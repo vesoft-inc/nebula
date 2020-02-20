@@ -15,8 +15,9 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
     auto space = req.get_space_id();
     CHECK_SPACE_ID_AND_RETURN(space);
     const auto &indexName = req.get_index_name();
-    LOG(INFO) << "Rebuild Edge Index Space " << space << ", Index Name " << indexName;
+    auto isOffline = req.get_is_offline();
 
+    LOG(INFO) << "Rebuild Edge Index Space " << space << ", Index Name " << indexName;
     std::unique_ptr<AdminClient> client(new AdminClient(kvstore_));
     auto partsRet = client->getLeaderDist(space).get();
     if (!partsRet.ok()) {
@@ -45,17 +46,14 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
         return;
     }
 
-    auto statusKey = MetaServiceUtils::rebuildIndexStatus(space, 'E', indexName);
-    if (!saveRebuildStatus(statusKey, "RUNNING")) {
-        return;
-    }
-
     std::vector<folly::Future<Status>> results;
+    auto statusKey = MetaServiceUtils::rebuildIndexStatus(space, 'E', indexName);
     for (auto iter = parts.begin(); iter != parts.end(); iter++) {
         auto future = client->rebuildEdgeIndex(iter->first,
                                                space,
                                                edgeIndexID,
-                                               iter->second);
+                                               iter->second,
+                                               isOffline);
         results.emplace_back(std::move(future));
     }
 

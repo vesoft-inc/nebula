@@ -154,6 +154,7 @@ NULL                        ([Nn][Uu][Ll][Ll])
 SNAPSHOT                    ([Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt])
 SNAPSHOTS                   ([Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt][Ss])
 FORCE                       ([Ff][Oo][Rr][Cc][Ee])
+OFFLINE                     ([Oo][Ff][Ff][Ll][Ii][Nn][Ee])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -297,6 +298,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {SNAPSHOT}                  { return TokenType::KW_SNAPSHOT; }
 {SNAPSHOTS}                 { return TokenType::KW_SNAPSHOTS; }
 {FORCE}                     { return TokenType::KW_FORCE; }
+{OFFLINE}                   { return TokenType::KW_OFFLINE; }
 
 {JOBS}                      { return TokenType::KW_JOBS; }
 {JOB}                       { return TokenType::KW_JOB; }

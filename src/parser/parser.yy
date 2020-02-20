@@ -100,7 +100,7 @@ class GraphScanner;
 
 /* keywords */
 %token KW_GO KW_AS KW_TO KW_OR KW_AND KW_XOR KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
-%token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX
+%token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_OFFLINE
 %token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND KW_REBUILD
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_PART KW_PARTS KW_TIMESTAMP KW_ADD
@@ -1228,13 +1228,19 @@ describe_edge_index_sentence
 
 rebuild_tag_index_sentence
     : KW_REBUILD KW_TAG KW_INDEX name_label {
-        $$ = new RebuildTagIndexSentence($4);
+        $$ = new RebuildTagIndexSentence($4, false);
+    }
+    | KW_REBUILD KW_TAG KW_INDEX name_label KW_OFFLINE {
+        $$ = new RebuildTagIndexSentence($4, true);
     }
     ;
 
 rebuild_edge_index_sentence
     : KW_REBUILD KW_EDGE KW_INDEX name_label {
-        $$ = new RebuildEdgeIndexSentence($4);
+        $$ = new RebuildEdgeIndexSentence($4, false);
+    }
+    | KW_REBUILD KW_EDGE KW_INDEX name_label KW_OFFLINE {
+        $$ = new RebuildEdgeIndexSentence($4, true);
     }
     ;
 

@@ -663,8 +663,9 @@ private:
 
 class RebuildTagIndexSentence final : public Sentence {
 public:
-    explicit RebuildTagIndexSentence(std::string *indexName) {
+    explicit RebuildTagIndexSentence(std::string *indexName, bool isOffline) {
         indexName_.reset(indexName);
+        isOffline_ = isOffline;
         kind_ = Kind::kRebuildTagIndex;
     }
 
@@ -676,13 +677,15 @@ public:
 
 private:
     std::unique_ptr<std::string>                indexName_;
+    bool                                        isOffline_;
 };
 
 
 class RebuildEdgeIndexSentence final : public Sentence {
 public:
-    explicit RebuildEdgeIndexSentence(std::string *indexName) {
+    explicit RebuildEdgeIndexSentence(std::string *indexName, bool isOffline) {
         indexName_.reset(indexName);
+        isOffline_ = isOffline;
         kind_ = Kind::kRebuildEdgeIndex;
     }
 
@@ -694,6 +697,7 @@ public:
 
 private:
     std::unique_ptr<std::string>                indexName_;
+    bool                                        isOffline_;
 };
 
 }   // namespace nebula

@@ -445,7 +445,7 @@ bool BaseProcessor<RESP>::saveRebuildStatus(std::string statusKey, std::string&&
 template<typename RESP>
 StatusOr<std::vector<nebula::cpp2::IndexItem>>
 BaseProcessor<RESP>::getIndexes(GraphSpaceID spaceId,
-                                int32_t schemaId) {
+                                int32_t tagOrEdge) {
     std::vector<nebula::cpp2::IndexItem> items;
     auto indexPrefix = MetaServiceUtils::indexPrefix(spaceId);
     auto iterRet = doPrefix(indexPrefix);
@@ -456,10 +456,10 @@ BaseProcessor<RESP>::getIndexes(GraphSpaceID spaceId,
     while (indexIter->valid()) {
         auto item = MetaServiceUtils::parseIndex(indexIter->val());
         if (item.get_schema_id().getType() == nebula::cpp2::SchemaID::Type::tag_id &&
-            item.get_schema_id().get_tag_id() == schemaId) {
+            item.get_schema_id().get_tag_id() == tagOrEdge) {
             items.emplace_back(std::move(item));
         } else if (item.get_schema_id().getType() == nebula::cpp2::SchemaID::Type::edge_type &&
-                   item.get_schema_id().get_edge_type() == schemaId) {
+                   item.get_schema_id().get_edge_type() == tagOrEdge) {
             items.emplace_back(std::move(item));
         }
         indexIter->next();

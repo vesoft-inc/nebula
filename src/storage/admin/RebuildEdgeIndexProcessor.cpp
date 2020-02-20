@@ -32,7 +32,7 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
               << " Edge Index " << indexID;
 
     for (PartitionID part : parts) {
-        if (FLAGS_offline) {
+        if (req.get_is_offline()) {
             std::unique_ptr<kvstore::KVIterator> iter;
             auto prefix = NebulaKeyUtils::prefix(part);
             auto ret = kvstore_->prefix(space, part, prefix, &iter);
@@ -50,6 +50,7 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
             VertexID currentDstVertex = -1;
             while (iter && iter->valid()) {
                 if (batchSize >= FLAGS_rebuild_index_batch_size) {
+                    callingNum_ += 1;
                     doPut(space, part, std::move(data));
                     data.clear();
                     batchSize = 0;
@@ -57,7 +58,6 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
 
                 auto key = iter->key();
                 auto val = iter->val();
-
                 if (!NebulaKeyUtils::isEdge(key) ||
                     NebulaKeyUtils::getEdgeType(key) != edgeType) {
                     iter->next();
@@ -75,12 +75,12 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
                 }
                 auto ranking = NebulaKeyUtils::getRank(key);
                 auto reader = RowReader::getEdgePropReader(schemaMan_,
-                                                        std::move(val),
-                                                        space,
-                                                        edgeType);
+                                                           std::move(val),
+                                                           space,
+                                                           edgeType);
                 auto values = collectIndexValues(reader.get(), item->get_fields());
                 auto indexKey = NebulaKeyUtils::edgeIndexKey(part, indexID, source,
-                                                            ranking, destination, values);
+                                                             ranking, destination, values);
                 data.emplace_back(std::move(indexKey), "");
                 iter->next();
             }
@@ -97,7 +97,6 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
             this->kvstore_->asyncAtomicOp(space, part, atomic, callback);
         }
     }
-    onFinished();
 }
 
 std::string

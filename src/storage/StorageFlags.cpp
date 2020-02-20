@@ -18,7 +18,5 @@ DEFINE_int32(waiting_new_leader_interval_in_secs, 5,
              "interval between two requests for catching up state");
 DEFINE_int32(rebuild_index_batch_size, 1024,
              "The batch size when rebuild index");
-DEFINE_bool(offline, false,
-            "Ensure there is no writes currently.It's usually used for initialization");
 DEFINE_bool(ignore_index_check_pre_insert, false,
             "skip check for stale index row when insert vertex or edge");

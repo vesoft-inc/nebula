@@ -116,12 +116,14 @@ public:
     folly::Future<Status> rebuildTagIndex(HostAddr address,
                                           GraphSpaceID spaceId,
                                           IndexID indexID,
-                                          std::vector<PartitionID> parts);
+                                          std::vector<PartitionID> parts,
+                                          bool isOffline);
 
     folly::Future<Status> rebuildEdgeIndex(HostAddr address,
                                            GraphSpaceID spaceId,
                                            IndexID indexID,
-                                           std::vector<PartitionID> parts);
+                                           std::vector<PartitionID> parts,
+                                           bool isOffline);
 
     FaultInjector* faultInjector() {
         return injector_.get();

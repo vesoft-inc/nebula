@@ -423,6 +423,9 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("SNAPSHOTS", TokenType::KW_SNAPSHOTS),
         CHECK_SEMANTIC_TYPE("Snapshots", TokenType::KW_SNAPSHOTS),
         CHECK_SEMANTIC_TYPE("snapshots", TokenType::KW_SNAPSHOTS),
+        CHECK_SEMANTIC_TYPE("OFFLINE", TokenType::KW_OFFLINE),
+        CHECK_SEMANTIC_TYPE("Offline", TokenType::KW_OFFLINE),
+        CHECK_SEMANTIC_TYPE("offline", TokenType::KW_OFFLINE),
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
         CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),

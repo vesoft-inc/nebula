@@ -97,7 +97,19 @@ TEST_F(IndexTest, TagIndex) {
     // Rebuild Tag Index
     {
         cpp2::ExecutionResponse resp;
+        std::string query = "REBUILD TAG INDEX single_person_index OFFLINE";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
         std::string query = "REBUILD TAG INDEX single_person_index";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "REBUILD TAG INDEX multi_person_index OFFLINE";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -260,7 +272,19 @@ TEST_F(IndexTest, EdgeIndex) {
     // Rebuild EDGE Index
     {
         cpp2::ExecutionResponse resp;
+        std::string query = "REBUILD EDGE INDEX single_friend_index OFFLINE";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
         std::string query = "REBUILD EDGE INDEX single_friend_index";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "REBUILD EDGE INDEX multi_friend_index OFFLINE";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }

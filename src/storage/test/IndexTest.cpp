@@ -548,6 +548,7 @@ TEST(IndexTest, RebulidTagIndexTest) {
         req.set_space_id(0);
         req.set_parts(std::move(parts));
         req.set_index_id(3001 + 1000);
+        req.set_is_offline(false);
 
         auto* processor = RebuildTagIndexProcessor::instance(kv.get(),
                                                              schemaMan.get(),
@@ -572,7 +573,6 @@ TEST(IndexTest, RebulidTagIndexTest) {
 }
 
 TEST(IndexTest, RebulidTagIndexWithOfflineTest) {
-    FLAGS_offline = true;
     fs::TempDir rootPath("/tmp/RebulidTagIndexWithOfflineTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     auto schemaMan = TestUtils::mockSchemaMan();
@@ -605,6 +605,7 @@ TEST(IndexTest, RebulidTagIndexWithOfflineTest) {
         req.set_space_id(0);
         req.set_parts(std::move(parts));
         req.set_index_id(3001 + 1000);
+        req.set_is_offline(true);
 
         auto* processor = RebuildTagIndexProcessor::instance(kv.get(),
                                                              schemaMan.get(),
@@ -660,6 +661,7 @@ TEST(IndexTest, RebulidEdgeIndexTest) {
         req.set_space_id(0);
         req.set_parts(std::move(parts));
         req.set_index_id(101 + 100);
+        req.is_offline = false;
 
         auto* processor = RebuildEdgeIndexProcessor::instance(kv.get(),
                                                               schemaMan.get(),
@@ -684,7 +686,6 @@ TEST(IndexTest, RebulidEdgeIndexTest) {
 }
 
 TEST(IndexTest, RebulidEdgeIndexWithOfflineTest) {
-    FLAGS_offline = true;
     fs::TempDir rootPath("/tmp/RebulidEdgeIndexWithOfflineTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     auto schemaMan = TestUtils::mockSchemaMan();
@@ -716,6 +717,7 @@ TEST(IndexTest, RebulidEdgeIndexWithOfflineTest) {
         req.set_space_id(0);
         req.set_parts(std::move(parts));
         req.set_index_id(101 + 100);
+        req.is_offline = true;
 
         auto* processor = RebuildEdgeIndexProcessor::instance(kv.get(),
                                                               schemaMan.get(),

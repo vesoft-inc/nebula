@@ -267,7 +267,7 @@ protected:
                                const std::vector<cpp2::AlterSchemaItem>& alterItems);
 
     StatusOr<std::vector<nebula::cpp2::IndexItem>>
-    getIndexes(GraphSpaceID spaceId, int32_t schemaId);
+    getIndexes(GraphSpaceID spaceId, int32_t tagOrEdge);
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;

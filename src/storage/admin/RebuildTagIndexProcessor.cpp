@@ -17,6 +17,7 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
     auto parts = req.get_parts();
     callingNum_ = parts.size();
     auto indexID = req.get_index_id();
+    auto isOffline = req.get_is_offline();
     auto itemRet = indexMan_->getTagIndex(space, indexID);
     if (!itemRet.ok()) {
         cpp2::ResultCode thriftRet;
@@ -31,7 +32,7 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
     LOG(INFO) << "Rebuild Tag Index Space " << space << " Tag ID " << tagID
               << " Tag Index " << indexID;
     for (PartitionID part : parts) {
-        if (FLAGS_offline) {
+        if (isOffline) {
             std::unique_ptr<kvstore::KVIterator> iter;
             auto prefix = NebulaKeyUtils::prefix(part);
             auto ret = kvstore_->prefix(space, part, prefix, &iter);
@@ -48,6 +49,7 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
             VertexID currentVertex = -1;
             while (iter && iter->valid()) {
                 if (batchSize >= FLAGS_rebuild_index_batch_size) {
+                    callingNum_ += 1;
                     doPut(space, part, std::move(data));
                     data.clear();
                     batchSize = 0;
@@ -69,9 +71,9 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
                     currentVertex = vertex;
                 }
                 auto reader = RowReader::getTagPropReader(schemaMan_,
-                                                        std::move(val),
-                                                        space,
-                                                        tagID);
+                                                          std::move(val),
+                                                          space,
+                                                          tagID);
                 auto values = collectIndexValues(reader.get(), item->get_fields());
 
                 auto indexKey = NebulaKeyUtils::vertexIndexKey(part, indexID, vertex, values);
@@ -91,7 +93,6 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
            this->kvstore_->asyncAtomicOp(space, part, atomic, callback);
         }
     }
-    onFinished();
 }
 
 std::string
