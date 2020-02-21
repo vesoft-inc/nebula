@@ -1376,5 +1376,29 @@ TEST_F(SchemaTest, TTLtest) {
     }
 }
 
+TEST_F(SchemaTest, UserAdminTest) {
+    auto client = gEnv->getClient();
+    ASSERT_NE(nullptr, client);
+    // Test command is comment
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "SHOW USERS";
+        auto code = client->execute(cmd, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "SHOW USER test";
+        auto code = client->execute(cmd, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "SHOW ROLES";
+        auto code = client->execute(cmd, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+}
+
 }   // namespace graph
 }   // namespace nebula
