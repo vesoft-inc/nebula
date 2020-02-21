@@ -93,8 +93,8 @@ private:
 
 class AddPartProcessor : public BaseProcessor<cpp2::AdminExecResp> {
 public:
-    static AddPartProcessor* instance(kvstore::KVStore* kvstore, meta::MetaClient* mClient) {
-        return new AddPartProcessor(kvstore, mClient);
+    static AddPartProcessor* instance(kvstore::KVStore* kvstore) {
+        return new AddPartProcessor(kvstore);
     }
 
     void process(const cpp2::AddPartReq& req) {
@@ -114,23 +114,13 @@ public:
             LOG(INFO) << "Space " << spaceId << " not exist, create it!";
             store->addSpace(spaceId);
         }
-        auto st = mClient_->refreshCache();
-        if (!st.ok()) {
-            this->pushResultCode(cpp2::ErrorCode::E_LOAD_META_FAILED, partId);
-            onFinished();
-            return;
-        }
         store->addPart(spaceId, partId, req.get_as_learner());
         onFinished();
     }
 
 private:
-    explicit AddPartProcessor(kvstore::KVStore* kvstore, meta::MetaClient* mClient)
-            : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr, nullptr)
-            , mClient_(mClient) {}
-
-private:
-    meta::MetaClient* mClient_ = nullptr;
+    explicit AddPartProcessor(kvstore::KVStore* kvstore)
+            : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr, nullptr) {}
 };
 
 class RemovePartProcessor : public BaseProcessor<cpp2::AdminExecResp> {

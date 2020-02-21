@@ -47,6 +47,7 @@ enum ErrorCode {
     E_SNAPSHOT_FAILURE   = -51,
 
     E_INDEX_CONFLICT = -61,
+    E_INDEX_WITH_TTL = -62,
 
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)
