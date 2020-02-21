@@ -17,7 +17,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     auto &fieldNames = req.get_fields();
     if (fieldNames.empty()) {
         LOG(ERROR) << "Edge's Field should not empty";
-        resp_.set_code(cpp2::ErrorCode::E_INVALID_PARM);
+        handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
         onFinished();
         return;
     }
@@ -27,9 +27,9 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     if (ret.ok()) {
         LOG(ERROR) << "Create Edge Index Failed: " << indexName << " have existed";
         if (req.get_if_not_exists()) {
-            resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+            handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
         } else {
-            resp_.set_code(cpp2::ErrorCode::E_EXISTED);
+            handleErrorCode(cpp2::ErrorCode::E_EXISTED);
         }
         onFinished();
         return;
@@ -39,7 +39,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     auto edgeTypeRet = getEdgeType(space, edgeName);
     if (!edgeTypeRet.ok()) {
         LOG(ERROR) << "Create Edge Index Failed: " << edgeName << " not exist";
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
@@ -47,7 +47,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     auto edgeType = edgeTypeRet.value();
     auto retSchema = getLatestEdgeSchema(space, edgeType);
     if (!retSchema.ok()) {
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
@@ -55,7 +55,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     auto latestEdgeSchema = retSchema.value();
     if (tagOrEdgeHasTTL(latestEdgeSchema)) {
        LOG(ERROR) << "Edge: " << edgeName  << " has ttl, not create index";
-       resp_.set_code(cpp2::ErrorCode::E_INDEX_WITH_TTL);
+       handleErrorCode(cpp2::ErrorCode::E_INDEX_WITH_TTL);
        onFinished();
        return;
     }
@@ -68,7 +68,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
 
         if (iter == fields.end()) {
             LOG(ERROR) << "Field " << field << " not found in Edge " << edgeName;
-            resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+            handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
             onFinished();
             return;
         } else {
@@ -84,7 +84,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     auto edgeIndexRet = autoIncrementId();
     if (!nebula::ok(edgeIndexRet)) {
         LOG(ERROR) << "Create edge index failed: Get edge index ID failed";
-        resp_.set_code(nebula::error(edgeIndexRet));
+        handleErrorCode(nebula::error(edgeIndexRet));
         onFinished();
         return;
     }
