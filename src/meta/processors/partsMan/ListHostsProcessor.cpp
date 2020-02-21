@@ -41,7 +41,7 @@ Status ListHostsProcessor::allHostsWithStatus() {
     auto kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, hostPrefix, &iter);
     if (kvRet != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "List Hosts Failed: No hosts";
-        resp_.set_code(cpp2::ErrorCode::E_NO_HOSTS);
+        handleErrorCode(cpp2::ErrorCode::E_NO_HOSTS);
         return Status::Error("Can't access kvstore, ret = %d", static_cast<int32_t>(kvRet));
     }
 
@@ -69,12 +69,12 @@ Status ListHostsProcessor::allHostsWithStatus() {
     kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, leaderPrefix, &iter);
     if (kvRet != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "List Hosts Failed: No leaders";
-        resp_.set_code(cpp2::ErrorCode::E_NO_HOSTS);
+        handleErrorCode(cpp2::ErrorCode::E_NO_HOSTS);
         return Status::Error("Can't access kvstore, ret = %d", static_cast<int32_t>(kvRet));
     }
 
     // get hosts which have send heartbeat recently
-    auto activeHosts = ActiveHostsMan::getActiveHosts(kvstore_, FLAGS_heartbeat_interval_secs + 1);
+    auto activeHosts = ActiveHostsMan::getActiveHosts(kvstore_, FLAGS_heartbeat_interval_secs * 2);
     while (iter->valid()) {
         auto host = MetaServiceUtils::parseLeaderKey(iter->key());
         if (std::find(activeHosts.begin(), activeHosts.end(),
@@ -101,7 +101,7 @@ Status ListHostsProcessor::allHostsWithStatus() {
         kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
         if (kvRet != kvstore::ResultCode::SUCCEEDED) {
             LOG(ERROR) << "List Hosts Failed: No partitions";
-            resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+            handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
             return Status::Error("Can't find any partitions");
         }
         while (iter->valid()) {
@@ -149,7 +149,7 @@ Status ListHostsProcessor::getSpaceIdNameMap() {
     auto kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, spacePrefix, &iter);
     if (kvRet != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "List Hosts Failed: No space found";
-        resp_.set_code(cpp2::ErrorCode::E_NO_HOSTS);
+        handleErrorCode(cpp2::ErrorCode::E_NO_HOSTS);
         return Status::Error("Can't access kvstore, ret = %d", static_cast<int32_t>(kvRet));
     }
     while (iter->valid()) {

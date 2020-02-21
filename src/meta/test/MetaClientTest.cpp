@@ -1218,6 +1218,143 @@ TEST(MetaClientTest, RetryUntilLimitTest) {
     }
 }
 
+TEST(MetaClientTest, Config) {
+    FLAGS_heartbeat_interval_secs = 1;
+    fs::TempDir rootPath("/tmp/MetaClientTest.Config.XXXXXX");
+
+    // Let the system choose an available port for us
+    int32_t localMetaPort = 0;
+    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
+
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    IPv4 localIp;
+    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    MetaClientOptions options;
+    // Now the `--local_config' option only affect if initialize the configuration from meta
+    // not affect `show/update/get configs'
+    options.skipConfig_ = true;
+    auto client = std::make_shared<MetaClient>(threadPool,
+                                               std::vector<HostAddr>{
+                                                    HostAddr(localIp, sc->port_)},
+                                                options);
+    client->waitForMetadReady();
+
+    // Empty Configuration
+    // List
+    {
+        auto resp = client->listConfigs(cpp2::ConfigModule::GRAPH).get();
+        EXPECT_TRUE(resp.ok());
+        EXPECT_EQ(resp.value().size(), 0);
+        resp = client->listConfigs(cpp2::ConfigModule::META).get();
+        EXPECT_TRUE(resp.ok());
+        EXPECT_EQ(resp.value().size(), 0);
+        resp = client->listConfigs(cpp2::ConfigModule::STORAGE).get();
+        EXPECT_TRUE(resp.ok());
+        EXPECT_EQ(resp.value().size(), 0);
+        resp = client->listConfigs(cpp2::ConfigModule::ALL).get();
+        EXPECT_TRUE(resp.ok());
+        EXPECT_EQ(resp.value().size(), 0);
+    }
+    // Set
+    {
+        auto resp = client->setConfig(cpp2::ConfigModule::GRAPH, "minloglevel",
+            cpp2::ConfigType::INT64,
+            toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(3))).get();
+        EXPECT_TRUE(!resp.ok());
+        resp = client->setConfig(cpp2::ConfigModule::META, "minloglevel",
+            cpp2::ConfigType::INT64,
+            toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(3))).get();
+        EXPECT_TRUE(!resp.ok());
+        resp = client->setConfig(cpp2::ConfigModule::STORAGE, "minloglevel",
+            cpp2::ConfigType::INT64,
+            toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(3))).get();
+        EXPECT_TRUE(!resp.ok());
+    }
+    // Get
+    {
+        auto resp = client->getConfig(cpp2::ConfigModule::GRAPH, "minloglevel").get();
+        EXPECT_TRUE(!resp.ok());
+
+        resp = client->getConfig(cpp2::ConfigModule::META, "minloglevel").get();
+        EXPECT_TRUE(!resp.ok());
+
+        resp = client->getConfig(cpp2::ConfigModule::STORAGE, "minloglevel").get();
+        EXPECT_TRUE(!resp.ok());
+    }
+
+    auto item1 = toThriftConfigItem(
+            cpp2::ConfigModule::GRAPH, "minloglevel", cpp2::ConfigType::INT64,
+            cpp2::ConfigMode::MUTABLE,
+            toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(2)));
+    auto item2 = toThriftConfigItem(
+            cpp2::ConfigModule::META, "minloglevel", cpp2::ConfigType::INT64,
+            cpp2::ConfigMode::MUTABLE,
+            toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(2)));
+    auto item3 = toThriftConfigItem(
+            cpp2::ConfigModule::STORAGE, "minloglevel", cpp2::ConfigType::INT64,
+            cpp2::ConfigMode::MUTABLE,
+            toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(2)));
+    // Reg
+    {
+        std::vector<cpp2::ConfigItem> configItems {
+            item1, item2, item3,
+        };
+        auto resp = client->regConfig(configItems).get();
+        ASSERT(resp.ok());
+    }
+    // List
+    {
+        auto resp = client->listConfigs(cpp2::ConfigModule::GRAPH).get();
+        EXPECT_TRUE(resp.ok());
+        EXPECT_EQ(resp.value().size(), 1);
+        resp = client->listConfigs(cpp2::ConfigModule::META).get();
+        EXPECT_TRUE(resp.ok());
+        EXPECT_EQ(resp.value().size(), 1);
+        resp = client->listConfigs(cpp2::ConfigModule::STORAGE).get();
+        EXPECT_TRUE(resp.ok());
+        EXPECT_EQ(resp.value().size(), 1);
+        resp = client->listConfigs(cpp2::ConfigModule::ALL).get();
+        EXPECT_TRUE(resp.ok());
+        EXPECT_EQ(resp.value().size(), 3);
+    }
+    // Set
+    {
+        auto resp = client->setConfig(cpp2::ConfigModule::GRAPH, "minloglevel",
+            cpp2::ConfigType::INT64,
+            toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(3))).get();
+        EXPECT_TRUE(resp.ok());
+        resp = client->setConfig(cpp2::ConfigModule::META, "minloglevel",
+            cpp2::ConfigType::INT64,
+            toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(3))).get();
+        EXPECT_TRUE(resp.ok());
+        resp = client->setConfig(cpp2::ConfigModule::STORAGE, "minloglevel",
+            cpp2::ConfigType::INT64,
+            toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(3))).get();
+        EXPECT_TRUE(resp.ok());
+    }
+    // Get
+    {
+        item1.set_value(toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(3)));
+        auto resp = client->getConfig(cpp2::ConfigModule::GRAPH, "minloglevel").get();
+        EXPECT_TRUE(resp.ok());
+        auto config = std::move(resp).value();
+        EXPECT_EQ(item1, config[0]);
+
+        item2.set_value(toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(3)));
+        resp = client->getConfig(cpp2::ConfigModule::META, "minloglevel").get();
+        EXPECT_TRUE(resp.ok());
+        config = std::move(resp).value();
+        EXPECT_EQ(item2, config[0]);
+
+        item3.set_value(toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(3)));
+        resp = client->getConfig(cpp2::ConfigModule::STORAGE, "minloglevel").get();
+        EXPECT_TRUE(resp.ok());
+        config = std::move(resp).value();
+        EXPECT_EQ(item3, config[0]);
+    }
+}
+
+
 TEST(MetaClientTest, RocksdbOptionsTest) {
     FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/RocksdbOptionsTest.XXXXXX");

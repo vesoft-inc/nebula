@@ -16,7 +16,7 @@ void ListTagsProcessor::process(const cpp2::ListTagsReq& req) {
     auto prefix = MetaServiceUtils::schemaTagsPrefix(spaceId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    resp_.set_code(to(ret));
+    handleErrorCode(MetaCommon::to(ret));
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         onFinished();
         return;
