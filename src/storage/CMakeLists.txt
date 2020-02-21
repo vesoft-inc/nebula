@@ -23,6 +23,9 @@ nebula_add_library(
     admin/SendBlockSignProcessor.cpp
     admin/RebuildTagIndexProcessor.cpp
     admin/RebuildEdgeIndexProcessor.cpp
+    admin/AdminTaskProcessor.cpp
+    admin/AdminTaskManager.cpp
+    admin/ConcreteTaskPlan.cpp
     index/IndexPolicyMaker.cpp
     index/IndexExecutor.cpp
     index/LookUpEdgeIndexProcessor.cpp

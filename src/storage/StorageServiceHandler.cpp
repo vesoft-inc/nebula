@@ -22,6 +22,7 @@
 #include "storage/kv/PutProcessor.h"
 #include "storage/kv/GetProcessor.h"
 #include "storage/admin/AdminProcessor.h"
+#include "storage/admin/AdminTaskProcessor.h"
 #include "storage/admin/CreateCheckpointProcessor.h"
 #include "storage/admin/DropCheckpointProcessor.h"
 #include "storage/admin/SendBlockSignProcessor.h"
@@ -263,6 +264,12 @@ StorageServiceHandler::future_lookUpEdgeIndex(const cpp2::LookUpIndexRequest& re
                                                          schemaMan_,
                                                          indexMan_,
                                                          &lookupEdgesQpsStat_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::AdminExecResp>
+StorageServiceHandler::future_addAdminTask(const cpp2::AddAdminTaskRequest& req) {
+    auto* processor = AdminTaskProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

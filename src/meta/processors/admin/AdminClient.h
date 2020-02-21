@@ -121,6 +121,13 @@ public:
                                            IndexID indexID,
                                            std::vector<PartitionID> parts,
                                            bool isOffline);
+    folly::Future<Status> addTask(nebula::cpp2::AdminCmd cmd,
+                                  int32_t jobId,
+                                  int32_t taskId,
+                                  GraphSpaceID spaceId,
+                                  const std::vector<HostAddr>& specificHosts,
+                                  IndexID indexID,
+                                  std::vector<PartitionID> parts);
 
     FaultInjector* faultInjector() {
         return injector_.get();

@@ -15,10 +15,12 @@
 #include "kvstore/Common.h"
 #include "kvstore/KVIterator.h"
 #include "meta/processors/Common.h"
+#include "meta/processors/admin/AdminClient.h"
 #include "meta/processors/jobMan/JobManager.h"
 #include "meta/processors/jobMan/JobUtils.h"
 #include "meta/processors/jobMan/TaskDescription.h"
 #include "meta/processors/jobMan/JobStatus.h"
+#include "meta/processors/jobMan/MetaJobExecutor.h"
 #include "meta/MetaServiceUtils.h"
 #include "webservice/Common.h"
 #include "common/time/WallClock.h"
@@ -89,7 +91,7 @@ void JobManager::runJobBackground() {
         }
         save(jobDesc->jobKey(), jobDesc->jobVal());
 
-        if (runJobInternal(*jobDesc)) {
+        if (runJobViaThrift(*jobDesc)) {
             jobDesc->setStatus(cpp2::JobStatus::FINISHED);
         } else {
             jobDesc->setStatus(cpp2::JobStatus::FAILED);
@@ -97,6 +99,30 @@ void JobManager::runJobBackground() {
         save(jobDesc->jobKey(), jobDesc->jobVal());
     }
     LOG(INFO) << "[JobManager] exit";
+}
+
+// tempory name,
+// will replace "runJobInternal" when task manager ready
+// @return: true if succeed, false if any task failed
+bool JobManager::runJobViaThrift(const JobDescription& jobDesc) {
+    auto jobExecutor = MetaJobExecutorFactory::createMetaJobExecutor(jobDesc);
+    if (jobExecutor == nullptr) {
+        LOG(ERROR) << "unreconized job cmd " << jobDesc.getCmd();
+        return false;
+    }
+    if (jobDesc.getParas().empty()) {
+        return false;
+    }
+    std::string spaceName = jobDesc.getParas().back();
+    int spaceId = getSpaceId(spaceName);
+    if (spaceId < 0) {
+        return false;
+    }
+    return jobExecutor->execute(spaceId,
+                                jobDesc.getJobId(),
+                                jobDesc.getParas(),
+                                kvStore_,
+                                pool_.get());
 }
 
 bool JobManager::runJobInternal(const JobDescription& jobDesc) {
@@ -138,6 +164,9 @@ bool JobManager::runJobInternal(const JobDescription& jobDesc) {
     for (auto& host : hosts) {
         auto dispatcher = [=]() {
             static const char *tmp = "http://%s:%d/admin?op=%s&space=%s";
+
+            std::unique_ptr<AdminClient> client(new AdminClient(kvStore_));
+
             auto strIP = network::NetworkUtils::intToIPv4(host.get_ip());
             auto url = folly::stringPrintf(tmp, strIP.c_str(),
                                            FLAGS_ws_storage_http_port,

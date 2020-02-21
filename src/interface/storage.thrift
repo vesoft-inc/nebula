@@ -464,10 +464,28 @@ struct LookUpIndexRequest {
     5: list<string>              return_columns,
 }
 
+struct AddAdminTaskRequest {
+    1: common.AdminCmd                      cmd        // rebuild index / flush / compact
+    2: i32                                  job_id     // job id and task 
+    3: i32                                  task_id    
+    4: common.GraphSpaceID                  space_id, 
+    5: optional list<common.PartitionID>    parts,
+    6: optional common.IndexID              index_id,
+    7: optional i64                         delay_ms  // 
+}
+
+// struct StopAdminTaskRequest {
+    // 1: i32 job_id
+    // 2: i32 task_id
+// }
+
 service StorageService {
     QueryResponse getBound(1: GetNeighborsRequest req)
 
     QueryStatsResponse boundStats(1: GetNeighborsRequest req)
+
+    AdminExecResp addAdminTask(1: AddAdminTaskRequest req);
+    // AdminExecResp stopAdminTask(1: StopAdminTaskRequest req);
 
     // When return_columns is empty, return all properties
     QueryResponse getProps(1: VertexPropRequest req);

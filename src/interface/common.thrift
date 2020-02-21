@@ -135,3 +135,11 @@ struct RoleItem {
 }
 
 const ValueType kInvalidValueType = {"type" : UNKNOWN}
+
+enum AdminCmd {
+    COMPACT         = 0
+    FLUSH           = 1
+    REBUILD_INDEX   = 2
+    STOP            = 20
+    INVALID         = 99
+}
