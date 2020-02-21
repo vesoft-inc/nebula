@@ -1746,9 +1746,6 @@ MetaClient::regConfig(const std::vector<cpp2::ConfigItem>& items) {
 
 folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
 MetaClient::getConfig(const cpp2::ConfigModule& module, const std::string& name) {
-    if (!configReady_) {
-        return Status::Error("Not ready!");
-    }
     cpp2::ConfigItem item;
     item.set_module(module);
     item.set_name(name);
@@ -1767,9 +1764,6 @@ MetaClient::getConfig(const cpp2::ConfigModule& module, const std::string& name)
 folly::Future<StatusOr<bool>>
 MetaClient::setConfig(const cpp2::ConfigModule& module, const std::string& name,
                       const cpp2::ConfigType& type, const std::string& value) {
-    if (!configReady_) {
-        return Status::Error("Not ready!");
-    }
     cpp2::ConfigItem item;
     item.set_module(module);
     item.set_name(name);
@@ -1790,9 +1784,6 @@ MetaClient::setConfig(const cpp2::ConfigModule& module, const std::string& name,
 
 folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
 MetaClient::listConfigs(const cpp2::ConfigModule& module) {
-    if (!configReady_) {
-        return Status::Error("Not ready!");
-    }
     cpp2::ListConfigsReq req;
     req.set_module(module);
     folly::Promise<StatusOr<std::vector<cpp2::ConfigItem>>> promise;
