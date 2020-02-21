@@ -1317,14 +1317,13 @@ void RaftPart::processAskForVoteRequest(
     }
 
     auto candidate = HostAddr(req.get_candidate_ip(), req.get_candidate_port());
-    if (role_ == Role::FOLLOWER && leader_ != std::make_pair(0, 0) &&
+    if (role_ == Role::FOLLOWER && leader_ != std::make_pair(0, 0) && leader_ != candidate &&
         lastMsgRecvDur_.elapsedInMSec() < FLAGS_raft_heartbeat_interval_secs * 1000) {
         LOG(INFO) << idStr_ << "I believe the leader exists. "
                   << "Refuse to vote for " << candidate;
         resp.set_error_code(cpp2::ErrorCode::E_WRONG_LEADER);
         return;
     }
-
 
     // Check term id
     auto term = role_ == Role::CANDIDATE ? proposedTerm_ : term_;
@@ -1633,6 +1632,14 @@ cpp2::ErrorCode RaftPart::verifyLeader(
         VLOG(2) << idStr_ << "The candidate leader " << candidate << " is not my peers";
         return cpp2::ErrorCode::E_WRONG_LEADER;
     }
+
+    if (role_ == Role::FOLLOWER && leader_ != std::make_pair(0, 0) && leader_ != candidate &&
+        lastMsgRecvDur_.elapsedInMSec() < FLAGS_raft_heartbeat_interval_secs * 1000) {
+        LOG(INFO) << idStr_ << "I believe the leader " << leader_ << " exists. "
+                  << "Refuse to append logs of " << candidate;
+        return cpp2::ErrorCode::E_WRONG_LEADER;
+    }
+
     VLOG(2) << idStr_ << "The current role is " << roleStr(role_);
     switch (role_) {
         case Role::LEARNER:
