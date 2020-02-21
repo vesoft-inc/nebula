@@ -57,31 +57,31 @@ The examples in this section make extensive use of the toy graph distributed wit
 
 - Insert data
   
-  ```bash
-  # insert vertex
-  nebula> INSERT VERTEX character(name, age, type) VALUES hash("saturn"):("saturn", 10000, "titan"), hash("jupiter"):("jupiter", 5000, "god");
+```bash
+# insert vertex
+nebula> INSERT VERTEX character(name,age, type) VALUES hash("saturn"):("saturn", 10000, "titan"), hash("jupiter"):("jupiter", 5000, "god");
 
-  gremlin> saturn = g.addV("character").property(T.id, 1).property('name', 'saturn').property('age', 10000).property('type', 'titan').next();
-  ==>v[1]
-  gremlin> jupiter = g.addV("character").property(T.id, 2).property('name', 'jupiter').property('age', 5000).property('type', 'god').next();
-  ==>v[2]
-  gremlin> prometheus = g.addV("character").property(T.id, 31).property('name',  'prometheus').property('age', 1000).property('type', 'god').next();
-  ==>v[31]
-  gremlin> jesus = g.addV("character").property(T.id, 32).property('name',  'jesus').property('age', 5000).property('type', 'god').next();
-  ==>v[32]
+gremlin> saturn = g.addV("character").property(T.id, 1).property('name', 'saturn').property('age', 10000).property('type', 'titan').next();
+==>v[1]
+gremlin> jupiter = g.addV("character").property(T.id, 2).property('name', 'jupiter').property('age', 5000).property('type', 'god').next();
+==>v[2]
+gremlin> prometheus = g.addV("character").property(T.id, 31).property('name',  'prometheus').property('age', 1000).property('type', 'god').next();
+==>v[31]
+gremlin> jesus = g.addV("character")property(T.id, 32).property('name', 'jesus').property('age', 5000).property('type', 'god').next();
+==>v[32]
 
-  # insert edge
-  nebula> INSERT EDGE father() VALUES hash("jupiter")->hash("saturn"):();
-  gremlin> g.addE("father").from(jupiter).to(saturn).property(T.id, 13);
-  ==>e[13][2-father->1]
-  ```
+# insert edge
+nebula> INSERT EDGE father() VALUES hash("jupiter")->hash("saturn"):();
+gremlin> g.addE("father").from(jupiter).to(saturn).property(T.id, 13);
+==>e[13][2-father->1]
+```
 
 - Delete vertex
   
-  ```bash
-  nebula> DELETE VERTEX hash("prometheus");
-  gremlin> g.V(prometheus).drop();
-  ```
+```bash
+nebula> DELETE VERTEX hash("prometheus");
+gremlin> g.V(prometheus).drop();
+```
 
 - Update vertex
 
@@ -92,125 +92,125 @@ gremlin> g.V(jesus).property('age', 6000);
 
 - Fetch data
   
-  ```bash
-  nebula> FETCH PROP ON character hash("saturn");
-  ===================================================
-  | character.name | character.age | character.type |
-  ===================================================
-  | saturn         | 10000         | titan          |
-  ---------------------------------------------------
+```bash
+nebula> FETCH PROP ON character hash("saturn");
+==================================================
+| character.name | character.age |character.type |
+==================================================
+| saturn         | 10000         |titan          |
+--------------------------------------------------
 
-  gremlin> g.V(saturn).valueMap();
-  ==>[name:[saturn],type:[titan],age:[10000]]
-  ```
+gremlin> g.V(saturn).valueMap();
+==>[name:[saturn],type:[titan],age:[10000]]
+```
 
 - Find the name of hercules's grandfather
 
-    ```bash
-    nebula> GO 2 STEPS FROM hash("hercules") OVER father YIELD  $$.character.name;
-    =====================
-    | $$.character.name |
-    =====================
-    | saturn            |
-    ---------------------
+```bash
+nebula> GO 2 STEPS FROM hash("hercules") OVER father YIELD $$.character.name;
+=====================
+| $$.character.name |
+=====================
+| saturn            |
+---------------------
 
-    gremlin> g.V().hasLabel('character').has('name','hercules').out('father').out('father').values('name');
-    ==>saturn
-    ```
+gremlin> g.V().hasLabel('character').has('name','hercules').out('father').out('father').values('name');
+==>saturn
+```
 
 - Find the name of hercules's father
 
-    ```bash
-    nebula> GO FROM hash("hercules") OVER father YIELD $$.character.name;
-    =====================
-    | $$.character.name |
-    =====================
-    | jupiter           |
-    ---------------------
+```bash
+nebula> GO FROM hash("hercules") OVER father YIELD $$.character.name;
+=====================
+| $$.character.name |
+=====================
+| jupiter           |
+---------------------
 
-    gremlin> g.V().hasLabel('character').has('name','hercules').out('father').values('name');
-    ==>jupiter
-    ```
+gremlin> g.V().hasLabel('character').has('name','hercules').out('father').values('name');
+==>jupiter
+```
 
 - Find the characters with age > 100
 
-    ```bash
-    nebula> # coming soon
-    gremlin> g.V().hasLabel('character').has('age',gt(100)).values('name');
-    ==>saturn
-    ==>jupiter
-    ==>neptune
-    ==>pluto
-    ```
+```bash
+nebula> # coming soon
+gremlin> g.V().hasLabel('character').has('age',gt(100)).values('name');
+==>saturn
+==>jupiter
+==>neptune
+==>pluto
+```
 
 - Find who are pluto's cohabitants
 
-    ```bash
-    nebula> GO FROM hash("pluto") OVER lives YIELD lives._dst AS place | \
-    GO FROM $-.place OVER lives REVERSELY YIELD $$.character.name AS cohabitants;
-    ===============
-    | cohabitants |
-    ===============
-    | pluto       |
-    ---------------
-    | cerberus    |
-    ---------------
+```bash
+nebula> GO FROM hash("pluto") OVER lives YIELD lives._dst AS place | \
+GO FROM $-.place OVER lives REVERSELY YIELD $$.character.name AS cohabitants;
+===============
+| cohabitants |
+===============
+| pluto       |
+---------------
+| cerberus    |
+---------------
 
-    gremlin> g.V(pluto).out('lives').in('lives').values('name');
-    ==>pluto
-    ==>cerberus
-    ```
+gremlin> g.V(pluto).out('lives').in('lives').values('name');
+==>pluto
+==>cerberus
+```
 
 - pluto can't be his own cohabitant
 
-    ```bash
-    nebula> GO FROM hash("pluto") OVER lives YIELD lives._dst AS place | GO FROM $-.place OVER lives REVERSELY WHERE \
-    $$.character.name != "pluto" YIELD $$.character.name AS cohabitants;
-    ===============
-    | cohabitants |
-    ===============
-    | cerberus    |
-    ---------------
+```bash
+nebula> GO FROM hash("pluto") OVER lives YIELD lives._dst AS place | GO FROM $-.place OVER lives REVERSELY WHERE \
+$$.character.name != "pluto" YIELD $$.character.name AS cohabitants;
+===============
+| cohabitants |
+===============
+| cerberus    |
+---------------
 
-    gremlin> g.V(pluto).out('lives').in('lives').where(is(neq(pluto))).values('name');
-    ==>cerberus
-    ```
+gremlin> g.V(pluto).out('lives').in('lives').where(is(neq(pluto))).values('name');
+==>cerberus
+```
 
 - Pluto's Brothers
 
-    ```bash
-    # where do pluto's brothers live?
+```bash
+# where do pluto's brothers live?
 
-    nebula> GO FROM hash("pluto") OVER brother YIELD brother._dst AS brother | \
-    GO FROM $-.brother OVER lives YIELD $$.location.name;
-    ====================
-    | $$.location.name |
-    ====================
-    | sky              |
-    --------------------
-    | sea              |
-    --------------------
+nebula> GO FROM hash("pluto") OVER brother YIELD brother._dst AS brother | \
+GO FROM $-.brother OVER lives YIELD $$.location.name;
+====================
+| $$.location.name |
+====================
+| sky              |
+--------------------
+| sea              |
+--------------------
 
-    gremlin> g.V(pluto).out('brother').out('lives').values('name');
-    ==>sky
-    ==>sea
+gremlin> g.V(pluto).out('brother').out('lives').values('name');
+==>sky
+==>sea
 
-    # which brother lives in which place?
+# which brother lives in which place?
 
-    nebula> GO FROM hash("pluto") OVER brother YIELD brother._dst AS god | \
-    GO FROM $-.god OVER lives YIELD $^.character.name AS Brother, $$.location.name AS Habitations;
-    =========================
-    | Brother | Habitations |
-    =========================
-    | jupiter | sky         |
-    -------------------------
-    | neptune | sea         |
-    -------------------------
+nebula> GO FROM hash("pluto") OVER brother YIELD brother._dst AS god | \
+GO FROM $-.god OVER lives YIELD $^.character.name AS Brother, $$.location.name AS Habitations;
+=========================
+| Brother | Habitations |
+=========================
+| jupiter | sky         |
+-------------------------
+| neptune | sea         |
+-------------------------
 
-    gremlin> g.V(pluto).out('brother').as('god').out('lives').as('place').select('god','place').by('name');
-    ==>[god:jupiter, place:sky]
-    ==>[god:neptune, place:sea]
-    ```
+gremlin> g.V(pluto).out('brother').as('god').out('lives').as('place').select('god','place').by('name');
+==>[god:jupiter, place:sky]
+==>[god:neptune, place:sea]
+```
 
 ## Advance Queries
 
@@ -218,9 +218,9 @@ gremlin> g.V(jesus).property('age', 6000);
 
 Name               | Gremlin | nGQL           |
 -----              |---------|   -----       |
-out adjacent vertices to the vertex | out(\<label>)       | GO FROM \<vertex_id> OVER \<edge_type>  |
-in adjacent vertices to the vertex | in(\<label>)    | GO FROM \<vertex_id> OVER \<edge_type> REVERSELY          |
-both adjacent vertices of the vertex      | both(\<label>)   | GO FROM \<vertex_id> OVER \<edge_type> BIDIRECT           |
+Out adjacent vertices to the vertex | out(\<label>)       | GO FROM \<vertex_id> OVER \<edge_type>  |
+In adjacent vertices to the vertex | in(\<label>)    | GO FROM \<vertex_id> OVER \<edge_type> REVERSELY          |
+Both adjacent vertices of the vertex      | both(\<label>)   | GO FROM \<vertex_id> OVER \<edge_type> BIDIRECT           |
 
 ```bash
 # Find the out adjacent vertices of a vertex along an edge
@@ -242,6 +242,49 @@ GO FROM $-.id OVER lives;
 ```
 
 ### Filter Condition
+
+Name               | Gremlin | nGQL           |
+-----              |---------|   -----       |
+Filter vertex via identifier | hasId(\<vertex_id>)       | FETCH PROP ON \<vertex_id> |
+Filter vertex or edge via label, key and value  | has(\<label>, \<key>, \<value>)    | LOOKUP \<tag> \| \<edge_type> WHERE \<expression>        |
+
+```bash
+# Filter vertex with ID saturn
+gremlin> g.V().hasId(saturn);
+nebula> FETCH PROP ON * hash("saturn");
+
+# Find for vertices with tag "character" and "name" attribute value "hercules"
+
+gremlin> g.V().has('character','name','hercules').valueMap();
+nebula> LOOKUP character WHERE character.name == 'hercules' YIELD character.name, character.age, character.type;
+```
+
+### Limiting Returned Results
+
+Name               | Gremlin | nGQL           |
+-----              |---------|   -----       |
+Constrain the number of rows to return  | limit()    | LIMIT        |
+Emit the last n-objects | tail() | ORDER BY \<expression> DESC LIMIT |
+Skip n-objects | skip() | LIMIT \<offset_value> |
+
+```bash
+# Find the first two records
+gremlin> g.V().has('character','name','hercules').out('battled').limit(2);
+GO FROM hash('hercules') OVER battled | LIMIT 2;
+
+# Find the last record
+gremlin> g.V().has('character','name','hercules').out('battled').values('name').tail(1);
+nebula> GO FROM hash('hercules') OVER battled YIELD $$.character.name AS name | ORDER BY name DESC | LIMIT 1;
+
+# Skip the first record and return one record
+gremlin> g.V().has('character','name','hercules').out('battled').values('name').skip(1).limit(1);
+nebula> GO FROM hash('hercules') OVER battled YIELD $$.character.name AS name | ORDER BY name | LIMIT 1,1;
+```
+
+
+
+
+
 
 <!-- ## References
 

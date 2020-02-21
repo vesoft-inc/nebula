@@ -57,31 +57,31 @@ Gremlin 和 nGQL 均使用唯一标识符标记顶点和边。在 **Nebula Graph
 
 - 插入数据
   
-  ```bash
-  # 插入点
-  nebula> INSERT VERTEX character(name, age, type) VALUES hash("saturn"):("saturn", 10000, "titan"), hash("jupiter"):("jupiter", 5000, "god");
+```bash
+# 插入点
+nebula> INSERT VERTEX character(name, age, type) VALUES hash("saturn"):("saturn", 10000, "titan"), hash("jupiter"):("jupiter", 5000, "god");
 
-  gremlin> saturn = g.addV("character").property(T.id, 1).property('name', 'saturn').property('age', 10000).property('type', 'titan').next();
-  ==>v[1]
-  gremlin> jupiter = g.addV("character").property(T.id, 2).property('name', 'jupiter').property('age', 5000).property('type', 'god').next();
-  ==>v[2]
-  gremlin> prometheus = g.addV("character").property(T.id, 31).property('name',  'prometheus').property('age', 1000).property('type', 'god').next();
-  ==>v[31]
-  gremlin> jesus = g.addV("character").property(T.id, 32).property('name',  'jesus').property('age', 5000).property('type', 'god').next();
-  ==>v[32]
+gremlin> saturn = g.addV("character").property(T.id, 1).property('name', 'saturn').property('age', 10000).property('type', 'titan').next();
+==>v[1]
+gremlin> jupiter = g.addV("character").property(T.id, 2).property('name', 'jupiter').property('age', 5000).property('type', 'god').next();
+==>v[2]
+gremlin> prometheus = g.addV("character").property(T.id, 31).property('name',  'prometheus').property('age', 1000).property('type', 'god').next();
+==>v[31]
+gremlin> jesus = g.addV("character").property(T.id, 32).property('name',  'jesus').property('age', 5000).property('type', 'god').next();
+==>v[32]
 
-  # 插入边
-  nebula> INSERT EDGE father() VALUES hash("jupiter")->hash("saturn"):();
-  gremlin> g.addE("father").from(jupiter).to(saturn).property(T.id, 13);
-  ==>e[13][2-father->1]
-  ```
+# 插入边
+nebula> INSERT EDGE father() VALUES hash("jupiter")->hash("saturn"):();
+gremlin> g.addE("father").from(jupiter).to(saturn).property(T.id, 13);
+==>e[13][2-father->1]
+```
 
 - 删除数据
   
-  ```bash
-  nebula> DELETE VERTEX hash("prometheus");
-  gremlin> g.V(prometheus).drop();
-  ```
+```bash
+nebula> DELETE VERTEX hash("prometheus");
+gremlin> g.V(prometheus).drop();
+```
 
 - 更新数据
 
@@ -92,125 +92,125 @@ gremlin> g.V(jesus).property('age', 6000);
 
 - 查看数据
   
-  ```bash
-  nebula> FETCH PROP ON character hash("saturn");
-  ===================================================
-  | character.name | character.age | character.type |
-  ===================================================
-  | saturn         | 10000         | titan          |
-  ---------------------------------------------------
+```bash
+nebula> FETCH PROP ON character hash("saturn");
+===================================================
+| character.name | character.age | character.type |
+===================================================
+| saturn         | 10000         | titan          |
+---------------------------------------------------
 
-  gremlin> g.V(saturn).valueMap();
-  ==>[name:[saturn],type:[titan],age:[10000]]
-  ```
+gremlin> g.V(saturn).valueMap();
+==>[name:[saturn],type:[titan],age:[10000]]
+```
 
 - 查询 hercules 的祖父
 
-    ```bash
-    nebula> GO 2 STEPS FROM hash("hercules") OVER father YIELD  $$.character.name;
-    =====================
-    | $$.character.name |
-    =====================
-    | saturn            |
-    ---------------------
+```bash
+nebula> GO 2 STEPS FROM hash("hercules") OVER father YIELD  $$.character.name;
+=====================
+| $$.character.name |
+=====================
+| saturn            |
+---------------------
 
-    gremlin> g.V().hasLabel('character').has('name','hercules').out('father').out('father').values('name');
-    ==>saturn
-    ```
+gremlin> g.V().hasLabel('character').has('name','hercules').out('father').out('father').values('name');
+==>saturn
+```
 
 - 查询 hercules 的父亲
 
-    ```bash
-    nebula> GO FROM hash("hercules") OVER father YIELD $$.character.name;
-    =====================
-    | $$.character.name |
-    =====================
-    | jupiter           |
-    ---------------------
+```bash
+nebula> GO FROM hash("hercules") OVER father YIELD $$.character.name;
+=====================
+| $$.character.name |
+=====================
+| jupiter           |
+---------------------
 
-    gremlin> g.V().hasLabel('character').has('name','hercules').out('father').values('name');
-    ==>jupiter
-    ```
+gremlin> g.V().hasLabel('character').has('name','hercules').out('father').values('name');
+==>jupiter
+```
 
 - 查询年龄大于 100 的人物
 
-    ```bash
-    nebula> XXX # coming soon
-    gremlin> g.V().hasLabel('character').has('age',gt(100)).values('name');
-    ==>saturn
-    ==>jupiter
-    ==>neptune
-    ==>pluto
-    ```
+```bash
+nebula> XXX # coming soon
+gremlin> g.V().hasLabel('character').has('age',gt(100)).values('name');
+==>saturn
+==>jupiter
+==>neptune
+==>pluto
+```
 
 - 查询和 pluto 一起居住的人物
 
-    ```bash
-    nebula> GO FROM hash("pluto") OVER lives YIELD lives._dst AS place | \
-    GO FROM $-.place OVER lives REVERSELY YIELD $$.character.name AS cohabitants;
-    ===============
-    | cohabitants |
-    ===============
-    | pluto       |
-    ---------------
-    | cerberus    |
-    ---------------
+```bash
+nebula> GO FROM hash("pluto") OVER lives YIELD lives._dst AS place | \
+GO FROM $-.place OVER lives REVERSELY YIELD $$.character.name AS cohabitants;
+===============
+| cohabitants |
+===============
+| pluto       |
+---------------
+| cerberus    |
+---------------
 
-    gremlin> g.V(pluto).out('lives').in('lives').values('name');
-    ==>pluto
-    ==>cerberus
-    ```
+gremlin> g.V(pluto).out('lives').in('lives').values('name');
+==>pluto
+==>cerberus
+```
 
 - 从一起居住的人物中排除 pluto 本人
 
-    ```bash
-    nebula>  GO FROM hash("pluto") OVER lives YIELD lives._dst AS place | GO FROM $-.place OVER lives REVERSELY WHERE \
-    $$.character.name != "pluto" YIELD $$.character.name AS cohabitants;
-    ===============
-    | cohabitants |
-    ===============
-    | cerberus    |
-    ---------------
+```bash
+nebula> GO FROM hash("pluto") OVER lives YIELD lives._dst AS place | GO FROM $-.place OVER lives REVERSELY WHERE \
+$$.character.name != "pluto" YIELD $$.character.name AS cohabitants;
+===============
+| cohabitants |
+===============
+| cerberus    |
+---------------
 
-    gremlin> g.V(pluto).out('lives').in('lives').where(is(neq(pluto))).values('name');
-    ==>cerberus
-    ```
+gremlin> g.V(pluto).out('lives').in('lives').where(is(neq(pluto))).values('name');
+==>cerberus
+```
 
 - Pluto 的兄弟们
 
-    ```bash
-    # where do pluto's brothers live?
+```bash
+# where do pluto's brothers live?
 
-    nebula> GO FROM hash("pluto") OVER brother YIELD brother._dst AS brother | \
-    GO FROM $-.brother OVER lives YIELD $$.location.name;
-    ====================
-    | $$.location.name |
-    ====================
-    | sky              |
-    --------------------
-    | sea              |
-    --------------------
+nebula> GO FROM hash("pluto") OVER brother YIELD brother._dst AS brother | \
+GO FROM $-.brother OVER lives YIELD $$.location.name;
+====================
+| $$.location.name |
+====================
+| sky              |
+--------------------
+| sea              |
+--------------------
 
-    gremlin> g.V(pluto).out('brother').out('lives').values('name');
-    ==>sky
-    ==>sea
+gremlin> g.V(pluto).out('brother').out('lives').values('name');
+==>sky
+==>sea
 
-    # which brother lives in which place?
+# which brother lives in which place?
 
-    nebula> GO FROM hash("pluto") OVER brother YIELD brother._dst AS god | \
-    GO FROM $-.god OVER lives YIELD $^.character.name AS Brother, $$.location.name AS Habitations;
-    =========================
-    | Brother | Habitations |
-    =========================
-    | jupiter | sky         |
-    -------------------------
-    | neptune | sea         |
-    -------------------------
+nebula> GO FROM hash("pluto") OVER brother YIELD brother._dst AS god | \
+GO FROM $-.god OVER lives YIELD $^.character.name AS Brother, $$.location.name AS Habitations;
+=========================
+| Brother | Habitations |
+=========================
+| jupiter | sky         |
+-------------------------
+| neptune | sea         |
+-------------------------
 
-    gremlin> g.V(pluto).out('brother').as('god').out('lives').as('place').select('god','place').by('name');
-    ==>[god:jupiter, place:sky]
-    ==>[god:neptune, place:sea]
-    ```
+gremlin> g.V(pluto).out('brother').as('god').out('lives').as('place').select('god','place').by('name');
+==>[god:jupiter, place:sky]
+==>[god:neptune, place:sea]
+```
 
 ## 高级查询
 
@@ -242,6 +242,49 @@ GO FROM $-.id OVER lives;
 ```
 
 ### 条件过滤
+
+名称               | Gremlin | nGQL           |
+-----              |---------|   -----       |
+通过 ID 来过滤顶点 | hasId(\<vertex_id>)       | FETCH PROP ON \<vertex_id> |
+通过 label 和属性的名字和值过滤顶点和边  | has(\<label>, \<key>, \<value>)    | LOOKUP \<tag> \| \<edge_type> WHERE \<expression>        |
+
+```bash
+# 查询 ID 为 saturn 的顶点
+gremlin> g.V().hasId(saturn);
+nebula> FETCH PROP ON * hash("saturn");
+
+# 查询 tag 为 character 且 name 属性值为 hercules 的顶点
+
+gremlin> g.V().has('character','name','hercules').valueMap();
+nebula> LOOKUP character WHERE character.name == 'hercules' YIELD character.name, character.age, character.type;
+```
+
+### 返回结果限制
+
+名称               | Gremlin | nGQL           |
+-----              |---------|   -----       |
+指定返回结果行数  | limit()    | LIMIT        |
+获取后 n 个元素 | tail() | ORDER BY \<expression> DESC LIMIT |
+跳过前 n 个元素 | skip() | LIMIT \<offset_value> |
+
+```bash
+# 查询前两个顶点
+gremlin> g.V().has('character','name','hercules').out('battled').limit(2);
+GO FROM hash('hercules') OVER battled | LIMIT 2;
+
+# 查询后两个顶点
+gremlin> g.V().has('character','name','hercules').out('battled').values('name').tail(1);
+nebula> GO FROM hash('hercules') OVER battled YIELD $$.character.name AS name | ORDER BY name DESC | LIMIT 1;
+
+# 跳过第 1 个元素并返回一个元素
+gremlin> g.V().has('character','name','hercules').out('battled').values('name').skip(1).limit(1);
+nebula> GO FROM hash('hercules') OVER battled YIELD $$.character.name AS name | ORDER BY name | LIMIT 1,1;
+```
+
+
+
+
+
 
 <!-- ## References
 
