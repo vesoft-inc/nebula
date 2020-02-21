@@ -212,6 +212,37 @@ gremlin> g.V(jesus).property('age', 6000);
     ==>[god:neptune, place:sea]
     ```
 
+## 高级查询
+
+### 边的遍历
+
+名称               | Gremlin | nGQL           |
+-----              |---------|   -----       |
+指定点沿指定边的出顶点 | out(\<label>)       | GO FROM \<vertex_id> OVER \<edge_type>  |
+指定点沿指定边的入顶点 | in(\<label>)    | GO FROM \<vertex_id> OVER \<edge_type> REVERSELY          |
+指定点沿指定边的双向顶点      | both(\<label>)   | GO FROM \<vertex_id> OVER \<edge_type> BIDIRECT           |
+
+```bash
+# 访问某个顶点沿某条边的 OUT 方向邻接点
+gremlin> g.V(jupiter).out('brother');
+nebula> GO FROM hash("jupiter") OVER brother;
+
+# 访问某个顶点沿某条边的 IN 方向邻接点
+gremlin> g.V(jupiter).in('brother');
+nebula> GO FROM hash("jupiter") OVER brother REVERSELY;
+
+# 访问某个顶点沿某条边的双向邻接点
+gremlin> g.V(jupiter).both('brother');
+nebula> GO FROM hash("jupiter") OVER brother BIDIRECT;
+
+# 2度 out 查询
+gremlin> g.V(hercules).out('father').out('lives');
+nebula> GO FROM hash("hercules") OVER father YIELD father._dst AS id | \
+GO FROM $-.id OVER lives;
+```
+
+### 条件过滤
+
 <!-- ## References
 
 Multiple properties (multi-properties): a vertex property key can have multiple values. For example, a vertex can have multiple "name" properties.

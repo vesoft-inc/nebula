@@ -212,6 +212,37 @@ gremlin> g.V(jesus).property('age', 6000);
     ==>[god:neptune, place:sea]
     ```
 
+## Advance Queries
+
+### Traversing Edges
+
+Name               | Gremlin | nGQL           |
+-----              |---------|   -----       |
+out adjacent vertices to the vertex | out(\<label>)       | GO FROM \<vertex_id> OVER \<edge_type>  |
+in adjacent vertices to the vertex | in(\<label>)    | GO FROM \<vertex_id> OVER \<edge_type> REVERSELY          |
+both adjacent vertices of the vertex      | both(\<label>)   | GO FROM \<vertex_id> OVER \<edge_type> BIDIRECT           |
+
+```bash
+# Find the out adjacent vertices of a vertex along an edge
+gremlin> g.V(jupiter).out('brother');
+nebula> GO FROM hash("jupiter") OVER brother;
+
+# Find the in adjacent vertices of a vertex along an edge
+gremlin> g.V(jupiter).in('brother');
+nebula> GO FROM hash("jupiter") OVER brother REVERSELY;
+
+# Find the both adjacent vertices of a vertex along an edge
+gremlin> g.V(jupiter).both('brother');
+nebula> GO FROM hash("jupiter") OVER brother BIDIRECT;
+
+# Two hops out traverse
+gremlin> g.V(hercules).out('father').out('lives');
+nebula> GO FROM hash("hercules") OVER father YIELD father._dst AS id | \
+GO FROM $-.id OVER lives;
+```
+
+### Filter Condition
+
 <!-- ## References
 
 Multiple properties (multi-properties): a vertex property key can have multiple values. For example, a vertex can have multiple "name" properties.
