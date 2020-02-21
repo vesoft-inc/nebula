@@ -34,14 +34,15 @@ public:
                      meta::SchemaManager *sm,
                      meta::ClientBasedGflagsManager *gflagsManager,
                      storage::StorageClient *storage,
-                     meta::MetaClient *metaClient) {
+                     meta::MetaClient *metaClient,
+                     CharsetInfo* charsetInfo) {
         rctx_ = std::move(rctx);
         sm_ = sm;
         gflagsManager_ = gflagsManager;
         storageClient_ = storage;
         metaClient_ = metaClient;
         variableHolder_ = std::make_unique<VariableHolder>();
-        charsetInfo_ = CharsetInfo::instance();
+        charsetInfo_ = charsetInfo;
     }
 
     ~ExecutionContext();
@@ -81,7 +82,7 @@ private:
     storage::StorageClient                     *storageClient_{nullptr};
     meta::MetaClient                           *metaClient_{nullptr};
     std::unique_ptr<VariableHolder>             variableHolder_;
-    CharsetInfo                                *charsetInfo_;
+    CharsetInfo                                *charsetInfo_{nullptr};
 };
 
 }   // namespace graph

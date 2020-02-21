@@ -12,11 +12,17 @@
 
 namespace nebula {
 
-struct CharsetToCollation {
+
+struct CharsetDesc {
+    // Charset name
     std::string               charsetName_;
+    // Charset default collation
     std::string               defaultColl_;
-    std::vector<std::string>  supportColl_;
+    // All collations supported by this charset
+    std::vector<std::string>  supportColls_;
+    // Charset description info
     std::string               desc_;
+    // Maximum byte number of a character by this charset
     int32_t                   maxLen_;
 };
 
@@ -25,12 +31,7 @@ class CharsetInfo final {
 public:
     static CharsetInfo* instance() {
         static std::unique_ptr<CharsetInfo> charsetInfo(new CharsetInfo());
-        charsetInfo->prepare();
         return charsetInfo.get();
-    }
-
-    void prepare() {
-        charsetToCollation["utf8"] = {"utf8", "utf8_bin", {"utf8_bin"}, "UTF-8 Unicode", 4};
     }
 
     /**
@@ -44,10 +45,10 @@ public:
     Status isSupportCollate(const std::string& collateName);
 
     /**
-     * check if charset and collation match
+     * Check if charset and collation match
      */
     Status charsetAndCollateMatch(const std::string& charsetName,
-                                         const std::string& collateName);
+                                  const std::string& collateName);
 
     /**
      * Get the corresponding collation according to charset
@@ -59,19 +60,32 @@ public:
      */
     StatusOr<std::string> getCharsetbyCollation(const std::string& collationName);
 
-
-    std::unordered_map<std::string, CharsetToCollation> getCharsetToCollation() {
-        return charsetToCollation;
+    /**
+     * Get all supported charsets description information
+     */
+    std::unordered_map<std::string, CharsetDesc> getCharsetDesc() {
+        return charsetDesc_;
     }
 
 private:
-    CharsetInfo() {}
+    CharsetInfo() {
+       charsetDesc_["utf8"] = {"utf8", "utf8_bin", {"utf8_bin"}, "UTF-8 Unicode", 4};
+    }
 
-    std::unordered_set<std::string> supportCharset = {"utf8"};
+    /**
+     * List of supported charsets
+     */
+    std::unordered_set<std::string> supportCharsets_ = {"utf8"};
 
-    std::unordered_set<std::string> supportCollation = {"utf8_bin"};
+    /**
+     * List of supported collations
+     */
+    std::unordered_set<std::string> supportCollations_ = {"utf8_bin"};
 
-    std::unordered_map<std::string, CharsetToCollation> charsetToCollation;
+    /**
+     * Description information of supported charsets
+     */
+    std::unordered_map<std::string, CharsetDesc> charsetDesc_;
 };
 
 }   // namespace nebula

@@ -9,7 +9,7 @@
 namespace nebula {
 
 Status CharsetInfo::isSupportCharset(const std::string& charsetName) {
-    if (supportCharset.find(charsetName) == supportCharset.end()) {
+    if (supportCharsets_.find(charsetName) == supportCharsets_.end()) {
         return Status::Error("Charset `%s' not support", charsetName.c_str());
     }
     return Status::OK();
@@ -17,7 +17,7 @@ Status CharsetInfo::isSupportCharset(const std::string& charsetName) {
 
 
 Status CharsetInfo::isSupportCollate(const std::string& collateName) {
-    if (supportCollation.find(collateName) == supportCollation.end()) {
+    if (supportCollations_.find(collateName) == supportCollations_.end()) {
         return Status::Error("Collation `%s' not support", collateName.c_str());
     }
     return Status::OK();
@@ -26,9 +26,9 @@ Status CharsetInfo::isSupportCollate(const std::string& collateName) {
 
 Status CharsetInfo::charsetAndCollateMatch(const std::string& charsetName,
                                            const std::string& collateName) {
-    auto iter = charsetToCollation.find(charsetName);
-    if (iter != charsetToCollation.end()) {
-        for (auto& sc : iter->second.supportColl_) {
+    auto iter = charsetDesc_.find(charsetName);
+    if (iter != charsetDesc_.end()) {
+        for (auto& sc : iter->second.supportColls_) {
             if (!sc.compare(collateName)) {
                 return Status::OK();
             }
@@ -40,8 +40,8 @@ Status CharsetInfo::charsetAndCollateMatch(const std::string& charsetName,
 
 
 StatusOr<std::string> CharsetInfo::getDefaultCollationbyCharset(const std::string& charsetName) {
-    auto iter = charsetToCollation.find(charsetName);
-    if (iter != charsetToCollation.end()) {
+    auto iter = charsetDesc_.find(charsetName);
+    if (iter != charsetDesc_.end()) {
         return iter->second.defaultColl_;
     }
     return Status::Error("Charset `%s' not support", charsetName.c_str());
@@ -49,8 +49,8 @@ StatusOr<std::string> CharsetInfo::getDefaultCollationbyCharset(const std::strin
 
 
 StatusOr<std::string> CharsetInfo::getCharsetbyCollation(const std::string& collationName ) {
-    for (auto& cset : charsetToCollation) {
-        for (auto& coll : cset.second.supportColl_) {
+    for (auto& cset : charsetDesc_) {
+        for (auto& coll : cset.second.supportColls_) {
             if (!coll.compare(collationName)) {
                 return cset.first;
             }

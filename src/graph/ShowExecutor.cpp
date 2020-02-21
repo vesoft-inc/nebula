@@ -928,9 +928,9 @@ void ShowExecutor::showCharset() {
     std::vector<std::string> header{"Charset", "Description", "Default collation", "Maxlen"};
     resp_->set_column_names(std::move(header));
     std::vector<cpp2::RowValue> rows;
-    auto charsetToCollation = ectx()->getCharsetInfo()->getCharsetToCollation();
+    auto charsetDesc = ectx()->getCharsetInfo()->getCharsetDesc();
 
-    for (auto& e : charsetToCollation) {
+    for (auto& e : charsetDesc) {
         std::vector<cpp2::ColumnValue> row;
         row.resize(4);
         row[0].set_str(e.second.charsetName_);
@@ -950,10 +950,10 @@ void ShowExecutor::showCollation() {
     std::vector<std::string> header{"Collation", "Charset"};
     resp_->set_column_names(std::move(header));
     std::vector<cpp2::RowValue> rows;
-    auto charsetToCollation = ectx()->getCharsetInfo()->getCharsetToCollation();
+    auto charsetDesc = ectx()->getCharsetInfo()->getCharsetDesc();
 
-    for (auto& cset : charsetToCollation) {
-        for (auto& coll : cset.second.supportColl_) {
+    for (auto& cset : charsetDesc) {
+        for (auto& coll : cset.second.supportColls_) {
             std::vector<cpp2::ColumnValue> row;
             row.resize(2);
             row[0].set_str(coll);
