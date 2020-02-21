@@ -59,13 +59,17 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
 * Statement Syntax
   * Data Definition Statements
     * [Alter Tag/Edge Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/alter-tag-edge-syntax.md)
+    * [Copy Schema Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/copy-schema-syntax.md)
     * [Create Space Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/create-space-syntax.md)
     * [Create Tag/Edge Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/create-tag-edge-syntax.md)
     * [Drop Edge Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/drop-edge-syntax.md)
     * [Drop Space Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/drop-space-syntax.md)
     * [Drop Tag Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/drop-tag-syntax.md)
     * [Index](2.query-language/4.statement-syntax/1.data-definition-statements/index.md)
+    * [Rename Space](2.query-language/4.statement-syntax/1.data-definition-statements/rename-space-syntax.md)
+    * [Truncate Space](2.query-language/4.statement-syntax/1.data-definition-statements/truncate-space-syntax.md)
     * [TTL (time-to-live)](2.query-language/4.statement-syntax/1.data-definition-statements/TTL.md)
+
   * Data Query and Manipulation Statements
     * [Delete Edge Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/delete-edge-syntax.md)
     * [Delete Vertex Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/delete-vertex-syntax.md)
@@ -102,7 +106,6 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
     * [Deploy Cluster](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster.md)
     <!-- * [Connect Prometheus](3.build-develop-and-administration/3.deploy-and-administrations/deployment/connect-prometheus.md) -->
     * [Installation With rpm](3.build-develop-and-administration/3.deploy-and-administrations/deployment/install-with-rpm-deb.md)
-
 
   * Server Administration
     * Account Management Statements
