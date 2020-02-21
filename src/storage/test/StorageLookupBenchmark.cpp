@@ -18,7 +18,7 @@
 #include "storage/test/TestUtils.h"
 #include "storage/StorageFlags.h"
 
-DEFINE_int32(total_vertices_size, 1000000, "The number of vertices");
+DEFINE_int64(total_vertices_size, 1000000, "The number of vertices");
 DEFINE_string(root_data_path, "/tmp/LookUpPref", "Engine data path");
 
 namespace nebula {
@@ -28,41 +28,18 @@ GraphSpaceID spaceId = 0;
 TagID tagId = 1;
 IndexID indexId = 1;
 PartitionID partId = 0;
-static int32_t modeInt = 100;
+static int64_t modeInt = 100;
 
 using IndexValues = std::vector<std::pair<nebula::cpp2::SupportedType, std::string>>;
 
-std::string indexStr(RowReader* reader, const nebula::cpp2::ColumnDef& col) {
-    auto res = RowReader::getPropByName(reader, col.get_name());
+std::string indexStr(RowReader* reader, const std::string& col) {
+    auto res = RowReader::getPropByName(reader, col);
     if (!ok(res)) {
-        LOG(ERROR) << "Skip bad column prop " << col.get_name();
+        LOG(ERROR) << "Skip bad column prop " << col;
         return "";
     }
     auto&& v = value(std::move(res));
-    switch (col.get_type().get_type()) {
-        case nebula::cpp2::SupportedType::BOOL: {
-            auto val = boost::get<bool>(v);
-            std::string raw;
-            raw.reserve(sizeof(bool));
-            raw.append(reinterpret_cast<const char*>(&val), sizeof(bool));
-            return raw;
-        }
-        case nebula::cpp2::SupportedType::INT:
-        case nebula::cpp2::SupportedType::TIMESTAMP: {
-            return NebulaKeyUtils::encodeInt64(boost::get<int64_t>(v));
-        }
-        case nebula::cpp2::SupportedType::FLOAT:
-        case nebula::cpp2::SupportedType::DOUBLE: {
-            return NebulaKeyUtils::encodeDouble(boost::get<double>(v));
-        }
-        case nebula::cpp2::SupportedType::STRING: {
-            return boost::get<std::string>(v);
-        }
-        default:
-            LOG(ERROR) << "Unknown type: "
-                       << static_cast<int32_t>(col.get_type().get_type());
-    }
-    return "";
+    return NebulaKeyUtils::encodeInt64(boost::get<int64_t>(v));
 }
 
 IndexValues collectIndexValues(RowReader* reader,
@@ -72,7 +49,7 @@ IndexValues collectIndexValues(RowReader* reader,
         return values;
     }
     for (auto& col : cols) {
-        auto val = indexStr(reader, col);
+        auto val = indexStr(reader, col.get_name());
         values.emplace_back(col.get_type().get_type(), std::move(val));
     }
     return values;
@@ -101,7 +78,7 @@ std::unique_ptr<AdHocSchemaManager> mockSchemaMan() {
     for (int32_t i = 0; i < 3; i++) {
         nebula::cpp2::ColumnDef column;
         column.name = folly::stringPrintf("col_%d", i);
-        column.type.type = nebula::cpp2::SupportedType::STRING;
+        column.type.type = nebula::cpp2::SupportedType::INT;
         schema.columns.emplace_back(std::move(column));
     }
     schemaMan->addTagSchema(spaceId, tagId,
@@ -115,7 +92,7 @@ std::unique_ptr<meta::IndexManager> mockIndexMan() {
     for (int32_t i = 0; i < 3; i++) {
         nebula::cpp2::ColumnDef column;
         column.name = folly::stringPrintf("col_%d", i);
-        column.type.type = nebula::cpp2::SupportedType::STRING;
+        column.type.type = nebula::cpp2::SupportedType::INT;
         columns.emplace_back(std::move(column));
     }
     indexMan->addTagIndex(spaceId, indexId, tagId, std::move(columns));
@@ -123,11 +100,10 @@ std::unique_ptr<meta::IndexManager> mockIndexMan() {
     return im;
 }
 
-std::string genVertexProp(int32_t vId) {
+std::string genVertexProp(int64_t vId) {
     RowWriter writer;
-    writer << folly::stringPrintf("col0_row_%d", vId % modeInt)
-           << folly::stringPrintf("col1_row_%d", vId)
-           << folly::stringPrintf("col2_row_%d", vId);
+    int64_t colVal = folly::to<int64_t >(vId % modeInt);
+    writer << colVal << colVal << colVal;
     return writer.encode();
 }
 
@@ -231,8 +207,7 @@ void lookupPrecise(int32_t expectRowNum) {
     auto* col = new std::string("col_0");
     auto* alias = new std::string("col0");
     auto* ape = new AliasPropertyExpression(new std::string(""), alias, col);
-    std::string c0("col0_row_1");
-    auto* pe = new PrimaryExpression(c0);
+    auto* pe = new PrimaryExpression(1L);
     auto r =  std::make_unique<RelationalExpression>(ape,
                                                      RelationalExpression::Operator::EQ,
                                                      pe);
@@ -240,13 +215,12 @@ void lookupPrecise(int32_t expectRowNum) {
 }
 
 void lookupFilter(int32_t expectRowNum) {
-    auto* col = new std::string("col_1");
-    auto* alias = new std::string("col1");
+    auto* col = new std::string("col_0");
+    auto* alias = new std::string("col0");
     auto* ape = new AliasPropertyExpression(new std::string(""), alias, col);
-    std::string c0("col1_row_9999");
-    auto* pe = new PrimaryExpression(c0);
+    auto* pe = new PrimaryExpression(1L);
     auto r =  std::make_unique<RelationalExpression>(ape,
-                                                     RelationalExpression::Operator::EQ,
+                                                     RelationalExpression::Operator::LT,
                                                      pe);
     lookupExec(expectRowNum, Expression::encode(r.get()));
 }
@@ -285,20 +259,23 @@ int main(int argc, char** argv) {
  * CPU : Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
  * MemTotal : 8G
  * Total vertices : 1000000
- * PreciseScan_10000 : Precise scan , return 10000 vertices
- * PreciseScan_100   : Precise scan , return 100 vertices
- * PreciseScan_10    : Precise scan , return 10 vertices
- * FilterScan_10     : Full index scan, return 1 vertex
+ * Total partition number : 1
+ * tag (col_0 int, col_1 int, col_2 int)
+ * index on tag (col_0, col_1, col_2)
+ * PreciseScan_10000 : Precise scan , return 10000 vertices , where clause col_1 == 1
+ * PreciseScan_100   : Precise scan , return 100 vertices , where clause col_1 == 1
+ * PreciseScan_10    : Precise scan , return 10 vertices , where clause col_1 == 1
+ * FilterScan_10     : Full index scan, return 1 vertex , where clause col_1 < 1
  **/
 
 /**
  * ============================================================================
- * src/storage/test/StorageLookupBenchmark.cpprelative  time/iter  iters/s
+ * src/storage/test/StorageLookupBenchmark.cpp relative  time/iter  iters/s
  * ============================================================================
- * PreciseScan_10000                                          31.81ms     4.12
- * PreciseScan_100                                            33.98ms     4.63
- * PreciseScan_10                                             28.96ms     4.52
- * FilterScan_10                                              260.16ms    2.82
+ * PreciseScan_10000                                          9.65ms   103.65
+ * PreciseScan_100                                            5.23ms   191.03
+ * PreciseScan_10                                             4.14ms   241.64
+ * FilterScan_10                                              1.47s  679.35m
  * ============================================================================
  **/
 
