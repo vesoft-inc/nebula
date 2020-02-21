@@ -48,7 +48,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
             if (rc == nebula::kvstore::SUCCEEDED) {
                 result.set_job_id(nebula::value(jobId));
             } else {
-                errorCode = to(rc);
+                errorCode = MetaCommon::to(rc);
             }
             break;
         }
@@ -58,7 +58,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
             if (nebula::ok(ret)) {
                 result.set_job_desc(nebula::value(ret));
             } else {
-                errorCode = to(nebula::error(ret));
+                errorCode = MetaCommon::to(nebula::error(ret));
             }
             break;
         }
@@ -80,7 +80,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
                 result.set_job_desc(std::vector<cpp2::JobDesc>{nebula::value(ret).first});
                 result.set_task_desc(nebula::value(ret).second);
             } else {
-                errorCode = to(nebula::error(ret));
+                errorCode = MetaCommon::to(nebula::error(ret));
             }
             break;
         }
@@ -97,7 +97,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
             }
             auto ret = jobMgr->stopJob(iJob);
             if (nebula::kvstore::ResultCode::SUCCEEDED != ret) {
-                errorCode = to(ret);
+                errorCode = MetaCommon::to(ret);
             }
             break;
         }
@@ -107,7 +107,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
             if (nebula::ok(ret)) {
                 result.set_recovered_job_num(nebula::value(ret));
             } else {
-                errorCode = to(nebula::error(ret));
+                errorCode = MetaCommon::to(nebula::error(ret));
             }
             break;
         }
@@ -117,7 +117,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
     }
 
     if (errorCode != cpp2::ErrorCode::SUCCEEDED) {
-        resp_.set_code(errorCode);
+        handleErrorCode(errorCode);
         onFinished();
         return;
     }

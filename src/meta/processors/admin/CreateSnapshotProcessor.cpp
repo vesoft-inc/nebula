@@ -22,7 +22,7 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq& req) {
     auto hosts = ActiveHostsMan::getActiveHosts(kvstore_);
     if (hosts.empty()) {
         LOG(ERROR) << "There is no active hosts";
-        resp_.set_code(cpp2::ErrorCode::E_NO_HOSTS);
+        handleErrorCode(cpp2::ErrorCode::E_NO_HOSTS);
         onFinished();
         return;
     }
@@ -34,9 +34,10 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq& req) {
                       MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::INVALID,
                                                     NetworkUtils::toHosts(hosts)));
 
-    if (!doSyncPut(std::move(data))) {
+    auto putRet = doSyncPut(std::move(data));
+    if (putRet != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "Write snapshot meta error";
-        resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
+        handleErrorCode(MetaCommon::to(putRet));
         onFinished();
         return;
     }
@@ -45,7 +46,7 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq& req) {
     auto signRet = Snapshot::instance(kvstore_)->blockingWrites(SignType::BLOCK_ON);
     if (signRet != cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Send blocking sign to storage engine error";
-        resp_.set_code(signRet);
+        handleErrorCode(signRet);
         cancelWriteBlocking();
         onFinished();
         return;
@@ -55,7 +56,7 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq& req) {
     auto csRet = Snapshot::instance(kvstore_)->createSnapshot(snapshot);
     if (csRet != cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Checkpoint create error on storage engine";
-        resp_.set_code(csRet);
+        handleErrorCode(csRet);
         cancelWriteBlocking();
         onFinished();
         return;
@@ -65,7 +66,7 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq& req) {
     auto unbRet = cancelWriteBlocking();
     if (unbRet != cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Create snapshot failed on meta server" << snapshot;
-        resp_.set_code(unbRet);
+        handleErrorCode(unbRet);
         onFinished();
         return;
     }
@@ -74,7 +75,7 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq& req) {
     auto meteRet = kvstore_->createCheckpoint(kDefaultSpaceId, snapshot);
     if (meteRet != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "Create snapshot failed on meta server" << snapshot;
-        resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
+        handleErrorCode(cpp2::ErrorCode::E_STORE_FAILURE);
         onFinished();
         return;
     }
@@ -84,11 +85,12 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq& req) {
                       MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::VALID,
                                                     NetworkUtils::toHosts(hosts)));
 
-    if (!doSyncPut(std::move(data))) {
+    putRet = doSyncPut(std::move(data));
+    if (putRet != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "All checkpoint creations are done, "
                       "but update checkpoint status error. "
                       "snapshot : " << snapshot;
-        resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
+        handleErrorCode(MetaCommon::to(putRet));
     }
 
     onFinished();

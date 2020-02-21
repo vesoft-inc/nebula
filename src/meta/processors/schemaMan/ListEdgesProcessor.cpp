@@ -16,7 +16,7 @@ void ListEdgesProcessor::process(const cpp2::ListEdgesReq& req) {
     auto prefix = MetaServiceUtils::schemaEdgesPrefix(spaceId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    resp_.set_code(to(ret));
+    handleErrorCode(MetaCommon::to(ret));
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         onFinished();
         return;
