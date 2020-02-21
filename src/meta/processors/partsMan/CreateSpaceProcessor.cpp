@@ -28,7 +28,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         }
 
         resp_.set_id(to(spaceRet.value(), EntryType::SPACE));
-        resp_.set_code(ret);
+        handleErrorCode(ret);
         onFinished();
         return;
     }
@@ -36,7 +36,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     auto hosts = ActiveHostsMan::getActiveHosts(kvstore_);
     if (hosts.empty()) {
         LOG(ERROR) << "Create Space Failed : No Hosts!";
-        resp_.set_code(cpp2::ErrorCode::E_NO_HOSTS);
+        handleErrorCode(cpp2::ErrorCode::E_NO_HOSTS);
         onFinished();
         return;
     }
@@ -44,7 +44,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     auto idRet = autoIncrementId();
     if (!nebula::ok(idRet)) {
         LOG(ERROR) << "Create Space Failed : Get space id failed";
-        resp_.set_code(nebula::error(idRet));
+        handleErrorCode(nebula::error(idRet));
         onFinished();
         return;
     }
@@ -66,7 +66,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     if ((int32_t)hosts.size() < replicaFactor) {
         LOG(ERROR) << "Not enough hosts existed for replica "
                    << replicaFactor << ", hosts num " << hosts.size();
-        resp_.set_code(cpp2::ErrorCode::E_UNSUPPORTED);
+        handleErrorCode(cpp2::ErrorCode::E_UNSUPPORTED);
         onFinished();
         return;
     }
@@ -81,7 +81,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         data.emplace_back(MetaServiceUtils::partKey(spaceId, partId),
                           MetaServiceUtils::partVal(partHosts));
     }
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_id(to(spaceId, EntryType::SPACE));
     doSyncPutAndUpdate(std::move(data));
 }
