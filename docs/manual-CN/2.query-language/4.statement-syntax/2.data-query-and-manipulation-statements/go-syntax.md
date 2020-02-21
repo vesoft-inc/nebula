@@ -25,8 +25,9 @@
 * [ <N> STEPS ] 指定查询 N 跳。
 * <node_list> 为逗号隔开的节点 ID，或特殊占位符 `$-.id` (参看 `PIPE` 用法)。
 * <edge_type_list> 为图遍历返回的边类型列表。
-* [ WHERE <expression> ] 指定被筛选的逻辑条件，`WHERE` 可用于起点，边及终点，同样支持逻辑关键词 `AND`、`OR`、`NOT`，详情参见 `WHERE` 的用法。
-* YIELD [DISTINCT] <return_list> 以列的形式返回结果，并可对列进行重命名。详情参看 `YIELD` 用法。`DISTINCT` 的用法与 SQL 相同。
+* [ WHERE <expression> ] 指定被筛选的逻辑条件，WHERE 可用于起点，边及终点，同样支持逻辑关键词 AND、OR、NOT，详情参见 [WHERE](where-syntax.md) 的用法。
+* YIELD [DISTINCT] <return_list> 以列的形式返回结果，并可对列进行重命名。详情参看 `YIELD`
+ 用法。`DISTINCT` 的用法与 SQL 相同。
 
 ## 示例
 
