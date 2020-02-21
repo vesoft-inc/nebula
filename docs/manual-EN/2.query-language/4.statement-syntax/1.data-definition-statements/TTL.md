@@ -14,7 +14,7 @@ The time to live value is set in seconds, and it is interpreted as a delta from 
 
 ## Setting a TTL Value
 
-Setting a TTL value allows you to identify the number of seconds the data will live before  it is expired.
+Setting a TTL value allows you to identify the number of seconds the data will live before it is expired.
 
 ```ngql
 nebula> CREATE TAG t(a int, b int, c string);
