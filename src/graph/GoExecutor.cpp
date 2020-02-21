@@ -1103,46 +1103,18 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                                     "Get edge type for `%s' failed in getters.", edgeName.c_str());
                         }
                         if (std::abs(edgeType) != type) {
-                            switch (direction_) {
-                                case OverClause::Direction::kForward: {
-                                    auto sit = edgeSchema.find(type);
-                                    if (sit != edgeSchema.end()) {
-                                        return RowReader::getDefaultProp(sit->second.get(), prop);
-                                    }
-                                    break;
-                                }
-                                case OverClause::Direction::kBackward: {
-                                    type = -type;
-                                    auto sit = edgeSchema.find(type);
-                                    if (sit != edgeSchema.end()) {
-                                        return RowReader::getDefaultProp(sit->second.get(), prop);
-                                    }
-                                    break;
-                                }
-                                case OverClause::Direction::kBidirect: {
-                                    auto sit = edgeSchema.find(type);
-                                    if (sit != edgeSchema.end()) {
-                                        return RowReader::getDefaultProp(sit->second.get(), prop);
-                                    }
-
-                                    type = -type;
-                                    sit = edgeSchema.find(type);
-                                    if (sit != edgeSchema.end()) {
-                                        return RowReader::getDefaultProp(sit->second.get(), prop);
-                                    }
-                                    break;
-                                }
-                                default:
-                                    return Status::Error(
-                                            "Unknown direction: %ld",
-                                            static_cast<int64_t>(direction_));
+                            auto sit = edgeSchema.find(
+                                    direction_ == OverClause::Direction::kBackward ? -type : type);
+                            if (sit == edgeSchema.end()) {
+                                std::string errMsg = folly::stringPrintf(
+                                        "Can't find shcema for %s when get default.",
+                                        edgeName.c_str());
+                                LOG(ERROR) << errMsg;
+                                return Status::Error(errMsg);
                             }
-
-                            std::string errMsg = folly::stringPrintf(
-                                    "Can't find shcema for %s when get default.", edgeName.c_str());
-                            LOG(ERROR) << errMsg;
-                            return Status::Error(errMsg);
+                            return RowReader::getDefaultProp(sit->second.get(), prop);
                         }
+
                         if (prop == _SRC) {
                             return srcId;
                         }
