@@ -60,6 +60,7 @@ void ShowExecutor::execute() {
         case ShowSentence::ShowType::kShowUser:
         case ShowSentence::ShowType::kShowRoles:
             // TODO(boshengchen)
+            doError(Status::Error("The statement has not been implemented"));
             break;
         case ShowSentence::ShowType::kShowCreateSpace:
             showCreateSpace();

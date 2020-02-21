@@ -20,7 +20,7 @@ void DropTagProcessor::process(const cpp2::DropTagReq& req) {
         tagId = *reinterpret_cast<const TagID *>(iRet.value().data());
         resp_.set_id(to(tagId, EntryType::TAG));
     } else {
-        resp_.set_code(req.get_if_exists() ? cpp2::ErrorCode::SUCCEEDED
+        handleErrorCode(req.get_if_exists() ? cpp2::ErrorCode::SUCCEEDED
                                            : cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
@@ -28,13 +28,13 @@ void DropTagProcessor::process(const cpp2::DropTagReq& req) {
 
     auto indexes = getIndexes(spaceId, tagId);
     if (!indexes.ok()) {
-        resp_.set_code(to(indexes.status()));
+        handleErrorCode(MetaCommon::to(indexes.status()));
         onFinished();
         return;
     }
     if (!indexes.value().empty()) {
         LOG(ERROR) << "Drop tag error, index conflict";
-        resp_.set_code(cpp2::ErrorCode::E_CONFLICT);
+        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
         onFinished();
         return;
     }
@@ -42,13 +42,13 @@ void DropTagProcessor::process(const cpp2::DropTagReq& req) {
     auto ret = getTagKeys(req.get_space_id(), tagId);
     if (!ret.ok()) {
         LOG(ERROR) << "Drop Tag Failed : " << req.get_tag_name() << " not found";
-        resp_.set_code(to(ret.status()));
+        handleErrorCode(MetaCommon::to(ret.status()));
         onFinished();
         return;
     }
     auto keys = std::move(ret).value();
     keys.emplace_back(indexKey);
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     LOG(INFO) << "Drop Tag " << req.get_tag_name();
     doSyncMultiRemoveAndUpdate(std::move(keys));
 }

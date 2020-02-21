@@ -19,10 +19,17 @@
 namespace nebula {
 namespace raftex {
 
+
+enum SnapshotStatus {
+    IN_PROGRESS,
+    DONE,
+    FAILED,
+};
+
 using SnapshotCallback = folly::Function<void(std::vector<std::string>&& rows,
                                               int64_t totalCount,
                                               int64_t totalSize,
-                                              bool finished)>;
+                                              SnapshotStatus status)>;
 class RaftPart;
 
 class SnapshotManager {

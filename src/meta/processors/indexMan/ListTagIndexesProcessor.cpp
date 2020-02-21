@@ -17,7 +17,7 @@ void ListTagIndexesProcessor::process(const cpp2::ListTagIndexesReq& req) {
 
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    resp_.set_code(to(ret));
+    handleErrorCode(MetaCommon::to(ret));
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "List Tag Index Failed: SpaceID " << space;
         onFinished();

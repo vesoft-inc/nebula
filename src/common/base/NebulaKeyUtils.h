@@ -109,6 +109,9 @@ public:
     }
 
     static bool isVertex(const folly::StringPiece& rawKey) {
+        if (rawKey.size() != kVertexLen) {
+            return false;
+        }
         constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
         auto type = readInt<uint32_t>(rawKey.data(), len) & kTypeMask;
         if (static_cast<uint32_t>(NebulaKeyType::kData) != type) {
@@ -144,6 +147,9 @@ public:
     }
 
     static bool isEdge(const folly::StringPiece& rawKey) {
+        if (rawKey.size() != kEdgeLen) {
+            return false;
+        }
         constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
         auto type = readInt<uint32_t>(rawKey.data(), len) & kTypeMask;
         if (static_cast<uint32_t>(NebulaKeyType::kData) != type) {

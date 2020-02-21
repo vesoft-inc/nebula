@@ -15,7 +15,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
     auto ret = getTagId(spaceId, req.get_tag_name());
     if (!ret.ok()) {
-        resp_.set_code(to(ret.status()));
+        handleErrorCode(MetaCommon::to(ret.status()));
         onFinished();
         return;
     }
@@ -29,7 +29,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
         LOG(ERROR) << "Tag could not be found " << req.get_tag_name()
                    << ", spaceId " << spaceId
                    << ", tagId " << tagId;
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
@@ -45,7 +45,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
 
     auto iCode = getIndexes(spaceId, tagId);
     if (!iCode.ok()) {
-        resp_.set_code(to(iCode.status()));
+        handleErrorCode(MetaCommon::to(iCode.status()));
         onFinished();
         return;
     }
@@ -55,7 +55,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
         auto iStatus = indexCheck(indexes, tagItems);
         if (iStatus != cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << "Alter tag error, index conflict : " << static_cast<int32_t>(iStatus);
-            resp_.set_code(iStatus);
+            handleErrorCode(iStatus);
             onFinished();
             return;
         }
@@ -67,7 +67,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
             auto retCode = MetaServiceUtils::alterColumnDefs(columns, prop, col, tagItem.op);
             if (retCode != cpp2::ErrorCode::SUCCEEDED) {
                 LOG(ERROR) << "Alter tag column error " << static_cast<int32_t>(retCode);
-                resp_.set_code(retCode);
+                handleErrorCode(retCode);
                 onFinished();
                 return;
             }
@@ -79,7 +79,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     auto retCode = MetaServiceUtils::alterSchemaProp(columns, prop, alterSchemaProp, existIndex);
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Alter tag property error " << static_cast<int32_t>(retCode);
-        resp_.set_code(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
