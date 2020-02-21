@@ -84,6 +84,15 @@ TEST(NebulaKeyUtilsTest, encodeVariant) {
     EXPECT_TRUE(evalDouble(-(0.000000001 - std::numeric_limits<double>::min())));
 }
 
+TEST(NebulaKeyUtilsTest, encodeDouble) {
+    EXPECT_TRUE(evalDouble(100.5));
+    EXPECT_TRUE(evalDouble(200.5));
+    EXPECT_TRUE(evalDouble(300.5));
+    EXPECT_TRUE(evalDouble(400.5));
+    EXPECT_TRUE(evalDouble(500.5));
+    EXPECT_TRUE(evalDouble(600.5));
+}
+
 }  // namespace nebula
 
 

@@ -120,6 +120,7 @@
       * [负载均衡和数据迁移](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/storage-balance.md)
       * [存储层运行统计 (metrics)](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/storage-metrics.md)
       * [集群快照](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/cluster-snapshot.md)
+      * [作业管理](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/job-manager.md)
 
 ## 社区贡献 (开源社区爱好者)
 
@@ -131,6 +132,7 @@
 ## 附录
 
 * [Gremlin VS nGQL](5.appendix/gremlin-ngql.md)
+* [Cypher V.S. nGQL](5.appendix/cypher-ngql.md)
 
 ## 其他
 

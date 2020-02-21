@@ -40,16 +40,18 @@ std::string MatchSentence::toString() const {
     return "MATCH sentence";
 }
 
-std::string FindSentence::toString() const {
+std::string LookupSentence::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += "FIND ";
-    buf += properties_->toString();
-    buf += " FROM ";
-    buf += *type_;
+    buf += "LOOKUP ON ";
+    buf += *from_;
     if (whereClause_ != nullptr) {
-        buf += " WHERE ";
+        buf += " ";
         buf += whereClause_->toString();
+    }
+    if (yieldClause_ != nullptr) {
+        buf += " ";
+        buf += yieldClause_->toString();
     }
     return buf;
 }

@@ -15,14 +15,30 @@ The `GROUP BY` functions are similar with SQL. It can only be applied in the `YI
 | BIT_OR()        |   Bitwise OR |
 | BIT_XOR()     |   Bitwise exclusive OR (XOR) |
 
-All the functions above can only applies for int64 and double.
+All the functions above only work with int64 and double.
 
 ## Example
 
 ```ngql
-nebula> GO FROM 1 OVER e1 YIELD $-.id AS fid | GROUP BY $-.fid YIELD COUNT(*)
--- for each fid, return the occurrence count.
+nebula> GO FROM 100 OVER follow YIELD $$.player.name as Name | GROUP BY $-.Name YIELD $-.Name, COUNT(*);
+-- Find all the players followed by vertex 100 and return their names as Name. These players are grouped by Name and the number in each group is counted.
+-- The following result is returned:
+================================
+| $-.Name           | COUNT(*) |
+================================
+| Kyle Anderson     | 1        |
+--------------------------------
+| Tony Parker       | 1        |
+--------------------------------
+| LaMarcus Aldridge | 1        |
+--------------------------------
 
-nebula> GO FROM 1 YIELD e1._dst AS fid, e1.prop1 AS prop1 | GROUP BY $-.fid YIELD SUM($-.prop1)
--- for each fid, return the sum of prop1.
+nebula> GO FROM 101 OVER follow YIELD follow._src AS player, follow.degree AS degree | GROUP BY $-.player YIELD SUM($-.degree);
+-- Find all the players who follow vertex 101, return these players as player and the property of the follow edge as degree. These players are grouped and the sum of their degree values is returned.
+-- The following result is returned:
+==================
+| SUM($-.degree) |
+==================
+| 186            |
+------------------
 ```
