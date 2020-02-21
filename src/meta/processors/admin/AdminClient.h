@@ -108,6 +108,14 @@ public:
     folly::Future<Status> blockingWrites(GraphSpaceID spaceId,
                                          storage::cpp2::EngineSignType sign);
 
+    folly::Future<Status> addTask(nebula::cpp2::AdminCmd cmd,
+                                  int32_t jobId,
+                                  int32_t taskId,
+                                  GraphSpaceID spaceId,
+                                  const std::vector<HostAddr>& specificHosts,
+                                  IndexID indexID,
+                                  std::vector<PartitionID> parts);
+
     FaultInjector* faultInjector() {
         return injector_.get();
     }

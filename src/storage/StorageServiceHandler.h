@@ -143,6 +143,9 @@ public:
     folly::Future<cpp2::LookUpEdgeIndexResp>
     future_lookUpEdgeIndex(const cpp2::LookUpIndexRequest& req) override;
 
+    folly::Future<cpp2::AdminExecResp>
+    future_addAdminTask(const cpp2::AddAdminTaskRequest& req) override;
+
 private:
     kvstore::KVStore* kvstore_{nullptr};
     meta::SchemaManager* schemaMan_{nullptr};

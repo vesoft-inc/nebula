@@ -69,6 +69,8 @@ nebula_add_library(
     processors/jobMan/JobStatus.cpp
     processors/jobMan/AdminJobProcessor.cpp
     processors/jobMan/JobUtils.cpp
+    processors/jobMan/MetaJobExecutor.cpp
+    processors/jobMan/SimpleConcurrentJobExecutor.cpp
 )
 
 nebula_add_library(

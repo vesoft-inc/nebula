@@ -10,6 +10,8 @@
 #include "meta/ActiveHostsMan.h"
 #include "kvstore/Part.h"
 
+#include "gen-cpp2/storage_types.h"
+
 DEFINE_int32(max_retry_times_admin_op, 30, "max retry times for admin request!");
 
 namespace nebula {
@@ -612,6 +614,34 @@ folly::Future<Status> AdminClient::blockingWrites(GraphSpaceID spaceId,
     getResponse(allHosts, 0, std::move(req), [] (auto client, auto request) {
         return client->future_blockingWrites(request);
     }, 0, std::move(pro), 1 /*The blocking needs to be retried twice*/);
+    return f;
+}
+
+folly::Future<Status> AdminClient::addTask(
+                                    nebula::cpp2::AdminCmd cmd,
+                                    int32_t jobId,
+                                    int32_t taskId,
+                                    GraphSpaceID spaceId,
+                                    const std::vector<HostAddr>& specificHosts,
+                                    IndexID indexID,
+                                    std::vector<PartitionID> parts) {
+    auto hosts = specificHosts.empty() ? ActiveHostsMan::getActiveHosts(kv_) :
+                                         specificHosts;
+    storage::cpp2::AddAdminTaskRequest req;
+    req.set_cmd(cmd);
+    req.set_job_id(jobId);
+    req.set_task_id(taskId);
+    req.set_space_id(spaceId);
+    req.set_index_id(indexID);
+    req.set_parts(std::move(parts));
+
+    folly::Promise<Status> pro;
+    auto f = pro.getFuture();
+
+    getResponse(hosts, 0, std::move(req), [] (auto client, auto request) {
+        return client->future_addAdminTask(request);
+    }, 0, std::move(pro), 1);
+
     return f;
 }
 

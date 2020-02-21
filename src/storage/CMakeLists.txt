@@ -22,6 +22,9 @@ nebula_add_library(
     admin/CreateCheckpointProcessor.cpp
     admin/DropCheckpointProcessor.cpp
     admin/SendBlockSignProcessor.cpp
+    admin/AdminTaskProcessor.cpp
+    admin/AdminTaskManager.cpp
+    admin/ConcreteTaskPlan.cpp
     index/IndexPolicyMaker.cpp
     index/IndexExecutor.cpp
     index/LookUpEdgeIndexProcessor.cpp

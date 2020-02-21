@@ -54,6 +54,7 @@ private:
     JobManager() = default;
     void runJobBackground();
     bool runJobInternal(const JobDescription& jobDesc);
+    bool runJobViaThrift(const JobDescription& jobDesc);
     int getSpaceId(const std::string& name);
     nebula::kvstore::ResultCode save(const std::string& k, const std::string& v);
 
