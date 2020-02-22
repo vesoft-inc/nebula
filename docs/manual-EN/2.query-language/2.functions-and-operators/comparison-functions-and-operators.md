@@ -19,7 +19,7 @@ Comparison operations result in a value of _true_ and _false_.
 
 * ==
 
-Equal. String comparisons are case-sensitive. Values of different type are not equal.
+Equal. String comparisons are case-sensitive. Values of different types are not equal.
 
 ```ngql
 nebula> YIELD 'A' == 'a';
@@ -48,7 +48,7 @@ nebula> YIELD 3 > 2;
 
 * &ge;
 
-Greater than or equal:
+Greater than or equal to:
 
 ```ngql
 nebula> YIELD 2 >= 2;
@@ -70,7 +70,7 @@ nebula> YIELD 2.0 < 1.9;
 
 * &le;
 
-Less than or equal:
+Less than or equal to:
 
 ```ngql
 nebula> YIELD 0.11 <= 0.11;
@@ -86,32 +86,35 @@ nebula> YIELD 0.11 <= 0.11;
 Not equal:
 
 ```ngql
-nebula> YIELD 1 != '1'
+nebula> YIELD 1 != '1';
 A string type can not be compared with a non-string type.
 ```
 
 * udf_is_in()
 
-Returns true if the first value is equal to any of the values in the  list, else returns false.
+Returns true if the first value is equal to any of the values in the list, otherwise, returns false.
 
 ```ngql
-nebula> YIELD udf_is_in(1,0,1,2)
+nebula> YIELD udf_is_in(1,0,1,2);
 ======================
 | udf_is_in(1,0,1,2) |
 ======================
 | true               |
 ----------------------
 
-nebula> GO FROM 201 OVER like WHERE udf_is_in($$.student.name, "Jane")
-=============
-| like._dst |
-=============
-| 202       |
--------------
+nebula> GO FROM 100 OVER follow WHERE udf_is_in($$.player.name, "Tony Parker"); /* This example might not work because udf_is_in might be changed in the future.*/
+===============
+| follow._dst |
+===============
+| 101         |
+---------------
 
-nebula> GO FROM 201 OVER like YIELD like._dst AS id | GO FROM $-.id OVER like WHERE udf_is_in($-.id, 200, 200+1)
-=============
-| like._dst |
-=============
-| 201       |
+nebula> GO FROM 100 OVER follow YIELD follow._dst AS id | GO FROM $-.id OVER follow WHERE udf_is_in($-.id, 102, 102 + 1);
+===============
+| follow._dst |
+===============
+| 100         |
+---------------
+| 101         |
+---------------
 ```

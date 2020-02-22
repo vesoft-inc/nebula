@@ -412,7 +412,13 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
             return cpp2::ErrorCode::SUCCEEDED;
         case cpp2::AlterSchemaOp::CHANGE:
             for (auto it = cols.begin(); it != cols.end(); ++it) {
-                if (col.get_name() == it->get_name()) {
+                auto colName = col.get_name();
+                if (colName == it->get_name()) {
+                    // If this col is ttl_col, change not allowed
+                    if (prop.get_ttl_col() && (*prop.get_ttl_col() == colName)) {
+                        LOG(ERROR) << "Column: " << colName << " as ttl_col, change not allowed";
+                        return cpp2::ErrorCode::E_UNSUPPORTED;
+                    }
                     *it = col;
                     return cpp2::ErrorCode::SUCCEEDED;
                 }
@@ -421,17 +427,14 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
             return cpp2::ErrorCode::E_NOT_FOUND;
         case cpp2::AlterSchemaOp::DROP:
             for (auto it = cols.begin(); it != cols.end(); ++it) {
-                if (col.get_name() == it->get_name()) {
-                    // Check if there is a TTL on the column to be deleted
-                    if (!prop.get_ttl_col() ||
-                        (prop.get_ttl_col() && (*prop.get_ttl_col() != col.get_name()))) {
-                        cols.erase(it);
-                        return cpp2::ErrorCode::SUCCEEDED;
-                    } else {
-                        LOG(ERROR) << "Column can't be dropped, a TTL attribute on it: "
-                                   << col.get_name();
-                        return cpp2::ErrorCode::E_NOT_DROP;
+                auto colName = col.get_name();
+                if (colName == it->get_name()) {
+                    if (prop.get_ttl_col() && (*prop.get_ttl_col() == colName)) {
+                        prop.set_ttl_duration(0);
+                        prop.set_ttl_col("");
                     }
+                    cols.erase(it);
+                    return cpp2::ErrorCode::SUCCEEDED;
                 }
             }
             LOG(ERROR) << "Column not found: " << col.get_name();
@@ -444,20 +447,32 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
 
 cpp2::ErrorCode MetaServiceUtils::alterSchemaProp(std::vector<nebula::cpp2::ColumnDef>& cols,
                                                   nebula::cpp2::SchemaProp& schemaProp,
-                                                  nebula::cpp2::SchemaProp alterSchemaProp) {
+                                                  nebula::cpp2::SchemaProp alterSchemaProp,
+                                                  bool existIndex) {
+    if (existIndex && (alterSchemaProp.__isset.ttl_duration || alterSchemaProp.__isset.ttl_col)) {
+        LOG(ERROR) << "Has index, can't set ttl";
+        return cpp2::ErrorCode::E_UNSUPPORTED;
+    }
     if (alterSchemaProp.__isset.ttl_duration) {
         // Graph check  <=0 to = 0
         schemaProp.set_ttl_duration(*alterSchemaProp.get_ttl_duration());
     }
     if (alterSchemaProp.__isset.ttl_col) {
         auto ttlCol = *alterSchemaProp.get_ttl_col();
+        // Disable ttl, ttl_col is empty, ttl_duration is 0
+        if (ttlCol.empty()) {
+            schemaProp.set_ttl_duration(0);
+            schemaProp.set_ttl_col(ttlCol);
+            return cpp2::ErrorCode::SUCCEEDED;
+        }
+
         auto existed = false;
         for (auto& col : cols) {
             if (col.get_name() == ttlCol) {
                 // Only integer and timestamp columns can be used as ttl_col
                 if (col.type.type != nebula::cpp2::SupportedType::INT &&
                     col.type.type != nebula::cpp2::SupportedType::TIMESTAMP) {
-                    LOG(WARNING) << "TTL column type illegal";
+                    LOG(ERROR) << "TTL column type illegal";
                     return cpp2::ErrorCode::E_UNSUPPORTED;
                 }
                 existed = true;
@@ -467,7 +482,7 @@ cpp2::ErrorCode MetaServiceUtils::alterSchemaProp(std::vector<nebula::cpp2::Colu
         }
 
         if (!existed) {
-            LOG(WARNING) << "TTL column not found: " << ttlCol;
+            LOG(ERROR) << "TTL column not found: " << ttlCol;
             return cpp2::ErrorCode::E_NOT_FOUND;
         }
     }

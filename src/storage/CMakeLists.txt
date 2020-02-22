@@ -2,6 +2,7 @@ nebula_add_library(
     storage_service_handler OBJECT
     StorageServiceHandler.cpp
     StorageFlags.cpp
+    CommonUtils.cpp
     query/QueryBaseProcessor.cpp
     query/QueryBoundProcessor.cpp
     query/QueryVertexPropsProcessor.cpp
@@ -21,6 +22,10 @@ nebula_add_library(
     admin/CreateCheckpointProcessor.cpp
     admin/DropCheckpointProcessor.cpp
     admin/SendBlockSignProcessor.cpp
+    index/IndexPolicyMaker.cpp
+    index/IndexExecutor.cpp
+    index/LookUpEdgeIndexProcessor.cpp
+    index/LookUpVertexIndexProcessor.cpp
 )
 
 nebula_add_library(
