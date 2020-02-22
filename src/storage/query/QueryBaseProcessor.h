@@ -77,20 +77,6 @@ protected:
                       FilterContext* fcontext,
                       Collector* collector);
 
-    void cutoffCollectEdgeProps(kvstore::KVIterator* iter,
-                                VertexID vId,
-                                EdgeType edgeType,
-                                const std::vector<PropContext>& props,
-                                FilterContext* fcontext,
-                                EdgeProcessor proc);
-
-    void samplingCollectEdgeProps(kvstore::KVIterator* iter,
-                                  VertexID vId,
-                                  EdgeType edgeType,
-                                  const std::vector<PropContext>& props,
-                                  FilterContext* fcontext,
-                                  EdgeProcessor proc);
-
     virtual kvstore::ResultCode processVertex(PartitionID partId, VertexID vId) = 0;
 
     virtual void onProcessFinished(int32_t retNum) = 0;
@@ -122,6 +108,13 @@ protected:
                                const std::vector<PropContext>& props,
                                FilterContext* fcontext,
                                EdgeProcessor proc);
+
+    void collectEdgeProps(kvstore::KVIterator* iter,
+                          VertexID vId,
+                          EdgeType edgeType,
+                          const std::vector<PropContext>& props,
+                          FilterContext* fcontext,
+                          EdgeProcessor proc);
 
     std::vector<Bucket> genBuckets(const cpp2::GetNeighborsRequest& req);
 
