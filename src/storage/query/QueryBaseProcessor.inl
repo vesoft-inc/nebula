@@ -11,6 +11,7 @@
 #include "meta/NebulaSchemaProvider.h"
 #include "filter/FunctionManager.h"
 #include "time/WallClock.h"
+#include "algorithm/ReservoirSampling.h"
 
 DECLARE_int32(max_handlers_per_req);
 DECLARE_int32(min_vertices_per_bucket);
@@ -618,13 +619,15 @@ void QueryBaseProcessor<REQ, RESP>::samplingCollectEdgeProps(
                                                const std::vector<PropContext>& props,
                                                FilterContext* fcontext,
                                                EdgeProcessor proc) {
-    auto sampler = std::make_unique<ReservoirSampling>();
-    std::vector<std::pair<std::string, std::string>> kvs;
-    kvs.resize(FLAGS_max_edge_returned_per_vertex);
+    auto sampler =
+        std::make_unique<
+            nebula::algorithm::ReservoirSampling<
+                std::pair<folly::StringPiece, folly::StringPiece>
+            >
+        >(FLAGS_max_edge_returned_per_vertex);
     EdgeRanking lastRank  = -1;
     VertexID    lastDstId = 0;
     bool        firstLoop = true;
-    int         cnt = 0;
     bool onlyStructure = onlyStructures_[edgeType];
     Getters getters;
     for (; iter->valid(); iter->next()) {
@@ -639,21 +642,13 @@ void QueryBaseProcessor<REQ, RESP>::samplingCollectEdgeProps(
         lastRank = rank;
         lastDstId = dstId;
 
-        auto index = sampler->sampling();
-        if (index >= 0 && index < FLAGS_max_edge_returned_per_vertex) {
-            kvs[index] = std::make_pair(key.str(), val.str());
-            ++cnt;
-        }
+        sampler->sampling(std::make_pair(std::move(key), std::move(val)));
     }
 
-    if (cnt > FLAGS_max_edge_returned_per_vertex) {
-        cnt = FLAGS_max_edge_returned_per_vertex;
-    }
-
-    for (auto i = 0; i < cnt; ++i) {
-        auto& pair = kvs[i];
-        auto& key = pair.first;
-        auto& val = pair.second;
+    auto kvs = sampler->samples();
+    for (auto& sample : kvs) {
+        auto& key = sample.first;
+        auto& val = sample.second;
         auto rank = NebulaKeyUtils::getRank(key);
         auto dstId = NebulaKeyUtils::getDstId(key);
         std::unique_ptr<RowReader> reader;

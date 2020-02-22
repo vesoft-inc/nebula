@@ -14,9 +14,6 @@
 #include "filter/Expressions.h"
 #include "storage/CommonUtils.h"
 #include "stats/Stats.h"
-#include <random>
-
-DECLARE_int32(max_edge_returned_per_vertex);
 
 namespace nebula {
 namespace storage {
@@ -37,32 +34,6 @@ struct Bucket {
 };
 
 using OneVertexResp = std::tuple<PartitionID, VertexID, kvstore::ResultCode>;
-
-class ReservoirSampling final {
-public:
-    ReservoirSampling() {
-        rng_.seed(nebula::time::WallClock::fastNowInMicroSec());
-    }
-
-    int64_t sampling() {
-        ++cnt_;
-        if (cnt_ < FLAGS_max_edge_returned_per_vertex) {
-            return cnt_;
-        } else {
-            std::uniform_int_distribution<> dist(0, cnt_);
-            int64_t index = dist(rng_);
-            if (index < FLAGS_max_edge_returned_per_vertex) {
-                return index;
-            } else {
-                return -1;
-            }
-        }
-    }
-
-private:
-    std::mt19937            rng_;
-    int64_t                 cnt_{-1};
-};
 
 template<typename REQ, typename RESP>
 class QueryBaseProcessor : public BaseProcessor<RESP> {
