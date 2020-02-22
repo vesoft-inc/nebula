@@ -2,12 +2,12 @@
 
 ## 配置说明
 
-**Nebula Graph** 默认从 meta 获取配置。如需从本地获取配置，请在配置文件 `metad.conf`、 `storaged.conf`、`graphd.conf` （路径为 `/home/user/nebula/build/install/etc`）中分别添加 `local_config=true`，以从本地配置文件获取。
+**Nebula Graph** 默认从 meta 获取配置。如需从本地获取配置，请在配置文件 `metad.conf`、 `storaged.conf`、`graphd.conf` （路径为 `/home/user/nebula/build/install/etc`）中分别添加 `--local_config=true`，以从本地配置文件获取。
 
 **注意：**
 
 - 配置优先级是：meta > 命令行参数 > 环境变量 > 配置文件。
-- 如果将 `local_config` 设置为 true，则配置文件优先级最高。
+- 如果将 `--local_config` 设置为 true，则配置文件优先级最高。
 - 更改配置文件后需重启服务方可生效。
 - 使用命令行更改可实时生效。
 
