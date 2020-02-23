@@ -42,7 +42,12 @@ folly::Future<Status> SnapshotManager::sendSnapshot(std::shared_ptr<RaftPart> pa
                                            std::vector<std::string>&& data,
                                            int64_t totalCount,
                                            int64_t totalSize,
-                                           bool finished) mutable {
+                                           SnapshotStatus status) mutable {
+            if (status == SnapshotStatus::FAILED) {
+                LOG(INFO) << part->idStr_ << "Snapshot send failed, the leader changed?";
+                p.setValue(Status::Error("Send snapshot failed!"));
+                return;
+            }
             int retry = FLAGS_snapshot_send_retry_times;
             while (retry-- > 0) {
                 auto f = send(spaceId,
@@ -55,13 +60,13 @@ folly::Future<Status> SnapshotManager::sendSnapshot(std::shared_ptr<RaftPart> pa
                               totalSize,
                               totalCount,
                               dst,
-                              finished);
+                              status == SnapshotStatus::DONE);
                 // TODO(heng): we send request one by one to avoid too large memory occupied.
                 try {
                     auto resp  = std::move(f).get();
                     if (resp.get_error_code() == cpp2::ErrorCode::SUCCEEDED) {
                         VLOG(1) << part->idStr_ << "has sended count " << totalCount;
-                        if (finished) {
+                        if (status == SnapshotStatus::DONE) {
                             LOG(INFO) << part->idStr_ << "Finished, totalCount " << totalCount
                                                       << ", totalSize " << totalSize;
                             p.setValue(Status::OK());
