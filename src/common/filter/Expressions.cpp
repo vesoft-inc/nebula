@@ -1076,7 +1076,6 @@ std::string BitExpression::toString() const {
 }
 
 OptVariantType BitExpression::eval(Getters &getters) const {
-    LOG(ERROR) << "Debug Point: " << "Bit Expression Eval";
     static const char constexpr *invalidTypeErrorMsg = "Invalid operand type for binary operator ^";
     auto left = left_->eval(getters);
     if (!left.ok()) {
@@ -1085,7 +1084,6 @@ OptVariantType BitExpression::eval(Getters &getters) const {
     if (!isInt(left.value())) {  // Require Integer for bit operation
         return Status::Error("%s", invalidTypeErrorMsg);
     }
-    LOG(ERROR) << "Debug Point: left type " << left.value().which();
     auto right = right_->eval(getters);
     if (!right.ok()) {
         return right.status();
@@ -1093,7 +1091,6 @@ OptVariantType BitExpression::eval(Getters &getters) const {
     if (!isInt(right.value())) {  // Require Integer for bit operation
         return Status::Error("%s", invalidTypeErrorMsg);
     }
-    LOG(ERROR) << "Debug Point: right type " << right.value().which();
 
     switch (op_) {
     case Operator::BIT_AND:
