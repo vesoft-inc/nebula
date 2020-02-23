@@ -17,7 +17,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     auto &fieldNames = req.get_fields();
     if (fieldNames.empty()) {
         LOG(ERROR) << "Tag's Field should not empty";
-        resp_.set_code(cpp2::ErrorCode::E_INVALID_PARM);
+        handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
         onFinished();
         return;
     }
@@ -27,9 +27,9 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     if (ret.ok()) {
         LOG(ERROR) << "Create Tag Index Failed: " << indexName << " have existed";
         if (req.get_if_not_exists()) {
-            resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+            handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
         } else {
-            resp_.set_code(cpp2::ErrorCode::E_EXISTED);
+            handleErrorCode(cpp2::ErrorCode::E_EXISTED);
         }
         onFinished();
         return;
@@ -38,7 +38,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     auto tagIDRet = getTagId(space, tagName);
     if (!tagIDRet.ok()) {
         LOG(ERROR) << "Create Tag Index Failed: Tag " << tagName << " not exist";
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
@@ -46,7 +46,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     auto tagID = tagIDRet.value();
     auto retSchema = getLatestTagSchema(space, tagID);
     if (!retSchema.ok()) {
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
@@ -54,7 +54,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     auto latestTagSchema = retSchema.value();
     if (tagOrEdgeHasTTL(latestTagSchema)) {
        LOG(ERROR) << "Tag: " << tagName << " has ttl, not create index";
-       resp_.set_code(cpp2::ErrorCode::E_INDEX_WITH_TTL);
+       handleErrorCode(cpp2::ErrorCode::E_INDEX_WITH_TTL);
        onFinished();
        return;
     }
@@ -66,7 +66,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
                                  [field](const auto& pair) { return field == pair.first; });
         if (iter == fields.end()) {
             LOG(ERROR) << "Field " << field << " not found in Tag " << tagName;
-            resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+            handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
             onFinished();
             return;
         } else {
@@ -82,7 +82,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     auto tagIndexRet = autoIncrementId();
     if (!nebula::ok(tagIndexRet)) {
         LOG(ERROR) << "Create tag index failed : Get tag index ID failed";
-        resp_.set_code(nebula::error(tagIndexRet));
+        handleErrorCode(nebula::error(tagIndexRet));
         onFinished();
         return;
     }
