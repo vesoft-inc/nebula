@@ -355,6 +355,7 @@ public:
         kArithmetic,
         kRelational,
         kLogical,
+        kBit,
         kSourceProp,
         kEdgeRank,
         kEdgeDstId,
@@ -403,6 +404,7 @@ private:
     friend class EdgeTypeExpression;
     friend class VariablePropertyExpression;
     friend class InputPropertyExpression;
+    friend class BitExpression;
 
     virtual void encode(Cord &cord) const = 0;
     /*
@@ -838,7 +840,7 @@ private:
 class ArithmeticExpression final : public Expression {
 public:
     enum Operator : uint8_t {
-        ADD, SUB, MUL, DIV, MOD, XOR
+        ADD, SUB, MUL, DIV, MOD
     };
     static_assert(sizeof(Operator) == sizeof(uint8_t), "");
 
@@ -1003,6 +1005,71 @@ private:
     std::unique_ptr<Expression>                 left_;
     std::unique_ptr<Expression>                 right_;
 };
+
+// &, |, ^
+class BitExpression final : public Expression {
+public:
+    enum class Operator : char {
+        // All binary operator
+        BIT_AND = '&', BIT_OR = '|', BIT_XOR = '^'
+    };
+    static_assert(sizeof(Operator) == sizeof(uint8_t), "");
+
+    // invalid default constructor
+    BitExpression() = delete;
+
+    BitExpression(Expression *left, Operator op, Expression *right) {
+        DCHECK(op == Operator::BIT_AND || op == Operator::BIT_OR || op == Operator::BIT_XOR);
+        kind_ = kBit;
+        op_ = op;
+        // binary operator require two not NULL operand
+        left_.reset(DCHECK_NOTNULL(left));
+        right_.reset(DCHECK_NOTNULL(right));
+    }
+
+    std::string toString() const override;
+
+    OptVariantType eval(Getters &getters) const override;
+
+    Status MUST_USE_RESULT prepare() override;
+
+    void setContext(ExpressionContext *context) override {
+        Expression::setContext(context);
+        left_->setContext(context);
+        right_->setContext(context);
+    }
+
+    void resetLeft(Expression *expr) {
+        left_.reset(expr);
+    }
+
+    void resetRight(Expression *expr) {
+        right_.reset(expr);
+    }
+
+    Operator op() const {
+        return op_;
+    }
+
+    const Expression* left() const {
+        return left_.get();
+    }
+
+    const Expression* right() const {
+        return right_.get();
+    }
+
+private:
+    void encode(Cord &cord) const override;
+
+    const char* decode(const char *pos, const char *end) override;
+
+private:
+    Operator                                    op_;
+    std::unique_ptr<Expression>                 left_;
+    std::unique_ptr<Expression>                 right_;
+};
+
 }   // namespace nebula
 
 #endif  // COMMON_FILTER_EXPRESSIONS_H_

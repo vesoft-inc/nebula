@@ -667,9 +667,6 @@ std::string ArithmeticExpression::toString() const {
         case MOD:
             buf += '%';
             break;
-        case XOR:
-            buf += '^';
-            break;
     }
     buf.append(right_->toString());
     buf += ')';
@@ -804,15 +801,6 @@ OptVariantType ArithmeticExpression::eval(Getters &getters) const {
                     return Status::Error("Division by zero");
                 }
                 return OptVariantType(asInt(l) % asInt(r));
-            }
-            break;
-        case XOR:
-            if (isArithmetic(l) && isArithmetic(r)) {
-                if (isDouble(l) || isDouble(r)) {
-                    return (static_cast<int64_t>(std::round(asDouble(l)))
-                                ^ static_cast<int64_t>(std::round(asDouble(r))));
-                }
-                return OptVariantType(asInt(l) ^ asInt(r));
             }
             break;
         default:
@@ -1075,6 +1063,79 @@ const char* LogicalExpression::decode(const char *pos, const char *end) {
     return right_->decode(pos, end);
 }
 
+
+std::string BitExpression::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += '(';
+    buf.append(left_->toString());
+    buf += static_cast<char>(op_);
+    buf.append(right_->toString());
+    buf += ')';
+    return buf;
+}
+
+OptVariantType BitExpression::eval(Getters &getters) const {
+    LOG(ERROR) << "Debug Point: " << "Bit Expression Eval";
+    static const char constexpr *invalidTypeErrorMsg = "Invalid operand type for binary operator ^";
+    auto left = left_->eval(getters);
+    if (!left.ok()) {
+        return left.status();
+    }
+    if (!isInt(left.value())) {  // Require Integer for bit operation
+        return Status::Error("%s", invalidTypeErrorMsg);
+    }
+    LOG(ERROR) << "Debug Point: left type " << left.value().which();
+    auto right = right_->eval(getters);
+    if (!right.ok()) {
+        return right.status();
+    }
+    if (!isInt(right.value())) {  // Require Integer for bit operation
+        return Status::Error("%s", invalidTypeErrorMsg);
+    }
+    LOG(ERROR) << "Debug Point: right type " << right.value().which();
+
+    switch (op_) {
+    case Operator::BIT_AND:
+        return asInt(left.value()) & asInt(right.value());
+    case Operator::BIT_OR:
+        return asInt(left.value()) | asInt(right.value());
+    case Operator::BIT_XOR:
+        return asInt(left.value()) ^ asInt(right.value());
+    default:
+        return Status::Error("Invalid bit operator %d", static_cast<uint8_t>(op_));
+    }
+}
+
+Status BitExpression::prepare() {
+    auto status = left_->prepare();
+    if (!status.ok()) {
+        return status;
+    }
+    status = right_->prepare();
+    return Status::OK();
+}
+
+void BitExpression::encode(Cord &cord) const {
+    cord << kindToInt(kind());
+    cord << static_cast<uint8_t>(op_);
+    left_->encode(cord);
+    right_->encode(cord);
+}
+
+
+const char* BitExpression::decode(const char *pos, const char *end) {
+    THROW_IF_NO_SPACE(pos, end, 2UL);
+    op_ = *reinterpret_cast<const Operator*>(pos++);
+    DCHECK(op_ == Operator::BIT_AND || op_ == Operator::BIT_OR || op_ == Operator::BIT_XOR);
+
+    left_ = makeExpr(*reinterpret_cast<const uint8_t*>(pos++));
+    pos = left_->decode(pos, end);
+
+    THROW_IF_NO_SPACE(pos, end, 1UL);
+    right_ = makeExpr(*reinterpret_cast<const uint8_t*>(pos++));
+    return right_->decode(pos, end);
+}
 
 #undef THROW_IF_NO_SPACE
 

@@ -122,7 +122,7 @@ class GraphScanner;
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
-%token PIPE OR AND XOR LT LE GT GE EQ NE PLUS MINUS MUL DIV MOD NOT NEG ASSIGN
+%token PIPE OR AND XOR LT LE GT GE EQ NE PLUS MINUS MUL DIV MOD NOT NEG ASSIGN AMPERSAND
 %token DOT COLON SEMICOLON L_ARROW R_ARROW AT
 %token ID_PROP TYPE_PROP SRC_ID_PROP DST_ID_PROP RANK_PROP INPUT_REF DST_REF SRC_REF
 
@@ -135,7 +135,8 @@ class GraphScanner;
 %type <strval> name_label unreserved_keyword agg_function
 %type <strval> admin_operation admin_para
 %type <expr> expression logic_xor_expression logic_or_expression logic_and_expression
-%type <expr> relational_expression multiplicative_expression additive_expression arithmetic_xor_expression
+%type <expr> bit_and_expression bit_or_expression bit_xor_expression
+%type <expr> relational_expression multiplicative_expression additive_expression
 %type <expr> unary_expression primary_expression equality_expression base_expression
 %type <expr> src_ref_expression
 %type <expr> dst_ref_expression
@@ -463,22 +464,15 @@ type_spec
     | KW_TIMESTAMP { $$ = ColumnType::TIMESTAMP; }
     ;
 
-arithmetic_xor_expression
-    : unary_expression { $$ = $1; }
-    | arithmetic_xor_expression XOR unary_expression {
-        $$ = new ArithmeticExpression($1, ArithmeticExpression::XOR, $3);
-    }
-    ;
-
 multiplicative_expression
-    : arithmetic_xor_expression { $$ = $1; }
-    | multiplicative_expression MUL arithmetic_xor_expression {
+    : unary_expression { $$ = $1; }
+    | multiplicative_expression MUL unary_expression {
         $$ = new ArithmeticExpression($1, ArithmeticExpression::MUL, $3);
     }
-    | multiplicative_expression DIV arithmetic_xor_expression {
+    | multiplicative_expression DIV unary_expression {
         $$ = new ArithmeticExpression($1, ArithmeticExpression::DIV, $3);
     }
-    | multiplicative_expression MOD arithmetic_xor_expression {
+    | multiplicative_expression MOD unary_expression {
         $$ = new ArithmeticExpression($1, ArithmeticExpression::MOD, $3);
     }
     ;
@@ -519,12 +513,47 @@ equality_expression
     }
     ;
 
+// precedence & > ^ > |
+bit_and_expression:
+    equality_expression { $$ = $1; }
+    | bit_and_expression KW_BIT_AND equality_expression  {
+        $$ = new BitExpression($1, BitExpression::Operator::BIT_AND, $3);
+    }
+    | bit_and_expression AMPERSAND equality_expression  {
+        $$ = new BitExpression($1, BitExpression::Operator::BIT_AND, $3);
+    }
+    ;
+
+bit_xor_expression:
+    bit_and_expression { $$ = $1; }
+    | bit_xor_expression KW_BIT_XOR bit_and_expression {
+        $$ = new BitExpression($1, BitExpression::Operator::BIT_XOR, $3);
+    }
+    | bit_xor_expression XOR bit_and_expression {
+        $$ = new BitExpression($1, BitExpression::Operator::BIT_XOR, $3);
+    }
+    ;
+
+bit_or_expression:
+    bit_xor_expression { $$ = $1; }
+    | bit_or_expression KW_BIT_OR bit_xor_expression {
+        $$ = new BitExpression($1, BitExpression::Operator::BIT_OR, $3);
+    }
+    // TODO(shylock) conflict with PIPE sentence which contains where clause expression
+    // In fact, the PIPE will occurs in where could reduce to sentence finally
+    // or shift to bit_or_expression
+    // Maybe need lookahead two token for this
+    // | bit_or_expression PIPE bit_xor_expression {
+        // $$ = new BitExpression($1, BitExpression::Operator::BIT_OR, $3);
+    // }
+    ;
+
 logic_and_expression
-    : equality_expression { $$ = $1; }
-    | logic_and_expression AND equality_expression {
+    : bit_or_expression { $$ = $1; }
+    | logic_and_expression AND bit_or_expression {
         $$ = new LogicalExpression($1, LogicalExpression::AND, $3);
     }
-    | logic_and_expression KW_AND equality_expression {
+    | logic_and_expression KW_AND bit_or_expression {
         $$ = new LogicalExpression($1, LogicalExpression::AND, $3);
     }
     ;

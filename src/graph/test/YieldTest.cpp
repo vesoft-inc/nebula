@@ -187,11 +187,7 @@ TEST_F(YieldTest, Logic) {
         cpp2::ExecutionResponse resp;
         std::string query = "YIELD 2.5 % 1.2 ^ 1.6";
         auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<double>> expected{
-            2.5
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);  // Now require integer for bit operation
     }
     {
         cpp2::ExecutionResponse resp;
@@ -737,6 +733,225 @@ TEST_F(YieldTest, EmptyInput) {
         ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
+
+TEST_F(YieldTest, BitOperator) {
+    // BIT_AND
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 0xFF BIT_AND 0xF0 AS result";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+
+        std::vector<std::string> expectedColNames{
+            {"result"}
+        };
+        EXPECT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected{
+            {0xF0}
+        };
+        EXPECT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        // Expr
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 0x0F + 0xF0 BIT_AND 0xF0 AS result";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+
+        std::vector<std::string> expectedColNames{
+            {"result"}
+        };
+        EXPECT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected{
+            {0xF0}
+        };
+        EXPECT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        // Invalid type
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 0xFF BIT_AND 'shylock' AS result";
+        auto code = client_->execute(query, resp);
+        EXPECT_NE(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+
+        query = "YIELD 0xFF BIT_AND true AS result";
+        code = client_->execute(query, resp);
+        EXPECT_NE(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+
+        query = "YIELD 0xFF BIT_AND 3.2 AS result";
+        code = client_->execute(query, resp);
+        EXPECT_NE(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+    }
+    // &
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 1 & 1 AS result";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+
+        std::vector<std::string> expectedColNames{
+            {"result"}
+        };
+        EXPECT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected{
+            {1}
+        };
+        EXPECT_TRUE(verifyResult(resp, expected));
+    }
+    // BIT_OR
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 0xF0 BIT_OR 0x0F AS result";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+
+        std::vector<std::string> expectedColNames{
+            {"result"}
+        };
+        EXPECT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected{
+            {0xFF}
+        };
+        EXPECT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        // Expr
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 0xFF - 0x0F BIT_OR 0x0F AS result";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+
+        std::vector<std::string> expectedColNames{
+            {"result"}
+        };
+        EXPECT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected{
+            {0xFF}
+        };
+        EXPECT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        // Invalid type
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 0xFF BIT_OR 'shylock' AS result";
+        auto code = client_->execute(query, resp);
+        EXPECT_NE(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+
+        query = "YIELD 0xFF BIT_OR true AS result";
+        code = client_->execute(query, resp);
+        EXPECT_NE(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+
+        query = "YIELD 0xFF BIT_OR 3.2 AS result";
+        code = client_->execute(query, resp);
+        EXPECT_NE(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+    }
+    // | TODO(shylock)
+    // {
+        // cpp2::ExecutionResponse resp;
+        // std::string query = "YIELD 1 | 0 AS result";
+        // auto code = client_->execute(query, resp);
+        // ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+
+        // std::vector<std::string> expectedColNames{
+            // {"result"}
+        // };
+        // EXPECT_TRUE(verifyColNames(resp, expectedColNames));
+
+        // std::vector<std::tuple<int64_t>> expected{
+            // {1}
+        // };
+        // EXPECT_TRUE(verifyResult(resp, expected));
+    // }
+    // BIT_XOR
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 0xFF BIT_XOR 0xF0 AS result";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+
+        std::vector<std::string> expectedColNames{
+            {"result"}
+        };
+        EXPECT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected{
+            {0x0F}
+        };
+        EXPECT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        // Expr
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 0xF0 + 0x0F BIT_XOR 0xF0 AS result";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+
+        std::vector<std::string> expectedColNames{
+            {"result"}
+        };
+        EXPECT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected{
+            {0x0F}
+        };
+        EXPECT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        // Invalid type
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 0xFF BIT_XOR 'shylock' AS result";
+        auto code = client_->execute(query, resp);
+        EXPECT_NE(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+
+        query = "YIELD 0xFF BIT_XOR true AS result";
+        code = client_->execute(query, resp);
+        EXPECT_NE(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+
+        query = "YIELD 0xFF BIT_XOR 3.2 AS result";
+        code = client_->execute(query, resp);
+        EXPECT_NE(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+    }
+    // ^
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 1 ^ 1 AS result";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+
+        std::vector<std::string> expectedColNames{
+            {"result"}
+        };
+        EXPECT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected{
+            {0}
+        };
+        EXPECT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        // precedence & > ^ > |
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 0xF0 BIT_OR 0xF0 BIT_XOR 0xF0 BIT_AND 0xF0 AS result";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+
+        std::vector<std::string> expectedColNames{
+            {"result"}
+        };
+        EXPECT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected{
+            {0xF0}
+        };
+        EXPECT_TRUE(verifyResult(resp, expected));
+    }
+}
+
 }   // namespace graph
 }   // namespace nebula
 
