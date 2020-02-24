@@ -430,19 +430,6 @@ void BaseProcessor<RESP>::doSyncMultiRemoveAndUpdate(std::vector<std::string> ke
 }
 
 template<typename RESP>
-bool BaseProcessor<RESP>::saveRebuildStatus(std::string statusKey, std::string&& statusValue) {
-    std::vector<kvstore::KV> status{std::make_pair(statusKey, statusValue)};
-    auto ret = doSyncPut(status);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Save Status Failed";
-        this->handleErrorCode(MetaCommon::to(ret));
-        onFinished();
-        return false;
-    }
-    return true;
-}
-
-template<typename RESP>
 StatusOr<std::vector<nebula::cpp2::IndexItem>>
 BaseProcessor<RESP>::getIndexes(GraphSpaceID spaceId,
                                 int32_t tagOrEdge) {

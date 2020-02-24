@@ -675,6 +675,10 @@ public:
         return indexName_.get();
     }
 
+    bool isOffline() {
+        return isOffline_;
+    }
+
 private:
     std::unique_ptr<std::string>                indexName_;
     bool                                        isOffline_;
@@ -693,6 +697,10 @@ public:
 
     const std::string* indexName() const {
         return indexName_.get();
+    }
+
+    bool isOffline() {
+        return isOffline_;
     }
 
 private:

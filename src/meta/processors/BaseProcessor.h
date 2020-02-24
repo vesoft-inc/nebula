@@ -246,8 +246,6 @@ protected:
 
     void doSyncMultiRemoveAndUpdate(std::vector<std::string> keys);
 
-    bool saveRebuildStatus(std::string statusKey, std::string&& statusValue);
-
     /**
      * check if the edge or tag contains indexes when alter edge or tag.
      **/

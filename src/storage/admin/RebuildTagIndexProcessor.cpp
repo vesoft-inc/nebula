@@ -82,65 +82,9 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
             }
             doPut(space, part, std::move(data));
         } else {
-            auto atomic = [space, part, tagID, item, this]() -> std::string {
-                return partitionRebuildIndex(space, part, tagID, item);
-            };
-
-            auto callback = [space, part, this](kvstore::ResultCode code) {
-                handleAsync(space, part, code);
-            };
-
-           this->kvstore_->asyncAtomicOp(space, part, atomic, callback);
+            // TODO darion Support online rebuild index
         }
     }
-}
-
-std::string
-RebuildTagIndexProcessor::partitionRebuildIndex(GraphSpaceID space,
-                                                PartitionID part,
-                                                TagID tag,
-                                                std::shared_ptr<nebula::cpp2::IndexItem> item) {
-    std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
-    // firstly remove the discard index
-    batchHolder->removePrefix(NebulaKeyUtils::indexPrefix(space, item->get_index_id()));
-
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto prefix = NebulaKeyUtils::prefix(part);
-    auto ret = kvstore_->prefix(space, part, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Processing Part " << part << " Failed";
-        return "";
-    }
-
-    VertexID currentVertex = -1;
-    while (iter && iter->valid()) {
-        auto key = iter->key();
-        auto val = iter->val();
-        if (!NebulaKeyUtils::isVertex(key) ||
-            NebulaKeyUtils::getTagId(key) != tag) {
-            iter->next();
-            continue;
-        }
-
-        auto vertex = NebulaKeyUtils::getVertexId(key);
-        if (currentVertex == vertex) {
-            iter->next();
-            continue;
-        } else {
-            currentVertex = vertex;
-        }
-        auto reader = RowReader::getTagPropReader(schemaMan_,
-                                                  std::move(val),
-                                                  space,
-                                                  tag);
-        auto values = collectIndexValues(reader.get(), item->get_fields());
-
-        auto indexKey = NebulaKeyUtils::vertexIndexKey(part, item->get_index_id(), vertex, values);
-        batchHolder->put(std::move(indexKey), "");
-        iter->next();
-    }
-
-    return encodeBatchValue(batchHolder->getBatch());
 }
 
 }  // namespace storage

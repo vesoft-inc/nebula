@@ -515,63 +515,6 @@ TEST(IndexTest, UpdateEdgeTest) {
     }
 }
 
-TEST(IndexTest, RebulidTagIndexTest) {
-    fs::TempDir rootPath("/tmp/RebulidTagIndexTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
-    auto schemaMan = TestUtils::mockSchemaMan();
-    auto indexMan = TestUtils::mockIndexMan();
-    {
-        cpp2::AddVerticesRequest req;
-        req.space_id = 0;
-        req.overwritable = true;
-        for (auto partId = 1; partId <= 3; partId++) {
-            auto vertices = TestUtils::setupVertices(partId,
-                                                     partId * 10,
-                                                     10 * (partId + 1),
-                                                     3001,
-                                                     3010);
-            req.parts.emplace(partId, std::move(vertices));
-        }
-
-        auto* processor = AddVerticesProcessor::instance(kv.get(),
-                                                         schemaMan.get(),
-                                                         indexMan.get(),
-                                                         nullptr);
-        auto fut = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(fut).get();
-        EXPECT_EQ(0, resp.result.failed_codes.size());
-    }
-    {
-        std::vector<PartitionID> parts{1, 2, 3};
-        cpp2::RebuildIndexRequest req;
-        req.set_space_id(0);
-        req.set_parts(std::move(parts));
-        req.set_index_id(3001 + 1000);
-        req.set_is_offline(false);
-
-        auto* processor = RebuildTagIndexProcessor::instance(kv.get(),
-                                                             schemaMan.get(),
-                                                             indexMan.get());
-        auto fut = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(fut).get();
-        EXPECT_EQ(0, resp.result.failed_codes.size());
-
-        for (auto partId = 1; partId <= 3; partId++) {
-            auto prefix = NebulaKeyUtils::indexPrefix(partId, 4001);
-            std::unique_ptr<kvstore::KVIterator> iter;
-            EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
-            int32_t count = 0;
-            while (iter->valid()) {
-                count++;
-                iter->next();
-            }
-            EXPECT_EQ(10, count);
-        }
-    }
-}
-
 TEST(IndexTest, RebulidTagIndexWithOfflineTest) {
     fs::TempDir rootPath("/tmp/RebulidTagIndexWithOfflineTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
@@ -625,62 +568,6 @@ TEST(IndexTest, RebulidTagIndexWithOfflineTest) {
                 iter->next();
             }
             EXPECT_EQ(10, count);
-        }
-    }
-}
-
-TEST(IndexTest, RebulidEdgeIndexTest) {
-    fs::TempDir rootPath("/tmp/RebulidEdgeIndexTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
-    auto schemaMan = TestUtils::mockSchemaMan();
-    auto indexMan = TestUtils::mockIndexMan();
-    {
-        auto* processor = AddEdgesProcessor::instance(kv.get(),
-                                                      schemaMan.get(),
-                                                      indexMan.get(),
-                                                      nullptr);
-        cpp2::AddEdgesRequest req;
-        req.space_id = 0;
-        req.overwritable = true;
-        for (auto partId = 1; partId <= 3; partId++) {
-            auto edges = TestUtils::setupEdges(partId,
-                                               partId * 10,
-                                               (partId + 1) * 10,
-                                               101,
-                                               3);
-            req.parts.emplace(partId, std::move(edges));
-        }
-        auto fut = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(fut).get();
-        EXPECT_EQ(0, resp.result.failed_codes.size());
-    }
-    {
-        std::vector<PartitionID> parts{1, 2, 3};
-        cpp2::RebuildIndexRequest req;
-        req.set_space_id(0);
-        req.set_parts(std::move(parts));
-        req.set_index_id(101 + 100);
-        req.is_offline = false;
-
-        auto* processor = RebuildEdgeIndexProcessor::instance(kv.get(),
-                                                              schemaMan.get(),
-                                                              indexMan.get());
-        auto fut = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(fut).get();
-        EXPECT_EQ(0, resp.result.failed_codes.size());
-
-        for (auto partId = 1; partId <= 3; partId++) {
-            auto prefix = NebulaKeyUtils::indexPrefix(partId, 101 + 100);
-            std::unique_ptr<kvstore::KVIterator> iter;
-            EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
-            int32_t rowCount = 0;
-            while (iter->valid()) {
-                rowCount++;
-                iter->next();
-            }
-            EXPECT_EQ(10, rowCount);
         }
     }
 }

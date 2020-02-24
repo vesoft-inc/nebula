@@ -16,6 +16,12 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
     CHECK_SPACE_ID_AND_RETURN(space);
     const auto &indexName = req.get_index_name();
     auto isOffline = req.get_is_offline();
+    if (!isOffline) {
+        LOG(ERROR) << "Currently not support online rebuild index";
+        resp_.set_code(cpp2::ErrorCode::E_UNSUPPORTED);
+        onFinished();
+        return;
+    }
 
     LOG(INFO) << "Rebuild Tag Index Space " << space << ", Index Name " << indexName;
     std::unique_ptr<AdminClient> client(new AdminClient(kvstore_));
@@ -58,32 +64,25 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
     }
 
     folly::collectAll(results)
-        .thenValue([&] (const std::vector<folly::Try<Status>>& tries) mutable {
+        .thenValue([statusKey, kv = kvstore_] (const auto& tries) mutable {
             for (const auto& t : tries) {
                 if (!t.value().ok()) {
                     LOG(ERROR) << "Build Tag Index Failed";
-                    if (!saveRebuildStatus(statusKey, "FAILED")) {
+                    if (!MetaCommon::saveRebuildStatus(kv, statusKey, "FAILED")) {
                         return;
                     }
-                    resp_.set_code(cpp2::ErrorCode::E_REBUILD_INDEX_FAILURE);
-                    onFinished();
-                    return;
                 }
             }
-        })
-        .thenError([&] (auto &&e) {
-            LOG(ERROR) << "Exception caught: " << e.what();
-            if (!saveRebuildStatus(std::move(statusKey), "FAILED")) {
+            if (!MetaCommon::saveRebuildStatus(kv, std::move(statusKey), "SUCCEEDED")) {
                 return;
             }
-            resp_.set_code(cpp2::ErrorCode::E_REBUILD_INDEX_FAILURE);
-            onFinished();
-            return;
+        })
+        .thenError([statusKey, kv = kvstore_] (auto &&e) {
+            LOG(ERROR) << "Exception caught: " << e.what();
+            if (!MetaCommon::saveRebuildStatus(kv, std::move(statusKey), "FAILED")) {
+                return;
+            }
         });
-
-    if (!saveRebuildStatus(statusKey, "SUCCEEDED")) {
-        return;
-    }
 
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     onFinished();

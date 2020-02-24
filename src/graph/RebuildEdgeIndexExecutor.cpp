@@ -28,9 +28,10 @@ void RebuildEdgeIndexExecutor::execute() {
 
     auto *mc = ectx()->getMetaClient();
     auto *name = sentence_->indexName();
+    auto isOffline = sentence_->isOffline();
     auto spaceId = ectx()->rctx()->session()->space();
 
-    auto future = mc->rebuildEdgeIndex(spaceId, *name);
+    auto future = mc->rebuildEdgeIndex(spaceId, *name, isOffline);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {

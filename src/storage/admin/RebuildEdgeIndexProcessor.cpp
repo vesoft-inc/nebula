@@ -86,70 +86,9 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
             }
             doPut(space, part, std::move(data));
         } else {
-            auto atomic = [space, part, edgeType, item, this]() -> std::string {
-                return partitionRebuildIndex(space, part, edgeType, item);
-            };
-
-            auto callback = [space, part, this](kvstore::ResultCode code) {
-                handleAsync(space, part, code);
-            };
-
-            this->kvstore_->asyncAtomicOp(space, part, atomic, callback);
+            // TODO darion Support online rebuild index
         }
     }
-}
-
-std::string
-RebuildEdgeIndexProcessor::partitionRebuildIndex(GraphSpaceID space,
-                                                 PartitionID part,
-                                                 EdgeType edge,
-                                                 std::shared_ptr<nebula::cpp2::IndexItem> item) {
-    std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
-    // firstly remove the discard index
-    batchHolder->removePrefix(NebulaKeyUtils::indexPrefix(space, item->get_index_id()));
-
-    VertexID currentSrcVertex = -1;
-    VertexID currentDstVertex = -1;
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto prefix = NebulaKeyUtils::prefix(part);
-    auto ret = kvstore_->prefix(space, part, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Processing Part " << part << " Failed";
-        return "";
-    }
-
-    while (iter && iter->valid()) {
-        auto key = iter->key();
-        auto val = iter->val();
-        if (!NebulaKeyUtils::isEdge(key) ||
-            NebulaKeyUtils::getEdgeType(key) != edge) {
-            iter->next();
-            continue;
-        }
-
-        auto source = NebulaKeyUtils::getSrcId(key);
-        auto destination = NebulaKeyUtils::getDstId(key);
-        if (currentSrcVertex == source || currentDstVertex == destination) {
-            iter->next();
-            continue;
-        } else {
-            currentSrcVertex = source;
-            currentDstVertex = destination;
-        }
-
-        auto ranking = NebulaKeyUtils::getRank(key);
-        auto reader = RowReader::getEdgePropReader(schemaMan_,
-                                                   std::move(val),
-                                                   space,
-                                                   edge);
-        auto values = collectIndexValues(reader.get(), item->get_fields());
-        auto indexKey = NebulaKeyUtils::edgeIndexKey(part, item->get_index_id(), source,
-                                                     ranking, destination, values);
-        batchHolder->put(std::move(indexKey), "");
-        iter->next();
-    }
-
-    return encodeBatchValue(batchHolder->getBatch());
 }
 
 }  // namespace storage
