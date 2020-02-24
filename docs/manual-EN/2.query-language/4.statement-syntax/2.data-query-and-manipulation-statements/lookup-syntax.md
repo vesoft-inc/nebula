@@ -16,7 +16,7 @@ LOOKUP ON {<vertex_tag> | <edge_type>} WHERE <expression> [ AND | OR expression 
   **Note:** `WHERE` clause does not support the following operations in `LOOKUP`:
   - `$-` and `$^`
   - In relational expressions, expressions with field-names on both sides of the operator are not currently supported, such as (tagName.column1> tagName.column2)
-
+  - Nested AliasProp expressions in operation expressions and function expressions are not supported at this time.
 - `YIELD` clause returns particular results. If not specified, vertex ID is returned when `LOOKUP` tags, source vertex ID, dest vertex ID and ranking of the edges are returned when `LOOKUP` edges.
 
 ## Retrieve Vertices
@@ -33,13 +33,21 @@ nebula> LOOKUP ON player WHERE player.name == "Tony Parker";
 | 101      |
 ------------
 
-nebula > LOOKUP ON player WHERE player.name == "Tony Parker" \
+nebula> LOOKUP ON player WHERE player.name == "Tony Parker" \
 YIELD person.name, person.age;
 =======================================
 | VertexID | player.name | player.age |
 =======================================
 | 101      | Tony Parker | 36         |
 ---------------------------------------
+
+nebula> LOOKUP ON player WHERE player.name== "Kobe Bryant" YIELD player.name AS name | \
+GO FROM $-.VertexID OVER serve YIELD $-.name, serve.start_year, serve.end_year, $$.team.name;
+==================================================================
+| $-.name     | serve.start_year | serve.end_year | $$.team.name |
+==================================================================
+| Kobe Bryant | 1996             | 2016           | Lakers       |
+------------------------------------------------------------------
 ```
 
 ## Retrieve Edges
@@ -62,4 +70,16 @@ nebula> LOOKUP ON follow WHERE follow.degree == 90 YIELD follow.degree;
 =============================================
 | 100    | 106    | 0       | 90            |
 ---------------------------------------------
+
+nebula> LOOKUP ON follow WHERE follow.degree == 60 YIELD follow.degree AS Degree | \
+GO FROM $-.DstVID OVER serve YIELD $-.DstVID, serve.start_year, serve.end_year, $$.team.name;
+================================================================
+| $-.DstVID | serve.start_year | serve.end_year | $$.team.name |
+================================================================
+| 105       | 2010             | 2018           | Spurs        |
+----------------------------------------------------------------
+| 105       | 2009             | 2010           | Cavaliers    |
+----------------------------------------------------------------
+| 105       | 2018             | 2019           | Raptors      |
+----------------------------------------------------------------
 ```

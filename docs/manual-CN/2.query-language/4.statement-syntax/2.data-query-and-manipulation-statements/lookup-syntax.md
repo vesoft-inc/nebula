@@ -16,6 +16,7 @@ LOOKUP ON {<vertex_tag> | <edge_type>} WHERE <expression> [ AND | OR expression 
   **注意：** `WHERE` 子句在 `LOOKUP` 中暂不支持如下操作：
   - `$-` 和 `$^`
   - 在关系表达式中，暂不支持操作符两边都是field-name 的表达式，如 (tagName.column1 > tagName.column2)
+  - 暂不支持运算表达式和 function 表达式中嵌套 AliasProp 表达式。
 - `YIELD` 指定返回结果。如未指定，则在 `LOOKUP` 标签时返回点 ID，在 `LOOKUP` 边类型时返回边的起点 ID、终点 ID 和 ranking 值。
 
 ## 点查询
@@ -32,13 +33,21 @@ nebula> LOOKUP ON player WHERE player.name == "Tony Parker";
 | 101      |
 ------------
 
-nebula > LOOKUP ON player WHERE player.name == "Tony Parker" \
+nebula> LOOKUP ON player WHERE player.name == "Tony Parker" \
 YIELD person.name, person.age;
 =======================================
 | VertexID | player.name | player.age |
 =======================================
 | 101      | Tony Parker | 36         |
 ---------------------------------------
+
+nebula> LOOKUP ON player WHERE player.name== "Kobe Bryant" YIELD player.name AS name | \
+GO FROM $-.VertexID OVER serve YIELD $-.name, serve.start_year, serve.end_year, $$.team.name;
+==================================================================
+| $-.name     | serve.start_year | serve.end_year | $$.team.name |
+==================================================================
+| Kobe Bryant | 1996             | 2016           | Lakers       |
+------------------------------------------------------------------
 ```
 
 ## 边查询
@@ -61,4 +70,16 @@ nebula> LOOKUP ON follow WHERE follow.degree == 90 YIELD follow.degree;
 =============================================
 | 100    | 106    | 0       | 90            |
 ---------------------------------------------
+
+nebula> LOOKUP ON follow WHERE follow.degree == 60 YIELD follow.degree AS Degree | \
+GO FROM $-.DstVID OVER serve YIELD $-.DstVID, serve.start_year, serve.end_year, $$.team.name;
+================================================================
+| $-.DstVID | serve.start_year | serve.end_year | $$.team.name |
+================================================================
+| 105       | 2010             | 2018           | Spurs        |
+----------------------------------------------------------------
+| 105       | 2009             | 2010           | Cavaliers    |
+----------------------------------------------------------------
+| 105       | 2018             | 2019           | Raptors      |
+----------------------------------------------------------------
 ```
