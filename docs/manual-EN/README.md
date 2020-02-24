@@ -4,7 +4,7 @@
 
 It is the optimal solution in the world capable of hosting graphs with dozens of billions of vertices (nodes) and trillions of edges with millisecond latency.
 
-## Prefix
+## Preface
 
 * [About This Manual](0.about-this-manual.md)
 * [Manual Change Log](CHANGELOG.md)
@@ -84,7 +84,7 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
   * Graph Algorithms
     * [Find Path Syntax](2.query-language/4.statement-syntax/4.graph-algorithms/find-path-syntax.md)
 
-## Build Develop And Administration (For Developers And DBA)
+## Build Develop and Administration (for Developers and DBA)
 
 * Build
   * [Build Source Code](3.build-develop-and-administration/1.build/1.build-source-code.md)
@@ -98,7 +98,7 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
     * [Configuration Description](3.build-develop-and-administration/3.deploy-and-administrations/deployment/configuration-description.md)
     * [Deploy Cluster On Docker](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster-on-docker.md)
     * [Deploy Cluster](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster.md)
-    * [Connect Prometheus](3.build-develop-and-administration/3.deploy-and-administrations/deployment/connect-prometheus.md)
+    <!-- * [Connect Prometheus](3.build-develop-and-administration/3.deploy-and-administrations/deployment/connect-prometheus.md) -->
     * [Installation With rpm](3.build-develop-and-administration/3.deploy-and-administrations/deployment/install-with-rpm-deb.md)
 
 
@@ -123,17 +123,19 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
       * [Storage Balance](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/storage-balance.md)
       * [Storage Metrics](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/storage-metrics.md)
       * [Cluster Snapshot](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/cluster-snapshot.md)
+      * [Job Manager](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/job-manager.md)
 
 ## Contributions (for Contributors)
 
-* [Contribute to Documentations](4.contributions/contribute-to-documentation.md)
+* [Contribute to Documentation](4.contributions/contribute-to-documentation.md)
 * [Cpp Coding Style](4.contributions/cpp-coding-style.md)
 * [Developer Documentation Style Guide](4.contributions/developer-documentation-style-guide.md)
 * [How to Contribute](4.contributions/how-to-contribute.md)
 
 ## Appendix
 
-* [Gremlin VS nGQL](5.appendix/gremlin-ngql.md)
+* [Gremlin V.S. nGQL](5.appendix/gremlin-ngql.md)
+* [Cypher V.S. nGQL](5.appendix/cypher-ngql.md)
 
 ## Misc
 

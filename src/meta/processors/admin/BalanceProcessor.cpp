@@ -14,23 +14,23 @@ namespace meta {
 void BalanceProcessor::process(const cpp2::BalanceReq& req) {
     if (req.get_space_id() != nullptr) {
         LOG(ERROR) << "Unsupport balance for specific space " << *req.get_space_id();
-        resp_.set_code(cpp2::ErrorCode::E_UNSUPPORTED);
+        handleErrorCode(cpp2::ErrorCode::E_UNSUPPORTED);
         onFinished();
         return;
     }
     if (req.get_stop() != nullptr) {
         if (!(*req.get_stop())) {
-            resp_.set_code(cpp2::ErrorCode::E_UNKNOWN);
+            handleErrorCode(cpp2::ErrorCode::E_UNKNOWN);
             onFinished();
             return;
         }
         auto ret = Balancer::instance(kvstore_)->stop();
         if (!ret.ok()) {
-            resp_.set_code(cpp2::ErrorCode::E_NO_RUNNING_BALANCE_PLAN);
+            handleErrorCode(cpp2::ErrorCode::E_NO_RUNNING_BALANCE_PLAN);
             onFinished();
             return;
         }
-        resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+        handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
         resp_.set_id(ret.value());
         onFinished();
         return;
@@ -38,11 +38,11 @@ void BalanceProcessor::process(const cpp2::BalanceReq& req) {
     if (req.get_id() != nullptr) {
         auto ret = Balancer::instance(kvstore_)->show(*req.get_id());
         if (!ret.ok()) {
-            resp_.set_code(cpp2::ErrorCode::E_BAD_BALANCE_PLAN);
+            handleErrorCode(cpp2::ErrorCode::E_BAD_BALANCE_PLAN);
             onFinished();
             return;
         }
-        resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+        handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
         const auto& plan = ret.value();
         std::vector<cpp2::BalanceTask> thriftTasks;
         for (auto& task : plan.tasks()) {
@@ -78,19 +78,18 @@ void BalanceProcessor::process(const cpp2::BalanceReq& req) {
     auto hosts = ActiveHostsMan::getActiveHosts(kvstore_);
     if (hosts.empty()) {
         LOG(ERROR) << "There is no active hosts";
-        resp_.set_code(cpp2::ErrorCode::E_NO_HOSTS);
+        handleErrorCode(cpp2::ErrorCode::E_NO_HOSTS);
         onFinished();
         return;
     }
     auto ret = Balancer::instance(kvstore_)->balance(std::move(hostDel));
     if (!ok(ret)) {
-        resp_.set_code(error(ret));
+        handleErrorCode(error(ret));
         onFinished();
         return;
     }
     resp_.set_id(value(ret));
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
-    LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }
 
