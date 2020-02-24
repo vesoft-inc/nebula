@@ -514,7 +514,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
             sampler->sampling(std::make_pair(std::move(key), std::move(val)));
         }
 
-        auto kvs = sampler->samples();
+        auto kvs = std::move(*sampler).samples();
         auto sampleIter = std::make_unique<kvstore::KVPairIter>(kvs.begin(), kvs.end());
         collectEdgeProps(sampleIter.get(), vId, edgeType, props, fcontext, proc);
     } else {

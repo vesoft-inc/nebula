@@ -7,41 +7,39 @@
 #ifndef COMMON_ALGORITHM_RESERVOIR_H_
 #define COMMON_ALGORITHM_RESERVOIR_H_
 
+#include "base/Base.h"
 #include "time/WallClock.h"
-#include <random>
 
 namespace nebula {
 namespace algorithm {
 template <class T>
 class ReservoirSampling final {
 public:
-    explicit ReservoirSampling(int64_t num) {
+    explicit ReservoirSampling(uint64_t num) {
         num_ = num;
-        rng_.seed(nebula::time::WallClock::fastNowInMicroSec());
         samples_.reserve(num);
     }
 
     void sampling(T&& sample) {
-        ++cnt_;
         if (cnt_ < num_) {
             samples_.emplace_back(std::move(sample));
         } else {
-            int64_t index = std::uniform_int_distribution<>(0, cnt_)(rng_);
+            auto index = folly::Random::rand64(cnt_);
             if (index < num_) {
                 samples_[index] = (std::move(sample));
             }
         }
+        ++cnt_;
     }
 
-    std::vector<T>&& samples() {
+    std::vector<T>&& samples() && {
         return std::move(samples_);
     }
 
 private:
     std::vector<T>          samples_;
-    std::mt19937_64         rng_;
-    int64_t                 cnt_{-1};
-    int64_t                 num_{-1};
+    uint64_t                cnt_{0};
+    uint64_t                num_{0};
 };
 }  // namespace algorithm
 }  // namespace nebula

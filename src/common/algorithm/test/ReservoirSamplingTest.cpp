@@ -17,7 +17,7 @@ TEST(ReservoirSamplingTest, Sample) {
             sampler.sampling(std::move(i));
         }
 
-        auto result = sampler.samples();
+        auto result = std::move(sampler).samples();
         EXPECT_EQ(5, result.size());
         for (auto i : result) {
             EXPECT_LE(0, i);
@@ -31,7 +31,7 @@ TEST(ReservoirSamplingTest, Sample) {
             sampler.sampling(std::move(i));
         }
 
-        auto result = sampler.samples();
+        auto result = std::move(sampler).samples();
         EXPECT_EQ(3, result.size());
         EXPECT_EQ(0, result[0]);
         EXPECT_EQ(1, result[1]);
