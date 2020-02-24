@@ -1,20 +1,22 @@
 # TTL (time-to-live)
 
-借助 **TTL**，**Nebula Graph** 支持当数据过期后，在 compaction  阶段自动删除数据。在设置 TTL 后，**Nebula Graph** 会在一段时间（自上次修改数据的时间开始算起）后自动删除这些数据。 配置的 TTL 值以秒为单位。 配置 TTL 后，系统会基于 TTL 值自动删除已过期的数据，而不需要客户端显式发出的 delete 操作。
+借助 **TTL**，**Nebula Graph** 支持当数据过期后，在查询顶点和边时，会自动过滤掉过期的数据，过期的数据在 compaction 阶段会自动删除，不需要客户显式发出的 delete 操作。
+
+`ttl_col` 用来指出 ttl 列，`ttl_duration` 用来指出 ttl 的持续时间，某一条数据的 ttl 列值加上 ttl_duration 值小于当前时间，则认为该条数据过期。`ttl_col` 列类型为 integer 或者 timestamp，单位为秒， `ttl_duration` 单位也是秒。
 
 ## TTL 配置
 
 TTL 值以秒为单位设置的。
 
-- 如果将 TTL 设置为 `n` ，则该字段数据将在 n 秒后过期。
+- 如果设置 tll，当某一行的 `ttl_col` 列值加上 `ttl_duration` 值小于当前时间时，则认为该条数据过期。
 
-- 如果未设置 TTL，则 TTL 不起作用。
+- 如果未设置 TTL 或 `ttl_col` 为空，则 TTL 不起作用。
 
 - 如果 TTL 设置为 -1 或者 0，则此字段数据不会过期。
 
 ## 设置 TTL
 
-设置 TTL 值可用来确定数据在过期之前存活的秒数。
+设置 TTL 可用来指定数据的存活时间。
 
 ```ngql
 nebula> CREATE TAG t(a int, b int, c string);
@@ -22,7 +24,7 @@ nebula> ALTER TAG t ADD ttl_col = "a", ttl_duration = 1000; -- add ttl attribute
 nebula> SHOW CREATE TAG t;
 ```
 
-或亦可在创建 tag 时创建 TTL。
+或亦可在创建 tag 时设置 TTL 属性。
 
 ```ngql
 nebula> CREATE TAG t(a int, b int, c string) ttl_duration= 100, ttl_col = "a";
@@ -42,7 +44,8 @@ nebula> SHOW CREATE TAG t;
 或使用如下方式让 TTL 失效：
 
 ```ngql
-nebula> ALTER TAG t ADD ttl_col = ""; ---- drop ttl attribute
+nebula> ALTER TAG t ttl_col = ""; -- drop ttl attribute
+nebula> ALTER TAG t ttl_duration = 0; -- keep the ttl but the data never expires
 ```
 
 ## TTL 使用注意事项
