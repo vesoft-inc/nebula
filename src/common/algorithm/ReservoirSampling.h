@@ -20,16 +20,21 @@ public:
         samples_.reserve(num);
     }
 
-    void sampling(T&& sample) {
+    bool sampling(T&& sample) {
         if (cnt_ < num_) {
             samples_.emplace_back(std::move(sample));
+            ++cnt_;
+            return true;
         } else {
             auto index = folly::Random::rand64(cnt_);
             if (index < num_) {
                 samples_[index] = (std::move(sample));
+                ++cnt_;
+                return true;
             }
         }
         ++cnt_;
+        return false;
     }
 
     std::vector<T>&& samples() && {

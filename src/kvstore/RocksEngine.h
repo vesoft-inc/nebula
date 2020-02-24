@@ -85,44 +85,6 @@ protected:
     rocksdb::Slice prefix_;
 };
 
-class KVPairIter : public KVIterator {
-public:
-    using InternalIter = typename std::vector<
-                                      std::pair<folly::StringPiece, folly::StringPiece>
-                                   >::iterator;
-    KVPairIter(InternalIter begin, InternalIter end) {
-        begin_ = begin;
-        end_ = end;
-    }
-
-    ~KVPairIter() = default;
-
-    bool valid() const override {
-        return begin_ < end_;
-    }
-
-    void next() override {
-        ++begin_;
-    }
-
-    void prev() override {
-        --begin_;
-    }
-
-    folly::StringPiece key() const override {
-        return begin_->first;
-    }
-
-    folly::StringPiece val() const override {
-        return begin_->second;
-    }
-
-private:
-    InternalIter begin_;
-    InternalIter end_;
-};
-
-
 /**************************************************************************
  *
  * An implementation of KVEngine based on Rocksdb

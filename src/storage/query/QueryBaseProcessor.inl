@@ -12,7 +12,6 @@
 #include "filter/FunctionManager.h"
 #include "time/WallClock.h"
 #include "algorithm/ReservoirSampling.h"
-#include "kvstore/RocksEngine.h"
 
 DECLARE_int32(max_handlers_per_req);
 DECLARE_int32(min_vertices_per_bucket);
@@ -488,66 +487,34 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
         return ret;
     }
 
-    if (FLAGS_enable_reservoir_sampling) {
-        auto sampler =
-            std::make_unique<
-                nebula::algorithm::ReservoirSampling<
-                    std::pair<folly::StringPiece, folly::StringPiece>
-                >
-            >(FLAGS_max_edge_returned_per_vertex);
-        EdgeRanking lastRank  = -1;
-        VertexID    lastDstId = 0;
-        bool        firstLoop = true;
-        Getters getters;
-        for (; iter->valid(); iter->next()) {
-            auto key = iter->key();
-            auto val = iter->val();
-            auto rank = NebulaKeyUtils::getRank(key);
-            auto dstId = NebulaKeyUtils::getDstId(key);
-            if (!firstLoop && rank == lastRank && lastDstId == dstId) {
-                VLOG(3) << "Only get the latest version for each edge.";
-                continue;
-            }
-            lastRank = rank;
-            lastDstId = dstId;
-
-            sampler->sampling(std::make_pair(std::move(key), std::move(val)));
-        }
-
-        auto kvs = std::move(*sampler).samples();
-        auto sampleIter = std::make_unique<kvstore::KVPairIter>(kvs.begin(), kvs.end());
-        collectEdgeProps(sampleIter.get(), vId, edgeType, props, fcontext, proc);
-    } else {
-        collectEdgeProps(iter.get(), vId, edgeType, props, fcontext, proc);
-    }
-
-    return ret;
-}
-
-template<typename REQ, typename RESP>
-void QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
-                                               kvstore::KVIterator* iter,
-                                               VertexID vId,
-                                               EdgeType edgeType,
-                                               const std::vector<PropContext>& props,
-                                               FilterContext* fcontext,
-                                               EdgeProcessor proc) {
     EdgeRanking lastRank  = -1;
     VertexID    lastDstId = 0;
     bool        firstLoop = true;
     int         cnt = 0;
     bool onlyStructure = onlyStructures_[edgeType];
     Getters getters;
+    std::unique_ptr<nebula::algorithm::ReservoirSampling<
+        std::pair<std::unique_ptr<RowReader>, folly::StringPiece>>> sampler;
+    if (FLAGS_enable_reservoir_sampling) {
+        sampler = std::make_unique<
+            nebula::algorithm::ReservoirSampling<
+                std::pair<std::unique_ptr<RowReader>, folly::StringPiece>
+            >
+        >(FLAGS_max_edge_returned_per_vertex);
+    }
 
     auto schema = this->schemaMan_->getEdgeSchema(spaceId_, std::abs(edgeType));
     auto retTTL = getEdgeTTLInfo(edgeType);
-    for (; iter->valid() && cnt < FLAGS_max_edge_returned_per_vertex; iter->next()) {
+    for (; iter->valid(); iter->next()) {
+        if (!FLAGS_enable_reservoir_sampling
+                && !(cnt < FLAGS_max_edge_returned_per_vertex)) {
+            break;
+        }
         auto key = iter->key();
         auto val = iter->val();
         auto rank = NebulaKeyUtils::getRank(key);
         auto dstId = NebulaKeyUtils::getDstId(key);
-        if (!FLAGS_enable_reservoir_sampling
-                && !firstLoop && rank == lastRank && lastDstId == dstId) {
+        if (!firstLoop && rank == lastRank && lastDstId == dstId) {
             VLOG(3) << "Only get the latest version for each edge.";
             continue;
         }
@@ -632,12 +599,25 @@ void QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
             }
         }
 
-        proc(reader.get(), key, props);
+        if (FLAGS_enable_reservoir_sampling) {
+            sampler->sampling(std::make_pair(std::move(reader), std::move(key)));
+        } else {
+            proc(reader.get(), key, props);
+        }
         ++cnt;
         if (firstLoop) {
             firstLoop = false;
         }
     }
+
+    if (FLAGS_enable_reservoir_sampling) {
+        auto samples = std::move(*sampler).samples();
+        for (auto& sample : samples) {
+            proc(sample.first.get(), sample.second, props);
+        }
+    }
+
+    return ret;
 }
 
 template<typename REQ, typename RESP>

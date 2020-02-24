@@ -14,6 +14,7 @@
 #include "filter/Expressions.h"
 #include "storage/CommonUtils.h"
 #include "stats/Stats.h"
+#include <random>
 
 namespace nebula {
 namespace storage {
@@ -108,13 +109,6 @@ protected:
                                const std::vector<PropContext>& props,
                                FilterContext* fcontext,
                                EdgeProcessor proc);
-
-    void collectEdgeProps(kvstore::KVIterator* iter,
-                          VertexID vId,
-                          EdgeType edgeType,
-                          const std::vector<PropContext>& props,
-                          FilterContext* fcontext,
-                          EdgeProcessor proc);
 
     std::vector<Bucket> genBuckets(const cpp2::GetNeighborsRequest& req);
 
