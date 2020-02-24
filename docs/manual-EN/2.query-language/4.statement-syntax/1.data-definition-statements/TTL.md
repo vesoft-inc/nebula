@@ -1,16 +1,16 @@
 # TTL (time-to-live)
 
-With **TTL**, **Nebula Graph** provides the ability to delete data automatically from a graph space after a certain time period. After you set the TTL , **Nebula Graph** will automatically delete these data after TTL is expired, since the time they were last modified. Time to live value is configured in seconds. When you configure TTL, the system will automatically delete the expired data based on the TTL value, without a delete operation that is explicitly issued by the console.
+With **TTL**, **Nebula Graph** provides the ability to delete data automatically from a graph space in the compaction phase after when the data expires. After you set the TTL , **Nebula Graph** will automatically delete these data after TTL is expired, since the time they were last modified. Time to live value is configured in seconds. When you configure TTL, the system will automatically delete the expired data based on the TTL value, without a delete operation that is explicitly issued by the console.
 
 ## TTL configurations
 
-The time to live value is set in seconds, and it is interpreted as a delta from the time that data was last modified.
+The time to live value is set in seconds.
 
 - If TTL is set to `n`, then data in the field will expire after n seconds.
 
 - If TTL is not set, then the time to live has no effect.
 
-- If TTL is set to -1, then data in the filed does not expire.
+- If TTL is set to -1 or 0, then data in the filed does not expire.
 
 ## Setting a TTL Value
 
