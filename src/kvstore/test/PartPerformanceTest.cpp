@@ -1,4 +1,4 @@
-/* Copyright (c) 2019 vesoft inc. All rights reserved.
+/* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -16,46 +16,34 @@
 #include "kvstore/Part.h"
 #include <folly/Benchmark.h>
 
-DEFINE_int32(part_performance_test_partnum, 10, "Total partitions");
+DEFINE_int64(part_performance_test_partnum, 10, "Total partitions");
 DEFINE_int64(part_performance_test_rownum, 100000, "Total rows");
 
 namespace nebula {
 namespace kvstore {
 
-std::string randomStr(int32_t repeatNum) {
-    std::string str("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-                    "!@#$%^&*()_+-={}[]-={}[]:<>,./?~");
-//    Not random for now, because it's too slow
-//    std::random_device rd;
-//    std::mt19937 generator(rd());
-//    std::shuffle(str.begin(), str.end(), generator);
-    for (auto i = 0; i < repeatNum; i++) {
-        str += str;
-    }
-    return str;
-}
-
 void genData(rocksdb::DB* db) {
     rocksdb::WriteBatch updates;
     rocksdb::WriteOptions woptions;
-
+    std::string str = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+                      "!@#$%^&*()_+-={}[]-={}[]:<>,./?~";
     for (auto i = 1; i <= FLAGS_part_performance_test_rownum; i++) {
-        auto partId = i%FLAGS_part_performance_test_partnum;
+        const int64_t rowId = i;
+        auto partId = rowId % FLAGS_part_performance_test_partnum;
         std::string key, val;
-        auto random = randomStr(10);
         key.reserve(sizeof(partId) + sizeof(uint64_t) * 3);
         key.append(reinterpret_cast<const char*>(&partId), sizeof(partId))
-           .append(reinterpret_cast<const char*>(&i), sizeof(uint64_t))
-           .append(reinterpret_cast<const char*>(&i), sizeof(uint64_t))
-           .append(reinterpret_cast<const char*>(&i), sizeof(uint64_t));
+           .append(reinterpret_cast<const char*>(&rowId), sizeof(uint64_t))
+           .append(reinterpret_cast<const char*>(&rowId), sizeof(uint64_t))
+           .append(reinterpret_cast<const char*>(&rowId), sizeof(uint64_t));
 
-        val.reserve(4 + sizeof(uint64_t) * 3 + 1000);
+        val.reserve(4 + sizeof(uint64_t) * 3 + str.size());
         val.append("VAL_")
-           .append(reinterpret_cast<const char*>(&i), sizeof(uint64_t))
-           .append(reinterpret_cast<const char*>(&i), sizeof(uint64_t))
-           .append(reinterpret_cast<const char*>(&i), sizeof(uint64_t))
-           .append(std::move(random));
-        updates.Put(rocksdb::Slice(key), rocksdb::Slice(val));
+           .append(reinterpret_cast<const char*>(&rowId), sizeof(uint64_t))
+           .append(reinterpret_cast<const char*>(&rowId), sizeof(uint64_t))
+           .append(reinterpret_cast<const char*>(&rowId), sizeof(uint64_t))
+           .append(str);
+        updates.Put(std::move(key), std::move(val));
         if (i%1000 == 0) {
             rocksdb::Status status = db->Write(woptions, &updates);
             updates.Clear();
@@ -171,7 +159,7 @@ void singleThreadTest(bool useCache, int32_t partnum) {
     BENCHMARK_SUSPEND {
         db->Close();
         delete db;
-    };
+    }
 }
 
 BENCHMARK(ParallelMultiplePartNoCache) {
@@ -207,6 +195,18 @@ int main(int argc, char** argv) {
     folly::runBenchmarks();
     return 0;
 }
+
+/**
+ * The cache must be cleared as each test begin.
+ * Using command `echo 3 > /proc/sys/vm/drop_caches` and sync by root user.
+ *
+ * ParallelMultiplePartNoCache : Multiple threads scan part in parallel . close block cache.
+ * SerialMultiplePartNoCache : One thread scan part one by one. close block cache.
+ * SerialSinglePartNocache : One thread scan part, only one part. close block cache.
+ * ParallelMultiplePartCache : Multiple threads scan part in parallel . open block cache.
+ * SerialMultiplePartCache : One thread scan part one by one. open block cache.
+ * SerialSinglePartCache : One thread scan part, only one part. open block cache.
+ */
 
 /**
 Intel(R) Core(TM) i7-4770HQ CPU @ 2.20GHz

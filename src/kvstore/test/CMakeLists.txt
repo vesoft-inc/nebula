@@ -26,13 +26,6 @@ nebula_add_test(
 )
 
 nebula_add_test(
-    NAME part_performance_test
-    SOURCES PartPerformanceTest.cpp
-    OBJECTS ${KVSTORE_TEST_LIBS}
-    LIBRARIES follybenchmark ${THRIFT_LIBRARIES} ${ROCKSDB_LIBRARIES} wangle gtest boost_regex
-)
-
-nebula_add_test(
     NAME rocks_engine_test
     SOURCES RocksEngineTest.cpp
     OBJECTS ${KVSTORE_TEST_LIBS}
@@ -72,22 +65,59 @@ nebula_add_test(
 
 
 nebula_add_test(
-    NAME log_encoder_test
-    SOURCES LogEncoderTest.cpp
-    OBJECTS ${KVSTORE_TEST_LIBS}
-    LIBRARIES ${THRIFT_LIBRARIES} ${ROCKSDB_LIBRARIES} wangle gtest
+    NAME
+        log_encoder_test
+    SOURCES
+        LogEncoderTest.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
 )
 
 nebula_add_test(
-        NAME snapshot_link_test
-        SOURCES SnapshotLinkTest.cpp
-        OBJECTS ${KVSTORE_TEST_LIBS}
-        LIBRARIES ${THRIFT_LIBRARIES} ${ROCKSDB_LIBRARIES} wangle gtest
+    NAME
+        snapshot_link_test
+    SOURCES
+        SnapshotLinkTest.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
 )
 
 nebula_add_executable(
-    NAME multi_versions_perf_test_bm
-    SOURCES MultiVersionBenchmark.cpp
-    OBJECTS $<TARGET_OBJECTS:base_obj> $<TARGET_OBJECTS:fs_obj>
-    LIBRARIES follybenchmark ${ROCKSDB_LIBRARIES} boost_regex
+    NAME
+        multi_versions_perf_test_bm
+    SOURCES
+        MultiVersionBenchmark.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:fs_obj>
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        follybenchmark
+        boost_regex
+)
+
+nebula_add_executable(
+    NAME
+        part_performance_test
+    SOURCES
+        PartPerformanceTest.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        follybenchmark
+        wangle
+        gtest
+        boost_regex
 )
