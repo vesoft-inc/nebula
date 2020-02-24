@@ -32,12 +32,14 @@ nebula> CREATE TAG t(a int, b int, c string) ttl_duration= 100, ttl_col = "a";
 
 如果为字段设置了 TTL 值，但又不希望数据自动过期，则可以删除该 TTL 值。例如，接着前面的示例，删除字段`a` 的 TTL 值。
 
+直接删除整个字段：
+
 ```ngql
-nebula> ALTER TAG t DROP a; -- drop ttl attribute column
+nebula> ALTER TAG t DROP a; -- drop field a with the ttl attribute
 nebula> SHOW CREATE TAG t;
 ```
 
-或使用如下方式删除：
+或使用如下方式让 TTL 失效：
 
 ```ngql
 nebula> ALTER TAG t ADD ttl_col = ""; ---- drop ttl attribute
