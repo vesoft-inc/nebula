@@ -34,19 +34,23 @@ nebula> CREATE TAG t(a int, b int, c string) ttl_duration= 100, ttl_col = "a";
 
 ## Dropping TTL
 
-If you have set a TTL value for a field and later decide do not want it to ever automatically expire, you can drop the TTL value. For example, using the previous example, drop the TTL value on field `a`.
+If you have set a TTL value for a field and later decide do not want it to ever automatically expire, you can drop the TTL value or invalidate it. For example, using the previous example.
 
-Drop the entire field directly:
-
-```ngql
-nebula> ALTER TAG t DROP a; -- drop field a with the ttl attribute
-nebula> SHOW CREATE TAG t;
-```
-
-Or you can invalidate the TTL with the following method:
+Drop the TTL attribute:
 
 ```ngql
 nebula> ALTER TAG t ttl_col = ""; -- drop ttl attribute
+```
+
+Drop the field a with the ttl attribute:
+
+```ngql
+nebula> ALTER TAG t DROP a; -- drop field a with the ttl attribute
+```
+
+Invalidate the TTL:
+
+```ngql
 nebula> ALTER TAG t ttl_duration = 0; -- keep the ttl but the data never expires
 ```
 
