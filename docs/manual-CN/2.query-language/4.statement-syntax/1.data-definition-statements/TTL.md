@@ -18,6 +18,8 @@ TTL 值以秒为单位设置的。
 
 设置 TTL 可用来指定数据的存活时间。
 
+先创建 tag，然后增加 ttl 属性。
+
 ```ngql
 nebula> CREATE TAG t(a int, b int, c string);
 nebula> ALTER TAG t ADD ttl_col = "a", ttl_duration = 1000; -- add ttl attribute
@@ -50,7 +52,7 @@ nebula> ALTER TAG t ttl_duration = 0; -- keep the ttl but the data never expires
 
 ## TTL 使用注意事项
 
-- 如果字段包含 TTL，则不支持更改操作。
+- 如果字段包含 TTL，则不支持对该字段的更改操作。
 
 ``` ngql
 nebula> ALTER TAG t ADD ttl_col = "b", ttl_duration = 1000;

@@ -18,6 +18,8 @@ The time to live value is set in seconds.
 
 Setting a TTL value allows you to specify the living time of the data.
 
+Creating a tag then adding ttl attribute.
+
 ```ngql
 nebula> CREATE TAG t(a int, b int, c string);
 nebula> ALTER TAG t ADD ttl_col = "a", ttl_duration = 1000; -- add ttl attribute
