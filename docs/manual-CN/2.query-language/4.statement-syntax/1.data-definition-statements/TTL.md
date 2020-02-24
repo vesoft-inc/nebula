@@ -2,13 +2,13 @@
 
 借助 **TTL**，**Nebula Graph** 支持当数据过期后，在查询顶点和边时，会自动过滤掉过期的数据，过期的数据在 compaction 阶段会自动删除，不需要客户显式发出的 delete 操作。
 
-`ttl_col` 用来指出 ttl 列，`ttl_duration` 用来指出 ttl 的持续时间，某一条数据的 ttl 列值加上 ttl_duration 值小于当前时间，则认为该条数据过期。`ttl_col` 列类型为 integer 或者 timestamp，单位为秒， `ttl_duration` 单位也是秒。
+`ttl_col` 用来指出 TTL 列，`ttl_duration` 用来指出 TTL 的持续时间，某一条数据的 TTL 列值加上 ttl_duration 值小于当前时间，则认为该条数据过期。`ttl_col` 列类型为 integer 或者 timestamp，单位为秒， `ttl_duration` 单位也是秒。
 
 ## TTL 配置
 
 TTL 值以秒为单位设置的。
 
-- 如果设置 tll，当某一行的 `ttl_col` 列值加上 `ttl_duration` 值小于当前时间时，则认为该条数据过期。
+- 如果设置 TTL，当某一行的 `ttl_col` 列值加上 `ttl_duration` 值小于当前时间时，则认为该条数据过期。
 
 - 如果未设置 TTL 或 `ttl_col` 为空，则 TTL 不起作用。
 
@@ -18,7 +18,7 @@ TTL 值以秒为单位设置的。
 
 设置 TTL 可用来指定数据的存活时间。
 
-先创建 tag，然后增加 ttl 属性。
+先创建 tag，然后增加 TTL 属性。
 
 ```ngql
 nebula> CREATE TAG t(a int, b int, c string);

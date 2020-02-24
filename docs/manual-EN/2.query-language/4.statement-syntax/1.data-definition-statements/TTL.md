@@ -2,7 +2,7 @@
 
 With **TTL**, **Nebula Graph** provides the ability to filter the expired data automatically when traversing vertices and edges. The system will automatically delete the expired data during the compaction phase, without a delete operation that is explicitly issued by the console.
 
-`ttl_col` indicates the ttl column, while `ttl_duration` indicates the duration of the ttl. When the sum of the ttl column and the ttl_duration is less than the current time, we consider the data as expired. The `ttl_col` type is integer or timestamp, and is set in seconds. `ttl_duration` is also set in seconds.
+`ttl_col` indicates the TTL column, while `ttl_duration` indicates the duration of the TTL. When the sum of the TTL column and the ttl_duration is less than the current time, we consider the data as expired. The `ttl_col` type is integer or timestamp, and is set in seconds. `ttl_duration` is also set in seconds.
 
 ## TTL configurations
 
@@ -18,7 +18,7 @@ The time to live value is set in seconds.
 
 Setting a TTL value allows you to specify the living time of the data.
 
-Creating a tag then adding ttl attribute.
+Creating a tag then adding TTL attribute.
 
 ```ngql
 nebula> CREATE TAG t(a int, b int, c string);
