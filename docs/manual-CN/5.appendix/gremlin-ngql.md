@@ -107,7 +107,7 @@ gremlin> g.V(saturn).valueMap();
 - 查询 hercules 的祖父
 
 ```bash
-nebula> GO 2 STEPS FROM hash("hercules") OVER father YIELD  $$.character.name;
+nebula> GO 2 STEPS FROM hash("hercules") OVER father YIELD $$.character.name;
 =====================
 | $$.character.name |
 =====================
@@ -135,7 +135,8 @@ gremlin> g.V().hasLabel('character').has('name','hercules').out('father').values
 - 查询年龄大于 100 的人物
 
 ```bash
-nebula> XXX # coming soon
+nebula> LOOKUP ON character WHERE character.age > 100 YIELD character.name AS name;
+
 gremlin> g.V().hasLabel('character').has('age',gt(100)).values('name');
 ==>saturn
 ==>jupiter
@@ -270,7 +271,7 @@ nebula> LOOKUP character WHERE character.name == 'hercules' YIELD character.name
 ```bash
 # 查询前两个顶点
 gremlin> g.V().has('character','name','hercules').out('battled').limit(2);
-GO FROM hash('hercules') OVER battled | LIMIT 2;
+nebula> GO FROM hash('hercules') OVER battled | LIMIT 2;
 
 # 查询后两个顶点
 gremlin> g.V().has('character','name','hercules').out('battled').values('name').tail(1);
@@ -281,8 +282,69 @@ gremlin> g.V().has('character','name','hercules').out('battled').values('name').
 nebula> GO FROM hash('hercules') OVER battled YIELD $$.character.name AS name | ORDER BY name | LIMIT 1,1;
 ```
 
+### 路径查询
 
+名称               | Gremlin | nGQL           |
+-----              |---------|   -----       |
+所有路径  | path()    | FIND ALL PATH        |
+不包含环路 | simplePath() | \ |
+只包含环路 | cyclicPath() | \ |
+最短路径   | \    | FIND SHORTEST PATH |
 
+**注意：**  **Nebula Graph** 需要起始点和终点方可返回路径， Gremlin 仅需要起始点。
+
+```bash
+# pluto 顶点到与其有直接关联的出边顶点的路径
+gremlin> g.V().hasLabel('character').has('name','pluto').out().path();
+# 查询点 pluto 到点 jupiter 的最短路径
+nebula> LOOKUP ON character WHERE character.name== "pluto" YIELD character.name AS name | \
+    FIND SHORTEST PATH FROM $-.VertexID TO hash("jupiter") OVER *;
+```
+
+### 多度查询
+
+名称               | Gremlin | nGQL           |
+-----              |---------|   -----       |
+指定重复执行的语句  | repeat()    | N STEPS        |
+指定重复执行的次数 | times() | N STEPS |
+指定循环终止的条件 | until() | \ |
+指定收集数据的条件   | emit()    | \ |
+
+```bash
+# 查询点 pluto 出边邻点
+gremlin> g.V().hasLabel('character').has('name','pluto').repeat(out()).times(1);
+nebula> LOOKUP ON character WHERE character.name== "pluto" YIELD character.name AS name | \
+    GO FROM $-.VertexID OVER *;
+
+# 查询顶点 hercules 到顶点 cerberus 之间的路径
+# 循环的终止条件是遇到名称是 cerberus 的顶点
+gremlin> g.V().hasLabel('character').has('name','hercules').repeat(out()).until(has('name', 'cerberus')).path();
+nebula> # Coming soon
+
+# 查询点 hercules 的所有出边可到达点的路径
+# 且终点必须是 character 类型的点
+gremlin> g.V().hasLabel('character').has('name','hercules').repeat(out()).emit(hasLabel('character')).path();
+nebula> # Coming soon
+
+# 查询两顶点 pluto 和 saturn 之间的最短路径
+# 且最大深度为 3
+gremlin> g.V('pluto').repeat(out().simplePath()).until(hasId('saturn').and().loops().is(lte(3))).hasId('saturn').path();
+nebula> FIND SHORTEST PATH FROM hash('pluto') TO hash('saturn') OVER * UPTO 3 STEPS;
+```
+
+### 查询结果排序
+
+名称               | Gremlin | nGQL           |
+-----              |---------|   -----       |
+升序排列 | order().by()    | ORDER BY         |
+降序排列 | order().by(decr) | ORDER BY DESC |
+随机排列 | order().by(shuffle) | \ |
+
+```bash
+# 查询 pluto 的兄弟并按照年龄降序排列
+gremlin> g.V(pluto).out('brother').order().by('age', decr).valueMap();
+nebula> GO FROM hash('pluto') OVER brother YIELD $$.character.name AS Name, $$.character.age as Age | ORDER BY Age DESC;
+```
 
 
 

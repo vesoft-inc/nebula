@@ -135,7 +135,8 @@ gremlin> g.V().hasLabel('character').has('name','hercules').out('father').values
 - Find the characters with age > 100
 
 ```bash
-nebula> # coming soon
+nebula> LOOKUP ON character WHERE character.age > 100 YIELD character.name AS name;
+
 gremlin> g.V().hasLabel('character').has('age',gt(100)).values('name');
 ==>saturn
 ==>jupiter
@@ -270,7 +271,7 @@ Skip n-objects | skip() | LIMIT \<offset_value> |
 ```bash
 # Find the first two records
 gremlin> g.V().has('character','name','hercules').out('battled').limit(2);
-GO FROM hash('hercules') OVER battled | LIMIT 2;
+nebula> GO FROM hash('hercules') OVER battled | LIMIT 2;
 
 # Find the last record
 gremlin> g.V().has('character','name','hercules').out('battled').values('name').tail(1);
@@ -280,6 +281,74 @@ nebula> GO FROM hash('hercules') OVER battled YIELD $$.character.name AS name | 
 gremlin> g.V().has('character','name','hercules').out('battled').values('name').skip(1).limit(1);
 nebula> GO FROM hash('hercules') OVER battled YIELD $$.character.name AS name | ORDER BY name | LIMIT 1,1;
 ```
+
+### Finding Path
+
+Name               | Gremlin | nGQL           |
+-----              |---------|   -----       |
+All path  | path()    | FIND ALL PATH        |
+Exclude cycles path | simplePath() | \ |
+Only cycles path | cyclicPath() | \ |
+Shortest path   | \    | FIND SHORTEST PATH |
+
+**NOTE:** **Nebula Graph** requires the source vertex and the dest vertex to find path while Gremlin only needs the source vertex.
+
+```bash
+# Find path from vertex pluto to the out adjacent vertices
+gremlin> g.V().hasLabel('character').has('name','pluto').out().path();
+# Find the shortest path from vertex pluto to vertex jupiter
+nebula> LOOKUP ON character WHERE character.name== "pluto" YIELD character.name AS name | \
+    FIND SHORTEST PATH FROM $-.VertexID TO hash("jupiter") OVER *;
+```
+
+### Traversing N Hops
+
+Name               | Gremlin | nGQL           |
+-----              |---------|   -----       |
+Loop over a traversal  | repeat()    | N STEPS        |
+Times the traverser has gone through a loop | times() | N STEPS |
+Specify when to end the loop | until() | \ |
+Specify when to collect data   | emit()    | \ |
+
+```bash
+# Find vertex pluto's out adjacent neighbors
+gremlin> g.V().hasLabel('character').has('name','pluto').repeat(out()).times(1);
+nebula> LOOKUP ON character WHERE character.name== "pluto" YIELD character.name AS name | \
+    GO FROM $-.VertexID OVER *;
+
+# Find path between vertex hercules and vertex cerberus
+# Stop traversing when the dest vertex is cerberus
+gremlin> g.V().hasLabel('character').has('name','hercules').repeat(out()).until(has('name', 'cerberus')).path();
+nebula> # Coming soon
+
+# Find path sourcing from vertex hercules
+# And the dest vertex type is character
+gremlin> g.V().hasLabel('character').has('name','hercules').repeat(out()).emit(hasLabel('character')).path();
+nebula> # Coming soon
+
+# Find shortest path between pluto and saturn over any edge
+# And the deepest loop is 3
+gremlin> g.V('pluto').repeat(out().simplePath()).until(hasId('saturn').and().loops().is(lte(3))).hasId('saturn').path();
+nebula> FIND SHORTEST PATH FROM hash('pluto') TO hash('saturn') OVER * UPTO 3 STEPS;
+```
+
+### Ordering Results
+
+Name               | Gremlin | nGQL           |
+-----              |---------|   -----       |
+Order the items increasingly | order().by()    | ORDER BY         |
+Order the items decreasingly | order().by(decr) | ORDER BY DESC |
+Randomize the records order | order().by(shuffle) | \ |
+
+```bash
+# Find pluto's brother and order by age decreasingly.
+gremlin> g.V(pluto).out('brother').order().by('age', decr).valueMap();
+nebula> GO FROM hash('pluto') OVER brother YIELD $$.character.name AS Name, $$.character.age as Age | ORDER BY Age DESC;
+```
+
+
+LOOKUP ON character WHERE character.name== "pluto" YIELD character.name AS name | \
+    GO FROM $-.VertexID OVER relation YIELD $-.name, relation.name, $$.entity.name
 
 
 
