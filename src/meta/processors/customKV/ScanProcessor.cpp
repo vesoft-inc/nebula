@@ -15,11 +15,11 @@ void ScanProcessor::process(const cpp2::ScanReq& req) {
     auto result = doScan(start, end);
     if (!result.ok()) {
         LOG(ERROR) << "Scan Failed: " << result.status();
-        resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
+        handleErrorCode(cpp2::ErrorCode::E_STORE_FAILURE);
         onFinished();
         return;
     }
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_values(std::move(result.value()));
     onFinished();
 }

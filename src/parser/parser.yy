@@ -117,7 +117,8 @@ class GraphScanner;
 %token KW_BALANCE KW_LEADER
 %token KW_SHORTEST KW_PATH
 %token KW_IS KW_NULL KW_DEFAULT
-%token KW_SNAPSHOT KW_SNAPSHOTS
+%token KW_SNAPSHOT KW_SNAPSHOTS KW_LOOKUP
+%token KW_JOBS KW_JOB KW_RECOVER KW_FLUSH KW_COMPACT KW_SUBMIT
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -132,6 +133,7 @@ class GraphScanner;
 %token <strval> STRING VARIABLE LABEL
 
 %type <strval> name_label unreserved_keyword agg_function
+%type <strval> admin_operation admin_para
 %type <expr> expression logic_xor_expression logic_or_expression logic_and_expression
 %type <expr> relational_expression multiplicative_expression additive_expression arithmetic_xor_expression
 %type <expr> unary_expression primary_expression equality_expression base_expression
@@ -200,7 +202,7 @@ class GraphScanner;
 %type <role_type_clause> role_type_clause
 %type <acl_item_clause> acl_item_clause
 
-%type <sentence> go_sentence match_sentence use_sentence find_sentence find_path_sentence
+%type <sentence> go_sentence match_sentence use_sentence lookup_sentence find_path_sentence
 %type <sentence> order_by_sentence limit_sentence group_by_sentence
 %type <sentence> fetch_vertices_sentence fetch_edges_sentence
 
@@ -218,6 +220,7 @@ class GraphScanner;
 %type <sentence> maintain_sentence insert_vertex_sentence insert_edge_sentence
 %type <sentence> mutate_sentence update_vertex_sentence update_edge_sentence delete_vertex_sentence delete_edge_sentence
 %type <sentence> show_sentence create_space_sentence describe_space_sentence
+%type <sentence> admin_sentence
 %type <sentence> drop_space_sentence
 %type <sentence> yield_sentence
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
@@ -274,6 +277,12 @@ unreserved_keyword
      | KW_LEADER             { $$ = new std::string("leader"); }
      | KW_UUID               { $$ = new std::string("uuid"); }
      | KW_VARIABLES          { $$ = new std::string("variables"); }
+     | KW_JOB                { $$ = new std::string("job"); }
+     | KW_JOBS               { $$ = new std::string("jobs"); }
+     | KW_SUBMIT             { $$ = new std::string("submit"); }
+     | KW_RECOVER            { $$ = new std::string("recover"); }
+     | KW_FLUSH              { $$ = new std::string("flush"); }
+     | KW_COMPACT            { $$ = new std::string("compact"); }
      ;
 
 agg_function
@@ -752,10 +761,11 @@ match_sentence
     : KW_MATCH { $$ = new MatchSentence; }
     ;
 
-find_sentence
-    : KW_FIND prop_list KW_FROM name_label where_clause {
-        auto sentence = new FindSentence($4, $2);
-        sentence->setWhereClause($5);
+lookup_sentence
+    : KW_LOOKUP KW_ON name_label where_clause yield_clause {
+        auto sentence = new LookupSentence($3);
+        sentence->setWhereClause($4);
+        sentence->setYieldClause($5);
         $$ = sentence;
     }
     ;
@@ -977,7 +987,7 @@ create_schema_prop_item
         }
         $$ = new SchemaPropItem(SchemaPropItem::TTL_DURATION, $3);
     }
-    | KW_TTL_COL ASSIGN name_label {
+    | KW_TTL_COL ASSIGN STRING {
         $$ = new SchemaPropItem(SchemaPropItem::TTL_COL, *$3);
         delete $3;
     }
@@ -1058,7 +1068,7 @@ alter_schema_prop_item
         }
         $$ = new SchemaPropItem(SchemaPropItem::TTL_DURATION, $3);
     }
-    | KW_TTL_COL ASSIGN name_label {
+    | KW_TTL_COL ASSIGN STRING {
         $$ = new SchemaPropItem(SchemaPropItem::TTL_COL, *$3);
         delete $3;
     }
@@ -1215,7 +1225,7 @@ traverse_sentence
     : L_PAREN set_sentence R_PAREN { $$ = $2; }
     | go_sentence { $$ = $1; }
     | match_sentence { $$ = $1; }
-    | find_sentence { $$ = $1; }
+    | lookup_sentence { $$ = $1; }
     | group_by_sentence { $$ = $1; }
     | order_by_sentence { $$ = $1; }
     | fetch_sentence { $$ = $1; }
@@ -1508,6 +1518,48 @@ ingest_sentence
     : KW_INGEST {
         auto sentence = new IngestSentence();
         $$ = sentence;
+    }
+    ;
+
+admin_sentence
+    : KW_SUBMIT KW_JOB admin_operation {
+        auto sentence = new AdminSentence("add_job");
+        sentence->addPara(*$3);
+        $$ = sentence;
+    }
+    | KW_SHOW KW_JOBS {
+        auto sentence = new AdminSentence("show_jobs");
+        $$ = sentence;
+    }
+    | KW_SHOW KW_JOB INTEGER {
+        auto sentence = new AdminSentence("show_job");
+        sentence->addPara(std::to_string($3));
+        $$ = sentence;
+    }
+    | KW_STOP KW_JOB INTEGER {
+        auto sentence = new AdminSentence("stop_job");
+        sentence->addPara(std::to_string($3));
+        $$ = sentence;
+    }
+    | KW_RECOVER KW_JOB {
+        auto sentence = new AdminSentence("recover_job");
+        $$ = sentence;
+    }
+    ;
+
+admin_operation
+    : KW_COMPACT { $$ = new std::string("compact"); }
+    | KW_FLUSH   { $$ = new std::string("flush"); }
+    | admin_operation admin_para {
+        $$ = new std::string(*$1 + " " + *$2);
+    }
+    ;
+
+admin_para
+    : name_label ASSIGN name_label {
+        auto left = *$1;
+        auto right = *$3;
+        $$ = new std::string(*$1 + "=" + *$3);
     }
     ;
 
@@ -1871,6 +1923,7 @@ mutate_sentence
     | delete_edge_sentence { $$ = $1; }
     | download_sentence { $$ = $1; }
     | ingest_sentence { $$ = $1; }
+    | admin_sentence { $$ = $1; }
     ;
 
 maintain_sentence

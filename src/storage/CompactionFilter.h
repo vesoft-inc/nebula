@@ -21,8 +21,10 @@ namespace storage {
 
 class StorageCompactionFilter final : public kvstore::KVFilter {
 public:
-    explicit StorageCompactionFilter(meta::SchemaManager* schemaMan)
-        : schemaMan_(schemaMan) {
+    StorageCompactionFilter(meta::SchemaManager* schemaMan,
+                            meta::IndexManager* indexMan)
+        : schemaMan_(schemaMan)
+        , indexMan_(indexMan) {
         CHECK_NOTNULL(schemaMan_);
     }
 
@@ -38,6 +40,9 @@ public:
             if (!schemaValid(spaceId, key)) {
                 return true;
             }
+            if (isInvalidReverseEdgeKey(key, val)) {
+                return true;
+            }
             if (!ttlValid(spaceId, key, val)) {
                 VLOG(3) << "TTL invalid for key " << key;
                 return true;
@@ -47,7 +52,7 @@ public:
                 return true;
             }
         } else if (NebulaKeyUtils::isIndexKey(key)) {
-            if (!indexValid(key)) {
+            if (!indexValid(spaceId, key)) {
                 VLOG(3) << "Index invalid for the key " << key;
                 return true;
             }
@@ -77,6 +82,15 @@ public:
             }
         }
         return true;
+    }
+
+    bool isInvalidReverseEdgeKey(const folly::StringPiece& key,
+                                 const folly::StringPiece& val) const {
+        if (NebulaKeyUtils::isEdge(key)) {
+            auto edgeType = NebulaKeyUtils::getEdgeType(key);
+            return edgeType < 0 && val.empty();
+        }
+        return false;
     }
 
     bool ttlValid(GraphSpaceID spaceId, const folly::StringPiece& key,
@@ -131,33 +145,46 @@ public:
 
     bool filterVersions(const folly::StringPiece& key) const {
         folly::StringPiece keyWithNoVersion = NebulaKeyUtils::keyWithNoVersion(key);
-        if (keyWithNoVersion == lastKeyWithNoVerison_) {
+        if (keyWithNoVersion == lastKeyWithNoVersion_) {
             // TODO(heng): we could support max-versions configuration in schema if needed.
             return true;
         }
-        lastKeyWithNoVerison_ = keyWithNoVersion.str();
+        lastKeyWithNoVersion_ = keyWithNoVersion.str();
         return false;
     }
 
-    bool indexValid(const folly::StringPiece&) const {
-        return true;
+    bool indexValid(GraphSpaceID spaceId, const folly::StringPiece& key) const {
+        auto indexId = NebulaKeyUtils::getIndexId(key);
+        auto eRet = this->indexMan_->getEdgeIndex(spaceId, indexId);
+        if (eRet.ok()) {
+            return true;
+        }
+        auto tRet = this->indexMan_->getTagIndex(spaceId, indexId);
+        if (tRet.ok()) {
+            return true;
+        }
+        return !(eRet.status() == Status::IndexNotFound() &&
+                 tRet.status() == Status::IndexNotFound());
     }
 
 private:
-    mutable std::string lastKeyWithNoVerison_;
+    mutable std::string lastKeyWithNoVersion_;
     meta::SchemaManager* schemaMan_ = nullptr;
+    meta::IndexManager* indexMan_ = nullptr;
 };
 
 class StorageCompactionFilterFactory final : public kvstore::KVCompactionFilterFactory {
 public:
     StorageCompactionFilterFactory(meta::SchemaManager* schemaMan,
+                                   meta::IndexManager* indexMan,
                                    GraphSpaceID spaceId,
                                    int32_t customFilterIntervalSecs):
         KVCompactionFilterFactory(spaceId, customFilterIntervalSecs),
-        schemaMan_(schemaMan) {}
+        schemaMan_(schemaMan),
+        indexMan_(indexMan) {}
 
     std::unique_ptr<kvstore::KVFilter> createKVFilter() override {
-        return std::make_unique<StorageCompactionFilter>(schemaMan_);
+        return std::make_unique<StorageCompactionFilter>(schemaMan_, indexMan_);
     }
 
     const char* Name() const override {
@@ -166,24 +193,29 @@ public:
 
 private:
     meta::SchemaManager* schemaMan_ = nullptr;
+    meta::IndexManager* indexMan_ = nullptr;
 };
 
 class StorageCompactionFilterFactoryBuilder : public kvstore::CompactionFilterFactoryBuilder {
 public:
-    explicit StorageCompactionFilterFactoryBuilder(meta::SchemaManager* schemaMan)
-        : schemaMan_(schemaMan) {}
+    StorageCompactionFilterFactoryBuilder(meta::SchemaManager* schemaMan,
+                                          meta::IndexManager* indexMan)
+        : schemaMan_(schemaMan)
+        , indexMan_(indexMan) {}
 
     virtual ~StorageCompactionFilterFactoryBuilder() = default;
 
     std::shared_ptr<kvstore::KVCompactionFilterFactory>
     buildCfFactory(GraphSpaceID spaceId, int32_t customFilterIntervalSecs) override {
         return std::make_shared<StorageCompactionFilterFactory>(schemaMan_,
+                                                                indexMan_,
                                                                 spaceId,
                                                                 customFilterIntervalSecs);
     }
 
 private:
     meta::SchemaManager* schemaMan_ = nullptr;
+    meta::IndexManager* indexMan_ = nullptr;
 };
 
 

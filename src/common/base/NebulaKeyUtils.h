@@ -108,6 +108,9 @@ public:
     }
 
     static bool isVertex(const folly::StringPiece& rawKey) {
+        if (rawKey.size() != kVertexLen) {
+            return false;
+        }
         constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
         auto type = readInt<uint32_t>(rawKey.data(), len) & kTypeMask;
         if (static_cast<uint32_t>(NebulaKeyType::kData) != type) {
@@ -143,6 +146,9 @@ public:
     }
 
     static bool isEdge(const folly::StringPiece& rawKey) {
+        if (rawKey.size() != kEdgeLen) {
+            return false;
+        }
         constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
         auto type = readInt<uint32_t>(rawKey.data(), len) & kTypeMask;
         if (static_cast<uint32_t>(NebulaKeyType::kData) != type) {
@@ -204,6 +210,12 @@ public:
         return readInt<int64_t>(rawKey.data() + offset, sizeof(int64_t));
     }
 
+    static IndexID getIndexId(const folly::StringPiece& rawKey) {
+        CHECK_GT(rawKey.size(), kIndexLen);
+        auto offset = sizeof(PartitionID);
+        return readInt<IndexID>(rawKey.data() + offset, sizeof(IndexID));
+    }
+
     template<typename T>
     static typename std::enable_if<std::is_integral<T>::value, T>::type
     readInt(const char* data, int32_t len) {
@@ -218,6 +230,9 @@ public:
     }
 
     static bool isIndexKey(const folly::StringPiece& key) {
+        if (key.size() < kIndexLen) {
+            return false;
+        }
         constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
         auto type = readInt<int32_t>(key.data(), len) & kTypeMask;
         return static_cast<uint32_t>(NebulaKeyType::kIndex) == type;
@@ -385,6 +400,8 @@ private:
 
     static constexpr int32_t kEdgeIndexLen = sizeof(PartitionID) + sizeof(IndexID)
                                              + sizeof(VertexID) * 2 + sizeof(EdgeRanking);
+
+    static constexpr int32_t kIndexLen = std::min(kVertexIndexLen, kEdgeIndexLen);
 
     static constexpr int32_t kSystemLen = sizeof(PartitionID) + sizeof(NebulaSystemKeyType);
 

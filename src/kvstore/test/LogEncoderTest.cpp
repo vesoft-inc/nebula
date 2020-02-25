@@ -147,7 +147,6 @@ TEST(LogEncoderTest, BatchTest) {
             std::pair<folly::StringPiece, folly::StringPiece>("begin", "end"));
     expectd.emplace_back(OP_BATCH_PUT,
             std::pair<folly::StringPiece, folly::StringPiece>("put_key_again", "put_value_again"));
-
     ASSERT_EQ(expectd, decoded);
 }
 
