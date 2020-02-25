@@ -999,8 +999,8 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int32_t, std::string>> expected{
-            {1019, "animal"},
-            {1020, "person"},
+            {1024, "animal"},
+            {1025, "person"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -1015,7 +1015,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int32_t, std::string>> expected1{
-            {1023, "test_tag"},
+            {1027, "test_tag"},
         };
         ASSERT_TRUE(verifyResult(resp, expected1));
 
@@ -1023,8 +1023,8 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int32_t, std::string>> expected2{
-            {1020, "animal"},
-            {1021, "person"},
+            {1024, "animal"},
+            {1025, "person"},
         };
         ASSERT_TRUE(verifyResult(resp, expected2));
 
