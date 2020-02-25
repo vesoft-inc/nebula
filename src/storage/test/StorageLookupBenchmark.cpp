@@ -262,10 +262,23 @@ int main(int argc, char** argv) {
  * Total partition number : 1
  * tag (col_0 int, col_1 int, col_2 int)
  * index on tag (col_0, col_1, col_2)
- * PreciseScan_10000 : Precise scan , return 10000 vertices , where clause col_1 == 1
- * PreciseScan_100   : Precise scan , return 100 vertices , where clause col_1 == 1
- * PreciseScan_10    : Precise scan , return 10 vertices , where clause col_1 == 1
- * FilterScan_10     : Full index scan, return 1 vertex , where clause col_1 < 1
+ *
+ * PreciseScan_10000 : Prefix scan and no expression filtering is required.
+ *                     Return 10000 vertices.
+ *                     Where clause col_1 == 1
+ *
+ * PreciseScan_100   : Prefix scan and no expression filtering is required.
+ *                     Return 100 vertices.
+ *                     Where clause col_1 == 1
+ *
+ * PreciseScan_10    : Prefix scan and no expression filtering is required.
+ *                     Return 10 vertices.
+ *                     Where clause col_1 == 1
+ *
+ * FilterScan_10     : Index scan and expression filtering is required.
+ *                     Return 1 vertex.
+ *                     Where clause col_1 < 1
+ *
  **/
 
 /**
