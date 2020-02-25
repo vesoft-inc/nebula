@@ -74,7 +74,6 @@ private:
     ColumnType                                  type_;
     std::unique_ptr<std::string>                name_;
     std::unique_ptr<Value>                      defaultExpr_{nullptr};
-    VariantType                                 defaultValue_;
 };
 
 
