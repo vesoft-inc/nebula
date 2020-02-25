@@ -279,8 +279,7 @@ public:
         return ret;
     }
 
-    static void mockTag(kvstore::KVStore* kv, int32_t tagNum, GraphSpaceID spaceId = 1,
-                        SchemaVer version = 0) {
+    static void mockTag(kvstore::KVStore* kv, int32_t tagNum, SchemaVer version = 0) {
         std::vector<nebula::kvstore::KV> tags;
         SchemaVer ver = version;
         for (auto t = 0; t < tagNum; t++) {
@@ -294,8 +293,8 @@ public:
             }
             auto tagName = folly::stringPrintf("tag_%d", tagId);
             auto tagIdVal = std::string(reinterpret_cast<const char*>(&tagId), sizeof(tagId));
-            tags.emplace_back(MetaServiceUtils::indexTagKey(spaceId, tagName), tagIdVal);
-            tags.emplace_back(MetaServiceUtils::schemaTagKey(spaceId, tagId, ver++),
+            tags.emplace_back(MetaServiceUtils::indexTagKey(1, tagName), tagIdVal);
+            tags.emplace_back(MetaServiceUtils::schemaTagKey(1, tagId, ver++),
                               MetaServiceUtils::schemaTagVal(tagName, srcsch));
         }
         folly::Baton<true, std::atomic> baton;
@@ -307,8 +306,7 @@ public:
         baton.wait();
     }
 
-    static void mockEdge(kvstore::KVStore* kv, int32_t edgeNum, GraphSpaceID spaceId = 1,
-                         SchemaVer version = 0) {
+    static void mockEdge(kvstore::KVStore* kv, int32_t edgeNum, SchemaVer version = 0) {
         std::vector<nebula::kvstore::KV> edges;
         SchemaVer ver = version;
         for (auto t = 0; t < edgeNum; t++) {
@@ -323,8 +321,8 @@ public:
             auto edgeName = folly::stringPrintf("edge_%d", edgeType);
             auto edgeTypeVal = std::string(reinterpret_cast<const char*>(&edgeType),
                                            sizeof(edgeType));
-            edges.emplace_back(MetaServiceUtils::indexEdgeKey(spaceId, edgeName), edgeTypeVal);
-            edges.emplace_back(MetaServiceUtils::schemaEdgeKey(spaceId, edgeType, ver++),
+            edges.emplace_back(MetaServiceUtils::indexEdgeKey(1, edgeName), edgeTypeVal);
+            edges.emplace_back(MetaServiceUtils::schemaEdgeKey(1, edgeType, ver++),
                                MetaServiceUtils::schemaEdgeVal(edgeName, srcsch));
         }
 

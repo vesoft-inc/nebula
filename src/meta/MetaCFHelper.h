@@ -19,11 +19,13 @@ class MetaCFHelper {
 public:
     MetaCFHelper() = default;
 
-    void registerKv(kvstore::NebulaStore* kv) {
+    void registerKv(kvstore::KVStore* kv) {
         kv_ = kv;
     }
 
     void init() {
+        LOG(INFO) << __PRETTY_FUNCTION__;
+        // scan the spaces whenever we need to compact
         spaces_.clear();
         if (kv_ != nullptr) {
             folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
@@ -42,12 +44,14 @@ public:
     }
 
     bool spaceValid(GraphSpaceID spaceId) const {
-        return spaces_.count(spaceId);
+        // If spaceId is not in the spaces_ when we create compaction filter,
+        // valid spaceId must be greater than the max spaceId in spaces_;
+        return spaces_.count(spaceId) || (spaces_.upper_bound(spaceId) == spaces_.end());
     }
 
 private:
-    kvstore::NebulaStore* kv_;
-    std::unordered_set<GraphSpaceID> spaces_;
+    kvstore::KVStore* kv_;
+    std::set<GraphSpaceID> spaces_;
 };
 
 }   // namespace meta

@@ -8,6 +8,7 @@
 #include "common/base/SignalHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "meta/MetaServiceHandler.h"
+#include "meta/MetaHttpAdminHandler.h"
 #include "meta/MetaHttpIngestHandler.h"
 #include "meta/MetaHttpDownloadHandler.h"
 #include "meta/MetaHttpReplaceHostHandler.h"
@@ -61,7 +62,8 @@ const std::string kClusterIdKey = "__meta_cluster_id_key__";  // NOLINT
 nebula::ClusterID gClusterId = 0;
 
 std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> peers,
-                                                 nebula::HostAddr localhost) {
+                                                 nebula::HostAddr localhost,
+                                                 nebula::meta::MetaCFHelper* cfHelper) {
     auto partMan
         = std::make_unique<nebula::kvstore::MemPartManager>();
     // The meta server has only one space (0), one part (0)
@@ -76,13 +78,13 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
     threadManager->setNamePrefix("executor");
     threadManager->start();
 
-    nebula::meta::MetaCFHelper cfHelper;
     // On metad, we are allowed to read on follower
     FLAGS_check_leader = false;
     nebula::kvstore::KVOptions options;
     options.dataPaths_ = {FLAGS_data_path};
     options.partMan_ = std::move(partMan);
-    options.cffBuilder_ = std::make_unique<nebula::meta::MetaCompactionFilterFactoryBuilder>(&cfHelper);
+    options.cffBuilder_
+        = std::make_unique<nebula::meta::MetaCompactionFilterFactoryBuilder>(cfHelper);
     auto kvstore = std::make_unique<nebula::kvstore::NebulaStore>(
                                                         std::move(options),
                                                         ioPool,
@@ -134,7 +136,6 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
         }
     }
     LOG(INFO) << "Nebula store init succeeded, clusterId " << gClusterId;
-    cfHelper.registerKv(kvstore.get());
     return kvstore;
 }
 
@@ -156,6 +157,11 @@ Status initWebService(nebula::WebService* svc,
     });
     router.get("/replace").handler([kvstore](PathParams &&) {
         auto handler = new nebula::meta::MetaHttpReplaceHostHandler();
+        handler->init(kvstore);
+        return handler;
+    });
+    router.get("/admin").handler([kvstore](PathParams &&) {
+        auto handler = new nebula::meta::MetaHttpAdminHandler();
         handler->init(kvstore);
         return handler;
     });
@@ -214,8 +220,9 @@ int main(int argc, char *argv[]) {
         LOG(ERROR) << "Can't get peers address, status:" << peersRet.status();
         return EXIT_FAILURE;
     }
+    nebula::meta::MetaCFHelper cfHelper;
 
-    auto kvstore = initKV(peersRet.value(), localhost);
+    auto kvstore = initKV(peersRet.value(), localhost, &cfHelper);
     if (kvstore == nullptr) {
         LOG(ERROR) << "Init kv failed!";
         return EXIT_FAILURE;
@@ -240,6 +247,7 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
     }
+    cfHelper.registerKv(kvstore.get());
 
     // Setup the signal handlers
     status = setupSignalHandler();
