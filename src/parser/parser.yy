@@ -1131,21 +1131,9 @@ column_spec_list
 
 column_spec
     : name_label type_spec { $$ = new ColumnSpecification($2, $1); }
-    | name_label type_spec KW_DEFAULT INTEGER {
+    | name_label type_spec KW_DEFAULT expression {
         $$ = new ColumnSpecification($2, $1);
-        $$->setIntValue($4);
-    }
-    | name_label type_spec KW_DEFAULT BOOL {
-        $$ = new ColumnSpecification($2, $1);
-        $$->setBoolValue($4);
-    }
-    | name_label type_spec KW_DEFAULT DOUBLE {
-        $$ = new ColumnSpecification($2, $1);
-        $$->setDoubleValue($4);
-    }
-    |  name_label type_spec KW_DEFAULT STRING {
-        $$ = new ColumnSpecification($2, $1);
-        $$->setStringValue($4);
+        $$->setValue($4);
     }
     ;
 
