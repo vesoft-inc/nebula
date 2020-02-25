@@ -665,7 +665,7 @@ MetaClient::getPartsAlloc(GraphSpaceID spaceId) {
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_getPartsAlloc(request);
-                }, [this] (cpp2::GetPartsAllocResp&& resp) -> decltype(auto) {
+                }, [] (cpp2::GetPartsAllocResp&& resp) -> decltype(auto) {
                     std::unordered_map<PartitionID, std::vector<HostAddr>> parts;
                     for (auto it = resp.parts.begin(); it != resp.parts.end(); it++) {
                         parts.emplace(it->first, it->second);

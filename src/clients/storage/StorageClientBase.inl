@@ -166,7 +166,7 @@ StorageClientBase<ClientType>::collectResponse(
         auto res = context->insertRequest(host, std::move(req.second));
         DCHECK(res.second);
         // Invoke the remote method
-        folly::via(evb, [this, evb, context, host, spaceId, res, duration] () mutable {
+        folly::via(evb, [this, evb, context, host, spaceId, res] () mutable {
             auto client = clientsMan_->client(host,
                                               evb,
                                               false,
@@ -177,7 +177,7 @@ StorageClientBase<ClientType>::collectResponse(
             // Since all requests are sent using the same eventbase, all then-callback
             // will be executed on the same IO thread
             .via(evb)
-            .then([this, context, host, spaceId, duration] (folly::Try<Response>&& val) {
+            .then([this, context, host, spaceId] (folly::Try<Response>&& val) {
                 auto& r = context->findRequest(host);
                 if (val.hasException()) {
                     LOG(ERROR) << "Request to " << host
@@ -261,15 +261,14 @@ folly::Future<StatusOr<Response>> StorageClientBase<ClientType>::getResponse(
     folly::Promise<StatusOr<Response>> pro;
     auto f = pro.getFuture();
     folly::via(evb, [evb, request = std::move(request), remoteFunc = std::move(remoteFunc),
-                     pro = std::move(pro), duration, this] () mutable {
+                     pro = std::move(pro), this] () mutable {
         auto host = request.first;
         auto client = clientsMan_->client(host, evb, false, FLAGS_storage_client_timeout_ms);
         auto spaceId = request.second.get_space_id();
         auto partId = request.second.get_part_id();
         LOG(INFO) << "Send request to storage " << host;
         remoteFunc(client.get(), std::move(request.second)).via(evb)
-             .then([spaceId, partId, p = std::move(pro),
-                    duration, this] (folly::Try<Response>&& t) mutable {
+             .then([spaceId, partId, p = std::move(pro), this] (folly::Try<Response>&& t) mutable {
             // exception occurred during RPC
             if (t.hasException()) {
 //                stats::Stats::addStatsValue(stats_, false, duration.elapsedInUSec());
@@ -351,4 +350,3 @@ StorageClientBase<ClientType>::clusterIdsToHosts(GraphSpaceID spaceId,
 
 }   // namespace storage
 }   // namespace nebula
-
