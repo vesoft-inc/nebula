@@ -330,7 +330,7 @@ bool FileUtils::makeDir(const std::string& dir, uint32_t mode) {
         return false;
     }
     FileType type = fileType(dir.c_str());
-    if (type == FileType::DIRECTORY) {
+    if (type == FileType::DIRECTORY || type == FileType::SYM_LINK) {
         // The directory already exists
         return true;
     } else if (type != FileType::NOTEXIST) {
