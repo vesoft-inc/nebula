@@ -226,20 +226,58 @@ gremlin> g.V(pluto).out('brother').as('god').out('lives').as('place').select('go
 ```bash
 # 访问某个顶点沿某条边的 OUT 方向邻接点
 gremlin> g.V(jupiter).out('brother');
+==>v[8]
+==>v[5]
 nebula> GO FROM hash("jupiter") OVER brother;
+========================
+| brother._dst         |
+========================
+| 6761447489613431910  |
+------------------------
+| -5860788569139907963 |
+------------------------
 
 # 访问某个顶点沿某条边的 IN 方向邻接点
 gremlin> g.V(jupiter).in('brother');
+==>v[5]
+==>v[8]
 nebula> GO FROM hash("jupiter") OVER brother REVERSELY;
+=======================
+| brother._dst        |
+=======================
+| 4863977009196259577 |
+-----------------------
+| 4863977009196259577 |
+-----------------------
 
 # 访问某个顶点沿某条边的双向邻接点
 gremlin> g.V(jupiter).both('brother');
+==>v[8]
+==>v[5]
+==>v[5]
+==>v[8]
 nebula> GO FROM hash("jupiter") OVER brother BIDIRECT;
+=======================
+| brother._dst        |
+=======================
+| 6761447489613431910 |
+------------------------
+| -5860788569139907963|
+| 4863977009196259577 |
+-----------------------
+| 4863977009196259577 |
+-----------------------
 
 # 2度 out 查询
 gremlin> g.V(hercules).out('father').out('lives');
+==>v[3]
 nebula> GO FROM hash("hercules") OVER father YIELD father._dst AS id | \
 GO FROM $-.id OVER lives;
+========================
+| lives._dst           |
+========================
+| -1121386748834253737 |
+------------------------
 ```
 
 ### has 条件过滤
@@ -252,12 +290,24 @@ GO FROM $-.id OVER lives;
 ```bash
 # 查询 ID 为 saturn 的顶点
 gremlin> g.V().hasId(saturn);
+==>v[1]
 nebula> FETCH PROP ON * hash("saturn");
+==========================================================================
+| VertexID             | character.name | character.age | character.type |
+==========================================================================
+| -4316810810681305233 | saturn         | 10000         | titan          |
+--------------------------------------------------------------------------
 
 # 查询 tag 为 character 且 name 属性值为 hercules 的顶点
 
 gremlin> g.V().has('character','name','hercules').valueMap();
-nebula> LOOKUP character WHERE character.name == 'hercules' YIELD character.name, character.age, character.type;
+==>[name:[hercules],type:[demigod],age:[30]]
+nebula> LOOKUP ON character WHERE character.name == 'hercules' YIELD character.name, character.age, character.type;
+=========================================================================
+| VertexID            | character.name | character.age | character.type |
+=========================================================================
+| 5976696804486077889 | hercules       | 30            | demigod        |
+-------------------------------------------------------------------------
 ```
 
 ### 返回结果限制
@@ -271,15 +321,36 @@ nebula> LOOKUP character WHERE character.name == 'hercules' YIELD character.name
 ```bash
 # 查询前两个顶点
 gremlin> g.V().has('character','name','hercules').out('battled').limit(2);
+==>v[9]
+==>v[10]
 nebula> GO FROM hash('hercules') OVER battled | LIMIT 2;
+=======================
+| battled._dst        |
+=======================
+| 530133512982221454  |
+-----------------------
+| -695163537569412701 |
+-----------------------
 
-# 查询后两个顶点
+# 查询最后一个顶点
 gremlin> g.V().has('character','name','hercules').out('battled').values('name').tail(1);
-nebula> GO FROM hash('hercules') OVER battled YIELD $$.character.name AS name | ORDER BY name DESC | LIMIT 1;
+==>cerberus
+nebula> GO FROM hash('hercules') OVER battled YIELD $$.character.name AS name | ORDER BY name | LIMIT 1;
+============
+| name     |
+============
+| cerberus |
+------------
 
 # 跳过第 1 个元素并返回一个元素
 gremlin> g.V().has('character','name','hercules').out('battled').values('name').skip(1).limit(1);
+==>hydra
 nebula> GO FROM hash('hercules') OVER battled YIELD $$.character.name AS name | ORDER BY name | LIMIT 1,1;
+=========
+| name  |
+=========
+| hydra |
+---------
 ```
 
 ### 路径查询
@@ -296,9 +367,19 @@ nebula> GO FROM hash('hercules') OVER battled YIELD $$.character.name AS name | 
 ```bash
 # pluto 顶点到与其有直接关联的出边顶点的路径
 gremlin> g.V().hasLabel('character').has('name','pluto').out().path();
+==>[v[8],v[12]]
+==>[v[8],v[2]]
+==>[v[8],v[5]]
+==>[v[8],v[11]]
+
 # 查询点 pluto 到点 jupiter 的最短路径
 nebula> LOOKUP ON character WHERE character.name== "pluto" YIELD character.name AS name | \
     FIND SHORTEST PATH FROM $-.VertexID TO hash("jupiter") OVER *;
+============================================================
+| _path_              |
+============================================================
+| 6761447489613431910 <brother,0> 4863977009196259577
+------------------------------------------------------------
 ```
 
 ### 多度查询
@@ -313,23 +394,52 @@ nebula> LOOKUP ON character WHERE character.name== "pluto" YIELD character.name 
 ```bash
 # 查询点 pluto 出边邻点
 gremlin> g.V().hasLabel('character').has('name','pluto').repeat(out()).times(1);
+==>v[12]
+==>v[2]
+==>v[5]
+==>v[11]
 nebula> LOOKUP ON character WHERE character.name== "pluto" YIELD character.name AS name | \
     GO FROM $-.VertexID OVER *;
+================================================================================================================
+| father._dst | brother._dst         | lives._dst           | mother._dst | pet._dst            | battled._dst |
+================================================================================================================
+| 0           | -5860788569139907963 | 0                    | 0           | 0                   | 0            |
+----------------------------------------------------------------------------------------------------------------
+| 0           | 4863977009196259577  | 0                    | 0           | 0                   | 0            |
+----------------------------------------------------------------------------------------------------------------
+| 0           | 0                    | -4331657707562925133 | 0           | 0                   | 0            |
+----------------------------------------------------------------------------------------------------------------
+| 0           | 0                    | 0                    | 0           | 4594048193862126013 | 0            |
+----------------------------------------------------------------------------------------------------------------
 
 # 查询顶点 hercules 到顶点 cerberus 之间的路径
 # 循环的终止条件是遇到名称是 cerberus 的顶点
 gremlin> g.V().hasLabel('character').has('name','hercules').repeat(out()).until(has('name', 'cerberus')).path();
+==>[v[6],v[11]]
+==>[v[6],v[2],v[8],v[11]]
+==>[v[6],v[2],v[5],v[8],v[11]]
+...
 nebula> # Coming soon
 
 # 查询点 hercules 的所有出边可到达点的路径
 # 且终点必须是 character 类型的点
 gremlin> g.V().hasLabel('character').has('name','hercules').repeat(out()).emit(hasLabel('character')).path();
+==>[v[6],v[7]]
+==>[v[6],v[2]]
+==>[v[6],v[9]]
+==>[v[6],v[10]]
+...
 nebula> # Coming soon
 
 # 查询两顶点 pluto 和 saturn 之间的最短路径
 # 且最大深度为 3
 gremlin> g.V('pluto').repeat(out().simplePath()).until(hasId('saturn').and().loops().is(lte(3))).hasId('saturn').path();
 nebula> FIND SHORTEST PATH FROM hash('pluto') TO hash('saturn') OVER * UPTO 3 STEPS;
+=================================================================================================
+| _path_              |
+=================================================================================================
+| 6761447489613431910 <brother,0> 4863977009196259577 <father,0> -4316810810681305233
+-------------------------------------------------------------------------------------------------
 ```
 
 ### 查询结果排序
@@ -343,7 +453,16 @@ nebula> FIND SHORTEST PATH FROM hash('pluto') TO hash('saturn') OVER * UPTO 3 ST
 ```bash
 # 查询 pluto 的兄弟并按照年龄降序排列
 gremlin> g.V(pluto).out('brother').order().by('age', decr).valueMap();
+==>[name:[jupiter],type:[god],age:[5000]]
+==>[name:[neptune],type:[god],age:[4500]]
 nebula> GO FROM hash('pluto') OVER brother YIELD $$.character.name AS Name, $$.character.age as Age | ORDER BY Age DESC;
+==================
+| Name    | Age  |
+==================
+| jupiter | 5000 |
+------------------
+| neptune | 4500 |
+------------------
 ```
 
 ### Group By
@@ -359,12 +478,25 @@ nebula> GO FROM hash('pluto') OVER brother YIELD $$.character.name AS Name, $$.c
 ```bash
 # 根据顶点类别进行分组并统计各个类别的数量
 gremlin> g.V().group().by(label).by(count());
-nebula> # coming soon
+==>[character:9,location:3]
+nebula> # Coming soon
 
 # 查询点 jupiter 出边邻点，使用 name 分组并统计
 gremlin> g.V(jupiter).out().group().by('name').by(count());
+==>[sky:1,saturn:1,neptune:1,pluto:1]
 nebula> GO FROM hash('jupiter') OVER * YIELD $$.character.name AS Name, $$.character.age as Age, $$.location.name | \
 GROUP BY $-.Name YIELD $-.Name, COUNT(*);
+======================
+| $-.Name | COUNT(*) |
+======================
+|         | 1        |
+----------------------
+| pluto   | 1        |
+----------------------
+| saturn  | 1        |
+----------------------
+| neptune | 1        |
+----------------------
 ```
 
 ### where 条件过滤
@@ -387,17 +519,35 @@ where 条件过滤 | where()    | WHERE         |
 
 ```bash
 gremlin> eq(2).test(3);
+==>false
 nebula> YIELD 3 == 2;
+==========
+| (3==2) |
+==========
+| false  |
+----------
 
 gremlin> within('a','b','c').test('d');
+==>false
 nebula> YIELD udf_is_in('d', 'a', 'b', 'c');
+======================
+| udf_is_in(d,a,b,c) |
+======================
+| false              |
+----------------------
 ```
 
 ```bash
 # 找出 pluto 和谁住并排队他本人
 gremlin> g.V(pluto).out('lives').in('lives').where(is(neq(pluto))).values('name');
+ ==>cerberus
 nebula> GO FROM hash("pluto") OVER lives YIELD lives._dst AS place | GO FROM $-.place OVER lives REVERSELY WHERE \
 $$.character.name != "pluto" YIELD $$.character.name AS cohabitants;
+===============
+| cohabitants |
+===============
+| cerberus    |
+---------------
 ```
 
 ### 逻辑运算
@@ -412,16 +562,49 @@ Or | or()    | OR         |
 ```bash
 # 查询年龄大于 30 的人物
 gremlin> g.V().values('age').is(gte(30));
+==>10000
+==>5000
+==>4500
+==>30
+==>45
+==>4000
 nebula> LOOKUP ON character WHERE character.age >= 30 YIELD character.age;
+========================================
+| VertexID             | character.age |
+========================================
+| -4316810810681305233 | 10000         |
+---------------------------------------–
+| 4863977009196259577  | 5000          |
+---------------------------------------–
+| -5860788569139907963 | 4500          |
+---------------------------------------–
+| 5976696804486077889  | 30            |
+---------------------------------------–
+| -6780323075177699500 | 45            |
+---------------------------------------–
+| 6761447489613431910  | 4000          |
+---------------------------------------–
 
 # 查询名称为 pluto 且年龄为 4000 的人物
 gremlin> g.V().has('name','pluto').and().has('age',4000);
+==>v[8]
 nebula> LOOKUP ON character WHERE character.name == 'pluto' AND character.age == 4000;
+=======================
+| VertexID            |
+=======================
+| 6761447489613431910 |
+-----------------------
 
 # 逻辑非的用法
 gremlin> g.V().has('name','pluto').out('brother').not(values('name').is('neptune')).values('name');
+==>jupiter
 nebula> LOOKUP ON character WHERE character.name == 'pluto' YIELD character.name AS name | \
 GO FROM $-.VertexID OVER brother WHERE $$.character.name != 'neptune' YIELD $$.character.name;
+=====================
+| $$.character.name |
+=====================
+| jupiter           |
+---------------------
 ```
 
 ### 模式匹配

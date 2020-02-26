@@ -226,20 +226,58 @@ Both adjacent vertices of the vertex      | both(\<label>)   | GO FROM \<vertex_
 ```bash
 # Find the out adjacent vertices of a vertex along an edge
 gremlin> g.V(jupiter).out('brother');
+==>v[8]
+==>v[5]
 nebula> GO FROM hash("jupiter") OVER brother;
+========================
+| brother._dst         |
+========================
+| 6761447489613431910  |
+------------------------
+| -5860788569139907963 |
+------------------------
 
 # Find the in adjacent vertices of a vertex along an edge
 gremlin> g.V(jupiter).in('brother');
+==>v[5]
+==>v[8]
 nebula> GO FROM hash("jupiter") OVER brother REVERSELY;
+=======================
+| brother._dst        |
+=======================
+| 4863977009196259577 |
+-----------------------
+| 4863977009196259577 |
+-----------------------
 
 # Find the both adjacent vertices of a vertex along an edge
 gremlin> g.V(jupiter).both('brother');
+==>v[8]
+==>v[5]
+==>v[5]
+==>v[8]
 nebula> GO FROM hash("jupiter") OVER brother BIDIRECT;
+=======================
+| brother._dst        |
+=======================
+| 6761447489613431910 |
+------------------------
+| -5860788569139907963|
+| 4863977009196259577 |
+-----------------------
+| 4863977009196259577 |
+-----------------------
 
 # Two hops out traverse
 gremlin> g.V(hercules).out('father').out('lives');
+==>v[3]
 nebula> GO FROM hash("hercules") OVER father YIELD father._dst AS id | \
 GO FROM $-.id OVER lives;
+========================
+| lives._dst           |
+========================
+| -1121386748834253737 |
+------------------------
 ```
 
 ### Has Filter Condition
@@ -252,12 +290,24 @@ Filter vertex or edge via label, key and value  | has(\<label>, \<key>, \<value>
 ```bash
 # Filter vertex with ID saturn
 gremlin> g.V().hasId(saturn);
+==>v[1]
 nebula> FETCH PROP ON * hash("saturn");
+==========================================================================
+| VertexID             | character.name | character.age | character.type |
+==========================================================================
+| -4316810810681305233 | saturn         | 10000         | titan          |
+--------------------------------------------------------------------------
 
 # Find for vertices with tag "character" and "name" attribute value "hercules"
 
 gremlin> g.V().has('character','name','hercules').valueMap();
-nebula> LOOKUP character WHERE character.name == 'hercules' YIELD character.name, character.age, character.type;
+==>[name:[hercules],type:[demigod],age:[30]]
+nebula> LOOKUP ON character WHERE character.name == 'hercules' YIELD character.name, character.age, character.type;
+=========================================================================
+| VertexID            | character.name | character.age | character.type |
+=========================================================================
+| 5976696804486077889 | hercules       | 30            | demigod        |
+-------------------------------------------------------------------------
 ```
 
 ### Limiting Returned Results
@@ -271,15 +321,36 @@ Skip n-objects | skip() | LIMIT \<offset_value> |
 ```bash
 # Find the first two records
 gremlin> g.V().has('character','name','hercules').out('battled').limit(2);
+==>v[9]
+==>v[10]
 nebula> GO FROM hash('hercules') OVER battled | LIMIT 2;
+=======================
+| battled._dst        |
+=======================
+| 530133512982221454  |
+-----------------------
+| -695163537569412701 |
+-----------------------
 
 # Find the last record
 gremlin> g.V().has('character','name','hercules').out('battled').values('name').tail(1);
-nebula> GO FROM hash('hercules') OVER battled YIELD $$.character.name AS name | ORDER BY name DESC | LIMIT 1;
+==>cerberus
+nebula> GO FROM hash('hercules') OVER battled YIELD $$.character.name AS name | ORDER BY name | LIMIT 1;
+============
+| name     |
+============
+| cerberus |
+------------
 
 # Skip the first record and return one record
 gremlin> g.V().has('character','name','hercules').out('battled').values('name').skip(1).limit(1);
+==>hydra
 nebula> GO FROM hash('hercules') OVER battled YIELD $$.character.name AS name | ORDER BY name | LIMIT 1,1;
+=========
+| name  |
+=========
+| hydra |
+---------
 ```
 
 ### Finding Path
@@ -296,9 +367,19 @@ Shortest path   | \    | FIND SHORTEST PATH |
 ```bash
 # Find path from vertex pluto to the out adjacent vertices
 gremlin> g.V().hasLabel('character').has('name','pluto').out().path();
+==>[v[8],v[12]]
+==>[v[8],v[2]]
+==>[v[8],v[5]]
+==>[v[8],v[11]]
+
 # Find the shortest path from vertex pluto to vertex jupiter
 nebula> LOOKUP ON character WHERE character.name== "pluto" YIELD character.name AS name | \
     FIND SHORTEST PATH FROM $-.VertexID TO hash("jupiter") OVER *;
+============================================================
+| _path_              |
+============================================================
+| 6761447489613431910 <brother,0> 4863977009196259577
+------------------------------------------------------------
 ```
 
 ### Traversing N Hops
@@ -313,23 +394,52 @@ Specify when to collect data   | emit()    | \ |
 ```bash
 # Find vertex pluto's out adjacent neighbors
 gremlin> g.V().hasLabel('character').has('name','pluto').repeat(out()).times(1);
+==>v[12]
+==>v[2]
+==>v[5]
+==>v[11]
 nebula> LOOKUP ON character WHERE character.name== "pluto" YIELD character.name AS name | \
     GO FROM $-.VertexID OVER *;
+================================================================================================================
+| father._dst | brother._dst         | lives._dst           | mother._dst | pet._dst            | battled._dst |
+================================================================================================================
+| 0           | -5860788569139907963 | 0                    | 0           | 0                   | 0            |
+----------------------------------------------------------------------------------------------------------------
+| 0           | 4863977009196259577  | 0                    | 0           | 0                   | 0            |
+----------------------------------------------------------------------------------------------------------------
+| 0           | 0                    | -4331657707562925133 | 0           | 0                   | 0            |
+----------------------------------------------------------------------------------------------------------------
+| 0           | 0                    | 0                    | 0           | 4594048193862126013 | 0            |
+----------------------------------------------------------------------------------------------------------------
 
 # Find path between vertex hercules and vertex cerberus
 # Stop traversing when the dest vertex is cerberus
 gremlin> g.V().hasLabel('character').has('name','hercules').repeat(out()).until(has('name', 'cerberus')).path();
+==>[v[6],v[11]]
+==>[v[6],v[2],v[8],v[11]]
+==>[v[6],v[2],v[5],v[8],v[11]]
+...
 nebula> # Coming soon
 
 # Find path sourcing from vertex hercules
 # And the dest vertex type is character
 gremlin> g.V().hasLabel('character').has('name','hercules').repeat(out()).emit(hasLabel('character')).path();
+==>[v[6],v[7]]
+==>[v[6],v[2]]
+==>[v[6],v[9]]
+==>[v[6],v[10]]
+...
 nebula> # Coming soon
 
 # Find shortest path between pluto and saturn over any edge
 # And the deepest loop is 3
 gremlin> g.V('pluto').repeat(out().simplePath()).until(hasId('saturn').and().loops().is(lte(3))).hasId('saturn').path();
 nebula> FIND SHORTEST PATH FROM hash('pluto') TO hash('saturn') OVER * UPTO 3 STEPS;
+=================================================================================================
+| _path_              |
+=================================================================================================
+| 6761447489613431910 <brother,0> 4863977009196259577 <father,0> -4316810810681305233
+-------------------------------------------------------------------------------------------------
 ```
 
 ### Ordering Results
@@ -343,7 +453,16 @@ Randomize the records order | order().by(shuffle) | \ |
 ```bash
 # Find pluto's brother and order by age decreasingly.
 gremlin> g.V(pluto).out('brother').order().by('age', decr).valueMap();
+==>[name:[jupiter],type:[god],age:[5000]]
+==>[name:[neptune],type:[god],age:[4500]]
 nebula> GO FROM hash('pluto') OVER brother YIELD $$.character.name AS Name, $$.character.age as Age | ORDER BY Age DESC;
+==================
+| Name    | Age  |
+==================
+| jupiter | 5000 |
+------------------
+| neptune | 4500 |
+------------------
 ```
 
 ### Group By
@@ -354,17 +473,30 @@ Group by items | group().by()    | GROUP BY         |
 Remove repeated items | dedup() | \ |
 Group by items and count | groupCount() | GROUP BY COUNT  |
 
-**Note:** The GROUP BY functions can only be applied in the YIELD clause.
+**Note:** The GROUP BY function can only be applied in the YIELD clause.
 
 ```bash
 # Group vertices by label then count
 gremlin> g.V().group().by(label).by(count());
-nebula> # coming soon
+==>[character:9,location:3]
+nebula> # Coming soon
 
 # Find vertex jupiter's out adjacency vertices, group by name, then count
 gremlin> g.V(jupiter).out().group().by('name').by(count());
+==>[sky:1,saturn:1,neptune:1,pluto:1]
 nebula> GO FROM hash('jupiter') OVER * YIELD $$.character.name AS Name, $$.character.age as Age, $$.location.name | \
 GROUP BY $-.Name YIELD $-.Name, COUNT(*);
+======================
+| $-.Name | COUNT(*) |
+======================
+|         | 1        |
+----------------------
+| pluto   | 1        |
+----------------------
+| saturn  | 1        |
+----------------------
+| neptune | 1        |
+----------------------
 ```
 
 ### Where Filter Condition
@@ -387,17 +519,35 @@ Whether a value is within the array | within(objects…​)    | udf_is_in()    
 
 ```bash
 gremlin> eq(2).test(3);
+==>false
 nebula> YIELD 3 == 2;
+==========
+| (3==2) |
+==========
+| false  |
+----------
 
 gremlin> within('a','b','c').test('d');
+==>false
 nebula> YIELD udf_is_in('d', 'a', 'b', 'c');
+======================
+| udf_is_in(d,a,b,c) |
+======================
+| false              |
+----------------------
 ```
 
 ```bash
 # Find pluto's co-habitants and exclude himself
 gremlin> g.V(pluto).out('lives').in('lives').where(is(neq(pluto))).values('name');
+==>cerberus
 nebula> GO FROM hash("pluto") OVER lives YIELD lives._dst AS place | GO FROM $-.place OVER lives REVERSELY WHERE \
 $$.character.name != "pluto" YIELD $$.character.name AS cohabitants;
+===============
+| cohabitants |
+===============
+| cerberus    |
+---------------
 ```
 
 ### Logical Operators
@@ -412,16 +562,49 @@ Or | or()    | OR         |
 ```bash
 # Find age greater than or equal to 30
 gremlin> g.V().values('age').is(gte(30));
+==>10000
+==>5000
+==>4500
+==>30
+==>45
+==>4000
 nebula> LOOKUP ON character WHERE character.age >= 30 YIELD character.age;
+========================================
+| VertexID             | character.age |
+========================================
+| -4316810810681305233 | 10000         |
+---------------------------------------–
+| 4863977009196259577  | 5000          |
+---------------------------------------–
+| -5860788569139907963 | 4500          |
+---------------------------------------–
+| 5976696804486077889  | 30            |
+---------------------------------------–
+| -6780323075177699500 | 45            |
+---------------------------------------–
+| 6761447489613431910  | 4000          |
+---------------------------------------–
 
 # Find character with name pluto and age 4000
 gremlin> g.V().has('name','pluto').and().has('age',4000);
+==>v[8]
 nebula> LOOKUP ON character WHERE character.name == 'pluto' AND character.age == 4000;
+=======================
+| VertexID            |
+=======================
+| 6761447489613431910 |
+-----------------------
 
 # Logical not
 gremlin> g.V().has('name','pluto').out('brother').not(values('name').is('neptune')).values('name');
+==>jupiter
 nebula> LOOKUP ON character WHERE character.name == 'pluto' YIELD character.name AS name | \
 GO FROM $-.VertexID OVER brother WHERE $$.character.name != 'neptune' YIELD $$.character.name;
+=====================
+| $$.character.name |
+=====================
+| jupiter           |
+---------------------
 ```
 
 ### Patterns
