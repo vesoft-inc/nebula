@@ -34,7 +34,7 @@ protected:
 
 private:
     folly::Future<std::pair<PartitionID, kvstore::ResultCode>>
-    asyncProcess(PartitionID part, std::vector<std::string> keys);
+    asyncProcess(PartitionID part, std::vector<std::string> keys, bool returnPartly);
 
     folly::Executor *executor_ = nullptr;
     std::unordered_map<std::string, std::string> pairs_;

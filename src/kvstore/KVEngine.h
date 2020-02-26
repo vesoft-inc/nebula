@@ -50,7 +50,8 @@ public:
 
     // Read a list of keys
     virtual ResultCode multiGet(const std::vector<std::string>& keys,
-                                std::vector<std::string>* values) = 0;
+                                std::vector<std::string>* values,
+                                bool returnPartly = false) = 0;
 
     // Get all results in range [start, end)
     virtual ResultCode range(const std::string& start,

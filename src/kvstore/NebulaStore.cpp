@@ -362,7 +362,8 @@ ResultCode NebulaStore::get(GraphSpaceID spaceId,
 ResultCode NebulaStore::multiGet(GraphSpaceID spaceId,
                                  PartitionID partId,
                                  const std::vector<std::string>& keys,
-                                 std::vector<std::string>* values) {
+                                 std::vector<std::string>* values,
+                                 bool returnPartly) {
     auto ret = part(spaceId, partId);
     if (!ok(ret)) {
         return error(ret);
@@ -371,7 +372,7 @@ ResultCode NebulaStore::multiGet(GraphSpaceID spaceId,
     if (!checkLeader(part)) {
         return ResultCode::ERR_LEADER_CHANGED;
     }
-    return part->engine()->multiGet(keys, values);
+    return part->engine()->multiGet(keys, values, returnPartly);
 }
 
 

@@ -265,8 +265,10 @@ ResultCode HBaseStore::get(GraphSpaceID spaceId,
 ResultCode HBaseStore::multiGet(GraphSpaceID spaceId,
                                 PartitionID partId,
                                 const std::vector<std::string>& keys,
-                                std::vector<std::string>* values) {
+                                std::vector<std::string>* values,
+                                bool returnPartly) {
     UNUSED(partId);
+    UNUSED(returnPartly);
     auto tableName = this->spaceIdToTableName(spaceId);
     std::vector<std::string> rowKeys;
     for (auto& key : keys) {

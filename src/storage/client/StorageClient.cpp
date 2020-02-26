@@ -524,6 +524,7 @@ StorageClient::put(GraphSpaceID space,
 folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>>
 StorageClient::get(GraphSpaceID space,
                    const std::vector<std::string>& keys,
+                   bool returnPartly,
                    folly::EventBase* evb) {
     auto status = clusterIdsToHosts(
         space, keys, [](const std::string& v) { return std::hash<std::string>{}(v); });
@@ -540,6 +541,7 @@ StorageClient::get(GraphSpaceID space,
         auto& req = requests[host];
         req.set_space_id(space);
         req.set_parts(std::move(c.second));
+        req.set_return_partly(returnPartly);
     }
 
     return collectResponse(evb, std::move(requests),

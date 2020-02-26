@@ -399,6 +399,9 @@ struct RemoveRangeRequest {
 struct GetRequest {
     1: common.GraphSpaceID space_id,
     2: map<common.PartitionID, list<string>>(cpp.template = "std::unordered_map") parts,
+    // When return_partly is true and some of the keys not found, will return the keys
+    // which exist
+    3: bool return_partly
 }
 
 struct PrefixRequest {
