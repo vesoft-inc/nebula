@@ -191,8 +191,7 @@ void UpdateVertexExecutor::execute() {
 
     auto status = prepareData();
     if (!status.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(status));
+        doError(std::move(status));
         return;
     }
 

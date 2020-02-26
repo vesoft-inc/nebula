@@ -247,8 +247,7 @@ void UpdateEdgeExecutor::execute() {
     FLOG_INFO("Executing UpdateEdge: %s", sentence_->toString().c_str());
     auto status = prepareData();
     if (!status.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(status));
+        doError(std::move(status));
         return;
     }
     std::string filterStr = filter_ ? Expression::encode(filter_) : "";
