@@ -210,6 +210,19 @@ TEST(FileUtils, makeDir) {
     EXPECT_TRUE(FileUtils::makeDir(subDirWithoutSlash));
     EXPECT_EQ(FileType::DIRECTORY, FileUtils::fileType(subDirWithoutSlash));
 
+    // Create symbolic links, then makedir
+    char srcDirTemp[64];
+    snprintf(srcDirTemp, sizeof(srcDirTemp), "%s/srcdir.XXXXXX", dirTemp);
+    EXPECT_TRUE(FileUtils::makeDir(srcDirTemp));
+    char linkDirTemp[64];
+    snprintf(linkDirTemp, sizeof(linkDirTemp), "%s/symlink1", dirTemp);
+    ASSERT_EQ(0, symlink(srcDirTemp, linkDirTemp));
+    char linkSubDir[128];
+    snprintf(linkSubDir, sizeof(linkSubDir), "%s/sub.XXXXXX", linkDirTemp);
+    EXPECT_TRUE(FileUtils::makeDir(linkSubDir));
+    EXPECT_EQ(FileType::SYM_LINK, FileUtils::fileType(linkDirTemp));
+    EXPECT_EQ(FileType::DIRECTORY, FileUtils::fileType(linkSubDir));
+
     // clean up
     EXPECT_TRUE(FileUtils::remove(dirTemp, true));
     // Verify everything is cleaned up
