@@ -1,3 +1,9 @@
+########## bench ########### 
+# AWS EC2 c5d.12xlarge
+# vCPU 48 
+# memory 96 GiB
+# Disk 2 * 900GiB NVMe SSD
+
 ########## basics ##########
 # Whether to run as a daemon process
 --daemonize=true
@@ -29,7 +35,7 @@
 --ws_h2_port=12002
 
 ########## storage ##########
-# Root data path, multiple paths should be splitted by comma.
+# Root data path, multiple paths should be separated by comma.
 # One path per instance, if --engine_type is `rocksdb'
 --data_path=data/storage
 
@@ -38,14 +44,14 @@
 
 # The default block cache size used in BlockBasedTable.
 # The unit is MB.
---rocksdb_block_cache=1024
+--rocksdb_block_cache=32768
 
 ############## rocksdb Options ##############
 --rocksdb_disable_wal=true
 # rocksdb DBOptions in json, each name and value of option is a string, given as "option_name":"option_value" separated by comma
 --rocksdb_db_options={}
 # rocksdb ColumnFamilyOptions in json, each name and value of option is string, given as "option_name":"option_value" separated by comma
---rocksdb_column_family_options={"write_buffer_size":"67108864","max_write_buffer_number":"4","max_bytes_for_level_base":"268435456"}
+--rocksdb_column_family_options={"write_buffer_size":"536870912‬","max_write_buffer_number":"4","max_bytes_for_level_base":"268435456"}
 # rocksdb BlockBasedTableOptions in json, each name and value of option is string, given as "option_name":"option_value" separated by comma
 --rocksdb_block_based_table_options={"block_size":"8192"}
 
