@@ -7,6 +7,8 @@
 #include "meta/processors/admin/Balancer.h"
 #include <algorithm>
 #include <cstdlib>
+#include "kvstore/NebulaStore.h"
+#include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/MetaServiceUtils.h"
@@ -21,25 +23,28 @@ namespace meta {
 ErrorOr<cpp2::ErrorCode, BalanceID> Balancer::balance(std::vector<HostAddr> hostDel) {
     std::lock_guard<std::mutex> lg(lock_);
     if (!running_) {
-        if (!recovery()) {
+        auto retCode = recovery();
+        if (retCode != cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << "Recovery balancer failed!";
             finish();
-            return cpp2::ErrorCode::E_CORRUPTTED_BALANCE_PLAN;
+            return retCode;
         }
         if (plan_ == nullptr) {
             LOG(INFO) << "There is no corrupted plan need to recovery, so create a new one";
-            auto retCode = buildBalancePlan(std::move(hostDel));
+            retCode = buildBalancePlan(std::move(hostDel));
             if (retCode != cpp2::ErrorCode::SUCCEEDED) {
                 LOG(ERROR) << "Create balance plan failed";
                 finish();
                 return retCode;
             }
         }
+        LOG(INFO) << "Start to invoke balance plan " << plan_->id();
         executor_->add(std::bind(&BalancePlan::invoke, plan_.get()));
         running_ = true;
         return plan_->id();
     }
     CHECK(!!plan_);
+    LOG(INFO) << "Balance plan " << plan_->id() << " is still running";
     return plan_->id();
 }
 
@@ -52,7 +57,8 @@ StatusOr<BalancePlan> Balancer::show(BalanceID id) const {
     }
     if (kv_) {
         BalancePlan plan(id, kv_, client_.get());
-        if (!plan.recovery(false)) {
+        auto retCode = plan.recovery(false);
+        if (retCode != cpp2::ErrorCode::SUCCEEDED) {
             return Status::Error("Get balance plan failed, id %ld", id);
         }
         return plan;
@@ -67,18 +73,25 @@ StatusOr<BalanceID> Balancer::stop() {
     }
     CHECK(!!plan_);
     plan_->stop();
+    LOG(INFO) << "Stop balance plan " << plan_->id();
     return plan_->id();
 }
 
-bool Balancer::recovery() {
+cpp2::ErrorCode Balancer::recovery() {
     CHECK(!plan_) << "plan should be nullptr now";
     if (kv_) {
+        auto* store = static_cast<kvstore::NebulaStore*>(kv_);
+        if (!store->isLeader(kDefaultSpaceId, kDefaultPartId)) {
+            // We need to check whether is leader or not, otherwise we would failed to persist
+            // state of BalancePlan and BalanceTask, so we just reject request if not leader.
+            return cpp2::ErrorCode::E_LEADER_CHANGED;
+        }
         const auto& prefix = BalancePlan::prefix();
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
         if (ret != kvstore::ResultCode::SUCCEEDED) {
             LOG(ERROR) << "Can't access kvstore, ret = " << static_cast<int32_t>(ret);
-            return false;
+            return MetaCommon::to(ret);
         }
         std::vector<int64_t> corruptedPlans;
         while (iter->valid()) {
@@ -92,7 +105,7 @@ bool Balancer::recovery() {
         }
         if (corruptedPlans.empty()) {
             LOG(INFO) << "No corrupted plan need to recovery!";
-            return true;
+            return cpp2::ErrorCode::SUCCEEDED;
         }
         CHECK_EQ(1, corruptedPlans.size());
         plan_ = std::make_unique<BalancePlan>(corruptedPlans[0], kv_, client_.get());
@@ -100,15 +113,20 @@ bool Balancer::recovery() {
             auto self = plan_;
             {
                 std::lock_guard<std::mutex> lg(lock_);
+                if (LastUpdateTimeMan::update(kv_, time::WallClock::fastNowInMilliSec()) !=
+                        kvstore::ResultCode::SUCCEEDED) {
+                    LOG(INFO) << "Balance plan " << plan_->id() << " update meta failed";
+                }
                 finish();
             }
         };
-        if (!plan_->recovery()) {
+        auto recRet = plan_->recovery();
+        if (recRet != cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << "Can't recovery plan " << corruptedPlans[0];
-            return false;
+            return recRet;
         }
     }
-    return true;
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
 bool Balancer::getAllSpaces(std::vector<GraphSpaceID>& spaces, kvstore::ResultCode& retCode) {
@@ -151,20 +169,21 @@ cpp2::ErrorCode Balancer::buildBalancePlan(std::vector<HostAddr> hostDel) {
         auto self = plan_;
         {
             std::lock_guard<std::mutex> lg(lock_);
+            if (LastUpdateTimeMan::update(kv_, time::WallClock::fastNowInMilliSec()) !=
+                    kvstore::ResultCode::SUCCEEDED) {
+                LOG(INFO) << "Balance plan " << plan_->id() << " update meta failed";
+            }
             finish();
         }
     };
     if (plan_->tasks_.empty()) {
         return cpp2::ErrorCode::E_BALANCED;
     }
-    if (!plan_->saveInStore()) {
-        return cpp2::ErrorCode::E_STORE_FAILURE;
-    }
-    return cpp2::ErrorCode::SUCCEEDED;
+    return plan_->saveInStore();
 }
 
 ErrorOr<cpp2::ErrorCode, std::vector<BalanceTask>>
-Balancer::genTasks(GraphSpaceID spaceId, std::vector<HostAddr>& lost) {
+Balancer::genTasks(GraphSpaceID spaceId, std::vector<HostAddr>& hostDel) {
     CHECK(!!plan_) << "plan should not be nullptr";
     std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
     int32_t totalParts = 0;
@@ -176,21 +195,21 @@ Balancer::genTasks(GraphSpaceID spaceId, std::vector<HostAddr>& lost) {
     }
     auto activeHosts = ActiveHostsMan::getActiveHosts(kv_);
     std::vector<HostAddr> newlyAdded;
-    calDiff(hostParts, activeHosts, newlyAdded, lost);
+    calDiff(hostParts, activeHosts, newlyAdded, hostDel);
     decltype(hostParts) newHostParts(hostParts);
     for (auto& h : newlyAdded) {
         LOG(INFO) << "Found new host " << h;
         newHostParts.emplace(h, std::vector<PartitionID>());
     }
-    for (auto& h : lost) {
+    for (auto& h : hostDel) {
         LOG(INFO) << "Lost host " << h;
         newHostParts.erase(h);
     }
     LOG(INFO) << "Now, try to balance the newHostParts";
-    // We have two parts need to balance, the first one is parts on lost hosts
+    // We have two parts need to balance, the first one is parts on lost hosts and deleted hosts
     // The seconds one is parts on unbalanced host in newHostParts.
     std::vector<BalanceTask> tasks;
-    for (auto& h : lost) {
+    for (auto& h : hostDel) {
         auto& lostParts = hostParts[h];
         for (auto& partId : lostParts) {
             auto srcRet = hostWithPart(newHostParts, partId);
@@ -205,12 +224,14 @@ Balancer::genTasks(GraphSpaceID spaceId, std::vector<HostAddr>& lost) {
             }
             auto& luckyHost = ret.value();
             newHostParts[luckyHost].emplace_back(partId);
+            // we need to check whether src is lived
+            bool srcLived = ActiveHostsMan::isLived(kv_, h);
             tasks.emplace_back(plan_->id_,
                                spaceId,
                                partId,
                                h,
                                luckyHost,
-                               false,
+                               srcLived,
                                kv_,
                                client_.get());
         }
@@ -385,9 +406,12 @@ StatusOr<HostAddr> Balancer::hostWithMinimalParts(
 }
 
 cpp2::ErrorCode Balancer::leaderBalance() {
+    if (running_) {
+        return cpp2::ErrorCode::E_BALANCER_RUNNING;
+    }
+
     folly::Promise<Status> promise;
     auto future = promise.getFuture();
-
     std::vector<GraphSpaceID> spaces;
     kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
     if (!getAllSpaces(spaces, ret)) {

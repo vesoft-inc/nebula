@@ -36,6 +36,11 @@ void BalanceTask::invoke() {
         onError_();
         return;
     }
+    if (ret_ == Result::SUCCEEDED) {
+        CHECK(status_ == Status::END);
+        onFinished_();
+        return;
+    }
     switch (status_) {
         case Status::START: {
             LOG(INFO) << taskIdStr_ << "Start to move part!";
@@ -43,6 +48,7 @@ void BalanceTask::invoke() {
             ret_ = Result::IN_PROGRESS;
             startTimeMs_ = time::WallClock::fastNowInMilliSec();
         }
+        // fallthrough
         case Status::CHANGE_LEADER: {
             LOG(INFO) << taskIdStr_ << "Ask the src to give up the leadership.";
             SAVE_STATE();
@@ -66,6 +72,7 @@ void BalanceTask::invoke() {
                 status_ = Status::ADD_PART_ON_DST;
             }
         }
+        // fallthrough
         case Status::ADD_PART_ON_DST: {
             LOG(INFO) << taskIdStr_ << "Open the part as learner on dst.";
             SAVE_STATE();
@@ -166,7 +173,6 @@ void BalanceTask::invoke() {
                         LOG(INFO) << taskIdStr_ << "Remove part failed, status " << resp;
                         ret_ = Result::FAILED;
                     } else {
-                        ret_ = Result::SUCCEEDED;
                         status_ = Status::CHECK;
                     }
                     invoke();
@@ -177,6 +183,7 @@ void BalanceTask::invoke() {
                 status_ = Status::CHECK;
             }
         }
+        // fallthrough
         case Status::CHECK: {
             LOG(INFO) << taskIdStr_ << "Check the peers...";
             SAVE_STATE();
@@ -185,7 +192,6 @@ void BalanceTask::invoke() {
                     LOG(INFO) << taskIdStr_ << "Check the peers failed, status " << resp;
                     ret_ = Result::FAILED;
                 } else {
-                    ret_ = Result::SUCCEEDED;
                     status_ = Status::END;
                 }
                 invoke();
@@ -195,6 +201,7 @@ void BalanceTask::invoke() {
         case Status::END: {
             LOG(INFO) << taskIdStr_ <<  "Part has been moved successfully!";
             endTimeMs_ = time::WallClock::fastNowInSec();
+            ret_ = Result::SUCCEEDED;
             SAVE_STATE();
             onFinished_();
             break;

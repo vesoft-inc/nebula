@@ -90,6 +90,16 @@ kvstore::ResultCode QueryVertexPropsProcessor::collectVertexProps(
         }
         VLOG(3) << "Found tag " << tagId << " for vId" << vId;
 
+        auto schema = this->schemaMan_->getTagSchema(spaceId_, tagId);
+        auto reader = RowReader::getTagPropReader(this->schemaMan_, val, spaceId_, tagId);
+        // Check if ttl data expired
+        auto retTTL = getTagTTLInfo(tagId);
+        if (retTTL.has_value() && checkDataExpiredForTTL(schema.get(),
+                                                         reader.get(),
+                                                         retTTL.value().first,
+                                                         retTTL.value().second)) {
+            continue;
+        }
         auto valStr = val.str();
         if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
             vertexCache_->insert(std::make_pair(vId, tagId),

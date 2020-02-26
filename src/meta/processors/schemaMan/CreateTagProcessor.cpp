@@ -21,7 +21,7 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
             LOG(ERROR) << "Failed to create tag `" << tagName
                        << "': some edge with the same name already exists.";
             resp_.set_id(to(conflictRet.value(), EntryType::TAG));
-            resp_.set_code(cpp2::ErrorCode::E_CONFLICT);
+            handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
             onFinished();
             return;
         }
@@ -31,10 +31,10 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
     auto ret = getTagId(req.get_space_id(), tagName);
     if (ret.ok()) {
         if (req.get_if_not_exists()) {
-            resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+            handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
         } else {
             LOG(ERROR) << "Create Tag Failed :" << tagName << " has existed";
-            resp_.set_code(cpp2::ErrorCode::E_EXISTED);
+            handleErrorCode(cpp2::ErrorCode::E_EXISTED);
         }
         resp_.set_id(to(ret.value(), EntryType::TAG));
         onFinished();
@@ -44,7 +44,7 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
     auto tagRet = autoIncrementId();
     if (!nebula::ok(tagRet)) {
         LOG(ERROR) << "Create tag failed : Get tag id failed";
-        resp_.set_code(nebula::error(tagRet));
+        handleErrorCode(nebula::error(tagRet));
         onFinished();
         return;
     }
@@ -67,7 +67,7 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
                     if (value->getType() != nebula::cpp2::Value::Type::bool_value) {
                         LOG(ERROR) << "Create Tag Failed: " << name
                                    << " type mismatch";
-                        resp_.set_code(cpp2::ErrorCode::E_CONFLICT);
+                        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
                         onFinished();
                         return;
                     }
@@ -77,7 +77,7 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
                     if (value->getType() != nebula::cpp2::Value::Type::int_value) {
                         LOG(ERROR) << "Create Tag Failed: " << name
                                    << " type mismatch";
-                        resp_.set_code(cpp2::ErrorCode::E_CONFLICT);
+                        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
                         onFinished();
                         return;
                     }
@@ -87,7 +87,7 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
                     if (value->getType() != nebula::cpp2::Value::Type::double_value) {
                         LOG(ERROR) << "Create Tag Failed: " << name
                                    << " type mismatch";
-                        resp_.set_code(cpp2::ErrorCode::E_CONFLICT);
+                        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
                         onFinished();
                         return;
                     }
@@ -97,7 +97,7 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
                     if (value->getType() != nebula::cpp2::Value::Type::string_value) {
                         LOG(ERROR) << "Create Tag Failed: " << name
                                    << " type mismatch";
-                        resp_.set_code(cpp2::ErrorCode::E_CONFLICT);
+                        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
                         onFinished();
                         return;
                     }
@@ -107,7 +107,7 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
                     if (value->getType() != nebula::cpp2::Value::Type::timestamp) {
                         LOG(ERROR) << "Create Tag Failed: " << name
                                    << " type mismatch";
-                        resp_.set_code(cpp2::ErrorCode::E_CONFLICT);
+                        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
                         onFinished();
                         return;
                     }
@@ -128,10 +128,9 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
     }
 
     LOG(INFO) << "Create Tag " << tagName << ", TagID " << tagId;
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_id(to(tagId, EntryType::TAG));
-    LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
-    doPut(std::move(data));
+    doSyncPutAndUpdate(std::move(data));
 }
 
 }  // namespace meta

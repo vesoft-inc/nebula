@@ -125,6 +125,9 @@ public:
                                        std::string&& prefix,
                                        std::unique_ptr<KVIterator>* iter) = delete;
 
+    virtual ResultCode sync(GraphSpaceID spaceId,
+                            PartitionID partId) = 0;
+
     virtual void asyncMultiPut(GraphSpaceID spaceId,
                                PartitionID  partId,
                                std::vector<KV> keyValues,

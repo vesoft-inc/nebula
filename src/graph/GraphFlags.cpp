@@ -10,7 +10,7 @@
 DEFINE_int32(port, 3699, "Nebula Graph daemon's listen port");
 DEFINE_int32(client_idle_timeout_secs, 0,
                 "Seconds before we close the idle connections, 0 for infinite");
-DEFINE_int32(session_idle_timeout_secs, 600,
+DEFINE_int32(session_idle_timeout_secs, 0,
                 "Seconds before we expire the idle sessions, 0 for infinite");
 DEFINE_int32(session_reclaim_interval_secs, 10, "Period we try to reclaim expired sessions");
 DEFINE_int32(num_netio_threads, 0,
@@ -29,3 +29,6 @@ DEFINE_bool(daemonize, true, "Whether run as a daemon process");
 DEFINE_string(meta_server_addrs, "", "list of meta server addresses,"
                                      "the format looks like ip1:port1, ip2:port2, ip3:port3");
 DEFINE_bool(local_config, false, "meta client will not retrieve latest configuration from meta");
+
+DEFINE_string(default_charset, "utf8", "The default charset when a space is created");
+DEFINE_string(default_collate, "utf8_bin", "The default collate when a space is created");
