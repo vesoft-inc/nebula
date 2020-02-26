@@ -52,8 +52,10 @@
 ## 获取帮助
 
 在使用 **Nebula Graph** 过程中遇到任何问题，都可以通过下面的方式寻求帮助：
+
 * [知乎](https://www.zhihu.com/org/nebulagraph/activities)
 * [SegmentFault](https://segmentfault.com/t/nebula)
+* [官方论坛](https://discuss.nebula-graph.io)
 
 ## 文档
 
