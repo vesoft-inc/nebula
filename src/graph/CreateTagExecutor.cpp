@@ -16,10 +16,14 @@ CreateTagExecutor::CreateTagExecutor(Sentence *sentence,
                                      ExecutionContext *ectx)
     : Executor(ectx, "create_tag") {
     sentence_ = static_cast<CreateTagSentence*>(sentence);
+    exprCtx_ = std::make_unique<ExpressionContext>();
 }
 
 
 Status CreateTagExecutor::prepare() {
+    for (auto spec : sentence_->columnSpecs()) {
+        spec->setContext(exprCtx_.get());
+    }
     return Status::OK();
 }
 

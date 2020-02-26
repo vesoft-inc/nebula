@@ -44,7 +44,9 @@ FileBasedWal::FileBasedWal(const folly::StringPiece dir,
         , preProcessor_(std::move(preProcessor)) {
     // Make sure WAL directory exist
     if (FileUtils::fileType(dir_.c_str()) == fs::FileType::NOTEXIST) {
-        FileUtils::makeDir(dir_);
+        if (!FileUtils::makeDir(dir_)) {
+            LOG(FATAL) << "MakeDIR " << dir_ << " failed";
+        }
     }
 
     scanAllWalFiles();
