@@ -52,16 +52,33 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     auto spaceName = properties.get_space_name();
     auto partitionNum = properties.get_partition_num();
     auto replicaFactor = properties.get_replica_factor();
+    auto charsetName = properties.get_charset_name();
+    auto collateName = properties.get_collate_name();
+
+    // Use default values or values from meta's configuration file
     if (partitionNum == 0) {
         partitionNum = FLAGS_default_parts_num;
+        if (partitionNum <= 0) {
+            LOG(ERROR) << "Create Space Failed : partition_num is illegal!";
+              resp_.set_code(cpp2::ErrorCode::E_INVALID_PARTITION_NUM);
+              onFinished();
+              return;
+        }
         // Set the default value back to the struct, which will be written to storage
         properties.set_partition_num(partitionNum);
     }
     if (replicaFactor == 0) {
         replicaFactor = FLAGS_default_replica_factor;
+        if (replicaFactor <= 0) {
+            LOG(ERROR) << "Create Space Failed : replicaFactor is illegal!";
+              resp_.set_code(cpp2::ErrorCode::E_INVALID_REPLICA_FACTOR);
+              onFinished();
+              return;
+        }
         // Set the default value back to the struct, which will be written to storage
         properties.set_replica_factor(replicaFactor);
     }
+
     VLOG(3) << "Create space " << spaceName << ", id " << spaceId;
     if ((int32_t)hosts.size() < replicaFactor) {
         LOG(ERROR) << "Not enough hosts existed for replica "
