@@ -51,6 +51,8 @@ Status ExecutionEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExec
     storage_ = std::make_unique<storage::StorageClient>(ioExecutor,
                                                         metaClient_.get(),
                                                         "graph");
+    charsetInfo_ = CharsetInfo::instance();
+
     return Status::OK();
 }
 
@@ -59,7 +61,8 @@ void ExecutionEngine::execute(RequestContextPtr rctx) {
                                                    schemaManager_.get(),
                                                    gflagsManager_.get(),
                                                    storage_.get(),
-                                                   metaClient_.get());
+                                                   metaClient_.get(),
+                                                   charsetInfo_);
     // TODO(dutor) add support to plan cache
     auto plan = new ExecutionPlan(std::move(ectx));
 

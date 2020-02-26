@@ -14,21 +14,22 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
     auto spaceRet = getSpaceId(req.get_space_name());
 
     if (!spaceRet.ok()) {
-        resp_.set_code(req.get_if_exists() ? cpp2::ErrorCode::SUCCEEDED : to(spaceRet.status()));
+        handleErrorCode(req.get_if_exists() ? cpp2::ErrorCode::SUCCEEDED :
+                                             MetaCommon::to(spaceRet.status()));
         onFinished();
         return;
     }
 
     auto spaceId = spaceRet.value();
     VLOG(3) << "Drop space " << req.get_space_name() << ", id " << spaceId;
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     std::vector<std::string> deleteKeys;
 
     auto prefix = MetaServiceUtils::partPrefix(spaceId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        resp_.set_code(to(ret));
+        handleErrorCode(MetaCommon::to(ret));
         onFinished();
         return;
     }
