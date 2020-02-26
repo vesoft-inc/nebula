@@ -23,8 +23,11 @@ UpdateEdgeExecutor::UpdateEdgeExecutor(Sentence *sentence,
     sentence_ = static_cast<UpdateEdgeSentence*>(sentence);
 }
 
-
 Status UpdateEdgeExecutor::prepare() {
+    return Status::OK();
+}
+
+Status UpdateEdgeExecutor::prepareData() {
     DCHECK(sentence_ != nullptr);
     Status status = Status::OK();
 
@@ -242,6 +245,12 @@ void UpdateEdgeExecutor::insertReverselyEdge(storage::cpp2::UpdateResponse &&rpc
 
 void UpdateEdgeExecutor::execute() {
     FLOG_INFO("Executing UpdateEdge: %s", sentence_->toString().c_str());
+    auto status = prepareData();
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(status));
+        return;
+    }
     std::string filterStr = filter_ ? Expression::encode(filter_) : "";
     auto returns = getReturnColumns();
     auto future = ectx()->getStorageClient()->updateEdge(spaceId_,
