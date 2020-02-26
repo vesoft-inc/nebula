@@ -106,10 +106,6 @@ public:
 
     void finish() {
         CHECK(!lock_.try_lock());
-        if (LastUpdateTimeMan::update(kv_, time::WallClock::fastNowInMilliSec()) !=
-                kvstore::ResultCode::SUCCEEDED) {
-            LOG(INFO) << "Balance plan " << plan_->id() << " update meta failed";
-        }
         plan_.reset();
         running_ = false;
     }
@@ -128,7 +124,7 @@ private:
     /*
      * When the balancer failover, we should recovery the status.
      * */
-    bool recovery();
+    cpp2::ErrorCode recovery();
 
     /**
      * Build balance plan and save it in kvstore.

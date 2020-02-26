@@ -99,7 +99,13 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
         , dataPath_(folly::stringPrintf("%s/nebula/%d", dataPath.c_str(), spaceId)) {
     auto path = folly::stringPrintf("%s/data", dataPath_.c_str());
     if (FileUtils::fileType(path.c_str()) == FileType::NOTEXIST) {
-        FileUtils::makeDir(path);
+        if (!FileUtils::makeDir(path)) {
+            LOG(FATAL) << "makeDir " << path << " failed";
+        }
+    }
+
+    if (FileUtils::fileType(path.c_str()) != FileType::DIRECTORY) {
+        LOG(FATAL) << path << " is not directory";
     }
 
     rocksdb::Options options;
@@ -133,6 +139,7 @@ ResultCode RocksEngine::commitBatchWrite(std::unique_ptr<WriteBatch> batch) {
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     }
+    LOG(ERROR) << "Write into rocksdb failed because of " << status.ToString();
     return ResultCode::ERR_UNKNOWN;
 }
 
@@ -467,7 +474,10 @@ ResultCode RocksEngine::createCheckpoint(const std::string& name) {
 
     auto parent = checkpointPath.substr(0, checkpointPath.rfind('/'));
     if (!FileUtils::exist(parent)) {
-        FileUtils::makeDir(parent);
+        if (!FileUtils::makeDir(parent)) {
+            LOG(ERROR) << "Make dir " << parent << " failed";
+            return ResultCode::ERR_UNKNOWN;
+        }
     }
 
     rocksdb::Checkpoint* checkpoint;
