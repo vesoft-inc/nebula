@@ -242,7 +242,7 @@ nebula> GO FROM hash("hercules") OVER father YIELD father._dst AS id | \
 GO FROM $-.id OVER lives;
 ```
 
-### Filter Condition
+### Has Filter Condition
 
 Name               | Gremlin | nGQL           |
 -----              |---------|   -----       |
@@ -346,10 +346,89 @@ gremlin> g.V(pluto).out('brother').order().by('age', decr).valueMap();
 nebula> GO FROM hash('pluto') OVER brother YIELD $$.character.name AS Name, $$.character.age as Age | ORDER BY Age DESC;
 ```
 
+### Group By
 
-LOOKUP ON character WHERE character.name== "pluto" YIELD character.name AS name | \
+Name               | Gremlin | nGQL           |
+-----              |---------|   -----       |
+Group by items | group().by()    | GROUP BY         |
+Remove repeated items | dedup() | \ |
+Group by items and count | groupCount() | GROUP BY COUNT  |
+
+**Note:** The GROUP BY functions can only be applied in the YIELD clause.
+
+```bash
+# Group vertices by label then count
+gremlin> g.V().group().by(label).by(count());
+nebula> # coming soon
+
+# Find vertex jupiter's out adjacency vertices, group by name, then count
+gremlin> g.V(jupiter).out().group().by('name').by(count());
+nebula> GO FROM hash('jupiter') OVER * YIELD $$.character.name AS Name, $$.character.age as Age, $$.location.name | \
+GROUP BY $-.Name YIELD $-.Name, COUNT(*);
+```
+
+### Where Filter Condition
+
+Name               | Gremlin | nGQL           |
+-----              |---------|   -----       |
+Where filter condition | where()    | WHERE         |
+
+Predicates comparison:
+
+Name               | Gremlin | nGQL           |
+-----              |---------|   -----       |
+Equal to | eq(object)    | ==         |
+Not equal to | neq(object)   | !=         |
+Less than | lt(number)    | <         |
+Less than or equal to | lte(number)    | <=        |
+Greater than | gt(number)    | >       |
+Greater than or equal to | gte(number)    | >=         |
+Whether a value is within the array | within(objects…​)    | udf_is_in()         |
+
+```bash
+gremlin> eq(2).test(3);
+nebula> YIELD 3 == 2;
+
+gremlin> within('a','b','c').test('d');
+nebula> YIELD udf_is_in('d', 'a', 'b', 'c');
+```
+
+```bash
+# Find pluto's co-habitants and exclude himself
+gremlin> g.V(pluto).out('lives').in('lives').where(is(neq(pluto))).values('name');
+nebula> GO FROM hash("pluto") OVER lives YIELD lives._dst AS place | GO FROM $-.place OVER lives REVERSELY WHERE \
+$$.character.name != "pluto" YIELD $$.character.name AS cohabitants;
+```
+
+### Logical Operators
+
+Name               | Gremlin | nGQL           |
+-----              |---------|   -----       |
+Is | is()    | ==         |
+Not | not()    | !=         |
+And | and()    | AND         |
+Or | or()    | OR         |
+
+```bash
+# Find age greater than or equal to 30
+gremlin> g.V().values('age').is(gte(30));
+nebula> LOOKUP ON character WHERE character.age >= 30 YIELD character.age;
+
+# Find character with name pluto and age 4000
+gremlin> g.V().has('name','pluto').and().has('age',4000);
+nebula> LOOKUP ON character WHERE character.name == 'pluto' AND character.age == 4000;
+
+# Logical not
+gremlin> g.V().has('name','pluto').out('brother').not(values('name').is('neptune')).values('name');
+nebula> LOOKUP ON character WHERE character.name == 'pluto' YIELD character.name AS name | \
+GO FROM $-.VertexID OVER brother WHERE $$.character.name != 'neptune' YIELD $$.character.name;
+```
+
+
+
+
+LOOKUP ON character WHERE character.age >= 30 YIELD character.age AS name | \
     GO FROM $-.VertexID OVER relation YIELD $-.name, relation.name, $$.entity.name
-
 
 
 

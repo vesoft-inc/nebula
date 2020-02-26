@@ -242,7 +242,7 @@ nebula> GO FROM hash("hercules") OVER father YIELD father._dst AS id | \
 GO FROM $-.id OVER lives;
 ```
 
-### 条件过滤
+### has 条件过滤
 
 名称               | Gremlin | nGQL           |
 -----              |---------|   -----       |
@@ -345,6 +345,88 @@ nebula> FIND SHORTEST PATH FROM hash('pluto') TO hash('saturn') OVER * UPTO 3 ST
 gremlin> g.V(pluto).out('brother').order().by('age', decr).valueMap();
 nebula> GO FROM hash('pluto') OVER brother YIELD $$.character.name AS Name, $$.character.age as Age | ORDER BY Age DESC;
 ```
+
+### Group By
+
+名称               | Gremlin | nGQL           |
+-----              |---------|   -----       |
+对结果集进行分组 | group().by()    | GROUP BY         |
+去除相同元素 | dedup() | \ |
+对结果集进行分组并统计 | groupCount() | GROUP BY COUNT  |
+
+**注意：** GROUP BY 函数只能与 YIELD 语句一起使用。
+
+```bash
+# 根据顶点类别进行分组并统计各个类别的数量
+gremlin> g.V().group().by(label).by(count());
+nebula> # coming soon
+
+# 查询点 jupiter 出边邻点，使用 name 分组并统计
+gremlin> g.V(jupiter).out().group().by('name').by(count());
+nebula> GO FROM hash('jupiter') OVER * YIELD $$.character.name AS Name, $$.character.age as Age, $$.location.name | \
+GROUP BY $-.Name YIELD $-.Name, COUNT(*);
+```
+
+### where 条件过滤
+
+名称               | Gremlin | nGQL           |
+-----              |---------|   -----       |
+where 条件过滤 | where()    | WHERE         |
+
+过滤条件对比：
+
+名称               | Gremlin | nGQL           |
+-----              |---------|   -----       |
+等于 | eq(object)    | ==         |
+不等于 | neq(object)   | !=         |
+小于 | lt(number)    | <         |
+小于等于 | lte(number)    | <=        |
+大于 | gt(number)    | >       |
+大于等于 | gte(number)    | >=         |
+判断值是否在指定的列表中 | within(objects…​)    | udf_is_in()         |
+
+```bash
+gremlin> eq(2).test(3);
+nebula> YIELD 3 == 2;
+
+gremlin> within('a','b','c').test('d');
+nebula> YIELD udf_is_in('d', 'a', 'b', 'c');
+```
+
+```bash
+# 找出 pluto 和谁住并排队他本人
+gremlin> g.V(pluto).out('lives').in('lives').where(is(neq(pluto))).values('name');
+nebula> GO FROM hash("pluto") OVER lives YIELD lives._dst AS place | GO FROM $-.place OVER lives REVERSELY WHERE \
+$$.character.name != "pluto" YIELD $$.character.name AS cohabitants;
+```
+
+### 逻辑运算
+
+名称               | Gremlin | nGQL           |
+-----              |---------|   -----       |
+Is | is()    | ==         |
+Not | not()    | !=         |
+And | and()    | AND         |
+Or | or()    | OR         |
+
+```bash
+# 查询年龄大于 30 的人物
+gremlin> g.V().values('age').is(gte(30));
+nebula> LOOKUP ON character WHERE character.age >= 30 YIELD character.age;
+
+# 查询名称为 pluto 且年龄为 4000 的人物
+gremlin> g.V().has('name','pluto').and().has('age',4000);
+nebula> LOOKUP ON character WHERE character.name == 'pluto' AND character.age == 4000;
+
+# 逻辑非的用法
+gremlin> g.V().has('name','pluto').out('brother').not(values('name').is('neptune')).values('name');
+nebula> LOOKUP ON character WHERE character.name == 'pluto' YIELD character.name AS name | \
+GO FROM $-.VertexID OVER brother WHERE $$.character.name != 'neptune' YIELD $$.character.name;
+```
+
+
+
+
 
 
 
