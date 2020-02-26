@@ -8,6 +8,7 @@
 #define META_BASEPROCESSOR_H_
 
 #include "base/Base.h"
+#include "charset/Charset.h"
 #include <folly/futures/Promise.h>
 #include <folly/futures/Future.h>
 #include <folly/SharedMutex.h>
