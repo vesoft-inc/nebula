@@ -6,6 +6,8 @@
 # the format of publish version is 'version-release'
 version=""
 rpmbuilddir=""
+enablesanitizer="OFF"
+buildtype="Release"
 
 prefix="/usr/local/nebula"
 bindir="$prefix/bin"
@@ -15,7 +17,7 @@ sharedir="$prefix/share"
 resourcesdir="$sharedir/resources"
 
 # parsing arguments
-while getopts v:p: opt;
+while getopts v:p:d opt;
 do
     case $opt in
         v)
@@ -23,6 +25,10 @@ do
             ;;
         p)
             rpmbuilddir=$OPTARG
+            ;;
+        d)
+            enablesanitizer="ON"
+            buildtype="RelWithDebInfo"
             ;;
         ?)
             echo "Invalid option, use default arguments"
@@ -64,4 +70,6 @@ rpmbuild -D"_topdir $rpmbuilddir" -D"_bindir $bindir" \
          -D"_sharedir $sharedir" -D"_resourcesdir $resourcesdir" \
          -D"_version $rpm_version" -D"_release $rpm_release" \
          -D"_install_dir $prefix" \
+         -D"_enable_san $enablesanitizer" \
+         -D"_buildtype $buildtype" \
          -ba nebula.spec
