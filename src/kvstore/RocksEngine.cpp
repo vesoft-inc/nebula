@@ -139,6 +139,7 @@ ResultCode RocksEngine::commitBatchWrite(std::unique_ptr<WriteBatch> batch) {
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     }
+    LOG(ERROR) << "Write into rocksdb failed because of " << status.ToString();
     return ResultCode::ERR_UNKNOWN;
 }
 
