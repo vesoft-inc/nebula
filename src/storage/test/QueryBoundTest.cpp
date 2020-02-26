@@ -203,6 +203,9 @@ void checkResponse(cpp2::QueryResponse& resp,
 
 void checkSamplingResponse(cpp2::QueryResponse& resp,
                            int32_t vertexNum,
+                           int32_t edgeFields,
+                           int32_t dstIdStart,
+                           int32_t dstIdEnd,
                            int32_t edgeNum) {
     EXPECT_EQ(0, resp.result.failed_codes.size());
 
@@ -213,6 +216,7 @@ void checkSamplingResponse(cpp2::QueryResponse& resp,
 
     auto* eschema = resp.get_edge_schema();
     DCHECK(eschema != nullptr);
+
 
     std::unordered_map<EdgeType, std::shared_ptr<ResultSchemaProvider>> schema;
 
@@ -232,12 +236,47 @@ void checkSamplingResponse(cpp2::QueryResponse& resp,
 
         EXPECT_EQ(3, size);
 
+        checkTagData<int64_t>(vp.tag_data, 3001, "tag_3001_col_0", vschema, vp.vertex_id + 3001);
+        checkTagData<int64_t>(vp.tag_data, 3003, "tag_3003_col_2", vschema,
+                              vp.vertex_id + 3003 + 2);
+        checkTagData<std::string>(vp.tag_data, 3005, "tag_3005_col_4", vschema,
+                                  folly::stringPrintf("tag_string_col_4"));
+
         for (auto& ep : vp.edge_data) {
             auto it2 = schema.find(ep.type);
             DCHECK(it2 != schema.end());
             auto provider = it2->second;
-            EXPECT_LE(edgeNum, ep.get_edges().size());
-            totalEdges += ep.get_edges().size();
+            int32_t rowNum = 0;
+            for (auto& edge : ep.get_edges()) {
+                auto dst = edge.get_dst();
+                VLOG(1) << "Check edge " << vp.vertex_id << " -> " << dst << " props...";
+                CHECK_LE(dstIdStart, dst);
+                CHECK_GE(dstIdEnd, dst);
+                auto reader = RowReader::getRowReader(edge.props, provider);
+                DCHECK(reader != nullptr);
+                EXPECT_EQ(edgeFields, reader->numFields() + 1);
+                {
+                    // _rank
+                    int64_t v;
+                    EXPECT_EQ(ResultType::SUCCEEDED, reader->getInt<int64_t>(0, v));
+                    CHECK_EQ(0, v);
+                }
+                // col_0, col_2 ... col_8
+                for (auto i = 1; i < 6; i++) {
+                    int64_t v;
+                    EXPECT_EQ(ResultType::SUCCEEDED, reader->getInt<int64_t>(i, v));
+                    CHECK_EQ((i - 1) * 2 + dst, v);
+                }
+                // col_10, col_12 ... col_18
+                for (auto i = 6; i < 11; i++) {
+                    folly::StringPiece v;
+                    EXPECT_EQ(ResultType::SUCCEEDED, reader->getString(i, v));
+                    CHECK_EQ(folly::stringPrintf("string_col_%d_%d", (i - 6 + 5) * 2, 2), v);
+                }
+                rowNum++;
+            }
+            EXPECT_EQ(edgeNum, rowNum);
+            totalEdges += rowNum;
         }
     }
     EXPECT_EQ(totalEdges, *resp.get_total_edges());
@@ -567,7 +606,7 @@ TEST(QueryBoundTest, SamplingTest) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    checkSamplingResponse(resp, 30, FLAGS_max_edge_returned_per_vertex);
+    checkSamplingResponse(resp, 30, 12, 10001, 10007, FLAGS_max_edge_returned_per_vertex);
     FLAGS_max_edge_returned_per_vertex = old_max_edge_returned;
 }
 }  // namespace storage

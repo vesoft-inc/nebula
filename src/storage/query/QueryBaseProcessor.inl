@@ -494,11 +494,11 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
     bool onlyStructure = onlyStructures_[edgeType];
     Getters getters;
     std::unique_ptr<nebula::algorithm::ReservoirSampling<
-        std::pair<std::unique_ptr<RowReader>, folly::StringPiece>>> sampler;
+        std::pair<std::unique_ptr<RowReader>, std::string>>> sampler;
     if (FLAGS_enable_reservoir_sampling) {
         sampler = std::make_unique<
             nebula::algorithm::ReservoirSampling<
-                std::pair<std::unique_ptr<RowReader>, folly::StringPiece>
+                std::pair<std::unique_ptr<RowReader>, std::string>
             >
         >(FLAGS_max_edge_returned_per_vertex);
     }
@@ -600,7 +600,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
         }
 
         if (FLAGS_enable_reservoir_sampling) {
-            sampler->sampling(std::make_pair(std::move(reader), std::move(key)));
+            sampler->sampling(std::make_pair(std::move(reader), key.str()));
         } else {
             proc(reader.get(), key, props);
         }
