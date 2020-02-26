@@ -424,11 +424,12 @@ nebula> LOOKUP ON character WHERE character.name == 'pluto' YIELD character.name
 GO FROM $-.VertexID OVER brother WHERE $$.character.name != 'neptune' YIELD $$.character.name;
 ```
 
+### Patterns
 
+TODO
 
-
-LOOKUP ON character WHERE character.age >= 30 YIELD character.age AS name | \
-    GO FROM $-.VertexID OVER relation YIELD $-.name, relation.name, $$.entity.name
+<!-- LOOKUP ON character WHERE character.age >= 30 YIELD character.age AS name | \
+    GO FROM $-.VertexID OVER relation YIELD $-.name, relation.name, $$.entity.name -->
 
 
 
