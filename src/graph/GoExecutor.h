@@ -61,6 +61,8 @@ private:
 
     Status addToEdgeTypes(EdgeType type);
 
+    Status checkNeededProps();
+
     /**
      * To check if this is the final step.
      */
