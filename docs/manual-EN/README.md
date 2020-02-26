@@ -24,7 +24,6 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
   * [Ingest .sst File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/download-and-ingest-sst-file.md)
   * [Nebula Graph Clients](1.overview/2.quick-start/3.supported-clients.md)
 
-
 * Design and Architecture
   * [Design Overview](1.overview/3.design-and-architecture/1.design-and-architecture.md)
   * [Storage Architecture](1.overview/3.design-and-architecture/2.storage-design.md)
@@ -66,6 +65,7 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
     * [Drop Space Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/drop-space-syntax.md)
     * [Drop Tag Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/drop-tag-syntax.md)
     * [Index](2.query-language/4.statement-syntax/1.data-definition-statements/index.md)
+    * [TTL (time-to-live)](2.query-language/4.statement-syntax/1.data-definition-statements/TTL.md)
   * Data Query and Manipulation Statements
     * [Delete Edge Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/delete-edge-syntax.md)
     * [Delete Vertex Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/delete-vertex-syntax.md)
