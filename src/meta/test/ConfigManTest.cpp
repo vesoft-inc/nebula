@@ -578,7 +578,8 @@ TEST(ConfigManTest, RocksdbOptionsTest) {
                                                     storagePort,
                                                     true);
 
-    auto ret = mClient->createSpace("storage", 9, 1).get();
+    SpaceDesc spaceDesc("storage", 9, 1);
+    auto ret = mClient->createSpace(spaceDesc).get();
     ASSERT_TRUE(ret.ok());
     auto spaceId = ret.value();
     sleep(FLAGS_heartbeat_interval_secs + 1);

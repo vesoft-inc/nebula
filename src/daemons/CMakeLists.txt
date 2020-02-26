@@ -27,6 +27,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:meta_gflags_man_obj>
         $<TARGET_OBJECTS:gflags_man_obj>
         $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:charset_obj>
         $<TARGET_OBJECTS:thread_obj>
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:base_obj>
@@ -116,6 +117,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:thread_obj>
         $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:charset_obj>
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:base_obj>
     LIBRARIES

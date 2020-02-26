@@ -41,8 +41,13 @@ enum ErrorCode {
     E_NO_VALID_HOST             = -37,
     E_CORRUPTTED_BALANCE_PLAN   = -38,
 
-    E_INVALID_PASSWORD       = -41,
-    E_INPROPER_ROLE          = -42,
+    E_INVALID_PASSWORD          = -41,
+    E_INPROPER_ROLE             = -42,
+    E_INVALID_PARTITION_NUM     = -43,
+    E_INVALID_REPLICA_FACTOR    = -44,
+    E_INVALID_CHARSET           = -45,
+    E_INVALID_COLLATE           = -46,
+    E_CHARSET_COLLATE_NOT_MATCH = -47,
 
     E_SNAPSHOT_FAILURE   = -51,
 
@@ -92,6 +97,8 @@ struct SpaceProperties {
     1: string               space_name,
     2: i32                  partition_num,
     3: i32                  replica_factor,
+    4: string               charset_name,
+    5: string               collate_name,
 }
 
 struct SpaceItem {
