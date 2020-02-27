@@ -37,6 +37,8 @@ public:
     void showCreateTagIndex();
     void showCreateEdgeIndex();
     void showSnapshots();
+    void showCharset();
+    void showCollation();
 
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 

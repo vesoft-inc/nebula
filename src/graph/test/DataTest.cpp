@@ -967,10 +967,11 @@ TEST_F(DataTest, InsertMultiVersionWithUUIDTest) {
     }
 }
 
-TEST_F(DataTest, FindTest) {
+TEST_F(DataTest, LookupTest) {
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "FIND name FROM person";
+        std::string cmd = "LOOKUP ON person where person.name == \"Tony\" "
+                          "YIELD person.name, person.age";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }

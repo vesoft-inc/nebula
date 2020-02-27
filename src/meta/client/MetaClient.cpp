@@ -482,7 +482,6 @@ std::vector<SpaceIdName> MetaClient::toSpaceIdName(const std::vector<cpp2::IdNam
     return idNames;
 }
 
-
 template<typename RESP>
 Status MetaClient::handleResponse(const RESP& resp) {
     switch (resp.get_code()) {
@@ -500,7 +499,7 @@ Status MetaClient::handleResponse(const RESP& resp) {
             return Status::Error("conflict!");
         case cpp2::ErrorCode::E_WRONGCLUSTER:
             return Status::Error("wrong cluster!");
-        case cpp2::ErrorCode::E_LEADER_CHANGED: {
+        case cpp2::ErrorCode::E_LEADER_CHANGED:
             return Status::LeaderChanged("Leader changed!");
         case cpp2::ErrorCode::E_BALANCED:
             return Status::Error("The cluster is balanced!");
@@ -514,7 +513,16 @@ Status MetaClient::handleResponse(const RESP& resp) {
             return Status::Error("No valid host hold the partition");
         case cpp2::ErrorCode::E_CORRUPTTED_BALANCE_PLAN:
             return Status::Error("No corrupted blance plan");
-        }
+        case cpp2::ErrorCode::E_INVALID_PARTITION_NUM:
+            return Status::Error("No valid partition_num");
+        case cpp2::ErrorCode::E_INVALID_REPLICA_FACTOR:
+            return Status::Error("No valid replica_factor");
+        case cpp2::ErrorCode::E_INVALID_CHARSET:
+            return Status::Error("No valid charset");
+        case cpp2::ErrorCode::E_INVALID_COLLATE:
+            return Status::Error("No valid collate");
+        case cpp2::ErrorCode::E_CHARSET_COLLATE_NOT_MATCH:
+            return Status::Error("Charset and collate not match");
         default:
             return Status::Error("Unknown code %d", static_cast<int32_t>(resp.get_code()));
     }
@@ -557,7 +565,7 @@ void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
         const auto& newParts = it->second;
         auto oldIt = oldPartsMap.find(spaceId);
         if (oldIt == oldPartsMap.end()) {
-            VLOG(1) << "SpaceId " << spaceId << " was added!";
+            LOG(INFO) << "SpaceId " << spaceId << " was added!";
             listener_->onSpaceAdded(spaceId);
             for (auto partIt = newParts.begin(); partIt != newParts.end(); partIt++) {
                 listener_->onPartAdded(partIt->second);
@@ -588,7 +596,7 @@ void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
         const auto& oldParts = it->second;
         auto newIt = newPartsMap.find(spaceId);
         if (newIt == newPartsMap.end()) {
-            VLOG(1) << "SpaceId " << spaceId << " was removed!";
+            LOG(INFO) << "SpaceId " << spaceId << " was removed!";
             for (auto partIt = oldParts.begin(); partIt != oldParts.end(); partIt++) {
                 listener_->onPartRemoved(spaceId, partIt->first);
             }
@@ -610,14 +618,15 @@ void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
 
 /// ================================== public methods =================================
 
-folly::Future<StatusOr<GraphSpaceID>> MetaClient::createSpace(std::string name,
-                                                              int32_t partsNum,
-                                                              int32_t replicaFactor,
+folly::Future<StatusOr<GraphSpaceID>> MetaClient::createSpace(SpaceDesc spaceDesc,
                                                               bool ifNotExists) {
     cpp2::SpaceProperties properties;
-    properties.set_space_name(std::move(name));
-    properties.set_partition_num(partsNum);
-    properties.set_replica_factor(replicaFactor);
+    properties.set_space_name(std::move(spaceDesc.spaceName_));
+    properties.set_partition_num(spaceDesc.partNum_);
+    properties.set_replica_factor(spaceDesc.replicaFactor_);
+    properties.set_charset_name(std::move(spaceDesc.charsetName_));
+    properties.set_collate_name(std::move(spaceDesc.collationName_));
+
     cpp2::CreateSpaceReq req;
     req.set_properties(std::move(properties));
     req.set_if_not_exists(ifNotExists);
@@ -639,6 +648,21 @@ folly::Future<StatusOr<std::vector<SpaceIdName>>> MetaClient::listSpaces() {
                     return client->future_listSpaces(request);
                 }, [this] (cpp2::ListSpacesResp&& resp) -> decltype(auto) {
                     return this->toSpaceIdName(resp.get_spaces());
+                }, std::move(promise));
+    return future;
+}
+
+folly::Future<StatusOr<cpp2::AdminJobResult>>
+MetaClient::submitJob(cpp2::AdminJobOp op, std::vector<std::string> paras) {
+    cpp2::AdminJobReq req;
+    req.set_op(op);
+    req.set_paras(std::move(paras));
+    folly::Promise<StatusOr<cpp2::AdminJobResult>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_runAdminJob(request);
+                }, [] (cpp2::AdminJobResp&& resp) -> decltype(auto) {
+                    return resp.get_result();
                 }, std::move(promise));
     return future;
 }
@@ -1732,9 +1756,6 @@ MetaClient::regConfig(const std::vector<cpp2::ConfigItem>& items) {
 
 folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
 MetaClient::getConfig(const cpp2::ConfigModule& module, const std::string& name) {
-    if (!configReady_) {
-        return Status::Error("Not ready!");
-    }
     cpp2::ConfigItem item;
     item.set_module(module);
     item.set_name(name);
@@ -1753,9 +1774,6 @@ MetaClient::getConfig(const cpp2::ConfigModule& module, const std::string& name)
 folly::Future<StatusOr<bool>>
 MetaClient::setConfig(const cpp2::ConfigModule& module, const std::string& name,
                       const cpp2::ConfigType& type, const std::string& value) {
-    if (!configReady_) {
-        return Status::Error("Not ready!");
-    }
     cpp2::ConfigItem item;
     item.set_module(module);
     item.set_name(name);
@@ -1776,9 +1794,6 @@ MetaClient::setConfig(const cpp2::ConfigModule& module, const std::string& name,
 
 folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
 MetaClient::listConfigs(const cpp2::ConfigModule& module) {
-    if (!configReady_) {
-        return Status::Error("Not ready!");
-    }
     cpp2::ListConfigsReq req;
     req.set_module(module);
     folly::Promise<StatusOr<std::vector<cpp2::ConfigItem>>> promise;

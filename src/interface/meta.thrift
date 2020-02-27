@@ -41,10 +41,18 @@ enum ErrorCode {
     E_NO_VALID_HOST             = -37,
     E_CORRUPTTED_BALANCE_PLAN   = -38,
 
-    E_INVALID_PASSWORD       = -41,
-    E_INPROPER_ROLE          = -42,
+    E_INVALID_PASSWORD          = -41,
+    E_INPROPER_ROLE             = -42,
+    E_INVALID_PARTITION_NUM     = -43,
+    E_INVALID_REPLICA_FACTOR    = -44,
+    E_INVALID_CHARSET           = -45,
+    E_INVALID_COLLATE           = -46,
+    E_CHARSET_COLLATE_NOT_MATCH = -47,
 
-    E_SNAPSHOT_FAILURE   = -51;
+    E_SNAPSHOT_FAILURE   = -51,
+
+    E_INDEX_CONFLICT = -61,
+    E_INDEX_WITH_TTL = -62,
 
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)
@@ -89,6 +97,8 @@ struct SpaceProperties {
     1: string               space_name,
     2: i32                  partition_num,
     3: i32                  replica_factor,
+    4: string               charset_name,
+    5: string               collate_name,
 }
 
 struct SpaceItem {
@@ -170,6 +180,69 @@ struct CreateSpaceReq {
 struct DropSpaceReq {
     1: string space_name,
     2: bool if_exists,
+}
+
+enum AdminJobOp {
+    ADD         = 0x01,
+    SHOW_All    = 0x02,
+    SHOW        = 0x03,
+    STOP        = 0x04,
+    RECOVER     = 0x05,
+    INVALID     = 0xFF,
+} (cpp.enum_strict)
+
+struct AdminJobReq {
+    1: AdminJobOp   op
+    2: list<string> paras;
+}
+
+enum JobStatus {
+    QUEUE           = 0x01,
+    RUNNING         = 0x02,
+    FINISHED        = 0x03,
+    FAILED          = 0x04,
+    STOPPED         = 0x05,
+    INVALID         = 0xFF,
+} (cpp.enum_strict)
+
+struct JobDesc {
+    1: i32          id
+    2: string       cmd
+    3: list<string> paras
+    4: JobStatus    status
+    5: i64          start_time
+    6: i64          stop_time
+}
+
+struct TaskDesc {
+    1: i32              task_id
+    2: common.HostAddr  host
+    3: JobStatus        status
+    4: i64              start_time
+    5: i64              stop_time
+    6: i32              job_id
+}
+
+struct AdminJobResult {
+    // used in a new added job, e.g. "flush" "compact"
+    // other job type which also need jobId in their result
+    // will use other filed. e.g. JobDesc::id
+    1: optional i32                 job_id
+
+    // used in "show jobs" and "show job <id>"
+    2: optional list<JobDesc>       job_desc
+
+    // used in "show job <id>"
+    3: optional list<TaskDesc>      task_desc
+
+    // used in "recover job"
+    4: optional i32                 recovered_job_num
+}
+
+struct AdminJobResp {
+    1: ErrorCode                    code
+    2: common.HostAddr              leader
+    3: AdminJobResult               result
 }
 
 struct ListSpacesReq {
@@ -699,5 +772,6 @@ service MetaService {
     ExecResp createSnapshot(1: CreateSnapshotReq req);
     ExecResp dropSnapshot(1: DropSnapshotReq req);
     ListSnapshotsResp listSnapshots(1: ListSnapshotsReq req);
+    AdminJobResp runAdminJob(1: AdminJobReq req);
 }
 

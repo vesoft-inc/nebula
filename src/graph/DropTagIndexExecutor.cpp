@@ -34,7 +34,7 @@ void DropTagIndexExecutor::execute() {
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
             DCHECK(onError_);
-            onError_(Status::Error("Index not found for tag '%s'",
+            onError_(Status::Error("Index \"%s\" not found",
                                    sentence_->indexName()->c_str()));
             return;
         }
