@@ -5,6 +5,8 @@
  */
 
 #include "datatypes/Value.h"
+#include "datatypes/Map.h"
+#include "datatypes/List.h"
 
 namespace nebula {
 
@@ -14,52 +16,52 @@ Value::Value(Value&& rhs) : type_(Value::Type::__EMPTY__) {
     switch (rhs.type_) {
         case Type::NULLVALUE:
         {
-            value_.nVal = std::move(rhs.value_.nVal);
+            setN(std::move(rhs.value_.nVal));
             break;
         }
         case Type::BOOL:
         {
-            value_.bVal = std::move(rhs.value_.bVal);
+            setB(std::move(rhs.value_.bVal));
             break;
         }
         case Type::INT:
         {
-            value_.iVal = std::move(rhs.value_.iVal);
+            setI(std::move(rhs.value_.iVal));
             break;
         }
         case Type::FLOAT:
         {
-            value_.fVal = std::move(rhs.value_.fVal);
+            setF(std::move(rhs.value_.fVal));
             break;
         }
         case Type::STRING:
         {
-            value_.sVal = std::move(rhs.value_.sVal);
+            setS(std::move(rhs.value_.sVal));
             break;
         }
         case Type::DATE:
         {
-            value_.dVal = std::move(rhs.value_.dVal);
+            setD(std::move(rhs.value_.dVal));
             break;
         }
         case Type::DATETIME:
         {
-            value_.tVal = std::move(rhs.value_.tVal);
+            setT(std::move(rhs.value_.tVal));
             break;
         }
         case Type::PATH:
         {
-            value_.pVal = std::move(rhs.value_.pVal);
+            setP(std::move(rhs.value_.pVal));
             break;
         }
         case Type::LIST:
         {
-            value_.lVal = std::move(rhs.value_.lVal);
+            setL(std::move(rhs.value_.lVal));
             break;
         }
         case Type::MAP:
         {
-            value_.mVal = std::move(rhs.value_.mVal);
+            setM(std::move(rhs.value_.mVal));
             break;
         }
         default:
@@ -68,7 +70,6 @@ Value::Value(Value&& rhs) : type_(Value::Type::__EMPTY__) {
             break;
         }
     }
-    type_ = rhs.type_;
     rhs.clear();
 }
 
@@ -79,54 +80,52 @@ Value::Value(const Value& rhs) : type_(Value::Type::__EMPTY__) {
     switch (rhs.type_) {
         case Type::NULLVALUE:
         {
-            value_.nVal = rhs.value_.nVal;
+            setN(rhs.value_.nVal);
             break;
         }
         case Type::BOOL:
         {
-            value_.bVal = rhs.value_.bVal;
+            setB(rhs.value_.bVal);
             break;
         }
         case Type::INT:
         {
-            value_.iVal = rhs.value_.iVal;
+            setI(rhs.value_.iVal);
             break;
         }
         case Type::FLOAT:
         {
-            value_.fVal = rhs.value_.fVal;
+            setF(rhs.value_.fVal);
             break;
         }
         case Type::STRING:
         {
-            value_.sVal = rhs.value_.sVal;
+            setS(rhs.value_.sVal);
             break;
         }
         case Type::DATE:
         {
-            value_.dVal = rhs.value_.dVal;
+            setD(rhs.value_.dVal);
             break;
         }
         case Type::DATETIME:
         {
-            value_.tVal = rhs.value_.tVal;
+            setT(rhs.value_.tVal);
             break;
         }
         case Type::PATH:
         {
-            value_.pVal = rhs.value_.pVal;
+            setP(rhs.value_.pVal);
             break;
         }
         case Type::LIST:
         {
-            value_.lVal = std::make_unique<List>();
-            *value_.lVal = *rhs.value_.lVal;
+            setL(rhs.value_.lVal);
             break;
         }
         case Type::MAP:
         {
-            value_.mVal = std::make_unique<Map>();
-            *value_.mVal = *rhs.value_.mVal;
+            setM(rhs.value_.mVal);
             break;
         }
         default:
@@ -135,273 +134,205 @@ Value::Value(const Value& rhs) : type_(Value::Type::__EMPTY__) {
             break;
         }
     }
-    type_ = rhs.type_;
 }
 
-Value::Value(NullType v) : type_(Value::Type::NULLVALUE) {
-    value_.nVal = v;
+Value::Value(const NullType& v) {
+    setN(v);
 }
 
-Value::Value(bool v) : type_(Value::Type::BOOL) {
-    value_.bVal = v;
+Value::Value(NullType&& v) {
+    setN(std::move(v));
 }
 
-Value::Value(int64_t v) : type_(Value::Type::INT) {
-    value_.iVal = v;
+Value::Value(const bool& v) {
+    setB(v);
 }
 
-Value::Value(double v) : type_(Value::Type::FLOAT) {
-    value_.fVal = v;
+Value::Value(bool&& v) {
+    setB(std::move(v));
 }
 
-Value::Value(const std::string& v) : type_(Value::Type::STRING) {
-    value_.sVal = v;
+Value::Value(const double& v) {
+    setF(v);
 }
 
-Value::Value(std::string&& v) : type_(Value::Type::STRING) {
-    value_.sVal = std::move(v);
+Value::Value(double&& v) {
+    setF(std::move(v));
 }
 
-Value::Value(const Date& v) : type_(Value::Type::DATE) {
-    value_.dVal = v;
+Value::Value(const std::string& v) {
+    setS(v);
 }
 
-Value::Value(Date&& v) : type_(Value::Type::DATE) {
-    value_.dVal = std::move(v);
+Value::Value(std::string&& v) {
+    setS(std::move(v));
 }
 
-Value::Value(const DateTime& v) : type_(Value::Type::DATETIME) {
-    value_.tVal = v;
+Value::Value(const Date& v) {
+    setD(v);
 }
 
-Value::Value(DateTime&& v) : type_(Value::Type::DATETIME) {
-    value_.tVal = std::move(v);
+Value::Value(Date&& v) {
+    setD(std::move(v));
 }
 
-Value::Value(const Path& v) : type_(Value::Type::PATH) {
-    value_.pVal = v;
+Value::Value(const DateTime& v) {
+    setT(v);
 }
 
-Value::Value(Path&& v) : type_(Value::Type::PATH) {
-    value_.pVal = std::move(v);
+Value::Value(DateTime&& v) {
+    setT(std::move(v));
 }
 
-Value::Value(const List& v) : type_(Value::Type::LIST) {
-    value_.lVal = std::make_unique<List>(v);
+Value::Value(const Path& v) {
+    setP(v);
 }
 
-Value::Value(List&& v) : type_(Value::Type::LIST) {
-    value_.lVal = std::make_unique<List>(std::move(v));
+Value::Value(Path&& v) {
+    setP(std::move(v));
 }
 
-Value::Value(const Map& v) : type_(Value::Type::MAP) {
-    value_.mVal = std::make_unique<Map>(v);
+Value::Value(const List& v) {
+    auto c = std::make_unique<List>(v);
+    setL(std::move(c));
 }
 
-Value::Value(Map&& v) : type_(Value::Type::MAP) {
-    value_.mVal = std::make_unique<Map>(std::move(v));
+Value::Value(List&& v) {
+    setL(std::make_unique<List>(std::move(v)));
 }
 
-
-Value& Value::operator=(NullType v) {
-    set(v);
-    return *this;
+Value::Value(const Map& v) {
+    auto c = std::make_unique<Map>(v);
+    setM(std::move(c));
 }
 
-Value& Value::operator=(bool v) {
-    set(v);
-    return *this;
-}
-
-Value& Value::operator=(int64_t v) {
-    set(v);
-    return *this;
-}
-
-Value& Value::operator=(double v) {
-    set(v);
-    return *this;
-}
-
-Value& Value::operator=(const std::string& v) {
-    set(v);
-    return *this;
-}
-
-Value& Value::operator=(std::string&& v) {
-    set(std::move(v));
-    return *this;
-}
-
-Value& Value::operator=(const Date& v) {
-    set(v);
-    return *this;
-}
-
-Value& Value::operator=(Date&& v) {
-    set(std::move(v));
-    return *this;
-}
-
-Value& Value::operator=(const DateTime& v) {
-    set(v);
-    return *this;
-}
-
-Value& Value::operator=(DateTime&& v) {
-    set(std::move(v));
-    return *this;
-}
-
-Value& Value::operator=(const Path& v) {
-    set(v);
-    return *this;
-}
-
-Value& Value::operator=(Path&& v) {
-    set(std::move(v));
-    return *this;
-}
-
-Value& Value::operator=(const List& v) {
-    set(v);
-    return *this;
-}
-
-Value& Value::operator=(List&& v) {
-    set(std::move(v));
-    return *this;
-}
-
-Value& Value::operator=(const Map& v) {
-    set(v);
-    return *this;
-}
-
-Value& Value::operator=(Map&& v) {
-    set(std::move(v));
-    return *this;
+Value::Value(Map&& v) {
+    setM(std::make_unique<Map>(std::move(v)));
 }
 
 
-void Value::set(NullType v) {
+void Value::setNull(const NullType& v) {
     clear();
-    type_ = Type::NULLVALUE;
-    value_.nVal = v;
+    setN(v);
 }
 
-void Value::set(bool v) {
+void Value::setNull(NullType&& v) {
     clear();
-    type_ = Type::BOOL;
-    value_.bVal = v;
+    setN(std::move(v));
 }
 
-void Value::set(int64_t v) {
+void Value::setBool(const bool& v) {
     clear();
-    type_ = Type::INT;
-    value_.iVal = v;
+    setB(v);
 }
 
-void Value::set(double v) {
+void Value::setBool(bool&& v) {
     clear();
-    type_ = Type::FLOAT;
-    value_.fVal = v;
+    setB(std::move(v));
 }
 
-void Value::set(const std::string& v) {
+void Value::setInt(const int64_t& v) {
     clear();
-    type_ = Type::STRING;
-    value_.sVal = v;
+    setI(v);
 }
 
-void Value::set(std::string&& v) {
+void Value::setInt(int64_t&& v) {
     clear();
-    type_ = Type::STRING;
-    value_.sVal = std::move(v);
+    setI(std::move(v));
 }
 
-void Value::set(const Date& v) {
+void Value::setFloat(const double& v) {
     clear();
-    type_ = Type::DATE;
-    value_.dVal = v;
+    setF(v);
 }
 
-void Value::set(Date&& v) {
+void Value::setFloat(double&& v) {
     clear();
-    type_ = Type::DATE;
-    value_.dVal = std::move(v);
+    setF(std::move(v));
 }
 
-void Value::set(const DateTime& v) {
+void Value::setStr(const std::string& v) {
     clear();
-    type_ = Type::DATETIME;
-    value_.tVal = v;
+    setS(v);
 }
 
-void Value::set(DateTime&& v) {
+void Value::setStr(std::string&& v) {
     clear();
-    type_ = Type::DATETIME;
-    value_.tVal = v;
+    setS(std::move(v));
 }
 
-void Value::set(const Path& v) {
+void Value::setDate(const Date& v) {
     clear();
-    type_ = Type::PATH;
-    value_.pVal = v;
+    setD(v);
 }
 
-void Value::set(Path&& v) {
+void Value::setDate(Date&& v) {
     clear();
-    type_ = Type::PATH;
-    value_.pVal = std::move(v);
+    setD(std::move(v));
 }
 
-void Value::set(const List& v) {
+void Value::setDateTime(const DateTime& v) {
     clear();
-    type_ = Type::LIST;
-    value_.lVal = std::make_unique<List>(v);
+    setT(v);
 }
 
-void Value::set(List&& v) {
+void Value::setDateTime(DateTime&& v) {
     clear();
-    type_ = Type::LIST;
-    value_.lVal = std::make_unique<List>(std::move(v));
+    setT(std::move(v));
 }
 
-void Value::set(const Map& v) {
+void Value::setPath(const Path& v) {
     clear();
-    type_ = Type::MAP;
-    value_.mVal = std::make_unique<Map>(v);
+    setP(v);
 }
 
-void Value::set(Map&& v) {
+void Value::setPath(Path&& v) {
     clear();
-    type_ = Type::MAP;
-    value_.mVal = std::make_unique<Map>(std::move(v));
+    setP(std::move(v));
+}
+
+void Value::setList(const List& v) {
+    clear();
+    setL(v);
+}
+
+void Value::setList(List&& v) {
+    clear();
+    setL(std::move(v));
+}
+
+void Value::setMap(const Map& v) {
+    clear();
+    setM(v);
+}
+
+void Value::setMap(Map&& v) {
+    clear();
+    setM(std::move(v));
 }
 
 
-NullType Value::getNullType() const {
+const NullType& Value::getNull() const {
     CHECK_EQ(type_, Type::NULLVALUE);
     return value_.nVal;
 }
 
-bool Value::getBool() const {
+const bool& Value::getBool() const {
     CHECK_EQ(type_, Type::BOOL);
     return value_.bVal;
 }
 
-int64_t Value::getInt() const {
+const int64_t& Value::getInt() const {
     CHECK_EQ(type_, Type::INT);
     return value_.iVal;
 }
 
-double Value::getDouble() const {
+const double& Value::getFloat() const {
     CHECK_EQ(type_, Type::FLOAT);
     return value_.fVal;
 }
 
-const std::string& Value::getString() const {
+const std::string& Value::getStr() const {
     CHECK_EQ(type_, Type::STRING);
     return value_.sVal;
 }
@@ -432,44 +363,125 @@ const Map& Value::getMap() const {
 }
 
 
-std::string Value::moveString() {
+NullType& Value::mutableNull() {
+    CHECK_EQ(type_, Type::NULLVALUE);
+    return value_.nVal;
+}
+
+bool& Value::mutableBool() {
+    CHECK_EQ(type_, Type::BOOL);
+    return value_.bVal;
+}
+
+int64_t& Value::mutableInt() {
+    CHECK_EQ(type_, Type::INT);
+    return value_.iVal;
+}
+
+double& Value::mutableFloat() {
+    CHECK_EQ(type_, Type::FLOAT);
+    return value_.fVal;
+}
+
+std::string& Value::mutableStr() {
     CHECK_EQ(type_, Type::STRING);
-    type_ = Type::__EMPTY__;
-    return std::move(value_.sVal);
+    return value_.sVal;
+}
+
+Date& Value::mutableDate() {
+    CHECK_EQ(type_, Type::DATE);
+    return value_.dVal;
+}
+
+DateTime& Value::mutableDateTime() {
+    CHECK_EQ(type_, Type::DATETIME);
+    return value_.tVal;
+}
+
+Path& Value::mutablePath() {
+    CHECK_EQ(type_, Type::PATH);
+    return value_.pVal;
+}
+
+List& Value::mutableList() {
+    CHECK_EQ(type_, Type::LIST);
+    return *(value_.lVal);
+}
+
+Map& Value::mutableMap() {
+    CHECK_EQ(type_, Type::MAP);
+    return *(value_.mVal);
+}
+
+
+NullType Value::moveNull() {
+    CHECK_EQ(type_, Type::NULLVALUE);
+    NullType v = std::move(value_.nVal);
+    clear();
+    return std::move(v);
+}
+
+bool Value::moveBool() {
+    CHECK_EQ(type_, Type::BOOL);
+    bool v = std::move(value_.bVal);
+    clear();
+    return std::move(v);
+}
+
+int64_t Value::moveInt() {
+    CHECK_EQ(type_, Type::INT);
+    int64_t v = std::move(value_.iVal);
+    clear();
+    return std::move(v);
+}
+
+double Value::moveFloat() {
+    CHECK_EQ(type_, Type::FLOAT);
+    double v = std::move(value_.fVal);
+    clear();
+    return std::move(v);
+}
+
+std::string Value::moveStr() {
+    CHECK_EQ(type_, Type::STRING);
+    std::string v = std::move(value_.sVal);
+    clear();
+    return std::move(v);
 }
 
 Date Value::moveDate() {
     CHECK_EQ(type_, Type::DATE);
-    type_ = Type::__EMPTY__;
-    return std::move(value_.dVal);
+    Date v = std::move(value_.dVal);
+    clear();
+    return std::move(v);
 }
 
 DateTime Value::moveDateTime() {
     CHECK_EQ(type_, Type::DATETIME);
-    type_ = Type::__EMPTY__;
-    return std::move(value_.tVal);
+    DateTime v = std::move(value_.tVal);
+    clear();
+    return std::move(v);
 }
 
 Path Value::movePath() {
     CHECK_EQ(type_, Type::PATH);
-    type_ = Type::__EMPTY__;
-    return std::move(value_.pVal);
+    Path v = std::move(value_.pVal);
+    clear();
+    return std::move(v);
 }
 
 List Value::moveList() {
     CHECK_EQ(type_, Type::LIST);
-    type_ = Type::__EMPTY__;
     List list = std::move(*(value_.lVal));
-    destruct(value_.lVal);
-    return list;
+    clear();
+    return std::move(list);
 }
 
 Map Value::moveMap() {
     CHECK_EQ(type_, Type::MAP);
-    type_ = Type::__EMPTY__;
     Map map = std::move(*(value_.mVal));
-    destruct(value_.mVal);
-    return map;
+    clear();
+    return std::move(map);
 }
 
 
@@ -526,6 +538,10 @@ bool Value::operator==(const Value& rhs) const {
 
 void Value::clear() {
     switch (type_) {
+        case Type::__EMPTY__:
+        {
+            return;
+        }
         case Type::NULLVALUE:
         {
             destruct(value_.nVal);
@@ -576,11 +592,6 @@ void Value::clear() {
             destruct(value_.mVal);
             break;
         }
-        default:
-        {
-            assert(false);
-            break;
-        }
     }
     type_ = Type::__EMPTY__;
 }
@@ -593,52 +604,52 @@ Value& Value::operator=(Value&& rhs) {
     switch (rhs.type_) {
         case Type::NULLVALUE:
         {
-            value_.nVal = std::move(rhs.value_.nVal);
+            setN(std::move(rhs.value_.nVal));
             break;
         }
         case Type::BOOL:
         {
-            value_.bVal = std::move(rhs.value_.bVal);
+            setB(std::move(rhs.value_.bVal));
             break;
         }
         case Type::INT:
         {
-            value_.iVal = std::move(rhs.value_.iVal);
+            setI(std::move(rhs.value_.iVal));
             break;
         }
         case Type::FLOAT:
         {
-            value_.fVal = std::move(rhs.value_.fVal);
+            setF(std::move(rhs.value_.fVal));
             break;
         }
         case Type::STRING:
         {
-            value_.sVal = std::move(rhs.value_.sVal);
+            setS(std::move(rhs.value_.sVal));
             break;
         }
         case Type::DATE:
         {
-            value_.dVal = std::move(rhs.value_.dVal);
+            setD(std::move(rhs.value_.dVal));
             break;
         }
         case Type::DATETIME:
         {
-            value_.tVal = std::move(rhs.value_.tVal);
+            setT(std::move(rhs.value_.tVal));
             break;
         }
         case Type::PATH:
         {
-            value_.pVal = std::move(rhs.value_.pVal);
+            setP(std::move(rhs.value_.pVal));
             break;
         }
         case Type::LIST:
         {
-            value_.lVal = std::move(rhs.value_.lVal);
+            setL(std::move(rhs.value_.lVal));
             break;
         }
         case Type::MAP:
         {
-            value_.mVal = std::move(rhs.value_.mVal);
+            setM(std::move(rhs.value_.mVal));
             break;
         }
         default:
@@ -647,7 +658,6 @@ Value& Value::operator=(Value&& rhs) {
             break;
         }
     }
-    type_ = rhs.type_;
     rhs.clear();
     return *this;
 }
@@ -655,59 +665,58 @@ Value& Value::operator=(Value&& rhs) {
 
 Value& Value::operator=(const Value& rhs) {
     if (this == &rhs) { return *this; }
+    if (this == &rhs) { return *this; }
     clear();
     if (rhs.type_ == Type::__EMPTY__) { return *this; }
     switch (rhs.type_) {
         case Type::NULLVALUE:
         {
-            value_.nVal = rhs.value_.nVal;
+            setN(rhs.value_.nVal);
             break;
         }
         case Type::BOOL:
         {
-            value_.bVal = rhs.value_.bVal;
+            setB(rhs.value_.bVal);
             break;
         }
         case Type::INT:
         {
-            value_.iVal = rhs.value_.iVal;
+            setI(rhs.value_.iVal);
             break;
         }
         case Type::FLOAT:
         {
-            value_.fVal = rhs.value_.fVal;
+            setF(rhs.value_.fVal);
             break;
         }
         case Type::STRING:
         {
-            value_.sVal = rhs.value_.sVal;
+            setS(rhs.value_.sVal);
             break;
         }
         case Type::DATE:
         {
-            value_.dVal = rhs.value_.dVal;
+            setD(rhs.value_.dVal);
             break;
         }
         case Type::DATETIME:
         {
-            value_.tVal = rhs.value_.tVal;
+            setT(rhs.value_.tVal);
             break;
         }
         case Type::PATH:
         {
-            value_.pVal = rhs.value_.pVal;
+            setP(rhs.value_.pVal);
             break;
         }
         case Type::LIST:
         {
-            value_.lVal = std::make_unique<List>();
-            *value_.lVal = *rhs.value_.lVal;
+            setL(rhs.value_.lVal);
             break;
         }
         case Type::MAP:
         {
-            value_.mVal = std::make_unique<Map>();
-            *value_.mVal = *rhs.value_.mVal;
+            setM(rhs.value_.mVal);
             break;
         }
         default:
@@ -718,6 +727,127 @@ Value& Value::operator=(const Value& rhs) {
     }
     type_ = rhs.type_;
     return *this;
+}
+
+
+void Value::setN(const NullType& v) {
+    type_ = Type::NULLVALUE;
+    new (std::addressof(value_.nVal)) NullType(v);
+}
+
+void Value::setN(NullType&& v) {
+    type_ = Type::NULLVALUE;
+    new (std::addressof(value_.nVal)) NullType(std::move(v));
+}
+
+void Value::setB(const bool& v) {
+    type_ = Type::BOOL;
+    new (std::addressof(value_.bVal)) bool(v);                  // NOLINT
+}
+
+void Value::setB(bool&& v) {
+    type_ = Type::BOOL;
+    new (std::addressof(value_.bVal)) bool(std::move(v));       // NOLINT
+}
+
+void Value::setI(const int64_t& v) {
+    type_ = Type::INT;
+    new (std::addressof(value_.iVal)) int64_t(v);               // NOLINT
+}
+
+void Value::setI(int64_t&& v) {
+    type_ = Type::INT;
+    new (std::addressof(value_.iVal)) int64_t(std::move(v));    // NOLINT
+}
+
+void Value::setF(const double& v) {
+    type_ = Type::FLOAT;
+    new (std::addressof(value_.fVal)) double(v);                // NOLINT
+}
+
+void Value::setF(double&& v) {
+    type_ = Type::FLOAT;
+    new (std::addressof(value_.fVal)) double(std::move(v));     // NOLINT
+}
+
+void Value::setS(const std::string& v) {
+    type_ = Type::STRING;
+    new (std::addressof(value_.sVal)) std::string(v);
+}
+
+void Value::setS(std::string&& v) {
+    type_ = Type::STRING;
+    new (std::addressof(value_.sVal)) std::string(std::move(v));
+}
+
+void Value::setD(const Date& v) {
+    type_ = Type::DATE;
+    new (std::addressof(value_.dVal)) Date(v);
+}
+
+void Value::setD(Date&& v) {
+    type_ = Type::DATE;
+    new (std::addressof(value_.dVal)) Date(std::move(v));
+}
+
+void Value::setT(const DateTime& v) {
+    type_ = Type::DATETIME;
+    new (std::addressof(value_.tVal)) DateTime(v);
+}
+
+void Value::setT(DateTime&& v) {
+    type_ = Type::DATETIME;
+    new (std::addressof(value_.tVal)) DateTime(std::move(v));
+}
+
+void Value::setP(const Path& v) {
+    type_ = Type::PATH;
+    new (std::addressof(value_.pVal)) Path(v);
+}
+
+void Value::setP(Path&& v) {
+    type_ = Type::PATH;
+    new (std::addressof(value_.pVal)) Path(std::move(v));
+}
+
+void Value::setL(const std::unique_ptr<List>& v) {
+    type_ = Type::LIST;
+    new (std::addressof(value_.lVal)) std::unique_ptr<List>(new List(*v));
+}
+
+void Value::setL(std::unique_ptr<List>&& v) {
+    type_ = Type::LIST;
+    new (std::addressof(value_.lVal)) std::unique_ptr<List>(std::move(v));
+}
+
+void Value::setL(const List& v) {
+    type_ = Type::LIST;
+    new (std::addressof(value_.lVal)) std::unique_ptr<List>(new List(v));
+}
+
+void Value::setL(List&& v) {
+    type_ = Type::LIST;
+    new (std::addressof(value_.lVal)) std::unique_ptr<List>(new List(std::move(v)));
+}
+
+void Value::setM(const std::unique_ptr<Map>& v) {
+    type_ = Type::MAP;
+    new (std::addressof(value_.mVal)) std::unique_ptr<Map>(new Map(*v));
+}
+
+void Value::setM(std::unique_ptr<Map>&& v) {
+    type_ = Type::MAP;
+    new (std::addressof(value_.mVal)) std::unique_ptr<Map>(std::move(v));
+}
+
+void Value::setM(const Map& v) {
+    type_ = Type::MAP;
+    new (std::addressof(value_.mVal)) std::unique_ptr<Map>(new Map(v));
+}
+
+void Value::setM(Map&& v) {
+    type_ = Type::MAP;
+    new (std::addressof(value_.mVal)) std::unique_ptr<Map>(new Map(std::move(v)));
 }
 
 

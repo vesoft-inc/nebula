@@ -17,6 +17,12 @@ struct Step {
     EdgeRanking ranking;
     VertexID dst;
 
+    void clear() {
+        type = 0;
+        ranking = 0;
+        dst.clear();
+    }
+
     bool operator==(const Step& rhs) const {
         return type == rhs.type &&
                ranking == rhs.ranking &&
@@ -28,6 +34,11 @@ struct Step {
 struct Path {
     VertexID src;
     std::vector<Step> steps;
+
+    void clear() {
+        src.clear();
+        steps.clear();
+    }
 
     bool operator==(const Path& rhs) const {
         return src == rhs.src &&

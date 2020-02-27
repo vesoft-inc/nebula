@@ -12,6 +12,16 @@
 #include "datatypes/Date.h"
 #include "datatypes/Path.h"
 
+namespace apache {
+namespace thrift {
+
+template<class T, class U>
+class Cpp2Ops;
+
+}  // namespace thrift
+}  // namespace apache
+
+
 namespace nebula {
 
 struct Map;
@@ -26,6 +36,8 @@ enum class NullType {
 
 
 struct Value {
+    friend class apache::thrift::Cpp2Ops<Value, void>;
+
     enum class Type {
         __EMPTY__ = 0,
         NULLVALUE = 1,
@@ -45,10 +57,12 @@ struct Value {
     Value(Value&& rhs);
     Value(const Value& rhs);
 
-    Value(NullType v);              // NOLINT
-    Value(bool v);                  // NOLINT
-    Value(int64_t v);               // NOLINT
-    Value(double v);                // NOLINT
+    Value(const NullType& v);       // NOLINT
+    Value(NullType&& v);            // NOLINT
+    Value(const bool& v);           // NOLINT
+    Value(bool&& v);                // NOLINT
+    Value(const double& v);         // NOLINT
+    Value(double&& v);              // NOLINT
     Value(const std::string& v);    // NOLINT
     Value(std::string&& v);         // NOLINT
     Value(const Date& v);           // NOLINT
@@ -61,65 +75,86 @@ struct Value {
     Value(List&& v);                // NOLINT
     Value(const Map& v);            // NOLINT
     Value(Map&& v);                 // NOLINT
+    // We need a template here to support multiple integer types
+    template<
+        typename T,
+        typename = typename std::enable_if<std::is_integral<T>::value>::type
+    >
+    Value(T&& v) {             // NOLINT
+        setI(std::forward<T>(v));
+    }
+
+    Type type() const noexcept {
+        return type_;
+    }
+
+    void clear();
 
     Value& operator=(Value&& rhs);
     Value& operator=(const Value& rhs);
 
-    Value& operator=(NullType v);
-    Value& operator=(bool v);
-    Value& operator=(int64_t v);
-    Value& operator=(double v);
-    Value& operator=(const std::string& v);
-    Value& operator=(std::string&& v);
-    Value& operator=(const Date& v);
-    Value& operator=(Date&& v);
-    Value& operator=(const DateTime& v);
-    Value& operator=(DateTime&& v);
-    Value& operator=(const Path& v);
-    Value& operator=(Path&& v);
-    Value& operator=(const List& v);
-    Value& operator=(List&& v);
-    Value& operator=(const Map& v);
-    Value& operator=(Map&& v);
+    void setNull(const NullType& v);
+    void setNull(NullType&& v);
+    void setBool(const bool& v);
+    void setBool(bool&& v);
+    void setInt(const int64_t& v);
+    void setInt(int64_t&& v);
+    void setFloat(const double& v);
+    void setFloat(double&& v);
+    void setStr(const std::string& v);
+    void setStr(std::string&& v);
+    void setDate(const Date& v);
+    void setDate(Date&& v);
+    void setDateTime(const DateTime& v);
+    void setDateTime(DateTime&& v);
+    void setPath(const Path& v);
+    void setPath(Path&& v);
+    void setList(const List& v);
+    void setList(List&& v);
+    void setMap(const Map& v);
+    void setMap(Map&& v);
+    // We need a template here to support multiple integer types
+    template<
+        typename T,
+        typename = typename std::enable_if<std::is_integral<T>::value>::type
+    >
+    void setInt(T&& v) {
+        clear();
+        setI(std::forward<T>(v));
+    }
 
-    void set(NullType v);
-    void set(bool v);
-    void set(int64_t v);
-    void set(double v);
-    void set(const std::string& v);
-    void set(std::string&& v);
-    void set(const Date& v);
-    void set(Date&& v);
-    void set(const DateTime& v);
-    void set(DateTime&& v);
-    void set(const Path& v);
-    void set(Path&& v);
-    void set(const List& v);
-    void set(List&& v);
-    void set(const Map& v);
-    void set(Map&& v);
-
-    NullType getNullType() const;
-    bool getBool() const;
-    int64_t getInt() const;
-    double getDouble() const;
-    const std::string& getString() const;
+    const NullType& getNull() const;
+    const bool& getBool() const;
+    const int64_t& getInt() const;
+    const double& getFloat() const;
+    const std::string& getStr() const;
     const Date& getDate() const;
     const DateTime& getDateTime() const;
     const Path& getPath() const;
     const List& getList() const;
     const Map& getMap() const;
 
-    std::string moveString();
+    NullType moveNull();
+    bool moveBool();
+    int64_t moveInt();
+    double moveFloat();
+    std::string moveStr();
     Date moveDate();
     DateTime moveDateTime();
     Path movePath();
     List moveList();
     Map moveMap();
 
-    Type type() const noexcept {
-        return type_;
-    }
+    NullType& mutableNull();
+    bool& mutableBool();
+    int64_t& mutableInt();
+    double& mutableFloat();
+    std::string& mutableStr();
+    Date& mutableDate();
+    DateTime& mutableDateTime();
+    Path& mutablePath();
+    List& mutableList();
+    Map& mutableMap();
 
     bool operator==(const Value& rhs) const;
 
@@ -152,56 +187,45 @@ private:
         (&val)->~T();
     }
 
-    void clear();
+    // Null value
+    void setN(const NullType& v);
+    void setN(NullType&& v);
+    // Bool value
+    void setB(const bool& v);
+    void setB(bool&& v);
+    // Integer value
+    void setI(const int64_t& v);
+    void setI(int64_t&& v);
+    // Double float value
+    void setF(const double& v);
+    void setF(double&& v);
+    // String value
+    void setS(const std::string& v);
+    void setS(std::string&& v);
+    // Date value
+    void setD(const Date& v);
+    void setD(Date&& v);
+    // DateTime value
+    void setT(const DateTime& v);
+    void setT(DateTime&& v);
+    // Path value
+    void setP(const Path& v);
+    void setP(Path&& v);
+    // List value
+    void setL(const std::unique_ptr<List>& v);
+    void setL(std::unique_ptr<List>&& v);
+    void setL(const List& v);
+    void setL(List&& v);
+    // Map value
+    void setM(const std::unique_ptr<Map>& v);
+    void setM(std::unique_ptr<Map>&& v);
+    void setM(const Map& v);
+    void setM(Map&& v);
 };
 
 void swap(Value& a, Value& b);
 
 std::ostream& operator<<(std::ostream& os, const Value::Type& type);
-
-
-struct Map {
-    std::unordered_map<std::string, Value> kvs;
-
-    Map() = default;
-    Map(const Map&) = default;
-    Map(Map&&) = default;
-
-    Map& operator=(const Map& rhs) {
-        kvs = rhs.kvs;
-        return *this;
-    }
-    Map& operator=(Map&& rhs) {
-        kvs = std::move(rhs.kvs);
-        return *this;
-    }
-
-    bool operator==(const Map& rhs) const {
-        return kvs == rhs.kvs;
-    }
-};
-
-
-struct List {
-    std::vector<Value> values;
-
-    List() = default;
-    List(const List&) = default;
-    List(List&&) = default;
-
-    List& operator=(const List& rhs) {
-        values = rhs.values;
-        return *this;
-    }
-    List& operator=(List&& rhs) {
-        values = std::move(rhs.values);
-        return *this;
-    }
-
-    bool operator==(const List& rhs) const {
-        return values == rhs.values;
-    }
-};
 
 }  // namespace nebula
 #endif  // DATATYPES_VALUE_H_

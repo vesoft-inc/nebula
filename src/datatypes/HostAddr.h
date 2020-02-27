@@ -21,6 +21,11 @@ struct HostAddr {
     HostAddr() : ip(0), port(0) {}
     HostAddr(IPv4 a, Port p) : ip(a), port(p) {}
 
+    void clear() {
+        ip = 0;
+        port = 0;
+    }
+
     bool operator==(const HostAddr& rhs) const;
 };
 

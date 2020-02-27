@@ -16,6 +16,12 @@ struct Date {
     int8_t month;
     int8_t day;
 
+    void clear() {
+        year = 0;
+        month = 0;
+        day = 0;
+    }
+
     bool operator==(const Date& rhs) const {
         return year == rhs.year &&
                month == rhs.month &&
@@ -33,6 +39,17 @@ struct DateTime {
     int8_t sec;
     int32_t microsec;
     int32_t timezone;
+
+    void clear() {
+        year = 0;
+        month = 0;
+        day = 0;
+        hour = 0;
+        minute = 0;
+        sec = 0;
+        microsec = 0;
+        timezone = 0;
+    }
 
     bool operator==(const DateTime& rhs) const {
         return year == rhs.year &&

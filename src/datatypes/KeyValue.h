@@ -26,6 +26,11 @@ struct KeyValue {
         : key(std::move(kv.first))
         , value(std::move(kv.second)) {}
 
+    void clear() {
+        key.clear();
+        value.clear();
+    }
+
     bool operator==(const KeyValue& rhs) const {
         if (key != rhs.key) {
             return false;

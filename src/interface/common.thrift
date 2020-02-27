@@ -10,11 +10,13 @@ namespace java com.vesoft.nebula
 namespace go nebula
 
 cpp_include "thrift/ThriftTypes.h"
-cpp_include "datatypes/Date.h"
-cpp_include "datatypes/Path.h"
-cpp_include "datatypes/Value.h"
-cpp_include "datatypes/KeyValue.h"
-cpp_include "datatypes/HostAddr.h"
+cpp_include "datatypes/DateOps.h"
+cpp_include "datatypes/PathOps.h"
+cpp_include "datatypes/ValueOps.h"
+cpp_include "datatypes/MapOps.h"
+cpp_include "datatypes/ListOps.h"
+cpp_include "datatypes/KeyValueOps.h"
+cpp_include "datatypes/HostAddrOps.h"
 
 /*
  *
@@ -88,10 +90,10 @@ union Value {
     4: double                               fVal;
     5: binary                               sVal;
     6: Date                                 dVal;
-    7: DateTime                             dtVal;
+    7: DateTime                             tVal;
     8: Path                                 pVal;
-    9: List (cpp.type = "nebula::List")     listVal (cpp.ref_type = "unique");
-    10: Map (cpp.type = "nebula::Map")      mapVal (cpp.ref_type = "unique");
+    9: List (cpp.type = "nebula::List")     lVal (cpp.ref_type = "unique");
+    10: Map (cpp.type = "nebula::Map")      mVal (cpp.ref_type = "unique");
 } (cpp.type = "nebula::Value")
 
 
