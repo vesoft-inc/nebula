@@ -17,8 +17,15 @@ namespace wal {
 //
 class InMemoryLogBuffer final {
 public:
-    explicit InMemoryLogBuffer(LogID firstLogId)
-        : firstLogId_(firstLogId) {}
+    explicit InMemoryLogBuffer(LogID firstLogId, const std::string& idStr = "")
+        : firstLogId_(firstLogId)
+        , idStr_(idStr) {
+        LOG(INFO) << idStr_ << "InMemoryLogBuffer ctor, firstLogId " << firstLogId_;
+    }
+
+    ~InMemoryLogBuffer() {
+        LOG(INFO) << idStr_ << "InMemoryLogBuffer dtor, firstLogId " << firstLogId_;
+    }
 
     // Push a new message to the end of the buffer
     void push(TermID term, ClusterID cluster, std::string&& msg);
@@ -54,6 +61,7 @@ private:
     std::vector<std::tuple<TermID, ClusterID, std::string>> logs_;
     LogID firstLogId_{-1};
     size_t totalLen_{0};
+    std::string idStr_;
 };
 
 
