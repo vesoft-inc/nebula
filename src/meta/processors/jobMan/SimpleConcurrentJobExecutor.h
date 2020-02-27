@@ -17,11 +17,12 @@ public:
     SimpleConcurrentJobExecutor(nebula::cpp2::AdminCmd cmd,
                                 std::vector<std::string> params);
     // virtual void prepare() override;
-    bool execute(int spaceId,
-                         int jobId,
-                         const std::vector<std::string>& jobParas,
-                         nebula::kvstore::KVStore* kvStore,
-                         nebula::thread::GenericThreadPool* pool) override;
+    ErrorOr<nebula::kvstore::ResultCode, std::map<HostAddr, Status>>
+    execute(int spaceId,
+            int jobId,
+            const std::vector<std::string>& jobParas,
+            nebula::kvstore::KVStore* kvStore,
+            nebula::thread::GenericThreadPool* pool) override;
     void stop() override;
 
 private:

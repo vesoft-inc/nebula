@@ -4,30 +4,28 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "storage/admin/AdminTaskManager.h"
 #include "base/Base.h"
-
+#include "storage/admin/AdminTask.h"
+#include "storage/admin/AdminTaskManager.h"
 
 namespace nebula {
 namespace storage {
 
-void AdminTaskManager::addTask(const cpp2::AddAdminTaskRequest& req) {
-    LOG(INFO) << "messi " << __PRETTY_FUNCTION__;
-    UNUSED(req);
-    // auto spaceId = req.get_space_id();
-    // auto& name = req.get_name();
-    // auto* store = dynamic_cast<kvstore::NebulaStore*>(kvstore_);
-    // auto retCode = store->createCheckpoint(spaceId, std::move(name));
-    // if (retCode != kvstore::ResultCode::SUCCEEDED) {
-    //     cpp2::ResultCode thriftRet;
-    //     thriftRet.set_code(to(retCode));
-    //     codes_.emplace_back(std::move(thriftRet));
-    // }
-    // onFinished();
+// JobManager can guarantee there won't be more than 1 task
+nebula::kvstore::ResultCode
+AdminTaskManager::addTask(const cpp2::AddAdminTaskRequest& req,
+                          nebula::kvstore::NebulaStore* store) {
+    auto adminTask = AdminTaskFactory::createAdminTask(req, store);
+    // if support stop/cancel a task
+    // there should be a queue here
+    // else return directly
+    return adminTask->run();
 }
 
-void AdminTaskManager::cancelTask(const cpp2::AddAdminTaskRequest& req) {
+nebula::kvstore::ResultCode
+AdminTaskManager::cancelTask(const cpp2::AddAdminTaskRequest& req) {
     UNUSED(req);
+    return nebula::kvstore::ResultCode::SUCCEEDED;
 }
 
 }  // namespace storage

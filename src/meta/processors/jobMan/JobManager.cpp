@@ -118,11 +118,31 @@ bool JobManager::runJobViaThrift(const JobDescription& jobDesc) {
     if (spaceId < 0) {
         return false;
     }
-    return jobExecutor->execute(spaceId,
+
+    auto results = jobExecutor->execute(spaceId,
                                 jobDesc.getJobId(),
                                 jobDesc.getParas(),
                                 kvStore_,
                                 pool_.get());
+
+    if (!nebula::ok(results)) {
+        return false;
+    }
+
+    size_t taskId = 0;
+    bool jobSuccess = true;
+    for (auto& hostAddStatus : nebula::value(results)) {
+        TaskDescription task(jobDesc.getJobId(), taskId, hostAddStatus.first);
+        bool taskSuccess = hostAddStatus.second.ok();
+        auto taskStatus = taskSuccess ? cpp2::JobStatus::FINISHED : cpp2::JobStatus::FAILED;
+        if (!taskSuccess) {
+            jobSuccess = false;
+        }
+        task.setStatus(taskStatus);
+        save(task.taskKey(), task.taskVal());
+        ++taskId;
+    }
+    return jobSuccess;
 }
 
 bool JobManager::runJobInternal(const JobDescription& jobDesc) {
@@ -173,7 +193,7 @@ bool JobManager::runJobInternal(const JobDescription& jobDesc) {
                                            op.c_str(),
                                            spaceName.c_str());
             LOG(INFO) << "make admin url: " << url << ", iTask=" << iTask;
-            TaskDescription taskDesc(iJob, iTask, host);
+            TaskDescription taskDesc(iJob, iTask, std::make_pair(host.get_ip(), host.get_port()));
             save(taskDesc.taskKey(), taskDesc.taskVal());
 
             auto httpResult = nebula::http::HttpClient::get(url, "-GSs");

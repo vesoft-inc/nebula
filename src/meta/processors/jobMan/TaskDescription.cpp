@@ -17,7 +17,7 @@ using Status = cpp2::JobStatus;
 
 TaskDescription::TaskDescription(int32_t iJob,
                                  int32_t iTask,
-                                 const nebula::cpp2::HostAddr& dest)
+                                 const HostAddr& dest)
                                  : iJob_(iJob),
                                    iTask_(iTask),
                                    dest_(dest),
@@ -29,7 +29,7 @@ TaskDescription::TaskDescription(int32_t iJob,
 /*
  * int32_t                         iJob_;
  * int32_t                         iTask_;
- * nebula::cpp2::HostAddr          dest_;
+ * HostAddr                        dest_;
  * cpp2::JobStatus                 status_;
  * int64_t                         startTime_;
  * int64_t                         stopTime_;
@@ -87,16 +87,16 @@ std::string TaskDescription::taskVal() {
 }
 
 /*
- * nebula::cpp2::HostAddr          dest_;
+ * HostAddr          dest_;
  * cpp2::JobStatus                 status_;
  * int64_t                         startTime_;
  * int64_t                         stopTime_;
  * */
-std::tuple<nebula::cpp2::HostAddr, Status, int64_t, int64_t>
+std::tuple<HostAddr, Status, int64_t, int64_t>
 TaskDescription::parseVal(const folly::StringPiece& rawVal) {
     size_t offset = 0;
 
-    auto host = JobUtil::parseFixedVal<nebula::cpp2::HostAddr>(rawVal, offset);
+    auto host = JobUtil::parseFixedVal<HostAddr>(rawVal, offset);
     offset += sizeof(host);
 
     auto status = JobUtil::parseFixedVal<Status>(rawVal, offset);
@@ -121,7 +121,10 @@ cpp2::TaskDesc TaskDescription::toTaskDesc() {
     cpp2::TaskDesc ret;
     ret.set_job_id(iJob_);
     ret.set_task_id(iTask_);
-    ret.set_host(dest_);
+    nebula::cpp2::HostAddr host;
+    host.set_ip(dest_.first);
+    host.set_port(dest_.second);
+    ret.set_host(host);
     ret.set_status(status_);
     ret.set_start_time(startTime_);
     ret.set_stop_time(stopTime_);

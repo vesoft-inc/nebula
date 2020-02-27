@@ -20,100 +20,77 @@ SimpleConcurrentJobExecutor(nebula::cpp2::AdminCmd cmd,
                             params_(params) {
 }
 
-// void SimpleConcurrentJobExecutor::prepare() {}
-
-bool SimpleConcurrentJobExecutor::execute(int spaceId,
-                                          int jobId,
-                                          const std::vector<std::string>& jobParas,
-                                          nebula::kvstore::KVStore* kvStore,
-                                          nebula::thread::GenericThreadPool* pool) {
-    UNUSED(kvStore);
+ErrorOr<nebula::kvstore::ResultCode, std::map<HostAddr, Status>>
+SimpleConcurrentJobExecutor::execute(int spaceId,
+                                     int jobId,
+                                     const std::vector<std::string>& jobParas,
+                                     nebula::kvstore::KVStore* kvStore,
+                                     nebula::thread::GenericThreadPool* pool) {
+    UNUSED(pool);
     if (jobParas.empty()) {
         LOG(ERROR) << "SimpleConcurrentJob should have a para";
-        return false;
+        return nebula::kvstore::ResultCode::ERR_INVALID_ARGUMENT;
     }
 
     std::unique_ptr<kvstore::KVIterator> iter;
     auto partPrefix = MetaServiceUtils::partPrefix(spaceId);
-    auto ret = kvStore->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    auto rc = kvStore->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
+    if (rc != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "Fetch Parts Failed";
-        return false;
+        return rc;
     }
 
-    struct HostAddrCmp {
-        bool operator()(const nebula::cpp2::HostAddr& a,
-                        const nebula::cpp2::HostAddr& b) const {
-            if (a.get_ip() == b.get_ip()) {
-                return a.get_port() < b.get_port();
-            }
-            return a.get_ip() < b.get_ip();
-        }
-    };
-    std::set<nebula::cpp2::HostAddr, HostAddrCmp> hosts;
+    // use vector not set because this can convient for next step
+    std::vector<HostAddr> hosts;
     while (iter->valid()) {
-        for (auto &host : MetaServiceUtils::parsePartVal(iter->val())) {
-            hosts.insert(host);
+        for (auto& host : MetaServiceUtils::parsePartVal(iter->val())) {
+            hosts.emplace_back(std::make_pair(host.get_ip(), host.get_port()));
         }
         iter->next();
     }
+    std::sort(hosts.begin(), hosts.end());
+    auto last = std::unique(hosts.begin(), hosts.end());
+    hosts.erase(last, hosts.end());
 
-    std::vector<folly::SemiFuture<bool>> futures;
-    size_t taskId = 0;
+    std::vector<folly::SemiFuture<Status>> futures;
+    std::unique_ptr<AdminClient> client(new AdminClient(kvStore));
+    int taskId = 0;
+    std::vector<PartitionID> parts;
     for (auto& host : hosts) {
-        UNUSED(host);
-        // UNUSED(jobId);
-        auto dispatcher = [jobId, kvStore]() {
-            // static const char *tmp = "http://%s:%d/admin?op=%s&space=%s";
-
-            std::unique_ptr<AdminClient> client(new AdminClient(kvStore));
-            // auto strIP = network::NetworkUtils::intToIPv4(host.get_ip());
-            // auto url = folly::stringPrintf(tmp, strIP.c_str(),
-            //                                FLAGS_ws_storage_http_port,
-            //                                op.c_str(),
-            //                                spaceName.c_str());
-            // LOG(INFO) << "make admin url: " << url << ", iTask=" << iTask;
-            // TaskDescription taskDesc(iJob, iTask, host);
-            // save(taskDesc.taskKey(), taskDesc.taskVal());
-
-            // auto httpResult = nebula::http::HttpClient::get(url, "-GSs");
-            // bool suc = httpResult.ok() && httpResult.value() == "ok";
-
-            // if (suc) {
-            //     taskDesc.setStatus(cpp2::JobStatus::FINISHED);
-            // } else {
-            //     taskDesc.setStatus(cpp2::JobStatus::FAILED);
-            // }
-
-            // save(taskDesc.taskKey(), taskDesc.taskVal());
-            // return suc;
-            return false;
-        };
-        ++taskId;
-        auto future = pool->addTask(dispatcher);
+        auto future = client->addTask(cmd_, jobId, taskId++, spaceId,
+                                      {host}, 0, parts);
         futures.push_back(std::move(future));
     }
 
-    bool success = false;
+    std::vector<Status> results;
+    nebula::Status errorStatus;
     folly::collectAll(std::move(futures))
-        .thenValue([&](const std::vector<folly::Try<bool>>& tries) {
+        .thenValue([&](const std::vector<folly::Try<Status>>& tries) {
+            Status status;
             for (const auto& t : tries) {
                 if (t.hasException()) {
                     LOG(ERROR) << "admin Failed: " << t.exception();
-                    success = false;
-                    break;
+                    results.push_back(nebula::Status::Error());
+                } else {
+                    results.push_back(t.value());
                 }
             }
         }).thenError([&](auto&& e) {
             LOG(ERROR) << "admin Failed: " << e.what();
-            success = false;
+            errorStatus = Status::Error(e.what());
         }).wait();
-    // LOG(INFO) << folly::stringPrintf("admin job %d %s, descrtion: %s %s",
-    //                                  iJob,
-    //                                  successfully ? "succeeded" : "failed",
-    //                                  op.c_str(),
-    //                                  folly::join(" ", jobDesc.getParas()).c_str());
-    return success;
+
+    if (hosts.size() != results.size()) {
+        LOG(ERROR) << "return ERR_UNKNOWN: hosts.size()=" << hosts.size()
+                   << ", results.size()=" << results.size();
+        return nebula::kvstore::ResultCode::ERR_UNKNOWN;
+    }
+
+    std::map<HostAddr, Status> ret;
+    for (size_t i = 0; i != hosts.size(); ++i) {
+        ret.insert(std::make_pair(hosts[i], results[i]));
+    }
+    return ret;
 }
 
 void SimpleConcurrentJobExecutor::stop() {
