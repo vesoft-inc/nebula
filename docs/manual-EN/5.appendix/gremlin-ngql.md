@@ -470,7 +470,7 @@ nebula> GO FROM hash('pluto') OVER brother YIELD $$.character.name AS Name, $$.c
 Name               | Gremlin | nGQL           |
 -----              |---------|   -----       |
 Group by items | group().by()    | GROUP BY         |
-Remove repeated items | dedup() | \ |
+Remove repeated items | dedup() | DISTINCT |
 Group by items and count | groupCount() | GROUP BY COUNT  |
 
 **Note:** The GROUP BY function can only be applied in the YIELD clause.
