@@ -497,6 +497,24 @@ GROUP BY $-.Name YIELD $-.Name, COUNT(*);
 ----------------------
 | neptune | 1        |
 ----------------------
+
+# Find the distinct dest vertices sourcing from vertex jupiter
+gremlin> g.V(jupiter).out().hasLabel('character').dedup();
+==>v[1]
+==>v[8]
+==>v[5]
+nebula> GO FROM hash('jupiter') OVER * YIELD DISTINCT $$.character.name, $$.character.age, $$.location.name;
+===========================================================
+| $$.character.name | $$.character.age | $$.location.name |
+===========================================================
+| pluto             | 4000             |                  |
+-----------------------------------------------------------
+| neptune           | 4500             |                  |
+-----------------------------------------------------------
+| saturn            | 10000            |                  |
+-----------------------------------------------------------
+|                   | 0                | sky              |
+-----------------------------------------------------------
 ```
 
 ### Where Filter Condition
