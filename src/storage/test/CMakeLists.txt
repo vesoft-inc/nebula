@@ -474,3 +474,23 @@ nebula_add_executable(
         wangle
         gtest
 )
+
+nebula_add_test(
+    NAME
+        kv_test
+    SOURCES
+        KVTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:meta_service_handler>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
+        $<TARGET_OBJECTS:http_client_obj>
+        $<TARGET_OBJECTS:process_obj>
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        wangle
+        gtest
+)
+
