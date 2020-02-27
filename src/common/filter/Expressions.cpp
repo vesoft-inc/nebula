@@ -719,9 +719,9 @@ OptVariantType ArithmeticExpression::eval(Getters &getters) const {
         } else if (lv < 0 && rv < 0) {
             return maxInt / lv > rv;
         } else if (lv > 0 && rv < 0) {
-            return maxInt / lv < -rv;
+            return minInt / lv > rv;
         } else if (lv < 0 && rv > 0) {
-            return maxInt / lv > -rv;
+            return minInt / lv < rv;
         } else {
             return false;
         }

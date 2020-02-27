@@ -20,6 +20,7 @@ set(storage_test_deps
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:charset_obj>
     $<TARGET_OBJECTS:gflags_man_obj>
     $<TARGET_OBJECTS:stats_obj>
     $<TARGET_OBJECTS:adHocSchema_obj>
@@ -58,7 +59,7 @@ nebula_add_test(
     SOURCES
         DeleteVerticesTest.cpp
     OBJECTS
-        $<TARGET_OBJECTS:adHocSchema_obj> ${storage_test_deps}
+        ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
@@ -196,6 +197,9 @@ nebula_add_test(
         StorageClientTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:meta_service_handler>
+        $<TARGET_OBJECTS:ws_common_obj>
+        $<TARGET_OBJECTS:http_client_obj>
+        $<TARGET_OBJECTS:process_obj>
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -217,6 +221,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:meta_service_handler>
+        $<TARGET_OBJECTS:ws_common_obj>
         ${storage_test_deps}
     LIBRARIES
         proxygenhttpserver
@@ -239,6 +244,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:meta_service_handler>
+        $<TARGET_OBJECTS:ws_common_obj>
         ${storage_test_deps}
     LIBRARIES
         proxygenhttpserver
@@ -261,6 +267,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:meta_service_handler>
+        $<TARGET_OBJECTS:ws_common_obj>
         ${storage_test_deps}
     LIBRARIES
         proxygenhttpserver
@@ -387,7 +394,6 @@ nebula_add_test(
         gtest
 )
 
-
 nebula_add_test(
     NAME
         scan_vertex_test
@@ -424,11 +430,26 @@ nebula_add_test(
     SOURCES
         IndexScanTest.cpp
     OBJECTS
-        $<TARGET_OBJECTS:adHocSchema_obj>
         ${storage_test_deps}  
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         wangle
         gtest 
+)
+
+nebula_add_executable(
+    NAME
+        storage_lookup_bm
+    SOURCES
+        StorageLookupBenchmark.cpp
+    OBJECTS
+        ${storage_test_deps}  
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        follybenchmark
+        boost_regex
+        wangle
+        gtest
 )

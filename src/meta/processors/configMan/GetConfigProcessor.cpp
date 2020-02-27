@@ -25,9 +25,9 @@ void GetConfigProcessor::process(const cpp2::GetConfigReq& req) {
     }
 
     if (items.empty()) {
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
     } else {
-        resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+        handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
         resp_.set_items(std::move(items));
     }
     onFinished();

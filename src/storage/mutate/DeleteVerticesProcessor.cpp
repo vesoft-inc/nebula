@@ -17,9 +17,7 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
     const auto& partVertices = req.get_parts();
     auto iRet = indexMan_->getTagIndexes(spaceId);
     if (iRet.ok()) {
-        for (auto& index : iRet.value()) {
-            indexes_.emplace_back(index);
-        }
+        indexes_ = std::move(iRet).value();
     }
 
     if (indexes_.empty()) {

@@ -15,10 +15,10 @@ void CreateUserProcessor::process(const cpp2::CreateUserReq& req) {
     auto ret = getUserId(user.get_account());
     if (ret.ok()) {
         if (req.get_missing_ok()) {
-            resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+            handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
         } else {
             LOG(ERROR) << "Create User Failed :" << user.get_account() << " have existed";
-            resp_.set_code(cpp2::ErrorCode::E_EXISTED);
+            handleErrorCode(cpp2::ErrorCode::E_EXISTED);
         }
         resp_.set_id(to(ret.value(), EntryType::USER));
         onFinished();
@@ -28,7 +28,7 @@ void CreateUserProcessor::process(const cpp2::CreateUserReq& req) {
     auto userRet = autoIncrementId();
     if (!nebula::ok(userRet)) {
         LOG(ERROR) << "Create User Failed : Get user id failed";
-        resp_.set_code(nebula::error(userRet));
+        handleErrorCode(nebula::error(userRet));
         onFinished();
         return;
     }
@@ -39,7 +39,7 @@ void CreateUserProcessor::process(const cpp2::CreateUserReq& req) {
     LOG(INFO) << "Create User " << user.get_account() << ", userId " << userId;
     data.emplace_back(MetaServiceUtils::userKey(userId),
                       MetaServiceUtils::userVal(req.get_encoded_pwd(), user));
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_id(to(userId, EntryType::USER));
     doPut(std::move(data));
 }
@@ -50,7 +50,7 @@ void AlterUserProcessor::process(const cpp2::AlterUserReq& req) {
     const auto& user = req.get_user_item();
     auto ret = getUserId(user.get_account());
     if (!ret.ok()) {
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
@@ -59,14 +59,14 @@ void AlterUserProcessor::process(const cpp2::AlterUserReq& req) {
     std::string val;
     auto result = kvstore_->get(kDefaultSpaceId, kDefaultPartId, userKey, &val);
     if (result != kvstore::ResultCode::SUCCEEDED) {
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
     std::vector<kvstore::KV> data;
     data.emplace_back(std::move(userKey),
                       MetaServiceUtils::replaceUserVal(user, val));
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_id(to(userId, EntryType::USER));
     doPut(std::move(data));
 }
@@ -77,10 +77,10 @@ void DropUserProcessor::process(const cpp2::DropUserReq& req) {
     auto ret = getUserId(req.get_account());
     if (!ret.ok()) {
         if (req.get_missing_ok()) {
-            resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+            handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
         } else {
             LOG(ERROR) << "Drop User Failed :" << req.get_account() << " not found.";
-            resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+            handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
         }
         onFinished();
         return;
@@ -105,7 +105,7 @@ void DropUserProcessor::process(const cpp2::DropUserReq& req) {
     }
 
     resp_.set_id(to(ret.value(), EntryType::USER));
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     LOG(INFO) << "Drop User " << req.get_account();
     doMultiRemove(std::move(keys));
 }
@@ -119,7 +119,7 @@ void GrantProcessor::process(const cpp2::GrantRoleReq& req) {
     std::vector<kvstore::KV> data;
     data.emplace_back(MetaServiceUtils::roleKey(roleItem.get_space_id(), roleItem.get_user_id()),
                       MetaServiceUtils::roleVal(roleItem.get_role_type()));
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     doPut(std::move(data));
 }
 
@@ -131,7 +131,7 @@ void RevokeProcessor::process(const cpp2::RevokeRoleReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::userLock());
     auto roleKey = MetaServiceUtils::roleKey(roleItem.get_space_id(), roleItem.get_user_id());
     resp_.set_id(to(roleItem.get_user_id(), EntryType::USER));
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     doRemove(std::move(roleKey));
 }
 
@@ -140,7 +140,7 @@ void ChangePasswordProcessor::process(const cpp2::ChangePasswordReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::userLock());
     auto userRet = getUserId(req.get_account());
     if (!userRet.ok()) {
-        resp_.set_code(to(userRet.status()));
+        handleErrorCode(MetaCommon::to(userRet.status()));
         onFinished();
         return;
     }
@@ -148,7 +148,7 @@ void ChangePasswordProcessor::process(const cpp2::ChangePasswordReq& req) {
     // If the user role is god, the option old_encoded_pwd will not be set.
     if (req.__isset.old_encoded_pwd) {
         if (!checkPassword(userRet.value(), req.get_old_encoded_pwd())) {
-            resp_.set_code(cpp2::ErrorCode::E_INVALID_PASSWORD);
+            handleErrorCode(cpp2::ErrorCode::E_INVALID_PASSWORD);
             onFinished();
             return;
         }
@@ -158,14 +158,14 @@ void ChangePasswordProcessor::process(const cpp2::ChangePasswordReq& req) {
     std::string val;
     auto result = kvstore_->get(kDefaultSpaceId, kDefaultPartId, userKey, &val);
     if (result != kvstore::ResultCode::SUCCEEDED) {
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
     std::vector<kvstore::KV> data;
     data.emplace_back(std::move(userKey),
                       MetaServiceUtils::changePassword(val, req.get_new_encoded_pwd()));
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     doPut(std::move(data));
 }
 
@@ -175,7 +175,7 @@ void GetUserProcessor::process(const cpp2::GetUserReq& req) {
     auto userRet = getUserId(req.get_account());
     if (!userRet.ok()) {
         LOG(ERROR) << "User " << req.get_account() << " not found.";
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
@@ -183,13 +183,13 @@ void GetUserProcessor::process(const cpp2::GetUserReq& req) {
     std::string val;
     auto result = kvstore_->get(kDefaultSpaceId, kDefaultPartId, userKey, &val);
     if (result != kvstore::ResultCode::SUCCEEDED) {
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
     decltype(resp_.user_item) user = MetaServiceUtils::parseUserItem(val);
     resp_.set_user_item(user);
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }
 
@@ -202,7 +202,7 @@ void ListUsersProcessor::process(const cpp2::ListUsersReq& req) {
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "Can't find any users.";
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
@@ -214,7 +214,7 @@ void ListUsersProcessor::process(const cpp2::ListUsersReq& req) {
         iter->next();
     }
     resp_.set_users(users);
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }
 
@@ -223,17 +223,17 @@ void CheckPasswordProcessor::process(const cpp2::CheckPasswordReq& req) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::userLock());
     auto userRet = getUserId(req.get_account());
     if (!userRet.ok()) {
-        resp_.set_code(to(userRet.status()));
+        handleErrorCode(MetaCommon::to(userRet.status()));
         onFinished();
         return;
     }
 
     if (!checkPassword(userRet.value(), req.get_encoded_pwd())) {
-        resp_.set_code(cpp2::ErrorCode::E_INVALID_PASSWORD);
+        handleErrorCode(cpp2::ErrorCode::E_INVALID_PASSWORD);
         onFinished();
         return;
     }
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_id(to(userRet.value(), EntryType::USER));
     onFinished();
 }
@@ -248,7 +248,7 @@ void ListRolesProcessor::process(const cpp2::ListRolesReq& req) {
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "Can't find any roles by space id  " << spaceId;
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
@@ -260,7 +260,7 @@ void ListRolesProcessor::process(const cpp2::ListRolesReq& req) {
         auto account = getUserAccount(userId);
         if (!account.ok()) {
             LOG(ERROR) << "Get user account failling by id : " << userId;
-            resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+            handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
             onFinished();
             return;
         }
@@ -272,7 +272,7 @@ void ListRolesProcessor::process(const cpp2::ListRolesReq& req) {
         iter->next();
     }
     resp_.set_roles(roles);
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }
 }  // namespace meta

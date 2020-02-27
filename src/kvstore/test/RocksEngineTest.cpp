@@ -198,6 +198,32 @@ TEST(RocksEngineTest, CompactTest) {
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->compact());
 }
 
+TEST(RocksEngineTest, IngestTest) {
+    rocksdb::Options options;
+    rocksdb::SstFileWriter writer(rocksdb::EnvOptions(), options);
+    fs::TempDir rootPath("/tmp/rocksdb_engine_IngestTest.XXXXXX");
+    auto file = folly::stringPrintf("%s/%s", rootPath.path(), "data.sst");
+    auto stauts = writer.Open(file);
+    ASSERT_TRUE(stauts.ok());
+
+    stauts = writer.Put("key", "value");
+    ASSERT_TRUE(stauts.ok());
+    stauts = writer.Put("key_empty", "");
+    ASSERT_TRUE(stauts.ok());
+    writer.Finish();
+
+    auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
+    std::vector<std::string> files = {file};
+    EXPECT_EQ(ResultCode::SUCCEEDED, engine->ingest(files));
+
+    std::string result;
+    EXPECT_EQ(ResultCode::SUCCEEDED, engine->get("key", &result));
+    EXPECT_EQ("value", result);
+    EXPECT_EQ(ResultCode::SUCCEEDED, engine->get("key_empty", &result));
+    EXPECT_EQ("", result);
+    EXPECT_EQ(ResultCode::ERR_KEY_NOT_FOUND, engine->get("key_not_exist", &result));
+}
+
 }  // namespace kvstore
 }  // namespace nebula
 

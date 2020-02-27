@@ -28,7 +28,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         }
 
         resp_.set_id(to(spaceRet.value(), EntryType::SPACE));
-        resp_.set_code(ret);
+        handleErrorCode(ret);
         onFinished();
         return;
     }
@@ -36,7 +36,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     auto hosts = ActiveHostsMan::getActiveHosts(kvstore_);
     if (hosts.empty()) {
         LOG(ERROR) << "Create Space Failed : No Hosts!";
-        resp_.set_code(cpp2::ErrorCode::E_NO_HOSTS);
+        handleErrorCode(cpp2::ErrorCode::E_NO_HOSTS);
         onFinished();
         return;
     }
@@ -44,7 +44,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     auto idRet = autoIncrementId();
     if (!nebula::ok(idRet)) {
         LOG(ERROR) << "Create Space Failed : Get space id failed";
-        resp_.set_code(nebula::error(idRet));
+        handleErrorCode(nebula::error(idRet));
         onFinished();
         return;
     }
@@ -52,21 +52,38 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     auto spaceName = properties.get_space_name();
     auto partitionNum = properties.get_partition_num();
     auto replicaFactor = properties.get_replica_factor();
+    auto charsetName = properties.get_charset_name();
+    auto collateName = properties.get_collate_name();
+
+    // Use default values or values from meta's configuration file
     if (partitionNum == 0) {
         partitionNum = FLAGS_default_parts_num;
+        if (partitionNum <= 0) {
+            LOG(ERROR) << "Create Space Failed : partition_num is illegal!";
+              resp_.set_code(cpp2::ErrorCode::E_INVALID_PARTITION_NUM);
+              onFinished();
+              return;
+        }
         // Set the default value back to the struct, which will be written to storage
         properties.set_partition_num(partitionNum);
     }
     if (replicaFactor == 0) {
         replicaFactor = FLAGS_default_replica_factor;
+        if (replicaFactor <= 0) {
+            LOG(ERROR) << "Create Space Failed : replicaFactor is illegal!";
+              resp_.set_code(cpp2::ErrorCode::E_INVALID_REPLICA_FACTOR);
+              onFinished();
+              return;
+        }
         // Set the default value back to the struct, which will be written to storage
         properties.set_replica_factor(replicaFactor);
     }
+
     VLOG(3) << "Create space " << spaceName << ", id " << spaceId;
     if ((int32_t)hosts.size() < replicaFactor) {
         LOG(ERROR) << "Not enough hosts existed for replica "
                    << replicaFactor << ", hosts num " << hosts.size();
-        resp_.set_code(cpp2::ErrorCode::E_UNSUPPORTED);
+        handleErrorCode(cpp2::ErrorCode::E_UNSUPPORTED);
         onFinished();
         return;
     }
@@ -81,7 +98,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         data.emplace_back(MetaServiceUtils::partKey(spaceId, partId),
                           MetaServiceUtils::partVal(partHosts));
     }
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_id(to(spaceId, EntryType::SPACE));
     doSyncPutAndUpdate(std::move(data));
 }

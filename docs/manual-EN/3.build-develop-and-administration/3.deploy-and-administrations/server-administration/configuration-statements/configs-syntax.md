@@ -1,8 +1,19 @@
 # CONFIG Syntax
 
-**Nebula Graph** uses `gflags` for run-time configurations.
+## Introduction to Configuration
+
+**Nebula Graph** gets configuration from meta by default. If you want to get configuration locally, please add the `--local_config=true` option in the configuration files `metad.conf`, `storaged.conf`, `graphd.conf` (directory is `/home/user/nebula/build/install/etc`) respectively.
+
+**Note:**
+
+- Configuration precedence: meta > console > environment variable > configuration files.
+- If set `--local_config` to true, the configuration files take precedence.
+- Restart the services after changing the configuration files to take effect.
+- Configuration changes in console take effect in real time.
 
 ## gflag Parameters
+
+**Nebula Graph** uses `gflags` for run-time configurations.
 
 There are four gflags related parameters, among which, `max_edge_returned_per_vertex` is used to control the max edges returned by a certain vertex, `rocksdb_db_options`, `rocksdb_column_family_options` and `rocksdb_block_based_table_options`
  are all in json format, and the key and value of them are in string format. For example, you can set as follows in the conf file of storage:
