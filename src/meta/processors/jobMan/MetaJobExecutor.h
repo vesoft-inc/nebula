@@ -7,32 +7,26 @@
 #ifndef META_METAJOBEXECUTOR_H_
 #define META_METAJOBEXECUTOR_H_
 
-#include <memory>
-#include <string>
-#include <vector>
-#include "meta/processors/jobMan/JobDescription.h"
+#include "base/ErrorOr.h"
 #include "kvstore/KVStore.h"
+#include "meta/processors/jobMan/JobDescription.h"
 
 namespace nebula {
 namespace meta {
 
 class MetaJobExecutor {
 public:
+    using HostAddrAndStatus = std::pair<HostAddr, Status>;
+
     MetaJobExecutor() = default;
     // virtual void prepare() {};
-    virtual bool execute(int spaceId,
-                         int jobId,
-                         const std::vector<std::string>& jobParas,
-                         nebula::kvstore::KVStore* kvStore,
-                         nebula::thread::GenericThreadPool* pool) {
-        UNUSED(spaceId);
-        UNUSED(jobId);
-        UNUSED(jobParas);
-        UNUSED(kvStore);
-        UNUSED(pool);
-        return false;
-    }
-    virtual void stop() {}
+    virtual ErrorOr<nebula::kvstore::ResultCode, std::map<HostAddr, Status>>
+    execute(int spaceId,
+            int jobId,
+            const std::vector<std::string>& jobParas,
+            nebula::kvstore::KVStore* kvStore,
+            nebula::thread::GenericThreadPool* pool) = 0;
+    virtual void stop() = 0;
     virtual ~MetaJobExecutor() = default;
 
 protected:

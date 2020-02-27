@@ -8,7 +8,8 @@
 #define STORAGE_ADMIN_ADMINTASKMANAGER_H_
 
 #include "interface/gen-cpp2/storage_types.h"
-#include "storage/admin/AdminTaskPlan.h"
+#include "kvstore/NebulaStore.h"
+#include "storage/admin/AdminTask.h"
 
 namespace nebula {
 namespace storage {
@@ -20,8 +21,9 @@ public:
         return sAdminTaskManager;
     }
 
-    void addTask(const cpp2::AddAdminTaskRequest& req);
-    void cancelTask(const cpp2::AddAdminTaskRequest& req);
+    nebula::kvstore::ResultCode addTask(const cpp2::AddAdminTaskRequest& req,
+                            nebula::kvstore::NebulaStore* store);
+    nebula::kvstore::ResultCode cancelTask(const cpp2::AddAdminTaskRequest& req);
 
 private:
 };

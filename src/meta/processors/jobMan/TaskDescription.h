@@ -13,6 +13,7 @@
 #include <folly/Range.h>
 #include <gtest/gtest_prod.h>
 
+#include "base/Base.h"
 #include "interface/gen-cpp2/meta_types.h"
 #include "meta/processors/jobMan/JobStatus.h"
 
@@ -38,7 +39,7 @@ class TaskDescription {
     FRIEND_TEST(JobManagerTest, showJob);
 
 public:
-    TaskDescription(int32_t iJob, int32_t iTask, const nebula::cpp2::HostAddr& dest);
+    TaskDescription(int32_t iJob, int32_t iTask, const HostAddr& dest);
     TaskDescription(const folly::StringPiece& key, const folly::StringPiece& val);
 
     /*
@@ -62,7 +63,7 @@ public:
      * should be
      * {host, status, start time, stop time}
      * */
-    static std::tuple<nebula::cpp2::HostAddr, cpp2::JobStatus, int64_t, int64_t>
+    static std::tuple<HostAddr, cpp2::JobStatus, int64_t, int64_t>
     parseVal(const folly::StringPiece& rawVal);
 
     /*
@@ -98,7 +99,7 @@ public:
 private:
     int32_t                         iJob_;
     int32_t                         iTask_;
-    nebula::cpp2::HostAddr          dest_;
+    HostAddr                        dest_;
     cpp2::JobStatus                 status_;
     int64_t                         startTime_;
     int64_t                         stopTime_;
