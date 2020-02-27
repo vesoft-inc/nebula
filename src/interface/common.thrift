@@ -112,5 +112,50 @@ struct Pair {
     2: string value,
 }
 
+/**
+** GOD is A global senior administrator.like root of Linux systems.
+** ADMIN is an administrator for a given Graph Space.
+** DBA is an schema administrator for a given Graph Space.
+** USER is a normal user for a given Graph Space. A User can access (read and write) the data in the Graph Space.
+** GUEST is a read-only role for a given Graph Space. A Guest cannot modify the data in the Graph Space.
+** Refer to header file src/graph/PermissionManager.h for details.
+**/
+
+enum RoleType {
+    GOD    = 0x01,
+    ADMIN  = 0x02,
+    DBA    = 0x03,
+    USER   = 0x04,
+    GUEST  = 0x05,
+} (cpp.enum_strict)
+
+enum UserLoginType {
+   PASSWORD = 0x01,
+   LDAP     = 0x02,
+}
+
+struct RoleItem {
+    1: string        user,
+    2: string        space,
+    3: RoleType      role_type,
+}
+
+struct UserItem {
+    1: required string        account;
+    // Disable user if lock status is true.
+    2: optional bool          is_lock,
+    // user login type
+    3: optional UserLoginType login_type,
+    // encoded password
+    4: optional string        encoded_pwd,
+    // The number of queries an account can issue per hour
+    5: optional i32           max_queries_per_hour,
+    // The number of updates an account can issue per hour
+    6: optional i32           max_updates_per_hour,
+    // The number of times an account can connect to the server per hour
+    7: optional i32           max_connections_per_hour,
+    // The number of simultaneous connections to the server by an account
+    8: optional i32           max_user_connections,
+}
 
 const ValueType kInvalidValueType = {"type" : UNKNOWN}

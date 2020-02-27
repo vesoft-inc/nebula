@@ -93,10 +93,6 @@ IF                          ([Ii][Ff])
 NOT                         ([Nn][Oo][Tt])
 EXISTS                      ([Ee][Xx][Ii][Ss][Tt][Ss])
 WITH                        ([Ww][Ii][Tt][Hh])
-FIRSTNAME                   ([Ff][Ii][Rr][Ss][Tt][Nn][Aa][Mm][Ee])
-LASTNAME                    ([Ll][Aa][Ss][Tt][Nn][Aa][Mm][Ee])
-EMAIL                       ([Ee][Mm][Aa][Ii][Ll])
-PHONE                       ([Pp][Hh][Oo][Nn][Ee])
 USER                        ([Uu][Ss][Ee][Rr])
 USERS                       ([Uu][Ss][Ee][Rr][Ss])
 PASSWORD                    ([Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd])
@@ -159,6 +155,15 @@ SNAPSHOTS                   ([Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt][Ss])
 FORCE                       ([Ff][Oo][Rr][Cc][Ee])
 OFFLINE                     ([Oo][Ff][Ff][Ll][Ii][Nn][Ee])
 BIDIRECT                    ([Bb][Ii][Dd][Ii][Rr][Ee][Cc][Tt])
+MAX_QUERIES_PER_HOUR        ([Mm][Aa][Xx][_][Qq][Uu][Ee][Rr][Ii][Ee][Ss][_][Pp][Ee][Rr][_][Hh][Oo][Uu][Rr])
+MAX_UPDATES_PER_HOUR        ([Mm][Aa][Xx][_][Uu][Pp][Dd][Aa][Tt][Ee][Ss][_][Pp][Ee][Rr][_][Hh][Oo][Uu][Rr])
+MAX_CONNECTIONS_PER_HOUR    ([Mm][Aa][Xx][_][Cc][Oo][Nn][Nn][Ee][Cc][Tt][Ii][Oo][Nn][Ss][_][Pp][Ee][Rr][_][Hh][Oo][Uu][Rr])
+MAX_USER_CONNECTIONS        ([Mm][Aa][Xx][_][Uu][Ss][Ee][Rr][_][Cc][Oo][Nn][Nn][Ee][Cc][Tt][Ii][Oo][Nn][Ss])
+ACCOUNT                     ([Aa][Cc][Cc][Oo][Uu][Nn][Tt])
+LOCK                        ([Ll][Oo][Cc][Kk])
+UNLOCK                      ([Uu][Nn][Ll][Oo][Cc][Kk])
+LDAP                        ([Ll][Dd][Aa][Pp])
+DBA                         ([Dd][Bb][Aa])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -239,10 +244,6 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {NOT}                       { return TokenType::KW_NOT; }
 {EXISTS}                    { return TokenType::KW_EXISTS; }
 {WITH}                      { return TokenType::KW_WITH; }
-{FIRSTNAME}                 { return TokenType::KW_FIRSTNAME; }
-{LASTNAME}                  { return TokenType::KW_LASTNAME; }
-{EMAIL}                     { return TokenType::KW_EMAIL; }
-{PHONE}                     { return TokenType::KW_PHONE; }
 {USER}                      { return TokenType::KW_USER; }
 {USERS}                     { return TokenType::KW_USERS; }
 {PASSWORD}                  { return TokenType::KW_PASSWORD; }
@@ -311,6 +312,16 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {JOBS}                      { return TokenType::KW_JOBS; }
 {JOB}                       { return TokenType::KW_JOB; }
 {RECOVER}                   { return TokenType::KW_RECOVER; }
+
+{MAX_QUERIES_PER_HOUR}      { return TokenType::KW_MAX_QUERIES_PER_HOUR; }
+{MAX_UPDATES_PER_HOUR}      { return TokenType::KW_MAX_UPDATES_PER_HOUR; }
+{MAX_CONNECTIONS_PER_HOUR}  { return TokenType::KW_MAX_CONNECTIONS_PER_HOUR; }
+{MAX_USER_CONNECTIONS}      { return TokenType::KW_MAX_USER_CONNECTIONS; }
+{ACCOUNT}                   { return TokenType::KW_ACCOUNT; }
+{LOCK}                      { return TokenType::KW_LOCK; }
+{UNLOCK}                    { return TokenType::KW_UNLOCK; }
+{LDAP}                      { return TokenType::KW_LDAP; }
+{DBA}                       { return TokenType::KW_DBA; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }

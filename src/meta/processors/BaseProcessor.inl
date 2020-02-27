@@ -343,10 +343,12 @@ template<typename RESP>
 bool BaseProcessor<RESP>::checkPassword(UserID userId, const std::string& password) {
     auto userKey = MetaServiceUtils::userKey(userId);
     auto ret = doGet(userKey);
-    if (ret.ok()) {
-        return  ret.value().compare(sizeof(int32_t), password.size(), password) == 0;
+    auto userItem = MetaServiceUtils::parseUserItem(ret.value());
+    if (*userItem.get_login_type() != nebula::cpp2::UserLoginType::PASSWORD) {
+        LOG(INFO) << "Login type is not 'PASSWORD'";
+        return false;
     }
-    return false;
+    return *userItem.get_encoded_pwd() == password;
 }
 
 template<typename RESP>

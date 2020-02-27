@@ -338,12 +338,6 @@ MetaServiceHandler::future_changePassword(const cpp2::ChangePasswordReq& req) {
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ExecResp>
-MetaServiceHandler::future_checkPassword(const cpp2::CheckPasswordReq& req) {
-    auto* processor = CheckPasswordProcessor::instance(kvstore_);
-    RETURN_FUTURE(processor);
-}
-
 folly::Future<cpp2::BalanceResp>
 MetaServiceHandler::future_balance(const cpp2::BalanceReq& req) {
     auto* processor = BalanceProcessor::instance(kvstore_);

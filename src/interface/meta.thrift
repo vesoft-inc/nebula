@@ -66,21 +66,6 @@ enum AlterSchemaOp {
     UNKNOWN = 0x04,
 } (cpp.enum_strict)
 
-/**
-** GOD is A global senior administrator.like root of Linux systems.
-** ADMIN is an administrator for a given Graph Space.
-** USER is a normal user for a given Graph Space. A User can access (read and write) the data in the Graph Space.
-** GUEST is a read-only role for a given Graph Space. A Guest cannot modify the data in the Graph Space.
-** Refer to header file src/graph/PermissionManager.h for details.
-**/
-
-enum RoleType {
-    GOD    = 0x01,
-    ADMIN  = 0x02,
-    USER   = 0x03,
-    GUEST  = 0x04,
-} (cpp.enum_strict)
-
 union ID {
     1: common.GraphSpaceID  space_id,
     2: common.TagID         tag_id,
@@ -143,26 +128,6 @@ struct HostItem {
     2: HostStatus           status,
     3: map<string, list<common.PartitionID>> (cpp.template = "std::unordered_map") leader_parts,
     4: map<string, list<common.PartitionID>> (cpp.template = "std::unordered_map") all_parts,
-}
-
-struct UserItem {
-    1: string account;
-    // Disable user if lock status is true.
-    2: bool   is_lock,
-    // The number of queries an account can issue per hour
-    3: i32    max_queries_per_hour,
-    // The number of updates an account can issue per hour
-    4: i32    max_updates_per_hour,
-    // The number of times an account can connect to the server per hour
-    5: i32    max_connections_per_hour,
-    // The number of simultaneous connections to the server by an account
-    6: i32    max_user_connections,
-}
-
-struct RoleItem {
-    1: common.UserID        user_id,
-    2: common.GraphSpaceID  space_id,
-    3: RoleType             role_type,
 }
 
 struct ExecResp {
@@ -537,26 +502,25 @@ struct RebuildIndexReq {
 }
 
 struct CreateUserReq {
-    1: UserItem user,
-    2: string encoded_pwd,
-    3: bool missing_ok,
+    1: common.UserItem      user_item,
+    2: bool          if_not_exists,
 }
 
 struct DropUserReq {
     1: string account,
-    2: bool missing_ok,
+    2: bool   if_exists,
 }
 
 struct AlterUserReq {
-    1: UserItem user_item,
+    1: common.UserItem      user_item,
 }
 
 struct GrantRoleReq {
-    1: RoleItem role_item,
+    1: common.RoleItem role_item,
 }
 
 struct RevokeRoleReq {
-    1: RoleItem role_item,
+    1: common.RoleItem role_item,
 }
 
 struct GetUserReq {
@@ -567,7 +531,7 @@ struct GetUserResp {
     1: ErrorCode code,
     // Valid if ret equals E_LEADER_CHANGED.
     2: common.HostAddr  leader,
-    3: UserItem user_item,
+    3: common.UserItem  user_item,
 }
 
 struct ListUsersReq {
@@ -577,29 +541,24 @@ struct ListUsersResp {
     1: ErrorCode code,
     // Valid if ret equals E_LEADER_CHANGED.
     2: common.HostAddr  leader,
-    3: map<common.UserID, UserItem>(cpp.template = "std::unordered_map") users,
+    3: map<common.UserID, common.UserItem>(cpp.template = "std::unordered_map") users,
 }
 
 struct ListRolesReq {
-    1: common.GraphSpaceID space_id,
+    1: string   space,
 }
 
 struct ListRolesResp {
     1: ErrorCode code,
     // Valid if ret equals E_LEADER_CHANGED.
     2: common.HostAddr  leader,
-    3: list<RoleItem> roles,
+    3: list<common.RoleItem> roles,
 }
 
 struct ChangePasswordReq {
     1: string account,
     2: string new_encoded_pwd,
     3: string old_encoded_pwd,
-}
-
-struct CheckPasswordReq {
-    1: string account,
-    2: string encoded_pwd,
 }
 
 struct BalanceReq {
@@ -785,7 +744,6 @@ service MetaService {
     ListUsersResp listUsers(1: ListUsersReq req);
     ListRolesResp listRoles(1: ListRolesReq req);
     ExecResp changePassword(1: ChangePasswordReq req);
-    ExecResp checkPassword(1: CheckPasswordReq req);
 
     HBResp           heartBeat(1: HBReq req);
     BalanceResp      balance(1: BalanceReq req);

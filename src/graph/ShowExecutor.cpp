@@ -59,10 +59,13 @@ void ShowExecutor::execute() {
             showEdgeIndexes();
             break;
         case ShowSentence::ShowType::kShowUsers:
+            showUsers();
+            break;
         case ShowSentence::ShowType::kShowUser:
+            showUser();
+            break;
         case ShowSentence::ShowType::kShowRoles:
-            // TODO(boshengchen)
-            doError(Status::Error("The statement has not been implemented"));
+            showRoles();
             break;
         case ShowSentence::ShowType::kShowCreateSpace:
             showCreateSpace();
@@ -1051,6 +1054,184 @@ void ShowExecutor::showCollation() {
     resp_->set_rows(std::move(rows));
 
     doFinish(Executor::ProcessControl::kNext);
+}
+
+void ShowExecutor::showUser() {
+    auto *name = sentence_->getName();
+    auto future = ectx()->getMetaClient()->getUser(*name);
+    auto *runner = ectx()->rctx()->runner();
+
+    auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            doError(std::forward<decltype(resp)>(resp).status());
+            return;
+        }
+
+        auto user = std::forward<decltype(resp)>(resp).value();
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        std::vector<cpp2::RowValue> rows;
+        std::vector<std::string> header{"Account",
+                                        "IsLock",
+                                        "Login Type",
+                                        "MAX_QUERIES_PER_HOUR",
+                                        "MAX_UPDATES_PER_HOUR",
+                                        "MAX_CONNECTIONS_PER_HOUR",
+                                        "MAX_USER_CONNECTIONS"};
+        resp_->set_column_names(std::move(header));
+        std::vector<cpp2::ColumnValue> row;
+        row.resize(7);
+        row[0].set_str(user.get_account());
+        row[1].set_bool_val(user.__isset.is_lock ? *user.get_is_lock() : false);
+        if (user.__isset.login_type) {
+            row[2].set_str(*user.get_login_type() == nebula::cpp2::UserLoginType::PASSWORD
+                           ? "PASSWORD" : "LDAP");
+        } else {
+            row[2].set_str("UNKNOWN");
+        }
+        row[3].set_integer(user.__isset.max_queries_per_hour ?
+                           *user.get_max_queries_per_hour() : 0);
+        row[4].set_integer(user.__isset.max_updates_per_hour ?
+                           *user.get_max_updates_per_hour() : 0);
+        row[5].set_integer(user.__isset.max_connections_per_hour ?
+                           *user.get_max_connections_per_hour() : 0);
+        row[6].set_integer(user.__isset.max_user_connections ?
+                           *user.get_max_user_connections() : 0);
+        rows.emplace_back();
+        rows.back().set_columns(std::move(row));
+
+        resp_->set_rows(std::move(rows));
+        doFinish(Executor::ProcessControl::kNext);
+    };
+
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        doError(Status::Error(folly::stringPrintf("Show tags exception: %s",
+                                                  e.what().c_str())));
+        return;
+    };
+    std::move(future).via(runner).thenValue(cb).thenError(error);
+}
+
+void ShowExecutor::showUsers() {
+    auto future = ectx()->getMetaClient()->listUsers();
+    auto *runner = ectx()->rctx()->runner();
+
+    auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            doError(std::forward<decltype(resp)>(resp).status());
+            return;
+        }
+
+        auto value = std::forward<decltype(resp)>(resp).value();
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        std::vector<cpp2::RowValue> rows;
+        std::vector<std::string> header{"Account", "IsLock", "Login Type",
+                                        "MAX_QUERIES_PER_HOUR",
+                                        "MAX_UPDATES_PER_HOUR",
+                                        "MAX_CONNECTIONS_PER_HOUR",
+                                        "MAX_USER_CONNECTIONS"};
+        resp_->set_column_names(std::move(header));
+        for (auto& item : value) {
+            auto user = item.second;
+            std::vector<cpp2::ColumnValue> row;
+            row.resize(7);
+            row[0].set_str(user.get_account());
+            row[1].set_bool_val(user.__isset.is_lock ? *user.get_is_lock() : false);
+            if (user.__isset.login_type) {
+                row[2].set_str(*user.get_login_type() == nebula::cpp2::UserLoginType::PASSWORD
+                               ? "PASSWORD" : "LDAP");
+            } else {
+                row[2].set_str("UNKNOWN");
+            }
+            row[3].set_integer(user.__isset.max_queries_per_hour ?
+                               *user.get_max_queries_per_hour() : 0);
+            row[4].set_integer(user.__isset.max_updates_per_hour ?
+                               *user.get_max_updates_per_hour() : 0);
+            row[5].set_integer(user.__isset.max_connections_per_hour ?
+                               *user.get_max_connections_per_hour() : 0);
+            row[6].set_integer(user.__isset.max_user_connections ?
+                               *user.get_max_user_connections() : 0);
+            rows.emplace_back();
+            rows.back().set_columns(std::move(row));
+        }
+
+        resp_->set_rows(std::move(rows));
+        doFinish(Executor::ProcessControl::kNext);
+    };
+
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        doError(Status::Error(folly::stringPrintf("Show tags exception: %s",
+                                                  e.what().c_str())));
+        return;
+    };
+    std::move(future).via(runner).thenValue(cb).thenError(error);
+}
+
+void ShowExecutor::showRoles() {
+    auto *space = sentence_->getName();
+    auto future = ectx()->getMetaClient()->listRoles(*space);
+    auto *runner = ectx()->rctx()->runner();
+
+    auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            doError(std::forward<decltype(resp)>(resp).status());
+            return;
+        }
+
+        auto value = std::forward<decltype(resp)>(resp).value();
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        std::vector<cpp2::RowValue> rows;
+        std::vector<std::string> header{"Account", "Role Type"};
+        resp_->set_column_names(std::move(header));
+        for (auto& role : value) {
+            std::vector<cpp2::ColumnValue> row;
+            row.resize(2);
+            row[0].set_str(role.get_user());
+            row[1].set_str(roleToStr(role.get_role_type()));
+            rows.emplace_back();
+            rows.back().set_columns(std::move(row));
+        }
+
+        resp_->set_rows(std::move(rows));
+        doFinish(Executor::ProcessControl::kNext);
+    };
+
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        doError(Status::Error(folly::stringPrintf("Show tags exception: %s",
+                                                  e.what().c_str())));
+        return;
+    };
+    std::move(future).via(runner).thenValue(cb).thenError(error);
+}
+
+// static
+std::string ShowExecutor::roleToStr(nebula::cpp2::RoleType type) {
+    std::string role;
+    switch (type) {
+        case nebula::cpp2::RoleType::GOD : {
+            role = "GOD";
+            break;
+        }
+        case nebula::cpp2::RoleType::ADMIN : {
+            role = "ADMIN";
+            break;
+        }
+        case nebula::cpp2::RoleType::DBA : {
+            role = "DBA";
+            break;
+        }
+        case nebula::cpp2::RoleType::USER : {
+            role = "USER";
+            break;
+        }
+        case nebula::cpp2::RoleType::GUEST : {
+            role = "GUEST";
+            break;
+        }
+    }
+    return role;
 }
 
 void ShowExecutor::setupResponse(cpp2::ExecutionResponse &resp) {

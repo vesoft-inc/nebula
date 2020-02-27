@@ -148,20 +148,18 @@ public:
 
     static std::string userKey(UserID userId);
 
-    static std::string userVal(const std::string& password,
-                               const cpp2::UserItem& userItem);
+    static std::string userVal(const nebula::cpp2::UserItem& userItem);
 
-    static folly::StringPiece userItemVal(folly::StringPiece rawVal);
-
-    static std::string replaceUserVal(const cpp2::UserItem& user, folly::StringPiece rawVal);
+    static std::string replaceUserVal(const nebula::cpp2::UserItem& user,
+                                      folly::StringPiece rawVal);
 
     static std::string roleKey(GraphSpaceID spaceId, UserID userId);
 
-    static std::string roleVal(cpp2::RoleType roleType);
+    static std::string roleVal(nebula::cpp2::RoleType roleType);
 
     static std::string changePassword(folly::StringPiece val, folly::StringPiece newPwd);
 
-    static cpp2::UserItem parseUserItem(folly::StringPiece val);
+    static nebula::cpp2::UserItem parseUserItem(folly::StringPiece val);
 
     static std::string rolesPrefix();
 

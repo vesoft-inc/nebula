@@ -172,9 +172,6 @@ public:
     folly::Future<cpp2::ExecResp>
     future_changePassword(const cpp2::ChangePasswordReq& req) override;
 
-    folly::Future<cpp2::ExecResp>
-    future_checkPassword(const cpp2::CheckPasswordReq& req) override;
-
     /**
      * HeartBeat
      * */

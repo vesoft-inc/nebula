@@ -124,20 +124,6 @@ private:
 };
 
 
-class CheckPasswordProcessor : public BaseProcessor<cpp2::ExecResp> {
-public:
-    static CheckPasswordProcessor* instance(kvstore::KVStore* kvstore) {
-        return new CheckPasswordProcessor(kvstore);
-    }
-
-    void process(const cpp2::CheckPasswordReq& req);
-
-private:
-    explicit CheckPasswordProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::ExecResp>(kvstore) {}
-};
-
-
 class ListRolesProcessor : public BaseProcessor<cpp2::ListRolesResp> {
 public:
     static ListRolesProcessor* instance(kvstore::KVStore* kvstore) {

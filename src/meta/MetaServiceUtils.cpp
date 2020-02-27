@@ -541,48 +541,41 @@ std::string MetaServiceUtils::userKey(UserID userId) {
     return key;
 }
 
-std::string MetaServiceUtils::userVal(const std::string& password,
-                                      const cpp2::UserItem& userItem) {
-    auto len = password.size();
-    std::string val, userVal;
-    apache::thrift::CompactSerializer::serialize(userItem, &userVal);
-    val.reserve(sizeof(int32_t) + len + userVal.size());
-    val.append(reinterpret_cast<const char*>(&len), sizeof(int32_t))
-       .append(password)
-       .append(userVal);
+std::string MetaServiceUtils::userVal(const nebula::cpp2::UserItem& userItem) {
+    std::string val;
+    apache::thrift::CompactSerializer::serialize(userItem, &val);
     return val;
 }
 
-folly::StringPiece MetaServiceUtils::userItemVal(folly::StringPiece rawVal) {
-    auto offset = sizeof(int32_t) + *reinterpret_cast<const int32_t *>(rawVal.begin());
-    return rawVal.subpiece(offset, rawVal.size() - offset);
-}
+std::string MetaServiceUtils::replaceUserVal(const nebula::cpp2::UserItem& user,
+                                             folly::StringPiece val) {
+    nebula::cpp2::UserItem oldUser;
+    apache::thrift::CompactSerializer::deserialize(val, oldUser);
 
-std::string MetaServiceUtils::replaceUserVal(const cpp2::UserItem& user, folly::StringPiece val) {
-    cpp2:: UserItem oldUser;
-    apache::thrift::CompactSerializer::deserialize(userItemVal(val), oldUser);
     if (user.__isset.is_lock) {
-        oldUser.set_is_lock(user.get_is_lock());
+        oldUser.set_is_lock(*user.get_is_lock());
+    }
+    if (user.__isset.login_type) {
+        oldUser.set_login_type(*user.get_login_type());
+    }
+    if (user.__isset.encoded_pwd) {
+        oldUser.set_encoded_pwd(*user.get_encoded_pwd());
     }
     if (user.__isset.max_queries_per_hour) {
-        oldUser.set_max_queries_per_hour(user.get_max_queries_per_hour());
+        oldUser.set_max_queries_per_hour(*user.get_max_queries_per_hour());
     }
     if (user.__isset.max_updates_per_hour) {
-        oldUser.set_max_updates_per_hour(user.get_max_updates_per_hour());
+        oldUser.set_max_updates_per_hour(*user.get_max_updates_per_hour());
     }
     if (user.__isset.max_connections_per_hour) {
-        oldUser.set_max_connections_per_hour(user.get_max_connections_per_hour());
+        oldUser.set_max_connections_per_hour(*user.get_max_connections_per_hour());
     }
     if (user.__isset.max_user_connections) {
-        oldUser.set_max_user_connections(user.get_max_user_connections());
+        oldUser.set_max_user_connections(*user.get_max_user_connections());
     }
 
-    std::string newVal, userVal;
-    apache::thrift::CompactSerializer::serialize(oldUser, &userVal);
-    auto len = sizeof(int32_t) + *reinterpret_cast<const int32_t *>(val.begin());
-    newVal.reserve(len + userVal.size());
-    newVal.append(val.subpiece(0, len).str())
-          .append(userVal);
+    std::string newVal;
+    apache::thrift::CompactSerializer::serialize(oldUser, &newVal);
     return newVal;
 }
 
@@ -595,28 +588,25 @@ std::string MetaServiceUtils::roleKey(GraphSpaceID spaceId, UserID userId) {
     return key;
 }
 
-std::string MetaServiceUtils::roleVal(cpp2::RoleType roleType) {
+std::string MetaServiceUtils::roleVal(nebula::cpp2::RoleType roleType) {
     std::string val;
-    val.reserve(sizeof(cpp2::RoleType));
-    val.append(reinterpret_cast<const char*>(&roleType), sizeof(cpp2::RoleType));
+    val.reserve(sizeof(nebula::cpp2::RoleType));
+    val.append(reinterpret_cast<const char*>(&roleType), sizeof(nebula::cpp2::RoleType));
     return val;
 }
 
 std::string MetaServiceUtils::changePassword(folly::StringPiece val, folly::StringPiece newPwd) {
-    auto pwdLen = newPwd.size();
-    auto len = sizeof(int32_t) + *reinterpret_cast<const int32_t *>(val.begin());
-    auto userVal = val.subpiece(len, val.size() - len);
+    nebula::cpp2::UserItem oldUser;
+    apache::thrift::CompactSerializer::deserialize(val, oldUser);
+    oldUser.set_encoded_pwd(newPwd.str());
     std::string newVal;
-    newVal.reserve(sizeof(int32_t) + pwdLen+ userVal.size());
-    newVal.append(reinterpret_cast<const char*>(&pwdLen), sizeof(int32_t))
-          .append(newPwd.str())
-          .append(userVal.str());
+    apache::thrift::CompactSerializer::serialize(oldUser, &newVal);
     return newVal;
 }
 
-cpp2::UserItem MetaServiceUtils::parseUserItem(folly::StringPiece val) {
-    cpp2::UserItem user;
-    apache::thrift::CompactSerializer::deserialize(userItemVal(val), user);
+nebula::cpp2::UserItem MetaServiceUtils::parseUserItem(folly::StringPiece val) {
+    nebula::cpp2::UserItem user;
+    apache::thrift::CompactSerializer::deserialize(val, user);
     return user;
 }
 
