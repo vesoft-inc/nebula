@@ -91,7 +91,12 @@ public:
     static StatusOr<VariantType> getDefaultProp(const meta::SchemaProviderIf* schema,
                                                 const std::string& prop) {
         auto& vType = schema->getFieldType(prop);
-        return getDefaultProp(vType.type);
+        auto defaultVal = getDefaultProp(vType.type);
+        if (!defaultVal.ok()) {
+            LOG(ERROR) << "Get default value for `" << prop << "' failed: " << defaultVal.status();
+        }
+
+        return defaultVal;
     }
 
     static StatusOr<VariantType> getDefaultProp(const nebula::cpp2::SupportedType& type) {
@@ -114,7 +119,7 @@ public:
             }
             default:
                 auto msg = folly::sformat("Unknown type: {}", static_cast<int32_t>(type));
-                LOG(ERROR) << "Unknown type: " << msg;
+                LOG(ERROR) << msg;
                 return Status::Error(msg);
         }
     }

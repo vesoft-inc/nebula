@@ -61,6 +61,8 @@ private:
 
     Status prepareOverAll();
 
+    Status addToEdgeTypes(EdgeType type);
+
     /**
      * To check if this is the final step.
      */
@@ -74,10 +76,6 @@ private:
      */
     bool isUpto() const {
         return upto_;
-    }
-
-    bool isReversely() const {
-        return isReversely_;
     }
 
     /**
@@ -216,7 +214,7 @@ private:
     uint32_t                                    steps_{1};
     uint32_t                                    curStep_{1};
     bool                                        upto_{false};
-    bool                                        isReversely_{false};
+    OverClause::Direction                       direction_{OverClause::Direction::kForward};
     std::vector<EdgeType>                       edgeTypes_;
     std::string                                *varname_{nullptr};
     std::string                                *colname_{nullptr};

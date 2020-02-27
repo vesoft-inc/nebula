@@ -121,7 +121,6 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
                         prop.type_.type = nebula::cpp2::SupportedType::INT;
                     }
                 } else {
-                    // Only outBound have properties on edge.
                     auto schema = this->schemaMan_->getEdgeSchema(spaceId_,
                                                                   std::abs(edgeType));
                     if (!schema) {
@@ -145,7 +144,6 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
                     edgeContexts_.emplace(edgeType, std::move(v));
                     break;
                 }
-
                 it2->second.emplace_back(std::move(prop));
                 break;
             }
@@ -521,6 +519,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
             }
 
             if (exp_ != nullptr) {
+                VLOG(1) << "Do filter: " << exp_->toString();
                 getters.getAliasProp = [this, edgeType, &reader, &key](const std::string& edgeName,
                                            const std::string& prop) -> OptVariantType {
                     auto edgeFound = this->edgeMap_.find(edgeName);
@@ -548,6 +547,42 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                     }
                     return value(std::move(res));
                 };
+                getters.getEdgeRank = [&rank] () -> VariantType {
+                    return rank;
+                };
+                getters.getEdgeDstId = [this,
+                                        &edgeType,
+                                        &dstId] (const std::string& edgeName) -> OptVariantType {
+                    auto edgeFound = this->edgeMap_.find(edgeName);
+                    if (edgeFound == edgeMap_.end()) {
+                        return Status::Error(
+                                "Edge `%s' not found when call getters.", edgeName.c_str());
+                    }
+                    if (std::abs(edgeType) != edgeFound->second) {
+                        return Status::Error("Ignore this edge");
+                    }
+                    return dstId;
+                };
+                getters.getSrcTagProp = [&fcontext] (const std::string& tag,
+                                                     const std::string& prop) -> OptVariantType {
+                    auto it = fcontext->tagFilters_.find(std::make_pair(tag, prop));
+                    if (it == fcontext->tagFilters_.end()) {
+                        return Status::Error("Invalid Tag Filter");
+                    }
+                    VLOG(1) << "Hit srcProp filter for tag " << tag << ", prop "
+                            << prop << ", value " << it->second;
+                    return it->second;
+                };
+                auto value = exp_->eval(getters);
+                if (value.ok() && !Expression::asBool(value.value())) {
+                    VLOG(1) << "Filter the edge "
+                            << vId << "-> " << dstId << "@" << rank << ":" << edgeType;
+                    continue;
+                }
+            }
+        } else if (onlyStructure) {
+            if (exp_ != nullptr) {
+                VLOG(1) << "Do filter: " << exp_->toString();
                 getters.getEdgeRank = [&rank] () -> VariantType {
                     return rank;
                 };

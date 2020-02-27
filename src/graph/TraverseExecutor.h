@@ -121,6 +121,8 @@ private:
     friend class TraverseExecutor;
     friend class GoExecutor;
     friend class GoTest_FilterPushdown_Test;
+    friend class GoTest_ReverseTraversalFilterPushdown_Test;
+    friend class GoTest_BidirectTraversalFilterPushdown_Test;
     const WhereClause              *where_{nullptr};
     std::unique_ptr<Expression>     filterRewrite_;
     Expression                     *filter_{nullptr};
