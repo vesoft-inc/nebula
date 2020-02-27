@@ -140,25 +140,21 @@ if("${NEBULA_COMMON_REPO_TAG}" STREQUAL "")
     SET(NEBULA_COMMON_REPO_TAG "HEAD")
 endif()
 
-include(ExternalProject)
-ExternalProject_Add(
+SET(NEBULA_COMMON_PACKAGE "nebula-common")
+
+# Configure the dependent projects
+include(AddDependentProject)
+message(STATUS "")
+message(STATUS ">>>>> Configuring the nebula-common repo <<<<<")
+add_dependent_project(
+    ${NEBULA_HOME}/modules
     common
-    PREFIX modules
-    SOURCE_DIR modules/common
-    GIT_REPOSITORY ${NEBULA_COMMON_REPO_URL}
-    GIT_SHALLOW true
-    GIT_PROGRESS true
-    GIT_TAG ${NEBULA_COMMON_REPO_TAG}
-    CMAKE_ARGS
-        -DNEBULA_THIRDPARTY_ROOT=${NEBULA_THIRDPARTY_ROOT}
-        -DNEBULA_OTHER_ROOT=${NEBULA_OTHER_ROOT}
-        -DENABLE_JEMALLOC=${ENABLE_JEMALLOC}
-        -DENABLE_NATIVE=${ENABLE_NATIVE}
-        -DENABLE_CCACHE=${ENABLE_CCACHE}
-        -DENABLE_TESTING=false
-    INSTALL_COMMAND ""
-    BUILD_IN_SOURCE true
+    ${NEBULA_COMMON_REPO_URL}
+    ${NEBULA_COMMON_REPO_TAG}
 )
+find_package(${NEBULA_COMMON_PACKAGE} REQUIRED)
+message(STATUS ">>>>> The nebula-common repo has been configured successfully <<<<<")
+message(STATUS "")
 
 # third-party
 if(NOT ${NEBULA_THIRDPARTY_ROOT} STREQUAL "")
@@ -319,7 +315,8 @@ macro(nebula_add_library name type)
     endif()
     add_dependencies(
         ${name}
-        parser_target
+        common_project
+#        parser_target
     )
 endmacro()
 
@@ -412,21 +409,22 @@ nebula_add_subdirectory(src)
 nebula_add_subdirectory(conf)
 nebula_add_subdirectory(resources)
 
-#set(NEBULA_CLEAN_ALL_DEPS clean-interface clean-pch)
+add_custom_target(
+    clean-modules
+    COMMAND "rm" "-fr" "modules/*"
+)
 
 add_custom_target(
     clean-build
     COMMAND ${CMAKE_MAKE_PROGRAM} clean
     COMMAND "find" "." "-name" "Testing" "|" "xargs" "rm" "-fr"
-    DEPENDS ${NEBULA_CLEAN_ALL_DEPS}
 )
 
 add_custom_target(
     clean-all
     COMMAND ${CMAKE_MAKE_PROGRAM} clean
     COMMAND "find" "." "-name" "Testing" "|" "xargs" "rm" "-fr"
-    COMMAND "rm" "-fr" "modules/*"
-    DEPENDS ${NEBULA_CLEAN_ALL_DEPS}
+    DEPENDS clean-modules
 )
 
 add_custom_target(
