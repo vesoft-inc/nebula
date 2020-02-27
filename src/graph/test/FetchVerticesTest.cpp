@@ -382,5 +382,26 @@ TEST_F(FetchVerticesTest, FetchAll) {
         ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
+
+TEST_F(FetchVerticesTest, DuplicateColumnName) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "FETCH PROP ON player %ld YIELD player.name, player.name";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"VertexID"}, {"player.name"}, {"player.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t, std::string, std::string>> expected = {
+            {player.vid(), player.name(), player.name()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
 }  // namespace graph
 }  // namespace nebula

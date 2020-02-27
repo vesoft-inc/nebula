@@ -77,6 +77,7 @@ StatusOr<std::vector<cpp2::RowValue>> InterimResult::getRows() const {
     }
     auto schema = rsReader_->schema();
     auto columnCnt = schema->getNumFields();
+    VLOG(1) << "columnCnt: " << columnCnt;
     std::vector<cpp2::RowValue> rows;
     folly::StringPiece piece;
     using nebula::cpp2::SupportedType;
@@ -88,6 +89,7 @@ StatusOr<std::vector<cpp2::RowValue>> InterimResult::getRows() const {
         while (fieldIter) {
             auto type = fieldIter->getType().type;
             auto field = fieldIter->getName();
+            VLOG(1) << "field: " << field << " type: " << static_cast<int64_t>(type);
             row.emplace_back();
             switch (type) {
                 case SupportedType::VID: {
@@ -276,21 +278,13 @@ OptVariantType InterimResult::InterimResultIndex::getColumnWithVID(VertexID id,
 }
 
 
-nebula::cpp2::SupportedType InterimResult::InterimResultIndex::getColumnType(
+nebula::cpp2::SupportedType InterimResult::getColumnType(
     const std::string &col) const {
-    uint32_t columnIndex = 0;
-    auto iter = columnToIndex_.find(col);
-    if (iter == columnToIndex_.end()) {
-        LOG(ERROR) << "Prop `" << col << "' not found";
+    auto schema = rsReader_->schema();
+    if (schema == nullptr) {
         return nebula::cpp2::SupportedType::UNKNOWN;
     }
-    columnIndex = iter->second;
-
-
-    if (schema_ == nullptr) {
-        return nebula::cpp2::SupportedType::UNKNOWN;
-    }
-    auto type = schema_->getFieldType(columnIndex);
+    auto type = schema->getFieldType(col);
     return type.type;
 }
 

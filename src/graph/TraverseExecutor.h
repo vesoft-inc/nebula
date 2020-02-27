@@ -153,11 +153,14 @@ public:
     static std::unique_ptr<TraverseExecutor>
     makeTraverseExecutor(Sentence *sentence, ExecutionContext *ectx);
 
+    nebula::cpp2::SupportedType calculateExprType(Expression* exp) const;
+
 protected:
     std::unique_ptr<TraverseExecutor> makeTraverseExecutor(Sentence *sentence);
 
 protected:
     OnResult                                    onResult_;
+    std::unique_ptr<InterimResult>              inputs_;
 };
 
 }   // namespace graph

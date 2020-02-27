@@ -490,5 +490,57 @@ TEST_F(FetchEdgesTest, NonExistEdge) {
         ASSERT_EQ(nullptr, resp.get_rows());
     }
 }
+
+TEST_F(FetchEdgesTest, DuplicateColumnName) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto &serve = player.serves()[0];
+        auto &team = teams_[std::get<0>(serve)];
+        auto *fmt = "FETCH PROP ON serve %ld->%ld"
+                    " YIELD serve.start_year, serve.start_year";
+        auto query = folly::stringPrintf(fmt, player.vid(), team.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve._src"},
+            {"serve._dst"},
+            {"serve._rank"},
+            {"serve.start_year"},
+            {"serve.start_year"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
+            {player.vid(), team.vid(), 0, std::get<1>(serve), std::get<1>(serve)},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto &serve = player.serves()[0];
+        auto &team = teams_[std::get<0>(serve)];
+        auto *fmt = "FETCH PROP ON serve %ld->%ld"
+                    " YIELD serve._dst";
+        auto query = folly::stringPrintf(fmt, player.vid(), team.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve._src"},
+            {"serve._dst"},
+            {"serve._rank"},
+            {"serve._dst"},
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t>> expected = {
+            {player.vid(), team.vid(), 0, team.vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
 }  // namespace graph
 }  // namespace nebula
