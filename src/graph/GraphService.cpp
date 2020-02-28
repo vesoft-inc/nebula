@@ -9,6 +9,7 @@
 #include "time/Duration.h"
 #include "graph/RequestContext.h"
 #include "graph/SimpleAuthenticator.h"
+ #include "graph/LdapAuthenticator.h"
 #include "storage/client/StorageClient.h"
 
 namespace nebula {
@@ -17,7 +18,8 @@ namespace graph {
 Status GraphService::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor) {
     sessionManager_ = std::make_unique<SessionManager>();
     executionEngine_ = std::make_unique<ExecutionEngine>();
-    authenticator_ = std::make_unique<SimpleAuthenticator>();
+    // authenticator_ = std::make_unique<SimpleAuthenticator>();
+    authenticator_ = std::make_unique<LdapAuthenticator>();
 
     return executionEngine_->init(std::move(ioExecutor));
 }

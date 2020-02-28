@@ -30,4 +30,21 @@ DECLARE_string(meta_server_addrs);
 DECLARE_string(default_charset);
 DECLARE_string(default_collate);
 
+// LDAP authentication common parameters
+DECLARE_string(ldap_server);
+DECLARE_int32(ldap_port);
+DECLARE_string(ldap_scheme);
+DECLARE_bool(ldap_tls);
+
+// LDAP authentication direct bind mode parameters
+DECLARE_string(ldap_prefix);
+DECLARE_string(ldap_suffix);
+
+// LDAP authentication search bind mode parameters
+DECLARE_string(ldap_basedn);
+DECLARE_string(ldap_binddn);
+DECLARE_string(ldap_bindpasswd);
+DECLARE_string(ldap_searchattribute);
+DECLARE_string(ldap_searchfilter);
+
 #endif  // GRAPH_GRAPHFLAGS_H_

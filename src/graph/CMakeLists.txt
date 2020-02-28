@@ -62,6 +62,7 @@ nebula_add_library(
     DropSnapshotExecutor.cpp
     AdminJobExecutor.cpp
     LookupExecutor.cpp
+    LdapAuthenticator.cpp
 )
 nebula_add_subdirectory(test)
 

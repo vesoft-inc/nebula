@@ -32,3 +32,23 @@ DEFINE_bool(local_config, false, "meta client will not retrieve latest configura
 
 DEFINE_string(default_charset, "utf8", "The default charset when a space is created");
 DEFINE_string(default_collate, "utf8_bin", "The default collate when a space is created");
+
+DEFINE_string(ldap_server, "", "list of ldap server addresses, "
+                               "separate multiple addresses with space");
+DEFINE_int32(ldap_port, 0, "Ldap server port, if no port is specified, use the default port");
+DEFINE_string(ldap_scheme, "", "Only support ldap");
+DEFINE_bool(ldap_tls, false, "Whether the connection between graphd and the LDAP server uses "
+                             "TLS encryption");
+
+DEFINE_string(ldap_prefix, "", "Prepend the string to the user name "
+                               "to form the distinguished name");
+DEFINE_string(ldap_suffix, "", "Append the string to the user name "
+                               "to form the distinguished name");
+
+DEFINE_string(ldap_basedn, "", "Root distinguished name to search the user");
+DEFINE_string(ldap_binddn, "", "User distinguished name binding to the "
+                               "directory to perform the search");
+DEFINE_string(ldap_bindpasswd, "", "User password binding to the directory "
+                                   "to perform the search");
+DEFINE_string(ldap_searchattribute, "", "Attribute to match the user name in the search");
+DEFINE_string(ldap_searchfilter, "", "Use search filter, more flexible than searchattribut");
