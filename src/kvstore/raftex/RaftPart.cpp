@@ -329,7 +329,6 @@ void RaftPart::stop() {
         status_ = Status::STOPPED;
         leader_ = {0, 0};
         role_ = Role::FOLLOWER;
-        ready_ = false;
 
         hosts = std::move(hosts_);
     }
@@ -893,7 +892,7 @@ void RaftPart::processAppendLogResponses(
                               << committedId + 1 << " to " << lastLogId;
 
             lastMsgAcceptedCostMs_ = lastMsgSentDur_.elapsedInMSec();
-            lastMsgAcceptedDur_.reset();
+            lastMsgAcceptedTime_ = time::WallClock::fastNowInMilliSec();
         } while (false);
 
         if (!checkAppendLogResult(res)) {
@@ -968,7 +967,8 @@ bool RaftPart::needToSendHeartbeat() {
     std::lock_guard<std::mutex> g(raftLock_);
     return status_ == Status::RUNNING &&
            role_ == Role::LEADER &&
-           lastMsgAcceptedDur_.elapsedInMSec() >= FLAGS_raft_heartbeat_interval_secs * 1000 * 2 / 5;
+           time::WallClock::fastNowInMilliSec() - lastMsgAcceptedTime_ >=
+               FLAGS_raft_heartbeat_interval_secs * 1000 * 2 / 5;
 }
 
 
@@ -1084,7 +1084,6 @@ typename RaftPart::Role RaftPart::processElectionResponses(
                   << proposedTerm_;
         term_ = proposedTerm_;
         role_ = Role::LEADER;
-        ready_ = false;
     }
 
     return role_;
@@ -1166,17 +1165,11 @@ bool RaftPart::leaderElection() {
                                        term = voteReq.get_term()] {
                         self->onElected(term);
                     });
+                    lastMsgAcceptedTime_ = 0;
                 }
             }
             weight_ = 1;
-            sendHeartbeat().then([this] (folly::Try<AppendLogResult>&& t) {
-                CHECK(!t.hasException());
-                auto result = std::move(t).value();
-                if (result == AppendLogResult::SUCCEEDED) {
-                    bool expected = false;
-                    ready_.compare_exchange_strong(expected, true);
-                }
-            });
+            sendHeartbeat();
             return true;
         }
         case Role::FOLLOWER: {
@@ -1214,14 +1207,7 @@ void RaftPart::statusPolling() {
         }
     } else if (needToSendHeartbeat()) {
         VLOG(2) << idStr_ << "Need to send heartbeat";
-        sendHeartbeat().then([this] (folly::Try<AppendLogResult>&& t) {
-            CHECK(!t.hasException());
-            auto result = std::move(t).value();
-            if (result == AppendLogResult::SUCCEEDED) {
-                bool expected = false;
-                ready_.compare_exchange_strong(expected, true);
-            }
-        });
+        sendHeartbeat();
     }
     if (needToCleanupSnapshot()) {
         LOG(INFO) << idStr_ << "Clean up the snapshot";
@@ -1887,8 +1873,8 @@ bool RaftPart::leaseValid() {
     // When majority has accepted a log, leader obtains a lease which last for heartbeat.
     // However, we need to take off the net io time. On the left side of the inequality is
     // the time duration since last time leader send a log (the log has been accepted as well)
-    return lastMsgAcceptedCostMs_ + lastMsgAcceptedDur_.elapsedInMSec()
-        < FLAGS_raft_heartbeat_interval_secs * 1000;
+    return time::WallClock::fastNowInMilliSec() - lastMsgAcceptedTime_
+        < FLAGS_raft_heartbeat_interval_secs * 1000 - lastMsgAcceptedCostMs_;
 }
 
 }  // namespace raftex

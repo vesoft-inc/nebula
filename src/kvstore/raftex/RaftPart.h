@@ -209,10 +209,6 @@ public:
         const cpp2::SendSnapshotRequest& req,
         cpp2::SendSnapshotResponse& resp);
 
-    bool isReady() {
-        return ready_;
-    }
-
     bool leaseValid();
 
 protected:
@@ -516,8 +512,8 @@ protected:
     time::Duration lastMsgRecvDur_;
     // To record how long ago when the last log message or heartbeat was sent
     time::Duration lastMsgSentDur_;
-    // To record how long ago when the last message was accepted by majority peers
-    time::Duration lastMsgAcceptedDur_;
+    // To record when the last message was accepted by majority peers
+    uint64_t lastMsgAcceptedTime_{0};
     // How long between last message was sent and was accepted by majority peers
     uint64_t lastMsgAcceptedCostMs_{0};
 
@@ -544,7 +540,6 @@ protected:
     std::atomic<uint64_t> weight_;
 
     bool blocking_{false};
-    std::atomic_bool ready_{false};
 };
 
 }  // namespace raftex
