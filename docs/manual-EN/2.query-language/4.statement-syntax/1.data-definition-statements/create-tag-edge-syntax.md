@@ -47,7 +47,7 @@ You can use the `If NOT EXISTS` keywords when creating tags or edges. This keywo
 
 * **Default Constraint**
 
-    You can set the default value of a property when creating a tag/edge with the `DEFAULT` constraint. The default value will be added to all new vertices and edges IF no other value is specified. Also you can write a user-specified value if you don't want to use the default one.
+    You can set the default value of a property when creating a tag/edge with the `DEFAULT` constraint. The default value will be added to all new vertices and edges if no other value is specified. The default value can be any of the data type supported by  **Nebula Graph** or  expressions. Also you can write a user-specified value if you don't want to use the default one.
 
     > Using `Alter` to change the default value is not supported.
 
