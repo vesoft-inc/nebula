@@ -262,10 +262,11 @@ ResultCode HBaseStore::get(GraphSpaceID spaceId,
 }
 
 
-ResultCode HBaseStore::multiGet(GraphSpaceID spaceId,
-                                PartitionID partId,
-                                const std::vector<std::string>& keys,
-                                std::vector<std::string>* values) {
+ErrorOr<ResultCode, std::vector<Status>> HBaseStore::multiGet(GraphSpaceID spaceId,
+                                                              PartitionID partId,
+                                                              const std::vector<std::string>& keys,
+                                                              std::vector<std::string>* values,
+                                                              bool returnPartly) {
     UNUSED(partId);
     auto tableName = this->spaceIdToTableName(spaceId);
     std::vector<std::string> rowKeys;
@@ -274,23 +275,17 @@ ResultCode HBaseStore::multiGet(GraphSpaceID spaceId,
         rowKeys.emplace_back(rowKey);
     }
     std::vector<std::pair<std::string, KVMap>> dataList;
-    ResultCode code = client_->multiGet(tableName, rowKeys, dataList);
-    for (size_t index = 0; index < dataList.size(); index++) {
-        auto value = this->encode(spaceId, keys[index], dataList[index].second);
-        values->emplace_back(value);
-    }
-    if (code == ResultCode::ERR_IO_ERROR) {
+    auto ret = client_->multiGet(tableName, rowKeys, dataList, returnPartly);
+    if (ok(ret)) {
+        for (size_t index = 0; index < dataList.size(); index++) {
+            auto value = this->encode(spaceId, keys[index], dataList[index].second);
+            values->emplace_back(value);
+        }
+        return value(ret);
+    } else {
         LOG(ERROR) << "MultiGet Failed: the HBase I/O error.";
+        return error(ret);
     }
-    return code;
-}
-
-
-ErrorOr<ResultCode, std::vector<Status>> HBaseStore::tryGet(GraphSpaceID,
-                                                            PartitionID,
-                                                            const std::vector<std::string>&,
-                                                            std::vector<std::string>*) {
-    LOG(FATAL) << "Unimplement";
 }
 
 

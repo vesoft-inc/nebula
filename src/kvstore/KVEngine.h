@@ -49,14 +49,10 @@ public:
     // Read a single key
     virtual ResultCode get(const std::string& key, std::string* value) = 0;
 
-    // Read a list of keys
-    virtual ResultCode multiGet(const std::vector<std::string>& keys,
-                                std::vector<std::string>* values) = 0;
-
     // Read a list of keys, if key[i] does not exist, the i-th value in return value
     // would be Status::KeyNotFound
-    virtual std::vector<Status> tryGet(const std::vector<std::string>& keys,
-                                       std::vector<std::string>* values) = 0;
+    virtual std::vector<Status> multiGet(const std::vector<std::string>& keys,
+                                         std::vector<std::string>* values) = 0;
 
     // Get all results in range [start, end)
     virtual ResultCode range(const std::string& start,

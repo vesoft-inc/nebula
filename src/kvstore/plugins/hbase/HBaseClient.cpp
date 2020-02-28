@@ -66,9 +66,11 @@ ResultCode HBaseClient::get(const std::string& tableName,
 }
 
 
-ResultCode HBaseClient::multiGet(const std::string& tableName,
-                                 const std::vector<std::string>& rowKeys,
-                                 std::vector<std::pair<std::string, KVMap>>& dataList) {
+ErrorOr<ResultCode, std::vector<Status>> HBaseClient::multiGet(
+        const std::string& tableName,
+        const std::vector<std::string>& rowKeys,
+        std::vector<std::pair<std::string, KVMap>>& dataList,
+        bool returnPartly) {
     std::vector<TGet> tGetList;
     for (auto& rowKey : rowKeys) {
         TGet tGet;
@@ -82,6 +84,7 @@ ResultCode HBaseClient::multiGet(const std::string& tableName,
     }
 
     std::vector<TResult> tResultList;
+    std::vector<Status> ret;
     try {
         client_->sync_getMultiple(tResultList, tableName, tGetList);
         for (auto& tResult : tResultList) {
@@ -93,12 +96,17 @@ ResultCode HBaseClient::multiGet(const std::string& tableName,
                     data.emplace(cv.qualifier, cv.value);
                 }
                 dataList.emplace_back(std::make_pair(rowKey, std::move(data)));
+                ret.emplace_back(Status::OK());
             } else {
-                dataList.clear();
-                return ResultCode::ERR_UNKNOWN;
+                if (returnPartly) {
+                    ret.emplace_back(Status::KeyNotFound());
+                } else {
+                    dataList.clear();
+                    return ResultCode::ERR_UNKNOWN;
+                }
             }
         }
-        return ResultCode::SUCCEEDED;
+        return ret;
     } catch (const TIOError &ex) {
         LOG(ERROR) << "TIOError: " << ex.message;
         return ResultCode::ERR_IO_ERROR;

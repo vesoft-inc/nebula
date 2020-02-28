@@ -63,7 +63,8 @@ TEST(HBaseClientTest, MultiTest) {
     EXPECT_EQ(ResultCode::SUCCEEDED, hbaseClient->multiPut(tableName, dataList));
 
     std::vector<std::pair<std::string, KVMap>> retDataList;
-    EXPECT_EQ(ResultCode::SUCCEEDED, hbaseClient->multiGet(tableName, rowKeys, retDataList));
+    auto ret = hbaseClient->multiGet(tableName, rowKeys, retDataList);
+    EXPECT_TRUE(ok(ret));
     EXPECT_EQ(10, retDataList.size());
     for (size_t index = 0; index < retDataList.size(); index++) {
         EXPECT_EQ(rowKeys[index], retDataList[index].first);
@@ -79,7 +80,9 @@ TEST(HBaseClientTest, MultiTest) {
 
     EXPECT_EQ(ResultCode::SUCCEEDED, hbaseClient->multiRemove(tableName, rowKeys));
     retDataList.clear();
-    EXPECT_EQ(ResultCode::ERR_UNKNOWN, hbaseClient->multiGet(tableName, rowKeys, retDataList));
+    ret = hbaseClient->multiGet(tableName, rowKeys, retDataList);
+    EXPECT_FALSE(ok(ret));
+    EXPECT_EQ(ResultCode::ERR_UNKNOWN, error(ret));
     EXPECT_EQ(0, retDataList.size());
 }
 
