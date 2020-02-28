@@ -10,6 +10,7 @@
 #include "base/Base.h"
 #include "kvstore/Common.h"
 #include "kvstore/KVIterator.h"
+#include "base/Status.h"
 
 namespace nebula {
 namespace kvstore {
@@ -50,8 +51,12 @@ public:
 
     // Read a list of keys
     virtual ResultCode multiGet(const std::vector<std::string>& keys,
-                                std::vector<std::string>* values,
-                                bool returnPartly = false) = 0;
+                                std::vector<std::string>* values) = 0;
+
+    // Read a list of keys, if key[i] does not exist, the i-th value in return value
+    // would be Status::KeyNotFound
+    virtual std::vector<Status> tryGet(const std::vector<std::string>& keys,
+                                       std::vector<std::string>* values) = 0;
 
     // Get all results in range [start, end)
     virtual ResultCode range(const std::string& start,

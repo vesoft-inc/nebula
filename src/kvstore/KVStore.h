@@ -17,6 +17,7 @@
 #include "kvstore/CompactionFilter.h"
 #include "meta/SchemaManager.h"
 #include "base/ErrorOr.h"
+#include "base/Status.h"
 
 namespace nebula {
 namespace kvstore {
@@ -81,8 +82,14 @@ public:
     virtual ResultCode multiGet(GraphSpaceID spaceId,
                                 PartitionID partId,
                                 const std::vector<std::string>& keys,
-                                std::vector<std::string>* values,
-                                bool returnPartly = false) = 0;
+                                std::vector<std::string>* values) = 0;
+
+    // Read multiple keys, if key[i] does not exist, the i-th value in return value
+    // would be Status::KeyNotFound
+    virtual ErrorOr<ResultCode, std::vector<Status>> tryGet(GraphSpaceID spaceId,
+                                                            PartitionID partId,
+                                                            const std::vector<std::string>& keys,
+                                                            std::vector<std::string>* values) = 0;
 
     // Get all results in range [start, end)
     virtual ResultCode range(GraphSpaceID spaceId,

@@ -265,10 +265,8 @@ ResultCode HBaseStore::get(GraphSpaceID spaceId,
 ResultCode HBaseStore::multiGet(GraphSpaceID spaceId,
                                 PartitionID partId,
                                 const std::vector<std::string>& keys,
-                                std::vector<std::string>* values,
-                                bool returnPartly) {
+                                std::vector<std::string>* values) {
     UNUSED(partId);
-    UNUSED(returnPartly);
     auto tableName = this->spaceIdToTableName(spaceId);
     std::vector<std::string> rowKeys;
     for (auto& key : keys) {
@@ -285,6 +283,14 @@ ResultCode HBaseStore::multiGet(GraphSpaceID spaceId,
         LOG(ERROR) << "MultiGet Failed: the HBase I/O error.";
     }
     return code;
+}
+
+
+ErrorOr<ResultCode, std::vector<Status>> HBaseStore::tryGet(GraphSpaceID,
+                                                            PartitionID,
+                                                            const std::vector<std::string>&,
+                                                            std::vector<std::string>*) {
+    LOG(FATAL) << "Unimplement";
 }
 
 

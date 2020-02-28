@@ -48,14 +48,30 @@ GetProcessor::asyncProcess(PartitionID part, std::vector<std::string> keys, bool
     executor_->add([this, p = std::move(promise), part, keys = std::move(keys),
                     kvKeys = std::move(kvKeys), returnPartly] () mutable {
         std::vector<std::string> values;
-        auto ret = this->kvstore_->multiGet(space_, part, kvKeys, &values, returnPartly);
-        if (ret == kvstore::ResultCode::SUCCEEDED) {
-            std::lock_guard<std::mutex> lg(this->lock_);
-            for (int32_t i = 0; i < static_cast<int32_t>(keys.size()); i++) {
-                pairs_.emplace(keys[i], values[i]);
+        if (returnPartly) {
+            auto ret = this->kvstore_->tryGet(space_, part, kvKeys, &values);
+            if (!ok(ret)) {
+                p.setValue(std::make_pair(part, error(ret)));
+            } else {
+                auto status = value(ret);
+                std::lock_guard<std::mutex> lg(this->lock_);
+                for (size_t i = 0; i < keys.size(); i++) {
+                    if (status[i].ok()) {
+                        pairs_.emplace(keys[i], values[i]);
+                    }
+                }
+                p.setValue(std::make_pair(part, kvstore::ResultCode::SUCCEEDED));
             }
+        } else {
+            auto ret = this->kvstore_->multiGet(space_, part, kvKeys, &values);
+            if (ret == kvstore::ResultCode::SUCCEEDED) {
+                std::lock_guard<std::mutex> lg(this->lock_);
+                for (size_t i = 0; i < keys.size(); i++) {
+                    pairs_.emplace(keys[i], values[i]);
+                }
+            }
+            p.setValue(std::make_pair(part, ret));
         }
-        p.setValue(std::make_pair(part, ret));
     });
     return future;
 }
