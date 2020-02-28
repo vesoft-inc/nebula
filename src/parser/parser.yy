@@ -120,6 +120,7 @@ class GraphScanner;
 %token KW_IS KW_NULL KW_DEFAULT
 %token KW_SNAPSHOT KW_SNAPSHOTS KW_LOOKUP
 %token KW_JOBS KW_JOB KW_RECOVER KW_FLUSH KW_COMPACT KW_SUBMIT
+%token KW_BIDIRECT
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -677,13 +678,23 @@ over_clause
         auto s = new std::string("*");
         auto edge = new OverEdge(s, nullptr);
         edges->addEdge(edge);
-        $$ = new OverClause(edges, true);
+        $$ = new OverClause(edges, OverClause::Direction::kBackward);
+    }
+    | KW_OVER MUL KW_BIDIRECT {
+        auto edges = new OverEdges();
+        auto s = new std::string("*");
+        auto edge = new OverEdge(s, nullptr);
+        edges->addEdge(edge);
+        $$ = new OverClause(edges, OverClause::Direction::kBidirect);
     }
     | KW_OVER over_edges {
         $$ = new OverClause($2);
     }
     | KW_OVER over_edges KW_REVERSELY {
-        $$ = new OverClause($2, true);
+        $$ = new OverClause($2, OverClause::Direction::kBackward);
+    }
+    | KW_OVER over_edges KW_BIDIRECT {
+        $$ = new OverClause($2, OverClause::Direction::kBidirect);
     }
     ;
 

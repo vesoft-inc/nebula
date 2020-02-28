@@ -9,6 +9,7 @@
 `submit job compact/flush` 命令在作业管理中新建作业并返回作业 ID，在存储层中执行 `compact/flush` 命令。示例返回结果如下：
 
 ```ngql
+nebula> SUBMIT JOB COMPACT;
 ==============
 | New Job Id |
 ==============
