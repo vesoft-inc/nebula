@@ -3,15 +3,19 @@
 ```ngql
 SHOW {SPACES | TAGS | EDGES | HOSTS | PARTS }
 SHOW PARTS <part_id>
-SHOW CREATE {TAG | EDGE} {<tag_name> | <edge_name>}
+SHOW CREATE { SPACE | TAG | EDGE} {<space_name> | <tag_name> | <edge_name>}
 SHOW {TAG | EDGE} INDEXES
 SHOW CONFIGS [graph|meta|storage]
+SHOW SNAPSHOTS
+SHOW CHARSET
+SHOW COLLATION
 ```
 
 `SHOW SPACES` 列出 **Nebula Graph** 集群中的所有图空间。
 
 `SHOW TAGS` 和 `SHOW EDGES` 则返回当前图空间中被定义的 tag 和 edge type。
 
+`SHOW CREATE SPACE` 返回指定 space 及其创建语法。如果 space 包含默认值，则同时返回默认值。
 `SHOW CREATE TAG` 和 `SHOW CREATE EDGE` 返回当前图空间中指定的 tag、edge type 及其创建语法。如果 tag 或 edge type 包含默认值，则同时返回默认值。
 
 `SHOW INDEXES` 用于列出已创建完成的标签或边类型的索引信息。
@@ -23,6 +27,12 @@ SHOW CONFIGS [graph|meta|storage]
 `SHOW PARTS <part_id>` 列出指定 partition 的信息。
 
 更多关于 `SHOW CONFIGS [graph|meta|storage]` 的信息，参见 [configs syntax](../../../3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/configs-syntax.md)。
+
+`SHOW SNAPSHOTS` 返回所有快照。
+
+`SHOW CHARSET` 返回所有支持的字符集。
+
+`SHOW COLLATION` 返回支持的排序规则。
 
 ## 示例
 
