@@ -65,7 +65,8 @@ TEST(KVTest, VerticesInterfacesTest) {
                                            localDataPort,
                                            false);
 
-    auto ret = mClient->createSpace("default", 10, 1).get();
+    meta::SpaceDesc spaceDesc("default", 10, 1);
+    auto ret = mClient->createSpace(spaceDesc).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     spaceId = ret.value();
     LOG(INFO) << "Created space \"default\", its id is " << spaceId;
