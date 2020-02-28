@@ -121,7 +121,6 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
                         prop.type_.type = nebula::cpp2::SupportedType::INT;
                     }
                 } else {
-                    // Only outBound have properties on edge.
                     auto schema = this->schemaMan_->getEdgeSchema(spaceId_,
                                                                   std::abs(edgeType));
                     if (!schema) {
@@ -145,7 +144,6 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
                     edgeContexts_.emplace(edgeType, std::move(v));
                     break;
                 }
-
                 it2->second.emplace_back(std::move(prop));
                 break;
             }
