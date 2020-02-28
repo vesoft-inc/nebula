@@ -51,7 +51,7 @@ CREATE {TAG | EDGE} [IF NOT EXISTS] {<tag_name> | <edge_name>}
   
   > 暂时不支持使用 `Alter` 更改默认值。
 
-<!-- ### Time-to-Live (TTL) 语法
+### Time-to-Live (TTL) 语法
 
 * TTL_DURATION
 
@@ -63,9 +63,9 @@ CREATE {TAG | EDGE} [IF NOT EXISTS] {<tag_name> | <edge_name>}
 
     指定的列（或者属性）必须是 int64 或者 timestamp。
 
-* 多 TTL 定义
+* 单 TTL 定义
 
-    可以指定多个 TTL_COL 字段， **Nebula Graph** 会使用最早的失效时间。 -->
+    仅支持指定单个 TTL_COL 字段。
 
 ### 示例
 
@@ -80,21 +80,15 @@ nebula> CREATE TAG player_with_default(name string, age int DEFAULT 20)  -- 默�
 nebula> CREATE EDGE follow_with_default(start_time timestamp DEFAULT 0, grade double DEFAULT 0.0)  -- 默认 start_time 设置为 0，默认 grade 设置为 0.0
 ```
 
-<!-- ```ngql
+```ngql
 nebula> CREATE TAG woman(name string, age int,
    married bool, salary double, create_time timestamp)
-   TTL_DURATION = 100, TTL_COL = create_time -- 过期时间是 100， 从当前时间开始
+   TTL_DURATION = 100, TTL_COL = "create_time" -- 时间间隔是 100s，从 create_time 字段的值开始
 
 nebula> CREATE EDGE marriage(location string, since timestamp)
     TTL_DURATION = 0, TTL_COL = since -- 负值或 0 数据不会失效
 
 nebula> CREATE TAG icecream(made timestamp, temperature int)
    TTL_DURATION = 100, TTL_COL = made,
-   TTL_DURATION = 10, TTL_COL = temperature
-   --  超过任一 TTL_DURATION 数据即失效
-
-nebula> CREATE EDGE garbage (thrown timestamp, temperature int)
-   TTL_DURATION = -2, TTL_COL = thrown,
-   TTL_DURATION = 10, TTL_COL = thrown
-   --  语法合法，但不推荐。数据将在 thrown + 10 后失效
-``` -->
+   --  超过 TTL_DURATION 数据即失效
+```

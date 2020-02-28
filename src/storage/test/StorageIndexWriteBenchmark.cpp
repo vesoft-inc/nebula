@@ -26,17 +26,6 @@ DEFINE_string(root_data_path, "/tmp/IndexWritePref", "Engine data path");
 namespace nebula {
 namespace storage {
 
-std::string genData() {
-    RowWriter writer;
-    for (int64_t numInt = 0; numInt < 3; numInt++) {
-        writer << static_cast<int64_t>(folly::Random::rand32());
-    }
-    for (auto numString = 3; numString < 6; numString++) {
-        writer << folly::stringPrintf("tag_string_col_%u", folly::Random::rand32());
-    }
-    return writer.encode();
-}
-
 std::vector<storage::cpp2::Vertex> genVertices(VertexID &vId, TagID tagId) {
     std::vector<storage::cpp2::Vertex> vertices;
     for (auto i = 0; i < FLAGS_bulk_insert_size; i++) {
@@ -45,7 +34,7 @@ std::vector<storage::cpp2::Vertex> genVertices(VertexID &vId, TagID tagId) {
         decltype(v.tags) tags;
         storage::cpp2::Tag tag;
         tag.set_tag_id(tagId);
-        auto props = genData();
+        auto props = TestUtils::setupEncode();
         tag.set_props(std::move(props));
         tags.emplace_back(std::move(tag));
         v.set_tags(std::move(tags));
@@ -106,10 +95,11 @@ void insertVertices(bool withoutIndex, bool skipIndexCheck = false) {
         }
         kv = TestUtils::initKV(std::move(rootPath).c_str());
         if (withoutIndex) {
-            schemaMan = TestUtils::mockSchemaMan(1);
+            indexMan = std::make_unique<nebula::storage::AdHocIndexManager>();
+            schemaMan = TestUtils::mockSchemaMan();
         } else {
-            indexMan = TestUtils::mockIndexMan(1, 3001, 3002);
-            schemaMan = TestUtils::mockSchemaMan(1);
+            indexMan = TestUtils::mockIndexMan(0, 3001, 3002);
+            schemaMan = TestUtils::mockSchemaMan();
         }
     };
     while (vId < FLAGS_total_vertices_size) {
@@ -196,8 +186,8 @@ void insertUnmatchIndex() {
     BENCHMARK_SUSPEND {
         auto rootPath = folly::stringPrintf("%s/%s", FLAGS_root_data_path.c_str(), "unmatchIndex");
         kv = TestUtils::initKV(std::move(rootPath).c_str());
-        indexMan = TestUtils::mockIndexMan(1, 2001, 2002);
-        schemaMan = TestUtils::mockSchemaMan(1);
+        indexMan = TestUtils::mockIndexMan(0, 2001, 2002);
+        schemaMan = TestUtils::mockSchemaMan(0);
     };
     while (vId < FLAGS_total_vertices_size) {
         if (!processVertices(kv.get(), schemaMan.get(), indexMan.get(), vId)) {
@@ -264,19 +254,13 @@ void insertDupVertices() {
                 FLAGS_root_data_path.c_str(),
                 "duplicateIndex");
         kv = TestUtils::initKV(std::move(rootPath).c_str());
-        schemaMan = TestUtils::mockSchemaMan(1);
+        schemaMan = TestUtils::mockSchemaMan();
+        indexMan = TestUtils::mockIndexMan(0, 3001, 3002);
     };
-    BENCHMARK_SUSPEND {
-        while (vId < FLAGS_total_vertices_size) {
-            if (!processVertices(kv.get(), schemaMan.get(), indexMan.get(), vId)) {
-                LOG(ERROR) << "Vertices bulk insert error";
-                return;
-            }
-        }
-    };
-    vId = 0;
+
     while (vId < FLAGS_total_vertices_size) {
-        if (!processVertices(kv.get(), schemaMan.get(), indexMan.get(), vId)) {
+        if (!processVertices(kv.get(), schemaMan.get(), indexMan.get(), vId) ||
+                !processVertices(kv.get(), schemaMan.get(), indexMan.get(), vId)) {
             LOG(ERROR) << "Vertices bulk insert error";
             return;
         }
@@ -351,8 +335,8 @@ void insertVerticesMultIndex(bool skipIndexCheck = false) {
         }
 
         kv = TestUtils::initKV(std::move(rootPath).c_str());
-        indexMan = TestUtils::mockMultiIndexMan(1, 3001, 3002);
-        schemaMan = TestUtils::mockSchemaMan(1);
+        indexMan = TestUtils::mockMultiIndexMan(0, 3001, 3002);
+        schemaMan = TestUtils::mockSchemaMan(0);
     };
     while (vId < FLAGS_total_vertices_size) {
         if (!processVertices(kv.get(), schemaMan.get(), indexMan.get(), vId)) {
@@ -464,7 +448,7 @@ skipCheckMultiIndex: Skip check obsolete index by three index.
 
 --total_vertices_size=2000000
 ============================================================================
-src/tools/storage-perf/StorageIndexWritePerfTool.cpprelative  time/iter  iters/s
+src/storage/test/StorageIndexWriteBenchmark.cpprelative  time/iter  iters/s
 ============================================================================
 withoutIndex                                                  3.00s  333.45m
 unmatchIndex                                                  4.72s  212.02m
@@ -477,7 +461,7 @@ skipCheckMultiIndex                                          33.51s   29.84m
 
 --total_vertices_size=1000000
 ============================================================================
-src/tools/storage-perf/StorageIndexWritePerfTool.cpprelative  time/iter  iters/s
+src/storage/test/StorageIndexWriteBenchmark.cpprelative  time/iter  iters/s
 ============================================================================
 withoutIndex                                                  1.49s  672.17m
 unmatchIndex                                                  2.40s  415.88m
@@ -490,7 +474,7 @@ skipCheckMultiIndex                                          17.01s   58.80m
 
 --total_vertices_size=100000
 ============================================================================
-src/tools/storage-perf/StorageIndexWritePerfTool.cpprelative  time/iter  iters/s
+src/storage/test/StorageIndexWriteBenchmark.cpprelative  time/iter  iters/s
 ============================================================================
 withoutIndex                                               136.06ms     7.35
 unmatchIndex                                               207.66ms     4.82
@@ -503,7 +487,7 @@ skipCheckMultiIndex                                           1.61s  620.78m
 
 --total_vertices_size=10000
 ============================================================================
-src/tools/storage-perf/StorageIndexWritePerfTool.cpprelative  time/iter  iters/s
+src/storage/test/StorageIndexWriteBenchmark.cpprelative  time/iter  iters/s
 ============================================================================
 withoutIndex                                                13.07ms    76.50
 unmatchIndex                                                20.58ms    48.59
@@ -516,7 +500,7 @@ skipCheckMultiIndex                                        142.01ms     7.04
 
 --total_vertices_size=1000
 ============================================================================
-src/tools/storage-perf/StorageIndexWritePerfTool.cpprelative  time/iter  iters/s
+src/storage/test/StorageIndexWriteBenchmark.cpprelative  time/iter  iters/s
 ============================================================================
 withoutIndex                                                 1.42ms   702.73
 unmatchIndex                                                 3.00ms   333.57

@@ -11,6 +11,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:network_obj>
+        $<TARGET_OBJECTS:charset_obj>
         $<TARGET_OBJECTS:thread_obj>
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -48,6 +49,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:process_obj>
+        $<TARGET_OBJECTS:charset_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
@@ -83,6 +85,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:process_obj>
+        $<TARGET_OBJECTS:charset_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
@@ -120,6 +123,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:process_obj>
+        $<TARGET_OBJECTS:charset_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
@@ -159,6 +163,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:dataman_obj>
         $<TARGET_OBJECTS:filter_obj>
         $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:charset_obj>
         $<TARGET_OBJECTS:index_obj>
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:http_client_obj>
@@ -199,6 +204,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:process_obj>
+        $<TARGET_OBJECTS:charset_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
@@ -237,6 +243,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:thread_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:schema_obj>
+        $<TARGET_OBJECTS:charset_obj>
         $<TARGET_OBJECTS:gflags_man_obj>
     LIBRARIES
         proxygenhttpserver
@@ -278,6 +285,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:thread_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:schema_obj>
+        $<TARGET_OBJECTS:charset_obj>
         $<TARGET_OBJECTS:gflags_man_obj>
     LIBRARIES
         proxygenhttpserver
@@ -315,6 +323,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:process_obj>
+        $<TARGET_OBJECTS:charset_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
@@ -357,6 +366,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:process_obj>
+        $<TARGET_OBJECTS:charset_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
@@ -394,6 +404,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:process_obj>
+        $<TARGET_OBJECTS:charset_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
@@ -430,6 +441,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:process_obj>
+        $<TARGET_OBJECTS:charset_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
@@ -446,6 +458,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:kvstore_obj>
         $<TARGET_OBJECTS:meta_client>
         $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:charset_obj>
         $<TARGET_OBJECTS:meta_thrift_obj>
         $<TARGET_OBJECTS:storage_thrift_obj>
         $<TARGET_OBJECTS:common_thrift_obj>
@@ -494,6 +507,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:charset_obj>
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:thread_obj>
         $<TARGET_OBJECTS:process_obj>
@@ -532,6 +546,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:charset_obj>
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:thread_obj>
         $<TARGET_OBJECTS:process_obj>

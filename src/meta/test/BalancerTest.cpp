@@ -502,7 +502,7 @@ TEST(BalanceTest, SpecifyHostTest) {
                 task.ret_ = std::get<1>(tup);
                 ASSERT_EQ(BalanceTask::Result::SUCCEEDED, task.ret_);
                 task.srcLived_ = std::get<2>(tup);
-                ASSERT_FALSE(task.srcLived_);
+                ASSERT_TRUE(task.srcLived_);
                 task.startTimeMs_ = std::get<3>(tup);
                 ASSERT_GT(task.startTimeMs_, 0);
                 task.endTimeMs_ = std::get<4>(tup);
@@ -545,7 +545,8 @@ TEST(BalanceTest, SpecifyMultiHostTest) {
 
     sleep(1);
     LOG(INFO) << "Now, we want to remove host {2, 2}/{3, 3}";
-    TestUtils::registerHB(kv.get(), {{0, 0}, {1, 1}, {2, 2}, {3, 3}, {4, 4}, {5, 5}});
+    // {2, 2} is dead, {3, 3} stiil alive
+    TestUtils::registerHB(kv.get(), {{0, 0}, {1, 1}, {3, 3}, {4, 4}, {5, 5}});
     auto ret = balancer.balance({{2, 2}, {3, 3}});
     CHECK(ok(ret));
     auto balanceId = value(ret);
@@ -591,6 +592,12 @@ TEST(BalanceTest, SpecifyMultiHostTest) {
                 task.status_ = std::get<0>(tup);
                 ASSERT_EQ(BalanceTask::Status::END, task.status_);
                 task.ret_ = std::get<1>(tup);
+                task.srcLived_ = std::get<2>(tup);
+                if (task.src_ == std::make_pair(2, 2)) {
+                    ASSERT_FALSE(task.srcLived_);
+                } else if (task.src_ == std::make_pair(3, 3)) {
+                    ASSERT_TRUE(task.srcLived_);
+                }
                 ASSERT_EQ(BalanceTask::Result::SUCCEEDED, task.ret_);
                 task.startTimeMs_ = std::get<3>(tup);
                 ASSERT_GT(task.startTimeMs_, 0);

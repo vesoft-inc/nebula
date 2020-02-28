@@ -6,6 +6,8 @@
 
 #include "graph/ShowExecutor.h"
 #include "network/NetworkUtils.h"
+#include "common/charset/Charset.h"
+
 
 namespace nebula {
 namespace graph {
@@ -60,6 +62,7 @@ void ShowExecutor::execute() {
         case ShowSentence::ShowType::kShowUser:
         case ShowSentence::ShowType::kShowRoles:
             // TODO(boshengchen)
+            doError(Status::Error("The statement has not been implemented"));
             break;
         case ShowSentence::ShowType::kShowCreateSpace:
             showCreateSpace();
@@ -78,6 +81,12 @@ void ShowExecutor::execute() {
             break;
         case ShowSentence::ShowType::kShowSnapshots:
             showSnapshots();
+            break;
+        case ShowSentence::ShowType::kShowCharset:
+            showCharset();
+            break;
+        case ShowSentence::ShowType::kShowCollation:
+            showCollation();
             break;
         case ShowSentence::ShowType::kUnknown:
             doError(Status::Error("Type unknown"));
@@ -501,7 +510,7 @@ void ShowExecutor::showCreateSpace() {
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            doError(Status::Error("Get space `%s' failed when show create: %s",
+            doError(Status::Error("Get space `%s' failed when show create space: %s",
                         sentence_->getName()->c_str(), resp.status().toString().c_str()));
             return;
         }
@@ -521,9 +530,12 @@ void ShowExecutor::showCreateSpace() {
         buf += folly::stringPrintf("CREATE SPACE %s (", properties.get_space_name().c_str());
         buf += "partition_num = ";
         buf += folly::to<std::string>(properties.get_partition_num());
-        buf += ", ";
-        buf += "replica_factor = ";
+        buf += ", replica_factor = ";
         buf += folly::to<std::string>(properties.get_replica_factor());
+        buf += ", charset = ";
+        buf += properties.get_charset_name();
+        buf += ", collate = ";
+        buf += properties.get_collate_name();
         buf += ")";
 
         row[1].set_str(buf);;
@@ -802,7 +814,7 @@ void ShowExecutor::showCreateTagIndex() {
 }
 
 void ShowExecutor::showCreateEdgeIndex() {
-auto *name = sentence_->getName();
+    auto *name = sentence_->getName();
     auto spaceId = ectx()->rctx()->session()->space();
 
     auto future = ectx()->getMetaClient()->getEdgeIndex(spaceId, *name);
@@ -911,6 +923,49 @@ void ShowExecutor::showSnapshots() {
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
+void ShowExecutor::showCharset() {
+    resp_ = std::make_unique<cpp2::ExecutionResponse>();
+    std::vector<std::string> header{"Charset", "Description", "Default collation", "Maxlen"};
+    resp_->set_column_names(std::move(header));
+    std::vector<cpp2::RowValue> rows;
+    auto charsetDesc = ectx()->getCharsetInfo()->getCharsetDesc();
+
+    for (auto& e : charsetDesc) {
+        std::vector<cpp2::ColumnValue> row;
+        row.resize(4);
+        row[0].set_str(e.second.charsetName_);
+        row[1].set_str(e.second.desc_);
+        row[2].set_str(e.second.defaultColl_);
+        row[3].set_integer(e.second.maxLen_);
+        rows.emplace_back();
+        rows.back().set_columns(std::move(row));
+    }
+    resp_->set_rows(std::move(rows));
+
+    doFinish(Executor::ProcessControl::kNext);
+}
+
+void ShowExecutor::showCollation() {
+    resp_ = std::make_unique<cpp2::ExecutionResponse>();
+    std::vector<std::string> header{"Collation", "Charset"};
+    resp_->set_column_names(std::move(header));
+    std::vector<cpp2::RowValue> rows;
+    auto charsetDesc = ectx()->getCharsetInfo()->getCharsetDesc();
+
+    for (auto& cset : charsetDesc) {
+        for (auto& coll : cset.second.supportColls_) {
+            std::vector<cpp2::ColumnValue> row;
+            row.resize(2);
+            row[0].set_str(coll);
+            row[1].set_str(cset.second.charsetName_);
+            rows.emplace_back();
+            rows.back().set_columns(std::move(row));
+        }
+    }
+    resp_->set_rows(std::move(rows));
+
+    doFinish(Executor::ProcessControl::kNext);
+}
 
 void ShowExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
     resp = std::move(*resp_);

@@ -50,6 +50,7 @@ UPSERT                      ([Uu][Pp][Ss][Ee][Rr][Tt])
 WHEN                        ([Ww][Hh][Ee][Nn])
 DELETE                      ([Dd][Ee][Ll][Ee][Tt][Ee])
 FIND                        ([Ff][Ii][Nn][Dd])
+LOOKUP                      ([Ll][Oo][Oo][Kk][Uu][Pp])
 ALTER                       ([Aa][Ll][Tt][Ee][Rr])
 STEPS                       ([Ss][Tt][Ee][Pp][Ss]?)
 OVER                        ([Oo][Vv][Ee][Rr])
@@ -82,6 +83,9 @@ PARTS                       ([Pp][Aa][Rr][Tt][Ss])
 TIMESTAMP                   ([Tt][Ii][Mm][Ee][Ss][Tt][Aa][Mm][Pp])
 PARTITION_NUM               ([Pp][Aa][Rr][Tt][Ii][Tt][Ii][[Oo][Nn][_][Nn][Uu][Mm])
 REPLICA_FACTOR              ([Rr][Ee][Pp][Ll][Ii][Cc][Aa][_][Ff][Aa][Cc][Tt][Oo][Rr])
+CHARSET                     ([Cc][Hh][Aa][Rr][Ss][Ee][Tt])
+COLLATE                     ([Cc][Oo][Ll][Ll][Aa][Tt][Ee])
+COLLATION                   ([Cc][Oo][Ll][Ll][Aa][Tt][Ii][Oo][Nn])
 DROP                        ([Dd][Rr][Oo][Pp])
 REMOVE                      ([Rr][Ee][Mm][Oo][Vv][Ee])
 IF                          ([Ii][Ff])
@@ -191,6 +195,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {WHEN}                      { return TokenType::KW_WHEN; }
 {DELETE}                    { return TokenType::KW_DELETE; }
 {FIND}                      { return TokenType::KW_FIND; }
+{LOOKUP}                    { return TokenType::KW_LOOKUP; }
 {ALTER}                     { return TokenType::KW_ALTER; }
 {STEPS}                     { return TokenType::KW_STEPS; }
 {OVER}                      { return TokenType::KW_OVER; }
@@ -222,6 +227,9 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {CREATE}                    { return TokenType::KW_CREATE;}
 {PARTITION_NUM}             { return TokenType::KW_PARTITION_NUM; }
 {REPLICA_FACTOR}            { return TokenType::KW_REPLICA_FACTOR; }
+{CHARSET}                   { return TokenType::KW_CHARSET; }
+{COLLATE}                   { return TokenType::KW_COLLATE; }
+{COLLATION}                 { return TokenType::KW_COLLATION; }
 {DROP}                      { return TokenType::KW_DROP; }
 {REMOVE}                    { return TokenType::KW_REMOVE; }
 {IF}                        { return TokenType::KW_IF; }

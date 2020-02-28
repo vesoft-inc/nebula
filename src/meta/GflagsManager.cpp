@@ -72,7 +72,6 @@ std::vector<cpp2::ConfigItem> GflagsManager::declareGflags(const cpp2::ConfigMod
         auto& name = flag.name;
         auto& type = flag.type;
         cpp2::ConfigType cType;
-        VariantType value;
         std::string valueStr;
 
         // We only register mutable configs to meta
@@ -88,18 +87,15 @@ std::vector<cpp2::ConfigItem> GflagsManager::declareGflags(const cpp2::ConfigMod
         // TODO: all int32/uint32/uint64 gflags are converted to int64 for now
         if (type == "uint32" || type == "int32" || type == "int64" || type == "uint64") {
             cType = cpp2::ConfigType::INT64;
-            value = folly::to<int64_t>(flag.current_value);
             valueStr = gflagsValueToThriftValue<int64_t>(flag);
         } else if (type == "double") {
             cType = cpp2::ConfigType::DOUBLE;
-            value = folly::to<double>(flag.current_value);
+            valueStr = gflagsValueToThriftValue<double>(flag);
         } else if (type == "bool") {
             cType = cpp2::ConfigType::BOOL;
-            value = folly::to<bool>(flag.current_value);
             valueStr = gflagsValueToThriftValue<bool>(flag);
         } else if (type == "string") {
             cType = cpp2::ConfigType::STRING;
-            value = flag.current_value;
             valueStr = gflagsValueToThriftValue<std::string>(flag);
             // only string gflags can be nested
             if (isNested) {

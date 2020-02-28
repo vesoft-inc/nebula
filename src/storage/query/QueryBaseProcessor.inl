@@ -700,7 +700,7 @@ void QueryBaseProcessor<REQ, RESP>::buildTTLInfoAndRespSchema() {
             // Only support the specified ttl_col mode
             // Not specifying or non-positive ttl_duration behaves like ttl_duration = infinity
             if (ttlCol.empty() || ttlDuration <= 0) {
-                VLOG(3) << "TTL property is valid";
+                VLOG(3) << "TTL property is invalid";
                 continue;
             }
 
@@ -766,7 +766,7 @@ void QueryBaseProcessor<REQ, RESP>::buildTTLInfoAndRespSchema() {
             // Only support the specified ttl_col mode
             // Not specifying or non-positive ttl_duration behaves like ttl_duration = infinity
             if (ttlCol.empty() || ttlDuration <= 0) {
-                VLOG(3) << "TTL property is valid";
+                VLOG(3) << "TTL property is invalid";
                 continue;
             }
 

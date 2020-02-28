@@ -77,6 +77,17 @@ cpp2::ErrorCode IndexPolicyMaker::traversalExpression(const Expression *expr) {
         return code;
     }
     Getters getters;
+
+    /**
+     *  TODO (sky) :
+     *  Handler error for FuncExpr or  ArithmeticExpr contains
+     *  AliasPropExpr , for example :
+     *  "tag1.col1 > tag1.col2" or "tag1.col2 > (tag1.col3 - 100)" , etc.
+     */
+    getters.getAliasProp = [](const std::string&,
+                              const std::string&) -> OptVariantType {
+        return OptVariantType(Status::Error("Alias expression cannot be evaluated"));
+    };
     switch (expr->kind()) {
         case nebula::Expression::kLogical : {
             auto* lExpr = dynamic_cast<const LogicalExpression*>(expr);
@@ -84,7 +95,6 @@ cpp2::ErrorCode IndexPolicyMaker::traversalExpression(const Expression *expr) {
                 return cpp2::ErrorCode::E_INVALID_FILTER;
             } else if (lExpr->op() == LogicalExpression::Operator::OR) {
                 optimizedPolicy_ = false;
-                return code;
             }
             auto* left = lExpr->left();
             traversalExpression(left);
@@ -98,29 +108,26 @@ cpp2::ErrorCode IndexPolicyMaker::traversalExpression(const Expression *expr) {
             auto* rExpr = dynamic_cast<const RelationalExpression*>(expr);
             auto* left = rExpr->left();
             auto* right = rExpr->right();
-            if (left->kind() == nebula::Expression::kAliasProp
-                && right->kind() == nebula::Expression::kPrimary) {
+            if (left->kind() == nebula::Expression::kAliasProp) {
                 auto* aExpr = dynamic_cast<const AliasPropertyExpression*>(left);
                 prop = *aExpr->prop();
-                auto* pExpr = dynamic_cast<const PrimaryExpression*>(right);
-                auto value = pExpr->eval(getters);
+                auto value = right->eval(getters);
                 if (!value.ok()) {
+                    VLOG(1) << "Can't evaluate the expression " << right->toString();
                     return cpp2::ErrorCode::E_INVALID_FILTER;
                 }
                 v = value.value();
-            } else if (left->kind() == nebula::Expression::kPrimary
-                       && right->kind() == nebula::Expression::kAliasProp) {
-                auto* pExpr = dynamic_cast<const PrimaryExpression*>(left);
-                auto value = pExpr->eval(getters);
+            } else if (right->kind() == nebula::Expression::kAliasProp) {
+                auto value = left->eval(getters);
                 if (!value.ok()) {
+                    VLOG(1) << "Can't evaluate the expression " << left->toString();
                     return cpp2::ErrorCode::E_INVALID_FILTER;
                 }
                 v = value.value();
                 auto* aExpr = dynamic_cast<const AliasPropertyExpression*>(right);
                 prop = *aExpr->prop();
             } else {
-                traversalExpression(left);
-                traversalExpression(right);
+                optimizedPolicy_ = false;
                 break;
             }
             operatorList_.emplace_back(std::make_tuple(std::move(prop), std::move(v), rExpr->op()));
@@ -128,7 +135,7 @@ cpp2::ErrorCode IndexPolicyMaker::traversalExpression(const Expression *expr) {
         }
         case nebula::Expression::kFunctionCall : {
             optimizedPolicy_ = false;
-            return code;
+            break;
         }
         default : {
             return cpp2::ErrorCode::E_INVALID_FILTER;
