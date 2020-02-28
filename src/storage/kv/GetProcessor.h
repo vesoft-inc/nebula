@@ -17,9 +17,8 @@ class GetProcessor : public BaseProcessor<cpp2::GeneralResponse> {
 public:
     static GetProcessor* instance(kvstore::KVStore* kvstore,
                                   meta::SchemaManager* schemaMan,
-                                  stats::Stats* stats,
-                                  folly::Executor* executor) {
-        return new GetProcessor(kvstore, schemaMan, stats, executor);
+                                  stats::Stats* stats) {
+        return new GetProcessor(kvstore, schemaMan, stats);
     }
 
     void process(const cpp2::GetRequest& req);
@@ -27,18 +26,8 @@ public:
 protected:
     explicit GetProcessor(kvstore::KVStore* kvstore,
                           meta::SchemaManager* schemaMan,
-                          stats::Stats* stats,
-                          folly::Executor* executor = nullptr):
-        BaseProcessor<cpp2::GeneralResponse>(kvstore, schemaMan, stats),
-        executor_(executor) {}
-
-private:
-    folly::Future<std::pair<PartitionID, kvstore::ResultCode>>
-    asyncProcess(PartitionID part, std::vector<std::string> keys, bool returnPartly);
-
-    folly::Executor *executor_ = nullptr;
-    std::unordered_map<std::string, std::string> pairs_;
-    GraphSpaceID  space_;
+                          stats::Stats* stats):
+        BaseProcessor<cpp2::GeneralResponse>(kvstore, schemaMan, stats) {}
 };
 
 }  // namespace storage
