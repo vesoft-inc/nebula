@@ -181,10 +181,19 @@ Status GroupByExecutor::checkAll() {
 void GroupByExecutor::execute() {
     FLOG_INFO("Executing Group by: %s", sentence_->toString().c_str());
 
-    if (rows_.empty()) {
+    if (inputs_ == nullptr || !inputs_->hasData()) {
         onEmptyInputs();
         return;
     }
+
+    auto ret = inputs_->getRows();
+    if (!ret.ok()) {
+        LOG(ERROR) << "Get rows failed: " << ret.status();
+        doError(std::move(ret).status());
+        return;
+    }
+    rows_ = std::move(ret).value();
+    schema_ = inputs_->schema();
 
     auto status = checkAll();
     if (!status.ok()) {
@@ -205,12 +214,12 @@ void GroupByExecutor::execute() {
     }
 
     if (onResult_) {
-        auto ret = setupInterimResult();
-        if (!ret.ok()) {
-            doError(std::move(ret).status());
+        auto result = setupInterimResult();
+        if (!result.ok()) {
+            doError(std::move(result).status());
             return;
         }
-        onResult_(std::move(ret).value());
+        onResult_(std::move(result).value());
     }
 
     doFinish(Executor::ProcessControl::kNext);
@@ -335,17 +344,7 @@ void GroupByExecutor::feedResult(std::unique_ptr<InterimResult> result) {
         return;
     }
 
-    if (!result->hasData()) {
-        return;
-    }
-
-    auto ret = result->getRows();
-    if (!ret.ok()) {
-        LOG(ERROR) << "Get rows failed: " << ret.status();
-        return;
-    }
-    rows_ = std::move(ret).value();
-    schema_ = result->schema();
+    inputs_ = std::move(result);
 }
 
 

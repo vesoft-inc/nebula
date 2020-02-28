@@ -523,7 +523,7 @@ TEST_F(FetchEdgesTest, DuplicateColumnName) {
         auto &serve = player.serves()[0];
         auto &team = teams_[std::get<0>(serve)];
         auto *fmt = "FETCH PROP ON serve %ld->%ld"
-                    " YIELD serve._dst";
+                    " YIELD serve._src, serve._dst, serve._rank";
         auto query = folly::stringPrintf(fmt, player.vid(), team.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -532,12 +532,14 @@ TEST_F(FetchEdgesTest, DuplicateColumnName) {
             {"serve._src"},
             {"serve._dst"},
             {"serve._rank"},
+            {"serve._src"},
             {"serve._dst"},
+            {"serve._rank"},
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
-        std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t>> expected = {
-            {player.vid(), team.vid(), 0, team.vid()},
+        std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
+            {player.vid(), team.vid(), 0, player.vid(), team.vid(), 0},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }

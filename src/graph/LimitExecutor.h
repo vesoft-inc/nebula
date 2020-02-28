@@ -36,7 +36,6 @@ private:
 
 private:
     LimitSentence                                            *sentence_{nullptr};
-    std::unique_ptr<InterimResult>                            inputs_;
     std::vector<std::string>                                  colNames_;
     std::vector<cpp2::RowValue>                               rows_;
     int64_t                                                   offset_{-1};
