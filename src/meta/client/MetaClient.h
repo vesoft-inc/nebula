@@ -102,6 +102,28 @@ struct ConfigItem {
     VariantType         value_;
 };
 
+
+struct SpaceDesc {
+    SpaceDesc() {}
+
+    SpaceDesc(const std::string& spaceName, int32_t partNum,
+              int32_t replicaFactor, const std::string& charsetName = "",
+              const std::string& collationName = "")
+        : spaceName_(spaceName)
+        , partNum_(partNum)
+        , replicaFactor_(replicaFactor)
+        , charsetName_(charsetName)
+        , collationName_(collationName) {
+    }
+
+    std::string  spaceName_;
+    int32_t      partNum_{0};
+    int32_t      replicaFactor_{0};
+    std::string  charsetName_;
+    std::string  collationName_;
+};
+
+
 // config cahce, get config via module and name
 using MetaConfigMap = std::unordered_map<std::pair<cpp2::ConfigModule, std::string>, ConfigItem>;
 
@@ -176,16 +198,14 @@ public:
     }
 
     // Operations for parts
-    /**
-     * TODO(dangleptr): Use one struct to represent space description.
-     * */
-    folly::Future<StatusOr<GraphSpaceID>> createSpace(std::string name,
-                                                      int32_t partsNum,
-                                                      int32_t replicaFactor,
+    folly::Future<StatusOr<GraphSpaceID>> createSpace(SpaceDesc spaceDesc,
                                                       bool ifNotExists = false);
 
     folly::Future<StatusOr<std::vector<SpaceIdName>>>
     listSpaces();
+
+    folly::Future<StatusOr<cpp2::AdminJobResult>>
+    submitJob(cpp2::AdminJobOp op, std::vector<std::string> paras);
 
     folly::Future<StatusOr<cpp2::SpaceItem>>
     getSpace(std::string name);

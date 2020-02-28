@@ -2,6 +2,7 @@ nebula_add_library(
     storage_service_handler OBJECT
     StorageServiceHandler.cpp
     StorageFlags.cpp
+    CommonUtils.cpp
     query/QueryBaseProcessor.cpp
     query/QueryBoundProcessor.cpp
     query/QueryVertexPropsProcessor.cpp

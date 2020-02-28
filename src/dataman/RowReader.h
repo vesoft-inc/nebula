@@ -91,7 +91,12 @@ public:
     static StatusOr<VariantType> getDefaultProp(const meta::SchemaProviderIf* schema,
                                                 const std::string& prop) {
         auto& vType = schema->getFieldType(prop);
-        return getDefaultProp(vType.type);
+        auto defaultVal = getDefaultProp(vType.type);
+        if (!defaultVal.ok()) {
+            LOG(ERROR) << "Get default value for `" << prop << "' failed: " << defaultVal.status();
+        }
+
+        return defaultVal;
     }
 
     static StatusOr<VariantType> getDefaultProp(const nebula::cpp2::SupportedType& type) {
@@ -114,7 +119,7 @@ public:
             }
             default:
                 auto msg = folly::sformat("Unknown type: {}", static_cast<int32_t>(type));
-                LOG(ERROR) << "Unknown type: " << msg;
+                LOG(ERROR) << msg;
                 return Status::Error(msg);
         }
     }
@@ -271,12 +276,15 @@ public:
     ResultType getVid(const folly::StringPiece name, int64_t& v) const noexcept;
     ResultType getVid(int64_t index, int64_t& v) const noexcept;
 
-
     std::shared_ptr<const meta::SchemaProviderIf> getSchema() const {
         return schema_;
     }
 
     static int32_t getSchemaVer(folly::StringPiece row);
+
+    folly::StringPiece getData() const noexcept {
+        return data_;
+    }
 
     // TODO getPath(const std::string& name) const noexcept;
     // TODO getPath(int64_t index) const noexcept;
