@@ -404,6 +404,10 @@ Status GoExecutor::setupStarts() {
         return Status::OK();
     }
 
+    auto status = checkIfDuplicateColumn();
+    if (!status.ok()) {
+        return status;
+    }
     auto result = inputs->getVIDs(*colname_);
     if (!result.ok()) {
         LOG(ERROR) << "Get vid fail: " << *colname_;

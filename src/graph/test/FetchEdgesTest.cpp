@@ -543,6 +543,16 @@ TEST_F(FetchEdgesTest, DuplicateColumnName) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "GO FROM %ld OVER serve YIELD serve._src AS src, serve._dst AS src"
+                    "| FETCH PROP ON serve $-.src->$-.dst"
+                    " YIELD serve.start_year, serve.end_year";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
 }
 }  // namespace graph
 }  // namespace nebula

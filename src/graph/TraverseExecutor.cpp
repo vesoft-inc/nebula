@@ -156,6 +156,22 @@ nebula::cpp2::SupportedType TraverseExecutor::calculateExprType(Expression* exp)
     }
 }
 
+Status TraverseExecutor::checkIfDuplicateColumn() const {
+    if (inputs_ == nullptr) {
+        return Status::OK();
+    }
+
+    auto colNames = inputs_->getColNames();
+    std::unordered_set<std::string> uniqueNames;
+    for (auto &colName : colNames) {
+        auto ret = uniqueNames.emplace(colName);
+        if (!ret.second) {
+            return Status::Error("Duplicate column `%s'", colName.c_str());
+        }
+    }
+    return Status::OK();
+}
+
 Status Collector::collect(VariantType &var, RowWriter *writer) {
     switch (var.which()) {
         case VAR_INT64:

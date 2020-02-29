@@ -186,6 +186,11 @@ void GroupByExecutor::execute() {
         return;
     }
 
+    auto status = checkIfDuplicateColumn();
+    if (!status.ok()) {
+        doError(std::move(status));
+        return;
+    }
     auto ret = inputs_->getRows();
     if (!ret.ok()) {
         LOG(ERROR) << "Get rows failed: " << ret.status();
@@ -195,7 +200,7 @@ void GroupByExecutor::execute() {
     rows_ = std::move(ret).value();
     schema_ = inputs_->schema();
 
-    auto status = checkAll();
+    status = checkAll();
     if (!status.ok()) {
         doError(std::move(status));
         return;

@@ -125,6 +125,10 @@ Status OrderByExecutor::beforeExecute() {
         return Status::OK();
     }
 
+    auto status = checkIfDuplicateColumn();
+    if (!status.ok()) {
+        return status;
+    }
     colNames_ = inputs_->getColNames();
     if (!inputs_->hasData()) {
         return Status::OK();

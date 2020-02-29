@@ -402,6 +402,15 @@ TEST_F(FetchVerticesTest, DuplicateColumnName) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "GO FROM %ld over like YIELD like._dst as id, like._dst as id"
+                    "| FETCH PROP ON player $-.id YIELD player.name, player.age";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
 }
 }  // namespace graph
 }  // namespace nebula

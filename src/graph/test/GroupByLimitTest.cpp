@@ -567,6 +567,24 @@ TEST_F(GroupByLimitTest, EmptyInput) {
     }
 }
 
+TEST_F(GroupByLimitTest, DuplicateColumn) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Marco Belinelli"];
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "YIELD $$.team.name AS name, "
+                    "serve._dst AS id, "
+                    "serve.start_year AS start_year, "
+                    "serve.end_year AS start_year"
+                    "| GROUP BY $-.start_year "
+                    "YIELD COUNT($-.id), "
+                    "$-.start_year AS start_year, "
+                    "AVG($-.end_year) as avg";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+}
 }   // namespace graph
 }   // namespace nebula
 
