@@ -36,5 +36,6 @@ jobs:
       set -e
       cd _build
       lcov --capture --gcov-tool $GCOV --directory . --output-file coverage.info
-      bash <(curl -s https://codecov.io/bash) -Z -f coverage.info
+      lcov --remove coverage.info '*/opt/vesoft/*' -o clean.info
+      bash <(curl -s https://codecov.io/bash) -Z -f clean.info
     displayName: 'coverage'
