@@ -338,16 +338,6 @@ std::vector<std::string> GroupByExecutor::getResultColumnNames() const {
 }
 
 
-void GroupByExecutor::feedResult(std::unique_ptr<InterimResult> result) {
-    if (result == nullptr) {
-        LOG(ERROR) << "result is nullptr";
-        return;
-    }
-
-    inputs_ = std::move(result);
-}
-
-
 Status GroupByExecutor::generateOutputSchema() {
     using nebula::cpp2::SupportedType;
     if (resultSchema_ == nullptr) {

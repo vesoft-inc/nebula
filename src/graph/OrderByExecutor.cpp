@@ -77,14 +77,6 @@ Status OrderByExecutor::prepare() {
     return Status::OK();
 }
 
-void OrderByExecutor::feedResult(std::unique_ptr<InterimResult> result) {
-    if (result == nullptr) {
-        return;
-    }
-    DCHECK(sentence_ != nullptr);
-    inputs_ = std::move(result);
-}
-
 void OrderByExecutor::execute() {
     FLOG_INFO("Executing Order By: %s", sentence_->toString().c_str());
     auto status = beforeExecute();

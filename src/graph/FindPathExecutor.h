@@ -46,10 +46,6 @@ public:
 
     void execute() override;
 
-    void feedResult(std::unique_ptr<InterimResult> result) override {
-        inputs_ = std::move(result);
-    }
-
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
     static std::string buildPathString(const Path &path);

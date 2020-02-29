@@ -113,11 +113,6 @@ void GoExecutor::execute() {
 }
 
 
-void GoExecutor::feedResult(std::unique_ptr<InterimResult> result) {
-    inputs_ = std::move(result);
-}
-
-
 Status GoExecutor::prepareStep() {
     auto *clause = sentence_->stepClause();
     if (clause != nullptr) {

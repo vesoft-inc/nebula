@@ -134,7 +134,9 @@ public:
 
     using OnResult = std::function<void(std::unique_ptr<InterimResult>)>;
 
-    virtual void feedResult(std::unique_ptr<InterimResult> result) = 0;
+    virtual void feedResult(std::unique_ptr<InterimResult> result) {
+        inputs_ = std::move(result);
+    }
 
     /**
      * `onResult_' must be set except for the right most executor
