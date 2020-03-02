@@ -249,6 +249,7 @@ public:
             while (retry-- > 0) {
                 auto res = part->isCatchedUp(peer);
                 LOG(INFO) << "Waiting for catching up data, peer " << peer
+                          << ", space " << spaceId << ", part " << partId
                           << ", remaining " << retry << " retry times"
                           << ", result " << static_cast<int32_t>(res);
                 switch (res) {
@@ -265,7 +266,8 @@ public:
                         return;
                     }
                     case raftex::AppendLogResult::E_SENDING_SNAPSHOT:
-                        LOG(INFO) << "Still sending snapshot, please wait...";
+                        LOG(INFO) << "Space " << spaceId << ", partId " << partId
+                                  << " is still sending snapshot, please wait...";
                         break;
                     default:
                         LOG(INFO) << "Unknown error " << static_cast<int32_t>(res);
