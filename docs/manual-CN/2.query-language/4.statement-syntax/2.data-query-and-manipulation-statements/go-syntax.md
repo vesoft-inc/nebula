@@ -148,7 +148,11 @@ nebula> GO FROM 100 OVER follow, serve YIELD follow.degree, serve.start_year;
 例如：
 
 ```ngql
-nebula> GO FROM 100 OVER follow REVERSELY YIELD follow._src AS id | \
+nebula> GO FROM 100 OVER follow REVERSELY YIELD follow._src -- 返回 100
+```
+
+```ngql
+nebula> GO FROM 100 OVER follow REVERSELY YIELD follow._dst AS id | \
         GO FROM $-.id OVER serve WHERE $^.player.age > 20 YIELD $^.player.name AS FriendOf, $$.team.name AS Team;
 
 ============================
@@ -160,10 +164,7 @@ nebula> GO FROM 100 OVER follow REVERSELY YIELD follow._src AS id | \
 ----------------------------
 ```
 
-<<<<<<< HEAD
 遍历所有关注 100 号球员的球员，找出这些球员服役的球队，筛选年龄大于 20 岁的球员并返回这些球员姓名和其服役的球队名称。如果此处不指定 `YIELD`，则默认返回每条边目标点的 `vid`。
-=======
-遍历 follow 125 号球员的所有球员，找出这些球员服役的球队，筛选年龄大于 35 岁的球员并返回这些球员姓名和其服役的球队名称。如果此处不指定 `YIELD`，则默认返回每条边目标点的 `vid`。
 
 ## 双向遍历
 
@@ -171,10 +172,24 @@ nebula> GO FROM 100 OVER follow REVERSELY YIELD follow._src AS id | \
 
 ```ngql
   GO FROM <node_list>
-  OVER <edge_type_list> REVERSELY
+  OVER <edge_type_list> BIDIRECT
   WHERE (expression [ AND | OR expression ...])  
   YIELD | YIELDS  [DISTINCT] <return_list>
 ```
 
-例如：TODO
->>>>>>> add bidirect
+例如：
+
+```ngql
+nebula> GO FROM 102 OVER follow BIDIRECT
+===============
+| follow._dst |
+===============
+| 101         |
+---------------
+| 103         |
+---------------
+| 135         |
+---------------
+```
+
+上述语句同时返回 102 关注的球员及关注 102 的球员。

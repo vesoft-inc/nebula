@@ -152,7 +152,11 @@ Currently, **Nebula Graph** supports traversing reversely using keyword `REVERSE
 For example:
 
 ```ngql
-nebula> GO FROM 100 OVER follow REVERSELY YIELD follow._src AS id | \
+nebula> GO FROM 100 OVER follow REVERSELY YIELD follow._src -- returns 100
+```
+
+```ngql
+nebula> GO FROM 100 OVER follow REVERSELY YIELD follow._dst AS id | \
         GO FROM $-.id OVER serve WHERE $^.player.age > 20 YIELD $^.player.name AS FriendOf, $$.team.name AS Team;
 
 ============================
@@ -164,21 +168,32 @@ nebula> GO FROM 100 OVER follow REVERSELY YIELD follow._src AS id | \
 ----------------------------
 ```
 
-<<<<<<< HEAD
-The above query first traverses players that follow player 100 and finds the teams they serve, then filter players who are older than 20, and finally it returns their names and teams. Of course, you can query without specifying `YIELD`, which will return the `vids` of the dest vertices of each edge by default.
-=======
-The above query first traverses players that follow player 125 and finds the teams they serve, then filter players who are older than 35, and finally it returns their names and teams. Of course, you can query without specifying `YIELD`, which will return the `vids` of the dest vertices of each edge by default.
+The above query first traverses players that follow player 100 and finds the teams they serve, then filter players who are older than 20, and finally it returns their names and teams. Of course, you can query without specifying YIELD, which will return the vids of the dest vertices of each edge by default.
 
 ## Traverse Bidirect
 
-Currently, **Nebula Graph** supports traversing reversely using keyword `BIDIRECT`, the syntax is:
+Currently, **Nebula Graph** supports traversing along in and out edges using keyword `BIDIRECT`, the syntax is:
 
 ```ngql
   GO FROM <node_list>
-  OVER <edge_type_list> REVERSELY
+  OVER <edge_type_list> BIDIRECT
   WHERE (expression [ AND | OR expression ...])  
   YIELD | YIELDS  [DISTINCT] <return_list>
 ```
 
-For example: TODO
->>>>>>> add bidirect
+For example:
+
+```ngql
+nebula> GO FROM 102 OVER follow BIDIRECT
+===============
+| follow._dst |
+===============
+| 101         |
+---------------
+| 103         |
+---------------
+| 135         |
+---------------
+```
+
+The above query returns players followed by 102 and follow 102 at the same time.
