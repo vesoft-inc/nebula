@@ -16,7 +16,6 @@ GrantExecutor::GrantExecutor(Sentence *sentence,
 }
 
 Status GrantExecutor::prepare() {
-    DCHECK(sentence_ != nullptr);
     return Status::OK();
 }
 
@@ -67,7 +66,6 @@ RevokeExecutor::RevokeExecutor(Sentence *sentence,
 }
 
 Status RevokeExecutor::prepare() {
-    DCHECK(sentence_ != nullptr);
     return Status::OK();
 }
 

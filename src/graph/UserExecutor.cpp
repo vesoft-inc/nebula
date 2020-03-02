@@ -17,7 +17,6 @@ CreateUserExecutor::CreateUserExecutor(Sentence *sentence,
 }
 
 Status CreateUserExecutor::prepare() {
-    DCHECK(sentence_ != nullptr);
     return Status::OK();
 }
 
@@ -64,7 +63,6 @@ DropUserExecutor::DropUserExecutor(Sentence *sentence,
 }
 
 Status DropUserExecutor::prepare() {
-    DCHECK(sentence_ != nullptr);
     return Status::OK();
 }
 
@@ -75,8 +73,7 @@ void DropUserExecutor::execute() {
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            doError(Status::Error("Drop user failed: %s.",
-                                         resp.status().toString().c_str()));
+            doError(Status::Error("Drop user failed: %s.", resp.status().toString().c_str()));
             return;
         }
         doFinish(Executor::ProcessControl::kNext);
@@ -100,9 +97,7 @@ AlterUserExecutor::AlterUserExecutor(Sentence *sentence,
 }
 
 Status AlterUserExecutor::prepare() {
-    DCHECK(sentence_ != nullptr);
-    Status status = Status::OK();
-    return status;
+    return Status::OK();
 }
 
 void AlterUserExecutor::execute() {
@@ -150,9 +145,7 @@ ChangePasswordExecutor::ChangePasswordExecutor(Sentence *sentence,
 }
 
 Status ChangePasswordExecutor::prepare() {
-    DCHECK(sentence_ != nullptr);
-    Status status = Status::OK();
-    return status;
+    return Status::OK();
 }
 
 void ChangePasswordExecutor::execute() {
