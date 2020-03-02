@@ -18,8 +18,7 @@ else()
     message(STATUS "Cloning from the repo \"" ${repo} "\"")
     execute_process(
         COMMAND
-            ${GIT_EXECUTABLE} clone --depth 1 --progress --branch ${tag} ${repo} ${name}
-        WORKING_DIRECTORY ${base}
+            ${GIT_EXECUTABLE} clone --depth 1 --progress --branch ${tag} ${repo} ${base}/${name}
         RESULT_VARIABLE clone_result
     )
 endif()
