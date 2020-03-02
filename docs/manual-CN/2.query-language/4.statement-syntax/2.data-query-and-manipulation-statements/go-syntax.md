@@ -148,7 +148,7 @@ nebula> GO FROM 100 OVER follow, serve YIELD follow.degree, serve.start_year;
 例如：
 
 ```ngql
-nebula> GO FROM 100 OVER follow REVERSELY YIELD follow._src -- 返回 100
+nebula> GO FROM 100 OVER follow REVERSELY YIELD follow._src; -- 返回 100
 ```
 
 ```ngql
@@ -180,7 +180,7 @@ nebula> GO FROM 100 OVER follow REVERSELY YIELD follow._dst AS id | \
 例如：
 
 ```ngql
-nebula> GO FROM 102 OVER follow BIDIRECT
+nebula> GO FROM 102 OVER follow BIDIRECT;
 ===============
 | follow._dst |
 ===============

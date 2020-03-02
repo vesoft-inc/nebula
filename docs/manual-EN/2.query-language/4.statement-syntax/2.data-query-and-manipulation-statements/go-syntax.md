@@ -152,7 +152,7 @@ Currently, **Nebula Graph** supports traversing reversely using keyword `REVERSE
 For example:
 
 ```ngql
-nebula> GO FROM 100 OVER follow REVERSELY YIELD follow._src -- returns 100
+nebula> GO FROM 100 OVER follow REVERSELY YIELD follow._src; -- returns 100
 ```
 
 ```ngql
@@ -184,7 +184,7 @@ Currently, **Nebula Graph** supports traversing along in and out edges using key
 For example:
 
 ```ngql
-nebula> GO FROM 102 OVER follow BIDIRECT
+nebula> GO FROM 102 OVER follow BIDIRECT;
 ===============
 | follow._dst |
 ===============
