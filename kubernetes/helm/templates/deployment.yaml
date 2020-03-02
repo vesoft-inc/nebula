@@ -43,7 +43,7 @@ spec:
           containerPort: {{ .Values.port.graphd.httpPort }}
         - name: http2
           containerPort: {{ .Values.port.graphd.http2Port }}
-        command: ["/usr/local/nebula/bin/nebula-graphd", "--flagfile=/usr/local/nebula/etc/nebula-graphd.conf"]     
+        command: ["/usr/local/nebula/bin/nebula-graphd", "--flagfile=/usr/local/nebula/etc/nebula-graphd.conf", "--v=0", "--minloglevel=2"]     
         {{- if .Values.livenessProbe.graphd.Enable }}   
         livenessProbe:
           httpGet:
