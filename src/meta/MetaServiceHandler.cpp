@@ -392,5 +392,17 @@ MetaServiceHandler::future_listSnapshots(const cpp2::ListSnapshotsReq& req) {
     RETURN_FUTURE(processor);
 }
 
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_installPlugin(const cpp2::InstallPluginReq& req) {
+    auto* processor = InstallPluginProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_uninstallPlugin(const cpp2::UninstallPluginReq& req) {
+    auto* processor = UninstallPluginProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
 }  // namespace meta
 }  // namespace nebula
