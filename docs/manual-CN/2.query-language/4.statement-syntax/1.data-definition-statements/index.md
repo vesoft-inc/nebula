@@ -30,7 +30,9 @@ nebula> CREATE EDGE INDEX follow_index_0 on follow(degree);
 
 ### 创建组合索引
 
-schema 索引还支持为多个属性同时创建索引。这种包含多种属性的索引在 **Nebula Graph** 中称为复合索引。
+schema 索引还支持为相同 tag 或 edge 中的多个属性同时创建索引。这种包含多种属性的索引在 **Nebula Graph** 中称为组合索引。
+
+**注意：** 目前尚不支持跨多个 tag 创建复合索引。
 
 ```ngql
 nebula> CREATE TAG INDEX player_index_1 on player(name,age);
