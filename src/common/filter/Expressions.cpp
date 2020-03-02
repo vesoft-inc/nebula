@@ -1076,20 +1076,19 @@ std::string BitExpression::toString() const {
 }
 
 OptVariantType BitExpression::eval(Getters &getters) const {
-    static const char constexpr *invalidTypeErrorMsg = "Invalid operand type for binary operator ^";
     auto left = left_->eval(getters);
     if (!left.ok()) {
         return left.status();
     }
     if (!isInt(left.value())) {  // Require Integer for bit operation
-        return Status::Error("%s", invalidTypeErrorMsg);
+        return Status::Error("Invalid operand type for binary operator %c", static_cast<char>(op_));
     }
     auto right = right_->eval(getters);
     if (!right.ok()) {
         return right.status();
     }
     if (!isInt(right.value())) {  // Require Integer for bit operation
-        return Status::Error("%s", invalidTypeErrorMsg);
+        return Status::Error("Invalid operand type for binary operator %c", static_cast<char>(op_));
     }
 
     switch (op_) {
