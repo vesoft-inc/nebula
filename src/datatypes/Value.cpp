@@ -446,42 +446,42 @@ std::string Value::moveStr() {
     CHECK_EQ(type_, Type::STRING);
     std::string v = std::move(value_.sVal);
     clear();
-    return std::move(v);
+    return v;
 }
 
 Date Value::moveDate() {
     CHECK_EQ(type_, Type::DATE);
     Date v = std::move(value_.dVal);
     clear();
-    return std::move(v);
+    return v;
 }
 
 DateTime Value::moveDateTime() {
     CHECK_EQ(type_, Type::DATETIME);
     DateTime v = std::move(value_.tVal);
     clear();
-    return std::move(v);
+    return v;
 }
 
 Path Value::movePath() {
     CHECK_EQ(type_, Type::PATH);
     Path v = std::move(value_.pVal);
     clear();
-    return std::move(v);
+    return v;
 }
 
 List Value::moveList() {
     CHECK_EQ(type_, Type::LIST);
     List list = std::move(*(value_.lVal));
     clear();
-    return std::move(list);
+    return list;
 }
 
 Map Value::moveMap() {
     CHECK_EQ(type_, Type::MAP);
     Map map = std::move(*(value_.mVal));
     clear();
-    return std::move(map);
+    return map;
 }
 
 
