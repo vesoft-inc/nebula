@@ -8,6 +8,8 @@
 #define STORAGE_ADMIN_ADMINTASKMANAGER_H_
 
 #include "interface/gen-cpp2/storage_types.h"
+#include <condition_variable>
+#include <mutex>
 #include "kvstore/NebulaStore.h"
 #include "storage/admin/AdminTask.h"
 
@@ -15,19 +17,40 @@ namespace nebula {
 namespace storage {
 
 class AdminTaskManager {
+    using TaskQueueItem = std::map<std::pair<int, int>, std::shared_ptr<AdminTask>>;
+
 public:
+    AdminTaskManager() = default;
     static AdminTaskManager& instance() {
         static AdminTaskManager sAdminTaskManager;
         return sAdminTaskManager;
     }
 
-    nebula::kvstore::ResultCode addTask(const cpp2::AddAdminTaskRequest& req,
-                            nebula::kvstore::NebulaStore* store);
+    nebula::kvstore::ResultCode runTaskDirectly(const cpp2::AddAdminTaskRequest& req,
+                                                nebula::kvstore::NebulaStore* store);
+
+    nebula::kvstore::ResultCode addAsyncTask(const cpp2::AddAdminTaskRequest& req,
+                                        nebula::kvstore::NebulaStore* store);
     nebula::kvstore::ResultCode cancelTask(const cpp2::AddAdminTaskRequest& req);
 
+    bool init();
+
+    void shutdown();
+
 private:
+    void pickTaskThread();
+
+private:
+    std::unique_ptr<thread::GenericWorker> bgThread_;
+    std::unique_ptr<nebula::thread::GenericThreadPool> pool_{nullptr};
+
+    std::mutex                      mutex_;
+    std::condition_variable         notEmpty_;
+    TaskQueueItem                   inQueueTasks_;
+    bool                            shutdown_;
 };
 
 }  // namespace storage
 }  // namespace nebula
 #endif  // STORAGE_ADMIN_ADMINTASKMANAGER_H_
+

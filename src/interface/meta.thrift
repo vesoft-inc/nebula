@@ -206,12 +206,12 @@ enum JobStatus {
 } (cpp.enum_strict)
 
 struct JobDesc {
-    1: i32          id
-    2: string       cmd
-    3: list<string> paras
-    4: JobStatus    status
-    5: i64          start_time
-    6: i64          stop_time
+    1: i32              id
+    2: string           cmd
+    3: list<string>     paras
+    4: JobStatus        status
+    5: i64              start_time
+    6: i64              stop_time
 }
 
 struct TaskDesc {

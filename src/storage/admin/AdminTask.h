@@ -25,7 +25,7 @@ public:
 
 class AdminTaskFactory {
 public:
-    static std::unique_ptr<AdminTask> createAdminTask(
+    static std::shared_ptr<AdminTask> createAdminTask(
             const nebula::storage::cpp2::AddAdminTaskRequest& req,
             nebula::kvstore::NebulaStore* store);
 };

@@ -14,20 +14,22 @@ namespace meta {
 
 class SimpleConcurrentJobExecutor : public MetaJobExecutor {
 public:
-    SimpleConcurrentJobExecutor(nebula::cpp2::AdminCmd cmd,
-                                std::vector<std::string> params);
-    // virtual void prepare() override;
-    ErrorOr<nebula::kvstore::ResultCode, std::map<HostAddr, Status>>
-    execute(int spaceId,
-            int jobId,
-            const std::vector<std::string>& jobParas,
-            nebula::kvstore::KVStore* kvStore,
-            nebula::thread::GenericThreadPool* pool) override;
+    using ExecuteRet = ErrorOr<kvstore::ResultCode, std::map<HostAddr, Status>>;
+
+    SimpleConcurrentJobExecutor(int jobId,
+                                nebula::cpp2::AdminCmd cmd,
+                                std::vector<std::string> params,
+                                nebula::kvstore::KVStore* kvStore);
+
+    ExecuteRet execute() override;
     void stop() override;
 
 private:
+    int jobId_;
     nebula::cpp2::AdminCmd cmd_;
-    std::vector<std::string> params_;
+    int spaceId_;
+    std::vector<std::string> paras_;
+    nebula::kvstore::KVStore* kvStore_;
 };
 
 }  // namespace meta

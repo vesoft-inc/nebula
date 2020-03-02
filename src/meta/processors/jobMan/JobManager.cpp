@@ -105,7 +105,7 @@ void JobManager::runJobBackground() {
 // will replace "runJobInternal" when task manager ready
 // @return: true if succeed, false if any task failed
 bool JobManager::runJobViaThrift(const JobDescription& jobDesc) {
-    auto jobExecutor = MetaJobExecutorFactory::createMetaJobExecutor(jobDesc);
+    auto jobExecutor = MetaJobExecutorFactory::createMetaJobExecutor(jobDesc, kvStore_);
     if (jobExecutor == nullptr) {
         LOG(ERROR) << "unreconized job cmd " << jobDesc.getCmd();
         return false;
@@ -119,21 +119,16 @@ bool JobManager::runJobViaThrift(const JobDescription& jobDesc) {
         return false;
     }
 
-    auto results = jobExecutor->execute(spaceId,
-                                jobDesc.getJobId(),
-                                jobDesc.getParas(),
-                                kvStore_,
-                                pool_.get());
-
+    auto results = jobExecutor->execute();
     if (!nebula::ok(results)) {
         return false;
     }
 
     size_t taskId = 0;
     bool jobSuccess = true;
-    for (auto& hostAddStatus : nebula::value(results)) {
-        TaskDescription task(jobDesc.getJobId(), taskId, hostAddStatus.first);
-        bool taskSuccess = hostAddStatus.second.ok();
+    for (auto& hostAndStatus : nebula::value(results)) {
+        TaskDescription task(jobDesc.getJobId(), taskId, hostAndStatus.first);
+        bool taskSuccess = hostAndStatus.second.ok();
         auto taskStatus = taskSuccess ? cpp2::JobStatus::FINISHED : cpp2::JobStatus::FAILED;
         if (!taskSuccess) {
             jobSuccess = false;
