@@ -16,7 +16,7 @@ namespace nebula {
 
 class ColumnSpecification final {
 public:
-    using Value = boost::variant<int64_t, bool, double, std::string>;
+    using Value = Expression;
 
     ColumnSpecification(ColumnType type, std::string *name) {
         type_ = type;
@@ -31,65 +31,79 @@ public:
         return name_.get();
     }
 
-    void setIntValue(int64_t v) {
-        defaultValue_ = v;
-        hasDefault_ = true;
+    void setValue(Value* expr) {
+        defaultExpr_.reset(DCHECK_NOTNULL(expr));
     }
 
-    StatusOr<int64_t> getIntValue() {
-        if (defaultValue_.which() != VAR_INT64) {
+    Status MUST_USE_RESULT prepare() {
+        if (hasDefault()) {
+            return defaultExpr_->prepare();
+        }
+        return Status::Error();
+    }
+
+    StatusOr<int64_t> getIntValue(Getters& getter) {
+        auto r = defaultExpr_->eval(getter);
+        if (!r.ok()) {
+            return std::move(r).status();
+        }
+        auto v = std::move(r).value();
+        if (!Value::isInt(v)) {
             return Status::Error("Wrong type");
         }
-        int64_t v = boost::get<int64_t>(defaultValue_);
-        return v;
+        return Value::toInt(v);
     }
 
-    void setBoolValue(bool v) {
-        defaultValue_ = v;
-        hasDefault_ = true;
-    }
-
-    StatusOr<bool> getBoolValue() {
-        if (defaultValue_.which() != VAR_BOOL) {
+    StatusOr<bool> getBoolValue(Getters& getter) {
+        auto r = defaultExpr_->eval(getter);
+        if (!r.ok()) {
+            return std::move(r).status();
+        }
+        auto v = std::move(r).value();
+        if (!Value::isBool(v)) {
             return Status::Error("Wrong type");
         }
-        return boost::get<bool>(defaultValue_);
+        return Value::toBool(v);
     }
 
-    void setDoubleValue(double v) {
-        defaultValue_ = v;
-        hasDefault_ = true;
-    }
-
-    StatusOr<double> getDoubleValue() {
-        if (defaultValue_.which() != VAR_DOUBLE) {
+    StatusOr<double> getDoubleValue(Getters& getter) {
+        auto r = defaultExpr_->eval(getter);
+        if (!r.ok()) {
+            return std::move(r).status();
+        }
+        auto v = std::move(r).value();
+        if (!Value::isDouble(v)) {
             return Status::Error("Wrong type");
         }
-        return boost::get<double>(defaultValue_);
+        return Value::toDouble(v);
     }
 
-    void setStringValue(std::string *v) {
-        defaultValue_ = *v;
-        hasDefault_ = true;
-        delete v;
-    }
-
-    StatusOr<std::string> getStringValue() {
-        if (defaultValue_.which() != VAR_STR) {
+    StatusOr<std::string> getStringValue(Getters& getter) {
+        auto r = defaultExpr_->eval(getter);
+        if (!r.ok()) {
+            return std::move(r).status();
+        }
+        auto v = std::move(r).value();
+        if (!Value::isString(v)) {
             return Status::Error("Wrong type");
         }
-        return boost::get<std::string>(defaultValue_);
+        return Value::toString(v);
+    }
+
+    void setContext(ExpressionContext* ctx) {
+        if (defaultExpr_ != nullptr) {
+            defaultExpr_->setContext(ctx);
+        }
     }
 
     bool hasDefault() {
-        return hasDefault_;
+        return defaultExpr_ != nullptr;
     }
 
 private:
     ColumnType                                  type_;
     std::unique_ptr<std::string>                name_;
-    bool                                        hasDefault_{false};
-    VariantType                                 defaultValue_;
+    std::unique_ptr<Value>                      defaultExpr_{nullptr};
 };
 
 

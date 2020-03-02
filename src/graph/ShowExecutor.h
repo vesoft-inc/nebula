@@ -40,6 +40,8 @@ public:
     void showTagIndexStatus();
     void showEdgeIndexStatus();
     void showSnapshots();
+    void showCharset();
+    void showCollation();
 
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 

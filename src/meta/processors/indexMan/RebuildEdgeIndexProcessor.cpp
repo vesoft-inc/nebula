@@ -66,10 +66,11 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
     auto activeHosts = ActiveHostsMan::getActiveHosts(kvstore_, FLAGS_heartbeat_interval_secs + 1);
     while (leaderIter->valid()) {
         auto host = MetaServiceUtils::parseLeaderKey(leaderIter->key());
-        auto hostAddrRet = NetworkUtils::toHostAddr(NetworkUtils::intToIPv4(host.get_ip()),
-                                                    host.get_port());
+        auto ip = NetworkUtils::intToIPv4(host.get_ip());
+        auto port = host.get_port();
+        auto hostAddrRet = NetworkUtils::toHostAddr(ip, port);
         if (!hostAddrRet.ok()) {
-            LOG(ERROR) << "Can't cast to host " << host.get_ip() + ":" << host.get_port();
+            LOG(ERROR) << "Can't cast to host " << ip + ":" << port;
             resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
             onFinished();
             return;

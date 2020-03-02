@@ -21,7 +21,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
     for (auto& p : req.get_paras()) {
         oss << p << " ";
     }
-    LOG(INFO) << __PRETTY_FUNCTION__ << " paras=" << oss.str();
+    LOG(INFO) << __PRETTY_FUNCTION__ << " paras = " << oss.str();
 
     JobManager* jobMgr = JobManager::getInstance();
     switch (req.get_op()) {
@@ -33,15 +33,15 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
                 break;
             }
 
-            std::vector<std::string> cmd_and_paras = req.get_paras();
-            if (cmd_and_paras.empty()) {
+            std::vector<std::string> cmdAndParas = req.get_paras();
+            if (cmdAndParas.empty()) {
                 errorCode = cpp2::ErrorCode::E_INVALID_PARM;
                 break;
             }
 
-            std::string cmd = cmd_and_paras[0];
-            std::vector<std::string> paras(cmd_and_paras.begin() + 1,
-                                           cmd_and_paras.end());
+            std::string cmd = cmdAndParas[0];
+            std::vector<std::string> paras(cmdAndParas.begin() + 1,
+                                           cmdAndParas.end());
 
             JobDescription jobDesc(nebula::value(jobId), cmd, paras);
             auto rc = jobMgr->addJob(jobDesc);

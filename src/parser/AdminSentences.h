@@ -38,7 +38,9 @@ public:
         kShowCreateEdgeIndex,
         kShowTagIndexStatus,
         kShowEdgeIndexStatus,
-        kShowSnapshots
+        kShowSnapshots,
+        kShowCharset,
+        kShowCollation
     };
 
     explicit ShowSentence(ShowType sType) {
@@ -73,13 +75,13 @@ public:
     }
 
 private:
-    ShowType                        showType_{ShowType::kUnknown};
+    ShowType                              showType_{ShowType::kUnknown};
     std::unique_ptr<std::vector<int32_t>> list_;
-    std::unique_ptr<std::string>    name_;
+    std::unique_ptr<std::string>          name_;
 };
 
 
-inline std::ostream& operator<<(std::ostream &os, ShowSentence::ShowType type) {
+inline std::ostream& operator<<(std::ostream &os, const ShowSentence::ShowType &type) {
     return os << static_cast<uint32_t>(type);
 }
 
@@ -89,7 +91,10 @@ public:
     using Value = boost::variant<int64_t, std::string>;
 
     enum OptionType : uint8_t {
-        PARTITION_NUM, REPLICA_FACTOR
+        PARTITION_NUM,
+        REPLICA_FACTOR,
+        CHARSET,
+        COLLATE
     };
 
     SpaceOptItem(OptionType op, std::string val) {
@@ -132,6 +137,24 @@ public:
             return asInt();
         } else {
             LOG(ERROR) << "replica_factor value illegal.";
+            return 0;
+        }
+    }
+
+    std::string get_charset() {
+        if (isString()) {
+            return asString();
+        } else {
+            LOG(ERROR) << "charset value illegal.";
+            return 0;
+        }
+    }
+
+    std::string get_collate() {
+        if (isString()) {
+            return asString();
+        } else {
+            LOG(ERROR) << "collate value illage.";
             return 0;
         }
     }

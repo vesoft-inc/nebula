@@ -104,7 +104,8 @@ class GraphScanner;
 %token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND KW_REBUILD
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_PART KW_PARTS KW_TIMESTAMP KW_ADD
-%token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_INDEX KW_INDEXES
+%token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_CHARSET KW_COLLATE KW_COLLATION
+%token KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_INDEX KW_INDEXES
 %token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
 %token KW_COUNT KW_COUNT_DISTINCT KW_SUM KW_AVG KW_MAX KW_MIN KW_STD KW_BIT_AND KW_BIT_OR KW_BIT_XOR
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON KW_STATUS
@@ -119,6 +120,7 @@ class GraphScanner;
 %token KW_IS KW_NULL KW_DEFAULT
 %token KW_SNAPSHOT KW_SNAPSHOTS KW_LOOKUP
 %token KW_JOBS KW_JOB KW_RECOVER KW_FLUSH KW_COMPACT KW_SUBMIT
+%token KW_BIDIRECT
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -681,13 +683,23 @@ over_clause
         auto s = new std::string("*");
         auto edge = new OverEdge(s, nullptr);
         edges->addEdge(edge);
-        $$ = new OverClause(edges, true);
+        $$ = new OverClause(edges, OverClause::Direction::kBackward);
+    }
+    | KW_OVER MUL KW_BIDIRECT {
+        auto edges = new OverEdges();
+        auto s = new std::string("*");
+        auto edge = new OverEdge(s, nullptr);
+        edges->addEdge(edge);
+        $$ = new OverClause(edges, OverClause::Direction::kBidirect);
     }
     | KW_OVER over_edges {
         $$ = new OverClause($2);
     }
     | KW_OVER over_edges KW_REVERSELY {
-        $$ = new OverClause($2, true);
+        $$ = new OverClause($2, OverClause::Direction::kBackward);
+    }
+    | KW_OVER over_edges KW_BIDIRECT {
+        $$ = new OverClause($2, OverClause::Direction::kBidirect);
     }
     ;
 
@@ -1136,21 +1148,9 @@ column_spec_list
 
 column_spec
     : name_label type_spec { $$ = new ColumnSpecification($2, $1); }
-    | name_label type_spec KW_DEFAULT INTEGER {
+    | name_label type_spec KW_DEFAULT expression {
         $$ = new ColumnSpecification($2, $1);
-        $$->setIntValue($4);
-    }
-    | name_label type_spec KW_DEFAULT BOOL {
-        $$ = new ColumnSpecification($2, $1);
-        $$->setBoolValue($4);
-    }
-    | name_label type_spec KW_DEFAULT DOUBLE {
-        $$ = new ColumnSpecification($2, $1);
-        $$->setDoubleValue($4);
-    }
-    |  name_label type_spec KW_DEFAULT STRING {
-        $$ = new ColumnSpecification($2, $1);
-        $$->setStringValue($4);
+        $$->setValue($4);
     }
     ;
 
@@ -1650,6 +1650,12 @@ show_sentence
     | KW_SHOW KW_SNAPSHOTS {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowSnapshots);
     }
+    | KW_SHOW KW_CHARSET {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowCharset);
+    }
+    | KW_SHOW KW_COLLATION {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowCollation);
+    }
     ;
 
 config_module_enum
@@ -1734,6 +1740,16 @@ space_opt_item
     | KW_REPLICA_FACTOR ASSIGN INTEGER {
         ifOutOfRange($3, @3);
         $$ = new SpaceOptItem(SpaceOptItem::REPLICA_FACTOR, $3);
+    }
+    | KW_CHARSET ASSIGN name_label {
+        // Currently support utf8, it is an alias for utf8mb4
+        $$ = new SpaceOptItem(SpaceOptItem::CHARSET, *$3);
+        delete $3;
+    }
+    | KW_COLLATE ASSIGN name_label {
+        // Currently support utf8_bin, it is an alias for utf8mb4_bin
+        $$ = new SpaceOptItem(SpaceOptItem::COLLATE, *$3);
+        delete $3;
     }
     // TODO(YT) Create Spaces for different engines
     // KW_ENGINE_TYPE ASSIGN name_label

@@ -40,6 +40,9 @@ public:
             if (!schemaValid(spaceId, key)) {
                 return true;
             }
+            if (isInvalidReverseEdgeKey(key, val)) {
+                return true;
+            }
             if (!ttlValid(spaceId, key, val)) {
                 VLOG(3) << "TTL invalid for key " << key;
                 return true;
@@ -79,6 +82,15 @@ public:
             }
         }
         return true;
+    }
+
+    bool isInvalidReverseEdgeKey(const folly::StringPiece& key,
+                                 const folly::StringPiece& val) const {
+        if (NebulaKeyUtils::isEdge(key)) {
+            auto edgeType = NebulaKeyUtils::getEdgeType(key);
+            return edgeType < 0 && val.empty();
+        }
+        return false;
     }
 
     bool ttlValid(GraphSpaceID spaceId, const folly::StringPiece& key,

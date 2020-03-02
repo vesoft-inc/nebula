@@ -191,6 +191,8 @@ TEST(ProcessorTest, SpaceTest) {
         properties.set_space_name("default_space");
         properties.set_partition_num(8);
         properties.set_replica_factor(3);
+        properties.set_charset_name("utf8");
+        properties.set_collate_name("utf8_bin");
         cpp2::CreateSpaceReq req;
         req.set_properties(std::move(properties));
         auto* processor = CreateSpaceProcessor::instance(kv.get());
@@ -211,6 +213,8 @@ TEST(ProcessorTest, SpaceTest) {
         ASSERT_EQ("default_space", resp.item.properties.space_name);
         ASSERT_EQ(8, resp.item.properties.partition_num);
         ASSERT_EQ(3, resp.item.properties.replica_factor);
+        ASSERT_EQ("utf8", resp.item.properties.charset_name);
+        ASSERT_EQ("utf8_bin", resp.item.properties.collate_name);
     }
 
     {
@@ -294,6 +298,40 @@ TEST(ProcessorTest, SpaceTest) {
         processor1->process(req1);
         auto resp1 = std::move(f1).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp1.code);
+    }
+    // Test default value
+    {
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("space_with_no_option");
+        cpp2::CreateSpaceReq creq;
+        creq.set_properties(std::move(properties));
+        auto* cprocessor = CreateSpaceProcessor::instance(kv.get());
+        auto cf = cprocessor->getFuture();
+        cprocessor->process(creq);
+        auto cresp = std::move(cf).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, cresp.code);
+
+        cpp2::GetSpaceReq greq;
+        greq.set_space_name("space_with_no_option");
+        auto* gprocessor = GetSpaceProcessor::instance(kv.get());
+        auto gf = gprocessor->getFuture();
+        gprocessor->process(greq);
+        auto gresp = std::move(gf).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, gresp.code);
+        ASSERT_EQ("space_with_no_option", gresp.item.properties.space_name);
+        ASSERT_EQ(100, gresp.item.properties.partition_num);
+        ASSERT_EQ(1, gresp.item.properties.replica_factor);
+        // Because setting default value in graph
+        ASSERT_EQ("", gresp.item.properties.charset_name);
+        ASSERT_EQ("", gresp.item.properties.collate_name);
+
+        cpp2::DropSpaceReq dreq;
+        dreq.set_space_name("space_with_no_option");
+        auto* dprocessor = DropSpaceProcessor::instance(kv.get());
+        auto df = dprocessor->getFuture();
+        dprocessor->process(dreq);
+        auto dresp = std::move(df).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, dresp.code);
     }
 }
 

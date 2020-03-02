@@ -153,6 +153,9 @@ bool JobManager::runJobInternal(const JobDescription& jobDesc) {
             if (succeed) {
                 taskDesc.setStatus(cpp2::JobStatus::FINISHED);
             } else {
+                LOG(INFO) << "task " << iTask << " failed"
+                          << ", httpResult.ok()=" << httpResult.ok()
+                          << ", httpResult.value()=" << httpResult.value();
                 taskDesc.setStatus(cpp2::JobStatus::FAILED);
             }
 
@@ -170,6 +173,10 @@ bool JobManager::runJobInternal(const JobDescription& jobDesc) {
             for (const auto& t : tries) {
                 if (t.hasException()) {
                     LOG(ERROR) << "admin Failed: " << t.exception();
+                    successfully = false;
+                    break;
+                }
+                if (!t.value()) {
                     successfully = false;
                     break;
                 }
