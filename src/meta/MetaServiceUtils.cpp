@@ -25,7 +25,7 @@ const std::string kConfigsTable        = "__configs__";        // NOLINT
 const std::string kDefaultTable        = "__default__";        // NOLINT
 const std::string kSnapshotsTable      = "__snapshots__";      // NOLINT
 const std::string kLastUpdateTimeTable = "__last_update_time__"; // NOLINT
-const std::string kLeadersTable = "__leaders__"; // NOLINT
+const std::string kLeadersTable        = "__leaders__";          // NOLINT
 
 const std::string kHostOnline  = "Online";       // NOLINT
 const std::string kHostOffline = "Offline";      // NOLINT

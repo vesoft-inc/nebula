@@ -8,6 +8,8 @@
 #include "meta/processors/admin/AdminClient.h"
 #include "meta/processors/indexMan/RebuildTagIndexProcessor.h"
 
+DECLARE_int32(heartbeat_interval_secs);
+
 namespace nebula {
 namespace meta {
 
@@ -24,15 +26,15 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
     }
 
     LOG(INFO) << "Rebuild Tag Index Space " << space << ", Index Name " << indexName;
-    std::unique_ptr<AdminClient> client(new AdminClient(kvstore_));
-    auto partsRet = client->getLeaderDist(space).get();
-    if (!partsRet.ok()) {
+    const auto& hostPrefix = MetaServiceUtils::leaderPrefix();
+    std::unique_ptr<kvstore::KVIterator> leaderIter;
+    auto kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, hostPrefix, &leaderIter);
+    if (kvRet != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "Get space " << space << "'s part failed";
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
-    auto parts = partsRet.value();
 
     folly::SharedMutex::ReadHolder indexHolder(LockUtils::tagIndexLock());
     auto tagIndexIDResult = getIndexID(space, indexName);
@@ -52,34 +54,62 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
         return;
     }
 
-    std::vector<folly::Future<Status>> results;
     auto statusKey = MetaServiceUtils::rebuildIndexStatus(space, 'T', indexName);
-    for (auto iter = parts.begin(); iter != parts.end(); iter++) {
-        auto future = client->rebuildTagIndex(iter->first,
-                                              space,
-                                              tagIndexID,
-                                              iter->second,
-                                              isOffline);
-        results.emplace_back(std::move(future));
+    if (!MetaCommon::saveRebuildStatus(kvstore_, statusKey, "RUNNING")) {
+        LOG(ERROR) << "Save rebuild status failed";
+        resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
+        onFinished();
+        return;
     }
 
-    folly::collectAll(results)
+    std::vector<folly::Future<Status>> results;
+    auto activeHosts = ActiveHostsMan::getActiveHosts(kvstore_, FLAGS_heartbeat_interval_secs + 1);
+    while (leaderIter->valid()) {
+        auto host = MetaServiceUtils::parseLeaderKey(leaderIter->key());
+        auto hostAddrRet = NetworkUtils::toHostAddr(NetworkUtils::intToIPv4(host.get_ip()),
+                                                    host.get_port());
+        if (!hostAddrRet.ok()) {
+            LOG(ERROR) << "Can't cast to host " << host.get_ip() + ":" << host.get_port();
+            resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
+            onFinished();
+            return;
+        }
+
+        auto hostAddr = hostAddrRet.value();
+        if (std::find(activeHosts.begin(), activeHosts.end(),
+                      HostAddr(host.ip, host.port)) != activeHosts.end()) {
+            auto leaderParts = MetaServiceUtils::parseLeaderVal(leaderIter->val());
+            auto& partIds = leaderParts[space];
+            auto future = adminClient_->rebuildTagIndex(hostAddr,
+                                                        space,
+                                                        tagIndexID,
+                                                        partIds,
+                                                        isOffline);
+            results.emplace_back(std::move(future));
+        }
+        leaderIter->next();
+    }
+
+    folly::collectAll(std::move(results))
         .thenValue([statusKey, kv = kvstore_] (const auto& tries) mutable {
             for (const auto& t : tries) {
                 if (!t.value().ok()) {
                     LOG(ERROR) << "Build Tag Index Failed";
                     if (!MetaCommon::saveRebuildStatus(kv, statusKey, "FAILED")) {
+                        LOG(ERROR) << "Save rebuild status failed";
                         return;
                     }
                 }
             }
             if (!MetaCommon::saveRebuildStatus(kv, std::move(statusKey), "SUCCEEDED")) {
+                LOG(ERROR) << "Save rebuild status failed";
                 return;
             }
         })
         .thenError([statusKey, kv = kvstore_] (auto &&e) {
             LOG(ERROR) << "Exception caught: " << e.what();
             if (!MetaCommon::saveRebuildStatus(kv, std::move(statusKey), "FAILED")) {
+                LOG(ERROR) << "Save rebuild status failed";
                 return;
             }
         });

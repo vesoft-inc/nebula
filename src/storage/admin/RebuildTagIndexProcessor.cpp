@@ -78,8 +78,10 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
 
                 auto indexKey = NebulaKeyUtils::vertexIndexKey(part, indexID, vertex, values);
                 data.emplace_back(std::move(indexKey), "");
+                batchSize += 1;
                 iter->next();
             }
+
             doPut(space, part, std::move(data));
         } else {
             // TODO darion Support online rebuild index

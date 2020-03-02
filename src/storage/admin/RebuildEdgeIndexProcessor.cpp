@@ -82,6 +82,7 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
                 auto indexKey = NebulaKeyUtils::edgeIndexKey(part, indexID, source,
                                                              ranking, destination, values);
                 data.emplace_back(std::move(indexKey), "");
+                batchSize += 1;
                 iter->next();
             }
             doPut(space, part, std::move(data));

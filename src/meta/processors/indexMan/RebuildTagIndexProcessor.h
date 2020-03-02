@@ -14,15 +14,20 @@ namespace meta {
 
 class RebuildTagIndexProcessor : public BaseProcessor<cpp2::ExecResp> {
 public:
-    static RebuildTagIndexProcessor* instance(kvstore::KVStore* kvstore) {
-        return new RebuildTagIndexProcessor(kvstore);
+    static RebuildTagIndexProcessor* instance(kvstore::KVStore* kvstore,
+                                              AdminClient* adminClient) {
+        return new RebuildTagIndexProcessor(kvstore, adminClient);
     }
 
     void process(const cpp2::RebuildIndexReq& req);
 
 private:
-    explicit RebuildTagIndexProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+    explicit RebuildTagIndexProcessor(kvstore::KVStore* kvstore,
+                                      AdminClient* adminClient)
+            : BaseProcessor<cpp2::ExecResp>(kvstore), adminClient_(adminClient) {}
+
+private:
+    AdminClient* adminClient_;
 };
 
 }  // namespace meta

@@ -232,7 +232,7 @@ MetaServiceHandler::future_listTagIndexes(const cpp2::ListTagIndexesReq& req) {
 
 folly::Future<cpp2::ExecResp>
 MetaServiceHandler::future_rebuildTagIndex(const cpp2::RebuildIndexReq& req) {
-    auto* processor = RebuildTagIndexProcessor::instance(kvstore_);
+    auto* processor = RebuildTagIndexProcessor::instance(kvstore_, adminClient_.get());
     RETURN_FUTURE(processor);
 }
 
@@ -268,7 +268,7 @@ MetaServiceHandler::future_listEdgeIndexes(const cpp2::ListEdgeIndexesReq& req) 
 
 folly::Future<cpp2::ExecResp>
 MetaServiceHandler::future_rebuildEdgeIndex(const cpp2::RebuildIndexReq& req) {
-    auto* processor = RebuildEdgeIndexProcessor::instance(kvstore_);
+    auto* processor = RebuildEdgeIndexProcessor::instance(kvstore_, adminClient_.get());
     RETURN_FUTURE(processor);
 }
 
