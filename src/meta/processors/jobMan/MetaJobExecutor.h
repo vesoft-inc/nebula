@@ -16,16 +16,11 @@ namespace meta {
 
 class MetaJobExecutor {
 public:
-    using HostAddrAndStatus = std::pair<HostAddr, Status>;
+    using ExecuteRet = ErrorOr<kvstore::ResultCode, std::map<HostAddr, Status>>;
 
     MetaJobExecutor() = default;
-    // virtual void prepare() {};
-    virtual ErrorOr<nebula::kvstore::ResultCode, std::map<HostAddr, Status>>
-    execute(int spaceId,
-            int jobId,
-            const std::vector<std::string>& jobParas,
-            nebula::kvstore::KVStore* kvStore,
-            nebula::thread::GenericThreadPool* pool) = 0;
+
+    virtual ExecuteRet execute() = 0;
     virtual void stop() = 0;
     virtual ~MetaJobExecutor() = default;
 
@@ -35,7 +30,8 @@ protected:
 
 class MetaJobExecutorFactory {
 public:
-    static std::unique_ptr<MetaJobExecutor> createMetaJobExecutor(const JobDescription& jd);
+    static std::unique_ptr<MetaJobExecutor>
+    createMetaJobExecutor(const JobDescription& jd, kvstore::KVStore* store);
 };
 
 }  // namespace meta

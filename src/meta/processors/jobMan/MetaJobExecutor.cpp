@@ -7,6 +7,7 @@
 #include "meta/processors/jobMan/MetaJobExecutor.h"
 #include "meta/processors/jobMan/SimpleConcurrentJobExecutor.h"
 #include <memory>
+#include <map>
 #include "interface/gen-cpp2/common_types.h"
 
 namespace nebula {
@@ -19,20 +20,25 @@ enum class JobCmdEnum {
 };
 
 nebula::cpp2::AdminCmd toAdminCmd(const std::string& cmd) {
-    UNUSED(cmd);
-    LOG(ERROR) << "this code should be removed and string cmd need to change";
-    return nebula::cpp2::AdminCmd::COMPACT;
+    static std::map<std::string, nebula::cpp2::AdminCmd> mapping {
+        {"compact", nebula::cpp2::AdminCmd::COMPACT},
+        {"flush", nebula::cpp2::AdminCmd::FLUSH},
+    };
+    if (mapping.count(cmd) == 0) {
+        return nebula::cpp2::AdminCmd::INVALID;
+    }
+    return mapping[cmd];
 }
 
 std::unique_ptr<MetaJobExecutor>
-MetaJobExecutorFactory::createMetaJobExecutor(const JobDescription& jd) {
+MetaJobExecutorFactory::createMetaJobExecutor(const JobDescription& jd,  kvstore::KVStore* store) {
     std::unique_ptr<MetaJobExecutor> ret;
 
     nebula::cpp2::AdminCmd cmd = toAdminCmd(jd.getCmd());
     switch (cmd) {
     case nebula::cpp2::AdminCmd::COMPACT:
     case nebula::cpp2::AdminCmd::FLUSH:
-        ret.reset(new SimpleConcurrentJobExecutor(cmd, jd.getParas()));
+        ret.reset(new SimpleConcurrentJobExecutor(jd.getJobId(), cmd, jd.getParas(), store));
         break;
     case nebula::cpp2::AdminCmd::REBUILD_INDEX:
         break;
@@ -41,6 +47,8 @@ MetaJobExecutorFactory::createMetaJobExecutor(const JobDescription& jd) {
     }
     return ret;
 }
+
+
 
 }  // namespace meta
 }  // namespace nebula

@@ -471,13 +471,8 @@ struct AddAdminTaskRequest {
     4: common.GraphSpaceID                  space_id, 
     5: optional list<common.PartitionID>    parts,
     6: optional common.IndexID              index_id,
-    7: optional i64                         delay_ms  // 
+    7: optional i64                         delay_ms    //
 }
-
-// struct StopAdminTaskRequest {
-    // 1: i32 job_id
-    // 2: i32 task_id
-// }
 
 service StorageService {
     QueryResponse getBound(1: GetNeighborsRequest req)

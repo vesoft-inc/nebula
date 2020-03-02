@@ -14,27 +14,35 @@ namespace nebula {
 namespace meta {
 
 SimpleConcurrentJobExecutor::
-SimpleConcurrentJobExecutor(nebula::cpp2::AdminCmd cmd,
-                            std::vector<std::string> params) :
+SimpleConcurrentJobExecutor(int jobId,
+                            nebula::cpp2::AdminCmd cmd,
+                            std::vector<std::string> paras,
+                            nebula::kvstore::KVStore* kvStore) :
+                            jobId_(jobId),
                             cmd_(cmd),
-                            params_(params) {
-}
+                            paras_(paras),
+                            kvStore_(kvStore) {}
 
 ErrorOr<nebula::kvstore::ResultCode, std::map<HostAddr, Status>>
-SimpleConcurrentJobExecutor::execute(int spaceId,
-                                     int jobId,
-                                     const std::vector<std::string>& jobParas,
-                                     nebula::kvstore::KVStore* kvStore,
-                                     nebula::thread::GenericThreadPool* pool) {
-    UNUSED(pool);
-    if (jobParas.empty()) {
+SimpleConcurrentJobExecutor::execute() {
+    if (paras_.empty()) {
         LOG(ERROR) << "SimpleConcurrentJob should have a para";
         return nebula::kvstore::ResultCode::ERR_INVALID_ARGUMENT;
     }
 
+    std::string spaceName = paras_.back();
+    auto indexKey = MetaServiceUtils::indexSpaceKey(spaceName);
+    std::string val;
+    auto rc = kvStore_->get(kDefaultSpaceId, kDefaultPartId, indexKey, &val);
+    if (rc != kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "KVStore get indexKey error spaceName: " << spaceName;
+        return rc;
+    }
+    int spaceId = *reinterpret_cast<const int*>(val.c_str());
+
     std::unique_ptr<kvstore::KVIterator> iter;
     auto partPrefix = MetaServiceUtils::partPrefix(spaceId);
-    auto rc = kvStore->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
+    rc = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
     if (rc != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "Fetch Parts Failed";
         return rc;
@@ -53,11 +61,11 @@ SimpleConcurrentJobExecutor::execute(int spaceId,
     hosts.erase(last, hosts.end());
 
     std::vector<folly::SemiFuture<Status>> futures;
-    std::unique_ptr<AdminClient> client(new AdminClient(kvStore));
+    std::unique_ptr<AdminClient> client(new AdminClient(kvStore_));
     int taskId = 0;
     std::vector<PartitionID> parts;
     for (auto& host : hosts) {
-        auto future = client->addTask(cmd_, jobId, taskId++, spaceId,
+        auto future = client->addTask(cmd_, jobId_, taskId++, spaceId,
                                       {host}, 0, parts);
         futures.push_back(std::move(future));
     }
