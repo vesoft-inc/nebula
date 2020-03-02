@@ -47,7 +47,7 @@ spec:
         command: 
           - "/bin/bash"
           - "-ecx"
-          - "exec /usr/local/nebula/bin/nebula-metad --flagfile=/usr/local/nebula/etc/nebula-metad.conf --local_ip=$(hostname -i) --v=0 --minloglevel=2"
+          - "exec /usr/local/nebula/bin/nebula-metad --flagfile=/usr/local/nebula/etc/nebula-metad.conf --local_ip=$(hostname -i) --v=0 --minloglevel=2 --daemonize=false"
         {{- if .Values.livenessProbe.graphd.Enable }}   
         livenessProbe:
           httpGet:
@@ -139,7 +139,7 @@ spec:
         command: 
           - "/bin/bash"
           - "-ecx"
-          - "exec /usr/local/nebula/bin/nebula-storaged --flagfile=/usr/local/nebula/etc/nebula-storaged.conf --local_ip=$(hostname -i) --v=0 --minloglevel=2"    
+          - "exec /usr/local/nebula/bin/nebula-storaged --flagfile=/usr/local/nebula/etc/nebula-storaged.conf --local_ip=$(hostname -i) --v=0 --minloglevel=2 --daemonize=false"    
         {{- if .Values.livenessProbe.graphd.Enable }}
         livenessProbe:
           httpGet:
