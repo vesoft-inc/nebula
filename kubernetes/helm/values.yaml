@@ -75,8 +75,8 @@ port:
   ## Service And Container Port Setting of Nebula-Storaged  
   storaged:
     serviceType: ClusterIP 
-    thriftPort: 45500 
-    raftPort: 45501 
+    thriftPort: 45600 
+    raftPort: 45601 
     httpPort: 12000
     http2Port: 12002 
   ## Service And Container Port Setting of Nebula-Metad  

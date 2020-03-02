@@ -28,6 +28,9 @@ spec:
       - name: nebula-metad
         image: "{{ .Values.image.metad.repository }}:{{ .Values.image.metad.tag }}"
         imagePullPolicy: {{ .Values.image.metad.pullPolicy }}
+        env:
+        - name: USER
+          value: root
         resources:
           requests:
             cpu: {{ .Values.resources.metad.requests.cpu | quote }}
@@ -120,6 +123,9 @@ spec:
       - name: nebula-storaged
         image: "{{ .Values.image.storaged.repository }}:{{ .Values.image.storaged.tag }}"
         imagePullPolicy: {{ .Values.image.storaged.pullPolicy }}
+        env:
+        - name: USER
+          value: root
         resources:
           requests:
             cpu: {{ .Values.resources.storaged.requests.cpu | quote }}
