@@ -51,8 +51,8 @@ TEST_F(SpaceTest, TestRename) {
         cmd = "DESC SPACE space_2";
         code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, int, int>> expected{
-            {"space_2", 100, 1},
+        std::vector<std::tuple<std::string, int, int, std::string, std::string>> expected{
+            {"space_2", 100, 1, "utf8", "utf8_bin"},
         };
         ASSERT_TRUE(verifyResult(resp, expected, true, {0}));
     }
@@ -78,8 +78,8 @@ TEST_F(SpaceTest, TestRename) {
         cmd = "DESC SPACE space_4";
         code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, int, int>> expected{
-            {"space_4", 9, 1}
+        std::vector<std::tuple<std::string, int, int, std::string, std::string>> expected{
+            {"space_4", 9, 1, "utf8", "utf8_bin"}
         };
         ASSERT_TRUE(verifyResult(resp, expected, true, {0}));
 

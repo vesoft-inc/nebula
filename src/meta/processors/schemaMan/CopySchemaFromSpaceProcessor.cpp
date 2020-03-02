@@ -14,14 +14,14 @@ void CopySchemaFromSpaceProcessor::process(const cpp2::CopySchemaFromSpaceReq& r
         folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
         auto fSpaceRet = getSpaceId(req.get_from_space());
         if (!fSpaceRet.ok()) {
-            resp_.set_code(to(fSpaceRet.status()));
+            resp_.set_code(MetaCommon::to(fSpaceRet.status()));
             onFinished();
             return;
         }
 
         auto cSpaceRet = getSpaceId(req.get_current_space());
         if (!cSpaceRet.ok()) {
-            resp_.set_code(to(cSpaceRet.status()));
+            resp_.set_code(MetaCommon::to(cSpaceRet.status()));
             onFinished();
             return;
         }
@@ -73,7 +73,7 @@ bool CopySchemaFromSpaceProcessor::copySchemas(std::vector<kvstore::KV> &data) {
     auto tagPrefix = MetaServiceUtils::schemaTagsPrefix(fromSpaceId_);
     auto tagRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, tagPrefix, &iter);
     if (tagRet != kvstore::ResultCode::SUCCEEDED) {
-        resp_.set_code(to(tagRet));
+        resp_.set_code(MetaCommon::to(tagRet));
         return false;
     }
 
@@ -107,7 +107,7 @@ bool CopySchemaFromSpaceProcessor::copySchemas(std::vector<kvstore::KV> &data) {
     // copy edges
     auto edgePrefix = MetaServiceUtils::schemaEdgesPrefix(fromSpaceId_);
     auto edgeRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, edgePrefix, &iter);
-    resp_.set_code(to(edgeRet));
+    resp_.set_code(MetaCommon::to(edgeRet));
     if (edgeRet != kvstore::ResultCode::SUCCEEDED) {
         return false;
     }
@@ -146,7 +146,7 @@ bool CopySchemaFromSpaceProcessor::copyIndexes(std::vector<kvstore::KV> &data) {
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        resp_.set_code(to(ret));
+        resp_.set_code(MetaCommon::to(ret));
         LOG(ERROR) << "List Tag Index Failed: SpaceID " << fromSpaceId_;
         return false;
     }

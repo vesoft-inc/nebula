@@ -19,7 +19,7 @@ Status TruncateSpaceExecutor::prepare() {
     return Status::OK();
 }
 
-void TruncateSpaceExecutor::getSpace() {
+void TruncateSpaceExecutor::truncateSpace() {
     auto future = ectx()->getMetaClient()->getSpace(*spaceName_);
     auto *runner = ectx()->rctx()->runner();
 
@@ -30,10 +30,15 @@ void TruncateSpaceExecutor::getSpace() {
         }
 
         fromSpaceId_ = resp.value().get_space_id();
+        tempSpaceName_ = folly::stringPrintf("temp_to_space_%ld",
+                                            time::WallClock::fastNowInMicroSec());
         auto properties = resp.value().get_properties();
-        auto partitionNum = properties.get_partition_num();
-        auto replicaFactor = properties.get_replica_factor();
-        createSpace(partitionNum, replicaFactor);
+        meta::SpaceDesc spaceDesc = meta::SpaceDesc(tempSpaceName_,
+                                                    properties.get_partition_num(),
+                                                    properties.get_replica_factor(),
+                                                    properties.get_charset_name(),
+                                                    properties.get_collate_name());
+        createSpace(spaceDesc);
     };
 
     auto error = [this] (auto &&e) {
@@ -45,11 +50,8 @@ void TruncateSpaceExecutor::getSpace() {
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
-void TruncateSpaceExecutor::createSpace(int32_t partsNum, int32_t replicaFactor) {
-    tempSpaceName_ = folly::stringPrintf("temp_to_space_%ld",
-                                         time::WallClock::fastNowInMicroSec());
-    auto future = ectx()->getMetaClient()->createSpace(
-            tempSpaceName_, partsNum, replicaFactor, false);
+void TruncateSpaceExecutor::createSpace(const meta::SpaceDesc &spaceDesc) {
+    auto future = ectx()->getMetaClient()->createSpace(spaceDesc, false);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {
@@ -190,7 +192,7 @@ void TruncateSpaceExecutor::execute() {
     // step2: copy schema from from_space
     // step3: drop from_space
     // step4: rename to_space to from_space
-    getSpace();
+    truncateSpace();
 }
 
 }   // namespace graph

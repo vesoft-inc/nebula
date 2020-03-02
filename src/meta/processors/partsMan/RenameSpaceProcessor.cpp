@@ -36,7 +36,8 @@ void RenameSpaceProcessor::process(const cpp2::RenameSpaceReq& req) {
 
     spaceRet = getSpaceId(fromSpace);
     if (!spaceRet.ok()) {
-        resp_.set_code(to(spaceRet.status()));
+        LOG(ERROR) << "Get '" << fromSpace << "' spaceId failed";
+        resp_.set_code(MetaCommon::to(spaceRet.status()));
         onFinished();
         return;
     }
@@ -45,7 +46,7 @@ void RenameSpaceProcessor::process(const cpp2::RenameSpaceReq& req) {
     std::string spaceKey = MetaServiceUtils::spaceKey(spaceId);
     auto ret = doGet(spaceKey);
     if (!ret.ok()) {
-        LOG(ERROR) << "Get Space SpaceName: " << fromSpace << " not found";
+        LOG(ERROR) << "Get space spaceName: " << fromSpace << " not found";
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
@@ -59,7 +60,8 @@ void RenameSpaceProcessor::process(const cpp2::RenameSpaceReq& req) {
                       std::string(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId)));
     data.emplace_back(MetaServiceUtils::spaceKey(spaceId),
                       MetaServiceUtils::spaceVal(properties));
-    if (!doSyncPut(std::move(data))) {
+    if (doSyncPut(std::move(data)) != kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "Add space: " << toSpace << " index failed";
         resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
         onFinished();
         return;

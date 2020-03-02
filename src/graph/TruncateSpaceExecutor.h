@@ -26,8 +26,8 @@ public:
     void execute() override;
 
 private:
-    void getSpace();
-    void createSpace(int32_t partsNum, int32_t replicaFactor);
+    void truncateSpace();
+    void createSpace(const meta::SpaceDesc &spaceDesc);
     void copySpace();
     void renameSpace();
     void dropSpace(const std::string &spaceName, bool isIfExists);
