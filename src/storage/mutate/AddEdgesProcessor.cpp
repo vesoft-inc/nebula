@@ -22,9 +22,7 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
     callingNum_ = req.parts.size();
     auto iRet = indexMan_->getEdgeIndexes(spaceId_);
     if (iRet.ok()) {
-        for (auto& index : iRet.value()) {
-            indexes_.emplace_back(index);
-        }
+        indexes_ = std::move(iRet).value();
     }
     CHECK_NOTNULL(kvstore_);
     if (indexes_.empty()) {
