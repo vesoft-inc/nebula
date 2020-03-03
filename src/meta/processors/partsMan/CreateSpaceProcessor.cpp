@@ -8,6 +8,7 @@
 #include "meta/ActiveHostsMan.h"
 
 DEFINE_int32(default_parts_num, 100, "The default number of parts when a space is created");
+DEFINE_int32(parts_num_limit, 2000, "The limit of the number of parts which a space takes");
 DEFINE_int32(default_replica_factor, 1, "The default replica factor when a space is created");
 
 namespace nebula {
@@ -60,9 +61,16 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         partitionNum = FLAGS_default_parts_num;
         if (partitionNum <= 0) {
             LOG(ERROR) << "Create Space Failed : partition_num is illegal!";
-              resp_.set_code(cpp2::ErrorCode::E_INVALID_PARTITION_NUM);
-              onFinished();
-              return;
+            resp_.set_code(cpp2::ErrorCode::E_INVALID_PARTITION_NUM);
+            onFinished();
+            return;
+        }
+
+        if (partitionNum > FLAGS_parts_num_limit) {
+            LOG(ERROR) << "Create Space Failed : partition_num is large than parts_num_limit!";
+            resp_.set_code(cpp2::ErrorCode::E_INVALID_PARTITION_NUM);
+            onFinished();
+            return;
         }
         // Set the default value back to the struct, which will be written to storage
         properties.set_partition_num(partitionNum);
