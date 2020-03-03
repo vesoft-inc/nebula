@@ -18,7 +18,8 @@ void AdminTaskProcessor::process(const cpp2::AddAdminTaskRequest& req) {
         rc = taskManager.cancelTask(req);
     } else {
         auto* store = dynamic_cast<kvstore::NebulaStore*>(kvstore_);
-        rc = taskManager.runTaskDirectly(req, store);
+        auto fut = taskManager.addAsyncTask(req, store);
+        fut.wait();
     }
     if (rc != kvstore::ResultCode::SUCCEEDED) {
         cpp2::ResultCode thriftRet;
