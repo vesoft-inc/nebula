@@ -1505,8 +1505,8 @@ update_edge_sentence
     ;
 
 delete_vertex_sentence
-    : KW_DELETE KW_VERTEX vid {
-        auto sentence = new DeleteVertexSentence($3);
+    : KW_DELETE KW_VERTEX vid_list {
+        auto sentence = new DeleteVerticesSentence($3);
         $$ = sentence;
     }
     ;
