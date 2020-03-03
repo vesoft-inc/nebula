@@ -213,8 +213,8 @@ TEST_F(FetchVerticesTest, Distinct) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
-        auto *fmt = "FETCH PROP ON player %ld,%ld"
-                    " YIELD DISTINCT player.name, player.age";
+        auto *fmt = "FETCH PROP ON player %ld, %ld "
+                    "YIELD DISTINCT player.name, player.age";
         auto query = folly::stringPrintf(fmt, player.vid(), player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -233,8 +233,8 @@ TEST_F(FetchVerticesTest, Distinct) {
         cpp2::ExecutionResponse resp;
         auto &boris = players_["Boris Diaw"];
         auto &tony = players_["Tony Parker"];
-        auto *fmt = "FETCH PROP ON player %ld,%ld"
-                    " YIELD DISTINCT player.age";
+        auto *fmt = "FETCH PROP ON player %ld, %ld "
+                    "YIELD DISTINCT player.age";
         auto query = folly::stringPrintf(fmt, boris.vid(), tony.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -312,8 +312,7 @@ TEST_F(FetchVerticesTest, NonExistVertex) {
     }
     {
         cpp2::ExecutionResponse resp;
-        auto *fmt = "GO FROM %ld OVER serve"
-                    " | FETCH PROP ON team $-";
+        auto *fmt = "GO FROM %ld OVER serve | FETCH PROP ON team $-";
         auto query = folly::stringPrintf(fmt, nonExistPlayerID);
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);

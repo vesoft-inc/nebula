@@ -1,16 +1,21 @@
 # Show Syntax
 
 ```ngql
-SHOW {SPACES | TAGS | EDGES | HOSTS | PARTS}
+SHOW {SPACES | TAGS | EDGES | HOSTS | PARTS }
 SHOW PARTS <part_id>
-SHOW CREATE {TAG | EDGE} {<tag_name> | <edge_name>}
+SHOW CREATE { SPACE | TAG | EDGE} {<space_name> | <tag_name> | <edge_name>}
 SHOW {TAG | EDGE} INDEXES
 SHOW CONFIGS [graph|meta|storage]
+SHOW SNAPSHOTS
+SHOW CHARSET
+SHOW COLLATION
 ```
 
 `SHOW SPACES` lists the SPACES on the **Nebula Graph** cluster.
 
 `SHOW TAGS` and `SHOW EDGES` return the defined tags and edge types in a given space, respectively.
+
+`SHOW CREATE SPACE` returns the specified graph space and its creation syntax. If the graph space contains a default value, the default value is also returned.
 
 `SHOW CREATE TAG` and `SHOW CREATE EDGE` return the specified tag or edge type and their creation syntax in a given space. If the tag or edge type contains a default value, the default value is also returned.
 
@@ -23,6 +28,12 @@ SHOW CONFIGS [graph|meta|storage]
 `SHOW PARTS <part_id>` lists the specified partition information.
 
 For more information about `SHOW CONFIGS [graph|meta|storage]`, please refer to [configs syntax](../../../3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/configs-syntax.md).
+
+`SHOW SNAPSHOTS` lists all the snapshots.
+
+`SHOW CHARSET` displays the available character sets.
+
+`SHOW COLLATION` lists the display collations for a character set.
 
 ## Example
 
