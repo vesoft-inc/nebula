@@ -98,7 +98,7 @@ void SetConfigProcessor::process(const cpp2::SetConfigReq& req) {
         return;
     } while (false);
 
-    resp_.set_code(code);
+    handleErrorCode(code);
     onFinished();
 }
 

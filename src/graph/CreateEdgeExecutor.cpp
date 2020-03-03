@@ -15,11 +15,15 @@ namespace graph {
 CreateEdgeExecutor::CreateEdgeExecutor(Sentence *sentence,
                                        ExecutionContext *ectx)
     : Executor(ectx, "create_edge") {
+    exprCtx_ = std::make_unique<ExpressionContext>();
     sentence_ = static_cast<CreateEdgeSentence*>(sentence);
 }
 
 
 Status CreateEdgeExecutor::prepare() {
+    for (auto spec : sentence_->columnSpecs()) {
+        spec->setContext(exprCtx_.get());
+    }
     return Status::OK();
 }
 

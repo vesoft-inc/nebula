@@ -61,6 +61,8 @@ private:
 
     Status prepareOverAll();
 
+    Status addToEdgeTypes(EdgeType type);
+
     /**
      * To check if this is the final step.
      */
@@ -74,10 +76,6 @@ private:
      */
     bool isUpto() const {
         return upto_;
-    }
-
-    bool isReversely() const {
-        return isReversely_;
     }
 
     /**
@@ -198,27 +196,6 @@ private:
          std::unordered_map<VertexID, VertexID>     mapping_;
     };
 
-    class EdgeHolder final {
-    public:
-        Status add(const storage::cpp2::EdgePropResponse &resp);
-        OptVariantType get(VertexID src,
-                           VertexID dst,
-                           EdgeType type,
-                           const std::string &prop) const;
-        StatusOr<nebula::cpp2::SupportedType> getType(VertexID src,
-                           VertexID dst,
-                           EdgeType type,
-                           const std::string &prop) const;
-        OptVariantType getDefaultProp(EdgeType type,
-                                      const std::string &prop);
-
-    private:
-        using EdgeKey = std::tuple<VertexID, VertexID, EdgeType>;
-        using EdgeValue = std::pair<std::shared_ptr<ResultSchemaProvider>, std::string>;
-        std::unordered_map<EdgeKey, EdgeValue> edges_;
-        std::unordered_map<EdgeType, std::shared_ptr<ResultSchemaProvider>> schemas_;
-    };
-
     OptVariantType getPropFromInterim(VertexID id, const std::string &prop) const;
 
     nebula::cpp2::SupportedType getPropTypeFromInterim(const std::string &prop) const;
@@ -237,7 +214,7 @@ private:
     uint32_t                                    steps_{1};
     uint32_t                                    curStep_{1};
     bool                                        upto_{false};
-    bool                                        isReversely_{false};
+    OverClause::Direction                       direction_{OverClause::Direction::kForward};
     std::vector<EdgeType>                       edgeTypes_;
     std::string                                *varname_{nullptr};
     std::string                                *colname_{nullptr};
@@ -252,7 +229,6 @@ private:
     std::unique_ptr<ExpressionContext>          expCtx_;
     std::vector<VertexID>                       starts_;
     std::unique_ptr<VertexHolder>               vertexHolder_;
-    std::unique_ptr<EdgeHolder>                 edgeHolder_;
     std::unique_ptr<VertexBackTracker>          backTracker_;
     std::unique_ptr<cpp2::ExecutionResponse>    resp_;
     // The name of Tag or Edge, index of prop in data

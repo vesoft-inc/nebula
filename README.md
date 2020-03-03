@@ -42,6 +42,10 @@ Compared with other graph database solutions, **Nebula Graph** has the following
 
 See our [Roadmap](https://github.com/vesoft-inc/nebula/wiki/Nebula-Graph-Roadmap-2019) for what's coming soon in **Nebula Graph**.
 
+## Graph Visualization
+
+Visit [Graph Visualization](https://github.com/vesoft-inc/nebula-web-docker) for visual exploration of graph data on web UI.
+
 ## Supported Clients
 * [Go](https://github.com/vesoft-inc/nebula-go)
 * [Python](https://github.com/vesoft-inc/nebula-python)
@@ -58,7 +62,8 @@ Please note that you must install **Nebula Graph** by [installing source code](h
 In case you encounter any problems playing around **Nebula Graph**, please reach out for help:
 
 * [Slack channel](https://join.slack.com/t/nebulagraph/shared_invite/enQtNjIzMjQ5MzE2OTQ2LTM0MjY0MWFlODg3ZTNjMjg3YWU5ZGY2NDM5MDhmOGU2OWI5ZWZjZDUwNTExMGIxZTk2ZmQxY2Q2MzM1OWJhMmY#)
-* [Stack Overflow](https://stackoverflow.com/search?q=%E2%80%9CNebula+Graph%E2%80%9D&mixed=0)
+* [Stack Overflow](https://stackoverflow.com/search?q=%5Bnebula-graph%5D&mixed=0)
+* [Official Forum](https://discuss.nebula-graph.io)
 
 ## Documentation
 

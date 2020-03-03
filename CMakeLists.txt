@@ -56,6 +56,8 @@ message(STATUS "ENABLE_FUZZ_TEST: ${ENABLE_FUZZ_TEST}")
 message(STATUS "ENABLE_TSAN: ${ENABLE_TSAN}")
 
 
+add_compile_options(-fno-strict-aliasing)
+
 if (ENABLE_NATIVE)
     message(STATUS "ENABLE_NATIVE is ${ENABLE_NATIVE}")
     add_compile_options(-fPIC)

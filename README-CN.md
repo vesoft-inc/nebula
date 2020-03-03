@@ -37,6 +37,10 @@
 
 **Nebula Graph** 产品规划路线图请参见 [roadmap](https://github.com/vesoft-inc/nebula/wiki/Nebula-Graph-Roadmap-2019)。
 
+## 图可视化
+
+查看[图可视化](https://github.com/vesoft-inc/nebula-web-docker)，开启图数据可视化探索之旅。
+
 ## 支持的客户端
 * [Go](https://github.com/vesoft-inc/nebula-go)
 * [Python](https://github.com/vesoft-inc/nebula-python)
@@ -51,8 +55,10 @@
 ## 获取帮助
 
 在使用 **Nebula Graph** 过程中遇到任何问题，都可以通过下面的方式寻求帮助：
+
 * [知乎](https://www.zhihu.com/org/nebulagraph/activities)
 * [SegmentFault](https://segmentfault.com/t/nebula)
+* [官方论坛](https://discuss.nebula-graph.io)
 
 ## 文档
 
