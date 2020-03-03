@@ -403,9 +403,7 @@ void UpdateVertexProcessor::process(const cpp2::UpdateVertexRequest& req) {
     updateItems_ = req.get_update_items();
     auto iRet = indexMan_->getTagIndexes(spaceId_);
     if (iRet.ok()) {
-        for (auto& index : iRet.value()) {
-            indexes_.emplace_back(index);
-        }
+        indexes_ = std::move(iRet).value();
     }
 
     VLOG(3) << "Update vertex, spaceId: " << this->spaceId_
