@@ -4,6 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include "dataman/RowReader.h"
 #include "graph/DeleteVerticesExecutor.h"
 #include "storage/client/StorageClient.h"
 
@@ -52,8 +53,44 @@ void DeleteVerticesExecutor::execute() {
         vids_.emplace_back(vid);
     }
 
-    // TODO(zlcook) Get edgeKeys of a vertex by Go
-    auto future = ectx()->getStorageClient()->getEdgeKeys(space_, vids_);
+    auto edgeAllStatus = ectx()->schemaManager()->getAllEdge(space_);
+    if (!edgeAllStatus.ok()) {
+        doError(edgeAllStatus.status());
+        return;
+    }
+
+    std::vector<EdgeType> edgeTypes;
+    std::vector<std::string> columns = {_DST, _RANK};
+    std::vector<nebula::storage::cpp2::PropDef> props;
+    for (auto &e : edgeAllStatus.value()) {
+        auto edgeStatus = ectx()->schemaManager()->toEdgeType(space_, e);
+        if (!edgeStatus.ok()) {
+            LOG(ERROR) << "Can't get all of the edge types";
+            doError(edgeStatus.status());
+            return;
+        }
+
+        auto type = edgeStatus.value();
+        VLOG(3) << "Get Edge Type: " << type << " and " << (-1 * type);
+        edgeTypes.emplace_back(type);
+        edgeTypes.emplace_back(-1 * type);
+
+        for (auto& column : columns) {
+            storage::cpp2::PropDef def;
+            def.owner = storage::cpp2::PropOwner::EDGE;
+            def.name = column;
+            def.id.set_edge_type(type);
+            props.emplace_back(std::move(def));
+
+            storage::cpp2::PropDef reverseDef;
+            reverseDef.owner = storage::cpp2::PropOwner::EDGE;
+            reverseDef.name = column;
+            reverseDef.id.set_edge_type(-1 * type);
+            props.emplace_back(std::move(reverseDef));
+        }
+    }
+
+    auto future = ectx()->getStorageClient()->getNeighbors(space_, vids_, edgeTypes, "", props);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&result) {
@@ -72,17 +109,65 @@ void DeleteVerticesExecutor::execute() {
         auto rpcResp = std::move(result).responses();
         std::vector<storage::cpp2::EdgeKey> allEdges;
         for (auto& response : rpcResp) {
-            auto keys = response.get_edge_keys();
-            for (auto iter = keys->begin(); iter != keys->end(); iter++) {
-                for (auto& edge : iter->second) {
-                    storage::cpp2::EdgeKey reverseEdge;
-                    reverseEdge.set_src(edge.get_dst());
-                    reverseEdge.set_edge_type(-(edge.get_edge_type()));
-                    reverseEdge.set_ranking(edge.get_ranking());
-                    reverseEdge.set_dst(edge.get_src());
+            std::unordered_map<EdgeType, std::shared_ptr<ResultSchemaProvider>> edgeSchema;
+            auto *eschema = response.get_edge_schema();
+            if (eschema != nullptr) {
+                std::transform(eschema->cbegin(), eschema->cend(),
+                               std::inserter(edgeSchema, edgeSchema.begin()), [](auto &schema) {
+                                   return std::make_pair(
+                                       schema.first,
+                                       std::make_shared<ResultSchemaProvider>(schema.second));
+                               });
+            }
 
-                    allEdges.emplace_back(std::move(edge));
-                    allEdges.emplace_back(std::move(reverseEdge));
+            if (edgeSchema.empty()) {
+                LOG(ERROR) << "Can't find edge's schema";
+                doError(Status::Error("Can't find edge's schema"));
+                return;
+            }
+
+            for (auto &vdata : response.vertices) {
+                auto src = vdata.get_vertex_id();
+                for (auto &edata : vdata.get_edge_data()) {
+                    auto edgeType = edata.get_type();
+                    auto it = edgeSchema.find(edgeType);
+                    if (it == edgeSchema.end()) {
+                        LOG(ERROR) << "Can't find " << edgeType;
+                        doError(Status::Error("Can't find edge type %d", edgeType));
+                        return;
+                    }
+
+                    for (auto& edge : edata.get_edges()) {
+                        auto dst = edge.get_dst();
+                        auto reader = RowReader::getRowReader(edge.get_props(), it->second);
+                        if (reader == nullptr) {
+                            LOG(ERROR) << "Can't get row reader";
+                            doError(Status::Error("Can't get reader! edge type %d", edgeType));
+                            return;
+                        }
+
+                        auto rankRes = RowReader::getPropByName(reader.get(), _RANK);
+                        if (!ok(rankRes)) {
+                            LOG(ERROR) << "Can't get rank " << edgeType;
+                            doError(Status::Error("Can't get rank! edge type %d", edgeType));
+                            return;
+                        }
+
+                        auto rank = boost::get<int64_t>(value(rankRes));
+                        storage::cpp2::EdgeKey edgeKey;
+                        edgeKey.set_src(src);
+                        edgeKey.set_edge_type(edgeType);
+                        edgeKey.set_ranking(rank);
+                        edgeKey.set_dst(dst);
+                        allEdges.emplace_back(std::move(edgeKey));
+
+                        storage::cpp2::EdgeKey reverseEdgeKey;
+                        reverseEdgeKey.set_src(dst);
+                        reverseEdgeKey.set_edge_type(-1 * edgeType);
+                        reverseEdgeKey.set_ranking(rank);
+                        reverseEdgeKey.set_dst(src);
+                        allEdges.emplace_back(std::move(reverseEdgeKey));
+                    }
                 }
             }
         }
