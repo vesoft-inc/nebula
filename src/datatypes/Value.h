@@ -31,7 +31,8 @@ enum class NullType {
     __NULL__ = 0,
     NaN      = 1,
     BAD_DATA = 2,
-    BAD_TYPE = 3
+    BAD_TYPE = 3,
+    OVERFLOW = 4,
 };
 
 
