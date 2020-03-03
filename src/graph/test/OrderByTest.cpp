@@ -342,5 +342,18 @@ TEST_F(OrderByTest, InterimResult) {
         ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
+
+TEST_F(OrderByTest, DuplicateColumn) {
+    std::string go = "GO FROM %ld OVER serve YIELD "
+                     "$^.player.name as team, serve.start_year as start, $$.team.name as team";
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto fmt = go + "| ORDER BY $-.team";
+        auto query = folly::stringPrintf(fmt.c_str(), player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+}
 }   // namespace graph
 }   // namespace nebula

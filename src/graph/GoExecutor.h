@@ -35,8 +35,6 @@ public:
 
     void execute() override;
 
-    void feedResult(std::unique_ptr<InterimResult> result) override;
-
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
 private:
@@ -198,10 +196,6 @@ private:
 
     OptVariantType getPropFromInterim(VertexID id, const std::string &prop) const;
 
-    nebula::cpp2::SupportedType getPropTypeFromInterim(const std::string &prop) const;
-
-    nebula::cpp2::SupportedType calculateExprType(Expression* exp) const;
-
     enum FromType {
         kInstantExpr,
         kVariable,
@@ -223,7 +217,6 @@ private:
     std::unique_ptr<YieldClauseWrapper>         yieldClauseWrapper_;
     bool                                        distinct_{false};
     bool                                        distinctPushDown_{false};
-    std::unique_ptr<InterimResult>              inputs_;
     using InterimIndex = InterimResult::InterimResultIndex;
     std::unique_ptr<InterimIndex>               index_;
     std::unique_ptr<ExpressionContext>          expCtx_;

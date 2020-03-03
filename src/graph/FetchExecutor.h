@@ -18,10 +18,6 @@ public:
     explicit FetchExecutor(ExecutionContext *ectx,
                            const std::string &statsName) : TraverseExecutor(ectx, statsName) {}
 
-    void feedResult(std::unique_ptr<InterimResult> result) override {
-        inputs_ = std::move(result);
-    }
-
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
 protected:
@@ -49,7 +45,6 @@ protected:
     std::vector<YieldColumn*>                       yields_;
     std::unique_ptr<YieldColumns>                   yieldColsHolder_;
     bool                                            distinct_{false};
-    std::unique_ptr<InterimResult>                  inputs_;
     std::vector<std::string>                        resultColNames_;
     std::vector<std::string>                        returnColNames_;
     std::unique_ptr<cpp2::ExecutionResponse>        resp_;
