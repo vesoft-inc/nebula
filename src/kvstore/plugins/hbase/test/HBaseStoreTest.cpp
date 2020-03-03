@@ -78,7 +78,7 @@ TEST(HBaseStoreTest, SimpleTest) {
 
     std::vector<std::string> retEdgeValues;
     auto ret = hbaseStore->multiGet(spaceId, partId, edgeKeys, &retEdgeValues);
-    EXPECT_TRUE(ok(ret));
+    EXPECT_EQ(ResultCode::SUCCEEDED, ret.first);
     EXPECT_EQ(20, retEdgeValues.size());
 
     auto checkPrefix = [&](const std::string& prefix,
@@ -117,8 +117,7 @@ TEST(HBaseStoreTest, SimpleTest) {
 
     retEdgeValues.clear();
     ret = hbaseStore->multiGet(spaceId, partId, edgeKeys, &retEdgeValues);
-    EXPECT_FALSE(ok(ret));
-    EXPECT_EQ(ResultCode::ERR_UNKNOWN, error(ret));
+    EXPECT_EQ(ResultCode::ERR_UNKNOWN, ret.first);
     EXPECT_EQ(0, retEdgeValues.size());
 }
 

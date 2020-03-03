@@ -262,11 +262,11 @@ ResultCode HBaseStore::get(GraphSpaceID spaceId,
 }
 
 
-ErrorOr<ResultCode, std::vector<Status>> HBaseStore::multiGet(GraphSpaceID spaceId,
-                                                              PartitionID partId,
-                                                              const std::vector<std::string>& keys,
-                                                              std::vector<std::string>* values,
-                                                              bool returnPartly) {
+std::pair<ResultCode, std::vector<Status>> HBaseStore::multiGet(
+        GraphSpaceID spaceId,
+        PartitionID partId,
+        const std::vector<std::string>& keys,
+        std::vector<std::string>* values) {
     UNUSED(partId);
     auto tableName = this->spaceIdToTableName(spaceId);
     std::vector<std::string> rowKeys;
@@ -275,17 +275,16 @@ ErrorOr<ResultCode, std::vector<Status>> HBaseStore::multiGet(GraphSpaceID space
         rowKeys.emplace_back(rowKey);
     }
     std::vector<std::pair<std::string, KVMap>> dataList;
-    auto ret = client_->multiGet(tableName, rowKeys, dataList, returnPartly);
-    if (ok(ret)) {
+    auto ret = client_->multiGet(tableName, rowKeys, dataList);
+    if (ret.first == ResultCode::SUCCEEDED || ret.first == ResultCode::ERR_PARTIAL_RESULT) {
         for (size_t index = 0; index < dataList.size(); index++) {
             auto value = this->encode(spaceId, keys[index], dataList[index].second);
             values->emplace_back(value);
         }
-        return value(ret);
     } else {
         LOG(ERROR) << "MultiGet Failed: the HBase I/O error.";
-        return error(ret);
     }
+    return ret;
 }
 
 

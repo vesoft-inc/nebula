@@ -359,33 +359,29 @@ ResultCode NebulaStore::get(GraphSpaceID spaceId,
 }
 
 
-ErrorOr<ResultCode, std::vector<Status>> NebulaStore::multiGet(
+std::pair<ResultCode, std::vector<Status>> NebulaStore::multiGet(
         GraphSpaceID spaceId,
         PartitionID partId,
         const std::vector<std::string>& keys,
-        std::vector<std::string>* values,
-        bool returnPartly) {
+        std::vector<std::string>* values) {
+    std::vector<Status> status;
     auto ret = part(spaceId, partId);
     if (!ok(ret)) {
-        return error(ret);
+        return {error(ret), status};
     }
     auto part = nebula::value(ret);
     if (!checkLeader(part)) {
-        return ResultCode::ERR_LEADER_CHANGED;
+        return {ResultCode::ERR_LEADER_CHANGED, status};
     }
-
-    auto status = part->engine()->multiGet(keys, values);
-    if (returnPartly) {
-        return status;
-    }
+    status = part->engine()->multiGet(keys, values);
     auto allExist = std::all_of(status.begin(), status.end(),
                                 [] (const auto& s) {
                                     return s.ok();
                                 });
     if (allExist) {
-        return status;
+        return {ResultCode::SUCCEEDED, status};
     } else {
-        return ResultCode::ERR_UNKNOWN;
+        return {ResultCode::ERR_PARTIAL_RESULT, status};
     }
 }
 

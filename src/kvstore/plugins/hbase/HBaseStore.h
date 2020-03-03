@@ -81,12 +81,11 @@ public:
                    const std::string& key,
                    std::string* value) override;
 
-    ErrorOr<ResultCode, std::vector<Status>> multiGet(
+    std::pair<ResultCode, std::vector<Status>> multiGet(
             GraphSpaceID spaceId,
             PartitionID partId,
             const std::vector<std::string>& keys,
-            std::vector<std::string>* values,
-            bool returnPartly = false) override;
+            std::vector<std::string>* values) override;
 
     // Get all results in range [start, end)
     ResultCode range(GraphSpaceID spaceId,

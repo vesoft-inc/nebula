@@ -29,16 +29,17 @@ void GetProcessor::process(const cpp2::GetRequest& req) {
         std::transform(keys.begin(), keys.end(), std::back_inserter(kvKeys),
                        [partId] (const auto& key) { return NebulaKeyUtils::kvKey(partId, key); });
         std::vector<std::string> values;
-        auto ret = this->kvstore_->multiGet(spaceId, partId, kvKeys, &values, returnPartly);
-        if (ok(ret)) {
-            auto status = value(ret);
+        auto ret = this->kvstore_->multiGet(spaceId, partId, kvKeys, &values);
+        if ((ret.first == kvstore::ResultCode::SUCCEEDED) ||
+            (ret.first == kvstore::ResultCode::ERR_PARTIAL_RESULT && returnPartly)) {
+            auto& status = ret.second;
             for (size_t i = 0; i < kvKeys.size(); i++) {
                 if (status[i].ok()) {
                     pairs.emplace(keys[i], values[i]);
                 }
             }
         } else {
-            handleErrorCode(error(ret), spaceId, partId);
+            handleErrorCode(ret.first, spaceId, partId);
         }
     }
 

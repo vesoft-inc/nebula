@@ -170,7 +170,7 @@ TEST(UpdateVertexTest, Set_Filter_Yield_Test) {
         keys.emplace_back(vertexKey);
     }
     auto ret = kv->multiGet(spaceId, partId, std::move(keys), &values);
-    EXPECT_TRUE(ok(ret));
+    EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret.first);
     EXPECT_EQ(3, values.size());
     for (int i = 0; i < 3; i++) {
         auto tagSchema = schemaMan->getTagSchema(spaceId, 3001 + i * 2);

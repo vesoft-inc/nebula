@@ -66,11 +66,10 @@ ResultCode HBaseClient::get(const std::string& tableName,
 }
 
 
-ErrorOr<ResultCode, std::vector<Status>> HBaseClient::multiGet(
+std::pair<ResultCode, std::vector<Status>> HBaseClient::multiGet(
         const std::string& tableName,
         const std::vector<std::string>& rowKeys,
-        std::vector<std::pair<std::string, KVMap>>& dataList,
-        bool returnPartly) {
+        std::vector<std::pair<std::string, KVMap>>& dataList) {
     std::vector<TGet> tGetList;
     for (auto& rowKey : rowKeys) {
         TGet tGet;
@@ -84,7 +83,8 @@ ErrorOr<ResultCode, std::vector<Status>> HBaseClient::multiGet(
     }
 
     std::vector<TResult> tResultList;
-    std::vector<Status> ret;
+    std::vector<Status> status;
+    ResultCode resultCode = ResultCode::SUCCEEDED;
     try {
         client_->sync_getMultiple(tResultList, tableName, tGetList);
         for (auto& tResult : tResultList) {
@@ -96,25 +96,21 @@ ErrorOr<ResultCode, std::vector<Status>> HBaseClient::multiGet(
                     data.emplace(cv.qualifier, cv.value);
                 }
                 dataList.emplace_back(std::make_pair(rowKey, std::move(data)));
-                ret.emplace_back(Status::OK());
+                status.emplace_back(Status::OK());
             } else {
-                if (returnPartly) {
-                    ret.emplace_back(Status::KeyNotFound());
-                } else {
-                    dataList.clear();
-                    return ResultCode::ERR_UNKNOWN;
-                }
+                resultCode = ResultCode::ERR_PARTIAL_RESULT;
+                status.emplace_back(Status::KeyNotFound());
             }
         }
-        return ret;
+        return {resultCode, status};
     } catch (const TIOError &ex) {
         LOG(ERROR) << "TIOError: " << ex.message;
-        return ResultCode::ERR_IO_ERROR;
+        return {ResultCode::ERR_IO_ERROR, status};
     } catch (const apache::thrift::transport::TTransportException &tte) {
         LOG(ERROR) << "TTransportException: " << tte.what();
-        return ResultCode::ERR_IO_ERROR;
+        return {ResultCode::ERR_IO_ERROR, status};
     }
-    return ResultCode::ERR_UNKNOWN;
+    return {ResultCode::ERR_UNKNOWN, status};
 }
 
 

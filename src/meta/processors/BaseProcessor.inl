@@ -57,7 +57,7 @@ StatusOr<std::vector<std::string>>
 BaseProcessor<RESP>::doMultiGet(const std::vector<std::string>& keys) {
     std::vector<std::string> values;
     auto ret = kvstore_->multiGet(kDefaultSpaceId, kDefaultPartId, keys, &values);
-    if (!ok(ret)) {
+    if (ret.first != kvstore::ResultCode::SUCCEEDED) {
         return Status::Error("MultiGet Failed");
     }
     return values;

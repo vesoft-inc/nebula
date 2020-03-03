@@ -80,12 +80,11 @@ public:
 
     // Read multiple keys, if error occurs a ResultCode is returned,
     // If key[i] does not exist, the i-th value in return value would be Status::KeyNotFound
-    virtual ErrorOr<ResultCode, std::vector<Status>> multiGet(
-                GraphSpaceID spaceId,
-                PartitionID partId,
-                const std::vector<std::string>& keys,
-                std::vector<std::string>* values,
-                bool returnPartly = false) = 0;
+    virtual std::pair<ResultCode, std::vector<Status>>
+    multiGet(GraphSpaceID spaceId,
+             PartitionID partId,
+             const std::vector<std::string>& keys,
+             std::vector<std::string>* values) = 0;
 
     // Get all results in range [start, end)
     virtual ResultCode range(GraphSpaceID spaceId,

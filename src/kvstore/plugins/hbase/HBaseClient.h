@@ -31,11 +31,10 @@ public:
                    const std::string& rowKey,
                    KVMap& data);
 
-    ErrorOr<ResultCode, std::vector<Status>> multiGet(
+    std::pair<ResultCode, std::vector<Status>> multiGet(
             const std::string& tableName,
             const std::vector<std::string>& rowKeys,
-            std::vector<std::pair<std::string, KVMap>>& dataList,
-            bool returnPartly = false);
+            std::vector<std::pair<std::string, KVMap>>& dataList);
 
     ResultCode put(const std::string& tableName,
                    std::string& rowKey,
