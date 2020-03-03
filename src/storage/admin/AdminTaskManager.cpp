@@ -43,7 +43,13 @@ AdminTaskManager::addAsyncTask(const cpp2::AddAdminTaskRequest& req,
 void AdminTaskManager::pickTaskThread() {
     while (!shutdown_) {
         std::unique_lock<std::mutex> lk(mutex_);
-        notEmpty_.wait(lk, [&]{return !taskQueue_.empty(); });
+        LOG(INFO) << "AdminTaskManager::pickTaskThread() waiting for coming task";
+        notEmpty_.wait(lk, [&]{ return shutdown_ || !taskQueue_.empty(); });
+
+        if (shutdown_) {
+            break;
+        }
+        LOG(INFO) << "AdminTaskManager::pickTaskThread() task picked";
         auto taskAndResult = taskQueue_.begin();
         auto& spAdminTask = taskAndResult->second.first;
         auto& result = taskAndResult->second.second;
@@ -84,6 +90,7 @@ bool AdminTaskManager::init() {
 void AdminTaskManager::shutdown() {
     LOG(INFO) << "enter " << __PRETTY_FUNCTION__;
     shutdown_ = true;
+    notEmpty_.notify_one();
     pool_->stop();
     bgThread_->stop();
     bgThread_->wait();
