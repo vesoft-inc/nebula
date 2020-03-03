@@ -161,6 +161,10 @@ Status FetchEdgesExecutor::setupEdgeKeysFromRef() {
         return Status::OK();
     }
 
+    auto status = checkIfDuplicateColumn();
+    if (!status.ok()) {
+        return status;
+    }
     auto ret = inputs->getVIDs(*srcid_);
     if (!ret.ok()) {
         return ret.status();
