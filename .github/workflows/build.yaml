@@ -43,9 +43,13 @@ jobs:
           cp ci/ccache.conf /tmp/ccache/ccache.conf
           mkdir -p build
       - name: CMake with gcc-9.2
-        if: matrix.compiler == 'gcc-9.2'
+        if: matrix.compiler == 'gcc-9.2' && matrix.os != 'centos7'
         run: |
           cmake -DCMAKE_BUILD_TYPE=Release -B build/
+      - name: CMake with Coverage
+        if: matrix.compiler == 'gcc-9.2' && matrix.os == 'centos7'
+        run: |
+          cmake -DENABLE_COVERAGE=ON -B build/
       - name: CMake with clang-9
         if: matrix.compiler == 'clang-9'
         run: |
@@ -81,3 +85,15 @@ jobs:
             --timeout 400 \
             --rerun-failed \
             --output-on-failure
+      - name: Testing Coverage Report
+        working-directory: build
+        if: success() && matrix.compiler == 'gcc-9.2' && matrix.os == 'centos7'
+        run: |
+          set -e
+          /usr/local/bin/lcov --version
+          /usr/local/bin/lcov --capture --gcov-tool $GCOV --directory . --output-file coverage.info
+          /usr/local/bin/lcov --remove coverage.info '*/opt/vesoft/*' -o clean.info
+          bash <(curl -s https://codecov.io/bash) -Z -f clean.info
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        shell: bash
