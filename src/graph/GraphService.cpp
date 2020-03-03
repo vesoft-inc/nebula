@@ -9,7 +9,7 @@
 #include "time/Duration.h"
 #include "graph/RequestContext.h"
 #include "graph/SimpleAuthenticator.h"
- #include "graph/LdapAuthenticator.h"
+#include "graph/LdapAuthenticator.h"
 #include "storage/client/StorageClient.h"
 
 namespace nebula {

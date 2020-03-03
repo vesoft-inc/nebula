@@ -32,7 +32,7 @@ private:
 
     /**
      * Init LDAP connect to LADP server.
-     * FLAGS_ldap_server may be a space-separated list of hosts or IP addresses.
+     * FLAGS_ldap_server may be a comma-separated list of IP addresses.
      */
     Status initLDAPConnection();
 
@@ -55,9 +55,9 @@ private:
     StatusOr<bool> searchBindAuth();
 
     /**
-     * Execute LDAP direct bind mode authentication
+     * Execute LDAP simple bind mode authentication
      */
-    StatusOr<bool> directBindAuth();
+    StatusOr<bool> simpleBindAuth();
 
 
     LDAP                    *ldap_{nullptr};

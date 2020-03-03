@@ -1,0 +1,58 @@
+/* Copyright (c) 2020 vesoft inc. All rights reserved.
+ *
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ */
+
+#include "base/Base.h"
+#include "graph/test/TestEnv.h"
+#include "graph/test/TestBase.h"
+
+
+namespace nebula {
+namespace graph {
+
+class LdapAuthTest : public TestBase {
+protected:
+    void SetUp() override {
+        TestBase::SetUp();
+        // ...
+    }
+
+    void TearDown() override {
+        // ...
+        TestBase::TearDown();
+    }
+};
+
+TEST_F(LdapAuthTest, SimpleBindAuth) {
+    auto client = gEnv->getClient();
+    ASSERT_NE(nullptr, client);
+
+    FLAGS_ldap_server = "127.0.0.1";
+    FLAGS_ldap_port = 389;
+    FLAGS_ldap_scheme = "ldap";
+    FLAGS_ldap_prefix = "uid=";
+    FLAGS_ldap_suffix = ",dc=sys,dc=com";
+
+    std::unique_ptr<Authenticator> authenticator_ = std::make_unique<LdapAuthenticator>();
+    auto ret = authenticator_->auth("admin", "123456");
+    ASSERT_TRUE(ret);
+}
+
+TEST_F(LdapAuthTest, SearchBindAuth) {
+    auto client = gEnv->getClient();
+    ASSERT_NE(nullptr, client);
+
+    FLAGS_ldap_server = "127.0.0.1";
+    FLAGS_ldap_port = 389;
+    FLAGS_ldap_scheme = "ldap";
+    FLAGS_ldap_basedn = "dc=sys,dc=com";
+
+    std::unique_ptr<Authenticator> authenticator_ = std::make_unique<LdapAuthenticator>();
+    auto ret = authenticator_->auth("admin", "123456");
+    ASSERT_TRUE(ret);
+}
+
+}   // namespace graph
+}   // namespace nebula
