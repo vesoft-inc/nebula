@@ -1694,4 +1694,40 @@ TEST(Parser, Return) {
         ASSERT_TRUE(result.ok()) << result.status();
     }
 }
+
+TEST(Parser, ErrorMsg) {
+    {
+        GQLParser parser;
+        std::string query = "CREATE SPACE " + std::string(4097, 'A');
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+        auto error = "SyntaxError: Out of rang of the LABEL length, "
+                     "the  max length of LABLE is 4096: near `" + std::string(80, 'A') + "'";
+        ASSERT_EQ(error, result.status().toString());
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(9223372036854775809) ";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+        auto error = "SyntaxError: Out of rang: near `9223372036854775809'";
+        ASSERT_EQ(error, result.status().toString());
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(0xFFFFFFFFFFFFFFFFF) ";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+        auto error = "SyntaxError: Out of rang: near `0xFFFFFFFFFFFFFFFFF'";
+        ASSERT_EQ(error, result.status().toString());
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(002777777777777777777777) ";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+        auto error = "SyntaxError: Out of rang: near `002777777777777777777777'";
+        ASSERT_EQ(error, result.status().toString());
+    }
+}
 }   // namespace nebula

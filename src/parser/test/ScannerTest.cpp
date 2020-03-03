@@ -118,11 +118,16 @@ TEST(Scanner, Basic) {
         lexer.setReadBuffer(input);                                         \
         nebula::GraphParser::semantic_type dumyyylval;                      \
         nebula::GraphParser::location_type dumyyyloc;                       \
-        auto token = lexer.yylex(&dumyyylval, &dumyyyloc);                  \
-        if (token != 0) {                                                   \
-            return AssertionFailure() << "Lexical error should've happened "\
-                                      << "for `" << STR << "'";             \
-        } else {                                                            \
+        try {                                                               \
+            auto token = lexer.yylex(&dumyyylval, &dumyyyloc);              \
+            if (token != 0) {                                               \
+                return AssertionFailure() << "Lexical error should've "     \
+                                          << "happened for `" << STR << "'";\
+            } else {                                                        \
+                return AssertionSuccess();                                  \
+            }                                                               \
+        } catch (const std::exception &e) {                                 \
+            LOG(INFO) << e.what() << STR;                                   \
             return AssertionSuccess();                                      \
         }                                                                   \
     })
