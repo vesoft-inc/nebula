@@ -13,6 +13,8 @@ DEFINE_int32(concurrent_tasks_num, 1, "Number of job concurrent tasks num");
 namespace nebula {
 namespace storage {
 
+using nebula::kvstore::ResultCode;
+
 nebula::kvstore::ResultCode
 AdminTaskManager::runTaskDirectly(const cpp2::AddAdminTaskRequest& req,
                                   nebula::kvstore::NebulaStore* store) {
@@ -20,35 +22,34 @@ AdminTaskManager::runTaskDirectly(const cpp2::AddAdminTaskRequest& req,
     return spAdminTask->run();
 }
 
-// JobManager can guarantee there won't be more than 1 task
-nebula::kvstore::ResultCode
+folly::Future<ResultCode>
 AdminTaskManager::addAsyncTask(const cpp2::AddAdminTaskRequest& req,
                                nebula::kvstore::NebulaStore* store) {
+    folly::Promise<ResultCode> pro;
+    auto fut = pro.getFuture();
     auto key = std::make_pair(req.get_job_id(), req.get_task_id());
     auto spAdminTask = AdminTaskFactory::createAdminTask(req, store);
     if (!spAdminTask) {
-        return nebula::kvstore::ResultCode::ERR_INVALID_ARGUMENT;
+        return ResultCode::ERR_INVALID_ARGUMENT;
     }
     {
         std::lock_guard<std::mutex> lk(mutex_);
-        inQueueTasks_[key] = spAdminTask;
+        taskQueue_[key] = std::make_pair(spAdminTask, std::move(pro));
         notEmpty_.notify_one();
     }
-    return nebula::kvstore::ResultCode::SUCCEEDED;
+    return fut;
 }
 
 void AdminTaskManager::pickTaskThread() {
     while (!shutdown_) {
         std::unique_lock<std::mutex> lk(mutex_);
-        notEmpty_.wait(lk);
-        // notEmpty_.wait(lk, [&]{ return !inQueueTasks_.empty(); });
-        // while (inQueueTasks_.empty()) {
-        //     notEmpty_.wait(lk, []{return !inQueueTasks_.empty()});
-        // }
-        auto firstTask = inQueueTasks_.begin();
-        // auto rc = firstTask->second->run();
-        firstTask->second->run();
-        inQueueTasks_.erase(firstTask);
+        notEmpty_.wait(lk, [&]{return !taskQueue_.empty(); });
+        auto taskAndResult = taskQueue_.begin();
+        auto& spAdminTask = taskAndResult->second.first;
+        auto& result = taskAndResult->second.second;
+
+        result.setValue(spAdminTask->run());
+        taskQueue_.erase(taskQueue_.begin());
     }
 }
 
@@ -57,13 +58,14 @@ AdminTaskManager::cancelTask(const cpp2::AddAdminTaskRequest& req) {
     auto key = std::make_pair(req.get_job_id(), req.get_task_id());
     {
         std::lock_guard<std::mutex> lk(mutex_);
-        auto iter = inQueueTasks_.find(key);
-        if (iter == inQueueTasks_.begin()) {
-            iter->second->stop();
-        } else if (iter == inQueueTasks_.end()) {
+        auto iter = taskQueue_.find(key);
+        if (iter == taskQueue_.begin()) {
+            auto& taskAndResult = iter->second;
+            taskAndResult.first->stop();
+        } else if (iter == taskQueue_.end()) {
             return nebula::kvstore::ResultCode::ERR_KEY_NOT_FOUND;
         } else {
-            inQueueTasks_.erase(iter);
+            taskQueue_.erase(iter);
         }
     }
     return nebula::kvstore::ResultCode::SUCCEEDED;

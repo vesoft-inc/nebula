@@ -17,7 +17,12 @@ namespace nebula {
 namespace storage {
 
 class AdminTaskManager {
-    using TaskQueueItem = std::map<std::pair<int, int>, std::shared_ptr<AdminTask>>;
+    using ResultCode = nebula::kvstore::ResultCode;
+
+    using ASyncTaskRet = folly::Promise<ResultCode>;
+    using TaskAndResult = std::pair<std::shared_ptr<AdminTask>, ASyncTaskRet>;
+    using JobIdAndTaskId = std::pair<int, int>;
+    using FutureResultCode = folly::Future<ResultCode>;
 
 public:
     AdminTaskManager() = default;
@@ -26,12 +31,13 @@ public:
         return sAdminTaskManager;
     }
 
-    nebula::kvstore::ResultCode runTaskDirectly(const cpp2::AddAdminTaskRequest& req,
-                                                nebula::kvstore::NebulaStore* store);
+    ResultCode runTaskDirectly(const cpp2::AddAdminTaskRequest& req,
+                               nebula::kvstore::NebulaStore* store);
 
-    nebula::kvstore::ResultCode addAsyncTask(const cpp2::AddAdminTaskRequest& req,
-                                        nebula::kvstore::NebulaStore* store);
-    nebula::kvstore::ResultCode cancelTask(const cpp2::AddAdminTaskRequest& req);
+    FutureResultCode addAsyncTask(const cpp2::AddAdminTaskRequest& req,
+                                  nebula::kvstore::NebulaStore* store);
+
+    ResultCode cancelTask(const cpp2::AddAdminTaskRequest& req);
 
     bool init();
 
@@ -42,12 +48,12 @@ private:
 
 private:
     std::unique_ptr<thread::GenericWorker> bgThread_;
-    std::unique_ptr<nebula::thread::GenericThreadPool> pool_{nullptr};
+    std::unique_ptr<nebula::thread::GenericThreadPool>  pool_{nullptr};
 
-    std::mutex                      mutex_;
-    std::condition_variable         notEmpty_;
-    TaskQueueItem                   inQueueTasks_;
-    bool                            shutdown_;
+    std::mutex                                          mutex_;
+    std::condition_variable                             notEmpty_;
+    std::map<JobIdAndTaskId, TaskAndResult>             taskQueue_;
+    bool                                                shutdown_;
 };
 
 }  // namespace storage
