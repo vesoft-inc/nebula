@@ -115,6 +115,33 @@ public:
         return result;
     }
 
+    void setContext(ExpressionContext *context) {
+        for (auto &expr : vidList_) {
+            expr->setContext(context);
+        }
+    }
+
+    Status prepare() const {
+        auto status = Status::OK();
+        for (auto& vertex : vidList_) {
+            status = vertex->prepare();
+            if (!status.ok()) {
+                break;
+            }
+        }
+        return status;
+    }
+
+    std::vector<nebula::OptVariantType> eval() const {
+        Getters getters;
+        std::vector<nebula::OptVariantType> vertices;
+        for (auto& vertex : vidList_) {
+            auto vid = vertex->eval(getters);
+            vertices.emplace_back(vid);
+        }
+        return vertices;
+    }
+
     std::string toString() const;
 
 private:
