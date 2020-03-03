@@ -60,7 +60,6 @@ private:
     std::unique_ptr<YieldClauseWrapper>         yieldClauseWrapper_;
     std::unique_ptr<ExpressionContext>          expCtx_;
     Expression                                 *filter_{nullptr};
-    std::unique_ptr<InterimResult>              inputs_;
     std::string                                 varname_;
     std::vector<std::string>                    resultColNames_;
     std::unique_ptr<cpp2::ExecutionResponse>    resp_;
