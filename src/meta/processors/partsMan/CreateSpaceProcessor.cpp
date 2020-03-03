@@ -9,6 +9,7 @@
 
 DEFINE_int32(default_parts_num, 100, "The default number of parts when a space is created");
 DEFINE_int32(default_replica_factor, 1, "The default replica factor when a space is created");
+DEFINE_int32(default_space_sum, 100, "The default number of space can be created");
 
 namespace nebula {
 namespace meta {
@@ -17,6 +18,14 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
     auto properties = req.get_properties();
     auto spaceRet = getSpaceId(properties.get_space_name());
+    auto count = getSpaceSum();
+    if (count >= FLAGS_default_space_sum ) {
+        LOG(ERROR) << "Create Space Failed : TOO MANY SPACES!";
+        handleErrorCode(cpp2::ErrorCode::E_TOO_MANY_SPACES);
+        onFinished();
+        return;
+    }
+
     if (spaceRet.ok()) {
         cpp2::ErrorCode ret;
         if (req.get_if_not_exists()) {
@@ -119,6 +128,22 @@ CreateSpaceProcessor::pickHosts(PartitionID partId,
     return pickedHosts;
 }
 
+int32_t CreateSpaceProcessor::getSpaceSum() {
+    folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
+    int32_t count = 0; 
+    auto prefix = MetaServiceUtils::spacePrefix();
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        return -1;
+    }
+    std::vector<cpp2::IdName> spaces;
+    while (iter->valid()) {
+        count++;
+        iter->next();
+    }
+    return count;
+}
 }  // namespace meta
 }  // namespace nebula
 
