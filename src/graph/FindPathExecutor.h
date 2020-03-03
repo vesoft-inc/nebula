@@ -46,10 +46,6 @@ public:
 
     void execute() override;
 
-    void feedResult(std::unique_ptr<InterimResult> result) override {
-        inputs_ = std::move(result);
-    }
-
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
     static std::string buildPathString(const Path &path);
@@ -111,7 +107,6 @@ private:
     Clause::Step                                    step_;
     Clause::Where                                   where_;
     bool                                            shortest_{false};
-    std::unique_ptr<InterimResult>                  inputs_;
     using SchemaPropIndex = std::unordered_map<std::pair<std::string, std::string>, int64_t>;
     SchemaPropIndex                                 srcTagProps_;
     SchemaPropIndex                                 dstTagProps_;
