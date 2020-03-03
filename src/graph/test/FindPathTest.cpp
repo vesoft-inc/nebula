@@ -503,5 +503,17 @@ TEST_F(FindPathTest, VertexNotExist) {
         ASSERT_TRUE(verifyPath(resp, expected));
     }
 }
+
+TEST_F(FindPathTest, DuplicateColumn) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER like yield like._src AS src, like._dst AS src| "
+                    "FIND SHORTEST PATH FROM $-.src TO $-.dst OVER like UPTO 5 STEPS";
+        auto &tim = players_["Tim Duncan"];
+        auto query = folly::stringPrintf(fmt, tim.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code) << *(resp.get_error_msg());
+    }
+}
 }  // namespace graph
 }  // namespace nebula
