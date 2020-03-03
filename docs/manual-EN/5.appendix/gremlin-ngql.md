@@ -215,6 +215,81 @@ gremlin> g.V(pluto).out('brother').as('god').out('lives').as('place').select('go
 
 ## Advance Queries
 
+### Graph Exploration
+
+```bash
+# Gremlin version
+gremlin> Gremlin.version();
+==>3.3.5
+
+# Return all the vertices
+gremlin> g.V();
+==>v[1]
+==>v[2]
+...
+nebula> # Coming soon
+
+# Count all the vertices
+gremlin> g.V().count();
+==>12
+nebula> # Coming soon
+
+# Count the vertices and edges by label
+gremlin> g.V().groupCount().by(label);
+==>[character:9,location:3]
+gremlin> g.E().groupCount().by(label);
+==>[mother:1,lives:5,father:2,brother:6,battled:3,pet:1]
+nebula> # Coming soon
+
+# Return all edges
+gremlin> g.E();
+==>e[13][2-father->1]
+==>e[14][2-lives->3]
+...
+nebula> # Coming soon
+
+# Return vertices labels
+gremlin> g.V().label().dedup();
+==>character
+==>location
+
+nebula> SHOW TAGS;
+==================
+| ID | Name      |
+==================
+| 15 | character |
+------------------
+| 16 | location  |
+------------------
+
+# 查询所有边类型
+gremlin> g.E().label().dedup();
+==>father
+==>lives
+...nebula> SHOW EDGES;
+================
+| ID | Name    |
+================
+| 17 | father  |
+----------------
+| 18 | brother |
+----------------
+...
+
+# 查询所有顶点的属性
+gremlin> g.V().valueMap();
+==>[name:[saturn],type:[titan],age:[10000]]
+==>[name:[jupiter],type:[god],age:[5000]]
+...
+nebula> # Coming soon
+
+# 查询 character 顶点属性
+gremlin> g.V().hasLabel('character').valueMap();
+==>[name:[saturn],type:[titan],age:[10000]]
+==>[name:[jupiter],type:[god],age:[5000]]
+...
+```
+
 ### Traversing Edges
 
 Name               | Gremlin | nGQL           |
@@ -625,9 +700,244 @@ GO FROM $-.VertexID OVER brother WHERE $$.character.name != 'neptune' YIELD $$.c
 ---------------------
 ```
 
-### Patterns
+### Statistical Operations
 
-TODO
+Name               | Gremlin | nGQL           |
+-----              |---------|   -----       |
+Sum | sum()    | SUM()         |
+Max | max()    | MAX()         |
+Min | min()    | MIN()         |
+Mean | mean()    | AVG()         |
+
+> **Nebula Graph** statistical operations must be applied with `GROUP BY`.
+
+```bash
+# Calculate the sum of ages of all characters
+gremlin> g.V().hasLabel('character').values('age').sum();
+==>23595
+nebula> # Coming soon
+
+# Calculate the sum of the out brother edges of all characters
+gremlin> g.V().hasLabel('character').map(outE('brother').count()).sum();
+==>6
+nebula> # Coming soon
+
+# Return the max age of all characters
+gremlin> g.V().hasLabel('character').values('age').max();
+==>10000
+nebula> # Coming soon
+```
+
+### Selecting and Filtering Paths
+
+```bash
+# Select the results of steps 1 and 3 from the path as the final result
+gremlin> g.V(pluto).as('a').out().as('b').out().as('c').select('a','c');
+==>[a:v[8],c:v[3]]
+==>[a:v[8],c:v[1]]
+...
+nebula> # Coming soon
+
+# Specify dimensions via by()
+gremlin> g.V(pluto).as('a').out().as('b').out().as('c').select('a','c').by('name');
+==>[a:pluto,c:sky]
+==>[a:pluto,c:saturn]
+...
+nebula> # Coming soon
+
+# Selects the specified key value from the map
+gremlin> g.V().valueMap().select('name').dedup();
+==>[saturn]
+==>[jupiter]
+...
+nebula> # Coming soon
+```
+
+### Branches
+
+```bash
+# Traverse all vertices with label 'character'
+# If name is 'jupiter', return the age property
+# Else return the name property
+gremlin> g.V().hasLabel('character').choose(values('name')).option('jupiter', values('age')).option(none, values('name'));
+==>saturn
+==>5000
+==>neptune
+...
+
+# Lambda
+gremlin> g.V().branch {it.get().value('name')}.option('jupiter', values('age')).option(none, values('name'));
+==>saturn
+==>5000
+...
+
+# Traversal
+gremlin> g.V().branch(values('name')).option('jupiter', values('age')).option(none, values('name'));
+==>saturn
+==>5000
+
+# Branch
+gremlin> g.V().choose(has('name','jupiter'),values('age'),values('name'));
+==>saturn
+==>5000
+
+# Group based on if then
+gremlin> g.V().hasLabel("character").groupCount().by(values("age").choose(
+           is(lt(40)),constant("young"),
+            choose(is(lt(4500)),
+                   constant("old"),
+                  constant("very old"))));
+==>[young:4,old:2,very old:3]
+```
+
+> Similar function is yet to be supported in **Nebula Graph**.
+
+### Coalesce
+
+The `coalesce()` step evaluates the provided traversals in order and returns the first traversal that emits at least one element.
+
+The `optional()` step returns the result of the specified traversal if it yields a result else it returns the calling element, i.e. the identity().
+
+The `union()` step supports the merging of the results of an arbitrary number of traversals.
+
+```bash
+# If type is monster, return type. Else return 'Not a monster'.
+gremlin> g.V(pluto).coalesce(has('type','monster').values('type'),constant("Not a monster"));
+==>Not a monster
+
+# Find the following edges and adjacent vertices of jupiter in order, and stop when finding one
+# 1. Edge brother out adjacent vertices
+# 2. Edge father out adjacent vertices
+# 3. Edge father in adjacent vertices
+gremlin> g.V(jupiter).coalesce(outE('brother'), outE('father'), inE('father')).inV().path().by('name').by(label);
+==>[jupiter,brother,pluto]
+==>[jupiter,brother,neptune]
+
+# Find pluto's father, if there is not any then return pluto himself
+gremlin> g.V(pluto).optional(out('father')).valueMap();
+==>[name:[pluto],type:[god],age:[4000]]
+
+# Find pluto's father and brother, union the results then return the paths
+gremlin> g.V(pluto).union(out('father'),both('brother')).path();
+==>[v[8],v[2]]
+==>[v[8],v[5]]
+```
+
+> Similar function is yet to be supported in **Nebula Graph**.
+
+### Aggregating and Unfolding Results
+
+```bash
+# 收集第 1 步的结果到集合 x 中
+# 注意：不影响后续结果
+gremlin> g.V(pluto).out().aggregate('x');
+==>v[12]
+==>v[2]
+...
+
+# 通过 by() 指定聚集的维度
+gremlin> g.V(pluto).out().aggregate('x').by('name').cap('x');
+==>[tartarus,jupiter,neptune,cerberus]
+
+# Find pluto's 2 hop out adjacent neighbors
+# Collect the results in set x
+# Show the neighbors' name
+gremlin> g.V(pluto).out().aggregate('x').out().aggregate('x').cap('x').unfold().values('name');
+==>tartarus
+==>tartarus
+...
+```
+
+> Similar function is yet to be supported in **Nebula Graph**.
+
+### Matching Patterns
+
+The `match()` step provides a more declarative form of graph querying based on the notion of pattern matching. With match(), the user provides a collection of "traversal fragments," called patterns, that have variables defined that must hold true throughout the duration of the match().
+
+```bash
+# Matching each vertex with the following pattern. If pattern is met, return map<String, Object>, els filter it.
+# Pattern 1: a is jupiter's son
+# Pattern 2: b is jupiter
+# Pattern 3: c is jupiter's brother, whose age is 4000
+gremlin> g.V().match(__.as('a').out('father').has('name', 'jupiter').as('b'), __.as('b').in('brother').has('age', 4000).as('c'));
+==>[a:v[6],b:v[2],c:v[8]]
+
+# match() can be applied with  select() to select partial results from Map <String, Object>
+gremlin> g.V().match(__.as('a').out('father').has('name', 'jupiter').as('b'), __.as('b').in('brother').has('age', 4000).as('c')).select('a', 'c').by('name');
+==>[a:hercules,c:pluto]
+
+# match () can be applied with where () to filter the results
+gremlin> g.V().match(__.as('a').out('father').has('name', 'jupiter').as('b'), __.as('b').in('brother').has('age', 4000).as('c')).where('a', neq('c')).select('a', 'c').by('name');
+==>[a:hercules,c:pluto]
+```
+
+### Random filtering
+
+The `sample()` step accepts an integer value and samples the maximum number of the specified results randomly from the previous traverser.
+
+The `coin()` step can randomly filter out a traverser with the given probability. You give coin a value indicating how biased the toss should be.
+
+```bash
+# Randomly select 2 out edges from all vertices
+gremlin> g.V().outE().sample(2);
+==>e[15][2-brother->5]
+==>e[18][5-brother->2]
+
+# Pick 3 names randomly from all vertices
+gremlin> g.V().values('name').sample(3);
+==>hercules
+==>sea
+==>jupiter
+
+# Pick 3 randomly from all characters based on age
+gremlin> g.V().hasLabel('character').sample(3).by('age');
+==>v[1]
+==>v[2]
+==>v[6]
+
+# Applied with local to do random walk
+# Starting from pluto, conduct random walk 3 times
+gremlin> g.V(pluto).repeat(local(bothE().sample(1).otherV())).times(3).path();
+==>[v[8],e[26][8-brother->5],v[5],e[18][5-brother->2],v[2],e[13][2-father->1],v[1]]
+
+# Filter each vertex with a probability of 0.5
+gremlin> g.V().coin(0.5);
+==>v[1]
+==>v[2]
+...
+
+# Return the name attribute of all vertices labeled location, otherwise return not a location
+gremlin> g.V().choose(hasLabel('location'), values('name'), constant('not a location'));
+==>not a location
+==>not a location
+==>sky
+...
+```
+
+### Sack
+
+A traverser that contains a local data structure is called a "sack". The `sack()` step is used to read and write sacks. Each sack of each traverser is created with `withSack()`.
+
+```bash
+# Defines a Gremlin sack with a value of one and return values in the sack
+gremlin> g.withSack(1).V().sack();
+==>1
+==>1
+...
+```
+
+### Barrier
+
+The `barrier()` step turns the lazy traversal pipeline into a bulk-synchronous pipeline. It's useful when everything prior to barrier() needs to be executed before moving onto the steps after the barrier().
+
+```bash
+# Calculate the Eigenvector Centrality with barrier
+# Including groupCount and cap, sorted in descending order
+gremlin> g.V().repeat(both().groupCount('m')).times(5).cap('m').order(local).by(values, decr);
+```
+
+### Local
+
 
 <!-- LOOKUP ON character WHERE character.age >= 30 YIELD character.age AS name | \
     GO FROM $-.VertexID OVER relation YIELD $-.name, relation.name, $$.entity.name -->

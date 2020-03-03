@@ -215,6 +215,82 @@ gremlin> g.V(pluto).out('brother').as('god').out('lives').as('place').select('go
 
 ## 高级查询
 
+### 图探索
+
+```bash
+# gremlin 版本
+gremlin> Gremlin.version();
+==>3.3.5
+
+# 返回所有点
+gremlin> g.V();
+==>v[1]
+==>v[2]
+...
+nebula> # Coming soon
+
+# 统计点数
+gremlin> g.V().count();
+==>12
+nebula> # Coming soon
+
+# 按照点边类型统计点边个数
+gremlin> g.V().groupCount().by(label);
+==>[character:9,location:3]
+gremlin> g.E().groupCount().by(label);
+==>[mother:1,lives:5,father:2,brother:6,battled:3,pet:1]
+nebula> # Coming soon
+
+# 返回所有边
+gremlin> g.E();
+==>e[13][2-father->1]
+==>e[14][2-lives->3]
+...
+nebula> # Coming soon
+
+# 查询所有点类型
+gremlin> g.V().label().dedup();
+==>character
+==>location
+
+nebula> SHOW TAGS;
+==================
+| ID | Name      |
+==================
+| 15 | character |
+------------------
+| 16 | location  |
+------------------
+
+# 查询所有边类型
+gremlin> g.E().label().dedup();
+==>father
+==>lives
+...
+nebula> SHOW EDGES;
+================
+| ID | Name    |
+================
+| 17 | father  |
+----------------
+| 18 | brother |
+----------------
+...
+
+# 查询所有顶点的属性
+gremlin> g.V().valueMap();
+==>[name:[saturn],type:[titan],age:[10000]]
+==>[name:[jupiter],type:[god],age:[5000]]
+...
+nebula> # Coming soon
+
+# 查询 character 顶点属性
+gremlin> g.V().hasLabel('character').valueMap();
+==>[name:[saturn],type:[titan],age:[10000]]
+==>[name:[jupiter],type:[god],age:[5000]]
+...
+```
+
 ### 边的遍历
 
 名称               | Gremlin | nGQL           |
@@ -625,9 +701,243 @@ GO FROM $-.VertexID OVER brother WHERE $$.character.name != 'neptune' YIELD $$.c
 ---------------------
 ```
 
+### 统计运算
+
+名称               | Gremlin | nGQL           |
+-----              |---------|   -----       |
+求和 | sum()    | SUM()         |
+最大值 | max()    | MAX()         |
+最小值 | min()    | MIN()         |
+平均值 | mean()    | AVG()         |
+
+> **Nebula Graph** 统计运算必须同 `GROUP BY` 一起使用。
+
+```bash
+# 计算所有 character 的年龄的总和
+gremlin> g.V().hasLabel('character').values('age').sum();
+==>23595
+nebula> # Coming soon
+
+# 计算所有 character 的 brother 出边数的总和
+gremlin> g.V().hasLabel('character').map(outE('brother').count()).sum();
+==>6
+nebula> # Coming soon
+
+# 返回所有 character 的年龄中的最大值
+gremlin> g.V().hasLabel('character').values('age').max();
+==>10000
+nebula> # Coming soon
+```
+
+### 路径选取与过滤
+
+```bash
+# 从路径中选取第 1 步和第 3 步的结果作为最终结果
+gremlin> g.V(pluto).as('a').out().as('b').out().as('c').select('a','c');
+==>[a:v[8],c:v[3]]
+==>[a:v[8],c:v[1]]
+...
+nebula> # Coming soon
+
+# 通过 by() 指定选取的维度
+gremlin> g.V(pluto).as('a').out().as('b').out().as('c').select('a','c').by('name');
+==>[a:pluto,c:sky]
+==>[a:pluto,c:saturn]
+...
+nebula> # Coming soon
+
+# 从 map 中选择指定 key 的值
+gremlin> g.V().valueMap().select('name').dedup();
+==>[saturn]
+==>[jupiter]
+...
+nebula> # Coming soon
+```
+
+### 分支
+
+```bash
+# 查找所有类型为 'character' 的顶点
+# name 属性为 'jupiter' 的顶点输出其 age 属性
+# 否则输出顶点的 name 属性
+gremlin> g.V().hasLabel('character').choose(values('name')).option('jupiter', values('age')).option(none, values('name'));
+==>saturn
+==>5000
+==>neptune
+...
+
+# Lambda
+gremlin> g.V().branch {it.get().value('name')}.option('jupiter', values('age')).option(none, values('name'));
+==>saturn
+==>5000
+...
+
+# Traversal
+gremlin> g.V().branch(values('name')).option('jupiter', values('age')).option(none, values('name'));
+==>saturn
+==>5000
+
+# Branch
+gremlin> g.V().choose(has('name','jupiter'),values('age'),values('name'));
+==>saturn
+==>5000
+
+# 基于 if then 进行分组
+gremlin> g.V().hasLabel("character").groupCount().by(values("age").choose(
+           is(lt(40)),constant("young"),
+            choose(is(lt(4500)),
+                   constant("old"),
+                  constant("very old"))));
+==>[young:4,old:2,very old:3]
+```
+
+> **Nebula Graph** 尚无类似功能。
+
+### 合并
+
+`coalesce()` 可以接受任意数量的遍历器（traversal），按顺序执行，并返回第一个能产生输出的遍历器的结果。
+
+`optional()` 只能接受一个遍历器（traversal），如果该遍历器能产生一个结果，则返回该结果，否则返回调用 optionalStep 的元素本身。
+
+`union()` 可以接受任意数量的遍历器，并能够将各个遍历器的输出合并到一起。
+
+```bash
+# 如果类型为 monster 则返回类型否则返回 'Not a monster'
+gremlin> g.V(pluto).coalesce(has('type','monster').values('type'),constant("Not a monster"));
+==>Not a monster
+
+# 按优先级寻找到顶点 jupiter 的以下边和邻接点，找到一个就停止
+# 1、brother 出边和邻接点
+# 2、father 出边和邻接点
+# 3、father 入边和邻接点
+gremlin> g.V(jupiter).coalesce(outE('brother'), outE('father'), inE('father')).inV().path().by('name').by(label);
+==>[jupiter,brother,pluto]
+==>[jupiter,brother,neptune]
+
+# 查找顶点 pluto 的 father 出顶点，如果没有就返回 pluto 自己
+gremlin> g.V(pluto).optional(out('father')).valueMap();
+==>[name:[pluto],type:[god],age:[4000]]
+
+# 寻找顶点 pluto 的出 father 顶点，邻接 brother 顶点，并将结果合并，最后打印出路径
+gremlin> g.V(pluto).union(out('father'),both('brother')).path();
+==>[v[8],v[2]]
+==>[v[8],v[5]]
+```
+
+> **Nebula Graph** 尚无类似功能。
+
+### 结果聚集与展开
+
+```bash
+# 收集第 1 步的结果到集合 x 中
+# 注意：不影响后续结果
+gremlin> g.V(pluto).out().aggregate('x');
+==>v[12]
+==>v[2]
+...
+
+# 通过 by() 指定聚集的维度
+gremlin> g.V(pluto).out().aggregate('x').by('name').cap('x');
+==>[tartarus,jupiter,neptune,cerberus]
+
+# 查询与 pluto 的两度 OUT 邻居
+# 并收集这些到 x 集合里面
+# 最终以 name 属性展示其邻居
+gremlin> g.V(pluto).out().aggregate('x').out().aggregate('x').cap('x').unfold().values('name');
+==>tartarus
+==>tartarus
+...
+```
+
+> **Nebula Graph** 尚无类似功能。
+
 ### 模式匹配
 
-TODO
+`match()` 语句为图查询提供了一种基于模式匹配的方式，以便用更具描述性的方式进行图查询。match()语句通过多个模式片段 traversal fragments 来进行模式匹配。这些 traversal fragments 中会定义一些变量，只有满足所有用变量表示的约束的对象才能够通过。
+
+```bash
+# 对每一个顶点，用以下模式去匹配，满足则生成一个 map<String, Object>，不满足则过滤掉
+# 模式1：a 为沿 father 出边指向 jupiter 的顶点
+# 模式2：b 对应当前顶点 jupiter
+# 模式3：c 对应创建 jupiter 的 brother 年龄为 4000 的 顶点
+gremlin> g.V().match(__.as('a').out('father').has('name', 'jupiter').as('b'), __.as('b').in('brother').has('age', 4000).as('c'));
+==>[a:v[6],b:v[2],c:v[8]]
+
+# match() 语句可以与 select() 语句配合使用，从 Map<String, Object> 中选取部分结果
+gremlin> g.V().match(__.as('a').out('father').has('name', 'jupiter').as('b'), __.as('b').in('brother').has('age', 4000).as('c')).select('a', 'c').by('name');
+==>[a:hercules,c:pluto]
+
+# match() 语句可以与 where() 语句配合使用，过滤结果
+gremlin> g.V().match(__.as('a').out('father').has('name', 'jupiter').as('b'), __.as('b').in('brother').has('age', 4000).as('c')).where('a', neq('c')).select('a', 'c').by('name');
+==>[a:hercules,c:pluto]
+```
+
+### 随机过滤
+
+`sample()` 接受一个整数值，从前一步的遍历器中采样（随机）出最多指定数目的结果。
+
+`coin()` 字面意思是抛硬币过滤，接受一个浮点值，该浮点值表示硬币出现正面的概率。
+
+```bash
+# 从所有顶点的出边中随机选择 2 条
+gremlin> g.V().outE().sample(2);
+==>e[15][2-brother->5]
+==>e[18][5-brother->2]
+
+# 从所顶点的 name 属性中随机选取 3 个
+gremlin> g.V().values('name').sample(3);
+==>hercules
+==>sea
+==>jupiter
+
+# 从所有的 character 中根据 age 随机选择 3 个
+gremlin> g.V().hasLabel('character').sample(3).by('age');
+==>v[1]
+==>v[2]
+==>v[6]
+
+# 与 local 联合使用做随机漫游
+# 从顶点 pluto 出发做 3 次随机漫游
+gremlin> g.V(pluto).repeat(local(bothE().sample(1).otherV())).times(3).path();
+==>[v[8],e[26][8-brother->5],v[5],e[18][5-brother->2],v[2],e[13][2-father->1],v[1]]
+
+# 每个顶点按 0.5 的概率过滤
+gremlin> g.V().coin(0.5);
+==>v[1]
+==>v[2]
+...
+
+# 输出所有 location 类顶点的 name 属性，否则输出 not a location
+gremlin> g.V().choose(hasLabel('location'), values('name'), constant('not a location'));
+==>not a location
+==>not a location
+==>sky
+...
+```
+
+### 结果存取口袋 Sack
+
+包含本地数据结构的遍历器称为口袋。`sack()` 将数据放入口袋，或者从口袋取出数据。每个遍历器的每个口袋都是通过 `withSack（）` 创建的。
+
+```bash
+# 创建一个包含常数 1 的口袋，并且在最终取出口袋中的值
+gremlin> g.withSack(1).V().sack();
+==>1
+==>1
+...
+```
+
+### 遍历栅栏 barrier
+
+`barrier()` 在某个位置插入一个栅栏，以强制该位置之前的步骤必须都执行完成才可以继续往后执行。
+
+```bash
+# 利用隐式 barrier 计算特征向量中心性
+# 包括 groupCount、cap，按照降序排序
+gremlin> g.V().repeat(both().groupCount('m')).times(5).cap('m').order(local).by(values, decr);
+```
+
+### 局部操作 local
 
 <!-- ## References
 
