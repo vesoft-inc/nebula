@@ -498,21 +498,21 @@ private:
 };
 
 
-class DeleteVertexSentence final : public Sentence {
+class DeleteVerticesSentence final : public Sentence {
 public:
-    explicit DeleteVertexSentence(Expression *vid) {
-        vid_.reset(vid);
+    explicit DeleteVerticesSentence(VertexIDList *vidList) {
+        vidList_.reset(vidList);
         kind_ = Kind::kDeleteVertex;
     }
 
-    Expression* vid() const {
-        return vid_.get();
+    VertexIDList* vidList() const {
+        return vidList_.get();
     }
 
     std::string toString() const override;
 
 private:
-    std::unique_ptr<Expression>                  vid_;
+    std::unique_ptr<VertexIDList>                vidList_;
 };
 
 

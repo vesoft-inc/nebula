@@ -4,7 +4,6 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
 #include "graph/DeleteEdgesExecutor.h"
 #include "meta/SchemaManager.h"
 #include "filter/Expressions.h"
@@ -20,34 +19,36 @@ DeleteEdgesExecutor::DeleteEdgesExecutor(Sentence *sentence,
 }
 
 Status DeleteEdgesExecutor::prepare() {
-    spaceId_ = ectx()->rctx()->session()->space();
-    expCtx_ = std::make_unique<ExpressionContext>();
-    expCtx_->setSpace(spaceId_);
-    expCtx_->setStorageClient(ectx()->getStorageClient());
-
-    auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId_, *sentence_->edge());
-    if (!edgeStatus.ok()) {
-        return edgeStatus.status();
-    } else {
-        edgeType_ = edgeStatus.value();
-        auto schema = ectx()->schemaManager()->getEdgeSchema(spaceId_, edgeType_);
-        if (schema == nullptr) {
-            return Status::Error("No schema found for '%s'", sentence_->edge()->c_str());
-        }
-    }
-
     return Status::OK();
 }
 
 void DeleteEdgesExecutor::execute() {
     auto status = checkIfGraphSpaceChosen();
     if (!status.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(status));
+        doError(std::move(status));
         return;
     }
 
-    status = setupEdgeKeys();
+    auto space = ectx()->rctx()->session()->space();
+    expCtx_ = std::make_unique<ExpressionContext>();
+    expCtx_->setSpace(space);
+    expCtx_->setStorageClient(ectx()->getStorageClient());
+
+    auto edgeStatus = ectx()->schemaManager()->toEdgeType(space, *sentence_->edge());
+    if (!edgeStatus.ok()) {
+        doError(edgeStatus.status());
+        return;
+    }
+
+    auto edgeType = edgeStatus.value();
+    auto schema = ectx()->schemaManager()->getEdgeSchema(space, edgeType);
+    if (schema == nullptr) {
+        status = Status::Error("No schema found for '%s'", sentence_->edge()->c_str());
+        doError(std::move(status));
+        return;
+    }
+
+    status = setupEdgeKeys(edgeType);
     if (!status.ok()) {
         doError(std::move(status));
         return;
@@ -55,7 +56,7 @@ void DeleteEdgesExecutor::execute() {
 
     // TODO Need to consider distributed transaction because in-edges/out-edges
     // may be in different partitions
-    auto future = ectx()->getStorageClient()->deleteEdges(spaceId_, std::move(edgeKeys_));
+    auto future = ectx()->getStorageClient()->deleteEdges(space, std::move(edgeKeys_));
 
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
@@ -77,7 +78,7 @@ void DeleteEdgesExecutor::execute() {
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
-Status DeleteEdgesExecutor::setupEdgeKeys() {
+Status DeleteEdgesExecutor::setupEdgeKeys(EdgeType edgeType) {
     auto status = Status::OK();
     auto edgeKeysExpr = sentence_->keys()->keys();
     Getters getters;
@@ -111,15 +112,16 @@ Status DeleteEdgesExecutor::setupEdgeKeys() {
             status = Status::Error("ID should be of type integer.");
             break;
         }
+
         storage::cpp2::EdgeKey outkey;
         outkey.set_src(Expression::asInt(srcid));
-        outkey.set_edge_type(edgeType_);
+        outkey.set_edge_type(edgeType);
         outkey.set_dst(Expression::asInt(dstid));
         outkey.set_ranking(rank);
 
         storage::cpp2::EdgeKey inkey;
         inkey.set_src(Expression::asInt(dstid));
-        inkey.set_edge_type(-edgeType_);
+        inkey.set_edge_type(-edgeType);
         inkey.set_dst(Expression::asInt(srcid));
         inkey.set_ranking(rank);
 
@@ -131,3 +133,4 @@ Status DeleteEdgesExecutor::setupEdgeKeys() {
 
 }   // namespace graph
 }   // namespace nebula
+

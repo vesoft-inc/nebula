@@ -23,6 +23,7 @@
 #include "graph/LimitExecutor.h"
 #include "graph/YieldExecutor.h"
 #include "graph/GroupByExecutor.h"
+#include "graph/SchemaHelper.h"
 
 namespace nebula {
 namespace graph {
@@ -82,6 +83,93 @@ TraverseExecutor::makeTraverseExecutor(Sentence *sentence, ExecutionContext *ect
             break;
     }
     return executor;
+}
+
+nebula::cpp2::SupportedType TraverseExecutor::calculateExprType(Expression* exp) const {
+    auto spaceId = ectx()->rctx()->session()->space();
+    switch (exp->kind()) {
+        case Expression::kPrimary:
+        case Expression::kFunctionCall:
+        case Expression::kUnary:
+        case Expression::kArithmetic: {
+            return nebula::cpp2::SupportedType::UNKNOWN;
+        }
+        case Expression::kTypeCasting: {
+            auto exprPtr = static_cast<const TypeCastingExpression *>(exp);
+            return SchemaHelper::columnTypeToSupportedType(
+                                                    exprPtr->getType());
+        }
+        case Expression::kRelational:
+        case Expression::kLogical: {
+            return nebula::cpp2::SupportedType::BOOL;
+        }
+        case Expression::kDestProp:
+        case Expression::kSourceProp: {
+            auto* tagPropExp = static_cast<const AliasPropertyExpression*>(exp);
+            const auto* tagName = tagPropExp->alias();
+            const auto* propName = tagPropExp->prop();
+            auto tagIdRet = ectx()->schemaManager()->toTagID(spaceId, *tagName);
+            if (tagIdRet.ok()) {
+                auto ts = ectx()->schemaManager()->getTagSchema(spaceId, tagIdRet.value());
+                if (ts != nullptr) {
+                    return ts->getFieldType(*propName).type;
+                }
+            }
+            return nebula::cpp2::SupportedType::UNKNOWN;
+        }
+        case Expression::kEdgeDstId:
+        case Expression::kEdgeSrcId: {
+            return nebula::cpp2::SupportedType::VID;
+        }
+        case Expression::kEdgeRank:
+        case Expression::kEdgeType: {
+            return nebula::cpp2::SupportedType::INT;
+        }
+        case Expression::kAliasProp: {
+            auto* edgeExp = static_cast<const AliasPropertyExpression*>(exp);
+            const auto* propName = edgeExp->prop();
+            auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId, *edgeExp->alias());
+            if (edgeStatus.ok()) {
+                auto edgeType = edgeStatus.value();
+                auto schema = ectx()->schemaManager()->getEdgeSchema(spaceId, edgeType);
+                if (schema != nullptr) {
+                    return schema->getFieldType(*propName).type;
+                }
+            }
+            return nebula::cpp2::SupportedType::UNKNOWN;
+        }
+        case Expression::kVariableProp:
+        case Expression::kInputProp: {
+            auto* propExp = static_cast<const AliasPropertyExpression*>(exp);
+            const auto* propName = propExp->prop();
+            if (inputs_ == nullptr) {
+                return nebula::cpp2::SupportedType::UNKNOWN;
+            } else {
+                return inputs_->getColumnType(*propName);
+            }
+        }
+        default: {
+            VLOG(1) << "Unsupport expression type! kind = "
+                    << std::to_string(static_cast<uint8_t>(exp->kind()));
+            return nebula::cpp2::SupportedType::UNKNOWN;
+        }
+    }
+}
+
+Status TraverseExecutor::checkIfDuplicateColumn() const {
+    if (inputs_ == nullptr) {
+        return Status::OK();
+    }
+
+    auto colNames = inputs_->getColNames();
+    std::unordered_set<std::string> uniqueNames;
+    for (auto &colName : colNames) {
+        auto ret = uniqueNames.emplace(colName);
+        if (!ret.second) {
+            return Status::Error("Duplicate column `%s'", colName.c_str());
+        }
+    }
+    return Status::OK();
 }
 
 Status Collector::collect(VariantType &var, RowWriter *writer) {

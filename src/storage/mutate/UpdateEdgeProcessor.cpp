@@ -448,9 +448,7 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
 
     auto iRet = indexMan_->getEdgeIndexes(spaceId_);
     if (iRet.ok()) {
-        for (auto& index : iRet.value()) {
-            indexes_.emplace_back(index);
-        }
+        indexes_ = std::move(iRet).value();
     }
 
     VLOG(3) << "Update edge, spaceId: " << this->spaceId_ << ", partId:  " << partId

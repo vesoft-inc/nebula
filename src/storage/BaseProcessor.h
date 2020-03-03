@@ -64,6 +64,11 @@ protected:
     void doRemoveRange(GraphSpaceID spaceId, PartitionID partId, std::string start,
                        std::string end);
 
+    void doRemovePrefix(GraphSpaceID spaceId, PartitionID partId, std::string prefix);
+
+    kvstore::ResultCode doRange(GraphSpaceID spaceId, PartitionID partId, std::string start,
+                                std::string end, std::unique_ptr<kvstore::KVIterator>* iter);
+
     kvstore::ResultCode doRange(GraphSpaceID spaceId, PartitionID partId, const std::string& start,
                                 const std::string& end, std::unique_ptr<kvstore::KVIterator>* iter);
 
