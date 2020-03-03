@@ -42,8 +42,6 @@ void LookUpVertexIndexProcessor::process(const cpp2::LookUpIndexRequest& req) {
             } else {
                 this->pushResultCode(this->to(code), partId);
             }
-            this->onFinished();
-            return;
         }
     });
 
