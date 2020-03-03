@@ -12,7 +12,7 @@
 #include "storage/test/TestUtils.h"
 #include "storage/mutate/AddVerticesProcessor.h"
 #include "storage/mutate/AddEdgesProcessor.h"
-#include "storage/mutate/DeleteVertexProcessor.h"
+#include "storage/mutate/DeleteVerticesProcessor.h"
 #include "storage/mutate/DeleteEdgesProcessor.h"
 #include "storage/mutate/UpdateVertexProcessor.h"
 #include "storage/mutate/UpdateEdgeProcessor.h"
@@ -156,14 +156,15 @@ TEST(IndexTest, DeleteVertexTest) {
         EXPECT_EQ(0, resp.result.failed_codes.size());
     }
     {
-        auto* processor = DeleteVertexProcessor::instance(kv.get(),
-                                                          schemaMan.get(),
-                                                          indexMan.get(),
-                                                          nullptr);
-        cpp2::DeleteVertexRequest req;
+        auto* processor = DeleteVerticesProcessor::instance(kv.get(),
+                                                            schemaMan.get(),
+                                                            indexMan.get(),
+                                                            nullptr);
+        cpp2::DeleteVerticesRequest req;
         req.set_space_id(0);
-        req.set_part_id(1);
-        req.set_vid(10);
+        std::unordered_map<PartitionID, std::vector<VertexID>> parts;
+        parts[1].emplace_back(10);
+        req.set_parts(std::move(parts));
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();

@@ -73,14 +73,14 @@ public:
     folly::Future<cpp2::ExecResponse>
     future_addEdges(const cpp2::AddEdgesRequest& req) override;
 
-    folly::Future<cpp2::EdgeKeyResponse>
-    future_getEdgeKeys(const cpp2::EdgeKeyRequest& req) override;
+    folly::Future<cpp2::EdgeKeysResponse>
+    future_getEdgeKeys(const cpp2::EdgeKeysRequest& req) override;
 
     folly::Future<cpp2::ExecResponse>
     future_deleteEdges(const cpp2::DeleteEdgesRequest& req) override;
 
     folly::Future<cpp2::ExecResponse>
-    future_deleteVertex(const cpp2::DeleteVertexRequest& req) override;
+    future_deleteVertices(const cpp2::DeleteVerticesRequest& req) override;
 
     folly::Future<cpp2::UpdateResponse>
     future_updateVertex(const cpp2::UpdateVertexRequest& req) override;

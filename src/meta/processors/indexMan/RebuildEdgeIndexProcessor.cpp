@@ -81,11 +81,11 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
                       HostAddr(host.ip, host.port)) != activeHosts.end()) {
             auto leaderParts = MetaServiceUtils::parseLeaderVal(leaderIter->val());
             auto& partIds = leaderParts[space];
-            auto future = adminClient_->rebuildTagIndex(hostAddr,
-                                                        space,
-                                                        edgeIndexID,
-                                                        partIds,
-                                                        isOffline);
+            auto future = adminClient_->rebuildEdgeIndex(hostAddr,
+                                                         space,
+                                                         edgeIndexID,
+                                                         partIds,
+                                                         isOffline);
             results.emplace_back(std::move(future));
         }
         leaderIter->next();

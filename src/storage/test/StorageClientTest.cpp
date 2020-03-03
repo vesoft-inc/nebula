@@ -235,64 +235,83 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
         EXPECT_EQ(it, rsReader.end());
     }
     {
+        std::unordered_map<VertexID, std::vector<cpp2::EdgeKey>> edgeKeys;
+        std::vector<VertexID> vertices;
         for (int64_t srcId = 0; srcId < 10; srcId++) {
-            std::vector<cpp2::EdgeKey> edgeKeys;
-            // Get all edgeKeys of a vertex
-            {
-                auto f = client->getEdgeKeys(spaceId, srcId);
-                auto resp = std::move(f).get();
-                ASSERT_TRUE(resp.ok());
-                auto edgeKeyResp =  std::move(resp).value();
-                auto& result = edgeKeyResp.get_result();
-                ASSERT_EQ(0, result.get_failed_codes().size());
-                edgeKeys = *(edgeKeyResp.get_edge_keys());
+            vertices.emplace_back(srcId);
+        }
 
-                // Check edgeKeys
-                CHECK_EQ(1, edgeKeys.size());
-                auto& edge = edgeKeys[0];
+        // Get all edgeKeys of a vertex
+        {
+            auto f = client->getEdgeKeys(spaceId, vertices);
+            auto resp = std::move(f).get();
+            ASSERT_TRUE(resp.succeeded());
+
+            auto edgeKeyResponses =  std::move(resp).responses();
+            for (auto& response : edgeKeyResponses) {
+                auto result = response.get_edge_keys();
+                ASSERT_EQ(0, response.get_result().get_failed_codes().size());
+                for (auto iter = result->begin(); iter != result->end(); iter++) {
+                    edgeKeys.emplace(iter->first, std::move(iter->second));
+                }
+            }
+
+            for (int64_t srcId = 0; srcId < 10; srcId++) {
+                auto& edge = edgeKeys[srcId][0];
                 CHECK_EQ(srcId, edge.get_src());
                 CHECK_EQ(101, edge.get_edge_type());
                 CHECK_EQ(srcId*100 + 3, edge.get_ranking());
                 CHECK_EQ(srcId*100 + 2, edge.get_dst());
             }
-            // Delete all edges of a vertex
-            {
-                auto f = client->deleteEdges(spaceId, edgeKeys);
+        }
+        // Delete all edges of a vertex
+        {
+            for (int64_t srcId = 0; srcId < 10; srcId++) {
+                auto keys = edgeKeys[srcId];
+                auto f = client->deleteEdges(spaceId, keys);
                 auto resp = std::move(f).get();
                 ASSERT_TRUE(resp.succeeded());
-
-                // Check that edges have been successfully deleted
-                auto cf = client->getEdgeKeys(spaceId, srcId);
-                auto cresp = std::move(cf).get();
-                ASSERT_TRUE(cresp.ok());
-                auto edgeKeyResp =  std::move(cresp).value();
-                auto& result = edgeKeyResp.get_result();
-                ASSERT_EQ(0, result.get_failed_codes().size());
-                ASSERT_EQ(0, edgeKeyResp.get_edge_keys()->size());
+                for (auto& response : std::move(resp).responses()) {
+                    ASSERT_EQ(0, response.get_result().get_failed_codes().size());
+                }
             }
-            // Delete a vertex
-            {
-                auto f = client->deleteVertex(spaceId, srcId);
-                auto resp = std::move(f).get();
-                ASSERT_TRUE(resp.ok());
-                auto  execResp = std::move(resp).value();
-                auto& result = execResp.get_result();
-                ASSERT_EQ(0, result.get_failed_codes().size());
 
-                // Check that this vertex has been successfully deleted
-                std::vector<VertexID> vIds{srcId};
-                std::vector<cpp2::PropDef> retCols;
-                retCols.emplace_back(
-                    TestUtils::vertexPropDef(folly::stringPrintf("tag_%d_col_%d", 3001, 0), 3001));
-                auto cf = client->getVertexProps(spaceId, std::move(vIds), std::move(retCols));
-                auto cresp = std::move(cf).get();
-                ASSERT_TRUE(cresp.succeeded());
-                auto& results = cresp.responses();
-                ASSERT_EQ(1, results.size());
-                EXPECT_EQ(0, results[0].result.failed_codes.size());
-                // TODO bug: the results[0].vertices.size should be equal 0
-                EXPECT_EQ(1, results[0].vertices.size());
-                EXPECT_EQ(0, results[0].vertices[0].tag_data.size());
+            // Check that edges have been successfully deleted
+            auto f = client->getEdgeKeys(spaceId, vertices);
+            auto resp = std::move(f).get();
+            ASSERT_TRUE(resp.succeeded());
+            auto edgeKeyResponses = std::move(resp).responses();
+
+            for (auto& response : edgeKeyResponses) {
+                auto result = response.get_edge_keys();
+                ASSERT_EQ(0, response.get_result().get_failed_codes().size());
+                for (auto iter = result->begin(); iter != result->end(); iter++) {
+                    ASSERT_EQ(0, iter->second.size());
+                }
+            }
+        }
+        // Delete a vertex
+        {
+            auto f = client->deleteVertices(spaceId, vertices);
+            auto resp = std::move(f).get();
+            ASSERT_TRUE(resp.succeeded());
+            auto  responses = std::move(resp).responses();
+            for (auto& response : responses) {
+                ASSERT_EQ(0, response.get_result().get_failed_codes().size());
+            }
+
+            // Check that this vertex has been successfully deleted
+            std::vector<cpp2::PropDef> retCols;
+            retCols.emplace_back(
+                TestUtils::vertexPropDef(folly::stringPrintf("tag_%d_col_%d", 3001, 0), 3001));
+            auto cf = client->getVertexProps(spaceId, std::move(vertices), std::move(retCols));
+            auto cresp = std::move(cf).get();
+            ASSERT_TRUE(cresp.succeeded());
+            auto& results = cresp.responses();
+            ASSERT_EQ(1, results.size());
+            EXPECT_EQ(0, results[0].result.failed_codes.size());
+            for (auto vertex : results[0].vertices) {
+                EXPECT_EQ(0, vertex.tag_data.size());
             }
         }
     }

@@ -9,7 +9,7 @@
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
-#include "storage/mutate/DeleteVertexProcessor.h"
+#include "storage/mutate/DeleteVerticesProcessor.h"
 #include "storage/mutate/AddVerticesProcessor.h"
 #include "base/NebulaKeyUtils.h"
 
@@ -17,7 +17,7 @@
 namespace nebula {
 namespace storage {
 
-TEST(DeleteVertexTest, SimpleTest) {
+TEST(DeleteVerticesTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/DeleteVertexTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     auto schemaMan = TestUtils::mockSchemaMan();
@@ -60,23 +60,24 @@ TEST(DeleteVertexTest, SimpleTest) {
 
     // Delete vertices
     {
+        cpp2::DeleteVerticesRequest req;
+        req.set_space_id(0);
         for (PartitionID partId = 0; partId < 3; partId++) {
+            std::vector<VertexID> vertices;
             for (VertexID vertexId = 10 * partId; vertexId < 10 * (partId + 1); vertexId++) {
-                auto* processor = DeleteVertexProcessor::instance(kv.get(),
-                                                                  schemaMan.get(),
-                                                                  indexMan.get(),
-                                                                  nullptr);
-                cpp2::DeleteVertexRequest req;
-                req.set_space_id(0);
-                req.set_part_id(partId);
-                req.set_vid(vertexId);
-
-                auto fut = processor->getFuture();
-                processor->process(req);
-                auto resp = std::move(fut).get();
-                EXPECT_EQ(0, resp.result.failed_codes.size());
+                vertices.emplace_back(vertexId);
             }
+            req.parts.emplace(partId, std::move(vertices));
         }
+
+        auto* processor = DeleteVerticesProcessor::instance(kv.get(),
+                                                            schemaMan.get(),
+                                                            indexMan.get(),
+                                                            nullptr);
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+        EXPECT_EQ(0, resp.result.failed_codes.size());
     }
 
     for (PartitionID partId = 0; partId < 3; partId++) {

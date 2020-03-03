@@ -86,17 +86,11 @@ void BaseProcessor<RESP>::doRemoveRange(GraphSpaceID spaceId,
 template <typename RESP>
 void BaseProcessor<RESP>::doRemovePrefix(GraphSpaceID spaceId,
                                          PartitionID partId,
-                                         std::string prefix,
-                                         bool sync) {
-    folly::Baton<true, std::atomic> baton;
-    this->kvstore_->asyncRemovePrefix(spaceId, partId, prefix,
-                                      [spaceId, partId, this, &baton](kvstore::ResultCode code) {
-                                          handleAsync(spaceId, partId, code);
-                                          baton.post();
-                                      });
-    if (sync) {
-        baton.wait();
-    }
+                                         std::string prefix) {
+    this->kvstore_->asyncRemovePrefix(
+        spaceId, partId, prefix, [spaceId, partId, this](kvstore::ResultCode code) {
+            handleAsync(spaceId, partId, code);
+        });
 }
 
 template<typename RESP>
