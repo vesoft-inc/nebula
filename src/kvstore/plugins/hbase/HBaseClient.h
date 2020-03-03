@@ -8,6 +8,8 @@
 #define KVSTORE_PLUGINS_HBASE_HBASECLIENT_H_
 
 #include "base/Base.h"
+#include "base/Status.h"
+#include "base/ErrorOr.h"
 #include "thrift/ThriftClientManager.h"
 #include "kvstore/Common.h"
 #include "gen-cpp2/hbase_types.h"
@@ -29,9 +31,10 @@ public:
                    const std::string& rowKey,
                    KVMap& data);
 
-    ResultCode multiGet(const std::string& tableName,
-                        const std::vector<std::string>& rowKeys,
-                        std::vector<std::pair<std::string, KVMap>>& dataList);
+    std::pair<ResultCode, std::vector<Status>> multiGet(
+            const std::string& tableName,
+            const std::vector<std::string>& rowKeys,
+            std::vector<std::pair<std::string, KVMap>>& dataList);
 
     ResultCode put(const std::string& tableName,
                    std::string& rowKey,

@@ -159,24 +159,27 @@ ResultCode RocksEngine::get(const std::string& key, std::string* value) {
 }
 
 
-ResultCode RocksEngine::multiGet(const std::vector<std::string>& keys,
-                                 std::vector<std::string>* values) {
+std::vector<Status> RocksEngine::multiGet(const std::vector<std::string>& keys,
+                                          std::vector<std::string>* values) {
     rocksdb::ReadOptions options;
     std::vector<rocksdb::Slice> slices;
     for (size_t index = 0; index < keys.size(); index++) {
         slices.emplace_back(keys[index]);
     }
 
-    std::vector<rocksdb::Status> status = db_->MultiGet(options, slices, values);
-    auto code = std::all_of(status.begin(), status.end(),
-                            [](rocksdb::Status s) {
-                                return s.ok();
-                            });
-    if (code) {
-        return ResultCode::SUCCEEDED;
-    } else {
-        return ResultCode::ERR_UNKNOWN;
-    }
+    auto status = db_->MultiGet(options, slices, values);
+    std::vector<Status> ret;
+    std::transform(status.begin(), status.end(), std::back_inserter(ret),
+                   [] (const auto& s) {
+                       if (s.ok()) {
+                           return Status::OK();
+                       } else if (s.IsNotFound()) {
+                           return Status::KeyNotFound();
+                       } else {
+                            return Status::Error();
+                       }
+                   });
+    return ret;
 }
 
 
