@@ -18,7 +18,18 @@ DECLARE_int32(heartbeat_interval_secs);
 namespace nebula {
 namespace storage {
 
-TEST(KVTest, VerticesInterfacesTest) {
+void checkResult(StorageRpcResponse<storage::cpp2::GeneralResponse>& resp, size_t expectCount) {
+    size_t count = 0;
+    for (const auto& result : resp.responses()) {
+        count += result.values.size();
+        for (const auto& pair : result.values) {
+            EXPECT_EQ(pair.first, pair.second);
+        }
+    }
+    EXPECT_EQ(expectCount, count);
+}
+
+TEST(KVTest, GetPutInterfacesTest) {
     FLAGS_heartbeat_interval_secs = 1;
     const nebula::ClusterID kClusterId = 10;
     fs::TempDir rootPath("/tmp/KVTest.XXXXXX");
@@ -99,7 +110,8 @@ TEST(KVTest, VerticesInterfacesTest) {
         auto future = client->get(spaceId, std::move(keys), false);
         auto resp = std::move(future).get();
         ASSERT_TRUE(resp.succeeded());
-        LOG(INFO) << "Gut Successfully";
+        LOG(INFO) << "Get Successfully";
+        checkResult(resp, 10);
     }
     {
         std::vector<std::string> keys;
@@ -110,12 +122,14 @@ TEST(KVTest, VerticesInterfacesTest) {
         auto future = client->get(spaceId, std::move(keys), false);
         auto resp = std::move(future).get();
         ASSERT_FALSE(resp.succeeded());
-        LOG(INFO) << "Gut failed because some key not exists";
+        LOG(INFO) << "Get failed because some key not exists";
         if (!resp.failedParts().empty()) {
             for (const auto& partEntry : resp.failedParts()) {
-                EXPECT_EQ(partEntry.second, cpp2::ErrorCode::E_UNKNOWN);
+                EXPECT_EQ(partEntry.second, cpp2::ErrorCode::E_PARTIAL_RESULT);
             }
         }
+        // Can not checkResult, because some part get all keys indeed, and other
+        // part return E_PARTIAL_RESULT
     }
     {
         std::vector<std::string> keys;
@@ -126,7 +140,26 @@ TEST(KVTest, VerticesInterfacesTest) {
         auto future = client->get(spaceId, std::move(keys), true);
         auto resp = std::move(future).get();
         ASSERT_TRUE(resp.succeeded());
-        LOG(INFO) << "Gut Successfully";
+        LOG(INFO) << "Get Successfully";
+        checkResult(resp, 10);
+    }
+    {
+        // try to get keys all not exists
+        std::vector<std::string> keys;
+        for (int32_t i = 10; i < 20; i++) {
+            keys.emplace_back(std::to_string(i));
+        }
+
+        auto future = client->get(spaceId, std::move(keys), true);
+        auto resp = std::move(future).get();
+        ASSERT_TRUE(resp.succeeded());
+        LOG(INFO) << "Get failed because some key not exists";
+        if (!resp.failedParts().empty()) {
+            for (const auto& partEntry : resp.failedParts()) {
+                EXPECT_EQ(partEntry.second, cpp2::ErrorCode::E_PARTIAL_RESULT);
+            }
+        }
+        checkResult(resp, 0);
     }
 
     LOG(INFO) << "Stop meta client";

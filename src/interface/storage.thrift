@@ -51,6 +51,9 @@ enum ErrorCode {
     // index failed
     E_INDEX_NOT_FOUND = -60,
 
+    // partial result, used for kv interfaces
+    E_PARTIAL_RESULT = -99,
+
     E_UNKNOWN = -100,
 } (cpp.enum_strict)
 
