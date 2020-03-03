@@ -20,6 +20,7 @@
 #   ENABLE_JEMALLOC                 -- Link jemalloc into all executables
 #   ENABLE_NATIVE                   -- Build native client
 #   ENABLE_TESTING                  -- Build unit test
+#   ENABLE_LDAP                     -- Link openLDAP
 #
 # CMake version check
 cmake_minimum_required(VERSION 3.5.0)
@@ -47,12 +48,14 @@ option(ENABLE_UBSAN "Whether to turn Undefined Behavior Sanitizer ON or OFF" OFF
 option(ENABLE_FUZZ_TEST "Whether to turn Fuzz Test ON or OFF" OFF)
 option(ENABLE_WERROR "Whether to error on warnings" ON)
 option(ENABLE_TSAN "Whether to turn Thread Sanitizer ON or OFF" OFF)
+option(ENABLE_LDAP "Whether to link openLDAP to use LDAP authentication" ON)
 
 message(STATUS "ENABLE_ASAN: ${ENABLE_ASAN}")
 message(STATUS "ENABLE_TESTING: ${ENABLE_TESTING}")
 message(STATUS "ENABLE_UBSAN: ${ENABLE_UBSAN}")
 message(STATUS "ENABLE_FUZZ_TEST: ${ENABLE_FUZZ_TEST}")
 message(STATUS "ENABLE_TSAN: ${ENABLE_TSAN}")
+message(STATUS "ENABLE_LDAP: ${ENABLE_LDAP}")
 
 
 add_compile_options(-fno-strict-aliasing)
@@ -343,6 +346,11 @@ if(ENABLE_FUZZ_TEST)
     if (NOT ENABLE_FUZZ_OK)
         MESSAGE(FATAL_ERROR "The compiler does not support fuzz testing")
     endif()
+endif()
+
+if(ENABLE_LDAP)
+    add_definitions(-DLDAP_DEPRECATED)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lldap")
 endif()
 
 macro(nebula_add_executable)

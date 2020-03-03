@@ -6,7 +6,7 @@
 
 #include "graph/LdapAuthenticator.h"
 #include "graph/GraphFlags.h"
-#include <ldap.h>
+#define LDAP_DEPRECATED 1
 
 namespace nebula {
 namespace graph {
@@ -88,7 +88,7 @@ Status LdapAuthenticator::initLDAPConnection() {
     */
 
     // initialize the LDAP
-    ldap_ = ldap_init(FLAGS_ldap_server, FLAGS_ldap_port);
+    ldap_ = ldap_init(FLAGS_ldap_server.c_str(), FLAGS_ldap_port);
     if (!ldap_) {
         return Status::Error("Init LDAP failed.");
     }
@@ -154,7 +154,7 @@ StatusOr<bool> LdapAuthenticator::searchBindAuth() {
      * LDAP authentication disallows any characters that need to escape
      * in user name.
      */
-    for (auto& c : user) {
+    for (auto& c : userName_) {
         if (c == '*' ||
             c == '(' ||
             c == ')' ||
@@ -251,7 +251,7 @@ StatusOr<bool> LdapAuthenticator::searchBindAuth() {
         return reInit;
     }
 
-    ret = ldap_simple_bind_s(ldap_, dn, password_);
+    ret = ldap_simple_bind_s(ldap_, dn.c_str(), password_.c_str());
     if (ret != LDAP_SUCCESS) {
         ldap_unbind(ldap_);
         return Status::Error("LDAP login failed for user \"%s\" on server \"%s\".",
@@ -266,7 +266,7 @@ StatusOr<bool> LdapAuthenticator::searchBindAuth() {
 StatusOr<bool> LdapAuthenticator::directBindAuth() {
     auto fullUserName = FLAGS_ldap_prefix + userName_ + FLAGS_ldap_suffix;
 
-    auto ret = ldap_simple_bind_s(ldap_, fullUserName, password_);
+    auto ret = ldap_simple_bind_s(ldap_, fullUserName.c_str(), password_.c_str());
     if (ret != LDAP_SUCCESS) {
         ldap_unbind(ldap_);
         return Status::Error("LDAP login failed for user \"%s\" on server \"%s\".",
