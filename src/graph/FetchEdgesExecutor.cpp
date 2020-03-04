@@ -125,18 +125,13 @@ Status FetchEdgesExecutor::checkEdgeProps() {
                 || propName == _RANK || propName == _TYPE) {
             continue;
         }
-        auto es = ectx()->schemaManager()->getEdgeSchema(spaceId_, edgeType_);
-        if (es == nullptr) {
-            return Status::Error("No edge schema for %s", pair.first.c_str());
-        }
-        if (es->getFieldIndex(propName) == -1) {
+        if (labelSchema_->getFieldIndex(propName) == -1) {
             return Status::Error("`%s' is not a prop of `%s'",
                     propName.c_str(), pair.first.c_str());
         }
     }
     return Status::OK();
 }
-
 
 void FetchEdgesExecutor::execute() {
     FLOG_INFO("Executing FetchEdges: %s", sentence_->toString().c_str());

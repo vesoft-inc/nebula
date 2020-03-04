@@ -106,11 +106,7 @@ Status FetchVerticesExecutor::checkTagProps() {
                     pair.first.c_str(), pair.second.c_str());
         }
 
-        auto ts = ectx()->schemaManager()->getTagSchema(spaceId_, tagId_);
-        if (ts == nullptr) {
-            return Status::Error("No tag schema for %s", pair.first.c_str());
-        }
-        if (ts->getFieldIndex(pair.second) == -1) {
+        if (labelSchema_->getFieldIndex(pair.second) == -1) {
             return Status::Error("`%s' is not a prop of `%s'",
                     pair.second.c_str(), pair.first.c_str());
         }
