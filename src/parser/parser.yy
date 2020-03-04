@@ -1708,8 +1708,8 @@ host_list
 host_item
     : IPV4 COLON port {
         $$ = new nebula::HostAddr();
-        $$->first = $1;
-        $$->second = $3;
+        $$->ip = $1;
+        $$->port = $3;
     }
 
 port : INTEGER { $$ = $1; }

@@ -11,6 +11,7 @@
 #include "PlanNode.h"
 #include "parser/Clauses.h"
 #include "parser/TraverseSentences.h"
+#include "interface/gen-cpp2/storage_types.h"
 
 /**
  * All query-related nodes would be put in this file,
@@ -50,25 +51,26 @@ private:
  */
 class GetNeighbors final : public Explore {
 public:
-    GetNeighbors(nebula::cpp2::GetNeighborsRequest&& req,
-                 GraphSpaceID space) : Explore(space) {
+    explicit GetNeighbors(GraphSpaceID space) : Explore(space) {
         kind_ = PlanNode::Kind::kGetNeighbors;
-        req_ = std::move(req);
     }
 
-    GetNeighbors(nebula::cpp2::GetNeighborsRequest&& req,
-                 GraphSpaceID space,
+    GetNeighbors(GraphSpaceID space,
                  std::vector<std::string>&& colNames,
                  StateTransition&& stateTrans)
         : Explore(space, std::move(colNames), std::move(stateTrans)) {
         kind_ = PlanNode::Kind::kGetNeighbors;
-        req_ = std::move(req);
     }
 
     std::string explain() const override;
 
 private:
-    nebula::cpp2::GetNeighborsRequest req_;
+    std::vector<VertexID>                        vertices_;
+    std::vector<EdgeType>                        edgeTypes_;
+    std::vector<storage::cpp2::VertexProp>       vertexProps_;
+    std::vector<storage::cpp2::EdgeProp>         edgeProps_;
+    std::vector<storage::cpp2::StatProp>         statProps_;
+    std::string                                  filter_;
 };
 
 /**
@@ -76,25 +78,23 @@ private:
  */
 class GetVertices final : public Explore {
 public:
-    GetVertices(nebula::cpp2::VertexPropRequest&& req,
-                GraphSpaceID space) : Explore(space) {
+    explicit GetVertices(GraphSpaceID space) : Explore(space) {
         kind_ = PlanNode::Kind::kGetVertices;
-        req_ = std::move(req);
     }
 
-    GetVertices(nebula::cpp2::VertexPropRequest&& req,
-                GraphSpaceID space,
+    GetVertices(GraphSpaceID space,
                 std::vector<std::string>&& colNames,
                 StateTransition&& stateTrans)
         : Explore(space, std::move(colNames), std::move(stateTrans)) {
         kind_ = PlanNode::Kind::kGetVertices;
-        req_ = std::move(req);
     }
 
     std::string explain() const override;
 
 private:
-    nebula::cpp2::VertexPropRequest req_;
+    std::vector<VertexID>                    vertices_;
+    std::vector<storage::cpp2::VertexProp>   props_;
+    std::string                              filter_;
 };
 
 /**
@@ -102,25 +102,23 @@ private:
  */
 class GetEdges final : public Explore {
 public:
-    GetEdges(nebula::cpp2::EdgePropsRequest&& req,
-                GraphSpaceID space) : Explore(space) {
+    explicit GetEdges(GraphSpaceID space) : Explore(space) {
         kind_ = PlanNode::Kind::kGetEdges;
-        req_ = std::move(req);
     }
 
-    GetEdges(nebula::cpp2::EdgePropsRequest&& req,
-                GraphSpaceID space,
-                std::vector<std::string>&& colNames,
-                StateTransition&& stateTrans)
+    GetEdges(GraphSpaceID space,
+             std::vector<std::string>&& colNames,
+             StateTransition&& stateTrans)
         : Explore(space, std::move(colNames), std::move(stateTrans)) {
         kind_ = PlanNode::Kind::kGetEdges;
-        req_ = std::move(req);
     }
 
     std::string explain() const override;
 
 private:
-    nebula::cpp2::EdgePropRequest req_;
+    std::vector<storage::cpp2::EdgeKey>      edges_;
+    std::vector<storage::cpp2::EdgeProp>     props_;
+    std::string                              filter_;
 };
 
 /**

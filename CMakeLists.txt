@@ -194,6 +194,7 @@ find_package(BISON 3.0.5 REQUIRED)
 find_package(FLEX REQUIRED)
 find_package(Readline REQUIRED)
 find_package(NCURSES REQUIRED)
+find_package(Libunwind REQUIRED)
 
 add_compile_options(-Wall)
 add_compile_options(-Werror)
@@ -316,7 +317,7 @@ macro(nebula_add_library name type)
     add_dependencies(
         ${name}
         common_project
-#        parser_target
+        parser_target
     )
 endmacro()
 

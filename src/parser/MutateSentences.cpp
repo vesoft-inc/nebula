@@ -164,20 +164,7 @@ std::string UpdateItem::toString() const {
 }
 
 StatusOr<std::string> UpdateItem::toEvaledString() const {
-    std::string buf;
-    buf.reserve(256);
-    buf += *field_;
-    buf += "=";
-    auto ret = value_->eval();
-    if (!ret.ok()) {
-        return ret.status();
-    }
-    if (Expression::isString(ret.value())) {
-        return Status::Error("Invalid string config value");
-    }
-
-    buf += Expression::toString(ret.value());
-    return buf;
+    return Status::Error("");
 }
 
 std::string UpdateList::toString() const {

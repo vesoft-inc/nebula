@@ -93,22 +93,7 @@ std::string DescribeSpaceSentence::toString() const {
 }
 
 std::string ConfigRowItem::toString() const {
-    std::stringstream ss;
-    if (module_ != nullptr) {
-        ss << *module_;
-    }
-    if (name_ != nullptr) {
-        ss << *name_;
-    }
-    if (value_ != nullptr) {
-        auto v = value_->eval();
-        if (!v.ok()) {
-            ss << "= ";
-        } else {
-            ss << "=" << v.value();
-        }
-    }
-    return ss.str();
+    return "";
 }
 
 std::string ConfigSentence::toString() const {
@@ -139,9 +124,9 @@ std::string HostList::toString() const {
     std::string buf;
     buf.reserve(256);
     for (auto &host : hosts_) {
-        buf += network::NetworkUtils::intToIPv4(host->first);
+        buf += network::NetworkUtils::intToIPv4(host->ip);
         buf += ":";
-        buf += std::to_string(host->second);
+        buf += std::to_string(host->port);
         buf += ",";
     }
     if (!buf.empty()) {
