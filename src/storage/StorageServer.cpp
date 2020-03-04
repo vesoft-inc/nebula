@@ -136,6 +136,12 @@ bool StorageServer::start() {
         return false;
     }
 
+    taskMgr_ = AdminTaskManager::instance();
+    if (!taskMgr_->init()) {
+        LOG(ERROR) << "Init task manager failed!";
+        return false;
+    }
+
     auto handler = std::make_shared<StorageServiceHandler>(kvstore_.get(),
                                                            schemaMan_.get(),
                                                            indexMan_.get(),
@@ -166,6 +172,10 @@ void StorageServer::stop() {
     stopped_ = true;
 
     webSvc_.reset();
+
+    if (taskMgr_) {
+        taskMgr_->shutdown();
+    }
 
     if (metaClient_) {
         metaClient_->stop();

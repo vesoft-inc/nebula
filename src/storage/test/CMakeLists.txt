@@ -40,6 +40,21 @@ nebula_add_library(
 )
 
 nebula_add_test(
+    NAME
+        task_manager_test
+    SOURCES
+        TaskManagerTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
     NAME add_vertices_test
     SOURCES AddVerticesTest.cpp
     OBJECTS ${storage_test_deps}
@@ -431,21 +446,6 @@ nebula_add_executable(
         ${THRIFT_LIBRARIES}
         follybenchmark
         boost_regex
-        wangle
-        gtest
-)
-
-nebula_add_test(
-    NAME
-        task_manager_test
-    SOURCES
-        TaskManagerTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:adHocSchema_obj>
-        ${storage_test_deps}
-    LIBRARIES
-        ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
         wangle
         gtest
 )

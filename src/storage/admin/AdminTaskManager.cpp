@@ -14,6 +14,7 @@ namespace nebula {
 namespace storage {
 
 using nebula::kvstore::ResultCode;
+using JobIdAndTaskId = std::pair<int, int>;
 
 nebula::kvstore::ResultCode
 AdminTaskManager::runTaskDirectly(const cpp2::AddAdminTaskRequest& req,
@@ -23,18 +24,12 @@ AdminTaskManager::runTaskDirectly(const cpp2::AddAdminTaskRequest& req,
 }
 
 folly::Future<ResultCode>
-AdminTaskManager::addAsyncTask(const cpp2::AddAdminTaskRequest& req,
-                               nebula::kvstore::NebulaStore* store) {
+AdminTaskManager::addAsyncTask(JobIdAndTaskId taskHandle, std::shared_ptr<AdminTask> task) {
     folly::Promise<ResultCode> pro;
     auto fut = pro.getFuture();
-    auto key = std::make_pair(req.get_job_id(), req.get_task_id());
-    auto spAdminTask = AdminTaskFactory::createAdminTask(req, store);
-    if (!spAdminTask) {
-        return ResultCode::ERR_INVALID_ARGUMENT;
-    }
     {
         std::lock_guard<std::mutex> lk(mutex_);
-        taskQueue_[key] = std::make_pair(spAdminTask, std::move(pro));
+        taskQueue_[taskHandle] = std::make_pair(task, std::move(pro));
         notEmpty_.notify_one();
     }
     return fut;
@@ -47,6 +42,7 @@ void AdminTaskManager::pickTaskThread() {
         notEmpty_.wait(lk, [&]{ return shutdown_ || !taskQueue_.empty(); });
 
         if (shutdown_) {
+            LOG(INFO) << "AdminTaskManager::pickTaskThread() shutdown called, exit";
             break;
         }
         LOG(INFO) << "AdminTaskManager::pickTaskThread() task picked";

@@ -11,13 +11,15 @@ namespace nebula {
 namespace storage {
 
 nebula::kvstore::ResultCode SimpleKVTask::run() {
-    LOG(ERROR) << "messi " << __PRETTY_FUNCTION__;
+    LOG(INFO) << "task manager" << __PRETTY_FUNCTION__;
     auto rc = nebula::kvstore::ResultCode::ERR_INVALID_ARGUMENT;
     switch (cmd_) {
     case nebula::cpp2::AdminCmd::COMPACT:
+        LOG(INFO) << "task manager exec [compact] spaceId_" << spaceId_;
         rc = store_->compact(spaceId_);
         break;
     case nebula::cpp2::AdminCmd::FLUSH:
+        LOG(INFO) << "task manager exec [flush] spaceId_" << spaceId_;
         rc = store_->flush(spaceId_);
         break;
     default:
