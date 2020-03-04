@@ -24,6 +24,7 @@ namespace graph {
 const int32_t kMaxAuthInfoRetries = 3;
 const int32_t kMaxUsernameLen = 16;
 const int32_t kMaxPasswordLen = 24;
+const int32_t kMaxCmdLen = 65536;
 
 CliManager::CliManager() {
     if (!fs::FileUtils::isStdinTTY()) {
@@ -140,9 +141,14 @@ void CliManager::loop() {
         if (line.empty()) {
             continue;
         }
+
+        if (line.size() > kMaxCmdLen) {
+            fprintf(stderr, "Too Large Command Line!\n");
+            continue;
+        }
         // Line break
         while (!quit && !line.empty() && line.back() == '\\') {
-            line.resize(line.size() - 1);
+            line.resize(line.size() - 1); 
             cmd += line;
             quit = !this->readLine(line, true/*linebreak*/);
             continue;
