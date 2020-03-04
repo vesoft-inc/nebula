@@ -31,7 +31,7 @@ void LookUpVertexIndexProcessor::process(const cpp2::LookUpIndexRequest& req) {
     /**
      * step 3 : execute index scan.
      */
-    std::for_each(req.get_parts().begin(), req.get_parts().end(), [&](auto& partId) {
+    for (auto partId : req.get_parts()) {
         auto code = executeExecutionPlan(partId);
         if (code != kvstore::ResultCode::SUCCEEDED) {
             VLOG(1) << "Error! ret = " << static_cast<int32_t>(code)
@@ -42,8 +42,10 @@ void LookUpVertexIndexProcessor::process(const cpp2::LookUpIndexRequest& req) {
             } else {
                 this->pushResultCode(this->to(code), partId);
             }
+            this->onFinished();
+            return;
         }
-    });
+    }
 
     /**
      * step 4 : collect result.
