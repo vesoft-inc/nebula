@@ -72,17 +72,14 @@ Status LdapAuthenticator::initLDAPConnection() {
         return Status::Error("Init LDAP failed.");
     }
     */
-
     // ldap_init is deprecated, so use ldap_initialize
-    /*
-    ldap_ = ldap_init(FLAGS_ldap_server.c_str(), FLAGS_ldap_port);
-    if (!ldap_) {
-        return Status::Error("Init LDAP failed.");
-    }
-    */
 
     // FLAGS_ldap_server is comma separated list of hosts
-    const char* host = FLAGS_ldap_server.c_str();
+    auto ldap_server = folly::trimWhitespace(FLAGS_ldap_server);
+    if (ldap_server.empty()) {
+        return Status::Error("LDAP authentication ldap_server is illegal.");
+    }
+    const char *host = ldap_server.str().c_str();
     std::string uris("");
     do {
         auto size = std::strcspn(host, ",");
@@ -94,6 +91,9 @@ Status LdapAuthenticator::initLDAPConnection() {
         uris.append(host, size);
         uris += folly::stringPrintf(":%d", FLAGS_ldap_port);
         host += size;
+        if (*host == ',') {
+            host++;
+        }
         while (*host == ' ') {
            host++;
         }
@@ -112,69 +112,12 @@ Status LdapAuthenticator::initLDAPConnection() {
     }
 
     if (FLAGS_ldap_tls) {
-        // synchronous
-        /*
         ret = ldap_start_tls_s(ldap_, NULL, NULL);
         if (ret != LDAP_SUCCESS) {
             ldap_unbind_ext(ldap_, NULL, NULL);
             return Status::Error("Start LDAP TLS session failed");
         }
-        */
-        // use asynchronous StartTLS
-        int     msgid;
-        ret = ldap_start_tls(ldap_, NULL, NULL, &msgid);
-        if (ret != LDAP_SUCCESS) {
-            ldap_unbind_ext(ldap_, NULL, NULL);
-            return Status::Error("Start LDAP TLS session failed");
-        }
-
-        LDAPMessage *res = NULL;
-        ret = ldap_result(ldap_, msgid, LDAP_MSG_ALL, NULL, &res);
-        if (ret <= 0) {
-            ldap_unbind_ext(ldap_, NULL, NULL);
-            if (res != NULL) {
-                ldap_msgfree(res);
-            }
-            return Status::Error("Start LDAP TLS session failed");
-        } else if (ret == LDAP_RES_EXTENDED) {
-            struct berval   *data = NULL;
-            ret = ldap_parse_extended_result(ldap_, res, NULL, &data, 0);
-            if (ret == LDAP_SUCCESS) {
-                int     msgidSub;
-                ret = ldap_parse_result(ldap_, res, &msgidSub, NULL, NULL, NULL, NULL, 1);
-                res = NULL;
-                if (ret != LDAP_SUCCESS) {
-                    if (data) {
-                        if (data->bv_val) {
-                            free(data->bv_val);
-                        }
-                        free(data);
-                    }
-                    ldap_unbind_ext(ldap_, NULL, NULL);
-                    return Status::Error("Start LDAP TLS session failed");
-                }
-
-                ret = ldap_install_tls(ldap_);
-                if (data) {
-                    if (data->bv_val) {
-                        free(data->bv_val);
-                    }
-                    free(data);
-                }
-            }
-        } else {
-            ret = LDAP_OTHER;
-        }
-
-        if (res != NULL) {
-            ldap_msgfree(res);
-        }
-        if (ret != LDAP_SUCCESS) {
-            ldap_unbind_ext(ldap_, NULL, NULL);
-            return Status::Error("Start LDAP TLS session failed");
-        }
     }
-
     return Status::OK();
 }
 
@@ -202,18 +145,14 @@ std::string LdapAuthenticator::buildSearchFilter() {
     while ((pos = result.find(ph)) != std::string::npos) {
         result.replace(pos, len, userName_);
     }
-
     return result;
 }
 
 
 StatusOr<bool> LdapAuthenticator::searchBindAuth() {
-    LDAPMessage *msg;
+    LDAPMessage *searchMessage, *entry;
     char* distName;
     std::string dn;
-    LDAPMessage *res = NULL;
-    struct timeval  tv = {2, 0};
-    int msgid = 0;
 
     /**
      * Firstly, perform the LDAP seach to find the distinguished name
@@ -242,37 +181,23 @@ StatusOr<bool> LdapAuthenticator::searchBindAuth() {
     auto& binddn = FLAGS_ldap_binddn;
     auto& bindPassword = FLAGS_ldap_bindpasswd;
 
-    // Perform an anonymous bind.
     struct berval cred1;
     cred1.bv_val = const_cast<char*>(bindPassword.c_str());
     cred1.bv_len = bindPassword.length();
 
-    auto rc = ldap_sasl_bind(ldap_,
-                             binddn.c_str(),
-                             LDAP_SASL_SIMPLE,
-                             &cred1,
-                             NULL,
-                             NULL,
-                             &msgid);
+    auto rc = ldap_sasl_bind_s(ldap_,
+                              binddn.c_str(),
+                              LDAP_SASL_SIMPLE,
+                              &cred1,
+                              NULL,
+                              NULL,
+                              NULL);
 
     if (rc != LDAP_SUCCESS) {
         ldap_unbind_ext(ldap_, NULL, NULL);
         return Status::Error("Perform initial LDAP bind for ldapbinddn \"%s\" on server "
                              "\"%s\" failed.", binddn.c_str(), FLAGS_ldap_server.c_str());
     }
-
-    // wait some time for the connection to succeed
-    if ((rc = ldap_result(ldap_, msgid, LDAP_MSG_ALL, &tv, &res)) == -1 ||
-        res == NULL) {
-        if (res != NULL) {
-            ldap_msgfree(res);
-        }
-        ldap_unbind_ext(ldap_, NULL, NULL);
-        return Status::Error("LDAP login failed for user \"%s\" on server \"%s\".",
-                             dn.c_str(), FLAGS_ldap_server.c_str());
-    }
-
-    ldap_msgfree(res);
 
     // Build the filter
     auto filter = buildFilter();
@@ -285,15 +210,18 @@ StatusOr<bool> LdapAuthenticator::searchBindAuth() {
     attributes[1] = ldap_no_attrs;
     attributes[2] = nullptr;
 
-    // Initiate an ldap search, anonymous
-    /*
-    rc = ldap_search_s(ldap_,
-                       FLAGS_ldap_basedn.c_str(),
-                       0,  // The search scope, use LDAP_SCOPE_BASE
-                       filter.c_str(),
-                       attributes,
-                       0,
-                       &searchMessage);
+    // Initiate an ldap search, synchronize
+    rc = ldap_search_ext_s(ldap_,
+                           FLAGS_ldap_basedn.c_str(),
+                           0,  // The search scope, use LDAP_SCOPE_BASE
+                           filter.c_str(),
+                           attributes,
+                           0,
+                           NULL,
+                           NULL,
+                           NULL,
+                           LDAP_NO_LIMIT,
+                           &searchMessage);
 
     if (rc != LDAP_SUCCESS) {
         ldap_unbind_ext(ldap_, NULL, NULL);
@@ -312,63 +240,14 @@ StatusOr<bool> LdapAuthenticator::searchBindAuth() {
             return Status::Error("LDAP user \"%s\" is not unique.", userName_.c_str());
         }
     }
-    */
 
-    msgid = 0;
-    rc = ldap_search_ext(ldap_,
-                         FLAGS_ldap_basedn.c_str(),
-                         0,  // The search scope, use LDAP_SCOPE_BASE
-                         filter.c_str(),
-                         attributes,
-                         0,
-                         NULL,
-                         NULL,
-                         NULL,
-                         LDAP_NO_LIMIT,
-                         &msgid);
-
-    if (rc !=  LDAP_SUCCESS) {
-        ldap_unbind_ext(ldap_, NULL, NULL);
-        return Status::Error("Search LDAP for filter \"%s\" on server \"%s\" failed.",
-                             filter.c_str(), FLAGS_ldap_server.c_str());
-    }
-
-    res = NULL;
-    int r = ldap_result(ldap_, msgid, LDAP_MSG_ONE, NULL, &res);
-    if (r <= 0 && res == NULL) {
-        if (res != NULL) {
-            ldap_msgfree(res);
-        }
-        ldap_unbind_ext(ldap_, NULL, NULL);
-        return Status::Error("Search LDAP for filter \"%s\" on server \"%s\" failed.",
-                              filter.c_str(), FLAGS_ldap_server.c_str());
-    }
-
-    int count = 0;
-    for (msg = ldap_first_message(ldap_, res); msg != NULL; msg = ldap_next_message(ldap_, res)) {
-        count++;
-        if (count > 1) {
-            ldap_msgfree(res);
-            ldap_unbind_ext(ldap_, NULL, NULL);
-            return Status::Error("LDAP user \"%s\" is not unique.", userName_.c_str());
-        }
-        // Get distinguished name from search result
-        distName = ldap_get_dn(ldap_, msg);
-    }
-    if (count == 0) {
-        if (res != NULL) {
-            ldap_msgfree(res);
-        }
-        ldap_unbind_ext(ldap_, NULL, NULL);
-        return Status::Error("LDAP user \"%s\" does not exist.", userName_.c_str());
-    }
-
-    if (res != NULL) {
-        ldap_msgfree(res);
-    }
+    // Get distinguished name from search result
+    entry = ldap_first_entry(ldap_, searchMessage);
+    distName = ldap_get_dn(ldap_, entry);
 
     if (!distName) {
         ldap_unbind_ext(ldap_, NULL, NULL);
+        ldap_msgfree(searchMessage);
         return Status::Error("Get distinguished name for the first entry with filter \"%s\" "
                              "on server \"%s\" failed.", filter.c_str(),
                              FLAGS_ldap_server.c_str());
@@ -376,9 +255,10 @@ StatusOr<bool> LdapAuthenticator::searchBindAuth() {
 
     dn = distName;
     ldap_memfree(distName);
+    ldap_msgfree(searchMessage);
 
     // Unbind and disconnect the first connection from the LDAP server
-    rc = ldap_unbind_ext(ldap_, NULL, NULL);
+    rc = ldap_unbind_ext_s(ldap_, NULL, NULL);
     if (rc != LDAP_SUCCESS) {
         return Status::Error("Unbind failed after searching for user \"%s\" on server \"%s\".",
                               userName_.c_str(), FLAGS_ldap_server.c_str());
@@ -394,82 +274,47 @@ StatusOr<bool> LdapAuthenticator::searchBindAuth() {
         return reInit;
     }
 
-    // Perform an anonymous bind.
-    msgid = 0;
     struct berval cred2;
     cred2.bv_val = const_cast<char*>(password_.c_str());
     cred2.bv_len = password_.length();
 
-    rc = ldap_sasl_bind(ldap_,
-                        dn.c_str(),
-                        LDAP_SASL_SIMPLE,
-                        &cred2,
-                        NULL,
-                        NULL,
-                        &msgid);
+    rc = ldap_sasl_bind_s(ldap_,
+                          dn.c_str(),
+                          LDAP_SASL_SIMPLE,
+                          &cred2,
+                          NULL,
+                          NULL,
+                          NULL);
 
-    if (rc != LDAP_SUCCESS) {
-        ldap_unbind_ext(ldap_, NULL, NULL);
-        return Status::Error("LDAP login failed for user \"%s\" on server \"%s\".",
-                             dn.c_str(), FLAGS_ldap_server.c_str());
-    }
-
-    // wait some time for the connection to succeed
-    res = NULL;
-    if ((rc = ldap_result(ldap_, msgid, LDAP_MSG_ALL, &tv, &res)) == -1 ||
-        res == NULL) {
-        if (res != NULL) {
-            ldap_msgfree(res);
-        }
-        ldap_unbind_ext(ldap_, NULL, NULL);
-        return Status::Error("LDAP login failed for user \"%s\" on server \"%s\".",
-                             dn.c_str(), FLAGS_ldap_server.c_str());
-    }
-
-    ldap_msgfree(res);
     ldap_unbind_ext(ldap_, NULL, NULL);
+    if (rc != LDAP_SUCCESS) {
+        return Status::Error("LDAP login failed for user \"%s\" on server \"%s\".",
+                             dn.c_str(), FLAGS_ldap_server.c_str());
+    }
     return true;
 }
 
 
 StatusOr<bool> LdapAuthenticator::simpleBindAuth() {
-    LDAPMessage *res = NULL;
-    struct timeval  tv = {2, 0};
     auto fullUserName = FLAGS_ldap_prefix + userName_ + FLAGS_ldap_suffix;
 
-    // Perform an anonymous bind.
-    int msgid;
     struct berval cred;
     cred.bv_val = const_cast<char*>(password_.c_str());
     cred.bv_len = password_.length();
 
-    auto rc = ldap_sasl_bind(ldap_,
-                             fullUserName.c_str(),
-                             LDAP_SASL_SIMPLE,
-                             &cred,
-                             NULL,
-                             NULL,
-                             &msgid);
+    auto ret = ldap_sasl_bind_s(ldap_,
+                                fullUserName.c_str(),
+                                LDAP_SASL_SIMPLE,
+                                &cred,
+                                NULL,
+                                NULL,
+                                NULL);
 
-    if (rc != LDAP_SUCCESS) {
-        ldap_unbind_ext(ldap_, NULL, NULL);
+    ldap_unbind_ext(ldap_, NULL, NULL);
+    if (ret != LDAP_SUCCESS) {
         return Status::Error("LDAP login failed for user \"%s\" on server \"%s\".",
                               fullUserName.c_str(), FLAGS_ldap_server.c_str());
     }
-
-    // wait some time for the connection to succeed
-    if ((rc = ldap_result(ldap_, msgid, LDAP_MSG_ALL, &tv, &res)) == -1 ||
-        res == NULL) {
-        if (res != NULL) {
-            ldap_msgfree(res);
-        }
-        ldap_unbind_ext(ldap_, NULL, NULL);
-        return Status::Error("LDAP login failed for user \"%s\" on server \"%s\".",
-                             fullUserName.c_str(), FLAGS_ldap_server.c_str());
-    }
-
-    ldap_msgfree(res);
-    ldap_unbind_ext(ldap_, NULL, NULL);
     return true;
 }
 
