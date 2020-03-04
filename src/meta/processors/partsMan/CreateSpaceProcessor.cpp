@@ -9,7 +9,7 @@
 
 DEFINE_int32(default_parts_num, 100, "The default number of parts when a space is created");
 DEFINE_int32(default_replica_factor, 1, "The default replica factor when a space is created");
-DEFINE_int32(default_space_sum, 100, "The default number of space can be created");
+DEFINE_int32(default_max_parts_num, 100, "The default max partitions number");
 
 namespace nebula {
 namespace meta {
@@ -18,14 +18,6 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
     auto properties = req.get_properties();
     auto spaceRet = getSpaceId(properties.get_space_name());
-    auto count = getSpaceSum();
-    if (count >= FLAGS_default_space_sum ) {
-        LOG(ERROR) << "Create Space Failed : TOO MANY SPACES!";
-        handleErrorCode(cpp2::ErrorCode::E_TOO_MANY_SPACES);
-        onFinished();
-        return;
-    }
-
     if (spaceRet.ok()) {
         cpp2::ErrorCode ret;
         if (req.get_if_not_exists()) {
@@ -63,6 +55,19 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     auto replicaFactor = properties.get_replica_factor();
     auto charsetName = properties.get_charset_name();
     auto collateName = properties.get_collate_name();
+    auto count = GetPartsNumbers();
+    if (count == -1) {
+        handleErrorCode(cpp2::ErrorCode::E_UNKNOWN);
+        onFinished();
+        return;
+    }
+
+    if (count + partitionNum >= FLAGS_default_max_parts_num) {
+        LOG(ERROR) << "Create Space Failed : TOO MANY PARTITIONS!";
+        handleErrorCode(cpp2::ErrorCode::E_TOO_MANY_PARTS);
+        onFinished();
+        return;
+    }
 
     // Use default values or values from meta's configuration file
     if (partitionNum == 0) {
@@ -76,6 +81,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         // Set the default value back to the struct, which will be written to storage
         properties.set_partition_num(partitionNum);
     }
+
     if (replicaFactor == 0) {
         replicaFactor = FLAGS_default_replica_factor;
         if (replicaFactor <= 0) {
@@ -128,20 +134,36 @@ CreateSpaceProcessor::pickHosts(PartitionID partId,
     return pickedHosts;
 }
 
-int32_t CreateSpaceProcessor::getSpaceSum() {
-    folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
-    int32_t count = 0; 
+int32_t CreateSpaceProcessor::GetPartsNumbers() {
+    int32_t count = 0;
     auto prefix = MetaServiceUtils::spacePrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "List Spaces " << spaceName << " Failed";
         return -1;
     }
-    std::vector<cpp2::IdName> spaces;
+
     while (iter->valid()) {
-        count++;
+        auto spaceId = MetaServiceUtils::spaceId(iter->key());
+        auto partPrefix = MetaServiceUtils::partPrefix(spaceId);
+        auto spaceName = MetaServiceUtils::spaceName(iter->val());
+        std::unique_ptr<kvstore::KVIterator> partIter;
+        auto kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &partIter);
+        if ( kvRet != kvstore::ResultCode::SUCCEEDED ) {
+            LOG(ERROR) << "List Partitions From " << spaceName
+                       << ", Space id " << spaceId << " Failed";
+            return -1;
+        }
+
+        while (partIter->valid()) {
+            count++;
+            partIter->next();
+        }
+
         iter->next();
     }
+
     return count;
 }
 }  // namespace meta

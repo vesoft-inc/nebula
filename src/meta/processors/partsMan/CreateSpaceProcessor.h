@@ -26,6 +26,7 @@ protected:
                                             const std::vector<network::InetAddress>& hosts,
                                             int32_t replicaFactor);
 
+    int32_t GetPartsNumbers();
 private:
     explicit CreateSpaceProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::ExecResp>(kvstore) {}
