@@ -74,7 +74,7 @@ jobs:
       - name: Make
         if: steps.ignore_docs.outputs.num_source_files != 0
         run: |
-          cmake --build build/ -j $(nproc)
+          cmake --build build/ -j $(($(nproc)/2))
       - name: CTest with multiple threads
         if: steps.ignore_docs.outputs.num_source_files != 0
         timeout-minutes: 15
