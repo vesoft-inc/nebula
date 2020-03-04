@@ -939,6 +939,86 @@ gremlin> g.V().repeat(both().groupCount('m')).times(5).cap('m').order(local).by(
 
 ### 局部操作 local
 
+通过 Gremlin 进行图遍历通常是当前 step 处理前一 step 传递过来的对象流。很多操作是针对传递过来的对象流中的全部对象进行操作，但也有很多时候需要针对对象流中的单个对象而非对象流中的全部对象进行操作。这种对单个对象的局部操作，可以使用 `local()` 语句实现。
+
+```bash
+# 不使用 local()
+gremlin> g.V().hasLabel('character').as('character').properties('age').order().by(value,decr).limit(2).value().as('age').select('character', 'age').by('name').by();
+==>[character:saturn,age:10000]
+==>[character:jupiter,age:5000]
+
+# 使用 local()
+gremlin> g.V().hasLabel('character').as('character').local(properties('age').order().by(value).limit(2)).value().as('age').select('character', 'age').by('name').by()
+==>[character:saturn,age:10000]
+==>[character:jupiter,age:5000]
+==>[character:neptune,age:4500]
+==>[character:hercules,age:30]
+...
+
+# 查询 monster 的属性 map
+gremlin> g.V()hasLabel('character').has('type', 'type').propertyMap();
+==>[name:[vp[name->nemean]],type:[vp[type->monster]],age:[vp[age->20]]]
+==>[name:[vp[name->hydra]],type:[vp[type->monster]],age:[vp[age->0]]]
+==>[name:[vp[name->cerberus]],type:[vp[type->monster]],age:[vp[age->0]]]
+
+# 查询 monster 的属性个数
+gremlin> g.V()hasLabel('character').has('type', 'monster').propertyMap().count(local);
+==>3
+==>3
+==>3
+
+# 数目最多的顶点类型的顶点数目
+gremlin> g.V().groupCount().by(label).select(values).max(local);
+==>9
+
+# 所有顶点的属性列表中的第一个属性
+gremlin> g.V().valueMap().limit(local, 1);
+==>[name:[saturn]]
+==>[name:[jupiter]]
+==>[name:[sky]]
+...
+
+# 不加 local
+gremlin> g.V().valueMap().limit(1);
+==>[name:[saturn],type:[titan],age:[10000]]
+
+# 所有顶点作为一个集合，从中采样 2 个
+gremlin> g.V().fold().sample(local,2);
+==>[v[8],v[1]]
+```
+
+### 执行统计和分析
+
+Gremlin 提供两种语句对执行的查询语句进行统计和分析：
+
+- `explain()`，详细描述原始的 Gremlin 语句在编译期是如何转变为最终要执行的 step 集合的
+- `profile()`，统计 Gremlin 语句执行过程中的每个 step 消耗的时间和通过的对象等统计信息
+
+```bash
+# explain()
+gremlin> g.V().hasLabel('character').explain();
+==>Traversal Explanation
+==========================================================================================
+Original Traversal                 [GraphStep(vertex,[]), HasStep([~label.eq(character)])]
+
+ConnectiveStrategy           [D]   [GraphStep(vertex,[]), HasStep([~label.eq(character)])]
+MatchPredicateStrategy       [O]   [GraphStep(vertex,[]), HasStep([~label.eq(character)])]
+...
+StandardVerificationStrategy [V]   [TinkerGraphStep(vertex,[~label.eq(character)])]
+
+Final Traversal                    [TinkerGraphStep(vertex,[~label.eq(character)])]
+
+# profile()
+gremlin> g.V().out('father').profile()
+==>Traversal Metrics
+Step                                                               Count  Traversers       Time (ms)    % Dur
+=============================================================================================================
+TinkerGraphStep(vertex,[])                                            12          12           0.644    45.66
+VertexStep(OUT,[father],vertex)                                        2           2           0.534    37.83
+NoOpBarrierStep(2500)                                                  2           2           0.233    16.51
+                                            >TOTAL                     -           -           1.411        -
+```
+
 <!-- ## References
 
 Multiple properties (multi-properties): a vertex property key can have multiple values. For example, a vertex can have multiple "name" properties.

@@ -262,7 +262,7 @@ nebula> SHOW TAGS;
 | 16 | location  |
 ------------------
 
-# 查询所有边类型
+# Return edge types
 gremlin> g.E().label().dedup();
 ==>father
 ==>lives
@@ -276,14 +276,14 @@ gremlin> g.E().label().dedup();
 ----------------
 ...
 
-# 查询所有顶点的属性
+# Return all vertices properties
 gremlin> g.V().valueMap();
 ==>[name:[saturn],type:[titan],age:[10000]]
 ==>[name:[jupiter],type:[god],age:[5000]]
 ...
 nebula> # Coming soon
 
-# 查询 character 顶点属性
+# Return properties of vertices labeled character
 gremlin> g.V().hasLabel('character').valueMap();
 ==>[name:[saturn],type:[titan],age:[10000]]
 ==>[name:[jupiter],type:[god],age:[5000]]
@@ -828,14 +828,14 @@ gremlin> g.V(pluto).union(out('father'),both('brother')).path();
 ### Aggregating and Unfolding Results
 
 ```bash
-# 收集第 1 步的结果到集合 x 中
-# 注意：不影响后续结果
+# Collect results of the first step into set x
+# Note: This operation doesn't affect subsequent results
 gremlin> g.V(pluto).out().aggregate('x');
 ==>v[12]
 ==>v[2]
 ...
 
-# 通过 by() 指定聚集的维度
+# Specify the aggregation dimensions via by ()
 gremlin> g.V(pluto).out().aggregate('x').by('name').cap('x');
 ==>[tartarus,jupiter,neptune,cerberus]
 
@@ -938,13 +938,63 @@ gremlin> g.V().repeat(both().groupCount('m')).times(5).cap('m').order(local).by(
 
 ### Local
 
+A GraphTraversal operates on a continuous stream of objects. In many situations, it is important to operate on a single element within that stream. To do such object-local traversal computations, `local()` step exists.
+
+```bash
+# Without local()
+gremlin> g.V().hasLabel('character').as('character').properties('age').order().by(value,decr).limit(2).value().as('age').select('character', 'age').by('name').by();
+==>[character:saturn,age:10000]
+==>[character:jupiter,age:5000]
+
+# With local()
+gremlin> g.V().hasLabel('character').as('character').local(properties('age').order().by(value).limit(2)).value().as('age').select('character', 'age').by('name').by()
+==>[character:saturn,age:10000]
+==>[character:jupiter,age:5000]
+==>[character:neptune,age:4500]
+==>[character:hercules,age:30]
+...
+
+# Return the property map of monster
+gremlin> g.V()hasLabel('character').has('type', 'type').propertyMap();
+==>[name:[vp[name->nemean]],type:[vp[type->monster]],age:[vp[age->20]]]
+==>[name:[vp[name->hydra]],type:[vp[type->monster]],age:[vp[age->0]]]
+==>[name:[vp[name->cerberus]],type:[vp[type->monster]],age:[vp[age->0]]]
+
+# Find number of monster
+gremlin> g.V()hasLabel('character').has('type', 'monster').propertyMap().count(local);
+==>3
+==>3
+==>3
+
+# Find the max vertices number labeled tha same tag
+gremlin> g.V().groupCount().by(label).select(values).max(local);
+==>9
+
+# List the first attribute of all vertices
+gremlin> g.V().valueMap().limit(local, 1);
+==>[name:[saturn]]
+==>[name:[jupiter]]
+==>[name:[sky]]
+...
+
+# Without local
+gremlin> g.V().valueMap().limit(1);
+==>[name:[saturn],type:[titan],age:[10000]]
+
+# All vertices as a set, sample 2 from it
+gremlin> g.V().fold().sample(local,2);
+==>[v[8],v[1]]
+```
+
+### Statistics and Analysis
+
+Gremlin provides two steps for statistics and analysis of the executed query statements:
+
+- The `explain()` step will return a TraversalExplanation. A traversal explanation details how the traversal (prior to explain()) will be compiled given the registered traversal strategies.
+- The `profile()` step allows developers to profile their traversals to determine statistical information like step runtime, counts, etc.
 
 <!-- LOOKUP ON character WHERE character.age >= 30 YIELD character.age AS name | \
     GO FROM $-.VertexID OVER relation YIELD $-.name, relation.name, $$.entity.name -->
-
-
-
-
 
 <!-- ## References
 
