@@ -138,6 +138,7 @@ struct PartMeta {
 using PartsMap  = std::unordered_map<GraphSpaceID, std::unordered_map<PartitionID, PartMeta>>;
 
 using VariantType = boost::variant<int64_t, double, bool, std::string>;
+constexpr const char* VARIANT_TYPE_NAME[] = {"int", "double", "bool", "string"};
 
 #ifndef VAR_INT64
 #define VAR_INT64 0
