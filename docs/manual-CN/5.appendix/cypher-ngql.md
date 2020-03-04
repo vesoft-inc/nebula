@@ -66,7 +66,7 @@ cypher> MATCH (n:character {name:"prometheus"})
 ```
 nebula> UPDATE VERTEX hash("jesus") SET character.type = 'titan';
 
-cypher> MATCH (n:character {name:"prometheus"})
+cypher> MATCH (n:character {name:"jesus"})
       > SET n.type = 'titan'
 ```
 
@@ -80,8 +80,13 @@ nebula> FETCH PROP ON character hash("saturn");
   | saturn         | 10000         | titan          |
   ---------------------------------------------------
 
-cypher> MATCH (n:character {name:"prometheus"})
+cypher> MATCH (n:character {name:"saturn"})
       > RETURN properties(n)
+  ╒════════════════════════════════════════════╕
+  │"properties(n)"                             │
+  ╞════════════════════════════════════════════╡
+  │{"name":"saturn","type":"titan","age":10000}│
+  └────────────────────────────────────────────┘
 ```
 
 - 查询 hercules 祖父的姓名
@@ -94,8 +99,13 @@ nebula> GO 2 STEPS FROM hash("hercules") OVER father YIELD  $$.character.name;
     | saturn            |
     ---------------------
 
-cypher> MATCH (src:character{name:"prometheus"})-[r:father*2]->(dst:character)
+cypher> MATCH (src:character{name:"hercules"})-[r:father*2]->(dst:character)
       > RETURN dst.name;
+      ╒══════════╕
+      │"dst.name"│
+      ╞══════════╡
+      │"satun"   │
+      └──────────┘
 ```
 
 - 查询 hercules 父亲的姓名
@@ -108,8 +118,13 @@ nebula> GO FROM hash("hercules") OVER father YIELD $$.character.name;
     | jupiter           |
     ---------------------
 
-cypher> MATCH (src:character{name:"prometheus"})-[r:father]->(dst:character)
+cypher> MATCH (src:character{name:"hercules"})-[r:father]->(dst:character)
       > RETURN dst.name
+      ╒══════════╕
+      │"dst.name"│
+      ╞══════════╡
+      │"jupiter" │
+      └──────────┘
 ```
 
 - 查询百岁老人的姓名
@@ -135,6 +150,11 @@ nebula> GO FROM hash("pluto") OVER lives YIELD lives._dst AS place | GO FROM $-.
 
 cypher> MATCH (src:character{name:"pluto"})-[r1:lives]->()<-[r2:lives]-(dst:character)
       > RETURN dst.name
+      ╒══════════╕
+      │"dst.name"│
+      ╞══════════╡
+      │"cerberus"│
+      └──────────┘
 ```
 
 -  查询 Pluto 的兄弟们以及他们的居住地
@@ -152,4 +172,11 @@ nebula> GO FROM hash("pluto") OVER brother YIELD brother._dst AS god | \
 
 cypher> MATCH (src:Character{name:"pluto"})-[r1:brother]->(bro:Character)-[r2:lives]->(dst)
       > RETURN bro.name, dst.name
+      ╒═════════════════════════╕
+      │"bro.name"    │"dst.name"│
+      ╞═════════════════════════╡
+      │ "jupiter"    │  "sky"   │
+      ├─────────────────────────┤
+      │ "neptune"    │ "sea"    │
+      └─────────────────────────┘
 ```
