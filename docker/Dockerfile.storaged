@@ -1,9 +1,11 @@
 FROM vesoft/nebula-dev:centos7 as builder
 
+ARG build_with_sanitizer
+
 COPY . /home/nebula/BUILD
 
 RUN cd /home/nebula/BUILD/package \
-  && ./make_srpm.sh -v $(git rev-parse --short HEAD) -p /home/nebula storaged
+  && ./make_srpm.sh $build_with_sanitizer -v $(git rev-parse --short HEAD) -p /home/nebula storaged
 
 FROM centos:7
 
