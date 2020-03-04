@@ -14,11 +14,85 @@
 namespace nebula {
 namespace storage {
 
+using nebula::kvstore::ResultCode;
+using TaskHandle = std::pair<int, int>;
+
+class MockAdminTask : public AdminTask {
+public:
+    explicit MockAdminTask(ResultCode rc) : rc_(rc) {}
+    ResultCode run() override {
+        return rc_;
+    }
+
+    ResultCode stop() override {
+        return rc_;
+    }
+
+private:
+    ResultCode rc_;
+};
+
 TEST(TaskManagerTest, ctor) {
-    auto& taskMgr = AdminTaskManager::instance();
-    taskMgr.init();
-    taskMgr.shutdown();
+    auto taskMgr = AdminTaskManager::instance();
+    taskMgr->init();
+    taskMgr->shutdown();
 }
+
+TEST(TaskManagerTest, happy_path) {
+    auto taskMgr = AdminTaskManager::instance();
+    taskMgr->init();
+    taskMgr->shutdown_ = false;
+
+    TaskHandle handle = std::make_pair(100, 100);
+
+    {
+        auto rc = ResultCode::SUCCEEDED;
+        std::shared_ptr<AdminTask> mockTask(new MockAdminTask(rc));
+        auto result = taskMgr->addAsyncTask(handle, mockTask);
+        result.wait();
+        EXPECT_EQ(result.value(), rc);
+    }
+
+    {
+        auto rc = ResultCode::ERR_SPACE_NOT_FOUND;
+        std::shared_ptr<AdminTask> mockTask(new MockAdminTask(rc));
+        auto result = taskMgr->addAsyncTask(handle, mockTask);
+        result.wait();
+        EXPECT_EQ(result.value(), rc);
+    }
+
+    {
+        auto rc = ResultCode::ERR_PART_NOT_FOUND;
+        std::shared_ptr<AdminTask> mockTask(new MockAdminTask(rc));
+        auto result = taskMgr->addAsyncTask(handle, mockTask);
+        result.wait();
+        EXPECT_EQ(result.value(), rc);
+    }
+
+    {
+        auto rc = ResultCode::ERR_KEY_NOT_FOUND;
+        std::shared_ptr<AdminTask> mockTask(new MockAdminTask(rc));
+        auto result = taskMgr->addAsyncTask(handle, mockTask);
+        result.wait();
+        EXPECT_EQ(result.value(), rc);
+    }
+
+    taskMgr->shutdown();
+}
+
+// TEST(TaskManagerTest, failedTask) {
+//     auto taskMgr = AdminTaskManager::instance();
+//     taskMgr->init();
+//     taskMgr->shutdown_ = false;
+//     TaskHandle handle = std::make_pair(100, 100);
+//     auto suc = ResultCode::SUCCEEDED;
+//     std::shared_ptr<AdminTask> mockTask(new MockAdminTask(suc));
+
+//     auto result = taskMgr->addAsyncTask(handle, mockTask);
+//     result.wait();
+//     EXPECT_EQ(result.value(), suc);
+//     taskMgr->shutdown();
+// }
 
 }  // namespace storage
 }  // namespace nebula

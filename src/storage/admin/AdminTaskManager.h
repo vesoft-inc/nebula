@@ -10,6 +10,7 @@
 #include "interface/gen-cpp2/storage_types.h"
 #include <condition_variable>
 #include <mutex>
+#include <gtest/gtest_prod.h>
 #include "kvstore/NebulaStore.h"
 #include "storage/admin/AdminTask.h"
 
@@ -17,8 +18,9 @@ namespace nebula {
 namespace storage {
 
 class AdminTaskManager {
-    using ResultCode = nebula::kvstore::ResultCode;
+    FRIEND_TEST(TaskManagerTest, happy_path);
 
+    using ResultCode = nebula::kvstore::ResultCode;
     using ASyncTaskRet = folly::Promise<ResultCode>;
     using TaskAndResult = std::pair<std::shared_ptr<AdminTask>, ASyncTaskRet>;
     using JobIdAndTaskId = std::pair<int, int>;
@@ -26,9 +28,9 @@ class AdminTaskManager {
 
 public:
     AdminTaskManager() = default;
-    static AdminTaskManager& instance() {
+    static AdminTaskManager* instance() {
         static AdminTaskManager sAdminTaskManager;
-        return sAdminTaskManager;
+        return &sAdminTaskManager;
     }
 
     ResultCode runTaskDirectly(const cpp2::AddAdminTaskRequest& req,
@@ -36,6 +38,8 @@ public:
 
     FutureResultCode addAsyncTask(const cpp2::AddAdminTaskRequest& req,
                                   nebula::kvstore::NebulaStore* store);
+
+    FutureResultCode addAsyncTask(JobIdAndTaskId taskHandle, std::shared_ptr<AdminTask> task);
 
     ResultCode cancelTask(const cpp2::AddAdminTaskRequest& req);
 
