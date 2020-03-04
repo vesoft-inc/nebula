@@ -203,12 +203,14 @@ StatusOr<bool> LdapAuthenticator::searchBindAuth() {
     auto filter = buildFilter();
 
 
-    // "1.1" ldap_no_attrs
-    char ldap_no_attrs[] = "1.1";
-
-    char *attributes[2];;
-    attributes[1] = ldap_no_attrs;
-    attributes[2] = nullptr;
+    char *attributes[2];
+    if (FLAGS_ldap_searchattribute.empty()) {
+        char tempStr[] = "uid";
+        attributes[0] = tempStr;
+    } else {
+        attributes[0] = const_cast<char*>(FLAGS_ldap_searchattribute.c_str());
+    }
+    attributes[1] = nullptr;
 
     // Initiate an ldap search, synchronize
     rc = ldap_search_ext_s(ldap_,
