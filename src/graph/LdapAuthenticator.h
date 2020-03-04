@@ -16,6 +16,27 @@
 namespace nebula {
 namespace graph {
 
+/**
+ * LDAP authentication has two modes: simple bind mode and search bind mode.
+ * common parameters:
+ * FLAGS_ldap_server, FLAGS_ldap_port
+ * FLAGS_ldap_scheme, FLAGS_ldap_tls
+ *
+ * Simple bind mode uses the parameters:
+ * FLAGS_ldap_prefix, FLAGS_ldap_suffix
+ * dn(distinguished name) = FLAGS_ldap_prefix + userName + FLAGS_ldap_suffix
+ * E.g FLAGS_ldap_prefix = "uid="
+ *     FLAGS_ldap_suffix = ",dc=sys,dc=com"
+ *     userName = "panda"
+ *     dn = "uid=panda,dc=sys,dc=com"
+ *
+ * Search bind mode uses the parameters:
+ * FLAGS_ldap_basedn, FLAGS_ldap_binddn, FLAGS_ldap_bindpasswd,
+ * one of FLAGS_ldap_searchattribute or FLAGS_ldap_searchfilter
+ * E.g FLAGS_ldap_basedn = "dc=sys,dc=com"
+ *
+ * Disallow mixing the parameters of two modes.
+ */
 class LdapAuthenticator final : public Authenticator {
 public:
     /**

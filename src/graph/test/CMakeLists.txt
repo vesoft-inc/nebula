@@ -385,7 +385,6 @@ nebula_add_test(
 )
 
 nebula_add_test(
-    DISABLED
     NAME
     LdapAuth_test
     SOURCES

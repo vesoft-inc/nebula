@@ -11,26 +11,12 @@
 namespace nebula {
 namespace graph {
 
-/**
- * LDAP authentication has two modes: simple bind mode and search bind mode.
- * common parameters:
- * FLAGS_ldap_server, FLAGS_ldap_port
- *
- * Simple bind mode uses the parameters:
- * FLAGS_ldap_prefix, FLAGS_ldap_suffix
- *
- * Search bind mode uses the parameters:
- * FLAGS_ldap_basedn, FLAGS_ldap_binddn, FLAGS_ldap_bindpasswd,
- * one of FLAGS_ldap_searchattribute or FLAGS_ldap_searchfilter
- *
- * Disallow mixing the parameters of two modes.
- */
 Status LdapAuthenticator::prepare() {
     if (FLAGS_ldap_server.empty()) {
         return Status::Error("LDAP authentication \"ldap_server\" parameter is not set.");
     }
 
-    if (!FLAGS_ldap_scheme.compare("ldap")) {
+    if (FLAGS_ldap_scheme.compare("ldap")) {
         return Status::Error("LDAP authentication ldap_scheme only support \"ldap\".");
     }
 
@@ -126,7 +112,63 @@ Status LdapAuthenticator::initLDAPConnection() {
     }
 
     if (FLAGS_ldap_tls) {
+        // synchronous
+        /*
         ret = ldap_start_tls_s(ldap_, NULL, NULL);
+        if (ret != LDAP_SUCCESS) {
+            ldap_unbind_ext(ldap_, NULL, NULL);
+            return Status::Error("Start LDAP TLS session failed");
+        }
+        */
+        // use asynchronous StartTLS
+        int     msgid;
+        ret = ldap_start_tls(ldap_, NULL, NULL, &msgid);
+        if (ret != LDAP_SUCCESS) {
+            ldap_unbind_ext(ldap_, NULL, NULL);
+            return Status::Error("Start LDAP TLS session failed");
+        }
+
+        LDAPMessage *res = NULL;
+        ret = ldap_result(ldap_, msgid, LDAP_MSG_ALL, NULL, &res);
+        if (ret <= 0) {
+            ldap_unbind_ext(ldap_, NULL, NULL);
+            if (res != NULL) {
+                ldap_msgfree(res);
+            }
+            return Status::Error("Start LDAP TLS session failed");
+        } else if (ret == LDAP_RES_EXTENDED) {
+            struct berval   *data = NULL;
+            ret = ldap_parse_extended_result(ldap_, res, NULL, &data, 0);
+            if (ret == LDAP_SUCCESS) {
+                int     msgidSub;
+                ret = ldap_parse_result(ldap_, res, &msgidSub, NULL, NULL, NULL, NULL, 1);
+                res = NULL;
+                if (ret != LDAP_SUCCESS) {
+                    if (data) {
+                        if (data->bv_val) {
+                            free(data->bv_val);
+                        }
+                        free(data);
+                    }
+                    ldap_unbind_ext(ldap_, NULL, NULL);
+                    return Status::Error("Start LDAP TLS session failed");
+                }
+
+                ret = ldap_install_tls(ldap_);
+                if (data) {
+                    if (data->bv_val) {
+                        free(data->bv_val);
+                    }
+                    free(data);
+                }
+            }
+        } else {
+            ret = LDAP_OTHER;
+        }
+
+        if (res != NULL) {
+            ldap_msgfree(res);
+        }
         if (ret != LDAP_SUCCESS) {
             ldap_unbind_ext(ldap_, NULL, NULL);
             return Status::Error("Start LDAP TLS session failed");
