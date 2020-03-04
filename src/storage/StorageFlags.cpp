@@ -16,5 +16,5 @@ DEFINE_int32(waiting_catch_up_interval_in_secs, 30,
 DEFINE_int32(waiting_new_leader_retry_times, 30, "retry times when waiting for catching up data");
 DEFINE_int32(waiting_new_leader_interval_in_secs, 5,
              "interval between two requests for catching up state");
-DEFINE_int32(rebuild_index_batch_size, 1024,
+DEFINE_int32(rebuild_index_batch_num, 1024,
              "The batch size when rebuild index");

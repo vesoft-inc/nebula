@@ -49,6 +49,9 @@ enum ErrorCode {
     E_FAILED_TO_CHECKPOINT = -50,
     E_CHECKPOINT_BLOCKED = -51,
 
+    // partial result, used for kv interfaces
+    E_PARTIAL_RESULT = -99,
+
     E_UNKNOWN = -100,
 } (cpp.enum_strict)
 
@@ -395,6 +398,9 @@ struct RemoveRangeRequest {
 struct GetRequest {
     1: common.GraphSpaceID space_id,
     2: map<common.PartitionID, list<string>>(cpp.template = "std::unordered_map") parts,
+    // When return_partly is true and some of the keys not found, will return the keys
+    // which exist
+    3: bool return_partly
 }
 
 struct PrefixRequest {

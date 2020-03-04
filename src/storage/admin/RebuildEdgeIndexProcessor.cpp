@@ -43,12 +43,12 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
             }
 
             std::vector<kvstore::KV> data;
-            data.reserve(FLAGS_rebuild_index_batch_size);
+            data.reserve(FLAGS_rebuild_index_batch_num);
             int32_t batchNum = 0;
             VertexID currentSrcVertex = -1;
             VertexID currentDstVertex = -1;
             while (iter && iter->valid()) {
-                if (batchNum >= FLAGS_rebuild_index_batch_size) {
+                if (batchNum >= FLAGS_rebuild_index_batch_num) {
                     auto result = doSyncPut(space, part, std::move(data));
                     if (result != kvstore::ResultCode::SUCCEEDED) {
                         LOG(ERROR) << "Write Part " << part << " Index Failed";
@@ -56,8 +56,7 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
                         onFinished();
                         return;
                     }
-                    data.clear();
-                    data.reserve(FLAGS_rebuild_index_batch_size);
+                    data.reserve(FLAGS_rebuild_index_batch_num);
                     batchNum = 0;
                 }
 
