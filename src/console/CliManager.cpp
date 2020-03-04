@@ -171,8 +171,8 @@ bool CliManager::readLine(std::string &line, bool linebreak) {
         if (!isInteractive_) {
             break;
         }
-        auto purePrompt = folly::stringPrintf("(%s@%s:%d) [%s]> ",
-                                              username_.c_str(), addr_.c_str(), port_,
+        auto purePrompt = folly::stringPrintf("(%s@) [%s]> ",
+                                              username_.c_str(),
                                               cmdProcessor_->getSpaceName().c_str());
         if (linebreak) {
             purePrompt.assign(purePrompt.size() - 3, ' ');
