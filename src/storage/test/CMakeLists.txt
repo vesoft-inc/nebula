@@ -85,21 +85,6 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
-        query_edgekeys_test
-    SOURCES
-        QueryEdgeKeysTest.cpp
-    OBJECTS
-        ${storage_test_deps}
-    LIBRARIES
-        ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
-        wangle
-        gtest
-)
-
-
-nebula_add_test(
-    NAME
         storage_service_handler_test
     SOURCES
         StorageServiceHandlerTest.cpp
