@@ -21,7 +21,7 @@ enum ErrorCode {
     E_LEADER_CHANGED   = -11,
 
     // Operation Failure
-    E_TOO_MANY_SPACE   = -20,
+    E_TOO_MANY_SPACES  = -20,
     E_NO_HOSTS         = -21,
     E_EXISTED          = -22,
     E_NOT_FOUND        = -23,
@@ -49,6 +49,7 @@ enum ErrorCode {
     E_INVALID_CHARSET           = -45,
     E_INVALID_COLLATE           = -46,
     E_CHARSET_COLLATE_NOT_MATCH = -47,
+    E_TOOLARGE_REPLICA_FACTOR   = -48,
 
     E_SNAPSHOT_FAILURE   = -51,
 
