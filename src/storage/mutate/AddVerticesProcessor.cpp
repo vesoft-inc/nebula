@@ -26,9 +26,7 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
     callingNum_ = partVertices.size();
     auto iRet = indexMan_->getTagIndexes(spaceId_);
     if (iRet.ok()) {
-        for (auto& index : iRet.value()) {
-            indexes_.emplace_back(index);
-        }
+        indexes_ = std::move(iRet).value();
     }
 
     CHECK_NOTNULL(kvstore_);

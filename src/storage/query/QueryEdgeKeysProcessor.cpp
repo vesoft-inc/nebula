@@ -7,48 +7,52 @@
 #include "base/NebulaKeyUtils.h"
 #include "storage/query/QueryEdgeKeysProcessor.h"
 
-
 namespace nebula {
 namespace storage {
 
-void QueryEdgeKeysProcessor::process(const cpp2::EdgeKeyRequest& req) {
-    auto spaceId = req.get_space_id();
-    auto vId = req.get_vid();
-    auto partId = req.get_part_id();
+void QueryEdgeKeysProcessor::process(const cpp2::EdgeKeysRequest& req) {
     CHECK_NOTNULL(kvstore_);
+    auto spaceId = req.get_space_id();
+    const auto& partVertices = req.get_parts();
 
-    std::vector<cpp2::EdgeKey> edges;
-    auto prefix = NebulaKeyUtils::edgePrefix(partId, vId);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = this->kvstore_->prefix(spaceId, partId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret) << ", spaceId = " << spaceId
-                << ", partId =  " << partId << ", vertexId = " << vId;
-        if (ret == kvstore::ResultCode::ERR_LEADER_CHANGED) {
-            this->handleLeaderChanged(spaceId, partId);
-        } else {
-            this->pushResultCode(this->to(ret), partId);
+    std::unordered_map<VertexID, std::vector<cpp2::EdgeKey>> edge_keys;
+    for (auto pv = partVertices.begin(); pv != partVertices.end(); pv++) {
+        auto part = pv->first;
+        const auto& vertices = pv->second;
+        for (auto v = vertices.begin(); v != vertices.end(); v++) {
+            auto prefix = NebulaKeyUtils::edgePrefix(part, *v);
+            std::unique_ptr<kvstore::KVIterator> iter;
+            auto ret = this->kvstore_->prefix(spaceId, part, prefix, &iter);
+            if (ret != kvstore::ResultCode::SUCCEEDED) {
+                VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret) << ", spaceId = " << spaceId
+                        << ", partId =  " << part << ", vertexId = " << *v;
+                this->pushResultCode(this->to(ret), part);
+                this->onFinished();
+                return;
+            }
+
+            std::vector<cpp2::EdgeKey> edges;
+            while (iter->valid()) {
+                auto key = iter->key();
+                if (NebulaKeyUtils::isEdge(key)) {
+                    auto src = NebulaKeyUtils::getSrcId(key);
+                    auto dst = NebulaKeyUtils::getDstId(key);
+                    auto edgeType = NebulaKeyUtils::getEdgeType(key);
+                    auto rank = NebulaKeyUtils::getRank(key);
+                    cpp2::EdgeKey edge;
+                    edge.set_src(src);
+                    edge.set_edge_type(edgeType);
+                    edge.set_ranking(rank);
+                    edge.set_dst(dst);
+                    edges.emplace_back(std::move(edge));
+                }
+                iter->next();
+            }
+            edge_keys.emplace(*v, std::move(edges));
         }
-        this->onFinished();
-        return;
     }
-    while (iter->valid()) {
-        auto key = iter->key();
-        if (NebulaKeyUtils::isEdge(key)) {
-            auto src = NebulaKeyUtils::getSrcId(key);
-            auto dst = NebulaKeyUtils::getDstId(key);
-            auto edgeType = NebulaKeyUtils::getEdgeType(key);
-            auto rank = NebulaKeyUtils::getRank(key);
-            cpp2::EdgeKey edge;
-            edge.set_src(src);
-            edge.set_edge_type(edgeType);
-            edge.set_ranking(rank);
-            edge.set_dst(dst);
-            edges.emplace_back(std::move(edge));
-        }
-        iter->next();
-    }
-    resp_.set_edge_keys(edges);
+
+    resp_.set_edge_keys(std::move(edge_keys));
     this->onFinished();
 }
 

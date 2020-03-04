@@ -52,7 +52,7 @@ nebula_add_library(
     FetchExecutor.cpp
     SetExecutor.cpp
     MatchExecutor.cpp
-    DeleteVertexExecutor.cpp
+    DeleteVerticesExecutor.cpp
     DeleteEdgesExecutor.cpp
     FindPathExecutor.cpp
     LimitExecutor.cpp
