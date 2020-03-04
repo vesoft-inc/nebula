@@ -10,6 +10,7 @@
 DEFINE_int32(default_parts_num, 100, "The default number of parts when a space is created");
 DEFINE_int32(default_replica_factor, 1, "The default replica factor when a space is created");
 DEFINE_int32(default_space_sum, 100, "The default number of space can be created");
+DEFINE_int32(default_max_replica_factor, 1, "The default max replica factor that a space can take");
 
 namespace nebula {
 namespace meta {
@@ -76,6 +77,14 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         // Set the default value back to the struct, which will be written to storage
         properties.set_partition_num(partitionNum);
     }
+
+    if (replicaFactor > default_max_replica_factor) {
+        LOG(ERROR) << "ReplicaFactor is too Large";
+        resp_.set_code(cpp2::ErrorCode::E_TOOLARGE_REPLICA_FACTOR);
+        onFinished();
+        return;
+    }
+
     if (replicaFactor == 0) {
         replicaFactor = FLAGS_default_replica_factor;
         if (replicaFactor <= 0) {
