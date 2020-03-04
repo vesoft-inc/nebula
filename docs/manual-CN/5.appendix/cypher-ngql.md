@@ -135,6 +135,17 @@ nebula> # coming soon
 cypher> MATCH (src:character)
       > WHERE src.age > 100
       > RETURN src.name
+      ╒═══════════╕
+      │"src.name" │
+      ╞═══════════╡
+      │  "saturn" │
+      ├───────────┤
+      │ "jupiter" │
+      ├───────────┤
+      │ "neptune" │
+      │───────────│
+      │  "pluto"  │
+      └───────────┘
 ```
 
 - 找出 pluto 和谁住
