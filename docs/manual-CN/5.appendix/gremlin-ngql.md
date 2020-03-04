@@ -107,7 +107,8 @@ gremlin> g.V(saturn).valueMap();
 - 查询 hercules 的祖父
 
 ```bash
-nebula> GO 2 STEPS FROM hash("hercules") OVER father YIELD $$.character.name;
+nebula> LOOKUP ON character WHERE character.name == 'hercules' | \
+     -> GO 2 STEPS FROM $-.VertexID OVER father YIELD $$.character.name;
 =====================
 | $$.character.name |
 =====================
@@ -121,7 +122,8 @@ gremlin> g.V().hasLabel('character').has('name','hercules').out('father').out('f
 - 查询 hercules 的父亲
 
 ```bash
-nebula> GO FROM hash("hercules") OVER father YIELD $$.character.name;
+nebula> LOOKUP ON character WHERE character.name == 'hercules' | \
+     -> GO FROM $-.VertexID OVER father YIELD $$.character.name;
 =====================
 | $$.character.name |
 =====================
@@ -135,7 +137,18 @@ gremlin> g.V().hasLabel('character').has('name','hercules').out('father').values
 - 查询年龄大于 100 的人物
 
 ```bash
-nebula> LOOKUP ON character WHERE character.age > 100 YIELD character.name AS name;
+nebula> LOOKUP ON character WHERE character.age > 100 YIELD character.name, character.age;
+=========================================================
+| VertexID             | character.name | character.age |
+=========================================================
+| 6761447489613431910  | pluto          | 4000          |
+---------------------------------------------------------
+| -5860788569139907963 | neptune        | 4500          |
+---------------------------------------------------------
+| 4863977009196259577  | jupiter        | 5000          |
+---------------------------------------------------------
+| -4316810810681305233 | saturn         | 10000         |
+---------------------------------------------------------
 
 gremlin> g.V().hasLabel('character').has('age',gt(100)).values('name');
 ==>saturn

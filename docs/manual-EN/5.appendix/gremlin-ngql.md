@@ -107,7 +107,8 @@ gremlin> g.V(saturn).valueMap();
 - Find the name of hercules's grandfather
 
 ```bash
-nebula> GO 2 STEPS FROM hash("hercules") OVER father YIELD $$.character.name;
+nebula> LOOKUP ON character WHERE character.name == 'hercules' | \
+     -> GO 2 STEPS FROM $-.VertexID OVER father YIELD $$.character.name;
 =====================
 | $$.character.name |
 =====================
@@ -121,7 +122,8 @@ gremlin> g.V().hasLabel('character').has('name','hercules').out('father').out('f
 - Find the name of hercules's father
 
 ```bash
-nebula> GO FROM hash("hercules") OVER father YIELD $$.character.name;
+nebula> LOOKUP ON character WHERE character.name == 'hercules' | \
+     -> GO FROM $-.VertexID OVER father YIELD $$.character.name;
 =====================
 | $$.character.name |
 =====================
@@ -135,7 +137,18 @@ gremlin> g.V().hasLabel('character').has('name','hercules').out('father').values
 - Find the characters with age > 100
 
 ```bash
-nebula> LOOKUP ON character WHERE character.age > 100 YIELD character.name AS name;
+nebula> LOOKUP ON character WHERE character.age > 100 YIELD character.name;
+=========================================
+| VertexID             | character.name |
+=========================================
+| 6761447489613431910  | pluto          |
+-----------------------------------------
+| -5860788569139907963 | neptune        |
+-----------------------------------------
+| 4863977009196259577  | jupiter        |
+-----------------------------------------
+| -4316810810681305233 | saturn         |
+-----------------------------------------
 
 gremlin> g.V().hasLabel('character').has('age',gt(100)).values('name');
 ==>saturn
