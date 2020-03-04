@@ -14,6 +14,8 @@
 namespace nebula {
 namespace graph {
 
+DEFINE_bool(disable_config_executor, false, "disable config cmds");
+
 class ConfigExecutor final : public Executor {
 public:
     ConfigExecutor(Sentence *sentence, ExecutionContext *ectx);

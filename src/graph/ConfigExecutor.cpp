@@ -24,6 +24,11 @@ Status ConfigExecutor::prepare() {
 }
 
 void ConfigExecutor::execute() {
+
+    if (FLAG_disable_config_executor) {
+        doError(Status::Error("do not support"));
+    }
+
     auto showType = sentence_->subType();
     switch (showType) {
         case ConfigSentence::SubType::kShow:
