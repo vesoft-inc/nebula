@@ -556,6 +556,10 @@ std::string MetaServiceUtils::parseRoleUser(folly::StringPiece key) {
     return key.subpiece(offset, key.size() - offset).str();
 }
 
+GraphSpaceID MetaServiceUtils::parseRoleSpace(folly::StringPiece key) {
+    return *reinterpret_cast<const GraphSpaceID*>(key.data() + kRolesTable.size());
+}
+
 std::string MetaServiceUtils::rolesPrefix() {
     return kRolesTable;
 }

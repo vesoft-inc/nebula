@@ -20,7 +20,7 @@ void CreateUserProcessor::process(const cpp2::CreateUserReq& req) {
             code = cpp2::ErrorCode::SUCCEEDED;
         } else {
             LOG(ERROR) << "Create User Failed : User " << account
-                       << " have existed!";
+                       << " already existed!";
             code = cpp2::ErrorCode::E_EXISTED;
         }
         handleErrorCode(code);
@@ -198,19 +198,20 @@ void ListUsersProcessor::process(const cpp2::ListUsersReq& req) {
 
 
 void ListRolesProcessor::process(const cpp2::ListRolesReq& req) {
-    auto spaceRet = getSpaceId(req.get_space());
-    if (!spaceRet.ok()) {
-        LOG(ERROR) << "space dose not found";
-        handleErrorCode(MetaCommon::to(spaceRet.status()));
-        onFinished();
-        return;
+    auto spaceId = req.get_space_id();
+    /**
+     * Because the god role's space id is kDefaultSpaceId.
+     * skip the space check when space id is kDefaultSpaceId.
+     **/
+    if (spaceId != kDefaultSpaceId) {
+        CHECK_SPACE_ID_AND_RETURN(spaceId);
     }
     folly::SharedMutex::ReadHolder rHolder(LockUtils::userLock());
-    auto prefix = MetaServiceUtils::roleSpacePrefix(spaceRet.value());
+    auto prefix = MetaServiceUtils::roleSpacePrefix(spaceId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Can't find any roles by space id  " << spaceRet.value();
+        LOG(ERROR) << "Can't find any roles by space id  " << spaceId;
         handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
@@ -222,7 +223,7 @@ void ListRolesProcessor::process(const cpp2::ListRolesReq& req) {
         auto val = iter->val();
         nebula::cpp2::RoleItem role;
         role.set_user(std::move(account));
-        role.set_space_id(spaceRet.value());
+        role.set_space_id(spaceId);
         role.set_role_type(*reinterpret_cast<const nebula::cpp2::RoleType *>(val.begin()));
         roles.emplace_back(role);
         iter->next();
@@ -249,5 +250,37 @@ void AuthCheckProcessor::process(const cpp2::AuthCheckReq& req) {
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }
+
+void GetUserRolesProcessor::process(const cpp2::GetUserRolesReq& req) {
+    folly::SharedMutex::WriteHolder wHolder(LockUtils::userLock());
+    auto prefix = MetaServiceUtils::rolesPrefix();
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "Can't find any roles by user  " << req.get_account();
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+        onFinished();
+        return;
+    }
+
+    decltype(resp_.roles) roles;
+    while (iter->valid()) {
+        auto account = MetaServiceUtils::parseRoleUser(iter->key());
+        auto spaceId = MetaServiceUtils::parseRoleSpace(iter->key());
+        if (account == req.get_account()) {
+            auto val = iter->val();
+            nebula::cpp2::RoleItem role;
+            role.set_user(std::move(account));
+            role.set_space_id(spaceId);
+            role.set_role_type(*reinterpret_cast<const nebula::cpp2::RoleType *>(val.begin()));
+            roles.emplace_back(role);
+        }
+        iter->next();
+    }
+    resp_.set_roles(roles);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+    onFinished();
+}
+
 }  // namespace meta
 }  // namespace nebula

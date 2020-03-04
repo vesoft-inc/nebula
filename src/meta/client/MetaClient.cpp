@@ -1622,6 +1622,20 @@ const std::vector<HostAddr>& MetaClient::getAddresses() {
     return addrs_;
 }
 
+StatusOr<std::vector<nebula::cpp2::RoleItem>>
+MetaClient::getRolesByUser(const std::string& user) {
+    auto ret = getUserRoles(std::move(user)).get();
+    if (ret.ok()) {
+        return std::move(ret).value();
+    }
+    return ret.status();
+}
+
+bool MetaClient::authenticationCheck(std::string account, std::string password) {
+    auto ret = authCheck(std::move(account), std::move(password)).get();
+    return ret.ok();
+}
+
 StatusOr<SchemaVer> MetaClient::getLatestTagVersionFromCache(const GraphSpaceID& space,
                                                              const TagID& tagId) {
     if (!ready_) {
@@ -1786,9 +1800,9 @@ MetaClient::listUsers() {
 }
 
 folly::Future<StatusOr<std::vector<nebula::cpp2::RoleItem>>>
-MetaClient::listRoles(std::string space) {
+MetaClient::listRoles(GraphSpaceID space) {
     cpp2::ListRolesReq req;
-    req.set_space(std::move(space));
+    req.set_space_id(std::move(space));
     folly::Promise<StatusOr<std::vector<nebula::cpp2::RoleItem>>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
@@ -1829,6 +1843,20 @@ MetaClient::authCheck(std::string account, std::string password) {
     }, [] (cpp2::ExecResp&& resp) -> bool {
         return resp.code == cpp2::ErrorCode::SUCCEEDED;
     }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<std::vector<nebula::cpp2::RoleItem>>>
+MetaClient::getUserRoles(std::string account) {
+    cpp2::GetUserRolesReq req;
+    req.set_account(std::move(account));
+    folly::Promise<StatusOr<std::vector<nebula::cpp2::RoleItem>>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_getUserRoles(request);
+    }, [] (cpp2::ListRolesResp&& resp) -> decltype(auto) {
+        return std::move(resp).get_roles();
+    }, std::move(promise));
     return future;
 }
 

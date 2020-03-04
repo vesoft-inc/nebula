@@ -60,12 +60,12 @@ TEST_F(UserTest, CreateUser) {
         std::string query = "SHOW USERS";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        ASSERT_EQ(2, resp.get_rows()->size());
+        ASSERT_EQ(3, resp.get_rows()->size());
         decltype(resp.column_names) colNames = {"Account"};
         ASSERT_TRUE(verifyColNames(resp, colNames));
 
         std::vector<std::tuple<std::string>>
-        rows = { {"user1"}, {"user2"}, };
+        rows = {{"root"}, {"user1"}, {"user2"}, };
         ASSERT_TRUE(verifyResult(resp, rows));
     }
 }
@@ -119,7 +119,7 @@ TEST_F(UserTest, DropUser) {
         std::string query = "SHOW USERS";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        ASSERT_EQ(2, resp.get_rows()->size());
+        ASSERT_EQ(3, resp.get_rows()->size());
     }
 }
 
@@ -175,13 +175,13 @@ TEST_F(UserTest, GrantRevoke) {
     // user not exist. expect fail.
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "GRANT DBA  ON user_space TO user";
+        std::string cmd = "GRANT DBA ON user_space TO user";
         auto code = client->execute(cmd, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(cpp2::ErrorCode::E_BAD_PERMISSION, code);
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "GRANT GOD  ON user_space TO user1";
+        std::string cmd = "GRANT GOD ON user_space TO user1";
         auto code = client->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }

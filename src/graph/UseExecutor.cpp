@@ -32,7 +32,20 @@ void UseExecutor::execute() {
         }
 
         auto spaceId = resp.value().get_space_id();
+        /**
+        * Permission check.
+        */
+        if (FLAGS_enable_authorize) {
+            auto *session = ectx()->rctx()->session();
+            auto rst = permission::PermissionManager::canReadSpace(session, spaceId);
+            if (!rst) {
+                doError(Status::PermissionError("Permission denied"));
+                return;
+            }
+        }
+
         ectx()->rctx()->session()->setSpace(*sentence_->space(), spaceId);
+
         FLOG_INFO("Graph space switched to `%s', space id: %d",
                    sentence_->space()->c_str(), spaceId);
 

@@ -9,8 +9,8 @@
 
 #include "base/Base.h"
 #include "base/StatusOr.h"
-#include "graph/ClientSession.h"
 #include "thread/GenericWorker.h"
+#include "common/session/Session.h"
 
 /**
  * SessionManager manages the client sessions, e.g. create new, find existing and drop expired.
@@ -24,7 +24,7 @@ public:
     SessionManager();
     ~SessionManager();
 
-    using SessionPtr = std::shared_ptr<ClientSession>;
+    using SessionPtr = std::shared_ptr<session::Session>;
     /**
      * Find an existing session
      */

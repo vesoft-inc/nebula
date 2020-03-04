@@ -153,6 +153,8 @@ public:
 
     static std::string parseRoleUser(folly::StringPiece key);
 
+    static GraphSpaceID parseRoleSpace(folly::StringPiece key);
+
     static std::string rolesPrefix();
 
     static std::string roleSpacePrefix(GraphSpaceID spaceId);

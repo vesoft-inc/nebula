@@ -7,7 +7,8 @@
 #include "graph/ShowExecutor.h"
 #include "network/NetworkUtils.h"
 #include "common/charset/Charset.h"
-
+#include "graph/GraphFlags.h"
+#include "common/permission/PermissionManager.h"
 
 namespace nebula {
 namespace graph {
@@ -243,6 +244,14 @@ void ShowExecutor::showSpaces() {
         resp_->set_column_names(std::move(header));
 
         for (auto &space : retShowSpaces) {
+            if (FLAGS_enable_authorize) {
+               auto canShow = permission::PermissionManager::canShow(ectx()->rctx()->session(),
+                                                                     sentence_->showType(),
+                                                                     space.first);
+               if (!canShow) {
+                   continue;
+               }
+            }
             std::vector<cpp2::ColumnValue> row;
             row.emplace_back();
             row.back().set_str(std::move(space.second));
@@ -526,7 +535,15 @@ void ShowExecutor::showCreateSpace() {
                         sentence_->getName()->c_str(), resp.status().toString().c_str()));
             return;
         }
-
+        if (FLAGS_enable_authorize) {
+            auto canShow = permission::PermissionManager::canShow(ectx()->rctx()->session(),
+                                                                  sentence_->showType(),
+                                                                  resp.value().get_space_id());
+            if (!canShow) {
+                doError(Status::PermissionError());
+                return;
+            }
+        }
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         std::vector<std::string> header{"Space", "Create Space"};
         resp_->set_column_names(std::move(header));
@@ -1090,7 +1107,25 @@ void ShowExecutor::showUsers() {
 
 void ShowExecutor::showRoles() {
     auto *space = sentence_->getName();
-    auto future = ectx()->getMetaClient()->listRoles(*space);
+    auto *mc = ectx()->getMetaClient();
+
+    auto spaceRet = mc->getSpaceIdByNameFromCache(*space);
+    if (!spaceRet.ok()) {
+        doError(spaceRet.status());
+        return;
+    }
+
+    if (FLAGS_enable_authorize) {
+        auto canShow = permission::PermissionManager::canShow(ectx()->rctx()->session(),
+                                                              sentence_->showType(),
+                                                              spaceRet.value());
+        if (!canShow) {
+            doError(Status::PermissionError());
+            return;
+        }
+    }
+
+    auto future = ectx()->getMetaClient()->listRoles(spaceRet.value());
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {

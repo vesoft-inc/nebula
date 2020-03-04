@@ -355,7 +355,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     // list roles.
     {
         cpp2::ListRolesReq req;
-        req.set_space("space1");
+        req.set_space_id(space1);
         auto* processor = ListRolesProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -376,7 +376,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     // list roles.
     {
         cpp2::ListRolesReq req;
-        req.set_space("space2");
+        req.set_space_id(space2);
         auto* processor = ListRolesProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -460,7 +460,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     // list roles.
     {
         cpp2::ListRolesReq req;
-        req.set_space("space1");
+        req.set_space_id(space1);
         auto* processor = ListRolesProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -477,7 +477,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     // list roles.
     {
         cpp2::ListRolesReq req;
-        req.set_space("space2");
+        req.set_space_id(space2);
         auto* processor = ListRolesProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -528,7 +528,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     // list roles.
     {
         cpp2::ListRolesReq req;
-        req.set_space("space2");
+        req.set_space_id(space2);
         auto* processor = ListRolesProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -552,7 +552,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     }
     {
         cpp2::ListRolesReq req;
-        req.set_space("space1");
+        req.set_space_id(space1);
         auto* processor = ListRolesProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);

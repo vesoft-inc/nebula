@@ -172,6 +172,9 @@ public:
     folly::Future<cpp2::ExecResp>
     future_authCheck(const cpp2::AuthCheckReq& req) override;
 
+    folly::Future<cpp2::ListRolesResp>
+    future_getUserRoles(const cpp2::GetUserRolesReq& req) override;
+
     /**
      * HeartBeat
      * */

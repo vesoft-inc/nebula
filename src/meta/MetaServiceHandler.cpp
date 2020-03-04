@@ -338,6 +338,12 @@ MetaServiceHandler::future_authCheck(const cpp2::AuthCheckReq& req) {
     RETURN_FUTURE(processor);
 }
 
+folly::Future<cpp2::ListRolesResp>
+MetaServiceHandler::future_getUserRoles(const cpp2::GetUserRolesReq& req) {
+    auto* processor = GetUserRolesProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
 folly::Future<cpp2::BalanceResp>
 MetaServiceHandler::future_balance(const cpp2::BalanceReq& req) {
     auto* processor = BalanceProcessor::instance(kvstore_);

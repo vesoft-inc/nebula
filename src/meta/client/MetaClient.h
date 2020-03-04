@@ -353,13 +353,16 @@ public:
     listUsers();
 
     folly::Future<StatusOr<std::vector<nebula::cpp2::RoleItem>>>
-    listRoles(std::string space);
+    listRoles(GraphSpaceID space);
 
     folly::Future<StatusOr<bool>>
     changePassword(std::string account, std::string newPwd, std::string oldPwd);
 
     folly::Future<StatusOr<bool>>
     authCheck(std::string account, std::string password);
+
+    folly::Future<StatusOr<std::vector<nebula::cpp2::RoleItem>>>
+    getUserRoles(std::string account);
 
     // Operations for admin
     folly::Future<StatusOr<int64_t>>
@@ -471,6 +474,11 @@ public:
     folly::Future<StatusOr<std::string>> getEdgeDefaultValue(GraphSpaceID spaceId,
                                                              EdgeType edgeType,
                                                              const std::string& field);
+
+    StatusOr<std::vector<nebula::cpp2::RoleItem>>
+    getRolesByUser(const std::string& user);
+
+    bool authenticationCheck(std::string account, std::string password);
 
     Status refreshCache();
 

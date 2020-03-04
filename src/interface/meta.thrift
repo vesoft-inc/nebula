@@ -540,7 +540,11 @@ struct ListUsersResp {
 }
 
 struct ListRolesReq {
-    1: string   space,
+    1: common.GraphSpaceID   space_id,
+}
+
+struct GetUserRolesReq {
+    1: string                account,
 }
 
 struct ListRolesResp {
@@ -737,6 +741,7 @@ service MetaService {
     ExecResp revokeRole(1: RevokeRoleReq req);
     ListUsersResp listUsers(1: ListUsersReq req);
     ListRolesResp listRoles(1: ListRolesReq req);
+    ListRolesResp getUserRoles(1: GetUserRolesReq req);
     ExecResp authCheck(1: AuthCheckReq req);
     ExecResp changePassword(1: ChangePasswordReq req);
 

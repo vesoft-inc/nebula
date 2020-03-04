@@ -134,6 +134,19 @@ private:
     explicit AuthCheckProcessor(kvstore::KVStore* kvstore)
         : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
+
+class GetUserRolesProcessor : public BaseProcessor<cpp2::ListRolesResp> {
+public:
+    static GetUserRolesProcessor* instance(kvstore::KVStore* kvstore) {
+        return new GetUserRolesProcessor(kvstore);
+    }
+
+    void process(const cpp2::GetUserRolesReq& req);
+
+private:
+    explicit GetUserRolesProcessor(kvstore::KVStore* kvstore)
+        : BaseProcessor<cpp2::ListRolesResp>(kvstore) {}
+};
 }  // namespace meta
 }  // namespace nebula
 #endif  // META_AUTHENTICATIONPROCESSOR_H
