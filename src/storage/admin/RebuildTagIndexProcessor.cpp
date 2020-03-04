@@ -15,7 +15,6 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
     CHECK_NOTNULL(kvstore_);
     auto space = req.get_space_id();
     auto parts = req.get_parts();
-    callingNum_ = parts.size();
     auto indexID = req.get_index_id();
     auto isOffline = req.get_is_offline();
     auto itemRet = indexMan_->getTagIndex(space, indexID);
@@ -45,14 +44,21 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
 
             std::vector<kvstore::KV> data;
             data.reserve(FLAGS_rebuild_index_batch_size);
-            int32_t batchSize = 0;
+            int32_t batchNum = 0;
             VertexID currentVertex = -1;
             while (iter && iter->valid()) {
-                if (batchSize >= FLAGS_rebuild_index_batch_size) {
-                    callingNum_ += 1;
-                    doPut(space, part, std::move(data));
+                if (batchNum >= FLAGS_rebuild_index_batch_size) {
+                    auto result = doSyncPut(space, part, std::move(data));
+                    if (result != kvstore::ResultCode::SUCCEEDED) {
+                        LOG(ERROR) << "Write Part " << part << " Index Failed";
+                        this->pushResultCode(to(result), part);
+                        onFinished();
+                        return;
+                    }
+
                     data.clear();
-                    batchSize = 0;
+                    data.reserve(FLAGS_rebuild_index_batch_size);
+                    batchNum = 0;
                 }
 
                 auto key = iter->key();
@@ -78,15 +84,20 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
 
                 auto indexKey = NebulaKeyUtils::vertexIndexKey(part, indexID, vertex, values);
                 data.emplace_back(std::move(indexKey), "");
-                batchSize += 1;
+                batchNum += 1;
                 iter->next();
             }
 
-            doPut(space, part, std::move(data));
+            auto result = doSyncPut(space, part, std::move(data));
+            if (result != kvstore::ResultCode::SUCCEEDED) {
+                LOG(ERROR) << "Write Part " << part << " Index Failed";
+                this->pushResultCode(to(result), part);
+            }
         } else {
             // TODO darion Support online rebuild index
         }
     }
+    onFinished();
 }
 
 }  // namespace storage

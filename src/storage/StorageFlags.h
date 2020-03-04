@@ -21,6 +21,4 @@ DECLARE_int32(waiting_new_leader_interval_in_secs);
 
 DECLARE_int32(rebuild_index_batch_size);
 
-DECLARE_bool(ignore_index_check_pre_insert);
-
 #endif  // STORAGE_STORAGEFLAGS_H_

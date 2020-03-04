@@ -63,6 +63,25 @@ void BaseProcessor<RESP>::doPut(GraphSpaceID spaceId,
 }
 
 template <typename RESP>
+kvstore::ResultCode BaseProcessor<RESP>::doSyncPut(GraphSpaceID spaceId,
+                                                   PartitionID partId,
+                                                   std::vector<kvstore::KV> data) {
+    folly::Baton<true, std::atomic> baton;
+    auto ret = kvstore::ResultCode::SUCCEEDED;
+    kvstore_->asyncMultiPut(spaceId,
+                            partId,
+                            std::move(data),
+                            [&ret, &baton] (kvstore::ResultCode code) {
+        if (kvstore::ResultCode::SUCCEEDED != code) {
+            ret = code;
+        }
+        baton.post();
+    });
+    baton.wait();
+    return ret;
+}
+
+template <typename RESP>
 void BaseProcessor<RESP>::doRemove(GraphSpaceID spaceId,
                                    PartitionID partId,
                                    std::vector<std::string> keys) {
