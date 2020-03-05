@@ -6,7 +6,6 @@
 
 #include "graph/LdapAuthenticator.h"
 #include "graph/GraphFlags.h"
-#define LDAP_DEPRECATED 1
 
 namespace nebula {
 namespace graph {

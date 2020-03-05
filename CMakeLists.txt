@@ -349,7 +349,6 @@ if(ENABLE_FUZZ_TEST)
 endif()
 
 if(ENABLE_LDAP)
-    # add_definitions(-DLDAP_DEPRECATED)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lldap")
 endif()
 
