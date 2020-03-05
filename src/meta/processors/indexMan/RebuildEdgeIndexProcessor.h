@@ -7,12 +7,13 @@
 #ifndef META_REBUILDEDGEINDEXPROCESSOR_H
 #define META_REBUILDEDGEINDEXPROCESSOR_H
 
-#include "meta/processors/BaseProcessor.h"
+#include "meta/processors/indexMan/RebuildIndexProcessor.h"
+#include "meta/processors/indexMan/RebuildEdgeIndexProcessor.h"
 
 namespace nebula {
 namespace meta {
 
-class RebuildEdgeIndexProcessor : public BaseProcessor<cpp2::ExecResp> {
+class RebuildEdgeIndexProcessor : public RebuildIndexProcessor {
 public:
     static RebuildEdgeIndexProcessor* instance(kvstore::KVStore* kvstore,
                                                AdminClient* adminClient) {
@@ -21,13 +22,17 @@ public:
 
     void process(const cpp2::RebuildIndexReq& req);
 
+protected:
+    folly::Future<Status> caller(const HostAddr& address,
+                                 GraphSpaceID spaceId,
+                                 IndexID indexID,
+                                 std::vector<PartitionID> parts,
+                                 bool isOffline) override;
+
 private:
     explicit RebuildEdgeIndexProcessor(kvstore::KVStore* kvstore,
                                        AdminClient* adminClient)
-            : BaseProcessor<cpp2::ExecResp>(kvstore), adminClient_(adminClient) {}
-
-private:
-    AdminClient* adminClient_;
+            : RebuildIndexProcessor(kvstore, adminClient, 'E') {}
 };
 
 }  // namespace meta

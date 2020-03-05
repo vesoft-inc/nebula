@@ -102,7 +102,7 @@ folly::Future<Status> AdminClient::addLearner(GraphSpaceID spaceId,
     }
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
-    getResponse(ret.value(), 0, std::move(req), [] (auto client, auto request) {
+    getResponse(std::move(ret).value(), 0, std::move(req), [] (auto client, auto request) {
         return client->future_addLearner(request);
     }, 0, std::move(pro), FLAGS_max_retry_times_admin_op);
     return f;
@@ -124,7 +124,7 @@ folly::Future<Status> AdminClient::waitingForCatchUpData(GraphSpaceID spaceId,
     }
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
-    getResponse(ret.value(), 0, std::move(req), [] (auto client, auto request) {
+    getResponse(std::move(ret).value(), 0, std::move(req), [] (auto client, auto request) {
         return client->future_waitingForCatchUpData(request);
     }, 0, std::move(pro), 3);
     return f;
@@ -148,7 +148,7 @@ folly::Future<Status> AdminClient::memberChange(GraphSpaceID spaceId,
     }
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
-    getResponse(ret.value(), 0, std::move(req), [] (auto client, auto request) {
+    getResponse(std::move(ret).value(), 0, std::move(req), [] (auto client, auto request) {
         return client->future_memberChange(request);
     }, 0, std::move(pro), FLAGS_max_retry_times_admin_op);
     return f;
@@ -584,7 +584,7 @@ folly::Future<Status> AdminClient::createSnapshot(GraphSpaceID spaceId, const st
      * Don't need retry.
      * Because existing checkpoint directories leads to fail again.
      **/
-    getResponse(allHosts, 0, std::move(req), [] (auto client, auto request) {
+    getResponse(std::move(allHosts), 0, std::move(req), [] (auto client, auto request) {
         return client->future_createCheckpoint(request);
     }, 0, std::move(pro), 0);
     return f;
@@ -603,7 +603,7 @@ folly::Future<Status> AdminClient::dropSnapshot(GraphSpaceID spaceId,
 
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
-    getResponse(hosts, 0, std::move(req), [] (auto client, auto request) {
+    getResponse(std::move(hosts), 0, std::move(req), [] (auto client, auto request) {
         return client->future_dropCheckpoint(request);
     }, 0, std::move(pro), 1 /*The snapshot operation only needs to be retried twice*/);
     return f;
@@ -617,13 +617,13 @@ folly::Future<Status> AdminClient::blockingWrites(GraphSpaceID spaceId,
     req.set_sign(sign);
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
-    getResponse(allHosts, 0, std::move(req), [] (auto client, auto request) {
+    getResponse(std::move(allHosts), 0, std::move(req), [] (auto client, auto request) {
         return client->future_blockingWrites(request);
     }, 0, std::move(pro), 1 /*The blocking needs to be retried twice*/);
     return f;
 }
 
-folly::Future<Status> AdminClient::rebuildTagIndex(HostAddr address,
+folly::Future<Status> AdminClient::rebuildTagIndex(const HostAddr& address,
                                                    GraphSpaceID spaceId,
                                                    IndexID indexID,
                                                    std::vector<PartitionID> parts,
@@ -640,13 +640,13 @@ folly::Future<Status> AdminClient::rebuildTagIndex(HostAddr address,
     req.set_is_offline(isOffline);
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
-    getResponse(hosts, 0, std::move(req), [] (auto client, auto request) {
+    getResponse(std::move(hosts), 0, std::move(req), [] (auto client, auto request) {
         return client->future_rebuildTagIndex(request);
     }, 0, std::move(pro), 1);
     return f;
 }
 
-folly::Future<Status> AdminClient::rebuildEdgeIndex(HostAddr address,
+folly::Future<Status> AdminClient::rebuildEdgeIndex(const HostAddr& address,
                                                     GraphSpaceID spaceId,
                                                     IndexID indexID,
                                                     std::vector<PartitionID> parts,
@@ -663,7 +663,7 @@ folly::Future<Status> AdminClient::rebuildEdgeIndex(HostAddr address,
     req.set_is_offline(isOffline);
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
-    getResponse(hosts, 0, std::move(req), [] (auto client, auto request) {
+    getResponse(std::move(hosts), 0, std::move(req), [] (auto client, auto request) {
         return client->future_rebuildEdgeIndex(request);
     }, 0, std::move(pro), 1);
     return f;

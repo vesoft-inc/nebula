@@ -110,13 +110,13 @@ public:
     folly::Future<Status> blockingWrites(GraphSpaceID spaceId,
                                          storage::cpp2::EngineSignType sign);
 
-    folly::Future<Status> rebuildTagIndex(HostAddr address,
+    folly::Future<Status> rebuildTagIndex(const HostAddr& address,
                                           GraphSpaceID spaceId,
                                           IndexID indexID,
                                           std::vector<PartitionID> parts,
                                           bool isOffline);
 
-    folly::Future<Status> rebuildEdgeIndex(HostAddr address,
+    folly::Future<Status> rebuildEdgeIndex(const HostAddr& address,
                                            GraphSpaceID spaceId,
                                            IndexID indexID,
                                            std::vector<PartitionID> parts,

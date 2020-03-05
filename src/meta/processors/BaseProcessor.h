@@ -256,10 +256,6 @@ protected:
     StatusOr<std::vector<nebula::cpp2::IndexItem>>
     getIndexes(GraphSpaceID spaceId, int32_t tagOrEdge);
 
-    void handleRebuildIndexResult(std::vector<folly::Future<Status>> results,
-                                  kvstore::KVStore* kvstore,
-                                  std::string statusKey);
-
 protected:
     kvstore::KVStore* kvstore_ = nullptr;
     RESP resp_;

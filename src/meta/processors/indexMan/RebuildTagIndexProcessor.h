@@ -7,12 +7,13 @@
 #ifndef META_REBUILDTAGINDEXPROCESSOR_H
 #define META_REBUILDTAGINDEXPROCESSOR_H
 
-#include "meta/processors/BaseProcessor.h"
+#include "meta/processors/indexMan/RebuildIndexProcessor.h"
+#include "meta/processors/indexMan/RebuildTagIndexProcessor.h"
 
 namespace nebula {
 namespace meta {
 
-class RebuildTagIndexProcessor : public BaseProcessor<cpp2::ExecResp> {
+class RebuildTagIndexProcessor : public RebuildIndexProcessor {
 public:
     static RebuildTagIndexProcessor* instance(kvstore::KVStore* kvstore,
                                               AdminClient* adminClient) {
@@ -21,13 +22,16 @@ public:
 
     void process(const cpp2::RebuildIndexReq& req);
 
+protected:
+    folly::Future<Status> caller(const HostAddr& address,
+                                 GraphSpaceID spaceId,
+                                 IndexID indexID,
+                                 std::vector<PartitionID> parts,
+                                 bool isOffline) override;
 private:
     explicit RebuildTagIndexProcessor(kvstore::KVStore* kvstore,
                                       AdminClient* adminClient)
-            : BaseProcessor<cpp2::ExecResp>(kvstore), adminClient_(adminClient) {}
-
-private:
-    AdminClient* adminClient_;
+            : RebuildIndexProcessor(kvstore, adminClient, 'T') {}
 };
 
 }  // namespace meta
