@@ -46,14 +46,6 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
     }
 
     auto edgeIndexID = edgeIndexIDResult.value();
-    auto edgeKey = MetaServiceUtils::indexKey(space, edgeIndexIDResult.value());
-    auto edgeResult = doGet(edgeKey);
-    if (!edgeResult.ok()) {
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
-        onFinished();
-        return;
-    }
-
     auto statusKey = MetaServiceUtils::rebuildIndexStatus(space, 'E', indexName);
     if (!MetaCommon::saveRebuildStatus(kvstore_, statusKey, "RUNNING")) {
         LOG(ERROR) << "Save rebuild status failed";
@@ -91,31 +83,7 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
         leaderIter->next();
      }
 
-    folly::collectAll(results)
-        .thenValue([statusKey, kv = kvstore_] (const auto& tries) mutable {
-            for (const auto& t : tries) {
-                if (!t.value().ok()) {
-                    LOG(ERROR) << "Build Edge Index Failed";
-                    if (!MetaCommon::saveRebuildStatus(kv, statusKey, "FAILED")) {
-                        LOG(ERROR) << "Save rebuild status failed";
-                        return;
-                    }
-                }
-            }
-
-            if (!MetaCommon::saveRebuildStatus(kv, std::move(statusKey), "SUCCEEDED")) {
-                LOG(ERROR) << "Save rebuild status failed";
-                return;
-            }
-        })
-        .thenError([statusKey, kv = kvstore_] (auto &&e) {
-            LOG(ERROR) << "Exception caught: " << e.what();
-            if (!MetaCommon::saveRebuildStatus(kv, std::move(statusKey), "FAILED")) {
-                LOG(ERROR) << "Save rebuild status failed";
-                return;
-            }
-        });
-
+    handleRebuildIndexResult(std::move(results), kvstore_, std::move(statusKey));
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }

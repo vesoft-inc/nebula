@@ -567,26 +567,6 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
     return future;
 }
 
-folly::Future<StatusOr<std::unordered_map<HostAddr, std::vector<PartitionID>>>>
-AdminClient::getLeaderDist(GraphSpaceID space) {
-    HostLeaderMap hostLeaderMap;
-    auto ret = getLeaderDist(&hostLeaderMap).get();
-    std::unordered_map<HostAddr, std::vector<PartitionID>> addresses;
-    if (!ret.ok()) {
-        LOG(ERROR) << "Get leader distribution failed";
-        return Status::Error("Get leader distribution failed");
-    }
-
-    for (auto& hostEntry : hostLeaderMap) {
-        auto spaceParts = hostEntry.second;
-        auto iter = hostEntry.second.find(space);
-        if (iter != hostEntry.second.end()) {
-            addresses.emplace(hostEntry.first, iter->second);
-        }
-    }
-    return addresses;
-}
-
 folly::Future<Status> AdminClient::createSnapshot(GraphSpaceID spaceId, const std::string& name) {
     if (injector_) {
         return injector_->createSnapshot();

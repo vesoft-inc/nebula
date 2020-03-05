@@ -481,5 +481,35 @@ BaseProcessor<RESP>::indexCheck(const std::vector<nebula::cpp2::IndexItem>& item
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
+template<typename RESP>
+void BaseProcessor<RESP>::handleRebuildIndexResult(std::vector<folly::Future<Status>> results,
+                                                   kvstore::KVStore* kvstore,
+                                                   std::string statusKey) {
+    folly::collectAll(results)
+        .thenValue([statusKey, kvstore] (const auto& tries) mutable {
+            for (const auto& t : tries) {
+                if (!t.value().ok()) {
+                    LOG(ERROR) << "Build Edge Index Failed";
+                    if (!MetaCommon::saveRebuildStatus(kvstore, statusKey, "FAILED")) {
+                        LOG(ERROR) << "Save rebuild status failed";
+                        return;
+                    }
+                }
+            }
+
+            if (!MetaCommon::saveRebuildStatus(kvstore, std::move(statusKey), "SUCCEEDED")) {
+                LOG(ERROR) << "Save rebuild status failed";
+                return;
+            }
+        })
+        .thenError([statusKey, kvstore] (auto &&e) {
+            LOG(ERROR) << "Exception caught: " << e.what();
+            if (!MetaCommon::saveRebuildStatus(kvstore, std::move(statusKey), "FAILED")) {
+                LOG(ERROR) << "Save rebuild status failed";
+                return;
+            }
+        });
+}
+
 }  // namespace meta
 }  // namespace nebula
