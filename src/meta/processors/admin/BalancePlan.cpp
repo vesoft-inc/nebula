@@ -175,6 +175,7 @@ cpp2::ErrorCode BalancePlan::recovery(bool resume) {
                 task.srcLived_ = std::get<2>(tup);
                 task.startTimeMs_ = std::get<3>(tup);
                 task.endTimeMs_ = std::get<4>(tup);
+                task.singleReplica_ = std::get<5>(tup);
                 if (resume && task.ret_ != BalanceTask::Result::SUCCEEDED) {
                     // Resume the failed task, skip the in-progress and invalid tasks
                     if (task.ret_ == BalanceTask::Result::FAILED) {

@@ -53,7 +53,10 @@ void BalanceTask::invoke() {
             LOG(INFO) << taskIdStr_ << "Ask the src to give up the leadership.";
             SAVE_STATE();
             if (srcLived_) {
-                client_->transLeader(spaceId_, partId_, src_).thenValue([this](auto&& resp) {
+                // For balance task of single replica, the target leader is src_ itself
+                HostAddr targetLeader = singleReplica_ ? src_ : kRandomPeer;
+                client_->transLeader(spaceId_, partId_, src_, targetLeader)
+                    .thenValue([this](auto&& resp) {
                     if (!resp.ok()) {
                         LOG(INFO) << taskIdStr_ << "Transfer leader failed, status " << resp;
                         if (resp == nebula::Status::PartNotFound()) {
@@ -261,6 +264,7 @@ std::string BalanceTask::taskVal() {
     str.append(reinterpret_cast<const char*>(&srcLived_), sizeof(srcLived_));
     str.append(reinterpret_cast<const char*>(&startTimeMs_), sizeof(startTimeMs_));
     str.append(reinterpret_cast<const char*>(&endTimeMs_), sizeof(endTimeMs_));
+    str.append(reinterpret_cast<const char*>(&singleReplica_), sizeof(singleReplica_));
     return str;
 }
 
@@ -287,7 +291,7 @@ BalanceTask::parseKey(const folly::StringPiece& rawKey) {
     return std::make_tuple(balanceId, spaceId, partId, src, dst);
 }
 
-std::tuple<BalanceTask::Status, BalanceTask::Result, bool, int64_t, int64_t>
+std::tuple<BalanceTask::Status, BalanceTask::Result, bool, int64_t, int64_t, bool>
 BalanceTask::parseVal(const folly::StringPiece& rawVal) {
     int32_t offset = 0;
     auto status = *reinterpret_cast<const BalanceTask::Status*>(rawVal.begin() + offset);
@@ -299,7 +303,9 @@ BalanceTask::parseVal(const folly::StringPiece& rawVal) {
     auto start = *reinterpret_cast<const int64_t*>(rawVal.begin() + offset);
     offset += sizeof(int64_t);
     auto end = *reinterpret_cast<const int64_t*>(rawVal.begin() + offset);
-    return std::make_tuple(status, ret, srcLived, start, end);
+    offset += sizeof(int64_t);
+    auto singleReplica = *reinterpret_cast<const bool*>(rawVal.begin() + offset);
+    return std::make_tuple(status, ret, srcLived, start, end, singleReplica);
 }
 
 }  // namespace meta

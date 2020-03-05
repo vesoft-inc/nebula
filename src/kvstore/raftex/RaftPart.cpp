@@ -34,7 +34,7 @@ DEFINE_int32(wal_buffer_size, 8 * 1024 * 1024, "Default wal buffer size");
 DEFINE_int32(wal_buffer_num, 2, "Default wal buffer number");
 DEFINE_bool(trace_raft, false, "Enable trace one raft request");
 
-DEFINE_bool(has_leader_lease, true, "If set to true, the leader only can read when "
+DEFINE_bool(has_leader_lease, false, "If set to true, the leader only can read when "
             "its lease is valid. If set to false, always valid");
 
 

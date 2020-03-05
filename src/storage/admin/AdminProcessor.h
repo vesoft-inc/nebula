@@ -40,10 +40,17 @@ public:
         auto part = nebula::value(ret);
         auto host = kvstore::NebulaStore::getRaftAddr(HostAddr(req.get_new_leader().get_ip(),
                                                                req.get_new_leader().get_port()));
+
+        if (part->isLeader() && part->address() == host) {
+            LOG(INFO) << "I am already leader of space " << spaceId
+                      << " part " << partId << ", skip transLeader";
+            onFinished();
+            return;
+        }
         part->asyncTransferLeader(host,
                                   [this, spaceId, partId, part] (kvstore::ResultCode code) {
             if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
-                LOG(INFO) << "I am not the leader yet!";
+                LOG(INFO) << "I am not the leader of space " << spaceId << " part " << partId;
                 handleLeaderChanged(spaceId, partId);
                 onFinished();
                 return;
@@ -61,24 +68,27 @@ public:
                         auto leader = value(std::move(leaderRet));
                         auto* store = static_cast<kvstore::NebulaStore*>(kvstore_);
                         if (leader != HostAddr(0, 0) && leader != store->address()) {
-                            LOG(INFO) << "Found new leader " << leader;
+                            LOG(INFO) << "Found new leader of space " << spaceId
+                                      << " part " << partId << ": " << leader;
                             onFinished();
                             return;
                         } else if (leader != HostAddr(0, 0)) {
-                            LOG(INFO) << "I am choosen as leader again!";
+                            LOG(INFO) << "I am choosen as leader of space " << spaceId
+                                      << " part " << partId << " again!";
                             this->pushResultCode(cpp2::ErrorCode::E_TRANSFER_LEADER_FAILED, partId);
                             onFinished();
                             return;
                         }
-                        LOG(INFO) << "Can't find leader for part " << partId << " on "
-                                  << store->address();
+                        LOG(INFO) << "Can't find leader for space " << spaceId
+                                  << " part " << partId << " on " << store->address();
                         sleep(FLAGS_waiting_new_leader_interval_in_secs);
                     }
                     this->pushResultCode(cpp2::ErrorCode::E_RETRY_EXHAUSTED, partId);
                     onFinished();
                 });
             } else {
-                LOG(ERROR) << "Failed transfer leader, error:" << static_cast<int32_t>(code);
+                LOG(ERROR) << "Space " << spaceId << " part " << partId
+                           << " failed transfer leader, error:" << static_cast<int32_t>(code);
                 this->pushResultCode(to(code), partId);
                 onFinished();
                 return;

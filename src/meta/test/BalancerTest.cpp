@@ -105,7 +105,7 @@ TEST(BalanceTest, BalancePartsTest) {
         std::vector<BalanceTask> tasks;
         VLOG(1) << "=== original map ====";
         dump(hostParts, tasks);
-        balancer->balanceParts(0, 0, hostParts, totalParts, tasks);
+        balancer->balanceParts(0, 0, 3, hostParts, totalParts, tasks);
         VLOG(1) << "=== new map ====";
         dump(hostParts, tasks);
         for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
@@ -123,7 +123,7 @@ TEST(BalanceTest, BalancePartsTest) {
         std::vector<BalanceTask> tasks;
         VLOG(1) << "=== original map ====";
         dump(hostParts, tasks);
-        balancer->balanceParts(0, 0, hostParts, totalParts, tasks);
+        balancer->balanceParts(0, 0, 3, hostParts, totalParts, tasks);
         VLOG(1) << "=== new map ====";
         dump(hostParts, tasks);
         EXPECT_EQ(4, hostParts[HostAddr(0, 0)].size());
@@ -142,7 +142,7 @@ TEST(BalanceTest, BalancePartsTest) {
         std::vector<BalanceTask> tasks;
         VLOG(1) << "=== original map ====";
         dump(hostParts, tasks);
-        balancer->balanceParts(0, 0, hostParts, totalParts, tasks);
+        balancer->balanceParts(0, 0, 3, hostParts, totalParts, tasks);
         VLOG(1) << "=== new map ====";
         dump(hostParts, tasks);
         EXPECT_EQ(4, hostParts[HostAddr(0, 0)].size());
@@ -166,7 +166,7 @@ TEST(BalanceTest, BalancePartsTest) {
         std::vector<BalanceTask> tasks;
         VLOG(1) << "=== original map ====";
         dump(hostParts, tasks);
-        balancer->balanceParts(0, 0, hostParts, totalParts, tasks);
+        balancer->balanceParts(0, 0, 3, hostParts, totalParts, tasks);
         VLOG(1) << "=== new map ====";
         dump(hostParts, tasks);
         for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
@@ -188,7 +188,7 @@ TEST(BalanceTest, BalancePartsTest) {
         std::vector<BalanceTask> tasks;
         VLOG(1) << "=== original map ====";
         dump(hostParts, tasks);
-        balancer->balanceParts(0, 0, hostParts, totalParts, tasks);
+        balancer->balanceParts(0, 0, 3, hostParts, totalParts, tasks);
         VLOG(1) << "=== new map ====";
         dump(hostParts, tasks);
         for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
@@ -614,6 +614,109 @@ TEST(BalanceTest, SpecifyMultiHostTest) {
     ASSERT_EQ(0, partCount[HostAddr(3, 3)]);
     ASSERT_EQ(9, partCount[HostAddr(4, 4)]);
     ASSERT_EQ(9, partCount[HostAddr(5, 5)]);
+}
+
+TEST(BalanceTest, SingleReplicaTest) {
+    fs::TempDir rootPath("/tmp/BalanceTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    FLAGS_expired_threshold_sec = 1;
+    TestUtils::createSomeHosts(kv.get(), {{0, 0}, {1, 1}, {2, 2}, {3, 3}, {4, 4}, {5, 5}});
+    {
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("default_space");
+        properties.set_partition_num(12);
+        properties.set_replica_factor(1);
+        cpp2::CreateSpaceReq req;
+        req.set_properties(std::move(properties));
+        auto* processor = CreateSpaceProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(1, resp.get_id().get_space_id());
+    }
+    std::unordered_map<HostAddr, int32_t> partCount;
+    for (int32_t i = 0; i < 6; i++) {
+        partCount[HostAddr(i, i)] = 2;
+    }
+    std::vector<Status> sts(9, Status::OK());
+    std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
+    auto client = std::make_unique<AdminClient>(std::move(injector));
+    Balancer balancer(kv.get(), std::move(client));
+
+    sleep(1);
+    LOG(INFO) << "Now, we want to remove host {2, 2} and {3, 3}";
+    // {2, 2} is dead, {3, 3} still alive
+    TestUtils::registerHB(kv.get(), {{0, 0}, {1, 1}, {3, 3}, {4, 4}, {5, 5}});
+    auto ret = balancer.balance({{2, 2}, {3, 3}});
+    // This would failed becouse no valid source host (2:2 is dead, and this is single replica)
+    ASSERT_EQ(cpp2::ErrorCode::E_NO_VALID_HOST, error(ret));
+
+    TestUtils::registerHB(kv.get(), {{0, 0}, {1, 1}, {2, 2}, {3, 3}, {4, 4}, {5, 5}});
+    ret = balancer.balance({{2, 2}, {3, 3}, {3, 3}});
+    CHECK(ok(ret));
+    auto balanceId = value(ret);
+    sleep(1);
+    LOG(INFO) << "Rebalance finished!";
+    {
+        const auto& prefix = BalancePlan::prefix();
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto retcode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+        ASSERT_EQ(retcode, kvstore::ResultCode::SUCCEEDED);
+        int num = 0;
+        while (iter->valid()) {
+            auto id = BalancePlan::id(iter->key());
+            auto status = BalancePlan::status(iter->val());
+            ASSERT_EQ(balanceId, id);
+            ASSERT_EQ(BalancePlan::Status::SUCCEEDED, status);
+            num++;
+            iter->next();
+        }
+        ASSERT_EQ(1, num);
+    }
+    {
+        const auto& prefix = BalanceTask::prefix(balanceId);
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto retcode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+        ASSERT_EQ(retcode, kvstore::ResultCode::SUCCEEDED);
+        int32_t num = 0;
+        while (iter->valid()) {
+            BalanceTask task;
+            {
+                auto tup = BalanceTask::parseKey(iter->key());
+                task.balanceId_ = std::get<0>(tup);
+                ASSERT_EQ(balanceId, task.balanceId_);
+                task.spaceId_ = std::get<1>(tup);
+                ASSERT_EQ(1, task.spaceId_);
+                task.src_ = std::get<3>(tup);
+                task.dst_ = std::get<4>(tup);
+                partCount[task.src_]--;
+                partCount[task.dst_]++;
+            }
+            {
+                auto tup = BalanceTask::parseVal(iter->val());
+                task.status_ = std::get<0>(tup);
+                ASSERT_EQ(BalanceTask::Status::END, task.status_);
+                task.ret_ = std::get<1>(tup);
+                task.srcLived_ = std::get<2>(tup);
+                ASSERT_EQ(BalanceTask::Result::SUCCEEDED, task.ret_);
+                ASSERT_TRUE(task.srcLived_);
+                task.startTimeMs_ = std::get<3>(tup);
+                ASSERT_GT(task.startTimeMs_, 0);
+                task.endTimeMs_ = std::get<4>(tup);
+                ASSERT_GT(task.endTimeMs_, 0);
+            }
+            num++;
+            iter->next();
+        }
+        ASSERT_EQ(4, num);
+    }
+    ASSERT_EQ(3, partCount[HostAddr(0, 0)]);
+    ASSERT_EQ(3, partCount[HostAddr(1, 1)]);
+    ASSERT_EQ(0, partCount[HostAddr(2, 2)]);
+    ASSERT_EQ(0, partCount[HostAddr(3, 3)]);
+    ASSERT_EQ(3, partCount[HostAddr(4, 4)]);
+    ASSERT_EQ(3, partCount[HostAddr(5, 5)]);
 }
 
 TEST(BalanceTest, RecoveryTest) {

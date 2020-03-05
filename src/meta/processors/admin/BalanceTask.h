@@ -24,6 +24,7 @@ class BalanceTask {
     FRIEND_TEST(BalanceTest, BalancePlanTest);
     FRIEND_TEST(BalanceTest, SpecifyHostTest);
     FRIEND_TEST(BalanceTest, SpecifyMultiHostTest);
+    FRIEND_TEST(BalanceTest, SingleReplicaTest);
     FRIEND_TEST(BalanceTest, NormalTest);
     FRIEND_TEST(BalanceTest, RecoveryTest);
     FRIEND_TEST(BalanceTest, StopBalanceDataTest);
@@ -58,7 +59,8 @@ public:
                 const HostAddr& dst,
                 bool srcLived,
                 kvstore::KVStore* kv,
-                AdminClient* client)
+                AdminClient* client,
+                bool singleReplica = false)
         : balanceId_(balanceId)
         , spaceId_(spaceId)
         , partId_(partId)
@@ -67,7 +69,8 @@ public:
         , srcLived_(srcLived)
         , taskIdStr_(buildTaskId())
         , kv_(kv)
-        , client_(client) {}
+        , client_(client)
+        , singleReplica_(singleReplica) {}
 
     const std::string& taskIdStr() const {
         return taskIdStr_;
@@ -104,7 +107,7 @@ private:
     static std::tuple<BalanceID, GraphSpaceID, PartitionID, HostAddr, HostAddr>
     parseKey(const folly::StringPiece& rawKey);
 
-    static std::tuple<BalanceTask::Status, BalanceTask::Result, bool, int64_t, int64_t>
+    static std::tuple<BalanceTask::Status, BalanceTask::Result, bool, int64_t, int64_t, bool>
     parseVal(const folly::StringPiece& rawVal);
 
 private:
@@ -117,6 +120,7 @@ private:
     std::string  taskIdStr_;
     kvstore::KVStore* kv_ = nullptr;
     AdminClient* client_ = nullptr;
+    bool         singleReplica_ = false;
     Status       status_ = Status::START;
     Result       ret_ = Result::IN_PROGRESS;
     int64_t      startTimeMs_ = 0;
