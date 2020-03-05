@@ -27,6 +27,8 @@ cpp2::ErrorCode BaseProcessor<RESP>::to(kvstore::ResultCode code) {
         return cpp2::ErrorCode::E_FAILED_TO_CHECKPOINT;
     case kvstore::ResultCode::ERR_WRITE_BLOCK_ERROR:
         return cpp2::ErrorCode::E_CHECKPOINT_BLOCKED;
+    case kvstore::ResultCode::ERR_PARTIAL_RESULT:
+        return cpp2::ErrorCode::E_PARTIAL_RESULT;
     default:
         return cpp2::ErrorCode::E_UNKNOWN;
     }
@@ -79,6 +81,16 @@ void BaseProcessor<RESP>::doRemoveRange(GraphSpaceID spaceId,
                                         std::string end) {
     this->kvstore_->asyncRemoveRange(
         spaceId, partId, start, end, [spaceId, partId, this](kvstore::ResultCode code) {
+            handleAsync(spaceId, partId, code);
+        });
+}
+
+template <typename RESP>
+void BaseProcessor<RESP>::doRemovePrefix(GraphSpaceID spaceId,
+                                         PartitionID partId,
+                                         std::string prefix) {
+    this->kvstore_->asyncRemovePrefix(
+        spaceId, partId, prefix, [spaceId, partId, this](kvstore::ResultCode code) {
             handleAsync(spaceId, partId, code);
         });
 }

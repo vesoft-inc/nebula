@@ -26,13 +26,11 @@ public:
     void execute() override;
 
 private:
-    Status setupEdgeKeys();
+    Status setupEdgeKeys(EdgeType edgeType);
 
 private:
     DeleteEdgesSentence                         *sentence_{nullptr};
     std::vector<storage::cpp2::EdgeKey>         edgeKeys_;
-    GraphSpaceID                                spaceId_{-1};
-    EdgeType                                    edgeType_{0};
     std::unique_ptr<ExpressionContext>          expCtx_;
 };
 

@@ -34,19 +34,10 @@ Status FetchExecutor::prepareYield() {
             returnColNames_.emplace_back(*col->alias());
         }
 
-        // such as YIELD 1+1, it has not type in schema, the type from the eval()
-        colTypes_.emplace_back(nebula::cpp2::SupportedType::UNKNOWN);
-        if (col->expr()->isAliasExpression()) {
-            auto prop = *static_cast<AliasPropertyExpression*>(col->expr())->prop();
-            auto type = labelSchema_->getFieldType(prop);
-            if (type != CommonConstants::kInvalidValueType()) {
-                colTypes_.back() = type.get_type();
-            }
-        } else if (col->expr()->isTypeCastingExpression()) {
-            // type cast
-            auto exprPtr = dynamic_cast<TypeCastingExpression*>(col->expr());
-            colTypes_.back() = SchemaHelper::columnTypeToSupportedType(exprPtr->getType());
-        }
+        auto type = calculateExprType(col->expr());
+        colTypes_.emplace_back(type);
+
+        VLOG(1) << "type: " << static_cast<int64_t>(colTypes_.back());
     }
 
     if (expCtx_->hasSrcTagProp() || expCtx_->hasDstTagProp()) {
@@ -122,7 +113,7 @@ Status FetchExecutor::getOutputSchema(
     };
     getters.getEdgeDstId = [schema,
                             reader] (const std::string&) -> OptVariantType {
-        return Collector::getProp(schema, "_dst", reader);
+        return Collector::getProp(schema, _DST, reader);
     };
     std::vector<VariantType> record;
     for (auto *column : yields_) {

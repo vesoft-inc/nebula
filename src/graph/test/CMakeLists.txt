@@ -32,6 +32,7 @@ set(GRAPH_TEST_LIBS
     $<TARGET_OBJECTS:gflags_man_obj>
     $<TARGET_OBJECTS:ws_common_obj>
     $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:charset_obj>
 )
 
 nebula_add_library(
@@ -187,9 +188,9 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
-        delete_vertex_sentence_test
+        delete_vertices_sentence_test
     SOURCES
-        DeleteVertexTest.cpp
+        DeleteVerticesTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
@@ -352,6 +353,24 @@ nebula_add_test(
         lookup_test
     SOURCES
         LookupTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:adHocIndex_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+    charsetCollate_test
+    SOURCES
+        CharsetCollateTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:client_cpp_obj>

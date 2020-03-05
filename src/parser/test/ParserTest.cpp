@@ -146,6 +146,27 @@ TEST(Parser, SpaceOperation) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    {
+        GQLParser parser;
+        std::string query = "CREATE SPACE default_space(partition_num=9, replica_factor=3,"
+                            "charset=utf8, collate=utf8_bin)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE SPACE default_space(partition_num=9, replica_factor=3,"
+                            "charset=utf8)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE SPACE default_space(partition_num=9, replica_factor=3,"
+                            "collate=utf8_bin)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
 }
 
 TEST(Parser, TagOperation) {
@@ -828,7 +849,31 @@ TEST(Parser, DeleteVertex) {
     }
     {
         GQLParser parser;
-        std::string query = "DELETE VERTEX hash(\"zhangsan\")";
+        std::string query = "DELETE VERTEX 12345,23456,34567";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DELETE VERTEX hash(\"Tom\")";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DELETE VERTEX hash(\"Tom\"), hash(\"Jerry\"), hash(\"Mickey\")";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DELETE VERTEX uuid(\"Tom\")";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DELETE VERTEX uuid(\"Tom\"), uuid(\"Jerry\"), uuid(\"Mickey\")";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -1087,6 +1132,18 @@ TEST(Parser, AdminOperation) {
     {
         GQLParser parser;
         std::string query = "SHOW CREATE EDGE e1";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW CHARSET";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW COLLATION";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

@@ -113,6 +113,10 @@ cpp2::ErrorCode Balancer::recovery() {
             auto self = plan_;
             {
                 std::lock_guard<std::mutex> lg(lock_);
+                if (LastUpdateTimeMan::update(kv_, time::WallClock::fastNowInMilliSec()) !=
+                        kvstore::ResultCode::SUCCEEDED) {
+                    LOG(INFO) << "Balance plan " << plan_->id() << " update meta failed";
+                }
                 finish();
             }
         };
@@ -165,6 +169,10 @@ cpp2::ErrorCode Balancer::buildBalancePlan(std::vector<HostAddr> hostDel) {
         auto self = plan_;
         {
             std::lock_guard<std::mutex> lg(lock_);
+            if (LastUpdateTimeMan::update(kv_, time::WallClock::fastNowInMilliSec()) !=
+                    kvstore::ResultCode::SUCCEEDED) {
+                LOG(INFO) << "Balance plan " << plan_->id() << " update meta failed";
+            }
             finish();
         }
     };

@@ -22,8 +22,11 @@ UpdateVertexExecutor::UpdateVertexExecutor(Sentence *sentence,
     sentence_ = static_cast<UpdateVertexSentence*>(sentence);
 }
 
-
 Status UpdateVertexExecutor::prepare() {
+    return Status::OK();
+}
+
+Status UpdateVertexExecutor::prepareData() {
     DCHECK(sentence_ != nullptr);
 
     spaceId_ = ectx()->rctx()->session()->space();
@@ -185,6 +188,13 @@ void UpdateVertexExecutor::finishExecution(storage::cpp2::UpdateResponse &&rpcRe
 
 void UpdateVertexExecutor::execute() {
     FLOG_INFO("Executing UpdateVertex: %s", sentence_->toString().c_str());
+
+    auto status = prepareData();
+    if (!status.ok()) {
+        doError(std::move(status));
+        return;
+    }
+
     std::string filterStr = filter_ ? Expression::encode(filter_) : "";
     auto returns = getReturnColumns();
     auto future = ectx()->getStorageClient()->updateVertex(spaceId_,
