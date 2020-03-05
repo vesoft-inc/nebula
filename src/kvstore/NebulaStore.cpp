@@ -101,7 +101,14 @@ bool NebulaStore::init() {
                             enginePtr->removePart(partId);
                             continue;
                         } else {
-                             partIds.emplace_back(partId);
+                             auto it = std::find(partIds.begin(), partIds.end(), partId);
+                             if (it != partIds.end()) {
+                                LOG(INFO) << "Part " << partId
+                                          << " has been loaded, skip current one, remove it!";
+                                enginePtr->removePart(partId);
+                             } else {
+                                partIds.emplace_back(partId);
+                             }
                         }
                     }
                     if (partIds.empty()) {
