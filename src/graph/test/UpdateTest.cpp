@@ -141,11 +141,47 @@ TEST_F(UpdateTest, UpdateVertex) {
 TEST_F(UpdateTest, UpdateEdge) {
     // OnlySet, SetFilter, SetYield, SetFilterYield, Insertable
     {   // OnlySet
-        cpp2::ExecutionResponse resp;
-        auto query = "UPDATE EDGE 200 -> 101@0 OF select "
-                     "SET grade = select.grade + 1, year = 2000";
-        auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        {
+            cpp2::ExecutionResponse resp;
+            auto query = "FETCH PROP ON select 200->101@0 "
+                        "YIELD select.grade, select.year";
+            auto code = client_->execute(query, resp);
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+            std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
+                {200, 101, 0, 5, 2018},
+            };
+            ASSERT_TRUE(verifyResult(resp, expected));
+        }
+
+        {
+            cpp2::ExecutionResponse resp;
+            auto query = "UPDATE EDGE 200 -> 101@0 OF select "
+                         "SET grade = select.grade + 1, year = 2000";
+            auto code = client_->execute(query, resp);
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        }
+        {
+            cpp2::ExecutionResponse resp;
+            auto query = "FETCH PROP ON select 200->101@0"
+                        " YIELD select.grade, select.year";
+            auto code = client_->execute(query, resp);
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+            std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
+                {200, 101, 0, 6, 2000},
+            };
+            ASSERT_TRUE(verifyResult(resp, expected));
+        }
+        {
+            cpp2::ExecutionResponse resp;
+            auto query = "GO FROM 101 OVER select REVERSELY"
+                        " YIELD select.grade, select.year";
+            auto code = client_->execute(query, resp);
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+            std::vector<std::tuple<int64_t, int64_t>> expected = {
+                {6, 2000},
+            };
+            ASSERT_TRUE(verifyResult(resp, expected));
+        }
     }
     {
         cpp2::ExecutionResponse resp;
