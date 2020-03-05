@@ -196,7 +196,7 @@ TEST(Parser, TagOperation) {
         GQLParser parser;
         std::string query = "CREATE TAG woman(name string, age int, "
                             "married bool, salary double, create_time timestamp)"
-                            "ttl_duration = 100, ttl_col = \"create_time\"";
+                            "ttl_duration = 100, ttl_col = create_time";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -225,26 +225,52 @@ TEST(Parser, TagOperation) {
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
+        // Drop ttl
         GQLParser parser;
-        std::string query = "ALTER TAG man ttl_duration = 200";
+        std::string query = "ALTER TAG person "
+                            "DROP TTL";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        // Change ttl
+        GQLParser parser;
+        std::string query = "ALTER TAG person "
+                            "CHANGE TTL_COL = field1";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        // Change ttl
+        GQLParser parser;
+        std::string query = "ALTER TAG person "
+                            "CHANGE TTL_DURATION = 233";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        // Change ttl
+        GQLParser parser;
+        std::string query = "ALTER TAG person "
+                            "CHANGE TTL_DURATION = 233, TTL_COL = field1";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "ALTER TAG man ttl_col = \"\"";
+        std::string query = "ALTER TAG man CHANGE ttl_duration = 200";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "ALTER TAG woman ttl_duration = 50, ttl_col = \"age\"";
+        std::string query = "ALTER TAG woman CHANGE ttl_duration = 50, ttl_col = age";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "ALTER TAG woman ADD (col6 int) ttl_duration = 200";
+        std::string query = "ALTER TAG woman ADD (col6 int) CHANGE ttl_duration = 200";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -308,7 +334,7 @@ TEST(Parser, EdgeOperation) {
         GQLParser parser;
         std::string query = "CREATE EDGE woman(name string, age int, "
                             "married bool, salary double, create_time timestamp)"
-                            "ttl_duration = 100, ttl_col = \"create_time\"";
+                            "ttl_duration = 100, ttl_col = create_time";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -322,25 +348,25 @@ TEST(Parser, EdgeOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "ALTER EDGE man ttl_duration = 200";
+        std::string query = "ALTER EDGE man CHANGE ttl_duration = 200";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "ALTER EDGE man ttl_col = \"\"";
+        std::string query = "ALTER EDGE man DROP TTL";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "ALTER EDGE woman ttl_duration = 50, ttl_col = \"age\"";
+        std::string query = "ALTER EDGE woman CHANGE ttl_duration = 50, ttl_col = age";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "ALTER EDGE woman ADD (col6 int)  ttl_duration = 200";
+        std::string query = "ALTER EDGE woman ADD (col6 int) CHANGE ttl_duration = 200";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -423,19 +449,19 @@ TEST(Parser, ColumnSpacesTest) {
     }
     {
         GQLParser parser;
-        std::string query = "ALTER EDGE woman ADD (col6)  ttl_duration = 200";
+        std::string query = "ALTER EDGE woman ADD (col6) CHANGE ttl_duration = 200";
         auto result = parser.parse(query);
         ASSERT_FALSE(result.ok());
     }
     {
         GQLParser parser;
-        std::string query = "ALTER EDGE woman CHANGE (col6)  ttl_duration = 200";
+        std::string query = "ALTER EDGE woman CHANGE (col6) CHANGE ttl_duration = 200";
         auto result = parser.parse(query);
         ASSERT_FALSE(result.ok());
     }
     {
         GQLParser parser;
-        std::string query = "ALTER EDGE woman DROP (col6 int)  ttl_duration = 200";
+        std::string query = "ALTER EDGE woman DROP (col6 int) CHANGE ttl_duration = 200";
         auto result = parser.parse(query);
         ASSERT_FALSE(result.ok());
     }

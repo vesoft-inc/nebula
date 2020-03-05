@@ -76,10 +76,8 @@ class GraphScanner;
     nebula::WithUserOptItem                *with_user_opt_item;
     nebula::RoleTypeClause                 *role_type_clause;
     nebula::AclItemClause                  *acl_item_clause;
-    nebula::SchemaPropList                 *create_schema_prop_list;
-    nebula::SchemaPropItem                 *create_schema_prop_item;
-    nebula::SchemaPropList                 *alter_schema_prop_list;
-    nebula::SchemaPropItem                 *alter_schema_prop_item;
+    nebula::SchemaPropList                 *schema_prop_list;
+    nebula::SchemaPropItem                 *schema_prop_item;
     nebula::OrderFactor                    *order_factor;
     nebula::OrderFactors                   *order_factors;
     nebula::ConfigModule                    config_module;
@@ -175,10 +173,8 @@ class GraphScanner;
 %type <space_opt_item> space_opt_item
 %type <alter_schema_opt_list> alter_schema_opt_list
 %type <alter_schema_opt_item> alter_schema_opt_item
-%type <create_schema_prop_list> create_schema_prop_list opt_create_schema_prop_list
-%type <create_schema_prop_item> create_schema_prop_item
-%type <alter_schema_prop_list> alter_schema_prop_list
-%type <alter_schema_prop_item> alter_schema_prop_item
+%type <schema_prop_list> schema_prop_list opt_schema_prop_list alter_schema_prop_list
+%type <schema_prop_item> schema_prop_item
 %type <order_factor> order_factor
 %type <order_factors> order_factors
 %type <config_module> config_module_enum
@@ -971,27 +967,39 @@ opt_if_exists
     | KW_IF KW_EXISTS { $$=true; }
     ;
 
-opt_create_schema_prop_list
+opt_schema_prop_list
     : %empty {
         $$ = nullptr;
     }
-    | create_schema_prop_list {
+    | schema_prop_list {
         $$ = $1;
     }
     ;
 
-create_schema_prop_list
-    : create_schema_prop_item {
+alter_schema_prop_list
+    // We treat empty ttl_col as drop
+    : KW_DROP KW_TTL {
+        auto prop = new SchemaPropList();
+        prop->addOpt(new SchemaPropItem(SchemaPropItem::PropType::TTL_COL, std::string()));
+        $$ = prop;
+    }
+    | KW_CHANGE schema_prop_list {
+        $$ = $2;
+    }
+    ;
+
+schema_prop_list
+    : schema_prop_item {
         $$ = new SchemaPropList();
         $$->addOpt($1);
     }
-    | create_schema_prop_list COMMA create_schema_prop_item {
+    | schema_prop_list COMMA schema_prop_item {
         $$ = $1;
         $$->addOpt($3);
     }
     ;
 
-create_schema_prop_item
+schema_prop_item
     : KW_TTL_DURATION ASSIGN unary_integer {
         // Less than or equal to 0 means infinity, so less than 0 is equivalent to 0
         if ($3 < 0) {
@@ -999,26 +1007,26 @@ create_schema_prop_item
         }
         $$ = new SchemaPropItem(SchemaPropItem::TTL_DURATION, $3);
     }
-    | KW_TTL_COL ASSIGN STRING {
+    | KW_TTL_COL ASSIGN name_label {
         $$ = new SchemaPropItem(SchemaPropItem::TTL_COL, *$3);
         delete $3;
     }
     ;
 
 create_tag_sentence
-    : KW_CREATE KW_TAG opt_if_not_exists name_label L_PAREN R_PAREN opt_create_schema_prop_list {
+    : KW_CREATE KW_TAG opt_if_not_exists name_label L_PAREN R_PAREN opt_schema_prop_list {
         if ($7 == nullptr) {
             $7 = new SchemaPropList();
         }
         $$ = new CreateTagSentence($4, new ColumnSpecificationList(), $7, $3);
     }
-    | KW_CREATE KW_TAG opt_if_not_exists name_label L_PAREN column_spec_list R_PAREN opt_create_schema_prop_list {
+    | KW_CREATE KW_TAG opt_if_not_exists name_label L_PAREN column_spec_list R_PAREN opt_schema_prop_list {
         if ($8 == nullptr) {
             $8 = new SchemaPropList();
         }
         $$ = new CreateTagSentence($4, $6, $8, $3);
     }
-    | KW_CREATE KW_TAG opt_if_not_exists name_label L_PAREN column_spec_list COMMA R_PAREN opt_create_schema_prop_list {
+    | KW_CREATE KW_TAG opt_if_not_exists name_label L_PAREN column_spec_list COMMA R_PAREN opt_schema_prop_list {
         if ($9 == nullptr) {
             $9 = new SchemaPropList();
         }
@@ -1061,45 +1069,20 @@ alter_schema_opt_item
     }
     ;
 
-alter_schema_prop_list
-    : alter_schema_prop_item {
-        $$ = new SchemaPropList();
-        $$->addOpt($1);
-    }
-    | alter_schema_prop_list COMMA alter_schema_prop_item {
-        $$ = $1;
-        $$->addOpt($3);
-    }
-    ;
-
-alter_schema_prop_item
-    : KW_TTL_DURATION ASSIGN unary_integer {
-        // Less than or equal to 0 means infinity, so less than 0 is equivalent to 0
-        if ($3 < 0) {
-            $3 = 0;
-        }
-        $$ = new SchemaPropItem(SchemaPropItem::TTL_DURATION, $3);
-    }
-    | KW_TTL_COL ASSIGN STRING {
-        $$ = new SchemaPropItem(SchemaPropItem::TTL_COL, *$3);
-        delete $3;
-    }
-    ;
-
 create_edge_sentence
-    : KW_CREATE KW_EDGE opt_if_not_exists name_label L_PAREN R_PAREN opt_create_schema_prop_list {
+    : KW_CREATE KW_EDGE opt_if_not_exists name_label L_PAREN R_PAREN opt_schema_prop_list {
         if ($7 == nullptr) {
             $7 = new SchemaPropList();
         }
         $$ = new CreateEdgeSentence($4,  new ColumnSpecificationList(), $7, $3);
     }
-    | KW_CREATE KW_EDGE opt_if_not_exists name_label L_PAREN column_spec_list R_PAREN opt_create_schema_prop_list {
+    | KW_CREATE KW_EDGE opt_if_not_exists name_label L_PAREN column_spec_list R_PAREN opt_schema_prop_list {
         if ($8 == nullptr) {
             $8 = new SchemaPropList();
         }
         $$ = new CreateEdgeSentence($4, $6, $8, $3);
     }
-    | KW_CREATE KW_EDGE opt_if_not_exists name_label L_PAREN column_spec_list COMMA R_PAREN opt_create_schema_prop_list {
+    | KW_CREATE KW_EDGE opt_if_not_exists name_label L_PAREN column_spec_list COMMA R_PAREN opt_schema_prop_list {
         if ($9 == nullptr) {
             $9 = new SchemaPropList();
         }

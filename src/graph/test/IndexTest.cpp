@@ -304,14 +304,14 @@ TEST_F(IndexTest, TagIndexTTL) {
     // Alter tag add ttl property on index col, failed
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "ALTER TAG person_ttl ttl_duration = 100, ttl_col = \"age\"";
+        std::string query = "ALTER TAG person_ttl ttl_duration = 100, ttl_col = age";
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
     // Alter tag add ttl property on not index col, failed
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "ALTER TAG person_ttl ttl_duration = 100, ttl_col = \"gender\"";
+        std::string query = "ALTER TAG person_ttl ttl_duration = 100, ttl_col = gender";
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -325,14 +325,14 @@ TEST_F(IndexTest, TagIndexTTL) {
     // Alter tag add ttl property on index col, succeed
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "ALTER TAG person_ttl ttl_duration = 100, ttl_col = \"age\"";
+        std::string query = "ALTER TAG person_ttl CHANGE ttl_duration = 100, ttl_col = age";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     // Alter tag add ttl property on not index col, succeed
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "ALTER TAG person_ttl ttl_duration = 100, ttl_col = \"gender\"";
+        std::string query = "ALTER TAG person_ttl CHANGE ttl_duration = 100, ttl_col = gender";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -353,7 +353,7 @@ TEST_F(IndexTest, TagIndexTTL) {
     // Drop ttl propery
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "ALTER TAG person_ttl  ttl_col = \"\"";
+        std::string query = "ALTER TAG person_ttl DROP TTL";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -374,7 +374,7 @@ TEST_F(IndexTest, TagIndexTTL) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG person_ttl_2(name string, age int, gender string)"
-                " ttl_duration = 200, ttl_col = \"age\"";
+                " ttl_duration = 200, ttl_col = age";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -448,14 +448,14 @@ TEST_F(IndexTest, EdgeIndexTTL) {
     // Alter edge add ttl property on index col, failed
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "ALTER edge friend_ttl ttl_duration = 100, ttl_col = \"start_time\"";
+        std::string query = "ALTER edge friend_ttl ttl_duration = 100, ttl_col = start_time";
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
     // Alter edge add ttl property on not index col, failed
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "ALTER edge friend_ttl ttl_duration = 100, ttl_col = \"degree\"";
+        std::string query = "ALTER edge friend_ttl ttl_duration = 100, ttl_col = degree";
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -469,14 +469,14 @@ TEST_F(IndexTest, EdgeIndexTTL) {
     // Alter edge add ttl property on index col, succeed
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "ALTER edge friend_ttl ttl_duration = 100, ttl_col = \"start_time\"";
+        std::string query = "ALTER edge friend_ttl CHANGE ttl_duration = 100, ttl_col = start_time";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     // Alter edge add ttl property on not index col, succeed
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "ALTER edge friend_ttl ttl_duration = 100, ttl_col = \"degree\"";
+        std::string query = "ALTER edge friend_ttl CHANGE ttl_duration = 100, ttl_col = degree";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -497,7 +497,7 @@ TEST_F(IndexTest, EdgeIndexTTL) {
     // Drop ttl propery
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "ALTER EDGE friend_ttl ttl_col = \"\"";
+        std::string query = "ALTER EDGE friend_ttl DROP TTL";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -519,7 +519,7 @@ TEST_F(IndexTest, EdgeIndexTTL) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE EDGE friend_ttl_2(degree int, start_time int)"
-                " ttl_duration = 200, ttl_col = \"start_time\"";
+                " ttl_duration = 200, ttl_col = start_time";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }

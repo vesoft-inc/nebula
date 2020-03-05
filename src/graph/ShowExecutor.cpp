@@ -623,19 +623,18 @@ void ShowExecutor::showCreateTag() {
             buf.resize(buf.size() -2);
             buf += "\n";
         }
-        buf += ") ";
+        buf += ")";
         nebula::cpp2::SchemaProp prop = schema.schema_prop;
-        buf += "ttl_duration = ";
+        bool seprate = false;
         if (prop.get_ttl_duration()) {
+            seprate = true;
+            buf += " ttl_duration = ";
             buf += folly::to<std::string>(*prop.get_ttl_duration());
-        } else {
-            buf += "0";
         }
-        buf += ", ttl_col = ";
         if (prop.get_ttl_col() && !(prop.get_ttl_col()->empty())) {
+            if (seprate) buf += ",";
+            buf += " ttl_col = ";
             buf += *prop.get_ttl_col();
-        } else {
-            buf += "\"\"";
         }
 
         row[1].set_str(buf);
@@ -721,19 +720,18 @@ void ShowExecutor::showCreateEdge() {
             buf.resize(buf.size() -2);
             buf += "\n";
         }
-        buf += ") ";
+        buf += ")";
         nebula::cpp2::SchemaProp prop = schema.schema_prop;
-        buf += "ttl_duration = ";
+        bool seprate = false;
         if (prop.get_ttl_duration()) {
+            buf += " ttl_duration = ";
             buf += folly::to<std::string>(*prop.get_ttl_duration());
-        } else {
-            buf += "0";
+            seprate = true;
         }
-        buf += ", ttl_col = ";
         if (prop.get_ttl_col() && !(prop.get_ttl_col()->empty())) {
+            if (seprate) buf += ",";
+            buf += " ttl_col = ";
             buf += *prop.get_ttl_col();
-        } else {
-            buf += "\"\"";
         }
 
         row[1].set_str(buf);
