@@ -271,13 +271,13 @@ void RaftPart::start(std::vector<HostAddr>&& peers, bool asLearner) {
 
     lastLogId_ = wal_->lastLogId();
     lastLogTerm_ = wal_->lastLogTerm();
+    term_ = proposedTerm_ = lastLogTerm_;
 
     // Set the quorum number
     quorum_ = (peers.size() + 1) / 2;
 
     auto logIdAndTerm = lastCommittedLogId();
     committedLogId_ = logIdAndTerm.first;
-    term_ = proposedTerm_ = logIdAndTerm.second;
 
     if (lastLogId_ < committedLogId_) {
         LOG(INFO) << idStr_ << "Reset lastLogId " << lastLogId_
