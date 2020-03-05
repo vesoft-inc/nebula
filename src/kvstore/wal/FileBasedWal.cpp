@@ -487,7 +487,7 @@ BufferPtr FileBasedWal::getLastBuffer(LogID id, size_t expectedToWrite) {
         }
         CHECK_LT(buffers_.size(), policy_.numBuffers);
     }
-    buffers_.emplace_back(std::make_shared<InMemoryLogBuffer>(id));
+    buffers_.emplace_back(std::make_shared<InMemoryLogBuffer>(id, idStr_));
     return buffers_.back();
 }
 
