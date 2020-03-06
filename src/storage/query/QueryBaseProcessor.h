@@ -14,6 +14,7 @@
 #include "filter/Expressions.h"
 #include "storage/CommonUtils.h"
 #include "stats/Stats.h"
+#include <random>
 
 namespace nebula {
 namespace storage {
