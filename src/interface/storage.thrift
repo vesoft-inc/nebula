@@ -216,16 +216,6 @@ struct AddEdgesRequest {
     3: bool overwritable,
 }
 
-struct EdgeKeysRequest {
-    1: common.GraphSpaceID space_id,
-    2: map<common.PartitionID, list<common.VertexID>>(cpp.template = "std::unordered_map") parts,
-}
-
-struct EdgeKeysResponse {
-    1: required ResponseCommon result,
-    2: optional map<common.VertexID, list<EdgeKey>>(cpp.template = "std::unordered_map") edge_keys,
-}
-
 struct DeleteVerticesRequest {
     1: common.GraphSpaceID space_id,
     2: map<common.PartitionID, list<common.VertexID>>(cpp.template = "std::unordered_map") parts,
@@ -478,7 +468,6 @@ service StorageService {
     ExecResponse addVertices(1: AddVerticesRequest req);
     ExecResponse addEdges(1: AddEdgesRequest req);
 
-    EdgeKeysResponse getEdgeKeys(1: EdgeKeysRequest req);
     ExecResponse deleteEdges(1: DeleteEdgesRequest req);
     ExecResponse deleteVertices(1: DeleteVerticesRequest req);
 
