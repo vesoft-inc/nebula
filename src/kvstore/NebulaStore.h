@@ -222,7 +222,9 @@ public:
     int32_t allLeader(std::unordered_map<GraphSpaceID,
                                          std::vector<PartitionID>>& leaderIds) override;
 
-    // Wait the N partition as leader in specify space
+    // Wait until the N partition as leader in specify space
+    // Better only use for testing
+    // return false when no such space
     bool waitNLeadersOnSpace(GraphSpaceID spaceId, uint64_t leaders) const;
 
 private:
