@@ -11,11 +11,13 @@
 #include "meta/NebulaSchemaProvider.h"
 #include "filter/FunctionManager.h"
 #include "time/WallClock.h"
+#include "algorithm/ReservoirSampling.h"
 
 DECLARE_int32(max_handlers_per_req);
 DECLARE_int32(min_vertices_per_bucket);
 DECLARE_int32(max_edge_returned_per_vertex);
 DECLARE_bool(enable_vertex_cache);
+DECLARE_bool(enable_reservoir_sampling);
 
 namespace nebula {
 namespace storage {
@@ -482,16 +484,30 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
     if (ret != kvstore::ResultCode::SUCCEEDED || !iter) {
         return ret;
     }
+
     EdgeRanking lastRank  = -1;
     VertexID    lastDstId = 0;
     bool        firstLoop = true;
     int         cnt = 0;
     bool onlyStructure = onlyStructures_[edgeType];
     Getters getters;
+    std::unique_ptr<nebula::algorithm::ReservoirSampling<
+        std::pair<std::unique_ptr<RowReader>, std::string>>> sampler;
+    if (FLAGS_enable_reservoir_sampling) {
+        sampler = std::make_unique<
+            nebula::algorithm::ReservoirSampling<
+                std::pair<std::unique_ptr<RowReader>, std::string>
+            >
+        >(FLAGS_max_edge_returned_per_vertex);
+    }
 
     auto schema = this->schemaMan_->getEdgeSchema(spaceId_, std::abs(edgeType));
     auto retTTL = getEdgeTTLInfo(edgeType);
-    for (; iter->valid() && cnt < FLAGS_max_edge_returned_per_vertex; iter->next()) {
+    for (; iter->valid(); iter->next()) {
+        if (!FLAGS_enable_reservoir_sampling
+                && !(cnt < FLAGS_max_edge_returned_per_vertex)) {
+            break;
+        }
         auto key = iter->key();
         auto val = iter->val();
         auto rank = NebulaKeyUtils::getRank(key);
@@ -581,12 +597,24 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
             }
         }
 
-        proc(reader.get(), key, props);
+        if (FLAGS_enable_reservoir_sampling) {
+            sampler->sampling(std::make_pair(std::move(reader), key.str()));
+        } else {
+            proc(reader.get(), key, props);
+        }
         ++cnt;
         if (firstLoop) {
             firstLoop = false;
         }
     }
+
+    if (FLAGS_enable_reservoir_sampling) {
+        auto samples = std::move(*sampler).samples();
+        for (auto& sample : samples) {
+            proc(sample.first.get(), sample.second, props);
+        }
+    }
+
     return ret;
 }
 
