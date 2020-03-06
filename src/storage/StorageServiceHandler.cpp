@@ -11,7 +11,6 @@
 #include "storage/query/QueryEdgePropsProcessor.h"
 #include "storage/query/QueryStatsProcessor.h"
 #include "storage/query/GetUUIDProcessor.h"
-#include "storage/query/QueryEdgeKeysProcessor.h"
 #include "storage/query/ScanEdgeProcessor.h"
 #include "storage/query/ScanVertexProcessor.h"
 #include "storage/mutate/AddVerticesProcessor.h"
@@ -96,12 +95,6 @@ StorageServiceHandler::future_addEdges(const cpp2::AddEdgesRequest& req) {
                                                   schemaMan_,
                                                   indexMan_,
                                                   &addEdgeQpsStat_);
-    RETURN_FUTURE(processor);
-}
-
-folly::Future<cpp2::EdgeKeysResponse>
-StorageServiceHandler::future_getEdgeKeys(const cpp2::EdgeKeysRequest& req) {
-    auto* processor = QueryEdgeKeysProcessor::instance(kvstore_, schemaMan_);
     RETURN_FUTURE(processor);
 }
 
