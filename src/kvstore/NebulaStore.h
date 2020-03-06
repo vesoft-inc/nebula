@@ -222,6 +222,9 @@ public:
     int32_t allLeader(std::unordered_map<GraphSpaceID,
                                          std::vector<PartitionID>>& leaderIds) override;
 
+    // Wait the N partition as leader in specify space
+    bool waitNLeadersOnSpace(GraphSpaceID spaceId, uint64_t leaders) const;
+
 private:
     void updateSpaceOption(GraphSpaceID spaceId,
                            const std::unordered_map<std::string, std::string>& options,
@@ -240,7 +243,7 @@ private:
 
 private:
     // The lock used to protect spaces_
-    folly::RWSpinLock lock_;
+    mutable folly::RWSpinLock lock_;
     std::unordered_map<GraphSpaceID, std::shared_ptr<SpacePartInfo>> spaces_;
 
     std::shared_ptr<folly::IOThreadPoolExecutor> ioPool_;

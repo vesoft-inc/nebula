@@ -16,9 +16,13 @@ namespace nebula {
 namespace storage {
 TEST(CheckpointTest, simpleTest) {
     fs::TempDir dataPath("/tmp/Checkpoint_Test_src.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(dataPath.path()));
+    constexpr int32_t partitions = 6;
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(dataPath.path(), partitions));
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
+    auto *store = dynamic_cast<kvstore::NebulaStore*>(kv.get());
+    // Hard code the default space 0
+    ASSERT_TRUE(store->waitNLeadersOnSpace(0, partitions));
     // Add vertices
     {
         auto* processor = AddVerticesProcessor::instance(kv.get(),
