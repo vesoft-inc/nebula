@@ -498,21 +498,21 @@ private:
 };
 
 
-class DeleteVertexSentence final : public Sentence {
+class DeleteVerticesSentence final : public Sentence {
 public:
-    explicit DeleteVertexSentence(Expression *vid) {
-        vid_.reset(vid);
+    explicit DeleteVerticesSentence(VertexIDList *vidList) {
+        vidList_.reset(vidList);
         kind_ = Kind::kDeleteVertex;
     }
 
-    Expression* vid() const {
-        return vid_.get();
+    VertexIDList* vidList() const {
+        return vidList_.get();
     }
 
     std::string toString() const override;
 
 private:
-    std::unique_ptr<Expression>                  vid_;
+    std::unique_ptr<VertexIDList>                vidList_;
 };
 
 
@@ -612,5 +612,21 @@ public:
 
     std::string toString() const override;
 };
+
+class AdminSentence final : public Sentence {
+public:
+    explicit AdminSentence(const std::string& op) : op_(op) {
+        kind_ = Kind::kAdmin;
+    }
+
+    void addPara(const std::string& para);
+    std::string toString() const override;
+    std::string getType() const;
+    std::vector<std::string> getParas() const;
+private:
+    std::string             op_;
+    std::vector<std::string> paras_;
+};
+
 }  // namespace nebula
 #endif  // PARSER_MUTATESENTENCES_H_

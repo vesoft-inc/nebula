@@ -51,6 +51,9 @@ enum ErrorCode {
     // index failed
     E_INDEX_NOT_FOUND = -60,
 
+    // partial result, used for kv interfaces
+    E_PARTIAL_RESULT = -99,
+
     E_UNKNOWN = -100,
 } (cpp.enum_strict)
 
@@ -162,11 +165,6 @@ struct QueryStatsResponse {
     3: optional binary data,
 }
 
-struct EdgeKeyResponse {
-    1: required ResponseCommon result,
-    2: optional list<EdgeKey> edge_keys,      // out-edges and in-edges
-}
-
 struct Tag {
     1: common.TagID tag_id,
     2: binary props,
@@ -218,16 +216,19 @@ struct AddEdgesRequest {
     3: bool overwritable,
 }
 
-struct EdgeKeyRequest {
+struct EdgeKeysRequest {
     1: common.GraphSpaceID space_id,
-    2: common.PartitionID part_id,
-    3: common.VertexID vid,
+    2: map<common.PartitionID, list<common.VertexID>>(cpp.template = "std::unordered_map") parts,
 }
 
-struct DeleteVertexRequest {
-    1: common.GraphSpaceID      space_id,
-    2: common.PartitionID       part_id,
-    3: common.VertexID          vid;
+struct EdgeKeysResponse {
+    1: required ResponseCommon result,
+    2: optional map<common.VertexID, list<EdgeKey>>(cpp.template = "std::unordered_map") edge_keys,
+}
+
+struct DeleteVerticesRequest {
+    1: common.GraphSpaceID space_id,
+    2: map<common.PartitionID, list<common.VertexID>>(cpp.template = "std::unordered_map") parts,
 }
 
 struct DeleteEdgesRequest {
@@ -399,6 +400,9 @@ struct RemoveRangeRequest {
 struct GetRequest {
     1: common.GraphSpaceID space_id,
     2: map<common.PartitionID, list<string>>(cpp.template = "std::unordered_map") parts,
+    // When return_partly is true and some of the keys not found, will return the keys
+    // which exist
+    3: bool return_partly
 }
 
 struct PrefixRequest {
@@ -474,9 +478,9 @@ service StorageService {
     ExecResponse addVertices(1: AddVerticesRequest req);
     ExecResponse addEdges(1: AddEdgesRequest req);
 
-    EdgeKeyResponse getEdgeKeys(1: EdgeKeyRequest req);
+    EdgeKeysResponse getEdgeKeys(1: EdgeKeysRequest req);
     ExecResponse deleteEdges(1: DeleteEdgesRequest req);
-    ExecResponse deleteVertex(1: DeleteVertexRequest req);
+    ExecResponse deleteVertices(1: DeleteVerticesRequest req);
 
     UpdateResponse updateVertex(1: UpdateVertexRequest req)
     UpdateResponse updateEdge(1: UpdateEdgeRequest req)

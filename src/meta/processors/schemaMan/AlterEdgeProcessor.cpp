@@ -15,7 +15,7 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeLock());
     auto ret = getEdgeType(spaceId, req.get_edge_name());
     if (!ret.ok()) {
-        resp_.set_code(to(ret.status()));
+        handleErrorCode(MetaCommon::to(ret.status()));
         onFinished();
         return;
     }
@@ -29,7 +29,7 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
         LOG(ERROR) << "Edge could not be found " << req.get_edge_name()
                    << ", spaceId " << spaceId
                    << ", edgeType " << edgeType;
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
@@ -45,16 +45,17 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
 
     auto iRet = getIndexes(spaceId, edgeType, true);
     if (!iRet.ok()) {
-        resp_.set_code(to(iRet.status()));
+        handleErrorCode(MetaCommon::to(iRet.status()));
         onFinished();
         return;
     }
     auto indexes = std::move(iRet).value();
-    if (!indexes.empty()) {
+    auto existIndex = !indexes.empty();
+    if (existIndex) {
         auto iStatus = indexCheck(indexes, edgeItems);
         if (iStatus != cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << "Alter edge error, index conflict : " << static_cast<int32_t>(iStatus);
-            resp_.set_code(iStatus);
+            handleErrorCode(iStatus);
             onFinished();
             return;
         }
@@ -66,26 +67,26 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
             auto retCode = MetaServiceUtils::alterColumnDefs(columns, prop, col, edgeItem.op);
             if (retCode != cpp2::ErrorCode::SUCCEEDED) {
                 LOG(ERROR) << "Alter edge column error " << static_cast<int32_t>(retCode);
-                resp_.set_code(retCode);
+                handleErrorCode(retCode);
                 onFinished();
                 return;
             }
         }
     }
 
-    // Update schema property
+    // Update schema property if edge not index
     auto& alterSchemaProp = req.get_schema_prop();
-    auto retCode = MetaServiceUtils::alterSchemaProp(columns, prop, alterSchemaProp);
-
+    auto retCode = MetaServiceUtils::alterSchemaProp(columns, prop, alterSchemaProp, existIndex);
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Alter edge property error " << static_cast<int32_t>(retCode);
-        resp_.set_code(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
-
+    if (!existIndex) {
+        schema.set_schema_prop(std::move(prop));
+    }
     schema.set_columns(std::move(columns));
-    schema.set_schema_prop(std::move(prop));
 
     std::vector<kvstore::KV> data;
     LOG(INFO) << "Alter edge " << req.get_edge_name() << ", edgeType " << edgeType;

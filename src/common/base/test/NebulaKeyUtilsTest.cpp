@@ -25,6 +25,11 @@ TEST(NebulaKeyUtilsTest, SimpleTest) {
     ASSERT_EQ(tagId, NebulaKeyUtils::getTagId(vertexKey));
     ASSERT_EQ(srcId, NebulaKeyUtils::getVertexId(vertexKey));
 
+    std::string invalidLenKey(12, 'A');
+    ASSERT_EQ(12, invalidLenKey.size());
+    ASSERT_FALSE(NebulaKeyUtils::isVertex(invalidLenKey));
+    ASSERT_FALSE(NebulaKeyUtils::isEdge(invalidLenKey));
+
     auto edgeKey = NebulaKeyUtils::edgeKey(partId, srcId, type, rank, dstId, edgeVersion);
     ASSERT_TRUE(NebulaKeyUtils::isEdge(edgeKey));
     ASSERT_EQ(partId, NebulaKeyUtils::getPart(edgeKey));
@@ -77,6 +82,15 @@ TEST(NebulaKeyUtilsTest, encodeVariant) {
     EXPECT_TRUE(evalDouble(std::numeric_limits<double>::min()));
     EXPECT_TRUE(evalDouble(-std::numeric_limits<double>::max()));
     EXPECT_TRUE(evalDouble(-(0.000000001 - std::numeric_limits<double>::min())));
+}
+
+TEST(NebulaKeyUtilsTest, encodeDouble) {
+    EXPECT_TRUE(evalDouble(100.5));
+    EXPECT_TRUE(evalDouble(200.5));
+    EXPECT_TRUE(evalDouble(300.5));
+    EXPECT_TRUE(evalDouble(400.5));
+    EXPECT_TRUE(evalDouble(500.5));
+    EXPECT_TRUE(evalDouble(600.5));
 }
 
 }  // namespace nebula

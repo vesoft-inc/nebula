@@ -190,8 +190,12 @@ Status YieldExecutor::executeInputs() {
         return Status::OK();
     }
 
+    auto status = checkIfDuplicateColumn();
+    if (!status.ok()) {
+        return status;
+    }
     auto outputSchema = std::make_shared<SchemaWriter>();
-    auto status = getOutputSchema(inputs, outputSchema.get());
+    status = getOutputSchema(inputs, outputSchema.get());
     if (!status.ok()) {
         return status;
     }

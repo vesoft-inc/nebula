@@ -21,7 +21,7 @@ void HBProcessor::process(const cpp2::HBReq& req) {
             && hostExist(MetaServiceUtils::hostKey(host.first, host.second))
                 == Status::HostNotFound()) {
         LOG(INFO) << "Reject unregistered host " << host << "!";
-        resp_.set_code(cpp2::ErrorCode::E_INVALID_HOST);
+        handleErrorCode(cpp2::ErrorCode::E_INVALID_HOST);
         onFinished();
         return;
     }
@@ -35,7 +35,7 @@ void HBProcessor::process(const cpp2::HBReq& req) {
             resp_.set_cluster_id(clusterId_);
         } else if (peerCluserId != clusterId_) {
             LOG(ERROR) << "Reject wrong cluster host " << host << "!";
-            resp_.set_code(cpp2::ErrorCode::E_WRONGCLUSTER);
+            handleErrorCode(cpp2::ErrorCode::E_WRONGCLUSTER);
             onFinished();
             return;
         }
@@ -53,7 +53,7 @@ void HBProcessor::process(const cpp2::HBReq& req) {
             }
         }
     }
-    resp_.set_code(to(ret));
+    handleErrorCode(MetaCommon::to(ret));
     int64_t lastUpdateTime = LastUpdateTimeMan::get(this->kvstore_);
     resp_.set_last_update_time_in_ms(lastUpdateTime);
     onFinished();

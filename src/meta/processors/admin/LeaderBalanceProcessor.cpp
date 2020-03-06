@@ -14,8 +14,7 @@ namespace meta {
 void LeaderBalanceProcessor::process(const cpp2::LeaderBalanceReq& req) {
     UNUSED(req);
     auto ret = Balancer::instance(kvstore_)->leaderBalance();
-    resp_.set_code(ret);
-    LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
+    handleErrorCode(ret);
     onFinished();
 }
 

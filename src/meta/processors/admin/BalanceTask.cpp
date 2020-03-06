@@ -36,6 +36,11 @@ void BalanceTask::invoke() {
         onError_();
         return;
     }
+    if (ret_ == Result::SUCCEEDED) {
+        CHECK(status_ == Status::END);
+        onFinished_();
+        return;
+    }
     switch (status_) {
         case Status::START: {
             LOG(INFO) << taskIdStr_ << "Start to move part!";
@@ -168,7 +173,6 @@ void BalanceTask::invoke() {
                         LOG(INFO) << taskIdStr_ << "Remove part failed, status " << resp;
                         ret_ = Result::FAILED;
                     } else {
-                        ret_ = Result::SUCCEEDED;
                         status_ = Status::CHECK;
                     }
                     invoke();
@@ -188,7 +192,6 @@ void BalanceTask::invoke() {
                     LOG(INFO) << taskIdStr_ << "Check the peers failed, status " << resp;
                     ret_ = Result::FAILED;
                 } else {
-                    ret_ = Result::SUCCEEDED;
                     status_ = Status::END;
                 }
                 invoke();
@@ -198,6 +201,7 @@ void BalanceTask::invoke() {
         case Status::END: {
             LOG(INFO) << taskIdStr_ <<  "Part has been moved successfully!";
             endTimeMs_ = time::WallClock::fastNowInSec();
+            ret_ = Result::SUCCEEDED;
             SAVE_STATE();
             onFinished_();
             break;
