@@ -102,6 +102,7 @@ public:
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>> get(
       GraphSpaceID space,
       const std::vector<std::string>& keys,
+      bool returnPartly = false,
       folly::EventBase* evb = nullptr);
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> addVertices(
