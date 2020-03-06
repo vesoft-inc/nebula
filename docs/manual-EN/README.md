@@ -4,7 +4,7 @@
 
 It is the optimal solution in the world capable of hosting graphs with dozens of billions of vertices (nodes) and trillions of edges with millisecond latency.
 
-## Prefix
+## Preface
 
 * [About This Manual](0.about-this-manual.md)
 * [Manual Change Log](CHANGELOG.md)
@@ -23,7 +23,6 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
   * [Import .csv File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/import-csv-file.md)
   * [Ingest .sst File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/download-and-ingest-sst-file.md)
   * [Nebula Graph Clients](1.overview/2.quick-start/3.supported-clients.md)
-
 
 * Design and Architecture
   * [Design Overview](1.overview/3.design-and-architecture/1.design-and-architecture.md)
@@ -66,6 +65,7 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
     * [Drop Space Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/drop-space-syntax.md)
     * [Drop Tag Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/drop-tag-syntax.md)
     * [Index](2.query-language/4.statement-syntax/1.data-definition-statements/index.md)
+    * [TTL (time-to-live)](2.query-language/4.statement-syntax/1.data-definition-statements/TTL.md)
   * Data Query and Manipulation Statements
     * [Delete Edge Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/delete-edge-syntax.md)
     * [Delete Vertex Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/delete-vertex-syntax.md)
@@ -73,10 +73,12 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
     * [Go Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/go-syntax.md)
     * [Insert Edge Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/insert-edge-syntax.md)
     * [Insert Vertex Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/insert-vertex-syntax.md)
+    * [Lookup Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/lookup-syntax.md)
+    * [Return Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/return-syntax.md)
     * [Update Vertex/Edge Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/update-vertex-edge-syntax.md)
     * [Where Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/where-syntax.md)
     * [Yield Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/yield-syntax.md)
-    * [Return Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/return-syntax.md)
+
   * Utility Statements
     * [Describe Syntax](2.query-language/4.statement-syntax/3.utility-statements/describe-syntax.md)
     * [Use Syntax](2.query-language/4.statement-syntax/3.utility-statements/use-syntax.md)
@@ -84,7 +86,7 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
   * Graph Algorithms
     * [Find Path Syntax](2.query-language/4.statement-syntax/4.graph-algorithms/find-path-syntax.md)
 
-## Build Develop And Administration (For Developers And DBA)
+## Build Develop and Administration (for Developers and DBA)
 
 * Build
   * [Build Source Code](3.build-develop-and-administration/1.build/1.build-source-code.md)
@@ -123,17 +125,19 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
       * [Storage Balance](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/storage-balance.md)
       * [Storage Metrics](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/storage-metrics.md)
       * [Cluster Snapshot](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/cluster-snapshot.md)
+      * [Job Manager](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/job-manager.md)
 
 ## Contributions (for Contributors)
 
-* [Contribute to Documentations](4.contributions/contribute-to-documentation.md)
+* [Contribute to Documentation](4.contributions/contribute-to-documentation.md)
 * [Cpp Coding Style](4.contributions/cpp-coding-style.md)
 * [Developer Documentation Style Guide](4.contributions/developer-documentation-style-guide.md)
 * [How to Contribute](4.contributions/how-to-contribute.md)
 
 ## Appendix
 
-* [Gremlin VS nGQL](5.appendix/gremlin-ngql.md)
+* [Gremlin V.S. nGQL](5.appendix/gremlin-ngql.md)
+* [Cypher V.S. nGQL](5.appendix/cypher-ngql.md)
 
 ## Misc
 

@@ -37,6 +37,7 @@ public:
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
 private:
+    Status prepareData();
     // To do some preparing works on the clauses
     Status prepareSet();
 

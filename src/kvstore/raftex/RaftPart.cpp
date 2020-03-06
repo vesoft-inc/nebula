@@ -238,8 +238,6 @@ RaftPart::RaftPart(ClusterID clusterId,
                                                                logClusterId,
                                                                log);
                                 });
-    lastLogId_ = wal_->lastLogId();
-    lastLogTerm_ = wal_->lastLogTerm();
     logs_.reserve(FLAGS_max_batch_size);
     CHECK(!!executor_) << idStr_ << "Should not be nullptr";
 }
@@ -274,12 +272,15 @@ const char* RaftPart::roleStr(Role role) const {
 void RaftPart::start(std::vector<HostAddr>&& peers, bool asLearner) {
     std::lock_guard<std::mutex> g(raftLock_);
 
+    lastLogId_ = wal_->lastLogId();
+    lastLogTerm_ = wal_->lastLogTerm();
+    term_ = proposedTerm_ = lastLogTerm_;
+
     // Set the quorum number
     quorum_ = (peers.size() + 1) / 2;
 
     auto logIdAndTerm = lastCommittedLogId();
     committedLogId_ = logIdAndTerm.first;
-    term_ = proposedTerm_ = logIdAndTerm.second;
 
     if (lastLogId_ < committedLogId_) {
         LOG(INFO) << idStr_ << "Reset lastLogId " << lastLogId_
@@ -490,7 +491,7 @@ void RaftPart::addPeer(const HostAddr& peer) {
 void RaftPart::removePeer(const HostAddr& peer) {
     CHECK(!raftLock_.try_lock());
     if (peer == addr_) {
-        //    status_ = Status::STOPPED;
+        // The part will be removed in REMOVE_PART_ON_SRC phase
         LOG(INFO) << idStr_ << "Remove myself from the raft group.";
         return;
     }
@@ -1097,6 +1098,16 @@ bool RaftPart::leaderElection() {
     cpp2::AskForVoteRequest voteReq;
     decltype(hosts_) hosts;
     if (!prepareElectionRequest(voteReq, hosts)) {
+        // Suppose we have three replicas A(leader), B, C, after A crashed,
+        // B, C will begin the election. B win, and send hb, C has gap with B
+        // and need the snapshot from B. Meanwhile C begin the election,
+        // C will be Candidate, but because C is in WAITING_SNAPSHOT,
+        // so prepareElectionRequest will return false and go on the election.
+        // Becasue C is in Candidate, so it will reject the snapshot request from B.
+        // Infinite loop begins.
+        // So we neeed to go back to the follower state to avoid the case.
+        std::lock_guard<std::mutex> g(raftLock_);
+        role_ = Role::FOLLOWER;
         return false;
     }
 

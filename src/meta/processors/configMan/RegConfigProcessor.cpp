@@ -34,7 +34,7 @@ void RegConfigProcessor::process(const cpp2::RegConfigReq& req) {
             return;
         }
     }
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }
 

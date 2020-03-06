@@ -124,7 +124,7 @@ private:
     /*
      * When the balancer failover, we should recovery the status.
      * */
-    bool recovery();
+    cpp2::ErrorCode recovery();
 
     /**
      * Build balance plan and save it in kvstore.
