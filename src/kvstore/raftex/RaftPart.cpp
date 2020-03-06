@@ -83,8 +83,8 @@ public:
     // Return true if the current log is a AtomicOp, otherwise return false
     bool processAtomicOp() {
         while (idx_ < logs_.size()) {
-            auto& tup = logs_.at(idx_);
-            auto logType = std::get<1>(tup);
+            auto& log = logs_.at(idx_);
+            auto logType = log.type;
             if (logType != LogType::ATOMIC_OP) {
                 // Not a AtomicOp
                 return false;
@@ -92,7 +92,7 @@ public:
 
             // Process AtomicOp log
             CHECK(!!opCB_);
-            opResult_ = opCB_(std::move(std::get<3>(tup)));
+            opResult_ = opCB_(std::move(log.atomicOp));
             if (opResult_.size() > 0) {
                 // AtomicOp Succeeded
                 return true;
@@ -140,7 +140,7 @@ public:
 
     ClusterID logSource() const override {
         DCHECK(valid());
-        return std::get<0>(logs_.at(idx_));
+        return logs_.at(idx_).clusterId;
     }
 
     folly::StringPiece logMsg() const override {
@@ -148,7 +148,7 @@ public:
         if (currLogType_ == LogType::ATOMIC_OP) {
             return opResult_;
         } else {
-            return std::get<2>(logs_.at(idx_));
+            return logs_.at(idx_).log;
         }
     }
 
@@ -171,7 +171,7 @@ public:
     }
 
     LogType logType() const {
-        return  std::get<1>(logs_.at(idx_));
+        return  logs_.at(idx_).type;
     }
 
 private:

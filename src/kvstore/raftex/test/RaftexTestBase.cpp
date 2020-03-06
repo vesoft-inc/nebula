@@ -262,7 +262,7 @@ void checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
                      size_t index,
                      std::shared_ptr<test::TestShard>& leader) {
     std::lock_guard<std::mutex> lock(leaderMutex);
-    ASSERT_FALSE(!leader);
+    ASSERT_TRUE(leader);
     ASSERT_EQ(leader->address(), copies[index]->address());
 }
 

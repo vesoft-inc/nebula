@@ -293,11 +293,17 @@ private:
     using AppendLogResponses = std::vector<std::pair<size_t, cpp2::AppendLogResponse>>;
 
     // <source, logType, log>
-    using LogCache = std::vector<
-        std::tuple<ClusterID,
-                   LogType,
-                   std::string,
-                   AtomicOp>>;
+    struct LogPiece {
+        LogPiece(ClusterID clusterId_, LogType type_, std::string &&log_,  AtomicOp &&atomicOp_) :
+            clusterId(clusterId_), type(type_), log(std::move(log_)), atomicOp(std::move(atomicOp_))
+            {}
+
+        ClusterID   clusterId;
+        LogType     type;
+        std::string log;
+        AtomicOp    atomicOp;
+    };
+    using LogCache = std::vector<LogPiece>;
 
 
     /****************************************************
