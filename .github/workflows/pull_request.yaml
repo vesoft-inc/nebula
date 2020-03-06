@@ -72,7 +72,7 @@ jobs:
             -DENABLE_ASAN=on \
             -B build/
       - name: Make
-        if: matrix.compiler != 'gcc-9.2' && matrix.os != 'centos7' && steps.ignore_docs.outputs.num_source_files != 0
+        if: (matrix.compiler != 'gcc-9.2' || matrix.os != 'centos7') && steps.ignore_docs.outputs.num_source_files != 0
         run: |
           cmake --build build/ -j $(nproc)
       - name: Make with less concurrency
