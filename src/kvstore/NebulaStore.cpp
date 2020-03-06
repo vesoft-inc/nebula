@@ -101,7 +101,14 @@ bool NebulaStore::init() {
                             enginePtr->removePart(partId);
                             continue;
                         } else {
-                             partIds.emplace_back(partId);
+                             auto it = std::find(partIds.begin(), partIds.end(), partId);
+                             if (it != partIds.end()) {
+                                LOG(INFO) << "Part " << partId
+                                          << " has been loaded, skip current one, remove it!";
+                                enginePtr->removePart(partId);
+                             } else {
+                                partIds.emplace_back(partId);
+                             }
                         }
                     }
                     if (partIds.empty()) {
@@ -814,7 +821,7 @@ int32_t NebulaStore::allLeader(std::unordered_map<GraphSpaceID,
 }
 
 bool NebulaStore::checkLeader(std::shared_ptr<Part> part) const {
-    return !FLAGS_check_leader || part->isLeader();
+    return !FLAGS_check_leader || (part->isLeader() && part->leaseValid());
 }
 
 
