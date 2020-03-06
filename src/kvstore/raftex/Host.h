@@ -64,7 +64,8 @@ public:
     }
 
     folly::Future<cpp2::AskForVoteResponse> askForVote(
-        const cpp2::AskForVoteRequest& req);
+        const cpp2::AskForVoteRequest& req,
+        folly::EventBase* eb);
 
     // When logId == lastLogIdSent, it is a heartbeat
     folly::Future<cpp2::AppendLogResponse> appendLogs(

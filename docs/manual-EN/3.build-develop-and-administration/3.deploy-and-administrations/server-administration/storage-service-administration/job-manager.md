@@ -9,6 +9,7 @@ The job here refers to the long tasks running at the storage layer. For example,
 The `submit job compact/flush` statement creates a new job and returns the job ID in the job manager, and executes the `compact/flush` command in the storage. The example is as follows:
 
 ```ngql
+nebula> SUBMIT JOB COMPACT;
 ==============
 | New Job Id |
 ==============

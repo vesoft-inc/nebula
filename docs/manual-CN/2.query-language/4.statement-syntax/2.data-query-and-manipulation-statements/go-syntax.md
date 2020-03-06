@@ -3,11 +3,10 @@
 `GO` 是 **Nebula Graph** 中最常用的关键字，可以指定过滤条件（如 `WHERE`）遍历图数据并获取点和边的属性，还能以指定顺序（`ORDER BY ASC | DESC`）返回指定数目（`LIMIT`）的结果。
 
 >`GO` 的用法与 SQL 中的 `SELECT` 类似，重要区别是 `GO` 必须从遍历一系列的节点开始。
-<!-- >请参考`FIND`的用法，它对应于SQL中的`SELECT`。 -->
 
 ```ngql
   GO [ <N> STEPS ] FROM <node_list>
-  OVER <edge_type_list> [REVERSELY]
+  OVER <edge_type_list> [REVERSELY] [BIDIRECT]
   [ WHERE <expression> [ AND | OR expression ...]) ]
   YIELD | YIELDS [DISTINCT] <return_list>
 
@@ -22,10 +21,10 @@
     <col_name> [AS <col_alias>] [, <col_name> [AS <col_alias>] ...]
 ```
 
-* [ <N> STEPS ] 指定查询 N 跳。
+* [ \<N> STEPS ] 指定查询 N 跳。
 * <node_list> 为逗号隔开的节点 ID，或特殊占位符 `$-.id` (参看 `PIPE` 用法)。
 * <edge_type_list> 为图遍历返回的边类型列表。
-* [ WHERE <expression> ] 指定被筛选的逻辑条件，`WHERE` 可用于起点，边及终点，同样支持逻辑关键词 `AND`、`OR`、`NOT`，详情参见 `WHERE` 的用法。
+* [ WHERE \<expression> ] 指定被筛选的逻辑条件，WHERE 可用于起点，边及终点，同样支持逻辑关键词 AND、OR、NOT，详情参见 WHERE 的用法。
 * YIELD [DISTINCT] <return_list> 以列的形式返回结果，并可对列进行重命名。详情参看 `YIELD` 用法。`DISTINCT` 的用法与 SQL 相同。
 
 ## 示例
@@ -149,7 +148,11 @@ nebula> GO FROM 100 OVER follow, serve YIELD follow.degree, serve.start_year;
 例如：
 
 ```ngql
-nebula> GO FROM 100 OVER follow REVERSELY YIELD follow._src AS id | \
+nebula> GO FROM 100 OVER follow REVERSELY YIELD follow._src; -- 返回 100
+```
+
+```ngql
+nebula> GO FROM 100 OVER follow REVERSELY YIELD follow._dst AS id | \
         GO FROM $-.id OVER serve WHERE $^.player.age > 20 YIELD $^.player.name AS FriendOf, $$.team.name AS Team;
 
 ============================
@@ -162,3 +165,31 @@ nebula> GO FROM 100 OVER follow REVERSELY YIELD follow._src AS id | \
 ```
 
 遍历所有关注 100 号球员的球员，找出这些球员服役的球队，筛选年龄大于 20 岁的球员并返回这些球员姓名和其服役的球队名称。如果此处不指定 `YIELD`，则默认返回每条边目标点的 `vid`。
+
+## 双向遍历
+
+目前 **Nebula Graph** 支持使用关键词 `BIDIRECT` 进行双向遍历，语法为：
+
+```ngql
+  GO FROM <node_list>
+  OVER <edge_type_list> BIDIRECT
+  WHERE (expression [ AND | OR expression ...])  
+  YIELD | YIELDS  [DISTINCT] <return_list>
+```
+
+例如：
+
+```ngql
+nebula> GO FROM 102 OVER follow BIDIRECT;
+===============
+| follow._dst |
+===============
+| 101         |
+---------------
+| 103         |
+---------------
+| 135         |
+---------------
+```
+
+上述语句同时返回 102 关注的球员及关注 102 的球员。

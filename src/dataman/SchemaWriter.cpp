@@ -36,7 +36,6 @@ SchemaWriter& SchemaWriter::appendCol(folly::StringPiece name,
                                       ValueType&& type) noexcept {
     using folly::hash::SpookyHashV2;
     uint64_t hash = SpookyHashV2::Hash64(name.data(), name.size(), 0);
-    DCHECK(nameIndex_.find(hash) == nameIndex_.end());
 
     ColumnDef col;
     col.set_name(name.toString());

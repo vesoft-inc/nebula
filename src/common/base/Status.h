@@ -106,6 +106,10 @@ public:
     // Nothing is executed When command is comment
     STATUS_GENERATOR(StatementEmpty);
 
+    // Storage engine errors
+    STATUS_GENERATOR(KeyNotFound);
+
+    // Meta engine errors
     // TODO(dangleptr) we could use ErrorOr to replace SpaceNotFound here.
     STATUS_GENERATOR(SpaceNotFound);
     STATUS_GENERATOR(HostNotFound);
@@ -138,7 +142,7 @@ public:
         kSyntaxError            = 201,
         kStatementEmpty         = 202,
         // 3xx, for storage engine errors
-        // ...
+        kKeyNotFound            = 301,
         // 4xx, for meta service errors
         kSpaceNotFound          = 404,
         kHostNotFound           = 405,

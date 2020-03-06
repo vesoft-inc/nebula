@@ -307,6 +307,10 @@ Status FetchVerticesExecutor::setupVidsFromRef() {
         return Status::OK();
     }
 
+    auto status = checkIfDuplicateColumn();
+    if (!status.ok()) {
+        return status;
+    }
     StatusOr<std::vector<VertexID>> result;
     if (distinct_) {
         result = inputs->getDistinctVIDs(*colname_);
