@@ -46,9 +46,9 @@ public:
     void showUsers();
     void showRoles();
 
-    static std::string roleToStr(nebula::cpp2::RoleType type);
+    std::string roleToStr(nebula::cpp2::RoleType type);
 
-    static std::string loginTypeToStr(nebula::cpp2::UserLoginType type);
+    std::string loginTypeToStr(nebula::cpp2::UserLoginType type);
 
     void toUserRows(std::vector<nebula::cpp2::UserItem> users);
 

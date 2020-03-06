@@ -1078,7 +1078,7 @@ void ShowExecutor::showUser() {
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error(folly::stringPrintf("Show tags exception: %s",
+        doError(Status::Error(folly::stringPrintf("Show user exception: %s",
                                                   e.what().c_str())));
         return;
     };
@@ -1153,7 +1153,6 @@ void ShowExecutor::showRoles() {
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
-// static
 std::string ShowExecutor::roleToStr(nebula::cpp2::RoleType type) {
     std::string role;
     switch (type) {
@@ -1181,7 +1180,6 @@ std::string ShowExecutor::roleToStr(nebula::cpp2::RoleType type) {
     return role;
 }
 
-// static
 std::string ShowExecutor::loginTypeToStr(nebula::cpp2::UserLoginType type) {
     std::string loginType;
     switch (type) {

@@ -39,12 +39,9 @@ void CreateUserExecutor::execute() {
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
             onError_(resp.status());
             return;
         }
-
-        DCHECK(onFinish_);
         onFinish_(Executor::ProcessControl::kNext);
     };
 
@@ -121,12 +118,9 @@ void AlterUserExecutor::execute() {
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
             onError_(resp.status());
             return;
         }
-
-        DCHECK(onFinish_);
         onFinish_(Executor::ProcessControl::kNext);
     };
 
@@ -157,12 +151,9 @@ void ChangePasswordExecutor::execute() {
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
             onError_(resp.status());
             return;
         }
-
-        DCHECK(onFinish_);
         onFinish_(Executor::ProcessControl::kNext);
     };
 
