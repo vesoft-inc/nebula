@@ -172,6 +172,19 @@ public:
     folly::Future<cpp2::ListRolesResp>
     future_getUserRoles(const cpp2::GetUserRolesReq& req) override;
 
+
+    /**
+     * Install or uninstall plugin
+     */
+    folly::Future<cpp2::ExecResp>
+    future_installPlugin(const cpp2::InstallPluginReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_uninstallPlugin(const cpp2::UninstallPluginReq& req) override;
+
+    folly::Future<cpp2::ListPluginsResp>
+    future_listPlugins(const cpp2::ListPluginsReq& req) override;
+
     /**
      * HeartBeat
      * */

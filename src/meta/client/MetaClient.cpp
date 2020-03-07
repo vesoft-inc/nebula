@@ -2167,6 +2167,49 @@ folly::Future<StatusOr<std::vector<cpp2::Snapshot>>> MetaClient::listSnapshots()
     return future;
 }
 
+folly::Future<StatusOr<bool>> MetaClient::installPlugin(const std::string& pluginName,
+                                                        const std::string& soName) {
+    cpp2::PluginItem item;
+    item.set_plugin_name(pluginName);
+    item.set_so_name(soName);
+
+    cpp2::InstallPluginReq req;
+    req.set_item(std::move(item));
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_installPlugin(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<bool>> MetaClient::uninstallPlugin(const std::string& pluginName) {
+    cpp2::UninstallPluginReq req;
+    req.set_plugin_name(pluginName);
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_uninstallPlugin(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<std::vector<cpp2::PluginItem>>> MetaClient::listPlugins() {
+    cpp2::ListPluginsReq req;
+    folly::Promise<StatusOr<std::vector<cpp2::PluginItem>>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_listPlugins(request);
+    }, [] (cpp2::ListPluginsResp&& resp) -> decltype(auto){
+        return std::move(resp).get_items();
+    }, std::move(promise));
+    return future;
+}
+
 bool MetaClient::registerCfg() {
     auto ret = regConfig(gflagsDeclared_).get();
     if (ret.ok()) {

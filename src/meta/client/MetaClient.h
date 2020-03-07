@@ -399,6 +399,15 @@ public:
 
     folly::Future<StatusOr<std::vector<cpp2::Snapshot>>> listSnapshots();
 
+    // Operations for plugin
+    folly::Future<StatusOr<bool>>
+    installPlugin(const std::string& pluginName, const std::string& soName);
+
+    folly::Future<StatusOr<bool>>
+    uninstallPlugin(const std::string& pluginName);
+
+    folly::Future<StatusOr<std::vector<cpp2::PluginItem>>> listPlugins();
+
     // Opeartions for cache.
     StatusOr<GraphSpaceID>
     getSpaceIdByNameFromCache(const std::string& name);

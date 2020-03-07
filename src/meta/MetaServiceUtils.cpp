@@ -25,7 +25,8 @@ const std::string kConfigsTable        = "__configs__";        // NOLINT
 const std::string kDefaultTable        = "__default__";        // NOLINT
 const std::string kSnapshotsTable      = "__snapshots__";      // NOLINT
 const std::string kLastUpdateTimeTable = "__last_update_time__"; // NOLINT
-const std::string kLeadersTable        = "__leaders__";          // NOLINT
+const std::string kLeadersTable        = "__leaders__";        // NOLINT
+const std::string kPluginTable         = "__plugins__";        // NOLINT
 
 const std::string kHostOnline  = "Online";       // NOLINT
 const std::string kHostOffline = "Offline";      // NOLINT
@@ -644,6 +645,36 @@ GraphSpaceID MetaServiceUtils::parseRoleSpace(folly::StringPiece key) {
     return *reinterpret_cast<const GraphSpaceID*>(key.data() + kRolesTable.size());
 }
 
+std::string MetaServiceUtils::indexPluginKey(const std::string& pluginName) {
+    std::string key;
+    EntryType type = EntryType::PLUGIN;
+    key.reserve(128);
+    key.append(kIndexTable.data(), kIndexTable.size())
+       .append(reinterpret_cast<const char*>(&type), sizeof(type))
+       .append(pluginName);
+    return key;
+}
+
+std::string MetaServiceUtils::pluginKey(PluginID pluginId) {
+    std::string key;
+    key.reserve(kPluginTable.size() + sizeof(PluginID));
+    key.append(kPluginTable.data(), kPluginTable.size())
+       .append(reinterpret_cast<const char*>(&pluginId), sizeof(PluginID));
+    return key;
+}
+
+std::string MetaServiceUtils::pluginVal(const cpp2::PluginItem& pluginItem) {
+    std::string val;
+    apache::thrift::CompactSerializer::serialize(pluginItem, &val);
+    return val;
+}
+
+cpp2::PluginItem MetaServiceUtils::parsePluginItem(folly::StringPiece val) {
+    cpp2::PluginItem plugin;
+    apache::thrift::CompactSerializer::deserialize(val, plugin);
+    return plugin;
+}
+
 std::string MetaServiceUtils::rolesPrefix() {
     return kRolesTable;
 }
@@ -795,6 +826,11 @@ std::string MetaServiceUtils::parseSnapshotName(folly::StringPiece rawData) {
 const std::string& MetaServiceUtils::snapshotPrefix() {
     return kSnapshotsTable;
 }
+
+const std::string& MetaServiceUtils::pluginPrefix() {
+    return kPluginTable;
+}
+
 
 }  // namespace meta
 }  // namespace nebula

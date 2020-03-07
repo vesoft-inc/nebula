@@ -106,6 +106,9 @@ protected:
         case EntryType::INDEX:
             thriftID.set_index_id(static_cast<IndexID>(id));
             break;
+        case EntryType::PLUGIN:
+            thriftID.set_index_id(static_cast<PluginID>(id));
+            break;
         }
         return thriftID;
     }
@@ -229,6 +232,8 @@ protected:
     StatusOr<IndexID> getIndexID(GraphSpaceID spaceId, const std::string& indexName);
 
     bool checkPassword(const std::string& account, const std::string& password);
+
+    StatusOr<PluginID> getPluginId(const std::string& pluginName);
 
     kvstore::ResultCode doSyncPut(std::vector<kvstore::KV> data);
 

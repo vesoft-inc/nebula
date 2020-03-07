@@ -121,6 +121,7 @@ public:
     STATUS_GENERATOR(LeaderChanged);
     STATUS_GENERATOR(Balanced);
     STATUS_GENERATOR(PartNotFound);
+    STATUS_GENERATOR(PluginNotFound);
 
     // User or permission errors
     STATUS_GENERATOR(PermissionError);
@@ -158,6 +159,7 @@ public:
         kBalanced               = 410,
         kIndexNotFound          = 411,
         kPartNotFound           = 412,
+        kPluginNotFound         = 413,
         // 5xx for user or permission error
         kPermissionError        = 501,
     };

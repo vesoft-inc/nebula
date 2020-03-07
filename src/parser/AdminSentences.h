@@ -39,7 +39,8 @@ public:
         kShowEdgeIndexStatus,
         kShowSnapshots,
         kShowCharset,
-        kShowCollation
+        kShowCollation,
+        kShowPlugins
     };
 
     explicit ShowSentence(ShowType sType) {
@@ -193,7 +194,7 @@ private:
 
 class CreateSpaceSentence final : public CreateSentence {
 public:
-    explicit CreateSpaceSentence(std::string* spaceName, bool ifNotExist)
+    CreateSpaceSentence(std::string* spaceName, bool ifNotExist)
         : CreateSentence(ifNotExist) {
         spaceName_.reset(spaceName);
         kind_ = Kind::kCreateSpace;
@@ -224,7 +225,7 @@ private:
 
 class DropSpaceSentence final : public DropSentence {
 public:
-    explicit DropSpaceSentence(std::string *spaceName, bool ifExist) : DropSentence(ifExist) {
+    DropSpaceSentence(std::string *spaceName, bool ifExist) : DropSentence(ifExist) {
         spaceName_.reset(spaceName);
         kind_ = Kind::kDropSpace;
     }
@@ -443,6 +444,46 @@ public:
 
 private:
     std::unique_ptr<std::string>    name_;
+};
+
+class InstallPluginSentence final : public Sentence {
+public:
+    InstallPluginSentence(std::string *pluginName, std::string *soName) {
+        pluginName_.reset(pluginName);
+        soName_.reset(soName);
+        kind_ = Kind::kInstallPlugin;
+    }
+
+    const std::string* pluginName() const {
+        return pluginName_.get();
+    }
+
+    const std::string* soName() const {
+        return soName_.get();
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<std::string>     pluginName_;
+    std::unique_ptr<std::string>     soName_;
+};
+
+class UninstallPluginSentence final : public Sentence {
+public:
+    explicit UninstallPluginSentence(std::string *pluginName) {
+        pluginName_.reset(pluginName);
+        kind_ = Kind::kUninstallPlugin;
+    }
+
+    const std::string* pluginName() const {
+        return pluginName_.get();
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<std::string>     pluginName_;
 };
 
 }   // namespace nebula

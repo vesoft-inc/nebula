@@ -93,6 +93,9 @@ void ShowExecutor::execute() {
         case ShowSentence::ShowType::kShowCollation:
             showCollation();
             break;
+        case ShowSentence::ShowType::kShowPlugins:
+            showPlugins();
+            break;
         case ShowSentence::ShowType::kUnknown:
             doError(Status::Error("Type unknown"));
             break;

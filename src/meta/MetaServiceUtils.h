@@ -22,6 +22,7 @@ enum class EntryType : int8_t {
     EDGE        = 0x03,
     INDEX       = 0x04,
     CONFIG      = 0x05,
+    PLUGIN      = 0x08,
 };
 
 using ConfigName = std::pair<cpp2::ConfigModule, std::string>;
@@ -165,6 +166,14 @@ public:
 
     static GraphSpaceID parseRoleSpace(folly::StringPiece key);
 
+    static std::string indexPluginKey(const std::string& pluginName);
+
+    static std::string pluginKey(PluginID pluginId);
+
+    static std::string pluginVal(const cpp2::PluginItem& pluginItem);
+
+    static cpp2::PluginItem parsePluginItem(folly::StringPiece val);
+
     static std::string rolesPrefix();
 
     static std::string roleSpacePrefix(GraphSpaceID spaceId);
@@ -202,6 +211,8 @@ public:
     static std::string parseSnapshotName(folly::StringPiece rawData);
 
     static const std::string& snapshotPrefix();
+
+    static const std::string& pluginPrefix();
 };
 
 }  // namespace meta

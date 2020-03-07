@@ -7,7 +7,6 @@
 #ifndef META_INSTALLPLUGINPROCESSOR_H_
 #define META_INSTALLPLUGINPROCESSOR_H_
 
-#include <gtest/gtest_prod.h>
 #include "meta/processors/BaseProcessor.h"
 
 namespace nebula {
@@ -19,7 +18,6 @@ public:
         return new InstallPluginProcessor(kvstore);
     }
     void process(const cpp2::InstallPluginReq& req);
-
 
 private:
     explicit InstallPluginProcessor(kvstore::KVStore* kvstore)
