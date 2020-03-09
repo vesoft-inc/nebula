@@ -160,7 +160,7 @@ INSTALL                     ([Ii][Nn][Ss][Tt][Aa][Ll][Ll])
 UNINSTALL                   ([Uu][Nn][Ii][Nn][Ss][Tt][Aa][Ll][Ll])
 PLUGIN                      ([Pp][Ll][Uu][Gg][Ii][Nn])
 SONAME                      ([Ss][Oo][Nn][Aa][Mm][Ee])
-PLUGINS					    ([Pp][Ll][Uu][Gg][Ii][Nn][Ss])
+PLUGINS                     ([Pp][Ll][Uu][Gg][Ii][Nn][Ss])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -320,7 +320,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {UNINSTALL}                 { return TokenType::KW_UNINSTALL; }
 {PLUGIN}                    { return TokenType::KW_PLUGIN; }
 {SONAME}                    { return TokenType::KW_SONAME; }
-{PLUGINS}                    { return TokenType::KW_PLUGINS; }
+{PLUGINS}                   { return TokenType::KW_PLUGINS; }
 
 {TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }
 {FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }

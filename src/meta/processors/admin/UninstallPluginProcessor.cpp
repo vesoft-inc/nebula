@@ -4,9 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-
 #include "meta/processors/admin/UninstallPluginProcessor.h"
-#include "common/fs/FileUtils.h"
 
 namespace nebula {
 namespace meta {
@@ -18,7 +16,7 @@ void UninstallPluginProcessor::process(const cpp2::UninstallPluginReq& req) {
     // Check if the plugin exists
     auto ret = getPluginId(pluginName);
     if (!ret.ok()) {
-        LOG(ERROR) << "Uninstall plugin Failed : plugin " << pluginName;
+        LOG(ERROR) << "Uninstall plugin failed : plugin " << pluginName;
         handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
@@ -31,7 +29,7 @@ void UninstallPluginProcessor::process(const cpp2::UninstallPluginReq& req) {
 
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_id(to(pluginId, EntryType::PLUGIN));
-    LOG(INFO) << "Uninstall plugin : " << pluginName;
+    LOG(INFO) << "Uninstall plugin succeed : " << pluginName;
     doMultiRemove(std::move(keys));
 }
 

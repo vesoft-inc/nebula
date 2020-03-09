@@ -293,9 +293,9 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
-        install_uninstall_plugin__test
+        plugin_test
     SOURCES
-        InstallUninstallPluginTest.cpp
+        PluginTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:meta_http_handler>
         $<TARGET_OBJECTS:meta_service_handler>

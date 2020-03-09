@@ -1675,7 +1675,7 @@ show_sentence
     | KW_SHOW KW_COLLATION {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowCollation);
     }
-	| KW_SHOW KW_PLUGINS {
+    | KW_SHOW KW_PLUGINS {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowPlugins);
     }
     ;

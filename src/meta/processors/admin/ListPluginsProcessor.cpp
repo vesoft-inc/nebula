@@ -4,8 +4,6 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-
-#include <common/fs/FileUtils.h>
 #include "meta/processors/admin/ListPluginsProcessor.h"
 
 namespace nebula {
@@ -30,6 +28,7 @@ void ListPluginsProcessor::process(const cpp2::ListPluginsReq& req) {
         iter->next();
     }
     resp_.set_items(std::move(pluginItems));
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }
 }  // namespace meta

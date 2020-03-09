@@ -51,6 +51,7 @@
 #include "meta/processors/admin/InstallPluginProcessor.h"
 #include "meta/processors/admin/UninstallPluginProcessor.h"
 #include "meta/processors/admin/ListPluginsProcessor.h"
+#include "meta/processors/admin/GetPluginProcessor.h"
 #include "meta/processors/configMan/RegConfigProcessor.h"
 #include "meta/processors/configMan/GetConfigProcessor.h"
 #include "meta/processors/configMan/SetConfigProcessor.h"
@@ -410,6 +411,12 @@ MetaServiceHandler::future_uninstallPlugin(const cpp2::UninstallPluginReq& req) 
 folly::Future<cpp2::ListPluginsResp>
 MetaServiceHandler::future_listPlugins(const cpp2::ListPluginsReq& req) {
     auto* processor = ListPluginsProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::GetPluginResp>
+MetaServiceHandler::future_getPlugin(const cpp2::GetPluginReq& req) {
+    auto* processor = GetPluginProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

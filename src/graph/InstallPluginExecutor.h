@@ -26,9 +26,9 @@ public:
     void execute() override;
 
 private:
-    InstallPluginSentence                *sentence_{nullptr};
-    const std::string                          *pluginName_{nullptr};
-    const std::string                          *soName_{nullptr};
+    InstallPluginSentence                   *sentence_{nullptr};
+    const std::string                       *pluginName_{nullptr};
+    const std::string                       *soName_{nullptr};
 };
 
 }   // namespace graph

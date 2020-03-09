@@ -2167,11 +2167,11 @@ folly::Future<StatusOr<std::vector<cpp2::Snapshot>>> MetaClient::listSnapshots()
     return future;
 }
 
-folly::Future<StatusOr<bool>> MetaClient::installPlugin(const std::string& pluginName,
-                                                        const std::string& soName) {
+folly::Future<StatusOr<bool>>
+MetaClient::installPlugin(const std::string& pluginName, const std::string& soName) {
     cpp2::PluginItem item;
-    item.set_plugin_name(pluginName);
-    item.set_so_name(soName);
+    item.set_plugin_name(std::move(pluginName));
+    item.set_so_name(std::move(soName));
 
     cpp2::InstallPluginReq req;
     req.set_item(std::move(item));
@@ -2185,9 +2185,10 @@ folly::Future<StatusOr<bool>> MetaClient::installPlugin(const std::string& plugi
     return future;
 }
 
-folly::Future<StatusOr<bool>> MetaClient::uninstallPlugin(const std::string& pluginName) {
+folly::Future<StatusOr<bool>>
+MetaClient::uninstallPlugin(const std::string& pluginName) {
     cpp2::UninstallPluginReq req;
-    req.set_plugin_name(pluginName);
+    req.set_plugin_name(std::move(pluginName));
     folly::Promise<StatusOr<bool>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
@@ -2198,7 +2199,8 @@ folly::Future<StatusOr<bool>> MetaClient::uninstallPlugin(const std::string& plu
     return future;
 }
 
-folly::Future<StatusOr<std::vector<cpp2::PluginItem>>> MetaClient::listPlugins() {
+folly::Future<StatusOr<std::vector<cpp2::PluginItem>>>
+MetaClient::listPlugins() {
     cpp2::ListPluginsReq req;
     folly::Promise<StatusOr<std::vector<cpp2::PluginItem>>> promise;
     auto future = promise.getFuture();
@@ -2206,6 +2208,20 @@ folly::Future<StatusOr<std::vector<cpp2::PluginItem>>> MetaClient::listPlugins()
         return client->future_listPlugins(request);
     }, [] (cpp2::ListPluginsResp&& resp) -> decltype(auto){
         return std::move(resp).get_items();
+    }, std::move(promise));
+    return future;
+}
+
+folly::Future<StatusOr<cpp2::PluginItem>>
+MetaClient::getPlugin(std::string pluginName) {
+    cpp2::GetPluginReq req;
+    req.set_plugin_name(std::move(pluginName));
+    folly::Promise<StatusOr<cpp2::PluginItem>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_getPlugin(request);
+    }, [] (cpp2::GetPluginResp&& resp) -> decltype(auto) {
+        return std::move(resp).get_item();
     }, std::move(promise));
     return future;
 }

@@ -4,14 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-
 #include "meta/processors/admin/InstallPluginProcessor.h"
 #include "common/fs/FileUtils.h"
 
 namespace nebula {
 namespace meta {
 
-// When installing, just register it, do not always open it, open it when using
+// When installing, just register it, do not open it. open it when using
 void InstallPluginProcessor::process(const cpp2::InstallPluginReq& req) {
     const auto& pluginItem = req.get_item();
     auto& pluginName = pluginItem.get_plugin_name();
@@ -26,7 +25,7 @@ void InstallPluginProcessor::process(const cpp2::InstallPluginReq& req) {
 
     cpp2::ErrorCode code;
     if (!FileUtils::exist(sofile)) {
-        LOG(ERROR) << "Install plugin Failed : sofile " << sofile << " not exists";
+        LOG(ERROR) << "Install plugin failed : sofile " << sofile << " not exists";
         code = cpp2::ErrorCode::E_NOT_FOUND;
         handleErrorCode(code);
         onFinished();
@@ -36,7 +35,7 @@ void InstallPluginProcessor::process(const cpp2::InstallPluginReq& req) {
     // Check if the plugin exists
     auto ret = getPluginId(pluginName);
     if (ret.ok()) {
-        LOG(ERROR) << "Install plugin Failed : plugin " << pluginName;
+        LOG(ERROR) << "Install plugin failed : plugin " << pluginName;
         code = cpp2::ErrorCode::E_EXISTED;
         handleErrorCode(code);
         onFinished();
@@ -45,7 +44,7 @@ void InstallPluginProcessor::process(const cpp2::InstallPluginReq& req) {
 
     auto idRet = autoIncrementId();
     if (!nebula::ok(idRet)) {
-        LOG(ERROR) << "Install plugin Failed : Get plugin id failed";
+        LOG(ERROR) << "Install plugin failed : get plugin id failed";
         handleErrorCode(nebula::error(idRet));
         onFinished();
         return;
@@ -60,6 +59,7 @@ void InstallPluginProcessor::process(const cpp2::InstallPluginReq& req) {
                       MetaServiceUtils::pluginVal(pluginItem));
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_id(to(pluginId, EntryType::PLUGIN));
+    LOG(INFO) << "Install plugin succeed : " << pluginName;
     doPut(std::move(data));
 }
 }  // namespace meta

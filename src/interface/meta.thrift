@@ -711,6 +711,17 @@ struct ListPluginsResp {
     3: list<PluginItem>     items,
 }
 
+struct GetPluginReq {
+    1: string               plugin_name,
+}
+
+struct GetPluginResp {
+    1: ErrorCode            code,
+    // Valid if code equals E_LEADER_CHANGED.
+    2: common.HostAddr      leader,
+    3: PluginItem           item,
+}
+
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp dropSpace(1: DropSpaceReq req);
@@ -778,8 +789,9 @@ service MetaService {
     ListSnapshotsResp listSnapshots(1: ListSnapshotsReq req);
     AdminJobResp runAdminJob(1: AdminJobReq req);
 
-    ExecResp installPlugin(1: InstallPluginReq req);
-    ExecResp uninstallPlugin(1: UninstallPluginReq req);
-    ListPluginsResp listPlugins(1: ListPluginsReq req);
+    ExecResp             installPlugin(1: InstallPluginReq req);
+    ExecResp             uninstallPlugin(1: UninstallPluginReq req);
+    ListPluginsResp      listPlugins(1: ListPluginsReq req);
+    GetPluginResp        getPlugin(1: GetPluginReq req);
 }
 

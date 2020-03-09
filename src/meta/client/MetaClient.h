@@ -406,7 +406,11 @@ public:
     folly::Future<StatusOr<bool>>
     uninstallPlugin(const std::string& pluginName);
 
-    folly::Future<StatusOr<std::vector<cpp2::PluginItem>>> listPlugins();
+    folly::Future<StatusOr<std::vector<cpp2::PluginItem>>>
+    listPlugins();
+
+    folly::Future<StatusOr<cpp2::PluginItem>>
+    getPlugin(std::string pluginName);
 
     // Opeartions for cache.
     StatusOr<GraphSpaceID>

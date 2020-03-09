@@ -18,23 +18,6 @@ InstallPluginExecutor::InstallPluginExecutor(Sentence *sentence,
 }
 
 Status InstallPluginExecutor::prepare() {
-    // Move this part of the operation to meta
-    /*
-    auto *pluginName = sentence_->pluginName();
-    auto *soName = sentence_->soName();
-
-    // Now place the so file that will be installed to the share directory
-    // of the installation directory
-    using fs::FileUtils;
-    auto dir = FileUtils::readLink("/proc/self/exe").value();
-    dir = FileUtils::dirname(dir.c_str()) + "/../share";
-    std::string sofile = dir + "/" + *soName;
-
-    dlHandle_ = dlopen(sofile, RTLD_NOW);
-    if (!dlHandle_) {
-        return Status::Error("Install plugin failed: `%s", dlerror());
-    }
-    */
     return Status::OK();
 }
 
