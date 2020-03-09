@@ -103,6 +103,14 @@ public:
         return response(8);
     }
 
+    folly::Future<Status> rebuildTagIndex() override {
+        return response(11);
+    }
+
+    folly::Future<Status> rebuildEdgeIndex() override {
+        return response(12);
+    }
+
     void reset(std::vector<Status> sts) {
         statusArray_ = std::move(sts);
     }

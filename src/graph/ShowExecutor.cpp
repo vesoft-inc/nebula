@@ -79,6 +79,12 @@ void ShowExecutor::execute() {
         case ShowSentence::ShowType::kShowCreateEdgeIndex:
             showCreateEdgeIndex();
             break;
+        case ShowSentence::ShowType::kShowTagIndexStatus:
+            showTagIndexStatus();
+            break;
+        case ShowSentence::ShowType::kShowEdgeIndexStatus:
+            showEdgeIndexStatus();
+            break;
         case ShowSentence::ShowType::kShowSnapshots:
             showSnapshots();
             break;
@@ -342,22 +348,25 @@ void ShowExecutor::showTags() {
             return;
         }
 
+        std::unordered_set<TagID> tags;
         auto value = std::move(resp).value();
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         std::vector<cpp2::RowValue> rows;
         std::vector<std::string> header{"ID", "Name"};
         resp_->set_column_names(std::move(header));
 
-        std::map<nebula::cpp2::TagID, std::string> tagItems;
         for (auto &tag : value) {
-            tagItems.emplace(tag.get_tag_id(), tag.get_tag_name());
-        }
+            auto tagID = tag.get_tag_id();
+            auto iter = tags.find(tagID);
+            if (iter != tags.end()) {
+                continue;
+            }
 
-        for (auto &item : tagItems) {
+            tags.emplace(tagID);
             std::vector<cpp2::ColumnValue> row;
             row.resize(2);
-            row[0].set_integer(item.first);
-            row[1].set_str(item.second);
+            row[0].set_integer(tagID);
+            row[1].set_str(std::move(tag.get_tag_name()));
             rows.emplace_back();
             rows.back().set_columns(std::move(row));
         }
@@ -386,22 +395,25 @@ void ShowExecutor::showEdges() {
             return;
         }
 
+        std::unordered_set<TagID> edges;
         auto value = std::move(resp).value();
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         std::vector<cpp2::RowValue> rows;
         std::vector<std::string> header{"ID", "Name"};
         resp_->set_column_names(std::move(header));
 
-        std::map<nebula::cpp2::EdgeType, std::string> edgeItems;
         for (auto &edge : value) {
-            edgeItems.emplace(edge.get_edge_type(), edge.get_edge_name());
-        }
+            auto edgeType = edge.get_edge_type();
+            auto iter = edges.find(edgeType);
+            if (iter != edges.end()) {
+                continue;
+            }
 
-        for (auto &item : edgeItems) {
+            edges.emplace(edgeType);
             std::vector<cpp2::ColumnValue> row;
             row.resize(2);
-            row[0].set_integer(item.first);
-            row[1].set_str(item.second);
+            row[0].set_integer(edge.get_edge_type());
+            row[1].set_str(std::move(edge.get_edge_name()));
             rows.emplace_back();
             rows.back().set_columns(std::move(row));
         }
@@ -787,7 +799,7 @@ void ShowExecutor::showCreateTagIndex() {
         auto& fields = indexItems.get_fields();
         buf += indexItems.get_schema_name();
         buf += "(";
-        for (auto column : fields) {
+        for (auto &column : fields) {
             buf += column.name;
             buf += ", ";
         }
@@ -846,7 +858,7 @@ void ShowExecutor::showCreateEdgeIndex() {
         auto& fields = indexItems.get_fields();
         buf += indexItems.get_schema_name();
         buf += "(";
-        for (auto column : fields) {
+        for (auto &column : fields) {
             buf += column.name;
             buf += ", ";
         }
@@ -869,6 +881,80 @@ void ShowExecutor::showCreateEdgeIndex() {
                                                    e.what().c_str())));
     };
 
+    std::move(future).via(runner).thenValue(cb).thenError(error);
+}
+
+void ShowExecutor::showTagIndexStatus() {
+    auto spaceId = ectx()->rctx()->session()->space();
+    auto future = ectx()->getMetaClient()->listTagIndexStatus(spaceId);
+    auto *runner = ectx()->rctx()->runner();
+
+    auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            doError(std::move(resp).status());
+            return;
+        }
+
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        std::vector<std::string> header{"Name", "Tag Index Status"};
+        resp_->set_column_names(std::move(header));
+
+        std::vector<cpp2::RowValue> rows;
+        auto value = std::move(resp).value();
+        for (auto &status : value) {
+            std::vector<cpp2::ColumnValue> row;
+            row.resize(2);
+            row[0].set_str(std::move(status.get_name()));
+            row[1].set_str(std::move(status.get_status()));
+            rows.emplace_back();
+            rows.back().set_columns(std::move(row));
+        }
+        resp_->set_rows(std::move(rows));
+        doFinish(Executor::ProcessControl::kNext);
+    };
+
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        doError(Status::Error(folly::stringPrintf("Show tag index status exception : %s",
+                                                  e.what().c_str())));
+    };
+    std::move(future).via(runner).thenValue(cb).thenError(error);
+}
+
+void ShowExecutor::showEdgeIndexStatus() {
+    auto spaceId = ectx()->rctx()->session()->space();
+    auto future = ectx()->getMetaClient()->listEdgeIndexStatus(spaceId);
+    auto *runner = ectx()->rctx()->runner();
+
+    auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            doError(std::move(resp).status());
+            return;
+        }
+
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        std::vector<std::string> header{"Name", "Edge Index Status"};
+        resp_->set_column_names(std::move(header));
+
+        std::vector<cpp2::RowValue> rows;
+        auto value = std::move(resp).value();
+        for (auto &status : value) {
+            std::vector<cpp2::ColumnValue> row;
+            row.resize(2);
+            row[0].set_str(std::move(status.get_name()));
+            row[1].set_str(std::move(status.get_status()));
+            rows.emplace_back();
+            rows.back().set_columns(std::move(row));
+        }
+        resp_->set_rows(std::move(rows));
+        doFinish(Executor::ProcessControl::kNext);
+    };
+
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        doError(Status::Error(folly::stringPrintf("Show edge index status exception : %s",
+                                                  e.what().c_str())));
+    };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
@@ -917,7 +1003,7 @@ void ShowExecutor::showSnapshots() {
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
         doError(Status::Error(folly::stringPrintf("Show snapshots exception : %s",
-                                                   e.what().c_str())));
+                                                  e.what().c_str())));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);

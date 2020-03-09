@@ -36,6 +36,8 @@ public:
         kShowCreateEdge,
         kShowCreateTagIndex,
         kShowCreateEdgeIndex,
+        kShowTagIndexStatus,
+        kShowEdgeIndexStatus,
         kShowSnapshots,
         kShowCharset,
         kShowCollation
