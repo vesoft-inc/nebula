@@ -6,16 +6,14 @@
 
 set -ex
 
-export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:$LIBRARY_PATH
-
-NEBULA_DEP_BIN=/opt/nebula/third-party/bin
-
 version=""
 strip_enable="FALSE"
 usage="Usage: ${0} -v <version> -s <TRUE/FALSE>"
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"/../
+enablesanitizer="OFF"
+buildtype="Release"
 
-while getopts v:t:s: opt;
+while getopts v:t:s:d opt;
 do
     case $opt in
         v)
@@ -23,6 +21,10 @@ do
             ;;
         s)
             strip_enable=$OPTARG
+            ;;
+        d)
+            enablesanitizer="ON"
+            buildtype="RelWithDebInfo"
             ;;
         ?)
             echo "Invalid option, use default arguments"
@@ -48,11 +50,13 @@ if [[ $strip_enable != TRUE ]] && [[ $strip_enable != FALSE ]]; then
     exit -1
 fi
 
-echo "current version is [ $version ], strip enable is [$strip_enable]"
+echo "current version is [ $version ], strip enable is [$strip_enable], enablesanitizer is [$enablesanitizer]"
 
 # args: <version>
 function build {
     version=$1
+    san=$2
+    build_type=$3
     build_dir=$PROJECT_DIR/build
     if [[ -d $build_dir ]]; then
         rm -rf ${build_dir}/*
@@ -62,7 +66,7 @@ function build {
 
     pushd ${build_dir}
 
-    $NEBULA_DEP_BIN/cmake -DCMAKE_C_COMPILER=$NEBULA_DEP_BIN/gcc -DCMAKE_CXX_COMPILER=$NEBULA_DEP_BIN/g++ -DCMAKE_BUILD_TYPE=Release -DNEBULA_BUILD_VERSION=${version} -DCMAKE_INSTALL_PREFIX=/usr/local/nebula -DENABLE_TESTING=OFF $PROJECT_DIR
+    cmake -DCMAKE_BUILD_TYPE=${build_type} -DNEBULA_BUILD_VERSION=${version} -DENABLE_ASAN=${san} --DENABLE_UBSAN=${san} -DCMAKE_INSTALL_PREFIX=/usr/local/nebula -DENABLE_TESTING=OFF $PROJECT_DIR
 
     if !( make -j$(nproc) ); then
         echo ">>> build nebula failed <<<"
@@ -98,7 +102,7 @@ function package {
         exit -1
     fi
 
-    if !( $NEBULA_DEP_BIN/cpack -G ${pType} --verbose $args ); then
+    if !( cpack -G ${pType} --verbose $args ); then
         echo ">>> package nebula failed <<<"
         exit -1
     else
@@ -115,5 +119,5 @@ function package {
 
 
 # The main
-build $version
+build $version $enablesanitizer $buildtype
 package $strip_enable

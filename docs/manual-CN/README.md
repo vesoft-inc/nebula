@@ -17,6 +17,7 @@
   * [查询语言概览](1.overview/1.concepts/2.nGQL-overview.md)
 * 快速开始和常用链接
   * [开始试用](1.overview/2.quick-start/1.get-started.md)
+  * [常见问题 FAQ](1.overview/2.quick-start/2.FAQ.md)
   * [编译源代码](3.build-develop-and-administration/1.build/1.build-source-code.md)
   * [部署集群](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster.md)
   * [导入 .csv 文件](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/import-csv-file.md)
@@ -25,6 +26,7 @@
 * 系统设计与架构
   * [设计总览](1.overview/3.design-and-architecture/1.design-and-architecture.md)
   * [存储层架构](1.overview/3.design-and-architecture/2.storage-design.md)
+  * [查询引擎架构](1.overview/3.design-and-architecture/3.query-engine.md)
 
 ## 查询语言 (所有用户)
 
@@ -52,14 +54,18 @@
   * [属性引用](2.query-language/3.language-structure/property-reference.md)
   * [标识符命名规则](2.query-language/3.language-structure/schema-object-names.md)
   * [语句组合](2.query-language/3.language-structure/statement-composition.md)
+  * [用户自定义变量](2.query-language/3.language-structure/user-defined-variables.md)
 * 语句语法
   * 数据定义语句 (DDL)
     * [新建图空间](2.query-language/4.statement-syntax/1.data-definition-statements/create-space-syntax.md)
     * [新建 Tag 和 Edge](2.query-language/4.statement-syntax/1.data-definition-statements/create-tag-edge-syntax.md)
     * [更改 Tag 和 Edge](2.query-language/4.statement-syntax/1.data-definition-statements/alter-tag-edge-syntax.md)
-    * [Drop Tag](2.query-language/4.statement-syntax/1.data-definition-statements/drop-tag-syntax.md)
-    * [Drop Edge](2.query-language/4.statement-syntax/1.data-definition-statements/drop-edge-syntax.md)
-    * [Drop Space](2.query-language/4.statement-syntax/1.data-definition-statements/drop-space-syntax.md)
+    * [删除 Tag](2.query-language/4.statement-syntax/1.data-definition-statements/drop-tag-syntax.md)
+    * [删除 Edge](2.query-language/4.statement-syntax/1.data-definition-statements/drop-edge-syntax.md)
+    * [删除 Space](2.query-language/4.statement-syntax/1.data-definition-statements/drop-space-syntax.md)
+    * [索引](2.query-language/4.statement-syntax/1.data-definition-statements/index.md)
+    * [TTL (time-to-live)](2.query-language/4.statement-syntax/1.data-definition-statements/TTL.md)
+
   * 数据查询与操作语句 (DQL 和 DML)
     * [删除边](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/delete-edge-syntax.md)
     * [删除顶点](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/delete-vertex-syntax.md)
@@ -67,10 +73,12 @@
     * [图遍历 (Go)](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/go-syntax.md)
     * [插入边](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/insert-edge-syntax.md)
     * [插入顶点](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/insert-vertex-syntax.md)
+    * [查找数据 (Lookup)](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/lookup-syntax.md)
+    * [返回满足条件的语句 (Return)](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/return-syntax.md)
     * [更新点和边](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/update-vertex-edge-syntax.md)
     * [条件语句 (Where)](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/where-syntax.md)
     * [返回结果语句 (Yield)](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/yield-syntax.md)
-    * [返回满足条件的语句 (Return)](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/return-syntax.md)
+
   * 辅助功能语句
     * [Describe](2.query-language/4.statement-syntax/3.utility-statements/describe-syntax.md)
     * [Use](2.query-language/4.statement-syntax/3.utility-statements/use-syntax.md)
@@ -93,6 +101,7 @@
     * [用 Docker 部署](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster-on-docker.md)
     * [部署集群](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster.md)
     * [接入 Prometheus](3.build-develop-and-administration/3.deploy-and-administrations/deployment/connect-prometheus.md)
+    * [rpm 安装](3.build-develop-and-administration/3.deploy-and-administrations/deployment/install-with-rpm-deb.md)
   * 服务器管理操作
     * 账号管理
       * [Drop User](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/drop-user-syntax.md)
@@ -109,9 +118,12 @@
         * [加载 .sst 文件](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/download-and-ingest-sst-file.md)
         * [读取 .csv 文件](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/import-csv-file.md)
         * [Spark 导入工具](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/spark-writer.md)
+      * 离线数据转储
+        * [Dump Tool](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-export/dump-tool.md)
       * [负载均衡和数据迁移](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/storage-balance.md)
       * [存储层运行统计 (metrics)](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/storage-metrics.md)
       * [集群快照](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/cluster-snapshot.md)
+      * [作业管理](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/job-manager.md)
 
 ## 社区贡献 (开源社区爱好者)
 
@@ -119,6 +131,11 @@
 * [C++ 编程风格](4.contributions/cpp-coding-style.md)
 * [开发者文档风格](4.contributions/developer-documentation-style-guide.md)
 * [如何贡献](4.contributions/how-to-contribute.md)
+
+## 附录
+
+* [Gremlin VS nGQL](5.appendix/gremlin-ngql.md)
+* [Cypher V.S. nGQL](5.appendix/cypher-ngql.md)
 
 ## 其他
 

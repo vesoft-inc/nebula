@@ -23,7 +23,7 @@ $$.tag_name.prop_name
 ### 示例
 
 ```ngql
-nebula> GO FROM 1 OVER e1 YIELD $^.start.name AS startName, $$.end.Age AS endAge
+nebula> GO FROM 100 OVER follow YIELD $^.player.name AS startName, $$.player.age AS endAge;
 ```
 
 该语句用于获取起点的属性名称和终点的属性年龄。
@@ -41,7 +41,7 @@ edge_type.edge_prop
 此处，`edge_type`为边的类型，`edge_prop`为属性，例如：
 
 ```ngql
-nebula> GO FROM 1 OVER e1 YIELD e1.prop1
+nebula> GO FROM 100 OVER follow YIELD follow.degree;
 ```
 
 ### 引用边的内置属性
@@ -51,14 +51,14 @@ nebula> GO FROM 1 OVER e1 YIELD e1.prop1
 - _src: 边起点 ID
 - _dst: 边终点 ID
 - _type: 边类型
-- _rank: 边的权重
+- _ranking: 边的权重
 
 获取起点和终点 ID 可通过 `_src` 和 `_dst` 获取，这在显示图路径时经常会用到。
 
 例如：
 
 ```ngql
-nebula> GO FROM 1 OVER e1 YIELD e1._src AS startVID /* 起点为1 */, e1._dst AS endVID
+nebula> GO FROM 100 OVER follow YIELD follow._src AS startVID /* 起点为100 */, follow._dst AS endVID;
 ```
 
-该语句通过引用 `e1._src` 作为起始顶点 ID（当然，这是 `1` ）和 ` e1._dst` 作为结束顶点，返回 `1` 边类型为 `e1` 的所有邻居节点。其中 `e1._src` 返回起点 ID，此处为 1，`e1._dst` 返回终点 ID。
+该语句通过引用 `follow._src` 作为起点 ID 和 `follow._dst` 作为终点 ID，返回起点 100 `follow` 的所有邻居节点。其中 `follow._src` 返回起点 ID，`follow._dst` 返回终点 ID。

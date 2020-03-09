@@ -146,6 +146,27 @@ TEST(Parser, SpaceOperation) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    {
+        GQLParser parser;
+        std::string query = "CREATE SPACE default_space(partition_num=9, replica_factor=3,"
+                            "charset=utf8, collate=utf8_bin)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE SPACE default_space(partition_num=9, replica_factor=3,"
+                            "charset=utf8)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE SPACE default_space(partition_num=9, replica_factor=3,"
+                            "collate=utf8_bin)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
 }
 
 TEST(Parser, TagOperation) {
@@ -175,7 +196,7 @@ TEST(Parser, TagOperation) {
         GQLParser parser;
         std::string query = "CREATE TAG woman(name string, age int, "
                             "married bool, salary double, create_time timestamp)"
-                            "ttl_duration = 100, ttl_col = create_time";
+                            "ttl_duration = 100, ttl_col = \"create_time\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -211,7 +232,13 @@ TEST(Parser, TagOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "ALTER TAG woman ttl_duration = 50, ttl_col = age";
+        std::string query = "ALTER TAG man ttl_col = \"\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "ALTER TAG woman ttl_duration = 50, ttl_col = \"age\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -281,7 +308,7 @@ TEST(Parser, EdgeOperation) {
         GQLParser parser;
         std::string query = "CREATE EDGE woman(name string, age int, "
                             "married bool, salary double, create_time timestamp)"
-                            "ttl_duration = 100, ttl_col = create_time";
+                            "ttl_duration = 100, ttl_col = \"create_time\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -301,7 +328,13 @@ TEST(Parser, EdgeOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "ALTER EDGE woman ttl_duration = 50, ttl_col = age";
+        std::string query = "ALTER EDGE man ttl_col = \"\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "ALTER EDGE woman ttl_duration = 50, ttl_col = \"age\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -405,6 +438,87 @@ TEST(Parser, ColumnSpacesTest) {
         std::string query = "ALTER EDGE woman DROP (col6 int)  ttl_duration = 200";
         auto result = parser.parse(query);
         ASSERT_FALSE(result.ok());
+    }
+}
+
+TEST(Parser, IndexOperation) {
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG INDEX name_index ON person(name)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG INDEX IF NOT EXISTS name_index ON person(name)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG INDEX IF NOT EXISTS name_index ON person(name, age)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE EDGE INDEX IF NOT EXISTS like_index ON service(like)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE EDGE INDEX IF NOT EXISTS like_index ON service(like, score)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DROP TAG INDEX name_index";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DROP EDGE INDEX like_index";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DESCRIBE TAG INDEX name_index";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DESCRIBE EDGE INDEX like_index";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "REBUILD TAG INDEX name_index";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "REBUILD TAG INDEX name_index OFFLINE";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "REBUILD EDGE INDEX like_index";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "REBUILD EDGE INDEX like_index OFFLINE";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
     }
 }
 
@@ -747,7 +861,31 @@ TEST(Parser, DeleteVertex) {
     }
     {
         GQLParser parser;
-        std::string query = "DELETE VERTEX hash(\"zhangsan\")";
+        std::string query = "DELETE VERTEX 12345,23456,34567";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DELETE VERTEX hash(\"Tom\")";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DELETE VERTEX hash(\"Tom\"), hash(\"Jerry\"), hash(\"Mickey\")";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DELETE VERTEX uuid(\"Tom\")";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DELETE VERTEX uuid(\"Tom\"), uuid(\"Jerry\"), uuid(\"Mickey\")";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -861,6 +999,12 @@ TEST(Parser, FetchVertex) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    {
+        GQLParser parser;
+        std::string query = "FETCH PROP ON * 1";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
 }
 
 TEST(Parser, FetchEdge) {
@@ -902,28 +1046,35 @@ TEST(Parser, FetchEdge) {
     }
 }
 
-TEST(Parser, Find) {
+TEST(Parser, Lookup) {
     {
         GQLParser parser;
-        std::string query = "FIND name FROM person";
+        std::string query = "LOOKUP ON person";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "FIND name, salary, age FROM person";
+        std::string query = "LOOKUP ON salary, age";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON person WHERE person.gender == \"man\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "FIND name, salary, age FROM person WHERE gender == \"man\"";
+        std::string query = "LOOKUP ON transfer WHERE transfer.amount > 1000 YIELD transfer.amount";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "FIND amount, time FROM transfer WHERE amount > 1000";
+        std::string query = "LOOKUP ON transfer WHERE transfer.amount > 1000 YIELD transfer.amount,"
+                            " transfer.test";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -950,6 +1101,12 @@ TEST(Parser, AdminOperation) {
     }
     {
         GQLParser parser;
+        std::string query = "SHOW PARTS 666";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
         std::string query = "SHOW TAGS";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
@@ -957,6 +1114,18 @@ TEST(Parser, AdminOperation) {
     {
         GQLParser parser;
         std::string query = "SHOW EDGES";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW TAG INDEXES";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW EDGE INDEXES";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -974,7 +1143,43 @@ TEST(Parser, AdminOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "SHOW CREATE EDGE e1";
+        std::string query = "SHOW CREATE EDGE like";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW CREATE TAG INDEX person_index";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW CREATE EDGE INDEX like_index";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW TAG INDEX STATUS";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW EDGE INDEX STATUS";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW CHARSET";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW COLLATION";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -1077,7 +1282,8 @@ TEST(Parser, UnreservedKeywords) {
     {
         GQLParser parser;
         std::string query = "CREATE TAG tag1(space string, spaces string, "
-                            "email string, password string, roles string)";
+                            "email string, password string, roles string, uuid int, "
+                            "path string, variables string, leader string, data string)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

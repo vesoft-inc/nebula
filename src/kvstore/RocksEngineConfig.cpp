@@ -84,7 +84,9 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options &baseOpts) {
         return s;
     }
 
-    bbtOpts.block_cache = rocksdb::NewLRUCache(FLAGS_rocksdb_block_cache * 1024 * 1024);
+    static std::shared_ptr<rocksdb::Cache> blockCache
+        = rocksdb::NewLRUCache(FLAGS_rocksdb_block_cache * 1024 * 1024);
+    bbtOpts.block_cache = blockCache;
     baseOpts.table_factory.reset(NewBlockBasedTableFactory(bbtOpts));
     baseOpts.create_if_missing = true;
     return s;

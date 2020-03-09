@@ -34,7 +34,7 @@ A high performance distributed graph database
 %prep
 
 %build
-cmake -DCMAKE_BUILD_TYPE=Release -DNEBULA_BUILD_VERSION=%{_version} -DCMAKE_INSTALL_PREFIX=%{_install_dir} -DENABLE_TESTING=OFF ./
+cmake -DCMAKE_BUILD_TYPE=%{_buildtype} -DNEBULA_BUILD_VERSION=%{_version} -DENABLE_ASAN=%{_enable_san} --DENABLE_UBSAN=%{_enable_san} -DCMAKE_INSTALL_PREFIX=%{_install_dir} -DENABLE_TESTING=OFF ./
 make -j$(nproc)
 
 %install
@@ -83,6 +83,11 @@ Group: Applications/Databases
 Summary: kv verify tool
 Group: Applications/Databases
 %description simple_kv_verify
+
+%package db_dump
+Summary: nebula db dump tool
+Group: Applications/Databases
+%description db_dump
 
 # the files include exe, config file, scripts
 # base rpm include files
@@ -150,6 +155,10 @@ fi
 # simple_kv_verify rpm
 %files simple_kv_verify
 %attr(0755,root,root) %{_bindir}/simple_kv_verify
+
+# db_dump rpm
+%files db_dump
+%attr(0755,root,root) %{_bindir}/db_dump
 
 %debug_package
 

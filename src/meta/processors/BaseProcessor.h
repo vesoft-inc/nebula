@@ -8,6 +8,7 @@
 #define META_BASEPROCESSOR_H_
 
 #include "base/Base.h"
+#include "charset/Charset.h"
 #include <folly/futures/Promise.h>
 #include <folly/futures/Future.h>
 #include <folly/SharedMutex.h>
@@ -18,6 +19,7 @@
 #include "meta/common/MetaCommon.h"
 #include "network/NetworkUtils.h"
 #include "meta/processors/Common.h"
+#include "meta/ActiveHostsMan.h"
 #include "stats/Stats.h"
 
 namespace nebula {
@@ -25,17 +27,18 @@ namespace meta {
 
 using nebula::network::NetworkUtils;
 using FieldType = std::pair<std::string, nebula::cpp2::ValueType>;
+using SignType = storage::cpp2::EngineSignType;
 
 #define CHECK_SPACE_ID_AND_RETURN(spaceID) \
     if (spaceExist(spaceID) == Status::SpaceNotFound()) { \
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND); \
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND); \
         onFinished(); \
         return; \
     }
 
 #define CHECK_USER_ID_AND_RETURN(userID) \
     if (userExist(userID) == Status::UserNotFound()) { \
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND); \
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND); \
         onFinished(); \
         return; \
     }
@@ -45,7 +48,7 @@ using FieldType = std::pair<std::string, nebula::cpp2::ValueType>;
  * */
 #define CHECK_SEGMENT(segment) \
     if (!MetaCommon::checkSegment(segment)) { \
-        resp_.set_code(cpp2::ErrorCode::E_STORE_SEGMENT_ILLEGAL); \
+        handleErrorCode(cpp2::ErrorCode::E_STORE_SEGMENT_ILLEGAL); \
         onFinished(); \
         return; \
     }
@@ -74,32 +77,20 @@ protected:
         delete this;
     }
 
-    cpp2::ErrorCode to(kvstore::ResultCode code) {
-        switch (code) {
-        case kvstore::ResultCode::SUCCEEDED:
-            return cpp2::ErrorCode::SUCCEEDED;
-        case kvstore::ResultCode::ERR_KEY_NOT_FOUND:
-            return cpp2::ErrorCode::E_NOT_FOUND;
-        case kvstore::ResultCode::ERR_LEADER_CHANGED:
-            return cpp2::ErrorCode::E_LEADER_CHANGED;
-        case kvstore::ResultCode::ERR_CHECKPOINT_ERROR:
-            return cpp2::ErrorCode::E_SNAPSHOT_FAILURE;
-        default:
-            return cpp2::ErrorCode::E_UNKNOWN;
+    void handleErrorCode(cpp2::ErrorCode code, GraphSpaceID spaceId = kDefaultSpaceId,
+                         PartitionID partId = kDefaultPartId) {
+        resp_.set_code(code);
+        if (code == cpp2::ErrorCode::E_LEADER_CHANGED) {
+            handleLeaderChanged(spaceId, partId);
         }
     }
 
-    cpp2::ErrorCode to(const Status& status) {
-        switch (status.code()) {
-        case Status::kOk:
-            return cpp2::ErrorCode::SUCCEEDED;
-        case Status::kSpaceNotFound:
-        case Status::kHostNotFound:
-        case Status::kTagNotFound:
-        case Status::kUserNotFound:
-            return cpp2::ErrorCode::E_NOT_FOUND;
-        default:
-            return cpp2::ErrorCode::E_UNKNOWN;
+    void handleLeaderChanged(GraphSpaceID spaceId, PartitionID partId) {
+        auto leaderRet = kvstore_->partLeader(spaceId, partId);
+        if (ok(leaderRet)) {
+            resp_.set_leader(toThriftHost(nebula::value(leaderRet)));
+        } else {
+            resp_.set_code(MetaCommon::to(nebula::error(leaderRet)));
         }
     }
 
@@ -121,11 +112,8 @@ protected:
             thriftID.set_user_id(static_cast<UserID>(id));
         case EntryType::CONFIG:
             break;
-        case EntryType::TAG_INDEX:
-            thriftID.set_tag_index_id(static_cast<TagIndexID>(id));
-            break;
-        case EntryType::EDGE_INDEX:
-            thriftID.set_edge_index_id(static_cast<EdgeIndexID>(id));
+        case EntryType::INDEX:
+            thriftID.set_index_id(static_cast<IndexID>(id));
             break;
         }
         return thriftID;
@@ -163,8 +151,7 @@ protected:
     /**
      * Remove keys from start to end, doesn't contain end.
      * */
-    void doRemoveRange(const std::string& start,
-                       const std::string& end);
+    void doRemoveRange(const std::string& start, const std::string& end);
 
     /**
      * Scan keys from start to end, doesn't contain end.
@@ -214,8 +201,19 @@ protected:
     /**
      * Fetch the latest version tag's fields.
      */
-    StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
-    getLatestTagFields(GraphSpaceID spaceId, const std::string& name);
+    std::unordered_map<std::string, nebula::cpp2::ValueType>
+    getLatestTagFields(const nebula::cpp2::Schema& latestTagSchema);
+
+    /**
+     * Fetch the latest version tag's schema.
+     */
+    StatusOr<nebula::cpp2::Schema>
+    getLatestTagSchema(GraphSpaceID spaceId, const TagID tagId);
+
+    /**
+     * Check if tag or edge has ttl
+     */
+    bool tagOrEdgeHasTTL(const nebula::cpp2::Schema& latestSchema);
 
     /**
      * Return the edgeType for name.
@@ -225,12 +223,17 @@ protected:
     /**
      * Fetch the latest version edge's fields.
      */
-    StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
-    getLatestEdgeFields(GraphSpaceID spaceId, const std::string& name);
+    std::unordered_map<std::string, nebula::cpp2::ValueType>
+    getLatestEdgeFields(const nebula::cpp2::Schema& latestEdgeSchema);
 
-    StatusOr<TagIndexID> getTagIndexID(GraphSpaceID spaceId, const std::string& indexName);
 
-    StatusOr<EdgeIndexID> getEdgeIndexID(GraphSpaceID spaceId, const std::string& indexName);
+    /**
+     * Fetch the latest version edge's schema.
+     */
+    StatusOr<nebula::cpp2::Schema>
+    getLatestEdgeSchema(GraphSpaceID spaceId, const EdgeType edgeType);
+
+    StatusOr<IndexID> getIndexID(GraphSpaceID spaceId, const std::string& indexName);
 
     StatusOr<UserID> getUserId(const std::string& account);
 
@@ -238,7 +241,20 @@ protected:
 
     StatusOr<std::string> getUserAccount(UserID userId);
 
-    bool doSyncPut(std::vector<kvstore::KV> data);
+    kvstore::ResultCode doSyncPut(std::vector<kvstore::KV> data);
+
+    void doSyncPutAndUpdate(std::vector<kvstore::KV> data);
+
+    void doSyncMultiRemoveAndUpdate(std::vector<std::string> keys);
+
+    /**
+     * check if the edge or tag contains indexes when alter edge or tag.
+     **/
+    cpp2::ErrorCode indexCheck(const std::vector<nebula::cpp2::IndexItem>& items,
+                               const std::vector<cpp2::AlterSchemaItem>& alterItems);
+
+    StatusOr<std::vector<nebula::cpp2::IndexItem>>
+    getIndexes(GraphSpaceID spaceId, int32_t tagOrEdge);
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;

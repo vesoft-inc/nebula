@@ -15,21 +15,25 @@ void DropEdgeIndexProcessor::process(const cpp2::DropEdgeIndexReq& req) {
     CHECK_SPACE_ID_AND_RETURN(spaceID);
     folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeIndexLock());
 
-    auto edgeIndexID = getEdgeIndexID(spaceID, indexName);
+    auto edgeIndexID = getIndexID(spaceID, indexName);
     if (!edgeIndexID.ok()) {
-        LOG(ERROR) << "Edge Index not exist Space: " << spaceID << " Index name: " << indexName;
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        LOG(ERROR) << "Edge Index not exists in Space: " << spaceID << " Index name: " << indexName;
+        if (req.get_if_exists()) {
+            handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+        } else {
+            handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+        }
         onFinished();
         return;
     }
 
     std::vector<std::string> keys;
-    keys.emplace_back(MetaServiceUtils::indexEdgeIndexKey(spaceID, indexName));
-    keys.emplace_back(MetaServiceUtils::edgeIndexKey(spaceID, edgeIndexID.value()));
+    keys.emplace_back(MetaServiceUtils::indexIndexKey(spaceID, indexName));
+    keys.emplace_back(MetaServiceUtils::indexKey(spaceID, edgeIndexID.value()));
 
     LOG(INFO) << "Drop Edge Index " << indexName;
-    resp_.set_id(to(edgeIndexID.value(), EntryType::EDGE_INDEX));
-    doMultiRemove(keys);
+    resp_.set_id(to(edgeIndexID.value(), EntryType::INDEX));
+    doSyncMultiRemoveAndUpdate(std::move(keys));
 }
 
 }  // namespace meta

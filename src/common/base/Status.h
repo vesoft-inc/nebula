@@ -81,7 +81,8 @@ public:
         return Status(k##ERROR, msg);                   \
     }                                                   \
                                                         \
-    static Status ERROR(const char *fmt, ...) {         \
+    static Status ERROR(const char *fmt, ...)           \
+        __attribute__((format(printf, 1, 2))) {         \
         va_list args;                                   \
         va_start(args, fmt);                            \
         auto msg = format(fmt, args);                   \
@@ -105,14 +106,17 @@ public:
     // Nothing is executed When command is comment
     STATUS_GENERATOR(StatementEmpty);
 
+    // Storage engine errors
+    STATUS_GENERATOR(KeyNotFound);
+
+    // Meta engine errors
     // TODO(dangleptr) we could use ErrorOr to replace SpaceNotFound here.
     STATUS_GENERATOR(SpaceNotFound);
     STATUS_GENERATOR(HostNotFound);
     STATUS_GENERATOR(TagNotFound);
     STATUS_GENERATOR(EdgeNotFound);
     STATUS_GENERATOR(UserNotFound);
-    STATUS_GENERATOR(TagIndexNotFound);
-    STATUS_GENERATOR(EdgeIndexNotFound);
+    STATUS_GENERATOR(IndexNotFound);
     STATUS_GENERATOR(LeaderChanged);
     STATUS_GENERATOR(Balanced);
     STATUS_GENERATOR(PartNotFound);
@@ -138,7 +142,7 @@ public:
         kSyntaxError            = 201,
         kStatementEmpty         = 202,
         // 3xx, for storage engine errors
-        // ...
+        kKeyNotFound            = 301,
         // 4xx, for meta service errors
         kSpaceNotFound          = 404,
         kHostNotFound           = 405,
@@ -147,9 +151,8 @@ public:
         kUserNotFound           = 408,
         kLeaderChanged          = 409,
         kBalanced               = 410,
-        kTagIndexNotFound       = 411,
-        kEdgeIndexNotFound      = 412,
-        kPartNotFound           = 413,
+        kIndexNotFound          = 411,
+        kPartNotFound           = 412,
     };
 
     Code code() const {

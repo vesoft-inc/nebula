@@ -10,7 +10,8 @@
 namespace nebula {
 namespace graph {
 
-UseExecutor::UseExecutor(Sentence *sentence, ExecutionContext *ectx) : Executor(ectx) {
+UseExecutor::UseExecutor(Sentence *sentence, ExecutionContext *ectx)
+    : Executor(ectx, "use") {
     sentence_ = static_cast<UseSentence*>(sentence);
 }
 
@@ -26,8 +27,7 @@ void UseExecutor::execute() {
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(Status::Error("Space not found for `%s'", sentence_->space()->c_str()));
+            doError(Status::Error("Space not found for `%s'", sentence_->space()->c_str()));
             return;
         }
 
@@ -36,14 +36,12 @@ void UseExecutor::execute() {
         FLOG_INFO("Graph space switched to `%s', space id: %d",
                    sentence_->space()->c_str(), spaceId);
 
-        DCHECK(onFinish_);
-        onFinish_(Executor::ProcessControl::kNext);
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        doError(Status::Error("Use space exception: %s", e.what().c_str()));
         return;
     };
 

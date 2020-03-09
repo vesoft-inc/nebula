@@ -12,7 +12,7 @@
 
     <groupId>com.vesoft</groupId>
     <artifactId>nebula-utils</artifactId>
-    <version>1.0.0-rc2</version>
+    <version>1.0.0-rc3</version>
 
     <name>nebula-utils</name>
     <description>Nebula jni utils</description>
@@ -146,7 +146,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>3.0.0</version>
+                <version>3.1.0</version>
                 <configuration>
                     <configLocation>
                         ${project.root.dir}/.linters/java/nebula_java_style_checks.xml
@@ -172,7 +172,7 @@
                     <dependency>
                         <groupId>com.puppycrawl.tools</groupId>
                         <artifactId>checkstyle</artifactId>
-                        <version>8.18</version>
+                        <version>8.29</version>
                     </dependency>
                 </dependencies>
             </plugin>

@@ -7,9 +7,10 @@
 #include "base/Base.h"
 #include "fs/TempDir.h"
 #include "http/HttpClient.h"
+#include "webservice/Router.h"
 #include "webservice/WebService.h"
 #include "storage/test/TestUtils.h"
-#include "storage/StorageHttpIngestHandler.h"
+#include "storage/http/StorageHttpIngestHandler.h"
 #include <gtest/gtest.h>
 #include <rocksdb/sst_file_writer.h>
 
@@ -45,25 +46,28 @@ public:
         status = writer.Finish();
         ASSERT_EQ(rocksdb::Status::OK(), status);
 
-        WebService::registerHandler("/ingest", [this] {
+        webSvc_ = std::make_unique<WebService>();
+        auto& router = webSvc_->router();
+        router.get("/ingest").handler([this](nebula::web::PathParams&&) {
             auto handler = new storage::StorageHttpIngestHandler();
             handler->init(kv_.get());
             return handler;
         });
-        auto webStatus = WebService::start();
+        auto webStatus = webSvc_->start();
         ASSERT_TRUE(webStatus.ok()) << webStatus;
     }
 
     void TearDown() override {
         kv_.reset();
         rootPath_.reset();
-        WebService::stop();
+        webSvc_.reset();
         VLOG(1) << "Web service stopped";
     }
 
 private:
     std::unique_ptr<fs::TempDir> rootPath_;
     std::unique_ptr<kvstore::KVStore> kv_;
+    std::unique_ptr<WebService> webSvc_;
 };
 
 TEST(StorageHttpIngestHandlerTest, StorageIngestTest) {

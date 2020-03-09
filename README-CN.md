@@ -15,6 +15,9 @@
   <a href="http://githubbadges.com/fork.svg?user=vesoft-inc&repo=nebula&style=default">
     <img src="http://githubbadges.com/fork.svg?user=vesoft-inc&repo=nebula&style=default" alt="nebula fork"/>
   </a>
+  <a href="https://codecov.io/gh/vesoft-inc/nebula">
+    <img src="https://codecov.io/gh/vesoft-inc/nebula/branch/master/graph/badge.svg" alt="codecov"/>
+  </a>
 </p>
 
 # Nebula Graph是什么？
@@ -32,19 +35,30 @@
 
 ## 产品路线图
 
-**Nebula Graph** 产品规划路线图请参见 [roadmap](https://github.com/vesoft-inc/nebula/wiki#roadmap)。
+**Nebula Graph** 产品规划路线图请参见 [roadmap](https://github.com/vesoft-inc/nebula/wiki/Nebula-Graph-Roadmap-2019)。
+
+## 图可视化
+
+查看[图可视化](https://github.com/vesoft-inc/nebula-web-docker)，开启图数据可视化探索之旅。
+
+## 支持的客户端
+* [Go](https://github.com/vesoft-inc/nebula-go)
+* [Python](https://github.com/vesoft-inc/nebula-python)
+* [Java](https://github.com/vesoft-inc/nebula-java)
 
 ## 快速使用
 
 请查看[快速使用手册](docs/manual-CN/1.overview/2.quick-start/1.get-started.md)，开始使用 **Nebula Graph**。
 
-在开始使用 **Nebula Graph** 之前，必须通过[编译源码](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/3.build-develop-and-administration/1.build/1.build-source-code.md)或者 [docker compose](https://github.com/vesoft-inc/nebula-docker-compose) 方式安装 **Nebula Graph**。您也可以观看[视频](https://space.bilibili.com/472621355)学习如何安装 **Nebula Graph**。
+在开始使用 **Nebula Graph** 之前，必须通过[编译源码](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/3.build-develop-and-administration/1.build/1.build-source-code.md)，[rpm/deb 包](https://github.com/vesoft-inc/nebula/tree/master/docs/manual-CN/3.build-develop-and-administration/3.deploy-and-administrations/deployment/install-with-rpm-deb.md) 或者 [docker compose](https://github.com/vesoft-inc/nebula-docker-compose) 方式安装 **Nebula Graph**。您也可以观看[视频](https://space.bilibili.com/472621355)学习如何安装 **Nebula Graph**。
 
 ## 获取帮助
 
 在使用 **Nebula Graph** 过程中遇到任何问题，都可以通过下面的方式寻求帮助：
+
 * [知乎](https://www.zhihu.com/org/nebulagraph/activities)
 * [SegmentFault](https://segmentfault.com/t/nebula)
+* [官方论坛](https://discuss.nebula-graph.io)
 
 ## 文档
 

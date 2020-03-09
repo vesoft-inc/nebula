@@ -7,7 +7,7 @@
   <a href="https://github.com/vesoft-inc/nebula/actions?workflow=build">
     <img src="https://github.com/vesoft-inc/nebula/workflows/build/badge.svg" alt="build and test workflow"/>
   </a>
-  <a href="https://github.com/vesoft-inc/nebula/actions?workflow=docker">
+  <a href="https://hub.docker.com/u/vesoft">
     <img src="https://github.com/vesoft-inc/nebula/workflows/docker/badge.svg" alt="build docker image workflow"/>
   </a>
   <a href="https://github.com/vesoft-inc/nebula/actions?workflow=package">
@@ -18,6 +18,9 @@
   </a>
   <a href="http://githubbadges.com/fork.svg?user=vesoft-inc&repo=nebula&style=default">
     <img src="http://githubbadges.com/fork.svg?user=vesoft-inc&repo=nebula&style=default" alt="nebula fork"/>
+  </a>
+  <a href="https://codecov.io/gh/vesoft-inc/nebula">
+    <img src="https://codecov.io/gh/vesoft-inc/nebula/branch/master/graph/badge.svg" alt="codecov"/>
   </a>
   <br>
 </p>
@@ -37,20 +40,30 @@ Compared with other graph database solutions, **Nebula Graph** has the following
 
 ## Roadmap
 
-See our [Roadmap](https://github.com/vesoft-inc/nebula/wiki#roadmap) for what's coming soon in **Nebula Graph**.
+See our [Roadmap](https://github.com/vesoft-inc/nebula/wiki/Nebula-Graph-Roadmap-2019) for what's coming soon in **Nebula Graph**.
+
+## Graph Visualization
+
+Visit [Graph Visualization](https://github.com/vesoft-inc/nebula-web-docker) for visual exploration of graph data on web UI.
+
+## Supported Clients
+* [Go](https://github.com/vesoft-inc/nebula-go)
+* [Python](https://github.com/vesoft-inc/nebula-python)
+* [Java](https://github.com/vesoft-inc/nebula-java)
 
 ## Quick start
 
 Read the [Getting started](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/1.overview/2.quick-start/1.get-started.md) article for a quick start.
 
-Please note that you need to install **Nebula Graph**, either by [installing source code](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/3.build-develop-and-administration/1.build/1.build-source-code.md) or by [docker compose](https://github.com/vesoft-inc/nebula-docker-compose), before you can actually start using it. If you prefer a video tutorial, visit our [YouTube channel](https://www.youtube.com/playlist?list=PL4ArMmsAnb84uB2d9L46eXpIi7Epz2cfp).
+Please note that you must install **Nebula Graph** by [installing source code](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/3.build-develop-and-administration/1.build/1.build-source-code.md), [rpm/deb packages](https://github.com/vesoft-inc/nebula/tree/master/docs/manual-EN/3.build-develop-and-administration/3.deploy-and-administrations/deployment/install-with-rpm-deb.md) or [docker compose](https://github.com/vesoft-inc/nebula-docker-compose), before you can actually start using it. If you prefer a video tutorial, visit our [YouTube channel](https://www.youtube.com/channel/UC73V8q795eSEMxDX4Pvdwmw).
 
 ## Getting help
 
 In case you encounter any problems playing around **Nebula Graph**, please reach out for help:
 
 * [Slack channel](https://join.slack.com/t/nebulagraph/shared_invite/enQtNjIzMjQ5MzE2OTQ2LTM0MjY0MWFlODg3ZTNjMjg3YWU5ZGY2NDM5MDhmOGU2OWI5ZWZjZDUwNTExMGIxZTk2ZmQxY2Q2MzM1OWJhMmY#)
-* [Stack Overflow](https://stackoverflow.com/questions/tagged/nebulagraph)
+* [Stack Overflow](https://stackoverflow.com/search?q=%5Bnebula-graph%5D&mixed=0)
+* [Official Forum](https://discuss.nebula-graph.io)
 
 ## Documentation
 
@@ -76,7 +89,8 @@ In order to prevent cloud providers monetizing from the project without contribu
 
 ## Contact
 
-* Twitter: <a href="https://twitter.com/NebulaGraph">@NebulaGraph</a>
-* <a href="https://www.linkedin.com/company/vesoft-nebula-graph/">LinkedIn page</a>
-* <a href="https://join.slack.com/t/nebulagraph/shared_invite/enQtNjIzMjQ5MzE2OTQ2LTM0MjY0MWFlODg3ZTNjMjg3YWU5ZGY2NDM5MDhmOGU2OWI5ZWZjZDUwNTExMGIxZTk2ZmQxY2Q2MzM1OWJhMmY#">Slack channel</a>
+* Twitter: [@NebulaGraph](https://twitter.com/NebulaGraph)
+* [Facebook page](https://www.facebook.com/NebulaGraph/)
+* [LinkedIn page](https://www.linkedin.com/company/vesoft-nebula-graph/)
+* [Slack channel](https://join.slack.com/t/nebulagraph/shared_invite/enQtNjIzMjQ5MzE2OTQ2LTM0MjY0MWFlODg3ZTNjMjg3YWU5ZGY2NDM5MDhmOGU2OWI5ZWZjZDUwNTExMGIxZTk2ZmQxY2Q2MzM1OWJhMmY#)
 * email: info@vesoft.com

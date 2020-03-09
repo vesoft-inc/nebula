@@ -15,21 +15,25 @@ void DropTagIndexProcessor::process(const cpp2::DropTagIndexReq& req) {
     CHECK_SPACE_ID_AND_RETURN(spaceID);
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagIndexLock());
 
-    auto tagIndexID = getTagIndexID(spaceID, indexName);
+    auto tagIndexID = getIndexID(spaceID, indexName);
     if (!tagIndexID.ok()) {
-        LOG(ERROR) << "Tag Index not exist Space: " << spaceID << " Index name: " << indexName;
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        LOG(ERROR) << "Tag Index not exists in Space: " << spaceID << " Index name: " << indexName;
+        if (req.get_if_exists()) {
+            handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+        } else {
+            handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+        }
         onFinished();
         return;
     }
 
     std::vector<std::string> keys;
-    keys.emplace_back(MetaServiceUtils::indexTagIndexKey(spaceID, indexName));
-    keys.emplace_back(MetaServiceUtils::tagIndexKey(spaceID, tagIndexID.value()));
+    keys.emplace_back(MetaServiceUtils::indexIndexKey(spaceID, indexName));
+    keys.emplace_back(MetaServiceUtils::indexKey(spaceID, tagIndexID.value()));
 
     LOG(INFO) << "Drop Tag Index " << indexName;
-    resp_.set_id(to(tagIndexID.value(), EntryType::TAG_INDEX));
-    doMultiRemove(keys);
+    resp_.set_id(to(tagIndexID.value(), EntryType::INDEX));
+    doSyncMultiRemoveAndUpdate(std::move(keys));
 }
 
 }  // namespace meta

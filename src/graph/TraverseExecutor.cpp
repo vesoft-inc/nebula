@@ -17,12 +17,13 @@
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
 #include "graph/SetExecutor.h"
-#include "graph/FindExecutor.h"
+#include "graph/LookupExecutor.h"
 #include "graph/MatchExecutor.h"
 #include "graph/FindPathExecutor.h"
 #include "graph/LimitExecutor.h"
 #include "graph/YieldExecutor.h"
 #include "graph/GroupByExecutor.h"
+#include "graph/SchemaHelper.h"
 
 namespace nebula {
 namespace graph {
@@ -59,8 +60,8 @@ TraverseExecutor::makeTraverseExecutor(Sentence *sentence, ExecutionContext *ect
         case Sentence::Kind::kMatch:
             executor = std::make_unique<MatchExecutor>(sentence, ectx);
             break;
-        case Sentence::Kind::kFind:
-            executor = std::make_unique<FindExecutor>(sentence, ectx);
+        case Sentence::Kind::kLookup:
+            executor = std::make_unique<LookupExecutor>(sentence, ectx);
             break;
         case Sentence::Kind::kYield:
             executor = std::make_unique<YieldExecutor>(sentence, ectx);
@@ -82,6 +83,93 @@ TraverseExecutor::makeTraverseExecutor(Sentence *sentence, ExecutionContext *ect
             break;
     }
     return executor;
+}
+
+nebula::cpp2::SupportedType TraverseExecutor::calculateExprType(Expression* exp) const {
+    auto spaceId = ectx()->rctx()->session()->space();
+    switch (exp->kind()) {
+        case Expression::kPrimary:
+        case Expression::kFunctionCall:
+        case Expression::kUnary:
+        case Expression::kArithmetic: {
+            return nebula::cpp2::SupportedType::UNKNOWN;
+        }
+        case Expression::kTypeCasting: {
+            auto exprPtr = static_cast<const TypeCastingExpression *>(exp);
+            return SchemaHelper::columnTypeToSupportedType(
+                                                    exprPtr->getType());
+        }
+        case Expression::kRelational:
+        case Expression::kLogical: {
+            return nebula::cpp2::SupportedType::BOOL;
+        }
+        case Expression::kDestProp:
+        case Expression::kSourceProp: {
+            auto* tagPropExp = static_cast<const AliasPropertyExpression*>(exp);
+            const auto* tagName = tagPropExp->alias();
+            const auto* propName = tagPropExp->prop();
+            auto tagIdRet = ectx()->schemaManager()->toTagID(spaceId, *tagName);
+            if (tagIdRet.ok()) {
+                auto ts = ectx()->schemaManager()->getTagSchema(spaceId, tagIdRet.value());
+                if (ts != nullptr) {
+                    return ts->getFieldType(*propName).type;
+                }
+            }
+            return nebula::cpp2::SupportedType::UNKNOWN;
+        }
+        case Expression::kEdgeDstId:
+        case Expression::kEdgeSrcId: {
+            return nebula::cpp2::SupportedType::VID;
+        }
+        case Expression::kEdgeRank:
+        case Expression::kEdgeType: {
+            return nebula::cpp2::SupportedType::INT;
+        }
+        case Expression::kAliasProp: {
+            auto* edgeExp = static_cast<const AliasPropertyExpression*>(exp);
+            const auto* propName = edgeExp->prop();
+            auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId, *edgeExp->alias());
+            if (edgeStatus.ok()) {
+                auto edgeType = edgeStatus.value();
+                auto schema = ectx()->schemaManager()->getEdgeSchema(spaceId, edgeType);
+                if (schema != nullptr) {
+                    return schema->getFieldType(*propName).type;
+                }
+            }
+            return nebula::cpp2::SupportedType::UNKNOWN;
+        }
+        case Expression::kVariableProp:
+        case Expression::kInputProp: {
+            auto* propExp = static_cast<const AliasPropertyExpression*>(exp);
+            const auto* propName = propExp->prop();
+            if (inputs_ == nullptr) {
+                return nebula::cpp2::SupportedType::UNKNOWN;
+            } else {
+                return inputs_->getColumnType(*propName);
+            }
+        }
+        default: {
+            VLOG(1) << "Unsupport expression type! kind = "
+                    << std::to_string(static_cast<uint8_t>(exp->kind()));
+            return nebula::cpp2::SupportedType::UNKNOWN;
+        }
+    }
+}
+
+Status TraverseExecutor::checkIfDuplicateColumn() const {
+    if (inputs_ == nullptr) {
+        return Status::OK();
+    }
+
+    auto colNames = inputs_->getColNames();
+    std::unordered_set<std::string> uniqueNames;
+    for (auto &colName : colNames) {
+        auto ret = uniqueNames.emplace(colName);
+        if (!ret.second) {
+            return Status::Error("Duplicate column `%s'", colName.c_str());
+        }
+    }
+    return Status::OK();
 }
 
 Status Collector::collect(VariantType &var, RowWriter *writer) {
@@ -107,9 +195,40 @@ Status Collector::collect(VariantType &var, RowWriter *writer) {
     return Status::OK();
 }
 
+Status Collector::collectWithoutSchema(VariantType &var, RowWriter *writer) {
+    switch (var.which()) {
+        case VAR_INT64:
+            VLOG(3) << boost::get<int64_t>(var);
+            (*writer) << RowWriter::ColType(nebula::cpp2::SupportedType::INT)
+                << boost::get<int64_t>(var);
+            break;
+        case VAR_DOUBLE:
+            VLOG(3) << boost::get<double>(var);
+            (*writer) << RowWriter::ColType(nebula::cpp2::SupportedType::DOUBLE)
+                << boost::get<double>(var);
+            break;
+        case VAR_BOOL:
+            VLOG(3) << boost::get<bool>(var);
+            (*writer) << RowWriter::ColType(nebula::cpp2::SupportedType::BOOL)
+                << boost::get<bool>(var);
+            break;
+        case VAR_STR:
+            VLOG(3) << boost::get<std::string>(var);
+            (*writer) << RowWriter::ColType(nebula::cpp2::SupportedType::STRING)
+                << boost::get<std::string>(var);
+            break;
+        default:
+            std::string errMsg =
+                folly::stringPrintf("Unknown VariantType: %d", var.which());
+            LOG(ERROR) << errMsg;
+            return Status::Error(errMsg);
+    }
+    return Status::OK();
+}
+
 OptVariantType Collector::getProp(const meta::SchemaProviderIf *schema,
-                               const std::string &prop,
-                               const RowReader *reader) {
+                                  const std::string &prop,
+                                  const RowReader *reader) {
     DCHECK(reader != nullptr);
     DCHECK(schema != nullptr);
     using nebula::cpp2::SupportedType;
@@ -161,9 +280,9 @@ OptVariantType Collector::getProp(const meta::SchemaProviderIf *schema,
 }
 
 Status Collector::getSchema(const std::vector<VariantType> &vals,
-                          const std::vector<std::string> &colNames,
-                          const std::vector<nebula::cpp2::SupportedType> &colTypes,
-                          SchemaWriter *outputSchema) {
+                            const std::vector<std::string> &colNames,
+                            const std::vector<nebula::cpp2::SupportedType> &colTypes,
+                            SchemaWriter *outputSchema) {
     DCHECK(outputSchema != nullptr);
     DCHECK_EQ(vals.size(), colNames.size());
     DCHECK_EQ(vals.size(), colTypes.size());
@@ -282,6 +401,120 @@ StatusOr<bool> YieldClauseWrapper::needAllPropsFromVar(
         return true;
     }
     return false;
+}
+
+Status WhereWrapper::prepare(ExpressionContext *ectx) {
+    Status status = Status::OK();
+    if (where_ == nullptr) {
+        return status;
+    }
+
+    filter_ = where_->filter();
+    if (filter_ != nullptr) {
+        filter_->setContext(ectx);
+        status = filter_->prepare();
+        if (!status.ok()) {
+            return status;
+        }
+    }
+
+    if (!FLAGS_filter_pushdown) {
+        return status;
+    }
+
+    auto encode = Expression::encode(where_->filter());
+    auto decode = Expression::decode(std::move(encode));
+    if (!decode.ok()) {
+        return std::move(decode).status();
+    }
+    filterRewrite_ = std::move(decode).value();
+    if (!rewrite(filterRewrite_.get())) {
+        filterRewrite_ = nullptr;
+    }
+    if (filterRewrite_ != nullptr) {
+        VLOG(1) << "Filter pushdown: " << filterRewrite_->toString();
+        filterPushdown_ = Expression::encode(filterRewrite_.get());
+    }
+    return status;
+}
+
+bool WhereWrapper::rewrite(Expression *expr) const {
+    switch (expr->kind()) {
+        case Expression::kLogical: {
+            auto *logExpr = static_cast<LogicalExpression*>(expr);
+            // Rewrite rule will not be applied to XOR
+            if (logExpr->op() == LogicalExpression::Operator::XOR) {
+                return canPushdown(logExpr);
+            }
+            auto leftCanPushdown = rewrite(const_cast<Expression*>(logExpr->left()));
+            auto rightCanPushdown = rewrite(const_cast<Expression*>(logExpr->right()));
+            switch (logExpr->op()) {
+                case LogicalExpression::Operator::OR: {
+                    if (!leftCanPushdown || !rightCanPushdown) {
+                        return false;
+                    } else {
+                        return true;
+                    }
+                }
+                case LogicalExpression::Operator::AND: {
+                    if (!leftCanPushdown && !rightCanPushdown) {
+                        return false;
+                    } else if (!leftCanPushdown) {
+                        auto *truePri = new PrimaryExpression(true);
+                        logExpr->resetLeft(truePri);
+                    } else if (!rightCanPushdown) {
+                        auto *truePri = new PrimaryExpression(true);
+                        logExpr->resetRight(truePri);
+                    }
+                    return true;
+                }
+                default:
+                    return false;
+            }
+        }
+        case Expression::kUnary:
+        case Expression::kTypeCasting:
+        case Expression::kArithmetic:
+        case Expression::kRelational:
+        case Expression::kFunctionCall: {
+            return canPushdown(expr);
+        }
+        case Expression::kPrimary:
+        case Expression::kSourceProp:
+        case Expression::kEdgeRank:
+        case Expression::kEdgeDstId:
+        case Expression::kEdgeSrcId:
+        case Expression::kEdgeType:
+        case Expression::kAliasProp: {
+            return true;
+        }
+        case Expression::kMax:
+        case Expression::kVariableProp:
+        case Expression::kDestProp:
+        case Expression::kInputProp:
+        case Expression::kUUID: {
+            return false;
+        }
+        default: {
+            LOG(ERROR) << "Unkown expression: " << expr->kind();
+            return false;
+        }
+    }
+}
+
+bool WhereWrapper::canPushdown(Expression *expr) const {
+    auto ectx = std::make_unique<ExpressionContext>();
+    expr->setContext(ectx.get());
+    auto status = expr->prepare();
+    if (!status.ok()) {
+        // We had do the preparation before rewrite, it would not fail here.
+        LOG(ERROR) << "Prepare failed when rewrite filter: " << status.toString();
+        return false;
+    }
+    if (ectx->hasInputProp() || ectx->hasVariableProp() || ectx->hasDstTagProp()) {
+        return false;
+    }
+    return true;
 }
 }   // namespace graph
 }   // namespace nebula

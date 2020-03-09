@@ -56,6 +56,8 @@ class Collector final {
 public:
     static Status collect(VariantType &var, RowWriter *writer);
 
+    static Status collectWithoutSchema(VariantType &var, RowWriter *writer);
+
     static OptVariantType getProp(const meta::SchemaProviderIf *schema,
                                   const std::string &prop,
                                   const RowReader *reader);
@@ -90,13 +92,51 @@ private:
     std::unique_ptr<YieldColumns>   yieldColsHolder_;
 };
 
+class WhereWrapper final {
+public:
+    explicit WhereWrapper(const WhereClause *where) : where_(where) {
+        if (where != nullptr) {
+            filter_ = where->filter();
+        }
+    }
+
+    Status prepare(ExpressionContext *ectx);
+
+    Expression* getFilter() {
+        return filter_;
+    }
+
+    std::string getFilterPushdown() {
+        return filterPushdown_;
+    }
+
+private:
+    Status encode();
+
+    bool rewrite(Expression *expr) const;
+
+    bool canPushdown(Expression *expr) const;
+
+private:
+    friend class TraverseExecutor;
+    friend class GoExecutor;
+    friend class GoTest_FilterPushdown_Test;
+    const WhereClause              *where_{nullptr};
+    std::unique_ptr<Expression>     filterRewrite_;
+    Expression                     *filter_{nullptr};
+    std::string                     filterPushdown_;
+};
+
 class TraverseExecutor : public Executor {
 public:
-    explicit TraverseExecutor(ExecutionContext *ectx) : Executor(ectx) {}
+    explicit TraverseExecutor(ExecutionContext *ectx,
+                              const std::string &statsName = "") : Executor(ectx, statsName) {}
 
     using OnResult = std::function<void(std::unique_ptr<InterimResult>)>;
 
-    virtual void feedResult(std::unique_ptr<InterimResult> result) = 0;
+    virtual void feedResult(std::unique_ptr<InterimResult> result) {
+        inputs_ = std::move(result);
+    }
 
     /**
      * `onResult_' must be set except for the right most executor
@@ -118,8 +158,13 @@ public:
 protected:
     std::unique_ptr<TraverseExecutor> makeTraverseExecutor(Sentence *sentence);
 
+    nebula::cpp2::SupportedType calculateExprType(Expression* exp) const;
+
+    Status checkIfDuplicateColumn() const;
+
 protected:
     OnResult                                    onResult_;
+    std::unique_ptr<InterimResult>              inputs_;
 };
 
 }   // namespace graph

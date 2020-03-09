@@ -30,6 +30,7 @@ enum BatchLogType : char {
     OP_BATCH_PUT            = 0x1,
     OP_BATCH_REMOVE         = 0x2,
     OP_BATCH_REMOVE_RANGE   = 0x3,
+    OP_BATCH_REMOVE_PREFIX  = 0x4,
 };
 
 std::string encodeKV(const folly::StringPiece& key,
@@ -47,8 +48,8 @@ std::string encodeMultiValues(LogType type,
                               folly::StringPiece v2);
 std::vector<folly::StringPiece> decodeMultiValues(folly::StringPiece encoded);
 
-std::string encodeBatchValue(const std::vector<std::pair<BatchLogType,
-                             std::pair<std::string, std::string>>>& batch);
+std::string
+encodeBatchValue(const std::vector<std::tuple<BatchLogType, std::string, std::string>>& batch);
 
 std::vector<std::pair<BatchLogType, std::pair<folly::StringPiece, folly::StringPiece>>>
 decodeBatchValue(folly::StringPiece encoded);
@@ -65,33 +66,43 @@ public:
     ~BatchHolder() = default;
 
     void put(std::string&& key, std::string&& val) {
-        batch_.emplace_back(BatchLogType::OP_BATCH_PUT,
-                            std::make_pair(std::forward<std::string>(key),
-                                           std::forward<std::string>(val)));
+        auto op = std::make_tuple(BatchLogType::OP_BATCH_PUT,
+                                  std::forward<std::string>(key),
+                                  std::forward<std::string>(val));
+        batch_.emplace_back(std::move(op));
     }
 
     void remove(std::string&& key) {
-        batch_.emplace_back(BatchLogType::OP_BATCH_REMOVE,
-                            std::make_pair(std::forward<std::string>(key), ""));
+        auto op = std::make_tuple(BatchLogType::OP_BATCH_REMOVE,
+                                  std::forward<std::string>(key),
+                                  "");
+        batch_.emplace_back(std::move(op));
     }
 
     void rangeRemove(std::string&& begin, std::string&& end) {
-        batch_.emplace_back(BatchLogType::OP_BATCH_REMOVE_RANGE,
-                            std::make_pair(std::forward<std::string>(begin),
-                                           std::forward<std::string>(end)));
+        auto op = std::make_tuple(BatchLogType::OP_BATCH_REMOVE_RANGE,
+                                  std::forward<std::string>(begin),
+                                  std::forward<std::string>(end));
+        batch_.emplace_back(std::move(op));
+    }
+
+    void removePrefix(std::string&& key) {
+        auto op = std::make_tuple(BatchLogType::OP_BATCH_REMOVE_PREFIX,
+                                  std::forward<std::string>(key),
+                                  "");
+        batch_.emplace_back(std::move(op));
     }
 
     void clear() {
         batch_.clear();
     }
 
-    const std::vector<std::pair<BatchLogType,
-                                std::pair<std::string, std::string>>>& getBatch() {
+    const std::vector<std::tuple<BatchLogType, std::string, std::string>>& getBatch() {
         return batch_;
     }
 
 private:
-    std::vector<std::pair<BatchLogType, std::pair<std::string, std::string>>> batch_;
+    std::vector<std::tuple<BatchLogType, std::string, std::string>> batch_;
 };
 }  // namespace kvstore
 }  // namespace nebula

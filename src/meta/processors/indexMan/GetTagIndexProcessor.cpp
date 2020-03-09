@@ -15,29 +15,28 @@ void GetTagIndexProcessor::process(const cpp2::GetTagIndexReq& req) {
     CHECK_SPACE_ID_AND_RETURN(spaceID);
     folly::SharedMutex::ReadHolder rHolder(LockUtils::tagIndexLock());
 
-    auto tagIndexIDResult = getTagIndexID(spaceID, indexName);
+    auto tagIndexIDResult = getIndexID(spaceID, indexName);
     if (!tagIndexIDResult.ok()) {
         LOG(ERROR) << "Get Tag Index SpaceID: " << spaceID
                    << " Index Name: " << indexName << " not found";
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
 
     LOG(INFO) << "Get Tag Index SpaceID: " << spaceID << " Index Name: " << indexName;
-    auto tagKey = MetaServiceUtils::tagIndexKey(spaceID, tagIndexIDResult.value());
+    auto tagKey = MetaServiceUtils::indexKey(spaceID, tagIndexIDResult.value());
     auto tagResult = doGet(tagKey);
     if (!tagResult.ok()) {
         LOG(ERROR) << "Get Tag Index Failed: SpaceID " << spaceID
                    << " Index Name: " << indexName << " status: " << tagResult.status();
+        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
 
-    cpp2::TagIndexItem item;
-    item.set_index_id(tagIndexIDResult.value());
-    item.set_fields(MetaServiceUtils::parseTagIndex(tagResult.value()));
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    auto item = MetaServiceUtils::parseIndex(tagResult.value());
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_item(std::move(item));
     onFinished();
 }

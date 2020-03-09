@@ -9,8 +9,10 @@ _build.log
 _install
 install_manifest.txt
 
-# ccls
+# lsp
 .ccls
+.ccls-cache
+.clangd/
 compile_commands.json
 
 src/common/base/Base.h.gch

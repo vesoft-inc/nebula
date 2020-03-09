@@ -14,16 +14,24 @@ nebula_add_library(
     GoExecutor.cpp
     PipeExecutor.cpp
     CreateEdgeExecutor.cpp
-    CreateTagExecutor.cpp
     AlterEdgeExecutor.cpp
+    DescribeEdgeExecutor.cpp
+    CreateTagExecutor.cpp
     AlterTagExecutor.cpp
     DropTagExecutor.cpp
     DropEdgeExecutor.cpp
     DescribeTagExecutor.cpp
-    DescribeEdgeExecutor.cpp
     InsertVertexExecutor.cpp
     UpdateVertexExecutor.cpp
     InsertEdgeExecutor.cpp
+    CreateEdgeIndexExecutor.cpp
+    DropEdgeIndexExecutor.cpp
+    DescribeEdgeIndexExecutor.cpp
+    RebuildEdgeIndexExecutor.cpp
+    CreateTagIndexExecutor.cpp
+    DropTagIndexExecutor.cpp
+    DescribeTagIndexExecutor.cpp
+    RebuildTagIndexExecutor.cpp
     UpdateEdgeExecutor.cpp
     AssignmentExecutor.cpp
     InterimResult.cpp
@@ -43,9 +51,8 @@ nebula_add_library(
     FetchEdgesExecutor.cpp
     FetchExecutor.cpp
     SetExecutor.cpp
-    FindExecutor.cpp
     MatchExecutor.cpp
-    DeleteVertexExecutor.cpp
+    DeleteVerticesExecutor.cpp
     DeleteEdgesExecutor.cpp
     FindPathExecutor.cpp
     LimitExecutor.cpp
@@ -53,12 +60,8 @@ nebula_add_library(
     ReturnExecutor.cpp
     CreateSnapshotExecutor.cpp
     DropSnapshotExecutor.cpp
+    AdminJobExecutor.cpp
+    LookupExecutor.cpp
 )
-
-nebula_add_library(
-    graph_http_handler OBJECT
-    GraphHttpHandler.cpp
-)
-
 nebula_add_subdirectory(test)
 

@@ -13,7 +13,8 @@ namespace nebula {
 namespace graph {
 
 InsertVertexExecutor::InsertVertexExecutor(Sentence *sentence,
-                                           ExecutionContext *ectx) : Executor(ectx) {
+                                           ExecutionContext *ectx)
+    : Executor(ectx, "insert_vertex") {
     sentence_ = static_cast<InsertVertexSentence*>(sentence);
 }
 
@@ -48,14 +49,14 @@ Status InsertVertexExecutor::check() {
         auto *tagName = item->tagName();
         auto tagStatus = ectx()->schemaManager()->toTagID(spaceId_, *tagName);
         if (!tagStatus.ok()) {
-            LOG(ERROR) << "No schema found for " << tagName;
+            LOG(ERROR) << "No schema found for " << *tagName;
             return Status::Error("No schema found for `%s'", tagName->c_str());
         }
 
         auto tagId = tagStatus.value();
         auto schema = ectx()->schemaManager()->getTagSchema(spaceId_, tagId);
         if (schema == nullptr) {
-            LOG(ERROR) << "No schema found for " << tagName;
+            LOG(ERROR) << "No schema found for " << *tagName;
             return Status::Error("No schema found for `%s'", tagName->c_str());
         }
 
@@ -64,6 +65,14 @@ Status InsertVertexExecutor::check() {
             LOG(ERROR) << "Input props number " << props.size()
                        << ", schema fields number " << schema->getNumFields();
             return Status::Error("Wrong number of props");
+        }
+
+        // Check prop name is in schema
+        for (auto *it : props) {
+            if (schema->getFieldIndex(*it) < 0) {
+                LOG(ERROR) << "Unknown column `" << *it << "' in schema";
+                return Status::Error("Unknown column `%s' in schema", it->c_str());
+            }
         }
 
         auto *mc = ectx()->getMetaClient();
@@ -80,7 +89,7 @@ Status InsertVertexExecutor::check() {
                 auto valueResult = mc->getTagDefaultValue(spaceId_, tagId, name).get();
                 if (!valueResult.ok()) {
                     LOG(ERROR) << "Not exist default value: " << name;
-                    return Status::Error("Not exist default value");
+                    return Status::Error("`%s' not exist default value", name.c_str());
                 } else {
                     VLOG(3) << "Default Value: " << name << ":" << valueResult.value();
                     defaultValues_.emplace(name, valueResult.value());
@@ -104,6 +113,7 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
     expCtx_->setSpace(spaceId_);
 
     std::vector<storage::cpp2::Vertex> vertices(rows_.size());
+    Getters getters;
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
         auto rid = row->id();
@@ -113,7 +123,7 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
         if (!status.ok()) {
             return status;
         }
-        auto ovalue = rid->eval();
+        auto ovalue = rid->eval(getters);
         if (!ovalue.ok()) {
             return ovalue.status();
         }
@@ -132,17 +142,18 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
             if (!status.ok()) {
                 return status;
             }
-            ovalue = expr->eval();
+            ovalue = expr->eval(getters);
             if (!ovalue.ok()) {
                 return ovalue.status();
             }
             values.emplace_back(ovalue.value());
         }
 
-        storage::cpp2::Vertex vertex;
         std::vector<storage::cpp2::Tag> tags(tagIds_.size());
 
+        int32_t valuesSize = values.size();
         int32_t valuePosition = 0;
+        int32_t handleValueNum = 0;
         for (auto index = 0u; index < tagIds_.size(); index++) {
             auto &tag = tags[index];
             auto tagId = tagIds_[index];
@@ -160,6 +171,10 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
                 auto schemaType = schema->getFieldType(schemaIndex);
                 if (positionIter != propsPosition.end()) {
                     auto position = propsPosition[fieldName];
+                    if (position + valuePosition >= valuesSize) {
+                        LOG(ERROR) << fieldName << " need input value";
+                        return Status::Error("`%s' need input value", fieldName);
+                    }
                     value = values[position + valuePosition];
 
                     if (!checkValueType(schemaType, value)) {
@@ -184,20 +199,28 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
                     if (!timestamp.ok()) {
                         return timestamp.status();
                     }
-                    writeVariantType(writer, timestamp.value());
+                    status = writeVariantType(writer, timestamp.value());
                 } else {
-                    writeVariantType(writer, value);
+                    status = writeVariantType(writer, value);
                 }
+                if (!status.ok()) {
+                    return status;
+                }
+                handleValueNum++;
             }
 
             tag.set_tag_id(tagId);
             tag.set_props(writer.encode());
             valuePosition += propsPosition.size();
         }
+        // Input values more than schema props
+        if (handleValueNum < valuesSize) {
+            return Status::Error("Column count doesn't match value count");
+        }
 
+        auto& vertex = vertices[i];
         vertex.set_id(id);
         vertex.set_tags(std::move(tags));
-        vertices.emplace_back(std::move(vertex));
     }
 
     return vertices;
@@ -207,14 +230,14 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
 void InsertVertexExecutor::execute() {
     auto status = check();
     if (!status.ok()) {
-        doError(std::move(status), ectx()->getGraphStats()->getInsertVertexStats());
+        doError(std::move(status));
         return;
     }
 
     auto result = prepareVertices();
     if (!result.ok()) {
         LOG(ERROR) << "Insert vertices failed, error " << result.status().toString();
-        doError(result.status(), ectx()->getGraphStats()->getInsertVertexStats());
+        doError(result.status());
         return;
     }
     auto future = ectx()->getStorageClient()->addVertices(spaceId_,
@@ -231,19 +254,15 @@ void InsertVertexExecutor::execute() {
                 LOG(ERROR) << "Insert vertices failed, error " << static_cast<int32_t>(it->second)
                            << ", part " << it->first;
             }
-            doError(Status::Error("Internal Error"),
-                    ectx()->getGraphStats()->getInsertVertexStats());
+            doError(Status::Error("Insert vertex not complete, completeness: %d", completeness));
             return;
         }
-        doFinish(Executor::ProcessControl::kNext,
-                 ectx()->getGraphStats()->getInsertVertexStats(),
-                 rows_.size());
+        doFinish(Executor::ProcessControl::kNext, rows_.size());
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal Error"),
-                ectx()->getGraphStats()->getInsertVertexStats());
+        LOG(ERROR) << "Insert vertex exception: " << e.what();
+        doError(Status::Error("Insert vertex exception: %s", e.what().c_str()));
         return;
     };
 

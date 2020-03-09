@@ -26,16 +26,17 @@ StatusOr<PartMeta> MemPartManager::partMeta(GraphSpaceID spaceId, PartitionID pa
     return partIt->second;
 }
 
-bool MemPartManager::partExist(const HostAddr& host, GraphSpaceID spaceId, PartitionID partId) {
-    UNUSED(host);
+Status MemPartManager::partExist(const HostAddr&, GraphSpaceID spaceId, PartitionID partId) {
     auto it = partsMap_.find(spaceId);
     if (it != partsMap_.end()) {
         auto partIt = it->second.find(partId);
         if (partIt != it->second.end()) {
-            return true;
+            return Status::OK();
+        } else {
+            return Status::PartNotFound();
         }
     }
-    return false;
+    return Status::SpaceNotFound();
 }
 
 MetaServerBasedPartManager::MetaServerBasedPartManager(HostAddr host, meta::MetaClient *client)
@@ -61,14 +62,14 @@ StatusOr<PartMeta> MetaServerBasedPartManager::partMeta(GraphSpaceID spaceId, Pa
     return client_->getPartMetaFromCache(spaceId, partId);
 }
 
-bool MetaServerBasedPartManager::partExist(const HostAddr& host,
-                                           GraphSpaceID spaceId,
-                                           PartitionID partId) {
+Status MetaServerBasedPartManager::partExist(const HostAddr& host,
+                                             GraphSpaceID spaceId,
+                                             PartitionID partId) {
     return client_->checkPartExistInCache(host, spaceId, partId);
 }
 
-bool MetaServerBasedPartManager::spaceExist(const HostAddr& host,
-                                            GraphSpaceID spaceId) {
+Status MetaServerBasedPartManager::spaceExist(const HostAddr& host,
+                                              GraphSpaceID spaceId) {
     return client_->checkSpaceExistInCache(host, spaceId);
 }
 
@@ -164,6 +165,15 @@ void MetaServerBasedPartManager::onPartRemoved(GraphSpaceID spaceId, PartitionID
 
 void MetaServerBasedPartManager::onPartUpdated(const PartMeta& partMeta) {
     UNUSED(partMeta);
+}
+
+void MetaServerBasedPartManager::fetchLeaderInfo(
+        std::unordered_map<GraphSpaceID, std::vector<PartitionID>>& leaderIds) {
+    if (handler_ != nullptr) {
+        handler_->allLeader(leaderIds);
+    } else {
+        VLOG(1) << "handler_ is nullptr!";
+    }
 }
 
 }  // namespace kvstore

@@ -29,7 +29,6 @@ namespace nebula {
 namespace meta {
 
 using nebula::cpp2::SupportedType;
-using apache::thrift::FragileConstructor::FRAGILE;
 
 class TestFaultInjector : public FaultInjector {
 public:
@@ -104,6 +103,14 @@ public:
         return response(8);
     }
 
+    folly::Future<Status> rebuildTagIndex() override {
+        return response(11);
+    }
+
+    folly::Future<Status> rebuildEdgeIndex() override {
+        return response(12);
+    }
+
     void reset(std::vector<Status> sts) {
         statusArray_ = std::move(sts);
     }
@@ -158,7 +165,7 @@ public:
             }
             usleep(100000);
         }
-        return std::move(store);
+        return store;
     }
 
     static nebula::cpp2::ColumnDef columnDef(int32_t index, nebula::cpp2::SupportedType st) {
@@ -247,7 +254,10 @@ public:
 
         std::vector<nebula::cpp2::HostAddr> allHosts;
         for (int i = 0; i < totalHost; i++) {
-            allHosts.emplace_back(apache::thrift::FragileConstructor::FRAGILE, i, i);
+            nebula::cpp2::HostAddr address;
+            address.set_ip(i);
+            address.set_port(i);
+            allHosts.emplace_back(std::move(address));
         }
 
         for (auto partId = 1; partId <= partitionNum; partId++) {
@@ -406,7 +416,7 @@ public:
         }
 
         for (auto resultIter = result.begin(), expectedIter = expected.begin();
-             resultIter != result.end(), expectedIter != expected.end();
+             resultIter != result.end() && expectedIter != expected.end();
              resultIter++, expectedIter++) {
             if (resultIter->first != expectedIter->first &&
                 !verifyResult(resultIter->second, expectedIter->second)) {
@@ -424,7 +434,7 @@ public:
         }
 
         for (auto resultIter = result.begin(), expectedIter = expected.begin();
-             resultIter != result.end(), expectedIter != expected.end();
+             resultIter != result.end() && expectedIter != expected.end();
              resultIter++, expectedIter++) {
             if (resultIter->first != expectedIter->first &&
                 !verifyResult(resultIter->second, expectedIter->second)) {

@@ -11,7 +11,6 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,9 +21,9 @@ public class NebulaCodec {
         try {
             System.loadLibrary("nebula_codec");
         } catch (Exception e) {
-            LOGGER.error(e.getMessage(), e);
+            LOGGER.error(e.getMessage());
         } catch (Error e) {
-            LOGGER.error(e.getMessage(), e);
+            LOGGER.error(e.getMessage());
         }
     }
 

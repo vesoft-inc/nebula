@@ -13,11 +13,11 @@ void ListTagIndexesProcessor::process(const cpp2::ListTagIndexesReq& req) {
     auto space = req.get_space_id();
     CHECK_SPACE_ID_AND_RETURN(space);
     folly::SharedMutex::ReadHolder rHolder(LockUtils::tagIndexLock());
-    auto prefix = MetaServiceUtils::tagIndexPrefix(space);
+    auto prefix = MetaServiceUtils::indexPrefix(space);
 
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    resp_.set_code(to(ret));
+    handleErrorCode(MetaCommon::to(ret));
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "List Tag Index Failed: SpaceID " << space;
         onFinished();
@@ -26,19 +26,14 @@ void ListTagIndexesProcessor::process(const cpp2::ListTagIndexesReq& req) {
 
     decltype(resp_.items) items;
     while (iter->valid()) {
-        auto key = iter->key();
         auto val = iter->val();
-        auto tagIndex = *reinterpret_cast<const TagIndexID *>(key.data() + prefix.size());
-        auto nameSize = *reinterpret_cast<const int32_t *>(val.data());
-        auto name = val.subpiece(sizeof(int32_t), nameSize).str();
-        auto fields = MetaServiceUtils::parseTagIndex(val);
-        nebula::meta::cpp2::TagIndexItem item;
-        item.set_index_id(tagIndex);
-        item.set_index_name(std::move(name));
-        item.set_fields(std::move(fields));
-        items.emplace_back(std::move(item));
+        auto item = MetaServiceUtils::parseIndex(val);
+        if (item.get_schema_id().getType() == nebula::cpp2::SchemaID::Type::tag_id) {
+            items.emplace_back(std::move(item));
+        }
         iter->next();
     }
+    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_items(std::move(items));
     onFinished();
 }

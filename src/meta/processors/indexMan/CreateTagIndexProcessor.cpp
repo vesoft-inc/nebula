@@ -13,85 +13,97 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     auto space = req.get_space_id();
     CHECK_SPACE_ID_AND_RETURN(space);
     const auto &indexName = req.get_index_name();
-    auto &properties = req.get_properties();
-    if (properties.get_fields().empty()) {
+    auto &tagName = req.get_tag_name();
+    auto &fieldNames = req.get_fields();
+    if (fieldNames.empty()) {
         LOG(ERROR) << "Tag's Field should not empty";
-        resp_.set_code(cpp2::ErrorCode::E_INVALID_PARM);
+        handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
         onFinished();
         return;
     }
 
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagIndexLock());
-    auto ret = getTagIndexID(space, indexName);
+    auto ret = getIndexID(space, indexName);
     if (ret.ok()) {
         LOG(ERROR) << "Create Tag Index Failed: " << indexName << " have existed";
-        resp_.set_code(cpp2::ErrorCode::E_EXISTED);
+        if (req.get_if_not_exists()) {
+            handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+        } else {
+            handleErrorCode(cpp2::ErrorCode::E_EXISTED);
+        }
         onFinished();
         return;
     }
 
-    std::map<std::string, std::vector<nebula::cpp2::ColumnDef>> tagColumns;
-    for (auto& element : properties.get_fields()) {
-        auto tagName = element.first;
-        auto tagID = getTagId(space, tagName);
-        if (!tagID.ok()) {
-            LOG(ERROR) << "Create Tag Index Failed: Tag " << tagName << " not exist";
-            resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
-            onFinished();
-            return;
-        }
-
-        auto fieldsResult = getLatestTagFields(space, tagName);
-        if (!fieldsResult.ok()) {
-            LOG(ERROR) << "Get Latest Tag Fields Failed";
-            resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
-            onFinished();
-            return;
-        }
-
-        auto fields = fieldsResult.value();
-        std::vector<nebula::cpp2::ColumnDef> columns;
-        for (auto &field : element.second) {
-            auto iter = std::find_if(std::begin(fields), std::end(fields),
-                                     [field](const auto& pair) {
-                                         return field == pair.first;
-                                     });
-            if (iter == fields.end()) {
-                LOG(ERROR) << "Field " << field << " not found in Tag " << tagName;
-                resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
-                onFinished();
-                return;
-            } else {
-                auto type = fields[field];
-                nebula::cpp2::ColumnDef column;
-                column.set_name(std::move(field));
-                column.set_type(std::move(type));
-                columns.emplace_back(std::move(column));
-            }
-        }
-        tagColumns.emplace(tagName, std::move(columns));
+    auto tagIDRet = getTagId(space, tagName);
+    if (!tagIDRet.ok()) {
+        LOG(ERROR) << "Create Tag Index Failed: Tag " << tagName << " not exist";
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+        onFinished();
+        return;
     }
 
-    nebula::meta::cpp2::IndexFields indexFields;
-    indexFields.set_fields(std::move(tagColumns));
+    auto tagID = tagIDRet.value();
+    auto retSchema = getLatestTagSchema(space, tagID);
+    if (!retSchema.ok()) {
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+        onFinished();
+        return;
+    }
+
+    auto latestTagSchema = retSchema.value();
+    if (tagOrEdgeHasTTL(latestTagSchema)) {
+       LOG(ERROR) << "Tag: " << tagName << " has ttl, not create index";
+       handleErrorCode(cpp2::ErrorCode::E_INDEX_WITH_TTL);
+       onFinished();
+       return;
+    }
+
+    auto fields = getLatestTagFields(latestTagSchema);
+    std::vector<nebula::cpp2::ColumnDef> columns;
+    for (auto &field : fieldNames) {
+        auto iter = std::find_if(std::begin(fields), std::end(fields),
+                                 [field](const auto& pair) { return field == pair.first; });
+        if (iter == fields.end()) {
+            LOG(ERROR) << "Field " << field << " not found in Tag " << tagName;
+            handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+            onFinished();
+            return;
+        } else {
+            auto type = fields[field];
+            nebula::cpp2::ColumnDef column;
+            column.set_name(std::move(field));
+            column.set_type(std::move(type));
+            columns.emplace_back(std::move(column));
+        }
+    }
 
     std::vector<kvstore::KV> data;
     auto tagIndexRet = autoIncrementId();
     if (!nebula::ok(tagIndexRet)) {
         LOG(ERROR) << "Create tag index failed : Get tag index ID failed";
-        resp_.set_code(nebula::error(tagIndexRet));
+        handleErrorCode(nebula::error(tagIndexRet));
         onFinished();
         return;
     }
 
     auto tagIndex = nebula::value(tagIndexRet);
-    data.emplace_back(MetaServiceUtils::indexTagIndexKey(space, indexName),
-                      std::string(reinterpret_cast<const char*>(&tagIndex), sizeof(TagIndexID)));
-    data.emplace_back(MetaServiceUtils::tagIndexKey(space, tagIndex),
-                      MetaServiceUtils::tagIndexVal(indexName, std::move(indexFields)));
+    nebula::cpp2::IndexItem item;
+    item.set_index_id(tagIndex);
+    item.set_index_name(indexName);
+    nebula::cpp2::SchemaID schemaID;
+    schemaID.set_tag_id(tagID);
+    item.set_schema_id(schemaID);
+    item.set_schema_name(tagName);
+    item.set_fields(std::move(columns));
+
+    data.emplace_back(MetaServiceUtils::indexIndexKey(space, indexName),
+                      std::string(reinterpret_cast<const char*>(&tagIndex), sizeof(IndexID)));
+    data.emplace_back(MetaServiceUtils::indexKey(space, tagIndex),
+                      MetaServiceUtils::indexVal(item));
     LOG(INFO) << "Create Tag Index " << indexName << ", tagIndex " << tagIndex;
-    resp_.set_id(to(tagIndex, EntryType::TAG_INDEX));
-    doPut(std::move(data));
+    resp_.set_id(to(tagIndex, EntryType::INDEX));
+    doSyncPutAndUpdate(std::move(data));
 }
 
 }  // namespace meta

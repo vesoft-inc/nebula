@@ -122,9 +122,13 @@ std::unique_ptr<RowReader> RowReader::getTagPropReader(
     CHECK_NOTNULL(schemaMan);
     int32_t ver = getSchemaVer(row);
     if (ver >= 0) {
+        auto schema = schemaMan->getTagSchema(space, tag, ver);
+        if (schema == nullptr) {
+            return nullptr;
+        }
         return std::unique_ptr<RowReader>(new RowReader(
             row,
-            schemaMan->getTagSchema(space, tag, ver)));
+            schema));
     } else {
         // Invalid data
         // TODO We need a better error handler here
@@ -153,7 +157,6 @@ std::unique_ptr<RowReader> RowReader::getEdgePropReader(
         return nullptr;
     }
 }
-
 
 // static
 std::unique_ptr<RowReader> RowReader::getRowReader(

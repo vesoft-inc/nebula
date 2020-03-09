@@ -5,7 +5,6 @@
  */
 
 #include "base/Base.h"
-#include "meta/SchemaManager.h"
 #include "meta/ServerBasedSchemaManager.h"
 
 namespace nebula {

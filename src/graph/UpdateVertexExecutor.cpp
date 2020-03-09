@@ -17,12 +17,16 @@ namespace graph {
 // UPDATE/UPSERT VERTEX <vertex_id>
 // SET <update_decl> [WHEN <conditions>] [YIELD <field_list>]
 UpdateVertexExecutor::UpdateVertexExecutor(Sentence *sentence,
-                                           ExecutionContext *ectx) : Executor(ectx) {
+                                           ExecutionContext *ectx)
+    : Executor(ectx, "update_vertex") {
     sentence_ = static_cast<UpdateVertexSentence*>(sentence);
 }
 
-
 Status UpdateVertexExecutor::prepare() {
+    return Status::OK();
+}
+
+Status UpdateVertexExecutor::prepareData() {
     DCHECK(sentence_ != nullptr);
 
     spaceId_ = ectx()->rctx()->session()->space();
@@ -43,7 +47,8 @@ Status UpdateVertexExecutor::prepare() {
         if (!status.ok()) {
             break;
         }
-        auto vid = id->eval();
+        Getters getters;
+        auto vid = id->eval(getters);
         if (!vid.ok() || !Expression::isInt(vid.value())) {
             status = Status::Error("Get Vertex ID failure!");
             break;
@@ -64,8 +69,7 @@ Status UpdateVertexExecutor::prepare() {
     } while (false);
 
     if (status.ok()) {
-        stats::Stats::addStatsValue(ectx()->getGraphStats()->getUpdateVertexStats(),
-                false, duration().elapsedInUSec());
+        stats::Stats::addStatsValue(stats_.get(), false, duration().elapsedInUSec());
     }
     return status;
 }
@@ -165,11 +169,12 @@ void UpdateVertexExecutor::finishExecution(storage::cpp2::UpdateResponse &&rpcRe
                         row[index].set_str(boost::get<std::string>(column));
                         break;
                     default:
-                        LOG(FATAL) << "Unknown VariantType: " << column.which();
+                        LOG(ERROR) << "Unknown VariantType: " << column.which();
+                        doError(Status::Error("Unknown VariantType: %d", column.which()));
+                        return;
                 }
             } else {
-                doError(Status::Error("get property failed"),
-                        ectx()->getGraphStats()->getUpdateVertexStats());
+                doError(Status::Error("get property failed"));
                 return;
             }
         }
@@ -177,12 +182,19 @@ void UpdateVertexExecutor::finishExecution(storage::cpp2::UpdateResponse &&rpcRe
         rows.back().set_columns(std::move(row));
     }
     resp_->set_rows(std::move(rows));
-    doFinish(Executor::ProcessControl::kNext, ectx()->getGraphStats()->getUpdateVertexStats());
+    doFinish(Executor::ProcessControl::kNext);
 }
 
 
 void UpdateVertexExecutor::execute() {
     FLOG_INFO("Executing UpdateVertex: %s", sentence_->toString().c_str());
+
+    auto status = prepareData();
+    if (!status.ok()) {
+        doError(std::move(status));
+        return;
+    }
+
     std::string filterStr = filter_ ? Expression::encode(filter_) : "";
     auto returns = getReturnColumns();
     auto future = ectx()->getStorageClient()->updateVertex(spaceId_,
@@ -194,19 +206,17 @@ void UpdateVertexExecutor::execute() {
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            doError(std::move(resp).status(), ectx()->getGraphStats()->getUpdateVertexStats());
+            doError(Status::Error("Insert vertex `%ld' failed.", vertex_));
             return;
         }
         auto rpcResp = std::move(resp).value();
         for (auto& code : rpcResp.get_result().get_failed_codes()) {
             switch (code.get_code()) {
                 case nebula::storage::cpp2::ErrorCode::E_INVALID_FILTER:
-                      doError(Status::Error("Maybe invalid tag or property in WHEN clause!"),
-                              ectx()->getGraphStats()->getUpdateVertexStats());
+                      doError(Status::Error("Maybe invalid tag or property in WHEN clause!"));
                       return;
                 case nebula::storage::cpp2::ErrorCode::E_INVALID_UPDATER:
-                      doError(Status::Error("Maybe invalid tag or property in SET/YIELD clasue!"),
-                              ectx()->getGraphStats()->getUpdateVertexStats());
+                      doError(Status::Error("Maybe invalid tag or property in SET/YIELD clasue!"));
                       return;
                 default:
                       std::string errMsg =
@@ -215,16 +225,17 @@ void UpdateVertexExecutor::execute() {
                                                 code.get_part_id(),
                                                 static_cast<int32_t>(code.get_code()));
                       LOG(ERROR) << errMsg;
-                      doError(Status::Error(errMsg),
-                              ectx()->getGraphStats()->getUpdateVertexStats());
+                      doError(Status::Error(errMsg));
                       return;
             }
         }
         this->finishExecution(std::move(rpcResp));
     };
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error"), ectx()->getGraphStats()->getUpdateVertexStats());
+        auto msg = folly::stringPrintf("Insert vertex `%ld' exception: %s",
+                vertex_, e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(std::move(msg)));
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }

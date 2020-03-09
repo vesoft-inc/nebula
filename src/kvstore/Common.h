@@ -26,6 +26,9 @@ enum ResultCode {
     ERR_UNSUPPORTED         = -8,
     ERR_CHECKPOINT_ERROR    = -9,
     ERR_WRITE_BLOCK_ERROR   = -10,
+    ERR_TAG_NOT_FOUND       = -11,
+    ERR_EDGE_NOT_FOUND      = -12,
+    ERR_PARTIAL_RESULT      = -99,
     ERR_UNKNOWN             = -100,
 };
 

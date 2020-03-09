@@ -11,6 +11,8 @@
 #include "graph/TraverseExecutor.h"
 #include "storage/client/StorageClient.h"
 
+DECLARE_bool(filter_pushdown);
+
 namespace nebula {
 
 namespace storage {
@@ -32,8 +34,6 @@ public:
     Status MUST_USE_RESULT prepare() override;
 
     void execute() override;
-
-    void feedResult(std::unique_ptr<InterimResult> result) override;
 
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
@@ -59,6 +59,8 @@ private:
 
     Status prepareOverAll();
 
+    Status addToEdgeTypes(EdgeType type);
+
     /**
      * To check if this is the final step.
      */
@@ -72,10 +74,6 @@ private:
      */
     bool isUpto() const {
         return upto_;
-    }
-
-    bool isReversely() const {
-        return isReversely_;
     }
 
     /**
@@ -120,12 +118,12 @@ private:
     /**
      * To retrieve the dst ids from a stepping out response.
      */
-    std::vector<VertexID> getDstIdsFromResp(RpcResponse &rpcResp) const;
+    StatusOr<std::vector<VertexID>> getDstIdsFromResp(RpcResponse &rpcResp) const;
 
     /**
-     * get the edgeName from response when over all edges
+     * get the edgeName when over all edges
      */
-    std::vector<std::string> getEdgeNamesFromResp(RpcResponse &rpcResp) const;
+    std::vector<std::string> getEdgeNames() const;
     /**
      * All required data have arrived, finish the execution.
      */
@@ -151,9 +149,12 @@ private:
      * To iterate on the final data collection, and evaluate the filter and yield columns.
      * For each row that matches the filter, `cb' would be invoked.
      */
-    using Callback = std::function<void(std::vector<VariantType>,
-                                   std::vector<nebula::cpp2::SupportedType>)>;
+    using Callback = std::function<Status(std::vector<VariantType>,
+                                          const std::vector<nebula::cpp2::SupportedType>&)>;
+
     bool processFinalResult(RpcResponse &rpcResp, Callback cb) const;
+
+    StatusOr<std::vector<cpp2::RowValue>> toThriftResponse(RpcResponse&& resp);
 
     /**
      * A container to hold the mapping from vertex id to its properties, used for lookups
@@ -193,30 +194,7 @@ private:
          std::unordered_map<VertexID, VertexID>     mapping_;
     };
 
-    class EdgeHolder final {
-    public:
-        Status add(const storage::cpp2::EdgePropResponse &resp);
-        OptVariantType get(VertexID src,
-                           VertexID dst,
-                           EdgeType type,
-                           const std::string &prop) const;
-        nebula::cpp2::SupportedType getType(VertexID src,
-                           VertexID dst,
-                           EdgeType type,
-                           const std::string &prop) const;
-        OptVariantType getDefaultProp(EdgeType type,
-                                      const std::string &prop);
-
-    private:
-        using EdgeKey = std::tuple<VertexID, VertexID, EdgeType>;
-        using EdgeValue = std::pair<std::shared_ptr<ResultSchemaProvider>, std::string>;
-        std::unordered_map<EdgeKey, EdgeValue> edges_;
-        std::unordered_map<EdgeType, std::shared_ptr<ResultSchemaProvider>> schemas_;
-    };
-
     OptVariantType getPropFromInterim(VertexID id, const std::string &prop) const;
-
-    nebula::cpp2::SupportedType getPropTypeFromInterim(const std::string &prop) const;
 
     enum FromType {
         kInstantExpr,
@@ -230,22 +208,20 @@ private:
     uint32_t                                    steps_{1};
     uint32_t                                    curStep_{1};
     bool                                        upto_{false};
-    bool                                        isReversely_{false};
+    OverClause::Direction                       direction_{OverClause::Direction::kForward};
     std::vector<EdgeType>                       edgeTypes_;
     std::string                                *varname_{nullptr};
     std::string                                *colname_{nullptr};
-    Expression                                 *filter_{nullptr};
+    std::unique_ptr<WhereWrapper>               whereWrapper_;
     std::vector<YieldColumn*>                   yields_;
     std::unique_ptr<YieldClauseWrapper>         yieldClauseWrapper_;
     bool                                        distinct_{false};
     bool                                        distinctPushDown_{false};
-    std::unique_ptr<InterimResult>              inputs_;
     using InterimIndex = InterimResult::InterimResultIndex;
     std::unique_ptr<InterimIndex>               index_;
     std::unique_ptr<ExpressionContext>          expCtx_;
     std::vector<VertexID>                       starts_;
     std::unique_ptr<VertexHolder>               vertexHolder_;
-    std::unique_ptr<EdgeHolder>                 edgeHolder_;
     std::unique_ptr<VertexBackTracker>          backTracker_;
     std::unique_ptr<cpp2::ExecutionResponse>    resp_;
     // The name of Tag or Edge, index of prop in data

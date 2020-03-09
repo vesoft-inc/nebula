@@ -21,7 +21,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
             LOG(ERROR) << "Failed to create edge `" << edgeName
                        << "': some edge with the same name already exists.";
             resp_.set_id(to(conflictRet.value(), EntryType::EDGE));
-            resp_.set_code(cpp2::ErrorCode::E_CONFLICT);
+            handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
             onFinished();
             return;
         }
@@ -30,14 +30,12 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeLock());
     auto ret = getEdgeType(req.get_space_id(), edgeName);
     if (ret.ok()) {
-        cpp2::ErrorCode ec;
         if (req.get_if_not_exists()) {
-            ec = cpp2::ErrorCode::SUCCEEDED;
+            handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
         } else {
-            ec = cpp2::ErrorCode::E_EXISTED;
+            handleErrorCode(cpp2::ErrorCode::E_EXISTED);
         }
         resp_.set_id(to(ret.value(), EntryType::EDGE));
-        resp_.set_code(ec);
         onFinished();
         return;
     }
@@ -45,7 +43,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
     auto edgeTypeRet = autoIncrementId();
     if (!nebula::ok(edgeTypeRet)) {
         LOG(ERROR) << "Create edge failed : Get edge type id failed";
-        resp_.set_code(nebula::error(edgeTypeRet));
+        handleErrorCode(nebula::error(edgeTypeRet));
         onFinished();
         return;
     }
@@ -68,7 +66,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
                     if (value->getType() != nebula::cpp2::Value::Type::bool_value) {
                         LOG(ERROR) << "Create Edge Failed: " << name
                                    << " type mismatch";
-                        resp_.set_code(cpp2::ErrorCode::E_CONFLICT);
+                        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
                         onFinished();
                         return;
                     }
@@ -78,7 +76,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
                     if (value->getType() != nebula::cpp2::Value::Type::int_value) {
                         LOG(ERROR) << "Create Edge Failed: " << name
                                    << " type mismatch";
-                        resp_.set_code(cpp2::ErrorCode::E_CONFLICT);
+                        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
                         onFinished();
                         return;
                     }
@@ -88,7 +86,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
                     if (value->getType() != nebula::cpp2::Value::Type::double_value) {
                         LOG(ERROR) << "Create Edge Failed: " << name
                                    << " type mismatch";
-                        resp_.set_code(cpp2::ErrorCode::E_CONFLICT);
+                        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
                         onFinished();
                         return;
                     }
@@ -98,7 +96,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
                     if (value->getType() != nebula::cpp2::Value::Type::string_value) {
                         LOG(ERROR) << "Create Edge Failed: " << name
                                    << " type mismatch";
-                        resp_.set_code(cpp2::ErrorCode::E_CONFLICT);
+                        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
                         onFinished();
                         return;
                     }
@@ -117,9 +115,9 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
     }
 
     LOG(INFO) << "Create Edge " << edgeName << ", edgeType " << edgeType;
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_id(to(edgeType, EntryType::EDGE));
-    doPut(std::move(data));
+    doSyncPutAndUpdate(std::move(data));
 }
 
 }  // namespace meta
