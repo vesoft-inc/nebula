@@ -13,12 +13,12 @@
 namespace nebula {
 namespace graph {
 
-class BuildEdgeIndexExecutor final : public Executor {
+class RebuildEdgeIndexExecutor final : public Executor {
 public:
-    BuildEdgeIndexExecutor(Sentence *sentence, ExecutionContext *ectx);
+    RebuildEdgeIndexExecutor(Sentence *sentence, ExecutionContext *ectx);
 
     const char* name() const override {
-        return "BuildEdgeIndexExecutor";
+        return "RebuildEdgeIndexExecutor";
     }
 
     Status MUST_USE_RESULT prepare() override;
@@ -26,7 +26,7 @@ public:
     void execute() override;
 
 private:
-    BuildEdgeIndexSentence                          *sentence_{nullptr};
+    RebuildEdgeIndexSentence                          *sentence_{nullptr};
 };
 
 }   // namespace graph
