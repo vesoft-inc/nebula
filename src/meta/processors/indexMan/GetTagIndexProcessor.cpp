@@ -30,6 +30,7 @@ void GetTagIndexProcessor::process(const cpp2::GetTagIndexReq& req) {
     if (!tagResult.ok()) {
         LOG(ERROR) << "Get Tag Index Failed: SpaceID " << spaceID
                    << " Index Name: " << indexName << " status: " << tagResult.status();
+        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }

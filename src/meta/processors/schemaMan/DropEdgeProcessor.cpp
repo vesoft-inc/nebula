@@ -26,7 +26,7 @@ void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
         return;
     }
 
-    auto indexes = getIndexes(spaceId, edgeType, true);
+    auto indexes = getIndexes(spaceId, edgeType);
     if (!indexes.ok()) {
         handleErrorCode(MetaCommon::to(indexes.status()));
         onFinished();
@@ -34,7 +34,7 @@ void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
     }
     if (!indexes.value().empty()) {
         LOG(ERROR) << "Drop edge error, index conflict";
-        handleErrorCode(cpp2::ErrorCode::E_INDEX_CONFLICT);
+        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
         onFinished();
         return;
     }

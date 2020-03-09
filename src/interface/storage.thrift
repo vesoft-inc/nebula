@@ -32,6 +32,7 @@ enum ErrorCode {
     E_IMPROPER_DATA_TYPE = -23,
     E_EDGE_NOT_FOUND = -24,
     E_TAG_NOT_FOUND = -25,
+    E_INDEX_NOT_FOUND = -26,
 
     // Invalid request
     E_INVALID_FILTER = -31,
@@ -47,9 +48,6 @@ enum ErrorCode {
     // checkpoint failed
     E_FAILED_TO_CHECKPOINT = -50,
     E_CHECKPOINT_BLOCKED = -51,
-
-    // index failed
-    E_INDEX_NOT_FOUND = -60,
 
     // partial result, used for kv interfaces
     E_PARTIAL_RESULT = -99,
@@ -436,6 +434,13 @@ struct DropCPRequest {
     2: string                       name,
 }
 
+struct RebuildIndexRequest {
+    1: common.GraphSpaceID          space_id,
+    2: list<common.PartitionID>     parts,
+    3: common.IndexID               index_id,
+    4: bool                         is_offline,
+}
+
 struct LookUpVertexIndexResp {
     1: required ResponseCommon             result,
     2: optional common.Schema              schema,
@@ -487,10 +492,14 @@ service StorageService {
     AdminExecResp checkPeers(1: CheckPeersReq req);
     GetLeaderResp getLeaderPart(1: GetLeaderReq req);
 
-    // Interfaces for nebula cluster checkpoint
+    // Interfaces for manage checkpoint
     AdminExecResp createCheckpoint(1: CreateCPRequest req);
     AdminExecResp dropCheckpoint(1: DropCPRequest req);
     AdminExecResp blockingWrites(1: BlockingSignRequest req);
+
+    // Interfaces for rebuild index
+    AdminExecResp rebuildTagIndex(1: RebuildIndexRequest req);
+    AdminExecResp rebuildEdgeIndex(1: RebuildIndexRequest req);
 
     // Interfaces for key-value storage
     ExecResponse      put(1: PutRequest req);
