@@ -63,5 +63,5 @@ nebula_add_library(
     AdminJobExecutor.cpp
     LookupExecutor.cpp
 )
-nebula_add_subdirectory(test)
+# nebula_add_subdirectory(test)
 
