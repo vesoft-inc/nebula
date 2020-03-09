@@ -33,6 +33,7 @@ void ListTagIndexesProcessor::process(const cpp2::ListTagIndexesReq& req) {
         }
         iter->next();
     }
+    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_items(std::move(items));
     onFinished();
 }

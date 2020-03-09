@@ -52,13 +52,13 @@ std::shared_ptr<const meta::SchemaProviderIf> HBaseStore::getSchema(GraphSpaceID
     if (NebulaKeyUtils::isVertex(key)) {
         TagID tagId = NebulaKeyUtils::getTagId(rawKey);
         if (version == -1) {
-            version = schemaMan_->getNewestTagSchemaVer(spaceId, tagId).value();
+            version = schemaMan_->getLatestTagSchemaVersion(spaceId, tagId).value();
         }
         schema = schemaMan_->getTagSchema(spaceId, tagId, version);
     } else if (NebulaKeyUtils::isEdge(key)) {
         EdgeType edgeTypeId = NebulaKeyUtils::getEdgeType(rawKey);
         if (version == -1) {
-            version = schemaMan_->getNewestEdgeSchemaVer(spaceId, edgeTypeId).value();
+            version = schemaMan_->getLatestEdgeSchemaVersion(spaceId, edgeTypeId).value();
         }
         schema = schemaMan_->getEdgeSchema(spaceId, edgeTypeId, version);
     } else {

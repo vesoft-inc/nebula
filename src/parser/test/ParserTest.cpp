@@ -498,13 +498,25 @@ TEST(Parser, IndexOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "BUILD TAG INDEX name_index";
+        std::string query = "REBUILD TAG INDEX name_index";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "BUILD EDGE INDEX like_index";
+        std::string query = "REBUILD TAG INDEX name_index OFFLINE";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "REBUILD EDGE INDEX like_index";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "REBUILD EDGE INDEX like_index OFFLINE";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -1131,7 +1143,31 @@ TEST(Parser, AdminOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "SHOW CREATE EDGE e1";
+        std::string query = "SHOW CREATE EDGE like";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW CREATE TAG INDEX person_index";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW CREATE EDGE INDEX like_index";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW TAG INDEX STATUS";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW EDGE INDEX STATUS";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
