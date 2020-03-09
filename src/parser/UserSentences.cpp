@@ -8,57 +8,6 @@
 
 namespace nebula {
 
-std::string UserLoginType::toString() const {
-    std::string buf;
-    switch (loginType_) {
-        case LoginType::PASSWORD : {
-            buf += "PASSWORD ";
-            buf += "\"" + *password_ + "\"";
-            break;
-        }
-        case LoginType::LDAP : {
-            buf += "LDAP";
-            break;
-        }
-    }
-    return buf;
-}
-
-std::string WithUserOptItem::toString() const {
-    switch (optType_) {
-        case OptionType::LOCK: {
-            if (asBool()) {
-                return std::string("ACCOUNT LOCK");
-            }
-            return std::string("ACCOUNT UNLOCK");
-        }
-        case OptionType::MAX_QUERIES_PER_HOUR:
-            return folly::stringPrintf("MAX_QUERIES_PER_HOUR %ld", asInt());
-        case OptionType::MAX_UPDATES_PER_HOUR:
-            return folly::stringPrintf("MAX_UPDATES_PER_HOUR %ld", asInt());
-        case OptionType::MAX_CONNECTIONS_PER_HOUR:
-            return folly::stringPrintf("MAX_CONNECTIONS_PER_HOUR %ld", asInt());
-        case OptionType::MAX_USER_CONNECTIONS:
-            return folly::stringPrintf("MAX_USER_CONNECTIONS %ld", asInt());
-        default:
-            return "Unknown";
-    }
-}
-
-
-std::string WithUserOptList::toString() const {
-    std::string buf;
-    buf.reserve(256);
-    for (auto& item : items_) {
-        if (!buf.empty()) {
-            buf += ", ";
-        }
-        buf += item->toString();
-    }
-    return buf;
-}
-
-
 std::string RoleTypeClause::toString() const {
     switch (roleType_) {
         case RoleType::GOD:
@@ -98,13 +47,10 @@ std::string CreateUserSentence::toString() const {
         buf += "IF NOT EXISTS ";
     }
     buf += *account_;
-    buf += " WITH ";
-    if (userLoginType_) {
-        buf += userLoginType_->toString();
-    }
-    if (withUserOpts_) {
-        buf += " , ";
-        buf += withUserOpts_->toString();
+    if (!password_->empty()) {
+        buf += " WITH PASSWORD \"";
+        buf += *password_;
+        buf += "\"";
     }
     return buf;
 }
@@ -115,16 +61,9 @@ std::string AlterUserSentence::toString() const {
     buf.reserve(256);
     buf = "ALTER USER ";
     buf += *account_;
-    buf += " WITH ";
-    if (userLoginType_) {
-        buf += userLoginType_->toString();
-    }
-    if (userLoginType_ && withUserOpts_) {
-        buf += ", ";
-    }
-    if (withUserOpts_) {
-        buf += withUserOpts_->toString();
-    }
+    buf += " WITH PASSWORD \"";
+    buf += *password_;
+    buf += "\"";
     return buf;
 }
 

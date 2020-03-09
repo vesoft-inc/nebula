@@ -24,7 +24,6 @@ typedef i32 (cpp.type = "nebula::Port") Port
 
 typedef i64 (cpp.type = "nebula::SchemaVer") SchemaVer
 
-typedef i32 (cpp.type = "nebula::UserID") UserID
 typedef i64 (cpp.type = "nebula::ClusterID") ClusterID
 
 // These are all data types supported in the graph properties
@@ -129,33 +128,10 @@ enum RoleType {
     GUEST  = 0x05,
 } (cpp.enum_strict)
 
-enum UserLoginType {
-   PASSWORD = 0x01,
-   LDAP     = 0x02,
-}
-
 struct RoleItem {
     1: string        user,
     2: string        space,
     3: RoleType      role_type,
-}
-
-struct UserItem {
-    1: required string        account;
-    // Disable user if lock status is true.
-    2: optional bool          is_lock,
-    // user login type
-    3: optional UserLoginType login_type,
-    // encoded password
-    4: optional string        encoded_pwd,
-    // The number of queries an account can issue per hour
-    5: optional i32           max_queries_per_hour,
-    // The number of updates an account can issue per hour
-    6: optional i32           max_updates_per_hour,
-    // The number of times an account can connect to the server per hour
-    7: optional i32           max_connections_per_hour,
-    // The number of simultaneous connections to the server by an account
-    8: optional i32           max_user_connections,
 }
 
 const ValueType kInvalidValueType = {"type" : UNKNOWN}

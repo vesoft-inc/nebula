@@ -23,6 +23,7 @@
 #include "kvstore/NebulaStore.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/processors/jobMan/JobManager.h"
+#include "meta/RootUserMan.h"
 
 using nebula::operator<<;
 using nebula::ProcessUtils;
@@ -232,6 +233,16 @@ int main(int argc, char *argv[]) {
         if (!jobMgr->init(kvstore.get())) {
             LOG(ERROR) << "Init job manager failed";
             return EXIT_FAILURE;
+        }
+    }
+
+    LOG(INFO) << "Check and init root user";
+    {
+        if (!nebula::meta::RootUserMan::isUserExists(kvstore.get())) {
+            if(!nebula::meta::RootUserMan::initRootUser(kvstore.get())) {
+                LOG(ERROR) << "Init root user failed";
+                return EXIT_FAILURE;
+            }
         }
     }
 

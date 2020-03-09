@@ -25,17 +25,13 @@ void GrantExecutor::execute() {
     auto* aclItem = sentence_->getAclItemClause();
 
     nebula::cpp2::RoleItem roleItem;
-    if (!aclItem->getSpaceName()
-        && aclItem->getRoleType() != RoleTypeClause::RoleType::GOD) {
-        doError(Status::SyntaxError("space name required"));
+    if (aclItem->getRoleType() == RoleTypeClause::RoleType::GOD) {
+        doError(Status::PermissionError("Permission denied"));
         return;
     }
 
     roleItem.set_user(*account);
-    if (aclItem->getRoleType() != RoleTypeClause::RoleType::GOD) {
-        roleItem.set_space(*aclItem->getSpaceName());
-    }
-
+    roleItem.set_space(*aclItem->getSpaceName());
     roleItem.set_role_type(PrivilegeUtils::toRoleType(aclItem->getRoleType()));
     auto future = mc->grantToUser(roleItem);
     auto *runner = ectx()->rctx()->runner();
@@ -73,6 +69,12 @@ void RevokeExecutor::execute() {
     auto *mc = ectx()->getMetaClient();
     auto* account = sentence_->getAccount();
     auto* aclItem = sentence_->getAclItemClause();
+
+    if (aclItem->getRoleType() == RoleTypeClause::RoleType::GOD) {
+        doError(Status::PermissionError("Permission denied"));
+        return;
+    }
+
     if (!aclItem->getSpaceName()) {
         doError(Status::SyntaxError("space name required"));
         return;

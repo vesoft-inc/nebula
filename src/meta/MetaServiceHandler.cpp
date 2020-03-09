@@ -314,12 +314,6 @@ MetaServiceHandler::future_revokeRole(const cpp2::RevokeRoleReq& req) {
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::GetUserResp>
-MetaServiceHandler::future_getUser(const cpp2::GetUserReq& req) {
-    auto* processor = GetUserProcessor::instance(kvstore_);
-    RETURN_FUTURE(processor);
-}
-
 folly::Future<cpp2::ListUsersResp>
 MetaServiceHandler::future_listUsers(const cpp2::ListUsersReq& req) {
     auto* processor = ListUsersProcessor::instance(kvstore_);
@@ -335,6 +329,12 @@ MetaServiceHandler::future_listRoles(const cpp2::ListRolesReq& req) {
 folly::Future<cpp2::ExecResp>
 MetaServiceHandler::future_changePassword(const cpp2::ChangePasswordReq& req) {
     auto* processor = ChangePasswordProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_authCheck(const cpp2::AuthCheckReq& req) {
+    auto* processor = AuthCheckProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

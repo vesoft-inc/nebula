@@ -121,6 +121,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:charset_obj>
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:encryption_obj>
     LIBRARIES
         proxygenhttpserver
         proxygenlib

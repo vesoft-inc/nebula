@@ -61,9 +61,6 @@ void ShowExecutor::execute() {
         case ShowSentence::ShowType::kShowUsers:
             showUsers();
             break;
-        case ShowSentence::ShowType::kShowUser:
-            showUser();
-            break;
         case ShowSentence::ShowType::kShowRoles:
             showRoles();
             break;
@@ -1056,35 +1053,6 @@ void ShowExecutor::showCollation() {
     doFinish(Executor::ProcessControl::kNext);
 }
 
-void ShowExecutor::showUser() {
-    auto *name = sentence_->getName();
-    auto future = ectx()->getMetaClient()->getUser(*name);
-    auto *runner = ectx()->rctx()->runner();
-
-    auto cb = [this] (auto &&resp) {
-        if (!resp.ok()) {
-            doError(std::forward<decltype(resp)>(resp).status());
-            return;
-        }
-
-        auto user = std::forward<decltype(resp)>(resp).value();
-        resp_ = std::make_unique<cpp2::ExecutionResponse>();
-        std::vector<cpp2::RowValue> rows;
-        std::vector<nebula::cpp2::UserItem> users;
-        users.emplace_back(std::move(user));
-        toUserRows(std::move(users));
-        doFinish(Executor::ProcessControl::kNext);
-    };
-
-    auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error(folly::stringPrintf("Show user exception: %s",
-                                                  e.what().c_str())));
-        return;
-    };
-    std::move(future).via(runner).thenValue(cb).thenError(error);
-}
-
 void ShowExecutor::showUsers() {
     auto future = ectx()->getMetaClient()->listUsers();
     auto *runner = ectx()->rctx()->runner();
@@ -1098,11 +1066,16 @@ void ShowExecutor::showUsers() {
         auto value = std::forward<decltype(resp)>(resp).value();
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         std::vector<cpp2::RowValue> rows;
-        std::vector<nebula::cpp2::UserItem> users;
-        for (auto& item : value) {
-            users.emplace_back(item.second);
+        std::vector<std::string> header{"Account"};
+        resp_->set_column_names(std::move(header));
+        for (auto& user : value) {
+            std::vector<cpp2::ColumnValue> row;
+            row.resize(1);
+            row[0].set_str(user);
+            rows.emplace_back();
+            rows.back().set_columns(std::move(row));
         }
-        toUserRows(std::move(users));
+        resp_->set_rows(std::move(rows));
         doFinish(Executor::ProcessControl::kNext);
     };
 
@@ -1178,53 +1151,6 @@ std::string ShowExecutor::roleToStr(nebula::cpp2::RoleType type) {
         }
     }
     return role;
-}
-
-std::string ShowExecutor::loginTypeToStr(nebula::cpp2::UserLoginType type) {
-    std::string loginType;
-    switch (type) {
-        case nebula::cpp2::UserLoginType::PASSWORD : {
-            loginType = "PASSWORD";
-            break;
-        }
-        case nebula::cpp2::UserLoginType::LDAP: {
-            loginType = "LDAP";
-            break;
-        }
-    }
-    return loginType;
-}
-
-void ShowExecutor::toUserRows(std::vector<nebula::cpp2::UserItem> users) {
-    std::vector<cpp2::RowValue> rows;
-    std::vector<std::string> header{"Account", "IsLock", "Login Type",
-                                    "MAX_QUERIES_PER_HOUR",
-                                    "MAX_UPDATES_PER_HOUR",
-                                    "MAX_CONNECTIONS_PER_HOUR",
-                                    "MAX_USER_CONNECTIONS"};
-    resp_->set_column_names(std::move(header));
-    for (auto& user : users) {
-        std::vector<cpp2::ColumnValue> row;
-        row.resize(7);
-        row[0].set_str(user.get_account());
-        row[1].set_bool_val(user.__isset.is_lock ? *user.get_is_lock() : false);
-        if (user.__isset.login_type) {
-            row[2].set_str(loginTypeToStr(*user.get_login_type()));
-        } else {
-            row[2].set_str("UNKNOWN");
-        }
-        row[3].set_integer(user.__isset.max_queries_per_hour ?
-                           *user.get_max_queries_per_hour() : 0);
-        row[4].set_integer(user.__isset.max_updates_per_hour ?
-                           *user.get_max_updates_per_hour() : 0);
-        row[5].set_integer(user.__isset.max_connections_per_hour ?
-                           *user.get_max_connections_per_hour() : 0);
-        row[6].set_integer(user.__isset.max_user_connections ?
-                           *user.get_max_user_connections() : 0);
-        rows.emplace_back();
-        rows.back().set_columns(std::move(row));
-    }
-    resp_->set_rows(std::move(rows));
 }
 
 void ShowExecutor::setupResponse(cpp2::ExecutionResponse &resp) {

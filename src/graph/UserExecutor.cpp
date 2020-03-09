@@ -23,19 +23,10 @@ Status CreateUserExecutor::prepare() {
 void CreateUserExecutor::execute() {
     auto *mc = ectx()->getMetaClient();
     auto* account = sentence_->getAccount();
-    auto opts = sentence_->getOpts();
-    auto* loginType = sentence_->getLoginType();
-    nebula::cpp2::UserItem userItem;
-    userItem.set_account(*account);
-    auto type = loginType->getLoginType() == UserLoginType::PASSWORD
-                ? nebula::cpp2::UserLoginType::PASSWORD
-                : nebula::cpp2::UserLoginType::LDAP;
-    userItem.set_login_type(type);
-    if (type == nebula::cpp2::UserLoginType::PASSWORD) {
-        userItem.set_encoded_pwd(encryption::MD5Utils::md5Encode(*loginType->getPassword()));
-    }
-    UserUtils::resetUserItem(opts, userItem);
-    auto future = mc->createUser(userItem, sentence_->ifNotExists());
+    auto* password = sentence_->getPassword();
+    auto future = mc->createUser(*account,
+                                 encryption::MD5Utils::md5Encode(*password),
+                                 sentence_->ifNotExists());
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
@@ -100,21 +91,8 @@ Status AlterUserExecutor::prepare() {
 void AlterUserExecutor::execute() {
     auto *mc = ectx()->getMetaClient();
     auto* account = sentence_->getAccount();
-    auto opts = sentence_->getOpts();
-    auto* loginType = sentence_->getLoginType();
-    nebula::cpp2::UserItem userItem;
-    userItem.set_account(*account);
-    if (loginType) {
-        auto type = loginType->getLoginType() == UserLoginType::PASSWORD
-                    ? nebula::cpp2::UserLoginType::PASSWORD
-                    : nebula::cpp2::UserLoginType::LDAP;
-        userItem.set_login_type(type);
-        if (type == nebula::cpp2::UserLoginType::PASSWORD) {
-            userItem.set_encoded_pwd(encryption::MD5Utils::md5Encode(*loginType->getPassword()));
-        }
-    }
-    UserUtils::resetUserItem(opts, userItem);
-    auto future = mc->alterUser(userItem);
+    auto* password = sentence_->getPassword();
+    auto future = mc->alterUser(*account, encryption::MD5Utils::md5Encode(*password));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {

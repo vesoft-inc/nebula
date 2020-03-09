@@ -160,9 +160,6 @@ public:
     folly::Future<cpp2::ExecResp>
     future_revokeRole(const cpp2::RevokeRoleReq& req) override;
 
-    folly::Future<cpp2::GetUserResp>
-    future_getUser(const cpp2::GetUserReq& req) override;
-
     folly::Future<cpp2::ListUsersResp>
     future_listUsers(const cpp2::ListUsersReq& req) override;
 
@@ -171,6 +168,9 @@ public:
 
     folly::Future<cpp2::ExecResp>
     future_changePassword(const cpp2::ChangePasswordReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_authCheck(const cpp2::AuthCheckReq& req) override;
 
     /**
      * HeartBeat

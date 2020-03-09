@@ -13,36 +13,6 @@
 namespace nebula {
 namespace graph {
 
-class UserUtils final {
-public:
-    static void resetUserItem(const std::vector<WithUserOptItem*> opts,
-                              nebula::cpp2::UserItem& userItem) {
-        for (auto* opt : opts) {
-            switch (opt->getOptType()) {
-                case WithUserOptItem::OptionType::LOCK : {
-                    userItem.set_is_lock(opt->asBool());
-                    break;
-                }
-                case WithUserOptItem::OptionType::MAX_QUERIES_PER_HOUR : {
-                    userItem.set_max_queries_per_hour(opt->asInt());
-                    break;
-                }
-                case WithUserOptItem::OptionType::MAX_UPDATES_PER_HOUR : {
-                    userItem.set_max_updates_per_hour(opt->asInt());
-                    break;
-                }
-                case WithUserOptItem::OptionType::MAX_CONNECTIONS_PER_HOUR : {
-                    userItem.set_max_connections_per_hour(opt->asInt());
-                    break;
-                }
-                case WithUserOptItem::OptionType::MAX_USER_CONNECTIONS : {
-                    userItem.set_max_user_connections(opt->asInt());
-                }
-            }
-        }
-    }
-};
-
 class CreateUserExecutor final : public Executor {
 public:
     CreateUserExecutor(Sentence *sentence, ExecutionContext *ectx);

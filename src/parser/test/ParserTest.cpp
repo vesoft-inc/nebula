@@ -1190,7 +1190,7 @@ TEST(Parser, UserOperation) {
         GQLParser parser;
         std::string query = "CREATE USER user1";
         auto result = parser.parse(query);
-        ASSERT_FALSE(result.ok());
+        ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
@@ -1208,33 +1208,7 @@ TEST(Parser, UserOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "CREATE USER user1 WITH LDAP";
-        auto result = parser.parse(query);
-        ASSERT_TRUE(result.ok()) << result.status();
-        auto& sentence = result.value();
-        EXPECT_EQ(query, sentence->toString());
-    }
-    {
-        GQLParser parser;
-        std::string query = "CREATE USER IF NOT EXISTS user1 WITH LDAP \"aaa\"";
-        auto result = parser.parse(query);
-        ASSERT_FALSE(result.ok());
-    }
-    {
-        GQLParser parser;
-        std::string query = "CREATE USER IF NOT EXISTS user1 WITH PASSWORD \"aaa\" , "
-                            "ACCOUNT LOCK, MAX_QUERIES_PER_HOUR 1, "
-                            "MAX_UPDATES_PER_HOUR 2, MAX_CONNECTIONS_PER_HOUR 3, "
-                            "MAX_USER_CONNECTIONS 4";
-        auto result = parser.parse(query);
-        ASSERT_TRUE(result.ok()) << result.status();
-        auto& sentence = result.value();
-        EXPECT_EQ(query, sentence->toString());
-    }
-    {
-        GQLParser parser;
-        std::string query = "CREATE USER IF NOT EXISTS user1 WITH PASSWORD \"aaa\" , "
-                            "ACCOUNT UNLOCK";
+        std::string query = "CREATE USER IF NOT EXISTS user1 WITH PASSWORD \"aaa\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
         auto& sentence = result.value();
@@ -1251,45 +1225,6 @@ TEST(Parser, UserOperation) {
     {
         GQLParser parser;
         std::string query = "ALTER USER user1 WITH PASSWORD \"a\"";
-        auto result = parser.parse(query);
-        ASSERT_TRUE(result.ok()) << result.status();
-        auto& sentence = result.value();
-        EXPECT_EQ(query, sentence->toString());
-    }
-    {
-        GQLParser parser;
-        std::string query = "ALTER USER user1 WITH LDAP";
-        auto result = parser.parse(query);
-        ASSERT_TRUE(result.ok()) << result.status();
-        auto& sentence = result.value();
-        EXPECT_EQ(query, sentence->toString());
-    }
-    {
-        GQLParser parser;
-        std::string query = "ALTER USER user1 WITH "
-                            "ACCOUNT LOCK, MAX_QUERIES_PER_HOUR 1, "
-                            "MAX_UPDATES_PER_HOUR 2, MAX_CONNECTIONS_PER_HOUR 3";
-        auto result = parser.parse(query);
-        ASSERT_TRUE(result.ok()) << result.status();
-        auto& sentence = result.value();
-        EXPECT_EQ(query, sentence->toString());
-    }
-    {
-        GQLParser parser;
-        std::string query = "ALTER USER user1 WITH LDAP, "
-                            "ACCOUNT LOCK, MAX_QUERIES_PER_HOUR 1, "
-                            "MAX_UPDATES_PER_HOUR 2, MAX_CONNECTIONS_PER_HOUR 3";
-        auto result = parser.parse(query);
-        ASSERT_TRUE(result.ok()) << result.status();
-        auto& sentence = result.value();
-        EXPECT_EQ(query, sentence->toString());
-    }
-    {
-        GQLParser parser;
-        std::string query = "ALTER USER user1 WITH LDAP, "
-                            "ACCOUNT LOCK, MAX_QUERIES_PER_HOUR 1, "
-                            "MAX_UPDATES_PER_HOUR 2, MAX_CONNECTIONS_PER_HOUR 3, "
-                            "MAX_USER_CONNECTIONS 4";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
         auto& sentence = result.value();
@@ -1364,14 +1299,6 @@ TEST(Parser, UserOperation) {
     {
         GQLParser parser;
         std::string query = "SHOW ROLES IN spacename";
-        auto result = parser.parse(query);
-        ASSERT_TRUE(result.ok()) << result.status();
-        auto& sentence = result.value();
-        EXPECT_EQ(query, sentence->toString());
-    }
-    {
-        GQLParser parser;
-        std::string query = "SHOW USER account";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
         auto& sentence = result.value();

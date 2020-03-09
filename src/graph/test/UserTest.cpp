@@ -35,22 +35,18 @@ TEST_F(UserTest, CreateUser) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE USER user1 WITH LDAP \"pwd1\"";
+        std::string query = "CREATE USER user2";
         auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "CREATE USER user1";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
-    }
+    // user exists.
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE USER user1 WITH PASSWORD \"pwd1\" ";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
+    // user exists. but if not exists is true.
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE USER IF NOT EXISTS user1 WITH PASSWORD \"pwd1\" ";
@@ -59,56 +55,15 @@ TEST_F(UserTest, CreateUser) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE USER user2 WITH LDAP, ACCOUNT LOCK";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "CREATE USER user3 WITH LDAP, ACCOUNT UNLOCK";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "CREATE USER user4 WITH LDAP, MAX_QUERIES_PER_HOUR \"2\"";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "CREATE USER user4 WITH LDAP, "
-                            "MAX_QUERIES_PER_HOUR 1, "
-                            "MAX_UPDATES_PER_HOUR 1, "
-                            "MAX_CONNECTIONS_PER_HOUR 1,"
-                            "MAX_USER_CONNECTIONS 2";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    {
-        cpp2::ExecutionResponse resp;
         std::string query = "SHOW USERS";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        ASSERT_EQ(4, resp.get_rows()->size());
-        decltype(resp.column_names) colNames = {
-            "Account",
-            "IsLock",
-            "Login Type",
-            "MAX_QUERIES_PER_HOUR",
-            "MAX_UPDATES_PER_HOUR",
-            "MAX_CONNECTIONS_PER_HOUR",
-            "MAX_USER_CONNECTIONS"
-        };
+        ASSERT_EQ(2, resp.get_rows()->size());
+        decltype(resp.column_names) colNames = {"Account"};
         ASSERT_TRUE(verifyColNames(resp, colNames));
 
-        std::vector<std::tuple<std::string, bool, std::string, int64_t, int64_t, int64_t, int64_t>>
-        rows = {
-            {"user1", false, "PASSWORD", 0, 0, 0, 0},
-            {"user2", true, "LDAP", 0, 0, 0, 0},
-            {"user3", false, "LDAP", 0, 0, 0, 0},
-            {"user4", false, "LDAP", 1, 1, 1, 2},
-        };
+        std::vector<std::tuple<std::string>>
+        rows = { {"user1"}, {"user2"}, };
         ASSERT_TRUE(verifyResult(resp, rows));
     }
 }
@@ -124,61 +79,9 @@ TEST_F(UserTest, AlterUser) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "ALTER USER user1 WITH LDAP";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    {
-        cpp2::ExecutionResponse resp;
         std::string query = "ALTER USER user2 WITH PASSWORD \"pwd2\"";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "ALTER USER user3 WITH PASSWORD \"pwd3\" ,"
-                            "MAX_QUERIES_PER_HOUR 1";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "ALTER USER user4 WITH ACCOUNT LOCK";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "SHOW USERS";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        ASSERT_EQ(4, resp.get_rows()->size());
-        std::vector<std::tuple<std::string, bool, std::string, int64_t, int64_t, int64_t, int64_t>>
-            rows = {
-            {"user1", false, "LDAP", 0, 0, 0, 0},
-            {"user2", true, "PASSWORD", 0, 0, 0, 0},
-            {"user3", false, "PASSWORD", 1, 0, 0, 0},
-            {"user4", true, "LDAP", 1, 1, 1, 2},
-        };
-        ASSERT_TRUE(verifyResult(resp, rows));
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "SHOW USER user4";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        ASSERT_EQ(1, resp.get_rows()->size());
-        std::vector<std::tuple<std::string, bool, std::string, int64_t, int64_t, int64_t, int64_t>>
-            rows = {
-            {"user4", true, "LDAP", 1, 1, 1, 2},
-        };
-        ASSERT_TRUE(verifyResult(resp, rows));
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "SHOW USER user";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
 }
 
@@ -199,7 +102,13 @@ TEST_F(UserTest, DropUser) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "DROP USER user4";
+        std::string query = "CREATE USER user3";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DROP USER user3";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -208,7 +117,7 @@ TEST_F(UserTest, DropUser) {
         std::string query = "SHOW USERS";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        ASSERT_EQ(3, resp.get_rows()->size());
+        ASSERT_EQ(2, resp.get_rows()->size());
     }
 }
 
@@ -263,15 +172,15 @@ TEST_F(UserTest, GrantRevoke) {
     // user not exist. expect fail.
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "GRANT GOD TO user";
+        std::string cmd = "GRANT DBA  ON user_space TO user";
         auto code = client->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "GRANT GOD TO user1";
+        std::string cmd = "GRANT GOD  ON user_space TO user1";
         auto code = client->execute(cmd, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
     // space not exists. expect fail.
     {
@@ -282,8 +191,21 @@ TEST_F(UserTest, GrantRevoke) {
     }
     {
         cpp2::ExecutionResponse resp;
+        std::string query = "SHOW USERS";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(2, resp.get_rows()->size());
+    }
+    {
+        cpp2::ExecutionResponse resp;
         std::string cmd = "GRANT ROLE DBA ON user_space TO user2";
         auto code = client->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE USER user3";
+        auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {

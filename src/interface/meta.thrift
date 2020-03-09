@@ -71,8 +71,7 @@ union ID {
     2: common.TagID         tag_id,
     3: common.EdgeType      edge_type,
     4: common.IndexID       index_id,
-    5: common.UserID        user_id,
-    6: common.ClusterID     cluster_id,
+    5: common.ClusterID     cluster_id,
 }
 
 struct IdName {
@@ -502,17 +501,19 @@ struct RebuildIndexReq {
 }
 
 struct CreateUserReq {
-    1: common.UserItem      user_item,
-    2: bool          if_not_exists,
+    1: string               account,
+    2: string               encoded_pwd,
+    3: bool                 if_not_exists,
 }
 
 struct DropUserReq {
-    1: string account,
-    2: bool   if_exists,
+    1: string               account,
+    2: bool                 if_exists,
 }
 
 struct AlterUserReq {
-    1: common.UserItem      user_item,
+    1: string               account,
+    2: string               encoded_pwd,
 }
 
 struct GrantRoleReq {
@@ -523,15 +524,9 @@ struct RevokeRoleReq {
     1: common.RoleItem role_item,
 }
 
-struct GetUserReq {
-    1: string account,
-}
-
-struct GetUserResp {
-    1: ErrorCode code,
-    // Valid if ret equals E_LEADER_CHANGED.
-    2: common.HostAddr  leader,
-    3: common.UserItem  user_item,
+struct AuthCheckReq {
+    1: string               account,
+    2: string               encoded_pwd,
 }
 
 struct ListUsersReq {
@@ -541,7 +536,7 @@ struct ListUsersResp {
     1: ErrorCode code,
     // Valid if ret equals E_LEADER_CHANGED.
     2: common.HostAddr  leader,
-    3: map<common.UserID, common.UserItem>(cpp.template = "std::unordered_map") users,
+    3: list<string>     users,
 }
 
 struct ListRolesReq {
@@ -740,9 +735,9 @@ service MetaService {
     ExecResp alterUser(1: AlterUserReq req);
     ExecResp grantRole(1: GrantRoleReq req);
     ExecResp revokeRole(1: RevokeRoleReq req);
-    GetUserResp getUser(1: GetUserReq req);
     ListUsersResp listUsers(1: ListUsersReq req);
     ListRolesResp listRoles(1: ListRolesReq req);
+    ExecResp authCheck(1: AuthCheckReq req);
     ExecResp changePassword(1: ChangePasswordReq req);
 
     HBResp           heartBeat(1: HBReq req);

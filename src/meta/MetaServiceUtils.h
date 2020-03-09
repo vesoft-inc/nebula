@@ -18,9 +18,8 @@ enum class EntryType : int8_t {
     SPACE       = 0x01,
     TAG         = 0x02,
     EDGE        = 0x03,
-    USER        = 0x04,
-    INDEX       = 0x05,
-    CONFIG      = 0x07,
+    INDEX       = 0x04,
+    CONFIG      = 0x05,
 };
 
 using ConfigName = std::pair<cpp2::ConfigModule, std::string>;
@@ -144,30 +143,19 @@ public:
                                            nebula::cpp2::SchemaProp alterSchemaProp,
                                            bool existIndex);
 
-    static std::string indexUserKey(const std::string& account);
+    static std::string userKey(const std::string& account);
 
-    static std::string userKey(UserID userId);
+    static std::string parseUser(folly::StringPiece key);
 
-    static std::string userVal(const nebula::cpp2::UserItem& userItem);
-
-    static std::string replaceUserVal(const nebula::cpp2::UserItem& user,
-                                      folly::StringPiece rawVal);
-
-    static std::string roleKey(GraphSpaceID spaceId, UserID userId);
+    static std::string roleKey(GraphSpaceID spaceId, const std::string& account);
 
     static std::string roleVal(nebula::cpp2::RoleType roleType);
 
-    static std::string changePassword(folly::StringPiece val, folly::StringPiece newPwd);
-
-    static nebula::cpp2::UserItem parseUserItem(folly::StringPiece val);
+    static std::string parseRoleUser(folly::StringPiece key);
 
     static std::string rolesPrefix();
 
     static std::string roleSpacePrefix(GraphSpaceID spaceId);
-
-    static UserID parseRoleUserId(folly::StringPiece val);
-
-    static UserID parseUserId(folly::StringPiece val);
 
     static std::string tagDefaultKey(GraphSpaceID spaceId,
                                      TagID tag,

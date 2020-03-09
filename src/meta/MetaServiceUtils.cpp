@@ -523,68 +523,24 @@ cpp2::ErrorCode MetaServiceUtils::alterSchemaProp(std::vector<nebula::cpp2::Colu
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
-std::string MetaServiceUtils::indexUserKey(const std::string& account) {
+std::string MetaServiceUtils::userKey(const std::string& account) {
     std::string key;
-    EntryType type = EntryType::USER;
-    key.reserve(128);
-    key.append(kIndexTable.data(), kIndexTable.size())
-       .append(reinterpret_cast<const char*>(&type), sizeof(type))
+    key.reserve(kUsersTable.size() + account.size());
+    key.append(kUsersTable.data(), kUsersTable.size())
        .append(account);
     return key;
 }
 
-std::string MetaServiceUtils::userKey(UserID userId) {
+std::string MetaServiceUtils::parseUser(folly::StringPiece key) {
+    return key.subpiece(kUsersTable.size(), key.size() - kUsersTable.size()).str();
+}
+
+std::string MetaServiceUtils::roleKey(GraphSpaceID spaceId, const std::string& account) {
     std::string key;
-    key.reserve(kUsersTable.size() + sizeof(UserID));
-    key.append(kUsersTable.data(), kUsersTable.size())
-       .append(reinterpret_cast<const char*>(&userId), sizeof(UserID));
-    return key;
-}
-
-std::string MetaServiceUtils::userVal(const nebula::cpp2::UserItem& userItem) {
-    std::string val;
-    apache::thrift::CompactSerializer::serialize(userItem, &val);
-    return val;
-}
-
-std::string MetaServiceUtils::replaceUserVal(const nebula::cpp2::UserItem& user,
-                                             folly::StringPiece val) {
-    nebula::cpp2::UserItem oldUser;
-    apache::thrift::CompactSerializer::deserialize(val, oldUser);
-
-    if (user.__isset.is_lock) {
-        oldUser.set_is_lock(*user.get_is_lock());
-    }
-    if (user.__isset.login_type) {
-        oldUser.set_login_type(*user.get_login_type());
-    }
-    if (user.__isset.encoded_pwd) {
-        oldUser.set_encoded_pwd(*user.get_encoded_pwd());
-    }
-    if (user.__isset.max_queries_per_hour) {
-        oldUser.set_max_queries_per_hour(*user.get_max_queries_per_hour());
-    }
-    if (user.__isset.max_updates_per_hour) {
-        oldUser.set_max_updates_per_hour(*user.get_max_updates_per_hour());
-    }
-    if (user.__isset.max_connections_per_hour) {
-        oldUser.set_max_connections_per_hour(*user.get_max_connections_per_hour());
-    }
-    if (user.__isset.max_user_connections) {
-        oldUser.set_max_user_connections(*user.get_max_user_connections());
-    }
-
-    std::string newVal;
-    apache::thrift::CompactSerializer::serialize(oldUser, &newVal);
-    return newVal;
-}
-
-std::string MetaServiceUtils::roleKey(GraphSpaceID spaceId, UserID userId) {
-    std::string key;
-    key.reserve(kRolesTable.size() + sizeof(GraphSpaceID) + sizeof(UserID));
+    key.reserve(kRolesTable.size() + sizeof(GraphSpaceID) + account.size());
     key.append(kRolesTable.data(), kRolesTable.size())
        .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID))
-       .append(reinterpret_cast<const char*>(&userId), sizeof(UserID));
+       .append(account);
     return key;
 }
 
@@ -595,19 +551,9 @@ std::string MetaServiceUtils::roleVal(nebula::cpp2::RoleType roleType) {
     return val;
 }
 
-std::string MetaServiceUtils::changePassword(folly::StringPiece val, folly::StringPiece newPwd) {
-    nebula::cpp2::UserItem oldUser;
-    apache::thrift::CompactSerializer::deserialize(val, oldUser);
-    oldUser.set_encoded_pwd(newPwd.str());
-    std::string newVal;
-    apache::thrift::CompactSerializer::serialize(oldUser, &newVal);
-    return newVal;
-}
-
-nebula::cpp2::UserItem MetaServiceUtils::parseUserItem(folly::StringPiece val) {
-    nebula::cpp2::UserItem user;
-    apache::thrift::CompactSerializer::deserialize(val, user);
-    return user;
+std::string MetaServiceUtils::parseRoleUser(folly::StringPiece key) {
+    auto offset = kRolesTable.size() + sizeof(GraphSpaceID);
+    return key.subpiece(offset, key.size() - offset).str();
 }
 
 std::string MetaServiceUtils::rolesPrefix() {
@@ -620,17 +566,6 @@ std::string MetaServiceUtils::roleSpacePrefix(GraphSpaceID spaceId) {
     key.append(kRolesTable.data(), kRolesTable.size())
        .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
     return key;
-}
-
-UserID MetaServiceUtils::parseRoleUserId(folly::StringPiece val) {
-    return *reinterpret_cast<const UserID *>(val.begin() +
-                                             kRolesTable.size() +
-                                             sizeof(GraphSpaceID));
-}
-
-UserID MetaServiceUtils::parseUserId(folly::StringPiece val) {
-    return *reinterpret_cast<const UserID *>(val.begin() +
-                                             kUsersTable.size());
 }
 
 std::string MetaServiceUtils::tagDefaultKey(GraphSpaceID spaceId,

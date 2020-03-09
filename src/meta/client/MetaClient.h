@@ -334,14 +334,14 @@ public:
     removeRange(std::string segment, std::string start, std::string end);
 
     // Operations for users.
-    folly::Future<StatusOr<UserID>>
-    createUser(nebula::cpp2::UserItem userItem, bool ifNotExists);
+    folly::Future<StatusOr<bool>>
+    createUser(std::string account, std::string password, bool ifNotExists);
 
     folly::Future<StatusOr<bool>>
     dropUser(std::string account, bool ifExists);
 
     folly::Future<StatusOr<bool>>
-    alterUser(nebula::cpp2::UserItem userItem);
+    alterUser(std::string account, std::string password);
 
     folly::Future<StatusOr<bool>>
     grantToUser(nebula::cpp2::RoleItem roleItem);
@@ -349,10 +349,7 @@ public:
     folly::Future<StatusOr<bool>>
     revokeFromUser(nebula::cpp2::RoleItem roleItem);
 
-    folly::Future<StatusOr<nebula::cpp2::UserItem>>
-    getUser(std::string account);
-
-    folly::Future<StatusOr<std::unordered_map<UserID, nebula::cpp2::UserItem>>>
+    folly::Future<StatusOr<std::vector<std::string>>>
     listUsers();
 
     folly::Future<StatusOr<std::vector<nebula::cpp2::RoleItem>>>
@@ -360,6 +357,9 @@ public:
 
     folly::Future<StatusOr<bool>>
     changePassword(std::string account, std::string newPwd, std::string oldPwd);
+
+    folly::Future<StatusOr<bool>>
+    authCheck(std::string account, std::string password);
 
     // Operations for admin
     folly::Future<StatusOr<int64_t>>

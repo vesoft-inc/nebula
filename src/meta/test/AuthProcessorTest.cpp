@@ -20,48 +20,32 @@ namespace meta {
 TEST(AuthProcessorTest, CreateUserTest) {
     fs::TempDir rootPath("/tmp/CreateUserTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    UserID userId;
     {
         cpp2::CreateUserReq req;
         req.set_if_not_exists(false);
-        decltype(req.user_item) user;
-        user.set_account("user1");
-        user.set_is_lock(true);
-        user.set_login_type(nebula::cpp2::UserLoginType::PASSWORD);
-        user.set_encoded_pwd("password");
-        user.set_max_queries_per_hour(1);
-        user.set_max_updates_per_hour(1);
-        user.set_max_connections_per_hour(1);
-        user.set_max_user_connections(1);
-        req.set_user_item(user);
+        req.set_account("user1");
+        req.set_encoded_pwd("password");
         auto* processor = CreateUserProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-        userId = resp.get_id().get_user_id();
 
         // Check user data has been inserted.
         std::string userVal;
         kvstore::ResultCode ret;
         std::unique_ptr<kvstore::KVIterator> iter;
         ret = kv->get(kDefaultSpaceId, kDefaultPartId,
-                      MetaServiceUtils::userKey(userId),
+                      MetaServiceUtils::userKey("user1"),
                       &userVal);
         ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
-        auto userItem = MetaServiceUtils::parseUserItem(userVal);
-        ASSERT_EQ(user, userItem);
     }
     // Test user exists and param 'if_not_exists' == false;
     {
         cpp2::CreateUserReq req;
         req.set_if_not_exists(false);
-        decltype(req.user_item) user;
-        user.set_account("user1");
-        user.set_is_lock(true);
-        user.set_login_type(nebula::cpp2::UserLoginType::PASSWORD);
-        user.set_encoded_pwd("password");
-        req.set_user_item(user);
+        req.set_account("user1");
+        req.set_encoded_pwd("password");
         auto* processor = CreateUserProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -72,199 +56,112 @@ TEST(AuthProcessorTest, CreateUserTest) {
     {
         cpp2::CreateUserReq req;
         req.set_if_not_exists(true);
-        decltype(req.user_item) user;
-        user.set_account("user1");
-        user.set_is_lock(true);
-        user.set_login_type(nebula::cpp2::UserLoginType::PASSWORD);
-        user.set_encoded_pwd("password");
-        req.set_user_item(user);
+        req.set_account("user1");
+        req.set_encoded_pwd("password");
         auto* processor = CreateUserProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-
-        // Check user data same with original.
-        std::string userVal;
-        kvstore::ResultCode ret;
-        std::unique_ptr<kvstore::KVIterator> iter;
-        ret = kv->get(kDefaultSpaceId, kDefaultPartId,
-                      MetaServiceUtils::userKey(userId),
-                      &userVal);
-        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
-        auto userItem = MetaServiceUtils::parseUserItem(userVal);
-
-        decltype(req.user_item) expectUser;
-        expectUser.set_account("user1");
-        expectUser.set_is_lock(true);
-        expectUser.set_login_type(nebula::cpp2::UserLoginType::PASSWORD);
-        expectUser.set_encoded_pwd("password");
-        expectUser.set_max_queries_per_hour(1);
-        expectUser.set_max_updates_per_hour(1);
-        expectUser.set_max_connections_per_hour(1);
-        expectUser.set_max_user_connections(1);
-        ASSERT_EQ(expectUser, userItem);
     }
-    // getUser
+    // authCheck
     {
-        cpp2::GetUserReq req;
+        cpp2::AuthCheckReq req;
         req.set_account("user1");
-        auto* processor = GetUserProcessor::instance(kv.get());
+        req.set_encoded_pwd("password");
+        auto* processor = AuthCheckProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-        decltype(resp.user_item) expectUser;
-        expectUser.set_account("user1");
-        expectUser.set_is_lock(true);
-        expectUser.set_login_type(nebula::cpp2::UserLoginType::PASSWORD);
-        expectUser.set_encoded_pwd("password");
-        expectUser.set_max_queries_per_hour(1);
-        expectUser.set_max_updates_per_hour(1);
-        expectUser.set_max_connections_per_hour(1);
-        expectUser.set_max_user_connections(1);
-        ASSERT_EQ(expectUser, resp.get_user_item());
     }
-    // getUser, user not exists.
+    // authCheck, user not exists.
     {
-        cpp2::GetUserReq req;
+        cpp2::AuthCheckReq req;
         req.set_account("user4");
-        auto* processor = GetUserProcessor::instance(kv.get());
+        req.set_encoded_pwd("password");
+        auto* processor = AuthCheckProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
+    }
+    // authCheck, password invalid.
+    {
+        cpp2::AuthCheckReq req;
+        req.set_account("user1");
+        req.set_encoded_pwd("passwordd");
+        auto* processor = AuthCheckProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_INVALID_PASSWORD, resp.get_code());
     }
 }
 
 TEST(AuthProcessorTest, AlterUserTest) {
     fs::TempDir rootPath("/tmp/AlterUserTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    UserID userId;
     // create a user.
     {
         cpp2::CreateUserReq req;
         req.set_if_not_exists(false);
-        decltype(req.user_item) user;
-        user.set_account("user1");
-        user.set_is_lock(true);
-        user.set_login_type(nebula::cpp2::UserLoginType::PASSWORD);
-        user.set_encoded_pwd("password");
-        user.set_max_queries_per_hour(1);
-        user.set_max_updates_per_hour(1);
-        user.set_max_connections_per_hour(1);
-        user.set_max_user_connections(1);
-        req.set_user_item(user);
+        req.set_account("user1");
+        req.set_encoded_pwd("password");
         auto* processor = CreateUserProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-        userId = resp.get_id().get_user_id();
     }
     // Simple alter user.
     {
         cpp2::AlterUserReq req;
-        decltype(req.user_item) user;
-        user.set_account("user1");
-        user.set_is_lock(false);
-        user.set_login_type(nebula::cpp2::UserLoginType::LDAP);
-        req.set_user_item(user);
+        req.set_account("user1");
+        req.set_encoded_pwd("password_1");
         auto* processor = AlterUserProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
-    // Verify userItem.
     {
-        // Check user data same with original.
-        std::string userVal;
-        kvstore::ResultCode ret;
-        std::unique_ptr<kvstore::KVIterator> iter;
-        ret = kv->get(kDefaultSpaceId, kDefaultPartId,
-                      MetaServiceUtils::userKey(userId),
-                      &userVal);
-        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
-        auto userItem = MetaServiceUtils::parseUserItem(userVal);
-
-        nebula::cpp2::UserItem expectUser;
-        expectUser.set_account("user1");
-        expectUser.set_is_lock(false);
-        expectUser.set_login_type(nebula::cpp2::UserLoginType::LDAP);
-        expectUser.set_encoded_pwd("password");
-        expectUser.set_max_queries_per_hour(1);
-        expectUser.set_max_updates_per_hour(1);
-        expectUser.set_max_connections_per_hour(1);
-        expectUser.set_max_user_connections(1);
-        ASSERT_EQ(expectUser, userItem);
+        cpp2::AuthCheckReq req;
+        req.set_account("user1");
+        req.set_encoded_pwd("password_1");
+        auto* processor = AuthCheckProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
     // If user not exists
     {
         cpp2::AlterUserReq req;
-        decltype(req.user_item) user;
-        user.set_account("user2");
-        user.set_is_lock(true);
-        user.set_login_type(nebula::cpp2::UserLoginType::LDAP);
-        req.set_user_item(user);
+        req.set_account("user2");
+        req.set_encoded_pwd("user3");
         auto* processor = AlterUserProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
     }
-    // alter user all items.
-    {
-        cpp2::AlterUserReq req;
-        decltype(req.user_item) user;
-        user.set_account("user1");
-        user.set_is_lock(false);
-        user.set_login_type(nebula::cpp2::UserLoginType::PASSWORD);
-        user.set_encoded_pwd("password1");
-        user.set_max_queries_per_hour(2);
-        user.set_max_updates_per_hour(2);
-        user.set_max_connections_per_hour(2);
-        user.set_max_user_connections(2);
-        req.set_user_item(user);
-        auto* processor = AlterUserProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-
-        // Check user data same with original.
-        std::string userVal;
-        kvstore::ResultCode ret;
-        std::unique_ptr<kvstore::KVIterator> iter;
-        ret = kv->get(kDefaultSpaceId, kDefaultPartId,
-                      MetaServiceUtils::userKey(userId),
-                      &userVal);
-        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
-        auto userItem = MetaServiceUtils::parseUserItem(userVal);
-        ASSERT_EQ(user, userItem);
-    }
 }
 
 TEST(AuthProcessorTest, DropUserTest) {
     fs::TempDir rootPath("/tmp/AlterUserTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    UserID userId;
     // create a user.
     {
         cpp2::CreateUserReq req;
         req.set_if_not_exists(false);
-        decltype(req.user_item) user;
-        user.set_account("user1");
-        user.set_is_lock(true);
-        user.set_login_type(nebula::cpp2::UserLoginType::PASSWORD);
-        user.set_encoded_pwd("password");
-        req.set_user_item(user);
+        req.set_account("user1");
+        req.set_encoded_pwd("password");
         auto* processor = CreateUserProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-        userId = resp.get_id().get_user_id();
     }
     // User not exists and 'if_exists' = false.
     {
@@ -304,7 +201,7 @@ TEST(AuthProcessorTest, DropUserTest) {
         kvstore::ResultCode ret;
         std::unique_ptr<kvstore::KVIterator> iter;
         ret = kv->get(kDefaultSpaceId, kDefaultPartId,
-                      MetaServiceUtils::userKey(userId),
+                      MetaServiceUtils::userKey("user1"),
                       &userVal);
         ASSERT_EQ(kvstore::ResultCode::ERR_KEY_NOT_FOUND, ret);
     }
@@ -352,12 +249,8 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     {
         cpp2::CreateUserReq req;
         req.set_if_not_exists(false);
-        decltype(req.user_item) user;
-        user.set_account("user1");
-        user.set_is_lock(true);
-        user.set_login_type(nebula::cpp2::UserLoginType::PASSWORD);
-        user.set_encoded_pwd("password");
-        req.set_user_item(user);
+        req.set_account("user1");
+        req.set_encoded_pwd("password");
         auto* processor = CreateUserProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -368,12 +261,8 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     {
         cpp2::CreateUserReq req;
         req.set_if_not_exists(false);
-        decltype(req.user_item) user;
-        user.set_account("user2");
-        user.set_is_lock(true);
-        user.set_login_type(nebula::cpp2::UserLoginType::PASSWORD);
-        user.set_encoded_pwd("password");
-        req.set_user_item(user);
+        req.set_account("user2");
+        req.set_encoded_pwd("password");
         auto* processor = CreateUserProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -384,26 +273,9 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     {
         cpp2::CreateUserReq req;
         req.set_if_not_exists(false);
-        decltype(req.user_item) user;
-        user.set_account("user3");
-        user.set_is_lock(true);
-        user.set_login_type(nebula::cpp2::UserLoginType::PASSWORD);
-        user.set_encoded_pwd("password");
-        req.set_user_item(user);
+        req.set_account("user3");
+        req.set_encoded_pwd("password");
         auto* processor = CreateUserProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-    }
-    // grant god role to user3
-    {
-        cpp2::GrantRoleReq req;
-        decltype(req.role_item) role;
-        role.set_user("user3");
-        role.set_role_type(nebula::cpp2::RoleType::GOD);
-        req.set_role_item(role);
-        auto* processor = GrantProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -718,12 +590,8 @@ TEST(AuthProcessorTest, ChangePasswordTest) {
     {
         cpp2::CreateUserReq req;
         req.set_if_not_exists(false);
-        decltype(req.user_item) user;
-        user.set_account("user1");
-        user.set_is_lock(true);
-        user.set_login_type(nebula::cpp2::UserLoginType::PASSWORD);
-        user.set_encoded_pwd("password");
-        req.set_user_item(user);
+        req.set_account("user1");
+        req.set_encoded_pwd("password");
         auto* processor = CreateUserProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -766,17 +634,6 @@ TEST(AuthProcessorTest, ChangePasswordTest) {
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
-    // verify password
-    {
-        cpp2::GetUserReq req;
-        req.set_account("user1");
-        auto* processor = GetUserProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-        ASSERT_EQ("pwd1", *resp.get_user_item().get_encoded_pwd());
-    }
     // change password, old password is not need check.
     {
         cpp2::ChangePasswordReq req;
@@ -788,16 +645,16 @@ TEST(AuthProcessorTest, ChangePasswordTest) {
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::E_INVALID_PASSWORD, resp.get_code());
     }
-    // verify password
+    // authCheck
     {
-        cpp2::GetUserReq req;
+        cpp2::AuthCheckReq req;
         req.set_account("user1");
-        auto* processor = GetUserProcessor::instance(kv.get());
+        req.set_encoded_pwd("pwd1");
+        auto* processor = AuthCheckProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-        ASSERT_EQ("pwd1", *resp.get_user_item().get_encoded_pwd());
     }
 }
 
