@@ -9,6 +9,7 @@
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
+#include "storage/StorageEnvironment.h"
 #include "storage/mutate/DeleteEdgesProcessor.h"
 #include "storage/mutate/AddEdgesProcessor.h"
 #include "utils/NebulaKeyUtils.h"
@@ -22,12 +23,15 @@ TEST(DeleteEdgesTest, SimpleTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
+    stats::Stats* stats = new stats::Stats();
+    StorageEnvironment* env = new StorageEnvironment();
     // Add edges
     {
         auto* processor = AddEdgesProcessor::instance(kv.get(),
                                                       schemaMan.get(),
                                                       indexMan.get(),
-                                                      nullptr);
+                                                      stats,
+                                                      env);
         cpp2::AddEdgesRequest req;
         req.space_id = 0;
         req.overwritable = true;
@@ -46,7 +50,8 @@ TEST(DeleteEdgesTest, SimpleTest) {
         auto* processor = AddEdgesProcessor::instance(kv.get(),
                                                       schemaMan.get(),
                                                       indexMan.get(),
-                                                      nullptr);
+                                                      stats,
+                                                      env);
         cpp2::AddEdgesRequest req;
         req.space_id = 0;
         req.overwritable = true;
@@ -94,7 +99,11 @@ TEST(DeleteEdgesTest, SimpleTest) {
 
     // Delete edges
     {
-        auto* processor = DeleteEdgesProcessor::instance(kv.get(), schemaMan.get(), indexMan.get());
+        auto* processor = DeleteEdgesProcessor::instance(kv.get(),
+                                                         schemaMan.get(),
+                                                         indexMan.get(),
+                                                         stats,
+                                                         env);
         cpp2::DeleteEdgesRequest req;
         req.set_space_id(0);
         // partId => List<EdgeKey>

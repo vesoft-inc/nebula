@@ -14,40 +14,43 @@ enum ErrorCode {
     SUCCEEDED = 0,
 
     // RPC Failure
-    E_DISCONNECTED = -1,
+    E_DISCONNECTED      = -1,
     E_FAILED_TO_CONNECT = -2,
-    E_RPC_FAILURE = -3,
+    E_RPC_FAILURE       = -3,
 
     // storage failures
-    E_LEADER_CHANGED = -11,
-    E_KEY_HAS_EXISTS = -12,
-    E_SPACE_NOT_FOUND = -13,
-    E_PART_NOT_FOUND = -14,
-    E_KEY_NOT_FOUND = -15,
-    E_CONSENSUS_ERROR = -16,
+    E_LEADER_CHANGED       = -11,
+    E_KEY_HAS_EXISTS       = -12,
+    E_SPACE_NOT_FOUND      = -13,
+    E_PART_NOT_FOUND       = -14,
+    E_KEY_NOT_FOUND        = -15,
+    E_CONSENSUS_ERROR      = -16,
+    E_BUILDING_INDEX_ERROR = -17,
 
     // meta failures
     E_EDGE_PROP_NOT_FOUND = -21,
-    E_TAG_PROP_NOT_FOUND = -22,
-    E_IMPROPER_DATA_TYPE = -23,
-    E_EDGE_NOT_FOUND = -24,
-    E_TAG_NOT_FOUND = -25,
-    E_INDEX_NOT_FOUND = -26,
+    E_TAG_PROP_NOT_FOUND  = -22,
+    E_IMPROPER_DATA_TYPE  = -23,
+    E_EDGE_NOT_FOUND      = -24,
+    E_TAG_NOT_FOUND       = -25,
+    E_INDEX_NOT_FOUND     = -26,
 
     // Invalid request
-    E_INVALID_FILTER = -31,
-    E_INVALID_UPDATER = -32,
-    E_INVALID_STORE = -33,
-    E_INVALID_PEER  = -34,
-    E_RETRY_EXHAUSTED = -35,
+    E_INVALID_FILTER         = -31,
+    E_INVALID_UPDATER        = -32,
+    E_INVALID_STORE          = -33,
+    E_INVALID_PEER           = -34,
+    E_RETRY_EXHAUSTED        = -35,
     E_TRANSFER_LEADER_FAILED = -36,
+    E_INVALID_OPERATION      = -37,
 
     // meta client failed
     E_LOAD_META_FAILED = -41,
 
     // checkpoint failed
     E_FAILED_TO_CHECKPOINT = -50,
-    E_CHECKPOINT_BLOCKED = -51,
+    E_CHECKPOINT_BLOCKED   = -51,
+    E_BLOCKING_WRITE       = -52,
 
     // Filter out
     E_FILTER_OUT         = -60,

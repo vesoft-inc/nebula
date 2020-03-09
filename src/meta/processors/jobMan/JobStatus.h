@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef META_KVJOBSTATUS_H_
-#define META_KVJOBSTATUS_H_
+#ifndef META_JOBSTATUS_H_
+#define META_JOBSTATUS_H_
 
 #include <vector>
 #include <string>
@@ -26,4 +26,4 @@ private:
 }  // namespace meta
 }  // namespace nebula
 
-#endif  // META_KVJOBSTATUS_H_
+#endif  // META_JOBSTATUS_H_

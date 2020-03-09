@@ -11,6 +11,7 @@
 #include <limits>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
+#include "storage/StorageEnvironment.h"
 #include "storage/mutate/UpdateVertexProcessor.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
@@ -121,10 +122,13 @@ TEST(UpdateVertexTest, Set_Filter_Yield_Test) {
     req.set_insertable(false);
 
     LOG(INFO) << "Test UpdateVertexRequest...";
+    StorageEnvironment* env = new StorageEnvironment();
     auto* processor = UpdateVertexProcessor::instance(kv.get(),
                                                       schemaMan.get(),
                                                       indexMan.get(),
-                                                      nullptr);
+                                                      nullptr,
+                                                      nullptr,
+                                                      env);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -259,10 +263,13 @@ TEST(UpdateVertexTest, Insertable_Test) {
     req.set_insertable(true);
 
     LOG(INFO) << "Test UpdateVertexRequest...";
+    StorageEnvironment* env = new StorageEnvironment();
     auto* processor = UpdateVertexProcessor::instance(kv.get(),
                                                       schemaMan.get(),
                                                       indexMan.get(),
-                                                      nullptr);
+                                                      nullptr,
+                                                      nullptr,
+                                                      env);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -339,10 +346,13 @@ TEST(UpdateVertexTest, Invalid_Set_Test) {
     req.set_insertable(false);
 
     LOG(INFO) << "Test UpdateVertexRequest...";
+    StorageEnvironment* env = new StorageEnvironment();
     auto* processor = UpdateVertexProcessor::instance(kv.get(),
                                                       schemaMan.get(),
                                                       indexMan.get(),
-                                                      nullptr);
+                                                      nullptr,
+                                                      nullptr,
+                                                      env);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -391,10 +401,13 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
     req.set_insertable(false);
 
     LOG(INFO) << "Test UpdateVertexRequest...";
+    StorageEnvironment* env = new StorageEnvironment();
     auto* processor = UpdateVertexProcessor::instance(kv.get(),
                                                       schemaMan.get(),
                                                       indexMan.get(),
-                                                      nullptr);
+                                                      nullptr,
+                                                      nullptr,
+                                                      env);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -450,10 +463,13 @@ TEST(UpdateVertexTest, CorruptDataTest) {
     req.set_insertable(false);
 
     LOG(INFO) << "Test UpdateVertexRequest...";
+    StorageEnvironment* env = new StorageEnvironment();
     auto* processor = UpdateVertexProcessor::instance(kv.get(),
                                                       schemaMan.get(),
                                                       indexMan.get(),
-                                                      nullptr);
+                                                      nullptr,
+                                                      nullptr,
+                                                      env);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();

@@ -240,5 +240,65 @@ std::string NebulaKeyUtils::prefix(PartitionID partId, VertexID src, EdgeType ty
     return key;
 }
 
+// static
+std::string NebulaKeyUtils::modifyOperationKey(PartitionID part, std::string key) {
+    uint32_t item = (part << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kOperation);
+    int64_t ts = time::WallClock::fastNowInMicroSec();
+    uint32_t type = static_cast<uint32_t>(NebulaOperationType::kModify);
+    int32_t keySize = key.size();
+    std::string result;
+    result.reserve(sizeof(int32_t) + sizeof(int64_t) + sizeof(NebulaOperationType) + keySize);
+    result.append(reinterpret_cast<const char*>(&item), sizeof(PartitionID))
+          .append(reinterpret_cast<const char*>(&ts), sizeof(int64_t))
+          .append(reinterpret_cast<const char*>(&type), sizeof(NebulaOperationType))
+          .append(key);
+    return result;
+}
+
+// static
+std::string NebulaKeyUtils::deleteOperationKey(PartitionID part, std::string key) {
+    uint32_t item = (part << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kOperation);
+    int64_t ts = time::WallClock::fastNowInMicroSec();
+    uint32_t type = static_cast<uint32_t>(NebulaOperationType::kDelete);
+    int32_t keySize = key.size();
+    std::string result;
+    result.reserve(sizeof(int32_t) + sizeof(int64_t) + sizeof(NebulaOperationType) + keySize);
+    result.append(reinterpret_cast<const char*>(&item), sizeof(PartitionID))
+          .append(reinterpret_cast<const char*>(&ts), sizeof(int64_t))
+          .append(reinterpret_cast<const char*>(&type), sizeof(NebulaOperationType))
+          .append(key);
+    return result;
+}
+
+// static
+bool NebulaKeyUtils::isModifyOperation(const folly::StringPiece& rawKey) {
+    auto position = rawKey.data() + sizeof(PartitionID);
+    auto len = sizeof(NebulaOperationType);
+    auto type = readInt<uint32_t>(position, len);
+    return static_cast<uint32_t>(NebulaOperationType::kModify) == type;
+}
+
+// static
+bool NebulaKeyUtils::isDeleteOperation(const folly::StringPiece& rawKey) {
+    auto position = rawKey.data() + sizeof(PartitionID);
+    auto len = sizeof(NebulaOperationType);
+    auto type = readInt<uint32_t>(position, len);
+    return static_cast<uint32_t>(NebulaOperationType::kDelete) == type;
+}
+
+// static
+std::string NebulaKeyUtils::getOperationKey(const folly::StringPiece& rawValue) {
+    auto offset = sizeof(int32_t) + sizeof(int64_t) + sizeof(NebulaOperationType);
+    return rawValue.subpiece(offset).data();
+}
+
+// static
+std::string NebulaKeyUtils::operationPrefix(PartitionID partId) {
+    uint32_t item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kOperation);
+    std::string result;
+    result.append(reinterpret_cast<const char*>(&item), sizeof(PartitionID));
+    return result;
+}
+
 }  // namespace nebula
 

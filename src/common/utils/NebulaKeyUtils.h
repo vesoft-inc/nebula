@@ -8,6 +8,7 @@
 #define COMMON_BASE_NEBULAKEYUTILS_H_
 
 #include "base/Base.h"
+#include "time/WallClock.h"
 #include "interface/gen-cpp2/common_types.h"
 #include "common/filter/Expressions.h"
 
@@ -29,11 +30,17 @@ enum class NebulaKeyType : uint32_t {
     kIndex             = 0x00000002,
     kUUID              = 0x00000003,
     kSystem            = 0x00000004,
+    kOperation         = 0x00000005,
 };
 
 enum class NebulaSystemKeyType : uint32_t {
     kSystemCommit      = 0x00000001,
     kSystemPart        = 0x00000002,
+};
+
+enum class NebulaOperationType : uint32_t {
+    kModify            = 0x00000001,
+    kDelete            = 0x00000002,
 };
 
 /**
@@ -78,7 +85,7 @@ public:
     static std::string indexPrefix(PartitionID partId, IndexID indexId);
 
     /**
-     * Prefix for
+     * Prefix for vertex Id and tag Id
      * */
     static std::string vertexPrefix(PartitionID partId, VertexID vId, TagID tagId);
 
@@ -368,8 +375,7 @@ public:
 
     static VertexID getIndexSrcId(const folly::StringPiece& rawKey) {
         CHECK_GE(rawKey.size(), kEdgeIndexLen);
-        auto offset = rawKey.size() -
-                      sizeof(VertexID) * 2 - sizeof(EdgeRanking);
+        auto offset = rawKey.size() - sizeof(VertexID) * 2 - sizeof(EdgeRanking);
         return readInt<VertexID>(rawKey.data() + offset, sizeof(VertexID));
     }
 
@@ -384,6 +390,24 @@ public:
         auto offset = rawKey.size() - sizeof(VertexID) - sizeof(EdgeRanking);
         return readInt<EdgeRanking>(rawKey.data() + offset, sizeof(EdgeRanking));
     }
+
+    static bool isOperationKey(const folly::StringPiece& key) {
+        constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
+        auto type = readInt<int32_t>(key.data(), len);
+        return static_cast<uint32_t>(NebulaKeyType::kOperation) == type;
+    }
+
+    static std::string modifyOperationKey(PartitionID part, std::string key);
+
+    static std::string deleteOperationKey(PartitionID part, std::string key);
+
+    static bool isModifyOperation(const folly::StringPiece& rawKey);
+
+    static bool isDeleteOperation(const folly::StringPiece& rawKey);
+
+    static std::string getOperationKey(const folly::StringPiece& rawValue);
+
+    static std::string operationPrefix(PartitionID part);
 
 private:
     NebulaKeyUtils() = delete;

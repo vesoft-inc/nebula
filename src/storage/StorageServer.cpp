@@ -7,6 +7,7 @@
 #include "storage/StorageServer.h"
 #include "network/NetworkUtils.h"
 #include "storage/StorageFlags.h"
+#include "storage/CompactionFilter.h"
 #include "storage/StorageServiceHandler.h"
 #include "storage/http/StorageHttpDownloadHandler.h"
 #include "storage/http/StorageHttpIngestHandler.h"
@@ -14,7 +15,6 @@
 #include "kvstore/PartManager.h"
 #include "webservice/Router.h"
 #include "webservice/WebService.h"
-#include "storage/CompactionFilter.h"
 #include "hdfs/HdfsCommandHelper.h"
 #include "thread/GenericThreadPool.h"
 #include <thrift/lib/cpp/concurrency/ThreadManager.h>

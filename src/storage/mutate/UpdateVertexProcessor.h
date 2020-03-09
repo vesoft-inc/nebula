@@ -26,8 +26,9 @@ public:
                                            meta::SchemaManager* schemaMan,
                                            meta::IndexManager* indexMan,
                                            stats::Stats* stats,
-                                           VertexCache* cache = nullptr) {
-        return new UpdateVertexProcessor(kvstore, schemaMan, indexMan, stats, cache);
+                                           VertexCache* cache,
+                                           StorageEnvironment* env) {
+        return new UpdateVertexProcessor(kvstore, schemaMan, indexMan, stats, cache, env);
     }
 
     void process(const cpp2::UpdateVertexRequest& req);
@@ -37,9 +38,10 @@ private:
                                    meta::SchemaManager* schemaMan,
                                    meta::IndexManager* indexMan,
                                    stats::Stats* stats,
-                                   VertexCache* cache)
+                                   VertexCache* cache,
+                                   StorageEnvironment* env)
         : QueryBaseProcessor<cpp2::UpdateVertexRequest,
-                             cpp2::UpdateResponse>(kvstore, schemaMan, stats, nullptr, cache)
+                             cpp2::UpdateResponse>(kvstore, schemaMan, stats, nullptr, cache, env)
         , indexMan_(indexMan) {}
 
     kvstore::ResultCode processVertex(PartitionID, VertexID) override {

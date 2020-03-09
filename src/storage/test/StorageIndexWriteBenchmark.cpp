@@ -57,7 +57,12 @@ bool processVertices(kvstore::KVStore* kv,
         req.parts.emplace(0, std::move(vertices));
     };
 
-    auto* processor = AddVerticesProcessor::instance(kv, schemaMan, indexMan, nullptr);
+    auto* processor = AddVerticesProcessor::instance(kv,
+                                                     schemaMan,
+                                                     indexMan,
+                                                     nullptr,
+                                                     nullptr,
+                                                     nullptr);
     auto fut = processor->getFuture();
     processor->process(std::move(req));
     auto resp = std::move(fut).get();
@@ -251,7 +256,7 @@ void insertDupVertices() {
 
     while (vId < FLAGS_total_vertices_size) {
         if (!processVertices(kv.get(), schemaMan.get(), indexMan.get(), vId) ||
-                !processVertices(kv.get(), schemaMan.get(), indexMan.get(), vId)) {
+            !processVertices(kv.get(), schemaMan.get(), indexMan.get(), vId)) {
             LOG(ERROR) << "Vertices bulk insert error";
             return;
         }

@@ -17,8 +17,9 @@ class GetProcessor : public BaseProcessor<cpp2::GeneralResponse> {
 public:
     static GetProcessor* instance(kvstore::KVStore* kvstore,
                                   meta::SchemaManager* schemaMan,
-                                  stats::Stats* stats) {
-        return new GetProcessor(kvstore, schemaMan, stats);
+                                  stats::Stats* stats,
+                                  StorageEnvironment* env) {
+        return new GetProcessor(kvstore, schemaMan, stats, env);
     }
 
     void process(const cpp2::GetRequest& req);
@@ -26,8 +27,9 @@ public:
 protected:
     explicit GetProcessor(kvstore::KVStore* kvstore,
                           meta::SchemaManager* schemaMan,
-                          stats::Stats* stats):
-        BaseProcessor<cpp2::GeneralResponse>(kvstore, schemaMan, stats) {}
+                          stats::Stats* stats,
+                          StorageEnvironment* env):
+        BaseProcessor<cpp2::GeneralResponse>(kvstore, schemaMan, stats, env) {}
 };
 
 }  // namespace storage

@@ -10,6 +10,7 @@
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
+#include "storage/StorageEnvironment.h"
 #include "storage/mutate/AddVerticesProcessor.h"
 #include "storage/mutate/AddEdgesProcessor.h"
 #include "storage/mutate/DeleteVerticesProcessor.h"
@@ -39,10 +40,13 @@ TEST(IndexTest, AddVerticesTest) {
                                                  3010);
         req.parts.emplace(partId, std::move(vertices));
     }
+    StorageEnvironment* env = new StorageEnvironment();
     auto* processor = AddVerticesProcessor::instance(kv.get(),
                                                      schemaMan.get(),
                                                      indexMan.get(),
-                                                     nullptr);
+                                                     nullptr,
+                                                     nullptr,
+                                                     env);
     auto fut = processor->getFuture();
     processor->process(req);
     auto resp = std::move(fut).get();
@@ -82,10 +86,12 @@ TEST(IndexTest, AddEdgeTest) {
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
+    StorageEnvironment* env = new StorageEnvironment();
     auto* processor = AddEdgesProcessor::instance(kv.get(),
                                                   schemaMan.get(),
                                                   indexMan.get(),
-                                                  nullptr);
+                                                  nullptr,
+                                                  env);
     cpp2::AddEdgesRequest req;
     req.space_id = 0;
     req.overwritable = true;
@@ -135,6 +141,7 @@ TEST(IndexTest, DeleteVertexTest) {
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
+    StorageEnvironment* env = new StorageEnvironment();
     {
         cpp2::AddVerticesRequest req;
         req.space_id = 0;
@@ -149,7 +156,9 @@ TEST(IndexTest, DeleteVertexTest) {
         auto* processor = AddVerticesProcessor::instance(kv.get(),
                                                          schemaMan.get(),
                                                          indexMan.get(),
-                                                         nullptr);
+                                                         nullptr,
+                                                         nullptr,
+                                                         env);
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -159,7 +168,9 @@ TEST(IndexTest, DeleteVertexTest) {
         auto* processor = DeleteVerticesProcessor::instance(kv.get(),
                                                             schemaMan.get(),
                                                             indexMan.get(),
-                                                            nullptr);
+                                                            nullptr,
+                                                            nullptr,
+                                                            env);
         cpp2::DeleteVerticesRequest req;
         req.set_space_id(0);
         std::unordered_map<PartitionID, std::vector<VertexID>> parts;
@@ -189,11 +200,13 @@ TEST(IndexTest, DeleteEdgeTest) {
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
+    StorageEnvironment* env = new StorageEnvironment();
     {
         auto* processor = AddEdgesProcessor::instance(kv.get(),
                                                       schemaMan.get(),
                                                       indexMan.get(),
-                                                      nullptr);
+                                                      nullptr,
+                                                      env);
         cpp2::AddEdgesRequest req;
         req.space_id = 0;
         req.overwritable = true;
@@ -201,20 +214,13 @@ TEST(IndexTest, DeleteEdgeTest) {
             std::vector<cpp2::Edge> edges;
             for (auto edgeType = 101; edgeType < 110; edgeType++) {
                 cpp2::EdgeKey key;
-                RowWriter writer(nullptr);
-                for (uint64_t numInt = 0; numInt < 10; numInt++) {
-                    writer << (numInt);
-                }
-                for (auto numString = 10; numString < 20; numString++) {
-                    writer << folly::stringPrintf("string_col_%d", numString);
-                }
-                auto val = writer.encode();
                 key.set_src(10);
                 key.set_edge_type(edgeType);
                 key.set_ranking(0);
                 key.set_dst(10001);
                 edges.emplace_back();
                 edges.back().set_key(key);
+                auto val = TestUtils::encodeValue(1, 10, 10001, edgeType);
                 edges.back().set_props(std::move(val));
             }
             req.parts.emplace(1, std::move(edges));
@@ -226,21 +232,17 @@ TEST(IndexTest, DeleteEdgeTest) {
         EXPECT_EQ(0, resp.result.failed_codes.size());
     }
     {
-        auto* processor = DeleteEdgesProcessor::instance(kv.get(), schemaMan.get(), indexMan.get());
+        auto* processor = DeleteEdgesProcessor::instance(kv.get(),
+                                                         schemaMan.get(),
+                                                         indexMan.get(),
+                                                         nullptr,
+                                                         env);
         cpp2::DeleteEdgesRequest req;
         req.set_space_id(0);
         // partId => List<EdgeKey>
         std::vector<cpp2::EdgeKey> keys;
         for (auto edgeType = 101; edgeType < 110; edgeType++) {
             cpp2::EdgeKey key;
-            RowWriter writer(nullptr);
-            for (uint64_t numInt = 0; numInt < 10; numInt++) {
-                writer << (numInt);
-            }
-            for (auto numString = 10; numString < 20; numString++) {
-                writer << folly::stringPrintf("string_col_%d", numString);
-            }
-            auto val = writer.encode();
             key.set_src(10);
             key.set_edge_type(edgeType);
             key.set_ranking(0);
@@ -267,10 +269,11 @@ TEST(IndexTest, DeleteEdgeTest) {
 }
 
 TEST(IndexTest, UpdateVertexTest) {
-    fs::TempDir rootPath("/tmp/DeleteVertexTest.XXXXXX");
+    fs::TempDir rootPath("/tmp/UpdateVertexTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
+    StorageEnvironment* env = new StorageEnvironment();
     {
         cpp2::AddVerticesRequest req;
         req.space_id = 0;
@@ -302,7 +305,9 @@ TEST(IndexTest, UpdateVertexTest) {
         auto* processor = AddVerticesProcessor::instance(kv.get(),
                                                          schemaMan.get(),
                                                          indexMan.get(),
-                                                         nullptr);
+                                                         nullptr,
+                                                         nullptr,
+                                                         env);
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -368,7 +373,9 @@ TEST(IndexTest, UpdateVertexTest) {
         auto* processor = UpdateVertexProcessor::instance(kv.get(),
                                                           schemaMan.get(),
                                                           indexMan.get(),
-                                                          nullptr);
+                                                          nullptr,
+                                                          nullptr,
+                                                          env);
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -408,11 +415,13 @@ TEST(IndexTest, UpdateEdgeTest) {
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
     LOG(INFO) << "Build AddEdgesRequest...";
+    StorageEnvironment* env = new StorageEnvironment();
     {
         auto* processor = AddEdgesProcessor::instance(kv.get(),
                                                       schemaMan.get(),
                                                       indexMan.get(),
-                                                      nullptr);
+                                                      nullptr,
+                                                      env);
         cpp2::AddEdgesRequest req;
         req.space_id = 0;
         req.overwritable = true;
@@ -420,20 +429,13 @@ TEST(IndexTest, UpdateEdgeTest) {
             std::vector<cpp2::Edge> edges;
             for (auto edgeType = 101; edgeType < 110; edgeType++) {
                 cpp2::EdgeKey key;
-                RowWriter writer(nullptr);
-                for (uint64_t numInt = 0; numInt < 10; numInt++) {
-                    writer << (numInt);
-                }
-                for (auto numString = 10; numString < 20; numString++) {
-                    writer << folly::stringPrintf("string_col_%d", numString);
-                }
-                auto val = writer.encode();
                 key.set_src(10);
                 key.set_edge_type(edgeType);
                 key.set_ranking(0);
                 key.set_dst(10001);
                 edges.emplace_back();
                 edges.back().set_key(key);
+                auto val = TestUtils::encodeValue(1, 10, 10001, edgeType);
                 edges.back().set_props(std::move(val));
             }
             req.parts.emplace(1, std::move(edges));
@@ -483,7 +485,8 @@ TEST(IndexTest, UpdateEdgeTest) {
         auto* processor = UpdateEdgeProcessor::instance(kv.get(),
                                                         schemaMan.get(),
                                                         indexMan.get(),
-                                                        nullptr);
+                                                        nullptr,
+                                                        env);
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -521,6 +524,7 @@ TEST(IndexTest, RebulidTagIndexWithOfflineTest) {
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
+    StorageEnvironment* env = new StorageEnvironment();
     {
         cpp2::AddVerticesRequest req;
         req.space_id = 0;
@@ -537,7 +541,9 @@ TEST(IndexTest, RebulidTagIndexWithOfflineTest) {
         auto* processor = AddVerticesProcessor::instance(kv.get(),
                                                          schemaMan.get(),
                                                          indexMan.get(),
-                                                         nullptr);
+                                                         nullptr,
+                                                         nullptr,
+                                                         env);
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -553,13 +559,77 @@ TEST(IndexTest, RebulidTagIndexWithOfflineTest) {
 
         auto* processor = RebuildTagIndexProcessor::instance(kv.get(),
                                                              schemaMan.get(),
-                                                             indexMan.get());
+                                                             indexMan.get(),
+                                                             nullptr,
+                                                             env);
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_codes.size());
 
+        for (PartitionID partId = 1; partId <= 3; partId++) {
+            auto prefix = NebulaKeyUtils::indexPrefix(partId, 4001);
+            std::unique_ptr<kvstore::KVIterator> iter;
+            EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
+            int32_t count = 0;
+            while (iter->valid()) {
+                count++;
+                iter->next();
+            }
+            EXPECT_EQ(10, count);
+        }
+    }
+}
+
+TEST(IndexTest, RebulidTagIndexWithOnlineTest) {
+    fs::TempDir rootPath("/tmp/RebulidTagIndexWithOnlineTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
+    StorageEnvironment* env = new StorageEnvironment();
+    {
+        cpp2::AddVerticesRequest req;
+        req.space_id = 0;
+        req.overwritable = true;
         for (auto partId = 1; partId <= 3; partId++) {
+            auto vertices = TestUtils::setupVertices(partId,
+                                                     partId * 10,
+                                                     10 * (partId + 1),
+                                                     3001,
+                                                     3010);
+            req.parts.emplace(partId, std::move(vertices));
+        }
+
+        auto* processor = AddVerticesProcessor::instance(kv.get(),
+                                                         schemaMan.get(),
+                                                         indexMan.get(),
+                                                         nullptr,
+                                                         nullptr,
+                                                         env);
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+        EXPECT_EQ(0, resp.result.failed_codes.size());
+    }
+    {
+        std::vector<PartitionID> parts{1, 2, 3};
+        cpp2::RebuildIndexRequest req;
+        req.set_space_id(0);
+        req.set_parts(std::move(parts));
+        req.set_index_id(3001 + 1000);
+        req.set_is_offline(false);
+
+        auto* processor = RebuildTagIndexProcessor::instance(kv.get(),
+                                                             schemaMan.get(),
+                                                             indexMan.get(),
+                                                             nullptr,
+                                                             env);
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+        EXPECT_EQ(0, resp.result.failed_codes.size());
+
+        for (PartitionID partId = 1; partId <= 3; partId++) {
             auto prefix = NebulaKeyUtils::indexPrefix(partId, 4001);
             std::unique_ptr<kvstore::KVIterator> iter;
             EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
@@ -578,11 +648,13 @@ TEST(IndexTest, RebulidEdgeIndexWithOfflineTest) {
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
+    StorageEnvironment* env = new StorageEnvironment();
     {
         auto* processor = AddEdgesProcessor::instance(kv.get(),
                                                       schemaMan.get(),
                                                       indexMan.get(),
-                                                      nullptr);
+                                                      nullptr,
+                                                      env);
         cpp2::AddEdgesRequest req;
         req.space_id = 0;
         req.overwritable = true;
@@ -605,17 +677,79 @@ TEST(IndexTest, RebulidEdgeIndexWithOfflineTest) {
         req.set_space_id(0);
         req.set_parts(std::move(parts));
         req.set_index_id(101 + 100);
-        req.is_offline = true;
+        req.set_is_offline(true);
 
         auto* processor = RebuildEdgeIndexProcessor::instance(kv.get(),
                                                               schemaMan.get(),
-                                                              indexMan.get());
+                                                              indexMan.get(),
+                                                              nullptr,
+                                                              env);
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_codes.size());
 
+        for (PartitionID partId = 1; partId <= 3; partId++) {
+            auto prefix = NebulaKeyUtils::indexPrefix(partId, 101 + 100);
+            std::unique_ptr<kvstore::KVIterator> iter;
+            EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
+            int32_t rowCount = 0;
+            while (iter->valid()) {
+                rowCount++;
+                iter->next();
+            }
+            EXPECT_EQ(10, rowCount);
+        }
+    }
+}
+
+TEST(IndexTest, RebulidEdgeIndexWithOnlineTest) {
+    fs::TempDir rootPath("/tmp/RebulidEdgeIndexWithOnlineTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
+    StorageEnvironment* env = new StorageEnvironment();
+    {
+        auto* processor = AddEdgesProcessor::instance(kv.get(),
+                                                      schemaMan.get(),
+                                                      indexMan.get(),
+                                                      nullptr,
+                                                      env);
+        cpp2::AddEdgesRequest req;
+        req.space_id = 0;
+        req.overwritable = true;
         for (auto partId = 1; partId <= 3; partId++) {
+            auto edges = TestUtils::setupEdges(partId,
+                                               partId * 10,
+                                               (partId + 1) * 10,
+                                               101,
+                                               3);
+            req.parts.emplace(partId, std::move(edges));
+        }
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+        EXPECT_EQ(0, resp.result.failed_codes.size());
+    }
+    {
+        std::vector<PartitionID> parts{1, 2, 3};
+        cpp2::RebuildIndexRequest req;
+        req.set_space_id(0);
+        req.set_parts(std::move(parts));
+        req.set_index_id(101 + 100);
+        req.set_is_offline(false);
+
+        auto* processor = RebuildEdgeIndexProcessor::instance(kv.get(),
+                                                              schemaMan.get(),
+                                                              indexMan.get(),
+                                                              nullptr,
+                                                              env);
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+        EXPECT_EQ(0, resp.result.failed_codes.size());
+
+        for (PartitionID partId = 1; partId <= 3; partId++) {
             auto prefix = NebulaKeyUtils::indexPrefix(partId, 101 + 100);
             std::unique_ptr<kvstore::KVIterator> iter;
             EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));

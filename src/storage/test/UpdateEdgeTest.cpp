@@ -11,6 +11,7 @@
 #include <limits>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
+#include "storage/StorageEnvironment.h"
 #include "storage/mutate/UpdateEdgeProcessor.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
@@ -154,10 +155,12 @@ TEST(UpdateEdgeTest, Set_Filter_Yield_Test) {
     req.set_return_columns(std::move(tmpColumns));
     req.set_insertable(false);
     LOG(INFO) << "Test UpdateEdgeRequest...";
+    StorageEnvironment* env = new StorageEnvironment();
     auto* processor = UpdateEdgeProcessor::instance(kv.get(),
                                                     schemaMan.get(),
                                                     indexMan.get(),
-                                                    nullptr);
+                                                    nullptr,
+                                                    env);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -278,10 +281,12 @@ TEST(UpdateEdgeTest, Insertable_Test) {
     req.set_insertable(true);
 
     LOG(INFO) << "Test UpdateEdgeRequest...";
+    StorageEnvironment* env = new StorageEnvironment();
     auto* processor = UpdateEdgeProcessor::instance(kv.get(),
                                                     schemaMan.get(),
                                                     indexMan.get(),
-                                                    nullptr);
+                                                    nullptr,
+                                                    env);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -404,10 +409,12 @@ TEST(UpdateEdgeTest, CorruptDataTest) {
     req.set_insertable(true);
 
     LOG(INFO) << "Test UpdateEdgeRequest...";
+    StorageEnvironment* env = new StorageEnvironment();
     auto* processor = UpdateEdgeProcessor::instance(kv.get(),
                                                     schemaMan.get(),
                                                     indexMan.get(),
-                                                    nullptr);
+                                                    nullptr,
+                                                    env);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();

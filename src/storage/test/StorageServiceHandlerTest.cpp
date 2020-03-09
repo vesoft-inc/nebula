@@ -17,21 +17,20 @@ namespace storage {
 
 TEST(StorageServiceHandlerTest, FutureAddVerticesTest) {
     fs::TempDir rootPath("/tmp/FutureAddVerticesTest.XXXXXX");
-    cpp2::AddVerticesRequest req;
-    req.set_space_id(0);
-    req.overwritable = true;
-
-    LOG(INFO) << "Build FutureAddVerticesTest...";
-    req.parts.emplace(0, TestUtils::setupVertices(0, 0, 10, 0, 10));
-    req.parts.emplace(1, TestUtils::setupVertices(1, 0, 20, 0, 30));
-    LOG(INFO) << "Test FutureAddVerticesTest...";
     std::unique_ptr<kvstore::KVStore> kvstore = TestUtils::initKV(rootPath.path());
+
+    LOG(INFO) << "Test FutureAddVerticesTest...";
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
     auto storageServiceHandler = std::make_unique<StorageServiceHandler>(kvstore.get(),
                                                                          schemaMan.get(),
                                                                          indexMan.get(),
                                                                          nullptr);
+    cpp2::AddVerticesRequest req;
+    req.set_space_id(0);
+    req.overwritable = true;
+    req.parts.emplace(0, TestUtils::setupVertices(0, 0, 10, 0, 10));
+    req.parts.emplace(1, TestUtils::setupVertices(1, 0, 20, 0, 30));
     auto resp = storageServiceHandler->future_addVertices(req).get();
     EXPECT_EQ(typeid(cpp2::ExecResponse).name() , typeid(resp).name());
 

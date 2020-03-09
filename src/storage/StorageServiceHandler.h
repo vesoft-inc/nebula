@@ -15,6 +15,7 @@
 #include "meta/IndexManager.h"
 #include "stats/StatsManager.h"
 #include "storage/CommonUtils.h"
+#include "storage/StorageEnvironment.h"
 #include "stats/Stats.h"
 
 DECLARE_int32(vertex_cache_num);
@@ -53,6 +54,7 @@ public:
         putKvQpsStat_ = stats::Stats("storage", "put_kv");
         lookupVerticesQpsStat_ = stats::Stats("storage", "lookup_vertices");
         lookupEdgesQpsStat_ = stats::Stats("storage", "lookup_edges");
+        env_ = new StorageEnvironment();
     }
 
     folly::Future<cpp2::QueryResponse>
@@ -148,6 +150,7 @@ private:
     meta::SchemaManager* schemaMan_{nullptr};
     meta::IndexManager* indexMan_{nullptr};
     meta::MetaClient* metaClient_{nullptr};
+    StorageEnvironment* env_{nullptr};
     VertexCache vertexCache_;
     std::unique_ptr<folly::IOThreadPoolExecutor> readerPool_;
 
@@ -158,12 +161,15 @@ private:
     stats::Stats addVertexQpsStat_;
     stats::Stats addEdgeQpsStat_;
     stats::Stats delVertexQpsStat_;
+    stats::Stats delEdgeQpsStat_;
     stats::Stats updateVertexQpsStat_;
     stats::Stats updateEdgeQpsStat_;
     stats::Stats scanEdgeQpsStat_;
     stats::Stats scanVertexQpsStat_;
     stats::Stats getKvQpsStat_;
     stats::Stats putKvQpsStat_;
+    stats::Stats rebuildTagIndexStat_;
+    stats::Stats rebuildEdgeIndexStat_;
     stats::Stats lookupVerticesQpsStat_;
     stats::Stats lookupEdgesQpsStat_;
 };

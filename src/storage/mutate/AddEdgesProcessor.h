@@ -20,8 +20,9 @@ public:
     static AddEdgesProcessor* instance(kvstore::KVStore* kvstore,
                                        meta::SchemaManager* schemaMan,
                                        meta::IndexManager* indexMan,
-                                       stats::Stats* stats) {
-        return new AddEdgesProcessor(kvstore, schemaMan, indexMan, stats);
+                                       stats::Stats* stats,
+                                       StorageEnvironment* env) {
+        return new AddEdgesProcessor(kvstore, schemaMan, indexMan, stats, env);
     }
 
     void process(const cpp2::AddEdgesRequest& req);
@@ -30,20 +31,13 @@ private:
     explicit AddEdgesProcessor(kvstore::KVStore* kvstore,
                                meta::SchemaManager* schemaMan,
                                meta::IndexManager* indexMan,
-                               stats::Stats* stats)
-            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats)
+                               stats::Stats* stats,
+                               StorageEnvironment* env)
+            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats, env)
             , indexMan_(indexMan) {}
 
     std::string addEdges(int64_t version, PartitionID partId,
                          const std::vector<cpp2::Edge>& edges);
-
-    std::string findObsoleteIndex(PartitionID partId,
-                                  const folly::StringPiece& rawKey);
-
-    std::string indexKey(PartitionID partId,
-                         RowReader* reader,
-                         const folly::StringPiece& rawKey,
-                         std::shared_ptr<nebula::cpp2::IndexItem> index);
 
 private:
     GraphSpaceID                                          spaceId_;

@@ -134,16 +134,23 @@ DeleteVerticesProcessor::deleteVertices(GraphSpaceID spaceId,
                             }
                         }
                         const auto& cols = index->get_fields();
-                        auto values = collectIndexValues(reader.get(), cols);
+                        auto valuesRet = collectIndexValues(reader.get(), cols);
                         auto indexKey = NebulaKeyUtils::vertexIndexKey(partId,
                                                                        indexId,
                                                                        vertex,
-                                                                       values);
-                        batchHolder->remove(std::move(indexKey));
+                                                                       valuesRet.value());
+                        if (env_->getPartID() != partId &&
+                            env_->getIndexID() != index->get_index_id()) {
+                            batchHolder->remove(std::move(indexKey));
+                        } else {
+                            auto deleteIndexOpKey = deleteOperationKey(partId, indexKey);
+                            batchHolder->remove(std::move(deleteIndexOpKey));
+                        }
                     }
                 }
                 latestVVId = tagId;
             }
+
             batchHolder->remove(key.str());
             iter->next();
         }

@@ -12,6 +12,7 @@
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
 #include "storage/index/LookUpIndexProcessor.h"
+#include "storage/StorageEnvironment.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
 

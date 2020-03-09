@@ -18,14 +18,8 @@ void RebuildIndexProcessor::processInternal(const cpp2::RebuildIndexReq& req) {
     CHECK_SPACE_ID_AND_RETURN(space);
     const auto &indexName = req.get_index_name();
     auto isOffline = req.get_is_offline();
-    if (!isOffline) {
-        LOG(ERROR) << "Currently not support online rebuild index";
-        resp_.set_code(cpp2::ErrorCode::E_UNSUPPORTED);
-        onFinished();
-        return;
-    }
-
     LOG(INFO) << "Rebuild Index Space " << space << ", Index Name " << indexName;
+
     const auto& hostPrefix = MetaServiceUtils::leaderPrefix();
     std::unique_ptr<kvstore::KVIterator> leaderIter;
     auto leaderRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, hostPrefix, &leaderIter);

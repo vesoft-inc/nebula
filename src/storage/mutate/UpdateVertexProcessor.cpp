@@ -117,6 +117,7 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
             auto&& v = value(std::move(res));
             tagFilters_.emplace(std::make_pair(tagId, prop.prop_.name), v);
         }
+
         if (updateTagIds_.find(tagId) != updateTagIds_.end()) {
             auto schema = std::const_pointer_cast<meta::SchemaProviderIf>(constSchema);
             auto updater =
@@ -206,7 +207,7 @@ std::string UpdateVertexProcessor::updateAndWriteBack(const PartitionID partId,
                                                       const VertexID vId) {
     Getters getters;
     getters.getSrcTagProp = [this] (const std::string& tagName,
-                                       const std::string& prop) -> OptVariantType {
+                                    const std::string& prop) -> OptVariantType {
         auto tagRet = this->schemaMan_->toTagID(this->spaceId_, tagName);
         if (!tagRet.ok()) {
             VLOG(1) << "Can't find tag " << tagName << ", in space " << this->spaceId_;
@@ -288,12 +289,18 @@ std::string UpdateVertexProcessor::updateAndWriteBack(const PartitionID partId,
                                                                   u.first);
                         }
                         const auto &oCols = index->get_fields();
-                        auto oValues = collectIndexValues(oReader.get(), oCols);
+                        auto oValuesRet = collectIndexValues(oReader.get(), oCols);
                         auto oIndexKey = NebulaKeyUtils::vertexIndexKey(partId,
                                                                         index->index_id,
                                                                         vId,
-                                                                        oValues);
-                        batchHolder->remove(std::move(oIndexKey));
+                                                                        oValuesRet.value());
+                        if (env_->getPartID() != partId &&
+                            env_->getIndexID() != index->get_index_id()) {
+                            batchHolder->remove(std::move(oIndexKey));
+                        } else {
+                            auto deleteOpKey = deleteOperationKey(partId, oIndexKey);
+                            batchHolder->remove(std::move(deleteOpKey));
+                        }
                     }
                     if (reader == nullptr) {
                         reader = RowReader::getTagPropReader(this->schemaMan_,
@@ -302,12 +309,19 @@ std::string UpdateVertexProcessor::updateAndWriteBack(const PartitionID partId,
                                                              u.first);
                     }
                     const auto &cols = index->get_fields();
-                    auto values = collectIndexValues(reader.get(), cols);
+                    auto valuesRet = collectIndexValues(reader.get(), cols);
+
                     auto indexKey = NebulaKeyUtils::vertexIndexKey(partId,
                                                                    index->get_index_id(),
                                                                    vId,
-                                                                   values);
-                    batchHolder->put(std::move(indexKey), "");
+                                                                   valuesRet.value());
+                    if (env_->getPartID() != partId &&
+                        env_->getIndexID() != index->get_index_id()) {
+                        batchHolder->put(std::move(indexKey), "");
+                    } else {
+                        auto modifyOpKey = modifyOperationKey(partId, indexKey);
+                        batchHolder->put(std::move(modifyOpKey), "");
+                    }
                 }
             }
         }
@@ -317,8 +331,8 @@ std::string UpdateVertexProcessor::updateAndWriteBack(const PartitionID partId,
 }
 
 
-cpp2::ErrorCode UpdateVertexProcessor::checkAndBuildContexts(
-        const cpp2::UpdateVertexRequest& req) {
+cpp2::ErrorCode
+UpdateVertexProcessor::checkAndBuildContexts(const cpp2::UpdateVertexRequest& req) {
     if (this->expCtx_ == nullptr) {
         this->expCtx_ = std::make_unique<ExpressionContext>();
     }

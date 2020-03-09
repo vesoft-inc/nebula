@@ -157,7 +157,7 @@ private:
 
 private:
     std::unique_ptr<FaultInjector> injector_{nullptr};
-    kvstore::KVStore* kv_ = nullptr;
+    kvstore::KVStore* kv_{nullptr};
     std::unique_ptr<folly::IOThreadPoolExecutor> ioThreadPool_{nullptr};
     std::unique_ptr<thrift::ThriftClientManager<storage::cpp2::StorageServiceAsyncClient>>
     clientsMan_;

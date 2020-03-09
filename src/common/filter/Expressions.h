@@ -159,7 +159,6 @@ public:
         return storageClient_;
     }
 
-
     void setSpace(GraphSpaceID space) {
         space_ = space;
     }
@@ -952,7 +951,7 @@ private:
 };
 
 
-// &&, ||
+// &&, ||, ^
 class LogicalExpression final : public Expression {
 public:
     enum Operator : uint8_t {

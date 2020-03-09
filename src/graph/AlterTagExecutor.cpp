@@ -53,7 +53,8 @@ void AlterTagExecutor::execute() {
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
             doError(Status::Error("Alter tag `%s' failed: %s",
-                        sentence_->name()->c_str(), resp.status().toString().c_str()));
+                                  sentence_->name()->c_str(),
+                                  resp.status().toString().c_str()));
             return;
         }
 
@@ -62,7 +63,8 @@ void AlterTagExecutor::execute() {
 
     auto error = [this] (auto &&e) {
         auto msg = folly::stringPrintf("Alter tag `%s' exception: %s.",
-                sentence_->name()->c_str(), e.what().c_str());
+                                       sentence_->name()->c_str(),
+                                       e.what().c_str());
         LOG(ERROR) << msg;
         doError(Status::Error(std::move(msg)));
     };

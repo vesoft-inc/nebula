@@ -23,7 +23,12 @@ namespace storage {
 void addVertices(kvstore::KVStore* kv,  meta::SchemaManager* schemaMan,
                  meta::IndexManager* indexMan, VertexCache* cache, int nums) {
     LOG(INFO) << "Build AddVerticesRequest...";
-    auto* processor = AddVerticesProcessor::instance(kv, schemaMan, indexMan, nullptr, cache);
+    auto* processor = AddVerticesProcessor::instance(kv,
+                                                     schemaMan,
+                                                     indexMan,
+                                                     nullptr,
+                                                     cache,
+                                                     nullptr);
     cpp2::AddVerticesRequest req;
     req.space_id = 0;
     req.overwritable = true;

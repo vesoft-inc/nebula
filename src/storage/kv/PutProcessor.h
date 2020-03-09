@@ -17,8 +17,9 @@ class PutProcessor : public BaseProcessor<cpp2::ExecResponse> {
 public:
     static PutProcessor* instance(kvstore::KVStore* kvstore,
                                   meta::SchemaManager* schemaMan,
-                                  stats::Stats* stats) {
-        return new PutProcessor(kvstore, schemaMan, stats);
+                                  stats::Stats* stats,
+                                  StorageEnvironment* env) {
+        return new PutProcessor(kvstore, schemaMan, stats, env);
     }
 
     void process(const cpp2::PutRequest& req);
@@ -26,8 +27,9 @@ public:
 private:
     explicit PutProcessor(kvstore::KVStore* kvstore,
                           meta::SchemaManager* schemaMan,
-                          stats::Stats* stats)
-            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats) {}
+                          stats::Stats* stats,
+                          StorageEnvironment* env)
+            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats, env) {}
 };
 
 }  // namespace storage

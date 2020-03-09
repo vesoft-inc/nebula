@@ -16,7 +16,7 @@ namespace nebula {
 namespace graph {
 
 AdminJobExecutor::AdminJobExecutor(Sentence *sentence,
-        ExecutionContext *ectx) : Executor(ectx) {
+                                   ExecutionContext *ectx) : Executor(ectx) {
     sentence_ = static_cast<AdminSentence*>(sentence);
 }
 

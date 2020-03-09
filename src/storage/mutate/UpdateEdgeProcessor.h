@@ -7,6 +7,7 @@
 #ifndef STORAGE_MUTATE_UPDATEEDGEROCESSOR_H_
 #define STORAGE_MUTATE_UPDATEEDGEROCESSOR_H_
 
+#include "storage/StorageEnvironment.h"
 #include "storage/query/QueryBaseProcessor.h"
 #include "dataman/RowReader.h"
 #include "dataman/RowUpdater.h"
@@ -20,8 +21,9 @@ public:
     static UpdateEdgeProcessor* instance(kvstore::KVStore* kvstore,
                                          meta::SchemaManager* schemaMan,
                                          meta::IndexManager* indexMan,
-                                         stats::Stats* stats) {
-        return new UpdateEdgeProcessor(kvstore, schemaMan, indexMan, stats);
+                                         stats::Stats* stats,
+                                         StorageEnvironment* env) {
+        return new UpdateEdgeProcessor(kvstore, schemaMan, indexMan, stats, env);
     }
 
     void process(const cpp2::UpdateEdgeRequest& req);
@@ -30,9 +32,10 @@ private:
     explicit UpdateEdgeProcessor(kvstore::KVStore* kvstore,
                                  meta::SchemaManager* schemaMan,
                                  meta::IndexManager* indexMan,
-                                 stats::Stats* stats)
+                                 stats::Stats* stats,
+                                 StorageEnvironment* env)
         : QueryBaseProcessor<cpp2::UpdateEdgeRequest,
-                             cpp2::UpdateResponse>(kvstore, schemaMan, stats)
+                             cpp2::UpdateResponse>(kvstore, schemaMan, stats, nullptr, nullptr, env)
         , indexMan_(indexMan) {}
 
     kvstore::ResultCode processVertex(PartitionID, VertexID) override {

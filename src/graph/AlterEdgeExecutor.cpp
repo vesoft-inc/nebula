@@ -52,7 +52,7 @@ void AlterEdgeExecutor::execute() {
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
             doError(Status::Error("Alter edge `%s' failed: %s.",
-                        sentence_->name()->c_str(), resp.status().toString().c_str()));
+                    sentence_->name()->c_str(), resp.status().toString().c_str()));
             return;
         }
 
@@ -61,7 +61,8 @@ void AlterEdgeExecutor::execute() {
 
     auto error = [this] (auto &&e) {
         auto msg = folly::stringPrintf("Alter edge `%s' exception: %s.",
-                sentence_->name()->c_str(), e.what().c_str());
+                                       sentence_->name()->c_str(),
+                                       e.what().c_str());
         LOG(ERROR) << msg;
         doError(Status::Error(std::move(msg)));
     };

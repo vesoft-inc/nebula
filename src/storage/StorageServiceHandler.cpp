@@ -86,7 +86,8 @@ StorageServiceHandler::future_addVertices(const cpp2::AddVerticesRequest& req) {
                                                      schemaMan_,
                                                      indexMan_,
                                                      &addVertexQpsStat_,
-                                                     &vertexCache_);
+                                                     &vertexCache_,
+                                                     env_);
     RETURN_FUTURE(processor);
 }
 
@@ -95,7 +96,8 @@ StorageServiceHandler::future_addEdges(const cpp2::AddEdgesRequest& req) {
     auto* processor = AddEdgesProcessor::instance(kvstore_,
                                                   schemaMan_,
                                                   indexMan_,
-                                                  &addEdgeQpsStat_);
+                                                  &addEdgeQpsStat_,
+                                                  env_);
     RETURN_FUTURE(processor);
 }
 
@@ -105,13 +107,18 @@ StorageServiceHandler::future_deleteVertices(const cpp2::DeleteVerticesRequest& 
                                                         schemaMan_,
                                                         indexMan_,
                                                         &delVertexQpsStat_,
-                                                        &vertexCache_);
+                                                        &vertexCache_,
+                                                        env_);
     RETURN_FUTURE(processor);
 }
 
 folly::Future<cpp2::ExecResponse>
 StorageServiceHandler::future_deleteEdges(const cpp2::DeleteEdgesRequest& req) {
-    auto* processor = DeleteEdgesProcessor::instance(kvstore_, schemaMan_, indexMan_);
+    auto* processor = DeleteEdgesProcessor::instance(kvstore_,
+                                                     schemaMan_,
+                                                     indexMan_,
+                                                     &delEdgeQpsStat_,
+                                                     env_);
     RETURN_FUTURE(processor);
 }
 
@@ -121,7 +128,8 @@ StorageServiceHandler::future_updateVertex(const cpp2::UpdateVertexRequest& req)
                                                       schemaMan_,
                                                       indexMan_,
                                                       &updateVertexQpsStat_,
-                                                      &vertexCache_);
+                                                      &vertexCache_,
+                                                      env_);
     RETURN_FUTURE(processor);
 }
 
@@ -130,7 +138,8 @@ StorageServiceHandler::future_updateEdge(const cpp2::UpdateEdgeRequest& req) {
     auto* processor = UpdateEdgeProcessor::instance(kvstore_,
                                                     schemaMan_,
                                                     indexMan_,
-                                                    &updateEdgeQpsStat_);
+                                                    &updateEdgeQpsStat_,
+                                                    env_);
     RETURN_FUTURE(processor);
 }
 
@@ -196,13 +205,13 @@ StorageServiceHandler::future_getLeaderPart(const cpp2::GetLeaderReq& req) {
 
 folly::Future<cpp2::ExecResponse>
 StorageServiceHandler::future_put(const cpp2::PutRequest& req) {
-    auto* processor = PutProcessor::instance(kvstore_, schemaMan_, &putKvQpsStat_);
+    auto* processor = PutProcessor::instance(kvstore_, schemaMan_, &putKvQpsStat_, env_);
     RETURN_FUTURE(processor);
 }
 
 folly::Future<cpp2::GeneralResponse>
 StorageServiceHandler::future_get(const cpp2::GetRequest& req) {
-    auto* processor = GetProcessor::instance(kvstore_, schemaMan_, &getKvQpsStat_);
+    auto* processor = GetProcessor::instance(kvstore_, schemaMan_, &getKvQpsStat_, env_);
     RETURN_FUTURE(processor);
 }
 
@@ -234,7 +243,9 @@ folly::Future<cpp2::AdminExecResp>
 StorageServiceHandler::future_rebuildTagIndex(const cpp2::RebuildIndexRequest& req) {
     auto* processor = RebuildTagIndexProcessor::instance(kvstore_,
                                                          schemaMan_,
-                                                         indexMan_);
+                                                         indexMan_,
+                                                         &rebuildTagIndexStat_,
+                                                         env_);
     RETURN_FUTURE(processor);
 }
 
@@ -242,7 +253,9 @@ folly::Future<cpp2::AdminExecResp>
 StorageServiceHandler::future_rebuildEdgeIndex(const cpp2::RebuildIndexRequest& req) {
     auto* processor = RebuildEdgeIndexProcessor::instance(kvstore_,
                                                           schemaMan_,
-                                                          indexMan_);
+                                                          indexMan_,
+                                                          &rebuildEdgeIndexStat_,
+                                                          env_);
     RETURN_FUTURE(processor);
 }
 

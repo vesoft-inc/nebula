@@ -10,6 +10,7 @@
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
+#include "storage/StorageEnvironment.h"
 #include "storage/mutate/AddVerticesProcessor.h"
 
 namespace nebula {
@@ -20,10 +21,14 @@ TEST(AddVerticesTest, SimpleTest) {
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
+    stats::Stats* stats = new stats::Stats();
+    StorageEnvironment* env = new StorageEnvironment();
     auto* processor = AddVerticesProcessor::instance(kv.get(),
                                                      schemaMan.get(),
                                                      indexMan.get(),
-                                                     nullptr);
+                                                     stats,
+                                                     nullptr,
+                                                     env);
 
     LOG(INFO) << "Build AddVerticesRequest...";
     cpp2::AddVerticesRequest req;

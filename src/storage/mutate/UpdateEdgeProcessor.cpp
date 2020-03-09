@@ -19,7 +19,7 @@ void UpdateEdgeProcessor::onProcessFinished(int32_t retNum) {
         RowWriter writer(nullptr);
         Getters getters;
         getters.getSrcTagProp = [&, this] (const std::string& tagName,
-                                        const std::string& prop) -> OptVariantType {
+                                           const std::string& prop) -> OptVariantType {
             auto tagRet = this->schemaMan_->toTagID(this->spaceId_, tagName);
             if (!tagRet.ok()) {
                 VLOG(1) << "Can't find tag " << tagName << ", in space " << this->spaceId_;
@@ -35,7 +35,7 @@ void UpdateEdgeProcessor::onProcessFinished(int32_t retNum) {
             return it->second;
         };
         getters.getAliasProp = [&, this] (const std::string&,
-                                        const std::string& prop) -> OptVariantType {
+                                          const std::string& prop) -> OptVariantType {
             auto it = this->edgeFilters_.find(prop);
             if (it == this->edgeFilters_.end()) {
                 return Status::Error("Invalid Edge Filter");
@@ -226,6 +226,7 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
                 << ", prop: " << prop << ", value: " << it->second;
         return it->second;
     };
+
     getters.getAliasProp = [&, this] (const std::string&,
                                       const std::string& prop) -> OptVariantType {
         auto it = this->edgeFilters_.find(prop);
@@ -294,15 +295,22 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
                                                                spaceId_,
                                                                edgeKey.edge_type);
                     }
-                    auto rValues = collectIndexValues(rReader.get(),
-                                                      index->get_fields());
+                    auto rValuesRet = collectIndexValues(rReader.get(),
+                                                         index->get_fields());
+
                     auto rIndexKey = NebulaKeyUtils::edgeIndexKey(partId,
                                                                   indexId,
                                                                   edgeKey.src,
                                                                   edgeKey.ranking,
                                                                   edgeKey.dst,
-                                                                  rValues);
-                    batchHolder->remove(std::move(rIndexKey));
+                                                                  rValuesRet.value());
+                    if (env_->getPartID() != partId &&
+                        env_->getIndexID() != index->get_index_id()) {
+                        batchHolder->remove(std::move(rIndexKey));
+                    } else {
+                        auto deleteOpKey = deleteOperationKey(partId, rIndexKey);
+                        batchHolder->remove(std::move(deleteOpKey));
+                    }
                 }
                 if (reader == nullptr) {
                     reader = RowReader::getEdgePropReader(this->schemaMan_,
@@ -311,15 +319,22 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
                                                           edgeKey.edge_type);
                 }
 
-                auto values = collectIndexValues(reader.get(),
-                                                 index->get_fields());
+                auto valuesRet = collectIndexValues(reader.get(),
+                                                    index->get_fields());
+
                 auto indexKey = NebulaKeyUtils::edgeIndexKey(partId,
                                                              indexId,
                                                              edgeKey.src,
                                                              edgeKey.ranking,
                                                              edgeKey.dst,
-                                                             values);
-                batchHolder->put(std::move(indexKey), "");
+                                                             valuesRet.value());
+                if (env_->getPartID() != partId &&
+                    env_->getIndexID() != index->get_index_id()) {
+                    batchHolder->put(std::move(indexKey), "");
+                } else {
+                    auto modifyOpKey = modifyOperationKey(partId, indexKey);
+                    batchHolder->put(std::move(modifyOpKey), "");
+                }
             }
         }
     }

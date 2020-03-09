@@ -470,8 +470,9 @@ public:
     }
 
     // Wait the specified partition elected
-    static void waitUntilAllElected(kvstore::KVStore* kvstore, GraphSpaceID spaceId,
-        std::set<PartitionID> parts) {
+    static void waitUntilAllElected(kvstore::KVStore* kvstore,
+                                    GraphSpaceID spaceId,
+                                    std::set<PartitionID> parts) {
         auto* nKV = static_cast<kvstore::NebulaStore*>(kvstore);
         const int32_t partNum = parts.size();
         // wait until all part leader exists

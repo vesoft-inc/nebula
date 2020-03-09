@@ -47,8 +47,9 @@ protected:
                                 meta::SchemaManager* schemaMan,
                                 stats::Stats* stats,
                                 folly::Executor* executor = nullptr,
-                                VertexCache* cache = nullptr)
-        : BaseProcessor<RESP>(kvstore, schemaMan, stats)
+                                VertexCache* cache = nullptr,
+                                StorageEnvironment* env = nullptr)
+        : BaseProcessor<RESP>(kvstore, schemaMan, stats, env)
         , executor_(executor)
         , vertexCache_(cache) {}
 

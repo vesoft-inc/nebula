@@ -23,8 +23,9 @@ public:
                                           meta::SchemaManager* schemaMan,
                                           meta::IndexManager* indexMan,
                                           stats::Stats* stats,
-                                          VertexCache* cache = nullptr) {
-        return new AddVerticesProcessor(kvstore, schemaMan, indexMan, stats, cache);
+                                          VertexCache* cache,
+                                          StorageEnvironment* env) {
+        return new AddVerticesProcessor(kvstore, schemaMan, indexMan, stats, cache, env);
     }
 
     void process(const cpp2::AddVerticesRequest& req);
@@ -34,22 +35,14 @@ private:
                                   meta::SchemaManager* schemaMan,
                                   meta::IndexManager* indexMan,
                                   stats::Stats* stats,
-                                  VertexCache* cache)
-            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats)
+                                  VertexCache* cache,
+                                  StorageEnvironment* env)
+            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats, env)
             , indexMan_(indexMan)
             , vertexCache_(cache) {}
 
     std::string addVertices(int64_t version, PartitionID partId,
                             const std::vector<cpp2::Vertex>& vertices);
-
-    std::string findObsoleteIndex(PartitionID partId,
-                                  VertexID vId,
-                                  TagID tagId);
-
-    std::string indexKey(PartitionID partId,
-                         VertexID vId,
-                         RowReader* reader,
-                         std::shared_ptr<nebula::cpp2::IndexItem> index);
 
 private:
     GraphSpaceID                                          spaceId_;

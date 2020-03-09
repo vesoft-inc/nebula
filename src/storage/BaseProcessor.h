@@ -21,8 +21,9 @@
 #include "storage/Collector.h"
 #include "meta/SchemaManager.h"
 #include "time/Duration.h"
-#include "stats/StatsManager.h"
 #include "stats/Stats.h"
+#include "stats/StatsManager.h"
+#include "storage/StorageEnvironment.h"
 
 namespace nebula {
 namespace storage {
@@ -34,10 +35,12 @@ class BaseProcessor {
 public:
     explicit BaseProcessor(kvstore::KVStore* kvstore,
                            meta::SchemaManager* schemaMan,
-                           stats::Stats* stats = nullptr)
+                           stats::Stats* stats = nullptr,
+                           StorageEnvironment* env = nullptr)
             : kvstore_(kvstore)
             , schemaMan_(schemaMan)
-            , stats_(stats) {}
+            , stats_(stats)
+            , env_(env) {}
 
     virtual ~BaseProcessor() = default;
 
@@ -64,6 +67,13 @@ protected:
                                   std::vector<kvstore::KV> data);
 
     void doRemove(GraphSpaceID spaceId, PartitionID partId, std::vector<std::string> keys);
+
+    kvstore::ResultCode doSyncRemove(GraphSpaceID spaceId,
+                                     PartitionID partId,
+                                     std::vector<std::string> keys);
+
+    void doRemoveRange(GraphSpaceID spaceId, PartitionID partId, std::string start,
+                       std::string end);
 
     kvstore::ResultCode doRange(GraphSpaceID spaceId, PartitionID partId, std::string start,
                                 std::string end, std::unique_ptr<kvstore::KVIterator>* iter);
@@ -150,18 +160,40 @@ protected:
         return tHost;
     }
 
-    IndexValues collectIndexValues(RowReader* reader,
-                                   const std::vector<nebula::cpp2::ColumnDef>& cols);
-
-    void collectProps(RowReader* reader, const std::vector<PropContext>& props,
+    void collectProps(RowReader* reader,
+                      const std::vector<PropContext>& props,
                       Collector* collector);
 
     void handleAsync(GraphSpaceID spaceId, PartitionID partId, kvstore::ResultCode code);
+
+    StatusOr<std::string> findObsoleteValue(GraphSpaceID space,
+                                            PartitionID part,
+                                            const std::string& prefix);
+
+    StatusOr<IndexValues> collectIndexValues(RowReader* reader,
+                                             const std::vector<nebula::cpp2::ColumnDef>& cols);
+
+    std::string vertexIndexKey(PartitionID partId,
+                               VertexID vId,
+                               RowReader* reader,
+                               std::shared_ptr<nebula::cpp2::IndexItem> index);
+
+    std::string edgeIndexKey(PartitionID partId,
+                             RowReader* reader,
+                             const folly::StringPiece& rawKey,
+                             std::shared_ptr<nebula::cpp2::IndexItem> index);
+
+    std::string modifyOperationKey(PartitionID partId, std::string key);
+
+    std::string deleteOperationKey(PartitionID partId, std::string key);
+
+    bool writeBlocking(GraphSpaceID space, bool sign);
 
 protected:
     kvstore::KVStore*                               kvstore_{nullptr};
     meta::SchemaManager*                            schemaMan_{nullptr};
     stats::Stats*                                   stats_{nullptr};
+    StorageEnvironment*                             env_{nullptr};
     RESP                                            resp_;
     folly::Promise<RESP>                            promise_;
     cpp2::ResponseCommon                            result_;

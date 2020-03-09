@@ -10,6 +10,7 @@
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
+#include "storage/StorageEnvironment.h"
 #include "storage/mutate/AddEdgesProcessor.h"
 
 namespace nebula {
@@ -20,10 +21,13 @@ TEST(AddEdgesTest, SimpleTest) {
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
+    stats::Stats* stats = new stats::Stats();
+    StorageEnvironment* env = new StorageEnvironment();
     auto* processor = AddEdgesProcessor::instance(kv.get(),
                                                   schemaMan.get(),
                                                   indexMan.get(),
-                                                  nullptr);
+                                                  stats,
+                                                  env);
 
     LOG(INFO) << "Build AddEdgesRequest...";
     cpp2::AddEdgesRequest req;

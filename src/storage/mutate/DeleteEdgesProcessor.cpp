@@ -94,6 +94,7 @@ DeleteEdgesProcessor::deleteEdges(GraphSpaceID spaceId,
         }
         bool isLatestVE = true;
         while (iter->valid()) {
+            auto key = iter->key();
             /**
              * just get the latest version edge for index.
              */
@@ -112,20 +113,27 @@ DeleteEdgesProcessor::deleteEdges(GraphSpaceID spaceId,
                                 return folly::none;
                             }
                         }
-                        auto values = collectIndexValues(reader.get(),
-                                                         index->get_fields());
+                        auto valuesRet = collectIndexValues(reader.get(),
+                                                            index->get_fields());
                         auto indexKey = NebulaKeyUtils::edgeIndexKey(partId,
                                                                      indexId,
                                                                      srcId,
                                                                      rank,
                                                                      dstId,
-                                                                     values);
-                        batchHolder->remove(std::move(indexKey));
+                                                                     valuesRet.value());
+                        if (env_->getPartID() != partId &&
+                            env_->getIndexID() != index->get_index_id()) {
+                            batchHolder->remove(std::move(indexKey));
+                        } else {
+                            auto deleteOpKey = deleteOperationKey(partId, indexKey);
+                            batchHolder->remove(std::move(deleteOpKey));
+                        }
                     }
                 }
                 isLatestVE = false;
             }
-            batchHolder->remove(iter->key().str());
+
+            batchHolder->remove(key.str());
             iter->next();
         }
     }

@@ -20,8 +20,9 @@ public:
                                              meta::SchemaManager* schemaMan,
                                              meta::IndexManager* indexMan,
                                              stats::Stats* stats,
-                                             VertexCache* cache = nullptr) {
-        return new DeleteVerticesProcessor(kvstore, schemaMan, indexMan, stats, cache);
+                                             VertexCache* cache,
+                                             StorageEnvironment* env) {
+        return new DeleteVerticesProcessor(kvstore, schemaMan, indexMan, stats, cache, env);
     }
 
     void process(const cpp2::DeleteVerticesRequest& req);
@@ -31,8 +32,9 @@ private:
                                      meta::SchemaManager* schemaMan,
                                      meta::IndexManager* indexMan,
                                      stats::Stats* stats,
-                                     VertexCache* cache)
-            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats)
+                                     VertexCache* cache,
+                                     StorageEnvironment* env)
+            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats, env)
             , indexMan_(indexMan)
             , vertexCache_(cache) {}
 

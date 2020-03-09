@@ -8,7 +8,6 @@
 #include "utils/NebulaKeyUtils.h"
 #include <algorithm>
 #include <limits>
-#include "time/WallClock.h"
 
 DECLARE_bool(enable_vertex_cache);
 
@@ -102,7 +101,7 @@ std::string AddVerticesProcessor::addVertices(int64_t version, PartitionID partI
     });
 
     for (auto& v : newVertices) {
-        std::string val;
+        StatusOr<std::string> valResult;
         std::unique_ptr<RowReader> nReader;
         auto tagId = NebulaKeyUtils::getTagId(v.first);
         auto vId = NebulaKeyUtils::getVertexId(v.first);
@@ -111,28 +110,37 @@ std::string AddVerticesProcessor::addVertices(int64_t version, PartitionID partI
                 /*
                  * step 1 , Delete old version index if exists.
                  */
-                if (val.empty()) {
-                    val = findObsoleteIndex(partId, vId, tagId);
+                if (!valResult.ok()) {
+                    auto prefix = NebulaKeyUtils::vertexPrefix(partId, vId, tagId);
+                    valResult = findObsoleteValue(spaceId_, partId, prefix);
                 }
-                if (!val.empty()) {
-                    auto reader = RowReader::getTagPropReader(this->schemaMan_,
-                                                              val,
+
+                if (valResult.ok()) {
+                    auto reader = RowReader::getTagPropReader(schemaMan_,
+                                                              valResult.value(),
                                                               spaceId_,
                                                               tagId);
                     if (reader == nullptr) {
                         LOG(WARNING) << "Bad format row";
                         return "";
                     }
-                    auto oi = indexKey(partId, vId, reader.get(), index);
-                    if (!oi.empty()) {
-                        batchHolder->remove(std::move(oi));
+
+                    auto originalIndexKey = vertexIndexKey(partId, vId, reader.get(), index);
+                    if (!originalIndexKey.empty()) {
+                        if (env_->getPartID() != partId &&
+                            env_->getIndexID() != index->get_index_id()) {
+                            batchHolder->remove(std::move(originalIndexKey));
+                        } else {
+                            auto modifyOpKey = modifyOperationKey(partId, originalIndexKey);
+                            batchHolder->remove(std::move(modifyOpKey));
+                        }
                     }
                 }
                 /*
                  * step 2 , Insert new vertex index
                  */
                 if (nReader == nullptr) {
-                    nReader = RowReader::getTagPropReader(this->schemaMan_,
+                    nReader = RowReader::getTagPropReader(schemaMan_,
                                                           v.second,
                                                           spaceId_,
                                                           tagId);
@@ -141,8 +149,15 @@ std::string AddVerticesProcessor::addVertices(int64_t version, PartitionID partI
                         return "";
                     }
                 }
-                auto ni = indexKey(partId, vId, nReader.get(), index);
-                batchHolder->put(std::move(ni), "");
+
+                auto currentIndexKey = vertexIndexKey(partId, vId, nReader.get(), index);
+                if (env_->getPartID() != partId &&
+                    env_->getIndexID() != index->get_index_id()) {
+                    batchHolder->put(std::move(currentIndexKey), "");
+                } else {
+                    auto modifyOpKey = modifyOperationKey(partId, currentIndexKey);
+                    batchHolder->put(std::move(modifyOpKey), "");
+                }
             }
         }
         /*
@@ -153,33 +168,6 @@ std::string AddVerticesProcessor::addVertices(int64_t version, PartitionID partI
         batchHolder->put(std::move(key), std::move(prop));
     }
     return encodeBatchValue(batchHolder->getBatch());
-}
-
-std::string AddVerticesProcessor::findObsoleteIndex(PartitionID partId,
-                                                    VertexID vId,
-                                                    TagID tagId) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId, vId, tagId);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(this->spaceId_, partId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Error! ret = " << static_cast<int32_t>(ret)
-                   << ", spaceId " << this->spaceId_;
-        return "";
-    }
-    if (iter && iter->valid()) {
-        return iter->val().str();
-    }
-    return "";
-}
-
-std::string AddVerticesProcessor::indexKey(PartitionID partId,
-                                           VertexID vId,
-                                           RowReader* reader,
-                                           std::shared_ptr<nebula::cpp2::IndexItem> index) {
-    auto values = collectIndexValues(reader, index->get_fields());
-    return NebulaKeyUtils::vertexIndexKey(partId,
-                                          index->get_index_id(),
-                                          vId, values);
 }
 
 }  // namespace storage

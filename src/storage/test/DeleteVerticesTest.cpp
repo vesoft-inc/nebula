@@ -9,6 +9,7 @@
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
+#include "storage/StorageEnvironment.h"
 #include "storage/mutate/DeleteVerticesProcessor.h"
 #include "storage/mutate/AddVerticesProcessor.h"
 #include "utils/NebulaKeyUtils.h"
@@ -22,12 +23,16 @@ TEST(DeleteVerticesTest, SimpleTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
+    stats::Stats* stats = new stats::Stats();
+    StorageEnvironment* env = new StorageEnvironment();
     // Add vertices
     {
         auto* processor = AddVerticesProcessor::instance(kv.get(),
                                                          schemaMan.get(),
                                                          indexMan.get(),
-                                                         nullptr);
+                                                         stats,
+                                                         nullptr,
+                                                         env);
         cpp2::AddVerticesRequest req;
         req.space_id = 0;
         req.overwritable = false;
@@ -73,7 +78,9 @@ TEST(DeleteVerticesTest, SimpleTest) {
         auto* processor = DeleteVerticesProcessor::instance(kv.get(),
                                                             schemaMan.get(),
                                                             indexMan.get(),
-                                                            nullptr);
+                                                            stats,
+                                                            nullptr,
+                                                            env);
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();

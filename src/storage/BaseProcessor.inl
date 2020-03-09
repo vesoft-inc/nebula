@@ -93,6 +93,36 @@ void BaseProcessor<RESP>::doRemove(GraphSpaceID spaceId,
         });
 }
 
+template <typename RESP>
+kvstore::ResultCode BaseProcessor<RESP>::doSyncRemove(GraphSpaceID spaceId,
+                                                      PartitionID partId,
+                                                      std::vector<std::string> keys) {
+    folly::Baton<true, std::atomic> baton;
+    auto ret = kvstore::ResultCode::SUCCEEDED;
+    kvstore_->asyncMultiRemove(spaceId,
+                               partId,
+                               std::move(keys),
+                               [&ret, &baton] (kvstore::ResultCode code) {
+        if (kvstore::ResultCode::SUCCEEDED != code) {
+            ret = code;
+        }
+        baton.post();
+    });
+    baton.wait();
+    return ret;
+}
+
+template <typename RESP>
+void BaseProcessor<RESP>::doRemoveRange(GraphSpaceID spaceId,
+                                        PartitionID partId,
+                                        std::string start,
+                                        std::string end) {
+    this->kvstore_->asyncRemoveRange(
+        spaceId, partId, start, end, [spaceId, partId, this](kvstore::ResultCode code) {
+            handleAsync(spaceId, partId, code);
+        });
+}
+
 template<typename RESP>
 kvstore::ResultCode BaseProcessor<RESP>::doRange(GraphSpaceID spaceId,
                                                  PartitionID partId,
@@ -115,25 +145,6 @@ kvstore::ResultCode BaseProcessor<RESP>::doRangeWithPrefix(
         GraphSpaceID spaceId, PartitionID partId, const std::string& start,
         const std::string& prefix, std::unique_ptr<kvstore::KVIterator>* iter) {
     return kvstore_->rangeWithPrefix(spaceId, partId, start, prefix, iter);
-}
-
-template <typename RESP>
-IndexValues
-BaseProcessor<RESP>::collectIndexValues(RowReader* reader,
-                                        const std::vector<nebula::cpp2::ColumnDef>& cols) {
-    IndexValues values;
-    if (reader == nullptr) {
-        return values;
-    }
-    for (auto& col : cols) {
-        auto res = RowReader::getPropByName(reader, col.get_name());
-        if (!ok(res)) {
-            LOG(ERROR) << "Skip bad column prop " << col.get_name();
-        }
-        auto val = NebulaKeyUtils::encodeVariant(value(std::move(res)));
-        values.emplace_back(col.get_type().get_type(), std::move(val));
-    }
-    return values;
 }
 
 template <typename RESP>
@@ -169,6 +180,93 @@ void BaseProcessor<RESP>::collectProps(RowReader* reader,
             }
         }
     }
+}
+
+template <typename RESP>
+StatusOr<std::string> BaseProcessor<RESP>::findObsoleteValue(GraphSpaceID space,
+                                                             PartitionID part,
+                                                             const std::string& prefix) {
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto ret = kvstore_->prefix(space, part, prefix, &iter);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "Error! ret = " << static_cast<int32_t>(ret)
+                   << ", space " << space;
+        return Status::Error("Can't find the obsolete value");
+    }
+    if (iter && iter->valid()) {
+        return iter->val().str();
+    }
+    return Status::Error("Not existent the obsolete value");
+}
+
+template <typename RESP>
+StatusOr<IndexValues>
+BaseProcessor<RESP>::collectIndexValues(RowReader* reader,
+                                        const std::vector<nebula::cpp2::ColumnDef>& cols) {
+    IndexValues values;
+    if (reader == nullptr) {
+        return values;
+    }
+    for (auto& col : cols) {
+        auto res = RowReader::getPropByName(reader, col.get_name());
+        if (!ok(res)) {
+            LOG(ERROR) << "Bad column %s" << col.get_name();
+            return Status::Error(folly::stringPrintf("Bad column %s", col.get_name().c_str()));
+        }
+        auto val = NebulaKeyUtils::encodeVariant(value(std::move(res)));
+        values.emplace_back(col.get_type().get_type(), std::move(val));
+    }
+    return values;
+}
+
+template <typename RESP>
+std::string BaseProcessor<RESP>::vertexIndexKey(PartitionID partId,
+                                                VertexID vId,
+                                                RowReader* reader,
+                                                std::shared_ptr<nebula::cpp2::IndexItem> index) {
+    auto valuesRet = collectIndexValues(reader, index->get_fields());
+    return NebulaKeyUtils::vertexIndexKey(partId,
+                                          index->get_index_id(),
+                                          vId,
+                                          std::move(valuesRet).value());
+}
+
+template <typename RESP>
+std::string BaseProcessor<RESP>::edgeIndexKey(PartitionID partId,
+                                              RowReader* reader,
+                                              const folly::StringPiece& rawKey,
+                                              std::shared_ptr<nebula::cpp2::IndexItem> index) {
+    auto valuesRet = collectIndexValues(reader, index->get_fields());
+    return NebulaKeyUtils::edgeIndexKey(partId,
+                                        index->get_index_id(),
+                                        NebulaKeyUtils::getSrcId(rawKey),
+                                        NebulaKeyUtils::getRank(rawKey),
+                                        NebulaKeyUtils::getDstId(rawKey),
+                                        std::move(valuesRet).value());
+}
+
+template <typename RESP>
+std::string BaseProcessor<RESP>::modifyOperationKey(PartitionID partId, std::string key) {
+    LOG(INFO) << "ModifyOperationKey Part: " << partId << " " << key;
+    return NebulaKeyUtils::modifyOperationKey(partId, key);
+}
+
+template <typename RESP>
+std::string BaseProcessor<RESP>::deleteOperationKey(PartitionID partId, std::string key) {
+    LOG(INFO) << "DeleteOperationKey Part: " << partId << " " << key;
+    return NebulaKeyUtils::deleteOperationKey(partId, key);
+}
+
+template <typename RESP>
+bool BaseProcessor<RESP>::writeBlocking(GraphSpaceID space, bool sign) {
+    auto code = kvstore_->setWriteBlocking(space, sign);
+    if (code != kvstore::ResultCode::SUCCEEDED) {
+        cpp2::ResultCode thriftRet;
+        thriftRet.set_code(to(code));
+        codes_.emplace_back(std::move(thriftRet));
+        return false;
+    }
+    return true;
 }
 
 }  // namespace storage

@@ -85,6 +85,18 @@ TEST_F(IndexTest, TagIndex) {
     }
     {
         cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG INDEX single_course_index ON course(teacher)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG INDEX multi_course_index ON course(teacher, score)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
         auto query = "INSERT VERTEX person(name, age, gender, email) VALUES "
                      "uuid(\"Tim\"):  (\"Tim\",  18, \"M\", \"tim@ve.com\"), "
                      "uuid(\"Tony\"): (\"Tony\", 18, \"M\", \"tony@ve.com\"), "
@@ -103,9 +115,9 @@ TEST_F(IndexTest, TagIndex) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "REBUILD TAG INDEX single_person_index";
+        std::string query = "REBUILD TAG INDEX single_course_index";
         auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -115,10 +127,11 @@ TEST_F(IndexTest, TagIndex) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "REBUILD TAG INDEX multi_person_index";
+        std::string query = "REBUILD TAG INDEX multi_course_index";
         auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    sleep(3);
     // Show Tag Index Status
     {
         cpp2::ExecutionResponse resp;
@@ -175,6 +188,8 @@ TEST_F(IndexTest, TagIndex) {
         std::vector<std::tuple<int32_t, std::string>> expected{
             {4, "single_person_index"},
             {5, "multi_person_index"},
+            {6, "single_course_index"},
+            {7, "multi_course_index"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -268,6 +283,18 @@ TEST_F(IndexTest, EdgeIndex) {
     }
     {
         cpp2::ExecutionResponse resp;
+        std::string query = "CREATE EDGE INDEX single_transfer_index ON transfer(amount)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE EDGE INDEX multi_transfer_index ON transfer(amount, bank)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
         auto query = "INSERT EDGE friend(degree, start_time) VALUES "
                      "uuid(\"Tim\")  -> uuid(\"May\"):  (\"Good\", 18), "
                      "uuid(\"Tim\")  -> uuid(\"Tony\"): (\"Good\", 18), "
@@ -286,9 +313,9 @@ TEST_F(IndexTest, EdgeIndex) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "REBUILD EDGE INDEX single_friend_index";
+        std::string query = "REBUILD EDGE INDEX single_transfer_index";
         auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -298,10 +325,11 @@ TEST_F(IndexTest, EdgeIndex) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "REBUILD EDGE INDEX multi_friend_index";
+        std::string query = "REBUILD EDGE INDEX multi_transfer_index";
         auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    sleep(3);
     // Show EDGE Index Status
     {
         cpp2::ExecutionResponse resp;
@@ -357,8 +385,10 @@ TEST_F(IndexTest, EdgeIndex) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int32_t, std::string>> expected{
-            {9, "single_friend_index"},
-            {10, "multi_friend_index"},
+            {11,  "single_friend_index"},
+            {12, "multi_friend_index"},
+            {13, "single_transfer_index"},
+            {14, "multi_transfer_index"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }

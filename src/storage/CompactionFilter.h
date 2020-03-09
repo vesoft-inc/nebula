@@ -56,6 +56,8 @@ public:
                 VLOG(3) << "Index invalid for the key " << key;
                 return true;
             }
+        } else if (NebulaKeyUtils::isOperationKey(key)) {
+            return true;
         } else {
             VLOG(3) << "Skip the system key inside, key " << key;
         }

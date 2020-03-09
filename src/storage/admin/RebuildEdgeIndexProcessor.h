@@ -11,16 +11,19 @@
 #include "kvstore/KVIterator.h"
 #include "meta/SchemaManager.h"
 #include "storage/BaseProcessor.h"
+#include "storage/admin/RebuildIndexProcessor.h"
 
 namespace nebula {
 namespace storage {
 
-class RebuildEdgeIndexProcessor : public BaseProcessor<cpp2::AdminExecResp> {
+class RebuildEdgeIndexProcessor : public RebuildIndexProcessor {
 public:
     static RebuildEdgeIndexProcessor* instance(kvstore::KVStore* kvstore,
                                                meta::SchemaManager* schemaMan,
-                                               meta::IndexManager* indexMan) {
-        return new RebuildEdgeIndexProcessor(kvstore, schemaMan, indexMan);
+                                               meta::IndexManager* indexMan,
+                                               stats::Stats* stats,
+                                               StorageEnvironment* env) {
+        return new RebuildEdgeIndexProcessor(kvstore, schemaMan, indexMan, stats, env);
     }
 
     void process(const cpp2::RebuildIndexRequest& req);
@@ -28,17 +31,20 @@ public:
 private:
     explicit RebuildEdgeIndexProcessor(kvstore::KVStore* kvstore,
                                        meta::SchemaManager* schemaMan,
-                                       meta::IndexManager* indexMan)
-            : BaseProcessor<cpp2::AdminExecResp>(kvstore, schemaMan, nullptr)
-            , indexMan_(indexMan) {}
+                                       meta::IndexManager* indexMan,
+                                       stats::Stats* stats,
+                                       StorageEnvironment* env)
+            : RebuildIndexProcessor(kvstore, schemaMan, indexMan, stats, env) {}
 
-    std::string partitionRebuildIndex(GraphSpaceID space,
-                                      PartitionID part,
-                                      EdgeType edge,
-                                      std::shared_ptr<nebula::cpp2::IndexItem> item);
+    StatusOr<std::shared_ptr<nebula::cpp2::IndexItem>>
+    getIndex(GraphSpaceID space, IndexID indexID) override;
 
-private:
-    meta::IndexManager* indexMan_{nullptr};
+    void buildIndex(GraphSpaceID space,
+                    PartitionID part,
+                    nebula::cpp2::SchemaID SchemaID,
+                    IndexID indexID,
+                    kvstore::KVIterator* iter,
+                    const std::vector<nebula::cpp2::ColumnDef>& cols) override;
 };
 
 }  // namespace storage

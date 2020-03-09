@@ -119,7 +119,6 @@ struct Pair {
  ** GUEST is a read-only role for a given Graph Space. A Guest cannot modify the data in the Graph Space.
  ** Refer to header file src/graph/PermissionManager.h for details.
  **/
-
 enum RoleType {
     GOD    = 0x01,
     ADMIN  = 0x02,

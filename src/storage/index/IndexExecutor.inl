@@ -247,8 +247,8 @@ kvstore::ResultCode IndexExecutor<RESP>::getEdgeRow(PartitionID partId,
     auto ret = this->kvstore_->prefix(spaceId_, partId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "Error! ret = "
-                << static_cast<int32_t>(ret)
-                << ", spaceId " << spaceId_;
+                   << static_cast<int32_t>(ret)
+                   << ", spaceId " << spaceId_;
         return ret;
     }
     if (iter && iter->valid()) {

@@ -28,6 +28,8 @@ TEST(CheckpointTest, simpleTest) {
         auto* processor = AddVerticesProcessor::instance(kv.get(),
                                                          schemaMan.get(),
                                                          indexMan.get(),
+                                                         nullptr,
+                                                         nullptr,
                                                          nullptr);
         cpp2::AddVerticesRequest req;
         req.space_id = 0;
