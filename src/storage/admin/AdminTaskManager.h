@@ -39,7 +39,14 @@ public:
     FutureResultCode addAsyncTask(const cpp2::AddAdminTaskRequest& req,
                                   nebula::kvstore::NebulaStore* store);
 
-    FutureResultCode addAsyncTask(JobIdAndTaskId taskHandle, std::shared_ptr<AdminTask> task);
+    FutureResultCode addAsyncTask(JobIdAndTaskId taskHandle,
+                                  std::shared_ptr<AdminTask> task);
+
+    void addAsyncTask2(JobIdAndTaskId taskHandle,
+                       std::shared_ptr<AdminTask> task,
+                       std::function<void(ResultCode)> cb);
+
+    void invoke();
 
     ResultCode cancelTask(const cpp2::AddAdminTaskRequest& req);
 
@@ -58,6 +65,8 @@ private:
     std::condition_variable                             notEmpty_;
     std::map<JobIdAndTaskId, TaskAndResult>             taskQueue_;
     bool                                                shutdown_;
+
+    std::vector<AdminSubTask>                   subTasksQueue_;
 };
 
 }  // namespace storage

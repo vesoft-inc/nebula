@@ -9,6 +9,8 @@
 #include "storage/admin/AdminTaskManager.h"
 
 DEFINE_int32(concurrent_tasks_num, 1, "Number of job concurrent tasks num");
+DEFINE_uint32(storage_task_concurrency, 10, "The tasks number could be invoked simultaneously");
+
 
 namespace nebula {
 namespace storage {
@@ -35,23 +37,26 @@ AdminTaskManager::addAsyncTask(JobIdAndTaskId taskHandle, std::shared_ptr<AdminT
     return fut;
 }
 
-void AdminTaskManager::pickTaskThread() {
-    while (!shutdown_) {
-        std::unique_lock<std::mutex> lk(mutex_);
-        LOG(INFO) << "AdminTaskManager::pickTaskThread() waiting for coming task";
-        notEmpty_.wait(lk, [&]{ return shutdown_ || !taskQueue_.empty(); });
-
-        if (shutdown_) {
-            LOG(INFO) << "AdminTaskManager::pickTaskThread() shutdown called, exit";
-            break;
+void AdminTaskManager::addAsyncTask2(JobIdAndTaskId taskHandle,
+                                     std::shared_ptr<AdminTask> task,
+                                     std::function<void(ResultCode)> cb) {
+    UNUSED(taskHandle);
+    {
+        std::lock_guard<std::mutex> lk(mutex_);
+        task->setCallback(cb);
+        auto errOrSubTasks = task->genSubTasks();
+        if (!nebula::ok(errOrSubTasks)) {
+            LOG(FATAL) << "need to do sth";
+            return;
         }
-        LOG(INFO) << "AdminTaskManager::pickTaskThread() task picked";
-        auto taskAndResult = taskQueue_.begin();
-        auto& spAdminTask = taskAndResult->second.first;
-        auto& result = taskAndResult->second.second;
+        auto& subTasks = nebula::value(errOrSubTasks);
+        subTasksQueue_.insert(subTasksQueue_.end(), subTasks.begin(), subTasks.end());
+        notEmpty_.notify_one();
+    }
+}
 
-        result.setValue(spAdminTask->run());
-        taskQueue_.erase(taskQueue_.begin());
+void AdminTaskManager::invoke() {
+    while (!shutdown_) {
     }
 }
 
@@ -91,6 +96,26 @@ void AdminTaskManager::shutdown() {
     bgThread_->stop();
     bgThread_->wait();
     LOG(INFO) << "exit " << __PRETTY_FUNCTION__;
+}
+
+void AdminTaskManager::pickTaskThread() {
+    while (!shutdown_) {
+        std::unique_lock<std::mutex> lk(mutex_);
+        LOG(INFO) << "AdminTaskManager::pickTaskThread() waiting for coming task";
+        notEmpty_.wait(lk, [&]{ return shutdown_ || !taskQueue_.empty(); });
+
+        if (shutdown_) {
+            LOG(INFO) << "AdminTaskManager::pickTaskThread() shutdown called, exit";
+            break;
+        }
+        LOG(INFO) << "AdminTaskManager::pickTaskThread() task picked";
+        auto taskAndResult = taskQueue_.begin();
+        auto& spAdminTask = taskAndResult->second.first;
+        auto& result = taskAndResult->second.second;
+
+        result.setValue(spAdminTask->run());
+        taskQueue_.erase(taskQueue_.begin());
+    }
 }
 
 }  // namespace storage

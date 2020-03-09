@@ -26,6 +26,14 @@ public:
 private:
     explicit AdminTaskProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr, nullptr) {}
+
+    void setInternalRC(kvstore::ResultCode rc) {
+        if (rc != kvstore::ResultCode::SUCCEEDED) {
+            cpp2::ResultCode thriftRet;
+            thriftRet.set_code(to(rc));
+            codes_.emplace_back(std::move(thriftRet));
+        }
+    }
 };
 }  // namespace storage
 }  // namespace nebula
