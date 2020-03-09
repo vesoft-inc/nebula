@@ -1,0 +1,18 @@
+apiVersion: v1
+name: nebula
+description: A distributed, fast open-source graph database 
+    featuring horizontal scalability and high availability 
+    https://nebula-graph.io
+type: application
+version: 0.1 
+appVersion: 1.0.0-rc2 
+keywords: 
+- graph-database
+- distributed
+- database
+- graphdb
+home: https://nebula-graph.io
+maintainers:
+- name: flyingcat 
+  email: badgangkiller@gmail.com 
+engine: gotpl
