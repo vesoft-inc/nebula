@@ -359,6 +359,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
                                     auto error = "Out of rang of the LABEL length, "
                                                   "the  max length of LABLE is " +
                                                   std::to_string(MAX_STRING) + ":";
+                                    delete yylval->strval;
                                     throw GraphParser::syntax_error(*yylloc, error);
                                 }
                                 return TokenType::LABEL;
