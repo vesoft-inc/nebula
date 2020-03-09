@@ -248,36 +248,6 @@ folly::SemiFuture<StorageRpcResponse<cpp2::EdgePropResponse>> StorageClient::get
         });
 }
 
-folly::SemiFuture<StorageRpcResponse<storage::cpp2::EdgeKeysResponse>> StorageClient::getEdgeKeys(
-    GraphSpaceID space,
-    std::vector<VertexID> vids,
-    folly::EventBase* evb) {
-    auto status = clusterIdsToHosts(space, vids, [] (const VertexID v) { return v; });
-
-    if (!status.ok()) {
-        return folly::makeFuture<StorageRpcResponse<cpp2::EdgeKeysResponse>>(
-            std::runtime_error(status.status().toString()));
-    }
-
-    auto& clusters = status.value();
-    std::unordered_map<HostAddr, cpp2::EdgeKeysRequest> requests;
-    for (auto& c : clusters) {
-        auto& host = c.first;
-        auto& req = requests[host];
-        req.set_space_id(space);
-        req.set_parts(std::move(c.second));
-    }
-
-    return collectResponse(
-        evb, std::move(requests),
-        [](cpp2::StorageServiceAsyncClient* client,
-           const cpp2::EdgeKeysRequest& r) {
-            return client->future_getEdgeKeys(r);},
-        [](const std::pair<const PartitionID, std::vector<VertexID>>& p) {
-            return p.first;
-        });
-}
-
 folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::deleteEdges(
     GraphSpaceID space,
     std::vector<storage::cpp2::EdgeKey> edges,

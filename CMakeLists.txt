@@ -43,6 +43,7 @@ option(ENABLE_NATIVE "Whether to build native client" OFF)
 option(ENABLE_CCACHE "Whether to use ccache to speed up compiling" ON)
 option(ENABLE_ASAN "Whether to turn AddressSanitizer ON or OFF" OFF)
 option(ENABLE_TESTING "Whether to turn unit test ON or OFF" ON)
+option(ENABLE_COVERAGE "Whether to turn unit test coverage ON or OFF" OFF)
 option(ENABLE_UBSAN "Whether to turn Undefined Behavior Sanitizer ON or OFF" OFF)
 option(ENABLE_FUZZ_TEST "Whether to turn Fuzz Test ON or OFF" OFF)
 option(ENABLE_WERROR "Whether to error on warnings" ON)
@@ -73,6 +74,15 @@ endif()
 set(CMAKE_CXX_STANDARD 14)  # specify the C++ standard
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+# coverage
+if (ENABLE_TESTING AND ENABLE_COVERAGE)
+    add_compile_options(--coverage)
+    add_compile_options(-g)
+    add_compile_options(-O0)
+
+    set(COVERAGES --coverage)
+endif()
 
 # To detect if ccache is available
 find_program(ccache_program_found "ccache")
@@ -517,6 +527,7 @@ macro(nebula_link_libraries target)
         ${GETTIME_LIB}
         ${libatomic_link_flags}
         -pthread
+        ${COVERAGES}
     )
 endmacro(nebula_link_libraries)
 

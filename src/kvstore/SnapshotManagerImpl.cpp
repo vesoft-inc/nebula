@@ -11,7 +11,7 @@ DEFINE_int32(snapshot_batch_size, 1024 * 1024 * 10, "batch size for snapshot");
 
 namespace nebula {
 namespace kvstore {
-
+const int32_t kReserveNum = 1024 * 4;
 void SnapshotManagerImpl::accessAllRowsInSnapshot(GraphSpaceID spaceId,
                                                   PartitionID partId,
                                                   raftex::SnapshotCallback cb) {
@@ -25,16 +25,21 @@ void SnapshotManagerImpl::accessAllRowsInSnapshot(GraphSpaceID spaceId,
     if (ret != ResultCode::SUCCEEDED) {
         LOG(INFO) << "[spaceId:" << spaceId << ", partId:" << partId << "] access prefix failed"
                   << ", error code:" << static_cast<int32_t>(ret);
-        cb(std::move(data), totalCount, totalSize, raftex::SnapshotStatus::FAILED);
+        cb(data, totalCount, totalSize, raftex::SnapshotStatus::FAILED);
         return;
     }
-    data.reserve(1024);
+    data.reserve(kReserveNum);
     int32_t batchSize = 0;
     while (iter && iter->valid()) {
         if (batchSize >= FLAGS_snapshot_batch_size) {
-            cb(std::move(data), totalCount, totalSize, raftex::SnapshotStatus::IN_PROGRESS);
-            data.clear();
-            batchSize = 0;
+            if (cb(data, totalCount, totalSize, raftex::SnapshotStatus::IN_PROGRESS)) {
+                data.clear();
+                batchSize = 0;
+            } else {
+                LOG(INFO) << "[spaceId:" << spaceId << ", partId:" << partId
+                          << "] callback invoked failed";
+                return;
+            }
         }
         auto key = iter->key();
         auto val = iter->val();
@@ -44,7 +49,7 @@ void SnapshotManagerImpl::accessAllRowsInSnapshot(GraphSpaceID spaceId,
         totalCount++;
         iter->next();
     }
-    cb(std::move(data), totalCount, totalSize, raftex::SnapshotStatus::DONE);
+    cb(data, totalCount, totalSize, raftex::SnapshotStatus::DONE);
 }
 }  // namespace kvstore
 }  // namespace nebula

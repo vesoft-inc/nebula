@@ -556,7 +556,8 @@ OptVariantType UnaryExpression::eval(Getters &getters) const {
     }
 
     return OptVariantType(Status::Error(folly::sformat(
-        "attempt to perform unary arithmetic on a {}", value.value().type().name())));
+        "attempt to perform unary arithmetic on a `{}'",
+        VARIANT_TYPE_NAME[value.value().which()])));
 }
 
 Status UnaryExpression::prepare() {
@@ -820,7 +821,8 @@ OptVariantType ArithmeticExpression::eval(Getters &getters) const {
     }
 
     return OptVariantType(Status::Error(folly::sformat(
-        "attempt to perform arithmetic on {} with {}", l.type().name(), r.type().name())));
+        "attempt to perform arithmetic on `{}' with `{}'",
+        VARIANT_TYPE_NAME[l.which()], VARIANT_TYPE_NAME[r.which()])));
 }
 
 Status ArithmeticExpression::prepare() {

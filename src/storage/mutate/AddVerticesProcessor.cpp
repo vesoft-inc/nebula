@@ -35,7 +35,7 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
             auto partId = pv.first;
             const auto& vertices = pv.second;
             std::vector<kvstore::KV> data;
-            std::for_each(vertices.begin(), vertices.end(), [&](auto& v){
+            std::for_each(vertices.begin(), vertices.end(), [&](auto& v) {
                 const auto& tags = v.get_tags();
                 std::for_each(tags.begin(), tags.end(), [&](auto& tag) {
                     VLOG(3) << "PartitionID: " << partId << ", VertexID: " << v.get_id()
@@ -111,7 +111,7 @@ std::string AddVerticesProcessor::addVertices(int64_t version, PartitionID partI
                 /*
                  * step 1 , Delete old version index if exists.
                  */
-                if (val.empty() && !FLAGS_ignore_index_check_pre_insert) {
+                if (val.empty()) {
                     val = findObsoleteIndex(partId, vId, tagId);
                 }
                 if (!val.empty()) {
@@ -133,10 +133,7 @@ std::string AddVerticesProcessor::addVertices(int64_t version, PartitionID partI
                                                           spaceId_,
                                                           tagId);
                 }
-                auto ni = indexKey(partId,
-                                   vId,
-                                   nReader.get(),
-                                   index);
+                auto ni = indexKey(partId, vId, nReader.get(), index);
                 batchHolder->put(std::move(ni), "");
             }
         }
