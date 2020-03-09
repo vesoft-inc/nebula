@@ -16,6 +16,8 @@
 #include <thrift/lib/cpp2/protocol/ProtocolReaderStructReadState.h>
 
 #include "datatypes/Value.h"
+#include "datatypes/Map.h"
+#include "datatypes/List.h"
 
 namespace apache {
 namespace thrift {

@@ -19,9 +19,20 @@ class NebulaSchemaProvider : public SchemaProviderIf {
 public:
     class SchemaField final : public SchemaProviderIf::Field {
     public:
-        SchemaField(std::string name, cpp2::PropertyType type)
+        SchemaField(std::string name,
+                    cpp2::PropertyType type,
+                    bool nullable,
+                    bool hasDefault,
+                    Value defaultValue,
+                    size_t size,
+                    size_t offset)
             : name_(std::move(name))
-            , type_(std::move(type)) {}
+            , type_(std::move(type))
+            , nullable_(nullable)
+            , hasDefault_(hasDefault)
+            , defaultValue_(defaultValue)
+            , size_(size)
+            , offset_(offset) {}
 
         const char* name() const override {
             return name_.c_str();
@@ -31,8 +42,8 @@ public:
             return type_;
         }
 
-        bool isValid() const override {
-            return true;
+        bool nullable() const override {
+            return nullable_;
         }
 
         bool hasDefault() const override {
@@ -43,11 +54,22 @@ public:
             return defaultValue_;
         }
 
+        size_t size() const override {
+            return size_;
+        }
+
+        size_t offset() const override {
+            return offset_;
+        }
+
     private:
         std::string name_;
         cpp2::PropertyType type_;
+        bool nullable_;
         bool hasDefault_;
         Value defaultValue_;
+        size_t size_;
+        size_t offset_;
     };
 
 public:
@@ -56,17 +78,22 @@ public:
     SchemaVer getVersion() const noexcept override;
     size_t getNumFields() const noexcept override;
 
+    size_t size() const noexcept override;
+
     int64_t getFieldIndex(const folly::StringPiece name) const override;
     const char* getFieldName(int64_t index) const override;
 
     const cpp2::PropertyType getFieldType(int64_t index) const override;
     const cpp2::PropertyType getFieldType(const folly::StringPiece name) const override;
 
-    std::shared_ptr<const SchemaProviderIf::Field> field(int64_t index) const override;
-    std::shared_ptr<const SchemaProviderIf::Field> field(
-        const folly::StringPiece name) const override;
+    const SchemaProviderIf::Field* field(int64_t index) const override;
+    const SchemaProviderIf::Field* field(const folly::StringPiece name) const override;
 
-    void addField(folly::StringPiece name, cpp2::PropertyType& type);
+    void addField(folly::StringPiece name,
+                  cpp2::PropertyType type,
+                  size_t fixedStrLen = 0,
+                  bool nullable = false,
+                  Value defaultValue = Value());
 
     void setProp(cpp2::SchemaProp schemaProp);
 
@@ -80,7 +107,7 @@ protected:
 
     // fieldname -> index
     std::unordered_map<std::string, int64_t>    fieldNameIndex_;
-    std::vector<std::shared_ptr<SchemaField>>   fields_;
+    std::vector<SchemaField>                    fields_;
     cpp2::SchemaProp                            schemaProp_;
 };
 

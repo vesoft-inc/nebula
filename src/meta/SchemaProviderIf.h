@@ -23,9 +23,19 @@ public:
 
         virtual const char* name() const = 0;
         virtual const cpp2::PropertyType type() const = 0;
-        virtual bool isValid() const = 0;
+        virtual bool nullable() const = 0;
         virtual bool hasDefault() const = 0;
         virtual const Value& defaultValue() const = 0;
+        // This method returns the number of bytes the field will occupy
+        // when the field is persisted on the storage medium
+        // For the variant length string, the size will return 8
+        // (4 bytes for offset and 4 bytes for string length)
+        // For the fixed length string, the size will be the pre-defined
+        // string length
+        virtual size_t size() const = 0;
+        // In v1, this will always return 0
+        // In v2, this will return the offset of the field
+        virtual size_t offset() const = 0;
     };
 
     // Inherited classes do not need to implement the Iterator
@@ -38,7 +48,7 @@ public:
         }
 
         const Field* operator->() const {
-            return field_.get();
+            return field_;
         }
 
         Iterator& operator++() {
@@ -70,7 +80,7 @@ public:
         const SchemaProviderIf* schema_;
         size_t numFields_;
         int64_t index_;
-        std::shared_ptr<const Field> field_;
+        const Field* field_;
 
     private:
         explicit Iterator(const SchemaProviderIf* schema,
@@ -88,6 +98,10 @@ public:
     virtual SchemaVer getVersion() const noexcept = 0;
     virtual size_t getNumFields() const noexcept = 0;
 
+    // Return the number of bytes occupied by when each row of data
+    // persisted on the disk
+    virtual size_t size() const noexcept = 0;
+
     virtual int64_t getFieldIndex(const folly::StringPiece name) const = 0;
     virtual const char* getFieldName(int64_t index) const = 0;
 
@@ -95,8 +109,8 @@ public:
     virtual const cpp2::PropertyType getFieldType(const folly::StringPiece name)
         const = 0;
 
-    virtual std::shared_ptr<const Field> field(int64_t index) const = 0;
-    virtual std::shared_ptr<const Field> field(const folly::StringPiece name) const = 0;
+    virtual const Field* field(int64_t index) const = 0;
+    virtual const Field* field(const folly::StringPiece name) const = 0;
 
     /******************************************
      *

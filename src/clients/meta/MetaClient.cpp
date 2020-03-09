@@ -232,8 +232,15 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
     EdgeSchemas edgeSchemas;
     for (auto& tagIt : tagItemVec) {
         std::shared_ptr<NebulaSchemaProvider> schema(new NebulaSchemaProvider(tagIt.version));
-        for (auto colIt : tagIt.schema.get_columns()) {
-            schema->addField(colIt.name, colIt.type);
+        for (auto col : tagIt.schema.get_columns()) {
+            bool hasDef = col.__isset.default_value;
+            size_t len = col.__isset.type_length ? *col.get_type_length() : 0;
+            bool nullable = col.__isset.nullable ? *col.get_nullable() : false;
+            schema->addField(col.get_name(),
+                             col.get_type(),
+                             len,
+                             nullable,
+                             hasDef ? *col.get_default_value() : Value());
         }
         // handle schema property
         schema->setProp(tagIt.schema.get_schema_prop());
@@ -254,8 +261,15 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
 
     for (auto& edgeIt : edgeItemVec) {
         std::shared_ptr<NebulaSchemaProvider> schema(new NebulaSchemaProvider(edgeIt.version));
-        for (auto colIt : edgeIt.schema.get_columns()) {
-            schema->addField(colIt.name, colIt.type);
+        for (auto col : edgeIt.schema.get_columns()) {
+            bool hasDef = col.__isset.default_value;
+            size_t len = col.__isset.type_length ? *col.get_type_length() : 0;
+            bool nullable = col.__isset.nullable ? *col.get_nullable() : false;
+            schema->addField(col.get_name(),
+                             col.get_type(),
+                             len,
+                             nullable,
+                             hasDef ? *col.get_default_value() : Value());
         }
         // handle shcem property
         schema->setProp(edgeIt.schema.get_schema_prop());

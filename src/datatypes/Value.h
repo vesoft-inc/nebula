@@ -33,6 +33,7 @@ enum class NullType {
     BAD_DATA = 2,
     BAD_TYPE = 3,
     OVERFLOW = 4,
+    UNKNOWN_PROP = 5,
 };
 
 
@@ -62,6 +63,14 @@ struct Value {
     Value(NullType&& v);            // NOLINT
     Value(const bool& v);           // NOLINT
     Value(bool&& v);                // NOLINT
+    Value(const int8_t& v);         // NOLINT
+    Value(int8_t&& v);              // NOLINT
+    Value(const int16_t& v);        // NOLINT
+    Value(int16_t&& v);             // NOLINT
+    Value(const int32_t& v);        // NOLINT
+    Value(int32_t&& v);             // NOLINT
+    Value(const int64_t& v);        // NOLINT
+    Value(int64_t&& v);             // NOLINT
     Value(const double& v);         // NOLINT
     Value(double&& v);              // NOLINT
     Value(const std::string& v);    // NOLINT
@@ -76,17 +85,13 @@ struct Value {
     Value(List&& v);                // NOLINT
     Value(const Map& v);            // NOLINT
     Value(Map&& v);                 // NOLINT
-    // We need a template here to support multiple integer types
-    template<
-        typename T,
-        typename = typename std::enable_if<std::is_integral<T>::value>::type
-    >
-    Value(T&& v) {             // NOLINT
-        setI(std::forward<T>(v));
-    }
 
     Type type() const noexcept {
         return type_;
+    }
+
+    bool empty() const {
+        return type_ == Type::__EMPTY__;
     }
 
     void clear();
@@ -98,6 +103,12 @@ struct Value {
     void setNull(NullType&& v);
     void setBool(const bool& v);
     void setBool(bool&& v);
+    void setInt(const int8_t& v);
+    void setInt(int8_t&& v);
+    void setInt(const int16_t& v);
+    void setInt(int16_t&& v);
+    void setInt(const int32_t& v);
+    void setInt(int32_t&& v);
     void setInt(const int64_t& v);
     void setInt(int64_t&& v);
     void setFloat(const double& v);
@@ -114,15 +125,6 @@ struct Value {
     void setList(List&& v);
     void setMap(const Map& v);
     void setMap(Map&& v);
-    // We need a template here to support multiple integer types
-    template<
-        typename T,
-        typename = typename std::enable_if<std::is_integral<T>::value>::type
-    >
-    void setInt(T&& v) {
-        clear();
-        setI(std::forward<T>(v));
-    }
 
     const NullType& getNull() const;
     const bool& getBool() const;

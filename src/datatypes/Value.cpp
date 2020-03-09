@@ -152,6 +152,38 @@ Value::Value(bool&& v) {
     setB(std::move(v));
 }
 
+Value::Value(const int8_t& v) {
+    setI(v);
+}
+
+Value::Value(int8_t&& v) {
+    setI(std::move(v));
+}
+
+Value::Value(const int16_t& v) {
+    setI(v);
+}
+
+Value::Value(int16_t&& v) {
+    setI(std::move(v));
+}
+
+Value::Value(const int32_t& v) {
+    setI(v);
+}
+
+Value::Value(int32_t&& v) {
+    setI(std::move(v));
+}
+
+Value::Value(const int64_t& v) {
+    setI(v);
+}
+
+Value::Value(int64_t&& v) {
+    setI(std::move(v));
+}
+
 Value::Value(const double& v) {
     setF(v);
 }
@@ -229,6 +261,36 @@ void Value::setBool(const bool& v) {
 void Value::setBool(bool&& v) {
     clear();
     setB(std::move(v));
+}
+
+void Value::setInt(const int8_t& v) {
+    clear();
+    setI(v);
+}
+
+void Value::setInt(int8_t&& v) {
+    clear();
+    setI(std::move(v));
+}
+
+void Value::setInt(const int16_t& v) {
+    clear();
+    setI(v);
+}
+
+void Value::setInt(int16_t&& v) {
+    clear();
+    setI(std::move(v));
+}
+
+void Value::setInt(const int32_t& v) {
+    clear();
+    setI(v);
+}
+
+void Value::setInt(int32_t&& v) {
+    clear();
+    setI(std::move(v));
 }
 
 void Value::setInt(const int64_t& v) {

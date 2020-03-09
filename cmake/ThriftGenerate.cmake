@@ -109,7 +109,7 @@ add_custom_target(${file_name}_thrift_headers DEPENDS ${${file_name}-cpp2-HEADER
 if(NOT "${file_name}" STREQUAL "common")
     add_dependencies(
         "${file_name}_thrift_obj"
-        "common_thrift_headers"
+        "common_thrift_obj"
     )
 endif()
 endmacro()
