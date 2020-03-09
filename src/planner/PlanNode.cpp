@@ -9,16 +9,12 @@
 namespace nebula {
 namespace graph {
 Status PlanNode::append(std::shared_ptr<PlanNode> node) {
-    if (node->kind() == PlanNode::Kind::kStart) {
-        stateTrans_.setTable(node->table());
-    } else {
-        // TODO: append a node to current node.
-    }
+    UNUSED(node);
     return Status::OK();
 }
 
 Status PlanNode::merge(std::shared_ptr<StartNode> start) {
-    stateTrans_.addNodes(start->table());
+    UNUSED(start);
     return Status::OK();
 }
 }  // namespace graph
