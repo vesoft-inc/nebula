@@ -9,7 +9,7 @@
 
 #include "base/Base.h"
 #include <folly/RWSpinLock.h>
-#include "meta/client/MetaClient.h"
+#include "clients/meta/MetaClient.h"
 #include "meta/SchemaManager.h"
 
 namespace nebula {
@@ -21,24 +21,22 @@ public:
     ~ServerBasedSchemaManager();
 
     // return the newest one if ver less 0
-    std::shared_ptr<const SchemaProviderIf>
-    getTagSchema(GraphSpaceID space, TagID tag, SchemaVer ver = -1) override;
+    std::shared_ptr<const SchemaProviderIf> getTagSchema(
+        GraphSpaceID space, TagID tag, SchemaVer ver = -1) override;
 
     // Returns a negative number when the schema does not exist
-    StatusOr<SchemaVer> getLatestTagSchemaVersion(GraphSpaceID space, TagID tag) override;
+    StatusOr<SchemaVer> getNewestTagSchemaVer(GraphSpaceID space, TagID tag) override;
 
     // return the newest one if ver less 0
-    std::shared_ptr<const SchemaProviderIf>
-    getEdgeSchema(GraphSpaceID space, EdgeType edge, SchemaVer ver = -1) override;
+    std::shared_ptr<const SchemaProviderIf> getEdgeSchema(
+        GraphSpaceID space, EdgeType edge, SchemaVer ver = -1) override;
 
     // Returns a negative number when the schema does not exist
-    StatusOr<SchemaVer> getLatestEdgeSchemaVersion(GraphSpaceID space, EdgeType edge) override;
+    StatusOr<SchemaVer> getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) override;
 
     StatusOr<GraphSpaceID> toGraphSpaceID(folly::StringPiece spaceName) override;
 
     StatusOr<TagID> toTagID(GraphSpaceID space, folly::StringPiece tagName) override;
-
-    StatusOr<std::string> toTagName(GraphSpaceID space, TagID tagId) override;
 
     StatusOr<EdgeType> toEdgeType(GraphSpaceID space, folly::StringPiece typeName) override;
 
