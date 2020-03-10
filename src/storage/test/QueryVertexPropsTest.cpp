@@ -445,7 +445,7 @@ TEST(QueryVertexPropsTest, TTLTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
 
     LOG(INFO) << "Prepare meta...";
-    auto schemaMan = TestUtils::mockSchemaWithTTLMan();
+    auto schemaMan = TestUtils::mockSchemaMan(0, 200);
 
     LOG(INFO) << "Prepare data...";
     for (auto partId = 0; partId < 3; partId++) {

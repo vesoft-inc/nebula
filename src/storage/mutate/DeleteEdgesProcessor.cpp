@@ -74,35 +74,34 @@ std::string DeleteEdgesProcessor::deleteEdges(GraphSpaceID spaceId,
                     << ", spaceId " << spaceId;
             return "";
         }
-        bool isLatestVE = true;
-        while (iter->valid()) {
-            /**
-             * just get the latest version edge for index.
-             */
-            if (isLatestVE) {
-                std::unique_ptr<RowReader> reader;
-                for (auto& index : indexes_) {
-                    auto indexId = index->get_index_id();
-                    if (type == index->get_schema_id().get_edge_type()) {
-                        if (reader == nullptr) {
-                            reader = RowReader::getEdgePropReader(this->schemaMan_,
-                                                                  iter->val(),
-                                                                  spaceId,
-                                                                  type);
-                        }
-                        auto values = collectIndexValues(reader.get(),
-                                                         index->get_fields());
-                        auto indexKey = NebulaKeyUtils::edgeIndexKey(partId,
-                                                                     indexId,
-                                                                     srcId,
-                                                                     rank,
-                                                                     dstId,
-                                                                     values);
-                        batchHolder->remove(std::move(indexKey));
+
+        if (iter->valid()) {
+            std::unique_ptr<RowReader> reader;
+            for (auto& index : indexes_) {
+                auto indexId = index->get_index_id();
+                if (type == index->get_schema_id().get_edge_type()) {
+                    if (reader == nullptr) {
+                        reader = RowReader::getEdgePropReader(this->schemaMan_,
+                                                              iter->val(),
+                                                              spaceId,
+                                                              type);
                     }
+                    auto values = collectIndexValues(reader.get(),
+                                                     index->get_fields());
+                    auto indexKey = NebulaKeyUtils::edgeIndexKey(partId,
+                                                                 indexId,
+                                                                 srcId,
+                                                                 rank,
+                                                                 dstId,
+                                                                 values);
+                    batchHolder->remove(std::move(indexKey));
                 }
-                isLatestVE = false;
             }
+            batchHolder->remove(iter->key().str());
+            iter->next();
+        }
+
+        while (iter->valid()) {
             batchHolder->remove(iter->key().str());
             iter->next();
         }

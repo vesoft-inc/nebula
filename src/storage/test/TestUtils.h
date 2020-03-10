@@ -78,25 +78,19 @@ public:
         return store;
     }
 
-    static std::unique_ptr<AdHocSchemaManager> mockSchemaMan(GraphSpaceID spaceId = 0) {
+    static std::unique_ptr<AdHocSchemaManager> mockSchemaMan(GraphSpaceID spaceId = 0,
+                                                             int32_t ttl = 0) {
         auto schemaMan = std::make_unique<AdHocSchemaManager>();
         for (TagID tagId = 3001; tagId < 3010; tagId++) {
-            schemaMan->addTagSchema(spaceId, tagId, TestUtils::genTagSchemaProvider(tagId, 3, 3));
+            schemaMan->addTagSchema(spaceId,
+                                    tagId,
+                                    TestUtils::genTagSchemaProvider(tagId, 3, 3, ttl));
         }
         for (EdgeType edgeType = 101; edgeType < 110; edgeType++) {
-            schemaMan->addEdgeSchema(spaceId, edgeType, TestUtils::genEdgeSchemaProvider(10, 10));
+            schemaMan->addEdgeSchema(spaceId,
+                                     edgeType,
+                                     TestUtils::genEdgeSchemaProvider(10, 10, ttl));
         }
-        return schemaMan;
-    }
-
-    static std::unique_ptr<AdHocSchemaManager> mockSchemaWithTTLMan(GraphSpaceID spaceId = 0) {
-        auto schemaMan = std::make_unique<AdHocSchemaManager>();
-        auto tagId = 3001;
-        schemaMan->addTagSchema(spaceId,
-                                tagId,
-                                TestUtils::genTagSchemaWithTTLProvider(tagId, 3, 3));
-
-        schemaMan->addEdgeSchema(spaceId, 101, TestUtils::genEdgeSchemaWithTTLProvider(10, 10));
         return schemaMan;
     }
 
@@ -287,7 +281,7 @@ public:
      * It will generate edge SchemaProvider with some int fields and string fields
      * */
     static std::shared_ptr<meta::SchemaProviderIf>
-    genEdgeSchemaProvider(int32_t intFieldsNum, int32_t stringFieldsNum) {
+    genEdgeSchemaProvider(int32_t intFieldsNum, int32_t stringFieldsNum, int32_t ttl = 0) {
         std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(0));
         for (int32_t i = 0; i < intFieldsNum; i++) {
             nebula::cpp2::ColumnDef column;
@@ -301,40 +295,22 @@ public:
             column.type.type = nebula::cpp2::SupportedType::STRING;
             schema->addField(column.name, std::move(column.type));
         }
+
+        if (ttl > 0) {
+            nebula::cpp2::SchemaProp prop;
+            prop.set_ttl_duration(ttl);
+            prop.set_ttl_col(folly::stringPrintf("col_0"));
+            schema->setProp(prop);
+        }
         return schema;
     }
-
-    /**
-     * It will generate edge SchemaProvider with some int fields and string fields and ttl
-     * */
-    static std::shared_ptr<meta::SchemaProviderIf>
-    genEdgeSchemaWithTTLProvider(int32_t intFieldsNum, int32_t stringFieldsNum) {
-        std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(0));
-        for (int32_t i = 0; i < intFieldsNum; i++) {
-            nebula::cpp2::ColumnDef column;
-            column.name = folly::stringPrintf("col_%d", i);
-            column.type.type = nebula::cpp2::SupportedType::INT;
-            schema->addField(column.name, std::move(column.type));
-        }
-        for (int32_t i = intFieldsNum; i < intFieldsNum + stringFieldsNum; i++) {
-            nebula::cpp2::ColumnDef column;
-            column.name = folly::stringPrintf("col_%d", i);
-            column.type.type = nebula::cpp2::SupportedType::STRING;
-            schema->addField(column.name, std::move(column.type));
-        }
-        nebula::cpp2::SchemaProp prop;
-        prop.set_ttl_duration(200);
-        prop.set_ttl_col(folly::stringPrintf("col_0"));
-        schema->setProp(prop);
-        return schema;
-    }
-
 
     /**
      * It will generate tag SchemaProvider with some int fields and string fields
      * */
     static std::shared_ptr<meta::SchemaProviderIf>
-    genTagSchemaProvider(TagID tagId, int32_t intFieldsNum, int32_t stringFieldsNum) {
+    genTagSchemaProvider(TagID tagId, int32_t intFieldsNum,
+                         int32_t stringFieldsNum, int32_t ttl = 0) {
         std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(0));
         for (int32_t i = 0; i < intFieldsNum; i++) {
             nebula::cpp2::ColumnDef column;
@@ -348,36 +324,15 @@ public:
             column.type.type = nebula::cpp2::SupportedType::STRING;
             schema->addField(column.name, std::move(column.type));
         }
+        if (ttl > 0) {
+            nebula::cpp2::SchemaProp prop;
+            prop.set_ttl_duration(ttl);
+            prop.set_ttl_col(folly::stringPrintf("tag_%d_col_0", tagId));
+            schema->setProp(prop);
+        }
         return schema;
     }
 
-
-    /**
-     * It will generate tag SchemaProvider with some int fields and string fields and ttl
-     * */
-    static std::shared_ptr<meta::SchemaProviderIf> genTagSchemaWithTTLProvider(
-            TagID tagId,
-            int32_t intFieldsNum,
-            int32_t stringFieldsNum) {
-        std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(0));
-        for (int32_t i = 0; i < intFieldsNum; i++) {
-            nebula::cpp2::ColumnDef column;
-            column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
-            column.type.type = nebula::cpp2::SupportedType::INT;
-            schema->addField(column.name, std::move(column.type));
-        }
-        for (int32_t i = intFieldsNum; i < intFieldsNum + stringFieldsNum; i++) {
-            nebula::cpp2::ColumnDef column;
-            column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
-            column.type.type = nebula::cpp2::SupportedType::STRING;
-            schema->addField(column.name, std::move(column.type));
-        }
-        nebula::cpp2::SchemaProp prop;
-        prop.set_ttl_duration(200);
-        prop.set_ttl_col(folly::stringPrintf("tag_%d_col_0", tagId));
-        schema->setProp(prop);
-        return schema;
-    }
 
     static cpp2::PropDef vertexPropDef(std::string name, TagID tagId) {
         cpp2::PropDef prop;

@@ -98,9 +98,9 @@ std::string DeleteVerticesProcessor::deleteVertices(GraphSpaceID spaceId,
             }
 
             /**
-            * example ,the prefix result as below :
-            *     V1_tag1_version3
-            *     V1_tag1_version2
+             * example ,the prefix result as below :
+             *     V1_tag1_version3
+             *     V1_tag1_version2
              *     V1_tag1_version1
              *     V1_tag2_version3
              *     V1_tag2_version2

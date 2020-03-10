@@ -214,6 +214,22 @@ TEST_F(DataTest, InsertTest) {
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    // Insert multi version vertex succeeded
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT VERTEX person(name, age) VALUES "
+                          "hash(\"Tom\"):(\"Tom\", 23), "
+                          "hash(\"Tom\"):(\"Tom\", 24), "
+                          "hash(\"Tom\"):(\"Tom\", 25)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        cmd = "FETCH PROP ON person hash(\"Tom\")";
+        code = client_->execute(cmd, resp);
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
+            {std::hash<std::string>()("Tom"), "Tom", 25},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
     // Insert unordered order prop vertex succeeded
     {
         cpp2::ExecutionResponse resp;
@@ -223,7 +239,7 @@ TEST_F(DataTest, InsertTest) {
         cmd = "FETCH PROP ON person hash(\"Conan\")";
         code = client_->execute(cmd, resp);
         std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
-                {std::hash<std::string>()("Conan"), "Conan", 10},
+            {std::hash<std::string>()("Conan"), "Conan", 10},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -258,13 +274,13 @@ TEST_F(DataTest, InsertTest) {
         cmd = "FETCH PROP ON person hash(\"Bob\")";
         code = client_->execute(cmd, resp);
         std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
-                {std::hash<std::string>()("Bob"), "Bob", 9},
+            {std::hash<std::string>()("Bob"), "Bob", 9},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
         cmd = "FETCH PROP ON student hash(\"Bob\")";
         code = client_->execute(cmd, resp);
         std::vector<std::tuple<int64_t, std::string, int64_t>> expected2 = {
-                {std::hash<std::string>()("Bob"), "four", 20191106001},
+            {std::hash<std::string>()("Bob"), "four", 20191106001},
         };
         ASSERT_TRUE(verifyResult(resp, expected2));
     }
@@ -304,6 +320,15 @@ TEST_F(DataTest, InsertTest) {
         cpp2::ExecutionResponse resp;
         std::string cmd = "INSERT EDGE schoolmate(likeness, nickname) VALUES "
                           "hash(\"Tom\")->hash(\"Lucy\"):(85, \"Lily\")";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT EDGE schoolmate(likeness, nickname) VALUES "
+                          "hash(\"Tom\")->hash(\"Lucy\"):(86, \"Lily\"), "
+                          "hash(\"Tom\")->hash(\"Lucy\"):(88, \"Lily\"), "
+                          "hash(\"Tom\")->hash(\"Lucy\"):(90, \"Lily\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -353,10 +378,10 @@ TEST_F(DataTest, InsertTest) {
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<std::string, int64_t, std::string>> expected = {
-            {"Tom", 85, "Lucy"},
+            {"Tom", 87, "Bob"},
             {"Tom", 81, "Kitty"},
             {"Tom", 83, "Peter"},
-            {"Tom", 87, "Bob"},
+            {"Tom", 90, "Lucy"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -688,7 +713,7 @@ TEST_F(DataTest, InsertTest) {
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
-                {std::hash<std::string>()("sun_school"), "sun_school", 1262311200},
+            {std::hash<std::string>()("sun_school"), "sun_school", 1262311200},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -698,7 +723,7 @@ TEST_F(DataTest, InsertTest) {
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<std::string, int64_t>> expected = {
-                {"sun_school", 1262311200},
+            {"sun_school", 1262311200},
         };
         ASSERT_TRUE(verifyResult(resp, expected, true,  {0}));
     }
@@ -717,8 +742,7 @@ TEST_F(DataTest, InsertWithDefaultValueTest) {
     // Insert lack of the column value
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "INSERT VERTEX personWithDefault"
-                          "(age, isMarried, BMI)"
+        std::string cmd = "INSERT VERTEX personWithDefault(age, isMarried, BMI) "
                           "VALUES hash(\"Tom\"):(18, false)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
@@ -726,8 +750,7 @@ TEST_F(DataTest, InsertWithDefaultValueTest) {
     // Insert column doesn't match value count
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "INSERT VERTEX studentWithDefault"
-                          "(grade, number)"
+        std::string cmd = "INSERT VERTEX studentWithDefault(grade, number) "
                           "VALUES hash(\"Tom\"):(\"one\", 111, \"\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);

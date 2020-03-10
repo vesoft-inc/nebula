@@ -111,61 +111,6 @@ static std::string genVertexIndexKey(meta::SchemaManager* schemaMan,
     return indexKey;
 }
 
-static std::shared_ptr<meta::SchemaProviderIf> genEdgeSchemaProvider(
-        int32_t intFieldsNum,
-        int32_t stringFieldsNum) {
-    nebula::cpp2::Schema schema;
-    for (auto i = 0; i < intFieldsNum; i++) {
-        nebula::cpp2::ColumnDef column;
-        column.name = folly::stringPrintf("col_%d", i);
-        column.type.type = nebula::cpp2::SupportedType::INT;
-        schema.columns.emplace_back(std::move(column));
-    }
-    for (auto i = intFieldsNum; i < intFieldsNum + stringFieldsNum; i++) {
-        nebula::cpp2::ColumnDef column;
-        column.name = folly::stringPrintf("col_%d", i);
-        column.type.type = nebula::cpp2::SupportedType::STRING;
-        schema.columns.emplace_back(std::move(column));
-    }
-    return std::make_shared<ResultSchemaProvider>(std::move(schema));
-}
-
-
-/**
- * It will generate tag SchemaProvider with some int fields and string fields
- * */
-static std::shared_ptr<meta::SchemaProviderIf> genTagSchemaProvider(
-        TagID tagId,
-        int32_t intFieldsNum,
-        int32_t stringFieldsNum) {
-    nebula::cpp2::Schema schema;
-    for (auto i = 0; i < intFieldsNum; i++) {
-        nebula::cpp2::ColumnDef column;
-        column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
-        column.type.type = nebula::cpp2::SupportedType::INT;
-        schema.columns.emplace_back(std::move(column));
-    }
-    for (auto i = intFieldsNum; i < intFieldsNum + stringFieldsNum; i++) {
-        nebula::cpp2::ColumnDef column;
-        column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
-        column.type.type = nebula::cpp2::SupportedType::STRING;
-        schema.columns.emplace_back(std::move(column));
-    }
-    return std::make_shared<ResultSchemaProvider>(std::move(schema));
-}
-
-static std::unique_ptr<meta::SchemaManager> mockSchemaMan(GraphSpaceID spaceId,
-                                                          EdgeType edgeType,
-                                                          TagID tagId) {
-    auto* schemaMan = new AdHocSchemaManager();
-    schemaMan->addEdgeSchema(spaceId /*space id*/, edgeType /*edge type*/,
-                             genEdgeSchemaProvider(10, 10));
-    schemaMan->addTagSchema(spaceId /*space id*/, tagId,
-                             genTagSchemaProvider(tagId, 3, 3));
-    std::unique_ptr<meta::SchemaManager> sm(schemaMan);
-    return sm;
-}
-
 void mockData(kvstore::KVStore* kv ,
               meta::SchemaManager* schemaMan,
               meta::IndexManager* indexMan,
@@ -270,18 +215,15 @@ static cpp2::LookUpVertexIndexResp execLookupVertices(const std::string& filter,
     TagID tagId = 3001;
     EdgeType type = 101;
     LOG(INFO) << "Prepare meta...";
-    auto schemaMan = mockSchemaMan(spaceId, type, tagId);
-    auto indexMan = mockIndexMan(spaceId, tagId, type);
+    auto schemaMan = TestUtils::mockSchemaMan(spaceId);
+    auto indexMan = mockIndexMan(spaceId, tagId,  type);
     mockData(kv.get(), schemaMan.get(), indexMan.get(), type, tagId, spaceId);
     auto *processor = LookUpVertexIndexProcessor::instance(kv.get(),
                                                            schemaMan.get(),
                                                            indexMan.get(),
                                                            nullptr);
     cpp2::LookUpIndexRequest req;
-    decltype(req.parts) parts;
-    parts.emplace_back(0);
-    parts.emplace_back(1);
-    parts.emplace_back(2);
+    std::vector<int32_t> parts = {0, 1, 2};
     if (hasReturnCols) {
         decltype(req.return_columns) cols;
         cols.emplace_back("tag_3001_col_0");
@@ -300,6 +242,7 @@ static cpp2::LookUpVertexIndexResp execLookupVertices(const std::string& filter,
     return std::move(f).get();
 }
 
+
 static cpp2::LookUpEdgeIndexResp execLookupEdges(const std::string& filter,
                                                  bool hasReturnCols = true) {
     fs::TempDir rootPath("/tmp/execLookupEdges.XXXXXX");
@@ -308,18 +251,15 @@ static cpp2::LookUpEdgeIndexResp execLookupEdges(const std::string& filter,
     TagID tagId = 3001;
     EdgeType type = 101;
     LOG(INFO) << "Prepare meta...";
-    auto schemaMan = mockSchemaMan(spaceId, type, tagId);
-    auto indexMan = mockIndexMan(spaceId, tagId, type);
+    auto schemaMan = TestUtils::mockSchemaMan(spaceId);
+    auto indexMan = mockIndexMan(spaceId, tagId,  type);
     mockData(kv.get(), schemaMan.get(), indexMan.get(), type, tagId, spaceId);
     auto *processor = LookUpEdgeIndexProcessor::instance(kv.get(),
                                                          schemaMan.get(),
                                                          indexMan.get(),
                                                          nullptr);
     cpp2::LookUpIndexRequest req;
-    decltype(req.parts) parts;
-    parts.emplace_back(0);
-    parts.emplace_back(1);
-    parts.emplace_back(2);
+    std::vector<int32_t> parts = {0, 1, 2};
     if (hasReturnCols) {
         decltype(req.return_columns) cols;
         cols.emplace_back("col_0");
@@ -417,10 +357,7 @@ static cpp2::LookUpEdgeIndexResp checkLookupEdgesString(const std::string& filte
                                                          indexMan.get(),
                                                          nullptr);
     cpp2::LookUpIndexRequest req;
-    decltype(req.parts) parts;
-    parts.emplace_back(0);
-    parts.emplace_back(1);
-    parts.emplace_back(2);
+    std::vector<int32_t> parts = {0, 1, 2};
     decltype(req.return_columns) cols;
     cols.emplace_back("col_0");
     cols.emplace_back("col_1");
@@ -507,14 +444,8 @@ static cpp2::LookUpVertexIndexResp checkLookupVerticesString(const std::string& 
                                                            indexMan.get(),
                                                            nullptr);
     cpp2::LookUpIndexRequest req;
-    decltype(req.parts) parts;
-    parts.emplace_back(0);
-    parts.emplace_back(1);
-    parts.emplace_back(2);
-    decltype(req.return_columns) cols;
-    cols.emplace_back("col_0");
-    cols.emplace_back("col_1");
-    cols.emplace_back("col_2");
+    std::vector<int32_t> parts = {0, 1, 2};
+    std::vector<std::string> cols = {"col_0", "col_1", "col_2"};
     req.set_space_id(spaceId);
     req.set_parts(std::move(parts));
     req.set_index_id(tagId);
@@ -604,14 +535,8 @@ static cpp2::LookUpEdgeIndexResp checkLookupEdgesDouble(const std::string& filte
                                                          indexMan.get(),
                                                          nullptr);
     cpp2::LookUpIndexRequest req;
-    decltype(req.parts) parts;
-    parts.emplace_back(0);
-    parts.emplace_back(1);
-    parts.emplace_back(2);
-    decltype(req.return_columns) cols;
-    cols.emplace_back("col_0");
-    cols.emplace_back("col_1");
-    cols.emplace_back("col_2");
+    std::vector<int32_t> parts = {0, 1, 2};
+    std::vector<std::string> cols = {"col_0", "col_1", "col_2"};
     req.set_space_id(spaceId);
     req.set_parts(std::move(parts));
     req.set_index_id(type);
@@ -698,14 +623,8 @@ static cpp2::LookUpVertexIndexResp checkLookupVerticesDouble(const std::string& 
                                                            indexMan.get(),
                                                            nullptr);
     cpp2::LookUpIndexRequest req;
-    decltype(req.parts) parts;
-    parts.emplace_back(0);
-    parts.emplace_back(1);
-    parts.emplace_back(2);
-    decltype(req.return_columns) cols;
-    cols.emplace_back("col_0");
-    cols.emplace_back("col_1");
-    cols.emplace_back("col_2");
+    std::vector<int32_t> parts = {0, 1, 2};
+    std::vector<std::string> cols = {"col_0", "col_1", "col_2"};
     req.set_space_id(spaceId);
     req.set_parts(std::move(parts));
     req.set_index_id(tagId);

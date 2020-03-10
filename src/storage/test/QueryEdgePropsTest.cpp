@@ -29,8 +29,8 @@ void mockData(kvstore::KVStore* kv,
             // Generate 7 edges for each source vertex id
             for (VertexID dstId = 10001; dstId <= 10007; dstId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", dst " << dstId;
-                auto key = NebulaKeyUtils::edgeKey(
-                        partId, vertexId, edgeType, dstId - 10001, dstId, version);
+                auto key = NebulaKeyUtils::edgeKey(partId, vertexId, edgeType,
+                                                   dstId - 10001, dstId, version);
                 auto val = TestUtils::setupEncode(10, 20);
                 data.emplace_back(std::move(key), std::move(val));
             }
@@ -216,7 +216,7 @@ TEST(QueryEdgePropsTest, TTLTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
 
     LOG(INFO) << "Prepare meta...";
-    auto schemaMng = TestUtils::mockSchemaWithTTLMan();
+    auto schemaMng = TestUtils::mockSchemaMan(0, 200);
     LOG(INFO) << "Prepare data...";
     mockData(kv.get(), schemaMng.get(), 0);
     LOG(INFO) << "Build EdgePropRequest...";

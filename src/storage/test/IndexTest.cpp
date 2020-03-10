@@ -93,8 +93,7 @@ TEST(IndexTest, AddEdgeTest) {
         auto edges = TestUtils::setupEdges(partId,
                                            partId * 10,
                                            (partId + 1) * 10,
-                                           101,
-                                           3);
+                                           101);
         req.parts.emplace(partId, std::move(edges));
     }
     auto fut = processor->getFuture();
@@ -184,7 +183,6 @@ TEST(IndexTest, DeleteVertexTest) {
 }
 
 TEST(IndexTest, DeleteEdgeTest) {
-    LOG(INFO) << "Build AddEdgesRequest...";
     fs::TempDir rootPath("/tmp/DeleteEdgeTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     auto schemaMan = TestUtils::mockSchemaMan();
@@ -201,20 +199,13 @@ TEST(IndexTest, DeleteEdgeTest) {
             std::vector<cpp2::Edge> edges;
             for (auto edgeType = 101; edgeType < 110; edgeType++) {
                 cpp2::EdgeKey key;
-                RowWriter writer(nullptr);
-                for (uint64_t numInt = 0; numInt < 10; numInt++) {
-                    writer << (numInt);
-                }
-                for (auto numString = 10; numString < 20; numString++) {
-                    writer << folly::stringPrintf("string_col_%d", numString);
-                }
-                auto val = writer.encode();
                 key.set_src(10);
                 key.set_edge_type(edgeType);
                 key.set_ranking(0);
                 key.set_dst(10001);
                 edges.emplace_back();
                 edges.back().set_key(key);
+                auto val = TestUtils::setupEncode(10, 20);
                 edges.back().set_props(std::move(val));
             }
             req.parts.emplace(1, std::move(edges));
@@ -233,14 +224,6 @@ TEST(IndexTest, DeleteEdgeTest) {
         std::vector<cpp2::EdgeKey> keys;
         for (auto edgeType = 101; edgeType < 110; edgeType++) {
             cpp2::EdgeKey key;
-            RowWriter writer(nullptr);
-            for (uint64_t numInt = 0; numInt < 10; numInt++) {
-                writer << (numInt);
-            }
-            for (auto numString = 10; numString < 20; numString++) {
-                writer << folly::stringPrintf("string_col_%d", numString);
-            }
-            auto val = writer.encode();
             key.set_src(10);
             key.set_edge_type(edgeType);
             key.set_ranking(0);
@@ -267,7 +250,7 @@ TEST(IndexTest, DeleteEdgeTest) {
 }
 
 TEST(IndexTest, UpdateVertexTest) {
-    fs::TempDir rootPath("/tmp/DeleteVertexTest.XXXXXX");
+    fs::TempDir rootPath("/tmp/UpdateVertexTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
@@ -520,7 +503,6 @@ TEST(IndexTest, RebulidTagIndexWithOfflineTest) {
     fs::TempDir rootPath("/tmp/RebulidTagIndexWithOfflineTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     auto schemaMan = TestUtils::mockSchemaMan();
-    auto indexMan = TestUtils::mockIndexMan();
     {
         cpp2::AddVerticesRequest req;
         req.space_id = 0;
@@ -534,6 +516,7 @@ TEST(IndexTest, RebulidTagIndexWithOfflineTest) {
             req.parts.emplace(partId, std::move(vertices));
         }
 
+        auto indexMan = std::make_unique<AdHocIndexManager>();
         auto* processor = AddVerticesProcessor::instance(kv.get(),
                                                          schemaMan.get(),
                                                          indexMan.get(),
@@ -551,6 +534,7 @@ TEST(IndexTest, RebulidTagIndexWithOfflineTest) {
         req.set_index_id(3001 + 1000);
         req.set_is_offline(true);
 
+        auto indexMan = TestUtils::mockIndexMan();
         auto* processor = RebuildTagIndexProcessor::instance(kv.get(),
                                                              schemaMan.get(),
                                                              indexMan.get());
@@ -577,8 +561,8 @@ TEST(IndexTest, RebulidEdgeIndexWithOfflineTest) {
     fs::TempDir rootPath("/tmp/RebulidEdgeIndexWithOfflineTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     auto schemaMan = TestUtils::mockSchemaMan();
-    auto indexMan = TestUtils::mockIndexMan();
     {
+        auto indexMan = std::make_unique<AdHocIndexManager>();
         auto* processor = AddEdgesProcessor::instance(kv.get(),
                                                       schemaMan.get(),
                                                       indexMan.get(),
@@ -590,8 +574,7 @@ TEST(IndexTest, RebulidEdgeIndexWithOfflineTest) {
             auto edges = TestUtils::setupEdges(partId,
                                                partId * 10,
                                                (partId + 1) * 10,
-                                               101,
-                                               3);
+                                               101);
             req.parts.emplace(partId, std::move(edges));
         }
         auto fut = processor->getFuture();
@@ -607,6 +590,7 @@ TEST(IndexTest, RebulidEdgeIndexWithOfflineTest) {
         req.set_index_id(101 + 100);
         req.is_offline = true;
 
+        auto indexMan = TestUtils::mockIndexMan();
         auto* processor = RebuildEdgeIndexProcessor::instance(kv.get(),
                                                               schemaMan.get(),
                                                               indexMan.get());

@@ -38,7 +38,10 @@ private:
                          const std::vector<cpp2::Edge>& edges);
 
     std::string findObsoleteIndex(PartitionID partId,
-                                  const folly::StringPiece& rawKey);
+                                  VertexID srcId,
+                                  EdgeType type,
+                                  EdgeRanking rank,
+                                  VertexID dstId);
 
     std::string indexKey(PartitionID partId,
                          RowReader* reader,

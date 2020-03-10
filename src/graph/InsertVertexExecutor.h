@@ -13,6 +13,8 @@
 namespace nebula {
 namespace graph {
 
+using TagVertexCache = std::unordered_set<std::pair<TagID, VertexID>>;
+
 class InsertVertexExecutor final : public Executor {
 public:
     InsertVertexExecutor(Sentence *sentence, ExecutionContext *ectx);

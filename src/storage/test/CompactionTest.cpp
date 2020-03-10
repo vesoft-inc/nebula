@@ -278,7 +278,7 @@ TEST(NebulaCompactionFilterTest, InvalidSchemaAndMutliVersionsFilterTest) {
 
 TEST(NebulaCompactionFilterTest, TTLFilterDataExpiredTest) {
     fs::TempDir rootPath("/tmp/NebulaCompactionFilterTest.XXXXXX");
-    auto schemaMan = TestUtils::mockSchemaWithTTLMan();
+    auto schemaMan = TestUtils::mockSchemaMan(0, 200);
     std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder(
                                     new StorageCompactionFilterFactoryBuilder(schemaMan.get(),
                                                                               nullptr));
@@ -349,7 +349,7 @@ TEST(NebulaCompactionFilterTest, TTLFilterDataExpiredTest) {
 
 TEST(NebulaCompactionFilterTest, TTLFilterDataNotExpiredTest) {
     fs::TempDir rootPath("/tmp/NebulaCompactionFilterTest.XXXXXX");
-    auto schemaMan = TestUtils::mockSchemaWithTTLMan();
+    auto schemaMan = TestUtils::mockSchemaMan(0, 200);
     std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder(
                                     new StorageCompactionFilterFactoryBuilder(schemaMan.get(),
                                                                               nullptr));

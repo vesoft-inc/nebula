@@ -87,6 +87,13 @@ Status InsertEdgeExecutor::check() {
         }
     }
 
+    for (auto& rowItem : rows_) {
+        if (rowItem->values().size() > schema_->getNumFields()) {
+            return Status::Error("Row item number %ld is more than schema field number %ld",
+                                 rowItem->values().size(),
+                                 schema_->getNumFields());
+        }
+    }
     return Status::OK();
 }
 
@@ -98,10 +105,11 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
     auto space = ectx()->rctx()->session()->space();
     expCtx_->setSpace(space);
 
-    std::vector<storage::cpp2::Edge> edges(rows_.size() * 2);   // inbound and outbound
-    auto index = 0;
+    std::shared_ptr<EdgeTypeCache> cache = std::make_shared<EdgeTypeCache>();
+    std::vector<storage::cpp2::Edge> edges;
+    edges.reserve(rows_.size() * 2);
     Getters getters;
-    for (auto i = 0u; i < rows_.size(); i++) {
+    for (int32_t i = rows_.size() - 1; i >= 0; i--) {
         auto *row = rows_[i];
         auto sid = row->srcid();
         sid->setContext(expCtx_.get());
@@ -138,6 +146,13 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
         auto dst = Expression::asInt(v);
 
         int64_t rank = row->rank();
+        auto cacheKey = std::make_tuple(edgeType_, src, dst, rank);
+        auto cacheIter = cache->find(cacheKey);
+        if (cacheIter == cache->end()) {
+            cache->emplace(std::move(cacheKey));
+        } else {
+            continue;
+        }
 
         auto expressions = row->values();
 
@@ -158,7 +173,6 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
 
         RowWriter writer(schema_);
         int64_t valuesSize = values.size();
-        int32_t handleValueNum = 0;
         for (size_t schemaIndex = 0; schemaIndex < schema_->getNumFields(); schemaIndex++) {
             auto fieldName = schema_->getFieldName(schemaIndex);
             auto positionIter = propsPosition_.find(fieldName);
@@ -201,16 +215,11 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
             if (!status.ok()) {
                 return status;
             }
-            handleValueNum++;
-        }
-        // Input values more than schema props
-        if (handleValueNum < valuesSize) {
-            return Status::Error("Column count doesn't match value count");
         }
 
         auto props = writer.encode();
         {
-            auto &out = edges[index++];
+            storage::cpp2::Edge out;
             out.key.set_src(src);
             out.key.set_dst(dst);
             out.key.set_ranking(rank);
@@ -218,9 +227,10 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
             out.props = props;
             out.__isset.key = true;
             out.__isset.props = true;
+            edges.emplace_back(std::move(out));
         }
         {
-            auto &in = edges[index++];
+            storage::cpp2::Edge in;
             in.key.set_src(dst);
             in.key.set_dst(src);
             in.key.set_ranking(rank);
@@ -228,9 +238,9 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
             in.props = std::move(props);
             in.__isset.key = true;
             in.__isset.props = true;
+            edges.emplace_back(std::move(in));
         }
     }
-
     return edges;
 }
 

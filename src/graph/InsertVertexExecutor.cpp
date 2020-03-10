@@ -45,6 +45,7 @@ Status InsertVertexExecutor::check() {
     schemas_.reserve(tagItems.size());
     tagProps_.reserve(tagItems.size());
 
+    int32_t itemNumber = 0;
     for (auto& item : tagItems) {
         auto *tagName = item->tagName();
         auto tagStatus = ectx()->schemaManager()->toTagID(spaceId_, *tagName);
@@ -67,6 +68,7 @@ Status InsertVertexExecutor::check() {
             return Status::Error("Wrong number of props");
         }
 
+        itemNumber += schema->getNumFields();
         // Check prop name is in schema
         for (auto *it : props) {
             if (schema->getFieldIndex(*it) < 0) {
@@ -105,6 +107,14 @@ Status InsertVertexExecutor::check() {
         tagProps_.emplace_back(std::move(props));
         propsPositions_.emplace_back(std::move(propsPosition));
     }
+
+    for (auto& rowItem : rows_) {
+        if (static_cast<int32_t>(rowItem->values().size()) > itemNumber) {
+            return Status::Error("Row item number %ld is more than schema field number %d",
+                                 rowItem->values().size(),
+                                 itemNumber);
+        }
+    }
     return Status::OK();
 }
 
@@ -112,9 +122,11 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
     expCtx_->setStorageClient(ectx()->getStorageClient());
     expCtx_->setSpace(spaceId_);
 
-    std::vector<storage::cpp2::Vertex> vertices(rows_.size());
     Getters getters;
-    for (auto i = 0u; i < rows_.size(); i++) {
+    std::vector<storage::cpp2::Vertex> vertices;
+    vertices.reserve(rows_.size());
+    std::shared_ptr<TagVertexCache> cache = std::make_shared<TagVertexCache>();
+    for (int32_t i = rows_.size() - 1; i >= 0 ; i--) {
         auto *row = rows_[i];
         auto rid = row->id();
         rid->setContext(expCtx_.get());
@@ -153,10 +165,17 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
 
         int32_t valuesSize = values.size();
         int32_t valuePosition = 0;
-        int32_t handleValueNum = 0;
         for (auto index = 0u; index < tagIds_.size(); index++) {
             auto &tag = tags[index];
             auto tagId = tagIds_[index];
+            auto cacheKey = std::make_pair(tagId, id);
+            auto cacheIter = cache->find(cacheKey);
+            if (cacheIter == cache->end()) {
+                cache->emplace(std::move(cacheKey));
+            } else {
+                continue;
+            }
+
             auto props = tagProps_[index];
             auto schema = schemas_[index];
             auto propsPosition = propsPositions_[index];
@@ -206,21 +225,16 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
                 if (!status.ok()) {
                     return status;
                 }
-                handleValueNum++;
             }
 
             tag.set_tag_id(tagId);
             tag.set_props(writer.encode());
             valuePosition += propsPosition.size();
         }
-        // Input values more than schema props
-        if (handleValueNum < valuesSize) {
-            return Status::Error("Column count doesn't match value count");
-        }
-
-        auto& vertex = vertices[i];
+        storage::cpp2::Vertex vertex;
         vertex.set_id(id);
         vertex.set_tags(std::move(tags));
+        vertices.emplace_back(vertex);
     }
 
     return vertices;
