@@ -81,6 +81,10 @@ download_dir=$build_root/downloads
 source_tar_name=nebula-third-party-src-1.0.tgz
 source_url=https://nebula-graph.oss-accelerate.aliyuncs.com/third-party/${source_tar_name}
 logfile=$build_root/build.log
+cxx_cmd=${CXX:-g++}
+gcc_version=$(${CXX:-g++} -dumpfullversion -dumpversion)
+abi_version=$($this_dir/cxx-compiler-abi-version.sh)
+libc_version=$(ldd --version | head -1 | cut -d ' ' -f4 | cut -d '-' -f1)
 
 
 trap '[[ $? -ne 0 ]] && echo "Building failed, see $logfile for more details." 1>&2' EXIT
@@ -147,13 +151,16 @@ sed -i 's/^prefix=.*$/prefix=$(dirname $(dirname $(readlink -f $0)))/' $install_
 sed -i 's#^LDFLAGS=.*$#LDFLAGS="-L$prefix/lib -L$prefix/lib64"#' $install_dir/bin/krb5-config
 sed -i -r 's#^DEFCKTNAME=.*(/var.*keytab).*#DEFCKTNAME="FILE:$prefix\1"#' $install_dir/bin/krb5-config
 
+cat > $install_dir/version-info <<EOF
+Package         : Nebula Third Party
+glibc           : $libc_version
+Arch            : x86_64
+Compiler        : GCC $gcc_version
+C++ ABI         : $abi_version
+Vendor          : VEsoft Inc.
+EOF
+
 function make_package {
-    cxx_cmd=${CXX:-g++}
-    gcc_version=$($cxx_cmd -dumpfullversion -dumpversion)
-    abi_version=$($this_dir/cxx-compiler-abi-version.sh)
-    set +e
-    libc_version=$(ldd --version | head -1 | cut -d ' ' -f4 | cut -d '-' -f1)
-    set -e
     exec_file=$build_root/vesoft-third-party-x86_64-libc-$libc_version-gcc-$gcc_version-abi-$abi_version.sh
 
     echo "Creating self-extractable package $exec_file"
