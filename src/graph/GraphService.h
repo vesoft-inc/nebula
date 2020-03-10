@@ -13,6 +13,7 @@
 #include "graph/CloudAuthenticator.h"
 #include "graph/ExecutionEngine.h"
 #include "graph/SessionManager.h"
+#include "graph/PluginManager.h"
 
 namespace folly {
 class IOThreadPoolExecutor;
@@ -50,6 +51,8 @@ private:
     std::unique_ptr<SessionManager>             sessionManager_;
     std::unique_ptr<ExecutionEngine>            executionEngine_;
     std::unique_ptr<meta::MetaClient>           metaClient_;
+    std::unique_ptr<Authenticator>              authenticator_;
+    std::unique_ptr<PluginManager>              pluginManager_;
 };
 
 }   // namespace graph
