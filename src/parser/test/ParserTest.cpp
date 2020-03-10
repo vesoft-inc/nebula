@@ -1334,6 +1334,13 @@ TEST(Parser, UnreservedKeywords) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG status(part int, parts int, job string, jobs string,"
+                            " offline bool, rebuild bool, submit bool, compact bool, "
+                            " bidirect bool, force bool, configs string)";
+        auto result = parser.parse(query);
+    }
 }
 
 TEST(Parser, Annotation) {
