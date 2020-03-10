@@ -152,13 +152,20 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
 }
 
 
-bool UpdateVertexProcessor::checkFilter(const PartitionID partId, const VertexID vId) {
+// return code 0 pass to next step
+// -1 return ok now
+// -2 return error now
+int UpdateVertexProcessor::checkFilter(const PartitionID partId, const VertexID vId) {
     for (auto& tc : this->tagContexts_) {
         VLOG(3) << "partId " << partId << ", vId " << vId
                 << ", tagId " << tc.tagId_ << ", prop size " << tc.props_.size();
         auto ret = collectVertexProps(partId, vId, tc.tagId_, tc.props_);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
-            return false;
+        if (insertable_ && ret == kvstore::ResultCode::ERR_KEY_NOT_FOUND) {
+            return 0;
+        } else if (ret == kvstore::ResultCode::ERR_KEY_NOT_FOUND) {
+            return  -2;
+        } else if (ret != kvstore::ResultCode::SUCCEEDED) {
+            return -1;
         }
     }
 
@@ -184,10 +191,10 @@ bool UpdateVertexProcessor::checkFilter(const PartitionID partId, const VertexID
         auto filterResult = this->exp_->eval(getters);
         if (!filterResult.ok() || !Expression::asBool(filterResult.value())) {
             VLOG(1) << "Filter skips the update";
-            return false;
+            return -1;
         }
     }
-    return true;
+    return 0;
 }
 
 
@@ -409,12 +416,30 @@ void UpdateVertexProcessor::process(const cpp2::UpdateVertexRequest& req) {
     VLOG(3) << "Update vertex, spaceId: " << this->spaceId_
             << ", partId: " << partId << ", vId: " << vId;
     CHECK_NOTNULL(kvstore_);
+    switch (checkFilter(partId, vId)) {
+    case 0 : {
+        // do nothing
+        break;
+    }
+    case -1: {
+        // Return OK while filter out
+        // https://github.com/vesoft-inc/nebula/issues/1888
+        this->pushResultCode(cpp2::ErrorCode::SUCCEEDED, partId);
+        this->onFinished();
+        return;
+    }
+    case -2: {
+        this->pushResultCode(cpp2::ErrorCode::E_INVALID_FILTER, partId);
+        this->onFinished();
+        return;
+    }
+    default: {
+        // do nothing
+    }
+    }
     this->kvstore_->asyncAtomicOp(this->spaceId_, partId,
         [partId, vId, this] () -> std::string {
-            if (checkFilter(partId, vId)) {
-                return updateAndWriteBack(partId, vId);
-            }
-            return std::string("");
+            return updateAndWriteBack(partId, vId);
         },
         [this, partId, vId, req] (kvstore::ResultCode code) {
             while (true) {

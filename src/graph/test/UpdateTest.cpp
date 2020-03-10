@@ -43,6 +43,16 @@ TEST_F(UpdateTest, UpdateVertex) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    {
+        // Filter out
+        // https://github.com/vesoft-inc/nebula/issues/1888
+        cpp2::ExecutionResponse resp;
+        auto query = "UPDATE VERTEX 101 "
+                     "SET course.credits = $^.course.credits + 1, building.name = \"No7\" "
+                     "WHEN $^.course.name == \"English\" && $^.course.credits > 2";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
     {   // SetFilter
         cpp2::ExecutionResponse resp;
         auto query = "UPDATE VERTEX 101 "
@@ -190,6 +200,15 @@ TEST_F(UpdateTest, UpdateEdge) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    {   // Filter out
+        // https://github.com/vesoft-inc/nebula/issues/1888
+        cpp2::ExecutionResponse resp;
+        auto query = "UPDATE EDGE 200 -> 101@0 OF select "
+                     "SET grade = select.grade + 1, year = 2000 "
+                     "WHEN select.grade > 1024 && $^.student.age > 15";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
     {   // SetFilter
         cpp2::ExecutionResponse resp;
         auto query = "UPDATE EDGE 200 -> 101@0 OF select "
@@ -309,7 +328,7 @@ TEST_F(UpdateTest, InvalidTest) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
-    {   // make sure the vertex must exist
+    {   // make sure the vertex must not exist
         cpp2::ExecutionResponse resp;
         auto query = "UPDATE VERTEX 101000000000000 "
                      "SET course.credits = $^.course.credits + 1, building.name = \"No9\" "
@@ -327,7 +346,7 @@ TEST_F(UpdateTest, InvalidTest) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code) << resp.get_error_msg();
     }
-    {   // make sure the edge(src, dst) must exist
+    {   // make sure the edge(src, dst) must not exist
         cpp2::ExecutionResponse resp;
         auto query = "UPDATE EDGE 200 -> 101000000000000@0 OF select "
                      "SET grade = select.grade + 1, year = 2019 "
@@ -336,7 +355,7 @@ TEST_F(UpdateTest, InvalidTest) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code) << resp.get_error_msg();
     }
-    {   // make sure the edge(src, edge_tyep, dst) must exist
+    {   // make sure the edge(src, edge_tyep, dst) must not exist
         cpp2::ExecutionResponse resp;
         auto query = "UPDATE EDGE 200 -> 101@0 OF nonexistentEdgeTypeName "
                      "SET grade = select.grade + 1, year = 2019";
@@ -350,7 +369,7 @@ TEST_F(UpdateTest, InvalidTest) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
     }
-    {   // make sure the edge(src, edge_tyep, ranking, dst) must exist
+    {   // make sure the edge(src, edge_tyep, ranking, dst) must not exist
         cpp2::ExecutionResponse resp;
         auto query = "UPDATE EDGE 200 -> 101@1000000000000 OF select "
                      "SET grade = select.grade + 1, year = 2019";

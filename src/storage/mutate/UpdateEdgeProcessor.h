@@ -53,7 +53,7 @@ private:
     kvstore::ResultCode collectEdgesProps(const PartitionID partId,
                                           const cpp2::EdgeKey& edgeKey);
 
-    bool checkFilter(const PartitionID partId, const cpp2::EdgeKey& edgeKey);
+    int checkFilter(const PartitionID partId, const cpp2::EdgeKey& edgeKey);
 
     std::string updateAndWriteBack(PartitionID partId, const cpp2::EdgeKey& edgeKey);
 
@@ -67,7 +67,7 @@ private:
     std::string                                                     val_;
     std::unique_ptr<RowUpdater>                                     updater_;
     meta::IndexManager*                                             indexMan_{nullptr};
-    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>                            indexes_;
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>           indexes_;
 };
 
 }  // namespace storage

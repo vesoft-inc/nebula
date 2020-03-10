@@ -313,11 +313,18 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
 }
 
 
-bool UpdateEdgeProcessor::checkFilter(const PartitionID partId,
+// return code 0 pass to next step
+// -1 return ok now
+// -2 return error now
+int UpdateEdgeProcessor::checkFilter(const PartitionID partId,
                                       const cpp2::EdgeKey& edgeKey) {
     auto ret = collectEdgesProps(partId, edgeKey);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        return false;
+    if (insertable_ && ret == kvstore::ResultCode::ERR_KEY_NOT_FOUND) {
+        return 0;
+    } else if (ret == kvstore::ResultCode::ERR_KEY_NOT_FOUND) {
+        return -2;
+    } else if (ret != kvstore::ResultCode::SUCCEEDED) {
+        return -1;
     }
     for (auto& tc : this->tagContexts_) {
         VLOG(3) << "partId " << partId << ", vId " << edgeKey.src
@@ -359,10 +366,10 @@ bool UpdateEdgeProcessor::checkFilter(const PartitionID partId,
         auto filterResult = this->exp_->eval(getters);
         if (!filterResult.ok() || !Expression::asBool(filterResult.value())) {
             VLOG(1) << "Filter skips the update";
-            return false;
+            return -1;
         }
     }
-    return true;
+    return 0;
 }
 
 
@@ -459,12 +466,30 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
             << ", src: " << edgeKey.get_src() << ", edge_type: " << edgeKey.get_edge_type()
             << ", dst: " << edgeKey.get_dst() << ", ranking: " << edgeKey.get_ranking();
     CHECK_NOTNULL(kvstore_);
+    switch (checkFilter(partId, edgeKey)) {
+    case 0 : {
+        // do nothing
+        break;
+    }
+    case -1: {
+        // Return OK while filter out
+        // https://github.com/vesoft-inc/nebula/issues/1888
+        this->pushResultCode(cpp2::ErrorCode::SUCCEEDED, partId);
+        this->onFinished();
+        return;
+    }
+    case -2: {
+        this->pushResultCode(cpp2::ErrorCode::E_INVALID_FILTER, partId);
+        this->onFinished();
+        return;
+    }
+    default: {
+        // do nothing
+    }
+    }
     this->kvstore_->asyncAtomicOp(this->spaceId_, partId,
         [partId, edgeKey, this] () -> std::string {
-            if (checkFilter(partId, edgeKey)) {
                 return updateAndWriteBack(partId, edgeKey);
-            }
-            return std::string("");
         },
         [this, partId, edgeKey, req] (kvstore::ResultCode code) {
             while (true) {
