@@ -466,30 +466,21 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
             << ", src: " << edgeKey.get_src() << ", edge_type: " << edgeKey.get_edge_type()
             << ", dst: " << edgeKey.get_dst() << ", ranking: " << edgeKey.get_ranking();
     CHECK_NOTNULL(kvstore_);
-    switch (checkFilter(partId, edgeKey)) {
-    case 0 : {
-        // do nothing
-        break;
-    }
-    case -1: {
-        // Return OK while filter out
-        // https://github.com/vesoft-inc/nebula/issues/1888
-        this->pushResultCode(cpp2::ErrorCode::SUCCEEDED, partId);
-        this->onFinished();
-        return;
-    }
-    case -2: {
-        this->pushResultCode(cpp2::ErrorCode::E_INVALID_FILTER, partId);
-        this->onFinished();
-        return;
-    }
-    default: {
-        // do nothing
-    }
-    }
     this->kvstore_->asyncAtomicOp(this->spaceId_, partId,
         [partId, edgeKey, this] () -> std::string {
+            filterResult_ = checkFilter(partId, edgeKey);
+            switch (filterResult_) {
+            case 0 : {
                 return updateAndWriteBack(partId, edgeKey);
+            }
+            case -1:
+            // fallthrough
+            case -2:
+            // fallthrough
+            default: {
+                return "";
+            }
+            }
         },
         [this, partId, edgeKey, req] (kvstore::ResultCode code) {
             while (true) {
@@ -507,7 +498,12 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
                     handleLeaderChanged(this->spaceId_, partId);
                     break;
                 }
-                this->pushResultCode(to(code), partId);
+                if (filterResult_ == -1) {
+                    // https://github.com/vesoft-inc/nebula/issues/1888
+                    this->pushResultCode(cpp2::ErrorCode::SUCCEEDED, partId);
+                } else {
+                    this->pushResultCode(to(code), partId);
+                }
                 break;
             }
             this->onFinished();

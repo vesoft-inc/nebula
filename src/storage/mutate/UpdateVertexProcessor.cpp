@@ -416,30 +416,21 @@ void UpdateVertexProcessor::process(const cpp2::UpdateVertexRequest& req) {
     VLOG(3) << "Update vertex, spaceId: " << this->spaceId_
             << ", partId: " << partId << ", vId: " << vId;
     CHECK_NOTNULL(kvstore_);
-    switch (checkFilter(partId, vId)) {
-    case 0 : {
-        // do nothing
-        break;
-    }
-    case -1: {
-        // Return OK while filter out
-        // https://github.com/vesoft-inc/nebula/issues/1888
-        this->pushResultCode(cpp2::ErrorCode::SUCCEEDED, partId);
-        this->onFinished();
-        return;
-    }
-    case -2: {
-        this->pushResultCode(cpp2::ErrorCode::E_INVALID_FILTER, partId);
-        this->onFinished();
-        return;
-    }
-    default: {
-        // do nothing
-    }
-    }
     this->kvstore_->asyncAtomicOp(this->spaceId_, partId,
         [partId, vId, this] () -> std::string {
-            return updateAndWriteBack(partId, vId);
+            filterResult_ = checkFilter(partId, vId);
+            switch (filterResult_) {
+            case 0 : {
+                return updateAndWriteBack(partId, vId);
+            }
+            case -1:
+            // Fallthrough
+            case -2:
+            // Fallthrough
+            default: {
+                return "";
+            }
+            }
         },
         [this, partId, vId, req] (kvstore::ResultCode code) {
             while (true) {
@@ -453,7 +444,12 @@ void UpdateVertexProcessor::process(const cpp2::UpdateVertexRequest& req) {
                     handleLeaderChanged(this->spaceId_, partId);
                     break;
                 }
-                this->pushResultCode(to(code), partId);
+                if (filterResult_ == -1) {
+                    // https://github.com/vesoft-inc/nebula/issues/1888
+                    this->pushResultCode(cpp2::ErrorCode::SUCCEEDED, partId);
+                } else {
+                    this->pushResultCode(to(code), partId);
+                }
                 break;
             }
             this->onFinished();
