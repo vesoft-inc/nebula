@@ -313,25 +313,22 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
 }
 
 
-// return code 0 pass to next step
-// -1 return ok now
-// -2 return error now
-int UpdateEdgeProcessor::checkFilter(const PartitionID partId,
+UpdateEdgeProcessor::FilterResult UpdateEdgeProcessor::checkFilter(const PartitionID partId,
                                       const cpp2::EdgeKey& edgeKey) {
     auto ret = collectEdgesProps(partId, edgeKey);
     if (insertable_ && ret == kvstore::ResultCode::ERR_KEY_NOT_FOUND) {
-        return 0;
+        return FilterResult::PASS;
     } else if (ret == kvstore::ResultCode::ERR_KEY_NOT_FOUND) {
-        return -2;
+        return FilterResult::FAILED_ERROR;
     } else if (ret != kvstore::ResultCode::SUCCEEDED) {
-        return -1;
+        return FilterResult::FAILED_FILTER_OUT;
     }
     for (auto& tc : this->tagContexts_) {
         VLOG(3) << "partId " << partId << ", vId " << edgeKey.src
                 << ", tagId " << tc.tagId_ << ", prop size " << tc.props_.size();
         ret = collectVertexProps(partId, edgeKey.src, tc.tagId_, tc.props_);
         if (ret != kvstore::ResultCode::SUCCEEDED) {
-            return false;
+            return FilterResult::FAILED_ERROR;
         }
     }
 
@@ -366,10 +363,10 @@ int UpdateEdgeProcessor::checkFilter(const PartitionID partId,
         auto filterResult = this->exp_->eval(getters);
         if (!filterResult.ok() || !Expression::asBool(filterResult.value())) {
             VLOG(1) << "Filter skips the update";
-            return -1;
+            return FilterResult::FAILED_FILTER_OUT;
         }
     }
-    return 0;
+    return FilterResult::PASS;
 }
 
 
@@ -470,12 +467,12 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
         [partId, edgeKey, this] () -> std::string {
             filterResult_ = checkFilter(partId, edgeKey);
             switch (filterResult_) {
-            case 0 : {
+            case FilterResult::PASS : {
                 return updateAndWriteBack(partId, edgeKey);
             }
-            case -1:
+            case FilterResult::FAILED_FILTER_OUT:
             // fallthrough
-            case -2:
+            case FilterResult::FAILED_ERROR:
             // fallthrough
             default: {
                 return "";
@@ -498,7 +495,7 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
                     handleLeaderChanged(this->spaceId_, partId);
                     break;
                 }
-                if (filterResult_ == -1) {
+                if (filterResult_ == FilterResult::FAILED_FILTER_OUT) {
                     // https://github.com/vesoft-inc/nebula/issues/1888
                     this->pushResultCode(cpp2::ErrorCode::SUCCEEDED, partId);
                 } else {

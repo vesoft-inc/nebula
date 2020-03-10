@@ -33,6 +33,12 @@ public:
     void process(const cpp2::UpdateVertexRequest& req);
 
 private:
+    enum class FilterResult {
+        PASS               = 0,  // pass filter
+        FAILED_FILTER_OUT  = -1,  // filter out
+        FAILED_ERROR       = -2,  // exception when filter
+    };
+
     explicit UpdateVertexProcessor(kvstore::KVStore* kvstore,
                                    meta::SchemaManager* schemaMan,
                                    meta::IndexManager* indexMan,
@@ -57,7 +63,7 @@ private:
                             const TagID tagId,
                             const std::vector<PropContext>& props);
 
-    int checkFilter(const PartitionID partId, const VertexID vId);
+    FilterResult checkFilter(const PartitionID partId, const VertexID vId);
 
     std::string updateAndWriteBack(const PartitionID partId, const VertexID vId);
 
@@ -70,7 +76,7 @@ private:
     std::unordered_map<TagID, std::unique_ptr<KeyUpdaterPair>>      tagUpdaters_;
     meta::IndexManager*                                             indexMan_{nullptr};
     std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>           indexes_;
-    int                                                             filterResult_{0};
+    FilterResult                                          filterResult_{FilterResult::FAILED_ERROR};
 };
 
 }  // namespace storage
