@@ -59,6 +59,10 @@ protected:
 
     void doPut(GraphSpaceID spaceId, PartitionID partId, std::vector<kvstore::KV> data);
 
+    kvstore::ResultCode doSyncPut(GraphSpaceID spaceId,
+                                  PartitionID partId,
+                                  std::vector<kvstore::KV> data);
+
     void doRemove(GraphSpaceID spaceId, PartitionID partId, std::vector<std::string> keys);
 
     void doRemoveRange(GraphSpaceID spaceId, PartitionID partId, std::string start,

@@ -8,7 +8,6 @@ nebula_add_library(
     query/QueryVertexPropsProcessor.cpp
     query/QueryEdgePropsProcessor.cpp
     query/QueryStatsProcessor.cpp
-    query/QueryEdgeKeysProcessor.cpp
     query/ScanEdgeProcessor.cpp
     query/ScanVertexProcessor.cpp
     mutate/AddVerticesProcessor.cpp
@@ -22,6 +21,8 @@ nebula_add_library(
     admin/CreateCheckpointProcessor.cpp
     admin/DropCheckpointProcessor.cpp
     admin/SendBlockSignProcessor.cpp
+    admin/RebuildTagIndexProcessor.cpp
+    admin/RebuildEdgeIndexProcessor.cpp
     index/IndexPolicyMaker.cpp
     index/IndexExecutor.cpp
     index/LookUpEdgeIndexProcessor.cpp

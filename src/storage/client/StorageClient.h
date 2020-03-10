@@ -102,6 +102,7 @@ public:
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>> get(
       GraphSpaceID space,
       const std::vector<std::string>& keys,
+      bool returnPartly = false,
       folly::EventBase* evb = nullptr);
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> addVertices(
@@ -142,11 +143,6 @@ public:
         GraphSpaceID space,
         std::vector<storage::cpp2::EdgeKey> edges,
         std::vector<storage::cpp2::PropDef> returnCols,
-        folly::EventBase* evb = nullptr);
-
-    folly::SemiFuture<StorageRpcResponse<storage::cpp2::EdgeKeysResponse>> getEdgeKeys(
-        GraphSpaceID space,
-        std::vector<VertexID> vids,
         folly::EventBase* evb = nullptr);
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> deleteEdges(

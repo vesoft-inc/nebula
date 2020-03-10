@@ -26,7 +26,7 @@ enum SnapshotStatus {
     FAILED,
 };
 
-using SnapshotCallback = folly::Function<void(std::vector<std::string>&& rows,
+using SnapshotCallback = folly::Function<bool(const std::vector<std::string>& rows,
                                               int64_t totalCount,
                                               int64_t totalSize,
                                               SnapshotStatus status)>;
@@ -49,7 +49,7 @@ private:
                                                    LogID committedLogId,
                                                    TermID committedLogTerm,
                                                    const HostAddr& localhost,
-                                                   std::vector<std::string>&& data,
+                                                   const std::vector<std::string>& data,
                                                    int64_t totalSize,
                                                    int64_t totalCount,
                                                    const HostAddr& addr,
