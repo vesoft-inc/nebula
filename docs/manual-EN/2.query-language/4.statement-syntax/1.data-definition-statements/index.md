@@ -114,3 +114,24 @@ DROP {TAG | EDGE} INDEX [IF EXISTS] <index_name>
 ```ngql
 nebula> DROP TAG INDEX player_index_0;
 ```
+
+## REBUILD INDEX
+
+```ngql
+REBUILD {TAG | EDGE} INDEX <index_name> OFFLINE
+REBUILD {TAG | EDGE} INDEX <index_name>
+```
+
+[Create Index](#create-index) section describes how to build indexes to improve query performance. These indexes are immediately available if the indexed keys or labels have been newly defined in the same management transaction. In this case, there is no need to rebuild index and this section can be skipped. If the indexed keys and labels already existed prior to index creation it is necessary to rebuild the indexes in order to ensure that the indexes contain previously added data.
+
+<!-- <index_name> defines the index that you want to rebuild. Use * to rebuild all automatic indexes. -->
+
+> During the rebuilding, any idempotent queries will skip the index and perform sequential scans. This means that queries run slower during this operation. Non-idempotent commands, such as INSERT, UPDATE, and DELETE are blocked until the indexes are rebuilt.
+
+After rebuilding is complete, you can use the `SHOW {TAG | EDGE} INDEX STATUS` command to check if the index is successfully rebuilt.
+
+## Using Index
+
+After the index is created and data is inserted, you can use the [LOOKUP](../2.data-query-and-manipulation-statements/lookup-syntax.md) statement to query the data.
+
+There is usually no need to specify which indexes to use in a query, **Nebula Graph** will figure that out by itself.

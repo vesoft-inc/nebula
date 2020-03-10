@@ -104,3 +104,22 @@ DROP {TAG | EDGE} INDEX [IF EXISTS] <index_name>
 ```ngql
 nebula> DROP TAG INDEX player_index_0;
 ```
+
+## 重构索引
+
+```ngql
+REBUILD {TAG | EDGE} INDEX <index_name> OFFLINE
+REBUILD {TAG | EDGE} INDEX <index_name>
+```
+
+[创建索引](#%e5%88%9b%e5%bb%ba%e7%b4%a2%e5%bc%95)部分介绍了如何创索引以提高查询性能。如果索引的 key 和 label 是在同一个事务中新创建的则索引会立即生效，此时无需执行索引重构操作；如果在建索引之前，索引的 key 和 label 已经存在，则必须要对整个图中与索引相关的数据执行索引重构操作以保证索引包含了之前的数据。
+
+> 索引重构期间，对索引进行的所有幂等查询都会跳过索引并执行顺序扫描。这意味着在此操作期间查询运行速度较慢。非幂等命令（例如 INSERT、UPDATE 和 DELETE）将被阻止，直到重建索引为止。
+
+重构完成后，可使用 `SHOW {TAG | EDGE} INDEX STATUS` 命令查看索引是否重构成功。
+
+## 使用索引
+
+索引创建完成并插入相关数据后，即可使用 [LOOKUP](../2.data-query-and-manipulation-statements/lookup-syntax.md) 语句进行数据查询。
+
+通常无需指定在查询中具体使用的索引，**Nebula Graph** 会自行选择。
