@@ -31,14 +31,7 @@ void mockData(kvstore::KVStore* kv,
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", dst " << dstId;
                 auto key = NebulaKeyUtils::edgeKey(
                         partId, vertexId, edgeType, dstId - 10001, dstId, version);
-                RowWriter writer(schema);
-                for (int64_t numInt = 0; numInt < 10; numInt++) {
-                    writer << numInt;
-                }
-                for (auto numString = 10; numString < 20; numString++) {
-                    writer << folly::stringPrintf("string_col_%d", numString);
-                }
-                auto val = writer.encode();
+                auto val = TestUtils::setupEncode(10, 20);
                 data.emplace_back(std::move(key), std::move(val));
             }
         }

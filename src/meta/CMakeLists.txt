@@ -23,6 +23,7 @@ nebula_add_library(
     processors/partsMan/ListSpacesProcessor.cpp
     processors/partsMan/DropSpaceProcessor.cpp
     processors/partsMan/GetPartsAllocProcessor.cpp
+    processors/indexMan/RebuildIndexProcessor.cpp
     processors/schemaMan/CreateTagProcessor.cpp
     processors/schemaMan/AlterTagProcessor.cpp
     processors/schemaMan/GetTagProcessor.cpp
@@ -37,10 +38,14 @@ nebula_add_library(
     processors/indexMan/DropTagIndexProcessor.cpp
     processors/indexMan/GetTagIndexProcessor.cpp
     processors/indexMan/ListTagIndexesProcessor.cpp
+    processors/indexMan/RebuildTagIndexProcessor.cpp
+    processors/indexMan/ListTagIndexStatusProcessor.cpp
     processors/indexMan/CreateEdgeIndexProcessor.cpp
     processors/indexMan/DropEdgeIndexProcessor.cpp
     processors/indexMan/GetEdgeIndexProcessor.cpp
     processors/indexMan/ListEdgeIndexesProcessor.cpp
+    processors/indexMan/RebuildEdgeIndexProcessor.cpp
+    processors/indexMan/ListEdgeIndexStatusProcessor.cpp
     processors/customKV/GetProcessor.cpp
     processors/customKV/MultiGetProcessor.cpp
     processors/customKV/MultiPutProcessor.cpp

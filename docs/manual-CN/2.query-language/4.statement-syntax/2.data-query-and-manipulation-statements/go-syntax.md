@@ -8,7 +8,7 @@
   GO [ <N> STEPS ] FROM <node_list>
   OVER <edge_type_list> [REVERSELY] [BIDIRECT]
   [ WHERE <expression> [ AND | OR expression ...]) ]
-  YIELD | YIELDS [DISTINCT] <return_list>
+  YIELD [DISTINCT] <return_list>
 
 <node_list>
    | <vid> [, <vid> ...]
@@ -84,7 +84,7 @@ nebula> GO FROM 100,102 OVER serve           \
 目前 **Nebula Graph** 还支持 `GO` 沿着多条边遍历，语法为：
 
 ```ngql
-GO FROM <node_list> OVER <edge_type_list | *> YIELD | YIELDS [DISTINCT] <return_list>
+GO FROM <node_list> OVER <edge_type_list | *> YIELD [DISTINCT] <return_list>
 ```
 
 例如：
@@ -142,7 +142,7 @@ nebula> GO FROM 100 OVER follow, serve YIELD follow.degree, serve.start_year;
   GO FROM <node_list>
   OVER <edge_type_list> REVERSELY
   WHERE (expression [ AND | OR expression ...])  
-  YIELD | YIELDS  [DISTINCT] <return_list>
+  YIELD [DISTINCT] <return_list>
 ```
 
 例如：
@@ -174,7 +174,7 @@ nebula> GO FROM 100 OVER follow REVERSELY YIELD follow._dst AS id | \
   GO FROM <node_list>
   OVER <edge_type_list> BIDIRECT
   WHERE (expression [ AND | OR expression ...])  
-  YIELD | YIELDS  [DISTINCT] <return_list>
+  YIELD [DISTINCT] <return_list>
 ```
 
 例如：

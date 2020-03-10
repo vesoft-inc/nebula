@@ -733,6 +733,7 @@ ResultCode NebulaStore::dropCheckpoint(GraphSpaceID spaceId, const std::string& 
 ResultCode NebulaStore::setWriteBlocking(GraphSpaceID spaceId, bool sign) {
     auto spaceRet = space(spaceId);
     if (!ok(spaceRet)) {
+        LOG(ERROR) << "Get Space " << spaceId << " Failed";
         return error(spaceRet);
     }
     auto space = nebula::value(spaceRet);
@@ -823,7 +824,7 @@ int32_t NebulaStore::allLeader(std::unordered_map<GraphSpaceID,
 }
 
 bool NebulaStore::checkLeader(std::shared_ptr<Part> part) const {
-    return !FLAGS_check_leader || part->isLeader();
+    return !FLAGS_check_leader || (part->isLeader() && part->leaseValid());
 }
 
 

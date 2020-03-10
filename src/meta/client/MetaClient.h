@@ -81,6 +81,7 @@ using SpaceAllEdgeMap = std::unordered_map<GraphSpaceID, std::vector<std::string
 // get leader host via spaceId and partId
 using LeaderMap = std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>;
 
+using IndexStatus = std::tuple<std::string, std::string, std::string>;
 
 struct ConfigItem {
     ConfigItem() {}
@@ -284,7 +285,10 @@ public:
     listTagIndexes(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<bool>>
-    buildTagIndex(GraphSpaceID spaceID, std::string name);
+    rebuildTagIndex(GraphSpaceID spaceID, std::string name, bool isOffline);
+
+    folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>>
+    listTagIndexStatus(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<IndexID>>
     createEdgeIndex(GraphSpaceID spaceID,
@@ -304,7 +308,10 @@ public:
     listEdgeIndexes(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<bool>>
-    buildEdgeIndex(GraphSpaceID spaceId, std::string name);
+    rebuildEdgeIndex(GraphSpaceID spaceId, std::string name, bool isOffline);
+
+    folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>>
+    listEdgeIndexStatus(GraphSpaceID spaceId);
 
     // Operations for custom kv
     folly::Future<StatusOr<bool>>
@@ -365,17 +372,16 @@ public:
     StatusOr<std::string>
     getTagNameByIdFromCache(const GraphSpaceID& space, const TagID& tagId);
 
+    StatusOr<SchemaVer> getLatestTagVersionFromCache(const GraphSpaceID& space, const TagID& tagId);
+
+    StatusOr<SchemaVer> getLatestEdgeVersionFromCache(const GraphSpaceID& space,
+                                                      const EdgeType& edgeType);
+
     StatusOr<EdgeType>
     getEdgeTypeByNameFromCache(const GraphSpaceID& space, const std::string& name);
 
     StatusOr<std::string>
     getEdgeNameByTypeFromCache(const GraphSpaceID& space, const EdgeType edgeType);
-
-    StatusOr<SchemaVer>
-    getNewestTagVerFromCache(const GraphSpaceID& space, const TagID& tagId);
-
-    StatusOr<SchemaVer>
-    getNewestEdgeVerFromCache(const GraphSpaceID& space, const EdgeType& edgeType);
 
     StatusOr<std::vector<std::string>> getAllEdgeFromCache(const GraphSpaceID& space);
 

@@ -227,8 +227,8 @@ Status Collector::collectWithoutSchema(VariantType &var, RowWriter *writer) {
 }
 
 OptVariantType Collector::getProp(const meta::SchemaProviderIf *schema,
-                               const std::string &prop,
-                               const RowReader *reader) {
+                                  const std::string &prop,
+                                  const RowReader *reader) {
     DCHECK(reader != nullptr);
     DCHECK(schema != nullptr);
     using nebula::cpp2::SupportedType;
@@ -280,9 +280,9 @@ OptVariantType Collector::getProp(const meta::SchemaProviderIf *schema,
 }
 
 Status Collector::getSchema(const std::vector<VariantType> &vals,
-                          const std::vector<std::string> &colNames,
-                          const std::vector<nebula::cpp2::SupportedType> &colTypes,
-                          SchemaWriter *outputSchema) {
+                            const std::vector<std::string> &colNames,
+                            const std::vector<nebula::cpp2::SupportedType> &colTypes,
+                            SchemaWriter *outputSchema) {
     DCHECK(outputSchema != nullptr);
     DCHECK_EQ(vals.size(), colNames.size());
     DCHECK_EQ(vals.size(), colTypes.size());

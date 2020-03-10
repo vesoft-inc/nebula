@@ -100,15 +100,15 @@ class GraphScanner;
 
 /* keywords */
 %token KW_GO KW_AS KW_TO KW_OR KW_AND KW_XOR KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
-%token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX
-%token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND KW_BUILD
+%token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_OFFLINE
+%token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND KW_REBUILD
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_PART KW_PARTS KW_TIMESTAMP KW_ADD
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_CHARSET KW_COLLATE KW_COLLATION
 %token KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_INDEX KW_INDEXES
 %token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
 %token KW_COUNT KW_COUNT_DISTINCT KW_SUM KW_AVG KW_MAX KW_MIN KW_STD KW_BIT_AND KW_BIT_OR KW_BIT_XOR
-%token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
+%token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON KW_STATUS
 %token KW_ROLES KW_BY KW_DOWNLOAD KW_HDFS KW_UUID KW_CONFIGS KW_FORCE
 %token KW_VARIABLES KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
 %token KW_TTL KW_TTL_DURATION KW_TTL_COL KW_DATA KW_STOP
@@ -204,33 +204,38 @@ class GraphScanner;
 %type <role_type_clause> role_type_clause
 %type <acl_item_clause> acl_item_clause
 
-%type <sentence> go_sentence match_sentence use_sentence lookup_sentence find_path_sentence
-%type <sentence> order_by_sentence limit_sentence group_by_sentence
-%type <sentence> fetch_vertices_sentence fetch_edges_sentence
-
+%type <sentence> maintain_sentence
+%type <sentence> create_space_sentence describe_space_sentence drop_space_sentence
 %type <sentence> create_tag_sentence create_edge_sentence
 %type <sentence> alter_tag_sentence alter_edge_sentence
 %type <sentence> drop_tag_sentence drop_edge_sentence
 %type <sentence> describe_tag_sentence describe_edge_sentence
-
 %type <sentence> create_tag_index_sentence create_edge_index_sentence
 %type <sentence> drop_tag_index_sentence drop_edge_index_sentence
 %type <sentence> describe_tag_index_sentence describe_edge_index_sentence
-%type <sentence> build_tag_index_sentence build_edge_index_sentence
+%type <sentence> rebuild_tag_index_sentence rebuild_edge_index_sentence
+%type <sentence> create_snapshot_sentence drop_snapshot_sentence
 
-%type <sentence> traverse_sentence set_sentence piped_sentence assignment_sentence fetch_sentence
-%type <sentence> maintain_sentence insert_vertex_sentence insert_edge_sentence
-%type <sentence> mutate_sentence update_vertex_sentence update_edge_sentence delete_vertex_sentence delete_edge_sentence
-%type <sentence> show_sentence create_space_sentence describe_space_sentence
 %type <sentence> admin_sentence
-%type <sentence> drop_space_sentence
-%type <sentence> yield_sentence
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
-%type <sentence> grant_sentence revoke_sentence
+%type <sentence> show_sentence 
+
+%type <sentence> mutate_sentence
+%type <sentence> insert_vertex_sentence insert_edge_sentence
+%type <sentence> delete_vertex_sentence delete_edge_sentence
+%type <sentence> update_vertex_sentence update_edge_sentence
 %type <sentence> download_sentence ingest_sentence
+
+%type <sentence> traverse_sentence
+%type <sentence> go_sentence match_sentence lookup_sentence find_path_sentence
+%type <sentence> group_by_sentence order_by_sentence limit_sentence
+%type <sentence> fetch_sentence fetch_vertices_sentence fetch_edges_sentence
+%type <sentence> set_sentence piped_sentence assignment_sentence
+%type <sentence> yield_sentence use_sentence
+
+%type <sentence> grant_sentence revoke_sentence
 %type <sentence> set_config_sentence get_config_sentence balance_sentence
 %type <sentence> process_control_sentence return_sentence
-%type <sentence> create_snapshot_sentence drop_snapshot_sentence
 %type <sentence> sentence
 %type <sentences> sentences
 
@@ -1221,15 +1226,21 @@ describe_edge_index_sentence
     }
     ;
 
-build_tag_index_sentence
-    : KW_BUILD KW_TAG KW_INDEX name_label {
-        $$ = new BuildTagIndexSentence($4);
+rebuild_tag_index_sentence
+    : KW_REBUILD KW_TAG KW_INDEX name_label {
+        $$ = new RebuildTagIndexSentence($4, false);
+    }
+    | KW_REBUILD KW_TAG KW_INDEX name_label KW_OFFLINE {
+        $$ = new RebuildTagIndexSentence($4, true);
     }
     ;
 
-build_edge_index_sentence
-    : KW_BUILD KW_EDGE KW_INDEX name_label {
-        $$ = new BuildEdgeIndexSentence($4);
+rebuild_edge_index_sentence
+    : KW_REBUILD KW_EDGE KW_INDEX name_label {
+        $$ = new RebuildEdgeIndexSentence($4, false);
+    }
+    | KW_REBUILD KW_EDGE KW_INDEX name_label KW_OFFLINE {
+        $$ = new RebuildEdgeIndexSentence($4, true);
     }
     ;
 
@@ -1630,6 +1641,12 @@ show_sentence
     | KW_SHOW KW_CREATE KW_EDGE KW_INDEX name_label {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowCreateEdgeIndex, $5);
     }
+    | KW_SHOW KW_TAG KW_INDEX KW_STATUS {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowTagIndexStatus);
+    }
+    | KW_SHOW KW_EDGE KW_INDEX KW_STATUS {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowEdgeIndexStatus);
+    }
     | KW_SHOW KW_SNAPSHOTS {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowSnapshots);
     }
@@ -1955,7 +1972,10 @@ mutate_sentence
     ;
 
 maintain_sentence
-    : create_tag_sentence { $$ = $1; }
+    : create_space_sentence { $$ = $1; }
+    | describe_space_sentence { $$ = $1; }
+    | drop_space_sentence { $$ = $1; }
+    | create_tag_sentence { $$ = $1; }
     | create_edge_sentence { $$ = $1; }
     | alter_tag_sentence { $$ = $1; }
     | alter_edge_sentence { $$ = $1; }
@@ -1969,12 +1989,9 @@ maintain_sentence
     | drop_edge_index_sentence { $$ = $1; }
     | describe_tag_index_sentence { $$ = $1; }
     | describe_edge_index_sentence { $$ = $1; }
-    | build_tag_index_sentence { $$ = $1; }
-    | build_edge_index_sentence { $$ = $1; }
+    | rebuild_tag_index_sentence { $$ = $1; }
+    | rebuild_edge_index_sentence { $$ = $1; }
     | show_sentence { $$ = $1; }
-    | create_space_sentence { $$ = $1; }
-    | describe_space_sentence { $$ = $1; }
-    | drop_space_sentence { $$ = $1; }
     ;
     | create_user_sentence { $$ = $1; }
     | alter_user_sentence { $$ = $1; }

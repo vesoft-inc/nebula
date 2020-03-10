@@ -65,7 +65,7 @@ public:
     bool schemaValid(GraphSpaceID spaceId, const folly::StringPiece& key) const {
         if (NebulaKeyUtils::isVertex(key)) {
             auto tagId = NebulaKeyUtils::getTagId(key);
-            auto ret = schemaMan_->getNewestTagSchemaVer(spaceId, tagId);
+            auto ret = schemaMan_->getLatestTagSchemaVersion(spaceId, tagId);
             if (ret.ok() && ret.value() == -1) {
                 VLOG(3) << "Space " << spaceId << ", Tag " << tagId << " invalid";
                 return false;
@@ -75,7 +75,7 @@ public:
             if (edgeType < 0) {
                 edgeType = -edgeType;
             }
-            auto ret = schemaMan_->getNewestEdgeSchemaVer(spaceId, edgeType);
+            auto ret = schemaMan_->getLatestEdgeSchemaVersion(spaceId, edgeType);
             if (ret.ok() && ret.value() == -1) {
                 VLOG(3) << "Space " << spaceId << ", EdgeType " << edgeType << " invalid";
                 return false;
