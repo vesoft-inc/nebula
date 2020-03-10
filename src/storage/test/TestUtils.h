@@ -422,6 +422,31 @@ public:
             usleep(100000);
         }
     }
+
+    // Wait the specified partition elected
+    static void waitUntilAllElected(kvstore::KVStore* kvstore, GraphSpaceID spaceId,
+        std::set<PartitionID> parts) {
+        auto* nKV = static_cast<kvstore::NebulaStore*>(kvstore);
+        const int32_t partNum = parts.size();
+        // wait until all part leader exists
+        while (true) {
+            int readyNum = 0;
+            for (const auto partId : parts) {
+                auto retLeader = nKV->partLeader(spaceId, partId);
+                if (ok(retLeader)) {
+                    auto leader = value(std::move(retLeader));
+                    if (leader != HostAddr(0, 0)) {
+                        readyNum++;
+                    }
+                }
+            }
+            if (readyNum == partNum) {
+                LOG(INFO) << "All leaders have been elected!";
+                break;
+            }
+            usleep(100000);
+        }
+    }
 };
 
 template <typename T>

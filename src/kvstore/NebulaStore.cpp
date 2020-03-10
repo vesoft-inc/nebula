@@ -822,29 +822,6 @@ int32_t NebulaStore::allLeader(std::unordered_map<GraphSpaceID,
     return count;
 }
 
-// Only for testing
-bool NebulaStore::waitNLeadersOnSpace(GraphSpaceID spaceId, uint64_t leaders) const {
-    while (true) {
-        uint64_t count = 0;
-        {
-            folly::RWSpinLock::ReadHolder rh(&lock_);
-            auto space = spaces_.find(spaceId);
-            if (space == spaces_.end()) {
-                return false;
-            }
-            for (const auto& partIt : space->second->parts_) {
-                if (partIt.second->isLeader()) {
-                    ++count;
-                }
-            }
-        }
-        if (count == leaders) {
-            return true;
-        }
-        ::sleep(FLAGS_raft_heartbeat_interval_secs * 2);
-    }
-}
-
 bool NebulaStore::checkLeader(std::shared_ptr<Part> part) const {
     return !FLAGS_check_leader || part->isLeader();
 }
