@@ -290,6 +290,15 @@ unreserved_keyword
      | KW_RECOVER            { $$ = new std::string("recover"); }
      | KW_FLUSH              { $$ = new std::string("flush"); }
      | KW_COMPACT            { $$ = new std::string("compact"); }
+     | KW_BIDIRECT           { $$ = new std::string("bidirect"); }
+     | KW_OFFLINE            { $$ = new std::string("offline"); }
+     | KW_FORCE              { $$ = new std::string("force"); }
+     | KW_STATUS             { $$ = new std::string("status"); }
+     | KW_REBUILD            { $$ = new std::string("rebuild"); }
+     | KW_PART               { $$ = new std::string("part"); }
+     | KW_PARTS              { $$ = new std::string("parts"); }
+     | KW_DEFAULT            { $$ = new std::string("default"); }
+     | KW_CONFIGS            { $$ = new std::string("configs"); }
      ;
 
 agg_function
