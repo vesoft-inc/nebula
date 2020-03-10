@@ -129,8 +129,7 @@ cpp2::ErrorCode Balancer::recovery() {
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
-bool Balancer::getAllSpaces(std::vector<std::pair<GraphSpaceID, int32_t>>& spaces,
-                            kvstore::ResultCode& retCode) {
+bool Balancer::getAllSpaces(std::vector<GraphSpaceID>& spaces, kvstore::ResultCode& retCode) {
     // Get all spaces
     folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
     auto prefix = MetaServiceUtils::spacePrefix();
@@ -142,8 +141,7 @@ bool Balancer::getAllSpaces(std::vector<std::pair<GraphSpaceID, int32_t>>& space
     }
     while (iter->valid()) {
         auto spaceId = MetaServiceUtils::spaceId(iter->key());
-        auto properties = MetaServiceUtils::parseSpace(iter->val());
-        spaces.emplace_back(spaceId, properties.replica_factor);
+        spaces.push_back(spaceId);
         iter->next();
     }
     return true;
@@ -151,15 +149,14 @@ bool Balancer::getAllSpaces(std::vector<std::pair<GraphSpaceID, int32_t>>& space
 
 cpp2::ErrorCode Balancer::buildBalancePlan(std::unordered_set<HostAddr> hostDel) {
     CHECK(!plan_) << "plan should be nullptr now";
-    std::vector<std::pair<GraphSpaceID, int32_t>> spaces;
+    std::vector<GraphSpaceID> spaces;
     kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
     if (!getAllSpaces(spaces, ret)) {
         return cpp2::ErrorCode::E_STORE_FAILURE;
     }
     plan_ = std::make_unique<BalancePlan>(time::WallClock::fastNowInSec(), kv_, client_.get());
-    auto activeHosts = ActiveHostsMan::getActiveHosts(kv_);
-    for (auto spaceInfo : spaces) {
-        auto taskRet = genTasks(spaceInfo.first, spaceInfo.second, activeHosts, hostDel);
+    for (auto spaceId : spaces) {
+        auto taskRet = genTasks(spaceId, hostDel);
         if (!ok(taskRet)) {
             return error(taskRet);
         }
@@ -186,10 +183,7 @@ cpp2::ErrorCode Balancer::buildBalancePlan(std::unordered_set<HostAddr> hostDel)
 }
 
 ErrorOr<cpp2::ErrorCode, std::vector<BalanceTask>>
-Balancer::genTasks(GraphSpaceID spaceId,
-                   int32_t spaceReplica,
-                   const std::vector<HostAddr>& activeHosts,
-                   std::unordered_set<HostAddr> hostDel) {
+Balancer::genTasks(GraphSpaceID spaceId, std::unordered_set<HostAddr> hostDel) {
     CHECK(!!plan_) << "plan should not be nullptr";
     std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
     int32_t totalParts = 0;
@@ -200,6 +194,7 @@ Balancer::genTasks(GraphSpaceID spaceId,
         return cpp2::ErrorCode::E_NOT_FOUND;
     }
     std::vector<HostAddr> newlyAdded;
+    auto activeHosts = ActiveHostsMan::getActiveHosts(kv_);
     calDiff(hostParts, activeHosts, newlyAdded, hostDel);
     decltype(hostParts) newHostParts(hostParts);
     for (auto& h : newlyAdded) {
@@ -220,13 +215,6 @@ Balancer::genTasks(GraphSpaceID spaceId,
     for (auto& h : hostDel) {
         auto& lostParts = hostParts[h];
         for (auto& partId : lostParts) {
-            // Pick the source host, since we support remove specified host now, the source host
-            // could still be alive and in oldHostParts, but not in newHostParts
-            auto srcRet = hostWithPart(hostParts, activeHosts, partId);
-            if (!srcRet.ok()) {
-                LOG(ERROR) << "Error:" << srcRet.status();
-                return cpp2::ErrorCode::E_NO_VALID_HOST;
-            }
             auto ret = hostWithMinimalParts(newHostParts, partId);
             if (!ret.ok()) {
                 LOG(ERROR) << "Error:" << ret.status();
@@ -234,17 +222,13 @@ Balancer::genTasks(GraphSpaceID spaceId,
             }
             auto& luckyHost = ret.value();
             newHostParts[luckyHost].emplace_back(partId);
-            // we need to check whether src is lived
-            bool srcLived = ActiveHostsMan::isLived(kv_, h);
             tasks.emplace_back(plan_->id_,
                                spaceId,
                                partId,
                                h,
                                luckyHost,
-                               srcLived,
                                kv_,
-                               client_.get(),
-                               spaceReplica == 1);
+                               client_.get());
         }
     }
     if (newHostParts.size() < 2) {
@@ -252,13 +236,12 @@ Balancer::genTasks(GraphSpaceID spaceId,
         return cpp2::ErrorCode::E_NO_VALID_HOST;
     }
     // 2. Make all hosts in newHostParts balanced
-    balanceParts(plan_->id_, spaceId, spaceReplica, newHostParts, totalParts, tasks);
+    balanceParts(plan_->id_, spaceId, newHostParts, totalParts, tasks);
     return tasks;
 }
 
 void Balancer::balanceParts(BalanceID balanceId,
                             GraphSpaceID spaceId,
-                            int32_t spaceReplica,
                             std::unordered_map<HostAddr, std::vector<PartitionID>>& newHostParts,
                             int32_t totalParts,
                             std::vector<BalanceTask>& tasks) {
@@ -307,10 +290,8 @@ void Balancer::balanceParts(BalanceID balanceId,
                                partId,
                                maxPartsHost.first,
                                minPartsHost.first,
-                               true,
                                kv_,
-                               client_.get(),
-                               spaceReplica == 1);
+                               client_.get());
             noAction = false;
         }
         if (noAction) {
@@ -397,20 +378,6 @@ Balancer::sortedHostsByParts(const std::unordered_map<HostAddr,
     return hosts;
 }
 
-StatusOr<HostAddr> Balancer::hostWithPart(
-            const std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
-            const std::vector<HostAddr>& activeHosts,
-            PartitionID partId) {
-    // If a host is alive and it contains specified part, it could be the source host
-    for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
-        if (std::find(it->second.begin(), it->second.end(), partId) != it->second.end() &&
-            std::find(activeHosts.begin(), activeHosts.end(), it->first) != activeHosts.end()) {
-            return it->first;
-        }
-    }
-    return Status::Error("No host hold the part %d", partId);
-}
-
 StatusOr<HostAddr> Balancer::hostWithMinimalParts(
                         const std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
                         PartitionID partId) {
@@ -432,7 +399,7 @@ cpp2::ErrorCode Balancer::leaderBalance() {
 
     folly::Promise<Status> promise;
     auto future = promise.getFuture();
-    std::vector<std::pair<GraphSpaceID, int32_t>> spaces;
+    std::vector<GraphSpaceID> spaces;
     kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
     if (!getAllSpaces(spaces, ret)) {
         LOG(ERROR) << "Can't access kvstore, ret = " << static_cast<int32_t>(ret);
@@ -450,14 +417,14 @@ cpp2::ErrorCode Balancer::leaderBalance() {
         }
 
         std::vector<folly::SemiFuture<Status>> futures;
-        for (const auto& spaceInfo : spaces) {
+        for (const auto& space : spaces) {
             LeaderBalancePlan plan;
-            buildLeaderBalancePlan(hostLeaderMap_.get(), spaceInfo.first, plan);
-            simplifyLeaderBalnacePlan(spaceInfo.first, plan);
+            buildLeaderBalancePlan(hostLeaderMap_.get(), space, plan);
+            simplifyLeaderBalnacePlan(space, plan);
             for (const auto& task : plan) {
                 futures.emplace_back(client_->transLeader(std::get<0>(task), std::get<1>(task),
-                                                        std::move(std::get<2>(task)),
-                                                        std::move(std::get<3>(task))));
+                                                          std::move(std::get<2>(task)),
+                                                          std::move(std::get<3>(task))));
             }
         }
 

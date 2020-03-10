@@ -57,20 +57,16 @@ public:
                 PartitionID partId,
                 const HostAddr& src,
                 const HostAddr& dst,
-                bool srcLived,
                 kvstore::KVStore* kv,
-                AdminClient* client,
-                bool singleReplica = false)
+                AdminClient* client)
         : balanceId_(balanceId)
         , spaceId_(spaceId)
         , partId_(partId)
         , src_(src)
         , dst_(dst)
-        , srcLived_(srcLived)
         , taskIdStr_(buildTaskId())
         , kv_(kv)
-        , client_(client)
-        , singleReplica_(singleReplica) {}
+        , client_(client) {}
 
     const std::string& taskIdStr() const {
         return taskIdStr_;
@@ -107,7 +103,7 @@ private:
     static std::tuple<BalanceID, GraphSpaceID, PartitionID, HostAddr, HostAddr>
     parseKey(const folly::StringPiece& rawKey);
 
-    static std::tuple<BalanceTask::Status, BalanceTask::Result, bool, int64_t, int64_t, bool>
+    static std::tuple<BalanceTask::Status, BalanceTask::Result, int64_t, int64_t>
     parseVal(const folly::StringPiece& rawVal);
 
 private:
@@ -116,11 +112,9 @@ private:
     PartitionID  partId_;
     HostAddr     src_;
     HostAddr     dst_;
-    bool         srcLived_ = true;  // false means the src host have been lost.
     std::string  taskIdStr_;
     kvstore::KVStore* kv_ = nullptr;
     AdminClient* client_ = nullptr;
-    bool         singleReplica_ = false;
     Status       status_ = Status::START;
     Result       ret_ = Result::IN_PROGRESS;
     int64_t      startTimeMs_ = 0;

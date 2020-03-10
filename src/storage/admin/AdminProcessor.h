@@ -40,13 +40,27 @@ public:
         auto part = nebula::value(ret);
         auto host = kvstore::NebulaStore::getRaftAddr(HostAddr(req.get_new_leader().get_ip(),
                                                                req.get_new_leader().get_port()));
-
         if (part->isLeader() && part->address() == host) {
             LOG(INFO) << "I am already leader of space " << spaceId
                       << " part " << partId << ", skip transLeader";
             onFinished();
             return;
         }
+        auto* partManager = kvstore_->partManager();
+        auto status = partManager->partMeta(spaceId, partId);
+        if (!status.ok()) {
+            this->pushResultCode(cpp2::ErrorCode::E_PART_NOT_FOUND, partId);
+            onFinished();
+            return;
+        }
+        auto partMeta = status.value();
+        if (partMeta.peers_.size() == 1) {
+            LOG(INFO) << "Skip transfer leader of space " << spaceId
+                      << ", part " << partId << " because of single replica.";
+            onFinished();
+            return;
+        }
+
         part->asyncTransferLeader(host,
                                   [this, spaceId, partId, part] (kvstore::ResultCode code) {
             if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
