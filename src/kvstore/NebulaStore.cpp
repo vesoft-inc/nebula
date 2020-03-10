@@ -19,8 +19,6 @@ DEFINE_int32(custom_filter_interval_secs, 24 * 3600, "interval to trigger custom
 DEFINE_int32(num_workers, 4, "Number of worker threads");
 DEFINE_bool(check_leader, true, "Check leader or not");
 
-DECLARE_uint32(raft_heartbeat_interval_secs);
-
 namespace nebula {
 namespace kvstore {
 

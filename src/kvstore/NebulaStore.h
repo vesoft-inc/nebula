@@ -240,7 +240,7 @@ private:
 
 private:
     // The lock used to protect spaces_
-    mutable folly::RWSpinLock lock_;
+    folly::RWSpinLock lock_;
     std::unordered_map<GraphSpaceID, std::shared_ptr<SpacePartInfo>> spaces_;
 
     std::shared_ptr<folly::IOThreadPoolExecutor> ioPool_;
