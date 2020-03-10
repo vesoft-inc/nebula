@@ -28,7 +28,7 @@ jobs:
         CCACHE_DIR: /tmp/ccache/
       options: --mount type=tmpfs,destination=/tmp/ccache,tmpfs-size=1073741824
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
         with:
           fetch-depth: 1
       - uses: actions/cache@v1
