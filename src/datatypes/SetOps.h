@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef DATATYPES_LISTOPS_H_
-#define DATATYPES_LISTOPS_H_
+#ifndef DATATYPES_SETOPS_H_
+#define DATATYPES_SETOPS_H_
 
 #include "base/Base.h"
 
@@ -13,7 +13,7 @@
 #include <thrift/lib/cpp2/gen/module_types_tcc.h>
 #include <thrift/lib/cpp2/protocol/ProtocolReaderStructReadState.h>
 
-#include "datatypes/List.h"
+#include "datatypes/Set.h"
 
 namespace apache {
 namespace thrift {
@@ -21,14 +21,14 @@ namespace thrift {
 namespace detail {
 
 template<>
-struct TccStructTraits<nebula::List> {
+struct TccStructTraits<nebula::Set> {
     static void translateFieldName(
             FOLLY_MAYBE_UNUSED folly::StringPiece _fname,
             FOLLY_MAYBE_UNUSED int16_t& fid,
             FOLLY_MAYBE_UNUSED apache::thrift::protocol::TType& _ftype) {
         if (_fname == "values") {
             fid = 1;
-            _ftype = apache::thrift::protocol::T_LIST;
+            _ftype = apache::thrift::protocol::T_STRUCT;
         }
     }
 };
@@ -37,27 +37,27 @@ struct TccStructTraits<nebula::List> {
 
 
 template<>
-inline void Cpp2Ops<nebula::List>::clear(nebula::List* obj) {
+inline void Cpp2Ops<nebula::Set>::clear(nebula::Set* obj) {
     return obj->clear();
 }
 
 
 template<>
-inline constexpr protocol::TType Cpp2Ops<nebula::List>::thriftType() {
+inline constexpr protocol::TType Cpp2Ops<nebula::Set>::thriftType() {
     return apache::thrift::protocol::T_STRUCT;
 }
 
 
 template<>
 template<class Protocol>
-uint32_t Cpp2Ops<nebula::List>::write(Protocol* proto, nebula::List const* obj) {
+uint32_t Cpp2Ops<nebula::Set>::write(Protocol* proto, nebula::Set const* obj) {
     uint32_t xfer = 0;
-    xfer += proto->writeStructBegin("List");
+    xfer += proto->writeStructBegin("Set");
 
-    xfer += proto->writeFieldBegin("values", apache::thrift::protocol::T_LIST, 1);
+    xfer += proto->writeFieldBegin("values", apache::thrift::protocol::T_SET, 1);
     xfer += detail::pm::protocol_methods<
-            type_class::list<type_class::structure>,
-            std::vector<nebula::Value>
+            type_class::set<type_class::structure>,
+            std::unordered_set<nebula::Value>
         >::write(*proto, obj->values);
     xfer += proto->writeFieldEnd();
 
@@ -69,23 +69,24 @@ uint32_t Cpp2Ops<nebula::List>::write(Protocol* proto, nebula::List const* obj) 
 
 template<>
 template<class Protocol>
-void Cpp2Ops<nebula::List>::read(Protocol* proto, nebula::List* obj) {
+void Cpp2Ops<nebula::Set>::read(Protocol* proto, nebula::Set* obj) {
     detail::ProtocolReaderStructReadState<Protocol> readState;
 
     readState.readStructBegin(proto);
 
     using apache::thrift::TProtocolException;
 
-    if (UNLIKELY(!readState.advanceToNextField(proto, 0, 1, protocol::T_LIST))) {
-        goto _loop;
+
+    if (UNLIKELY(!readState.advanceToNextField(proto, 0, 1, protocol::T_SET))) {
+      goto _loop;
     }
 
 _readField_values:
     {
-        obj->values = std::vector<nebula::Value>();
+        obj->values = std::unordered_set<nebula::Value>();
         detail::pm::protocol_methods<
-                type_class::list<type_class::structure>,
-                std::vector<nebula::Value>
+                type_class::set<type_class::structure>,
+                std::unordered_set<nebula::Value>
             >::read(*proto, obj->values);
     }
 
@@ -104,14 +105,14 @@ _loop:
     }
 
     if (proto->kUsesFieldNames()) {
-        detail::TccStructTraits<nebula::List>::translateFieldName(
+        detail::TccStructTraits<nebula::Set>::translateFieldName(
             readState.fieldName(), readState.fieldId, readState.fieldType);
     }
 
     switch (readState.fieldId) {
         case 1:
         {
-            if (LIKELY(readState.fieldType == apache::thrift::protocol::T_LIST)) {
+            if (LIKELY(readState.fieldType == apache::thrift::protocol::T_SET)) {
                 goto _readField_values;
             } else {
                 goto _skip;
@@ -131,15 +132,14 @@ _skip:
 
 template<>
 template<class Protocol>
-uint32_t Cpp2Ops<nebula::List>::serializedSize(Protocol const* proto,
-                                               nebula::List const* obj) {
+uint32_t Cpp2Ops<nebula::Set>::serializedSize(Protocol const* proto,
+                                              nebula::Set const* obj) {
     uint32_t xfer = 0;
-    xfer += proto->serializedStructSize("List");
-
-    xfer += proto->serializedFieldSize("values", apache::thrift::protocol::T_LIST, 1);
+    xfer += proto->serializedStructSize("Set");
+    xfer += proto->serializedFieldSize("values", apache::thrift::protocol::T_SET, 1);
     xfer += detail::pm::protocol_methods<
-            type_class::list<type_class::structure>,
-            std::vector<nebula::Value>
+            type_class::set<type_class::structure>,
+            std::unordered_set<nebula::Value>
         >::serializedSize<false>(*proto, obj->values);
     xfer += proto->serializedSizeStop();
     return xfer;
@@ -148,15 +148,14 @@ uint32_t Cpp2Ops<nebula::List>::serializedSize(Protocol const* proto,
 
 template<>
 template<class Protocol>
-uint32_t Cpp2Ops<nebula::List>::serializedSizeZC(Protocol const* proto,
-                                                 nebula::List const* obj) {
+uint32_t Cpp2Ops<nebula::Set>::serializedSizeZC(Protocol const* proto,
+                                                nebula::Set const* obj) {
     uint32_t xfer = 0;
-    xfer += proto->serializedStructSize("List");
-
-    xfer += proto->serializedFieldSize("values", apache::thrift::protocol::T_LIST, 1);
+    xfer += proto->serializedStructSize("Set");
+    xfer += proto->serializedFieldSize("values", apache::thrift::protocol::T_SET, 1);
     xfer += detail::pm::protocol_methods<
-            type_class::list<type_class::structure>,
-            std::vector<nebula::Value>
+            type_class::set<type_class::structure>,
+            std::unordered_set<nebula::Value>
         >::serializedSize<false>(*proto, obj->values);
     xfer += proto->serializedSizeStop();
     return xfer;
@@ -164,5 +163,5 @@ uint32_t Cpp2Ops<nebula::List>::serializedSizeZC(Protocol const* proto,
 
 }  // namespace thrift
 }  // namespace apache
-#endif  // DATATYPES_LISTOPS_H_
+#endif  // DATATYPES_SETOPS_H_
 

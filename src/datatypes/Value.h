@@ -10,7 +10,6 @@
 #include "base/Base.h"
 #include "thrift/ThriftTypes.h"
 #include "datatypes/Date.h"
-#include "datatypes/Path.h"
 
 namespace apache {
 namespace thrift {
@@ -24,8 +23,12 @@ class Cpp2Ops;
 
 namespace nebula {
 
+struct Vertex;
+struct Edge;
+struct Path;
 struct Map;
 struct List;
+struct Set;
 
 enum class NullType {
     __NULL__ = 0,
@@ -49,9 +52,12 @@ struct Value {
         STRING = 5,
         DATE = 6,
         DATETIME = 7,
-        PATH = 8,
-        LIST = 9,
-        MAP = 10,
+        VERTEX = 8,
+        EDGE = 9,
+        PATH = 10,
+        LIST = 11,
+        MAP = 12,
+        SET = 13,
     };
 
     // Constructors
@@ -79,12 +85,18 @@ struct Value {
     Value(Date&& v);                // NOLINT
     Value(const DateTime& v);       // NOLINT
     Value(DateTime&& v);            // NOLINT
+    Value(const Vertex& v);         // NOLINT
+    Value(Vertex&& v);              // NOLINT
+    Value(const Edge& v);           // NOLINT
+    Value(Edge&& v);                // NOLINT
     Value(const Path& v);           // NOLINT
     Value(Path&& v);                // NOLINT
     Value(const List& v);           // NOLINT
     Value(List&& v);                // NOLINT
     Value(const Map& v);            // NOLINT
     Value(Map&& v);                 // NOLINT
+    Value(const Set& v);            // NOLINT
+    Value(Set&& v);                 // NOLINT
 
     Type type() const noexcept {
         return type_;
@@ -119,12 +131,18 @@ struct Value {
     void setDate(Date&& v);
     void setDateTime(const DateTime& v);
     void setDateTime(DateTime&& v);
+    void setVertex(const Vertex& v);
+    void setVertex(Vertex&& v);
+    void setEdge(const Edge& v);
+    void setEdge(Edge&& v);
     void setPath(const Path& v);
     void setPath(Path&& v);
     void setList(const List& v);
     void setList(List&& v);
     void setMap(const Map& v);
     void setMap(Map&& v);
+    void setSet(const Set& v);
+    void setSet(Set&& v);
 
     const NullType& getNull() const;
     const bool& getBool() const;
@@ -133,9 +151,18 @@ struct Value {
     const std::string& getStr() const;
     const Date& getDate() const;
     const DateTime& getDateTime() const;
+    const Vertex& getVertex() const;
+    const Vertex* getVertexPtr() const;
+    const Edge& getEdge() const;
+    const Edge* getEdgePtr() const;
     const Path& getPath() const;
+    const Path* getPathPtr() const;
     const List& getList() const;
+    const List* getListPtr() const;
     const Map& getMap() const;
+    const Map* getMapPtr() const;
+    const Set& getSet() const;
+    const Set* getSetPtr() const;
 
     NullType moveNull();
     bool moveBool();
@@ -144,9 +171,12 @@ struct Value {
     std::string moveStr();
     Date moveDate();
     DateTime moveDateTime();
+    Vertex moveVertex();
+    Edge moveEdge();
     Path movePath();
     List moveList();
     Map moveMap();
+    Set moveSet();
 
     NullType& mutableNull();
     bool& mutableBool();
@@ -155,9 +185,12 @@ struct Value {
     std::string& mutableStr();
     Date& mutableDate();
     DateTime& mutableDateTime();
+    Vertex& mutableVertex();
+    Edge& mutableEdge();
     Path& mutablePath();
     List& mutableList();
     Map& mutableMap();
+    Set& mutableSet();
 
     bool operator==(const Value& rhs) const;
 
@@ -177,9 +210,12 @@ private:
         std::string             sVal;
         Date                    dVal;
         DateTime                tVal;
-        Path                    pVal;
+        std::unique_ptr<Vertex> vVal;
+        std::unique_ptr<Edge>   eVal;
+        std::unique_ptr<Path>   pVal;
         std::unique_ptr<List>   lVal;
         std::unique_ptr<Map>    mVal;
+        std::unique_ptr<Set>    uVal;
 
         Storage() {}
         ~Storage() {}
@@ -211,7 +247,19 @@ private:
     // DateTime value
     void setT(const DateTime& v);
     void setT(DateTime&& v);
+    // Vertex value
+    void setV(const std::unique_ptr<Vertex>& v);
+    void setV(std::unique_ptr<Vertex>&& v);
+    void setV(const Vertex& v);
+    void setV(Vertex&& v);
+    // Edge value
+    void setE(const std::unique_ptr<Edge>& v);
+    void setE(std::unique_ptr<Edge>&& v);
+    void setE(const Edge& v);
+    void setE(Edge&& v);
     // Path value
+    void setP(const std::unique_ptr<Path>& v);
+    void setP(std::unique_ptr<Path>&& v);
     void setP(const Path& v);
     void setP(Path&& v);
     // List value
@@ -224,6 +272,11 @@ private:
     void setM(std::unique_ptr<Map>&& v);
     void setM(const Map& v);
     void setM(Map&& v);
+    // Set value
+    void setU(const std::unique_ptr<Set>& v);
+    void setU(std::unique_ptr<Set>&& v);
+    void setU(const Set& v);
+    void setU(Set&& v);
 };
 
 void swap(Value& a, Value& b);
@@ -231,5 +284,16 @@ void swap(Value& a, Value& b);
 std::ostream& operator<<(std::ostream& os, const Value::Type& type);
 
 }  // namespace nebula
+
+
+namespace std {
+
+// Inject a customized hash function
+template<>
+struct hash<nebula::Value> {
+    std::size_t operator()(const nebula::Value& h) const noexcept;
+};
+
+}  // namespace std
 #endif  // DATATYPES_VALUE_H_
 

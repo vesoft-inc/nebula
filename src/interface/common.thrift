@@ -11,10 +11,13 @@ namespace go nebula
 
 cpp_include "thrift/ThriftTypes.h"
 cpp_include "datatypes/DateOps.h"
+cpp_include "datatypes/VertexOps.h"
+cpp_include "datatypes/EdgeOps.h"
 cpp_include "datatypes/PathOps.h"
 cpp_include "datatypes/ValueOps.h"
 cpp_include "datatypes/MapOps.h"
 cpp_include "datatypes/ListOps.h"
+cpp_include "datatypes/SetOps.h"
 cpp_include "datatypes/KeyValueOps.h"
 cpp_include "datatypes/HostAddrOps.h"
 
@@ -60,20 +63,6 @@ struct DateTime {
 } (cpp.type = "nebula::DateTime")
 
 
-struct Step {
-    1: EdgeType type;
-    2: EdgeRanking ranking;
-    3: VertexID dst;
-} (cpp.type = "nebula::Step")
-
-
-// Special type to support path during the query
-struct Path {
-    1: VertexID src;
-    2: list<Step> steps;
-} (cpp.type = "nebula::Path")
-
-
 enum NullType {
     __NULL__ = 0,
     NaN      = 1,
@@ -91,20 +80,71 @@ union Value {
     5: binary                               sVal;
     6: Date                                 dVal;
     7: DateTime                             tVal;
-    8: Path                                 pVal;
-    9: List (cpp.type = "nebula::List")     lVal (cpp.ref_type = "unique");
-    10: Map (cpp.type = "nebula::Map")      mVal (cpp.ref_type = "unique");
+    8: Vertex (cpp.type = "nebula::Vertex") vVal (cpp.ref_type = "unique");
+    9: Edge (cpp.type = "nebula::Edge")     eVal (cpp.ref_type = "unique");
+    10: Path (cpp.type = "nebula::Path")    pVal (cpp.ref_type = "unique");
+    11: List (cpp.type = "nebula::List")    lVal (cpp.ref_type = "unique");
+    12: Map (cpp.type = "nebula::Map")      mVal (cpp.ref_type = "unique");
+    13: Set (cpp.type = "nebula::Set")      uVal (cpp.ref_type = "unique");
 } (cpp.type = "nebula::Value")
 
 
+// Ordered list
 struct List {
     1: list<Value> values;
 } (cpp.type = "nebula::List")
 
 
+// Unordered key/values pairs
 struct Map {
     1: map<binary, Value> (cpp.template = "std::unordered_map") kvs;
 } (cpp.type = "nebula::Map")
+
+
+// Unordered and unique values
+struct Set {
+    1: set<Value> (cpp.template = "std::unordered_set") values;
+} (cpp.type = "nebula::Set")
+
+
+struct Tag {
+    1: binary name,
+    // List of <prop_name, prop_value>
+    2: map<binary, Value> (cpp.template = "std::unordered_map") props,
+} (cpp.type = "nebula::Tag")
+
+
+struct Vertex {
+    1: VertexID vid,
+    2: list<Tag> tags,
+} (cpp.type = "nebula::Vertex")
+
+
+struct Edge {
+    1: VertexID src,
+    2: VertexID dst,
+    3: EdgeType type,
+    4: binary name,
+    5: EdgeRanking ranking,
+    // List of <prop_name, prop_value>
+    6: map<binary, Value> (cpp.template = "std::unordered_map") props,
+} (cpp.type = "nebula::Edge")
+
+
+struct Step {
+    1: Vertex dst,
+    2: EdgeType type,
+    3: binary name,
+    4: EdgeRanking ranking,
+    5: map<binary, Value> (cpp.template = "std::unordered_map") props,
+} (cpp.type = "nebula::Step")
+
+
+// Special type to support path during the query
+struct Path {
+    1: Vertex src,
+    2: list<Step> steps;
+} (cpp.type = "nebula::Path")
 
 
 struct HostAddr {

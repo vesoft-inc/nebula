@@ -44,12 +44,17 @@ struct Row {
 }
 
 
+struct DataSet {
+    1: list<binary>    column_names;   // Column names
+    2: list<Row>       rows;
+}
+
+
 struct ExecutionResponse {
     1: required ErrorCode       error_code;
     2: required i32             latency_in_us;  // Execution time on server
-    3: optional list<binary>    column_names;   // Column names
-    4: optional list<Row>       rows;
-    5: optional binary          space_name;
+    3: optional list<DataSet>   data;           // Can return multiple dataset
+    4: optional binary          space_name;
 }
 
 
@@ -65,4 +70,7 @@ service GraphService {
     oneway void signout(1: i64 sessionId)
 
     ExecutionResponse execute(1: i64 sessionId, 2: binary stmt)
+
+    // Same as execute(), but response will be a json string
+    binary executeJson(1: i64 sessionId, 2: binary stmt)
 }

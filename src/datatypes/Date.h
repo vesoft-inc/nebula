@@ -8,6 +8,7 @@
 #define DATATYPES_DATE_H_
 
 #include "base/Base.h"
+#include "folly/hash/Hash.h"
 
 namespace nebula {
 
@@ -64,4 +65,55 @@ struct DateTime {
 };
 
 }  // namespace nebula
+
+
+namespace std {
+
+// Inject a customized hash function
+template<>
+struct hash<nebula::Date> {
+    std::size_t operator()(const nebula::Date& h) const noexcept {
+        size_t hv = folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.year),
+                                           sizeof(h.year));
+        hv = folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.month),
+                                    sizeof(h.month),
+                                    hv);
+        return folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.day),
+                                      sizeof(h.day),
+                                      hv);
+    }
+};
+
+
+template<>
+struct hash<nebula::DateTime> {
+    std::size_t operator()(const nebula::DateTime& h) const noexcept {
+        size_t hv = folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.year),
+                                           sizeof(h.year));
+        hv = folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.month),
+                                    sizeof(h.month),
+                                    hv);
+        hv = folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.day),
+                                    sizeof(h.day),
+                                    hv);
+        hv = folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.hour),
+                                    sizeof(h.hour),
+                                    hv);
+        hv = folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.minute),
+                                    sizeof(h.minute),
+                                    hv);
+        hv = folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.sec),
+                                    sizeof(h.sec),
+                                    hv);
+        hv = folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.microsec),
+                                    sizeof(h.microsec),
+                                    hv);
+        return folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.timezone),
+                                      sizeof(h.timezone),
+                                      hv);
+    }
+};
+
+}  // namespace std
 #endif  // DATATYPES_DATE_H_
+
