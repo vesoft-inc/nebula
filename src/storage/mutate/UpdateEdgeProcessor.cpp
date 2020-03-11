@@ -318,10 +318,8 @@ UpdateEdgeProcessor::FilterResult UpdateEdgeProcessor::checkFilter(const Partiti
     auto ret = collectEdgesProps(partId, edgeKey);
     if (insertable_ && ret == kvstore::ResultCode::ERR_KEY_NOT_FOUND) {
         return FilterResult::PASS;
-    } else if (ret == kvstore::ResultCode::ERR_KEY_NOT_FOUND) {
-        return FilterResult::FAILED_ERROR;
     } else if (ret != kvstore::ResultCode::SUCCEEDED) {
-        return FilterResult::FAILED_FILTER_OUT;
+        return FilterResult::FAILED_ERROR;
     }
     for (auto& tc : this->tagContexts_) {
         VLOG(3) << "partId " << partId << ", vId " << edgeKey.src

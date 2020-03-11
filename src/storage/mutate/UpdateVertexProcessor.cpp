@@ -160,10 +160,8 @@ UpdateVertexProcessor::checkFilter(const PartitionID partId, const VertexID vId)
         auto ret = collectVertexProps(partId, vId, tc.tagId_, tc.props_);
         if (insertable_ && ret == kvstore::ResultCode::ERR_KEY_NOT_FOUND) {
             return FilterResult::PASS;
-        } else if (ret == kvstore::ResultCode::ERR_KEY_NOT_FOUND) {
-            return  FilterResult::FAILED_ERROR;
         } else if (ret != kvstore::ResultCode::SUCCEEDED) {
-            return FilterResult::FAILED_FILTER_OUT;
+            return FilterResult::FAILED_ERROR;
         }
     }
 
