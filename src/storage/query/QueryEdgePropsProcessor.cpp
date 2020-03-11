@@ -28,6 +28,10 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
     }
 
     auto schema = this->schemaMan_->getEdgeSchema(spaceId_, std::abs(edgeKey.edge_type));
+    if (schema == nullptr) {
+        VLOG(3) << "Schema not found for edge type: " << edgeKey.edge_type;
+        return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
+    }
     auto retTTLOpt = getEdgeTTLInfo(edgeKey.edge_type);
     // Only use the latest version.
     if (iter && iter->valid()) {
