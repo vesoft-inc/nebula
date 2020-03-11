@@ -24,6 +24,7 @@ class BalanceTask {
     FRIEND_TEST(BalanceTest, BalancePlanTest);
     FRIEND_TEST(BalanceTest, SpecifyHostTest);
     FRIEND_TEST(BalanceTest, SpecifyMultiHostTest);
+    FRIEND_TEST(BalanceTest, MockReplaceMachineTest);
     FRIEND_TEST(BalanceTest, SingleReplicaTest);
     FRIEND_TEST(BalanceTest, NormalTest);
     FRIEND_TEST(BalanceTest, RecoveryTest);
