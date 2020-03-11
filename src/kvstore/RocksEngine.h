@@ -85,7 +85,6 @@ protected:
     rocksdb::Slice prefix_;
 };
 
-
 /**************************************************************************
  *
  * An implementation of KVEngine based on Rocksdb

@@ -81,6 +81,31 @@ public:
     future_memberChange(const storage::cpp2::MemberChangeReq& req) override {
         RETURN_OK(req);
     }
+
+    folly::Future<storage::cpp2::AdminExecResp>
+    future_createCheckpoint(const storage::cpp2::CreateCPRequest& req) override {
+        RETURN_OK(req);
+    }
+
+    folly::Future<storage::cpp2::AdminExecResp>
+    future_dropCheckpoint(const storage::cpp2::DropCPRequest& req) override {
+        RETURN_OK(req);
+    }
+
+    folly::Future<storage::cpp2::AdminExecResp>
+    future_blockingWrites(const storage::cpp2::BlockingSignRequest& req) override {
+        RETURN_OK(req);
+    }
+
+    folly::Future<storage::cpp2::AdminExecResp>
+    future_rebuildTagIndex(const storage::cpp2::RebuildIndexRequest& req) override {
+        RETURN_OK(req);
+    }
+
+    folly::Future<storage::cpp2::AdminExecResp>
+    future_rebuildEdgeIndex(const storage::cpp2::RebuildIndexRequest& req) override {
+        RETURN_OK(req);
+    }
 };
 
 class TestStorageServiceRetry : public TestStorageService {
@@ -263,6 +288,88 @@ TEST(AdminClientTest, RetryTest) {
         ASSERT_EQ(HostAddr(localIp, sc2->port_), hosts[0]);
         ASSERT_EQ(HostAddr(localIp, sc1->port_), hosts[1]);
         ASSERT_EQ(HostAddr(1, 1), hosts[2]);
+    }
+}
+
+TEST(AdminClientTest, SnapshotTest) {
+    auto sc = std::make_unique<test::ServerContext>();
+    auto handler = std::make_shared<TestStorageService>();
+    sc->mockCommon("storage", 0, handler);
+    LOG(INFO) << "Start storage1 server on " << sc->port_;
+
+    IPv4 localIp;
+    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+
+    LOG(INFO) << "Now test interfaces with retry to leader!";
+    fs::TempDir rootPath("/tmp/admin_snapshot_test.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto now = time::WallClock::fastNowInMilliSec();
+    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr(localIp, sc->port_), HostInfo(now));
+    ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(kv.get()).size());
+
+    std::vector<HostAddr> addresses;
+    addresses.emplace_back(localIp, sc->port_);
+    auto client = std::make_unique<AdminClient>(kv.get());
+    {
+        LOG(INFO) << "Test Blocking Writes On...";
+        auto status = client->blockingWrites(1, storage::cpp2::EngineSignType::BLOCK_ON).get();
+        ASSERT_TRUE(status.ok());
+    }
+    {
+        LOG(INFO) << "Test Create Snapshot...";
+        auto status = client->createSnapshot(1, "test_snapshot").get();
+        ASSERT_TRUE(status.ok());
+    }
+    {
+        LOG(INFO) << "Test Drop Snapshot...";
+        auto status = client->dropSnapshot(1, "test_snapshot", addresses).get();
+        ASSERT_TRUE(status.ok());
+    }
+    {
+        LOG(INFO) << "Test Blocking Writes Off...";
+        auto status = client->blockingWrites(1, storage::cpp2::EngineSignType::BLOCK_OFF).get();
+        ASSERT_TRUE(status.ok());
+    }
+}
+
+TEST(AdminClientTest, RebuildIndexTest) {
+    auto sc = std::make_unique<test::ServerContext>();
+    auto handler = std::make_shared<TestStorageService>();
+    sc->mockCommon("storage", 0, handler);
+    LOG(INFO) << "Start storage server on " << sc->port_;
+
+    IPv4 localIp;
+    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+
+    LOG(INFO) << "Now test interfaces with retry to leader!";
+    fs::TempDir rootPath("/tmp/admin_snapshot_test.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto now = time::WallClock::fastNowInMilliSec();
+    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr(localIp, sc->port_), HostInfo(now));
+    ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(kv.get()).size());
+    auto address = std::make_pair(localIp, sc->port_);
+    auto client = std::make_unique<AdminClient>(kv.get());
+    {
+        LOG(INFO) << "Test Blocking Writes On...";
+        auto status = client->blockingWrites(1, storage::cpp2::EngineSignType::BLOCK_ON).get();
+        ASSERT_TRUE(status.ok());
+    }
+    {
+        LOG(INFO) << "Test Rebuild Tag Index...";
+        std::vector<PartitionID> parts{1, 2, 3};
+        auto status = client->rebuildTagIndex(address, 1, 1, std::move(parts), false).get();
+        ASSERT_TRUE(status.ok());
+    }
+    {
+        LOG(INFO) << "Test Rebuild Edge Index...";
+        std::vector<PartitionID> parts{1, 2, 3};
+        auto status = client->rebuildEdgeIndex(address, 1, 1, std::move(parts), false).get();
+        ASSERT_TRUE(status.ok());
+    }
+    {
+        LOG(INFO) << "Test Blocking Writes Off...";
+        auto status = client->blockingWrites(1, storage::cpp2::EngineSignType::BLOCK_OFF).get();
+        ASSERT_TRUE(status.ok());
     }
 }
 

@@ -18,13 +18,14 @@ const std::string kTagsTable           = "__tags__";           // NOLINT
 const std::string kEdgesTable          = "__edges__";          // NOLINT
 const std::string kIndexesTable        = "__indexes__";        // NOLINT
 const std::string kIndexTable          = "__index__";          // NOLINT
+const std::string kIndexStatusTable    = "__index_status__";   // NOLINT
 const std::string kUsersTable          = "__users__";          // NOLINT
 const std::string kRolesTable          = "__roles__";          // NOLINT
 const std::string kConfigsTable        = "__configs__";        // NOLINT
 const std::string kDefaultTable        = "__default__";        // NOLINT
 const std::string kSnapshotsTable      = "__snapshots__";      // NOLINT
 const std::string kLastUpdateTimeTable = "__last_update_time__"; // NOLINT
-const std::string kLeadersTable = "__leaders__"; // NOLINT
+const std::string kLeadersTable        = "__leaders__";          // NOLINT
 
 const std::string kHostOnline  = "Online";       // NOLINT
 const std::string kHostOffline = "Offline";      // NOLINT
@@ -339,6 +340,30 @@ nebula::cpp2::IndexItem MetaServiceUtils::parseIndex(const folly::StringPiece& r
     nebula::cpp2::IndexItem item;
     apache::thrift::CompactSerializer::deserialize(rawData, item);
     return item;
+}
+
+// This method should replace with JobManager when it ready.
+std::string MetaServiceUtils::rebuildIndexStatus(GraphSpaceID space,
+                                                 char type,
+                                                 const std::string& indexName) {
+    std::string key;
+    key.reserve(64);
+    key.append(kIndexStatusTable.data(), kIndexStatusTable.size())
+       .append(reinterpret_cast<const char*>(&space), sizeof(GraphSpaceID))
+       .append(1, type)
+       .append(indexName);
+    return key;
+}
+
+// This method should replace with JobManager when it ready.
+std::string MetaServiceUtils::rebuildIndexStatusPrefix(GraphSpaceID space,
+                                                       char type) {
+    std::string key;
+    key.reserve(kIndexStatusTable.size() + sizeof(GraphSpaceID) + sizeof(char));
+    key.append(kIndexStatusTable.data(), kIndexStatusTable.size())
+       .append(reinterpret_cast<const char*>(&space), sizeof(GraphSpaceID))
+       .append(1, type);
+    return key;
 }
 
 std::string MetaServiceUtils::indexSpaceKey(const std::string& name) {

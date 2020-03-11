@@ -276,7 +276,10 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
                     code = batch->remove(op.second.first);
                 } else if (op.first == BatchLogType::OP_BATCH_REMOVE_RANGE) {
                     code = batch->removeRange(op.second.first, op.second.second);
+                } else if (op.first == BatchLogType::OP_BATCH_REMOVE_PREFIX) {
+                    code = batch->removePrefix(op.second.first);
                 }
+
                 if (code != ResultCode::SUCCEEDED) {
                     LOG(ERROR) << idStr_ << "Failed to call WriteBatch";
                     return false;

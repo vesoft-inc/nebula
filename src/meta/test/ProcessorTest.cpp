@@ -2457,7 +2457,7 @@ TEST(ProcessorTest, IndexCheckAlterEdgeTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INDEX_CONFLICT, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
     }
     // Verify ErrorCode of drop
     {
@@ -2480,7 +2480,7 @@ TEST(ProcessorTest, IndexCheckAlterEdgeTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INDEX_CONFLICT, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
     }
 }
 
@@ -2583,7 +2583,7 @@ TEST(ProcessorTest, IndexCheckAlterTagTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INDEX_CONFLICT, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
     }
     {
         cpp2::AlterTagReq req;
@@ -2604,7 +2604,7 @@ TEST(ProcessorTest, IndexCheckAlterTagTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INDEX_CONFLICT, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
     }
 }
 
@@ -2635,7 +2635,7 @@ TEST(ProcessorTest, IndexCheckDropEdgeTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INDEX_CONFLICT, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
     }
 }
 
@@ -2667,7 +2667,7 @@ TEST(ProcessorTest, IndexCheckDropTagTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INDEX_CONFLICT, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
     }
 }
 

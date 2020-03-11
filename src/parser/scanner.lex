@@ -60,7 +60,8 @@ SPACE                       ([Ss][Pp][Aa][Cc][Ee])
 SPACES                      ([Ss][Pp][Aa][Cc][Ee][Ss])
 INDEX                       ([Ii][Nn][Dd][Ee][Xx])
 INDEXES                     ([Ii][Nn][Dd][Ee][Xx][Ee][Ss])
-BUILD                       ([Bb][Uu][Ii][Ll][Dd])
+REBUILD                     ([Rr][Ee][Bb][Uu][Ii][Ll][Dd])
+STATUS                      ([Ss][Tt][Aa][Tt][Uu][Ss])
 INT                         ([Ii][Nn][Tt])
 BIGINT                      ([Bb][Ii][Gg][Ii][Nn][Tt])
 DOUBLE                      ([Dd][Oo][Uu][Bb][Ll][Ee])
@@ -157,6 +158,7 @@ NULL                        ([Nn][Uu][Ll][Ll])
 SNAPSHOT                    ([Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt])
 SNAPSHOTS                   ([Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt][Ss])
 FORCE                       ([Ff][Oo][Rr][Cc][Ee])
+OFFLINE                     ([Oo][Ff][Ff][Ll][Ii][Nn][Ee])
 BIDIRECT                    ([Bb][Ii][Dd][Ii][Rr][Ee][Cc][Tt])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
@@ -206,7 +208,8 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {SPACES}                    { return TokenType::KW_SPACES; }
 {INDEX}                     { return TokenType::KW_INDEX; }
 {INDEXES}                   { return TokenType::KW_INDEXES; }
-{BUILD}                     { return TokenType::KW_BUILD; }
+{REBUILD}                   { return TokenType::KW_REBUILD; }
+{STATUS}                    { return TokenType::KW_STATUS; }
 {INT}                       { return TokenType::KW_INT; }
 {BIGINT}                    { return TokenType::KW_BIGINT; }
 {DOUBLE}                    { return TokenType::KW_DOUBLE; }
@@ -304,6 +307,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {SNAPSHOT}                  { return TokenType::KW_SNAPSHOT; }
 {SNAPSHOTS}                 { return TokenType::KW_SNAPSHOTS; }
 {FORCE}                     { return TokenType::KW_FORCE; }
+{OFFLINE}                   { return TokenType::KW_OFFLINE; }
 {BIDIRECT}                  { return TokenType::KW_BIDIRECT; }
 
 {JOBS}                      { return TokenType::KW_JOBS; }
