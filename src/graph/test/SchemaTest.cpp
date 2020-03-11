@@ -80,23 +80,11 @@ TEST_F(SchemaTest, TestDefaultValue) {
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
 }
-TEST_F(SchemaTest, metaCommunication) {
+
+TEST_F(SchemaTest, TestSpace) {
     FLAGS_heartbeat_interval_secs = 1;
     auto client = gEnv->getClient();
     ASSERT_NE(nullptr, client);
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "SHOW HOSTS";
-        client->execute(query, resp);
-        std::vector<std::tuple<std::string, std::string, std::string,
-                               int, std::string, std::string>> expected {
-            {"127.0.0.1", std::to_string(gEnv->storageServerPort()), "online", 0,
-             "No valid partition", "No valid partition"},
-            {"Total", "", "", 0, "", ""},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
-
     // Test space not exist
     {
         cpp2::ExecutionResponse resp;
@@ -104,47 +92,7 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
-    // Test create space succeeded
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "CREATE SPACE default_space(partition_num=9, replica_factor=1)";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "DESCRIBE SPACE default_space";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<int, std::string, int, int>> expected{
-            {1, "default_space", 9, 1},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
-    // Test desc space command
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "DESC SPACE default_space";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<int, std::string, int, int>> expected{
-            {1, "default_space", 9, 1},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "SHOW CREATE SPACE default_space";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::string createSpaceStr = "CREATE SPACE default_space ("
-                                     "partition_num = 9, "
-                                     "replica_factor = 1)";
-        std::vector<uniform_tuple_t<std::string, 2>> expected{
-            {"default_space", createSpaceStr},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
+    // Test space with default options
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE SPACE space_with_default_options";
@@ -156,8 +104,8 @@ TEST_F(SchemaTest, metaCommunication) {
         std::string query = "DESCRIBE SPACE space_with_default_options";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<int, std::string, int, int>> expected{
-            {2, "space_with_default_options", 100, 1},
+        std::vector<std::tuple<int, std::string, int, int, std::string, std::string>> expected{
+            {1, "space_with_default_options", 100, 1, "utf8", "utf8_bin"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -167,11 +115,193 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+
+    // Test create space succeeded
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE SPACE default_space(partition_num=9, replica_factor=1)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW SPACES";
+        client->execute(query, resp);
+        std::vector<uniform_tuple_t<std::string, 1>> expected{
+            {"default_space"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // Test desc space
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESCRIBE SPACE default_space";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int, std::string, int, int, std::string, std::string>> expected{
+            {2, "default_space", 9, 1, "utf8", "utf8_bin"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESC SPACE default_space";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int, std::string, int, int, std::string, std::string>> expected{
+            {2, "default_space", 9, 1, "utf8", "utf8_bin"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW CREATE SPACE default_space";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::string createSpaceStr = "CREATE SPACE default_space ("
+                                     "partition_num = 9, "
+                                     "replica_factor = 1, "
+                                     "charset = utf8, "
+                                     "collate = utf8_bin)";
+        std::vector<uniform_tuple_t<std::string, 2>> expected{
+            {"default_space", createSpaceStr},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "USE default_space";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Test charset and collate
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE SPACE space_charset_collate (partition_num=9, "
+                            "replica_factor=1, charset=utf8, collate=utf8_bin)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESCRIBE SPACE space_charset_collate";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int, std::string, int, int, std::string, std::string>> expected{
+            {3, "space_charset_collate", 9, 1, "utf8", "utf8_bin"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DROP SPACE space_charset_collate";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE SPACE space_charset (partition_num=9, "
+                            "replica_factor=1, charset=utf8)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESCRIBE SPACE space_charset";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int, std::string, int, int, std::string, std::string>> expected{
+            {4, "space_charset", 9, 1, "utf8", "utf8_bin"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DROP SPACE space_charset";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE SPACE space_collate (partition_num=9, "
+                            "replica_factor=1, collate=utf8_bin)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESCRIBE SPACE space_collate";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int, std::string, int, int, std::string, std::string>> expected{
+            {5, "space_collate", 9, 1, "utf8", "utf8_bin"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DROP SPACE space_collate";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE SPACE space_charset_collate_nomatch (partition_num=9, "
+                            "replica_factor=1, charset = utf8, collate=gbk_bin)";
+        auto code = client->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE SPACE space_charset_collate_nomatch (partition_num=9, "
+                            "replica_factor=1, charset = gbk, collate=utf8_bin)";
+        auto code = client->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE SPACE space_illegal_charset (partition_num=9, "
+                            "replica_factor=1, charset = gbk)";
+        auto code = client->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE SPACE space_illegal_collate (partition_num=9, "
+                            "replica_factor=1, collate = gbk_bin)";
+        auto code = client->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE SPACE space_capital (partition_num=9, "
+                            "replica_factor=1, charset=UTF8, collate=UTF8_bin)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESCRIBE SPACE space_capital";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int, std::string, int, int, std::string, std::string>> expected{
+            {6, "space_capital", 9, 1, "utf8", "utf8_bin"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DROP SPACE space_capital";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+
+    // Test IF NOT EXISTS And IF EXISTS
+    {
+        std::string query = "CREATE SPACE default_space";
+        cpp2::ExecutionResponse resp;
+        auto code = client->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
         std::string query = "CREATE SPACE IF NOT EXISTS default_space";
@@ -202,6 +332,69 @@ TEST_F(SchemaTest, metaCommunication) {
         cpp2::ExecutionResponse resp1;
         auto code1 = client->execute(query1, resp1);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code1);
+    }
+    // Test drop space
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW SPACES";
+        client->execute(query, resp);
+        std::vector<uniform_tuple_t<std::string, 1>> expected{
+            {"default_space"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DROP SPACE default_space";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW SPACES";
+        client->execute(query, resp);
+        ASSERT_EQ(0, (*(resp.get_rows())).size());
+    }
+}
+
+TEST_F(SchemaTest, TestTagAndEdge) {
+    FLAGS_heartbeat_interval_secs = 1;
+    auto client = gEnv->getClient();
+    ASSERT_NE(nullptr, client);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW HOSTS";
+        client->execute(query, resp);
+        std::vector<std::tuple<std::string, std::string, std::string,
+                               int, std::string, std::string>> expected {
+            {"127.0.0.1", std::to_string(gEnv->storageServerPort()), "online", 0,
+             "No valid partition", "No valid partition"},
+            {"Total", "", "", 0, "", ""},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE SPACE default_space(partition_num=9, "
+                            "replica_factor=1, charset=utf8, collate=utf8_bin)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESCRIBE SPACE default_space";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int, std::string, int, int, std::string, std::string>> expected{
+            {8, "default_space", 9, 1, "utf8", "utf8_bin"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "USE default_space";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     // show parts of default_space
     {
@@ -434,10 +627,10 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int32_t, std::string>> expected{
-            {4, "tag1"},
-            {5, "person"},
-            {6, "person_with_default"},
-            {7, "upper"},
+            {9, "tag1"},
+            {10, "person"},
+            {11, "person_with_default"},
+            {12, "upper"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -578,10 +771,10 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int32_t, std::string>> expected{
-            {8,  "edge1"},
-            {9,  "buy"},
-            {10,  "buy_with_default"},
-            {11, "education"},
+            {13,  "edge1"},
+            {14,  "buy"},
+            {15,  "buy_with_default"},
+            {16, "education"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -712,7 +905,7 @@ TEST_F(SchemaTest, metaCommunication) {
     // show parts of default_space
     {
         auto kvstore = gEnv->storageServer()->kvStore_.get();
-        GraphSpaceID spaceId = 1;  // default_space id is 1
+        GraphSpaceID spaceId = 8;  // default_space id is 1
         nebula::storage::TestUtils::waitUntilAllElected(kvstore, spaceId, 9);
         // sleep a bit to make sure leader info has been updated in meta
         sleep(FLAGS_heartbeat_interval_secs + 1);
@@ -728,6 +921,44 @@ TEST_F(SchemaTest, metaCommunication) {
             expected.emplace_back(std::make_tuple(partId, host, host, ""));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // Tag with negative default value
+    {
+        cpp2::ExecutionResponse resp;
+        const std::string cmd =
+            "CREATE TAG default_tag_neg(id int DEFAULT -10, height double DEFAULT -176.0)";
+        auto code = client->execute(cmd, resp);
+        EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Tag with expression default value
+    {
+        cpp2::ExecutionResponse resp;
+        const std::string cmd = "CREATE TAG default_tag_expr"
+            "(id int DEFAULT 3/2*4-5, "  // arithmetic
+            "male bool DEFAULT 3 > 2, "  // relation
+            "height double DEFAULT abs(-176.0), "  // built-in function
+            "adult bool DEFAULT true && false)";  // logic
+        auto code = client->execute(cmd, resp);
+        EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Edge with negative default value
+    {
+        cpp2::ExecutionResponse resp;
+        const std::string cmd =
+            "CREATE EDGE default_edge_neg(id int DEFAULT -10, height double DEFAULT -176.0)";
+        auto code = client->execute(cmd, resp);
+        EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Edge with expression default value
+    {
+        cpp2::ExecutionResponse resp;
+        const std::string cmd = "CREATE EDGE default_edge_expr"
+            "(id int DEFAULT 3/2*4-5, "  // arithmetic
+            "male bool DEFAULT 3 > 2, "  // relation
+            "height double DEFAULT abs(-176.0), "  // built-in function
+            "adult bool DEFAULT true && false)";  // logic
+        auto code = client->execute(cmd, resp);
+        EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     // Test different tag and edge in different space
     {
@@ -772,8 +1003,8 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int32_t, std::string>> expected{
-            {1015, "animal"},
-            {1016, "person"},
+            {1024, "animal"},
+            {1025, "person"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -788,7 +1019,7 @@ TEST_F(SchemaTest, metaCommunication) {
         code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int32_t, std::string>> expected1{
-            {1018, "test_tag"},
+            {1027, "test_tag"},
         };
         ASSERT_TRUE(verifyResult(resp, expected1));
 
@@ -796,8 +1027,8 @@ TEST_F(SchemaTest, metaCommunication) {
         code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int32_t, std::string>> expected2{
-            {1015, "animal"},
-            {1016, "person"},
+            {1024, "animal"},
+            {1025, "person"},
         };
         ASSERT_TRUE(verifyResult(resp, expected2));
 
@@ -805,7 +1036,12 @@ TEST_F(SchemaTest, metaCommunication) {
         code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    // Test drop space
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW SPACES";
+        client->execute(query, resp);
+        ASSERT_EQ(2, (*(resp.get_rows())).size());
+    }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DROP SPACE my_space";
@@ -814,30 +1050,9 @@ TEST_F(SchemaTest, metaCommunication) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "SHOW SPACES";
-        client->execute(query, resp);
-        std::vector<uniform_tuple_t<std::string, 1>> expected{
-            {"default_space"},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
-    {
-        cpp2::ExecutionResponse resp;
         std::string query = "DROP SPACE default_space";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "SHOW SPACES";
-        client->execute(query, resp);
-        ASSERT_EQ(0, (*(resp.get_rows())).size());
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "SHOW HOSTS";
-        client->execute(query, resp);
-        ASSERT_EQ(2, (*(resp.get_rows())).size());
     }
 
     int retry = 60;
@@ -923,7 +1138,7 @@ TEST_F(SchemaTest, TTLtest) {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG man(name string, email string, "
                             "age int, gender string, row_timestamp timestamp)"
-                            "ttl_duration = 100, ttl_col = row_timestamp";
+                            "ttl_duration = 100, ttl_col = \"row_timestamp\"";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -945,9 +1160,8 @@ TEST_F(SchemaTest, TTLtest) {
         ASSERT_TRUE(verifyResult(resp, expected));
     }
 
-    // Abnormal test
+    // Disable implicit ttl mode
     {
-        // Disable implicit ttl mode
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG woman(name string, email string, "
                             "age int, gender string, row_timestamp timestamp)"
@@ -955,20 +1169,21 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    // Disable when ttl_col is not an integer column or a timestamp column
     {
-        // Disable when ttl_col is not an integer column or a timestamp column
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG woman(name string, email string, "
                             "age int, gender string, row_timestamp timestamp)"
-                            "ttl_col = name";
+                            "ttl_col = \"name\"";
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    // Ttl_duration less than 0
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG woman(name string, email string, "
                             "age int, gender string, row_timestamp timestamp)"
-                            "ttl_duration = -100, ttl_col = row_timestamp";
+                            "ttl_duration = -100, ttl_col = \"row_timestamp\"";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -989,11 +1204,12 @@ TEST_F(SchemaTest, TTLtest) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    // Only ttl col
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG only_ttl_col(name string, email string, "
                             "age int, gender string, row_timestamp timestamp)"
-                            "ttl_col = row_timestamp";
+                            "ttl_col = \"row_timestamp\"";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -1017,7 +1233,7 @@ TEST_F(SchemaTest, TTLtest) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "ALTER TAG woman "
-                            "ttl_duration = 50, ttl_col = row_timestamp";
+                            "ttl_duration = 50, ttl_col = \"row_timestamp\"";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -1038,11 +1254,11 @@ TEST_F(SchemaTest, TTLtest) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    // Failed when alter tag to set ttl_col on not integer and timestamp column
     {
-        // Failed when alter tag to set ttl_col on not integer and timestamp column
         cpp2::ExecutionResponse resp;
         std::string query = "ALTER TAG woman "
-                            "ttl_col = name";
+                            "ttl_col = \"name\"";
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -1069,19 +1285,11 @@ TEST_F(SchemaTest, TTLtest) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    // When the column is as TTL column, droping column
     {
-        // When the column is as TTL column, droping column failed
         cpp2::ExecutionResponse resp;
         std::string query = "ALTER TAG woman "
                             "Drop (row_timestamp)";
-        auto code = client->execute(query, resp);
-        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    {
-        // First remove TTL property, then drop column
-        cpp2::ExecutionResponse resp;
-        std::string query = "ALTER TAG woman "
-                            "ttl_col = age";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -1094,18 +1302,18 @@ TEST_F(SchemaTest, TTLtest) {
         std::string createTagStr = "CREATE TAG woman (\n"
                                "  email string,\n"
                                "  age int,\n"
-                               "  gender string,\n"
-                               "  row_timestamp timestamp\n"
-                               ") ttl_duration = 200, ttl_col = age";
+                               "  gender string\n"
+                               ") ttl_duration = 0, ttl_col = \"\"";
         std::vector<uniform_tuple_t<std::string, 2>> expected{
             {"woman", createTagStr},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    // ADD ttl property
     {
         cpp2::ExecutionResponse resp;
         std::string query = "ALTER TAG woman "
-                            "Drop (row_timestamp)";
+                            "ttl_duration = 100, ttl_col = \"age\"";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -1118,7 +1326,60 @@ TEST_F(SchemaTest, TTLtest) {
                                "  email string,\n"
                                "  age int,\n"
                                "  gender string\n"
-                               ") ttl_duration = 200, ttl_col = age";
+                               ") ttl_duration = 100, ttl_col = age";
+        std::vector<uniform_tuple_t<std::string, 2>> expected{
+            {"woman", createTagStr},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // Change ttl col, failed
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "ALTER TAG woman "
+                            "CHANGE (age string)";
+        auto code = client->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Drop ttl property
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "ALTER TAG woman ttl_col = \"\" ";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW CREATE TAG woman";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::string createTagStr = "CREATE TAG woman (\n"
+                               "  email string,\n"
+                               "  age int,\n"
+                               "  gender string\n"
+                               ") ttl_duration = 0, ttl_col = \"\"";;
+        std::vector<uniform_tuple_t<std::string, 2>> expected{
+            {"woman", createTagStr},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // Change succeed
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "ALTER TAG woman "
+                            "CHANGE (age string)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW CREATE TAG woman";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::string createTagStr = "CREATE TAG woman (\n"
+                               "  email string,\n"
+                               "  age string,\n"
+                               "  gender string\n"
+                               ") ttl_duration = 0, ttl_col = \"\"";;
         std::vector<uniform_tuple_t<std::string, 2>> expected{
             {"woman", createTagStr},
         };
@@ -1161,7 +1422,7 @@ TEST_F(SchemaTest, TTLtest) {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE EDGE work1(name string, email string, "
                             "age int, gender string, row_timestamp timestamp)"
-                            "ttl_duration = 100, ttl_col = row_timestamp";
+                            "ttl_duration = 100, ttl_col = \"row_timestamp\"";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -1183,28 +1444,28 @@ TEST_F(SchemaTest, TTLtest) {
         ASSERT_TRUE(verifyResult(resp, expected));
     }
 
-    // Abnormal test
+    // Disable implicit ttl mode
     {
-        // Disable implicit ttl mode
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE EDGE work2(number string, start_time timestamp)"
                             "ttl_duration = 100";
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    // Disable when ttl_col is not an integer column or a timestamp column
     {
-        // Disable when ttl_col is not an integer column or a timestamp column
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE EDGE work2(number string, start_time timestamp)"
-                            "ttl_col = name";
+                            "ttl_col = \"name\"";
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    // Ttl duration less than 0
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE EDGE work2(name string, email string, "
                             "age int, gender string, start_time timestamp)"
-                            "ttl_duration = -100, ttl_col = start_time";
+                            "ttl_duration = -100, ttl_col = \"start_time\"";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -1225,11 +1486,12 @@ TEST_F(SchemaTest, TTLtest) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    // Only ttl col
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE EDGE edge_only_ttl_col(name string, email string, "
                             "age int, gender string, row_timestamp timestamp)"
-                            "ttl_col = row_timestamp";
+                            "ttl_col = \"row_timestamp\"";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -1253,7 +1515,7 @@ TEST_F(SchemaTest, TTLtest) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "ALTER EDGE work2 "
-                            "ttl_duration = 50, ttl_col = start_time";
+                            "ttl_duration = 50, ttl_col = \"start_time\"";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -1275,11 +1537,11 @@ TEST_F(SchemaTest, TTLtest) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    // Failed when alter edge to set ttl_col on not integer and timestamp column
     {
-        // Failed when alter edge to set ttl_col on not integer and timestamp column
         cpp2::ExecutionResponse resp;
         std::string query = "ALTER EDGE work2 "
-                            "ttl_col = name";
+                            "ttl_col = \"name\"";
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -1306,19 +1568,11 @@ TEST_F(SchemaTest, TTLtest) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    // When the column is as TTL column, droping column
     {
-        // When the column is as TTL column, droping column failed
         cpp2::ExecutionResponse resp;
         std::string query = "ALTER EDGE work2 "
                             "Drop (start_time)";
-        auto code = client->execute(query, resp);
-        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    {
-        // First remove TTL property, then drop column
-        cpp2::ExecutionResponse resp;
-        std::string query = "ALTER EDGE work2 "
-                            "ttl_col = age";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -1330,25 +1584,57 @@ TEST_F(SchemaTest, TTLtest) {
         std::string createEdgeStr = "CREATE EDGE work2 (\n"
                                "  email string,\n"
                                "  age int,\n"
-                               "  gender string,\n"
-                               "  start_time timestamp\n"
-                               ") ttl_duration = 200, ttl_col = age";
+                               "  gender string\n"
+                               ") ttl_duration = 0, ttl_col = \"\"";
         std::vector<uniform_tuple_t<std::string, 2>> expected{
             {"work2", createEdgeStr},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    // Add ttl property
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "ALTER Edge work2 "
+                            "ttl_duration = 100, ttl_col = \"age\"";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW CREATE EDGE work2";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::string createTagStr = "CREATE EDGE work2 (\n"
+                               "  email string,\n"
+                               "  age int,\n"
+                               "  gender string\n"
+                               ") ttl_duration = 100, ttl_col = age";
+        std::vector<uniform_tuple_t<std::string, 2>> expected{
+            {"work2", createTagStr},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // Change ttl col, failed
     {
         cpp2::ExecutionResponse resp;
         std::string query = "ALTER EDGE work2 "
-                            "Drop (start_time)";
+                            "CHANGE (age string)";
+        auto code = client->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Drop ttl property
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "ALTER EDGE work2 "
+                            "ttl_col = \"\"";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE EDGE work2";
-        client->execute(query, resp);
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<SchemaTuple> expected{
             {"email", "string", false, "", "", ""},
             {"age", "int", false, "", "", ""},
@@ -1361,17 +1647,39 @@ TEST_F(SchemaTest, TTLtest) {
         std::string query = "SHOW CREATE EDGE work2";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::string createEdgeStr = "CREATE EDGE work2 (\n"
+        std::string createTagStr = "CREATE EDGE work2 (\n"
                                "  email string,\n"
                                "  age int,\n"
                                "  gender string\n"
-                               ") ttl_duration = 200, ttl_col = age";
+                               ") ttl_duration = 0, ttl_col = \"\"";;
         std::vector<uniform_tuple_t<std::string, 2>> expected{
-            {"work2", createEdgeStr},
+            {"work2", createTagStr},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
-
+    // Change succeed
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "ALTER EDGE work2 "
+                            "CHANGE (age string)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW CREATE EDGE work2";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::string createTagStr = "CREATE EDGE work2 (\n"
+                               "  email string,\n"
+                               "  age string,\n"
+                               "  gender string\n"
+                               ") ttl_duration = 0, ttl_col = \"\"";;
+        std::vector<uniform_tuple_t<std::string, 2>> expected{
+            {"work2", createTagStr},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DROP SPACE default_space";
@@ -1421,7 +1729,7 @@ TEST_F(SchemaTest, DescribeSchema) {
         EXPECT_TRUE(verifyResult(resp, expected));
     }
 
-    // Tag Schema
+    // Edge Schema
     {
         cpp2::ExecutionResponse resp;
         std::string cmd =
@@ -1445,6 +1753,30 @@ TEST_F(SchemaTest, DescribeSchema) {
             {"name", "string", false, "", "shylock", ""},
         };
         EXPECT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+TEST_F(SchemaTest, UserAdminTest) {
+    auto client = gEnv->getClient();
+    ASSERT_NE(nullptr, client);
+    // Test command is comment
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "SHOW USERS";
+        auto code = client->execute(cmd, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "SHOW USER test";
+        auto code = client->execute(cmd, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "SHOW ROLES";
+        auto code = client->execute(cmd, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
 }
 

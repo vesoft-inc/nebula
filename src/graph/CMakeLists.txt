@@ -28,11 +28,11 @@ nebula_add_library(
     CreateEdgeIndexExecutor.cpp
     DropEdgeIndexExecutor.cpp
     DescribeEdgeIndexExecutor.cpp
-    BuildEdgeIndexExecutor.cpp
+    RebuildEdgeIndexExecutor.cpp
     CreateTagIndexExecutor.cpp
     DropTagIndexExecutor.cpp
     DescribeTagIndexExecutor.cpp
-    BuildTagIndexExecutor.cpp
+    RebuildTagIndexExecutor.cpp
     UpdateEdgeExecutor.cpp
     AssignmentExecutor.cpp
     InterimResult.cpp
@@ -52,9 +52,8 @@ nebula_add_library(
     FetchEdgesExecutor.cpp
     FetchExecutor.cpp
     SetExecutor.cpp
-    FindExecutor.cpp
     MatchExecutor.cpp
-    DeleteVertexExecutor.cpp
+    DeleteVerticesExecutor.cpp
     DeleteEdgesExecutor.cpp
     FindPathExecutor.cpp
     LimitExecutor.cpp
@@ -62,6 +61,8 @@ nebula_add_library(
     ReturnExecutor.cpp
     CreateSnapshotExecutor.cpp
     DropSnapshotExecutor.cpp
+    AdminJobExecutor.cpp
+    LookupExecutor.cpp
 )
 nebula_add_subdirectory(test)
 

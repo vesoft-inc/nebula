@@ -19,6 +19,9 @@
   <a href="http://githubbadges.com/fork.svg?user=vesoft-inc&repo=nebula&style=default">
     <img src="http://githubbadges.com/fork.svg?user=vesoft-inc&repo=nebula&style=default" alt="nebula fork"/>
   </a>
+  <a href="https://codecov.io/gh/vesoft-inc/nebula">
+    <img src="https://codecov.io/gh/vesoft-inc/nebula/branch/master/graph/badge.svg" alt="codecov"/>
+  </a>
   <br>
 </p>
 
@@ -59,7 +62,8 @@ Please note that you must install **Nebula Graph** by [installing source code](h
 In case you encounter any problems playing around **Nebula Graph**, please reach out for help:
 
 * [Slack channel](https://join.slack.com/t/nebulagraph/shared_invite/enQtNjIzMjQ5MzE2OTQ2LTM0MjY0MWFlODg3ZTNjMjg3YWU5ZGY2NDM5MDhmOGU2OWI5ZWZjZDUwNTExMGIxZTk2ZmQxY2Q2MzM1OWJhMmY#)
-* [Stack Overflow](https://stackoverflow.com/search?q=%E2%80%9CNebula+Graph%E2%80%9D&mixed=0)
+* [Stack Overflow](https://stackoverflow.com/search?q=%5Bnebula-graph%5D&mixed=0)
+* [Official Forum](https://discuss.nebula-graph.io)
 
 ## Documentation
 

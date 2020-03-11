@@ -110,6 +110,20 @@ public:
 
     static nebula::cpp2::IndexItem parseIndex(const folly::StringPiece& rawData);
 
+    static std::string rebuildIndexStatus(GraphSpaceID space,
+                                          char type,
+                                          const std::string& indexName);
+
+    static std::string rebuildIndexStatusPrefix(GraphSpaceID spaceId, char type);
+
+    static std::string rebuildTagIndexStatusPrefix(GraphSpaceID spaceId) {
+        return rebuildIndexStatusPrefix(spaceId, 'T');
+    }
+
+    static std::string rebuildEdgeIndexStatusPrefix(GraphSpaceID spaceId) {
+        return rebuildIndexStatusPrefix(spaceId, 'E');
+    }
+
     static std::string indexSpaceKey(const std::string& name);
 
     static std::string indexTagKey(GraphSpaceID spaceId, const std::string& name);
@@ -127,7 +141,8 @@ public:
 
     static cpp2::ErrorCode alterSchemaProp(std::vector<nebula::cpp2::ColumnDef>& cols,
                                            nebula::cpp2::SchemaProp&  schemaProp,
-                                           nebula::cpp2::SchemaProp alterSchemaProp);
+                                           nebula::cpp2::SchemaProp alterSchemaProp,
+                                           bool existIndex);
 
     static std::string indexUserKey(const std::string& account);
 

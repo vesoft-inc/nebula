@@ -46,7 +46,7 @@ private:
     bool getAllSpaces(std::vector<GraphSpaceID>& spaces, kvstore::ResultCode& retCode);
 
 private:
-    kvstore::KVStore* kv_ = nullptr;
+    kvstore::KVStore* kv_{nullptr};
     std::unique_ptr<AdminClient> client_{nullptr};
     std::unique_ptr<folly::Executor> executor_;
 };

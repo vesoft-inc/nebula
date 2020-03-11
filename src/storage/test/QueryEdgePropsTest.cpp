@@ -31,14 +31,7 @@ void mockData(kvstore::KVStore* kv,
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", dst " << dstId;
                 auto key = NebulaKeyUtils::edgeKey(
                         partId, vertexId, edgeType, dstId - 10001, dstId, version);
-                RowWriter writer(schema);
-                for (int64_t numInt = 0; numInt < 10; numInt++) {
-                    writer << numInt;
-                }
-                for (auto numString = 10; numString < 20; numString++) {
-                    writer << folly::stringPrintf("string_col_%d", numString);
-                }
-                auto val = writer.encode();
+                auto val = TestUtils::setupEncode(10, 20);
                 data.emplace_back(std::move(key), std::move(val));
             }
         }
@@ -110,7 +103,7 @@ void checkResponse(cpp2::EdgePropResponse& resp, uint32_t expectedColSize) {
             CHECK_EQ(10001 + rowNum % 7, v);
         }
         {
-            // _dst
+            // _type
             int64_t v;
             EXPECT_EQ(ResultType::SUCCEEDED, it->getVid(3, v));
             CHECK_EQ(101, v);
@@ -177,6 +170,25 @@ void checkAlteredProp(cpp2::EdgePropResponse& resp,
 }
 
 
+void checkTTLResponse(cpp2::EdgePropResponse& resp) {
+    EXPECT_EQ(0, resp.result.failed_codes.size());
+    EXPECT_EQ(14, resp.schema.columns.size());
+    auto provider = std::make_shared<ResultSchemaProvider>(resp.schema);
+    LOG(INFO) << "Check edge props...";
+    RowSetReader rsReader(provider, resp.data);
+    EXPECT_EQ(0, rsReader.getData().size());
+
+    auto it = rsReader.begin();
+    int32_t rowNum = 0;
+    while (static_cast<bool>(it)) {
+        ++it;
+        rowNum++;
+    }
+    EXPECT_EQ(it, rsReader.end());
+    EXPECT_EQ(0, rowNum);
+}
+
+
 TEST(QueryEdgePropsTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/QueryEdgePropsTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
@@ -199,6 +211,27 @@ TEST(QueryEdgePropsTest, SimpleTest) {
     checkResponse(resp, 14);
 }
 
+TEST(QueryEdgePropsTest, TTLTest) {
+    fs::TempDir rootPath("/tmp/QueryEdgePropsTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+
+    LOG(INFO) << "Prepare meta...";
+    auto schemaMng = TestUtils::mockSchemaWithTTLMan();
+    LOG(INFO) << "Prepare data...";
+    mockData(kv.get(), schemaMng.get(), 0);
+    LOG(INFO) << "Build EdgePropRequest...";
+    cpp2::EdgePropRequest req;
+    buildRequest(req);
+
+    LOG(INFO) << "Test QueryEdgePropsRequest...";
+    auto* processor = QueryEdgePropsProcessor::instance(kv.get(), schemaMng.get(), nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    LOG(INFO) << "Check the results...";
+    checkTTLResponse(resp);
+}
 
 TEST(QueryEdgePropsTest, QueryAfterEdgeAltered) {
     fs::TempDir rootPath("/tmp/QueryEdgePropsTest.XXXXXX");

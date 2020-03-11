@@ -32,7 +32,13 @@ Status LimitExecutor::prepare() {
 
 void LimitExecutor::execute() {
     FLOG_INFO("Executing Limit: %s", sentence_->toString().c_str());
-    if (inputs_ == nullptr || !inputs_->hasData() || count_ == 0) {
+    if (inputs_ == nullptr) {
+        onEmptyInputs();
+        return;
+    }
+
+    colNames_ = inputs_->getColNames();
+    if (!inputs_->hasData() || count_ == 0) {
         onEmptyInputs();
         return;
     }
@@ -66,16 +72,6 @@ void LimitExecutor::execute() {
     }
 
     doFinish(Executor::ProcessControl::kNext);
-}
-
-
-void LimitExecutor::feedResult(std::unique_ptr<InterimResult> result) {
-    if (result == nullptr) {
-        LOG(ERROR) << "Get null input.";
-        return;
-    }
-    inputs_ = std::move(result);
-    colNames_ = inputs_->getColNames();
 }
 
 

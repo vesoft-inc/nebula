@@ -113,11 +113,6 @@ void GoExecutor::execute() {
 }
 
 
-void GoExecutor::feedResult(std::unique_ptr<InterimResult> result) {
-    inputs_ = std::move(result);
-}
-
-
 Status GoExecutor::prepareStep() {
     auto *clause = sentence_->stepClause();
     if (clause != nullptr) {
@@ -229,13 +224,12 @@ Status GoExecutor::prepareOverAll() {
         }
 
         auto v = edgeStatus.value();
-        if (isReversely()) {
-            v = -v;
+        auto status = addToEdgeTypes(v);
+        if (!status.ok()) {
+            return status;
         }
 
-        edgeTypes_.push_back(v);
-
-        if (!expCtx_->addEdge(e, v)) {
+        if (!expCtx_->addEdge(e, std::abs(v))) {
             return Status::Error(folly::sformat("edge alias({}) was dup", e));
         }
     }
@@ -251,7 +245,7 @@ Status GoExecutor::prepareOver() {
         return Status::Error("Over clause shall never be null");
     }
 
-    isReversely_ = clause->isReversely();
+    direction_ = clause->direction();
 
     auto edges = clause->edges();
     for (auto e : edges) {
@@ -267,17 +261,17 @@ Status GoExecutor::prepareOver() {
         }
 
         auto v = edgeStatus.value();
-        if (isReversely()) {
-            v = -v;
+        status = addToEdgeTypes(v);
+        if (!status.ok()) {
+            return status;
         }
-        edgeTypes_.push_back(v);
 
         if (e->alias() != nullptr) {
-            if (!expCtx_->addEdge(*e->alias(), v)) {
+            if (!expCtx_->addEdge(*e->alias(), std::abs(v))) {
                 return Status::Error(folly::sformat("edge alias({}) was dup", *e->alias()));
             }
         } else {
-            if (!expCtx_->addEdge(*e->edge(), v)) {
+            if (!expCtx_->addEdge(*e->edge(), std::abs(v))) {
                 return Status::Error(folly::sformat("edge alias({}) was dup", *e->edge()));
             }
         }
@@ -286,6 +280,29 @@ Status GoExecutor::prepareOver() {
     return status;
 }
 
+Status GoExecutor::addToEdgeTypes(EdgeType type) {
+    switch (direction_) {
+        case OverClause::Direction::kForward: {
+            edgeTypes_.push_back(type);
+            break;
+        }
+        case OverClause::Direction::kBackward: {
+            type = -type;
+            edgeTypes_.push_back(type);
+            break;
+        }
+        case OverClause::Direction::kBidirect: {
+            edgeTypes_.push_back(type);
+            type = -type;
+            edgeTypes_.push_back(type);
+            break;
+        }
+        default: {
+            return Status::Error("Unkown direction type: %ld", static_cast<int64_t>(direction_));
+        }
+    }
+    return Status::OK();
+}
 
 Status GoExecutor::prepareWhere() {
     auto *clause = sentence_->whereClause();
@@ -409,6 +426,10 @@ Status GoExecutor::setupStarts() {
         return Status::OK();
     }
 
+    auto status = checkIfDuplicateColumn();
+    if (!status.ok()) {
+        return status;
+    }
     auto result = inputs->getVIDs(*colname_);
     if (!result.ok()) {
         LOG(ERROR) << "Get vid fail: " << *colname_;
@@ -442,15 +463,18 @@ void GoExecutor::stepOut() {
     }
     auto returns = status.value();
     std::string filterPushdown = "";
-    if (FLAGS_filter_pushdown && isFinalStep() && !isReversely()) {
+    if (FLAGS_filter_pushdown && isFinalStep()
+            && direction_ == OverClause::Direction::kForward) {
         // TODO: not support filter pushdown in reversely traversal now.
         filterPushdown = whereWrapper_->filterPushdown_;
     }
+    VLOG(1) << "edge type size: " << edgeTypes_.size()
+            << " return cols: " << returns.size();
     auto future  = ectx()->getStorageClient()->getNeighbors(spaceId,
-                                                   starts_,
-                                                   edgeTypes_,
-                                                   filterPushdown,
-                                                   std::move(returns));
+                                                            starts_,
+                                                            edgeTypes_,
+                                                            filterPushdown,
+                                                            std::move(returns));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&result) {
         auto completeness = result.completeness();
@@ -547,19 +571,6 @@ void GoExecutor::onVertexProps(RpcResponse &&rpcResp) {
     UNUSED(rpcResp);
 }
 
-std::vector<std::string> GoExecutor::getEdgeNames() const {
-    std::vector<std::string> names;
-    auto spaceId = ectx()->rctx()->session()->space();
-    for (auto edgeType : edgeTypes_) {
-        auto status = ectx()->schemaManager()->toEdgeName(spaceId, std::abs(edgeType));
-        DCHECK(status.ok());
-        auto edgeName = status.value();
-        names.emplace_back(std::move(edgeName));
-    }
-
-    return names;
-}
-
 StatusOr<std::vector<VertexID>> GoExecutor::getDstIdsFromResp(RpcResponse &rpcResp) const {
     std::unordered_set<VertexID> set;
     for (auto &resp : rpcResp.responses()) {
@@ -587,13 +598,8 @@ void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
     // MayBe we can do better.
     std::vector<std::unique_ptr<YieldColumn>> yc;
     if (expCtx_->isOverAllEdge() && yields_.empty()) {
-        auto edgeNames = getEdgeNames();
-        if (edgeNames.empty()) {
-            doError(Status::Error("get edge name failed"));
-            return;
-        }
-        for (const auto &name : edgeNames) {
-            auto dummy = new std::string(name);
+        for (const auto &alias : expCtx_->getEdgeAlias()) {
+            auto dummy = new std::string(alias);
             auto dummy_exp = new EdgeDstIdExpression(dummy);
             auto ptr = std::make_unique<YieldColumn>(dummy_exp);
             dummy_exp->setContext(expCtx_.get());
@@ -721,6 +727,7 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
             pd.name = _DST;
             pd.id.set_edge_type(e);
             props.emplace_back(std::move(pd));
+            VLOG(3) << "Need edge props: " << e << ", _dst";
         }
         auto spaceId = ectx()->rctx()->session()->space();
         for (auto &tagProp : expCtx_->srcTagProps()) {
@@ -734,6 +741,7 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
             auto tagId = status.value();
             pd.id.set_tag_id(tagId);
             props.emplace_back(std::move(pd));
+            VLOG(3) << "Need tag src props: " << tagProp.first << ", " << tagProp.second;
         }
         for (auto &prop : expCtx_->aliasProps()) {
             if (prop.second == _DST) {
@@ -749,7 +757,29 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
                 return Status::Error("the edge was not found '%s'", prop.first.c_str());
             }
             pd.id.set_edge_type(edgeType);
-            props.emplace_back(std::move(pd));
+            switch (direction_) {
+                case OverClause::Direction::kForward: {
+                    props.emplace_back(std::move(pd));
+                    break;
+                }
+                case OverClause::Direction::kBackward: {
+                    edgeType = -edgeType;
+                    pd.id.set_edge_type(edgeType);
+                    props.emplace_back(std::move(pd));
+                    break;
+                }
+                case OverClause::Direction::kBidirect: {
+                    props.emplace_back(pd);
+                    edgeType = -edgeType;
+                    pd.id.set_edge_type(edgeType);
+                    props.emplace_back(std::move(pd));
+                    break;
+                }
+                default:
+                    return Status::Error(
+                            "Unknown direction: %ld", static_cast<int64_t>(direction_));
+            }
+            VLOG(3) << "Need edge props: " << prop.first << ", " << prop.second;
         }
         return props;
     }
@@ -770,6 +800,7 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getDstProps() {
         auto tagId = status.value();
         pd.id.set_tag_id(tagId);
         props.emplace_back(std::move(pd));
+        VLOG(3) << "Need dst tag props: " << tagProp.first << ", " << tagProp.second;
     }
     return props;
 }
@@ -976,9 +1007,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                 for (auto& edge : edata.edges) {
                     auto dstId = edge.get_dst();
                     Getters getters;
-                    // In reverse mode, _dst will return the srcId.
                     getters.getEdgeDstId = [this,
-                                            &srcId,
                                             &dstId,
                                             &edgeType] (const std::string& edgeName)
                                                             -> OptVariantType {
@@ -990,13 +1019,12 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                                         "Get edge type for `%s' failed in getters.",
                                         edgeName.c_str());
                             }
-                            if (type != edgeType) {
+                            if (type != std::abs(edgeType)) {
                                 return 0L;
                             }
                         }
-                        return isReversely() ? srcId : dstId;
+                        return dstId;
                     };
-                    // In reverse mode, it is used to get the dst props.
                     getters.getSrcTagProp = [&spaceId,
                                              &tagData,
                                              &tagSchema,
@@ -1061,7 +1089,6 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
 
                     // In reverse mode, we should handle _src
                     getters.getAliasProp = [&reader,
-                                            &dstId,
                                             &srcId,
                                             &edgeType,
                                             &edgeSchema,
@@ -1074,16 +1101,21 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                             return Status::Error(
                                     "Get edge type for `%s' failed in getters.", edgeName.c_str());
                         }
-                        if (edgeType != type) {
-                            auto sit = edgeSchema.find(type);
+                        if (std::abs(edgeType) != type) {
+                            auto sit = edgeSchema.find(
+                                    direction_ == OverClause::Direction::kBackward ? -type : type);
                             if (sit == edgeSchema.end()) {
-                                LOG(ERROR) << "Can't find schema for " << edgeName;
-                                return Status::Error("get schema failed");
+                                std::string errMsg = folly::stringPrintf(
+                                        "Can't find shcema for %s when get default.",
+                                        edgeName.c_str());
+                                LOG(ERROR) << errMsg;
+                                return Status::Error(errMsg);
                             }
                             return RowReader::getDefaultProp(sit->second.get(), prop);
                         }
+
                         if (prop == _SRC) {
-                            return isReversely() ? dstId : srcId;
+                            return srcId;
                         }
                         DCHECK(reader != nullptr);
                         auto res = RowReader::getPropByName(reader.get(), prop);
@@ -1228,80 +1260,5 @@ OptVariantType GoExecutor::getPropFromInterim(VertexID id, const std::string &pr
     DCHECK(index_ != nullptr);
     return index_->getColumnWithVID(rootId, prop);
 }
-
-
-SupportedType GoExecutor::getPropTypeFromInterim(const std::string &prop) const {
-    DCHECK(index_ != nullptr);
-    return index_->getColumnType(prop);
-}
-
-nebula::cpp2::SupportedType GoExecutor::calculateExprType(Expression* exp) const {
-    auto spaceId = ectx()->rctx()->session()->space();
-    switch (exp->kind()) {
-        case Expression::kPrimary:
-        case Expression::kFunctionCall:
-        case Expression::kUnary:
-        case Expression::kArithmetic: {
-            return nebula::cpp2::SupportedType::UNKNOWN;
-        }
-        case Expression::kTypeCasting: {
-            auto exprPtr = static_cast<const TypeCastingExpression *>(exp);
-            return SchemaHelper::columnTypeToSupportedType(
-                                                    exprPtr->getType());
-        }
-        case Expression::kRelational:
-        case Expression::kLogical: {
-            return nebula::cpp2::SupportedType::BOOL;
-        }
-        case Expression::kDestProp:
-        case Expression::kSourceProp: {
-            auto* tagPropExp = static_cast<const AliasPropertyExpression*>(exp);
-            const auto* tagName = tagPropExp->alias();
-            const auto* propName = tagPropExp->prop();
-            auto tagIdRet = ectx()->schemaManager()->toTagID(spaceId, *tagName);
-            if (tagIdRet.ok()) {
-                auto ts = ectx()->schemaManager()->getTagSchema(spaceId, tagIdRet.value());
-                if (ts != nullptr) {
-                    return ts->getFieldType(*propName).type;
-                }
-            }
-            return nebula::cpp2::SupportedType::UNKNOWN;
-        }
-        case Expression::kEdgeDstId:
-        case Expression::kEdgeSrcId: {
-            return nebula::cpp2::SupportedType::VID;
-        }
-        case Expression::kEdgeRank:
-        case Expression::kEdgeType: {
-            return nebula::cpp2::SupportedType::INT;
-        }
-        case Expression::kAliasProp: {
-            auto* edgeExp = static_cast<const AliasPropertyExpression*>(exp);
-            const auto* propName = edgeExp->prop();
-            auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId, *edgeExp->alias());
-            if (edgeStatus.ok()) {
-                auto edgeType = edgeStatus.value();
-                auto schema = ectx()->schemaManager()->getEdgeSchema(spaceId, edgeType);
-                if (schema != nullptr) {
-                    return schema->getFieldType(*propName).type;
-                }
-            }
-            return nebula::cpp2::SupportedType::UNKNOWN;
-        }
-        case Expression::kVariableProp:
-        case Expression::kInputProp: {
-            auto* propExp = static_cast<const AliasPropertyExpression*>(exp);
-            const auto* propName = propExp->prop();
-            return getPropTypeFromInterim(*propName);
-        }
-        default: {
-            VLOG(1) << "Unsupport expression type! kind = "
-                    << std::to_string(static_cast<uint8_t>(exp->kind()));
-            return nebula::cpp2::SupportedType::UNKNOWN;
-        }
-    }
-}
-
-
 }   // namespace graph
 }   // namespace nebula

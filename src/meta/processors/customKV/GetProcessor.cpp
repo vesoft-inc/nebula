@@ -15,11 +15,11 @@ void GetProcessor::process(const cpp2::GetReq& req) {
     auto result = doGet(key);
     if (!result.ok()) {
         LOG(ERROR) << "Get Failed: " << key << " not found!";
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_value(std::move(result.value()));
     onFinished();
 }

@@ -66,6 +66,10 @@ public:
     Iterator begin() const noexcept;
     Iterator end() const noexcept;
 
+    folly::StringPiece getData() const noexcept {
+        return data_;
+    }
+
 private:
     std::shared_ptr<const meta::SchemaProviderIf> schema_;
     std::string dataStore_;

@@ -99,7 +99,13 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
         , dataPath_(folly::stringPrintf("%s/nebula/%d", dataPath.c_str(), spaceId)) {
     auto path = folly::stringPrintf("%s/data", dataPath_.c_str());
     if (FileUtils::fileType(path.c_str()) == FileType::NOTEXIST) {
-        FileUtils::makeDir(path);
+        if (!FileUtils::makeDir(path)) {
+            LOG(FATAL) << "makeDir " << path << " failed";
+        }
+    }
+
+    if (FileUtils::fileType(path.c_str()) != FileType::DIRECTORY) {
+        LOG(FATAL) << path << " is not directory";
     }
 
     rocksdb::Options options;
@@ -133,6 +139,7 @@ ResultCode RocksEngine::commitBatchWrite(std::unique_ptr<WriteBatch> batch) {
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     }
+    LOG(ERROR) << "Write into rocksdb failed because of " << status.ToString();
     return ResultCode::ERR_UNKNOWN;
 }
 
@@ -152,24 +159,27 @@ ResultCode RocksEngine::get(const std::string& key, std::string* value) {
 }
 
 
-ResultCode RocksEngine::multiGet(const std::vector<std::string>& keys,
-                                 std::vector<std::string>* values) {
+std::vector<Status> RocksEngine::multiGet(const std::vector<std::string>& keys,
+                                          std::vector<std::string>* values) {
     rocksdb::ReadOptions options;
     std::vector<rocksdb::Slice> slices;
     for (size_t index = 0; index < keys.size(); index++) {
         slices.emplace_back(keys[index]);
     }
 
-    std::vector<rocksdb::Status> status = db_->MultiGet(options, slices, values);
-    auto code = std::all_of(status.begin(), status.end(),
-                            [](rocksdb::Status s) {
-                                return s.ok();
-                            });
-    if (code) {
-        return ResultCode::SUCCEEDED;
-    } else {
-        return ResultCode::ERR_UNKNOWN;
-    }
+    auto status = db_->MultiGet(options, slices, values);
+    std::vector<Status> ret;
+    std::transform(status.begin(), status.end(), std::back_inserter(ret),
+                   [] (const auto& s) {
+                       if (s.ok()) {
+                           return Status::OK();
+                       } else if (s.IsNotFound()) {
+                           return Status::KeyNotFound();
+                       } else {
+                            return Status::Error();
+                       }
+                   });
+    return ret;
 }
 
 
@@ -467,7 +477,10 @@ ResultCode RocksEngine::createCheckpoint(const std::string& name) {
 
     auto parent = checkpointPath.substr(0, checkpointPath.rfind('/'));
     if (!FileUtils::exist(parent)) {
-        FileUtils::makeDir(parent);
+        if (!FileUtils::makeDir(parent)) {
+            LOG(ERROR) << "Make dir " << parent << " failed";
+            return ResultCode::ERR_UNKNOWN;
+        }
     }
 
     rocksdb::Checkpoint* checkpoint;

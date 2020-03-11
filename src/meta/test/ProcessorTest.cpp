@@ -191,6 +191,8 @@ TEST(ProcessorTest, SpaceTest) {
         properties.set_space_name("default_space");
         properties.set_partition_num(8);
         properties.set_replica_factor(3);
+        properties.set_charset_name("utf8");
+        properties.set_collate_name("utf8_bin");
         cpp2::CreateSpaceReq req;
         req.set_properties(std::move(properties));
         auto* processor = CreateSpaceProcessor::instance(kv.get());
@@ -211,6 +213,8 @@ TEST(ProcessorTest, SpaceTest) {
         ASSERT_EQ("default_space", resp.item.properties.space_name);
         ASSERT_EQ(8, resp.item.properties.partition_num);
         ASSERT_EQ(3, resp.item.properties.replica_factor);
+        ASSERT_EQ("utf8", resp.item.properties.charset_name);
+        ASSERT_EQ("utf8_bin", resp.item.properties.collate_name);
     }
 
     {
@@ -294,6 +298,40 @@ TEST(ProcessorTest, SpaceTest) {
         processor1->process(req1);
         auto resp1 = std::move(f1).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp1.code);
+    }
+    // Test default value
+    {
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("space_with_no_option");
+        cpp2::CreateSpaceReq creq;
+        creq.set_properties(std::move(properties));
+        auto* cprocessor = CreateSpaceProcessor::instance(kv.get());
+        auto cf = cprocessor->getFuture();
+        cprocessor->process(creq);
+        auto cresp = std::move(cf).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, cresp.code);
+
+        cpp2::GetSpaceReq greq;
+        greq.set_space_name("space_with_no_option");
+        auto* gprocessor = GetSpaceProcessor::instance(kv.get());
+        auto gf = gprocessor->getFuture();
+        gprocessor->process(greq);
+        auto gresp = std::move(gf).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, gresp.code);
+        ASSERT_EQ("space_with_no_option", gresp.item.properties.space_name);
+        ASSERT_EQ(100, gresp.item.properties.partition_num);
+        ASSERT_EQ(1, gresp.item.properties.replica_factor);
+        // Because setting default value in graph
+        ASSERT_EQ("", gresp.item.properties.charset_name);
+        ASSERT_EQ("", gresp.item.properties.collate_name);
+
+        cpp2::DropSpaceReq dreq;
+        dreq.set_space_name("space_with_no_option");
+        auto* dprocessor = DropSpaceProcessor::instance(kv.get());
+        auto df = dprocessor->getFuture();
+        dprocessor->process(dreq);
+        auto dresp = std::move(df).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, dresp.code);
     }
 }
 
@@ -1209,8 +1247,8 @@ TEST(ProcessorTest, AlterTagTest) {
         auto resp = std::move(f).get();
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
+    // Succeeded
     {
-        // Succeeded
         cpp2::AlterTagReq req;
         nebula::cpp2::SchemaProp schemaProp;
         schemaProp.set_ttl_duration(100);
@@ -1272,9 +1310,47 @@ TEST(ProcessorTest, AlterTagTest) {
         EXPECT_EQ(*schema.get_schema_prop().get_ttl_col(),
                   *tag.get_schema().get_schema_prop().get_ttl_col());
     }
-
+    // Change col with ttl, failed
     {
-        // Drop ttl_col column, failed
+        cpp2::AlterTagReq req;
+        std::vector<cpp2::AlterSchemaItem> items;
+        nebula::cpp2::Schema changeSch;
+        nebula::cpp2::ColumnDef column;
+        column.name = "tag_0_col_10";
+        column.type.type = SupportedType::DOUBLE;
+        changeSch.columns.emplace_back(std::move(column));
+
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::CHANGE);
+        items.back().set_schema(std::move(changeSch));
+
+        req.set_space_id(1);
+        req.set_tag_name("tag_0");
+        req.set_tag_items(items);
+        auto* processor = AlterTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    // Set ttl col on illegal column type, failed
+    {
+        cpp2::AlterTagReq req;
+        nebula::cpp2::SchemaProp schemaProp;
+        schemaProp.set_ttl_duration(100);
+        schemaProp.set_ttl_col("tag_0_col_11");
+
+        req.set_space_id(1);
+        req.set_tag_name("tag_0");
+        req.set_schema_prop(std::move(schemaProp));
+        auto* processor = AlterTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    // Drop ttl_col column
+    {
         cpp2::AlterTagReq req;
         std::vector<cpp2::AlterSchemaItem> items;
         nebula::cpp2::Schema dropSch;
@@ -1292,7 +1368,56 @@ TEST(ProcessorTest, AlterTagTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    // Verify alter drop ttl col result.
+    {
+        cpp2::ListTagsReq req;
+        req.set_space_id(1);
+        auto* processor = ListTagsProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        auto tags = resp.get_tags();
+        ASSERT_EQ(4, tags.size());
+        // TagItems in vector are unordered.So need to get the latest one by comparing the versions.
+        int version = 0;
+        int max_index = 0;
+        for (uint32_t i = 0; i < tags.size(); i++) {
+            if (tags[i].version > version) {
+                max_index = i;
+                version  = tags[i].version;
+            }
+        }
+        auto tag = tags[max_index];
+        EXPECT_EQ(0, tag.get_tag_id());
+        EXPECT_EQ(folly::stringPrintf("tag_%d", 0), tag.get_tag_name());
+        EXPECT_EQ(3, tag.version);
+
+        nebula::cpp2::Schema schema;
+        decltype(schema.columns) cols;
+
+        nebula::cpp2::ColumnDef column;
+        column.name = "tag_0_col_1";
+        column.type.type = SupportedType::DOUBLE;
+        cols.emplace_back(std::move(column));
+
+        column.name = "tag_0_col_11";
+        column.type.type = SupportedType::STRING;
+        cols.emplace_back(std::move(column));
+
+        schema.set_columns(std::move(cols));
+
+        nebula::cpp2::SchemaProp schemaProp;
+        schemaProp.set_ttl_duration(0);
+        schemaProp.set_ttl_col("");
+        schema.set_schema_prop(std::move(schemaProp));
+        EXPECT_EQ(schema.get_columns(), tag.get_schema().get_columns());
+        EXPECT_EQ(*schema.get_schema_prop().get_ttl_duration(),
+                  *tag.get_schema().get_schema_prop().get_ttl_duration());
+        EXPECT_EQ(*schema.get_schema_prop().get_ttl_col(),
+                  *tag.get_schema().get_schema_prop().get_ttl_col());
     }
     // Verify ErrorCode of add
     {
@@ -1411,10 +1536,11 @@ TEST(ProcessorTest, AlterEdgeTest) {
     {
         cpp2::AlterEdgeReq req;
         nebula::cpp2::Schema addSch;
-        nebula::cpp2::ColumnDef column;
         std::vector<cpp2::AlterSchemaItem> items;
         for (int32_t i = 0; i < 2; i++) {
+            nebula::cpp2::ColumnDef column;
             column.name = folly::stringPrintf("edge_0_col_%d", i);
+            column.type.type = i < 1 ? SupportedType::INT : SupportedType::STRING;
             addSch.columns.emplace_back(std::move(column));
         }
 
@@ -1485,7 +1611,15 @@ TEST(ProcessorTest, AlterEdgeTest) {
         auto edges = resp.get_edges();
         ASSERT_EQ(4, edges.size());
         // Get the latest one by comparing the versions.
-        auto edge = edges[0].version > 0 ? edges[0] : edges[1];
+        int version = 0;
+        int max_index = 0;
+        for (uint32_t i = 0; i < edges.size(); i++) {
+            if (edges[i].version > version) {
+                max_index = i;
+                version  = edges[i].version;
+            }
+        }
+        auto edge = edges[max_index];
         EXPECT_EQ(0, edge.get_edge_type());
         EXPECT_EQ("edge_0", edge.get_edge_name());
         EXPECT_EQ(3, edge.version);
@@ -1509,9 +1643,8 @@ TEST(ProcessorTest, AlterEdgeTest) {
         EXPECT_EQ(schema, edge.get_schema());
     }
 
-    // Alter edge with ttl
+    // Only set ttl_duration, failed
     {
-        // Only set ttl_duration, failed
         cpp2::AlterEdgeReq req;
         nebula::cpp2::SchemaProp schemaProp;
         schemaProp.set_ttl_duration(100);
@@ -1525,8 +1658,8 @@ TEST(ProcessorTest, AlterEdgeTest) {
         auto resp = std::move(f).get();
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
+    // Succeed
     {
-        // Succeed
         cpp2::AlterEdgeReq req;
         nebula::cpp2::SchemaProp schemaProp;
         schemaProp.set_ttl_duration(100);
@@ -1595,8 +1728,47 @@ TEST(ProcessorTest, AlterEdgeTest) {
         EXPECT_EQ(*schema.get_schema_prop().get_ttl_col(),
                   *edge.get_schema().get_schema_prop().get_ttl_col());
     }
+    // Change col on ttl, failed
     {
-        // Drop ttl_col column, failed
+        cpp2::AlterEdgeReq req;
+        std::vector<cpp2::AlterSchemaItem> items;
+        nebula::cpp2::Schema changeSch;
+        nebula::cpp2::ColumnDef column;
+        column.name = "edge_0_col_10";
+        column.type.type = SupportedType::DOUBLE;
+        changeSch.columns.emplace_back(std::move(column));
+
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::CHANGE);
+        items.back().set_schema(std::move(changeSch));
+
+        req.set_space_id(1);
+        req.set_edge_name("edge_0");
+        req.set_edge_items(items);
+        auto* processor = AlterEdgeProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    // Set ttl col on illegal column type, failed
+    {
+        cpp2::AlterEdgeReq req;
+        nebula::cpp2::SchemaProp schemaProp;
+        schemaProp.set_ttl_duration(100);
+        schemaProp.set_ttl_col("edge_0_col_11");
+
+        req.set_space_id(1);
+        req.set_edge_name("edge_0");
+        req.set_schema_prop(std::move(schemaProp));
+        auto* processor = AlterEdgeProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    // Drop ttl_col column
+    {
         cpp2::AlterEdgeReq req;
         std::vector<cpp2::AlterSchemaItem> items;
         nebula::cpp2::Schema dropSch;
@@ -1614,7 +1786,57 @@ TEST(ProcessorTest, AlterEdgeTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    // Verify alter drop ttl col result
+    {
+        cpp2::ListEdgesReq req;
+        req.set_space_id(1);
+        auto* processor = ListEdgesProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        auto edges = resp.get_edges();
+        ASSERT_EQ(6, edges.size());
+        // EdgeItems in vector are unordered.So get the latest one by comparing the versions.
+        int version = 0;
+        int max_index = 0;
+        for (uint32_t i = 0; i < edges.size(); i++) {
+            if (edges[i].version > version) {
+                max_index = i;
+                version  = edges[i].version;
+            }
+        }
+        auto edge = edges[max_index];
+
+        EXPECT_EQ(0, edge.get_edge_type());
+        EXPECT_EQ("edge_0", edge.get_edge_name());
+        EXPECT_EQ(5, edge.version);
+
+        nebula::cpp2::Schema schema;
+        decltype(schema.columns) cols;
+
+        nebula::cpp2::ColumnDef column;
+        column.name = "edge_0_col_1";
+        column.type.type = SupportedType::DOUBLE;
+        cols.emplace_back(std::move(column));
+
+        column.name = "edge_0_col_11";
+        column.type.type = SupportedType::STRING;
+        cols.emplace_back(std::move(column));
+
+        schema.set_columns(std::move(cols));
+
+        nebula::cpp2::SchemaProp schemaProp;
+        schemaProp.set_ttl_duration(0);
+        schemaProp.set_ttl_col("");
+        schema.set_schema_prop(std::move(schemaProp));
+        EXPECT_EQ(schema.get_columns(), edge.get_schema().get_columns());
+        EXPECT_EQ(*schema.get_schema_prop().get_ttl_duration(),
+                  *edge.get_schema().get_schema_prop().get_ttl_duration());
+        EXPECT_EQ(*schema.get_schema_prop().get_ttl_col(),
+                  *edge.get_schema().get_schema_prop().get_ttl_col());
     }
     // Verify ErrorCode of add
     {
@@ -2247,7 +2469,7 @@ TEST(ProcessorTest, IndexCheckAlterEdgeTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INDEX_CONFLICT, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
     }
     // Verify ErrorCode of drop
     {
@@ -2270,7 +2492,7 @@ TEST(ProcessorTest, IndexCheckAlterEdgeTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INDEX_CONFLICT, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
     }
 }
 
@@ -2373,7 +2595,7 @@ TEST(ProcessorTest, IndexCheckAlterTagTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INDEX_CONFLICT, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
     }
     {
         cpp2::AlterTagReq req;
@@ -2394,7 +2616,7 @@ TEST(ProcessorTest, IndexCheckAlterTagTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INDEX_CONFLICT, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
     }
 }
 
@@ -2425,7 +2647,7 @@ TEST(ProcessorTest, IndexCheckDropEdgeTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INDEX_CONFLICT, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
     }
 }
 
@@ -2457,9 +2679,414 @@ TEST(ProcessorTest, IndexCheckDropTagTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INDEX_CONFLICT, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
     }
 }
+
+TEST(ProcessorTest, IndexTTLTagTest) {
+    fs::TempDir rootPath("/tmp/IndexTTLTagTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    TestUtils::createSomeHosts(kv.get());
+    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1, 1));
+    TestUtils::mockTag(kv.get(), 1);
+    {
+        cpp2::CreateTagIndexReq req;
+        req.set_space_id(1);
+        req.set_tag_name("tag_0");
+        std::vector<std::string> fields{"tag_0_col_0"};
+        req.set_fields(std::move(fields));
+        req.set_index_name("single_field_index");
+
+        auto *processor = CreateTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    {
+        cpp2::AlterTagReq req;
+        std::vector<cpp2::AlterSchemaItem> items;
+        nebula::cpp2::Schema addSch;
+        for (auto i = 0; i < 2; i++) {
+            nebula::cpp2::ColumnDef column;
+            column.name = folly::stringPrintf("tag_0_col_%d", i + 10);
+            column.type.type = i < 1 ? SupportedType::INT : SupportedType::STRING;
+            addSch.columns.emplace_back(std::move(column));
+        }
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::ADD);
+        items.back().set_schema(std::move(addSch));
+        req.set_space_id(1);
+        req.set_tag_name("tag_0");
+        req.set_tag_items(items);
+
+        auto* processor = AlterTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    // Tag with index add ttl property on index col, failed
+    {
+        cpp2::AlterTagReq req;
+        nebula::cpp2::SchemaProp schemaProp;
+        schemaProp.set_ttl_col("tag_0_col_0");
+        schemaProp.set_ttl_duration(100);
+        req.set_space_id(1);
+        req.set_tag_name("tag_0");
+        req.set_schema_prop(std::move(schemaProp));
+
+        auto* processor = AlterTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    // Tag with index add ttl property on no index col, failed
+    {
+        cpp2::AlterTagReq req;
+        nebula::cpp2::SchemaProp schemaProp;
+        schemaProp.set_ttl_col("tag_0_col_10");
+        schemaProp.set_ttl_duration(100);
+        req.set_space_id(1);
+        req.set_tag_name("tag_0");
+        req.set_schema_prop(std::move(schemaProp));
+
+        auto* processor = AlterTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    // Drop index
+    {
+        cpp2::DropTagIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("single_field_index");
+
+        auto* processor = DropTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    // Add ttl property, succeed
+    {
+        cpp2::AlterTagReq req;
+        nebula::cpp2::SchemaProp schemaProp;
+        schemaProp.set_ttl_col("tag_0_col_0");
+        schemaProp.set_ttl_duration(100);
+        req.set_space_id(1);
+        req.set_tag_name("tag_0");
+        req.set_schema_prop(std::move(schemaProp));
+
+        auto* processor = AlterTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    // Tag with ttl to creat index on ttl col, failed
+    {
+        cpp2::CreateTagIndexReq req;
+        req.set_space_id(1);
+        req.set_tag_name("tag_0");
+        std::vector<std::string> fields{"tag_0_col_0"};
+        req.set_fields(std::move(fields));
+        req.set_index_name("single_field_index");
+
+        auto *processor = CreateTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    // Tag with ttl to creat index on no ttl col, failed
+    {
+        cpp2::CreateTagIndexReq req;
+        req.set_space_id(1);
+        req.set_tag_name("tag_0");
+        std::vector<std::string> fields{"tag_0_col_10"};
+        req.set_fields(std::move(fields));
+        req.set_index_name("single_field_index");
+
+        auto *processor = CreateTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    // Drop ttl property
+    {
+        cpp2::AlterTagReq req;
+        nebula::cpp2::SchemaProp schemaProp;
+        schemaProp.set_ttl_duration(0);
+        schemaProp.set_ttl_col("");
+        req.set_space_id(1);
+        req.set_tag_name("tag_0");
+        req.set_schema_prop(std::move(schemaProp));
+
+        auto* processor = AlterTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    // Tag without ttl to creat index, succeed
+    {
+        cpp2::CreateTagIndexReq req;
+        req.set_space_id(1);
+        req.set_tag_name("tag_0");
+        std::vector<std::string> fields{"tag_0_col_0"};
+        req.set_fields(std::move(fields));
+        req.set_index_name("single_field_index_col_0");
+        auto *processor = CreateTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    {
+        cpp2::CreateTagIndexReq req;
+        req.set_space_id(1);
+        req.set_tag_name("tag_0");
+        std::vector<std::string> fields{"tag_0_col_10"};
+        req.set_fields(std::move(fields));
+        req.set_index_name("single_field_index_col_10");
+        auto *processor = CreateTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    {
+        cpp2::DropTagIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("single_field_index_col_0");
+
+        auto* processor = DropTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    {
+        cpp2::DropTagIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("single_field_index_col_10");
+
+        auto* processor = DropTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+}
+
+
+TEST(ProcessorTest, IndexTTLEdgeTest) {
+    fs::TempDir rootPath("/tmp/IndexTTLEdgeTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    TestUtils::createSomeHosts(kv.get());
+    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1, 1));
+    TestUtils::mockEdge(kv.get(), 1);
+    {
+        cpp2::CreateEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_edge_name("edge_0");
+        std::vector<std::string> fields{"edge_0_col_0"};
+        req.set_fields(std::move(fields));
+        req.set_index_name("single_field_index");
+
+        auto *processor = CreateEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    {
+        cpp2::AlterEdgeReq req;
+        std::vector<cpp2::AlterSchemaItem> items;
+        nebula::cpp2::Schema addSch;
+        for (auto i = 0; i < 2; i++) {
+            nebula::cpp2::ColumnDef column;
+            column.name = folly::stringPrintf("edge_0_col_%d", i + 10);
+            column.type.type = i < 1 ? SupportedType::INT : SupportedType::STRING;
+            addSch.columns.emplace_back(std::move(column));
+        }
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::ADD);
+        items.back().set_schema(std::move(addSch));
+
+        req.set_space_id(1);
+        req.set_edge_name("edge_0");
+        req.set_edge_items(items);
+        auto* processor = AlterEdgeProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    // Edge with index add ttl property on index col, failed
+    {
+        cpp2::AlterEdgeReq req;
+        nebula::cpp2::SchemaProp schemaProp;
+        schemaProp.set_ttl_col("edge_0_col_0");
+        schemaProp.set_ttl_duration(100);
+        req.set_space_id(1);
+        req.set_edge_name("edge_0");
+        req.set_schema_prop(std::move(schemaProp));
+
+        auto* processor = AlterEdgeProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    // Edge with index add ttl property on no index col, failed
+    {
+        cpp2::AlterEdgeReq req;
+        nebula::cpp2::SchemaProp schemaProp;
+        schemaProp.set_ttl_col("edge_0_col_10");
+        schemaProp.set_ttl_duration(100);
+        req.set_space_id(1);
+        req.set_edge_name("edge_0");
+        req.set_schema_prop(std::move(schemaProp));
+
+        auto* processor = AlterEdgeProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    // Drop index
+    {
+        cpp2::DropEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("single_field_index");
+
+        auto* processor = DropEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    // Drop index, then add ttl property, succeed
+    {
+        cpp2::AlterEdgeReq req;
+        nebula::cpp2::SchemaProp schemaProp;
+        schemaProp.set_ttl_col("edge_0_col_0");
+        schemaProp.set_ttl_duration(100);
+        req.set_space_id(1);
+        req.set_edge_name("edge_0");
+        req.set_schema_prop(std::move(schemaProp));
+
+        auto* processor = AlterEdgeProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    // Edge with ttl to creat index on ttl col, failed
+    {
+        cpp2::CreateEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_edge_name("edge_0");
+        std::vector<std::string> fields{"edge_0_col_0"};
+        req.set_fields(std::move(fields));
+        req.set_index_name("single_field_index");
+
+        auto *processor = CreateEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    // Edge with ttl to creat index on no ttl col, failed
+    {
+        cpp2::CreateEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_edge_name("edge_0");
+        std::vector<std::string> fields{"edge_0_col_10"};
+        req.set_fields(std::move(fields));
+        req.set_index_name("single_field_index");
+
+        auto *processor = CreateEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    // Drop ttl property
+    {
+        cpp2::AlterEdgeReq req;
+        nebula::cpp2::SchemaProp schemaProp;
+        schemaProp.set_ttl_duration(0);
+        schemaProp.set_ttl_col("");
+        req.set_space_id(1);
+        req.set_edge_name("edge_0");
+        req.set_schema_prop(std::move(schemaProp));
+
+        auto* processor = AlterEdgeProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    // Edge without ttl to create index, succeed
+    {
+        cpp2::CreateEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_edge_name("edge_0");
+        std::vector<std::string> fields{"edge_0_col_0"};
+        req.set_fields(std::move(fields));
+        req.set_index_name("single_field_index_col_0");
+
+        auto *processor = CreateEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    {
+        cpp2::CreateEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_edge_name("edge_0");
+        std::vector<std::string> fields{"edge_0_col_10"};
+        req.set_fields(std::move(fields));
+        req.set_index_name("single_field_index_col_10");
+
+        auto *processor = CreateEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    {
+        cpp2::DropEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("single_field_index_col_0");
+
+        auto* processor = DropEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    {
+        cpp2::DropEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("single_field_index_col_10");
+
+        auto* processor = DropEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+}
+
+
 }  // namespace meta
 }  // namespace nebula
 

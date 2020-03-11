@@ -20,32 +20,32 @@ void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
         edgeType = *reinterpret_cast<const EdgeType *>(iRet.value().data());
         resp_.set_id(to(edgeType, EntryType::EDGE));
     } else {
-        resp_.set_code(req.get_if_exists() == true ? cpp2::ErrorCode::SUCCEEDED
+        handleErrorCode(req.get_if_exists() == true ? cpp2::ErrorCode::SUCCEEDED
                                                    : cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
 
-    auto indexes = getIndexes(spaceId, edgeType, true);
+    auto indexes = getIndexes(spaceId, edgeType);
     if (!indexes.ok()) {
-        resp_.set_code(to(indexes.status()));
+        handleErrorCode(MetaCommon::to(indexes.status()));
         onFinished();
         return;
     }
     if (!indexes.value().empty()) {
         LOG(ERROR) << "Drop edge error, index conflict";
-        resp_.set_code(cpp2::ErrorCode::E_INDEX_CONFLICT);
+        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
         onFinished();
         return;
     }
 
     auto ret = getEdgeKeys(req.get_space_id(), edgeType);
     if (!ret.ok()) {
-        resp_.set_code(to(ret.status()));
+        handleErrorCode(MetaCommon::to(ret.status()));
         onFinished();
         return;
     }
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     auto keys = std::move(ret).value();
     keys.emplace_back(std::move(indexKey));
     LOG(INFO) << "Drop Edge " << req.get_edge_name();

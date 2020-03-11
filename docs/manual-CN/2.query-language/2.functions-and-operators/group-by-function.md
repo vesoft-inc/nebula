@@ -1,4 +1,4 @@
-# 聚合函数 (Group by)
+# 聚合函数 (Group By)
 
  `GROUP BY` 函数类似于 SQL。 只能与 `YIELD` 语句一起使用。
 
@@ -33,7 +33,7 @@ nebula> GO FROM 100 OVER follow YIELD $$.player.name as Name | GROUP BY $-.Name 
 --------------------------------
 
 nebula> GO FROM 101 OVER follow YIELD follow._src AS player, follow.degree AS degree | GROUP BY $-.player YIELD SUM($-.degree);
--- 从节点 101 出发找到关注节点 101 的球员，返回这些球员作为 player，边（follow）的属性值作为 degree，对这些球员分组并返回分组球员属性 degree 相加的值。
+-- 从节点 101 出发找到其关注的球员，返回这些球员作为 player，边（follow）的属性值作为 degree，对这些球员分组并返回分组球员属性 degree 相加的值。
 -- 返回以下结果：
 ==================
 | SUM($-.degree) |

@@ -146,7 +146,7 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
         auto reader = RowReader::getEdgePropReader(this->schemaMan_,
                                                    val_,
                                                    this->spaceId_,
-                                                   edgeKey.edge_type);
+                                                   std::abs(edgeKey.edge_type));
         const auto constSchema = reader->getSchema();
         for (auto index = 0UL; index < constSchema->getNumFields(); index++) {
             auto propName = std::string(constSchema->getFieldName(index));
@@ -167,7 +167,7 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
         key_ = NebulaKeyUtils::edgeKey(partId, edgeKey.src, edgeKey.edge_type,
                                        edgeKey.ranking, edgeKey.dst, now);
         const auto constSchema = this->schemaMan_->getEdgeSchema(this->spaceId_,
-                                                                 edgeKey.edge_type);
+                                                                 std::abs(edgeKey.edge_type));
         if (constSchema == nullptr) {
             return kvstore::ResultCode::ERR_UNKNOWN;
         }
@@ -224,12 +224,14 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
         auto prop = item.get_prop();
         auto exp = Expression::decode(item.get_value());
         if (!exp.ok()) {
+            LOG(ERROR) << "Decode item expr failed";
             return std::string("");
         }
         auto vexp = std::move(exp).value();
         vexp->setContext(this->expCtx_.get());
         auto value = vexp->eval(getters);
         if (!value.ok()) {
+            LOG(ERROR) << "Eval item expr failed";
             return std::string("");
         }
         auto expValue = value.value();
@@ -264,7 +266,8 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
     }
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
     auto nVal = updater_->encode();
-    if (!indexes_.empty()) {
+    // TODO(heng) we don't update the index for reverse edge.
+    if (!indexes_.empty() && edgeKey.edge_type > 0) {
         std::unique_ptr<RowReader> reader, rReader;
         for (auto& index : indexes_) {
             auto indexId = index->get_index_id();
@@ -405,6 +408,7 @@ cpp2::ErrorCode UpdateEdgeProcessor::checkAndBuildContexts(
         edgePropExp.setContext(this->expCtx_.get());
         auto status = edgePropExp.prepare();
         if (!status.ok() || !this->checkExp(&edgePropExp)) {
+            VLOG(1) << "Invalid item expression!";
             return cpp2::ErrorCode::E_INVALID_UPDATER;
         }
         auto exp = Expression::decode(item.get_value());
@@ -448,9 +452,7 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
 
     auto iRet = indexMan_->getEdgeIndexes(spaceId_);
     if (iRet.ok()) {
-        for (auto& index : iRet.value()) {
-            indexes_.emplace_back(index);
-        }
+        indexes_ = std::move(iRet).value();
     }
 
     VLOG(3) << "Update edge, spaceId: " << this->spaceId_ << ", partId:  " << partId

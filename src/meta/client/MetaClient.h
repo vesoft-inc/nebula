@@ -81,6 +81,7 @@ using SpaceAllEdgeMap = std::unordered_map<GraphSpaceID, std::vector<std::string
 // get leader host via spaceId and partId
 using LeaderMap = std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>;
 
+using IndexStatus = std::tuple<std::string, std::string, std::string>;
 
 struct ConfigItem {
     ConfigItem() {}
@@ -101,6 +102,28 @@ struct ConfigItem {
     cpp2::ConfigMode    mode_;
     VariantType         value_;
 };
+
+
+struct SpaceDesc {
+    SpaceDesc() {}
+
+    SpaceDesc(const std::string& spaceName, int32_t partNum,
+              int32_t replicaFactor, const std::string& charsetName = "",
+              const std::string& collationName = "")
+        : spaceName_(spaceName)
+        , partNum_(partNum)
+        , replicaFactor_(replicaFactor)
+        , charsetName_(charsetName)
+        , collationName_(collationName) {
+    }
+
+    std::string  spaceName_;
+    int32_t      partNum_{0};
+    int32_t      replicaFactor_{0};
+    std::string  charsetName_;
+    std::string  collationName_;
+};
+
 
 // config cahce, get config via module and name
 using MetaConfigMap = std::unordered_map<std::pair<cpp2::ConfigModule, std::string>, ConfigItem>;
@@ -176,16 +199,14 @@ public:
     }
 
     // Operations for parts
-    /**
-     * TODO(dangleptr): Use one struct to represent space description.
-     * */
-    folly::Future<StatusOr<GraphSpaceID>> createSpace(std::string name,
-                                                      int32_t partsNum,
-                                                      int32_t replicaFactor,
+    folly::Future<StatusOr<GraphSpaceID>> createSpace(SpaceDesc spaceDesc,
                                                       bool ifNotExists = false);
 
     folly::Future<StatusOr<std::vector<SpaceIdName>>>
     listSpaces();
+
+    folly::Future<StatusOr<cpp2::AdminJobResult>>
+    submitJob(cpp2::AdminJobOp op, std::vector<std::string> paras);
 
     folly::Future<StatusOr<cpp2::SpaceItem>>
     getSpace(std::string name);
@@ -264,7 +285,10 @@ public:
     listTagIndexes(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<bool>>
-    buildTagIndex(GraphSpaceID spaceID, std::string name);
+    rebuildTagIndex(GraphSpaceID spaceID, std::string name, bool isOffline);
+
+    folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>>
+    listTagIndexStatus(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<IndexID>>
     createEdgeIndex(GraphSpaceID spaceID,
@@ -284,7 +308,10 @@ public:
     listEdgeIndexes(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<bool>>
-    buildEdgeIndex(GraphSpaceID spaceId, std::string name);
+    rebuildEdgeIndex(GraphSpaceID spaceId, std::string name, bool isOffline);
+
+    folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>>
+    listEdgeIndexStatus(GraphSpaceID spaceId);
 
     // Operations for custom kv
     folly::Future<StatusOr<bool>>
@@ -345,17 +372,16 @@ public:
     StatusOr<std::string>
     getTagNameByIdFromCache(const GraphSpaceID& space, const TagID& tagId);
 
+    StatusOr<SchemaVer> getLatestTagVersionFromCache(const GraphSpaceID& space, const TagID& tagId);
+
+    StatusOr<SchemaVer> getLatestEdgeVersionFromCache(const GraphSpaceID& space,
+                                                      const EdgeType& edgeType);
+
     StatusOr<EdgeType>
     getEdgeTypeByNameFromCache(const GraphSpaceID& space, const std::string& name);
 
     StatusOr<std::string>
     getEdgeNameByTypeFromCache(const GraphSpaceID& space, const EdgeType edgeType);
-
-    StatusOr<SchemaVer>
-    getNewestTagVerFromCache(const GraphSpaceID& space, const TagID& tagId);
-
-    StatusOr<SchemaVer>
-    getNewestEdgeVerFromCache(const GraphSpaceID& space, const EdgeType& edgeType);
 
     StatusOr<std::vector<std::string>> getAllEdgeFromCache(const GraphSpaceID& space);
 

@@ -14,10 +14,9 @@
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/NebulaStore.h"
-#include "meta/SchemaManager.h"
-#include "meta/IndexManager.h"
 #include "meta/SchemaProviderIf.h"
 #include "dataman/ResultSchemaProvider.h"
+#include "meta/NebulaSchemaProvider.h"
 #include "storage/StorageServiceHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include <folly/synchronization/Baton.h>
@@ -45,7 +44,6 @@ public:
                                  1, true /*stats*/);
         workers->setNamePrefix("executor");
         workers->start();
-
 
         kvstore::KVOptions options;
         if (useMetaServer) {
@@ -88,6 +86,17 @@ public:
         for (EdgeType edgeType = 101; edgeType < 110; edgeType++) {
             schemaMan->addEdgeSchema(spaceId, edgeType, TestUtils::genEdgeSchemaProvider(10, 10));
         }
+        return schemaMan;
+    }
+
+    static std::unique_ptr<AdHocSchemaManager> mockSchemaWithTTLMan(GraphSpaceID spaceId = 0) {
+        auto schemaMan = std::make_unique<AdHocSchemaManager>();
+        auto tagId = 3001;
+        schemaMan->addTagSchema(spaceId,
+                                tagId,
+                                TestUtils::genTagSchemaWithTTLProvider(tagId, 3, 3));
+
+        schemaMan->addEdgeSchema(spaceId, 101, TestUtils::genEdgeSchemaWithTTLProvider(10, 10));
         return schemaMan;
     }
 
@@ -175,18 +184,19 @@ public:
     }
 
     static std::vector<cpp2::Vertex>
-    setupVertices(PartitionID partitionID, VertexID vIdFrom, VertexID vIdTo,
-                  TagID tagFrom = 0, TagID tagTo = 10) {
-        // partId => List<Vertex>
-        // Vertex => {Id, List<VertexProp>}
-        // VertexProp => {tagId, tags}
+    setupVertices(PartitionID partitionID,
+                  VertexID vIdFrom,
+                  VertexID vIdTo,
+                  TagID tagFrom = 0,
+                  TagID tagTo = 10) {
         std::vector<cpp2::Vertex> vertices;
         for (VertexID vId = vIdFrom;  vId < vIdTo; vId++) {
               std::vector<cpp2::Tag> tags;
               for (TagID tId = tagFrom; tId < tagTo; tId++) {
                   cpp2::Tag t;
                   t.set_tag_id(tId);
-                  t.set_props(folly::stringPrintf("%d_%ld_%d", partitionID, vId, tId));
+                  auto val = encodeValue(partitionID, vId, tId);
+                  t.set_props(std::move(val));
                   tags.emplace_back(std::move(t));
               }
               cpp2::Vertex v;
@@ -197,19 +207,67 @@ public:
         return vertices;
     }
 
+    static std::string encodeValue(PartitionID partitionID,
+                                   VertexID vertexID,
+                                   TagID tagID) {
+        RowWriter writer;
+        for (int32_t numInt = 0; numInt < 3; numInt++) {
+            writer << numInt;
+        }
+        for (int32_t numString = 3; numString < 6; numString++) {
+            writer << folly::stringPrintf("col_%d_%d_%ld_%d",
+                                          numString,
+                                          partitionID,
+                                          vertexID,
+                                          tagID);
+        }
+        return writer.encode();
+    }
+
+    static std::string encodeValue(PartitionID partitionID,
+                                   VertexID sourceID,
+                                   VertexID destinationID,
+                                   EdgeType edgeType,
+                                   SchemaVer version = 0,
+                                   std::string fmt = "%d_%d_%ld_%ld_%d_%ld") {
+        RowWriter writer;
+        for (int32_t numInt = 0; numInt < 10; numInt++) {
+            writer << numInt;
+        }
+        for (int32_t numString = 10; numString < 20; numString++) {
+            writer << folly::stringPrintf(fmt.c_str(),
+                                          numString,
+                                          partitionID,
+                                          sourceID,
+                                          destinationID,
+                                          edgeType,
+                                          version);
+        }
+        return writer.encode();
+    }
+
     static std::vector<cpp2::Edge>
-    setupEdges(PartitionID part, VertexID srcFrom,
-               VertexID srcTo, std::string fmt = "%d_%ld") {
+    setupEdges(PartitionID partitionID,
+               VertexID srcFrom,
+               VertexID srcTo,
+               EdgeType edgeType = 101,
+               int32_t versionNum = 1,
+               std::string fmt = "%d_%d_%ld_%ld_%d_%ld") {
         std::vector<cpp2::Edge> edges;
         for (VertexID srcId = srcFrom; srcId < srcTo; srcId++) {
-            cpp2::EdgeKey key;
-            key.set_src(srcId);
-            key.set_edge_type(srcId * 100 + 1);
-            key.set_ranking(srcId * 100 + 2);
-            key.set_dst(srcId * 100 + 3);
-            edges.emplace_back();
-            edges.back().set_key(std::move(key));
-            edges.back().set_props(folly::stringPrintf(fmt.c_str(), part, srcId));
+            for (SchemaVer version = 0; version < versionNum; version++) {
+                VertexID dstId = srcId * 100 + 2;
+                EdgeRanking ranking = srcId * 100 + 3;
+                cpp2::EdgeKey key;
+                key.set_src(srcId);
+                key.set_edge_type(edgeType);
+                key.set_ranking(ranking);
+                key.set_dst(dstId);
+                edges.emplace_back();
+                edges.back().set_key(std::move(key));
+                auto val = encodeValue(partitionID, srcId, dstId, edgeType, version, fmt);
+                edges.back().set_props(std::move(val));
+            }
         }
         return edges;
     }
@@ -225,26 +283,50 @@ public:
         return writer.encode();
     }
 
-
     /**
-     * It will generate SchemaProvider with some int fields and string fields
+     * It will generate edge SchemaProvider with some int fields and string fields
      * */
     static std::shared_ptr<meta::SchemaProviderIf>
     genEdgeSchemaProvider(int32_t intFieldsNum, int32_t stringFieldsNum) {
-        nebula::cpp2::Schema schema;
+        std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(0));
         for (int32_t i = 0; i < intFieldsNum; i++) {
             nebula::cpp2::ColumnDef column;
             column.name = folly::stringPrintf("col_%d", i);
             column.type.type = nebula::cpp2::SupportedType::INT;
-            schema.columns.emplace_back(std::move(column));
+            schema->addField(column.name, std::move(column.type));
         }
         for (int32_t i = intFieldsNum; i < intFieldsNum + stringFieldsNum; i++) {
             nebula::cpp2::ColumnDef column;
             column.name = folly::stringPrintf("col_%d", i);
             column.type.type = nebula::cpp2::SupportedType::STRING;
-            schema.columns.emplace_back(std::move(column));
+            schema->addField(column.name, std::move(column.type));
         }
-        return std::make_shared<ResultSchemaProvider>(std::move(schema));
+        return schema;
+    }
+
+    /**
+     * It will generate edge SchemaProvider with some int fields and string fields and ttl
+     * */
+    static std::shared_ptr<meta::SchemaProviderIf>
+    genEdgeSchemaWithTTLProvider(int32_t intFieldsNum, int32_t stringFieldsNum) {
+        std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(0));
+        for (int32_t i = 0; i < intFieldsNum; i++) {
+            nebula::cpp2::ColumnDef column;
+            column.name = folly::stringPrintf("col_%d", i);
+            column.type.type = nebula::cpp2::SupportedType::INT;
+            schema->addField(column.name, std::move(column.type));
+        }
+        for (int32_t i = intFieldsNum; i < intFieldsNum + stringFieldsNum; i++) {
+            nebula::cpp2::ColumnDef column;
+            column.name = folly::stringPrintf("col_%d", i);
+            column.type.type = nebula::cpp2::SupportedType::STRING;
+            schema->addField(column.name, std::move(column.type));
+        }
+        nebula::cpp2::SchemaProp prop;
+        prop.set_ttl_duration(200);
+        prop.set_ttl_col(folly::stringPrintf("col_0"));
+        schema->setProp(prop);
+        return schema;
     }
 
 
@@ -253,20 +335,48 @@ public:
      * */
     static std::shared_ptr<meta::SchemaProviderIf>
     genTagSchemaProvider(TagID tagId, int32_t intFieldsNum, int32_t stringFieldsNum) {
-        nebula::cpp2::Schema schema;
+        std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(0));
         for (int32_t i = 0; i < intFieldsNum; i++) {
             nebula::cpp2::ColumnDef column;
             column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
             column.type.type = nebula::cpp2::SupportedType::INT;
-            schema.columns.emplace_back(std::move(column));
+            schema->addField(column.name, std::move(column.type));
         }
         for (int32_t i = intFieldsNum; i < intFieldsNum + stringFieldsNum; i++) {
             nebula::cpp2::ColumnDef column;
             column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
             column.type.type = nebula::cpp2::SupportedType::STRING;
-            schema.columns.emplace_back(std::move(column));
+            schema->addField(column.name, std::move(column.type));
         }
-        return std::make_shared<ResultSchemaProvider>(std::move(schema));
+        return schema;
+    }
+
+
+    /**
+     * It will generate tag SchemaProvider with some int fields and string fields and ttl
+     * */
+    static std::shared_ptr<meta::SchemaProviderIf> genTagSchemaWithTTLProvider(
+            TagID tagId,
+            int32_t intFieldsNum,
+            int32_t stringFieldsNum) {
+        std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(0));
+        for (int32_t i = 0; i < intFieldsNum; i++) {
+            nebula::cpp2::ColumnDef column;
+            column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
+            column.type.type = nebula::cpp2::SupportedType::INT;
+            schema->addField(column.name, std::move(column.type));
+        }
+        for (int32_t i = intFieldsNum; i < intFieldsNum + stringFieldsNum; i++) {
+            nebula::cpp2::ColumnDef column;
+            column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
+            column.type.type = nebula::cpp2::SupportedType::STRING;
+            schema->addField(column.name, std::move(column.type));
+        }
+        nebula::cpp2::SchemaProp prop;
+        prop.set_ttl_duration(200);
+        prop.set_ttl_col(folly::stringPrintf("tag_%d_col_0", tagId));
+        schema->setProp(prop);
+        return schema;
     }
 
     static cpp2::PropDef vertexPropDef(std::string name, TagID tagId) {
@@ -299,15 +409,15 @@ public:
 
     // If kvstore should init files in dataPath, input port can't be 0
     static std::unique_ptr<test::ServerContext>
-    mockStorageServer(meta::MetaClient* mClient, const char* dataPath,
-                      uint32_t ip, uint32_t port = 0, bool useMetaServer = false) {
+    mockStorageServer(meta::MetaClient* mClient, const char* dataPath, uint32_t ip,
+                      uint32_t port = 0, bool useMetaServer = false, GraphSpaceID space = 1) {
         auto sc = std::make_unique<test::ServerContext>();
         // Always use the Meta Service in this case
         sc->kvStore_ = TestUtils::initKV(dataPath, 6, {ip, port}, mClient, true);
 
         if (!useMetaServer) {
-            sc->schemaMan_ = TestUtils::mockSchemaMan(1);
-            sc->indexMan_ = TestUtils::mockIndexMan(1);
+            sc->schemaMan_ = TestUtils::mockSchemaMan(space);
+            sc->indexMan_ = TestUtils::mockIndexMan(space);
         } else {
             LOG(INFO) << "Create real SchemaManager and IndexManager";
             sc->schemaMan_ = meta::SchemaManager::create();

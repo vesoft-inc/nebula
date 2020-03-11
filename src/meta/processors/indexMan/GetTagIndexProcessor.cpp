@@ -19,7 +19,7 @@ void GetTagIndexProcessor::process(const cpp2::GetTagIndexReq& req) {
     if (!tagIndexIDResult.ok()) {
         LOG(ERROR) << "Get Tag Index SpaceID: " << spaceID
                    << " Index Name: " << indexName << " not found";
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
@@ -30,12 +30,13 @@ void GetTagIndexProcessor::process(const cpp2::GetTagIndexReq& req) {
     if (!tagResult.ok()) {
         LOG(ERROR) << "Get Tag Index Failed: SpaceID " << spaceID
                    << " Index Name: " << indexName << " status: " << tagResult.status();
+        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
 
     auto item = MetaServiceUtils::parseIndex(tagResult.value());
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_item(std::move(item));
     onFinished();
 }

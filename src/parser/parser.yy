@@ -100,14 +100,15 @@ class GraphScanner;
 
 /* keywords */
 %token KW_GO KW_AS KW_TO KW_OR KW_AND KW_XOR KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
-%token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX
-%token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND KW_BUILD
+%token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_OFFLINE
+%token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND KW_REBUILD
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_PART KW_PARTS KW_TIMESTAMP KW_ADD
-%token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_INDEX KW_INDEXES
+%token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_CHARSET KW_COLLATE KW_COLLATION
+%token KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_INDEX KW_INDEXES
 %token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
 %token KW_COUNT KW_COUNT_DISTINCT KW_SUM KW_AVG KW_MAX KW_MIN KW_STD KW_BIT_AND KW_BIT_OR KW_BIT_XOR
-%token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
+%token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON KW_STATUS
 %token KW_ROLES KW_BY KW_DOWNLOAD KW_HDFS KW_UUID KW_CONFIGS KW_FORCE
 %token KW_VARIABLES KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
 %token KW_TTL KW_TTL_DURATION KW_TTL_COL KW_DATA KW_STOP
@@ -117,7 +118,9 @@ class GraphScanner;
 %token KW_BALANCE KW_LEADER
 %token KW_SHORTEST KW_PATH
 %token KW_IS KW_NULL KW_DEFAULT
-%token KW_SNAPSHOT KW_SNAPSHOTS
+%token KW_SNAPSHOT KW_SNAPSHOTS KW_LOOKUP
+%token KW_JOBS KW_JOB KW_RECOVER KW_FLUSH KW_COMPACT KW_SUBMIT
+%token KW_BIDIRECT
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -132,6 +135,7 @@ class GraphScanner;
 %token <strval> STRING VARIABLE LABEL
 
 %type <strval> name_label unreserved_keyword agg_function
+%type <strval> admin_operation admin_para
 %type <expr> expression logic_xor_expression logic_or_expression logic_and_expression
 %type <expr> relational_expression multiplicative_expression additive_expression arithmetic_xor_expression
 %type <expr> unary_expression primary_expression equality_expression base_expression
@@ -200,32 +204,38 @@ class GraphScanner;
 %type <role_type_clause> role_type_clause
 %type <acl_item_clause> acl_item_clause
 
-%type <sentence> go_sentence match_sentence use_sentence find_sentence find_path_sentence
-%type <sentence> order_by_sentence limit_sentence group_by_sentence
-%type <sentence> fetch_vertices_sentence fetch_edges_sentence
-
+%type <sentence> maintain_sentence
+%type <sentence> create_space_sentence describe_space_sentence drop_space_sentence
 %type <sentence> create_tag_sentence create_edge_sentence
 %type <sentence> alter_tag_sentence alter_edge_sentence
 %type <sentence> drop_tag_sentence drop_edge_sentence
 %type <sentence> describe_tag_sentence describe_edge_sentence
-
 %type <sentence> create_tag_index_sentence create_edge_index_sentence
 %type <sentence> drop_tag_index_sentence drop_edge_index_sentence
 %type <sentence> describe_tag_index_sentence describe_edge_index_sentence
-%type <sentence> build_tag_index_sentence build_edge_index_sentence
+%type <sentence> rebuild_tag_index_sentence rebuild_edge_index_sentence
+%type <sentence> create_snapshot_sentence drop_snapshot_sentence
 
-%type <sentence> traverse_sentence set_sentence piped_sentence assignment_sentence fetch_sentence
-%type <sentence> maintain_sentence insert_vertex_sentence insert_edge_sentence
-%type <sentence> mutate_sentence update_vertex_sentence update_edge_sentence delete_vertex_sentence delete_edge_sentence
-%type <sentence> show_sentence create_space_sentence describe_space_sentence
-%type <sentence> drop_space_sentence
-%type <sentence> yield_sentence
+%type <sentence> admin_sentence
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
-%type <sentence> grant_sentence revoke_sentence
+%type <sentence> show_sentence 
+
+%type <sentence> mutate_sentence
+%type <sentence> insert_vertex_sentence insert_edge_sentence
+%type <sentence> delete_vertex_sentence delete_edge_sentence
+%type <sentence> update_vertex_sentence update_edge_sentence
 %type <sentence> download_sentence ingest_sentence
+
+%type <sentence> traverse_sentence
+%type <sentence> go_sentence match_sentence lookup_sentence find_path_sentence
+%type <sentence> group_by_sentence order_by_sentence limit_sentence
+%type <sentence> fetch_sentence fetch_vertices_sentence fetch_edges_sentence
+%type <sentence> set_sentence piped_sentence assignment_sentence
+%type <sentence> yield_sentence use_sentence
+
+%type <sentence> grant_sentence revoke_sentence
 %type <sentence> set_config_sentence get_config_sentence balance_sentence
 %type <sentence> process_control_sentence return_sentence
-%type <sentence> create_snapshot_sentence drop_snapshot_sentence
 %type <sentence> sentence
 %type <sentences> sentences
 
@@ -274,6 +284,21 @@ unreserved_keyword
      | KW_LEADER             { $$ = new std::string("leader"); }
      | KW_UUID               { $$ = new std::string("uuid"); }
      | KW_VARIABLES          { $$ = new std::string("variables"); }
+     | KW_JOB                { $$ = new std::string("job"); }
+     | KW_JOBS               { $$ = new std::string("jobs"); }
+     | KW_SUBMIT             { $$ = new std::string("submit"); }
+     | KW_RECOVER            { $$ = new std::string("recover"); }
+     | KW_FLUSH              { $$ = new std::string("flush"); }
+     | KW_COMPACT            { $$ = new std::string("compact"); }
+     | KW_BIDIRECT           { $$ = new std::string("bidirect"); }
+     | KW_OFFLINE            { $$ = new std::string("offline"); }
+     | KW_FORCE              { $$ = new std::string("force"); }
+     | KW_STATUS             { $$ = new std::string("status"); }
+     | KW_REBUILD            { $$ = new std::string("rebuild"); }
+     | KW_PART               { $$ = new std::string("part"); }
+     | KW_PARTS              { $$ = new std::string("parts"); }
+     | KW_DEFAULT            { $$ = new std::string("default"); }
+     | KW_CONFIGS            { $$ = new std::string("configs"); }
      ;
 
 agg_function
@@ -667,13 +692,23 @@ over_clause
         auto s = new std::string("*");
         auto edge = new OverEdge(s, nullptr);
         edges->addEdge(edge);
-        $$ = new OverClause(edges, true);
+        $$ = new OverClause(edges, OverClause::Direction::kBackward);
+    }
+    | KW_OVER MUL KW_BIDIRECT {
+        auto edges = new OverEdges();
+        auto s = new std::string("*");
+        auto edge = new OverEdge(s, nullptr);
+        edges->addEdge(edge);
+        $$ = new OverClause(edges, OverClause::Direction::kBidirect);
     }
     | KW_OVER over_edges {
         $$ = new OverClause($2);
     }
     | KW_OVER over_edges KW_REVERSELY {
-        $$ = new OverClause($2, true);
+        $$ = new OverClause($2, OverClause::Direction::kBackward);
+    }
+    | KW_OVER over_edges KW_BIDIRECT {
+        $$ = new OverClause($2, OverClause::Direction::kBidirect);
     }
     ;
 
@@ -752,10 +787,11 @@ match_sentence
     : KW_MATCH { $$ = new MatchSentence; }
     ;
 
-find_sentence
-    : KW_FIND prop_list KW_FROM name_label where_clause {
-        auto sentence = new FindSentence($4, $2);
-        sentence->setWhereClause($5);
+lookup_sentence
+    : KW_LOOKUP KW_ON name_label where_clause yield_clause {
+        auto sentence = new LookupSentence($3);
+        sentence->setWhereClause($4);
+        sentence->setYieldClause($5);
         $$ = sentence;
     }
     ;
@@ -977,7 +1013,7 @@ create_schema_prop_item
         }
         $$ = new SchemaPropItem(SchemaPropItem::TTL_DURATION, $3);
     }
-    | KW_TTL_COL ASSIGN name_label {
+    | KW_TTL_COL ASSIGN STRING {
         $$ = new SchemaPropItem(SchemaPropItem::TTL_COL, *$3);
         delete $3;
     }
@@ -1058,7 +1094,7 @@ alter_schema_prop_item
         }
         $$ = new SchemaPropItem(SchemaPropItem::TTL_DURATION, $3);
     }
-    | KW_TTL_COL ASSIGN name_label {
+    | KW_TTL_COL ASSIGN STRING {
         $$ = new SchemaPropItem(SchemaPropItem::TTL_COL, *$3);
         delete $3;
     }
@@ -1121,21 +1157,9 @@ column_spec_list
 
 column_spec
     : name_label type_spec { $$ = new ColumnSpecification($2, $1); }
-    | name_label type_spec KW_DEFAULT INTEGER {
+    | name_label type_spec KW_DEFAULT expression {
         $$ = new ColumnSpecification($2, $1);
-        $$->setIntValue($4);
-    }
-    | name_label type_spec KW_DEFAULT BOOL {
-        $$ = new ColumnSpecification($2, $1);
-        $$->setBoolValue($4);
-    }
-    | name_label type_spec KW_DEFAULT DOUBLE {
-        $$ = new ColumnSpecification($2, $1);
-        $$->setDoubleValue($4);
-    }
-    |  name_label type_spec KW_DEFAULT STRING {
-        $$ = new ColumnSpecification($2, $1);
-        $$->setStringValue($4);
+        $$->setValue($4);
     }
     ;
 
@@ -1211,15 +1235,21 @@ describe_edge_index_sentence
     }
     ;
 
-build_tag_index_sentence
-    : KW_BUILD KW_TAG KW_INDEX name_label {
-        $$ = new BuildTagIndexSentence($4);
+rebuild_tag_index_sentence
+    : KW_REBUILD KW_TAG KW_INDEX name_label {
+        $$ = new RebuildTagIndexSentence($4, false);
+    }
+    | KW_REBUILD KW_TAG KW_INDEX name_label KW_OFFLINE {
+        $$ = new RebuildTagIndexSentence($4, true);
     }
     ;
 
-build_edge_index_sentence
-    : KW_BUILD KW_EDGE KW_INDEX name_label {
-        $$ = new BuildEdgeIndexSentence($4);
+rebuild_edge_index_sentence
+    : KW_REBUILD KW_EDGE KW_INDEX name_label {
+        $$ = new RebuildEdgeIndexSentence($4, false);
+    }
+    | KW_REBUILD KW_EDGE KW_INDEX name_label KW_OFFLINE {
+        $$ = new RebuildEdgeIndexSentence($4, true);
     }
     ;
 
@@ -1227,7 +1257,7 @@ traverse_sentence
     : L_PAREN set_sentence R_PAREN { $$ = $2; }
     | go_sentence { $$ = $1; }
     | match_sentence { $$ = $1; }
-    | find_sentence { $$ = $1; }
+    | lookup_sentence { $$ = $1; }
     | group_by_sentence { $$ = $1; }
     | order_by_sentence { $$ = $1; }
     | fetch_sentence { $$ = $1; }
@@ -1495,8 +1525,8 @@ update_edge_sentence
     ;
 
 delete_vertex_sentence
-    : KW_DELETE KW_VERTEX vid {
-        auto sentence = new DeleteVertexSentence($3);
+    : KW_DELETE KW_VERTEX vid_list {
+        auto sentence = new DeleteVerticesSentence($3);
         $$ = sentence;
     }
     ;
@@ -1520,6 +1550,48 @@ ingest_sentence
     : KW_INGEST {
         auto sentence = new IngestSentence();
         $$ = sentence;
+    }
+    ;
+
+admin_sentence
+    : KW_SUBMIT KW_JOB admin_operation {
+        auto sentence = new AdminSentence("add_job");
+        sentence->addPara(*$3);
+        $$ = sentence;
+    }
+    | KW_SHOW KW_JOBS {
+        auto sentence = new AdminSentence("show_jobs");
+        $$ = sentence;
+    }
+    | KW_SHOW KW_JOB INTEGER {
+        auto sentence = new AdminSentence("show_job");
+        sentence->addPara(std::to_string($3));
+        $$ = sentence;
+    }
+    | KW_STOP KW_JOB INTEGER {
+        auto sentence = new AdminSentence("stop_job");
+        sentence->addPara(std::to_string($3));
+        $$ = sentence;
+    }
+    | KW_RECOVER KW_JOB {
+        auto sentence = new AdminSentence("recover_job");
+        $$ = sentence;
+    }
+    ;
+
+admin_operation
+    : KW_COMPACT { $$ = new std::string("compact"); }
+    | KW_FLUSH   { $$ = new std::string("flush"); }
+    | admin_operation admin_para {
+        $$ = new std::string(*$1 + " " + *$2);
+    }
+    ;
+
+admin_para
+    : name_label ASSIGN name_label {
+        auto left = *$1;
+        auto right = *$3;
+        $$ = new std::string(*$1 + "=" + *$3);
     }
     ;
 
@@ -1578,8 +1650,20 @@ show_sentence
     | KW_SHOW KW_CREATE KW_EDGE KW_INDEX name_label {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowCreateEdgeIndex, $5);
     }
+    | KW_SHOW KW_TAG KW_INDEX KW_STATUS {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowTagIndexStatus);
+    }
+    | KW_SHOW KW_EDGE KW_INDEX KW_STATUS {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowEdgeIndexStatus);
+    }
     | KW_SHOW KW_SNAPSHOTS {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowSnapshots);
+    }
+    | KW_SHOW KW_CHARSET {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowCharset);
+    }
+    | KW_SHOW KW_COLLATION {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowCollation);
     }
     ;
 
@@ -1665,6 +1749,16 @@ space_opt_item
     | KW_REPLICA_FACTOR ASSIGN INTEGER {
         ifOutOfRange($3, @3);
         $$ = new SpaceOptItem(SpaceOptItem::REPLICA_FACTOR, $3);
+    }
+    | KW_CHARSET ASSIGN name_label {
+        // Currently support utf8, it is an alias for utf8mb4
+        $$ = new SpaceOptItem(SpaceOptItem::CHARSET, *$3);
+        delete $3;
+    }
+    | KW_COLLATE ASSIGN name_label {
+        // Currently support utf8_bin, it is an alias for utf8mb4_bin
+        $$ = new SpaceOptItem(SpaceOptItem::COLLATE, *$3);
+        delete $3;
     }
     // TODO(YT) Create Spaces for different engines
     // KW_ENGINE_TYPE ASSIGN name_label
@@ -1883,10 +1977,14 @@ mutate_sentence
     | delete_edge_sentence { $$ = $1; }
     | download_sentence { $$ = $1; }
     | ingest_sentence { $$ = $1; }
+    | admin_sentence { $$ = $1; }
     ;
 
 maintain_sentence
-    : create_tag_sentence { $$ = $1; }
+    : create_space_sentence { $$ = $1; }
+    | describe_space_sentence { $$ = $1; }
+    | drop_space_sentence { $$ = $1; }
+    | create_tag_sentence { $$ = $1; }
     | create_edge_sentence { $$ = $1; }
     | alter_tag_sentence { $$ = $1; }
     | alter_edge_sentence { $$ = $1; }
@@ -1900,12 +1998,9 @@ maintain_sentence
     | drop_edge_index_sentence { $$ = $1; }
     | describe_tag_index_sentence { $$ = $1; }
     | describe_edge_index_sentence { $$ = $1; }
-    | build_tag_index_sentence { $$ = $1; }
-    | build_edge_index_sentence { $$ = $1; }
+    | rebuild_tag_index_sentence { $$ = $1; }
+    | rebuild_edge_index_sentence { $$ = $1; }
     | show_sentence { $$ = $1; }
-    | create_space_sentence { $$ = $1; }
-    | describe_space_sentence { $$ = $1; }
-    | drop_space_sentence { $$ = $1; }
     ;
     | create_user_sentence { $$ = $1; }
     | alter_user_sentence { $$ = $1; }

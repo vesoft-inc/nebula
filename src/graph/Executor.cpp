@@ -27,8 +27,8 @@
 #include "graph/DropEdgeIndexExecutor.h"
 #include "graph/DescribeTagIndexExecutor.h"
 #include "graph/DescribeEdgeIndexExecutor.h"
-#include "graph/BuildTagIndexExecutor.h"
-#include "graph/BuildEdgeIndexExecutor.h"
+#include "graph/RebuildTagIndexExecutor.h"
+#include "graph/RebuildEdgeIndexExecutor.h"
 #include "graph/InsertVertexExecutor.h"
 #include "graph/InsertEdgeExecutor.h"
 #include "graph/AssignmentExecutor.h"
@@ -40,15 +40,16 @@
 #include "graph/DownloadExecutor.h"
 #include "graph/OrderByExecutor.h"
 #include "graph/IngestExecutor.h"
+#include "graph/AdminJobExecutor.h"
 #include "graph/ConfigExecutor.h"
 #include "graph/FetchVerticesExecutor.h"
 #include "graph/FetchEdgesExecutor.h"
 #include "graph/ConfigExecutor.h"
 #include "graph/SetExecutor.h"
-#include "graph/FindExecutor.h"
+#include "graph/LookupExecutor.h"
 #include "graph/MatchExecutor.h"
 #include "graph/BalanceExecutor.h"
-#include "graph/DeleteVertexExecutor.h"
+#include "graph/DeleteVerticesExecutor.h"
 #include "graph/DeleteEdgesExecutor.h"
 #include "graph/UpdateVertexExecutor.h"
 #include "graph/UpdateEdgeExecutor.h"
@@ -117,11 +118,11 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
         case Sentence::Kind::kDropEdgeIndex:
              executor = std::make_unique<DropEdgeIndexExecutor>(sentence, ectx());
              break;
-        case Sentence::Kind::kBuildTagIndex:
-             executor = std::make_unique<BuildTagIndexExecutor>(sentence, ectx());
+        case Sentence::Kind::kRebuildTagIndex:
+             executor = std::make_unique<RebuildTagIndexExecutor>(sentence, ectx());
              break;
-        case Sentence::Kind::kBuildEdgeIndex:
-             executor = std::make_unique<BuildEdgeIndexExecutor>(sentence, ectx());
+        case Sentence::Kind::kRebuildEdgeIndex:
+             executor = std::make_unique<RebuildEdgeIndexExecutor>(sentence, ectx());
              break;
         case Sentence::Kind::kInsertVertex:
             executor = std::make_unique<InsertVertexExecutor>(sentence, ectx());
@@ -174,14 +175,14 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
         case Sentence::Kind::kMatch:
             executor = std::make_unique<MatchExecutor>(sentence, ectx());
             break;
-        case Sentence::Kind::kFind:
-            executor = std::make_unique<FindExecutor>(sentence, ectx());
+        case Sentence::Kind::kLookup:
+            executor = std::make_unique<LookupExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kBalance:
             executor = std::make_unique<BalanceExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kDeleteVertex:
-            executor = std::make_unique<DeleteVertexExecutor>(sentence, ectx());
+            executor = std::make_unique<DeleteVerticesExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kDeleteEdges:
             executor = std::make_unique<DeleteEdgesExecutor>(sentence, ectx());
@@ -206,6 +207,9 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             break;
         case Sentence::Kind::kDropSnapshot:
             executor = std::make_unique<DropSnapshotExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kAdmin:
+            executor = std::make_unique<AdminJobExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kUnknown:
             LOG(ERROR) << "Sentence kind unknown";

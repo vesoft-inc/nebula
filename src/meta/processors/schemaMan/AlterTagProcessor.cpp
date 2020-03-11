@@ -15,14 +15,13 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
     auto ret = getTagId(spaceId, req.get_tag_name());
     if (!ret.ok()) {
-        resp_.set_code(to(ret.status()));
+        handleErrorCode(MetaCommon::to(ret.status()));
         onFinished();
         return;
     }
     auto tagId = ret.value();
 
     // Check the tag belongs to the space
-
     std::unique_ptr<kvstore::KVIterator> iter;
     auto tagPrefix = MetaServiceUtils::schemaTagPrefix(spaceId, tagId);
     auto code = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, tagPrefix, &iter);
@@ -30,7 +29,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
         LOG(ERROR) << "Tag could not be found " << req.get_tag_name()
                    << ", spaceId " << spaceId
                    << ", tagId " << tagId;
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
@@ -44,18 +43,19 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     // Update schema column
     auto& tagItems = req.get_tag_items();
 
-    auto iCode = getIndexes(spaceId, tagId, false);
+    auto iCode = getIndexes(spaceId, tagId);
     if (!iCode.ok()) {
-        resp_.set_code(to(iCode.status()));
+        handleErrorCode(MetaCommon::to(iCode.status()));
         onFinished();
         return;
     }
     auto indexes = std::move(iCode).value();
-    if (!indexes.empty()) {
+    auto existIndex = !indexes.empty();
+    if (existIndex) {
         auto iStatus = indexCheck(indexes, tagItems);
         if (iStatus != cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << "Alter tag error, index conflict : " << static_cast<int32_t>(iStatus);
-            resp_.set_code(iStatus);
+            handleErrorCode(iStatus);
             onFinished();
             return;
         }
@@ -67,26 +67,27 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
             auto retCode = MetaServiceUtils::alterColumnDefs(columns, prop, col, tagItem.op);
             if (retCode != cpp2::ErrorCode::SUCCEEDED) {
                 LOG(ERROR) << "Alter tag column error " << static_cast<int32_t>(retCode);
-                resp_.set_code(retCode);
+                handleErrorCode(retCode);
                 onFinished();
                 return;
             }
         }
     }
 
-    // Update schema property
+    // Update schema property if tag not index
     auto& alterSchemaProp = req.get_schema_prop();
-    auto retCode = MetaServiceUtils::alterSchemaProp(columns, prop, alterSchemaProp);
-
+    auto retCode = MetaServiceUtils::alterSchemaProp(columns, prop, alterSchemaProp, existIndex);
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Alter tag property error " << static_cast<int32_t>(retCode);
-        resp_.set_code(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
+    if (!existIndex) {
+        schema.set_schema_prop(std::move(prop));
+    }
     schema.set_columns(std::move(columns));
-    schema.set_schema_prop(std::move(prop));
 
     std::vector<kvstore::KV> data;
     LOG(INFO) << "Alter Tag " << req.get_tag_name() << ", tagId " << tagId;

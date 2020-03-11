@@ -9,6 +9,7 @@
 
 #include "base/Base.h"
 #include "graph/Executor.h"
+#include <unordered_set>
 
 namespace nebula {
 namespace graph {
@@ -36,7 +37,11 @@ public:
     void showCreateEdge();
     void showCreateTagIndex();
     void showCreateEdgeIndex();
+    void showTagIndexStatus();
+    void showEdgeIndexStatus();
     void showSnapshots();
+    void showCharset();
+    void showCollation();
 
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
