@@ -144,6 +144,10 @@ private:
                  std::vector<HostAddr>& newlyAdded,
                  std::unordered_set<HostAddr>& lost);
 
+    Status checkReplica(const std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
+                        const std::vector<HostAddr>& activeHosts,
+                        PartitionID partId);
+
     StatusOr<HostAddr> hostWithMinimalParts(
                         const std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
                         PartitionID partId);

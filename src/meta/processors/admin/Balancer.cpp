@@ -196,6 +196,8 @@ Balancer::genTasks(GraphSpaceID spaceId, std::unordered_set<HostAddr> hostDel) {
     std::vector<HostAddr> newlyAdded;
     auto activeHosts = ActiveHostsMan::getActiveHosts(kv_);
     calDiff(hostParts, activeHosts, newlyAdded, hostDel);
+    // newHostParts is new part allocation map after balance, it would include newlyAdded
+    // and exclude hostDel
     decltype(hostParts) newHostParts(hostParts);
     for (auto& h : newlyAdded) {
         LOG(INFO) << "Found new host " << h;
@@ -215,6 +217,13 @@ Balancer::genTasks(GraphSpaceID spaceId, std::unordered_set<HostAddr> hostDel) {
     for (auto& h : hostDel) {
         auto& lostParts = hostParts[h];
         for (auto& partId : lostParts) {
+            // check whether any peers which is alive
+            auto alive = checkReplica(hostParts, activeHosts, partId);
+            if (!alive.ok()) {
+                LOG(ERROR) << "Error:" << alive;
+                return cpp2::ErrorCode::E_NO_VALID_HOST;
+            }
+            // find a host with minimum parts which doesn't have this part
             auto ret = hostWithMinimalParts(newHostParts, partId);
             if (!ret.ok()) {
                 LOG(ERROR) << "Error:" << ret.status();
@@ -376,6 +385,24 @@ Balancer::sortedHostsByParts(const std::unordered_map<HostAddr,
         return l.second < r.second;
     });
     return hosts;
+}
+
+Status Balancer::checkReplica(
+            const std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
+            const std::vector<HostAddr>& activeHosts,
+            PartitionID partId) {
+    // check host hold the part and alive
+    auto checkPart = [&] (const auto& entry) {
+        auto& host = entry.first;
+        auto& peers = entry.second;
+        return std::find(peers.begin(), peers.end(), partId) != peers.end() &&
+               std::find(activeHosts.begin(), activeHosts.end(), host) != activeHosts.end();
+    };
+    auto aliveReplica = std::count_if(hostParts.begin(), hostParts.end(), checkPart);
+    if (aliveReplica >= 1) {
+        return Status::OK();
+    }
+    return Status::Error("No alive host hold the part %d", partId);
 }
 
 StatusOr<HostAddr> Balancer::hostWithMinimalParts(
