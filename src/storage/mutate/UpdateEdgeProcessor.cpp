@@ -175,7 +175,7 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
             auto&& v = value(std::move(res));
             edgeFilters_.emplace(propName, v);
         }
-        updater_ = std::unique_ptr<RowUpdater>(new RowUpdater(std::move(reader), schema));
+        updater_ = std::unique_ptr<RowUpdater>(new RowUpdater(std::move(reader), constSchema));
     } else if (insertable_) {
         resp_.set_upsert(true);
         int64_t ms = time::WallClock::fastNowInMicroSec();
@@ -190,15 +190,15 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
         }
         auto updater = std::make_unique<RowUpdater>(constSchema);
 
-        for (auto index = 0UL; index < schema->getNumFields(); index++) {
-            auto propName = std::string(schema->getFieldName(index));
+        for (auto index = 0UL; index < constSchema->getNumFields(); index++) {
+            auto propName = std::string(constSchema->getFieldName(index));
             auto findIter = std::find_if(updateItems_.cbegin(), updateItems_.cend(),
                     [&propName](auto &item) { return item.prop == propName; });
             OptVariantType value;
             if (findIter == updateItems_.end()) {
                 // When the schema field is not in update field
                 // need to get default value from schema. If nonexistent return error.
-                value = schema->getDefaultValue(index);
+                value = constSchema->getDefaultValue(index);
             } else {
                 // When the update item has src item,
                 // need to get default value from schema. If nonexistent return error.
@@ -216,7 +216,7 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
                     return kvstore::ResultCode::ERR_UNKNOWN;
                 }
                 if (expCtx.hasEdgeProp()) {
-                    value = schema->getDefaultValue(index);
+                    value = constSchema->getDefaultValue(index);
                     VLOG(2) << "UpdateItem on propName: " << propName << " has edge prop";
                 } else {
                     VLOG(2) << "Nothing set on propName: " << propName;
