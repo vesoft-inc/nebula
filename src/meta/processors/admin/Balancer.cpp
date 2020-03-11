@@ -129,7 +129,8 @@ cpp2::ErrorCode Balancer::recovery() {
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
-bool Balancer::getAllSpaces(std::vector<GraphSpaceID>& spaces, kvstore::ResultCode& retCode) {
+bool Balancer::getAllSpaces(std::vector<std::pair<GraphSpaceID, int32_t>>& spaces,
+                            kvstore::ResultCode& retCode) {
     // Get all spaces
     folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
     auto prefix = MetaServiceUtils::spacePrefix();
@@ -141,7 +142,8 @@ bool Balancer::getAllSpaces(std::vector<GraphSpaceID>& spaces, kvstore::ResultCo
     }
     while (iter->valid()) {
         auto spaceId = MetaServiceUtils::spaceId(iter->key());
-        spaces.push_back(spaceId);
+        auto properties = MetaServiceUtils::parseSpace(iter->val());
+        spaces.emplace_back(spaceId, properties.replica_factor);
         iter->next();
     }
     return true;
@@ -149,14 +151,14 @@ bool Balancer::getAllSpaces(std::vector<GraphSpaceID>& spaces, kvstore::ResultCo
 
 cpp2::ErrorCode Balancer::buildBalancePlan(std::unordered_set<HostAddr> hostDel) {
     CHECK(!plan_) << "plan should be nullptr now";
-    std::vector<GraphSpaceID> spaces;
+    std::vector<std::pair<GraphSpaceID, int32_t>> spaces;
     kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
     if (!getAllSpaces(spaces, ret)) {
         return cpp2::ErrorCode::E_STORE_FAILURE;
     }
     plan_ = std::make_unique<BalancePlan>(time::WallClock::fastNowInSec(), kv_, client_.get());
-    for (auto spaceId : spaces) {
-        auto taskRet = genTasks(spaceId, hostDel);
+    for (auto spaceInfo : spaces) {
+        auto taskRet = genTasks(spaceInfo.first, spaceInfo.second, hostDel);
         if (!ok(taskRet)) {
             return error(taskRet);
         }
@@ -183,7 +185,9 @@ cpp2::ErrorCode Balancer::buildBalancePlan(std::unordered_set<HostAddr> hostDel)
 }
 
 ErrorOr<cpp2::ErrorCode, std::vector<BalanceTask>>
-Balancer::genTasks(GraphSpaceID spaceId, std::unordered_set<HostAddr> hostDel) {
+Balancer::genTasks(GraphSpaceID spaceId,
+                   int32_t spaceReplica,
+                   std::unordered_set<HostAddr> hostDel) {
     CHECK(!!plan_) << "plan should not be nullptr";
     std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
     int32_t totalParts = 0;
@@ -218,7 +222,7 @@ Balancer::genTasks(GraphSpaceID spaceId, std::unordered_set<HostAddr> hostDel) {
         auto& lostParts = hostParts[h];
         for (auto& partId : lostParts) {
             // check whether any peers which is alive
-            auto alive = checkReplica(hostParts, activeHosts, partId);
+            auto alive = checkReplica(hostParts, activeHosts, spaceReplica, partId);
             if (!alive.ok()) {
                 LOG(ERROR) << "Error:" << alive;
                 return cpp2::ErrorCode::E_NO_VALID_HOST;
@@ -390,6 +394,7 @@ Balancer::sortedHostsByParts(const std::unordered_map<HostAddr,
 Status Balancer::checkReplica(
             const std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
             const std::vector<HostAddr>& activeHosts,
+            int32_t replica,
             PartitionID partId) {
     // check host hold the part and alive
     auto checkPart = [&] (const auto& entry) {
@@ -399,10 +404,10 @@ Status Balancer::checkReplica(
                std::find(activeHosts.begin(), activeHosts.end(), host) != activeHosts.end();
     };
     auto aliveReplica = std::count_if(hostParts.begin(), hostParts.end(), checkPart);
-    if (aliveReplica >= 1) {
+    if (aliveReplica >= replica / 2 + 1) {
         return Status::OK();
     }
-    return Status::Error("No alive host hold the part %d", partId);
+    return Status::Error("Not enough alive host hold the part %d", partId);
 }
 
 StatusOr<HostAddr> Balancer::hostWithMinimalParts(
@@ -426,7 +431,7 @@ cpp2::ErrorCode Balancer::leaderBalance() {
 
     folly::Promise<Status> promise;
     auto future = promise.getFuture();
-    std::vector<GraphSpaceID> spaces;
+    std::vector<std::pair<GraphSpaceID, int32_t>> spaces;
     kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
     if (!getAllSpaces(spaces, ret)) {
         LOG(ERROR) << "Can't access kvstore, ret = " << static_cast<int32_t>(ret);
@@ -444,10 +449,10 @@ cpp2::ErrorCode Balancer::leaderBalance() {
         }
 
         std::vector<folly::SemiFuture<Status>> futures;
-        for (const auto& space : spaces) {
+        for (const auto& spaceInfo : spaces) {
             LeaderBalancePlan plan;
-            buildLeaderBalancePlan(hostLeaderMap_.get(), space, plan);
-            simplifyLeaderBalnacePlan(space, plan);
+            buildLeaderBalancePlan(hostLeaderMap_.get(), spaceInfo.first, plan);
+            simplifyLeaderBalnacePlan(spaceInfo.first, plan);
             for (const auto& task : plan) {
                 futures.emplace_back(client_->transLeader(std::get<0>(task), std::get<1>(task),
                                                           std::move(std::get<2>(task)),

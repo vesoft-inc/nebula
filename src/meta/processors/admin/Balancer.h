@@ -133,7 +133,7 @@ private:
     cpp2::ErrorCode buildBalancePlan(std::unordered_set<HostAddr> hostDel);
 
     ErrorOr<cpp2::ErrorCode, std::vector<BalanceTask>>
-    genTasks(GraphSpaceID spaceId, std::unordered_set<HostAddr> hostDel);
+    genTasks(GraphSpaceID spaceId, int32_t spaceReplica, std::unordered_set<HostAddr> hostDel);
 
     void getHostParts(GraphSpaceID spaceId,
                       std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
@@ -146,6 +146,7 @@ private:
 
     Status checkReplica(const std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
                         const std::vector<HostAddr>& activeHosts,
+                        int32_t replica,
                         PartitionID partId);
 
     StatusOr<HostAddr> hostWithMinimalParts(
@@ -162,7 +163,8 @@ private:
     std::vector<std::pair<HostAddr, int32_t>>
     sortedHostsByParts(const std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts);
 
-    bool getAllSpaces(std::vector<GraphSpaceID>& spaces, kvstore::ResultCode& retCode);
+    bool getAllSpaces(std::vector<std::pair<GraphSpaceID, int32_t>>& spaces,
+                      kvstore::ResultCode& retCode);
 
     std::unordered_map<HostAddr, std::vector<PartitionID>>
     buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap, GraphSpaceID spaceId,
