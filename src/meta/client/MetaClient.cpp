@@ -172,6 +172,7 @@ bool MetaClient::loadData() {
     decltype(spaceEdgeIndexByType_)  spaceEdgeIndexByType;
     decltype(spaceTagIndexById_)     spaceTagIndexById;
     decltype(spaceAllEdgeMap_)       spaceAllEdgeMap;
+    decltype(pluginItems_)           pluginItems;
 
     for (auto space : ret.value()) {
         auto spaceId = space.first;
@@ -209,6 +210,11 @@ bool MetaClient::loadData() {
             return false;
         }
 
+        if (!loadPlugins(pluginItems)) {
+            LOG(ERROR) << "Load Plugins Failed";
+            return false;
+        }
+
         cache.emplace(spaceId, spaceCache);
         spaceIndexByName.emplace(space.second, spaceId);
     }
@@ -225,6 +231,7 @@ bool MetaClient::loadData() {
         spaceEdgeIndexByType_  = std::move(spaceEdgeIndexByType);
         spaceTagIndexById_     = std::move(spaceTagIndexById);
         spaceAllEdgeMap_       = std::move(spaceAllEdgeMap);
+        pluginItems_           = std::move(pluginItems);
     }
     localDataLastUpdateTime_.store(metadLastUpdateTime_.load());
     diff(oldCache, localCache_);
@@ -390,6 +397,7 @@ bool MetaClient::loadIndexes(GraphSpaceID spaceId,
     return true;
 }
 
+<<<<<<< HEAD
 const MetaClient::ThreadLocalInfo& MetaClient::getThreadLocalInfo() {
     ThreadLocalInfo& threadLocalInfo = folly::SingletonThreadLocal<ThreadLocalInfo>::get();
 
@@ -418,6 +426,16 @@ const MetaClient::ThreadLocalInfo& MetaClient::getThreadLocalInfo() {
     }
 
     return threadLocalInfo;
+}
+
+bool MetaClient::loadPlugins(std::vector<cpp2::PluginItem> &pluginItems) {
+    auto pluginItemsRet = listPlugins().get();
+    if (!pluginItemsRet.ok()) {
+        LOG(ERROR) << "Get plugins failed, " << pluginItemsRet.status();
+        return false;
+    }
+    pluginItems = std::move(pluginItemsRet.value());
+    return true;
 }
 
 Status MetaClient::checkTagIndexed(GraphSpaceID space, TagID tagID) {
@@ -1723,6 +1741,35 @@ MetaClient::getEdgeIndexesFromCache(GraphSpaceID spaceId) {
         }
         return items;
     }
+}
+
+StatusOr<std::vector<cpp2::PluginItem>>
+MetaClient::listPluginsFromCache() {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+
+    // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+    return threadLocalInfo.pluginItems_;
+}
+
+StatusOr<cpp2::PluginItem>
+MetaClient::getPluginFromCache(const std::string& pluginName) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+
+    // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+    for (auto &item : threadLocalInfo.pluginItems_) {
+        if (!item.plugin_name.compare(pluginName)) {
+            return item;
+        }
+    }
+
+    VLOG(3) << "Plugin:" << pluginName << " not found!";
+    return Status::PluginNotFound();
 }
 
 const std::vector<HostAddr>& MetaClient::getAddresses() {

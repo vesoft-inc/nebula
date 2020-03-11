@@ -84,14 +84,14 @@ Status PluginManager::openPluginNoLock(const std::string& pluginName,
     }
 
     if (!pluginName.compare("auth_ldap")) {
-        authLdapSimple_ = static_cast<auth_ldap_simple>(dlsym(dlHandle, "authLdapSimple"));
+        authLdapSimple_ = reinterpret_cast<auth_ldap_simple>(dlsym(dlHandle, "authLdapSimple"));
         if (!authLdapSimple_) {
             LOG(ERROR) << "Function authLdapSimple not found in so file";
             dlclose(dlHandle);
             return Status::Error("Function authLdap_Simple not found in so file");
         }
         authLdapSearchBind_ =
-            static_cast<auth_ldap_search_bind>(dlsym(dlHandle, "authLdapSearchBind"));
+            reinterpret_cast<auth_ldap_search_bind>(dlsym(dlHandle, "authLdapSearchBind"));
         if (!authLdapSearchBind_) {
             LOG(ERROR) << "Function authLdapSearchBind not found in so file";
             dlclose(dlHandle);

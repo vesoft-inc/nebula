@@ -505,6 +505,10 @@ public:
 
     StatusOr<LeaderMap> loadLeader();
 
+    StatusOr<std::vector<cpp2::PluginItem>> listPluginsFromCache();
+
+    StatusOr<cpp2::PluginItem> getPluginFromCache(const std::string& pluginName);
+
 protected:
     // Return true if load succeeded.
     bool loadData();
@@ -529,6 +533,8 @@ protected:
 
     bool loadIndexes(GraphSpaceID spaceId,
                      std::shared_ptr<SpaceInfoCache> cache);
+
+    bool loadPlugins(std::vector<cpp2::PluginItem> &pluginItems);
 
     folly::Future<StatusOr<bool>> heartbeat();
 
@@ -602,6 +608,7 @@ private:
         SpaceNewestTagVerMap  spaceNewestTagVerMap_;
         SpaceNewestEdgeVerMap spaceNewestEdgeVerMap_;
         SpaceAllEdgeMap       spaceAllEdgeMap_;
+        std::vector<cpp2::PluginItem>  pluginItems_;
     };
 
     const ThreadLocalInfo& getThreadLocalInfo();
@@ -629,6 +636,8 @@ private:
 
     NameIndexMap          tagNameIndexMap_;
     NameIndexMap          edgeNameIndexMap_;
+
+    std::vector<cpp2::PluginItem>  pluginItems_;
 
     folly::RWSpinLock     localCacheLock_;
     MetaChangedListener*  listener_{nullptr};
