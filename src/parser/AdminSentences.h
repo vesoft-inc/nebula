@@ -29,7 +29,6 @@ public:
         kShowTagIndexes,
         kShowEdgeIndexes,
         kShowUsers,
-        kShowUser,
         kShowRoles,
         kShowCreateSpace,
         kShowCreateTag,
