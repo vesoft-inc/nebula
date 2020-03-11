@@ -18,10 +18,12 @@ namespace storage {
 class CompactTask : public AdminTask {
     using ResultCode = nebula::kvstore::ResultCode;
 public:
-    CompactTask(nebula::kvstore::NebulaStore* store,
+    CompactTask(int jobId,
+                int taskId,
+                nebula::kvstore::NebulaStore* store,
                 int32_t spaceId,
                 std::function<void(kvstore::ResultCode)> cb)
-                : AdminTask(cb),
+                : AdminTask(jobId, taskId, cb),
                 store_(store),
                 spaceId_(spaceId) {}
 

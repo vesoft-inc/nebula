@@ -33,7 +33,10 @@ class AdminTask {
 
 public:
     AdminTask() = default;
-    explicit AdminTask(TCallBack cb) : onFinished_(cb) {}
+    AdminTask(int jobId, int taskId, TCallBack cb) :
+                    jobId_(jobId),
+                    taskId_(taskId),
+                    onFinished_(cb) {}
     virtual ErrorOr<ResultCode, std::vector<AdminSubTask>> genSubTasks() = 0;
     virtual ~AdminTask() {}
 
@@ -64,7 +67,17 @@ public:
         onFinished_(rc);
     }
 
+    virtual int getJobId() {
+        return jobId_;
+    }
+
+    virtual int getTaskId() {
+        return taskId_;
+    }
+
 protected:
+    int             jobId_{-1};
+    int             taskId_{-1};
     TCallBack     onFinished_;
     bool          stop_{false};
 };
@@ -76,16 +89,6 @@ public:
             nebula::kvstore::NebulaStore* store,
             std::function<void(nebula::kvstore::ResultCode)> cb);
 };
-
-// struct TaskExecContext {
-//     explicit TaskExecContext(const cpp2::AddAdminTaskRequest& req) : req_(req) {}
-//     void setNebulaStore(kvstore::NebulaStore* kvstore) {
-//         kvstore_ = kvstore;
-//     }
-
-//     cpp2::AddAdminTaskRequest req_;
-//     kvstore::NebulaStore*     kvstore_{nullptr};
-// };
 
 }  // namespace storage
 }  // namespace nebula
