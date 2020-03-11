@@ -130,7 +130,7 @@ enum RoleType {
 
 struct RoleItem {
     1: string        user,
-    2: string        space,
+    2: GraphSpaceID  space_id,
     3: RoleType      role_type,
 }
 

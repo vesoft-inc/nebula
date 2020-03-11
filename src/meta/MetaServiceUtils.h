@@ -157,6 +157,8 @@ public:
 
     static std::string roleSpacePrefix(GraphSpaceID spaceId);
 
+    static std::string parseRoleStr(folly::StringPiece key);
+
     static std::string tagDefaultKey(GraphSpaceID spaceId,
                                      TagID tag,
                                      const std::string& field);

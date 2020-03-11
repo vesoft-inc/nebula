@@ -8,6 +8,8 @@
 #include "graph/test/TestEnv.h"
 #include "graph/test/TestBase.h"
 
+DECLARE_uint32(raft_heartbeat_interval_secs);
+
 namespace nebula {
 namespace graph {
 
@@ -162,6 +164,7 @@ TEST_F(UserTest, GrantRevoke) {
         auto code = client->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    sleep(FLAGS_raft_heartbeat_interval_secs);
     // must set the space if is not god role. expect fail.
     {
         cpp2::ExecutionResponse resp;

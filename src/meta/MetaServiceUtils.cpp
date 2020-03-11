@@ -568,6 +568,34 @@ std::string MetaServiceUtils::roleSpacePrefix(GraphSpaceID spaceId) {
     return key;
 }
 
+std::string MetaServiceUtils::parseRoleStr(folly::StringPiece key) {
+    auto type = *reinterpret_cast<const nebula::cpp2::RoleType*>(&key);
+    std::string role;
+    switch (type) {
+        case nebula::cpp2::RoleType::GOD : {
+            role = "GOD";
+            break;
+        }
+        case nebula::cpp2::RoleType::ADMIN : {
+            role = "ADMIN";
+            break;
+        }
+        case nebula::cpp2::RoleType::DBA : {
+            role = "DBA";
+            break;
+        }
+        case nebula::cpp2::RoleType::USER : {
+            role = "USER";
+            break;
+        }
+        case nebula::cpp2::RoleType::GUEST : {
+            role = "GUEST";
+            break;
+        }
+    }
+    return role;
+}
+
 std::string MetaServiceUtils::tagDefaultKey(GraphSpaceID spaceId,
                                             TagID tag,
                                             const std::string& field) {

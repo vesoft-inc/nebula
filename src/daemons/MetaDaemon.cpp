@@ -236,12 +236,23 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    LOG(INFO) << "Check and init root user";
     {
-        if (!nebula::meta::RootUserMan::isUserExists(kvstore.get())) {
-            if(!nebula::meta::RootUserMan::initRootUser(kvstore.get())) {
-                LOG(ERROR) << "Init root user failed";
-                return EXIT_FAILURE;
+        /**
+         *  Only leader part needed.
+         */
+        auto ret = kvstore->partLeader(nebula::meta::kDefaultSpaceId,
+                                       nebula::meta::kDefaultPartId);
+        if (!nebula::ok(ret)) {
+            LOG(ERROR) << "Part leader get failed";
+            return EXIT_FAILURE;
+        }
+        if (nebula::value(ret) == localhost) {
+            LOG(INFO) << "Check and init root user";
+            if (!nebula::meta::RootUserMan::isUserExists(kvstore.get())) {
+                if(!nebula::meta::RootUserMan::initRootUser(kvstore.get())) {
+                    LOG(ERROR) << "Init root user failed";
+                    return EXIT_FAILURE;
+                }
             }
         }
     }

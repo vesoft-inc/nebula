@@ -95,21 +95,17 @@ void DropUserProcessor::process(const cpp2::DropUserReq& req) {
 void GrantProcessor::process(const cpp2::GrantRoleReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::userLock());
     const auto& roleItem = req.get_role_item();
+    auto spaceId = roleItem.get_space_id();
+    CHECK_SPACE_ID_AND_RETURN(spaceId);
     auto userRet = userExist(roleItem.get_user());
     if (!userRet.ok()) {
         handleErrorCode(MetaCommon::to(userRet));
         onFinished();
         return;
     }
-    auto spaceRet = getSpaceId(roleItem.get_space());
-    if (!spaceRet.ok()) {
-        handleErrorCode(MetaCommon::to(spaceRet.status()));
-        onFinished();
-        return;
-    }
 
     std::vector<kvstore::KV> data;
-    data.emplace_back(MetaServiceUtils::roleKey(spaceRet.value(), roleItem.get_user()),
+    data.emplace_back(MetaServiceUtils::roleKey(spaceId, roleItem.get_user()),
                       MetaServiceUtils::roleVal(roleItem.get_role_type()));
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     doPut(std::move(data));
@@ -119,20 +115,16 @@ void GrantProcessor::process(const cpp2::GrantRoleReq& req) {
 void RevokeProcessor::process(const cpp2::RevokeRoleReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::userLock());
     const auto& roleItem = req.get_role_item();
+    auto spaceId = roleItem.get_space_id();
+    CHECK_SPACE_ID_AND_RETURN(spaceId);
     auto userRet = userExist(roleItem.get_user());
     if (!userRet.ok()) {
         handleErrorCode(MetaCommon::to(userRet));
         onFinished();
         return;
     }
-    auto spaceRet = getSpaceId(roleItem.get_space());
-    if (!spaceRet.ok()) {
-        handleErrorCode(MetaCommon::to(spaceRet.status()));
-        onFinished();
-        return;
-    }
 
-    auto roleKey = MetaServiceUtils::roleKey(spaceRet.value(), roleItem.get_user());
+    auto roleKey = MetaServiceUtils::roleKey(spaceId, roleItem.get_user());
     auto result = doGet(roleKey);
     if (!result.ok()) {
         handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
@@ -230,7 +222,7 @@ void ListRolesProcessor::process(const cpp2::ListRolesReq& req) {
         auto val = iter->val();
         nebula::cpp2::RoleItem role;
         role.set_user(std::move(account));
-        role.set_space(req.get_space());
+        role.set_space_id(spaceRet.value());
         role.set_role_type(*reinterpret_cast<const nebula::cpp2::RoleType *>(val.begin()));
         roles.emplace_back(role);
         iter->next();

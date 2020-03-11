@@ -211,7 +211,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     fs::TempDir rootPath("/tmp/GrantRevokeTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     TestUtils::createSomeHosts(kv.get());
-    GraphSpaceID spaceId;
+    GraphSpaceID space1, space2;
     // create space1
     {
         cpp2::SpaceProperties properties;
@@ -227,7 +227,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-        spaceId = resp.get_id().get_space_id();
+        space1 = resp.get_id().get_space_id();
     }
     // create space2
     {
@@ -244,6 +244,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        space2 = resp.get_id().get_space_id();
     }
     // create a user1.
     {
@@ -286,7 +287,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         cpp2::GrantRoleReq req;
         decltype(req.role_item) role;
         role.set_user("user");
-        role.set_space("space1");
+        role.set_space_id(space1);
         role.set_role_type(nebula::cpp2::RoleType::GUEST);
         req.set_role_item(role);
         auto* processor = GrantProcessor::instance(kv.get());
@@ -300,7 +301,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         cpp2::GrantRoleReq req;
         decltype(req.role_item) role;
         role.set_user("user1");
-        role.set_space("space");
+        role.set_space_id(-1);
         role.set_role_type(nebula::cpp2::RoleType::GUEST);
         req.set_role_item(role);
         auto* processor = GrantProcessor::instance(kv.get());
@@ -314,7 +315,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         cpp2::GrantRoleReq req;
         decltype(req.role_item) role;
         role.set_user("user1");
-        role.set_space("space1");
+        role.set_space_id(space1);
         role.set_role_type(nebula::cpp2::RoleType::GUEST);
         req.set_role_item(role);
         auto* processor = GrantProcessor::instance(kv.get());
@@ -328,7 +329,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         cpp2::GrantRoleReq req;
         decltype(req.role_item) role;
         role.set_user("user2");
-        role.set_space("space1");
+        role.set_space_id(space1);
         role.set_role_type(nebula::cpp2::RoleType::ADMIN);
         req.set_role_item(role);
         auto* processor = GrantProcessor::instance(kv.get());
@@ -342,7 +343,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         cpp2::GrantRoleReq req;
         decltype(req.role_item) role;
         role.set_user("user2");
-        role.set_space("space2");
+        role.set_space_id(space2);
         role.set_role_type(nebula::cpp2::RoleType::DBA);
         req.set_role_item(role);
         auto* processor = GrantProcessor::instance(kv.get());
@@ -362,11 +363,11 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         decltype(resp.roles) expectRoles;
         nebula::cpp2::RoleItem role;
-        role.set_space("space1");
+        role.set_space_id(space1);
         role.set_user("user1");
         role.set_role_type(nebula::cpp2::RoleType::GUEST);
         expectRoles.emplace_back(std::move(role));
-        role.set_space("space1");
+        role.set_space_id(space1);
         role.set_user("user2");
         role.set_role_type(nebula::cpp2::RoleType::ADMIN);
         expectRoles.emplace_back(std::move(role));
@@ -383,7 +384,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         decltype(resp.roles) expectRoles;
         nebula::cpp2::RoleItem role;
-        role.set_space("space2");
+        role.set_space_id(space2);
         role.set_user("user2");
         role.set_role_type(nebula::cpp2::RoleType::DBA);
         expectRoles.emplace_back(std::move(role));
@@ -394,7 +395,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         cpp2::RevokeRoleReq req;
         decltype(req.role_item) role;
         role.set_user("user");
-        role.set_space("space2");
+        role.set_space_id(space2);
         req.set_role_item(role);
         auto* processor = RevokeProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -407,7 +408,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         cpp2::RevokeRoleReq req;
         decltype(req.role_item) role;
         role.set_user("user1");
-        role.set_space("space");
+        role.set_space_id(-1);
         req.set_role_item(role);
         auto* processor = RevokeProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -420,7 +421,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         cpp2::RevokeRoleReq req;
         decltype(req.role_item) role;
         role.set_user("user1");
-        role.set_space("space1");
+        role.set_space_id(space1);
         role.set_role_type(nebula::cpp2::RoleType::ADMIN);
         req.set_role_item(role);
         auto* processor = RevokeProcessor::instance(kv.get());
@@ -434,7 +435,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         cpp2::RevokeRoleReq req;
         decltype(req.role_item) role;
         role.set_user("user1");
-        role.set_space("space1");
+        role.set_space_id(space1);
         req.set_role_item(role);
         auto* processor = RevokeProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -447,7 +448,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         cpp2::RevokeRoleReq req;
         decltype(req.role_item) role;
         role.set_user("user1");
-        role.set_space("space1");
+        role.set_space_id(space1);
         role.set_role_type(nebula::cpp2::RoleType::GUEST);
         req.set_role_item(role);
         auto* processor = RevokeProcessor::instance(kv.get());
@@ -467,7 +468,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         decltype(resp.roles) expectRoles;
         nebula::cpp2::RoleItem role;
-        role.set_space("space1");
+        role.set_space_id(space1);
         role.set_user("user2");
         role.set_role_type(nebula::cpp2::RoleType::ADMIN);
         expectRoles.emplace_back(std::move(role));
@@ -484,7 +485,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         decltype(resp.roles) expectRoles;
         nebula::cpp2::RoleItem role;
-        role.set_space("space2");
+        role.set_space_id(space2);
         role.set_user("user2");
         role.set_role_type(nebula::cpp2::RoleType::DBA);
         expectRoles.emplace_back(std::move(role));
@@ -495,7 +496,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         cpp2::RevokeRoleReq req;
         decltype(req.role_item) role;
         role.set_user("user1");
-        role.set_space("space1");
+        role.set_space_id(space1);
         req.set_role_item(role);
         auto* processor = RevokeProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -540,7 +541,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         cpp2::GrantRoleReq req;
         decltype(req.role_item) role;
         role.set_user("user1");
-        role.set_space("space1");
+        role.set_space_id(space1);
         role.set_role_type(nebula::cpp2::RoleType::ADMIN);
         req.set_role_item(role);
         auto* processor = GrantProcessor::instance(kv.get());
@@ -570,7 +571,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
 
         // check role deleted after drop space
-        auto rolePrefix = MetaServiceUtils::roleSpacePrefix(spaceId);
+        auto rolePrefix = MetaServiceUtils::roleSpacePrefix(space1);
         std::unique_ptr<kvstore::KVIterator> roleIter;
         auto roleRet = kv->prefix(kDefaultSpaceId, kDefaultPartId, rolePrefix, &roleIter);
         ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, roleRet);

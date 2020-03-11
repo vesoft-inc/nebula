@@ -29,9 +29,14 @@ void GrantExecutor::execute() {
         doError(Status::PermissionError("Permission denied"));
         return;
     }
+    auto spaceRet = mc->getSpaceIdByNameFromCache(*aclItem->getSpaceName());
+    if (!spaceRet.ok()) {
+        doError(spaceRet.status());
+        return;
+    }
 
     roleItem.set_user(*account);
-    roleItem.set_space(*aclItem->getSpaceName());
+    roleItem.set_space_id(spaceRet.value());
     roleItem.set_role_type(PrivilegeUtils::toRoleType(aclItem->getRoleType()));
     auto future = mc->grantToUser(roleItem);
     auto *runner = ectx()->rctx()->runner();
@@ -75,13 +80,15 @@ void RevokeExecutor::execute() {
         return;
     }
 
-    if (!aclItem->getSpaceName()) {
-        doError(Status::SyntaxError("space name required"));
+    auto spaceRet = mc->getSpaceIdByNameFromCache(*aclItem->getSpaceName());
+    if (!spaceRet.ok()) {
+        doError(spaceRet.status());
         return;
     }
+
     nebula::cpp2::RoleItem roleItem;
     roleItem.set_user(*account);
-    roleItem.set_space(*aclItem->getSpaceName());
+    roleItem.set_space_id(spaceRet.value());
     roleItem.set_role_type(PrivilegeUtils::toRoleType(aclItem->getRoleType()));
     auto future = mc->revokeFromUser(roleItem);
     auto *runner = ectx()->rctx()->runner();
