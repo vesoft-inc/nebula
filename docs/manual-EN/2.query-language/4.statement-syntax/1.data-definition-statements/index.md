@@ -127,7 +127,22 @@ REBUILD {TAG | EDGE} INDEX <index_name> [OFFLINE]
 
 > During the rebuilding, any idempotent queries will skip the index and perform sequential scans. This means that queries run slower during this operation. Non-idempotent commands, such as INSERT, UPDATE, and DELETE are blocked until the indexes are rebuilt. -->
 
-After rebuilding is complete, you can use the `SHOW {TAG | EDGE} INDEX STATUS` command to check if the index is successfully rebuilt.
+After rebuilding is complete, you can use the `SHOW {TAG | EDGE} INDEX STATUS` command to check if the index is successfully rebuilt. For example:
+
+```ngql
+nebula> CREATE TAG person(name string, age int, gender string, email string);
+Execution succeeded (Time spent: 10.051/11.397 ms)
+
+nebula> REBUILD TAG INDEX single_person_index OFFLINE;
+Execution succeeded (Time spent: 2.352/3.568 ms)
+
+nebula> SHOW TAG INDEX STATUS;
+==========================================
+| Name                | Tag Index Status |
+==========================================
+| single_person_index | SUCCEEDED        |
+------------------------------------------
+```
 
 ## Using Index
 

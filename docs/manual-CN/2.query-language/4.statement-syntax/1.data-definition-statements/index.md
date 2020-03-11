@@ -117,7 +117,22 @@ REBUILD {TAG | EDGE} INDEX <index_name> [OFFLINE]
 
 <!-- > 索引重构期间，对索引进行的所有幂等查询都会跳过索引并执行顺序扫描。这意味着在此操作期间查询运行速度较慢。非幂等命令（例如 INSERT、UPDATE 和 DELETE）将被阻止，直到重建索引为止。 -->
 
-重构完成后，可使用 `SHOW {TAG | EDGE} INDEX STATUS` 命令查看索引是否重构成功。
+重构完成后，可使用 `SHOW {TAG | EDGE} INDEX STATUS` 命令查看索引是否重构成功。例如：
+
+```ngql
+nebula> CREATE TAG person(name string, age int, gender string, email string);
+Execution succeeded (Time spent: 10.051/11.397 ms)
+
+nebula> REBUILD TAG INDEX single_person_index OFFLINE;
+Execution succeeded (Time spent: 2.352/3.568 ms)
+
+nebula> SHOW TAG INDEX STATUS;
+==========================================
+| Name                | Tag Index Status |
+==========================================
+| single_person_index | SUCCEEDED        |
+------------------------------------------
+```
 
 ## 使用索引
 
