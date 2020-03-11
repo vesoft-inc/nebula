@@ -18,12 +18,12 @@ InstallPluginExecutor::InstallPluginExecutor(Sentence *sentence,
 }
 
 Status InstallPluginExecutor::prepare() {
-    return Status::OK();
+    pluginName_ = sentence_->pluginName();
+    soName_ = sentence_->soName();
+    return ectx()->getPluginManager()->tryOpen(*pluginName_, *soName_);
 }
 
 void InstallPluginExecutor::execute() {
-    pluginName_ = sentence_->pluginName();
-    soName_ = sentence_->soName();
     auto future = ectx()->getMetaClient()->installPlugin(*pluginName_, *soName_);
     auto *runner = ectx()->rctx()->runner();
 
@@ -40,6 +40,14 @@ void InstallPluginExecutor::execute() {
             doError(Status::Error("Install plugin %s soname \"%s\" failed",
                                   pluginName_->c_str(),
                                   soName_->c_str()));
+            return;
+        }
+
+        // Open the so file after the installation is complete
+        auto retstat = ectx()->getPluginManager()->open(*pluginName_, *soName_);
+        // Because already tryOpen, not happen here
+        if (!retstat.ok()) {
+            doError(retstat);
             return;
         }
 

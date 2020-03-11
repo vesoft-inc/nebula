@@ -16,6 +16,7 @@
 #include "meta/client/MetaClient.h"
 #include "network/NetworkUtils.h"
 #include "charset/Charset.h"
+#include "graph/PluginManager.h"
 #include <folly/executors/IOThreadPoolExecutor.h>
 
 /**
@@ -33,7 +34,7 @@ namespace graph {
 
 class ExecutionEngine final : public cpp::NonCopyable, public cpp::NonMovable {
 public:
-    explicit ExecutionEngine(meta::MetaClient* client);
+    ExecutionEngine(PluginManager* pluginManager, meta::MetaClient* client);
     ~ExecutionEngine();
 
     Status init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor);
@@ -45,8 +46,9 @@ private:
     std::unique_ptr<meta::SchemaManager>              schemaManager_;
     std::unique_ptr<meta::ClientBasedGflagsManager>   gflagsManager_;
     std::unique_ptr<storage::StorageClient>           storage_;
-    meta::MetaClient*                                 metaClient_;
+    meta::MetaClient*                                 metaClient_{nullptr};
     CharsetInfo*                                      charsetInfo_{nullptr};
+    PluginManager*                                    pluginManager_{nullptr};
 };
 
 }   // namespace graph

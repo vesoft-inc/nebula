@@ -40,7 +40,10 @@ Status GraphService::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecuto
     executionEngine_ = std::make_unique<ExecutionEngine>(metaClient_.get());
     // authenticator_ = std::make_unique<SimpleAuthenticator>();
     pluginManager_ = std::make_unique<PluginManager>(metaClient_.get());
-    authenticator_ = std::make_unique<LdapAuthenticator>(pluginManager_.get());
+    pluginManager_->init();
+
+    // authenticator_ = std::make_unique<LdapAuthenticator>(pluginManager_.get());
+    executionEngine_ = std::make_unique<ExecutionEngine>(pluginManager_.get(), metaClient_.get());
 
     return executionEngine_->init(std::move(ioExecutor));
 }

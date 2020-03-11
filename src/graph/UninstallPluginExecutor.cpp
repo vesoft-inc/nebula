@@ -40,6 +40,9 @@ void UninstallPluginExecutor::execute() {
             return;
         }
 
+        // close so file
+        ectx()->getPluginManager()->close(*pluginName_);
+
         doFinish(Executor::ProcessControl::kNext);
     };
 

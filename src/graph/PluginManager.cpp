@@ -6,7 +6,6 @@
 
 #include "base/Base.h"
 #include "graph/PluginManager.h"
-#include "graph/GraphFlags.h"
 #include "fs/FileUtils.h"
 #include <dlfcn.h>
 
@@ -36,7 +35,7 @@ Status PluginManager::init() {
         auto status = openPluginNoLock(pluginName, soname);
         if (!status.ok()) {
             LOG(ERROR) << status.toString();
-            // Ignore, continue
+            // When opening a plugin fails, ignore, continue
             continue;
         }
     }
@@ -63,6 +62,17 @@ Status PluginManager::open(const std::string& pluginName) {
     auto plugin = retPlugin.value();
     auto soname = plugin.get_so_name();
 
+    return openPluginNoLock(pluginName, soname);
+}
+
+
+Status PluginManager::open(const std::string& pluginName, const std::string& soname) {
+    folly::RWSpinLock::WriteHolder holder(rwlock_);
+    auto iter = pluginToInfo_.find(pluginName);
+    if (iter != pluginToInfo_.end()) {
+        LOG(INFO) << "Already open plugin.";
+        return Status::OK();
+    }
     return openPluginNoLock(pluginName, soname);
 }
 
@@ -112,6 +122,45 @@ Status PluginManager::openPluginNoLock(const std::string& pluginName,
     return Status::OK();
 }
 
+Status PluginManager::tryOpen(const std::string& pluginName, const std::string& soname) {
+    using fs::FileUtils;
+    auto dir = FileUtils::readLink("/proc/self/exe").value();
+    dir = FileUtils::dirname(dir.c_str()) + "/../share";
+    std::string sofile = dir + "/" + soname;
+
+    if (!FileUtils::exist(sofile)) {
+        return Status::Error("so file: %s not exist", sofile.c_str());
+    }
+
+    void* dlHandle = dlopen(sofile.c_str(), RTLD_NOW);
+    if (!dlHandle) {
+        return Status::Error("Open plugin %s failed: `%s", pluginName.c_str(), dlerror());
+    }
+
+    if (!pluginName.compare("auth_ldap")) {
+        auth_ldap_simple authLdapSimple =
+            reinterpret_cast<auth_ldap_simple>(dlsym(dlHandle, "authLdapSimple"));
+        if (!authLdapSimple) {
+            LOG(ERROR) << "Function authLdapSimple not found in so file";
+            dlclose(dlHandle);
+            return Status::Error("Function authLdap_Simple not found in so file");
+        }
+        auth_ldap_search_bind authLdapSearchBind =
+            reinterpret_cast<auth_ldap_search_bind>(dlsym(dlHandle, "authLdapSearchBind"));
+        if (!authLdapSearchBind) {
+            LOG(ERROR) << "Function authLdapSearchBind not found in so file";
+            dlclose(dlHandle);
+            return Status::Error("Function authLdapSearchBind not found in so file");
+        }
+
+    } else {
+        // TODO support udf function
+        LOG(ERROR) << "Unsupport it yet";
+        return Status::Error("Unsupport it yet");
+    }
+    dlclose(dlHandle);
+    return Status::OK();
+}
 
 bool PluginManager::findFunc(const std::string& funcName) {
     folly::RWSpinLock::ReadHolder holder(rwlock_);
@@ -134,6 +183,7 @@ bool PluginManager::execAuthLdapSimple(std::string ldap_server,
                                        std::string ldap_suffix,
                                        std::string userName,
                                        std::string passwd) {
+    folly::RWSpinLock::ReadHolder holder(rwlock_);
     return authLdapSimple_(ldap_server,
                            ldap_port,
                            ldap_scheme,
@@ -156,6 +206,7 @@ bool PluginManager::execAuthLdapSearchBind(std::string ldap_server,
                                            std::string ldap_searchfilter,
                                            std::string userName,
                                            std::string passwd) {
+    folly::RWSpinLock::ReadHolder holder(rwlock_);
     return authLdapSearchBind_(ldap_server,
                                ldap_port,
                                ldap_scheme,
@@ -180,6 +231,20 @@ void PluginManager::close() {
     authLdapSimple_ = nullptr;
     authLdapSearchBind_ = nullptr;
     pluginToInfo_.clear();
+}
+
+
+void PluginManager::close(const std::string& pluginName) {
+    folly::RWSpinLock::WriteHolder holder(rwlock_);
+    auto iter = pluginToInfo_.find(pluginName);
+    if (iter != pluginToInfo_.end()) {
+        dlclose(iter->second->handler_);
+        pluginToInfo_.erase(iter);
+        if (!pluginName.compare("auth_ldap")) {
+            authLdapSimple_ = nullptr;
+            authLdapSearchBind_ = nullptr;
+        }
+    }
 }
 
 }   // namespace graph

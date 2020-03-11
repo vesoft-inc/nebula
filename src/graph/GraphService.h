@@ -14,6 +14,7 @@
 #include "graph/ExecutionEngine.h"
 #include "graph/SessionManager.h"
 #include "graph/PluginManager.h"
+#include "meta/client/MetaClient.h"
 
 namespace folly {
 class IOThreadPoolExecutor;
@@ -53,6 +54,7 @@ private:
     std::unique_ptr<meta::MetaClient>           metaClient_;
     std::unique_ptr<Authenticator>              authenticator_;
     std::unique_ptr<PluginManager>              pluginManager_;
+    std::unique_ptr<meta::MetaClient>           metaClient_;
 };
 
 }   // namespace graph

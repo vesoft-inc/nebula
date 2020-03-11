@@ -16,6 +16,7 @@
 #include "graph/VariableHolder.h"
 #include "meta/client/MetaClient.h"
 #include "charset/Charset.h"
+#include "graph/PluginManager.h"
 
 /**
  * ExecutionContext holds context infos in the execution process, e.g. clients of storage or meta services.
@@ -35,7 +36,8 @@ public:
                      meta::ClientBasedGflagsManager *gflagsManager,
                      storage::StorageClient *storage,
                      meta::MetaClient *metaClient,
-                     CharsetInfo* charsetInfo) {
+                     CharsetInfo* charsetInfo,
+                     PluginManager* pluginManager) {
         rctx_ = std::move(rctx);
         sm_ = sm;
         gflagsManager_ = gflagsManager;
@@ -43,6 +45,7 @@ public:
         metaClient_ = metaClient;
         variableHolder_ = std::make_unique<VariableHolder>();
         charsetInfo_ = charsetInfo;
+        pluginManager_ = pluginManager;
     }
 
     ~ExecutionContext();
@@ -75,6 +78,10 @@ public:
         return charsetInfo_;
     }
 
+    PluginManager* getPluginManager() const {
+        return pluginManager_;
+    }
+
 private:
     RequestContextPtr                           rctx_;
     meta::SchemaManager                        *sm_{nullptr};
@@ -83,6 +90,7 @@ private:
     meta::MetaClient                           *metaClient_{nullptr};
     std::unique_ptr<VariableHolder>             variableHolder_;
     CharsetInfo                                *charsetInfo_{nullptr};
+    PluginManager                              *pluginManager_{nullptr};
 };
 
 }   // namespace graph

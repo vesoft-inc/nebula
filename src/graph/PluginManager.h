@@ -35,13 +35,24 @@ public:
     /**
      * If the plugin has not been opened, dlopen opens the plugin, dlsym init function
      * and records the information. If the plugin has been opened, return directly.
+     * Need to search in meta client cache
      */
     Status open(const std::string& pluginName);
+
+    /**
+     * The difference from the above is that it does not need to search
+     */
+    Status open(const std::string& pluginName, const std::string& soname);
 
     /**
      * Dlopen opens the plugin, dlsym init function, records the information
      */
     Status openPluginNoLock(const std::string& pluginName, const std::string& soname);
+
+    /**
+     * Try open so file
+     */
+    Status tryOpen(const std::string& pluginName, const std::string& soname);
 
     /**
      * Check if function exists
@@ -75,6 +86,11 @@ public:
      * For all open plugins, close
      */
     void close();
+
+    /**
+     * Dlclose the sofile for pluginName
+     */
+    void close(const std::string& pluginName);
 
     struct PluginInfo {
         std::string soName_;
