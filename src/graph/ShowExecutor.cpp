@@ -59,10 +59,10 @@ void ShowExecutor::execute() {
             showEdgeIndexes();
             break;
         case ShowSentence::ShowType::kShowUsers:
-        case ShowSentence::ShowType::kShowUser:
+            showUsers();
+            break;
         case ShowSentence::ShowType::kShowRoles:
-            // TODO(boshengchen)
-            doError(Status::Error("The statement has not been implemented"));
+            showRoles();
             break;
         case ShowSentence::ShowType::kShowCreateSpace:
             showCreateSpace();
@@ -1051,6 +1051,106 @@ void ShowExecutor::showCollation() {
     resp_->set_rows(std::move(rows));
 
     doFinish(Executor::ProcessControl::kNext);
+}
+
+void ShowExecutor::showUsers() {
+    auto future = ectx()->getMetaClient()->listUsers();
+    auto *runner = ectx()->rctx()->runner();
+
+    auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            doError(std::forward<decltype(resp)>(resp).status());
+            return;
+        }
+
+        auto value = std::forward<decltype(resp)>(resp).value();
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        std::vector<cpp2::RowValue> rows;
+        std::vector<std::string> header{"Account"};
+        resp_->set_column_names(std::move(header));
+        for (auto& user : value) {
+            std::vector<cpp2::ColumnValue> row;
+            row.resize(1);
+            row[0].set_str(user);
+            rows.emplace_back();
+            rows.back().set_columns(std::move(row));
+        }
+        resp_->set_rows(std::move(rows));
+        doFinish(Executor::ProcessControl::kNext);
+    };
+
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        doError(Status::Error(folly::stringPrintf("Show users exception: %s",
+                                                  e.what().c_str())));
+        return;
+    };
+    std::move(future).via(runner).thenValue(cb).thenError(error);
+}
+
+void ShowExecutor::showRoles() {
+    auto *space = sentence_->getName();
+    auto future = ectx()->getMetaClient()->listRoles(*space);
+    auto *runner = ectx()->rctx()->runner();
+
+    auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            doError(std::forward<decltype(resp)>(resp).status());
+            return;
+        }
+
+        auto value = std::forward<decltype(resp)>(resp).value();
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        std::vector<cpp2::RowValue> rows;
+        std::vector<std::string> header{"Account", "Role Type"};
+        resp_->set_column_names(std::move(header));
+        for (auto& role : value) {
+            std::vector<cpp2::ColumnValue> row;
+            row.resize(2);
+            row[0].set_str(role.get_user());
+            row[1].set_str(roleToStr(role.get_role_type()));
+            rows.emplace_back();
+            rows.back().set_columns(std::move(row));
+        }
+
+        resp_->set_rows(std::move(rows));
+        doFinish(Executor::ProcessControl::kNext);
+    };
+
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        doError(Status::Error(folly::stringPrintf("Show roles exception: %s",
+                                                  e.what().c_str())));
+        return;
+    };
+    std::move(future).via(runner).thenValue(cb).thenError(error);
+}
+
+std::string ShowExecutor::roleToStr(nebula::cpp2::RoleType type) {
+    std::string role;
+    switch (type) {
+        case nebula::cpp2::RoleType::GOD : {
+            role = "GOD";
+            break;
+        }
+        case nebula::cpp2::RoleType::ADMIN : {
+            role = "ADMIN";
+            break;
+        }
+        case nebula::cpp2::RoleType::DBA : {
+            role = "DBA";
+            break;
+        }
+        case nebula::cpp2::RoleType::USER : {
+            role = "USER";
+            break;
+        }
+        case nebula::cpp2::RoleType::GUEST : {
+            role = "GUEST";
+            break;
+        }
+    }
+    return role;
 }
 
 void ShowExecutor::setupResponse(cpp2::ExecutionResponse &resp) {

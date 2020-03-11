@@ -1188,7 +1188,19 @@ TEST(Parser, AdminOperation) {
 TEST(Parser, UserOperation) {
     {
         GQLParser parser;
-        std::string query = "CREATE USER user1 WITH PASSWORD \"aaa\" ";
+        std::string query = "CREATE USER user1";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE USER user1 WITH PASSWORD aaa";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE USER user1 WITH PASSWORD \"aaa\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
         auto& sentence = result.value();
@@ -1196,8 +1208,7 @@ TEST(Parser, UserOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "CREATE USER IF NOT EXISTS user1 WITH PASSWORD \"aaa\" , "
-                            "FIRSTNAME \"a\", LASTNAME \"a\", EMAIL \"a\", PHONE \"111\"";
+        std::string query = "CREATE USER IF NOT EXISTS user1 WITH PASSWORD \"aaa\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
         auto& sentence = result.value();
@@ -1205,8 +1216,15 @@ TEST(Parser, UserOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "ALTER USER user1 WITH FIRSTNAME \"a\","
-                            " LASTNAME \"a\", EMAIL \"a\", PHONE \"111\"";
+        std::string query = "ALTER USER user1 WITH PASSWORD \"a\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+        auto& sentence = result.value();
+        EXPECT_EQ(query, sentence->toString());
+    }
+    {
+        GQLParser parser;
+        std::string query = "ALTER USER user1 WITH PASSWORD \"a\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
         auto& sentence = result.value();
@@ -1230,6 +1248,18 @@ TEST(Parser, UserOperation) {
     }
     {
         GQLParser parser;
+        std::string query = "CHANGE PASSWORD \"new password\"";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "CHANGE PASSWORD account TO \"new password\"";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
         std::string query = "CHANGE PASSWORD account FROM \"old password\" TO \"new password\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
@@ -1246,6 +1276,20 @@ TEST(Parser, UserOperation) {
     }
     {
         GQLParser parser;
+        std::string query = "GRANT ROLE DBA ON spacename TO account";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+        auto& sentence = result.value();
+        EXPECT_EQ(query, sentence->toString());
+    }
+    {
+        GQLParser parser;
+        std::string query = "GRANT ROLE SYSTEM ON spacename TO account";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
         std::string query = "REVOKE ROLE ADMIN ON spacename FROM account";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
@@ -1255,14 +1299,6 @@ TEST(Parser, UserOperation) {
     {
         GQLParser parser;
         std::string query = "SHOW ROLES IN spacename";
-        auto result = parser.parse(query);
-        ASSERT_TRUE(result.ok()) << result.status();
-        auto& sentence = result.value();
-        EXPECT_EQ(query, sentence->toString());
-    }
-    {
-        GQLParser parser;
-        std::string query = "SHOW USER account";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
         auto& sentence = result.value();
