@@ -118,15 +118,14 @@ nebula> DROP TAG INDEX player_index_0;
 ## REBUILD INDEX
 
 ```ngql
-REBUILD {TAG | EDGE} INDEX <index_name> OFFLINE
-REBUILD {TAG | EDGE} INDEX <index_name>
+REBUILD {TAG | EDGE} INDEX <index_name> [OFFLINE]
 ```
 
-[Create Index](#create-index) section describes how to build indexes to improve query performance. These indexes are immediately available if the indexed keys or labels have been newly defined in the same management transaction. In this case, there is no need to rebuild index and this section can be skipped. If the indexed keys and labels already existed prior to index creation it is necessary to rebuild the indexes in order to ensure that the indexes contain previously added data.
+[Create Index](#create-index) section describes how to build indexes to improve query performance. If the index is created before inserting the data, there is no need to rebuild index and this section can be skipped; if data is updated or newly inserted after the index creation, it is necessary to rebuild the indexes in order to ensure that the indexes contain the previously added data. If the current database does not provide any services, use the `OFFLINE` keyword to speed up the rebuilding.
 
-<!-- <index_name> defines the index that you want to rebuild. Use * to rebuild all automatic indexes. -->
+<!-- These indexes are immediately available if the indexed keys or labels have been newly defined in the same management transaction. In this case, there is no need to rebuild index and this section can be skipped. If the indexed keys and labels already existed prior to index creation it is necessary to rebuild the indexes in order to ensure that the indexes contain previously added data.
 
-> During the rebuilding, any idempotent queries will skip the index and perform sequential scans. This means that queries run slower during this operation. Non-idempotent commands, such as INSERT, UPDATE, and DELETE are blocked until the indexes are rebuilt.
+> During the rebuilding, any idempotent queries will skip the index and perform sequential scans. This means that queries run slower during this operation. Non-idempotent commands, such as INSERT, UPDATE, and DELETE are blocked until the indexes are rebuilt. -->
 
 After rebuilding is complete, you can use the `SHOW {TAG | EDGE} INDEX STATUS` command to check if the index is successfully rebuilt.
 
