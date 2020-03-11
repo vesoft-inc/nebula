@@ -23,14 +23,6 @@ public:
     using RetSubTask = ErrorOr<nebula::kvstore::ResultCode, std::vector<AdminSubTask>>;
 
     explicit MockAdminTask(nebula::kvstore::ResultCode rc) : rc_(rc) {}
-    ResultCode run() override {
-        return rc_;
-    }
-
-    ResultCode stop() override {
-        return rc_;
-    }
-
     RetSubTask genSubTasks() override {
         return nebula::kvstore::ResultCode::SUCCEEDED;
     }
@@ -41,9 +33,18 @@ private:
 };
 
 struct MockCallBack {
+    explicit MockCallBack(folly::Promise<int>* p) : pro(p) {
+    }
     void operator()(ResultCode rc) {
         UNUSED(rc);
+        pro->setValue(1);
     }
+
+    void wait() {
+        // fut->wait();
+    }
+
+    folly::Promise<int>* pro;
 };
 
 TEST(TaskManagerTest, ctor) {
@@ -57,12 +58,16 @@ TEST(TaskManagerTest, happy_path) {
     taskMgr->init();
     taskMgr->shutdown_ = false;
 
-    TaskHandle handle = std::make_pair(100, 100);
+    // TaskHandle handle = std::make_pair(100, 100);
     {
         auto rc = ResultCode::SUCCEEDED;
         std::shared_ptr<AdminTask> mockTask(new MockAdminTask(rc));
-        MockCallBack cb;
-        taskMgr->addAsyncTask2(handle, mockTask, cb);
+        folly::Promise<int> pro;
+        folly::Future<int> fut = pro.getFuture();
+        MockCallBack cb(&pro);
+        // taskMgr->addAsyncTask2(handle, mockTask, cb);
+        taskMgr->addAsyncTask(mockTask);
+        fut.wait();
     }
 
     taskMgr->shutdown();

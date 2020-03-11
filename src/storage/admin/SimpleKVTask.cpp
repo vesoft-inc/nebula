@@ -10,28 +10,29 @@
 namespace nebula {
 namespace storage {
 
-nebula::kvstore::ResultCode SimpleKVTask::run() {
-    LOG(INFO) << "task manager" << __PRETTY_FUNCTION__;
-    auto rc = nebula::kvstore::ResultCode::ERR_INVALID_ARGUMENT;
-    switch (cmd_) {
-    case nebula::cpp2::AdminCmd::COMPACT:
-        LOG(INFO) << "task manager exec [compact] spaceId_" << spaceId_;
-        rc = store_->compact(spaceId_);
-        break;
-    case nebula::cpp2::AdminCmd::FLUSH:
-        LOG(INFO) << "task manager exec [flush] spaceId_" << spaceId_;
-        rc = store_->flush(spaceId_);
-        break;
-    default:
-        LOG(ERROR) << __PRETTY_FUNCTION__ << " invalid command ";
-        return nebula::kvstore::ResultCode::ERR_INVALID_ARGUMENT;
-    }
-    return rc;
-}
+// nebula::kvstore::ResultCode SimpleKVTask::run() {
+//     LOG(INFO) << "task manager" << __PRETTY_FUNCTION__;
+//     auto rc = nebula::kvstore::ResultCode::ERR_INVALID_ARGUMENT;
+//     switch (cmd_) {
+//     case nebula::cpp2::AdminCmd::COMPACT:
+//         LOG(INFO) << "task manager exec [compact] spaceId_" << spaceId_;
+//         rc = store_->compact(spaceId_);
+//         break;
+//     case nebula::cpp2::AdminCmd::FLUSH:
+//         LOG(INFO) << "task manager exec [flush] spaceId_" << spaceId_;
+//         rc = store_->flush(spaceId_);
+//         break;
+//     default:
+//         LOG(ERROR) << __PRETTY_FUNCTION__ << " invalid command ";
+//         return nebula::kvstore::ResultCode::ERR_INVALID_ARGUMENT;
+//     }
+//     return rc;
+// }
 
-nebula::kvstore::ResultCode SimpleKVTask::stop() {
+// nebula::kvstore::ResultCode SimpleKVTask::stop() {
+void SimpleKVTask::stop() {
     LOG(ERROR) << "not implement function " << __PRETTY_FUNCTION__;
-    return nebula::kvstore::ResultCode::SUCCEEDED;
+    // return nebula::kvstore::ResultCode::SUCCEEDED;
 }
 
 }  // namespace storage

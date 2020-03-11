@@ -8,9 +8,7 @@
 #include "storage/admin/AdminTask.h"
 #include "storage/admin/AdminTaskManager.h"
 
-DEFINE_int32(concurrent_tasks_num, 1, "Number of job concurrent tasks num");
-DEFINE_uint32(storage_task_concurrency, 10, "The tasks number could be invoked simultaneously");
-
+DEFINE_uint32(subtask_concurrency, 10, "The tasks number could be invoked simultaneously");
 
 namespace nebula {
 namespace storage {
@@ -18,70 +16,40 @@ namespace storage {
 using nebula::kvstore::ResultCode;
 using JobIdAndTaskId = std::pair<int, int>;
 
-nebula::kvstore::ResultCode
-AdminTaskManager::runTaskDirectly(const cpp2::AddAdminTaskRequest& req,
-                                  nebula::kvstore::NebulaStore* store) {
-    auto spAdminTask = AdminTaskFactory::createAdminTask(req, store);
-    return spAdminTask->run();
-}
-
-folly::Future<ResultCode>
-AdminTaskManager::addAsyncTask(JobIdAndTaskId taskHandle, std::shared_ptr<AdminTask> task) {
-    folly::Promise<ResultCode> pro;
-    auto fut = pro.getFuture();
+void AdminTaskManager::addAsyncTask(std::shared_ptr<AdminTask> task) {
+    LOG(ERROR) << "messi enter AdminTaskManager::addAsyncTask2()";
     {
-        std::lock_guard<std::mutex> lk(mutex_);
-        taskQueue_[taskHandle] = std::make_pair(task, std::move(pro));
-        notEmpty_.notify_one();
+        std::lock_guard<std::mutex> lk(taskListMutex_);
+        taskList_.push_back(task);
+        taskListEmpty_.notify_one();
     }
-    return fut;
-}
-
-void AdminTaskManager::addAsyncTask2(JobIdAndTaskId taskHandle,
-                                     std::shared_ptr<AdminTask> task,
-                                     std::function<void(ResultCode)> cb) {
-    UNUSED(taskHandle);
-    {
-        std::lock_guard<std::mutex> lk(mutex_);
-        task->setCallback(cb);
-        auto errOrSubTasks = task->genSubTasks();
-        if (!nebula::ok(errOrSubTasks)) {
-            LOG(FATAL) << "need to do sth";
-            return;
-        }
-        auto& subTasks = nebula::value(errOrSubTasks);
-        subTasksQueue_.insert(subTasksQueue_.end(), subTasks.begin(), subTasks.end());
-        notEmpty_.notify_one();
-    }
-}
-
-void AdminTaskManager::invoke() {
-    while (!shutdown_) {
-    }
+    LOG(ERROR) << "messi exit AdminTaskManager::addAsyncTask2()";
 }
 
 nebula::kvstore::ResultCode
 AdminTaskManager::cancelTask(const cpp2::AddAdminTaskRequest& req) {
-    auto key = std::make_pair(req.get_job_id(), req.get_task_id());
-    {
-        std::lock_guard<std::mutex> lk(mutex_);
-        auto iter = taskQueue_.find(key);
-        if (iter == taskQueue_.begin()) {
-            auto& taskAndResult = iter->second;
-            taskAndResult.first->stop();
-        } else if (iter == taskQueue_.end()) {
-            return nebula::kvstore::ResultCode::ERR_KEY_NOT_FOUND;
-        } else {
-            taskQueue_.erase(iter);
-        }
-    }
+    UNUSED(req);
+    LOG(FATAL) << "need implement";
+    // auto key = std::make_pair(req.get_job_id(), req.get_task_id());
+    // {
+    //     std::lock_guard<std::mutex> lk(mutex_);
+    //     auto iter = taskQueue_.find(key);
+    //     if (iter == taskQueue_.begin()) {
+    //         auto& taskAndResult = iter->second;
+    //         taskAndResult.first->stop();
+    //     } else if (iter == taskQueue_.end()) {
+    //         return nebula::kvstore::ResultCode::ERR_KEY_NOT_FOUND;
+    //     } else {
+    //         taskQueue_.erase(iter);
+    //     }
+    // }
     return nebula::kvstore::ResultCode::SUCCEEDED;
 }
 
 bool AdminTaskManager::init() {
-    std::lock_guard<std::mutex> lk(mutex_);
-    pool_ = std::make_unique<nebula::thread::GenericThreadPool>();
-    pool_->start(FLAGS_concurrent_tasks_num);
+    // std::lock_guard<std::mutex> lk(mutex_);
+    // pool_ = std::make_unique<nebula::thread::GenericThreadPool>();
+    // pool_->start(FLAGS_concurrent_tasks_num);
     bgThread_ = std::make_unique<thread::GenericWorker>();
     CHECK(bgThread_->start());
     bgThread_->addTask(&AdminTaskManager::pickTaskThread, this);
@@ -91,30 +59,61 @@ bool AdminTaskManager::init() {
 void AdminTaskManager::shutdown() {
     LOG(INFO) << "enter " << __PRETTY_FUNCTION__;
     shutdown_ = true;
-    notEmpty_.notify_one();
-    pool_->stop();
+    taskListEmpty_.notify_one();
+    // pool_->stop();
     bgThread_->stop();
     bgThread_->wait();
     LOG(INFO) << "exit " << __PRETTY_FUNCTION__;
 }
 
+void AdminTaskManager::pickSubTaskThread() {
+    auto& currTask = *taskList_.begin();
+    size_t idx = subTaskIndex_.fetch_add(1);
+
+    while (idx < subTasks_.size() && !currTask->isStop()) {
+        subTaskStatus_[idx] = subTasks_[idx].invoke();
+        idx = subTaskIndex_.fetch_add(1);
+    }
+}
+
+void AdminTaskManager::runTask(AdminTask& task) {
+    auto errOrSubTasks = task.genSubTasks();
+    if (!nebula::ok(errOrSubTasks)) {
+        task.finish(nebula::error(errOrSubTasks));
+        return;
+    }
+    auto& subTasks = nebula::value(errOrSubTasks);
+    subTaskStatus_.resize(subTasks.size());
+    size_t concurrency = std::min(subTasks.size(),
+                                  (size_t)FLAGS_subtask_concurrency);
+    std::vector<std::thread> threads;
+    for (size_t i = 0; i < concurrency; ++i) {
+        threads.emplace_back(std::thread(&AdminTaskManager::pickSubTaskThread, this));
+    }
+
+    for (auto& t : threads) {
+        t.join();
+    }
+
+    // some task may tolerant some not succeeded code ?
+    task.finish(subTaskStatus_);
+}
+
 void AdminTaskManager::pickTaskThread() {
     while (!shutdown_) {
-        std::unique_lock<std::mutex> lk(mutex_);
+        std::unique_lock<std::mutex> lk(taskListMutex_);
         LOG(INFO) << "AdminTaskManager::pickTaskThread() waiting for coming task";
-        notEmpty_.wait(lk, [&]{ return shutdown_ || !taskQueue_.empty(); });
+        taskListEmpty_.wait(lk, [&]{ return shutdown_ || !taskList_.empty(); });
 
         if (shutdown_) {
             LOG(INFO) << "AdminTaskManager::pickTaskThread() shutdown called, exit";
             break;
         }
-        LOG(INFO) << "AdminTaskManager::pickTaskThread() task picked";
-        auto taskAndResult = taskQueue_.begin();
-        auto& spAdminTask = taskAndResult->second.first;
-        auto& result = taskAndResult->second.second;
 
-        result.setValue(spAdminTask->run());
-        taskQueue_.erase(taskQueue_.begin());
+        LOG(INFO) << "AdminTaskManager::pickTaskThread() task picked";
+        runTask(**taskList_.begin());
+
+        taskList_.erase(taskList_.begin());
     }
 }
 

@@ -40,7 +40,8 @@ MetaJobExecutorFactory::createMetaJobExecutor(const JobDescription& jd,  kvstore
     case nebula::cpp2::AdminCmd::FLUSH:
         ret.reset(new SimpleConcurrentJobExecutor(jd.getJobId(), cmd, jd.getParas(), store));
         break;
-    case nebula::cpp2::AdminCmd::REBUILD_INDEX:
+    case nebula::cpp2::AdminCmd::REBUILD_TAG_INDEX:
+    case nebula::cpp2::AdminCmd::REBUILD_EDGE_INDEX:
         break;
     default:
         break;

@@ -33,18 +33,7 @@ public:
         return &sAdminTaskManager;
     }
 
-    ResultCode runTaskDirectly(const cpp2::AddAdminTaskRequest& req,
-                               nebula::kvstore::NebulaStore* store);
-
-    FutureResultCode addAsyncTask(const cpp2::AddAdminTaskRequest& req,
-                                  nebula::kvstore::NebulaStore* store);
-
-    FutureResultCode addAsyncTask(JobIdAndTaskId taskHandle,
-                                  std::shared_ptr<AdminTask> task);
-
-    void addAsyncTask2(JobIdAndTaskId taskHandle,
-                       std::shared_ptr<AdminTask> task,
-                       std::function<void(ResultCode)> cb);
+    void addAsyncTask(std::shared_ptr<AdminTask> task);
 
     void invoke();
 
@@ -55,18 +44,23 @@ public:
     void shutdown();
 
 private:
+    void runTask(AdminTask& task);
     void pickTaskThread();
+    void pickSubTaskThread();
 
 private:
     std::unique_ptr<thread::GenericWorker> bgThread_;
     std::unique_ptr<nebula::thread::GenericThreadPool>  pool_{nullptr};
 
-    std::mutex                                          mutex_;
-    std::condition_variable                             notEmpty_;
-    std::map<JobIdAndTaskId, TaskAndResult>             taskQueue_;
     bool                                                shutdown_;
 
-    std::vector<AdminSubTask>                   subTasksQueue_;
+    std::list<std::shared_ptr<AdminTask>>           taskList_;
+    std::mutex                                      taskListMutex_;
+    std::condition_variable                         taskListEmpty_;
+
+    std::vector<AdminSubTask>                       subTasks_;
+    std::vector<ResultCode>                         subTaskStatus_;
+    std::atomic<int>                                subTaskIndex_;
 };
 
 }  // namespace storage

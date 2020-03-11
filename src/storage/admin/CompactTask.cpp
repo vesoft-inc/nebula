@@ -12,16 +12,6 @@ namespace storage {
 
 using ResultCode = nebula::kvstore::ResultCode;
 
-nebula::kvstore::ResultCode CompactTask::run() {
-    LOG(ERROR) << "show not call this function";
-    return nebula::kvstore::ResultCode::ERR_UNKNOWN;
-}
-
-nebula::kvstore::ResultCode CompactTask::stop() {
-    LOG(ERROR) << "not implement function " << __PRETTY_FUNCTION__;
-    return nebula::kvstore::ResultCode::SUCCEEDED;
-}
-
 ErrorOr<ResultCode, std::vector<AdminSubTask>>
 CompactTask::genSubTasks() {
     std::vector<AdminSubTask> ret;
@@ -36,27 +26,16 @@ CompactTask::genSubTasks() {
 
     auto space = nebula::value(errOrSpace);
 
-    using FuncObj = std::function<void()>;
-
-    totalSubTasks_ = space->engines_.size();
+    using FuncObj = std::function<ResultCode()>;
     for (auto& engine : space->engines_) {
-        FuncObj obj = std::bind(&CompactTask::func, this, engine.get());
+        FuncObj obj = std::bind(&CompactTask::subTask, this, engine.get());
         ret.emplace_back(obj);
     }
     return ret;
 }
 
-void CompactTask::func(nebula::kvstore::KVEngine* engine) {
-    auto rc = engine->compact();
-    ++finishedSubTasks_;
-
-    if (rc != nebula::kvstore::ResultCode::SUCCEEDED) {
-        rc_ = rc;  // what if there are more than one task failed ????
-    }
-
-    if (totalSubTasks_ == finishedSubTasks_) {
-        onFinished_(rc_);
-    }
+ResultCode CompactTask::subTask(nebula::kvstore::KVEngine* engine) {
+    return engine->compact();
 }
 
 }  // namespace storage
