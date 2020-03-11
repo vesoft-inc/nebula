@@ -12,7 +12,7 @@ namespace graph {
 
 UninstallPluginExecutor::UninstallPluginExecutor(Sentence *sentence,
                                                  ExecutionContext *ectx)
-    : Executor(ectx, "uninstall_plugin") {
+    : Executor(ectx) {
     sentence_ = static_cast<UninstallPluginSentence*>(sentence);
 }
 
@@ -27,30 +27,25 @@ void UninstallPluginExecutor::execute() {
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            doError(Status::Error("Uninstall plugin %s failed: %s",
-                                  pluginName_->c_str(),
-                                  resp.status().toString().c_str()));
+            onError_(resp.status());
             return;
         }
 
         auto ret = std::move(resp).value();
         if (!ret) {
-            doError(Status::Error("Uninstall plugin %s failed",
+            onError_(Status::Error("Uninstall plugin %s failed",
                                   pluginName_->c_str()));
             return;
         }
 
-        // close so file
-        ectx()->getPluginManager()->close(*pluginName_);
-
-        doFinish(Executor::ProcessControl::kNext);
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
         auto msg = folly::stringPrintf("Uninstall plugin %s exception: %s",
                                        pluginName_->c_str(), e.what().c_str());
         LOG(ERROR) << msg;
-        doError(Status::Error(std::move(msg)));
+        onError_(Status::Error(std::move(msg)));
         return;
     };
 

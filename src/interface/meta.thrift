@@ -689,12 +689,14 @@ struct ListIndexStatusResp {
 }
 
 struct PluginItem {
-    1: string               plugin_name,
-    2: string               so_name,
+    1: common.PluginID      plugin_id,
+    2: string               plugin_name,
+    3: string               so_name,
 }
 
 struct InstallPluginReq {
-    1: PluginItem           item,
+    1: string               plugin_name,
+    2: string               so_name,
 }
 
 struct UninstallPluginReq {

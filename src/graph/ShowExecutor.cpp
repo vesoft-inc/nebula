@@ -1210,15 +1210,16 @@ void ShowExecutor::showPlugins() {
 
         auto retShowPlugins = std::move(resp).value();
         std::vector<cpp2::RowValue> rows;
-        std::vector<std::string> header{"Name", "Soname"};
+        std::vector<std::string> header{"ID", "Name", "Soname"};
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         resp_->set_column_names(std::move(header));
 
         for (auto &plugin : retShowPlugins) {
             std::vector<cpp2::ColumnValue> row;
-            row.resize(2);
-            row[0].set_str(plugin.plugin_name);
-            row[1].set_str(plugin.so_name);
+            row.resize(3);
+            row[0].set_integer(plugin.plugin_id);
+            row[1].set_str(plugin.plugin_name);
+            row[2].set_str(plugin.so_name);
 
             rows.emplace_back();
             rows.back().set_columns(std::move(row));

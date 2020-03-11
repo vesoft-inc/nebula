@@ -33,31 +33,22 @@ public:
     Status init();
 
     /**
-     * If the plugin has not been opened, dlopen opens the plugin, dlsym init function
-     * and records the information. If the plugin has been opened, return directly.
-     * Need to search in meta client cache
+     * First go to the meta client cache to get the plugin information.
+     * Then check if the latest version of the plugin is open by using
+     * pair<pluginId, pluginName>, If open, return directly, otherwise open.
      */
     Status open(const std::string& pluginName);
 
     /**
-     * The difference from the above is that it does not need to search
-     */
-    Status open(const std::string& pluginName, const std::string& soname);
-
-    /**
      * Dlopen opens the plugin, dlsym init function, records the information
      */
-    Status openPluginNoLock(const std::string& pluginName, const std::string& soname);
+    Status openPluginNoLock(PluginID pluginId, const std::string& pluginName,
+                            const std::string& soname);
 
     /**
      * Try open so file
      */
     Status tryOpen(const std::string& pluginName, const std::string& soname);
-
-    /**
-     * Check if function exists
-     */
-    bool findFunc(const std::string& funcName);
 
     /**
      * Execute function, return result
@@ -87,12 +78,8 @@ public:
      */
     void close();
 
-    /**
-     * Dlclose the sofile for pluginName
-     */
-    void close(const std::string& pluginName);
-
     struct PluginInfo {
+        std::string pluginName_;
         std::string soName_;
         void* handler_;
         // funcName
@@ -124,8 +111,9 @@ public:
 private:
     folly::RWSpinLock                                              rwlock_;
     meta::MetaClient                                              *metaClient_;
-    // pluginName -> std::pair<soNmae, dlopen handler>
-    std::unordered_map<std::string, std::shared_ptr<PluginInfo>>   pluginToInfo_;
+    //
+    std::unordered_map<std::pair<PluginID, std::string>,
+                       std::shared_ptr<PluginInfo>>                pluginToInfo_;
     auth_ldap_simple                                               authLdapSimple_{nullptr};
     auth_ldap_search_bind                                          authLdapSearchBind_{nullptr};
 };

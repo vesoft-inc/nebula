@@ -13,13 +13,14 @@ namespace graph {
 
 InstallPluginExecutor::InstallPluginExecutor(Sentence *sentence,
                                              ExecutionContext *ectx)
-    : Executor(ectx, "install_plugin") {
+    : Executor(ectx) {
     sentence_ = static_cast<InstallPluginSentence*>(sentence);
 }
 
 Status InstallPluginExecutor::prepare() {
     pluginName_ = sentence_->pluginName();
     soName_ = sentence_->soName();
+    // Open to check if the so file is normal
     return ectx()->getPluginManager()->tryOpen(*pluginName_, *soName_);
 }
 
@@ -29,36 +30,25 @@ void InstallPluginExecutor::execute() {
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            doError(Status::Error("Install plugin %s soname \"%s\" failed: %s",
-                                  pluginName_->c_str(),
-                                  soName_->c_str(),
-                                  resp.status().toString().c_str()));
+            onError_(resp.status());
             return;
         }
         auto ret = std::move(resp).value();
         if (!ret) {
-            doError(Status::Error("Install plugin %s soname \"%s\" failed",
-                                  pluginName_->c_str(),
-                                  soName_->c_str()));
+            onError_(Status::Error("Install plugin %s soname \"%s\" failed",
+                                   pluginName_->c_str(),
+                                   soName_->c_str()));
             return;
         }
 
-        // Open the so file after the installation is complete
-        auto retstat = ectx()->getPluginManager()->open(*pluginName_, *soName_);
-        // Because already tryOpen, not happen here
-        if (!retstat.ok()) {
-            doError(retstat);
-            return;
-        }
-
-        doFinish(Executor::ProcessControl::kNext);
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
         auto msg = folly::stringPrintf("Install plugin %s exception: %s",
                                        pluginName_->c_str(), e.what().c_str());
         LOG(ERROR) << msg;
-        doError(Status::Error(std::move(msg)));
+        onError_(Status::Error(std::move(msg)));
         return;
     };
 

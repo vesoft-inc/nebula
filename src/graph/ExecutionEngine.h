@@ -46,9 +46,9 @@ private:
     std::unique_ptr<meta::SchemaManager>              schemaManager_;
     std::unique_ptr<meta::ClientBasedGflagsManager>   gflagsManager_;
     std::unique_ptr<storage::StorageClient>           storage_;
-    meta::MetaClient*                                 metaClient_{nullptr};
-    CharsetInfo*                                      charsetInfo_{nullptr};
-    PluginManager*                                    pluginManager_{nullptr};
+    meta::MetaClient                                 *metaClient_{nullptr};
+    CharsetInfo                                      *charsetInfo_{nullptr};
+    PluginManager                                    *pluginManager_{nullptr};
 };
 
 }   // namespace graph

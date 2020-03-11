@@ -22,43 +22,11 @@ namespace meta {
 TEST(InstallUninstallPluginTest, Test) {
     fs::TempDir rootPath("/tmp/CreateUserTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    // Create a fake so file
-    using fs::FileUtils;
-    auto dir = FileUtils::readLink("/proc/self/exe").value();
-    dir = FileUtils::dirname(dir.c_str()) + "/../share";
-
-    bool isMkdir = false;
-    if (!FileUtils::exist(dir)) {
-        bool ret = FileUtils::makeDir(dir);
-        ASSERT_TRUE(ret);
-        isMkdir = true;
-    }
-    std::string soname = dir + "/ldap.so";
-
-    int fd = open(soname.c_str(), O_CREAT|O_RDWR, 0755);
-    ASSERT_NE(-1, fd);
-
     {
-        // So file not exists
-        cpp2::PluginItem item;
-        item.set_plugin_name("auth");
-        item.set_so_name("auth.so");
+        // Succeed, meta not check if so file exists
         cpp2::InstallPluginReq req;
-        req.set_item(std::move(item));
-
-        auto* processor = InstallPluginProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-    }
-    {
-        // Succeed
-        cpp2::PluginItem item;
-        item.set_plugin_name("ldap");
-        item.set_so_name("ldap.so");
-        cpp2::InstallPluginReq req;
-        req.set_item(std::move(item));
+        req.set_plugin_name("ldap");
+        req.set_so_name("ldap.so");
 
         auto* processor = InstallPluginProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -90,11 +58,9 @@ TEST(InstallUninstallPluginTest, Test) {
     }
     {
         // Repeated, failed to register
-        cpp2::PluginItem item;
-        item.set_plugin_name("ldap");
-        item.set_so_name("ldap.so");
         cpp2::InstallPluginReq req;
-        req.set_item(std::move(item));
+        req.set_plugin_name("ldap");
+        req.set_so_name("ldap.so");
 
         auto* processor = InstallPluginProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -151,10 +117,6 @@ TEST(InstallUninstallPluginTest, Test) {
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-    }
-    // Delete file
-    if (isMkdir) {
-        FileUtils::remove(dir.c_str(), true);
     }
 }
 

@@ -30,9 +30,10 @@ Status PluginManager::init() {
     }
     auto plugins = retPlugins.value();
     for (auto &plugin : plugins) {
+        auto pluginId = plugin.get_plugin_id();
         auto pluginName = plugin.get_plugin_name();
         auto soname = plugin.get_so_name();
-        auto status = openPluginNoLock(pluginName, soname);
+        auto status = openPluginNoLock(pluginId, pluginName, soname);
         if (!status.ok()) {
             LOG(ERROR) << status.toString();
             // When opening a plugin fails, ignore, continue
@@ -46,39 +47,29 @@ Status PluginManager::init() {
 Status PluginManager::open(const std::string& pluginName) {
     folly::RWSpinLock::WriteHolder holder(rwlock_);
 
-    auto iter = pluginToInfo_.find(pluginName);
-    if (iter != pluginToInfo_.end()) {
-        LOG(INFO) << "Already open plugin.";
-        return Status::OK();
-    }
-
-    // Open plugin
+    // Open plugin, get newest form meta cache
     StatusOr<nebula::meta::cpp2::PluginItem>
         retPlugin = metaClient_->getPluginFromCache(pluginName);
     if (!retPlugin.ok()) {
         return Status::Error("Get plugin %s failed.", pluginName.c_str());
     }
-
     auto plugin = retPlugin.value();
-    auto soname = plugin.get_so_name();
+    auto pluginId = plugin.get_plugin_id();
 
-    return openPluginNoLock(pluginName, soname);
-}
-
-
-Status PluginManager::open(const std::string& pluginName, const std::string& soname) {
-    folly::RWSpinLock::WriteHolder holder(rwlock_);
-    auto iter = pluginToInfo_.find(pluginName);
+    auto iter = pluginToInfo_.find(std::make_pair(pluginId, pluginName));
     if (iter != pluginToInfo_.end()) {
         LOG(INFO) << "Already open plugin.";
         return Status::OK();
     }
-    return openPluginNoLock(pluginName, soname);
+
+    auto soname = plugin.get_so_name();
+    return openPluginNoLock(pluginId, pluginName, soname);
 }
 
 
-Status PluginManager::openPluginNoLock(const std::string& pluginName,
+Status PluginManager::openPluginNoLock(PluginID pluginId, const std::string& pluginName,
                                        const std::string& soname) {
+    // Currently only graphd will open so files by default
     using fs::FileUtils;
     auto dir = FileUtils::readLink("/proc/self/exe").value();
     dir = FileUtils::dirname(dir.c_str()) + "/../share";
@@ -109,11 +100,12 @@ Status PluginManager::openPluginNoLock(const std::string& pluginName,
         }
 
         auto pluginInfo = std::make_shared<PluginInfo>();
+        pluginInfo->pluginName_ = pluginName,
         pluginInfo->soName_ = soname;
         pluginInfo->handler_ = dlHandle;
         pluginInfo->funcName_.emplace_back("authLdapSimple");
         pluginInfo->funcName_.emplace_back("authLdapSearchBind");
-        pluginToInfo_.emplace("auth_ldap", pluginInfo);
+        pluginToInfo_.emplace(std::make_pair(pluginId, pluginName), pluginInfo);
     } else {
         // TODO support udf function
         LOG(ERROR) << "Unsupport it yet";
@@ -121,6 +113,7 @@ Status PluginManager::openPluginNoLock(const std::string& pluginName,
     }
     return Status::OK();
 }
+
 
 Status PluginManager::tryOpen(const std::string& pluginName, const std::string& soname) {
     using fs::FileUtils;
@@ -160,18 +153,6 @@ Status PluginManager::tryOpen(const std::string& pluginName, const std::string& 
     }
     dlclose(dlHandle);
     return Status::OK();
-}
-
-bool PluginManager::findFunc(const std::string& funcName) {
-    folly::RWSpinLock::ReadHolder holder(rwlock_);
-    for (auto& pluginToInfo : pluginToInfo_) {
-        for (auto&func : pluginToInfo.second->funcName_) {
-            if (!func.compare(funcName)) {
-                return true;
-            }
-        }
-    }
-    return false;
 }
 
 
@@ -231,20 +212,6 @@ void PluginManager::close() {
     authLdapSimple_ = nullptr;
     authLdapSearchBind_ = nullptr;
     pluginToInfo_.clear();
-}
-
-
-void PluginManager::close(const std::string& pluginName) {
-    folly::RWSpinLock::WriteHolder holder(rwlock_);
-    auto iter = pluginToInfo_.find(pluginName);
-    if (iter != pluginToInfo_.end()) {
-        dlclose(iter->second->handler_);
-        pluginToInfo_.erase(iter);
-        if (!pluginName.compare("auth_ldap")) {
-            authLdapSimple_ = nullptr;
-            authLdapSearchBind_ = nullptr;
-        }
-    }
 }
 
 }   // namespace graph

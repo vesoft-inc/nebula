@@ -210,13 +210,13 @@ bool MetaClient::loadData() {
             return false;
         }
 
-        if (!loadPlugins(pluginItems)) {
-            LOG(ERROR) << "Load Plugins Failed";
-            return false;
-        }
-
         cache.emplace(spaceId, spaceCache);
         spaceIndexByName.emplace(space.second, spaceId);
+    }
+
+    if (!loadPlugins(pluginItems)) {
+        LOG(ERROR) << "Load Plugins Failed";
+        return false;
     }
     decltype(localCache_) oldCache;
     {
@@ -2216,12 +2216,9 @@ folly::Future<StatusOr<std::vector<cpp2::Snapshot>>> MetaClient::listSnapshots()
 
 folly::Future<StatusOr<bool>>
 MetaClient::installPlugin(const std::string& pluginName, const std::string& soName) {
-    cpp2::PluginItem item;
-    item.set_plugin_name(std::move(pluginName));
-    item.set_so_name(std::move(soName));
-
     cpp2::InstallPluginReq req;
-    req.set_item(std::move(item));
+    req.set_plugin_name(std::move(pluginName));
+    req.set_so_name(std::move(soName));
     folly::Promise<StatusOr<bool>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {

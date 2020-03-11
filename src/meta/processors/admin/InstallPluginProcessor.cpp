@@ -12,31 +12,15 @@ namespace meta {
 
 // When installing, just register it, do not open it. open it when using
 void InstallPluginProcessor::process(const cpp2::InstallPluginReq& req) {
-    const auto& pluginItem = req.get_item();
-    auto& pluginName = pluginItem.get_plugin_name();
-    auto& soName = pluginItem.get_so_name();
+    auto& pluginName = req.get_plugin_name();
+    auto& soName = req.get_so_name();
     folly::SharedMutex::WriteHolder wHolder(LockUtils::pluginLock());
-
-    // Check if file exists
-    using fs::FileUtils;
-    auto dir = FileUtils::readLink("/proc/self/exe").value();
-    dir = FileUtils::dirname(dir.c_str()) + "/../share";
-    std::string sofile = dir + "/" + soName;
-
-    cpp2::ErrorCode code;
-    if (!FileUtils::exist(sofile)) {
-        LOG(ERROR) << "Install plugin failed : sofile " << sofile << " not exists";
-        code = cpp2::ErrorCode::E_NOT_FOUND;
-        handleErrorCode(code);
-        onFinished();
-        return;
-    }
 
     // Check if the plugin exists
     auto ret = getPluginId(pluginName);
     if (ret.ok()) {
         LOG(ERROR) << "Install plugin failed : plugin " << pluginName;
-        code = cpp2::ErrorCode::E_EXISTED;
+        cpp2::ErrorCode code = cpp2::ErrorCode::E_EXISTED;
         handleErrorCode(code);
         onFinished();
         return;
@@ -53,6 +37,10 @@ void InstallPluginProcessor::process(const cpp2::InstallPluginReq& req) {
     auto pluginId = nebula::value(idRet);
     std::vector<kvstore::KV> data;
 
+    cpp2::PluginItem pluginItem;
+    pluginItem.set_plugin_id(pluginId);
+    pluginItem.set_plugin_name(pluginName);
+    pluginItem.set_so_name(std::move(soName));
     data.emplace_back(MetaServiceUtils::indexPluginKey(pluginName),
                       std::string(reinterpret_cast<const char*>(&pluginId), sizeof(pluginId)));
     data.emplace_back(MetaServiceUtils::pluginKey(pluginId),

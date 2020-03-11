@@ -36,8 +36,8 @@ public:
                      meta::ClientBasedGflagsManager *gflagsManager,
                      storage::StorageClient *storage,
                      meta::MetaClient *metaClient,
-                     CharsetInfo* charsetInfo,
-                     PluginManager* pluginManager) {
+                     CharsetInfo *charsetInfo,
+                     PluginManager *pluginManager) {
         rctx_ = std::move(rctx);
         sm_ = sm;
         gflagsManager_ = gflagsManager;
