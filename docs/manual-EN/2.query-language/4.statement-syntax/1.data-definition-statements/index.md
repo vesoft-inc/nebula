@@ -123,15 +123,16 @@ REBUILD {TAG | EDGE} INDEX <index_name> [OFFLINE]
 
 [Create Index](#create-index) section describes how to build indexes to improve query performance. If the index is created before inserting the data, there is no need to rebuild index and this section can be skipped; if data is updated or newly inserted after the index creation, it is necessary to rebuild the indexes in order to ensure that the indexes contain the previously added data. If the current database does not provide any services, use the `OFFLINE` keyword to speed up the rebuilding.
 
-<!-- These indexes are immediately available if the indexed keys or labels have been newly defined in the same management transaction. In this case, there is no need to rebuild index and this section can be skipped. If the indexed keys and labels already existed prior to index creation it is necessary to rebuild the indexes in order to ensure that the indexes contain previously added data.
-
-> During the rebuilding, any idempotent queries will skip the index and perform sequential scans. This means that queries run slower during this operation. Non-idempotent commands, such as INSERT, UPDATE, and DELETE are blocked until the indexes are rebuilt. -->
+<!-- > During the rebuilding, any idempotent queries will skip the index and perform sequential scans. This means that queries run slower during this operation. Non-idempotent commands, such as INSERT, UPDATE, and DELETE are blocked until the indexes are rebuilt. -->
 
 After rebuilding is complete, you can use the `SHOW {TAG | EDGE} INDEX STATUS` command to check if the index is successfully rebuilt. For example:
 
 ```ngql
 nebula> CREATE TAG person(name string, age int, gender string, email string);
 Execution succeeded (Time spent: 10.051/11.397 ms)
+
+nebula> CREATE TAG INDEX single_person_index ON person(name);
+Execution succeeded (Time spent: 2.168/3.379 ms)
 
 nebula> REBUILD TAG INDEX single_person_index OFFLINE;
 Execution succeeded (Time spent: 2.352/3.568 ms)
