@@ -25,6 +25,8 @@
 #include "storage/admin/CreateCheckpointProcessor.h"
 #include "storage/admin/DropCheckpointProcessor.h"
 #include "storage/admin/SendBlockSignProcessor.h"
+#include "storage/admin/RebuildTagIndexProcessor.h"
+#include "storage/admin/RebuildEdgeIndexProcessor.h"
 #include "storage/index/LookUpVertexIndexProcessor.h"
 #include "storage/index/LookUpEdgeIndexProcessor.h"
 
@@ -226,6 +228,22 @@ StorageServiceHandler::future_dropCheckpoint(const cpp2::DropCPRequest& req) {
 folly::Future<cpp2::AdminExecResp>
 StorageServiceHandler::future_blockingWrites(const cpp2::BlockingSignRequest& req) {
     auto* processor = SendBlockSignProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::AdminExecResp>
+StorageServiceHandler::future_rebuildTagIndex(const cpp2::RebuildIndexRequest& req) {
+    auto* processor = RebuildTagIndexProcessor::instance(kvstore_,
+                                                         schemaMan_,
+                                                         indexMan_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::AdminExecResp>
+StorageServiceHandler::future_rebuildEdgeIndex(const cpp2::RebuildIndexRequest& req) {
+    auto* processor = RebuildEdgeIndexProcessor::instance(kvstore_,
+                                                          schemaMan_,
+                                                          indexMan_);
     RETURN_FUTURE(processor);
 }
 

@@ -41,6 +41,7 @@ enum ErrorCode {
     E_NO_VALID_HOST             = -37,
     E_CORRUPTTED_BALANCE_PLAN   = -38,
 
+    // Authentication Failure
     E_INVALID_PASSWORD          = -41,
     E_INPROPER_ROLE             = -42,
     E_INVALID_PARTITION_NUM     = -43,
@@ -49,10 +50,11 @@ enum ErrorCode {
     E_INVALID_COLLATE           = -46,
     E_CHARSET_COLLATE_NOT_MATCH = -47,
 
-    E_SNAPSHOT_FAILURE   = -51,
-
-    E_INDEX_CONFLICT = -61,
-    E_INDEX_WITH_TTL = -62,
+    // Admin Failure
+    E_SNAPSHOT_FAILURE       = -51,
+    E_BLOCK_WRITE_FAILURE    = -52,
+    E_REBUILD_INDEX_FAILURE  = -53,
+    E_INDEX_WITH_TTL         = -54,
 
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)
@@ -395,7 +397,7 @@ struct GetPartsAllocResp {
 struct MultiPutReq {
     // segment is used to avoid conflict with system data.
     // it should be comprised of numbers and letters.
-    1: string     segment,
+    1: string            segment,
     2: list<common.Pair> pairs,
 }
 
@@ -405,9 +407,9 @@ struct GetReq {
 }
 
 struct GetResp {
-    1: ErrorCode code,
+    1: ErrorCode        code,
     2: common.HostAddr  leader,
-    3: string    value,
+    3: string           value,
 }
 
 struct MultiGetReq {
@@ -416,9 +418,9 @@ struct MultiGetReq {
 }
 
 struct MultiGetResp {
-    1: ErrorCode    code,
+    1: ErrorCode        code,
     2: common.HostAddr  leader,
-    3: list<string> values,
+    3: list<string>     values,
 }
 
 struct RemoveReq {
@@ -439,16 +441,16 @@ struct ScanReq {
 }
 
 struct ScanResp {
-    1: ErrorCode code,
+    1: ErrorCode        code,
     2: common.HostAddr  leader,
-    3: list<string> values,
+    3: list<string>     values,
 }
 
 struct HBResp {
-    1: ErrorCode code,
-    2: common.HostAddr  leader,
-    3: common.ClusterID cluster_id,
-    4: i64 last_update_time_in_ms,
+    1: ErrorCode         code,
+    2: common.HostAddr   leader,
+    3: common.ClusterID  cluster_id,
+    4: i64               last_update_time_in_ms,
 }
 
 struct HBReq {
@@ -526,6 +528,12 @@ struct ListEdgeIndexesResp {
     1: ErrorCode                 code,
     2: common.HostAddr           leader,
     3: list<common.IndexItem>    items,
+}
+
+struct RebuildIndexReq {
+    1: common.GraphSpaceID space_id,
+    2: string              index_name,
+    3: bool                is_offline,
 }
 
 struct CreateUserReq {
@@ -710,6 +718,21 @@ struct ListSnapshotsResp {
     3: list<Snapshot>       snapshots,
 }
 
+struct ListIndexStatusReq {
+    1: common.GraphSpaceID space_id,
+}
+
+struct IndexStatus {
+    1: string         name,
+    2: string         status,
+}
+
+struct ListIndexStatusResp {
+    1: ErrorCode            code,
+    2: common.HostAddr      leader,
+    3: list<IndexStatus>    statuses,
+}
+
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp dropSpace(1: DropSpaceReq req);
@@ -744,10 +767,14 @@ service MetaService {
     ExecResp             dropTagIndex(1: DropTagIndexReq req );
     GetTagIndexResp      getTagIndex(1: GetTagIndexReq req);
     ListTagIndexesResp   listTagIndexes(1:ListTagIndexesReq req);
+    ExecResp             rebuildTagIndex(1: RebuildIndexReq req);
+    ListIndexStatusResp  listTagIndexStatus(1: ListIndexStatusReq req);
     ExecResp             createEdgeIndex(1: CreateEdgeIndexReq req);
     ExecResp             dropEdgeIndex(1: DropEdgeIndexReq req );
     GetEdgeIndexResp     getEdgeIndex(1: GetEdgeIndexReq req);
     ListEdgeIndexesResp  listEdgeIndexes(1: ListEdgeIndexesReq req);
+    ExecResp             rebuildEdgeIndex(1: RebuildIndexReq req);
+    ListIndexStatusResp  listEdgeIndexStatus(1: ListIndexStatusReq req);
 
     ExecResp createUser(1: CreateUserReq req);
     ExecResp dropUser(1: DropUserReq req);

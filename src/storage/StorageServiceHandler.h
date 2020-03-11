@@ -134,6 +134,12 @@ public:
     folly::Future<cpp2::AdminExecResp>
     future_blockingWrites(const cpp2::BlockingSignRequest& req) override;
 
+    folly::Future<cpp2::AdminExecResp>
+    future_rebuildTagIndex(const cpp2::RebuildIndexRequest& req) override;
+
+    folly::Future<cpp2::AdminExecResp>
+    future_rebuildEdgeIndex(const cpp2::RebuildIndexRequest& req) override;
+
     folly::Future<cpp2::LookUpVertexIndexResp>
     future_lookUpVertexIndex(const cpp2::LookUpIndexRequest& req) override;
 

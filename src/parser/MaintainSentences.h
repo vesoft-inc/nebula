@@ -675,11 +675,12 @@ private:
 };
 
 
-class BuildTagIndexSentence final : public Sentence {
+class RebuildTagIndexSentence final : public Sentence {
 public:
-    explicit BuildTagIndexSentence(std::string *indexName) {
+    explicit RebuildTagIndexSentence(std::string *indexName, bool isOffline) {
         indexName_.reset(indexName);
-        kind_ = Kind::kBuildTagIndex;
+        isOffline_ = isOffline;
+        kind_ = Kind::kRebuildTagIndex;
     }
 
     std::string toString() const override;
@@ -688,16 +689,22 @@ public:
         return indexName_.get();
     }
 
+    bool isOffline() {
+        return isOffline_;
+    }
+
 private:
     std::unique_ptr<std::string>                indexName_;
+    bool                                        isOffline_;
 };
 
 
-class BuildEdgeIndexSentence final : public Sentence {
+class RebuildEdgeIndexSentence final : public Sentence {
 public:
-    explicit BuildEdgeIndexSentence(std::string *indexName) {
+    explicit RebuildEdgeIndexSentence(std::string *indexName, bool isOffline) {
         indexName_.reset(indexName);
-        kind_ = Kind::kBuildEdgeIndex;
+        isOffline_ = isOffline;
+        kind_ = Kind::kRebuildEdgeIndex;
     }
 
     std::string toString() const override;
@@ -706,8 +713,13 @@ public:
         return indexName_.get();
     }
 
+    bool isOffline() {
+        return isOffline_;
+    }
+
 private:
     std::unique_ptr<std::string>                indexName_;
+    bool                                        isOffline_;
 };
 
 }   // namespace nebula

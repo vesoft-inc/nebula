@@ -27,6 +27,7 @@ namespace meta {
 
 using nebula::network::NetworkUtils;
 using FieldType = std::pair<std::string, nebula::cpp2::ValueType>;
+using SignType = storage::cpp2::EngineSignType;
 
 #define CHECK_SPACE_ID_AND_RETURN(spaceID) \
     if (spaceExist(spaceID) == Status::SpaceNotFound()) { \
@@ -253,7 +254,7 @@ protected:
                                const std::vector<cpp2::AlterSchemaItem>& alterItems);
 
     StatusOr<std::vector<nebula::cpp2::IndexItem>>
-    getIndexes(GraphSpaceID spaceId, int32_t edgeOrTag, bool isEdge);
+    getIndexes(GraphSpaceID spaceId, int32_t tagOrEdge);
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;
