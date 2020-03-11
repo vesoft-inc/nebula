@@ -11,26 +11,23 @@
 namespace nebula {
 namespace storage {
 
-using nebula::kvstore::ResultCode;
-
 std::shared_ptr<AdminTask>
 AdminTaskFactory::createAdminTask(const cpp2::AddAdminTaskRequest& req,
-                                  kvstore::NebulaStore* store) {
-    LOG(ERROR) << "messi " << __PRETTY_FUNCTION__;
+                                  kvstore::NebulaStore* store,
+                                  std::function<void(kvstore::ResultCode)> cb) {
     std::shared_ptr<AdminTask> ret;
     auto cmd = req.get_cmd();
     switch (cmd) {
     case nebula::cpp2::AdminCmd::COMPACT:
-    case nebula::cpp2::AdminCmd::FLUSH:
-        // ret.reset(new SimpleKVTask(cmd, store, req.get_space_id()));
-        ret.reset(new CompactTask(cmd, store, req.get_space_id()));
+        ret.reset(new CompactTask(store, req.get_space_id(), cb));
         break;
-    case nebula::cpp2::AdminCmd::REBUILD_INDEX:
+    case nebula::cpp2::AdminCmd::FLUSH:
+    case nebula::cpp2::AdminCmd::REBUILD_TAG_INDEX:
+    case nebula::cpp2::AdminCmd::REBUILD_EDGE_INDEX:
         break;
     default:
         break;
     }
-    LOG(ERROR) << "messi ~" << __PRETTY_FUNCTION__;
     return ret;
 }
 

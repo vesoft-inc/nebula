@@ -20,8 +20,9 @@ public:
                           nebula::kvstore::NebulaStore* store,
                           int32_t spaceId) :
                           cmd_(cmd), store_(store), spaceId_(spaceId) {}
-    nebula::kvstore::ResultCode run() override;
-    nebula::kvstore::ResultCode stop() override;
+    // nebula::kvstore::ResultCode run() override;
+    // nebula::kvstore::ResultCode stop() override;
+    void stop() override;
 
 private:
     nebula::cpp2::AdminCmd cmd_;

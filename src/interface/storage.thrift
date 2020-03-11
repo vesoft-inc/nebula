@@ -470,6 +470,7 @@ struct AddAdminTaskRequest {
     5: optional list<common.PartitionID>    parts,
     6: optional common.IndexID              index_id,
     7: optional i64                         delay_ms    //
+    8: optional i32                         concurrent  //
 }
 
 service StorageService {
