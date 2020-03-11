@@ -28,22 +28,17 @@ void AdminTaskManager::addAsyncTask(std::shared_ptr<AdminTask> task) {
 
 nebula::kvstore::ResultCode
 AdminTaskManager::cancelTask(const cpp2::AddAdminTaskRequest& req) {
-    UNUSED(req);
-    LOG(FATAL) << "need implement";
-    // auto key = std::make_pair(req.get_job_id(), req.get_task_id());
-    // {
-    //     std::lock_guard<std::mutex> lk(mutex_);
-    //     auto iter = taskQueue_.find(key);
-    //     if (iter == taskQueue_.begin()) {
-    //         auto& taskAndResult = iter->second;
-    //         taskAndResult.first->stop();
-    //     } else if (iter == taskQueue_.end()) {
-    //         return nebula::kvstore::ResultCode::ERR_KEY_NOT_FOUND;
-    //     } else {
-    //         taskQueue_.erase(iter);
-    //     }
-    // }
-    return nebula::kvstore::ResultCode::SUCCEEDED;
+    {
+        auto ret = kvstore::ResultCode::ERR_KEY_NOT_FOUND;
+        std::lock_guard<std::mutex> lk(taskListMutex_);
+        for (auto& task : taskList_) {
+            if (task->getJobId() == req.get_job_id()) {
+                task->stop();
+                ret = kvstore::ResultCode::SUCCEEDED;
+            }
+        }
+    }
+    return ret;
 }
 
 bool AdminTaskManager::init() {

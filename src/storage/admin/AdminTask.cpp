@@ -17,9 +17,11 @@ AdminTaskFactory::createAdminTask(const cpp2::AddAdminTaskRequest& req,
                                   std::function<void(kvstore::ResultCode)> cb) {
     std::shared_ptr<AdminTask> ret;
     auto cmd = req.get_cmd();
+    int jobId = req.get_job_id();
+    int taskId = req.get_task_id();
     switch (cmd) {
     case nebula::cpp2::AdminCmd::COMPACT:
-        ret.reset(new CompactTask(store, req.get_space_id(), cb));
+        ret.reset(new CompactTask(jobId, taskId, store, req.get_space_id(), cb));
         break;
     case nebula::cpp2::AdminCmd::FLUSH:
     case nebula::cpp2::AdminCmd::REBUILD_TAG_INDEX:

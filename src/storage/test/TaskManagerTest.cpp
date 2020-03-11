@@ -58,7 +58,6 @@ TEST(TaskManagerTest, happy_path) {
     taskMgr->init();
     taskMgr->shutdown_ = false;
 
-    // TaskHandle handle = std::make_pair(100, 100);
     {
         auto rc = ResultCode::SUCCEEDED;
         std::shared_ptr<AdminTask> mockTask(new MockAdminTask(rc));
