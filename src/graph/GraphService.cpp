@@ -10,6 +10,7 @@
 #include "graph/RequestContext.h"
 #include "graph/SimpleAuthenticator.h"
 #include "storage/client/StorageClient.h"
+#include "graph/LdapAuthenticator.h"
 
 namespace nebula {
 namespace graph {

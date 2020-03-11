@@ -64,6 +64,7 @@ nebula_add_library(
     LookupExecutor.cpp
     UserExecutor.cpp
     PrivilegeExecutor.cpp
+    LdapAuthenticator.cpp
 )
 nebula_add_subdirectory(test)
 
