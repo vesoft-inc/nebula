@@ -27,12 +27,6 @@ public:
     void process(const cpp2::UpdateEdgeRequest& req);
 
 private:
-    enum class FilterResult {
-        SUCCEEDED     = 0,   // pass filter
-        E_FILTER_OUT  = -1,  // filter out
-        E_ERROR       = -2,  // exception when filter
-    };
-
     explicit UpdateEdgeProcessor(kvstore::KVStore* kvstore,
                                  meta::SchemaManager* schemaMan,
                                  meta::IndexManager* indexMan,
@@ -74,7 +68,7 @@ private:
     std::unique_ptr<RowUpdater>                                     updater_;
     meta::IndexManager*                                             indexMan_{nullptr};
     std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>           indexes_;
-    FilterResult                                          filterResult_{FilterResult::E_ERROR};
+    std::atomic<FilterResult>                                  filterResult_{FilterResult::E_ERROR};
 };
 
 }  // namespace storage

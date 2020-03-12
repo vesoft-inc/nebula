@@ -313,7 +313,7 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
 }
 
 
-UpdateEdgeProcessor::FilterResult UpdateEdgeProcessor::checkFilter(const PartitionID partId,
+FilterResult UpdateEdgeProcessor::checkFilter(const PartitionID partId,
                                       const cpp2::EdgeKey& edgeKey) {
     auto ret = collectEdgesProps(partId, edgeKey);
     if (ret != kvstore::ResultCode::SUCCEEDED) {

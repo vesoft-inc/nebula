@@ -152,8 +152,7 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
 }
 
 
-UpdateVertexProcessor::FilterResult
-UpdateVertexProcessor::checkFilter(const PartitionID partId, const VertexID vId) {
+FilterResult UpdateVertexProcessor::checkFilter(const PartitionID partId, const VertexID vId) {
     for (auto& tc : this->tagContexts_) {
         VLOG(3) << "partId " << partId << ", vId " << vId
                 << ", tagId " << tc.tagId_ << ", prop size " << tc.props_.size();
