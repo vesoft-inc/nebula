@@ -66,10 +66,6 @@ function check_cxx {
 check_cmake
 check_cxx
 
-# Exit on any failure here after
-set -e
-set -o pipefail
-
 # Directories setup
 cur_dir=`pwd`
 source_dir=$(readlink -f $(dirname $0)/..)/third-party
@@ -85,6 +81,10 @@ cxx_cmd=${CXX:-g++}
 gcc_version=$(${CXX:-g++} -dumpfullversion -dumpversion)
 abi_version=$($this_dir/cxx-compiler-abi-version.sh)
 libc_version=$(ldd --version | head -1 | cut -d ' ' -f4 | cut -d '-' -f1)
+
+# Exit on any failure here after
+set -e
+set -o pipefail
 
 
 trap '[[ $? -ne 0 ]] && echo "Building failed, see $logfile for more details." 1>&2' EXIT
