@@ -10,7 +10,6 @@ jobs:
     name: package and upload release assets
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
         os:
           - ubuntu1604

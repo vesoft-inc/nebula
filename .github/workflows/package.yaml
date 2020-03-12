@@ -15,7 +15,6 @@ jobs:
     name: build package
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
         os:
           - ubuntu1604
