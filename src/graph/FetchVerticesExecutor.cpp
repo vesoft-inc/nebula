@@ -348,9 +348,9 @@ void FetchVerticesExecutor::processAllPropsResult(RpcResponse &&result) {
                 }
                 auto schema = ectx()->schemaManager()->getTagSchema(spaceId_, tdata.tag_id, ver);
                 if (schema == nullptr) {
-                    LOG(ERROR) << "Schema not found for id: " << tdata.tag_id;
-                    doError(Status::Error("Get schema failed when handle data."));
-                    return;
+                    VLOG(3) << "Schema not found for tag id: " << tdata.tag_id;
+                    // Ignore the bad data.
+                    continue;
                 }
                 if (rsWriter == nullptr) {
                     outputSchema = std::make_shared<SchemaWriter>();
@@ -363,9 +363,9 @@ void FetchVerticesExecutor::processAllPropsResult(RpcResponse &&result) {
 
                 auto tagFound = ectx()->schemaManager()->toTagName(spaceId_, tdata.tag_id);
                 if (!tagFound.ok()) {
-                    LOG(ERROR) << "Tag not found for id: " << tdata.tag_id;
-                    doError(Status::Error("Tag not found for id: %d", tdata.tag_id));
-                    return;
+                    VLOG(3) << "Tag name not found for tag id: " << tdata.tag_id;
+                    // Ignore the bad data.
+                    continue;
                 }
                 auto tagName = std::move(tagFound).value();
                 auto iter = schema->begin();
