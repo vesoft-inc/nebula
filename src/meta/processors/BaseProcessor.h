@@ -36,13 +36,6 @@ using SignType = storage::cpp2::EngineSignType;
         return; \
     }
 
-#define CHECK_USER_ID_AND_RETURN(userID) \
-    if (userExist(userID) == Status::UserNotFound()) { \
-        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND); \
-        onFinished(); \
-        return; \
-    }
-
 /**
  * Check segment is consist of numbers and letters and should not empty.
  * */
@@ -108,8 +101,6 @@ protected:
         case EntryType::EDGE:
             thriftID.set_edge_type(static_cast<EdgeType>(id));
             break;
-        case EntryType::USER:
-            thriftID.set_user_id(static_cast<UserID>(id));
         case EntryType::CONFIG:
             break;
         case EntryType::INDEX:
@@ -179,9 +170,9 @@ protected:
     Status spaceExist(GraphSpaceID spaceId);
 
     /**
-     * Check userId exist or not.
+     * Check user exist or not.
      **/
-    Status userExist(UserID userId);
+    Status userExist(const std::string& account);
 
     /**
      * Check host has been registered or not.
@@ -235,11 +226,7 @@ protected:
 
     StatusOr<IndexID> getIndexID(GraphSpaceID spaceId, const std::string& indexName);
 
-    StatusOr<UserID> getUserId(const std::string& account);
-
-    bool checkPassword(UserID userId, const std::string& password);
-
-    StatusOr<std::string> getUserAccount(UserID userId);
+    bool checkPassword(const std::string& account, const std::string& password);
 
     kvstore::ResultCode doSyncPut(std::vector<kvstore::KV> data);
 

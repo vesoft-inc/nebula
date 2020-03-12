@@ -62,6 +62,8 @@ nebula_add_library(
     DropSnapshotExecutor.cpp
     AdminJobExecutor.cpp
     LookupExecutor.cpp
+    UserExecutor.cpp
+    PrivilegeExecutor.cpp
 )
 nebula_add_subdirectory(test)
 
