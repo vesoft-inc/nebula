@@ -19,7 +19,8 @@ CompactTask::genSubTasks() {
         return ret;
     }
 
-    auto errOrSpace = store_->space(spaceId_);
+    auto* store = dynamic_cast<kvstore::NebulaStore*>(store_);
+    auto errOrSpace = store->space(spaceId_);
     if (!ok(errOrSpace)) {
         return error(errOrSpace);
     }

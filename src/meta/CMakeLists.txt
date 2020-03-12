@@ -71,6 +71,9 @@ nebula_add_library(
     processors/jobMan/JobUtils.cpp
     processors/jobMan/MetaJobExecutor.cpp
     processors/jobMan/SimpleConcurrentJobExecutor.cpp
+    processors/jobMan/RebuildJobExecutor.cpp
+    processors/jobMan/RebuildTagJobExecutor.cpp
+    processors/jobMan/RebuildEdgeJobExecutor.cpp
 )
 
 nebula_add_library(

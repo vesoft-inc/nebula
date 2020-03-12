@@ -14,15 +14,21 @@ namespace meta {
 
 class AdminJobProcessor : public BaseProcessor<cpp2::AdminJobResp> {
 public:
-    static AdminJobProcessor* instance(kvstore::KVStore* kvstore) {
-        return new AdminJobProcessor(kvstore);
+    static AdminJobProcessor* instance(kvstore::KVStore* kvstore,
+                                       AdminClient* adminClient) {
+        return new AdminJobProcessor(kvstore, adminClient);
     }
 
     void process(const cpp2::AdminJobReq& req);
 
 private:
-    explicit AdminJobProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::AdminJobResp>(kvstore) {}
+    explicit AdminJobProcessor(kvstore::KVStore* kvstore,
+                               AdminClient* adminClient)
+            : BaseProcessor<cpp2::AdminJobResp>(kvstore)
+            , adminClient_(adminClient) {}
+
+protected:
+    AdminClient* adminClient_;
 };
 
 }  // namespace meta

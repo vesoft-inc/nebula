@@ -4,10 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/processors/jobMan/MetaJobExecutor.h"
-#include "meta/processors/jobMan/SimpleConcurrentJobExecutor.h"
 #include <memory>
 #include <map>
+#include "meta/processors/jobMan/MetaJobExecutor.h"
+#include "meta/processors/jobMan/SimpleConcurrentJobExecutor.h"
+#include "meta/processors/jobMan/RebuildTagJobExecutor.h"
+#include "meta/processors/jobMan/RebuildEdgeJobExecutor.h"
 #include "interface/gen-cpp2/common_types.h"
 
 namespace nebula {
@@ -16,7 +18,8 @@ namespace meta {
 enum class JobCmdEnum {
     COMPACT,
     FLUSH,
-    REBUILD_INDEX
+    REBUILD_TAG_INDEX,
+    REBUILD_EDGE_INDEX
 };
 
 nebula::cpp2::AdminCmd toAdminCmd(const std::string& cmd) {
@@ -31,22 +34,36 @@ nebula::cpp2::AdminCmd toAdminCmd(const std::string& cmd) {
 }
 
 std::unique_ptr<MetaJobExecutor>
-MetaJobExecutorFactory::createMetaJobExecutor(const JobDescription& jd,  kvstore::KVStore* store) {
-    std::unique_ptr<MetaJobExecutor> ret;
+MetaJobExecutorFactory::createMetaJobExecutor(const JobDescription& description,
+                                              kvstore::KVStore* store,
+                                              AdminClient* adminClient) {
+    std::unique_ptr<MetaJobExecutor> executor;
 
-    nebula::cpp2::AdminCmd cmd = toAdminCmd(jd.getCmd());
+    nebula::cpp2::AdminCmd cmd = toAdminCmd(description.getCmd());
     switch (cmd) {
     case nebula::cpp2::AdminCmd::COMPACT:
     case nebula::cpp2::AdminCmd::FLUSH:
-        ret.reset(new SimpleConcurrentJobExecutor(jd.getJobId(), cmd, jd.getParas(), store));
+        executor.reset(new SimpleConcurrentJobExecutor(description.getJobId(),
+                                                       cmd,
+                                                       description.getParas(),
+                                                       store));
         break;
     case nebula::cpp2::AdminCmd::REBUILD_TAG_INDEX:
+        executor.reset(new RebuildTagJobExecutor(description.getJobId(),
+                                                 cmd,
+                                                 description.getParas(),
+                                                 store));
+        break;
     case nebula::cpp2::AdminCmd::REBUILD_EDGE_INDEX:
+        executor.reset(new RebuildEdgeJobExecutor(description.getJobId(),
+                                                  cmd,
+                                                  description.getParas(),
+                                                  store));
         break;
     default:
         break;
     }
-    return ret;
+    return executor;
 }
 
 

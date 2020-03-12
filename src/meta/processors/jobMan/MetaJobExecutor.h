@@ -14,14 +14,16 @@
 namespace nebula {
 namespace meta {
 
+using ExecuteRet = ErrorOr<kvstore::ResultCode, std::map<HostAddr, Status>>;
+
 class MetaJobExecutor {
 public:
-    using ExecuteRet = ErrorOr<kvstore::ResultCode, std::map<HostAddr, Status>>;
-
     MetaJobExecutor() = default;
 
     virtual ExecuteRet execute() = 0;
+
     virtual void stop() = 0;
+
     virtual ~MetaJobExecutor() = default;
 
 protected:
@@ -31,7 +33,9 @@ protected:
 class MetaJobExecutorFactory {
 public:
     static std::unique_ptr<MetaJobExecutor>
-    createMetaJobExecutor(const JobDescription& jd, kvstore::KVStore* store);
+    createMetaJobExecutor(const JobDescription& description,
+                          kvstore::KVStore* store,
+                          AdminClient* adminClient);
 };
 
 }  // namespace meta

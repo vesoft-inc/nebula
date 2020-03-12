@@ -6,9 +6,7 @@
 
 #include <boost/stacktrace.hpp>
 #include <gtest/gtest.h>
-#include <folly/futures/Future.h>
 #include <folly/synchronization/Baton.h>
-#include <folly/String.h>
 
 #include "base/Base.h"
 #include "http/HttpClient.h"
@@ -40,11 +38,14 @@ JobManager* JobManager::getInstance() {
     return &inst;
 }
 
-bool JobManager::init(nebula::kvstore::KVStore* store) {
+bool JobManager::init(nebula::kvstore::KVStore* store,
+                      AdminClient* adminClient) {
     if (store == nullptr) {
         return false;
     }
+
     kvStore_ = store;
+    adminClient_ = adminClient;
     pool_ = std::make_unique<nebula::thread::GenericThreadPool>();
     pool_->start(FLAGS_dispatch_thread_num);
 
@@ -105,7 +106,9 @@ void JobManager::runJobBackground() {
 // will replace "runJobInternal" when task manager ready
 // @return: true if succeed, false if any task failed
 bool JobManager::runJobViaThrift(const JobDescription& jobDesc) {
-    auto jobExecutor = MetaJobExecutorFactory::createMetaJobExecutor(jobDesc, kvStore_);
+    auto jobExecutor = MetaJobExecutorFactory::createMetaJobExecutor(jobDesc,
+                                                                     kvStore_,
+                                                                     adminClient_);
     if (jobExecutor == nullptr) {
         LOG(ERROR) << "unreconized job cmd " << jobDesc.getCmd();
         return false;

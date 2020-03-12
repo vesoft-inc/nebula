@@ -28,14 +28,12 @@ void AdminTaskManager::addAsyncTask(std::shared_ptr<AdminTask> task) {
 
 nebula::kvstore::ResultCode
 AdminTaskManager::cancelTask(const cpp2::AddAdminTaskRequest& req) {
-    {
-        auto ret = kvstore::ResultCode::ERR_KEY_NOT_FOUND;
-        std::lock_guard<std::mutex> lk(taskListMutex_);
-        for (auto& task : taskList_) {
-            if (task->getJobId() == req.get_job_id()) {
-                task->stop();
-                ret = kvstore::ResultCode::SUCCEEDED;
-            }
+    auto ret = kvstore::ResultCode::ERR_KEY_NOT_FOUND;
+    std::lock_guard<std::mutex> lk(taskListMutex_);
+    for (auto& task : taskList_) {
+        if (task->getJobId() == req.get_job_id()) {
+            task->stop();
+            ret = kvstore::ResultCode::SUCCEEDED;
         }
     }
     return ret;

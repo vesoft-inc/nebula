@@ -13,7 +13,7 @@ namespace storage {
 
 std::shared_ptr<AdminTask>
 AdminTaskFactory::createAdminTask(const cpp2::AddAdminTaskRequest& req,
-                                  kvstore::NebulaStore* store,
+                                  kvstore::KVStore* store,
                                   std::function<void(kvstore::ResultCode)> cb) {
     std::shared_ptr<AdminTask> ret;
     auto cmd = req.get_cmd();

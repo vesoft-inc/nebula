@@ -14,14 +14,17 @@ namespace meta {
 
 class SimpleConcurrentJobExecutor : public MetaJobExecutor {
 public:
-    using ExecuteRet = ErrorOr<kvstore::ResultCode, std::map<HostAddr, Status>>;
-
     SimpleConcurrentJobExecutor(int jobId,
                                 nebula::cpp2::AdminCmd cmd,
-                                std::vector<std::string> params,
-                                nebula::kvstore::KVStore* kvStore);
+                                std::vector<std::string> paras,
+                                nebula::kvstore::KVStore* kvStore) :
+                                jobId_(jobId),
+                                cmd_(cmd),
+                                paras_(paras),
+                                kvStore_(kvStore) {}
 
     ExecuteRet execute() override;
+
     void stop() override;
 
 private:

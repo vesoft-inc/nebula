@@ -18,7 +18,6 @@ void AdminTaskProcessor::process(const cpp2::AddAdminTaskRequest& req) {
     if (req.get_cmd() == nebula::cpp2::AdminCmd::STOP) {
         rc = taskManager->cancelTask(req);
     } else {
-        auto* store = dynamic_cast<kvstore::NebulaStore*>(kvstore_);
         auto cb = [&](nebula::kvstore::ResultCode ret) {
                 if (ret != nebula::kvstore::ResultCode::SUCCEEDED) {
                     cpp2::ResultCode thriftRet;
@@ -27,7 +26,7 @@ void AdminTaskProcessor::process(const cpp2::AddAdminTaskRequest& req) {
                 }
                 onFinished();
             };
-        auto task = AdminTaskFactory::createAdminTask(req, store, cb);
+        auto task = AdminTaskFactory::createAdminTask(req, kvstore_, cb);
         if (task) {
             processAsync = true;
             taskManager->addAsyncTask(task);

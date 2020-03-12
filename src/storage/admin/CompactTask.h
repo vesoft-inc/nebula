@@ -20,7 +20,7 @@ class CompactTask : public AdminTask {
 public:
     CompactTask(int jobId,
                 int taskId,
-                nebula::kvstore::NebulaStore* store,
+                nebula::kvstore::KVStore* store,
                 int32_t spaceId,
                 std::function<void(kvstore::ResultCode)> cb)
                 : AdminTask(jobId, taskId, cb),
@@ -32,7 +32,7 @@ public:
 
 private:
     // nebula::cpp2::AdminCmd cmd_;
-    kvstore::NebulaStore* store_;
+    kvstore::KVStore* store_;
     int32_t               spaceId_;
 };
 

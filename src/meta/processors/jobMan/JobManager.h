@@ -45,26 +45,37 @@ public:
      * Load job description from kvstore
      * */
     ResultCode addJob(const JobDescription& jobDesc);
+
     ErrorOr<ResultCode, std::vector<cpp2::JobDesc>> showJobs();
+
     ErrorOr<ResultCode, std::pair<cpp2::JobDesc, std::vector<cpp2::TaskDesc>>> showJob(int iJob);
+
     ResultCode stopJob(int32_t iJob);
+
     ErrorOr<ResultCode, int32_t> recoverJob();
 
 private:
     JobManager() = default;
+
     void runJobBackground();
+
     bool runJobInternal(const JobDescription& jobDesc);
+
     bool runJobViaThrift(const JobDescription& jobDesc);
+
     int getSpaceId(const std::string& name);
+
     nebula::kvstore::ResultCode save(const std::string& k, const std::string& v);
 
-    bool                shutDown_{false};
     static bool isExpiredJob(const cpp2::JobDesc& jobDesc);
+
     void removeExpiredJobs(const std::vector<std::string>& jobKeys);
+
+    bool shutDown_{false};
     std::unique_ptr<folly::UMPSCQueue<int32_t, true>> queue_;
     std::unique_ptr<thread::GenericWorker> bgThread_;
-
-    nebula::kvstore::KVStore* kvStore_{nullptr};
+    AdminClient* adminClient_{nullptr};
+    kvstore::KVStore* kvStore_{nullptr};
     std::unique_ptr<nebula::thread::GenericThreadPool> pool_{nullptr};
 };
 
