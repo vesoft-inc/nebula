@@ -42,6 +42,10 @@ public:
     void showSnapshots();
     void showCharset();
     void showCollation();
+    void showUsers();
+    void showRoles();
+
+    std::string roleToStr(nebula::cpp2::RoleType type);
 
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
