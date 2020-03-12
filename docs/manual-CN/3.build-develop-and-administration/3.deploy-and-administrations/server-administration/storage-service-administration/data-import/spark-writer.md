@@ -203,7 +203,7 @@ Player 表结构如下：
   }
 
   # 处理标签
-  tags: {
+  tags: [
 
     # 从 HDFS 文件加载数据， 此处数据类型为 Parquet
     # tag 名称为 tag name 0
@@ -235,10 +235,10 @@ Player 表结构如下：
       }
       vertex: vertex_id_field
     }
-  }
+  ]
 
   # 处理边
-  edges: {
+  edges: [
     # 从 HDFS 加载数据，数据类型为 JSON
     # 边名称为 edge_name_0
     # HDFS JSON 文件中的 field_0、field_1、field 2 将被写入 edge_name_0
@@ -271,7 +271,7 @@ Player 表结构如下：
       source:  source_id_field
       target:  target_id_field
     }
-  }
+  ]
 }
 ```
 
