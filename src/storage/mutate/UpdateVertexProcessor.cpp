@@ -447,6 +447,8 @@ void UpdateVertexProcessor::process(const cpp2::UpdateVertexRequest& req) {
                     && filterResult_ == FilterResult::FAILED_FILTER_OUT) {
                     // Filter out
                     // https://github.com/vesoft-inc/nebula/issues/1888
+                    // Only filter out so we still return the data
+                    onProcessFinished(req.get_return_columns().size());
                     this->pushResultCode(cpp2::ErrorCode::E_FILTER_OUT, partId);
                 } else if (code == kvstore::ResultCode::ERR_ATOMIC_OP_FAILED
                     && filterResult_ == FilterResult::FAILED_ERROR) {

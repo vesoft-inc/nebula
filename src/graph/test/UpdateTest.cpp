@@ -156,6 +156,32 @@ TEST_P(UpdateUpsertTest, UpdateUpsertVertex) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    {   // Filter out with Yield
+        cpp2::ExecutionResponse resp;
+        auto query = GetParam() + " VERTEX 101 "
+                + "SET course.credits = $^.course.credits + 1, building.name = \"No9\" "
+                + "WHEN $^.course.name == \"notexist\" && $^.course.credits > 2 "
+                + "YIELD $^.course.name AS Name, $^.course.credits AS Credits, $^.building.name";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t, std::string>> expected = {
+            {"Math", 7, "No9"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {   // Filter out with Yield
+        cpp2::ExecutionResponse resp;
+        auto query = GetParam() + " VERTEX uuid(\"Math\") "
+                + "SET course.credits = $^.course.credits + 1, building.name = \"No9\" "
+                + "WHEN $^.course.name == \"notexist\" && $^.course.credits > 2 "
+                + "YIELD $^.course.name AS Name, $^.course.credits AS Credits, $^.building.name";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t, std::string>> expected = {
+            {"Math", 7, "No9"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
 }
 
 
@@ -278,6 +304,32 @@ TEST_P(UpdateUpsertTest, UpdateUpsertEdge) {
         auto query = GetParam() + " EDGE uuid(\"Monica\") -> uuid(\"Math\")@0 OF select "
                     + "SET grade = select.grade + 1, year = 2019 "
                     + "WHEN select.grade > 4 && $^.student.age > 15 "
+                    + "YIELD $^.student.name AS Name, select.grade AS Grade, select.year AS Year";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t, int64_t>> expected = {
+            {"Monica", 9, 2019},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {   // Filter out with Yield
+        cpp2::ExecutionResponse resp;
+        auto query = GetParam() + " EDGE 200 -> 101@0 OF select "
+                    + "SET grade = select.grade + 1, year = 2019 "
+                    + "WHEN select.grade > 233333333333 && $^.student.age > 15 "
+                    + "YIELD $^.student.name AS Name, select.grade AS Grade, select.year AS Year";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t, int64_t>> expected = {
+            {"Monica", 9, 2019},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {   // Filter out with Yield
+        cpp2::ExecutionResponse resp;
+        auto query = GetParam() + " EDGE uuid(\"Monica\") -> uuid(\"Math\")@0 OF select "
+                    + "SET grade = select.grade + 1, year = 2019 "
+                    + "WHEN select.grade > 233333333333 && $^.student.age > 15 "
                     + "YIELD $^.student.name AS Name, select.grade AS Grade, select.year AS Year";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
