@@ -30,7 +30,9 @@ void DeleteEdgesExecutor::execute() {
     }
 
     auto space = ectx()->rctx()->session()->space();
-    expCtx_ = std::make_unique<ExpressionContext>();
+    auto spaceCollate = ectx()->rctx()->session()->spaceCollate();
+    auto* charsetInfo = ectx()->getCharsetInfo();
+    expCtx_ = std::make_unique<ExpressionContext>(spaceCollate, charsetInfo);
     expCtx_->setSpace(space);
     expCtx_->setStorageClient(ectx()->getStorageClient());
 

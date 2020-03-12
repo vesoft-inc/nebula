@@ -26,18 +26,8 @@ public:
 protected:
     explicit GetProcessor(kvstore::KVStore* kvstore,
                           meta::SchemaManager* schemaMan,
-                          stats::Stats* stats,
-                          folly::Executor* executor = nullptr):
-        BaseProcessor<cpp2::GeneralResponse>(kvstore, schemaMan, nullptr, stats),
-        executor_(executor) {}
-
-private:
-    folly::Future<std::pair<PartitionID, kvstore::ResultCode>>
-    asyncProcess(PartitionID part, std::vector<std::string> keys);
-
-    folly::Executor *executor_ = nullptr;
-    std::unordered_map<std::string, std::string> pairs_;
-    GraphSpaceID  space_;
+                          stats::Stats* stats) :
+        BaseProcessor<cpp2::GeneralResponse>(kvstore, schemaMan, nullptr, stats) {}
 };
 
 }  // namespace storage

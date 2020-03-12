@@ -81,16 +81,10 @@ void testWithVersion(kvstore::KVStore* kv,
 
         LOG(INFO) << "Test QueryVertexPropsRequest...";
         auto* processor = QueryVertexPropsProcessor::instance(kv,
-<<<<<<< HEAD
                                                               schemaMng,
+                                                              charsetInfo,
                                                               nullptr,
                                                               executor);
-=======
-                                                            schemaMng,
-                                                            charsetInfo,
-                                                            nullptr,
-                                                            executor);
->>>>>>> rebase master
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -140,16 +134,10 @@ void testWithVersion(kvstore::KVStore* kv,
 
         LOG(INFO) << "Test QueryVertexPropsRequest...";
         auto* processor = QueryVertexPropsProcessor::instance(kv,
-<<<<<<< HEAD
                                                               schemaMng,
+                                                              charsetInfo,
                                                               nullptr,
                                                               executor);
-=======
-                                                            schemaMng,
-                                                            charsetInfo,
-                                                            nullptr,
-                                                            executor);
->>>>>>> rebase master
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -346,16 +334,10 @@ TEST(QueryVertexPropsTest, QueryAfterTagAltered) {
 
         LOG(INFO) << "Test QueryVertexPropsRequest...";
         auto* processor = QueryVertexPropsProcessor::instance(kv.get(),
-<<<<<<< HEAD
                                                               schemaMng.get(),
+                                                              charsetInfo,
                                                               nullptr,
                                                               executor.get());
-=======
-                                                            schemaMng.get(),
-                                                            charsetInfo,
-                                                            nullptr,
-                                                            executor.get());
->>>>>>> rebase master
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();

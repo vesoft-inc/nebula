@@ -618,6 +618,7 @@ TEST(QueryBoundTest, SamplingTest) {
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
     LOG(INFO) << "Prepare meta...";
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    auto* charsetInfo = CharsetInfo::instance();
 
     auto schemaMan = TestUtils::mockSchemaMan();
     mockData(kv.get());
@@ -629,8 +630,11 @@ TEST(QueryBoundTest, SamplingTest) {
 
         LOG(INFO) << "Test QueryOutBoundRequest...";
         auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
-        auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(),
-                                                        nullptr, executor.get());
+        auto* processor = QueryBoundProcessor::instance(kv.get(),
+                                                        schemaMan.get(),
+                                                        charsetInfo,
+                                                        nullptr,
+                                                        executor.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();

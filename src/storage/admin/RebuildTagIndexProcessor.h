@@ -19,8 +19,9 @@ class RebuildTagIndexProcessor : public BaseProcessor<cpp2::AdminExecResp> {
 public:
     static RebuildTagIndexProcessor* instance(kvstore::KVStore* kvstore,
                                               meta::SchemaManager* schemaMan,
+                                              CharsetInfo* charsetInfo,
                                               meta::IndexManager* indexMan) {
-        return new RebuildTagIndexProcessor(kvstore, schemaMan, indexMan);
+        return new RebuildTagIndexProcessor(kvstore, schemaMan, charsetInfo, indexMan);
     }
 
     void process(const cpp2::RebuildIndexRequest& req);
@@ -28,8 +29,9 @@ public:
 private:
     explicit RebuildTagIndexProcessor(kvstore::KVStore* kvstore,
                                       meta::SchemaManager* schemaMan,
+                                      CharsetInfo* charsetInfo,
                                       meta::IndexManager* indexMan)
-            : BaseProcessor<cpp2::AdminExecResp>(kvstore, schemaMan, nullptr)
+            : BaseProcessor<cpp2::AdminExecResp>(kvstore, schemaMan, charsetInfo, nullptr)
             , indexMan_(indexMan) {}
 
     std::string partitionRebuildIndex(GraphSpaceID space,

@@ -69,26 +69,13 @@ TEST(DeleteVerticesTest, SimpleTest) {
             std::vector<VertexID> vertices;
             for (VertexID vertexId = 10 * partId; vertexId < 10 * (partId + 1); vertexId++) {
                 vertices.emplace_back(vertexId);
-                auto* processor = DeleteVertexProcessor::instance(kv.get(),
-                                                                  schemaMan.get(),
-                                                                  charsetInfo,
-                                                                  indexMan.get(),
-                                                                  nullptr);
-                cpp2::DeleteVertexRequest req;
-                req.set_space_id(0);
-                req.set_part_id(partId);
-                req.set_vid(vertexId);
-
-                auto fut = processor->getFuture();
-                processor->process(req);
-                auto resp = std::move(fut).get();
-                EXPECT_EQ(0, resp.result.failed_codes.size());
             }
             req.parts.emplace(partId, std::move(vertices));
         }
 
         auto* processor = DeleteVerticesProcessor::instance(kv.get(),
                                                             schemaMan.get(),
+                                                            charsetInfo,
                                                             indexMan.get(),
                                                             nullptr);
         auto fut = processor->getFuture();

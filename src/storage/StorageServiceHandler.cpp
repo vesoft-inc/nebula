@@ -105,13 +105,6 @@ StorageServiceHandler::future_addEdges(const cpp2::AddEdgesRequest& req) {
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::EdgeKeyResponse>
-StorageServiceHandler::future_getEdgeKeys(const cpp2::EdgeKeyRequest& req) {
-    auto* processor = QueryEdgeKeysProcessor::instance(kvstore_,
-                                                       schemaMan_);
-    RETURN_FUTURE(processor);
-}
-
 folly::Future<cpp2::ExecResponse>
 StorageServiceHandler::future_deleteVertices(const cpp2::DeleteVerticesRequest& req) {
     auto* processor = DeleteVerticesProcessor::instance(kvstore_,
@@ -259,6 +252,7 @@ folly::Future<cpp2::AdminExecResp>
 StorageServiceHandler::future_rebuildTagIndex(const cpp2::RebuildIndexRequest& req) {
     auto* processor = RebuildTagIndexProcessor::instance(kvstore_,
                                                          schemaMan_,
+                                                         charsetInfo_,
                                                          indexMan_);
     RETURN_FUTURE(processor);
 }
@@ -267,6 +261,7 @@ folly::Future<cpp2::AdminExecResp>
 StorageServiceHandler::future_rebuildEdgeIndex(const cpp2::RebuildIndexRequest& req) {
     auto* processor = RebuildEdgeIndexProcessor::instance(kvstore_,
                                                           schemaMan_,
+                                                          charsetInfo_,
                                                           indexMan_);
     RETURN_FUTURE(processor);
 }

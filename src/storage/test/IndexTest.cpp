@@ -542,6 +542,7 @@ TEST(IndexTest, UpdateEdgeTest) {
 TEST(IndexTest, RebulidTagIndexWithOfflineTest) {
     fs::TempDir rootPath("/tmp/RebulidTagIndexWithOfflineTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    auto* charsetInfo = CharsetInfo::instance();
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
     {
@@ -559,6 +560,7 @@ TEST(IndexTest, RebulidTagIndexWithOfflineTest) {
 
         auto* processor = AddVerticesProcessor::instance(kv.get(),
                                                          schemaMan.get(),
+                                                         charsetInfo,
                                                          indexMan.get(),
                                                          nullptr);
         auto fut = processor->getFuture();
@@ -576,6 +578,7 @@ TEST(IndexTest, RebulidTagIndexWithOfflineTest) {
 
         auto* processor = RebuildTagIndexProcessor::instance(kv.get(),
                                                              schemaMan.get(),
+                                                             charsetInfo,
                                                              indexMan.get());
         auto fut = processor->getFuture();
         processor->process(req);
@@ -599,11 +602,13 @@ TEST(IndexTest, RebulidTagIndexWithOfflineTest) {
 TEST(IndexTest, RebulidEdgeIndexWithOfflineTest) {
     fs::TempDir rootPath("/tmp/RebulidEdgeIndexWithOfflineTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    auto* charsetInfo = CharsetInfo::instance();
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
     {
         auto* processor = AddEdgesProcessor::instance(kv.get(),
                                                       schemaMan.get(),
+                                                      charsetInfo,
                                                       indexMan.get(),
                                                       nullptr);
         cpp2::AddEdgesRequest req;
@@ -632,6 +637,7 @@ TEST(IndexTest, RebulidEdgeIndexWithOfflineTest) {
 
         auto* processor = RebuildEdgeIndexProcessor::instance(kv.get(),
                                                               schemaMan.get(),
+                                                              charsetInfo,
                                                               indexMan.get());
         auto fut = processor->getFuture();
         processor->process(req);
