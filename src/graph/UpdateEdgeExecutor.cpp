@@ -244,7 +244,9 @@ void UpdateEdgeExecutor::updateEdge(bool reversely) {
                     // so do nothing
                     // https://github.com/vesoft-inc/nebula/issues/1888
                     // TODO(shylock) maybe we need alert user execute ok but no data affect
-                    break;
+                    this->toResponse(std::move(rpcResp));
+                    doFinish(Executor::ProcessControl::kNext);
+                    return;
                 default:
                     std::string errMsg =
                         folly::stringPrintf("Maybe edge does not exist or filter failed, "
