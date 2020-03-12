@@ -13,7 +13,7 @@ jobs:
     if: contains(join(toJson(github.event.pull_request.labels.*.name)), 'ready-for-testing')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v1
         with:
           fetch-depth: 1
       - name: Cpplint
@@ -42,7 +42,7 @@ jobs:
         CCACHE_DIR: /tmp/ccache/${{ matrix.os }}-${{ matrix.compiler }}
       options: --mount type=tmpfs,destination=/tmp/ccache,tmpfs-size=1073741824 -v /tmp/ccache/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/${{ matrix.os }}-${{ matrix.compiler }} -v /etc/action/secrets/codecov:/etc/action/secrets/codecov
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v1
         with:
           fetch-depth: 1
       - name: Ignore only documents changes
