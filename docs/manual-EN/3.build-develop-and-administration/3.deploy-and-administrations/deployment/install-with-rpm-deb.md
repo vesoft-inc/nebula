@@ -64,7 +64,7 @@ cd nebula/package
 **Note**:
 
 1. Replace the above file name with your own file name, otherwise, this command might fail.
-2. **Nebula Graph** is installed in the `/usr/local/nebula directory`.
+2. **Nebula Graph** is installed in the `/usr/local/nebula directory` by default.
 
 ## Starting **Nebula Graph** Services
 
