@@ -27,11 +27,11 @@ nebula_add_library(
     CreateEdgeIndexExecutor.cpp
     DropEdgeIndexExecutor.cpp
     DescribeEdgeIndexExecutor.cpp
-    BuildEdgeIndexExecutor.cpp
+    RebuildEdgeIndexExecutor.cpp
     CreateTagIndexExecutor.cpp
     DropTagIndexExecutor.cpp
     DescribeTagIndexExecutor.cpp
-    BuildTagIndexExecutor.cpp
+    RebuildTagIndexExecutor.cpp
     UpdateEdgeExecutor.cpp
     AssignmentExecutor.cpp
     InterimResult.cpp
@@ -62,6 +62,8 @@ nebula_add_library(
     DropSnapshotExecutor.cpp
     AdminJobExecutor.cpp
     LookupExecutor.cpp
+    UserExecutor.cpp
+    PrivilegeExecutor.cpp
 )
 nebula_add_subdirectory(test)
 

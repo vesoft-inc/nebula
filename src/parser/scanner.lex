@@ -60,7 +60,8 @@ SPACE                       ([Ss][Pp][Aa][Cc][Ee])
 SPACES                      ([Ss][Pp][Aa][Cc][Ee][Ss])
 INDEX                       ([Ii][Nn][Dd][Ee][Xx])
 INDEXES                     ([Ii][Nn][Dd][Ee][Xx][Ee][Ss])
-BUILD                       ([Bb][Uu][Ii][Ll][Dd])
+REBUILD                     ([Rr][Ee][Bb][Uu][Ii][Ll][Dd])
+STATUS                      ([Ss][Tt][Aa][Tt][Uu][Ss])
 INT                         ([Ii][Nn][Tt])
 BIGINT                      ([Bb][Ii][Gg][Ii][Nn][Tt])
 DOUBLE                      ([Dd][Oo][Uu][Bb][Ll][Ee])
@@ -92,10 +93,6 @@ IF                          ([Ii][Ff])
 NOT                         ([Nn][Oo][Tt])
 EXISTS                      ([Ee][Xx][Ii][Ss][Tt][Ss])
 WITH                        ([Ww][Ii][Tt][Hh])
-FIRSTNAME                   ([Ff][Ii][Rr][Ss][Tt][Nn][Aa][Mm][Ee])
-LASTNAME                    ([Ll][Aa][Ss][Tt][Nn][Aa][Mm][Ee])
-EMAIL                       ([Ee][Mm][Aa][Ii][Ll])
-PHONE                       ([Pp][Hh][Oo][Nn][Ee])
 USER                        ([Uu][Ss][Ee][Rr])
 USERS                       ([Uu][Ss][Ee][Rr][Ss])
 PASSWORD                    ([Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd])
@@ -156,7 +153,10 @@ NULL                        ([Nn][Uu][Ll][Ll])
 SNAPSHOT                    ([Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt])
 SNAPSHOTS                   ([Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt][Ss])
 FORCE                       ([Ff][Oo][Rr][Cc][Ee])
+OFFLINE                     ([Oo][Ff][Ff][Ll][Ii][Nn][Ee])
 BIDIRECT                    ([Bb][Ii][Dd][Ii][Rr][Ee][Cc][Tt])
+ACCOUNT                     ([Aa][Cc][Cc][Oo][Uu][Nn][Tt])
+DBA                         ([Dd][Bb][Aa])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -205,7 +205,8 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {SPACES}                    { return TokenType::KW_SPACES; }
 {INDEX}                     { return TokenType::KW_INDEX; }
 {INDEXES}                   { return TokenType::KW_INDEXES; }
-{BUILD}                     { return TokenType::KW_BUILD; }
+{REBUILD}                   { return TokenType::KW_REBUILD; }
+{STATUS}                    { return TokenType::KW_STATUS; }
 {INT}                       { return TokenType::KW_INT; }
 {BIGINT}                    { return TokenType::KW_BIGINT; }
 {DOUBLE}                    { return TokenType::KW_DOUBLE; }
@@ -236,10 +237,6 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {NOT}                       { return TokenType::KW_NOT; }
 {EXISTS}                    { return TokenType::KW_EXISTS; }
 {WITH}                      { return TokenType::KW_WITH; }
-{FIRSTNAME}                 { return TokenType::KW_FIRSTNAME; }
-{LASTNAME}                  { return TokenType::KW_LASTNAME; }
-{EMAIL}                     { return TokenType::KW_EMAIL; }
-{PHONE}                     { return TokenType::KW_PHONE; }
 {USER}                      { return TokenType::KW_USER; }
 {USERS}                     { return TokenType::KW_USERS; }
 {PASSWORD}                  { return TokenType::KW_PASSWORD; }
@@ -247,6 +244,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {ROLE}                      { return TokenType::KW_ROLE; }
 {GOD}                       { return TokenType::KW_GOD; }
 {ADMIN}                     { return TokenType::KW_ADMIN; }
+{DBA}                       { return TokenType::KW_DBA; }
 {GUEST}                     { return TokenType::KW_GUEST; }
 {GRANT}                     { return TokenType::KW_GRANT; }
 {REVOKE}                    { return TokenType::KW_REVOKE; }
@@ -302,11 +300,14 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {SNAPSHOT}                  { return TokenType::KW_SNAPSHOT; }
 {SNAPSHOTS}                 { return TokenType::KW_SNAPSHOTS; }
 {FORCE}                     { return TokenType::KW_FORCE; }
+{OFFLINE}                   { return TokenType::KW_OFFLINE; }
 {BIDIRECT}                  { return TokenType::KW_BIDIRECT; }
 
 {JOBS}                      { return TokenType::KW_JOBS; }
 {JOB}                       { return TokenType::KW_JOB; }
 {RECOVER}                   { return TokenType::KW_RECOVER; }
+
+{ACCOUNT}                   { return TokenType::KW_ACCOUNT; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }

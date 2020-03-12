@@ -10,7 +10,7 @@ It indicates to traverse in a graph with specific filters (the `WHERE` clause), 
   GO [ <N> STEPS ] FROM <node_list>
   OVER <edge_type_list> [REVERSELY] [BIDIRECT]
   [ WHERE <expression> [ AND | OR expression ...]) ]
-  YIELD | YIELDS [DISTINCT] <return_list>
+  YIELD [DISTINCT] <return_list>
 
 <node_list>
    | <vid> [, <vid> ...]
@@ -87,7 +87,7 @@ nebula> GO FROM 100,102 OVER serve           \
 Currently, **Nebula Graph** also supports traversing via multiple edge types with `GO`. The syntax is:
 
 ```ngql
-GO FROM <node_list> OVER <edge_type_list | *> YIELD | YIELDS [DISTINCT] <return_list>
+GO FROM <node_list> OVER <edge_type_list | *> YIELD [DISTINCT] <return_list>
 ```
 
 For example:
@@ -146,7 +146,7 @@ Currently, **Nebula Graph** supports traversing reversely using keyword `REVERSE
   GO FROM <node_list>
   OVER <edge_type_list> REVERSELY
   WHERE (expression [ AND | OR expression ...])  
-  YIELD | YIELDS  [DISTINCT] <return_list>
+  YIELD [DISTINCT] <return_list>
 ```
 
 For example:
@@ -178,7 +178,7 @@ Currently, **Nebula Graph** supports traversing along in and out edges using key
   GO FROM <node_list>
   OVER <edge_type_list> BIDIRECT
   WHERE (expression [ AND | OR expression ...])  
-  YIELD | YIELDS  [DISTINCT] <return_list>
+  YIELD [DISTINCT] <return_list>
 ```
 
 For example:

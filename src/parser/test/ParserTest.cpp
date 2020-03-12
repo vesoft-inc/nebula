@@ -498,13 +498,25 @@ TEST(Parser, IndexOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "BUILD TAG INDEX name_index";
+        std::string query = "REBUILD TAG INDEX name_index";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "BUILD EDGE INDEX like_index";
+        std::string query = "REBUILD TAG INDEX name_index OFFLINE";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "REBUILD EDGE INDEX like_index";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "REBUILD EDGE INDEX like_index OFFLINE";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -1131,7 +1143,31 @@ TEST(Parser, AdminOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "SHOW CREATE EDGE e1";
+        std::string query = "SHOW CREATE EDGE like";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW CREATE TAG INDEX person_index";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW CREATE EDGE INDEX like_index";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW TAG INDEX STATUS";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW EDGE INDEX STATUS";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -1152,7 +1188,19 @@ TEST(Parser, AdminOperation) {
 TEST(Parser, UserOperation) {
     {
         GQLParser parser;
-        std::string query = "CREATE USER user1 WITH PASSWORD \"aaa\" ";
+        std::string query = "CREATE USER user1";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE USER user1 WITH PASSWORD aaa";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE USER user1 WITH PASSWORD \"aaa\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
         auto& sentence = result.value();
@@ -1160,8 +1208,7 @@ TEST(Parser, UserOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "CREATE USER IF NOT EXISTS user1 WITH PASSWORD \"aaa\" , "
-                            "FIRSTNAME \"a\", LASTNAME \"a\", EMAIL \"a\", PHONE \"111\"";
+        std::string query = "CREATE USER IF NOT EXISTS user1 WITH PASSWORD \"aaa\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
         auto& sentence = result.value();
@@ -1169,8 +1216,15 @@ TEST(Parser, UserOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "ALTER USER user1 WITH FIRSTNAME \"a\","
-                            " LASTNAME \"a\", EMAIL \"a\", PHONE \"111\"";
+        std::string query = "ALTER USER user1 WITH PASSWORD \"a\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+        auto& sentence = result.value();
+        EXPECT_EQ(query, sentence->toString());
+    }
+    {
+        GQLParser parser;
+        std::string query = "ALTER USER user1 WITH PASSWORD \"a\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
         auto& sentence = result.value();
@@ -1194,6 +1248,18 @@ TEST(Parser, UserOperation) {
     }
     {
         GQLParser parser;
+        std::string query = "CHANGE PASSWORD \"new password\"";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "CHANGE PASSWORD account TO \"new password\"";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
         std::string query = "CHANGE PASSWORD account FROM \"old password\" TO \"new password\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
@@ -1210,6 +1276,20 @@ TEST(Parser, UserOperation) {
     }
     {
         GQLParser parser;
+        std::string query = "GRANT ROLE DBA ON spacename TO account";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+        auto& sentence = result.value();
+        EXPECT_EQ(query, sentence->toString());
+    }
+    {
+        GQLParser parser;
+        std::string query = "GRANT ROLE SYSTEM ON spacename TO account";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
         std::string query = "REVOKE ROLE ADMIN ON spacename FROM account";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
@@ -1219,14 +1299,6 @@ TEST(Parser, UserOperation) {
     {
         GQLParser parser;
         std::string query = "SHOW ROLES IN spacename";
-        auto result = parser.parse(query);
-        ASSERT_TRUE(result.ok()) << result.status();
-        auto& sentence = result.value();
-        EXPECT_EQ(query, sentence->toString());
-    }
-    {
-        GQLParser parser;
-        std::string query = "SHOW USER account";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
         auto& sentence = result.value();
@@ -1297,6 +1369,13 @@ TEST(Parser, UnreservedKeywords) {
         std::string query = "$var = GO FROM UUID(\"tom\") OVER like;GO FROM $var.SPACE OVER like";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG status(part int, parts int, job string, jobs string,"
+                            " offline bool, rebuild bool, submit bool, compact bool, "
+                            " bidirect bool, force bool, configs string)";
+        auto result = parser.parse(query);
     }
 }
 

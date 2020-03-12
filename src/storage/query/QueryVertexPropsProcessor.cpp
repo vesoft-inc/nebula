@@ -91,6 +91,11 @@ kvstore::ResultCode QueryVertexPropsProcessor::collectVertexProps(
         VLOG(3) << "Found tag " << tagId << " for vId" << vId;
 
         auto schema = this->schemaMan_->getTagSchema(spaceId_, tagId);
+        if (schema == nullptr) {
+            // Ignore the bad data.
+            VLOG(3) << "Schema not found for tag id: " << tagId;
+            continue;
+        }
         auto reader = RowReader::getTagPropReader(this->schemaMan_, val, spaceId_, tagId);
         // Check if ttl data expired
         auto retTTL = getTagTTLInfo(tagId);
