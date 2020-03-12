@@ -58,7 +58,7 @@
 * 语句语法
   * 数据定义语句 (DDL)
     * [更改 Tag 和 Edge](2.query-language/4.statement-syntax/1.data-definition-statements/alter-tag-edge-syntax.md)
-    * [复制 Schema 语法](2.query-language/4.statement-syntax/1.data-definition-statements/copy-schema-syntax.md)    
+    * [复制 Schema 语法](2.query-language/4.statement-syntax/1.data-definition-statements/copy-schema-syntax.md)
     * [新建图空间](2.query-language/4.statement-syntax/1.data-definition-statements/create-space-syntax.md)
     * [新建 Tag 和 Edge](2.query-language/4.statement-syntax/1.data-definition-statements/create-tag-edge-syntax.md)
     * [删除 Edge](2.query-language/4.statement-syntax/1.data-definition-statements/drop-edge-syntax.md)
