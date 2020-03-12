@@ -316,9 +316,7 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
 UpdateEdgeProcessor::FilterResult UpdateEdgeProcessor::checkFilter(const PartitionID partId,
                                       const cpp2::EdgeKey& edgeKey) {
     auto ret = collectEdgesProps(partId, edgeKey);
-    if (insertable_ && ret == kvstore::ResultCode::ERR_KEY_NOT_FOUND) {
-        return FilterResult::PASS;
-    } else if (ret != kvstore::ResultCode::SUCCEEDED) {
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
         return FilterResult::FAILED_ERROR;
     }
     for (auto& tc : this->tagContexts_) {
@@ -359,7 +357,11 @@ UpdateEdgeProcessor::FilterResult UpdateEdgeProcessor::checkFilter(const Partiti
 
     if (this->exp_ != nullptr) {
         auto filterResult = this->exp_->eval(getters);
-        if (!filterResult.ok() || !Expression::asBool(filterResult.value())) {
+        if (!filterResult.ok()) {
+            VLOG(1) << "Invalid filter expression";
+            return FilterResult::FAILED_ERROR;
+        }
+        if (!Expression::asBool(filterResult.value())) {
             VLOG(1) << "Filter skips the update";
             return FilterResult::FAILED_FILTER_OUT;
         }
@@ -463,6 +465,8 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
     CHECK_NOTNULL(kvstore_);
     this->kvstore_->asyncAtomicOp(this->spaceId_, partId,
         [partId, edgeKey, this] () -> std::string {
+            // TODO(shylock) the AtomicOP can't return various error
+            // so put it in the processor
             filterResult_ = checkFilter(partId, edgeKey);
             switch (filterResult_) {
             case FilterResult::PASS : {
@@ -493,9 +497,13 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
                     handleLeaderChanged(this->spaceId_, partId);
                     break;
                 }
-                if (filterResult_ == FilterResult::FAILED_FILTER_OUT) {
+                if (code == kvstore::ResultCode::ERR_ATOMIC_OP_FAILED
+                    && filterResult_ == FilterResult::FAILED_FILTER_OUT) {
                     // https://github.com/vesoft-inc/nebula/issues/1888
-                    this->pushResultCode(cpp2::ErrorCode::SUCCEEDED, partId);
+                    this->pushResultCode(cpp2::ErrorCode::E_FILTER_OUT, partId);
+                } else if (code == kvstore::ResultCode::ERR_ATOMIC_OP_FAILED
+                    && filterResult_ == FilterResult::FAILED_ERROR) {
+                    this->pushResultCode(cpp2::ErrorCode::E_INVALID_FILTER, partId);
                 } else {
                     this->pushResultCode(to(code), partId);
                 }

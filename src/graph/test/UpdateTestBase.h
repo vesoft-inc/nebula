@@ -22,14 +22,6 @@ protected:
     void SetUp() override {
         TestBase::SetUp();
         // ...
-    }
-
-    void TearDown() override {
-        // ...
-        TestBase::TearDown();
-    }
-
-    static void SetUpTestCase() {
         client_ = gEnv->getClient();
         storagePort_ = gEnv->storageServerPort();
 
@@ -40,7 +32,10 @@ protected:
         ASSERT_TRUE(prepareData());
     }
 
-    static void TearDownTestCase() {
+    void TearDown() override {
+        // ...
+        TestBase::TearDown();
+
         ASSERT_TRUE(removeData());
         client_.reset();
     }
