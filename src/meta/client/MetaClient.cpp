@@ -1698,6 +1698,140 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
     return future;
 }
 
+folly::Future<StatusOr<bool>>
+MetaClient::createUser(std::string account, std::string password, bool ifNotExists) {
+    cpp2::CreateUserReq req;
+    req.set_account(std::move(account));
+    req.set_encoded_pwd(std::move(password));
+    req.set_if_not_exists(ifNotExists);
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_createUser(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::dropUser(std::string account, bool ifExists) {
+    cpp2::DropUserReq req;
+    req.set_account(std::move(account));
+    req.set_if_exists(ifExists);
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_dropUser(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::alterUser(std::string account, std::string password) {
+    cpp2::AlterUserReq req;
+    req.set_account(std::move(account));
+    req.set_encoded_pwd(std::move(password));
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_alterUser(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::grantToUser(nebula::cpp2::RoleItem roleItem) {
+    cpp2::GrantRoleReq req;
+    req.set_role_item(std::move(roleItem));
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_grantRole(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::revokeFromUser(nebula::cpp2::RoleItem roleItem) {
+    cpp2::RevokeRoleReq req;
+    req.set_role_item(std::move(roleItem));
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_revokeRole(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<std::vector<std::string>>>
+MetaClient::listUsers() {
+    cpp2::ListUsersReq req;
+    folly::Promise<StatusOr<std::vector<std::string>>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_listUsers(request);
+    }, [] (cpp2::ListUsersResp&& resp) -> decltype(auto) {
+        return std::move(resp).get_users();
+    }, std::move(promise));
+    return future;
+}
+
+folly::Future<StatusOr<std::vector<nebula::cpp2::RoleItem>>>
+MetaClient::listRoles(std::string space) {
+    cpp2::ListRolesReq req;
+    req.set_space(std::move(space));
+    folly::Promise<StatusOr<std::vector<nebula::cpp2::RoleItem>>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_listRoles(request);
+    }, [] (cpp2::ListRolesResp&& resp) -> decltype(auto) {
+        return std::move(resp).get_roles();
+    }, std::move(promise));
+    return future;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::changePassword(std::string account,
+                           std::string newPwd,
+                           std::string oldPwd) {
+    cpp2::ChangePasswordReq req;
+    req.set_account(std::move(account));
+    req.set_new_encoded_pwd(std::move(newPwd));
+    req.set_old_encoded_pwd(std::move(oldPwd));
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_changePassword(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::authCheck(std::string account, std::string password) {
+    cpp2::AuthCheckReq req;
+    req.set_account(std::move(account));
+    req.set_encoded_pwd(std::move(password));
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_authCheck(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
 folly::Future<StatusOr<int64_t>> MetaClient::balance(std::vector<HostAddr> hostDel,
                                                      bool isStop) {
     cpp2::BalanceReq req;

@@ -534,7 +534,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
     // Test unreserved keyword
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE TAG upper(name string, EMAIL string, "
+        std::string query = "CREATE TAG upper(name string, ACCOUNT string, "
                             "age int, gender string, row_timestamp timestamp)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -547,7 +547,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
 
         std::vector<uniform_tuple_t<std::string, 2>> expected{
             {"name", "string"},
-            {"email", "string"},
+            {"account", "string"},
             {"age", "int"},
             {"gender", "string"},
             {"row_timestamp", "timestamp"},
@@ -1681,30 +1681,6 @@ TEST_F(SchemaTest, TTLtest) {
         std::string query = "DROP SPACE default_space";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-}
-
-TEST_F(SchemaTest, UserAdminTest) {
-    auto client = gEnv->getClient();
-    ASSERT_NE(nullptr, client);
-    // Test command is comment
-    {
-        cpp2::ExecutionResponse resp;
-        std::string cmd = "SHOW USERS";
-        auto code = client->execute(cmd, resp);
-        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string cmd = "SHOW USER test";
-        auto code = client->execute(cmd, resp);
-        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string cmd = "SHOW ROLES";
-        auto code = client->execute(cmd, resp);
-        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
 }
 
