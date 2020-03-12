@@ -121,6 +121,9 @@ public:
     STATUS_GENERATOR(Balanced);
     STATUS_GENERATOR(PartNotFound);
 
+    // User or permission errors
+    STATUS_GENERATOR(PermissionError);
+
 #undef STATUS_GENERATOR
 
     std::string toString() const;
@@ -153,6 +156,8 @@ public:
         kBalanced               = 410,
         kIndexNotFound          = 411,
         kPartNotFound           = 412,
+        // 5xx for user or permission error
+        kPermissionError        = 501,
     };
 
     Code code() const {
