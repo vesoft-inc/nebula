@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 2
       - name: Cpplint
         run: |
           cd .linters/cpp && ln -snf hooks/pre-commit.sh
@@ -44,7 +44,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 1
+          fetch-depth: 2
       - name: Ignore only documents changes
         id: ignore_docs
         run: |
