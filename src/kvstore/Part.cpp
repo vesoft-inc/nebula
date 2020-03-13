@@ -434,6 +434,8 @@ ResultCode Part::toResultCode(raftex::AppendLogResult res) {
             return ResultCode::ERR_LEADER_CHANGED;
         case raftex::AppendLogResult::E_WRITE_BLOCKING:
             return ResultCode::ERR_WRITE_BLOCK_ERROR;
+        case raftex::AppendLogResult::E_ATOMIC_OP_FAILURE:
+            return ResultCode::ERR_ATOMIC_OP_FAILED;
         default:
             LOG(ERROR) << idStr_ << "Consensus error "
                        << static_cast<int32_t>(res);
