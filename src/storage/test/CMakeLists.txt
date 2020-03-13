@@ -205,8 +205,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:ws_obj>
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:process_obj>
-        $<TARGET_OBJECTS:meta_service_handler>
-        $<TARGET_OBJECTS:ws_common_obj>
         ${storage_test_deps}
     LIBRARIES
         proxygenhttpserver
@@ -228,8 +226,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:ws_obj>
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:process_obj>
-        $<TARGET_OBJECTS:meta_service_handler>
-        $<TARGET_OBJECTS:ws_common_obj>
         ${storage_test_deps}
     LIBRARIES
         proxygenhttpserver
@@ -251,8 +247,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:ws_obj>
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:process_obj>
-        $<TARGET_OBJECTS:meta_service_handler>
-        $<TARGET_OBJECTS:ws_common_obj>
         ${storage_test_deps}
     LIBRARIES
         proxygenhttpserver
@@ -415,7 +409,7 @@ nebula_add_test(
     SOURCES
         IndexScanTest.cpp
     OBJECTS
-        ${storage_test_deps}  
+        ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
@@ -429,7 +423,7 @@ nebula_add_executable(
     SOURCES
         StorageLookupBenchmark.cpp
     OBJECTS
-        ${storage_test_deps}  
+        ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
