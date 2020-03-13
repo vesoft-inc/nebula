@@ -67,7 +67,7 @@ void BalanceExecutor::balanceLeader() {
 }
 
 void BalanceExecutor::balanceData(bool isStop) {
-    std::vector<HostAddr> hostDelList;
+    std::vector<network::InetAddress> hostDelList;
     auto hostDel = sentence_->hostDel();
     if (hostDel != nullptr) {
         hostDelList = hostDel->hosts();

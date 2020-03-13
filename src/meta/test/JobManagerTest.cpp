@@ -127,7 +127,7 @@ TEST_F(JobManagerTest, showJobs) {
 
 nebula::cpp2::HostAddr toHost(std::string strIp) {
     nebula::cpp2::HostAddr host;
-    int ip = 0;
+    uint32_t ip = 0;
     nebula::network::NetworkUtils::ipv4ToInt(strIp, ip);
     host.set_ip(ip);
     return host;

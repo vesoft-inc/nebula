@@ -25,7 +25,7 @@ TEST(LearnerTest, OneLeaderOneFollowerOneLearnerTest) {
     fs::TempDir walRoot("/tmp/learner_test.XXXXXX");
     std::shared_ptr<thread::GenericThreadPool> workers;
     std::vector<std::string> wals;
-    std::vector<HostAddr> allHosts;
+    std::vector<network::InetAddress> allHosts;
     std::vector<std::shared_ptr<RaftexService>> services;
     std::vector<std::shared_ptr<test::TestShard>> copies;
 
@@ -50,7 +50,7 @@ TEST(LearnerTest, OneLeaderTwoLearnerTest) {
     fs::TempDir walRoot("/tmp/learner_test.XXXXXX");
     std::shared_ptr<thread::GenericThreadPool> workers;
     std::vector<std::string> wals;
-    std::vector<HostAddr> allHosts;
+    std::vector<network::InetAddress> allHosts;
     std::vector<std::shared_ptr<RaftexService>> services;
     std::vector<std::shared_ptr<test::TestShard>> copies;
 
@@ -86,7 +86,7 @@ TEST(LearnerTest, CatchUpDataTest) {
     fs::TempDir walRoot("/tmp/catch_up_data.XXXXXX");
     std::shared_ptr<thread::GenericThreadPool> workers;
     std::vector<std::string> wals;
-    std::vector<HostAddr> allHosts;
+    std::vector<network::InetAddress> allHosts;
     std::vector<std::shared_ptr<RaftexService>> services;
     std::vector<std::shared_ptr<test::TestShard>> copies;
 

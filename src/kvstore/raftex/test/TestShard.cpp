@@ -14,19 +14,16 @@ namespace nebula {
 namespace raftex {
 namespace test {
 
-std::string encodeLearner(const HostAddr& addr) {
+std::string encodeLearner(const network::InetAddress& addr) {
     std::string str;
     CommandType type = CommandType::ADD_LEARNER;
     str.append(reinterpret_cast<const char*>(&type), 1);
-    str.append(reinterpret_cast<const char*>(&addr), sizeof(HostAddr));
+    str.append(addr.encode());
     return str;
 }
 
-HostAddr decodeLearner(const folly::StringPiece& log) {
-    HostAddr learner;
-    memcpy(&learner.first, log.begin() + 1, sizeof(learner.first));
-    memcpy(&learner.second, log.begin() + 1 + sizeof(learner.first), sizeof(learner.second));
-    return learner;
+network::InetAddress decodeLearner(const folly::StringPiece& log) {
+    return network::InetAddress::make_inet_address(log.begin() + 1);
 }
 
 std::string compareAndSet(const std::string& log) {
@@ -38,19 +35,16 @@ std::string compareAndSet(const std::string& log) {
     }
 }
 
-std::string encodeTransferLeader(const HostAddr& addr) {
+std::string encodeTransferLeader(const network::InetAddress& addr) {
     std::string str;
     CommandType type = CommandType::TRANSFER_LEADER;
     str.append(reinterpret_cast<const char*>(&type), 1);
-    str.append(reinterpret_cast<const char*>(&addr), sizeof(HostAddr));
+    str.append(addr.encode());
     return str;
 }
 
-HostAddr decodeTransferLeader(const folly::StringPiece& log) {
-    HostAddr leader;
-    memcpy(&leader.first, log.begin() + 1, sizeof(leader.first));
-    memcpy(&leader.second, log.begin() + 1 + sizeof(leader.first), sizeof(leader.second));
-    return leader;
+network::InetAddress decodeTransferLeader(const folly::StringPiece& log) {
+    return network::InetAddress::make_inet_address(log.begin() + 1);
 }
 
 std::string encodeSnapshotRow(LogID logId, const std::string& row) {
@@ -67,40 +61,34 @@ std::pair<LogID, std::string> decodeSnapshotRow(const std::string& rawData) {
     return std::make_pair(id, std::move(str));
 }
 
-std::string encodeAddPeer(const HostAddr& addr) {
+std::string encodeAddPeer(const network::InetAddress& addr) {
     std::string str;
     CommandType type = CommandType::ADD_PEER;
     str.append(reinterpret_cast<const char*>(&type), 1);
-    str.append(reinterpret_cast<const char*>(&addr), sizeof(HostAddr));
+    str.append(addr.encode());
     return str;
 }
 
-HostAddr decodeAddPeer(const folly::StringPiece& log) {
-    HostAddr addr;
-    memcpy(&addr.first, log.begin() + 1, sizeof(addr.first));
-    memcpy(&addr.second, log.begin() + 1 + sizeof(addr.first), sizeof(addr.second));
-    return addr;
+network::InetAddress decodeAddPeer(const folly::StringPiece& log) {
+    return network::InetAddress::make_inet_address(log.begin() + 1);
 }
 
-std::string encodeRemovePeer(const HostAddr& addr) {
+std::string encodeRemovePeer(const network::InetAddress& addr) {
     std::string str;
     CommandType type = CommandType::REMOVE_PEER;
     str.append(reinterpret_cast<const char*>(&type), 1);
-    str.append(reinterpret_cast<const char*>(&addr), sizeof(HostAddr));
+    str.append(addr.encode());
     return str;
 }
 
-HostAddr decodeRemovePeer(const folly::StringPiece& log) {
-    HostAddr addr;
-    memcpy(&addr.first, log.begin() + 1, sizeof(addr.first));
-    memcpy(&addr.second, log.begin() + 1 + sizeof(addr.first), sizeof(addr.second));
-    return addr;
+network::InetAddress decodeRemovePeer(const folly::StringPiece& log) {
+    return network::InetAddress::make_inet_address(log.begin() + 1);
 }
 
 TestShard::TestShard(size_t idx,
                      std::shared_ptr<RaftexService> svc,
                      PartitionID partId,
-                     HostAddr addr,
+                     network::InetAddress addr,
                      const folly::StringPiece walRoot,
                      std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
                      std::shared_ptr<thread::GenericThreadPool> workers,

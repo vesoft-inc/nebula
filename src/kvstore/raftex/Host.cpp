@@ -25,15 +25,14 @@ namespace raftex {
 
 using nebula::network::NetworkUtils;
 
-Host::Host(const HostAddr& addr, std::shared_ptr<RaftPart> part, bool isLearner)
+Host::Host(const network::InetAddress& addr, std::shared_ptr<RaftPart> part, bool isLearner)
         : part_(std::move(part))
         , addr_(addr)
         , isLearner_(isLearner)
         , idStr_(folly::stringPrintf(
-            "%s[Host: %s:%d] ",
+            "%s[Host: %s] ",
             part_->idStr_.c_str(),
-            NetworkUtils::intToIPv4(addr_.first).c_str(),
-            addr_.second))
+            addr_.toString().c_str()))
         , cachingPromise_(folly::SharedPromise<cpp2::AppendLogResponse>()) {
 }
 
@@ -408,8 +407,8 @@ Host::prepareAppendLogRequest() {
     req->set_part(part_->partitionId());
     req->set_current_term(logTermToSend_);
     req->set_last_log_id(logIdToSend_);
-    req->set_leader_ip(part_->address().first);
-    req->set_leader_port(part_->address().second);
+    req->set_leader_ip(part_->address().toLong());
+    req->set_leader_port(part_->address().getPort());
     req->set_committed_log_id(committedLogId_);
     req->set_last_log_term_sent(lastLogTermSent_);
     req->set_last_log_id_sent(lastLogIdSent_);

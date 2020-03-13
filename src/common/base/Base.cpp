@@ -8,7 +8,7 @@
 
 namespace nebula {
 
-std::ostream& operator <<(std::ostream &os, const HostAddr &addr) {
+std::ostream &operator<<(std::ostream &os, const std::pair<IPv4, Port> &addr) {
     uint32_t ip = addr.first;
     uint32_t port = addr.second;
     os << folly::stringPrintf("[%u.%u.%u.%u:%u]",
@@ -18,7 +18,6 @@ std::ostream& operator <<(std::ostream &os, const HostAddr &addr) {
                               ip & 0xFF, port);
     return os;
 }
-
 
 std::string versionString() {
     std::string version;

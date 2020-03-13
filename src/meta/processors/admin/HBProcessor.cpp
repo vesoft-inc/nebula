@@ -16,9 +16,9 @@ namespace nebula {
 namespace meta {
 
 void HBProcessor::process(const cpp2::HBReq& req) {
-    HostAddr host(req.host.ip, req.host.port);
+    network::InetAddress host(req.host.ip, req.host.port);
     if (FLAGS_hosts_whitelist_enabled
-            && hostExist(MetaServiceUtils::hostKey(host.first, host.second))
+            && hostExist(MetaServiceUtils::hostKey(host.toLong(), host.getPort()))
                 == Status::HostNotFound()) {
         LOG(INFO) << "Reject unregistered host " << host << "!";
         handleErrorCode(cpp2::ErrorCode::E_INVALID_HOST);

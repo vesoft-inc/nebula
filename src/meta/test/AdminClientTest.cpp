@@ -115,8 +115,7 @@ TEST(AdminClientTest, SimpleTest) {
     sc->mockCommon("storage", 0, handler);
     LOG(INFO) << "Start storage server on " << sc->port_;
 
-    IPv4 localIp;
-    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    std::string localIp = "127.0.0.1";
     fs::TempDir rootPath("/tmp/AdminTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     auto client = std::make_unique<AdminClient>(kv.get());
@@ -124,26 +123,24 @@ TEST(AdminClientTest, SimpleTest) {
     {
         LOG(INFO) << "Test transLeader...";
         folly::Baton<true, std::atomic> baton;
-        client->transLeader(0, 0, {localIp, sc->port_}, HostAddr(1, 1))
-            .thenValue([&baton](auto&&) {
-            baton.post();
-        });
+        client
+            ->transLeader(
+                0, 0, network::InetAddress(localIp, sc->port_), network::InetAddress(1, 1))
+            .thenValue([&baton](auto&&) { baton.post(); });
         baton.wait();
     }
     {
         LOG(INFO) << "Test addPart...";
         folly::Baton<true, std::atomic> baton;
-        client->addPart(0, 0, {localIp, sc->port_}, true).thenValue([&baton](auto&&) {
-            baton.post();
-        });
+        client->addPart(0, 0, network::InetAddress(localIp, sc->port_), true)
+            .thenValue([&baton](auto&&) { baton.post(); });
         baton.wait();
     }
     {
         LOG(INFO) << "Test removePart...";
         folly::Baton<true, std::atomic> baton;
-        client->removePart(0, 0, {localIp, sc->port_}).thenValue([&baton](auto&&) {
-            baton.post();
-        });
+        client->removePart(0, 0, network::InetAddress(localIp, sc->port_))
+            .thenValue([&baton](auto&&) { baton.post(); });
         baton.wait();
     }
 }
@@ -203,17 +200,19 @@ TEST(AdminClientTest, RetryTest) {
     {
         LOG(INFO) << "Test transLeader, return ok if target is not leader";
         folly::Baton<true, std::atomic> baton;
-        client->transLeader(0, 1, {localIp, sc2->port_}, HostAddr(1, 1))
+        client
+            ->transLeader(
+                0, 1, network::InetAddress("127.0.0.1", sc2->port_), network::InetAddress(1, 1))
             .thenValue([&baton](auto&& st) {
-            CHECK(st.ok());
-            baton.post();
-        });
+                CHECK(st.ok());
+                baton.post();
+            });
         baton.wait();
     }
     {
         LOG(INFO) << "Test member change...";
         folly::Baton<true, std::atomic> baton;
-        client->memberChange(0, 1, HostAddr(0, 0), true).thenValue([&baton](auto&& st) {
+        client->memberChange(0, 1, network::InetAddress(0, 0), true).thenValue([&baton](auto&& st) {
             CHECK(st.ok());
             baton.post();
         });
@@ -222,7 +221,7 @@ TEST(AdminClientTest, RetryTest) {
     {
         LOG(INFO) << "Test add learner...";
         folly::Baton<true, std::atomic> baton;
-        client->addLearner(0, 1, HostAddr(0, 0)).thenValue([&baton](auto&& st) {
+        client->addLearner(0, 1, network::InetAddress(0, 0)).thenValue([&baton](auto&& st) {
             CHECK(st.ok());
             baton.post();
         });
@@ -231,17 +230,18 @@ TEST(AdminClientTest, RetryTest) {
     {
         LOG(INFO) << "Test waitingForCatchUpData...";
         folly::Baton<true, std::atomic> baton;
-        client->waitingForCatchUpData(0, 1, HostAddr(0, 0)).thenValue([&baton](auto&& st) {
-            CHECK(st.ok());
-            baton.post();
-        });
+        client->waitingForCatchUpData(0, 1, network::InetAddress(0, 0))
+            .thenValue([&baton](auto&& st) {
+                CHECK(st.ok());
+                baton.post();
+            });
         baton.wait();
     }
     FLAGS_max_retry_times_admin_op = 1;
     {
         LOG(INFO) << "Test member change...";
         folly::Baton<true, std::atomic> baton;
-        client->memberChange(0, 1, HostAddr(0, 0), true).thenValue([&baton](auto&& st) {
+        client->memberChange(0, 1, network::InetAddress(0, 0), true).thenValue([&baton](auto&& st) {
             CHECK(!st.ok());
             CHECK_EQ("Leader changed!", st.toString());
             baton.post();
@@ -251,18 +251,19 @@ TEST(AdminClientTest, RetryTest) {
     {
         LOG(INFO) << "Test update meta...";
         folly::Baton<true, std::atomic> baton;
-        client->updateMeta(0, 1, HostAddr(0, 0), HostAddr(1, 1)).thenValue([&baton](auto&& st) {
-            CHECK(st.ok());
-            baton.post();
-        });
+        client->updateMeta(0, 1, network::InetAddress(0, 0), network::InetAddress(1, 1))
+            .thenValue([&baton](auto&& st) {
+                CHECK(st.ok());
+                baton.post();
+            });
         baton.wait();
         auto peersRet = client->getPeers(0, 1);
         CHECK(peersRet.ok());
         auto hosts = std::move(peersRet).value();
         ASSERT_EQ(3, hosts.size());
-        ASSERT_EQ(HostAddr(localIp, sc2->port_), hosts[0]);
-        ASSERT_EQ(HostAddr(localIp, sc1->port_), hosts[1]);
-        ASSERT_EQ(HostAddr(1, 1), hosts[2]);
+        ASSERT_EQ(network::InetAddress(localIp, sc2->port_), hosts[0]);
+        ASSERT_EQ(network::InetAddress(localIp, sc1->port_), hosts[1]);
+        ASSERT_EQ(network::InetAddress(1, 1), hosts[2]);
     }
 }
 

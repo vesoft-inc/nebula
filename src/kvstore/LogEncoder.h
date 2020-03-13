@@ -53,8 +53,8 @@ encodeBatchValue(const std::vector<std::tuple<BatchLogType, std::string, std::st
 std::vector<std::pair<BatchLogType, std::pair<folly::StringPiece, folly::StringPiece>>>
 decodeBatchValue(folly::StringPiece encoded);
 
-std::string encodeHost(LogType type, const HostAddr& learner);
-HostAddr decodeHost(LogType type, const folly::StringPiece& encoded);
+std::string encodeHost(LogType type, const network::InetAddress& learner);
+network::InetAddress decodeHost(LogType type, const folly::StringPiece& encoded);
 
 int64_t getTimestamp(const folly::StringPiece& command);
 

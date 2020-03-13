@@ -112,7 +112,7 @@ protected:
         }
     }
 
-    void pushResultCode(cpp2::ErrorCode code, PartitionID partId, HostAddr leader) {
+    void pushResultCode(cpp2::ErrorCode code, PartitionID partId, network::InetAddress leader) {
         if (code != cpp2::ErrorCode::SUCCEEDED) {
             cpp2::ResultCode thriftRet;
             thriftRet.set_code(code);
@@ -144,10 +144,10 @@ protected:
         }
     }
 
-    nebula::cpp2::HostAddr toThriftHost(const HostAddr& host) {
+    nebula::cpp2::HostAddr toThriftHost(const network::InetAddress& host) {
         nebula::cpp2::HostAddr tHost;
-        tHost.set_ip(host.first);
-        tHost.set_port(host.second);
+        tHost.set_ip(host.toLong());
+        tHost.set_port(host.getPort());
         return tHost;
     }
 

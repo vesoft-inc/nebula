@@ -17,7 +17,7 @@ using nebula::raftex::AppendLogResult;
 
 Part::Part(GraphSpaceID spaceId,
            PartitionID partId,
-           HostAddr localAddr,
+           network::InetAddress localAddr,
            const std::string& walPath,
            KVEngine* engine,
            std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
@@ -133,7 +133,7 @@ void Part::asyncAtomicOp(raftex::AtomicOp op, KVCallback cb) {
     });
 }
 
-void Part::asyncAddLearner(const HostAddr& learner, KVCallback cb) {
+void Part::asyncAddLearner(const network::InetAddress& learner, KVCallback cb) {
     std::string log = encodeHost(OP_ADD_LEARNER, learner);
     sendCommandAsync(std::move(log))
         .thenValue([callback = std::move(cb), learner, this] (AppendLogResult res) mutable {
@@ -143,7 +143,7 @@ void Part::asyncAddLearner(const HostAddr& learner, KVCallback cb) {
     });
 }
 
-void Part::asyncTransferLeader(const HostAddr& target, KVCallback cb) {
+void Part::asyncTransferLeader(const network::InetAddress& target, KVCallback cb) {
     std::string log = encodeHost(OP_TRANS_LEADER, target);
     sendCommandAsync(std::move(log))
         .thenValue([callback = std::move(cb), target, this] (AppendLogResult res) mutable {
@@ -153,7 +153,7 @@ void Part::asyncTransferLeader(const HostAddr& target, KVCallback cb) {
     });
 }
 
-void Part::asyncAddPeer(const HostAddr& peer, KVCallback cb) {
+void Part::asyncAddPeer(const network::InetAddress& peer, KVCallback cb) {
     std::string log = encodeHost(OP_ADD_PEER, peer);
     sendCommandAsync(std::move(log))
         .thenValue([callback = std::move(cb), peer, this] (AppendLogResult res) mutable {
@@ -163,7 +163,7 @@ void Part::asyncAddPeer(const HostAddr& peer, KVCallback cb) {
     });
 }
 
-void Part::asyncRemovePeer(const HostAddr& peer, KVCallback cb) {
+void Part::asyncRemovePeer(const network::InetAddress& peer, KVCallback cb) {
     std::string log = encodeHost(OP_REMOVE_PEER, peer);
     sendCommandAsync(std::move(log))
         .thenValue([callback = std::move(cb), peer, this] (AppendLogResult res) mutable {
@@ -187,7 +187,7 @@ void Part::onElected(TermID term) {
     VLOG(1) << "Being elected as the leader for the term " << term;
 }
 
-void Part::onDiscoverNewLeader(HostAddr nLeader) {
+void Part::onDiscoverNewLeader(network::InetAddress nLeader) {
     LOG(INFO) << idStr_ << "Find the new leader " << nLeader;
     if (newLeaderCb_) {
         newLeaderCb_(nLeader);

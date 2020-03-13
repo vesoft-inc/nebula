@@ -17,8 +17,6 @@ class NetworkUtils final {
 public:
     NetworkUtils() = delete;
 
-    static std::string getHostname();
-
     // Get the Ipv4 address bound to a specific net device.
     // If given "any", it returns "0.0.0.0".
     static StatusOr<std::string> getIPv4FromDevice(const std::string &device);
@@ -37,13 +35,13 @@ public:
     // So don't use it in production code.
     static uint16_t getAvailablePort();
 
-    static StatusOr<std::vector<HostAddr>> resolveHost(const std::string &host, int32_t port);
-    // Convert the given IP/HOST and Port to a HostAddr
-    static StatusOr<HostAddr> toHostAddr(const std::string &ip, int32_t port);
-    // Retrieve the string-form IP from the given HostAddr
-    static std::string ipFromHostAddr(const HostAddr& host);
-    // Retrieve the port number from the given HostAddr
-    static int32_t portFromHostAddr(const HostAddr& host);
+//    static StatusOr<std::vector<boost::asio::ip::address>> resolveHost(const std::string& host);
+    // Convert the given IP/HOST and Port to a InetAddress
+    static StatusOr<InetAddress> toInetAddress(const std::string &ip, uint16_t port);
+    // Retrieve the string-form IP from the given InetAddress
+    static std::string ipFromInetAddress(const InetAddress& host);
+    // Retrieve the port number from the given InetAddress
+    static uint16_t portFromInetAddress(const InetAddress& host);
 
     // Convert an IPv4 address (in the form of xx.xx.xx.xx) to an 32-bit
     // integer
@@ -58,11 +56,11 @@ public:
     // it will use the first ip exclude "127.0.0.1"
     static StatusOr<std::string> getLocalIP(std::string defaultIP = "");
 
-    // Convert peers str which is a list of ipPort joined with comma into HostAddr list.
+    // Convert peers str which is a list of ipPort joined with comma into InetAddress list.
     // (Peers str format example: 192.168.1.1:10001, 192.168.1.2:10001)
     // Return Status::Error if peersStr is invalid.
-    static StatusOr<std::vector<HostAddr>> toHosts(const std::string& peersStr);
-    static std::string toHosts(const std::vector<HostAddr>& hosts);
+    static StatusOr<std::vector<InetAddress>> toHosts(const std::string& peersStr);
+    static std::string toHostsString(const std::vector<InetAddress>& hosts);
 
 private:
 };

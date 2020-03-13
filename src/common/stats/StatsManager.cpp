@@ -26,7 +26,7 @@ void StatsManager::setDomain(folly::StringPiece domain) {
 
 
 // static
-void StatsManager::setReportInfo(HostAddr addr, int32_t interval) {
+void StatsManager::setReportInfo(network::InetAddress addr, int32_t interval) {
     auto& sm = get();
     sm.collectorAddr_ = addr;
     sm.interval_ = interval;

@@ -45,7 +45,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::addVert
     }
 
     auto& clusters = status.value();
-    std::unordered_map<HostAddr, cpp2::AddVerticesRequest> requests;
+    std::unordered_map<network::InetAddress, cpp2::AddVerticesRequest> requests;
     for (auto& c : clusters) {
         auto& host = c.first;
         auto& req = requests[host];
@@ -80,7 +80,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::addEdge
 
     auto& clusters = status.value();
 
-    std::unordered_map<HostAddr, cpp2::AddEdgesRequest> requests;
+    std::unordered_map<network::InetAddress, cpp2::AddEdgesRequest> requests;
     for (auto& c : clusters) {
         auto& host = c.first;
         auto& req = requests[host];
@@ -117,7 +117,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::QueryResponse>> StorageClient::getNei
 
     auto& clusters = status.value();
 
-    std::unordered_map<HostAddr, cpp2::GetNeighborsRequest> requests;
+    std::unordered_map<network::InetAddress, cpp2::GetNeighborsRequest> requests;
     for (auto& c : clusters) {
         auto& host = c.first;
         auto& req = requests[host];
@@ -154,7 +154,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::QueryStatsResponse>> StorageClient::n
     }
     auto& clusters = status.value();
 
-    std::unordered_map<HostAddr, cpp2::GetNeighborsRequest> requests;
+    std::unordered_map<network::InetAddress, cpp2::GetNeighborsRequest> requests;
     for (auto& c : clusters) {
         auto& host = c.first;
         auto& req = requests[host];
@@ -190,7 +190,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::QueryResponse>> StorageClient::getVer
     }
     auto& clusters = status.value();
 
-    std::unordered_map<HostAddr, cpp2::VertexPropRequest> requests;
+    std::unordered_map<network::InetAddress, cpp2::VertexPropRequest> requests;
     for (auto& c : clusters) {
         auto& host = c.first;
         auto& req = requests[host];
@@ -225,7 +225,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::EdgePropResponse>> StorageClient::get
     }
 
     auto& clusters = status.value();
-    std::unordered_map<HostAddr, cpp2::EdgePropRequest> requests;
+    std::unordered_map<network::InetAddress, cpp2::EdgePropRequest> requests;
     for (auto& c : clusters) {
         auto& host = c.first;
         auto& req = requests[host];
@@ -260,7 +260,7 @@ folly::SemiFuture<StorageRpcResponse<storage::cpp2::EdgeKeysResponse>> StorageCl
     }
 
     auto& clusters = status.value();
-    std::unordered_map<HostAddr, cpp2::EdgeKeysRequest> requests;
+    std::unordered_map<network::InetAddress, cpp2::EdgeKeysRequest> requests;
     for (auto& c : clusters) {
         auto& host = c.first;
         auto& req = requests[host];
@@ -291,7 +291,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::deleteE
     }
     auto& clusters = status.value();
 
-    std::unordered_map<HostAddr, cpp2::DeleteEdgesRequest> requests;
+    std::unordered_map<network::InetAddress, cpp2::DeleteEdgesRequest> requests;
     for (auto& c : clusters) {
         auto& host = c.first;
         auto& req = requests[host];
@@ -323,7 +323,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::deleteV
     }
 
     auto& clusters = status.value();
-    std::unordered_map<HostAddr, cpp2::DeleteVerticesRequest> requests;
+    std::unordered_map<network::InetAddress, cpp2::DeleteVerticesRequest> requests;
     for (auto& c : clusters) {
         auto& host = c.first;
         auto& req = requests[host];
@@ -352,7 +352,7 @@ folly::Future<StatusOr<storage::cpp2::UpdateResponse>> StorageClient::updateVert
         std::vector<std::string> returnCols,
         bool insertable,
         folly::EventBase* evb) {
-    std::pair<HostAddr, cpp2::UpdateVertexRequest> request;
+    std::pair<network::InetAddress, cpp2::UpdateVertexRequest> request;
 
     auto status = partId(space, vertexId);
     if (!status.ok()) {
@@ -395,7 +395,7 @@ folly::Future<StatusOr<storage::cpp2::UpdateResponse>> StorageClient::updateEdge
         std::vector<std::string> returnCols,
         bool insertable,
         folly::EventBase* evb) {
-    std::pair<HostAddr, cpp2::UpdateEdgeRequest> request;
+    std::pair<network::InetAddress, cpp2::UpdateEdgeRequest> request;
     auto status = partId(space, edgeKey.get_src());
     if (!status.ok()) {
         return folly::makeFuture<StatusOr<storage::cpp2::UpdateResponse>>(status.status());
@@ -433,7 +433,7 @@ folly::Future<StatusOr<cpp2::GetUUIDResp>> StorageClient::getUUID(
         GraphSpaceID space,
         const std::string& name,
         folly::EventBase* evb) {
-    std::pair<HostAddr, cpp2::GetUUIDReq> request;
+    std::pair<network::InetAddress, cpp2::GetUUIDReq> request;
     std::hash<std::string> hashFunc;
     auto hashValue = hashFunc(name);
     auto status = partId(space, hashValue);
@@ -492,7 +492,7 @@ StorageClient::put(GraphSpaceID space,
     }
 
     auto& clusters = status.value();
-    std::unordered_map<HostAddr, cpp2::PutRequest> requests;
+    std::unordered_map<network::InetAddress, cpp2::PutRequest> requests;
     for (auto& c : clusters) {
         auto& host = c.first;
         auto& req = requests[host];
@@ -524,7 +524,7 @@ StorageClient::get(GraphSpaceID space,
     }
     auto& clusters = status.value();
 
-    std::unordered_map<HostAddr, cpp2::GetRequest> requests;
+    std::unordered_map<network::InetAddress, cpp2::GetRequest> requests;
     for (auto& c : clusters) {
         auto& host = c.first;
         auto& req = requests[host];
@@ -555,7 +555,7 @@ StorageClient::lookUpVertexIndex(GraphSpaceID space,
             std::runtime_error(status.status().toString()));
     }
     auto& clusters = status.value();
-    std::unordered_map<HostAddr, cpp2::LookUpIndexRequest> requests;
+    std::unordered_map<network::InetAddress, cpp2::LookUpIndexRequest> requests;
     for (auto& c : clusters) {
         auto& host = c.first;
         auto& req = requests[host];
@@ -586,7 +586,7 @@ StorageClient::lookUpEdgeIndex(GraphSpaceID space,
             std::runtime_error(status.status().toString()));
     }
     auto& clusters = status.value();
-    std::unordered_map<HostAddr, cpp2::LookUpIndexRequest> requests;
+    std::unordered_map<network::InetAddress, cpp2::LookUpIndexRequest> requests;
     for (auto& c : clusters) {
         auto& host = c.first;
         auto& req = requests[host];

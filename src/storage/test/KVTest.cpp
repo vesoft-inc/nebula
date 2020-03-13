@@ -34,8 +34,6 @@ TEST(KVTest, GetPutInterfacesTest) {
     const nebula::ClusterID kClusterId = 10;
     fs::TempDir rootPath("/tmp/KVTest.XXXXXX");
     GraphSpaceID spaceId = 0;
-    IPv4 localIp;
-    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
 
     // Let the system choose an available port for us
     uint32_t localMetaPort = network::NetworkUtils::getAvailablePort();
@@ -53,7 +51,7 @@ TEST(KVTest, GetPutInterfacesTest) {
     CHECK(addrsRet.ok()) << addrsRet.status();
     auto& addrs = addrsRet.value();
     uint32_t localDataPort = network::NetworkUtils::getAvailablePort();
-    auto hostRet = nebula::network::NetworkUtils::toHostAddr("127.0.0.1", localDataPort);
+    auto hostRet = nebula::network::NetworkUtils::toInetAddress("127.0.0.1", localDataPort);
     auto& localHost = hostRet.value();
     meta::MetaClientOptions options;
     options.localHost_ = localHost;
@@ -70,10 +68,10 @@ TEST(KVTest, GetPutInterfacesTest) {
 
     // for mockStorageServer MetaServerBasedPartManager, use ephemeral port
     std::string dataPath = folly::stringPrintf("%s/data", rootPath.path());
+    auto addr = network::InetAddress("127.0.0.1", localDataPort);
     auto sc = TestUtils::mockStorageServer(mClient.get(),
                                            dataPath.c_str(),
-                                           localIp,
-                                           localDataPort,
+                                           addr,
                                            false);
 
     meta::SpaceDesc spaceDesc("default", 10, 1);

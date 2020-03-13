@@ -42,7 +42,7 @@ public:
     /**
      * return PartsMap for host
      * */
-    virtual PartsMap parts(const HostAddr& host) = 0;
+    virtual PartsMap parts(const network::InetAddress& host) = 0;
 
     /**
      * return PartMeta for <spaceId, partId>
@@ -52,12 +52,14 @@ public:
     /**
      * Check current part exist or not on host.
      * */
-    virtual Status partExist(const HostAddr& host, GraphSpaceID spaceId, PartitionID partId) = 0;
+    virtual Status partExist(const network::InetAddress& host,
+                             GraphSpaceID spaceId,
+                             PartitionID partId) = 0;
 
     /**
      * Check current space exist or not.
      * */
-    virtual Status spaceExist(const HostAddr& host, GraphSpaceID spaceId) = 0;
+    virtual Status spaceExist(const network::InetAddress& host, GraphSpaceID spaceId) = 0;
 
     /**
      * Register Handler
@@ -88,11 +90,13 @@ public:
 
     ~MemPartManager() = default;
 
-    PartsMap parts(const HostAddr& host) override;
+    PartsMap parts(const network::InetAddress& host) override;
 
     StatusOr<PartMeta> partMeta(GraphSpaceID spaceId, PartitionID partId) override;
 
-    void addPart(GraphSpaceID spaceId, PartitionID partId, std::vector<HostAddr> peers = {}) {
+    void addPart(GraphSpaceID spaceId,
+                 PartitionID partId,
+                 std::vector<network::InetAddress> peers = {}) {
         bool noSpace = partsMap_.find(spaceId) == partsMap_.end();
         auto& p = partsMap_[spaceId];
         bool noPart = p.find(partId) == p.end();
@@ -107,7 +111,7 @@ public:
         if (noPart && handler_) {
             handler_->addPart(spaceId, partId, false);
         }
-     }
+    }
 
     void removePart(GraphSpaceID spaceId, PartitionID partId) {
         auto it = partsMap_.find(spaceId);
@@ -123,9 +127,11 @@ public:
         }
     }
 
-    Status partExist(const HostAddr& host, GraphSpaceID spaceId, PartitionID partId) override;
+    Status partExist(const network::InetAddress& host,
+                     GraphSpaceID spaceId,
+                     PartitionID partId) override;
 
-    Status spaceExist(const HostAddr&, GraphSpaceID spaceId) override {
+    Status spaceExist(const network::InetAddress&, GraphSpaceID spaceId) override {
         if (partsMap_.find(spaceId) != partsMap_.end()) {
             return Status::OK();
         } else {
@@ -144,39 +150,41 @@ private:
 
 class MetaServerBasedPartManager : public PartManager, public meta::MetaChangedListener {
 public:
-     explicit MetaServerBasedPartManager(HostAddr host, meta::MetaClient *client = nullptr);
+    explicit MetaServerBasedPartManager(network::InetAddress host,
+                                        meta::MetaClient* client = nullptr);
 
-     ~MetaServerBasedPartManager();
+    ~MetaServerBasedPartManager();
 
-     PartsMap parts(const HostAddr& host) override;
+    PartsMap parts(const network::InetAddress& host) override;
 
-     StatusOr<PartMeta> partMeta(GraphSpaceID spaceId, PartitionID partId) override;
+    StatusOr<PartMeta> partMeta(GraphSpaceID spaceId, PartitionID partId) override;
 
-     Status partExist(const HostAddr& host, GraphSpaceID spaceId, PartitionID partId) override;
+    Status partExist(const network::InetAddress& host,
+                     GraphSpaceID spaceId,
+                     PartitionID partId) override;
 
-     Status spaceExist(const HostAddr& host, GraphSpaceID spaceId) override;
+    Status spaceExist(const network::InetAddress& host, GraphSpaceID spaceId) override;
 
-     /**
-      * Implement the interfaces in MetaChangedListener
-      * */
-     void onSpaceAdded(GraphSpaceID spaceId) override;
+    /**
+     * Implement the interfaces in MetaChangedListener
+     * */
+    void onSpaceAdded(GraphSpaceID spaceId) override;
 
-     void onSpaceRemoved(GraphSpaceID spaceId) override;
+    void onSpaceRemoved(GraphSpaceID spaceId) override;
 
-     void onSpaceOptionUpdated(GraphSpaceID spaceId,
-                               const std::unordered_map<std::string, std::string>& options)
-                               override;
+    void onSpaceOptionUpdated(GraphSpaceID spaceId,
+                              const std::unordered_map<std::string, std::string>& options) override;
 
-     void onPartAdded(const PartMeta& partMeta) override;
+    void onPartAdded(const PartMeta& partMeta) override;
 
-     void onPartRemoved(GraphSpaceID spaceId, PartitionID partId) override;
+    void onPartRemoved(GraphSpaceID spaceId, PartitionID partId) override;
 
-     void onPartUpdated(const PartMeta& partMeta) override;
+    void onPartUpdated(const PartMeta& partMeta) override;
 
-     void fetchLeaderInfo(std::unordered_map<GraphSpaceID,
-                                             std::vector<PartitionID>>& leaderParts) override;
+    void fetchLeaderInfo(
+        std::unordered_map<GraphSpaceID, std::vector<PartitionID>>& leaderParts) override;
 
-     HostAddr getLocalHost() {
+    network::InetAddress getLocalHost() {
         return localHost_;
      }
 
@@ -184,13 +192,13 @@ public:
       * for UTs, because the port is chosen by system,
       * we should update port after thrift setup
       * */
-     void setLocalHost(HostAddr localHost) {
+     void setLocalHost(network::InetAddress localHost) {
         localHost_ = std::move(localHost);
      }
 
 private:
      meta::MetaClient *client_{nullptr};
-     HostAddr localHost_;
+     network::InetAddress localHost_;
 };
 
 }  // namespace kvstore

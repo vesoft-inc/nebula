@@ -42,7 +42,7 @@ void TestEnv::SetUp() {
         = network::NetworkUtils::toHosts(folly::stringPrintf("127.0.0.1:%d", metaServerPort()));
     CHECK(addrsRet.ok()) << addrsRet.status();
     auto storagePort = network::NetworkUtils::getAvailablePort();
-    auto hostRet = nebula::network::NetworkUtils::toHostAddr("127.0.0.1", storagePort);
+    auto hostRet = network::NetworkUtils::toInetAddress("127.0.0.1", storagePort);
     if (!hostRet.ok()) {
         LOG(ERROR) << "Bad local host addr, status:" << hostRet.status();
     }
@@ -58,13 +58,11 @@ void TestEnv::SetUp() {
     mClient_->waitForMetadReady();
     gflagsManager_ = std::make_unique<meta::ClientBasedGflagsManager>(mClient_.get());
 
-    IPv4 localIp;
-    nebula::network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    auto address = network::InetAddress("127.0.0.1", storagePort);
     storageServer_ = nebula::storage::TestUtils::mockStorageServer(
                                                         mClient_.get(),
                                                         storageRootPath_.path(),
-                                                        localIp,
-                                                        storagePort,
+                                                        address,
                                                         true);
 
     // Create graphServer

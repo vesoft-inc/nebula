@@ -42,7 +42,7 @@ bool NebulaStore::init() {
     snapshot_.reset(new SnapshotManagerImpl(this));
     raftService_ = raftex::RaftexService::createService(ioPool_,
                                                         workers_,
-                                                        raftAddr_.second);
+                                                        raftAddr_.getPort());
     if (!raftService_->start()) {
         LOG(ERROR) << "Start the raft service failed";
         return false;
@@ -131,7 +131,7 @@ bool NebulaStore::init() {
                                 return;
                             }
                             auto partMeta = status.value();
-                            std::vector<HostAddr> peers;
+                            std::vector<network::InetAddress> peers;
                             for (auto& h : partMeta.peers_) {
                                 if (h != storeSvcAddr_) {
                                     peers.emplace_back(getRaftAddr(h));
@@ -202,7 +202,8 @@ std::unique_ptr<KVEngine> NebulaStore::newEngine(GraphSpaceID spaceId,
     }
 }
 
-ErrorOr<ResultCode, HostAddr> NebulaStore::partLeader(GraphSpaceID spaceId, PartitionID partId) {
+ErrorOr<ResultCode, network::InetAddress> NebulaStore::partLeader(GraphSpaceID spaceId,
+                                                                  PartitionID partId) {
     folly::RWSpinLock::ReadHolder rh(&lock_);
     auto it = spaces_.find(spaceId);
     if (UNLIKELY(it == spaces_.end())) {
@@ -283,7 +284,7 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
     }
 
     auto partMeta = metaStatus.value();
-    std::vector<HostAddr> peers;
+    std::vector<network::InetAddress> peers;
     for (auto& h : partMeta.peers_) {
         if (h != storeSvcAddr_) {
             peers.emplace_back(getRaftAddr(h));

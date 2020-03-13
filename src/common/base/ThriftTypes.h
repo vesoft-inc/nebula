@@ -17,7 +17,7 @@ using GraphSpaceID = int32_t;
 using PartitionID = int32_t;
 using TermID = int64_t;
 using LogID = int64_t;
-using IPv4 = int32_t;
+using IPv4 = uint32_t;
 using Port = int32_t;
 
 using VertexID = int64_t;

@@ -39,7 +39,7 @@ public:
 
     // Send snapshot for spaceId, partId to host dst.
     folly::Future<Status> sendSnapshot(std::shared_ptr<RaftPart> part,
-                                       const HostAddr& dst);
+                                       const network::InetAddress& dst);
 
 private:
     folly::Future<raftex::cpp2::SendSnapshotResponse> send(
@@ -48,11 +48,11 @@ private:
                                                    TermID termId,
                                                    LogID committedLogId,
                                                    TermID committedLogTerm,
-                                                   const HostAddr& localhost,
+                                                   const network::InetAddress& localhost,
                                                    std::vector<std::string>&& data,
                                                    int64_t totalSize,
                                                    int64_t totalCount,
-                                                   const HostAddr& addr,
+                                                   const network::InetAddress& addr,
                                                    bool finished);
 
     virtual void accessAllRowsInSnapshot(GraphSpaceID spaceId,

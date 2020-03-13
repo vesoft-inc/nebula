@@ -14,15 +14,15 @@ namespace nebula {
 namespace meta {
 
 kvstore::ResultCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
-                                                   const HostAddr& hostAddr,
+                                                   const network::InetAddress& hostAddr,
                                                    const HostInfo& info,
                                                    const LeaderParts* leaderParts) {
     CHECK_NOTNULL(kv);
     std::vector<kvstore::KV> data;
-    data.emplace_back(MetaServiceUtils::hostKey(hostAddr.first, hostAddr.second),
+    data.emplace_back(MetaServiceUtils::hostKey(hostAddr.toLong(), hostAddr.getPort()),
                       HostInfo::encode(info));
     if (leaderParts != nullptr) {
-        data.emplace_back(MetaServiceUtils::leaderKey(hostAddr.first, hostAddr.second),
+        data.emplace_back(MetaServiceUtils::leaderKey(hostAddr.toLong(), hostAddr.getPort()),
                           MetaServiceUtils::leaderVal(*leaderParts));
     }
     folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
@@ -37,8 +37,9 @@ kvstore::ResultCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
     return ret;
 }
 
-std::vector<HostAddr> ActiveHostsMan::getActiveHosts(kvstore::KVStore* kv, int32_t expiredTTL) {
-    std::vector<HostAddr> hosts;
+std::vector<network::InetAddress> ActiveHostsMan::getActiveHosts(kvstore::KVStore* kv,
+                                                                 int32_t expiredTTL) {
+    std::vector<network::InetAddress> hosts;
     const auto& prefix = MetaServiceUtils::hostPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
@@ -58,7 +59,7 @@ std::vector<HostAddr> ActiveHostsMan::getActiveHosts(kvstore::KVStore* kv, int32
     return hosts;
 }
 
-bool ActiveHostsMan::isLived(kvstore::KVStore* kv, const HostAddr& host) {
+bool ActiveHostsMan::isLived(kvstore::KVStore* kv, const network::InetAddress& host) {
     auto activeHosts = getActiveHosts(kv);
     return std::find(activeHosts.begin(), activeHosts.end(), host) != activeHosts.end();
 }

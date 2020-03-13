@@ -19,7 +19,7 @@ namespace nebula {
 namespace kvstore {
 
 TEST(HBaseClientTest, SimpleTest) {
-    auto hbaseClient = std::make_shared<HBaseClient>(HostAddr(0, 9096));
+    auto hbaseClient = std::make_shared<HBaseClient>(network::InetAddress(0, 9096));
     std::string tableName = "Nebula_Graph_Space_0";
     std::string rowKey = "rowKey";
     std::vector<KV> putData;
@@ -46,7 +46,7 @@ TEST(HBaseClientTest, SimpleTest) {
 
 
 TEST(HBaseClientTest, MultiTest) {
-    auto hbaseClient = std::make_shared<HBaseClient>(HostAddr(0, 9096));
+    auto hbaseClient = std::make_shared<HBaseClient>(network::InetAddress(0, 9096));
     std::string tableName = "Nebula_Graph_Space_0";
     std::vector<std::string> rowKeys;
     std::vector<std::pair<std::string, std::vector<KV>>> dataList;
@@ -87,7 +87,7 @@ TEST(HBaseClientTest, MultiTest) {
 
 
 TEST(HBaseClientTest, RangeTest) {
-    auto hbaseClient = std::make_shared<HBaseClient>(HostAddr(0, 9096));
+    auto hbaseClient = std::make_shared<HBaseClient>(network::InetAddress(0, 9096));
     std::string tableName = "Nebula_Graph_Space_0";
     std::vector<std::string> rowKeys;
     std::vector<std::pair<std::string, std::vector<KV>>> dataList;

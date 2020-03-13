@@ -13,6 +13,20 @@ nebula_add_test(
         gtest
 )
 
+nebula_add_test(
+    NAME
+        network_address_test
+    SOURCES
+        InetAddressTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:network_obj>
+        $<TARGET_OBJECTS:fs_obj>
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        wangle
+        gtest
+)
 
 nebula_add_executable(
     NAME

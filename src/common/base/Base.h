@@ -62,9 +62,12 @@
 #include <folly/dynamic.h>
 #include <folly/json.h>
 #include <folly/RWSpinLock.h>
+#include <folly/SocketAddress.h>
 
 #include "base/Logging.h"
 #include "thread/NamedThread.h"
+#include "network/InetAddress.h"
+
 // #include "base/StringUnorderedMap.h"
 
 #define MUST_USE_RESULT                 __attribute__((warn_unused_result))
@@ -106,10 +109,7 @@ namespace nebula {
 // Types using in a graph
 // Partition ID is defined as PartitionID in Raftex
 
-// Host address type and utility functions
-using HostAddr = std::pair<IPv4, Port>;
-
-std::ostream& operator<<(std::ostream &, const HostAddr&);
+std::ostream& operator<<(std::ostream &, const std::pair<IPv4, Port>&);
 
 template<typename Key, typename T>
 using UnorderedMap = typename std::conditional<
@@ -122,7 +122,7 @@ using UnorderedMap = typename std::conditional<
 struct PartMeta {
     GraphSpaceID           spaceId_;
     PartitionID            partId_;
-    std::vector<HostAddr>  peers_;
+    std::vector<network::InetAddress>  peers_;
 
     bool operator==(const PartMeta& that) const {
         return this->spaceId_ == that.spaceId_

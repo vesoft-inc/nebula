@@ -41,19 +41,19 @@ TEST(MetaClientTest, InterfacesTest) {
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto clientPort = network::NetworkUtils::getAvailablePort();
-    HostAddr localHost{localIp, clientPort};
-    auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
+    network::InetAddress localHost{localIp, clientPort};
+    auto client = std::make_shared<MetaClient>(
+        threadPool, std::vector<network::InetAddress>{network::InetAddress(localIp, sc->port_)});
     client->waitForMetadReady();
     {
         // Add hosts automatically, then testing listHosts interface.
-        std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
+        std::vector<network::InetAddress> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
         TestUtils::registerHB(sc->kvStore_.get(), hosts);
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
         for (auto i = 0u; i < hosts.size(); i++) {
             auto tHost = ret.value()[i].hostAddr;
-            auto hostAddr = HostAddr(tHost.ip, tHost.port);
+            auto hostAddr = network::InetAddress(tHost);
             ASSERT_EQ(hosts[i], hostAddr);
         }
     }
@@ -245,7 +245,7 @@ TEST(MetaClientTest, InterfacesTest) {
     sleep(FLAGS_heartbeat_interval_secs + 1);
     {
         // Test cache interfaces
-        auto partsMap = client->getPartsMapFromCache(HostAddr(0, 0));
+        auto partsMap = client->getPartsMapFromCache(network::InetAddress(0, 0));
         ASSERT_EQ(1, partsMap.size());
         ASSERT_EQ(6, partsMap[spaceId].size());
     }
@@ -255,7 +255,7 @@ TEST(MetaClientTest, InterfacesTest) {
         auto partMeta = metaStatus.value();
         ASSERT_EQ(3, partMeta.peers_.size());
         for (auto& h : partMeta.peers_) {
-            ASSERT_EQ(h.first, h.second);
+            ASSERT_EQ(h.toLong(), h.getPort());
         }
     }
     {
@@ -351,9 +351,9 @@ TEST(MetaClientTest, TagTest) {
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
-    auto localhosts = std::vector<HostAddr>{HostAddr(localIp, sc->port_)};
+    auto localhosts = std::vector<network::InetAddress>{network::InetAddress(localIp, sc->port_)};
     auto client = std::make_shared<MetaClient>(threadPool, localhosts);
-    std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
+    std::vector<network::InetAddress> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
     client->waitForMetadReady();
     TestUtils::registerHB(sc->kvStore_.get(), hosts);
     SpaceDesc spaceDesc("default", 9, 3);
@@ -469,9 +469,9 @@ TEST(MetaClientTest, EdgeTest) {
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
-    auto localhosts = std::vector<HostAddr>{HostAddr(localIp, sc->port_)};
+    auto localhosts = std::vector<network::InetAddress>{network::InetAddress(localIp, sc->port_)};
     auto client = std::make_shared<MetaClient>(threadPool, localhosts);
-    std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
+    std::vector<network::InetAddress> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
     client->waitForMetadReady();
     TestUtils::registerHB(sc->kvStore_.get(), hosts);
     SpaceDesc spaceDesc("default_space", 9, 3);
@@ -593,8 +593,8 @@ TEST(MetaClientTest, TagIndexTest) {
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
-    auto localhosts = std::vector<HostAddr>{HostAddr(localIp, sc->port_)};
-    std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
+    auto localhosts = std::vector<network::InetAddress>{network::InetAddress(localIp, sc->port_)};
+    std::vector<network::InetAddress> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
     auto client = std::make_shared<MetaClient>(threadPool, localhosts);
     client->waitForMetadReady();
     TestUtils::registerHB(sc->kvStore_.get(), hosts);
@@ -760,11 +760,11 @@ TEST(MetaClientTest, EdgeIndexTest) {
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
-    auto localhosts = std::vector<HostAddr>{HostAddr(localIp, sc->port_)};
+    auto localhosts = std::vector<network::InetAddress>{network::InetAddress(localIp, sc->port_)};
     auto client = std::make_shared<MetaClient>(threadPool, localhosts);
 
     client->waitForMetadReady();
-    std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
+    std::vector<network::InetAddress> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
     TestUtils::registerHB(sc->kvStore_.get(), hosts);
     SpaceDesc spaceDesc("default_space", 8, 3);
     auto ret = client->createSpace(spaceDesc).get();
@@ -960,8 +960,8 @@ public:
         UNUSED(leaderIds);
     }
 
-    HostAddr getLocalHost() {
-        return HostAddr(0, 0);
+    network::InetAddress getLocalHost() {
+        return network::InetAddress(0, 0);
     }
 
     int32_t spaceNum = 0;
@@ -983,19 +983,19 @@ TEST(MetaClientTest, DiffTest) {
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto listener = std::make_unique<TestListener>();
     auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{
-                                                    HostAddr(localIp, sc->port_)});
+                                               std::vector<network::InetAddress>{
+                                                    network::InetAddress(localIp, sc->port_)});
     client->waitForMetadReady();
     client->registerListener(listener.get());
     {
         // Add hosts automatically, then testing listHosts interface.
-        std::vector<HostAddr> hosts = {{0, 0}};
+        std::vector<network::InetAddress> hosts = {{0, 0}};
         TestUtils::registerHB(sc->kvStore_.get(), hosts);
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
         for (auto i = 0u; i < hosts.size(); i++) {
             auto tHost = ret.value()[i].hostAddr;
-            auto hostAddr = HostAddr(tHost.ip, tHost.port);
+            auto hostAddr = network::InetAddress(tHost);
             ASSERT_EQ(hosts[i], hostAddr);
         }
     }
@@ -1037,25 +1037,26 @@ TEST(MetaClientTest, HeartbeatTest) {
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto listener = std::make_unique<TestListener>();
     auto clientPort = network::NetworkUtils::getAvailablePort();
-    HostAddr localHost{localIp, clientPort};
+    network::InetAddress localHost{localIp, clientPort};
 
     MetaClientOptions options;
     options.localHost_ = localHost;
     options.clusterId_ = kClusterId;
     options.inStoraged_ = true;
-    auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{HostAddr(localIp, 10001)},
-                                               options);
+    auto client = std::make_shared<MetaClient>(
+        threadPool,
+        std::vector<network::InetAddress>{network::InetAddress(localIp, 10001)},
+        options);
     client->waitForMetadReady();
     client->registerListener(listener.get());
     {
         // Add hosts automatically, then testing listHosts interface.
-        std::vector<HostAddr> hosts = {localHost};
+        std::vector<network::InetAddress> hosts = {localHost};
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
         for (auto i = 0u; i < hosts.size(); i++) {
             auto tHost = ret.value()[i].hostAddr;
-            auto hostAddr = HostAddr(tHost.ip, tHost.port);
+            auto hostAddr = network::InetAddress(tHost);
             ASSERT_EQ(hosts[i], hostAddr);
         }
     }
@@ -1080,14 +1081,14 @@ public:
 
 class TestMetaServiceRetry : public cpp2::MetaServiceSvIf {
 public:
-    void setLeader(HostAddr leader) {
-        leader_.set_ip(leader.first);
-        leader_.set_port(leader.second);
+    void setLeader(network::InetAddress leader) {
+        leader_.set_ip(leader.toLong());
+        leader_.set_port(leader.getPort());
     }
 
-    void setAddr(HostAddr addr) {
-        addr_.set_ip(addr.first);
-        addr_.set_port(addr.second);
+    void setAddr(network::InetAddress addr) {
+        addr_.set_ip(addr.toLong());
+        addr_.set_port(addr.getPort());
     }
 
     folly::Future<cpp2::HBResp>
@@ -1122,10 +1123,10 @@ TEST(MetaClientTest, SimpleTest) {
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     auto clientPort = network::NetworkUtils::getAvailablePort();
-    HostAddr localHost{localIp, clientPort};
+    network::InetAddress localHost{localIp, clientPort};
     auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{
-                                                   HostAddr(localIp, sc->port_)});
+                                               std::vector<network::InetAddress>{
+                                                   network::InetAddress(localIp, sc->port_)});
     {
         LOG(INFO) << "Test heart beat...";
         folly::Baton<true, std::atomic> baton;
@@ -1144,9 +1145,9 @@ TEST(MetaClientTest, RetryWithExceptionTest) {
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     auto clientPort = network::NetworkUtils::getAvailablePort();
-    HostAddr localHost{localIp, clientPort};
-    auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{HostAddr(0, 0)});
+    network::InetAddress localHost{localIp, clientPort};
+    auto client = std::make_shared<MetaClient>(
+        threadPool, std::vector<network::InetAddress>{network::InetAddress(0, 0)});
     // Retry with exception, then failed
     {
         LOG(INFO) << "Test heart beat...";
@@ -1166,7 +1167,7 @@ TEST(MetaClientTest, RetryOnceTest) {
 
     std::vector<std::unique_ptr<test::ServerContext>> contexts;
     std::vector<std::shared_ptr<TestMetaServiceRetry>> handlers;
-    std::vector<HostAddr> addrs;
+    std::vector<network::InetAddress> addrs;
     for (size_t i = 0; i < 3; i++) {
         auto sc = std::make_unique<test::ServerContext>();
         auto handler = std::make_shared<TestMetaServiceRetry>();
@@ -1183,9 +1184,9 @@ TEST(MetaClientTest, RetryOnceTest) {
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     auto clientPort = network::NetworkUtils::getAvailablePort();
-    HostAddr localHost{localIp, clientPort};
+    network::InetAddress localHost{localIp, clientPort};
     auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{addrs[1]});
+                                               std::vector<network::InetAddress>{addrs[1]});
     // First get leader changed and then succeeded
     {
         LOG(INFO) << "Test heart beat...";
@@ -1205,7 +1206,7 @@ TEST(MetaClientTest, RetryUntilLimitTest) {
 
     std::vector<std::unique_ptr<test::ServerContext>> contexts;
     std::vector<std::shared_ptr<TestMetaServiceRetry>> handlers;
-    std::vector<HostAddr> addrs;
+    std::vector<network::InetAddress> addrs;
     for (size_t i = 0; i < 3; i++) {
         auto sc = std::make_unique<test::ServerContext>();
         auto handler = std::make_shared<TestMetaServiceRetry>();
@@ -1221,9 +1222,9 @@ TEST(MetaClientTest, RetryUntilLimitTest) {
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     auto clientPort = network::NetworkUtils::getAvailablePort();
-    HostAddr localHost{localIp, clientPort};
+    network::InetAddress localHost{localIp, clientPort};
     auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{addrs[1]});
+                                               std::vector<network::InetAddress>{addrs[1]});
     // always get response of leader changed, then failed
     {
         LOG(INFO) << "Test heart beat...";
@@ -1252,8 +1253,8 @@ TEST(MetaClientTest, Config) {
     // not affect `show/update/get configs'
     options.skipConfig_ = true;
     auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{
-                                                    HostAddr(localIp, sc->port_)},
+                                               std::vector<network::InetAddress>{
+                                                    network::InetAddress(localIp, sc->port_)},
                                                 options);
     client->waitForMetadReady();
 
@@ -1388,7 +1389,7 @@ TEST(MetaClientTest, RocksdbOptionsTest) {
     auto mode = meta::cpp2::ConfigMode::MUTABLE;
 
     auto client = std::make_shared<MetaClient>(threadPool,
-        std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
+        std::vector<network::InetAddress>{network::InetAddress(localIp, sc->port_)});
     client->waitForMetadReady();
     client->registerListener(listener.get());
     client->gflagsModule_ = module;
@@ -1407,7 +1408,7 @@ TEST(MetaClientTest, RocksdbOptionsTest) {
         cfgMan.registerGflags(configItems);
     }
     {
-        std::vector<HostAddr> hosts = {{0, 0}};
+        std::vector<network::InetAddress> hosts = {{0, 0}};
         TestUtils::registerHB(sc->kvStore_.get(), hosts);
         SpaceDesc spaceDesc("default_space", 9, 1);
         client->createSpace(spaceDesc).get();

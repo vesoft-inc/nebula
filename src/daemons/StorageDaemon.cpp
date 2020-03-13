@@ -23,7 +23,7 @@ DECLARE_int32(port);
 
 using nebula::operator<<;
 using nebula::Status;
-using nebula::HostAddr;
+using nebula::network::InetAddress;
 using nebula::network::NetworkUtils;
 using nebula::ProcessUtils;
 
@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
                    << ", status:" << result.status();
         return EXIT_FAILURE;
     }
-    auto hostRet = nebula::network::NetworkUtils::toHostAddr(result.value(), FLAGS_port);
+    auto hostRet = nebula::network::NetworkUtils::toInetAddress(result.value(), FLAGS_port);
     if (!hostRet.ok()) {
         LOG(ERROR) << "Bad local host addr, status:" << hostRet.status();
         return EXIT_FAILURE;

@@ -30,8 +30,8 @@ extern std::mutex leaderMutex;
 extern std::condition_variable leaderCV;
 
 
-std::vector<HostAddr> getPeers(const std::vector<HostAddr>& all,
-                               const HostAddr& self,
+std::vector<network::InetAddress> getPeers(const std::vector<network::InetAddress>& all,
+                               const network::InetAddress& self,
                                std::vector<bool> isLearner = {});
 
 void onLeaderElected(
@@ -60,7 +60,7 @@ void setupRaft(
         fs::TempDir& walRoot,
         std::shared_ptr<thread::GenericThreadPool>& workers,
         std::vector<std::string>& wals,
-        std::vector<HostAddr>& allHosts,
+        std::vector<network::InetAddress>& allHosts,
         std::vector<std::shared_ptr<RaftexService>>& services,
         std::vector<std::shared_ptr<test::TestShard>>& copies,
         std::shared_ptr<test::TestShard>& leader,
@@ -96,7 +96,7 @@ void killOneCopy(std::vector<std::shared_ptr<RaftexService>>& services,
 
 void rebootOneCopy(std::vector<std::shared_ptr<RaftexService>>& services,
                    std::vector<std::shared_ptr<test::TestShard>>& copies,
-                   std::vector<HostAddr> allHosts,
+                   std::vector<network::InetAddress> allHosts,
                    size_t index);
 
 std::vector<std::shared_ptr<SnapshotManager>> snapshots(
@@ -129,7 +129,7 @@ protected:
     std::unique_ptr<fs::TempDir> walRoot_;
     std::shared_ptr<thread::GenericThreadPool> workers_;
     std::vector<std::string> wals_;
-    std::vector<HostAddr> allHosts_;
+    std::vector<network::InetAddress> allHosts_;
     std::vector<std::shared_ptr<RaftexService>> services_;
     std::vector<std::shared_ptr<test::TestShard>> copies_;
     std::shared_ptr<test::TestShard> leader_;

@@ -125,9 +125,9 @@ void ShowExecutor::showHosts() {
         for (auto& item : hostItems) {
             std::vector<cpp2::ColumnValue> row;
             row.resize(6);
-            auto hostAddr = HostAddr(item.hostAddr.ip, item.hostAddr.port);
-            row[0].set_str(NetworkUtils::ipFromHostAddr(hostAddr));
-            row[1].set_str(folly::to<std::string>(NetworkUtils::portFromHostAddr(hostAddr)));
+            auto hostAddr = network::InetAddress(item.hostAddr.ip, item.hostAddr.port);
+            row[0].set_str(hostAddr.getAddressStr());
+            row[1].set_str(folly::to<std::string>(hostAddr.getPort()));
             switch (item.get_status()) {
                 case meta::cpp2::HostStatus::ONLINE:
                     row[2].set_str("online");
@@ -292,25 +292,25 @@ void ShowExecutor::showParts() {
 
             if (item.__isset.leader) {
                 auto leader = item.get_leader();
-                std::vector<HostAddr> leaders = {{leader->ip, leader->port}};
-                std::string leaderStr = NetworkUtils::toHosts(leaders);
+                std::vector<network::InetAddress> leaders = {network::InetAddress(leader)};
+                std::string leaderStr = NetworkUtils::toHostsString(leaders);
                 row[1].set_str(leaderStr);
             } else {
                 row[1].set_str("");
             }
 
-            std::vector<HostAddr> peers;
+            std::vector<network::InetAddress> peers;
             for (auto& peer : item.get_peers()) {
                 peers.emplace_back(peer.ip, peer.port);
             }
-            std::string peersStr = NetworkUtils::toHosts(peers);
+            std::string peersStr = NetworkUtils::toHostsString(peers);
             row[2].set_str(peersStr);
 
-            std::vector<HostAddr> losts;
+            std::vector<network::InetAddress> losts;
             for (auto& lost : item.get_losts()) {
                 losts.emplace_back(lost.ip, lost.port);
             }
-            std::string lostsStr = NetworkUtils::toHosts(losts);
+            std::string lostsStr = NetworkUtils::toHostsString(losts);
             row[3].set_str(lostsStr);
 
             rows.emplace_back();

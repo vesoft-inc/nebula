@@ -272,7 +272,7 @@ std::string BalanceTask::prefix(BalanceID balanceId) {
     return str;
 }
 
-std::tuple<BalanceID, GraphSpaceID, PartitionID, HostAddr, HostAddr>
+std::tuple<BalanceID, GraphSpaceID, PartitionID, network::InetAddress, network::InetAddress>
 BalanceTask::parseKey(const folly::StringPiece& rawKey) {
     int32_t offset = kBalanceTaskTable.size();
     auto balanceId = *reinterpret_cast<const BalanceID*>(rawKey.begin() + offset);
@@ -281,9 +281,9 @@ BalanceTask::parseKey(const folly::StringPiece& rawKey) {
     offset += sizeof(GraphSpaceID);
     auto partId = *reinterpret_cast<const PartitionID*>(rawKey.begin() + offset);
     offset += sizeof(PartitionID);
-    auto src = *reinterpret_cast<const HostAddr*>(rawKey.begin() + offset);
-    offset += sizeof(HostAddr);
-    auto dst = *reinterpret_cast<const HostAddr*>(rawKey.begin() + offset);
+    auto src = *reinterpret_cast<const network::InetAddress*>(rawKey.begin() + offset);
+    offset += sizeof(network::InetAddress);
+    auto dst = *reinterpret_cast<const network::InetAddress*>(rawKey.begin() + offset);
     return std::make_tuple(balanceId, spaceId, partId, src, dst);
 }
 

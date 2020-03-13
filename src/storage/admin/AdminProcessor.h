@@ -38,8 +38,7 @@ public:
             return;
         }
         auto part = nebula::value(ret);
-        auto host = kvstore::NebulaStore::getRaftAddr(HostAddr(req.get_new_leader().get_ip(),
-                                                               req.get_new_leader().get_port()));
+        auto host = kvstore::NebulaStore::getRaftAddr(network::InetAddress(req.get_new_leader()));
         part->asyncTransferLeader(host,
                                   [this, spaceId, partId, part] (kvstore::ResultCode code) {
             if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
@@ -60,11 +59,11 @@ public:
                         }
                         auto leader = value(std::move(leaderRet));
                         auto* store = static_cast<kvstore::NebulaStore*>(kvstore_);
-                        if (leader != HostAddr(0, 0) && leader != store->address()) {
+                        if (!leader.isZero() && leader != store->address()) {
                             LOG(INFO) << "Found new leader " << leader;
                             onFinished();
                             return;
-                        } else if (leader != HostAddr(0, 0)) {
+                        } else if (!leader.isZero()) {
                             LOG(INFO) << "I am choosen as leader again!";
                             this->pushResultCode(cpp2::ErrorCode::E_TRANSFER_LEADER_FAILED, partId);
                             onFinished();
@@ -167,8 +166,7 @@ public:
             return;
         }
         auto part = nebula::value(ret);
-        auto peer = kvstore::NebulaStore::getRaftAddr(HostAddr(req.get_peer().get_ip(),
-                                                               req.get_peer().get_port()));
+        auto peer = kvstore::NebulaStore::getRaftAddr(network::InetAddress(req.get_peer()));
         auto cb = [this, spaceId, partId] (kvstore::ResultCode code) {
             handleErrorCode(code, spaceId, partId);
             onFinished();
@@ -206,8 +204,7 @@ public:
             return;
         }
         auto part = nebula::value(ret);
-        auto learner = kvstore::NebulaStore::getRaftAddr(HostAddr(req.get_learner().get_ip(),
-                                                                  req.get_learner().get_port()));
+        auto learner = kvstore::NebulaStore::getRaftAddr(network::InetAddress(req.get_learner()));
         part->asyncAddLearner(learner, [this, spaceId, partId] (kvstore::ResultCode code) {
             handleErrorCode(code, spaceId, partId);
             onFinished();
@@ -241,8 +238,7 @@ public:
             return;
         }
         auto part = nebula::value(ret);
-        auto peer = kvstore::NebulaStore::getRaftAddr(HostAddr(req.get_target().get_ip(),
-                                                               req.get_target().get_port()));
+        auto peer = kvstore::NebulaStore::getRaftAddr(network::InetAddress(req.get_target()));
 
         folly::async([this, part, peer, spaceId, partId] {
             int retry = FLAGS_waiting_catch_up_retry_times;
@@ -303,10 +299,10 @@ public:
             return;
         }
         auto part = nebula::value(ret);
-        std::vector<HostAddr> peers;
+        std::vector<network::InetAddress> peers;
         for (auto& p : req.get_peers()) {
             peers.emplace_back(
-                    kvstore::NebulaStore::getRaftAddr(HostAddr(p.get_ip(), p.get_port())));
+                    kvstore::NebulaStore::getRaftAddr(network::InetAddress(p)));
         }
         part->checkAndResetPeers(peers);
         this->onFinished();

@@ -11,23 +11,8 @@
 #include <arpa/inet.h>
 #include "fs/FileUtils.h"
 
-
 namespace nebula {
 namespace network {
-
-static const int32_t kMaxHostNameLen = 256;
-
-std::string NetworkUtils::getHostname() {
-    char hn[kMaxHostNameLen];
-
-    if (gethostname(hn, kMaxHostNameLen) < 0) {
-        LOG(ERROR) << "gethostname error : " << strerror(errno);
-        return "";
-    }
-
-    return std::string(hn);
-}
-
 
 StatusOr<std::string> NetworkUtils::getIPv4FromDevice(const std::string &device) {
     if (device == "any") {
@@ -196,126 +181,30 @@ uint16_t NetworkUtils::getAvailablePort() {
 
 
 bool NetworkUtils::ipv4ToInt(const std::string& ipStr, IPv4& ip) {
-    std::vector<folly::StringPiece> parts;
-    folly::split(".", ipStr, parts, true);
-    if (parts.size() != 4) {
+    try {
+        folly::IPAddress addr(ipStr);
+        ip = addr.asV4().toLong();
+        return true;
+    } catch (std::exception& e) {
+        LOG(ERROR) << "Invalid ip string: \"" << ipStr << "\", err: %s", e.what();
         return false;
     }
-
-    ip = 0;
-    for (auto& s : parts) {
-        ip <<= 8;
-        try {
-            ip |= folly::to<uint8_t>(s);
-        } catch (const std::exception& ex) {
-            LOG(ERROR) << "Invalid ip string: \"" << ipStr << "\"";
-            return false;
-        }
-    }
-
-    return true;
 }
-
 
 std::string NetworkUtils::intToIPv4(IPv4 ip) {
-    static const std::vector<std::string> kDict{
-        "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12",
-        "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24",
-        "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36",
-        "37", "38", "39", "40", "41", "42", "43", "44", "45", "46", "47", "48",
-        "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60",
-        "61", "62", "63", "64", "65", "66", "67", "68", "69", "70", "71", "72",
-        "73", "74", "75", "76", "77", "78", "79", "80", "81", "82", "83", "84",
-        "85", "86", "87", "88", "89", "90", "91", "92", "93", "94", "95", "96",
-        "97", "98", "99", "100", "101", "102", "103", "104", "105", "106",
-        "107", "108", "109", "110", "111", "112", "113", "114", "115", "116",
-        "117", "118", "119", "120", "121", "122", "123", "124", "125", "126",
-        "127", "128", "129", "130", "131", "132", "133", "134", "135", "136",
-        "137", "138", "139", "140", "141", "142", "143", "144", "145", "146",
-        "147", "148", "149", "150", "151", "152", "153", "154", "155", "156",
-        "157", "158", "159", "160", "161", "162", "163", "164", "165", "166",
-        "167", "168", "169", "170", "171", "172", "173", "174", "175", "176",
-        "177", "178", "179", "180", "181", "182", "183", "184", "185", "186",
-        "187", "188", "189", "190", "191", "192", "193", "194", "195", "196",
-        "197", "198", "199", "200", "201", "202", "203", "204", "205", "206",
-        "207", "208", "209", "210", "211", "212", "213", "214", "215", "216",
-        "217", "218", "219", "220", "221", "222", "223", "224", "225", "226",
-        "227", "228", "229", "230", "231", "232", "233", "234", "235", "236",
-        "237", "238", "239", "240", "241", "242", "243", "244", "245", "246",
-        "247", "248", "249", "250", "251", "252", "253", "254", "255"
-    };
-
-    auto& f1 = kDict[ip & 0x000000FF];
-    auto& f2 = kDict[(ip >> 8) & 0x000000FF];
-    auto& f3 = kDict[(ip >> 16) & 0x000000FF];
-    auto& f4 = kDict[(ip >> 24) & 0x000000FF];
-
-    char buf[16];
-    char* pt = buf;
-    strcpy(pt, f4.c_str());     // NOLINT
-    pt += f4.size();
-    *pt++ = '.';
-    strcpy(pt, f3.c_str());     // NOLINT
-    pt += f3.size();
-    *pt++ = '.';
-    strcpy(pt, f2.c_str());     // NOLINT
-    pt += f2.size();
-    *pt++ = '.';
-    strcpy(pt, f1.c_str());     // NOLINT
-    pt += f1.size();
-
-    return buf;
+    return folly::IPAddress::fromLong(ip).str();
 }
 
-StatusOr<std::vector<HostAddr>> NetworkUtils::resolveHost(const std::string& host, int32_t port) {
-    std::vector<HostAddr> addrs;
-    struct addrinfo hints, *res, *rp;
-    ::memset(&hints, 0, sizeof(struct addrinfo));
-
-    hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_flags = AI_ADDRCONFIG;
-
-    if (getaddrinfo(host.c_str(), nullptr, &hints, &res) != 0) {
-        return Status::Error("host not found:%s", host.c_str());
+StatusOr<InetAddress> NetworkUtils::toInetAddress(const std::string& ip, uint16_t port) {
+    try {
+        return InetAddress{ip, port};
+    } catch (const std::exception& e) {
+        return Status::Error("Bad ip format: %s", e.what());
     }
-
-    for (rp = res; rp != nullptr; rp = rp->ai_next) {
-        switch (rp->ai_family) {
-            case AF_INET:
-                break;
-            case AF_INET6:
-                VLOG(1) << "Currently does not support Ipv6 address";
-                continue;
-            default:
-                continue;
-        }
-
-        auto address = ((struct sockaddr_in*)rp->ai_addr)->sin_addr.s_addr;
-        // We need to match the integer byte order generated by ipv4ToInt, so we need to convert
-        // here.
-        addrs.emplace_back(htonl(std::move(address)), port);
-    }
-
-    freeaddrinfo(res);
-
-    if (addrs.empty()) {
-        return Status::Error("host not found: %s", host.c_str());
-    }
-
-    return addrs;
 }
 
-StatusOr<HostAddr> NetworkUtils::toHostAddr(const std::string &ip, int32_t port) {
-    IPv4 ipV4;
-    if (!ipv4ToInt(ip, ipV4)) {
-        return Status::Error("Bad ip format:%s", ip.c_str());
-    }
-    return std::make_pair(ipV4, port);
-}
-
-StatusOr<std::vector<HostAddr>> NetworkUtils::toHosts(const std::string& peersStr) {
-    std::vector<HostAddr> hosts;
+StatusOr<std::vector<InetAddress>> NetworkUtils::toHosts(const std::string& peersStr) {
+    std::vector<InetAddress> hosts;
     std::vector<std::string> peers;
     folly::split(",", peersStr, peers, true);
     hosts.reserve(peers.size());
@@ -326,38 +215,32 @@ StatusOr<std::vector<HostAddr>> NetworkUtils::toHosts(const std::string& peersSt
             return Status::Error("Bad peer format: %s", ipPort.start());
         }
 
-        int32_t port;
+        uint16_t port;
         try {
-            port = folly::to<int32_t>(ipPort.subpiece(pos + 1));
+            port = folly::to<uint16_t>(ipPort.subpiece(pos + 1));
         } catch (const std::exception& ex) {
             return Status::Error("Bad port number, error: %s", ex.what());
         }
 
-        auto ipAddr = ipPort.subpiece(0, pos).toString();
-        auto hostAddr = toHostAddr(ipAddr, port);
-        if (hostAddr.ok()) {
-            hosts.emplace_back(hostAddr.value());
-            continue;
-        }
+        auto ipStr = ipPort.subpiece(0, pos).toString();
 
-        auto resolveAddr = resolveHost(ipAddr, port);
-        if (resolveAddr.ok()) {
-            hosts.insert(hosts.end(), std::make_move_iterator(resolveAddr.value().begin()),
-                         std::make_move_iterator(resolveAddr.value().end()));
-            continue;
+        try {
+            hosts.emplace_back(ipStr, port);
+        } catch (const std::exception& e) {
+            try {
+                hosts.emplace_back(ipStr, port, true);
+            } catch (const std::exception& e) {
+                return Status::Error("Bad ip format: %s", e.what());
+            }
         }
-
-        return resolveAddr.status();
     }
     return hosts;
 }
 
-std::string NetworkUtils::toHosts(const std::vector<HostAddr>& hosts) {
+std::string NetworkUtils::toHostsString(const std::vector<InetAddress>& hosts) {
     std::string hostsString = "";
     for (auto& host : hosts) {
-        std::string addrStr = network::NetworkUtils::ipFromHostAddr(host);
-        int32_t port = network::NetworkUtils::portFromHostAddr(host);
-        hostsString += folly::stringPrintf("%s:%d, ", addrStr.c_str(), port);
+        hostsString += folly::stringPrintf("%s, ", host.toString().c_str());
     }
     if (!hostsString.empty()) {
         hostsString.resize(hostsString.size() - 2);
@@ -365,20 +248,19 @@ std::string NetworkUtils::toHosts(const std::vector<HostAddr>& hosts) {
     return hostsString;
 }
 
-std::string NetworkUtils::ipFromHostAddr(const HostAddr& host) {
-    return intToIPv4(host.first);
+std::string NetworkUtils::ipFromInetAddress(const InetAddress& host) {
+    return host.getAddressStr();
 }
 
-
-int32_t NetworkUtils::portFromHostAddr(const HostAddr& host) {
-    return host.second;
+uint16_t NetworkUtils::portFromInetAddress(const InetAddress& host) {
+    return host.getPort();
 }
 
 StatusOr<std::string> NetworkUtils::getLocalIP(std::string defaultIP) {
     if (!defaultIP.empty()) {
         return defaultIP;
     }
-    auto result = network::NetworkUtils::listDeviceAndIPv4s();
+    auto result = network::NetworkUtils:: listDeviceAndIPv4s();
     if (!result.ok()) {
         return std::move(result).status();
     }

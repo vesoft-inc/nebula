@@ -351,14 +351,14 @@ private:
 
 class HostList final {
 public:
-    void addHost(HostAddr *addr) {
+    void addHost(network::InetAddress *addr) {
         hosts_.emplace_back(addr);
     }
 
     std::string toString() const;
 
-    std::vector<HostAddr> hosts() const {
-        std::vector<HostAddr> result;
+    std::vector<network::InetAddress> hosts() const {
+        std::vector<network::InetAddress> result;
         result.reserve(hosts_.size());
         for (auto &host : hosts_) {
             result.emplace_back(*host);
@@ -367,7 +367,7 @@ public:
     }
 
 private:
-    std::vector<std::unique_ptr<HostAddr>>      hosts_;
+    std::vector<std::unique_ptr<network::InetAddress>>      hosts_;
 };
 
 class BalanceSentence final : public Sentence {

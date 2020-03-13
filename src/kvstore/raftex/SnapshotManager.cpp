@@ -21,7 +21,7 @@ SnapshotManager::SnapshotManager() {
 }
 
 folly::Future<Status> SnapshotManager::sendSnapshot(std::shared_ptr<RaftPart> part,
-                                                    const HostAddr& dst) {
+                                                    const network::InetAddress& dst) {
     folly::Promise<Status> p;
     auto fut = p.getFuture();
     executor_->add([this, p = std::move(p), part, dst] () mutable {
@@ -88,17 +88,17 @@ folly::Future<Status> SnapshotManager::sendSnapshot(std::shared_ptr<RaftPart> pa
 }
 
 folly::Future<raftex::cpp2::SendSnapshotResponse> SnapshotManager::send(
-                                                                GraphSpaceID spaceId,
-                                                                PartitionID partId,
-                                                                TermID termId,
-                                                                LogID committedLogId,
-                                                                TermID committedLogTerm,
-                                                                const HostAddr& localhost,
-                                                                std::vector<std::string>&& data,
-                                                                int64_t totalSize,
-                                                                int64_t totalCount,
-                                                                const HostAddr& addr,
-                                                                bool finished) {
+    GraphSpaceID spaceId,
+    PartitionID partId,
+    TermID termId,
+    LogID committedLogId,
+    TermID committedLogTerm,
+    const network::InetAddress& localhost,
+    std::vector<std::string>&& data,
+    int64_t totalSize,
+    int64_t totalCount,
+    const network::InetAddress& addr,
+    bool finished) {
     VLOG(2) << "Send snapshot request to " << addr;
     raftex::cpp2::SendSnapshotRequest req;
     req.set_space(spaceId);
@@ -106,8 +106,8 @@ folly::Future<raftex::cpp2::SendSnapshotResponse> SnapshotManager::send(
     req.set_term(termId);
     req.set_committed_log_id(committedLogId);
     req.set_committed_log_term(committedLogTerm);
-    req.set_leader_ip(localhost.first);
-    req.set_leader_port(localhost.second);
+    req.set_leader_ip(localhost.toLong());
+    req.set_leader_port(localhost.getPort());
     req.set_rows(std::move(data));
     req.set_total_size(totalSize);
     req.set_total_count(totalCount);

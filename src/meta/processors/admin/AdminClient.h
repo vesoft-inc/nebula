@@ -17,7 +17,7 @@
 namespace nebula {
 namespace meta {
 
-using HostLeaderMap = std::unordered_map<HostAddr,
+using HostLeaderMap = std::unordered_map<network::InetAddress,
                                          std::unordered_map<GraphSpaceID,
                                                             std::vector<PartitionID>>>;
 
@@ -38,7 +38,7 @@ public:
     virtual folly::Future<Status> blockingWrites() = 0;
 };
 
-static const HostAddr kRandomPeer(0, 0);
+static const network::InetAddress kRandomPeer(0, 0);
 
 class AdminClient {
     FRIEND_TEST(AdminClientTest, RetryTest);
@@ -60,21 +60,21 @@ public:
 
     folly::Future<Status> transLeader(GraphSpaceID spaceId,
                                       PartitionID partId,
-                                      const HostAddr& leader,
-                                      const HostAddr& dst = kRandomPeer);
+                                      const network::InetAddress& leader,
+                                      const network::InetAddress& dst = kRandomPeer);
 
     folly::Future<Status> addPart(GraphSpaceID spaceId,
                                   PartitionID partId,
-                                  const HostAddr& host,
+                                  const network::InetAddress& host,
                                   bool asLearner);
 
     folly::Future<Status> addLearner(GraphSpaceID spaceId,
                                      PartitionID partId,
-                                     const HostAddr& learner);
+                                     const network::InetAddress& learner);
 
     folly::Future<Status> waitingForCatchUpData(GraphSpaceID spaceId,
                                                 PartitionID partId,
-                                                const HostAddr& target);
+                                                const network::InetAddress& target);
 
     /**
      * Add/Remove one peer for raft group (spaceId, partId).
@@ -82,17 +82,17 @@ public:
      * */
     folly::Future<Status> memberChange(GraphSpaceID spaceId,
                                        PartitionID partId,
-                                       const HostAddr& peer,
+                                       const network::InetAddress& peer,
                                        bool added);
 
     folly::Future<Status> updateMeta(GraphSpaceID spaceId,
                                      PartitionID partId,
-                                     const HostAddr& leader,
-                                     const HostAddr& dst);
+                                     const network::InetAddress& leader,
+                                     const network::InetAddress& dst);
 
     folly::Future<Status> removePart(GraphSpaceID spaceId,
                                      PartitionID partId,
-                                     const HostAddr& host);
+                                     const network::InetAddress& host);
 
     folly::Future<Status> checkPeers(GraphSpaceID spaceId,
                                      PartitionID partId);
@@ -103,7 +103,7 @@ public:
 
     folly::Future<Status> dropSnapshot(GraphSpaceID spaceId,
                                        const std::string& name,
-                                       const std::vector<HostAddr>& hosts);
+                                       const std::vector<network::InetAddress>& hosts);
 
     folly::Future<Status> blockingWrites(GraphSpaceID spaceId,
                                          storage::cpp2::EngineSignType sign);
@@ -116,13 +116,13 @@ private:
     template<class Request,
              class RemoteFunc,
              class RespGenerator>
-    folly::Future<Status> getResponse(const HostAddr& host,
+    folly::Future<Status> getResponse(const network::InetAddress& host,
                                       Request req,
                                       RemoteFunc remoteFunc,
                                       RespGenerator respGen);
 
     template<typename Request, typename RemoteFunc>
-    void getResponse(std::vector<HostAddr> hosts,
+    void getResponse(std::vector<network::InetAddress> hosts,
                      int32_t index,
                      Request req,
                      RemoteFunc remoteFunc,
@@ -130,16 +130,16 @@ private:
                      folly::Promise<Status> pro,
                      int32_t retryLimit);
 
-    void getLeaderDist(const HostAddr& host,
+    void getLeaderDist(const network::InetAddress& host,
                        folly::Promise<StatusOr<storage::cpp2::GetLeaderResp>>&& pro,
                        int32_t retry,
                        int32_t retryLimit);
 
     Status handleResponse(const storage::cpp2::AdminExecResp& resp);
 
-    nebula::cpp2::HostAddr toThriftHost(const HostAddr& addr);
+    nebula::cpp2::HostAddr toThriftHost(const network::InetAddress& addr);
 
-    StatusOr<std::vector<HostAddr>> getPeers(GraphSpaceID spaceId, PartitionID partId);
+    StatusOr<std::vector<network::InetAddress>> getPeers(GraphSpaceID spaceId, PartitionID partId);
 
 private:
     std::unique_ptr<FaultInjector> injector_{nullptr};

@@ -8,7 +8,7 @@
 namespace nebula {
 namespace kvstore {
 
-PartsMap MemPartManager::parts(const HostAddr& hostAddr) {
+PartsMap MemPartManager::parts(const network::InetAddress& hostAddr) {
     UNUSED(hostAddr);
     return partsMap_;
 }
@@ -26,7 +26,9 @@ StatusOr<PartMeta> MemPartManager::partMeta(GraphSpaceID spaceId, PartitionID pa
     return partIt->second;
 }
 
-Status MemPartManager::partExist(const HostAddr&, GraphSpaceID spaceId, PartitionID partId) {
+Status MemPartManager::partExist(const network::InetAddress&,
+                                 GraphSpaceID spaceId,
+                                 PartitionID partId) {
     auto it = partsMap_.find(spaceId);
     if (it != partsMap_.end()) {
         auto partIt = it->second.find(partId);
@@ -39,7 +41,8 @@ Status MemPartManager::partExist(const HostAddr&, GraphSpaceID spaceId, Partitio
     return Status::SpaceNotFound();
 }
 
-MetaServerBasedPartManager::MetaServerBasedPartManager(HostAddr host, meta::MetaClient *client)
+MetaServerBasedPartManager::MetaServerBasedPartManager(network::InetAddress host,
+                                                       meta::MetaClient* client)
     : localHost_(std::move(host)) {
     client_ = client;
     CHECK_NOTNULL(client_);
@@ -54,7 +57,7 @@ MetaServerBasedPartManager::~MetaServerBasedPartManager() {
     }
 }
 
-PartsMap MetaServerBasedPartManager::parts(const HostAddr& hostAddr) {
+PartsMap MetaServerBasedPartManager::parts(const network::InetAddress& hostAddr) {
     return client_->getPartsMapFromCache(hostAddr);
 }
 
@@ -62,13 +65,13 @@ StatusOr<PartMeta> MetaServerBasedPartManager::partMeta(GraphSpaceID spaceId, Pa
     return client_->getPartMetaFromCache(spaceId, partId);
 }
 
-Status MetaServerBasedPartManager::partExist(const HostAddr& host,
+Status MetaServerBasedPartManager::partExist(const network::InetAddress& host,
                                              GraphSpaceID spaceId,
                                              PartitionID partId) {
     return client_->checkPartExistInCache(host, spaceId, partId);
 }
 
-Status MetaServerBasedPartManager::spaceExist(const HostAddr& host,
+Status MetaServerBasedPartManager::spaceExist(const network::InetAddress& host,
                                               GraphSpaceID spaceId) {
     return client_->checkSpaceExistInCache(host, spaceId);
 }

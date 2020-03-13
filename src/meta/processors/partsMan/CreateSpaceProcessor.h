@@ -23,7 +23,7 @@ public:
 protected:
     std::vector<nebula::cpp2::HostAddr> pickHosts(
                                             PartitionID partId,
-                                            const std::vector<HostAddr>& hosts,
+                                            const std::vector<network::InetAddress>& hosts,
                                             int32_t replicaFactor);
 
 private:

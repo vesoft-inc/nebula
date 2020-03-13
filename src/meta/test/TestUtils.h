@@ -80,9 +80,9 @@ public:
     }
 
     folly::Future<Status> getLeaderDist(HostLeaderMap* hostLeaderMap) override {
-        (*hostLeaderMap)[HostAddr(0, 0)][1] = {1, 2, 3, 4, 5};
-        (*hostLeaderMap)[HostAddr(1, 1)][1] = {6, 7, 8};
-        (*hostLeaderMap)[HostAddr(2, 2)][1] = {9};
+        (*hostLeaderMap)[network::InetAddress(0, 0)][1] = {1, 2, 3, 4, 5};
+        (*hostLeaderMap)[network::InetAddress(1, 1)][1] = {6, 7, 8};
+        (*hostLeaderMap)[network::InetAddress(2, 2)][1] = {9};
         return response(7);
     }
 
@@ -134,12 +134,10 @@ public:
         kvstore::KVOptions options;
         options.dataPaths_ = std::move(paths);
         options.partMan_ = std::move(partMan);
-        IPv4 localIp;
-        network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
         if (port == 0) {
             port = network::NetworkUtils::getAvailablePort();
         }
-        HostAddr localhost = HostAddr(localIp, port);
+        network::InetAddress localhost = network::InetAddress("127.0.0.1", port);
 
         auto store = std::make_unique<kvstore::NebulaStore>(std::move(options),
                                                             ioPool,
@@ -197,7 +195,7 @@ public:
         return column;
     }
 
-    static void registerHB(kvstore::KVStore* kv, const std::vector<HostAddr>& hosts) {
+    static void registerHB(kvstore::KVStore* kv, const std::vector<network::InetAddress>& hosts) {
         auto now = time::WallClock::fastNowInMilliSec();
         for (auto& h : hosts) {
             auto ret = ActiveHostsMan::updateHostInfo(kv, h, HostInfo(now));
@@ -205,32 +203,35 @@ public:
         }
      }
 
-    static int32_t createSomeHosts(kvstore::KVStore* kv,
-                                   std::vector<HostAddr> hosts
-                                       = {{0, 0}, {1, 1}, {2, 2}, {3, 3}}) {
-        std::vector<nebula::cpp2::HostAddr> thriftHosts;
-        thriftHosts.resize(hosts.size());
-        std::transform(hosts.begin(), hosts.end(), thriftHosts.begin(), [](const auto& h) {
-            nebula::cpp2::HostAddr th;
-            th.set_ip(h.first);
-            th.set_port(h.second);
-            return th;
-        });
-        registerHB(kv, hosts);
-        {
-            cpp2::ListHostsReq req;
-            auto* processor = ListHostsProcessor::instance(kv);
-            auto f = processor->getFuture();
-            processor->process(req);
-            auto resp = std::move(f).get();
-            EXPECT_EQ(hosts.size(), resp.hosts.size());
-            for (decltype(hosts.size()) i = 0; i < hosts.size(); i++) {
-                EXPECT_EQ(hosts[i].first, resp.hosts[i].hostAddr.ip);
-                EXPECT_EQ(hosts[i].second, resp.hosts[i].hostAddr.port);
-            }
-        }
-        return hosts.size();
-    }
+     static int32_t createSomeHosts(kvstore::KVStore* kv,
+                                    std::vector<network::InetAddress> hosts = {
+                                        network::InetAddress{0, 0},
+                                        network::InetAddress{1, 1},
+                                        network::InetAddress{2, 2},
+                                        network::InetAddress{3, 3}}) {
+         std::vector<nebula::cpp2::HostAddr> thriftHosts;
+         thriftHosts.resize(hosts.size());
+         std::transform(hosts.begin(), hosts.end(), thriftHosts.begin(), [](const auto& h) {
+             nebula::cpp2::HostAddr th;
+             th.set_ip(h.toLong());
+             th.set_port(h.getPort());
+             return th;
+         });
+         registerHB(kv, hosts);
+         {
+             cpp2::ListHostsReq req;
+             auto* processor = ListHostsProcessor::instance(kv);
+             auto f = processor->getFuture();
+             processor->process(req);
+             auto resp = std::move(f).get();
+             EXPECT_EQ(hosts.size(), resp.hosts.size());
+             for (decltype(hosts.size()) i = 0; i < hosts.size(); i++) {
+                 EXPECT_EQ(hosts[i].toLong(), resp.hosts[i].hostAddr.ip);
+                 EXPECT_EQ(hosts[i].getPort(), resp.hosts[i].hostAddr.port);
+             }
+         }
+         return hosts.size();
+     }
 
     static bool assembleSpace(kvstore::KVStore* kv, GraphSpaceID id, int32_t partitionNum,
                               int32_t replica = 1, int32_t totalHost = 1) {

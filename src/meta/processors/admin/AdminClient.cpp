@@ -17,8 +17,8 @@ namespace meta {
 
 folly::Future<Status> AdminClient::transLeader(GraphSpaceID spaceId,
                                                PartitionID partId,
-                                               const HostAddr& leader,
-                                               const HostAddr& dst) {
+                                               const network::InetAddress& leader,
+                                               const network::InetAddress& dst) {
     if (injector_) {
         return injector_->transLeader();
     }
@@ -65,7 +65,7 @@ folly::Future<Status> AdminClient::transLeader(GraphSpaceID spaceId,
 
 folly::Future<Status> AdminClient::addPart(GraphSpaceID spaceId,
                                            PartitionID partId,
-                                           const HostAddr& host,
+                                           const network::InetAddress& host,
                                            bool asLearner) {
     if (injector_) {
         return injector_->addPart();
@@ -88,7 +88,7 @@ folly::Future<Status> AdminClient::addPart(GraphSpaceID spaceId,
 
 folly::Future<Status> AdminClient::addLearner(GraphSpaceID spaceId,
                                               PartitionID partId,
-                                              const HostAddr& learner) {
+                                              const network::InetAddress& learner) {
     if (injector_) {
         return injector_->addLearner();
     }
@@ -110,7 +110,7 @@ folly::Future<Status> AdminClient::addLearner(GraphSpaceID spaceId,
 
 folly::Future<Status> AdminClient::waitingForCatchUpData(GraphSpaceID spaceId,
                                                          PartitionID partId,
-                                                         const HostAddr& target) {
+                                                         const network::InetAddress& target) {
     if (injector_) {
         return injector_->waitingForCatchUpData();
     }
@@ -132,7 +132,7 @@ folly::Future<Status> AdminClient::waitingForCatchUpData(GraphSpaceID spaceId,
 
 folly::Future<Status> AdminClient::memberChange(GraphSpaceID spaceId,
                                                 PartitionID partId,
-                                                const HostAddr& peer,
+                                                const network::InetAddress& peer,
                                                 bool added) {
     if (injector_) {
         return injector_->memberChange();
@@ -156,8 +156,8 @@ folly::Future<Status> AdminClient::memberChange(GraphSpaceID spaceId,
 
 folly::Future<Status> AdminClient::updateMeta(GraphSpaceID spaceId,
                                               PartitionID partId,
-                                              const HostAddr& src,
-                                              const HostAddr& dst) {
+                                              const network::InetAddress& src,
+                                              const network::InetAddress& dst) {
     if (injector_) {
         return injector_->updateMeta();
     }
@@ -167,7 +167,7 @@ folly::Future<Status> AdminClient::updateMeta(GraphSpaceID spaceId,
         return ret.status();
     }
     auto peers = std::move(ret).value();
-    auto strHosts = [] (const std::vector<HostAddr>& hosts) -> std::string {
+    auto strHosts = [] (const std::vector<network::InetAddress>& hosts) -> std::string {
         std::stringstream peersStr;
         for (auto& h : hosts) {
             peersStr << h << ",";
@@ -226,7 +226,7 @@ folly::Future<Status> AdminClient::updateMeta(GraphSpaceID spaceId,
 
 folly::Future<Status> AdminClient::removePart(GraphSpaceID spaceId,
                                               PartitionID partId,
-                                              const HostAddr& host) {
+                                              const network::InetAddress& host) {
     if (injector_) {
         return injector_->removePart();
     }
@@ -303,7 +303,7 @@ template<typename Request,
          typename RemoteFunc,
          typename RespGenerator>
 folly::Future<Status> AdminClient::getResponse(
-                                     const HostAddr& host,
+                                     const network::InetAddress& host,
                                      Request req,
                                      RemoteFunc remoteFunc,
                                      RespGenerator respGen) {
@@ -341,7 +341,7 @@ folly::Future<Status> AdminClient::getResponse(
 
 template<typename Request, typename RemoteFunc>
 void AdminClient::getResponse(
-                         std::vector<HostAddr> hosts,
+                         std::vector<network::InetAddress> hosts,
                          int32_t index,
                          Request req,
                          RemoteFunc remoteFunc,
@@ -388,12 +388,12 @@ void AdminClient::getResponse(
             switch (resp.get_code()) {
                 case storage::cpp2::ErrorCode::E_LEADER_CHANGED: {
                     if (retry < retryLimit) {
-                        HostAddr leader(0, 0);
+                        network::InetAddress leader(0, 0);
                         if (resp.get_leader() != nullptr) {
-                            leader = HostAddr(resp.get_leader()->get_ip(),
+                            leader = network::InetAddress(resp.get_leader()->get_ip(),
                                               resp.get_leader()->get_port());
                         }
-                        if (leader == HostAddr(0, 0)) {
+                        if (leader == network::InetAddress(0, 0)) {
                             usleep(1000 * 50);
                             LOG(INFO) << "The leader is in election"
                                       << ", retry " << retry
@@ -465,14 +465,15 @@ void AdminClient::getResponse(
     });  // via
 }
 
-nebula::cpp2::HostAddr AdminClient::toThriftHost(const HostAddr& addr) {
+nebula::cpp2::HostAddr AdminClient::toThriftHost(const network::InetAddress& addr) {
     nebula::cpp2::HostAddr thriftAddr;
-    thriftAddr.set_ip(addr.first);
-    thriftAddr.set_port(addr.second);
+    thriftAddr.set_ip(addr.toLong());
+    thriftAddr.set_port(addr.getPort());
     return thriftAddr;
 }
 
-StatusOr<std::vector<HostAddr>> AdminClient::getPeers(GraphSpaceID spaceId, PartitionID partId) {
+StatusOr<std::vector<network::InetAddress>> AdminClient::getPeers(GraphSpaceID spaceId,
+                                                                  PartitionID partId) {
     CHECK_NOTNULL(kv_);
     auto partKey = MetaServiceUtils::partKey(spaceId, partId);
     std::string value;
@@ -480,10 +481,10 @@ StatusOr<std::vector<HostAddr>> AdminClient::getPeers(GraphSpaceID spaceId, Part
     switch (code) {
         case kvstore::ResultCode::SUCCEEDED: {
             auto partHosts = MetaServiceUtils::parsePartVal(value);
-            std::vector<HostAddr> hosts;
+            std::vector<network::InetAddress> hosts;
             hosts.resize(partHosts.size());
             std::transform(partHosts.begin(), partHosts.end(), hosts.begin(), [](const auto& h) {
-                return HostAddr(h.get_ip(), h.get_port());
+                return network::InetAddress(h.get_ip(), h.get_port());
             });
             return hosts;
         }
@@ -496,7 +497,7 @@ StatusOr<std::vector<HostAddr>> AdminClient::getPeers(GraphSpaceID spaceId, Part
     return Status::Error("Get Failed");
 }
 
-void AdminClient::getLeaderDist(const HostAddr& host,
+void AdminClient::getLeaderDist(const network::InetAddress& host,
                                 folly::Promise<StatusOr<storage::cpp2::GetLeaderResp>>&& pro,
                                 int32_t retry,
                                 int32_t retryLimit) {
@@ -588,7 +589,7 @@ folly::Future<Status> AdminClient::createSnapshot(GraphSpaceID spaceId, const st
 
 folly::Future<Status> AdminClient::dropSnapshot(GraphSpaceID spaceId,
                                                 const std::string& name,
-                                                const std::vector<HostAddr>& hosts) {
+                                                const std::vector<network::InetAddress>& hosts) {
     storage::cpp2::DropCPRequest req;
     req.set_space_id(spaceId);
     req.set_name(name);
