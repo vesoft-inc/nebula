@@ -351,37 +351,6 @@ public:
         return sc;
     }
 
-    static StatusOr<UserID> createUser(kvstore::KVStore* kv,
-                                       bool missingOk,
-                                       folly::StringPiece account,
-                                       folly::StringPiece password,
-                                       bool               isLock,
-                                       int32_t            maxQueries,
-                                       int32_t            maxUpdates,
-                                       int32_t            maxConnections,
-                                       int32_t            maxConnectors) {
-        cpp2::CreateUserReq req;
-        req.set_missing_ok(missingOk);
-        req.set_encoded_pwd(password.str());
-        decltype(req.user) user;
-        user.set_account(account.str());
-        user.set_is_lock(isLock);
-        user.set_max_queries_per_hour(maxQueries);
-        user.set_max_updates_per_hour(maxUpdates);
-        user.set_max_connections_per_hour(maxConnections);
-        user.set_max_user_connections(maxConnectors);
-        req.set_user(std::move(user));
-        auto* processor = CreateUserProcessor::instance(kv);
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        if (resp.get_code() == cpp2::ErrorCode::SUCCEEDED) {
-            return resp.get_id().get_user_id();
-        } else {
-            return Status::Error("Create user fail");
-        }
-    }
-
     static bool verifySchema(nebula::cpp2::Schema &result,
                              nebula::cpp2::Schema &expected) {
         if (result.get_columns().size() != expected.get_columns().size()) {

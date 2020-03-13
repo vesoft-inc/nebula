@@ -72,8 +72,6 @@ class GraphScanner;
     nebula::SpaceOptItem                   *space_opt_item;
     nebula::AlterSchemaOptList             *alter_schema_opt_list;
     nebula::AlterSchemaOptItem             *alter_schema_opt_item;
-    nebula::WithUserOptList                *with_user_opt_list;
-    nebula::WithUserOptItem                *with_user_opt_item;
     nebula::RoleTypeClause                 *role_type_clause;
     nebula::AclItemClause                  *acl_item_clause;
     nebula::SchemaPropList                 *create_schema_prop_list;
@@ -106,10 +104,9 @@ class GraphScanner;
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_PART KW_PARTS KW_TIMESTAMP KW_ADD
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_CHARSET KW_COLLATE KW_COLLATION
 %token KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_INDEX KW_INDEXES
-%token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
+%token KW_IF KW_NOT KW_EXISTS KW_WITH
 %token KW_COUNT KW_COUNT_DISTINCT KW_SUM KW_AVG KW_MAX KW_MIN KW_STD KW_BIT_AND KW_BIT_OR KW_BIT_XOR
-%token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON KW_STATUS
-%token KW_ROLES KW_BY KW_DOWNLOAD KW_HDFS KW_UUID KW_CONFIGS KW_FORCE
+%token KW_BY KW_DOWNLOAD KW_HDFS KW_UUID KW_CONFIGS KW_FORCE KW_STATUS
 %token KW_VARIABLES KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
 %token KW_TTL KW_TTL_DURATION KW_TTL_COL KW_DATA KW_STOP
 %token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
@@ -121,6 +118,9 @@ class GraphScanner;
 %token KW_SNAPSHOT KW_SNAPSHOTS KW_LOOKUP
 %token KW_JOBS KW_JOB KW_RECOVER KW_FLUSH KW_COMPACT KW_SUBMIT
 %token KW_BIDIRECT
+%token KW_USER KW_USERS KW_ACCOUNT
+%token KW_PASSWORD KW_CHANGE KW_ROLE KW_ROLES
+%token KW_GOD KW_ADMIN KW_DBA KW_GUEST KW_GRANT KW_REVOKE KW_ON
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -199,8 +199,6 @@ class GraphScanner;
 %type <colspeclist> column_spec_list
 %type <colsnamelist> column_name_list
 
-%type <with_user_opt_list> with_user_opt_list
-%type <with_user_opt_item> with_user_opt_item
 %type <role_type_clause> role_type_clause
 %type <acl_item_clause> acl_item_clause
 
@@ -257,10 +255,6 @@ unreserved_keyword
      | KW_VALUES             { $$ = new std::string("values"); }
      | KW_HOSTS              { $$ = new std::string("hosts"); }
      | KW_SPACES             { $$ = new std::string("spaces"); }
-     | KW_FIRSTNAME          { $$ = new std::string("firstname"); }
-     | KW_LASTNAME           { $$ = new std::string("lastname"); }
-     | KW_EMAIL              { $$ = new std::string("email"); }
-     | KW_PHONE              { $$ = new std::string("phone"); }
      | KW_USER               { $$ = new std::string("user"); }
      | KW_USERS              { $$ = new std::string("users"); }
      | KW_PASSWORD           { $$ = new std::string("password"); }
@@ -268,6 +262,7 @@ unreserved_keyword
      | KW_ROLES              { $$ = new std::string("roles"); }
      | KW_GOD                { $$ = new std::string("god"); }
      | KW_ADMIN              { $$ = new std::string("admin"); }
+     | KW_DBA                { $$ = new std::string("dba"); }
      | KW_GUEST              { $$ = new std::string("guest"); }
      | KW_GROUP              { $$ = new std::string("group"); }
      | KW_COUNT              { $$ = new std::string("count"); }
@@ -299,6 +294,7 @@ unreserved_keyword
      | KW_PARTS              { $$ = new std::string("parts"); }
      | KW_DEFAULT            { $$ = new std::string("default"); }
      | KW_CONFIGS            { $$ = new std::string("configs"); }
+     | KW_ACCOUNT            { $$ = new std::string("account"); }
      ;
 
 agg_function
@@ -1626,9 +1622,6 @@ show_sentence
     | KW_SHOW KW_USERS {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowUsers);
     }
-    | KW_SHOW KW_USER name_label {
-        $$ = new ShowSentence(ShowSentence::ShowType::kShowUser, $3);
-    }
     | KW_SHOW KW_ROLES KW_IN name_label {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowRoles, $4);
     }
@@ -1772,78 +1765,30 @@ drop_space_sentence
 
 //  User manager sentences.
 
-with_user_opt_item
-    : KW_FIRSTNAME STRING {
-        $$ = new WithUserOptItem(WithUserOptItem::FIRST, $2);
-    }
-    | KW_LASTNAME STRING {
-        $$ = new WithUserOptItem(WithUserOptItem::LAST, $2);
-    }
-    | KW_EMAIL STRING {
-        $$ = new WithUserOptItem(WithUserOptItem::EMAIL, $2);
-    }
-    | KW_PHONE STRING {
-        $$ = new WithUserOptItem(WithUserOptItem::PHONE, $2);
-    }
-    ;
-
-with_user_opt_list
-    : with_user_opt_item {
-        $$ = new WithUserOptList();
-        $$->addOpt($1);
-    }
-    | with_user_opt_list COMMA with_user_opt_item {
-        $$ = $1;
-        $$->addOpt($3);
-    }
-    ;
-
 create_user_sentence
-    : KW_CREATE KW_USER name_label KW_WITH KW_PASSWORD STRING {
-        $$ = new CreateUserSentence($3, $6);
+    : KW_CREATE KW_USER opt_if_not_exists name_label KW_WITH KW_PASSWORD STRING {
+        $$ = new CreateUserSentence($4, $7, $3);
     }
-    | KW_CREATE KW_USER KW_IF KW_NOT KW_EXISTS name_label KW_WITH KW_PASSWORD STRING {
-        auto sentence = new CreateUserSentence($6, $9);
-        sentence->setMissingOk(true);
-        $$ = sentence;
+    | KW_CREATE KW_USER opt_if_not_exists name_label {
+        $$ = new CreateUserSentence($4, new std::string(""), $3);
     }
-    | KW_CREATE KW_USER name_label KW_WITH KW_PASSWORD STRING COMMA with_user_opt_list {
-        auto sentence = new CreateUserSentence($3, $6);
-        sentence->setOpts($8);
-        $$ = sentence;
-    }
-    | KW_CREATE KW_USER KW_IF KW_NOT KW_EXISTS name_label KW_WITH KW_PASSWORD STRING COMMA with_user_opt_list {
-        auto sentence = new CreateUserSentence($6, $9);
-        sentence->setMissingOk(true);
-        sentence->setOpts($11);
-        $$ = sentence;
-    }
+    ;
 
 alter_user_sentence
-    : KW_ALTER KW_USER name_label KW_WITH with_user_opt_list {
-        auto sentence = new AlterUserSentence($3);
-        sentence->setOpts($5);
-        $$ = sentence;
+    : KW_ALTER KW_USER name_label KW_WITH KW_PASSWORD STRING {
+        $$ = new AlterUserSentence($3, $6);
     }
     ;
 
 drop_user_sentence
-    : KW_DROP KW_USER name_label {
-        $$ = new DropUserSentence($3);
-    }
-    | KW_DROP KW_USER KW_IF KW_EXISTS name_label {
-        auto sentence = new DropUserSentence($5);
-        sentence->setMissingOk(true);
+    : KW_DROP KW_USER opt_if_exists name_label {
+        auto sentence = new DropUserSentence($4, $3);
         $$ = sentence;
     }
     ;
 
 change_password_sentence
-    : KW_CHANGE KW_PASSWORD name_label KW_TO STRING {
-        auto sentence = new ChangePasswordSentence($3, $5);
-        $$ = sentence;
-    }
-    | KW_CHANGE KW_PASSWORD name_label KW_FROM STRING KW_TO STRING {
+    : KW_CHANGE KW_PASSWORD name_label KW_FROM STRING KW_TO STRING {
         auto sentence = new ChangePasswordSentence($3, $5, $7);
         $$ = sentence;
     }
@@ -1852,6 +1797,7 @@ change_password_sentence
 role_type_clause
     : KW_GOD { $$ = new RoleTypeClause(RoleTypeClause::GOD); }
     | KW_ADMIN { $$ = new RoleTypeClause(RoleTypeClause::ADMIN); }
+    | KW_DBA { $$ = new RoleTypeClause(RoleTypeClause::DBA); }
     | KW_USER { $$ = new RoleTypeClause(RoleTypeClause::USER); }
     | KW_GUEST { $$ = new RoleTypeClause(RoleTypeClause::GUEST); }
     ;
@@ -2083,7 +2029,11 @@ void nebula::GraphParser::error(const nebula::GraphParser::location_type& loc,
         || begin >= query->size()) {
         os << " at " << loc;
     } else if (loc.begin.column < (loc.end.column ? loc.end.column - 1 : 0)) {
-        os << " near `" << query->substr(begin, loc.end.column - loc.begin.column) << "'";
+        uint32_t len = loc.end.column - loc.begin.column;
+        if (len > 80) {
+            len = 80;
+        }
+        os << " near `" << query->substr(begin, len) << "'";
     } else {
         os << " near `" << query->substr(begin, 8) << "'";
     }
