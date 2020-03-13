@@ -17,9 +17,6 @@ using TokenType = nebula::GraphParser::token;
 
 static constexpr size_t MAX_STRING = 4096;
 
-static constexpr size_t MAX_INTEGER = 9223372036854775808ULL;
-
-
 %}
 
 %x DQ_STR
