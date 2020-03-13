@@ -171,7 +171,7 @@ bool CliManager::readLine(std::string &line, bool linebreak) {
         if (!isInteractive_) {
             break;
         }
-        auto purePrompt = folly::stringPrintf("(%s@) [%s]> ",
+        auto purePrompt = folly::stringPrintf("(%s@nebula) [%s]> ",
                                               username_.c_str(),
                                               cmdProcessor_->getSpaceName().c_str());
         if (linebreak) {
