@@ -28,9 +28,7 @@ class GraphScanner;
                      nebula::GraphParser::location_type *yylloc,
                      nebula::GraphScanner& scanner);
 
-    void ifOutOfPositiveRange(const int64_t input,
-                      const nebula::GraphParser::location_type& loc);
-    void ifOutOfNegativeRange(const int64_t input,
+    void ifOutOfRange(const int64_t input,
                       const nebula::GraphParser::location_type& loc);
 }
 
@@ -314,11 +312,10 @@ agg_function
 
 primary_expression
     : INTEGER {
-        ifOutOfPositiveRange($1, @1);
+        ifOutOfRange($1, @1);
         $$ = new PrimaryExpression($1);
     }
     | MINUS INTEGER {
-        ifOutOfNegativeRange($2, @2);
         $$ = new PrimaryExpression(-$2);;
     }
     | MINUS base_expression {
@@ -593,11 +590,11 @@ go_sentence
 step_clause
     : %empty { $$ = new StepClause(); }
     | INTEGER KW_STEPS {
-        ifOutOfPositiveRange($1, @1);
+        ifOutOfRange($1, @1);
         $$ = new StepClause($1);
     }
     | KW_UPTO INTEGER KW_STEPS {
-        ifOutOfPositiveRange($2, @2);
+        ifOutOfRange($2, @2);
         $$ = new StepClause($2, true);
     }
     ;
@@ -636,15 +633,14 @@ vid
 
 unary_integer
     : PLUS INTEGER {
-        ifOutOfPositiveRange($2, @2);
+        ifOutOfRange($2, @2);
         $$ = $2;
     }
     | MINUS INTEGER {
-        ifOutOfNegativeRange($2, @2);
         $$ = -$2;
     }
     | INTEGER {
-        ifOutOfPositiveRange($1, @1);
+        ifOutOfRange($1, @1);
         $$ = $1;
     }
     ;
@@ -931,7 +927,7 @@ find_path_sentence
 find_path_upto_clause
     : %empty { $$ = new StepClause(5, true); }
     | KW_UPTO INTEGER KW_STEPS {
-        ifOutOfPositiveRange($2, @2);
+        ifOutOfRange($2, @2);
         $$ = new StepClause($2, true);
     }
     ;
@@ -947,17 +943,17 @@ to_clause
 
 limit_sentence
     : KW_LIMIT INTEGER {
-        ifOutOfPositiveRange($2, @2);
+        ifOutOfRange($2, @2);
         $$ = new LimitSentence(0, $2);
     }
     | KW_LIMIT INTEGER COMMA INTEGER {
-        ifOutOfPositiveRange($2, @2);
-        ifOutOfPositiveRange($4, @2);
+        ifOutOfRange($2, @2);
+        ifOutOfRange($4, @2);
         $$ = new LimitSentence($2, $4);
     }
     | KW_LIMIT INTEGER KW_OFFSET INTEGER {
-        ifOutOfPositiveRange($2, @2);
-        ifOutOfPositiveRange($4, @4);
+        ifOutOfRange($2, @2);
+        ifOutOfRange($4, @4);
         $$ = new LimitSentence($2, $4);
     }
     ;
@@ -1740,11 +1736,11 @@ space_opt_list
 
 space_opt_item
     : KW_PARTITION_NUM ASSIGN INTEGER {
-        ifOutOfPositiveRange($3, @3);
+        ifOutOfRange($3, @3);
         $$ = new SpaceOptItem(SpaceOptItem::PARTITION_NUM, $3);
     }
     | KW_REPLICA_FACTOR ASSIGN INTEGER {
-        ifOutOfPositiveRange($3, @3);
+        ifOutOfRange($3, @3);
         $$ = new SpaceOptItem(SpaceOptItem::REPLICA_FACTOR, $3);
     }
     | KW_CHARSET ASSIGN name_label {
@@ -1895,7 +1891,7 @@ balance_sentence
         $$ = new BalanceSentence(BalanceSentence::SubType::kData);
     }
     | KW_BALANCE KW_DATA INTEGER {
-        ifOutOfPositiveRange($3, @3);
+        ifOutOfRange($3, @3);
         $$ = new BalanceSentence($3);
     }
     | KW_BALANCE KW_DATA KW_STOP {
@@ -2045,19 +2041,13 @@ void nebula::GraphParser::error(const nebula::GraphParser::location_type& loc,
     errmsg = os.str();
 }
 
+// check the positive integer boundary
 // parameter input accept the INTEGER value
 // which filled as uint64_t
 // so the conversion is expected
-void ifOutOfPositiveRange(const int64_t input,
+void ifOutOfRange(const int64_t input,
                   const nebula::GraphParser::location_type& loc) {
     if ((uint64_t)input > 9223372036854775807ULL) {
-        throw nebula::GraphParser::syntax_error(loc, "Out of range:");
-    }
-}
-
-void ifOutOfNegativeRange(const int64_t input,
-                  const nebula::GraphParser::location_type& loc) {
-    if ((uint64_t)input > 9223372036854775808ULL) {
         throw nebula::GraphParser::syntax_error(loc, "Out of range:");
     }
 }
