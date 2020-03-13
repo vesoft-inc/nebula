@@ -131,6 +131,12 @@ TEST_F(IndexTest, TagIndex) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG INDEX duplicate_index ON person(name, name)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
     // Describe Tag Index
     {
         cpp2::ExecutionResponse resp;
@@ -306,6 +312,12 @@ TEST_F(IndexTest, EdgeIndex) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE EDGE INDEX duplicate_index ON friend(degree, degree)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
     // Describe Edge Index
     {
         cpp2::ExecutionResponse resp;
@@ -473,8 +485,8 @@ TEST_F(IndexTest, TagIndexTTL) {
 
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE TAG person_ttl_2(name string, age int, gender string)"
-                " ttl_duration = 200, ttl_col = \"age\"";
+        std::string query = "CREATE TAG person_ttl_2(name string, age int, gender string) "
+                            "ttl_duration = 200, ttl_col = \"age\"";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -615,11 +627,10 @@ TEST_F(IndexTest, EdgeIndexTTL) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE EDGE friend_ttl_2(degree int, start_time int)"
-                " ttl_duration = 200, ttl_col = \"start_time\"";
+        std::string query = "CREATE EDGE friend_ttl_2(degree int, start_time int) "
+                            "ttl_duration = 200, ttl_col = \"start_time\"";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
