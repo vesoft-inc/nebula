@@ -1,6 +1,8 @@
 set(meta_test_deps
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_service_handler>
+    $<TARGET_OBJECTS:ws_common_obj>
+    $<TARGET_OBJECTS:http_client_obj>
     $<TARGET_OBJECTS:gflags_man_obj>
     $<TARGET_OBJECTS:raftex_thrift_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
