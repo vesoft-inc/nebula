@@ -461,8 +461,8 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_VALUE("00777777777777777777777", TokenType::INTEGER,
                               00777777777777777777777),
         CHECK_LEXICAL_ERROR("9223372036854775809"),
-        CHECK_LEXICAL_ERROR("0xFFFFFFFFFFFFFFFFF"),
-        CHECK_LEXICAL_ERROR("002777777777777777777777"),
+        CHECK_LEXICAL_ERROR("0x8000000000000001"),
+        CHECK_LEXICAL_ERROR("001000000000000000000001"),
         // TODO(dutor) It's too tedious to paste an overflowed double number here,
         // thus we rely on `folly::to<double>' to cover those cases for us.
 
