@@ -49,8 +49,7 @@ TEST(DeleteVerticesTest, SimpleTest) {
                 EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
                 TagID tagId = 0;
                 while (iter->valid()) {
-                    EXPECT_EQ(folly::stringPrintf("%d_%ld_%d",
-                                                   partId, vertexId, tagId), iter->val());
+                    EXPECT_EQ(TestUtils::encodeValue(partId, vertexId, tagId), iter->val());
                     tagId++;
                     iter->next();
                 }

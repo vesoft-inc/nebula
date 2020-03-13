@@ -2040,6 +2040,19 @@ TEST(ProcessorTest, TagIndexTest) {
     {
         cpp2::CreateTagIndexReq req;
         req.set_space_id(1);
+        req.set_tag_name("tag_0");
+        std::vector<std::string> fields{"tag_0_col_0", "tag_0_col_0"};
+        req.set_fields(std::move(fields));
+        req.set_index_name("conflict_index");
+        auto* processor = CreateTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
+    }
+    {
+        cpp2::CreateTagIndexReq req;
+        req.set_space_id(1);
         req.set_tag_name("tag_not_exist");
         std::vector<std::string> fields{"tag_0_col_0"};
         req.set_fields(std::move(fields));
@@ -2214,6 +2227,19 @@ TEST(ProcessorTest, EdgeIndexTest) {
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    {
+        cpp2::CreateEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_edge_name("edge_0");
+        std::vector<std::string> fields{"edge_0_col_0", "edge_0_col_0"};
+        req.set_fields(std::move(fields));
+        req.set_index_name("conflict_index");
+        auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
     }
     {
         cpp2::CreateEdgeIndexReq req;
@@ -2457,7 +2483,7 @@ TEST(ProcessorTest, IndexCheckAlterEdgeTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INDEX_CONFLICT, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
     }
     // Verify ErrorCode of drop
     {
@@ -2480,7 +2506,7 @@ TEST(ProcessorTest, IndexCheckAlterEdgeTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INDEX_CONFLICT, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
     }
 }
 
@@ -2583,7 +2609,7 @@ TEST(ProcessorTest, IndexCheckAlterTagTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INDEX_CONFLICT, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
     }
     {
         cpp2::AlterTagReq req;
@@ -2604,7 +2630,7 @@ TEST(ProcessorTest, IndexCheckAlterTagTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INDEX_CONFLICT, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
     }
 }
 
@@ -2635,7 +2661,7 @@ TEST(ProcessorTest, IndexCheckDropEdgeTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INDEX_CONFLICT, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
     }
 }
 
@@ -2667,7 +2693,7 @@ TEST(ProcessorTest, IndexCheckDropTagTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INDEX_CONFLICT, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
     }
 }
 

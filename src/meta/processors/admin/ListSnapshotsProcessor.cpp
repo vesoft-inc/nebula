@@ -32,6 +32,7 @@ void ListSnapshotsProcessor::process(const cpp2::ListSnapshotsReq&) {
         snapshots.emplace_back(std::move(snapshot));
         iter->next();
     }
+    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_snapshots(std::move(snapshots));
     onFinished();
 }

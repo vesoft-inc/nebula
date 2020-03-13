@@ -27,8 +27,8 @@
 #include "graph/DropEdgeIndexExecutor.h"
 #include "graph/DescribeTagIndexExecutor.h"
 #include "graph/DescribeEdgeIndexExecutor.h"
-#include "graph/BuildTagIndexExecutor.h"
-#include "graph/BuildEdgeIndexExecutor.h"
+#include "graph/RebuildTagIndexExecutor.h"
+#include "graph/RebuildEdgeIndexExecutor.h"
 #include "graph/InsertVertexExecutor.h"
 #include "graph/InsertEdgeExecutor.h"
 #include "graph/AssignmentExecutor.h"
@@ -59,6 +59,8 @@
 #include "graph/ReturnExecutor.h"
 #include "graph/CreateSnapshotExecutor.h"
 #include "graph/DropSnapshotExecutor.h"
+#include "graph/UserExecutor.h"
+#include "graph/PrivilegeExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -118,11 +120,11 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
         case Sentence::Kind::kDropEdgeIndex:
              executor = std::make_unique<DropEdgeIndexExecutor>(sentence, ectx());
              break;
-        case Sentence::Kind::kBuildTagIndex:
-             executor = std::make_unique<BuildTagIndexExecutor>(sentence, ectx());
+        case Sentence::Kind::kRebuildTagIndex:
+             executor = std::make_unique<RebuildTagIndexExecutor>(sentence, ectx());
              break;
-        case Sentence::Kind::kBuildEdgeIndex:
-             executor = std::make_unique<BuildEdgeIndexExecutor>(sentence, ectx());
+        case Sentence::Kind::kRebuildEdgeIndex:
+             executor = std::make_unique<RebuildEdgeIndexExecutor>(sentence, ectx());
              break;
         case Sentence::Kind::kInsertVertex:
             executor = std::make_unique<InsertVertexExecutor>(sentence, ectx());
@@ -210,6 +212,24 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             break;
         case Sentence::Kind::kAdmin:
             executor = std::make_unique<AdminJobExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kCreateUser:
+            executor = std::make_unique<CreateUserExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kDropUser:
+            executor = std::make_unique<DropUserExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kAlterUser:
+            executor = std::make_unique<AlterUserExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kChangePassword:
+            executor = std::make_unique<ChangePasswordExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kGrant:
+            executor = std::make_unique<GrantExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kRevoke:
+            executor = std::make_unique<RevokeExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kUnknown:
             LOG(ERROR) << "Sentence kind unknown";

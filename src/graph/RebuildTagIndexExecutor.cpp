@@ -4,21 +4,21 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "graph/BuildTagIndexExecutor.h"
+#include "graph/RebuildTagIndexExecutor.h"
 
 namespace nebula {
 namespace graph {
 
-BuildTagIndexExecutor::BuildTagIndexExecutor(Sentence *sentence,
-                                             ExecutionContext *ectx) : Executor(ectx) {
-    sentence_ = static_cast<BuildTagIndexSentence*>(sentence);
+RebuildTagIndexExecutor::RebuildTagIndexExecutor(Sentence *sentence,
+                                                 ExecutionContext *ectx) : Executor(ectx) {
+    sentence_ = static_cast<RebuildTagIndexSentence*>(sentence);
 }
 
-Status BuildTagIndexExecutor::prepare() {
+Status RebuildTagIndexExecutor::prepare() {
     return Status::OK();
 }
 
-void BuildTagIndexExecutor::execute() {
+void RebuildTagIndexExecutor::execute() {
     auto status = checkIfGraphSpaceChosen();
     if (!status.ok()) {
         DCHECK(onError_);
@@ -28,9 +28,10 @@ void BuildTagIndexExecutor::execute() {
 
     auto *mc = ectx()->getMetaClient();
     auto *name = sentence_->indexName();
+    auto isOffline = sentence_->isOffline();
     auto spaceId = ectx()->rctx()->session()->space();
 
-    auto future = mc->buildTagIndex(spaceId, *name);
+    auto future = mc->rebuildTagIndex(spaceId, *name, isOffline);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
