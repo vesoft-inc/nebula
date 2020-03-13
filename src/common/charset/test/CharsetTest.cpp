@@ -16,6 +16,10 @@ TEST(CharsetInfo, isSupportCharset) {
         ASSERT_TRUE(status.ok()) << status;
     }
     {
+        auto status = charsetInfo->isSupportCharset("utf8mb4");
+        ASSERT_TRUE(status.ok()) << status;
+    }
+    {
         auto status = charsetInfo->isSupportCharset("gbk");
         ASSERT_FALSE(status.ok());
     }
@@ -26,6 +30,18 @@ TEST(CharsetInfo, isSupportCollate) {
     auto* charsetInfo = CharsetInfo::instance();
     {
         auto status = charsetInfo->isSupportCollate("utf8_bin");
+        ASSERT_TRUE(status.ok()) << status;
+    }
+    {
+        auto status = charsetInfo->isSupportCollate("utf8_general_ci");
+        ASSERT_TRUE(status.ok()) << status;
+    }
+    {
+        auto status = charsetInfo->isSupportCollate("utf8mb4_bin");
+        ASSERT_TRUE(status.ok()) << status;
+    }
+    {
+        auto status = charsetInfo->isSupportCollate("utf8mb4_general_ci");
         ASSERT_TRUE(status.ok()) << status;
     }
     {
@@ -47,7 +63,15 @@ TEST(CharsetInfo, charsetAndCollateMatch) {
     }
     {
         auto status = charsetInfo->charsetAndCollateMatch("utf8", "utf8_general_ci");
-        ASSERT_FALSE(status.ok());
+        ASSERT_TRUE(status.ok());
+    }
+    {
+        auto status = charsetInfo->charsetAndCollateMatch("utf8mb4", "utf8mb4_bin");
+        ASSERT_TRUE(status.ok()) << status;
+    }
+    {
+        auto status = charsetInfo->charsetAndCollateMatch("utf8mb4", "utf8mb4_general_ci");
+        ASSERT_TRUE(status.ok());
     }
     {
         auto status = charsetInfo->charsetAndCollateMatch("gbk", "utf8_bin");
@@ -65,7 +89,8 @@ TEST(CharsetInfo, getDefaultCollationbyCharset) {
     }
     {
         auto result = charsetInfo->getDefaultCollationbyCharset("utf8mb4");
-        ASSERT_FALSE(result.ok());
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ("utf8mb4_bin", result.value());
     }
     {
         auto result = charsetInfo->getDefaultCollationbyCharset("gbk");
@@ -82,8 +107,19 @@ TEST(CharsetInfo, getCharsetbyCollation) {
         EXPECT_EQ("utf8", result.value());
     }
     {
+        auto result = charsetInfo->getCharsetbyCollation("utf8_general_ci");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ("utf8", result.value());
+    }
+    {
         auto result = charsetInfo->getCharsetbyCollation("utf8mb4_bin");
-        ASSERT_FALSE(result.ok());
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ("utf8mb4", result.value());
+    }
+    {
+        auto result = charsetInfo->getCharsetbyCollation("utf8mb4_general_ci");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ("utf8mb4", result.value());
     }
     {
         auto result = charsetInfo->getCharsetbyCollation("gbk_bin");
@@ -95,7 +131,7 @@ TEST(CharsetInfo, getCharsetbyCollation) {
 TEST(CharsetInfo, getCharsetDesc) {
     auto* charsetInfo = CharsetInfo::instance();
     auto result = charsetInfo->getCharsetDesc();
-    EXPECT_EQ(1, result.size());
+    EXPECT_EQ(2, result.size());
 }
 
 
@@ -120,7 +156,8 @@ TEST(CharsetInfo, nebulaStrCmp) {
     auto* charsetInfo = CharsetInfo::instance();
     {
         auto result = charsetInfo->nebulaStrCmp("utf8mb4_bin", "123456", "21345");
-        ASSERT_FALSE(result.ok());
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(-1, result.value());
     }
     {
         auto result = charsetInfo->nebulaStrCmp("utf8_bin", "123456", "21345");
@@ -146,7 +183,7 @@ TEST(CharsetInfo, nebulaStrCmp) {
         // Determined by locale characteristics, not by ASCII
         auto result = charsetInfo->nebulaStrCmp("utf8_bin", "China", "china");
         ASSERT_TRUE(result.ok()) << result.status();
-        EXPECT_EQ(1, result.value());
+        EXPECT_EQ(-1, result.value());
     }
     {
         auto result = charsetInfo->nebulaStrCmp("utf8_bin", "北京", "天津");
@@ -160,7 +197,8 @@ TEST(CharsetInfo, nebulaStrCmpLT) {
     auto* charsetInfo = CharsetInfo::instance();
     {
         auto result = charsetInfo->nebulaStrCmpLT("utf8mb4_bin", "123456", "21345");
-        ASSERT_FALSE(result.ok());
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_TRUE(result.value());
     }
     {
         auto result = charsetInfo->nebulaStrCmpLT("utf8_bin", "123456", "21345");
@@ -185,7 +223,7 @@ TEST(CharsetInfo, nebulaStrCmpLT) {
     {
         auto result = charsetInfo->nebulaStrCmpLT("utf8_bin", "China", "china");
         ASSERT_TRUE(result.ok()) << result.status();
-        EXPECT_FALSE(result.value());
+        EXPECT_TRUE(result.value());
     }
     {
         auto result = charsetInfo->nebulaStrCmpLT("utf8_bin", "北京", "天津");
@@ -198,7 +236,8 @@ TEST(CharsetInfo, nebulaStrCmpLE) {
     auto* charsetInfo = CharsetInfo::instance();
     {
         auto result = charsetInfo->nebulaStrCmpLE("utf8mb4_bin", "123456", "21345");
-        ASSERT_FALSE(result.ok());
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_TRUE(result.value());
     }
     {
         auto result = charsetInfo->nebulaStrCmpLE("utf8_bin", "beijing", "tianjin");
@@ -232,7 +271,8 @@ TEST(CharsetInfo, nebulaStrCmpGT) {
     auto* charsetInfo = CharsetInfo::instance();
     {
         auto result = charsetInfo->nebulaStrCmpGT("utf8mb4_bin", "123456", "21345");
-        ASSERT_FALSE(result.ok());
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_FALSE(result.value());
     }
     {
         auto result = charsetInfo->nebulaStrCmpGT("utf8_bin", "beijing", "tianjin");
@@ -266,7 +306,8 @@ TEST(CharsetInfo, nebulaStrCmpGE) {
     auto* charsetInfo = CharsetInfo::instance();
     {
         auto result = charsetInfo->nebulaStrCmpGE("utf8mb4_bin", "123456", "21345");
-        ASSERT_FALSE(result.ok());
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_FALSE(result.value());
     }
     {
         auto result = charsetInfo->nebulaStrCmpGE("utf8_bin", "beijing", "tianjin");
@@ -300,7 +341,8 @@ TEST(CharsetInfo, nebulaStrCmpEQ) {
     auto* charsetInfo = CharsetInfo::instance();
     {
         auto result = charsetInfo->nebulaStrCmpEQ("utf8mb4_bin", "123456", "21345");
-        ASSERT_FALSE(result.ok());
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_FALSE(result.value());
     }
     {
         auto result = charsetInfo->nebulaStrCmpEQ("utf8_bin", "beijing", "tianjin");
@@ -334,7 +376,8 @@ TEST(CharsetInfo, nebulaStrCmpNE) {
     auto* charsetInfo = CharsetInfo::instance();
     {
         auto result = charsetInfo->nebulaStrCmpNE("utf8mb4_bin", "123456", "21345");
-        ASSERT_FALSE(result.ok());
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_TRUE(result.value());
     }
     {
         auto result = charsetInfo->nebulaStrCmpNE("utf8_bin", "beijing", "tianjin");

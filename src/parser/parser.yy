@@ -1750,12 +1750,11 @@ space_opt_item
         $$ = new SpaceOptItem(SpaceOptItem::REPLICA_FACTOR, $3);
     }
     | KW_CHARSET ASSIGN name_label {
-        // Currently support utf8, it is an alias for utf8mb4
+        // support utf8, utf8mb4. utf8 is an alias for utf8mb4
         $$ = new SpaceOptItem(SpaceOptItem::CHARSET, *$3);
         delete $3;
     }
     | KW_COLLATE ASSIGN name_label {
-        // Currently support utf8_bin, it is an alias for utf8mb4_bin
         $$ = new SpaceOptItem(SpaceOptItem::COLLATE, *$3);
         delete $3;
     }

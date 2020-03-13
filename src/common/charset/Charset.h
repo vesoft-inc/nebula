@@ -74,7 +74,7 @@ public:
 
     /**
      * Compare strings according to the collation of the specified locale
-     */
+    */
     StatusOr<int> nebulaStrCmp(const std::string& collateName,
                                const std::string& p1,
                                const std::string& p2);
@@ -129,30 +129,36 @@ public:
 
 private:
     CharsetInfo() {
-       charsetDesc_["utf8"] = {"utf8", "utf8_bin", {"utf8_bin"}, "UTF-8 Unicode", 4};
+       charsetDesc_["utf8"] = {"utf8",
+                               "utf8_bin",
+                               {"utf8_bin", "utf8_general_ci"},
+                               "UTF-8 Unicode",
+                               4};
+       charsetDesc_["utf8mb4"] = {"utf8mb4",
+                                  "utf8mb4_bin",
+                                  {"utf8mb4_bin", "utf8mb4_general_ci"},
+                                  "UTF-8 Unicode", 4};
     }
 
     /**
      * List of supported charsets
+     * At present, we treat utf8 as an alias of utf8mb4, so utf8 is completely
+     * equivalent to utf8mb4,UTF8 and utf8mb4 support characters up to 4 bytes.
      */
-    std::unordered_set<std::string> supportCharsets_ = {"utf8"};
+    std::unordered_set<std::string> supportCharsets_ = {"utf8", "utf8mb4"};
 
     /**
      * List of supported collations
      */
-    std::unordered_set<std::string> supportCollations_ = {"utf8_bin"};
+    std::unordered_set<std::string> supportCollations_ = {"utf8_bin",
+                                                          "utf8_general_ci",
+                                                          "utf8mb4_bin",
+                                                          "utf8mb4_general_ci"};
 
     /**
      * Description information of supported charsets
      */
     std::unordered_map<std::string, CharsetDesc> charsetDesc_;
-
-    /**
-     * Mapping collation to locale
-     */
-    std::unordered_map<std::string, std::string> collationToLocale_ = {
-        {"utf8_bin", "en_US.UTF-8"}
-    };
 };
 
 }   // namespace nebula

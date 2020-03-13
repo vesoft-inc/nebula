@@ -45,7 +45,6 @@
 #include <ctime>
 #include <cassert>
 #include <cmath>
-#include <locale>
 
 #include <gflags/gflags.h>
 

@@ -5,6 +5,7 @@
  */
 
 #include "charset/Charset.h"
+#include "charset/UniUtf8.h"
 
 namespace nebula {
 
@@ -84,23 +85,21 @@ size_t CharsetInfo::getUtf8Charlength(const std::string& str) {
 
 
 StatusOr<int> CharsetInfo::nebulaStrCmp(const std::string& collateName,
-                                        const std::string& p1,
-                                        const std::string& p2) {
-    auto iter = collationToLocale_.find(collateName);
-    if (iter == collationToLocale_.end()) {
-        return Status::Error("Collation `%s' not support", collateName.c_str());
+                                        const std::string& str1,
+                                        const std::string& str2) {
+    int ret = 0;
+    if (!collateName.compare("utf8_bin") || !collateName.compare("utf8mb4_bin")) {
+        ret = str1.compare(str2);
+    } else if (!collateName.compare("utf8_general_ci") ||
+               !collateName.compare("utf8mb4_general_ci")) {
+        ret = UniUtf8::generalCICmp(str1, str2);
     }
-
-    // For charset is incomplete in locale
-    std::locale loc(iter->second);
-    if (!std::has_facet<std::ctype<char>>(loc)) {
-        return Status::Error("Locale: `%s' environment is not supported", iter->second.c_str());
+    if (ret < 0) {
+        ret = -1;
+    } else if (ret > 0) {
+        ret = 1;
     }
-    auto& f = std::use_facet<std::collate<char>>(loc);
-
-    std::string str1(p1), str2(p2);
-    return f.compare(&str1[0], &str1[0] + str1.size(),
-                     &str2[0], &str2[0] + str2.size());
+    return ret;
 }
 
 
