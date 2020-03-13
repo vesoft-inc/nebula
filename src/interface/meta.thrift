@@ -49,7 +49,7 @@ enum ErrorCode {
     E_INVALID_CHARSET           = -45,
     E_INVALID_COLLATE           = -46,
     E_CHARSET_COLLATE_NOT_MATCH = -47,
-    E_TOOLARGE_REPLICA_FACTOR   = -48,
+    E_TOO_LARGE_REPLICA_FACTOR   = -48,
 
     E_SNAPSHOT_FAILURE   = -51,
 

@@ -519,7 +519,7 @@ Status MetaClient::handleResponse(const RESP& resp) {
             return Status::Error("No valid partition_num");
         case cpp2::ErrorCode::E_INVALID_REPLICA_FACTOR:
             return Status::Error("No valid replica_factor");
-        case cpp2::ErrorCode::E_TOOLARGE_REPLICA_FACTOR:
+        case cpp2::ErrorCode::E_TOO_LARGE_REPLICA_FACTOR:
             return Status::Error("Too Large replica_factor");
         case cpp2::ErrorCode::E_INVALID_CHARSET:
             return Status::Error("No valid charset");

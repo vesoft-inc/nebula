@@ -9,8 +9,8 @@
 
 DEFINE_int32(default_parts_num, 100, "The default number of parts when a space is created");
 DEFINE_int32(default_replica_factor, 1, "The default replica factor when a space is created");
-DEFINE_int32(default_space_sum, 100, "The default number of space can be created");
-DEFINE_int32(default_max_replica_factor, 1, "The default max replica factor that a space can take");
+DEFINE_int32(default_spaces_max_num, 100, "The default limited number of spaces can be created");
+DEFINE_int32(default_replica_factor_max_num, 1, "The default max replica factor that a space can take");
 
 namespace nebula {
 namespace meta {
@@ -20,7 +20,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     auto properties = req.get_properties();
     auto spaceRet = getSpaceId(properties.get_space_name());
     auto count = getSpaceSum();
-    if (count >= FLAGS_default_space_sum ) {
+    if (count >= FLAGS_default_spaces_max_num) {
         LOG(ERROR) << "Create Space Failed : TOO MANY SPACES!";
         handleErrorCode(cpp2::ErrorCode::E_TOO_MANY_SPACES);
         onFinished();
@@ -78,9 +78,9 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         properties.set_partition_num(partitionNum);
     }
 
-    if (replicaFactor > default_max_replica_factor) {
-        LOG(ERROR) << "ReplicaFactor is too Large";
-        resp_.set_code(cpp2::ErrorCode::E_TOOLARGE_REPLICA_FACTOR);
+    if (replicaFactor > FLAGS_default_replica_factor_max_num) {
+        LOG(ERROR) << "The replicaFactor is too Large";
+        resp_.set_code(cpp2::ErrorCode::E_TOO_LARGE_REPLICA_FACTOR);
         onFinished();
         return;
     }
