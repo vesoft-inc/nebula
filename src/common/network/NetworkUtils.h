@@ -35,7 +35,6 @@ public:
     // So don't use it in production code.
     static uint16_t getAvailablePort();
 
-//    static StatusOr<std::vector<boost::asio::ip::address>> resolveHost(const std::string& host);
     // Convert the given IP/HOST and Port to a InetAddress
     static StatusOr<InetAddress> toInetAddress(const std::string &ip, uint16_t port);
     // Retrieve the string-form IP from the given InetAddress
