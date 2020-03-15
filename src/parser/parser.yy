@@ -250,6 +250,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 
 name_label
      : LABEL { $$ = $1; }
+     | STRING { $$ = $1; }
      | unreserved_keyword { $$ = $1; }
      ;
 
@@ -298,6 +299,21 @@ unreserved_keyword
      | KW_DEFAULT            { $$ = new std::string("default"); }
      | KW_CONFIGS            { $$ = new std::string("configs"); }
      | KW_ACCOUNT            { $$ = new std::string("account"); }
+     | KW_HDFS               { $$ = new std::string("hdfs"); }
+     | KW_PARTITION_NUM      { $$ = new std::string("partition_num"); }
+     | KW_REPLICA_FACTOR     { $$ = new std::string("replica_factor"); }
+     | KW_CHARSET            { $$ = new std::string("charset"); }
+     | KW_COLLATE            { $$ = new std::string("collate"); }
+     | KW_COLLATION          { $$ = new std::string("collation"); }
+     | KW_TTL_DURATION       { $$ = new std::string("ttl_duration"); }
+     | KW_TTL_COL            { $$ = new std::string("ttl_col"); }
+     | KW_SNAPSHOT           { $$ = new std::string("snapshot"); }
+     | KW_SNAPSHOTS          { $$ = new std::string("snapshots"); }
+     | KW_GRAPH              { $$ = new std::string("graph"); }
+     | KW_META               { $$ = new std::string("meta"); }
+     | KW_STORAGE            { $$ = new std::string("storage"); }
+     | KW_ALL                { $$ = new std::string("all"); }
+     | KW_SHORTEST           { $$ = new std::string("shortest"); }
      ;
 
 agg_function
@@ -331,10 +347,6 @@ primary_expression
 base_expression
     : DOUBLE {
         $$ = new PrimaryExpression($1);
-    }
-    | STRING {
-        $$ = new PrimaryExpression(*$1);
-        delete $1;
     }
     | BOOL {
         $$ = new PrimaryExpression($1);
