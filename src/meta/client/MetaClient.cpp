@@ -21,6 +21,7 @@ DEFINE_int32(meta_client_retry_times, 3, "meta client retry times, 0 means no re
 DEFINE_int32(meta_client_retry_interval_secs, 1, "meta client sleep interval between retry");
 DEFINE_int32(meta_client_timeout_ms, 60 * 1000, "meta client timeout");
 DEFINE_string(cluster_id_path, "cluster.id", "file path saved clusterId");
+DEFINE_int32(meta_domain_ttl_secs, 60, "dns query interval for meta");
 DECLARE_string(gflags_mode_json);
 
 
@@ -95,6 +96,8 @@ bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
     LOG(INFO) << "Register time task for heartbeat!";
     size_t delayMS = FLAGS_heartbeat_interval_secs * 1000 + folly::Random::rand32(900);
     bgThread_->addDelayTask(delayMS, &MetaClient::heartBeatThreadFunc, this);
+    auto ttl = FLAGS_meta_domain_ttl_secs * 1000;
+    bgThread_->addDelayTask(ttl, &MetaClient::dnsQUeryThreadFunc, this);
     return ready_;
 }
 
@@ -107,6 +110,35 @@ void MetaClient::stop() {
     isRunning_ = false;
 }
 
+void MetaClient::dnsQUeryThreadFunc() {
+    SCOPE_EXIT {
+        bgThread_->addDelayTask(
+            FLAGS_meta_domain_ttl_secs * 1000, &MetaClient::dnsQUeryThreadFunc, this);
+    };
+    // we need update addr from dns.
+    std::vector<network::InetAddress> addrs;
+    std::vector<int> addrsIndex;
+    for (auto it = addrs.cbegin(); it != addrs.cend(); ++it) {
+        if (it->isResolved()) {
+            try {
+                auto newAddr = network::InetAddress(it->getHostStr(), it->getPort(), true);
+                if (newAddr != (*it)) {
+                    addrs.emplace_back(newAddr);
+                    addrsIndex.emplace_back(std::distance(addrs.cbegin(), it));
+                }
+            } catch (std::exception& e) {
+                LOG(ERROR) << "update meta addr failed, err: " << e.what();
+            }
+            continue;
+        }
+    }
+    folly::SharedMutexReadPriority::WriteHolder holder(addrsLock_);
+    for (auto index : addrsIndex) {
+        LOG(INFO) << "meta will update host from " << addrs_[index] << " to: " << addrs[index];
+        addrs_[index] = std::move(addrs[index]);
+    }
+}
+
 void MetaClient::heartBeatThreadFunc() {
     SCOPE_EXIT {
         bgThread_->addDelayTask(FLAGS_heartbeat_interval_secs * 1000,
@@ -116,15 +148,6 @@ void MetaClient::heartBeatThreadFunc() {
     auto ret = heartbeat().get();
     if (!ret.ok()) {
         LOG(ERROR) << "Heartbeat failed, status:" << ret.status();
-        // // we need update addr from dns.
-        // auto metaAddrsRet = nebula::network::NetworkUtils::toHosts(network::InetAddresss_);
-        // if (!metaAddrsRet.ok() || metaAddrsRet.value().empty()) {
-        //     LOG(ERROR) << "Can't get metaServer address, status:" << metaAddrsRet.status()
-        //                << ", network::InetAddresss_:" << network::InetAddresss_;
-        //     return;
-        // }
-        // folly::RWSpinLock::WriteHolder holder(hostLock_);
-        // addrs_ = std::move(metaAddrsRet.value());
         return;
     }
 

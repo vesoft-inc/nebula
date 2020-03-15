@@ -447,6 +447,7 @@ protected:
     bool loadData();
     bool loadCfg();
     void heartBeatThreadFunc();
+    void dnsQUeryThreadFunc();
 
     bool registerCfg();
     void updateGflagsValue(const ConfigItem& item);
@@ -472,15 +473,18 @@ protected:
 
     void updateActive() {
         folly::RWSpinLock::WriteHolder holder(hostLock_);
+        folly::SharedMutexReadPriority::ReadHolder addrsHolder(addrsLock_);
         active_ = addrs_[folly::Random::rand64(addrs_.size())];
     }
 
     void updateLeader(network::InetAddress leader = {0, 0}) {
         if (!leader.isZero()) {
             folly::RWSpinLock::WriteHolder holder(hostLock_);
+            folly::SharedMutexReadPriority::ReadHolder addrsHolder(addrsLock_);
             leader_ = leader;
         } else {
             folly::RWSpinLock::WriteHolder holder(hostLock_);
+            folly::SharedMutexReadPriority::ReadHolder addrsHolder(addrsLock_);
             leader_ = addrs_[folly::Random::rand64(addrs_.size())];
         }
     }
@@ -527,9 +531,12 @@ private:
     int64_t               metadLastUpdateTime_{0};
 
     LocalCache localCache_;
+
     std::vector<network::InetAddress> addrs_;
+    folly::SharedMutexReadPriority addrsLock_;
     // The lock used to protect active_ and leader_.
     folly::RWSpinLock hostLock_;
+
     network::InetAddress active_;
     network::InetAddress leader_;
     network::InetAddress localHost_;
