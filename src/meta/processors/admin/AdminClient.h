@@ -36,6 +36,8 @@ public:
     virtual folly::Future<Status> createSnapshot() = 0;
     virtual folly::Future<Status> dropSnapshot() = 0;
     virtual folly::Future<Status> blockingWrites() = 0;
+    virtual folly::Future<Status> rebuildTagIndex() = 0;
+    virtual folly::Future<Status> rebuildEdgeIndex() = 0;
 };
 
 static const network::InetAddress kRandomPeer(0, 0);
@@ -107,6 +109,18 @@ public:
 
     folly::Future<Status> blockingWrites(GraphSpaceID spaceId,
                                          storage::cpp2::EngineSignType sign);
+
+    folly::Future<Status> rebuildTagIndex(const network::InetAddress& address,
+                                          GraphSpaceID spaceId,
+                                          IndexID indexID,
+                                          std::vector<PartitionID> parts,
+                                          bool isOffline);
+
+    folly::Future<Status> rebuildEdgeIndex(const network::InetAddress& address,
+                                           GraphSpaceID spaceId,
+                                           IndexID indexID,
+                                           std::vector<PartitionID> parts,
+                                           bool isOffline);
 
     FaultInjector* faultInjector() {
         return injector_.get();

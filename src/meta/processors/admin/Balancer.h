@@ -46,6 +46,8 @@ class Balancer {
     FRIEND_TEST(BalanceTest, NormalTest);
     FRIEND_TEST(BalanceTest, SpecifyHostTest);
     FRIEND_TEST(BalanceTest, SpecifyMultiHostTest);
+    FRIEND_TEST(BalanceTest, MockReplaceMachineTest);
+    FRIEND_TEST(BalanceTest, SingleReplicaTest);
     FRIEND_TEST(BalanceTest, RecoveryTest);
     FRIEND_TEST(BalanceTest, StopBalanceDataTest);
     FRIEND_TEST(BalanceTest, LeaderBalancePlanTest);
@@ -68,7 +70,8 @@ public:
     /*
      * Return Error if reject the balance request, otherwise return balance id.
      * */
-    ErrorOr<cpp2::ErrorCode, BalanceID> balance(std::vector<network::InetAddress> hostDel = {});
+    ErrorOr<cpp2::ErrorCode, BalanceID> balance(
+        std::unordered_set<network::InetAddress> hostDel = {});
 
     /**
      * Show balance plan id status.
@@ -130,11 +133,12 @@ private:
     /**
      * Build balance plan and save it in kvstore.
      * */
-    cpp2::ErrorCode buildBalancePlan(std::vector<network::InetAddress> hostDel);
+    cpp2::ErrorCode buildBalancePlan(std::unordered_set<network::InetAddress> hostDel);
 
     ErrorOr<cpp2::ErrorCode, std::vector<BalanceTask>> genTasks(
         GraphSpaceID spaceId,
-        std::vector<network::InetAddress>& hostDel);
+        int32_t spaceReplica,
+        std::unordered_set<network::InetAddress> hostDel);
 
     void getHostParts(GraphSpaceID spaceId,
                       std::unordered_map<network::InetAddress, std::vector<PartitionID>>& hostParts,
@@ -144,10 +148,12 @@ private:
         const std::unordered_map<network::InetAddress, std::vector<PartitionID>>& hostParts,
         const std::vector<network::InetAddress>& activeHosts,
         std::vector<network::InetAddress>& newlyAdded,
-        std::vector<network::InetAddress>& lost);
+        std::unordered_set<network::InetAddress>& lost);
 
-    StatusOr<network::InetAddress> hostWithPart(
+    Status checkReplica(
         const std::unordered_map<network::InetAddress, std::vector<PartitionID>>& hostParts,
+        const std::vector<network::InetAddress>& activeHosts,
+        int32_t replica,
         PartitionID partId);
 
     StatusOr<network::InetAddress> hostWithMinimalParts(
@@ -164,7 +170,8 @@ private:
     std::vector<std::pair<network::InetAddress, int32_t>> sortedHostsByParts(
         const std::unordered_map<network::InetAddress, std::vector<PartitionID>>& hostParts);
 
-    bool getAllSpaces(std::vector<GraphSpaceID>& spaces, kvstore::ResultCode& retCode);
+    bool getAllSpaces(std::vector<std::pair<GraphSpaceID, int32_t>>& spaces,
+                      kvstore::ResultCode& retCode);
 
     std::unordered_map<network::InetAddress, std::vector<PartitionID>>
     buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap, GraphSpaceID spaceId,

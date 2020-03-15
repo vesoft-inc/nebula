@@ -166,8 +166,8 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             decltype(edge.key) edgeKey;
             edgeKey.set_src(srcId);
             edgeKey.set_edge_type(101);
-            edgeKey.set_dst(srcId*100 + 2);
-            edgeKey.set_ranking(srcId*100 + 3);
+            edgeKey.set_dst(srcId * 100 + 2);
+            edgeKey.set_ranking(srcId * 100 + 3);
             edge.set_key(std::move(edgeKey));
             // Generate some edge props.
             auto val = TestUtils::setupEncode(10, 20);
@@ -188,8 +188,8 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             cpp2::EdgeKey edgeKey;
             edgeKey.set_src(srcId);
             edgeKey.set_edge_type(101);
-            edgeKey.set_dst(srcId*100 + 2);
-            edgeKey.set_ranking(srcId*100 + 3);
+            edgeKey.set_dst(srcId * 100 + 2);
+            edgeKey.set_ranking(srcId * 100 + 3);
             edgeKeys.emplace_back(std::move(edgeKey));
         }
         for (int i = 0; i < 20; i++) {
@@ -239,52 +239,21 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             vertices.emplace_back(srcId);
         }
 
-        // Get all edgeKeys of a vertex
-        {
-            auto f = client->getEdgeKeys(spaceId, vertices);
-            auto resp = std::move(f).get();
-            ASSERT_TRUE(resp.succeeded());
-
-            auto edgeKeyResponses =  std::move(resp).responses();
-            for (auto& response : edgeKeyResponses) {
-                auto result = response.get_edge_keys();
-                ASSERT_EQ(0, response.get_result().get_failed_codes().size());
-                for (auto iter = result->begin(); iter != result->end(); iter++) {
-                    edgeKeys.emplace(iter->first, std::move(iter->second));
-                }
-            }
-
-            for (int64_t srcId = 0; srcId < 10; srcId++) {
-                auto& edge = edgeKeys[srcId][0];
-                CHECK_EQ(srcId, edge.get_src());
-                CHECK_EQ(101, edge.get_edge_type());
-                CHECK_EQ(srcId*100 + 3, edge.get_ranking());
-                CHECK_EQ(srcId*100 + 2, edge.get_dst());
-            }
-        }
         // Delete all edges of a vertex
         {
             for (int64_t srcId = 0; srcId < 10; srcId++) {
-                auto keys = edgeKeys[srcId];
+                std::vector<cpp2::EdgeKey> keys;
+                cpp2::EdgeKey key;
+                key.set_src(srcId);
+                key.set_edge_type(101);
+                key.set_ranking(srcId * 100 + 3);
+                key.set_dst(srcId * 100 + 2);
+                keys.emplace_back(std::move(key));
                 auto f = client->deleteEdges(spaceId, keys);
                 auto resp = std::move(f).get();
                 ASSERT_TRUE(resp.succeeded());
                 for (auto& response : std::move(resp).responses()) {
                     ASSERT_EQ(0, response.get_result().get_failed_codes().size());
-                }
-            }
-
-            // Check that edges have been successfully deleted
-            auto f = client->getEdgeKeys(spaceId, vertices);
-            auto resp = std::move(f).get();
-            ASSERT_TRUE(resp.succeeded());
-            auto edgeKeyResponses = std::move(resp).responses();
-
-            for (auto& response : edgeKeyResponses) {
-                auto result = response.get_edge_keys();
-                ASSERT_EQ(0, response.get_result().get_failed_codes().size());
-                for (auto iter = result->begin(); iter != result->end(); iter++) {
-                    ASSERT_EQ(0, iter->second.size());
                 }
             }
         }

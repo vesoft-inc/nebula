@@ -29,6 +29,7 @@ void GetEdgeIndexProcessor::process(const cpp2::GetEdgeIndexReq& req) {
     if (!edgeResult.ok()) {
         LOG(ERROR) << "Get Edge Index Failed: SpaceID " << spaceID
                    << " Index Name: " << indexName << " status: " << edgeResult.status();
+        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }

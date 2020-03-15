@@ -471,10 +471,10 @@ void GoExecutor::stepOut() {
     VLOG(1) << "edge type size: " << edgeTypes_.size()
             << " return cols: " << returns.size();
     auto future  = ectx()->getStorageClient()->getNeighbors(spaceId,
-                                                   starts_,
-                                                   edgeTypes_,
-                                                   filterPushdown,
-                                                   std::move(returns));
+                                                            starts_,
+                                                            edgeTypes_,
+                                                            filterPushdown,
+                                                            std::move(returns));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&result) {
         auto completeness = result.completeness();

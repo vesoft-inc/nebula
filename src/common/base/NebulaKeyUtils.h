@@ -11,8 +11,9 @@
 #include "interface/gen-cpp2/common_types.h"
 #include "common/filter/Expressions.h"
 
-namespace nebula {
 using IndexValues = std::vector<std::pair<nebula::cpp2::SupportedType, std::string>>;
+
+namespace nebula {
 
 /**
  * VertexKeyUtils:

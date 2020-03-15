@@ -68,14 +68,12 @@ void BalanceProcessor::process(const cpp2::BalanceReq& req) {
         onFinished();
         return;
     }
-    std::vector<network::InetAddress> hostDel;
+    std::unordered_set<network::InetAddress> hostDel;
     if (req.get_host_del() != nullptr) {
         hostDel.reserve(req.get_host_del()->size());
-        std::transform(
-            req.get_host_del()->begin(),
-            req.get_host_del()->end(),
-            std::back_inserter(hostDel),
-            [](const auto& h) { return network::InetAddress(h.get_ip(), h.get_port()); });
+        for (const auto& host : *req.get_host_del()) {
+            hostDel.emplace(host.get_ip());
+        }
     }
     auto hosts = ActiveHostsMan::getActiveHosts(kvstore_);
     if (hosts.empty()) {

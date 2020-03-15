@@ -170,8 +170,8 @@ TEST(MetaClientTest, InterfacesTest) {
 
             // getTagSchemaFromCache
             sleep(FLAGS_heartbeat_interval_secs + 1);
-            auto ret = client->getNewestTagVerFromCache(spaceId,
-                                                        ret1.value().begin()->tag_id);
+            auto ret = client->getLatestTagVersionFromCache(spaceId,
+                                                            ret1.value().begin()->tag_id);
             CHECK(ret.ok());
             auto ver = ret.value();
             auto ret2 = client->getTagSchemaFromCache(spaceId,
@@ -190,7 +190,7 @@ TEST(MetaClientTest, InterfacesTest) {
             ASSERT_EQ(nullptr, outSchema->getFieldName(-1));
             ASSERT_EQ(nullptr, outSchema->getFieldName(5));
             ASSERT_EQ(nullptr, outSchema->getFieldName(6));
-            auto retVer = schemaMan->getNewestTagSchemaVer(spaceId, tagId);
+            auto retVer = schemaMan->getLatestTagSchemaVersion(spaceId, tagId);
             ASSERT_TRUE(retVer.ok());
             auto version = retVer.value();
             ASSERT_EQ(0, version);
@@ -210,8 +210,8 @@ TEST(MetaClientTest, InterfacesTest) {
             ASSERT_NE(ret1.value().begin()->edge_type, 0);
 
             // getEdgeSchemaFromCache
-            auto retVer = client->getNewestEdgeVerFromCache(spaceId,
-                                                            ret1.value().begin()->edge_type);
+            auto retVer = client->getLatestEdgeVersionFromCache(spaceId,
+                                                                ret1.value().begin()->edge_type);
             CHECK(retVer.ok());
             auto ver = retVer.value();
             auto ret2 = client->getEdgeSchemaFromCache(spaceId,
@@ -229,7 +229,7 @@ TEST(MetaClientTest, InterfacesTest) {
             ASSERT_EQ(nullptr, outSchema->getFieldName(-1));
             ASSERT_EQ(nullptr, outSchema->getFieldName(5));
             ASSERT_EQ(nullptr, outSchema->getFieldName(6));
-            auto versionRet = schemaMan->getNewestEdgeSchemaVer(spaceId, edgeType);
+            auto versionRet = schemaMan->getLatestEdgeSchemaVersion(spaceId, edgeType);
             ASSERT_TRUE(versionRet.ok());
             auto version = versionRet.value();
             ASSERT_EQ(0, version);
@@ -666,6 +666,15 @@ TEST(MetaClientTest, TagIndexTest) {
         ASSERT_EQ(Status::Error("not existed!"), result.status());
     }
     {
+        std::vector<std::string>&& fields {"tag_0_col_0",  "tag_0_col_0"};
+        auto result = client->createTagIndex(space,
+                                             "tag_conflict_index",
+                                             "tag_0",
+                                             std::move(fields)).get();
+        ASSERT_FALSE(result.ok());
+        ASSERT_EQ(Status::Error("conflict"), result.status());
+    }
+    {
         auto result = client->listTagIndexes(space).get();
         auto values = result.value();
         ASSERT_EQ(2, values.size());
@@ -822,6 +831,15 @@ TEST(MetaClientTest, EdgeIndexTest) {
                                               std::move(fields)).get();
         ASSERT_FALSE(result.ok());
         ASSERT_EQ(Status::Error("not existed!"), result.status());
+    }
+    {
+        std::vector<std::string>&& fields {"edge_0_col_0",  "edge_0_col_0"};
+        auto result = client->createEdgeIndex(space,
+                                              "edge_conflict_index",
+                                              "edge_0",
+                                              std::move(fields)).get();
+        ASSERT_FALSE(result.ok());
+        ASSERT_EQ(Status::Error("conflict"), result.status());
     }
     {
         std::vector<std::string>&& fields {"edge_0_col_0",  "not_exist_field"};

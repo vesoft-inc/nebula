@@ -11,11 +11,8 @@
 
 namespace nebula {
 namespace meta {
-using SignType = storage::cpp2::EngineSignType;
 
-void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq& req) {
-    UNUSED(req);
-
+void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
     auto snapshot = genSnapshotName();
     folly::SharedMutex::WriteHolder wHolder(LockUtils::snapshotLock());
 

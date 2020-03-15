@@ -95,21 +95,6 @@ private:
             : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
-
-class GetUserProcessor : public BaseProcessor<cpp2::GetUserResp> {
-public:
-    static GetUserProcessor* instance(kvstore::KVStore* kvstore) {
-        return new GetUserProcessor(kvstore);
-    }
-
-    void process(const cpp2::GetUserReq& req);
-
-private:
-    explicit GetUserProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::GetUserResp>(kvstore) {}
-};
-
-
 class ListUsersProcessor : public BaseProcessor<cpp2::ListUsersResp> {
 public:
     static ListUsersProcessor* instance(kvstore::KVStore* kvstore) {
@@ -124,20 +109,6 @@ private:
 };
 
 
-class CheckPasswordProcessor : public BaseProcessor<cpp2::ExecResp> {
-public:
-    static CheckPasswordProcessor* instance(kvstore::KVStore* kvstore) {
-        return new CheckPasswordProcessor(kvstore);
-    }
-
-    void process(const cpp2::CheckPasswordReq& req);
-
-private:
-    explicit CheckPasswordProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::ExecResp>(kvstore) {}
-};
-
-
 class ListRolesProcessor : public BaseProcessor<cpp2::ListRolesResp> {
 public:
     static ListRolesProcessor* instance(kvstore::KVStore* kvstore) {
@@ -149,6 +120,19 @@ public:
 private:
     explicit ListRolesProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::ListRolesResp>(kvstore) {}
+};
+
+class AuthCheckProcessor : public BaseProcessor<cpp2::ExecResp> {
+public:
+    static AuthCheckProcessor* instance(kvstore::KVStore* kvstore) {
+        return new AuthCheckProcessor(kvstore);
+    }
+
+    void process(const cpp2::AuthCheckReq& req);
+
+private:
+    explicit AuthCheckProcessor(kvstore::KVStore* kvstore)
+        : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 }  // namespace meta
 }  // namespace nebula

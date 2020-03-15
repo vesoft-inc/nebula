@@ -743,7 +743,7 @@ folly::Future<StatusOr<std::vector<cpp2::HostItem>>> MetaClient::listHosts() {
 folly::Future<StatusOr<std::vector<cpp2::PartItem>>>
 MetaClient::listParts(GraphSpaceID spaceId, std::vector<PartitionID> partIds) {
     cpp2::ListPartsReq req;
-    req.set_space_id(std::move(spaceId));
+    req.set_space_id(spaceId);
     req.set_part_ids(std::move(partIds));
     folly::Promise<StatusOr<std::vector<cpp2::PartItem>>> promise;
     auto future = promise.getFuture();
@@ -1064,7 +1064,7 @@ folly::Future<StatusOr<TagID>> MetaClient::createTagSchema(GraphSpaceID spaceId,
                                                            nebula::cpp2::Schema schema,
                                                            bool ifNotExists) {
     cpp2::CreateTagReq req;
-    req.set_space_id(std::move(spaceId));
+    req.set_space_id(spaceId);
     req.set_tag_name(std::move(name));
     req.set_schema(std::move(schema));
     req.set_if_not_exists(ifNotExists);
@@ -1084,7 +1084,7 @@ MetaClient::alterTagSchema(GraphSpaceID spaceId,
                            std::vector<cpp2::AlterSchemaItem> items,
                            nebula::cpp2::SchemaProp schemaProp) {
     cpp2::AlterTagReq req;
-    req.set_space_id(std::move(spaceId));
+    req.set_space_id(spaceId);
     req.set_tag_name(std::move(name));
     req.set_tag_items(std::move(items));
     req.set_schema_prop(std::move(schemaProp));
@@ -1102,7 +1102,7 @@ MetaClient::alterTagSchema(GraphSpaceID spaceId,
 folly::Future<StatusOr<std::vector<cpp2::TagItem>>>
 MetaClient::listTagSchemas(GraphSpaceID spaceId) {
     cpp2::ListTagsReq req;
-    req.set_space_id(std::move(spaceId));
+    req.set_space_id(spaceId);
     folly::Promise<StatusOr<std::vector<cpp2::TagItem>>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
@@ -1152,7 +1152,7 @@ folly::Future<StatusOr<EdgeType>> MetaClient::createEdgeSchema(GraphSpaceID spac
                                                                nebula::cpp2::Schema schema,
                                                                bool ifNotExists) {
     cpp2::CreateEdgeReq req;
-    req.set_space_id(std::move(spaceId));
+    req.set_space_id(spaceId);
     req.set_edge_name(std::move(name));
     req.set_schema(schema);
     req.set_if_not_exists(ifNotExists);
@@ -1174,7 +1174,7 @@ MetaClient::alterEdgeSchema(GraphSpaceID spaceId,
                             std::vector<cpp2::AlterSchemaItem> items,
                             nebula::cpp2::SchemaProp schemaProp) {
     cpp2::AlterEdgeReq req;
-    req.set_space_id(std::move(spaceId));
+    req.set_space_id(spaceId);
     req.set_edge_name(std::move(name));
     req.set_edge_items(std::move(items));
     req.set_schema_prop(std::move(schemaProp));
@@ -1192,7 +1192,7 @@ MetaClient::alterEdgeSchema(GraphSpaceID spaceId,
 folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>>
 MetaClient::listEdgeSchemas(GraphSpaceID spaceId) {
     cpp2::ListEdgesReq req;
-    req.set_space_id(std::move(spaceId));
+    req.set_space_id(spaceId);
     folly::Promise<StatusOr<std::vector<cpp2::EdgeItem>>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
@@ -1207,7 +1207,7 @@ MetaClient::listEdgeSchemas(GraphSpaceID spaceId) {
 folly::Future<StatusOr<nebula::cpp2::Schema>>
 MetaClient::getEdgeSchema(GraphSpaceID spaceId, std::string name, SchemaVer version) {
     cpp2::GetEdgeReq req;
-    req.set_space_id(std::move(spaceId));
+    req.set_space_id(spaceId);
     req.set_edge_name(std::move(name));
     req.set_version(version);
     folly::Promise<StatusOr<nebula::cpp2::Schema>> promise;
@@ -1220,11 +1220,10 @@ MetaClient::getEdgeSchema(GraphSpaceID spaceId, std::string name, SchemaVer vers
     return future;
 }
 
-
 folly::Future<StatusOr<bool>>
 MetaClient::dropEdgeSchema(GraphSpaceID spaceId, std::string name, const bool ifExists) {
     cpp2::DropEdgeReq req;
-    req.set_space_id(std::move(spaceId));
+    req.set_space_id(spaceId);
     req.set_edge_name(std::move(name));
     req.set_if_exists(ifExists);
     folly::Promise<StatusOr<bool>> promise;
@@ -1244,7 +1243,7 @@ MetaClient::createTagIndex(GraphSpaceID spaceID,
                            std::vector<std::string> fields,
                            bool ifNotExists) {
     cpp2::CreateTagIndexReq req;
-    req.set_space_id(std::move(spaceID));
+    req.set_space_id(spaceID);
     req.set_index_name(std::move(indexName));
     req.set_tag_name(std::move(tagName));
     req.set_fields(std::move(fields));
@@ -1265,7 +1264,7 @@ MetaClient::dropTagIndex(GraphSpaceID spaceID,
                          std::string name,
                          bool ifExists) {
     cpp2::DropTagIndexReq req;
-    req.set_space_id(std::move(spaceID));
+    req.set_space_id(spaceID);
     req.set_index_name(std::move(name));
     req.set_if_exists(ifExists);
 
@@ -1282,7 +1281,7 @@ MetaClient::dropTagIndex(GraphSpaceID spaceID,
 folly::Future<StatusOr<nebula::cpp2::IndexItem>>
 MetaClient::getTagIndex(GraphSpaceID spaceID, std::string name) {
     cpp2::GetTagIndexReq req;
-    req.set_space_id(std::move(spaceID));
+    req.set_space_id(spaceID);
     req.set_index_name(std::move(name));
 
     folly::Promise<StatusOr<nebula::cpp2::IndexItem>> promise;
@@ -1298,7 +1297,7 @@ MetaClient::getTagIndex(GraphSpaceID spaceID, std::string name) {
 folly::Future<StatusOr<std::vector<nebula::cpp2::IndexItem>>>
 MetaClient::listTagIndexes(GraphSpaceID spaceID) {
     cpp2::ListTagIndexesReq req;
-    req.set_space_id(std::move(spaceID));
+    req.set_space_id(spaceID);
 
     folly::Promise<StatusOr<std::vector<nebula::cpp2::IndexItem>>> promise;
     auto future = promise.getFuture();
@@ -1311,8 +1310,37 @@ MetaClient::listTagIndexes(GraphSpaceID spaceID) {
 }
 
 folly::Future<StatusOr<bool>>
-MetaClient::buildTagIndex(GraphSpaceID, std::string) {
-    return Status::Error("unsupported");
+MetaClient::rebuildTagIndex(GraphSpaceID spaceID,
+                            std::string name,
+                            bool isOffline) {
+    cpp2::RebuildIndexReq req;
+    req.set_space_id(spaceID);
+    req.set_index_name(std::move(name));
+    req.set_is_offline(isOffline);
+
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_rebuildTagIndex(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>>
+MetaClient::listTagIndexStatus(GraphSpaceID spaceID) {
+    cpp2::ListIndexStatusReq req;
+    req.set_space_id(spaceID);
+
+    folly::Promise<StatusOr<std::vector<cpp2::IndexStatus>>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_listTagIndexStatus(request);
+    }, [] (cpp2::ListIndexStatusResp&& resp) -> decltype(auto) {
+        return std::move(resp).get_statuses();
+    }, std::move(promise));
+    return future;
 }
 
 folly::Future<StatusOr<IndexID>>
@@ -1322,7 +1350,7 @@ MetaClient::createEdgeIndex(GraphSpaceID spaceID,
                             std::vector<std::string> fields,
                             bool ifNotExists) {
     cpp2::CreateEdgeIndexReq req;
-    req.set_space_id(std::move(spaceID));
+    req.set_space_id(spaceID);
     req.set_index_name(std::move(indexName));
     req.set_edge_name(std::move(edgeName));
     req.set_fields(std::move(fields));
@@ -1344,7 +1372,7 @@ MetaClient::dropEdgeIndex(GraphSpaceID spaceID,
                           std::string name,
                           bool ifExists) {
     cpp2::DropEdgeIndexReq req;
-    req.set_space_id(std::move(spaceID));
+    req.set_space_id(spaceID);
     req.set_index_name(std::move(name));
     req.set_if_exists(ifExists);
 
@@ -1361,7 +1389,7 @@ MetaClient::dropEdgeIndex(GraphSpaceID spaceID,
 folly::Future<StatusOr<nebula::cpp2::IndexItem>>
 MetaClient::getEdgeIndex(GraphSpaceID spaceID, std::string name) {
     cpp2::GetEdgeIndexReq req;
-    req.set_space_id(std::move(spaceID));
+    req.set_space_id(spaceID);
     req.set_index_name(std::move(name));
 
     folly::Promise<StatusOr<nebula::cpp2::IndexItem>> promise;
@@ -1377,7 +1405,7 @@ MetaClient::getEdgeIndex(GraphSpaceID spaceID, std::string name) {
 folly::Future<StatusOr<std::vector<nebula::cpp2::IndexItem>>>
 MetaClient::listEdgeIndexes(GraphSpaceID spaceID) {
     cpp2::ListEdgeIndexesReq req;
-    req.set_space_id(std::move(spaceID));
+    req.set_space_id(spaceID);
 
     folly::Promise<StatusOr<std::vector<nebula::cpp2::IndexItem>>> promise;
     auto future = promise.getFuture();
@@ -1390,8 +1418,37 @@ MetaClient::listEdgeIndexes(GraphSpaceID spaceID) {
 }
 
 folly::Future<StatusOr<bool>>
-MetaClient::buildEdgeIndex(GraphSpaceID, std::string) {
-    return Status::Error("unsupported");
+MetaClient::rebuildEdgeIndex(GraphSpaceID spaceID,
+                             std::string name,
+                             bool isOffline) {
+    cpp2::RebuildIndexReq req;
+    req.set_space_id(spaceID);
+    req.set_index_name(std::move(name));
+    req.set_is_offline(isOffline);
+
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_rebuildEdgeIndex(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>>
+MetaClient::listEdgeIndexStatus(GraphSpaceID spaceID) {
+    cpp2::ListIndexStatusReq req;
+    req.set_space_id(spaceID);
+
+    folly::Promise<StatusOr<std::vector<cpp2::IndexStatus>>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_listEdgeIndexStatus(request);
+    }, [] (cpp2::ListIndexStatusResp&& resp) -> decltype(auto) {
+        return std::move(resp).get_statuses();
+    }, std::move(promise));
+    return future;
 }
 
 StatusOr<std::shared_ptr<const SchemaProviderIf>>
@@ -1599,28 +1656,28 @@ const std::vector<network::InetAddress>& MetaClient::getAddresses() {
     return addrs_;
 }
 
-StatusOr<SchemaVer> MetaClient::getNewestTagVerFromCache(const GraphSpaceID& space,
-                                                         const TagID& tagId) {
+StatusOr<SchemaVer> MetaClient::getLatestTagVersionFromCache(const GraphSpaceID& space,
+                                                             const TagID& tagId) {
     if (!ready_) {
         return Status::Error("Not ready!");
     }
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = spaceNewestTagVerMap_.find(std::make_pair(space, tagId));
     if (it == spaceNewestTagVerMap_.end()) {
-        return -1;
+        return Status::TagNotFound();
     }
     return it->second;
 }
 
-StatusOr<SchemaVer> MetaClient::getNewestEdgeVerFromCache(const GraphSpaceID& space,
-                                                          const EdgeType& edgeType) {
+StatusOr<SchemaVer> MetaClient::getLatestEdgeVersionFromCache(const GraphSpaceID& space,
+                                                              const EdgeType& edgeType) {
     if (!ready_) {
         return Status::Error("Not ready!");
     }
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = spaceNewestEdgeVerMap_.find(std::make_pair(space, edgeType));
     if (it == spaceNewestEdgeVerMap_.end()) {
-        return -1;
+        return Status::EdgeNotFound();
     }
     return it->second;
 }
@@ -1672,6 +1729,140 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
                     VLOG(1) << "Metad last update time: " << metadLastUpdateTime_;
                     return true;  // resp.code == cpp2::ErrorCode::SUCCEEDED
                 }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::createUser(std::string account, std::string password, bool ifNotExists) {
+    cpp2::CreateUserReq req;
+    req.set_account(std::move(account));
+    req.set_encoded_pwd(std::move(password));
+    req.set_if_not_exists(ifNotExists);
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_createUser(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::dropUser(std::string account, bool ifExists) {
+    cpp2::DropUserReq req;
+    req.set_account(std::move(account));
+    req.set_if_exists(ifExists);
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_dropUser(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::alterUser(std::string account, std::string password) {
+    cpp2::AlterUserReq req;
+    req.set_account(std::move(account));
+    req.set_encoded_pwd(std::move(password));
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_alterUser(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::grantToUser(nebula::cpp2::RoleItem roleItem) {
+    cpp2::GrantRoleReq req;
+    req.set_role_item(std::move(roleItem));
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_grantRole(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::revokeFromUser(nebula::cpp2::RoleItem roleItem) {
+    cpp2::RevokeRoleReq req;
+    req.set_role_item(std::move(roleItem));
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_revokeRole(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<std::vector<std::string>>>
+MetaClient::listUsers() {
+    cpp2::ListUsersReq req;
+    folly::Promise<StatusOr<std::vector<std::string>>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_listUsers(request);
+    }, [] (cpp2::ListUsersResp&& resp) -> decltype(auto) {
+        return std::move(resp).get_users();
+    }, std::move(promise));
+    return future;
+}
+
+folly::Future<StatusOr<std::vector<nebula::cpp2::RoleItem>>>
+MetaClient::listRoles(std::string space) {
+    cpp2::ListRolesReq req;
+    req.set_space(std::move(space));
+    folly::Promise<StatusOr<std::vector<nebula::cpp2::RoleItem>>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_listRoles(request);
+    }, [] (cpp2::ListRolesResp&& resp) -> decltype(auto) {
+        return std::move(resp).get_roles();
+    }, std::move(promise));
+    return future;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::changePassword(std::string account,
+                           std::string newPwd,
+                           std::string oldPwd) {
+    cpp2::ChangePasswordReq req;
+    req.set_account(std::move(account));
+    req.set_new_encoded_pwd(std::move(newPwd));
+    req.set_old_encoded_pwd(std::move(oldPwd));
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_changePassword(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::authCheck(std::string account, std::string password) {
+    cpp2::AuthCheckReq req;
+    req.set_account(std::move(account));
+    req.set_encoded_pwd(std::move(password));
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_authCheck(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
     return future;
 }
 

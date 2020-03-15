@@ -22,8 +22,6 @@ std::string ShowSentence::toString() const {
             return std::string("SHOW EDGES");
         case ShowType::kShowUsers:
             return std::string("SHOW USERS");
-        case ShowType::kShowUser:
-            return folly::stringPrintf("SHOW USER %s", name_.get()->c_str());
         case ShowType::kShowRoles:
             return folly::stringPrintf("SHOW ROLES IN %s", name_.get()->c_str());
         case ShowType::kShowCreateSpace:

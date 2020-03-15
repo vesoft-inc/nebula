@@ -11,7 +11,6 @@
 #include "storage/query/QueryEdgePropsProcessor.h"
 #include "storage/query/QueryStatsProcessor.h"
 #include "storage/query/GetUUIDProcessor.h"
-#include "storage/query/QueryEdgeKeysProcessor.h"
 #include "storage/query/ScanEdgeProcessor.h"
 #include "storage/query/ScanVertexProcessor.h"
 #include "storage/mutate/AddVerticesProcessor.h"
@@ -26,6 +25,8 @@
 #include "storage/admin/CreateCheckpointProcessor.h"
 #include "storage/admin/DropCheckpointProcessor.h"
 #include "storage/admin/SendBlockSignProcessor.h"
+#include "storage/admin/RebuildTagIndexProcessor.h"
+#include "storage/admin/RebuildEdgeIndexProcessor.h"
 #include "storage/index/LookUpVertexIndexProcessor.h"
 #include "storage/index/LookUpEdgeIndexProcessor.h"
 
@@ -96,12 +97,6 @@ StorageServiceHandler::future_addEdges(const cpp2::AddEdgesRequest& req) {
                                                   schemaMan_,
                                                   indexMan_,
                                                   &addEdgeQpsStat_);
-    RETURN_FUTURE(processor);
-}
-
-folly::Future<cpp2::EdgeKeysResponse>
-StorageServiceHandler::future_getEdgeKeys(const cpp2::EdgeKeysRequest& req) {
-    auto* processor = QueryEdgeKeysProcessor::instance(kvstore_, schemaMan_);
     RETURN_FUTURE(processor);
 }
 
@@ -233,6 +228,22 @@ StorageServiceHandler::future_dropCheckpoint(const cpp2::DropCPRequest& req) {
 folly::Future<cpp2::AdminExecResp>
 StorageServiceHandler::future_blockingWrites(const cpp2::BlockingSignRequest& req) {
     auto* processor = SendBlockSignProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::AdminExecResp>
+StorageServiceHandler::future_rebuildTagIndex(const cpp2::RebuildIndexRequest& req) {
+    auto* processor = RebuildTagIndexProcessor::instance(kvstore_,
+                                                         schemaMan_,
+                                                         indexMan_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::AdminExecResp>
+StorageServiceHandler::future_rebuildEdgeIndex(const cpp2::RebuildIndexRequest& req) {
+    auto* processor = RebuildEdgeIndexProcessor::instance(kvstore_,
+                                                          schemaMan_,
+                                                          indexMan_);
     RETURN_FUTURE(processor);
 }
 

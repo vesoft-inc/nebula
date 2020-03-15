@@ -66,7 +66,8 @@ cpp2::ErrorCode Host::checkStatus() const {
 
 
 folly::Future<cpp2::AskForVoteResponse> Host::askForVote(
-        const cpp2::AskForVoteRequest& req) {
+        const cpp2::AskForVoteRequest& req,
+        folly::EventBase* eb) {
     {
         std::lock_guard<std::mutex> g(lock_);
         auto res = checkStatus();
@@ -78,7 +79,7 @@ folly::Future<cpp2::AskForVoteResponse> Host::askForVote(
             return resp;
         }
     }
-    auto client = tcManager().client(addr_);
+    auto client = tcManager().client(addr_, eb, false, FLAGS_raft_rpc_timeout_ms);
     return client->future_askForVote(req);
 }
 

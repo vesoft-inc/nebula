@@ -34,7 +34,6 @@ DEFINE_int32(wal_buffer_size, 8 * 1024 * 1024, "Default wal buffer size");
 DEFINE_int32(wal_buffer_num, 2, "Default wal buffer number");
 DEFINE_bool(trace_raft, false, "Enable trace one raft request");
 
-
 namespace nebula {
 namespace raftex {
 
@@ -270,13 +269,13 @@ void RaftPart::start(std::vector<network::InetAddress>&& peers, bool asLearner) 
 
     lastLogId_ = wal_->lastLogId();
     lastLogTerm_ = wal_->lastLogTerm();
+    term_ = proposedTerm_ = lastLogTerm_;
 
     // Set the quorum number
     quorum_ = (peers.size() + 1) / 2;
 
     auto logIdAndTerm = lastCommittedLogId();
     committedLogId_ = logIdAndTerm.first;
-    term_ = proposedTerm_ = logIdAndTerm.second;
 
     if (lastLogId_ < committedLogId_) {
         LOG(INFO) << idStr_ << "Reset lastLogId " << lastLogId_
@@ -763,6 +762,7 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
 
     VLOG(2) << idStr_ << "About to replicate logs to all peer hosts";
 
+    lastMsgSentDur_.reset();
     SlowOpTracker tracker;
     collectNSucceeded(
         gen::from(hosts)
@@ -871,8 +871,6 @@ void RaftPart::processAppendLogResponses(
             lastLogId_ = lastLogId;
             lastLogTerm_ = currTerm;
 
-            lastMsgSentDur_.reset();
-
             auto walIt = wal_->iterator(committedId + 1, lastLogId);
             SlowOpTracker tracker;
             // Step 3: Commit the batch
@@ -888,6 +886,9 @@ void RaftPart::processAppendLogResponses(
             }
             VLOG(2) << idStr_ << "Leader succeeded in committing the logs "
                               << committedId + 1 << " to " << lastLogId;
+
+            lastMsgAcceptedCostMs_ = lastMsgSentDur_.elapsedInMSec();
+            lastMsgAcceptedTime_ = time::WallClock::fastNowInMilliSec();
         } while (false);
 
         if (!checkAppendLogResult(res)) {
@@ -962,7 +963,8 @@ bool RaftPart::needToSendHeartbeat() {
     std::lock_guard<std::mutex> g(raftLock_);
     return status_ == Status::RUNNING &&
            role_ == Role::LEADER &&
-           lastMsgSentDur_.elapsedInSec() >= FLAGS_raft_heartbeat_interval_secs * 2 / 5;
+           time::WallClock::fastNowInMilliSec() - lastMsgAcceptedTime_ >=
+               FLAGS_raft_heartbeat_interval_secs * 1000 * 2 / 5;
 }
 
 
@@ -1031,7 +1033,8 @@ bool RaftPart::prepareElectionRequest(
 
 
 typename RaftPart::Role RaftPart::processElectionResponses(
-        const RaftPart::ElectionResponses& results) {
+        const RaftPart::ElectionResponses& results,
+        std::vector<std::shared_ptr<Host>> hosts) {
     std::lock_guard<std::mutex> g(raftLock_);
 
     if (UNLIKELY(status_ == Status::STOPPED)) {
@@ -1061,6 +1064,11 @@ typename RaftPart::Role RaftPart::processElectionResponses(
     for (auto& r : results) {
         if (r.second.get_error_code() == cpp2::ErrorCode::SUCCEEDED) {
             ++numSucceeded;
+        } else if (r.second.get_error_code() == cpp2::ErrorCode::E_LOG_STALE) {
+            LOG(INFO) << idStr_ << "My last log id is less than " << hosts[r.first]->address()
+                      << ", double my election interval.";
+            uint64_t curWeight = weight_.load();
+            weight_.store(curWeight * 2);
         }
     }
 
@@ -1123,22 +1131,16 @@ bool RaftPart::leaderElection() {
                         << host->idStr();
                 return via(
                     eb,
-                    [&voteReq, &host] ()
+                    [&voteReq, &host, eb] ()
                             -> Future<cpp2::AskForVoteResponse> {
-                        return host->askForVote(voteReq);
+                        return host->askForVote(voteReq, eb);
                     });
             })
             | gen::as<std::vector>(),
             // Number of succeeded required
             quorum_,
             // Result evaluator
-            [hosts, this](size_t idx, cpp2::AskForVoteResponse& resp) {
-                if (resp.get_error_code() == cpp2::ErrorCode::E_LOG_STALE) {
-                    LOG(INFO) << idStr_ << "My last log id is less than " << hosts[idx]->address()
-                              << ", double my election interval.";
-                    uint64_t curWeight = weight_.load();
-                    weight_.store(curWeight * 2);
-                }
+            [hosts] (size_t idx, cpp2::AskForVoteResponse& resp) {
                 return resp.get_error_code() == cpp2::ErrorCode::SUCCEEDED
                         && !hosts[idx]->isLearner();
             });
@@ -1156,7 +1158,7 @@ bool RaftPart::leaderElection() {
     }
 
     // Process the responses
-    switch (processElectionResponses(resps)) {
+    switch (processElectionResponses(resps, std::move(hosts))) {
         case Role::LEADER: {
             // Elected
             LOG(INFO) << idStr_
@@ -1169,6 +1171,7 @@ bool RaftPart::leaderElection() {
                                        term = voteReq.get_term()] {
                         self->onElected(term);
                     });
+                    lastMsgAcceptedTime_ = 0;
                 }
             }
             weight_ = 1;
@@ -1304,6 +1307,15 @@ void RaftPart::processAskForVoteRequest(
         return;
     }
 
+    auto candidate = network::InetAddress(req.get_candidate_ip(), req.get_candidate_port());
+    if (role_ == Role::FOLLOWER && !leader_.isZero() && leader_ != candidate &&
+        lastMsgRecvDur_.elapsedInMSec() < FLAGS_raft_heartbeat_interval_secs * 1000) {
+        LOG(INFO) << idStr_ << "I believe the leader exists. "
+                  << "Refuse to vote for " << candidate;
+        resp.set_error_code(cpp2::ErrorCode::E_WRONG_LEADER);
+        return;
+    }
+
     // Check term id
     auto term = role_ == Role::CANDIDATE ? proposedTerm_ : term_;
     if (req.get_term() <= term) {
@@ -1342,7 +1354,6 @@ void RaftPart::processAskForVoteRequest(
         }
     }
 
-    auto candidate = network::InetAddress(req.get_candidate_ip(), req.get_candidate_port());
     auto hosts = followers();
     auto it = std::find_if(hosts.begin(), hosts.end(), [&candidate] (const auto& h){
                 return h->address() == candidate;
@@ -1611,6 +1622,14 @@ cpp2::ErrorCode RaftPart::verifyLeader(
         VLOG(2) << idStr_ << "The candidate leader " << candidate << " is not my peers";
         return cpp2::ErrorCode::E_WRONG_LEADER;
     }
+
+    if (role_ == Role::FOLLOWER && !leader_.isZero() && leader_ != candidate &&
+        lastMsgRecvDur_.elapsedInMSec() < FLAGS_raft_heartbeat_interval_secs * 1000) {
+        LOG(INFO) << idStr_ << "I believe the leader " << leader_ << " exists. "
+                  << "Refuse to append logs of " << candidate;
+        return cpp2::ErrorCode::E_WRONG_LEADER;
+    }
+
     VLOG(2) << idStr_ << "The current role is " << roleStr(role_);
     switch (role_) {
         case Role::LEARNER:
@@ -1848,6 +1867,14 @@ void RaftPart::checkAndResetPeers(const std::vector<network::InetAddress>& peers
         LOG(INFO) << idStr_ << "Add peer " << p << " if not exist!";
         addPeer(p);
     }
+}
+
+bool RaftPart::leaseValid() {
+    // When majority has accepted a log, leader obtains a lease which last for heartbeat.
+    // However, we need to take off the net io time. On the left side of the inequality is
+    // the time duration since last time leader send a log (the log has been accepted as well)
+    return time::WallClock::fastNowInMilliSec() - lastMsgAcceptedTime_
+        < FLAGS_raft_heartbeat_interval_secs * 1000 - lastMsgAcceptedCostMs_;
 }
 
 }  // namespace raftex

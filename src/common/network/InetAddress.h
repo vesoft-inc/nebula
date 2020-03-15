@@ -22,7 +22,7 @@ public:
     explicit InetAddress(const std::string& host, uint16_t port, bool resolved = false)
         : addrs_{host, port, resolved}, resolved_(resolved) {}
 
-    InetAddress(uint32_t ip, uint32_t port = 0) : addrs_(folly::IPAddress::fromLong(ip), port) {}
+    InetAddress(uint32_t ip, uint16_t port = 0) : addrs_(folly::IPAddress::fromLong(ip), port) {}
 
     explicit InetAddress(const nebula::cpp2::HostAddr& addr)
         : InetAddress(addr.get_ip(), addr.get_port()) {}
