@@ -19,6 +19,7 @@ namespace storage {
 
 class AdminTaskManager {
     FRIEND_TEST(TaskManagerTest, happy_path);
+    FRIEND_TEST(TaskManagerTest, gen_sub_task_failed);
 
     using ResultCode = nebula::kvstore::ResultCode;
     using ASyncTaskRet = folly::Promise<ResultCode>;
@@ -37,11 +38,13 @@ public:
 
     void invoke();
 
-    ResultCode cancelTask(const cpp2::AddAdminTaskRequest& req);
+    ResultCode cancelTask(int jobId);
 
     bool init();
 
     void shutdown();
+
+    void setSubTaskLimit(int limit) { subTaskLimit_ = limit; }
 
 private:
     void runTask(AdminTask& task);
@@ -52,9 +55,10 @@ private:
     std::unique_ptr<thread::GenericWorker> bgThread_;
     std::unique_ptr<nebula::thread::GenericThreadPool>  pool_{nullptr};
 
-    bool                                                shutdown_;
+    int                                             subTaskLimit_{1};
+    bool                                            shutdown_;
 
-    std::list<std::shared_ptr<AdminTask>>           taskList_;
+    std::deque<std::shared_ptr<AdminTask>>          taskList_;
     std::mutex                                      taskListMutex_;
     std::condition_variable                         taskListEmpty_;
 

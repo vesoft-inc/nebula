@@ -16,7 +16,7 @@ void AdminTaskProcessor::process(const cpp2::AddAdminTaskRequest& req) {
     auto rc = nebula::kvstore::ResultCode::SUCCEEDED;
     auto taskManager = AdminTaskManager::instance();
     if (req.get_cmd() == nebula::cpp2::AdminCmd::STOP) {
-        rc = taskManager->cancelTask(req);
+        rc = taskManager->cancelTask(req.get_job_id());
     } else {
         auto* store = dynamic_cast<kvstore::NebulaStore*>(kvstore_);
         auto cb = [&](nebula::kvstore::ResultCode ret) {

@@ -31,7 +31,6 @@ public:
     ResultCode subTask(nebula::kvstore::KVEngine* engine);
 
 private:
-    // nebula::cpp2::AdminCmd cmd_;
     kvstore::NebulaStore* store_;
     int32_t               spaceId_;
 };
