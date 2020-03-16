@@ -148,7 +148,7 @@ void CliManager::loop() {
         }
         // Line break
         while (!quit && !line.empty() && line.back() == '\\') {
-            line.resize(line.size() - 1); 
+            line.resize(line.size() - 1);
             cmd += line;
             quit = !this->readLine(line, true/*linebreak*/);
             continue;
