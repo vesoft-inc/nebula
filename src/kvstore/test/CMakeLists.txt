@@ -19,24 +19,45 @@ set(KVSTORE_TEST_LIBS
 )
 
 nebula_add_test(
-    NAME part_test
-    SOURCES PartTest.cpp
-    OBJECTS ${KVSTORE_TEST_LIBS}
-    LIBRARIES ${THRIFT_LIBRARIES} ${ROCKSDB_LIBRARIES} wangle gtest
+    NAME
+        part_test
+    SOURCES
+        PartTest.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
 )
 
 nebula_add_test(
-    NAME rocks_engine_test
-    SOURCES RocksEngineTest.cpp
-    OBJECTS ${KVSTORE_TEST_LIBS}
-    LIBRARIES ${THRIFT_LIBRARIES} ${ROCKSDB_LIBRARIES} wangle gtest
+    NAME
+        rocks_engine_test
+    SOURCES
+        RocksEngineTest.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
 )
 
 nebula_add_test(
-    NAME nebula_store_test
-    SOURCES NebulaStoreTest.cpp
-    OBJECTS ${KVSTORE_TEST_LIBS}
-    LIBRARIES ${THRIFT_LIBRARIES} ${ROCKSDB_LIBRARIES} wangle gtest
+    NAME
+        nebula_store_test
+    SOURCES
+        NebulaStoreTest.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
 )
 
 nebula_add_test(

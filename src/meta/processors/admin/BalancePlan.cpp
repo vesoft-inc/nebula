@@ -172,20 +172,14 @@ cpp2::ErrorCode BalancePlan::recovery(bool resume) {
                 auto tup = BalanceTask::parseVal(iter->val());
                 task.status_ = std::get<0>(tup);
                 task.ret_ = std::get<1>(tup);
-                task.srcLived_ = std::get<2>(tup);
-                task.startTimeMs_ = std::get<3>(tup);
-                task.endTimeMs_ = std::get<4>(tup);
+                task.startTimeMs_ = std::get<2>(tup);
+                task.endTimeMs_ = std::get<3>(tup);
                 if (resume && task.ret_ != BalanceTask::Result::SUCCEEDED) {
                     // Resume the failed task, skip the in-progress and invalid tasks
                     if (task.ret_ == BalanceTask::Result::FAILED) {
                         task.ret_ = BalanceTask::Result::IN_PROGRESS;
                     }
                     task.status_ = BalanceTask::Status::START;
-                    if (ActiveHostsMan::isLived(kv_, task.src_)) {
-                        task.srcLived_ = true;
-                    } else {
-                        task.srcLived_ = false;
-                    }
                     if (!ActiveHostsMan::isLived(kv_, task.dst_)) {
                         task.ret_ = BalanceTask::Result::INVALID;
                     }
