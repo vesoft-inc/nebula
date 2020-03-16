@@ -11,7 +11,7 @@ UPSERT {VERTEX <vid> | EDGE <edge>} SET <update_columns> [WHEN <condition>] [YIE
 ```
 
 - `vid` is the ID of the vertex to be updated.
-- `edge` is the edge to be updated, the syntax is `$src->$dst[@ranking] OF <edge_type>`.
+- `edge` is the edge to be updated, the syntax is `<src> -> <dst> [@ranking] OF <edge_type>`.
 - `update_columns` is the properties of the vertex or edge to be updated, for example, `tag1.col1 = $^.tag2.col2 + 1` means to update `tag1.col1` to `tag2.col2+1`.
 
     **NOTE:**  `$^` indicates vertex to be updated.

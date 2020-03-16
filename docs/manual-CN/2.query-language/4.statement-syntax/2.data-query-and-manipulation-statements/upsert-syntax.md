@@ -11,7 +11,7 @@ UPSERT {VERTEX <vid> | EDGE <edge>} SET <update_columns> [WHEN <condition>] [YIE
 ```
 
 - `vid` 表示需要更新的 vertex ID。
-- `edge` 表示需要更新的 edge，edge 的格式为 `$src->$dst[@ranking] OF <edge_type>`。
+- `edge` 表示需要更新的 edge，edge 的格式为 `<src> -> <dst> [@ranking] OF <edge_type>`。
 - `update_columns` 表示需要更新的 tag 或 edge 上的 columns，比如 `tag1.col1 = $^.tag2.col2 + 1` 表示把这个点的 `tag1.col1` 更新成 `tag2.col2 + 1`。
 
     **注意：**  `$^`表示 `UPDATE` 中需要更新的点。
