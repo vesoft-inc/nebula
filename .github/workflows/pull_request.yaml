@@ -13,9 +13,9 @@ jobs:
     if: contains(join(toJson(github.event.pull_request.labels.*.name)), 'ready-for-testing')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
         with:
-          fetch-depth: 1
+          fetch-depth: 2
       - name: Cpplint
         run: |
           cd .linters/cpp && ln -snf hooks/pre-commit.sh
@@ -42,9 +42,9 @@ jobs:
         CCACHE_DIR: /tmp/ccache/${{ matrix.os }}-${{ matrix.compiler }}
       options: --mount type=tmpfs,destination=/tmp/ccache,tmpfs-size=1073741824 -v /tmp/ccache/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/${{ matrix.os }}-${{ matrix.compiler }} -v /etc/action/secrets/codecov:/etc/action/secrets/codecov
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
         with:
-          fetch-depth: 1
+          fetch-depth: 2
       - name: Ignore only documents changes
         id: ignore_docs
         run: |

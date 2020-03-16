@@ -79,11 +79,15 @@ public:
         return response(6);
     }
 
+    folly::Future<Status> checkPeers() override {
+        return response(7);
+    }
+
     folly::Future<Status> getLeaderDist(HostLeaderMap* hostLeaderMap) override {
         (*hostLeaderMap)[HostAddr(0, 0)][1] = {1, 2, 3, 4, 5};
         (*hostLeaderMap)[HostAddr(1, 1)][1] = {6, 7, 8};
         (*hostLeaderMap)[HostAddr(2, 2)][1] = {9};
-        return response(7);
+        return response(8);
     }
 
 
@@ -97,10 +101,6 @@ public:
 
     folly::Future<Status> blockingWrites() override {
         return response(10);
-    }
-
-    folly::Future<Status> checkPeers() override {
-        return response(8);
     }
 
     folly::Future<Status> rebuildTagIndex() override {
@@ -349,37 +349,6 @@ public:
                   << ", data path is at \"" << dataPath << "\"";
 
         return sc;
-    }
-
-    static StatusOr<UserID> createUser(kvstore::KVStore* kv,
-                                       bool missingOk,
-                                       folly::StringPiece account,
-                                       folly::StringPiece password,
-                                       bool               isLock,
-                                       int32_t            maxQueries,
-                                       int32_t            maxUpdates,
-                                       int32_t            maxConnections,
-                                       int32_t            maxConnectors) {
-        cpp2::CreateUserReq req;
-        req.set_missing_ok(missingOk);
-        req.set_encoded_pwd(password.str());
-        decltype(req.user) user;
-        user.set_account(account.str());
-        user.set_is_lock(isLock);
-        user.set_max_queries_per_hour(maxQueries);
-        user.set_max_updates_per_hour(maxUpdates);
-        user.set_max_connections_per_hour(maxConnections);
-        user.set_max_user_connections(maxConnectors);
-        req.set_user(std::move(user));
-        auto* processor = CreateUserProcessor::instance(kv);
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        if (resp.get_code() == cpp2::ErrorCode::SUCCEEDED) {
-            return resp.get_id().get_user_id();
-        } else {
-            return Status::Error("Create user fail");
-        }
     }
 
     static bool verifySchema(nebula::cpp2::Schema &result,

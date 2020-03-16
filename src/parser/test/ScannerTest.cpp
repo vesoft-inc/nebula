@@ -118,11 +118,16 @@ TEST(Scanner, Basic) {
         lexer.setReadBuffer(input);                                         \
         nebula::GraphParser::semantic_type dumyyylval;                      \
         nebula::GraphParser::location_type dumyyyloc;                       \
-        auto token = lexer.yylex(&dumyyylval, &dumyyyloc);                  \
-        if (token != 0) {                                                   \
-            return AssertionFailure() << "Lexical error should've happened "\
-                                      << "for `" << STR << "'";             \
-        } else {                                                            \
+        try {                                                               \
+            auto token = lexer.yylex(&dumyyylval, &dumyyyloc);              \
+            if (token != 0) {                                               \
+                return AssertionFailure() << "Lexical error should've "     \
+                                          << "happened for `" << STR << "'";\
+            } else {                                                        \
+                return AssertionSuccess();                                  \
+            }                                                               \
+        } catch (const std::exception &e) {                                 \
+            LOG(INFO) << e.what() << STR;                                   \
             return AssertionSuccess();                                      \
         }                                                                   \
     })
@@ -321,20 +326,6 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("WITH", TokenType::KW_WITH),
         CHECK_SEMANTIC_TYPE("With", TokenType::KW_WITH),
         CHECK_SEMANTIC_TYPE("with", TokenType::KW_WITH),
-        CHECK_SEMANTIC_TYPE("FIRSTNAME", TokenType::KW_FIRSTNAME),
-        CHECK_SEMANTIC_TYPE("Firstname", TokenType::KW_FIRSTNAME),
-        CHECK_SEMANTIC_TYPE("FirstName", TokenType::KW_FIRSTNAME),
-        CHECK_SEMANTIC_TYPE("firstname", TokenType::KW_FIRSTNAME),
-        CHECK_SEMANTIC_TYPE("LASTNAME", TokenType::KW_LASTNAME),
-        CHECK_SEMANTIC_TYPE("Lastname", TokenType::KW_LASTNAME),
-        CHECK_SEMANTIC_TYPE("LastName", TokenType::KW_LASTNAME),
-        CHECK_SEMANTIC_TYPE("lastname", TokenType::KW_LASTNAME),
-        CHECK_SEMANTIC_TYPE("EMAIL", TokenType::KW_EMAIL),
-        CHECK_SEMANTIC_TYPE("Email", TokenType::KW_EMAIL),
-        CHECK_SEMANTIC_TYPE("email", TokenType::KW_EMAIL),
-        CHECK_SEMANTIC_TYPE("PHONE", TokenType::KW_PHONE),
-        CHECK_SEMANTIC_TYPE("Phone", TokenType::KW_PHONE),
-        CHECK_SEMANTIC_TYPE("phone", TokenType::KW_PHONE),
         CHECK_SEMANTIC_TYPE("USER", TokenType::KW_USER),
         CHECK_SEMANTIC_TYPE("User", TokenType::KW_USER),
         CHECK_SEMANTIC_TYPE("user", TokenType::KW_USER),
@@ -356,6 +347,9 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("ADMIN", TokenType::KW_ADMIN),
         CHECK_SEMANTIC_TYPE("Admin", TokenType::KW_ADMIN),
         CHECK_SEMANTIC_TYPE("admin", TokenType::KW_ADMIN),
+        CHECK_SEMANTIC_TYPE("DBA", TokenType::KW_DBA),
+        CHECK_SEMANTIC_TYPE("Dba", TokenType::KW_DBA),
+        CHECK_SEMANTIC_TYPE("dba", TokenType::KW_DBA),
         CHECK_SEMANTIC_TYPE("GUEST", TokenType::KW_GUEST),
         CHECK_SEMANTIC_TYPE("Guest", TokenType::KW_GUEST),
         CHECK_SEMANTIC_TYPE("guest", TokenType::KW_GUEST),

@@ -49,6 +49,9 @@ enum ErrorCode {
     E_FAILED_TO_CHECKPOINT = -50,
     E_CHECKPOINT_BLOCKED = -51,
 
+    // Filter out
+    E_FILTER_OUT         = -60,
+
     // partial result, used for kv interfaces
     E_PARTIAL_RESULT = -99,
 
