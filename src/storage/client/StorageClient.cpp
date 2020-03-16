@@ -513,7 +513,7 @@ StorageClient::get(GraphSpaceID space,
                            });
 }
 
-folly::SemiFuture<StorageRpcResponse<storage::cpp2::LookUpVertexIndexResp>>
+folly::SemiFuture<StorageRpcResponse<storage::cpp2::LookUpIndexResp>>
 StorageClient::lookUpVertexIndex(GraphSpaceID space,
                                  IndexID indexId,
                                  std::string filter,
@@ -521,7 +521,7 @@ StorageClient::lookUpVertexIndex(GraphSpaceID space,
                                  folly::EventBase *evb) {
     auto status = getHostParts(space);
     if (!status.ok()) {
-        return folly::makeFuture<StorageRpcResponse<storage::cpp2::LookUpVertexIndexResp>>(
+        return folly::makeFuture<StorageRpcResponse<storage::cpp2::LookUpIndexResp>>(
             std::runtime_error(status.status().toString()));
     }
     auto& clusters = status.value();
@@ -534,6 +534,7 @@ StorageClient::lookUpVertexIndex(GraphSpaceID space,
         req.set_index_id(indexId);
         req.set_filter(filter);
         req.set_return_columns(returnCols);
+        req.set_is_edge(false);
     }
     return collectResponse(evb, std::move(requests),
                            [](cpp2::StorageServiceAsyncClient* client,
@@ -544,7 +545,7 @@ StorageClient::lookUpVertexIndex(GraphSpaceID space,
                            });
 }
 
-folly::SemiFuture<StorageRpcResponse<storage::cpp2::LookUpEdgeIndexResp>>
+folly::SemiFuture<StorageRpcResponse<storage::cpp2::LookUpIndexResp>>
 StorageClient::lookUpEdgeIndex(GraphSpaceID space,
                                IndexID indexId,
                                std::string filter,
@@ -552,7 +553,7 @@ StorageClient::lookUpEdgeIndex(GraphSpaceID space,
                                folly::EventBase *evb) {
     auto status = getHostParts(space);
     if (!status.ok()) {
-        return folly::makeFuture<StorageRpcResponse<storage::cpp2::LookUpEdgeIndexResp>>(
+        return folly::makeFuture<StorageRpcResponse<storage::cpp2::LookUpIndexResp>>(
             std::runtime_error(status.status().toString()));
     }
     auto& clusters = status.value();
@@ -565,6 +566,7 @@ StorageClient::lookUpEdgeIndex(GraphSpaceID space,
         req.set_index_id(indexId);
         req.set_filter(filter);
         req.set_return_columns(returnCols);
+        req.set_is_edge(true);
     }
     return collectResponse(evb, std::move(requests),
                            [](cpp2::StorageServiceAsyncClient* client,

@@ -140,10 +140,10 @@ public:
     folly::Future<cpp2::AdminExecResp>
     future_rebuildEdgeIndex(const cpp2::RebuildIndexRequest& req) override;
 
-    folly::Future<cpp2::LookUpVertexIndexResp>
+    folly::Future<cpp2::LookUpIndexResp>
     future_lookUpVertexIndex(const cpp2::LookUpIndexRequest& req) override;
 
-    folly::Future<cpp2::LookUpEdgeIndexResp>
+    folly::Future<cpp2::LookUpIndexResp>
     future_lookUpEdgeIndex(const cpp2::LookUpIndexRequest& req) override;
 
 private:
