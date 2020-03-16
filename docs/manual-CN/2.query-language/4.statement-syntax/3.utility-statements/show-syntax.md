@@ -30,9 +30,9 @@ SHOW COLLATION
 
 `SHOW SNAPSHOTS` 返回所有快照。
 
-`SHOW CHARSET` 返回所有支持的字符集。
+`SHOW CHARSET` 返回所有支持的字符集。目前支持两种类型：utf8、utf8mb4。
 
-`SHOW COLLATION` 返回支持的排序规则。
+`SHOW COLLATION` 返回支持的排序规则。目前支持四种类型：utf8_bin、utf8_general_ci、utf8mb4_bin、utf8mb4_general_ci。
 
 ## 示例
 

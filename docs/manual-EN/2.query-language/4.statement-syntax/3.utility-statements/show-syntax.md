@@ -31,9 +31,9 @@ For more information about `SHOW CONFIGS [graph|meta|storage]`, please refer to 
 
 `SHOW SNAPSHOTS` lists all the snapshots.
 
-`SHOW CHARSET` displays the available character sets.
+`SHOW CHARSET` displays the available character sets. Currently available types are: utf8 and utf8mb4.
 
-`SHOW COLLATION` lists the display collations for a character set.
+`SHOW COLLATION` lists the display collations for a character set. Currently available types are: utf8_bin, utf8_general_ci, utf8mb4_bin and utf8mb4_general_ci.
 
 ## Example
 
