@@ -384,7 +384,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
                                 }
                                 uint64_t val = 0;
                                 sscanf(yytext, "%lx", &val);
-                                if (val > MAX_INTEGER) {
+                                if (val > MAX_ABS_INTEGER) {
                                     throw GraphParser::syntax_error(*yylloc, "Out of range:");
                                 }
                                 yylval->intval = static_cast<int64_t>(val);
@@ -403,7 +403,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
                                 }
                                 uint64_t val = 0;
                                 sscanf(yytext, "%lo", &val);
-                                if (val > MAX_INTEGER) {
+                                if (val > MAX_ABS_INTEGER) {
                                     throw GraphParser::syntax_error(*yylloc, "Out of range:");
                                 }
                                 yylval->intval = static_cast<int64_t>(val);
@@ -413,7 +413,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
                                 try {
                                     folly::StringPiece text(yytext, yyleng);
                                     uint64_t val = folly::to<uint64_t>(text);
-                                    if (val > MAX_INTEGER) {
+                                    if (val > MAX_ABS_INTEGER) {
                                         throw GraphParser::syntax_error(*yylloc, "Out of range:");
                                     }
                                     yylval->intval = val;

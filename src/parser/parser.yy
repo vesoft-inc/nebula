@@ -22,7 +22,7 @@ class GraphScanner;
 
 }
 
-static constexpr size_t MAX_INTEGER = 9223372036854775808ULL;
+static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 
 }
 
@@ -2050,7 +2050,7 @@ void nebula::GraphParser::error(const nebula::GraphParser::location_type& loc,
 // so the conversion is expected
 void ifOutOfRange(const int64_t input,
                   const nebula::GraphParser::location_type& loc) {
-    if ((uint64_t)input >= MAX_INTEGER) {
+    if ((uint64_t)input >= MAX_ABS_INTEGER) {
         throw nebula::GraphParser::syntax_error(loc, "Out of range:");
     }
 }
