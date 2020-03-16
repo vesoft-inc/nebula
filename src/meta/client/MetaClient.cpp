@@ -132,9 +132,36 @@ void MetaClient::heartBeatThreadFunc() {
     }
 }
 
+bool MetaClient::loadRoles() {
+    auto userRoleRet = listUsers().get();
+    if (!userRoleRet.ok()) {
+        LOG(ERROR) << "List users failed, status:" << userRoleRet.status();
+        return false;
+    }
+    decltype(userRolesMap_)       userRolesMap;
+    for (auto& user : userRoleRet.value()) {
+        auto rolesRet = getUserRoles(user).get();
+        if (!rolesRet.ok()) {
+            LOG(ERROR) << "List role by user failed, user : " << user;
+            return false;
+        }
+        userRolesMap[user] = rolesRet.value();
+    }
+    {
+        folly::RWSpinLock::WriteHolder holder(localCacheLock_);
+        userRolesMap_ = std::move(userRolesMap);
+    }
+    return true;
+}
+
 bool MetaClient::loadData() {
     if (ioThreadPool_->numThreads() <= 0) {
         LOG(ERROR) << "The threads number in ioThreadPool should be greater than 0";
+        return false;
+    }
+
+    if (!loadRoles()) {
+        LOG(ERROR) << "Load roles Failed";
         return false;
     }
 
@@ -1622,13 +1649,13 @@ const std::vector<HostAddr>& MetaClient::getAddresses() {
     return addrs_;
 }
 
-StatusOr<std::vector<nebula::cpp2::RoleItem>>
-MetaClient::getRolesByUser(const std::string& user) {
-    auto ret = getUserRoles(std::move(user)).get();
-    if (ret.ok()) {
-        return std::move(ret).value();
+std::vector<nebula::cpp2::RoleItem>
+MetaClient::getRolesByUserFromCache(const std::string& user) {
+    auto iter = userRolesMap_.find(user);
+    if (iter == userRolesMap_.end()) {
+        return std::vector<nebula::cpp2::RoleItem>(0);
     }
-    return ret.status();
+    return iter->second;
 }
 
 bool MetaClient::authenticationCheck(std::string account, std::string password) {

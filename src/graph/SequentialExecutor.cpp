@@ -19,6 +19,7 @@ SequentialExecutor::SequentialExecutor(SequentialSentences *sentences,
 }
 
 
+
 Status SequentialExecutor::prepare() {
     for (auto i = 0U; i < sentences_->sentences_.size(); i++) {
         auto *sentence = sentences_->sentences_[i].get();

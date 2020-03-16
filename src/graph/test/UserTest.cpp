@@ -8,7 +8,7 @@
 #include "graph/test/TestEnv.h"
 #include "graph/test/TestBase.h"
 
-DECLARE_uint32(raft_heartbeat_interval_secs);
+DECLARE_int32(heartbeat_interval_secs);
 
 namespace nebula {
 namespace graph {
@@ -164,7 +164,7 @@ TEST_F(UserTest, GrantRevoke) {
         auto code = client->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    sleep(FLAGS_raft_heartbeat_interval_secs);
+    sleep(FLAGS_heartbeat_interval_secs + 1);
     // must set the space if is not god role. expect fail.
     {
         cpp2::ExecutionResponse resp;
@@ -177,13 +177,13 @@ TEST_F(UserTest, GrantRevoke) {
         cpp2::ExecutionResponse resp;
         std::string cmd = "GRANT DBA ON user_space TO user";
         auto code = client->execute(cmd, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_BAD_PERMISSION, code);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "GRANT GOD ON user_space TO user1";
         auto code = client->execute(cmd, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(cpp2::ErrorCode::E_BAD_PERMISSION, code);
     }
     // space not exists. expect fail.
     {
@@ -197,7 +197,7 @@ TEST_F(UserTest, GrantRevoke) {
         std::string query = "SHOW USERS";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        ASSERT_EQ(2, resp.get_rows()->size());
+        ASSERT_EQ(3, resp.get_rows()->size());
     }
     {
         cpp2::ExecutionResponse resp;

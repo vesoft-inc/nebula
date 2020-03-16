@@ -48,11 +48,11 @@ public:
     }
 
     const std::string& user() const {
-        return user_;
+        return account_;
     }
 
-    void setUser(std::string user) {
-        user_ = std::move(user);
+    void setAccount(std::string account) {
+        account_ = std::move(account);
     }
 
     std::unordered_map<GraphSpaceID, Role> roles() const {
@@ -114,7 +114,7 @@ private:
     int64_t           id_{0};
     GraphSpaceID      space_{-1};
     std::string       spaceName_;
-    std::string       user_;
+    std::string       account_;
     time::Duration    idleDuration_;
     /*
      * map<space name, role>

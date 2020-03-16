@@ -56,6 +56,14 @@ TEST_F(PermissionTest, SimpleTest) {
 
         query = "USE my_space; CREATE TAG person(name string)";
         code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_BAD_PERMISSION, code);
+
+        query = "USE my_space";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        query = "CREATE TAG person(name string)";
+        code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     /*
@@ -133,6 +141,7 @@ TEST_F(PermissionTest, UserWriteTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         ASSERT_EQ(1, resp.get_rows()->size());
     }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
     {
         auto adminClient = gEnv->getClient("admin", "admin");
         ASSERT_NE(nullptr, adminClient);
@@ -319,6 +328,7 @@ TEST_F(PermissionTest, SchemaAndDataTest) {
     /**
      * admin write schema test
      */
+    sleep(FLAGS_heartbeat_interval_secs + 1);
     auto adminClient = gEnv->getClient("admin", "admin");
     ASSERT_NE(nullptr, adminClient);
     {
@@ -387,6 +397,7 @@ TEST_F(PermissionTest, SchemaAndDataTest) {
     /**
      * dba write schema test
      */
+    sleep(FLAGS_heartbeat_interval_secs + 1);
     auto dbaClient = gEnv->getClient("dba", "dba");
     ASSERT_NE(nullptr, dbaClient);
     {
@@ -455,6 +466,7 @@ TEST_F(PermissionTest, SchemaAndDataTest) {
     /**
      * user write schema test
      */
+    sleep(FLAGS_heartbeat_interval_secs + 1);
     auto userClient = gEnv->getClient("user", "user");
     ASSERT_NE(nullptr, userClient);
     {
@@ -523,6 +535,7 @@ TEST_F(PermissionTest, SchemaAndDataTest) {
     /**
      * guest write schema test
      */
+    sleep(FLAGS_heartbeat_interval_secs + 1);
     auto guestClient = gEnv->getClient("guest", "guest");
     ASSERT_NE(nullptr, guestClient);
     {
@@ -691,6 +704,7 @@ TEST_F(PermissionTest, SchemaAndDataTest) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string query = "USE space3";

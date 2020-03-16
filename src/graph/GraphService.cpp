@@ -51,22 +51,17 @@ folly::Future<cpp2::AuthResponse> GraphService::future_authenticate(
 
     RequestContext<cpp2::AuthResponse> ctx;
     auto session = sessionManager_->createSession();
-    session->setUser(username);
+    session->setAccount(username);
     ctx.setSession(std::move(session));
 
     if (!FLAGS_enable_authorize) {
         onHandle(ctx, cpp2::ErrorCode::SUCCEEDED);
     } else if (auth(username, password)) {
-        auto ret = metaClient_->getRolesByUser(username);
-        if (ret.ok()) {
-            auto roles = std::move(ret).value();
-            for (const auto& role : roles) {
-                ctx.session()->setRole(role.get_space_id(), toRole(role.get_role_type()));
-            }
-            onHandle(ctx, cpp2::ErrorCode::SUCCEEDED);
-        } else {
-            onHandle(ctx, cpp2::ErrorCode::E_EXECUTION_ERROR);
+        auto roles = metaClient_->getRolesByUserFromCache(username);
+        for (const auto& role : roles) {
+            ctx.session()->setRole(role.get_space_id(), toRole(role.get_role_type()));
         }
+        onHandle(ctx, cpp2::ErrorCode::SUCCEEDED);
     } else {
         onHandle(ctx, cpp2::ErrorCode::E_BAD_USERNAME_PASSWORD);
     }

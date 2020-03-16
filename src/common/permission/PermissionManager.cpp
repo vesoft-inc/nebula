@@ -33,12 +33,12 @@ bool PermissionManager::canReadSpace(session::Session *session, GraphSpaceID spa
 
 // static
 bool PermissionManager::canReadSchemaData(session::Session *session) {
-    if (session->isGod()) {
-        return true;
-    }
     if (session->space() == -1) {
         LOG(ERROR) << "The space name is not set";
         return false;
+    }
+    if (session->isGod()) {
+        return true;
     }
     bool havePermission = false;
     switch (session->roleWithSpace(session->space())) {
@@ -64,12 +64,12 @@ bool PermissionManager::canWriteSpace(session::Session *session) {
 
 // static
 bool PermissionManager::canWriteSchema(session::Session *session) {
-    if (session->isGod()) {
-        return true;
-    }
     if (session->space() == -1) {
         LOG(ERROR) << "The space name is not set";
         return false;
+    }
+    if (session->isGod()) {
+        return true;
     }
     bool havePermission = false;
     switch (session->roleWithSpace(session->space())) {
@@ -127,12 +127,12 @@ bool PermissionManager::canWriteRole(session::Session *session,
 
 // static
 bool PermissionManager::canWriteData(session::Session *session) {
-    if (session->isGod()) {
-        return true;
-    }
     if (session->space() == -1) {
         LOG(ERROR) << "The space name is not set";
         return false;
+    }
+    if (session->isGod()) {
+        return true;
     }
     bool havePermission = false;
     switch (session->roleWithSpace(session->space())) {

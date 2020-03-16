@@ -83,6 +83,9 @@ using LeaderMap = std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostA
 
 using IndexStatus = std::tuple<std::string, std::string, std::string>;
 
+// get user roles by account
+using UserRolesMap = std::unordered_map<std::string, std::vector<nebula::cpp2::RoleItem>>;
+
 struct ConfigItem {
     ConfigItem() {}
 
@@ -475,8 +478,7 @@ public:
                                                              EdgeType edgeType,
                                                              const std::string& field);
 
-    StatusOr<std::vector<nebula::cpp2::RoleItem>>
-    getRolesByUser(const std::string& user);
+    std::vector<nebula::cpp2::RoleItem> getRolesByUserFromCache(const std::string& user);
 
     bool authenticationCheck(std::string account, std::string password);
 
@@ -503,6 +505,8 @@ protected:
                      SpaceNewestTagVerMap &newestTagVerMap,
                      SpaceNewestEdgeVerMap &newestEdgeVerMap,
                      SpaceAllEdgeMap &allEdgemap);
+
+    bool loadRoles();
 
     bool loadIndexes(GraphSpaceID spaceId,
                      std::shared_ptr<SpaceInfoCache> cache);
@@ -584,6 +588,8 @@ private:
     SpaceNewestTagVerMap  spaceNewestTagVerMap_;
     SpaceNewestEdgeVerMap spaceNewestEdgeVerMap_;
     SpaceAllEdgeMap       spaceAllEdgeMap_;
+
+    UserRolesMap          userRolesMap_;
 
     NameIndexMap          tagNameIndexMap_;
     NameIndexMap          edgeNameIndexMap_;
