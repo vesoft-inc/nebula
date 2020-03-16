@@ -31,9 +31,9 @@ For more information about `SHOW CONFIGS [graph|meta|storage]`, please refer to 
 
 `SHOW SNAPSHOTS` lists all the snapshots.
 
-`SHOW CHARSET` displays the available character sets. Currently available types are: utf8 and utf8mb4.
+`SHOW CHARSET` displays the available character sets. Currently available types are: utf8 and utf8mb4. **Nebula Graph** extends the uft8 to support four byte characters. Therefore utf8 and utf8mb4 equivalent.
 
-`SHOW COLLATION` lists the display collations for a character set. Currently available types are: utf8_bin, utf8_general_ci, utf8mb4_bin and utf8mb4_general_ci.
+`SHOW COLLATION` lists the display collations for a character set. Currently available types are: utf8_bin, utf8_general_ci, utf8mb4_bin and utf8mb4_general_ci. When the character set is utf8, the default collate is utf8_bin; when the character set is utf8mb4, the default collate is utf8mb4_bin. Both utf8_general_ci and utf8mb4_general_ci are case-insensitive comparisons and behave the same as MySQL.
 
 ## Example
 

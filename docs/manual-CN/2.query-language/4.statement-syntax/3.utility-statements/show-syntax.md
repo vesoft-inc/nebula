@@ -31,8 +31,9 @@ SHOW COLLATION
 `SHOW SNAPSHOTS` 返回所有快照。
 
 `SHOW CHARSET` 返回所有支持的字符集。目前支持两种类型：utf8、utf8mb4。
+其中默认字符集为 utf8。**Nebula Graph** 将 utf8 进行了扩展，utf8 同时支持 4 个字节的字符，因此，utf8 和 utf8mb4 是等价的。
 
-`SHOW COLLATION` 返回支持的排序规则。目前支持四种类型：utf8_bin、utf8_general_ci、utf8mb4_bin、utf8mb4_general_ci。
+`SHOW COLLATION` 返回支持的排序规则。目前支持四种类型：utf8_bin、utf8_general_ci、utf8mb4_bin、utf8mb4_general_ci。字符集为 utf8 时，默认 collate 为 utf8_bin；字符集为 utf8mb4 时，默认 collate 为 utf8mb4_bin。utf8_general_ci 和 utf8mb4_general_ci 都是忽略大小写的比较，行为同 MySQL 一致。
 
 ## 示例
 
