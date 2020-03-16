@@ -34,7 +34,7 @@ UPDATE EDGE <edge> SET <update_columns> WHEN <condition> YIELD <columns>
 
 **注意：**`WHEN` 和 `YIELD` 是可选的。
 
-- `edge` 表示需要更新的 edge，edge 的格式为 `$src->$dst@$rank OF $type`。
+- `edge` 表示需要更新的 edge，edge 的格式为 `$src->$dst[@ranking] OF <edge_type>`。
 - `update_columns` 表示需要更新的 edge 上的属性。
 - `condition` 是一些约束条件，只有满足这个条件，update 才会真正执行，支持表达式操作。
 - `columns` 表示需要返回的 columns，此处 YIELD 可返回 update 以后最新的 columns 值。
