@@ -640,11 +640,16 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
         [this] (AtomicOp opCB) -> std::string {
             CHECK(opCB != nullptr);
             auto opRet = opCB();
-            if (opRet.empty()) {
+            if (!ok(opRet)) {
                 // Failed
+                sendingPromise_.setOneSingleValue(error(opRet));
+                return "";
+            }
+            // reserved not recommend
+            if (value(opRet).empty()) {
                 sendingPromise_.setOneSingleValue(AppendLogResult::E_ATOMIC_OP_FAILURE);
             }
-            return opRet;
+            return value(std::move(opRet));
         });
     appendLogsInternal(std::move(it), termId);
 
@@ -922,13 +927,19 @@ void RaftPart::processAppendLogResponses(
                         currTerm,
                         std::move(logs_),
                         [this] (AtomicOp op) -> std::string {
+                            CHECK(op != nullptr);
                             auto opRet = op();
-                            if (opRet.empty()) {
+                            if (!ok(opRet)) {
                                 // Failed
+                                sendingPromise_.setOneSingleValue(error(opRet));
+                                return "";
+                            }
+                            // reserved not recommend
+                            if (value(opRet).empty()) {
                                 sendingPromise_.setOneSingleValue(
                                     AppendLogResult::E_ATOMIC_OP_FAILURE);
                             }
-                            return opRet;
+                            return value(std::move(opRet));
                         });
                     logs_.clear();
                     bufferOverFlow_ = false;

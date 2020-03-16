@@ -152,13 +152,14 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
 }
 
 
-FilterResult UpdateVertexProcessor::checkFilter(const PartitionID partId, const VertexID vId) {
+kvstore::ResultCode
+UpdateVertexProcessor::checkFilter(const PartitionID partId, const VertexID vId) {
     for (auto& tc : this->tagContexts_) {
         VLOG(3) << "partId " << partId << ", vId " << vId
                 << ", tagId " << tc.tagId_ << ", prop size " << tc.props_.size();
         auto ret = collectVertexProps(partId, vId, tc.tagId_, tc.props_);
         if (ret != kvstore::ResultCode::SUCCEEDED) {
-            return FilterResult::E_ERROR;
+            return ret;
         }
     }
 
@@ -183,14 +184,14 @@ FilterResult UpdateVertexProcessor::checkFilter(const PartitionID partId, const 
     if (this->exp_ != nullptr) {
         auto filterResult = this->exp_->eval(getters);
         if (!filterResult.ok()) {
-            return FilterResult::E_ERROR;
+            return kvstore::ResultCode::ERR_ATOMIC_OP_INVALID_FILTER;
         }
         if (!Expression::asBool(filterResult.value())) {
             VLOG(1) << "Filter skips the update";
-            return FilterResult::E_FILTER_OUT;
+            return kvstore::ResultCode::ERR_ATOMIC_OP_FILTER_OUT;
         }
     }
-    return FilterResult::SUCCEEDED;
+    return kvstore::ResultCode::SUCCEEDED;
 }
 
 
@@ -413,20 +414,19 @@ void UpdateVertexProcessor::process(const cpp2::UpdateVertexRequest& req) {
             << ", partId: " << partId << ", vId: " << vId;
     CHECK_NOTNULL(kvstore_);
     this->kvstore_->asyncAtomicOp(this->spaceId_, partId,
-        [partId, vId, this] () -> std::string {
-            // TODO(shylock) the AtomicOP can't return various error
-            // so put it in the processor
-            filterResult_ = checkFilter(partId, vId);
-            switch (filterResult_) {
-            case FilterResult::SUCCEEDED : {
+        [partId, vId, this] () -> raftex::AtomicOpResult {
+            switch (checkFilter(partId, vId)) {
+            case kvstore::ResultCode::SUCCEEDED : {
                 return updateAndWriteBack(partId, vId);
             }
-            case FilterResult::E_FILTER_OUT:
-            // Fallthrough
-            case FilterResult::E_ERROR:
-            // Fallthrough
+            case kvstore::ResultCode::ERR_ATOMIC_OP_FILTER_OUT: {
+                return raftex::AppendLogResult::E_ATOMIC_OP_FILTER_OUT;
+            }
+            case kvstore::ResultCode::ERR_ATOMIC_OP_INVALID_FILTER: {
+                return raftex::AppendLogResult::E_ATOMIC_OP_INVALID_FILTER;
+            }
             default: {
-                return "";
+                return raftex::AppendLogResult::E_ATOMIC_OP_FAILURE;
             }
             }
         },
@@ -442,16 +442,12 @@ void UpdateVertexProcessor::process(const cpp2::UpdateVertexRequest& req) {
                     handleLeaderChanged(this->spaceId_, partId);
                     break;
                 }
-                if (code == kvstore::ResultCode::ERR_ATOMIC_OP_FAILED
-                    && filterResult_ == FilterResult::E_FILTER_OUT) {
+                if (code == kvstore::ResultCode::ERR_ATOMIC_OP_FILTER_OUT) {
                     // Filter out
                     // https://github.com/vesoft-inc/nebula/issues/1888
                     // Only filter out so we still return the data
                     onProcessFinished(req.get_return_columns().size());
                     this->pushResultCode(cpp2::ErrorCode::E_FILTER_OUT, partId);
-                } else if (code == kvstore::ResultCode::ERR_ATOMIC_OP_FAILED
-                    && filterResult_ == FilterResult::E_ERROR) {
-                    this->pushResultCode(cpp2::ErrorCode::E_INVALID_FILTER, partId);
                 } else {
                     this->pushResultCode(to(code), partId);
                 }

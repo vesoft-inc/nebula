@@ -29,6 +29,11 @@ enum ResultCode {
     ERR_TAG_NOT_FOUND       = -11,
     ERR_EDGE_NOT_FOUND      = -12,
     ERR_ATOMIC_OP_FAILED    = -13,
+    // We list the failure about atomic operation below
+    // they are not the concept of kvstore, but we need return the detail from kv layer
+    // because the CAS/RMW operation itself will intrude deep into the raft layer
+    ERR_ATOMIC_OP_FILTER_OUT      = -14,
+    ERR_ATOMIC_OP_INVALID_FILTER  = -15,
     ERR_PARTIAL_RESULT      = -99,
     ERR_UNKNOWN             = -100,
 };

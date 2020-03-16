@@ -8,6 +8,7 @@
 #define RAFTEX_RAFTPART_H_
 
 #include "base/Base.h"
+#include "base/ErrorOr.h"
 #include <folly/futures/SharedPromise.h>
 #include <folly/Function.h>
 #include <gtest/gtest_prod.h>
@@ -44,6 +45,11 @@ enum class AppendLogResult {
     E_INVALID_PEER = -9,
     E_NOT_ENOUGH_ACKS = -10,
     E_WRITE_BLOCKING = -11,
+    // We list the failure about atomic operation below
+    // they are not the concept of raft, but we need return the detail from raft layer
+    // because the CAS/RMW operation itself will intrude into the raft layer
+    E_ATOMIC_OP_FILTER_OUT     = -12,
+    E_ATOMIC_OP_INVALID_FILTER = -13,
 };
 
 enum class LogType {
@@ -64,11 +70,13 @@ class Host;
 class AppendLogsIterator;
 
 /**
- * The operation will be atomic, if the operation failed, empty string will be returned,
- * otherwise it will return the new operation's encoded string whick should be applied atomically.
+ * The operation will be atomic, if the operation failed, error code
+ * (empty string reversed for compatible) will be returned,
+ * otherwise it will return the new operation's encoded string which should be applied atomically.
  * You could implement CAS, READ-MODIFY-WRITE operations though it.
  * */
-using AtomicOp = folly::Function<std::string(void)>;
+using AtomicOpResult = ErrorOr<AppendLogResult, std::string>;
+using AtomicOp = folly::Function<AtomicOpResult(void)>;
 
 class RaftPart : public std::enable_shared_from_this<RaftPart> {
     friend class AppendLogsIterator;

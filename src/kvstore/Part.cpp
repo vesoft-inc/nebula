@@ -436,6 +436,10 @@ ResultCode Part::toResultCode(raftex::AppendLogResult res) {
             return ResultCode::ERR_WRITE_BLOCK_ERROR;
         case raftex::AppendLogResult::E_ATOMIC_OP_FAILURE:
             return ResultCode::ERR_ATOMIC_OP_FAILED;
+        case raftex::AppendLogResult::E_ATOMIC_OP_FILTER_OUT:
+            return ResultCode::ERR_ATOMIC_OP_FILTER_OUT;
+        case raftex::AppendLogResult::E_ATOMIC_OP_INVALID_FILTER:
+            return ResultCode::ERR_ATOMIC_OP_INVALID_FILTER;
         default:
             LOG(ERROR) << idStr_ << "Consensus error "
                        << static_cast<int32_t>(res);

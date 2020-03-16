@@ -29,6 +29,10 @@ cpp2::ErrorCode BaseProcessor<RESP>::to(kvstore::ResultCode code) {
         return cpp2::ErrorCode::E_CHECKPOINT_BLOCKED;
     case kvstore::ResultCode::ERR_PARTIAL_RESULT:
         return cpp2::ErrorCode::E_PARTIAL_RESULT;
+    case kvstore::ResultCode::ERR_ATOMIC_OP_FILTER_OUT:
+        return cpp2::ErrorCode::E_FILTER_OUT;
+    case kvstore::ResultCode::ERR_ATOMIC_OP_INVALID_FILTER:
+        return cpp2::ErrorCode::E_INVALID_FILTER;
     default:
         return cpp2::ErrorCode::E_UNKNOWN;
     }
