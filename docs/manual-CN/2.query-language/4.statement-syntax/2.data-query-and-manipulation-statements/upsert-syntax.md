@@ -2,12 +2,16 @@
 
 `UPSERT` 用于插入新的顶点或边或更新现有的顶点或边。如果顶点或边不存在，则会新建该顶点或边。`UPSERT` 是 `INSERT` 和 `UPDATE` 的组合。
 
+- 如果顶点或边不存在，则会新建该顶点或边，无论 WHEN 条件是否满足；
+- 如果该顶点或者边存在，并且 WHEN 条件满足，则会更新；
+- 如果该顶点或者边存在, 并且 WHEN 条件不满足，则不会有任何操作。
+
 ```ngql
-UPSERT {VERTEX | EDGE} {<vid> | <edge>} SET <update_columns> [WHEN <condition>] [YIELD <columns>]
+UPSERT {VERTEX <vid> | EDGE <edge>} SET <update_columns> [WHEN <condition>] [YIELD <columns>]
 ```
 
 - `vid` 表示需要更新的 vertex ID。
-- `edge` 表示需要更新的 edge，edge 的格式为 `$src->$dst@$rank OF $type`。
+- `edge` 表示需要更新的 edge，edge 的格式为 `$src->$dst@[ranking] OF $type`。
 - `update_columns` 表示需要更新的 tag 上的 columns，比如 `tag1.col1 = $^.tag2.col2 + 1` 表示把这个点的 `tag1.col1` 更新成 `tag2.col2 + 1`。
 
     **注意：**  `$^`表示 `UPDATE` 中需要更新的点。
