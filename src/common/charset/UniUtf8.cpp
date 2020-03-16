@@ -1597,11 +1597,14 @@ int UniUtf8::utf8BinCmp(const unsigned char* src, const unsigned char* srcend,
                         const unsigned char* tar, const unsigned char* tarend) {
     int slen = static_cast<int>(srcend - src);
     int tlen = static_cast<int>(tarend - tar);
-
     int len = std::min(slen, tlen);
-    int ret = memcmp(src, tar, len);
 
-    if (!ret) {
+    int ret = 0;
+    if (len != 0) {
+        ret = memcmp(src, tar, len);
+    }
+
+    if (ret != 0) {
         return ret;
     } else {
         return slen - tlen;
@@ -1621,7 +1624,7 @@ void UniUtf8::toSortUnicode(uint64_t* uni) {
 }
 
 
-int UniUtf8::generalCICmp(const std::string& p1, const std::string& p2) {
+int UniUtf8::utf8GeneralCICmp(const std::string& p1, const std::string& p2) {
     uint64_t suni = 0;
     uint64_t tuni = 0;
 

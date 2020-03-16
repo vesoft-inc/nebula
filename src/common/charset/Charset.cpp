@@ -92,7 +92,7 @@ StatusOr<int> CharsetInfo::nebulaStrCmp(const std::string& collateName,
         ret = str1.compare(str2);
     } else if (!collateName.compare("utf8_general_ci") ||
                !collateName.compare("utf8mb4_general_ci")) {
-        ret = UniUtf8::generalCICmp(str1, str2);
+        ret = UniUtf8::utf8GeneralCICmp(str1, str2);
     }
     if (ret < 0) {
         ret = -1;

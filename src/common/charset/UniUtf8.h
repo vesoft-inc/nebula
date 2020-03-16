@@ -45,8 +45,8 @@ public:
                           const unsigned char* tar,
                           const unsigned char* tarend);
 
-    // Compare unicode encoding character by character
-    static int generalCICmp(const std::string& p1, const std::string& p2);
+    // Compare utf8 encoding character by character
+    static int utf8GeneralCICmp(const std::string& p1, const std::string& p2);
 
 private:
     // Unicode support planes
@@ -66,7 +66,7 @@ private:
     static UniCaseInfo*  uniPlaneTab_[256];
 
     // The largest character in unicode plane`
-    static uint64_t                   maxchar_;
+    static uint64_t      maxchar_;
 };
 
 }   // namespace nebula

@@ -10,3 +10,16 @@ nebula_add_test(
         gtest
         gtest_main
 )
+
+nebula_add_test(
+    NAME
+        uni_utf8_test
+    SOURCES
+        UniToUtf8Test.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:charset_obj>
+        $<TARGET_OBJECTS:base_obj>
+    LIBRARIES
+        gtest
+        gtest_main
+)

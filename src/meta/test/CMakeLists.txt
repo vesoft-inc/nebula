@@ -15,6 +15,7 @@ set(meta_test_deps
     $<TARGET_OBJECTS:process_obj>
     $<TARGET_OBJECTS:schema_obj>
     $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:charset_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:network_obj>
@@ -156,7 +157,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:hdfs_helper_obj>
         $<TARGET_OBJECTS:http_client_obj>
-        $<TARGET_OBJECTS:charset_obj>
         ${meta_test_deps}
     LIBRARIES
         proxygenhttpserver
@@ -278,7 +278,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:ws_obj>
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:http_client_obj>
-        $<TARGET_OBJECTS:charset_obj>
         $<TARGET_OBJECTS:gflags_man_obj>
         ${meta_test_deps}
     LIBRARIES
