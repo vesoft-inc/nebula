@@ -38,6 +38,7 @@ nebula_add_library(
     adHocIndex_obj OBJECT
     AdHocIndexManager.cpp
 )
+
 nebula_add_test(
     NAME
         task_manager_test

@@ -58,7 +58,7 @@ public:
 
     virtual void finish(const std::vector<ResultCode>& subTaskResults) {
         ResultCode rc = ResultCode::SUCCEEDED;
-        for (auto _t : subTaskResults) {
+        for (auto& _t : subTaskResults) {
             if (ResultCode::SUCCEEDED != _t) {
                 rc = _t;
                 break;

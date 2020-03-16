@@ -26,11 +26,13 @@ void AdminTaskManager::addAsyncTask(std::shared_ptr<AdminTask> task) {
 
 nebula::kvstore::ResultCode
 AdminTaskManager::cancelTask(int jobId) {
+    LOG(INFO) << "AdminTaskManager::cancelTask() jobId=" << jobId;
     auto ret = kvstore::ResultCode::ERR_KEY_NOT_FOUND;
     {
         std::lock_guard<std::mutex> lk(taskListMutex_);
         for (auto& task : taskList_) {
             if (task->getJobId() == jobId) {
+                LOG(INFO) << "task["  << jobId << "], cancelled.";
                 task->stop();
                 ret = kvstore::ResultCode::SUCCEEDED;
             }
@@ -57,34 +59,18 @@ void AdminTaskManager::shutdown() {
     LOG(INFO) << "exit " << __PRETTY_FUNCTION__;
 }
 
-void AdminTaskManager::pickSubTaskThread() {
-    LOG(ERROR) << "enter " << __PRETTY_FUNCTION__;
-    auto& currTask = *taskList_.begin();
-    size_t idx = subTaskIndex_.fetch_add(1);
-
-    // LOG(ERROR) << "idx=" << idx
-    //            << ", subTasks_.size()=" <<  subTasks_.size()
-    //            << ", currTask->isStop()=" << currTask->isStop();
-    while (idx < subTasks_.size() && !currTask->isStop()) {
-        // LOG(ERROR) << "idx=" << idx << " subTasks_.size()=" <<  subTasks_.size();
-        subTaskStatus_[idx] = subTasks_[idx].invoke();
-        idx = subTaskIndex_.fetch_add(1);
-    }
-    LOG(ERROR) << "exit " << __PRETTY_FUNCTION__;
-}
-
 void AdminTaskManager::runTask(AdminTask& task) {
-    LOG(ERROR) << "enter " << __PRETTY_FUNCTION__;
+    LOG(ERROR) << "runTask()";
     auto errOrSubTasks = task.genSubTasks();
     if (!nebula::ok(errOrSubTasks)) {
         LOG(ERROR)  << __PRETTY_FUNCTION__ << " generate sub tasks failed ";
         task.finish(nebula::error(errOrSubTasks));
         return;
     }
-    // auto& subTasks = nebula::value(errOrSubTasks);
+
     subTasks_ = nebula::value(errOrSubTasks);
 
-    subTaskStatus_.resize(subTasks_.size(), kvstore::ResultCode::ERR_UNKNOWN);
+    subTaskStatus_.resize(subTasks_.size(), kvstore::ResultCode::SUCCEEDED);
     size_t concurrency = std::min(subTasks_.size(), (size_t)subTaskLimit_);
     subTaskIndex_ = 0;
 
@@ -99,7 +85,7 @@ void AdminTaskManager::runTask(AdminTask& task) {
         t.join();
     }
 
-    // some task may tolerant some not succeeded code ?
+    // maybe some task will tolerant some err code
     task.finish(subTaskStatus_);
     LOG(ERROR) << "exit " << __PRETTY_FUNCTION__;
 }
@@ -119,6 +105,23 @@ void AdminTaskManager::pickTaskThread() {
             taskList_.erase(taskList_.begin());
         }
     }
+}
+
+void AdminTaskManager::pickSubTaskThread() {
+    LOG(ERROR) << "enter " << __PRETTY_FUNCTION__;
+    auto& currTask = *taskList_.begin();
+    size_t idx = subTaskIndex_.fetch_add(1);
+
+    while (idx < subTasks_.size()) {
+        if (!currTask->isStop()) {
+            subTaskStatus_[idx] = subTasks_[idx].invoke();
+        } else {
+            subTaskStatus_[idx] = kvstore::ResultCode::ERR_USER_CANCELLED;
+            LOG(INFO) << "skip cancelled task, sub task =" << idx;
+        }
+        idx = subTaskIndex_.fetch_add(1);
+    }
+    LOG(ERROR) << "exit " << __PRETTY_FUNCTION__;
 }
 
 }  // namespace storage
