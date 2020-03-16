@@ -79,11 +79,15 @@ public:
         return response(6);
     }
 
+    folly::Future<Status> checkPeers() override {
+        return response(7);
+    }
+
     folly::Future<Status> getLeaderDist(HostLeaderMap* hostLeaderMap) override {
         (*hostLeaderMap)[HostAddr(0, 0)][1] = {1, 2, 3, 4, 5};
         (*hostLeaderMap)[HostAddr(1, 1)][1] = {6, 7, 8};
         (*hostLeaderMap)[HostAddr(2, 2)][1] = {9};
-        return response(7);
+        return response(8);
     }
 
 
@@ -97,10 +101,6 @@ public:
 
     folly::Future<Status> blockingWrites() override {
         return response(10);
-    }
-
-    folly::Future<Status> checkPeers() override {
-        return response(8);
     }
 
     folly::Future<Status> rebuildTagIndex() override {

@@ -357,7 +357,11 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {LABEL}                     {
                                 yylval->strval = new std::string(yytext, yyleng);
                                 if (yylval->strval->size() > MAX_STRING) {
-                                    yyterminate();
+                                    auto error = "Out of rang of the LABEL length, "
+                                                  "the  max length of LABLE is " +
+                                                  std::to_string(MAX_STRING) + ":";
+                                    delete yylval->strval;
+                                    throw GraphParser::syntax_error(*yylloc, error);
                                 }
                                 return TokenType::LABEL;
                             }
@@ -376,7 +380,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
                                         i++;
                                     }
                                     if (yyleng - i > 16) {
-                                        yyterminate();
+                                        throw GraphParser::syntax_error(*yylloc, "Out of rang:");
                                     }
                                 }
                                 uint64_t val = 0;
@@ -390,10 +394,9 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
                                     while (i < yyleng && yytext[i] == '0') {
                                         i++;
                                     }
-                                    if (yyleng - i > 22) {
-                                        yyterminate();
-                                    } else if (yyleng - i == 22 && yytext[i] != '1') {
-                                        yyterminate();
+                                    if (yyleng - i > 22 ||
+                                            (yyleng - i == 22 && yytext[i] != '1')) {
+                                        throw GraphParser::syntax_error(*yylloc, "Out of rang:");
                                     }
                                 }
                                 uint64_t val = 0;
@@ -406,11 +409,11 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
                                     folly::StringPiece text(yytext, yyleng);
                                     uint64_t val = folly::to<uint64_t>(text);
                                     if (val > 9223372036854775808ULL) {
-                                        yyterminate();
+                                        throw GraphParser::syntax_error(*yylloc, "Out of rang:");
                                     }
                                     yylval->intval = val;
                                 } catch (...) {
-                                    yyterminate();
+                                    throw GraphParser::syntax_error(*yylloc, "Out of rang:");
                                 }
                                 return TokenType::INTEGER;
                             }
@@ -419,7 +422,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
                                     folly::StringPiece text(yytext, yyleng);
                                     yylval->doubleval = folly::to<double>(text);
                                 } catch (...) {
-                                    yyterminate();
+                                    throw GraphParser::syntax_error(*yylloc, "Out of rang:");
                                 }
                                 return TokenType::DOUBLE;
                             }
@@ -428,7 +431,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
                                     folly::StringPiece text(yytext, yyleng);
                                     yylval->doubleval = folly::to<double>(text);
                                 } catch (...) {
-                                    yyterminate();
+                                    throw GraphParser::syntax_error(*yylloc, "Out of rang:");
                                 }
                                 return TokenType::DOUBLE;
                             }
@@ -450,7 +453,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
                             }
 <DQ_STR,SQ_STR><<EOF>>      {
                                 // Must match '' or ""
-                                throw GraphParser::syntax_error(*yylloc, "unterminated string");
+                                throw GraphParser::syntax_error(*yylloc, "Unterminated string: ");
                             }
 <DQ_STR,SQ_STR>\n           { yyterminate(); }
 <DQ_STR>[^\\\n\"]+          {

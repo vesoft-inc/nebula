@@ -666,6 +666,15 @@ TEST(MetaClientTest, TagIndexTest) {
         ASSERT_EQ(Status::Error("not existed!"), result.status());
     }
     {
+        std::vector<std::string>&& fields {"tag_0_col_0",  "tag_0_col_0"};
+        auto result = client->createTagIndex(space,
+                                             "tag_conflict_index",
+                                             "tag_0",
+                                             std::move(fields)).get();
+        ASSERT_FALSE(result.ok());
+        ASSERT_EQ(Status::Error("conflict"), result.status());
+    }
+    {
         auto result = client->listTagIndexes(space).get();
         auto values = result.value();
         ASSERT_EQ(2, values.size());
@@ -822,6 +831,15 @@ TEST(MetaClientTest, EdgeIndexTest) {
                                               std::move(fields)).get();
         ASSERT_FALSE(result.ok());
         ASSERT_EQ(Status::Error("not existed!"), result.status());
+    }
+    {
+        std::vector<std::string>&& fields {"edge_0_col_0",  "edge_0_col_0"};
+        auto result = client->createEdgeIndex(space,
+                                              "edge_conflict_index",
+                                              "edge_0",
+                                              std::move(fields)).get();
+        ASSERT_FALSE(result.ok());
+        ASSERT_EQ(Status::Error("conflict"), result.status());
     }
     {
         std::vector<std::string>&& fields {"edge_0_col_0",  "not_exist_field"};

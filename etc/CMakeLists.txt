@@ -3,8 +3,11 @@
 install(
     FILES
         nebula-graphd.conf.default
+        nebula-graphd.conf.production
         nebula-storaged.conf.default
+        nebula-storaged.conf.production
         nebula-metad.conf.default
+        nebula-metad.conf.production
     PERMISSIONS
         OWNER_READ
         GROUP_READ

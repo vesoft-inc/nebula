@@ -2029,7 +2029,11 @@ void nebula::GraphParser::error(const nebula::GraphParser::location_type& loc,
         || begin >= query->size()) {
         os << " at " << loc;
     } else if (loc.begin.column < (loc.end.column ? loc.end.column - 1 : 0)) {
-        os << " near `" << query->substr(begin, loc.end.column - loc.begin.column) << "'";
+        uint32_t len = loc.end.column - loc.begin.column;
+        if (len > 80) {
+            len = 80;
+        }
+        os << " near `" << query->substr(begin, len) << "'";
     } else {
         os << " near `" << query->substr(begin, 8) << "'";
     }
