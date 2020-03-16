@@ -458,7 +458,7 @@ void GoExecutor::stepOut() {
     auto spaceId = ectx()->rctx()->session()->space();
     auto status = getStepOutProps();
     if (!status.ok()) {
-        doError(Status::Error("Get step out props failed"));
+        doError(std::move(status).status());
         return;
     }
     auto returns = status.value();
