@@ -26,7 +26,7 @@ void DropTagProcessor::process(const cpp2::DropTagReq& req) {
         return;
     }
 
-    auto indexes = getIndexes(spaceId, tagId, false);
+    auto indexes = getIndexes(spaceId, tagId);
     if (!indexes.ok()) {
         handleErrorCode(MetaCommon::to(indexes.status()));
         onFinished();
@@ -34,7 +34,7 @@ void DropTagProcessor::process(const cpp2::DropTagReq& req) {
     }
     if (!indexes.value().empty()) {
         LOG(ERROR) << "Drop tag error, index conflict";
-        handleErrorCode(cpp2::ErrorCode::E_INDEX_CONFLICT);
+        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
         onFinished();
         return;
     }

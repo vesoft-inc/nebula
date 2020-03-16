@@ -28,6 +28,8 @@ enum ResultCode {
     ERR_WRITE_BLOCK_ERROR   = -10,
     ERR_TAG_NOT_FOUND       = -11,
     ERR_EDGE_NOT_FOUND      = -12,
+    ERR_ATOMIC_OP_FAILED    = -13,
+    ERR_PARTIAL_RESULT      = -99,
     ERR_UNKNOWN             = -100,
 };
 

@@ -113,11 +113,6 @@ void GoExecutor::execute() {
 }
 
 
-void GoExecutor::feedResult(std::unique_ptr<InterimResult> result) {
-    inputs_ = std::move(result);
-}
-
-
 Status GoExecutor::prepareStep() {
     auto *clause = sentence_->stepClause();
     if (clause != nullptr) {
@@ -431,6 +426,10 @@ Status GoExecutor::setupStarts() {
         return Status::OK();
     }
 
+    auto status = checkIfDuplicateColumn();
+    if (!status.ok()) {
+        return status;
+    }
     auto result = inputs->getVIDs(*colname_);
     if (!result.ok()) {
         LOG(ERROR) << "Get vid fail: " << *colname_;
@@ -472,10 +471,10 @@ void GoExecutor::stepOut() {
     VLOG(1) << "edge type size: " << edgeTypes_.size()
             << " return cols: " << returns.size();
     auto future  = ectx()->getStorageClient()->getNeighbors(spaceId,
-                                                   starts_,
-                                                   edgeTypes_,
-                                                   filterPushdown,
-                                                   std::move(returns));
+                                                            starts_,
+                                                            edgeTypes_,
+                                                            filterPushdown,
+                                                            std::move(returns));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&result) {
         auto completeness = result.completeness();
@@ -1261,80 +1260,5 @@ OptVariantType GoExecutor::getPropFromInterim(VertexID id, const std::string &pr
     DCHECK(index_ != nullptr);
     return index_->getColumnWithVID(rootId, prop);
 }
-
-
-SupportedType GoExecutor::getPropTypeFromInterim(const std::string &prop) const {
-    DCHECK(index_ != nullptr);
-    return index_->getColumnType(prop);
-}
-
-nebula::cpp2::SupportedType GoExecutor::calculateExprType(Expression* exp) const {
-    auto spaceId = ectx()->rctx()->session()->space();
-    switch (exp->kind()) {
-        case Expression::kPrimary:
-        case Expression::kFunctionCall:
-        case Expression::kUnary:
-        case Expression::kArithmetic: {
-            return nebula::cpp2::SupportedType::UNKNOWN;
-        }
-        case Expression::kTypeCasting: {
-            auto exprPtr = static_cast<const TypeCastingExpression *>(exp);
-            return SchemaHelper::columnTypeToSupportedType(
-                                                    exprPtr->getType());
-        }
-        case Expression::kRelational:
-        case Expression::kLogical: {
-            return nebula::cpp2::SupportedType::BOOL;
-        }
-        case Expression::kDestProp:
-        case Expression::kSourceProp: {
-            auto* tagPropExp = static_cast<const AliasPropertyExpression*>(exp);
-            const auto* tagName = tagPropExp->alias();
-            const auto* propName = tagPropExp->prop();
-            auto tagIdRet = ectx()->schemaManager()->toTagID(spaceId, *tagName);
-            if (tagIdRet.ok()) {
-                auto ts = ectx()->schemaManager()->getTagSchema(spaceId, tagIdRet.value());
-                if (ts != nullptr) {
-                    return ts->getFieldType(*propName).type;
-                }
-            }
-            return nebula::cpp2::SupportedType::UNKNOWN;
-        }
-        case Expression::kEdgeDstId:
-        case Expression::kEdgeSrcId: {
-            return nebula::cpp2::SupportedType::VID;
-        }
-        case Expression::kEdgeRank:
-        case Expression::kEdgeType: {
-            return nebula::cpp2::SupportedType::INT;
-        }
-        case Expression::kAliasProp: {
-            auto* edgeExp = static_cast<const AliasPropertyExpression*>(exp);
-            const auto* propName = edgeExp->prop();
-            auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId, *edgeExp->alias());
-            if (edgeStatus.ok()) {
-                auto edgeType = edgeStatus.value();
-                auto schema = ectx()->schemaManager()->getEdgeSchema(spaceId, edgeType);
-                if (schema != nullptr) {
-                    return schema->getFieldType(*propName).type;
-                }
-            }
-            return nebula::cpp2::SupportedType::UNKNOWN;
-        }
-        case Expression::kVariableProp:
-        case Expression::kInputProp: {
-            auto* propExp = static_cast<const AliasPropertyExpression*>(exp);
-            const auto* propName = propExp->prop();
-            return getPropTypeFromInterim(*propName);
-        }
-        default: {
-            VLOG(1) << "Unsupport expression type! kind = "
-                    << std::to_string(static_cast<uint8_t>(exp->kind()));
-            return nebula::cpp2::SupportedType::UNKNOWN;
-        }
-    }
-}
-
-
 }   // namespace graph
 }   // namespace nebula

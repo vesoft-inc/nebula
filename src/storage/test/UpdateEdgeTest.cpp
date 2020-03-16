@@ -199,8 +199,8 @@ TEST(UpdateEdgeTest, Set_Filter_Yield_Test) {
     auto lastVersion = std::numeric_limits<int32_t>::max() - 2;
     auto kvstoreEdgeKey = NebulaKeyUtils::edgeKey(partId, srcId, 101, 0, dstId, lastVersion);
     keys.emplace_back(kvstoreEdgeKey);
-    kvstore::ResultCode code = kv->multiGet(spaceId, partId, std::move(keys), &values);
-    CHECK_EQ(code, kvstore::ResultCode::SUCCEEDED);
+    auto ret = kv->multiGet(spaceId, partId, std::move(keys), &values);
+    EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret.first);
     EXPECT_EQ(1, values.size());
     auto edgeSchema = schemaMan->getEdgeSchema(spaceId, 101);
     auto edgeReader = RowReader::getRowReader(values[0], edgeSchema);

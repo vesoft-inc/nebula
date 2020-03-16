@@ -6,6 +6,7 @@
 
 #ifndef STORAGE_ADMIN_CREATECHECKPOINTPROCESSOR_H_
 #define STORAGE_ADMIN_CREATECHECKPOINTPROCESSOR_H_
+
 #include "base/Base.h"
 #include "kvstore/NebulaStore.h"
 #include "storage/BaseProcessor.h"
@@ -13,6 +14,7 @@
 
 namespace nebula {
 namespace storage {
+
 class CreateCheckpointProcessor : public BaseProcessor<cpp2::AdminExecResp> {
 public:
     static CreateCheckpointProcessor* instance(kvstore::KVStore* kvstore) {
@@ -25,6 +27,7 @@ private:
     explicit CreateCheckpointProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr, nullptr) {}
 };
+
 }  // namespace storage
 }  // namespace nebula
 #endif  // STORAGE_ADMIN_CREATECHECKPOINTPROCESSOR_H_

@@ -27,6 +27,8 @@ cpp2::ErrorCode BaseProcessor<RESP>::to(kvstore::ResultCode code) {
         return cpp2::ErrorCode::E_FAILED_TO_CHECKPOINT;
     case kvstore::ResultCode::ERR_WRITE_BLOCK_ERROR:
         return cpp2::ErrorCode::E_CHECKPOINT_BLOCKED;
+    case kvstore::ResultCode::ERR_PARTIAL_RESULT:
+        return cpp2::ErrorCode::E_PARTIAL_RESULT;
     default:
         return cpp2::ErrorCode::E_UNKNOWN;
     }
@@ -63,6 +65,25 @@ void BaseProcessor<RESP>::doPut(GraphSpaceID spaceId,
 }
 
 template <typename RESP>
+kvstore::ResultCode BaseProcessor<RESP>::doSyncPut(GraphSpaceID spaceId,
+                                                   PartitionID partId,
+                                                   std::vector<kvstore::KV> data) {
+    folly::Baton<true, std::atomic> baton;
+    auto ret = kvstore::ResultCode::SUCCEEDED;
+    kvstore_->asyncMultiPut(spaceId,
+                            partId,
+                            std::move(data),
+                            [&ret, &baton] (kvstore::ResultCode code) {
+        if (kvstore::ResultCode::SUCCEEDED != code) {
+            ret = code;
+        }
+        baton.post();
+    });
+    baton.wait();
+    return ret;
+}
+
+template <typename RESP>
 void BaseProcessor<RESP>::doRemove(GraphSpaceID spaceId,
                                    PartitionID partId,
                                    std::vector<std::string> keys) {
@@ -79,6 +100,16 @@ void BaseProcessor<RESP>::doRemoveRange(GraphSpaceID spaceId,
                                         std::string end) {
     this->kvstore_->asyncRemoveRange(
         spaceId, partId, start, end, [spaceId, partId, this](kvstore::ResultCode code) {
+            handleAsync(spaceId, partId, code);
+        });
+}
+
+template <typename RESP>
+void BaseProcessor<RESP>::doRemovePrefix(GraphSpaceID spaceId,
+                                         PartitionID partId,
+                                         std::string prefix) {
+    this->kvstore_->asyncRemovePrefix(
+        spaceId, partId, prefix, [spaceId, partId, this](kvstore::ResultCode code) {
             handleAsync(spaceId, partId, code);
         });
 }

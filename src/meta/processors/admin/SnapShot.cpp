@@ -88,7 +88,7 @@ cpp2::ErrorCode Snapshot::blockingWrites(storage::cpp2::EngineSignType sign) {
         auto status = client_->blockingWrites(space, sign).get();
 
         if (!status.ok()) {
-            return cpp2::ErrorCode::E_RPC_FAILURE;
+            return cpp2::ErrorCode::E_BLOCK_WRITE_FAILURE;
         }
     }
     return cpp2::ErrorCode::SUCCEEDED;

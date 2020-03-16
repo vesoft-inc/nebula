@@ -56,8 +56,8 @@ template<typename RESP>
 StatusOr<std::vector<std::string>>
 BaseProcessor<RESP>::doMultiGet(const std::vector<std::string>& keys) {
     std::vector<std::string> values;
-    auto code = kvstore_->multiGet(kDefaultSpaceId, kDefaultPartId, keys, &values);
-    if (code != kvstore::ResultCode::SUCCEEDED) {
+    auto ret = kvstore_->multiGet(kDefaultSpaceId, kDefaultPartId, keys, &values);
+    if (ret.first != kvstore::ResultCode::SUCCEEDED) {
         return Status::Error("MultiGet Failed");
     }
     return values;
@@ -199,9 +199,8 @@ Status BaseProcessor<RESP>::spaceExist(GraphSpaceID spaceId) {
 
 
 template<typename RESP>
-Status BaseProcessor<RESP>::userExist(UserID spaceId) {
-    folly::SharedMutex::ReadHolder rHolder(LockUtils::userLock());
-    auto userKey = MetaServiceUtils::userKey(spaceId);
+Status BaseProcessor<RESP>::userExist(const std::string& account) {
+    auto userKey = MetaServiceUtils::userKey(account);
     auto ret = doGet(userKey);
     if (ret.ok()) {
         return Status::OK();
@@ -329,36 +328,10 @@ BaseProcessor<RESP>::getIndexID(GraphSpaceID spaceId, const std::string& indexNa
 }
 
 template<typename RESP>
-StatusOr<UserID>
-BaseProcessor<RESP>::getUserId(const std::string& account) {
-    auto indexKey = MetaServiceUtils::indexUserKey(account);
-    auto ret = doGet(indexKey);
-    if (ret.ok()) {
-        return *reinterpret_cast<const UserID*>(ret.value().c_str());
-    }
-    return Status::UserNotFound(folly::stringPrintf("User %s not found", account.c_str()));
-}
-
-template<typename RESP>
-bool BaseProcessor<RESP>::checkPassword(UserID userId, const std::string& password) {
-    auto userKey = MetaServiceUtils::userKey(userId);
+bool BaseProcessor<RESP>::checkPassword(const std::string& account, const std::string& password) {
+    auto userKey = MetaServiceUtils::userKey(account);
     auto ret = doGet(userKey);
-    if (ret.ok()) {
-        return  ret.value().compare(sizeof(int32_t), password.size(), password) == 0;
-    }
-    return false;
-}
-
-template<typename RESP>
-StatusOr<std::string>
-BaseProcessor<RESP>::getUserAccount(UserID userId) {
-    auto key = MetaServiceUtils::userKey(userId);
-    auto ret = doGet(key);
-    if (!ret.ok()) {
-        return Status::UserNotFound(folly::stringPrintf("User not found by id %d", userId));
-    }
-
-    return MetaServiceUtils::parseUserItem(ret.value()).get_account();
+    return ret.value() == password;
 }
 
 template<typename RESP>
@@ -432,11 +405,8 @@ void BaseProcessor<RESP>::doSyncMultiRemoveAndUpdate(std::vector<std::string> ke
 template<typename RESP>
 StatusOr<std::vector<nebula::cpp2::IndexItem>>
 BaseProcessor<RESP>::getIndexes(GraphSpaceID spaceId,
-                                int32_t edgeOrTag,
-                                bool isEdge) {
+                                int32_t tagOrEdge) {
     std::vector<nebula::cpp2::IndexItem> items;
-    auto type = isEdge ? nebula::cpp2::SchemaID::Type::edge_type
-                       : nebula::cpp2::SchemaID::Type::tag_id;
     auto indexPrefix = MetaServiceUtils::indexPrefix(spaceId);
     auto iterRet = doPrefix(indexPrefix);
     if (!iterRet.ok()) {
@@ -445,9 +415,11 @@ BaseProcessor<RESP>::getIndexes(GraphSpaceID spaceId,
     auto indexIter = iterRet.value().get();
     while (indexIter->valid()) {
         auto item = MetaServiceUtils::parseIndex(indexIter->val());
-        auto id = isEdge ? item.get_schema_id().get_edge_type()
-                         : item.get_schema_id().get_tag_id();
-        if (item.get_schema_id().getType() == type && id == edgeOrTag) {
+        if (item.get_schema_id().getType() == nebula::cpp2::SchemaID::Type::tag_id &&
+            item.get_schema_id().get_tag_id() == tagOrEdge) {
+            items.emplace_back(std::move(item));
+        } else if (item.get_schema_id().getType() == nebula::cpp2::SchemaID::Type::edge_type &&
+                   item.get_schema_id().get_edge_type() == tagOrEdge) {
             items.emplace_back(std::move(item));
         }
         indexIter->next();
@@ -473,7 +445,7 @@ BaseProcessor<RESP>::indexCheck(const std::vector<nebula::cpp2::IndexItem>& item
                     if (it != indexCols.end()) {
                         LOG(ERROR) << "Index conflict, index :" << index.get_index_name()
                                    << ", column : " << tCol.name;
-                        return cpp2::ErrorCode::E_INDEX_CONFLICT;
+                        return cpp2::ErrorCode::E_CONFLICT;
                     }
                 }
             }
