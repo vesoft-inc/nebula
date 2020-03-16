@@ -81,9 +81,22 @@
     * [返回结果语句 (Yield)](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/yield-syntax.md)
 
   * 辅助功能语句
+    * Show 语句
+      * [Show Charset 语法](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-charset-syntax.md)
+      * [Show Collation 语法](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-collation-syntax.md)
+      * [Show Configs 语法](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-configs-syntax.md)
+      * [Show Create Spaces 语法](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-create-space-syntax.md)
+      * [Show Create Tag/Edge 语法](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-create-tag-edge-syntax.md)
+      * [Show Hosts 语法](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-hosts-syntax.md)
+      * [Show Indexes 语法](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-indexes-syntax.md)
+      * [Show Parts 语法](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-parts-syntax.md)
+      * [Show Roles 语法](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-roles-syntax.md)
+      * [Show Snapshots 语法](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-snapshots-syntax.md)
+      * [Show Spaces 语法](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-spaces-syntax.md)
+      * [Show Tag/Edge 语法](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-tags-edges-syntax.md)
+      * [Show Users 语法](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-users-syntax.md)
     * [Describe](2.query-language/4.statement-syntax/3.utility-statements/describe-syntax.md)
     * [Use](2.query-language/4.statement-syntax/3.utility-statements/use-syntax.md)
-    * [Show](2.query-language/4.statement-syntax/3.utility-statements/show-syntax.md)
   * 图算法
     * [查找路径](2.query-language/4.statement-syntax/4.graph-algorithms/find-path-syntax.md)
 
