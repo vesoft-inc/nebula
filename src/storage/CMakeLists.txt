@@ -26,8 +26,8 @@ nebula_add_library(
     admin/AdminTaskProcessor.cpp
     admin/AdminTaskManager.cpp
     admin/AdminTask.cpp
-    admin/SimpleKVTask.cpp
     admin/CompactTask.cpp
+    admin/FlushTask.cpp
     index/IndexPolicyMaker.cpp
     index/IndexExecutor.cpp
     index/LookUpEdgeIndexProcessor.cpp

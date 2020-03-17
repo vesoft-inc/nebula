@@ -5,8 +5,8 @@
  */
 
 #include "storage/admin/AdminTask.h"
-#include "storage/admin/SimpleKVTask.h"
 #include "storage/admin/CompactTask.h"
+#include "storage/admin/FlushTask.h"
 
 namespace nebula {
 namespace storage {
@@ -24,6 +24,8 @@ AdminTaskFactory::createAdminTask(const cpp2::AddAdminTaskRequest& req,
         ret.reset(new CompactTask(jobId, taskId, store, req.get_space_id(), cb));
         break;
     case nebula::cpp2::AdminCmd::FLUSH:
+        ret.reset(new FlushTask(jobId, taskId, store, req.get_space_id(), cb));
+        break;
     case nebula::cpp2::AdminCmd::REBUILD_TAG_INDEX:
     case nebula::cpp2::AdminCmd::REBUILD_EDGE_INDEX:
         break;
