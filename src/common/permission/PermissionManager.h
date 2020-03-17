@@ -13,6 +13,7 @@
 #include "parser/Sentence.h"
 #include "parser/UserSentences.h"
 #include "parser/AdminSentences.h"
+#include "graph/GraphFlags.h"
 
 namespace nebula {
 namespace permission {

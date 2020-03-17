@@ -29,9 +29,10 @@ void CreateUserProcessor::process(const cpp2::CreateUserReq& req) {
     }
 
     std::vector<kvstore::KV> data;
-    data.emplace_back(MetaServiceUtils::userKey(account), password);
+    data.emplace_back(MetaServiceUtils::userKey(account),
+                      MetaServiceUtils::userVal(password));
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
-    doPut(std::move(data));
+    doSyncPutAndUpdate(std::move(data));
 }
 
 
@@ -40,6 +41,7 @@ void AlterUserProcessor::process(const cpp2::AlterUserReq& req) {
     const auto& account = req.get_account();
     const auto& password = req.get_encoded_pwd();
     auto userKey = MetaServiceUtils::userKey(account);
+    auto userVal = MetaServiceUtils::userVal(password);
     std::string val;
     auto result = kvstore_->get(kDefaultSpaceId, kDefaultPartId, userKey, &val);
     if (result != kvstore::ResultCode::SUCCEEDED) {
@@ -48,9 +50,9 @@ void AlterUserProcessor::process(const cpp2::AlterUserReq& req) {
         return;
     }
     std::vector<kvstore::KV> data;
-    data.emplace_back(std::move(userKey), password);
+    data.emplace_back(std::move(userKey), std::move(userVal));
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
-    doPut(std::move(data));
+    doSyncPutAndUpdate(std::move(data));
 }
 
 
@@ -88,7 +90,7 @@ void DropUserProcessor::process(const cpp2::DropUserReq& req) {
 
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     LOG(INFO) << "Drop User " << req.get_account();
-    doMultiRemove(std::move(keys));
+    doSyncMultiRemoveAndUpdate({std::move(keys)});
 }
 
 
@@ -108,7 +110,7 @@ void GrantProcessor::process(const cpp2::GrantRoleReq& req) {
     data.emplace_back(MetaServiceUtils::roleKey(spaceId, roleItem.get_user()),
                       MetaServiceUtils::roleVal(roleItem.get_role_type()));
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
-    doPut(std::move(data));
+    doSyncPutAndUpdate(std::move(data));
 }
 
 
@@ -139,7 +141,7 @@ void RevokeProcessor::process(const cpp2::RevokeRoleReq& req) {
         return;
     }
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
-    doRemove(roleKey);
+    doSyncMultiRemoveAndUpdate({std::move(roleKey)});
 }
 
 
@@ -159,17 +161,11 @@ void ChangePasswordProcessor::process(const cpp2::ChangePasswordReq& req) {
     }
 
     auto userKey = MetaServiceUtils::userKey(req.get_account());
-    std::string val;
-    auto result = kvstore_->get(kDefaultSpaceId, kDefaultPartId, userKey, &val);
-    if (result != kvstore::ResultCode::SUCCEEDED) {
-        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
-        onFinished();
-        return;
-    }
+    auto userVal = MetaServiceUtils::userVal(req.get_new_encoded_pwd());
     std::vector<kvstore::KV> data;
-    data.emplace_back(std::move(userKey), req.get_new_encoded_pwd());
+    data.emplace_back(std::move(userKey), std::move(userVal));
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
-    doPut(std::move(data));
+    doSyncPutAndUpdate(std::move(data));
 }
 
 
@@ -187,8 +183,9 @@ void ListUsersProcessor::process(const cpp2::ListUsersReq& req) {
     }
     decltype(resp_.users) users;
     while (iter->valid()) {
-        auto user = MetaServiceUtils::parseUser(iter->key());
-        users.emplace_back(std::move(user));
+        auto account = MetaServiceUtils::parseUser(iter->key());
+        auto password = MetaServiceUtils::parseUserPwd(iter->val());
+        users.emplace(std::pair<std::string, std::string>(std::move(account), std::move(password)));
         iter->next();
     }
     resp_.set_users(users);
@@ -199,13 +196,7 @@ void ListUsersProcessor::process(const cpp2::ListUsersReq& req) {
 
 void ListRolesProcessor::process(const cpp2::ListRolesReq& req) {
     auto spaceId = req.get_space_id();
-    /**
-     * Because the god role's space id is kDefaultSpaceId.
-     * skip the space check when space id is kDefaultSpaceId.
-     **/
-    if (spaceId != kDefaultSpaceId) {
-        CHECK_SPACE_ID_AND_RETURN(spaceId);
-    }
+    CHECK_SPACE_ID_AND_RETURN(spaceId);
     folly::SharedMutex::ReadHolder rHolder(LockUtils::userLock());
     auto prefix = MetaServiceUtils::roleSpacePrefix(spaceId);
     std::unique_ptr<kvstore::KVIterator> iter;
@@ -229,24 +220,6 @@ void ListRolesProcessor::process(const cpp2::ListRolesReq& req) {
         iter->next();
     }
     resp_.set_roles(roles);
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
-    onFinished();
-}
-
-void AuthCheckProcessor::process(const cpp2::AuthCheckReq& req) {
-    folly::SharedMutex::WriteHolder wHolder(LockUtils::userLock());
-    auto userRet = userExist(req.get_account());
-    if (!userRet.ok()) {
-        handleErrorCode(MetaCommon::to(userRet));
-        onFinished();
-        return;
-    }
-
-    if (!checkPassword(req.get_account(), req.get_encoded_pwd())) {
-        handleErrorCode(cpp2::ErrorCode::E_INVALID_PASSWORD);
-        onFinished();
-        return;
-    }
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }

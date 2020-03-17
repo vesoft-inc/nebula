@@ -524,19 +524,15 @@ struct RevokeRoleReq {
     1: common.RoleItem role_item,
 }
 
-struct AuthCheckReq {
-    1: string               account,
-    2: string               encoded_pwd,
-}
-
 struct ListUsersReq {
 }
 
 struct ListUsersResp {
-    1: ErrorCode code,
+    1: ErrorCode            code,
     // Valid if ret equals E_LEADER_CHANGED.
-    2: common.HostAddr  leader,
-    3: list<string>     users,
+    2: common.HostAddr      leader,
+    // map<account, encoded password>
+    3: map<string, string>  users,
 }
 
 struct ListRolesReq {
@@ -742,7 +738,6 @@ service MetaService {
     ListUsersResp listUsers(1: ListUsersReq req);
     ListRolesResp listRoles(1: ListRolesReq req);
     ListRolesResp getUserRoles(1: GetUserRolesReq req);
-    ExecResp authCheck(1: AuthCheckReq req);
     ExecResp changePassword(1: ChangePasswordReq req);
 
     HBResp           heartBeat(1: HBReq req);

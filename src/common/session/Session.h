@@ -89,12 +89,10 @@ public:
     }
 
     bool isGod() const {
-        for (auto iter = roles_.begin(); iter != roles_.end(); iter++) {
-            if (iter->second == Role::GOD) {
-                return true;
-            }
-        }
-        return false;
+        /**
+         * Only have one user as GOD, the user name is "root".
+         */
+        return user() == "root";
     }
 
     void setRole(GraphSpaceID space, Role role) {

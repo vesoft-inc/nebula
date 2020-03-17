@@ -64,39 +64,6 @@ TEST(AuthProcessorTest, CreateUserTest) {
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
-    // authCheck
-    {
-        cpp2::AuthCheckReq req;
-        req.set_account("user1");
-        req.set_encoded_pwd("password");
-        auto* processor = AuthCheckProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-    }
-    // authCheck, user not exists.
-    {
-        cpp2::AuthCheckReq req;
-        req.set_account("user4");
-        req.set_encoded_pwd("password");
-        auto* processor = AuthCheckProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
-    }
-    // authCheck, password invalid.
-    {
-        cpp2::AuthCheckReq req;
-        req.set_account("user1");
-        req.set_encoded_pwd("passwordd");
-        auto* processor = AuthCheckProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INVALID_PASSWORD, resp.get_code());
-    }
 }
 
 TEST(AuthProcessorTest, AlterUserTest) {
@@ -120,16 +87,6 @@ TEST(AuthProcessorTest, AlterUserTest) {
         req.set_account("user1");
         req.set_encoded_pwd("password_1");
         auto* processor = AlterUserProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-    }
-    {
-        cpp2::AuthCheckReq req;
-        req.set_account("user1");
-        req.set_encoded_pwd("password_1");
-        auto* processor = AuthCheckProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -645,17 +602,6 @@ TEST(AuthProcessorTest, ChangePasswordTest) {
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::E_INVALID_PASSWORD, resp.get_code());
-    }
-    // authCheck
-    {
-        cpp2::AuthCheckReq req;
-        req.set_account("user1");
-        req.set_encoded_pwd("pwd1");
-        auto* processor = AuthCheckProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
 }
 

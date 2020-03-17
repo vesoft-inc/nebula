@@ -37,18 +37,17 @@ void GrantExecutor::execute() {
     /**
      * Permission check.
      */
-    if (FLAGS_enable_authorize) {
-        auto *session = ectx()->rctx()->session();
-        auto role = session->toRole(PrivilegeUtils::toRoleType(aclItem->getRoleType()));
-        auto rst = permission::PermissionManager::canWriteRole(session,
-                                                               role,
-                                                               spaceRet.value(),
-                                                               *account);
-        if (!rst) {
-            doError(Status::PermissionError("Permission denied"));
-            return;
-        }
+    auto *session = ectx()->rctx()->session();
+    auto role = session->toRole(PrivilegeUtils::toRoleType(aclItem->getRoleType()));
+    auto rst = permission::PermissionManager::canWriteRole(session,
+                                                           role,
+                                                           spaceRet.value(),
+                                                           *account);
+    if (!rst) {
+        doError(Status::PermissionError("Permission denied"));
+        return;
     }
+
     roleItem.set_user(*account);
     roleItem.set_space_id(spaceRet.value());
     roleItem.set_role_type(PrivilegeUtils::toRoleType(aclItem->getRoleType()));
@@ -103,17 +102,15 @@ void RevokeExecutor::execute() {
     /**
      * Permission check.
      */
-    if (FLAGS_enable_authorize) {
-        auto *session = ectx()->rctx()->session();
-        auto role = session->toRole(PrivilegeUtils::toRoleType(aclItem->getRoleType()));
-        auto rst = permission::PermissionManager::canWriteRole(session,
-                                                               role,
-                                                               spaceRet.value(),
-                                                               *account);
-        if (!rst) {
-            doError(Status::PermissionError("Permission denied"));
-            return;
-        }
+    auto *session = ectx()->rctx()->session();
+    auto role = session->toRole(PrivilegeUtils::toRoleType(aclItem->getRoleType()));
+    auto rst = permission::PermissionManager::canWriteRole(session,
+                                                           role,
+                                                           spaceRet.value(),
+                                                           *account);
+    if (!rst) {
+        doError(Status::PermissionError("Permission denied"));
+        return;
     }
 
     nebula::cpp2::RoleItem roleItem;

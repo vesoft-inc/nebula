@@ -34,14 +34,14 @@ void DescribeSpaceExecutor::execute() {
         * Permission check.
         */
         auto spaceId = resp.value().get_space_id();
-        if (FLAGS_enable_authorize) {
-            auto *session = ectx()->rctx()->session();
-            auto rst = permission::PermissionManager::canReadSpace(session, spaceId);
-            if (!rst) {
-                doError(Status::PermissionError("Permission denied"));
-                return;
-            }
+
+        auto *session = ectx()->rctx()->session();
+        auto rst = permission::PermissionManager::canReadSpace(session, spaceId);
+        if (!rst) {
+            doError(Status::PermissionError("Permission denied"));
+            return;
         }
+
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         std::vector<std::string> header{"ID",
                                         "Name",

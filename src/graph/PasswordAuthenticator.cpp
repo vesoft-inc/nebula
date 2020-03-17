@@ -14,7 +14,7 @@ PasswordAuthenticator::PasswordAuthenticator(meta::MetaClient* client) {
 }
 
 bool PasswordAuthenticator::auth(const std::string& user, const std::string& password) {
-    return metaClient_->authenticationCheck(user, password);
+    return metaClient_->authCheckFromCache(user, password);
 }
 
 }   // namespace graph

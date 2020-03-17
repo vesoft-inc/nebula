@@ -11,6 +11,9 @@ namespace permission {
 
 // static
 bool PermissionManager::canReadSpace(session::Session *session, GraphSpaceID spaceId) {
+    if (!FLAGS_enable_authorize) {
+        return true;
+    }
     if (session->isGod()) {
         return true;
     }
@@ -97,6 +100,9 @@ bool PermissionManager::canWriteRole(session::Session *session,
                                      session::Role targetRole,
                                      GraphSpaceID spaceId,
                                      const std::string& targetUser) {
+    if (!FLAGS_enable_authorize) {
+        return true;
+    }
     /**
      * Reject grant or revoke to himself.
      */
@@ -155,6 +161,9 @@ bool PermissionManager::canWriteData(session::Session *session) {
 bool PermissionManager::canShow(session::Session *session,
                                 ShowSentence::ShowType type,
                                 GraphSpaceID targetSpace) {
+    if (!FLAGS_enable_authorize) {
+        return true;
+    }
     bool havePermission = false;
     switch (type) {
         case ShowSentence::ShowType::kShowParts:

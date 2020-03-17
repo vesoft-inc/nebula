@@ -145,7 +145,11 @@ public:
 
     static std::string userKey(const std::string& account);
 
+    static std::string userVal(const std::string& val);
+
     static std::string parseUser(folly::StringPiece key);
+
+    static std::string parseUserPwd(folly::StringPiece val);
 
     static std::string roleKey(GraphSpaceID spaceId, const std::string& account);
 

@@ -28,6 +28,7 @@ protected:
 };
 
 TEST_F(PermissionTest, SimpleTest) {
+    FLAGS_heartbeat_interval_secs = 1;
     FLAGS_enable_authorize = true;
     /*
      * test incorrect password.
@@ -65,6 +66,7 @@ TEST_F(PermissionTest, SimpleTest) {
         query = "CREATE TAG person(name string)";
         code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        client->disconnect();
     }
     /*
      * change root password, incorrect password.
@@ -76,6 +78,7 @@ TEST_F(PermissionTest, SimpleTest) {
         std::string query = "CHANGE PASSWORD root FROM \"aa\" TO \"bb\"";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        client->disconnect();
     }
     /*
      * change root password, correct password.
@@ -87,10 +90,12 @@ TEST_F(PermissionTest, SimpleTest) {
         std::string query = "CHANGE PASSWORD root FROM \"nebula\" TO \"bb\"";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        client->disconnect();
     }
     /*
      * verify password changed
      */
+    sleep(FLAGS_heartbeat_interval_secs + 1);
     {
         auto client = gEnv->getClient("root", "nebula");
         ASSERT_EQ(nullptr, client);
@@ -102,11 +107,15 @@ TEST_F(PermissionTest, SimpleTest) {
         std::string query = "CHANGE PASSWORD root FROM \"bb\" TO \"nebula\"";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        client->disconnect();
     }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
 }
 
 TEST_F(PermissionTest, UserWriteTest) {
+    FLAGS_heartbeat_interval_secs = 1;
     FLAGS_enable_authorize = true;
+    sleep(FLAGS_heartbeat_interval_secs + 1);
     auto client = gEnv->getClient();
     ASSERT_NE(nullptr, client);
     {
