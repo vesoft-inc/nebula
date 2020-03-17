@@ -118,13 +118,15 @@ void MetaClient::dnsQUeryThreadFunc() {
     // we need update addr from dns.
     std::vector<network::InetAddress> addrs;
     std::vector<int> addrsIndex;
-    for (auto it = addrs.cbegin(); it != addrs.cend(); ++it) {
-        if (it->isResolved()) {
+    for (auto it = addrs_.cbegin(); it != addrs_.cend(); ++it) {
+        if (!it->getHostStr().empty()) {
             try {
+                LOG(INFO) << "will resolve host: " << it->getHostStr()
+                          << ", ipaddress: " << it->toString();
                 auto newAddr = network::InetAddress(it->getHostStr(), it->getPort(), true);
                 if (newAddr != (*it)) {
                     addrs.emplace_back(newAddr);
-                    addrsIndex.emplace_back(std::distance(addrs.cbegin(), it));
+                    addrsIndex.emplace_back(std::distance(addrs_.cbegin(), it));
                 }
             } catch (std::exception& e) {
                 LOG(ERROR) << "update meta addr failed, err: " << e.what();

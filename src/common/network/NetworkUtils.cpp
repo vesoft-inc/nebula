@@ -228,6 +228,7 @@ StatusOr<std::vector<InetAddress>> NetworkUtils::toHosts(const std::string& peer
             hosts.emplace_back(ipStr, port);
         } catch (const std::exception& e) {
             try {
+                LOG(INFO) << "will resolve host: " << ipStr;
                 hosts.emplace_back(ipStr, port, true);
             } catch (const std::exception& e) {
                 return Status::Error("Bad ip format: %s", e.what());

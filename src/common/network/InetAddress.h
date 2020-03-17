@@ -20,7 +20,11 @@ class InetAddress final {
 public:
     InetAddress() : InetAddress(0, 0) {}
     explicit InetAddress(const std::string& host, uint16_t port, bool resolved = false)
-        : addrs_{host, port, resolved}, resolved_(resolved) {}
+        : addrs_{host, port, resolved} {
+        if (resolved) {
+            hostName_ = host;
+        }
+    }
 
     InetAddress(uint32_t ip, uint16_t port = 0) : addrs_(folly::IPAddress::fromLong(ip), port) {}
 
@@ -45,10 +49,6 @@ public:
         return !(*this == other);
     }
 
-    bool isResolved() const {
-        return resolved_;
-    }
-
     std::string getAddressStr() const {
         return addrs_.getAddressStr();
     }
@@ -58,7 +58,7 @@ public:
     }
 
     std::string getHostStr() const {
-        return addrs_.getHostStr();
+        return hostName_;
     }
 
     uint32_t toLong() const {
@@ -89,7 +89,7 @@ public:
 
 private:
     folly::SocketAddress addrs_;
-    bool resolved_{false};
+    std::string hostName_;
 };
 
 std::ostream& operator<<(std::ostream&, const InetAddress&);

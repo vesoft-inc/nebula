@@ -323,7 +323,7 @@ void RaftPart::stop() {
     {
         std::unique_lock<std::mutex> lck(raftLock_);
         status_ = Status::STOPPED;
-        leader_ = {};
+        leader_ = {0, 0};
         role_ = Role::FOLLOWER;
 
         hosts = std::move(hosts_);

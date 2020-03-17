@@ -34,7 +34,7 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(
     // Need to create a new client
     VLOG(2) << "There is no existing client to " << host << ", trying to create one";
     auto channel = apache::thrift::ReconnectingRequestChannel::newChannel(
-        *evb, [compatibility, &host, timeout] (folly::EventBase& eb) mutable {
+        *evb, [compatibility, host, timeout] (folly::EventBase& eb) mutable {
             static thread_local int connectionCount = 0;
             VLOG(2) << "Connecting to " << host << " for " << ++connectionCount << " times";
             std::shared_ptr<apache::thrift::async::TAsyncSocket> socket;
