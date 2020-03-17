@@ -2,15 +2,13 @@
 
 Nebula 支持 **TTL** ，在一定时间后自动从数据库中删除点或者边。过期数据会在下次 compaction 时被删除，在下次 compaction 来临前，query 会过滤掉过期的点和边。
 
-ttl 功能需要 `ttl_col` 和 `ttl_duration` 一起使用。其中 `ttl_col` 指定的字段的类型需为 integer 或者 timestamp。当配置的 `ttl_col` 字段为 timestamp 类型时，表示自从 `ttl_col` 指定的字段的值起，经过 `ttl_duration` 指定的秒数后，该条数据过期。当为 integer 时，表示数据从插入时间起，经过 `ttl_col`字段的值 + `ttl_duration` 设置的秒数后过期。
+ttl 功能需要 `ttl_col` 和 `ttl_duration` 一起使用。自从 `ttl_col` 指定的字段的值起，经过 `ttl_duration` 指定的秒数后，该条数据过期。即，到期阈值是 `ttl_col`指定的 property 的值加上 `ttl_duration` 设置的秒数。其中 `ttl_col` 指定的字段的类型需为 integer 或者 timestamp
 
 ## TTL 配置
 
 - `ttl_duration` 单位为秒，当 `ttl_duration` 被设置为 -1 或者 0，则点的此 tag 属性不会过期。
 
-- 当 `ttl_col` 指定的字段类型为 timestamp 时，该字段的值 + `ttl_duration` 值 < 当前时间时，该条数据此 tag 属性值过期。
-
-- 当 `ttl_col` 指定的字段类型为 integer 时，数据从插入时间起，经过 `ttl_col`字段的值 + `ttl_duration` 设置的秒数后过期
+- 当 `ttl_col` 指定的字段的值 + `ttl_duration` 值 < 当前时间时，该条数据此 tag 属性值过期。
 
 - 当该条数据有多个 tag，每个 tag 的 ttl 单独处理。
 
@@ -30,9 +28,9 @@ nebula> INSERT VERTEX t1(a) values 101:(now());
 
 ```ngql
 nebula> CREATE TAG t2(a int, b int, c string) ttl_duration= 100, ttl_col = "a";
-nebula> INSERT VERTEX t2(a, b, c) values 102:(200, 30, "Word")
+nebula> INSERT VERTEX t2(a, b, c) values 102:(1584441231, 30, "Word")
 ```
-点 102 的 TAG t2 属性会在数据插入后，经过 300s 过期。
+点 102 的 TAG t2 属性会在 2020年 3月17日 18时33分51秒 CST (MacOS)，经过 300s 后过期。
 
 * 当点有个多个 tag 时，ttl 相互独立。
 
