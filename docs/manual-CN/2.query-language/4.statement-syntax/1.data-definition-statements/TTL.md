@@ -47,14 +47,14 @@ Execution succeeded (Time spent: 5.945/7.492 ms)
 
 nebula> fetch prop on t3 200
 ======================
-| VertexID | t3.a |
+| VertexID | t3.a    |
 ======================
 | 200      | hello   |
 ----------------------
 
 nebula> fetch prop on * 200
 ======================
-| VertexID | t3.a |
+| VertexID | t3.a    |
 ======================
 | 200      | hello   |
 ----------------------
