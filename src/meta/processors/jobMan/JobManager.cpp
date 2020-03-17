@@ -107,7 +107,7 @@ void JobManager::runJobBackground() {
 bool JobManager::runJobViaThrift(const JobDescription& jobDesc) {
     auto jobExecutor = MetaJobExecutorFactory::createMetaJobExecutor(jobDesc, kvStore_);
     if (jobExecutor == nullptr) {
-        LOG(ERROR) << "unreconized job cmd " << jobDesc.getCmd();
+        LOG(ERROR) << "unreconized job cmd " << static_cast<int>(jobDesc.getCmd());
         return false;
     }
     if (jobDesc.getParas().empty()) {
@@ -138,103 +138,6 @@ bool JobManager::runJobViaThrift(const JobDescription& jobDesc) {
         ++taskId;
     }
     return jobSuccess;
-}
-
-bool JobManager::runJobInternal(const JobDescription& jobDesc) {
-    std::unique_ptr<kvstore::KVIterator> iter;
-    std::string spaceName = jobDesc.getParas().back();
-    int spaceId = getSpaceId(spaceName);
-    if (spaceId == -1) {
-        return false;
-    }
-    auto prefix = MetaServiceUtils::partPrefix(spaceId);
-    auto ret = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Fetch Parts Failed";
-        return false;
-    }
-
-    std::string op = jobDesc.getCmd();
-
-    struct HostAddrCmp {
-        bool operator()(const nebula::cpp2::HostAddr& a,
-                        const nebula::cpp2::HostAddr& b) const {
-            if (a.get_ip() == b.get_ip()) {
-                return a.get_port() < b.get_port();
-            }
-            return a.get_ip() < b.get_ip();
-        }
-    };
-    std::set<nebula::cpp2::HostAddr, HostAddrCmp> hosts;
-    while (iter->valid()) {
-        for (auto &host : MetaServiceUtils::parsePartVal(iter->val())) {
-            hosts.insert(host);
-        }
-        iter->next();
-    }
-
-    int32_t iJob = jobDesc.getJobId();
-    std::vector<folly::SemiFuture<bool>> futures;
-    size_t iTask = 0;
-    for (auto& host : hosts) {
-        auto dispatcher = [=]() {
-            static const char *tmp = "http://%s:%d/admin?op=%s&space=%s";
-
-            std::unique_ptr<AdminClient> client(new AdminClient(kvStore_));
-
-            auto strIP = network::NetworkUtils::intToIPv4(host.get_ip());
-            auto url = folly::stringPrintf(tmp, strIP.c_str(),
-                                           FLAGS_ws_storage_http_port,
-                                           op.c_str(),
-                                           spaceName.c_str());
-            LOG(INFO) << "make admin url: " << url << ", iTask=" << iTask;
-            TaskDescription taskDesc(iJob, iTask, std::make_pair(host.get_ip(), host.get_port()));
-            save(taskDesc.taskKey(), taskDesc.taskVal());
-
-            auto httpResult = nebula::http::HttpClient::get(url, "-GSs");
-            bool succeed = httpResult.ok() && httpResult.value() == "ok";
-
-            if (succeed) {
-                taskDesc.setStatus(cpp2::JobStatus::FINISHED);
-            } else {
-                LOG(INFO) << "task " << iTask << " failed"
-                          << ", httpResult.ok()=" << httpResult.ok()
-                          << ", httpResult.value()=" << httpResult.value();
-                taskDesc.setStatus(cpp2::JobStatus::FAILED);
-            }
-
-            save(taskDesc.taskKey(), taskDesc.taskVal());
-            return succeed;
-        };
-        ++iTask;
-        auto future = pool_->addTask(dispatcher);
-        futures.push_back(std::move(future));
-    }
-
-    bool successfully{true};
-    folly::collectAll(std::move(futures))
-        .thenValue([&](const std::vector<folly::Try<bool>>& tries) {
-            for (const auto& t : tries) {
-                if (t.hasException()) {
-                    LOG(ERROR) << "admin Failed: " << t.exception();
-                    successfully = false;
-                    break;
-                }
-                if (!t.value()) {
-                    successfully = false;
-                    break;
-                }
-            }
-        }).thenError([&](auto&& e) {
-            LOG(ERROR) << "admin Failed: " << e.what();
-            successfully = false;
-        }).wait();
-    LOG(INFO) << folly::stringPrintf("admin job %d %s, descrtion: %s %s",
-                                     iJob,
-                                     successfully ? "succeeded" : "failed",
-                                     op.c_str(),
-                                     folly::join(" ", jobDesc.getParas()).c_str());
-    return successfully;
 }
 
 ResultCode JobManager::addJob(const JobDescription& jobDesc) {

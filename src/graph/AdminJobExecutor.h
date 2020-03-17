@@ -42,6 +42,7 @@ private:
     static std::string time2string(int64_t);
     static std::string toString(nebula::meta::cpp2::JobStatus st);
     static std::string toString(nebula::cpp2::HostAddr st);
+    static std::string toString(nebula::cpp2::AdminCmd cmd);
 
 private:
     AdminSentence                             *sentence_{nullptr};

@@ -24,6 +24,17 @@ namespace nebula {
 namespace meta {
 
 using Status = nebula::meta::cpp2::JobStatus;
+using AdminCmd = nebula::cpp2::AdminCmd;
+
+AdminCmd makeCmd(const std::string& str) {
+    std::map<std::string, AdminCmd> mapping;
+    mapping["compact"] = AdminCmd::COMPACT;
+    mapping["FLUSH"] = AdminCmd::COMPACT;
+    if (mapping.count(str)) {
+        return mapping[str];
+    }
+    return AdminCmd::INVALID;
+}
 
 class JobManagerTest : public ::testing::Test {
 protected:
@@ -52,7 +63,7 @@ protected:
 };
 
 TEST_F(JobManagerTest, addJob) {
-    std::string cmd("compact");
+    auto cmd = makeCmd("compact");
     std::vector<std::string> paras{"test"};
     JobDescription job(1, cmd, paras);
     auto rc = jobMgr->addJob(job);
@@ -60,7 +71,7 @@ TEST_F(JobManagerTest, addJob) {
 }
 
 TEST_F(JobManagerTest, loadJobDescription) {
-    std::string cmd("compact");
+    auto cmd = makeCmd("compact");
     std::string para("test");
     std::vector<std::string> paras{para};
     JobDescription job1(1, cmd, paras);
@@ -89,7 +100,7 @@ TEST(JobUtilTest, dummy) {
 }
 
 TEST_F(JobManagerTest, showJobs) {
-    std::string type1("compact");
+    auto type1 = makeCmd("compact");
     std::string para1("test");
     std::vector<std::string> paras1{para1};
     JobDescription jd1(1, type1, paras1);
@@ -97,7 +108,7 @@ TEST_F(JobManagerTest, showJobs) {
     jd1.setStatus(Status::FINISHED);
     jobMgr->addJob(jd1);
 
-    std::string type2("flush");
+    auto type2 = makeCmd("flush");
     std::string para2("nba");
     std::vector<std::string> paras2{para2};
     JobDescription jd2(2, type2, paras2);
@@ -125,16 +136,22 @@ TEST_F(JobManagerTest, showJobs) {
     ASSERT_EQ(jobs[0].get_stop_time(), jd2.stopTime_);
 }
 
-nebula::cpp2::HostAddr toHost(std::string strIp) {
-    nebula::cpp2::HostAddr host;
+// nebula::cpp2::HostAddr toHost(std::string strIp) {
+//     nebula::cpp2::HostAddr host;
+//     int ip = 0;
+//     nebula::network::NetworkUtils::ipv4ToInt(strIp, ip);
+//     host.set_ip(ip);
+//     return host;
+// }
+
+HostAddr toHost(std::string strIp) {
     int ip = 0;
     nebula::network::NetworkUtils::ipv4ToInt(strIp, ip);
-    host.set_ip(ip);
-    return host;
+    return std::make_pair(ip, 0);
 }
 
 TEST_F(JobManagerTest, showJob) {
-    std::string type("compact");
+    auto type = makeCmd("compact");
     std::string para("test");
     std::vector<std::string> paras{para};
 
@@ -176,14 +193,14 @@ TEST_F(JobManagerTest, showJob) {
 
     ASSERT_EQ(tasks[0].get_task_id(), task1);
     ASSERT_EQ(tasks[0].get_job_id(), iJob);
-    ASSERT_EQ(tasks[0].get_host(), host1);
+    ASSERT_EQ(tasks[0].get_host().get_ip(), host1.first);
     ASSERT_EQ(tasks[0].get_status(), Status::FINISHED);
     ASSERT_EQ(tasks[0].get_start_time(), td1.startTime_);
     ASSERT_EQ(tasks[0].get_stop_time(), td1.stopTime_);
 
     ASSERT_EQ(tasks[1].get_task_id(), task2);
     ASSERT_EQ(tasks[1].get_job_id(), iJob);
-    ASSERT_EQ(tasks[1].get_host(), host2);
+    ASSERT_EQ(tasks[1].get_host().get_ip(), host2.first);
     ASSERT_EQ(tasks[1].get_status(), Status::FAILED);
     ASSERT_EQ(tasks[1].get_start_time(), td2.startTime_);
     ASSERT_EQ(tasks[1].get_stop_time(), td2.stopTime_);
@@ -192,7 +209,7 @@ TEST_F(JobManagerTest, showJob) {
 TEST_F(JobManagerTest, recoverJob) {
     int32_t nJob = 3;
     for (auto i = 0; i != nJob; ++i) {
-        JobDescription jd(i, "flush", {"test"});
+        JobDescription jd(i, makeCmd("flush"), {"test"});
         jobMgr->save(jd.jobKey(), jd.jobVal());
     }
 
@@ -201,7 +218,7 @@ TEST_F(JobManagerTest, recoverJob) {
 }
 
 TEST(JobDescriptionTest, ctor) {
-    std::string type1("compact");
+    auto type1 = makeCmd("compact");
     std::string para1("test");
     std::vector<std::string> paras1{para1};
     JobDescription jd1(1, type1, paras1);
@@ -211,7 +228,7 @@ TEST(JobDescriptionTest, ctor) {
 }
 
 TEST(JobDescriptionTest, ctor2) {
-    std::string type1("compact");
+    auto type1 = makeCmd("compact");
     std::string para1("test");
     std::vector<std::string> paras1{para1};
     JobDescription jd1(1, type1, paras1);
@@ -226,7 +243,7 @@ TEST(JobDescriptionTest, ctor2) {
 }
 
 TEST(JobDescriptionTest, ctor3) {
-    std::string type1("compact");
+    auto type1 = makeCmd("compact");
     std::string para1("test");
     std::vector<std::string> paras1{para1};
     JobDescription jd1(1, type1, paras1);
@@ -244,7 +261,7 @@ TEST(JobDescriptionTest, ctor3) {
 
 TEST(JobDescriptionTest, parseKey) {
     int32_t iJob = std::pow(2, 16);
-    std::string type{"compact"};
+    auto type = makeCmd("compact");
     std::vector<std::string> paras{"test"};
     JobDescription jd(iJob, type, paras);
     auto sKey = jd.jobKey();
@@ -258,7 +275,7 @@ TEST(JobDescriptionTest, parseKey) {
 
 TEST(JobDescriptionTest, parseVal) {
     int32_t iJob = std::pow(2, 15);
-    std::string type{"flush"};
+    auto type = makeCmd("flush");
     std::vector<std::string> paras{"nba"};
     JobDescription jd(iJob, type, paras);
     auto status = Status::FINISHED;

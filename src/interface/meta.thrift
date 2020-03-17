@@ -158,8 +158,8 @@ enum AdminJobOp {
 } (cpp.enum_strict)
 
 struct AdminJobReq {
-    1: AdminJobOp   op
-    2: list<string> paras;
+    1: AdminJobOp       op
+    2: list<string>     paras;
 }
 
 enum JobStatus {
@@ -173,7 +173,7 @@ enum JobStatus {
 
 struct JobDesc {
     1: i32              id
-    2: string           cmd
+    2: common.AdminCmd  cmd
     3: list<string>     paras
     4: JobStatus        status
     5: i64              start_time

@@ -135,7 +135,7 @@ AdminJobExecutor::toRowValue(const nebula::meta::cpp2::JobDesc& job) {
     std::vector<cpp2::ColumnValue> row(5);
     row[0].set_str(std::to_string(job.get_id()));
     std::stringstream oss;
-    oss << job.get_cmd() << " ";
+    oss << toString(job.get_cmd()) << " ";
     for (auto& p : job.get_paras()) {
         oss << p << " ";
     }
@@ -238,6 +238,27 @@ AdminJobExecutor::toString(nebula::meta::cpp2::JobStatus st) {
 std::string AdminJobExecutor::toString(nebula::cpp2::HostAddr host) {
     auto ip = network::NetworkUtils::intToIPv4(host.get_ip());
     auto ret = folly::stringPrintf("%s:%d", ip.c_str(), host.get_port());
+    return ret;
+}
+
+std::string AdminJobExecutor::toString(nebula::cpp2::AdminCmd cmd) {
+    std::string ret;
+    switch (cmd) {
+    case nebula::cpp2::AdminCmd::COMPACT:
+        ret = "compact";
+        break;
+    case nebula::cpp2::AdminCmd::FLUSH:
+        ret = "flush";
+        break;
+    case nebula::cpp2::AdminCmd::REBUILD_TAG_INDEX:
+        ret = "rebuild tag index";
+        break;
+    case nebula::cpp2::AdminCmd::REBUILD_EDGE_INDEX:
+        ret = "rebuild edge index";
+        break;
+    default:
+        ret = "unknown";
+    }
     return ret;
 }
 

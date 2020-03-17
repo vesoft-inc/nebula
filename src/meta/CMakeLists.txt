@@ -100,4 +100,4 @@ nebula_add_library(
     ClientBasedGflagsManager.cpp
 )
 
-# nebula_add_subdirectory(test)
+nebula_add_subdirectory(test)

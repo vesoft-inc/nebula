@@ -17,15 +17,16 @@ namespace nebula {
 namespace meta {
 
 using Status = cpp2::JobStatus;
+using AdminCmd = nebula::cpp2::AdminCmd;
 
 JobDescription::JobDescription(int32_t id,
-                               std::string cmd,
+                               nebula::cpp2::AdminCmd cmd,
                                std::vector<std::string> paras,
                                Status status,
                                int64_t startTime,
                                int64_t stopTime)
                                : id_(id),
-                                 cmd_(std::move(cmd)),
+                                 cmd_(cmd),
                                  paras_(std::move(paras)),
                                  status_(status),
                                  startTime_(startTime),
@@ -76,11 +77,9 @@ int32_t JobDescription::parseKey(const folly::StringPiece& rawKey) {
 
 std::string JobDescription::jobVal() const {
     std::string str;
-    auto cmdLen = cmd_.length();
-    auto paraSize = paras_.size();
     str.reserve(256);
-    str.append(reinterpret_cast<const char*>(&cmdLen), sizeof(size_t));
-    str.append(reinterpret_cast<const char*>(cmd_.data()), cmd_.length());
+    str.append(reinterpret_cast<const char*>(&cmd_), sizeof(cmd_));
+    auto paraSize = paras_.size();
     str.append(reinterpret_cast<const char*>(&paraSize), sizeof(size_t));
     for (auto& para : paras_) {
         auto len = para.length();
@@ -93,7 +92,7 @@ std::string JobDescription::jobVal() const {
     return str;
 }
 
-std::tuple<std::string,
+std::tuple<AdminCmd,
            std::vector<std::string>,
            Status,
            int64_t,
@@ -101,8 +100,8 @@ std::tuple<std::string,
 JobDescription::parseVal(const folly::StringPiece& rawVal) {
     size_t offset = 0;
 
-    std::string cmd = JobUtil::parseString(rawVal, offset);
-    offset += sizeof(size_t) + cmd.length();
+    auto cmd = JobUtil::parseFixedVal<AdminCmd>(rawVal, offset);
+    offset += sizeof(cmd);
 
     std::vector<std::string> paras = JobUtil::parseStrVector(rawVal, &offset);
 
