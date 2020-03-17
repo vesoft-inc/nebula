@@ -88,6 +88,9 @@ kvstore::ResultCode QueryVertexPropsProcessor::collectVertexProps(
             // Already found the latest version.
             continue;
         }
+        // Build TTL info
+        buildTagTTLInfo(tagId);
+
         VLOG(3) << "Found tag " << tagId << " for vId" << vId;
 
         auto schema = this->schemaMan_->getTagSchema(spaceId_, tagId);

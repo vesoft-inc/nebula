@@ -674,6 +674,46 @@ std::vector<Bucket> QueryBaseProcessor<REQ, RESP>::genBuckets(
 }
 
 template<typename REQ, typename RESP>
+void QueryBaseProcessor<REQ, RESP>::buildTagTTLInfo(TagID tagId) {
+    auto tagFound = tagTTLInfo_.find(tagId);
+    if (tagFound != tagTTLInfo_.end()) {
+        return;
+    }
+
+    auto tagschema = this->schemaMan_->getTagSchema(spaceId_, tagId);
+    if (!tagschema) {
+        VLOG(3) << "Can't find spaceId " << spaceId_ << ", tagId " << tagId;
+        return;
+    }
+    const meta::NebulaSchemaProvider* nschema =
+        dynamic_cast<const meta::NebulaSchemaProvider*>(tagschema.get());
+    if (nschema == NULL) {
+        VLOG(3) << "Can't find NebulaSchemaProvider in spaceId " << spaceId_;
+        return;
+    }
+
+    const nebula::cpp2::SchemaProp schemaProp = nschema->getProp();
+
+    int64_t ttlDuration = 0;
+    if (schemaProp.get_ttl_duration()) {
+         ttlDuration = *schemaProp.get_ttl_duration();
+    }
+    std::string ttlCol;
+    if (schemaProp.get_ttl_col()) {
+        ttlCol = *schemaProp.get_ttl_col();
+    }
+
+    // Only support the specified ttl_col mode
+    // Not specifying or non-positive ttl_duration behaves like ttl_duration = infinity
+    if (ttlCol.empty() || ttlDuration <= 0) {
+        VLOG(3) << "TTL property is invalid";
+        return;
+    }
+
+    tagTTLInfo_.emplace(tagId, std::make_pair(ttlCol, ttlDuration));
+}
+
+template<typename REQ, typename RESP>
 void QueryBaseProcessor<REQ, RESP>::buildTTLInfoAndRespSchema() {
     if (!this->tagContexts_.empty()) {
         for (auto& tc : this->tagContexts_) {
@@ -697,42 +737,7 @@ void QueryBaseProcessor<REQ, RESP>::buildTTLInfoAndRespSchema() {
             }
 
             // build ttl info
-            auto tagFound = tagTTLInfo_.find(tc.tagId_);
-            if (tagFound != tagTTLInfo_.end()) {
-                continue;
-            }
-
-            auto tagschema = this->schemaMan_->getTagSchema(spaceId_, tc.tagId_);
-            if (!tagschema) {
-                VLOG(3) << "Can't find spaceId " << spaceId_ << ", tagId " << tc.tagId_;
-                continue;
-            }
-            const meta::NebulaSchemaProvider* nschema =
-                dynamic_cast<const meta::NebulaSchemaProvider*>(tagschema.get());
-            if (nschema == NULL) {
-                VLOG(3) << "Can't find NebulaSchemaProvider in spaceId " << spaceId_;
-                continue;
-            }
-
-            const nebula::cpp2::SchemaProp schemaProp = nschema->getProp();
-
-            int64_t ttlDuration = 0;
-            if (schemaProp.get_ttl_duration()) {
-                ttlDuration = *schemaProp.get_ttl_duration();
-            }
-            std::string ttlCol;
-            if (schemaProp.get_ttl_col()) {
-                ttlCol = *schemaProp.get_ttl_col();
-            }
-
-            // Only support the specified ttl_col mode
-            // Not specifying or non-positive ttl_duration behaves like ttl_duration = infinity
-            if (ttlCol.empty() || ttlDuration <= 0) {
-                VLOG(3) << "TTL property is invalid";
-                continue;
-            }
-
-            tagTTLInfo_.emplace(tc.tagId_, std::make_pair(ttlCol, ttlDuration));
+            buildTagTTLInfo(tc.tagId_);
         }
     }
 
