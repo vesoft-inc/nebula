@@ -6,7 +6,7 @@ ttl 功能需要 `ttl_col` 和 `ttl_duration` 一起使用。自从 `ttl_col` �
 
 ## TTL 配置
 
-- `ttl_duration` 单位为秒，当 `ttl_duration` 被设置为 -1 或者 0，则此条数据不会过期。
+- `ttl_duration` 单位为秒，当 `ttl_duration` 被设置为 -1 或者 0，则点的此 tag 属性不会过期。
 
 - 当 `ttl_col` 指定的字段的值加上 `ttl_duration` 值小于当前时间时，该条数据过期。
 
@@ -22,7 +22,7 @@ nebula> CREATE TAG t(a timestamp, b int, c string);
 nebula> ALTER TAG t ttl_col = "a", ttl_duration = 100; -- 创建 ttl
 nebula> SHOW CREATE TAG t;
 ```
-此 tag 的点会在 `a` 字段的值，经过 100s 后过期。
+点的 TAG t 属性会在 `a` 字段的值，经过 100s 后过期。
 
 * 在创建 tag 时设置 TTL。
 
@@ -35,7 +35,7 @@ nebula> CREATE TAG t1(a timestamp) ttl_duration= 5, ttl_col = "a";
 nebula> CREATE TAG t2(a timestamp) ttl_duration= 10, ttl_col = "a"
 nebula> INSERT VERTEX t1(a),t2(a) values 100:(now(), now()+15)
 ```
-从 now() 起，5s 后，t1 过期，20s 后，t2 过期。
+从 now() 起，5s 后，点 100 的 t1 属性值过期，20s 后，t2 属性值过期。
 
 当点有多个 tag 时
 
