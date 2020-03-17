@@ -112,7 +112,7 @@ bool PermissionCheck::permissionCheck(session::Session *session, Sentence* sente
         case Sentence::Kind::kLimit :
         case Sentence::Kind::KGroupBy :
         case Sentence::Kind::kReturn : {
-            return permission::PermissionManager::canReadSchemaData(session);
+            return permission::PermissionManager::canReadSchemaOrData(session);
         }
         case Sentence::Kind::kShow : {
             auto *stc = static_cast<ShowSentence*>(sentence);

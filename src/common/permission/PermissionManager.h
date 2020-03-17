@@ -22,7 +22,7 @@ class PermissionManager final {
 public:
     PermissionManager() = delete;
     static bool canReadSpace(session::Session *session, GraphSpaceID spaceId);
-    static bool canReadSchemaData(session::Session *session);
+    static bool canReadSchemaOrData(session::Session *session);
     static bool canWriteSpace(session::Session *session);
     static bool canWriteSchema(session::Session *session);
     static bool canWriteUser(session::Session *session);

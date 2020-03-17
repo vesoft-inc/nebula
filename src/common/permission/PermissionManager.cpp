@@ -35,7 +35,7 @@ bool PermissionManager::canReadSpace(session::Session *session, GraphSpaceID spa
 }
 
 // static
-bool PermissionManager::canReadSchemaData(session::Session *session) {
+bool PermissionManager::canReadSchemaOrData(session::Session *session) {
     if (session->space() == -1) {
         LOG(ERROR) << "The space name is not set";
         return false;
@@ -179,7 +179,7 @@ bool PermissionManager::canShow(session::Session *session,
         case ShowSentence::ShowType::kShowEdgeIndexStatus: {
             /**
              * Above operations can get the space id via session,
-             * so the permission same with canReadSchemaData.
+             * so the permission same with canReadSchemaOrData.
              * They've been checked by "USE SPACE", so here skip the check.
              */
             havePermission = true;
