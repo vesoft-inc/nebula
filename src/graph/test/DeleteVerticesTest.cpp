@@ -476,17 +476,6 @@ TEST_F(DeleteVerticesTest, DeleteWithPipe) {
     }
     // Single var
     {
-#if 0
-        cpp2::ExecutionResponse resp;
-        auto fmt = "GO FROM %ld OVER serve YIELD serve._dst as id";
-        auto query = folly::stringPrintf(fmt, players_["Kobe Bryant"].vid());
-        auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<int64_t>> expected1 = {
-            { teams_["Lakers"].vid() },
-        };
-        ASSERT_TRUE(verifyResult(resp, expected1));
-#endif
         cpp2::ExecutionResponse resp;
         auto fmt = "$var = GO FROM %ld OVER serve YIELD serve._dst as id; DELETE VERTEX $var.id";
         auto query = folly::stringPrintf(fmt, players_["Kobe Bryant"].vid());
