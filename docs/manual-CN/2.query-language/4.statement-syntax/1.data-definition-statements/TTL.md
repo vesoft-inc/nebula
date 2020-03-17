@@ -2,7 +2,7 @@
 
 Nebula 支持 **TTL** ，在一定时间后或在特定时钟时间自动从数据库中删除点或者边。过期数据会在下次 compaction 时被删除，在下次 compaction 来临前，query 会过滤掉过期的点和边。
 
-ttl 功能需要 `ttl_col` 和 `ttl_duration` 一起使用。自从 `ttl_col` 指定的字段的值起，经过 `ttl_duration` 指定的秒数后，该条数据过期。即，到期阈值是 ttl_col 指定的 property 的值加上 `ttl_duration` 设置的秒数。其中 `ttl_col` 指定的字段的类型需为 integer 或者 timestamp。
+ttl 功能需要 `ttl_col` 和 `ttl_duration` 一起使用。自从 `ttl_col` 指定的字段的值起，经过 `ttl_duration` 指定的秒数后，该条数据过期。即，到期阈值是 `ttl_col`指定的 property 的值加上 `ttl_duration` 设置的秒数。其中 `ttl_col` 指定的字段的类型需为 integer 或者 timestamp。
 
 ## TTL 配置
 
@@ -69,7 +69,7 @@ nebula> fetch prop on t3 200
 nebula> ALTER TAG t ttl_col = ""; -- drop ttl attribute
 ```
 
-删除配置的 ttl_col 字段：
+删除配置的 `ttl_col` 字段：
 
 ```ngql
 nebula> ALTER TAG t DROP a; -- drop field a with the ttl attribute
@@ -86,7 +86,7 @@ nebula> ALTER TAG t ttl_duration = 0; -- keep the ttl but the data never expires
 - 不能修改 `ttl_col` 所配置的字段。
 
 ``` ngql
-nebula> ALTER TAG t ADD ttl_col = "b", ttl_duration = 1000;
+nebula> ALTER TAG t ttl_col = "b", ttl_duration = 1000;
 nebula> ALTER TAG t CHANGE (b string); -- failed
 ```
 
@@ -105,7 +105,7 @@ nebula> CREATE TAG INDEX id1 ON t(b); -- failed
 ```ngql
 nebula> CREATE TAG t1(a int, b int, c string);
 nebula> CREATE TAG INDEX id1 ON t1(a);
-nebula> ALTER TAG t1 ADD ttl_col = "a", ttl_duration = 100; -- failed
+nebula> ALTER TAG t1 ttl_col = "a", ttl_duration = 100; -- failed
 ```
 
 - 对 edge 配置 TTL 与 tag 类似。
