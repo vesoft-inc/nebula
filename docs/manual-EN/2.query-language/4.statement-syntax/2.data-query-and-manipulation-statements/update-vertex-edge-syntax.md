@@ -13,7 +13,8 @@ UPDATE VERTEX <vid> SET <update_columns> WHEN <condition> YIELD <columns>
 - `vid` is the id of the vertex to be updated.
 - `update_columns` is the properties of the vertex to be updated, for example, `tag1.col1 = $^.tag2.col2 + 1` means to update `tag1.col1` to `tag2.col2+1`.
 
-    **NOTE:**  `$^` indicates vertex to be updated
+    **NOTE:**  `$^` indicates vertex to be updated.
+
 - `condition` is some constraints, only when met, `UPDATE` will run successfully and expression operations are supported.
 - `columns` is the columns to be returned, `YIELD` returns the latest updated values.
 
@@ -33,7 +34,7 @@ UPDATE EDGE <edge> SET <update_columns> WHEN <condition> YIELD <columns>
 
 **NOTE:** `WHEN` and `YIELD` are optional.
 
-- `edge` is the edge to be updated, the syntax is `$src->$dst@$rank OF $type`.
+- `edge` is the edge to be updated, the syntax is `<src> -> <dst> [@ranking] OF <edge_type>`.
 - `update_columns` is the properties of the edge to be updated.
 - `condition` is some constraints, only when met, `UPDATE` will run successfully and expression operations are supported.
 - `columns` is the columns to be returned, `YIELD` returns the latest updated values.
