@@ -13,6 +13,7 @@
 #include "meta/SchemaProviderIf.h"
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
+#include "parser/BaseSentence.h"
 
 namespace nebula {
 namespace graph {
@@ -161,6 +162,12 @@ protected:
     nebula::cpp2::SupportedType calculateExprType(Expression* exp) const;
 
     Status checkIfDuplicateColumn() const;
+
+    StatusOr<std::vector<VertexID>> getVids(ExpressionContext* expCtx,
+            BaseVerticesSentence *sentence, bool distinct = false) const;
+
+    StatusOr<std::vector<storage::cpp2::EdgeKey>> getEdgeKeys(ExpressionContext* expCtx,
+            BaseEdgesSentence *sentence, EdgeType edgeType, bool distinct = false) const;
 
 protected:
     OnResult                                    onResult_;

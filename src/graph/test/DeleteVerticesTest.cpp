@@ -423,5 +423,117 @@ TEST_F(DeleteVerticesTest, DeleteWithUUID) {
     }
 }
 
+TEST_F(DeleteVerticesTest, DeleteWithPipe) {
+    // Empty input
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "GO FROM 123 OVER like YIELD like._src as id | "
+                     "DELETE VERTEX $-.id";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Empty var
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "$var = GO FROM 123 OVER like YIELD like._src as id; "
+                     "DELETE VERTEX $var.id";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Single input
+    {
+        cpp2::ExecutionResponse resp;
+        auto fmt = "GO FROM %ld OVER like YIELD like._dst as id | DELETE VERTEX $-.id";
+        auto query = folly::stringPrintf(fmt, players_["LeBron James"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        // Check
+        fmt = "GO FROM %ld OVER like YIELD like._dst as id";
+        query = folly::stringPrintf(fmt, players_["LeBron James"].vid());
+        code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected = {
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+
+    // Multi input
+    {
+        cpp2::ExecutionResponse resp;
+        auto fmt = "GO FROM %ld OVER serve YIELD serve._dst as id | DELETE VERTEX $-.id";
+        auto query = folly::stringPrintf(fmt, players_["LeBron James"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        // Check
+        fmt = "GO FROM %ld OVER serve YIELD serve._dst as id";
+        query = folly::stringPrintf(fmt, players_["LeBron James"].vid());
+        code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected = {};
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // Single var
+    {
+#if 0
+        cpp2::ExecutionResponse resp;
+        auto fmt = "GO FROM %ld OVER serve YIELD serve._dst as id";
+        auto query = folly::stringPrintf(fmt, players_["Kobe Bryant"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected1 = {
+            { teams_["Lakers"].vid() },
+        };
+        ASSERT_TRUE(verifyResult(resp, expected1));
+#endif
+        cpp2::ExecutionResponse resp;
+        auto fmt = "$var = GO FROM %ld OVER serve YIELD serve._dst as id; DELETE VERTEX $var.id";
+        auto query = folly::stringPrintf(fmt, players_["Kobe Bryant"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        // Check
+        fmt = "FETCH PROP ON team %ld YIELD team.name as name";
+        query = folly::stringPrintf(fmt, teams_["Lakers"].vid());
+        code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(resp.get_rows() == nullptr);
+    }
+    // Multi var
+    {
+        cpp2::ExecutionResponse resp;
+        auto fmt = "$var = GO FROM %ld OVER like YIELD like._dst as id; DELETE VERTEX $var.id";
+        auto query = folly::stringPrintf(fmt, players_["Dejounte Murray"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        // Check
+        fmt = "GO FROM %ld OVER like YIELD like._dst as id";
+        query = folly::stringPrintf(fmt, players_["Dejounte Murray"].vid());
+        code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected = {};
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // Repeat input
+    {
+        cpp2::ExecutionResponse resp;
+        auto fmt = "GO FROM %ld, %ld OVER serve YIELD serve._dst as id | DELETE VERTEX $-.id";
+        auto query = folly::stringPrintf(fmt, players_["Kevin Durant"].vid(),
+                players_["James Harden"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        // Check
+        fmt = "GO FROM %ld, %ld OVER serve YIELD serve._dst as id";
+        query = folly::stringPrintf(fmt, players_["Kevin Durant"].vid(),
+                players_["James Harden"].vid());
+        code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected = {};
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
 }  // namespace graph
 }  // namespace nebula

@@ -45,7 +45,7 @@ public:
         kInsertEdge,
         kUpdateEdge,
         kShow,
-        kDeleteVertex,
+        kDeleteVertices,
         kDeleteEdges,
         kLookup,
         kCreateSpace,

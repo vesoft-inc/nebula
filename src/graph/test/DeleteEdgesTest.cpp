@@ -122,7 +122,8 @@ TEST_F(DeleteEdgesTest, DeleteEdges) {
         cpp2::ExecutionResponse resp;
         std::string cmd = "INSERT VERTEX person(name, age) VALUES "
                           "uuid(\"Zhangsan\"):(\"Zhangsan\", 22), uuid(\"Lisi\"):(\"Lisi\", 23),"
-                          "uuid(\"Jack\"):(\"Jack\", 18), uuid(\"Rose\"):(\"Rose\", 19)";
+                          "uuid(\"Jack\"):(\"Jack\", 18), uuid(\"Rose\"):(\"Rose\", 19),"
+                          "uuid(\"Tom\"):(\"Tom\", 17)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -131,6 +132,7 @@ TEST_F(DeleteEdgesTest, DeleteEdges) {
         std::string cmd = "INSERT EDGE friend(intimacy) VALUES "
                           "uuid(\"Zhangsan\")->uuid(\"Lisi\")@15:(90), "
                           "uuid(\"Zhangsan\")->uuid(\"Jack\")@12:(50),"
+                          "uuid(\"Zhangsan\")->uuid(\"Tom\")@18:(60),"
                           "uuid(\"Jack\")->uuid(\"Rose\")@13:(100)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -139,6 +141,7 @@ TEST_F(DeleteEdgesTest, DeleteEdges) {
         cpp2::ExecutionResponse resp;
         std::string cmd = "INSERT EDGE schoolmate(likeness) VALUES "
                           "uuid(\"Zhangsan\")->uuid(\"Jack\"):(60),"
+                          "uuid(\"Zhangsan\")->uuid(\"Tom\"):(60),"
                           "uuid(\"Lisi\")->uuid(\"Rose\"):(70)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -162,6 +165,7 @@ TEST_F(DeleteEdgesTest, DeleteEdges) {
         std::vector<valueType> expected = {
             {"Zhangsan", 90, "Lisi"},
             {"Zhangsan", 50, "Jack"},
+            {"Zhangsan", 60, "Tom"},
             {"Jack", 100, "Rose"}
         };
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -175,6 +179,7 @@ TEST_F(DeleteEdgesTest, DeleteEdges) {
         using valueType = std::tuple<std::string, int64_t, std::string>;
         std::vector<valueType> expected = {
             {"Zhangsan", 60, "Jack"},
+            {"Zhangsan", 60, "Tom"},
             {"Lisi", 70, "Rose"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -212,6 +217,35 @@ TEST_F(DeleteEdgesTest, DeleteEdges) {
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    // input
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd ="GO FROM uuid(\"Zhangsan\") OVER friend "
+                         "YIELD friend._src as src, friend._dst as dst, friend._rank as rank |"
+                         "DELETE EDGE friend $-.src->$-.dst@$-.rank";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // multi var
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd ="$var = GO FROM uuid(\"Zhangsan\") OVER schoolmate "
+                         "YIELD schoolmate._src as src, schoolmate._dst as dst, "
+                         "schoolmate._rank as rank;"
+                         "DELETE EDGE schoolmate $var.src->$var.dst@$var.rank";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // empty imput
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd ="GO FROM 111 OVER friend "
+                         "YIELD friend._src as src, friend._dst as dst, friend._rank as rank |"
+                         "DELETE EDGE friend $-.src->$-.dst@$-.rank";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+
     // Traverse again
     {
         cpp2::ExecutionResponse resp;
@@ -220,9 +254,7 @@ TEST_F(DeleteEdgesTest, DeleteEdges) {
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         using valueType = std::tuple<std::string, int64_t, std::string>;
-        std::vector<valueType> expected = {
-            {"Zhangsan", 50, "Jack"}
-        };
+        std::vector<valueType> expected = {};
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     {
@@ -232,9 +264,7 @@ TEST_F(DeleteEdgesTest, DeleteEdges) {
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         using valueType = std::tuple<std::string, int64_t, std::string>;
-        std::vector<valueType> expected = {
-            {"Zhangsan", 60, "Jack"}
-        };
+        std::vector<valueType> expected = {};
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     {
@@ -260,13 +290,13 @@ TEST_F(DeleteEdgesTest, DeleteEdges) {
     // Traverse again
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "GO FROM uuid(\"Zhangsan\"),uuid(\"Jack\") OVER friend "
-                          "YIELD $^.person.name, friend.intimacy, $$.person.name";
+        std::string cmd = "GO FROM uuid(\"Zhangsan\"), uuid(\"Jack\") OVER transfer "
+                          "YIELD $^.person.name, transfer._rank, transfer.money, $$.person.name";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        using valueType = std::tuple<std::string, int64_t, std::string>;
+        using valueType = std::tuple<std::string, int64_t, int64_t, std::string>;
         std::vector<valueType> expected = {
-            {"Zhangsan", 50, "Jack"}
+                {"Zhangsan", 1561013236, 33, "Lisi"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -274,3 +304,4 @@ TEST_F(DeleteEdgesTest, DeleteEdges) {
 
 }   // namespace graph
 }   // namespace nebula
+

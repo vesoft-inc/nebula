@@ -1263,6 +1263,8 @@ traverse_sentence
     | find_path_sentence { $$ = $1; }
     | limit_sentence { $$ = $1; }
     | yield_sentence { $$ = $1; }
+    | delete_vertex_sentence { $$ = $1; }
+    | delete_edge_sentence { $$ = $1; }
     ;
 
 piped_sentence
@@ -1528,6 +1530,10 @@ delete_vertex_sentence
         auto sentence = new DeleteVerticesSentence($3);
         $$ = sentence;
     }
+    | KW_DELETE KW_VERTEX vid_ref_expression {
+        auto sentence = new DeleteVerticesSentence($3);
+        $$ = sentence;
+    }
     ;
 
 download_sentence
@@ -1540,6 +1546,10 @@ download_sentence
 
 delete_edge_sentence
     : KW_DELETE KW_EDGE name_label edge_keys {
+        auto sentence = new DeleteEdgesSentence($3, $4);
+        $$ = sentence;
+    }
+    | KW_DELETE KW_EDGE name_label edge_key_ref {
         auto sentence = new DeleteEdgesSentence($3, $4);
         $$ = sentence;
     }
@@ -1922,8 +1932,6 @@ mutate_sentence
     | insert_edge_sentence { $$ = $1; }
     | update_vertex_sentence { $$ = $1; }
     | update_edge_sentence { $$ = $1; }
-    | delete_vertex_sentence { $$ = $1; }
-    | delete_edge_sentence { $$ = $1; }
     | download_sentence { $$ = $1; }
     | ingest_sentence { $$ = $1; }
     | admin_sentence { $$ = $1; }

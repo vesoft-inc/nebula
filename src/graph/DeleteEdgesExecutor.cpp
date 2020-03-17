@@ -14,7 +14,7 @@ namespace graph {
 
 DeleteEdgesExecutor::DeleteEdgesExecutor(Sentence *sentence,
                                          ExecutionContext *ectx)
-    : Executor(ectx, "delete_edge") {
+    : TraverseExecutor(ectx, "delete_edge") {
     sentence_ = static_cast<DeleteEdgesSentence*>(sentence);
 }
 
@@ -48,12 +48,18 @@ void DeleteEdgesExecutor::execute() {
         return;
     }
 
-    status = setupEdgeKeys(edgeType);
-    if (!status.ok()) {
-        doError(std::move(status));
+    auto ret = getEdgeKeys(expCtx_.get(), sentence_, edgeType, false);
+    if (!ret.ok()) {
+        LOG(ERROR) << ret.status();
+        doError(std::move(ret).status());
         return;
     }
 
+    edgeKeys_ = std::move(ret).value();
+    if (edgeKeys_.empty()) {
+        onEmptyInputs();
+        return;
+    }
     // TODO Need to consider distributed transaction because in-edges/out-edges
     // may be in different partitions
     auto future = ectx()->getStorageClient()->deleteEdges(space, std::move(edgeKeys_));
@@ -78,59 +84,15 @@ void DeleteEdgesExecutor::execute() {
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
-Status DeleteEdgesExecutor::setupEdgeKeys(EdgeType edgeType) {
-    auto status = Status::OK();
-    auto edgeKeysExpr = sentence_->keys()->keys();
-    Getters getters;
-    for (auto *keyExpr : edgeKeysExpr) {
-        auto *srcExpr = keyExpr->srcid();
-        srcExpr->setContext(expCtx_.get());
-
-        auto *dstExpr = keyExpr->dstid();
-        dstExpr->setContext(expCtx_.get());
-
-        auto rank = keyExpr->rank();
-        status = srcExpr->prepare();
-        if (!status.ok()) {
-            break;
-        }
-        status = dstExpr->prepare();
-        if (!status.ok()) {
-            break;
-        }
-        auto value = srcExpr->eval(getters);
-        if (!value.ok()) {
-            return value.status();
-        }
-        auto srcid = value.value();
-        value = dstExpr->eval(getters);
-        if (!value.ok()) {
-            return value.status();
-        }
-        auto dstid = value.value();
-        if (!Expression::isInt(srcid) || !Expression::isInt(dstid)) {
-            status = Status::Error("ID should be of type integer.");
-            break;
-        }
-
-        storage::cpp2::EdgeKey outkey;
-        outkey.set_src(Expression::asInt(srcid));
-        outkey.set_edge_type(edgeType);
-        outkey.set_dst(Expression::asInt(dstid));
-        outkey.set_ranking(rank);
-
-        storage::cpp2::EdgeKey inkey;
-        inkey.set_src(Expression::asInt(dstid));
-        inkey.set_edge_type(-edgeType);
-        inkey.set_dst(Expression::asInt(srcid));
-        inkey.set_ranking(rank);
-
-        edgeKeys_.emplace_back(std::move(outkey));
-        edgeKeys_.emplace_back(std::move(inkey));
+void DeleteEdgesExecutor::onEmptyInputs() {
+    auto outputs = std::make_unique<InterimResult>();
+    if (onResult_) {
+        onResult_(std::move(outputs));
+    } else if (resp_ == nullptr) {
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
     }
-    return status;
+    doFinish(Executor::ProcessControl::kNext);
 }
-
 }   // namespace graph
 }   // namespace nebula
 

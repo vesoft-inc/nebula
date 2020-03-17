@@ -13,7 +13,7 @@ namespace graph {
 
 DeleteVerticesExecutor::DeleteVerticesExecutor(Sentence *sentence,
                                                ExecutionContext *ectx)
-    : Executor(ectx, "delete_vertices") {
+    : TraverseExecutor(ectx, "delete_vertices") {
     sentence_ = static_cast<DeleteVerticesSentence*>(sentence);
 }
 
@@ -32,27 +32,19 @@ void DeleteVerticesExecutor::execute() {
     expCtx_ = std::make_unique<ExpressionContext>();
     expCtx_->setSpace(space_);
     expCtx_->setStorageClient(ectx()->getStorageClient());
-
-    auto vidList = sentence_->vidList();
-    vidList->setContext(expCtx_.get());
-    status = vidList->prepare();
-    if (!status.ok()) {
-        doError(std::move(status));
+    auto ret = getVids(expCtx_.get(), sentence_, false);
+    if (!ret.ok()) {
+        LOG(ERROR) << ret.status();
+        doError(std::move(ret).status());
         return;
     }
 
-    auto values = vidList->eval();
-    for (auto value : values) {
-        auto v = value.value();
-        if (!Expression::isInt(v)) {
-            status = Status::Error("Vertex ID should be of type integer");
-            doError(std::move(status));
-            return;
-        }
-        auto vid = Expression::asInt(v);
-        vids_.emplace_back(vid);
+    vids_ = std::move(ret).value();
+    if (vids_.empty()) {
+        LOG(WARNING) << "Empty vids";
+        onEmptyInputs();
+        return;
     }
-
     auto edgeAllStatus = ectx()->schemaManager()->getAllEdge(space_);
     if (!edgeAllStatus.ok()) {
         doError(edgeAllStatus.status());
@@ -232,6 +224,15 @@ void DeleteVerticesExecutor::deleteVertices() {
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
+void DeleteVerticesExecutor::onEmptyInputs() {
+    auto outputs = std::make_unique<InterimResult>();
+    if (onResult_) {
+        onResult_(std::move(outputs));
+    } else if (resp_ == nullptr) {
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+    }
+    doFinish(Executor::ProcessControl::kNext);
+}
 }   // namespace graph
 }   // namespace nebula
 

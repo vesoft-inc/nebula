@@ -183,7 +183,7 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
         case Sentence::Kind::kBalance:
             executor = std::make_unique<BalanceExecutor>(sentence, ectx());
             break;
-        case Sentence::Kind::kDeleteVertex:
+        case Sentence::Kind::kDeleteVertices:
             executor = std::make_unique<DeleteVerticesExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kDeleteEdges:

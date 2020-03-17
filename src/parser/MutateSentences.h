@@ -9,10 +9,9 @@
 #include "base/Base.h"
 #include "parser/Clauses.h"
 #include "parser/Sentence.h"
+#include "parser/BaseSentence.h"
 
 namespace nebula {
-
-class EdgeKeys;
 
 class PropertyList final {
 public:
@@ -498,40 +497,40 @@ private:
 };
 
 
-class DeleteVerticesSentence final : public Sentence {
+class DeleteVerticesSentence final : public BaseVerticesSentence {
 public:
-    explicit DeleteVerticesSentence(VertexIDList *vidList) {
-        vidList_.reset(vidList);
-        kind_ = Kind::kDeleteVertex;
+    explicit DeleteVerticesSentence(VertexIDList *vidList) : BaseVerticesSentence(vidList) {
+        kind_ = Kind::kDeleteVertices;
     }
 
-    VertexIDList* vidList() const {
-        return vidList_.get();
+    explicit DeleteVerticesSentence(Expression *ref) : BaseVerticesSentence(ref) {
+        kind_ = Kind::kDeleteVertices;
     }
 
     std::string toString() const override;
-
-private:
-    std::unique_ptr<VertexIDList>                vidList_;
 };
 
 
-class DeleteEdgesSentence final : public Sentence {
+class DeleteEdgesSentence final : public BaseEdgesSentence {
 public:
-    explicit DeleteEdgesSentence(std::string *edge,
-                                 EdgeKeys    *keys);
+    explicit DeleteEdgesSentence(std::string *edge, EdgeKeys *keys) : BaseEdgesSentence(keys) {
+        edge_.reset(edge);
+        kind_ = Kind::kDeleteEdges;
+    }
+
+    explicit DeleteEdgesSentence(std::string *edge, EdgeKeyRef *ref) : BaseEdgesSentence(ref) {
+        edge_.reset(edge);
+        kind_ = Kind::kDeleteEdges;
+    }
 
     const std::string* edge() const {
         return edge_.get();
     }
 
-    EdgeKeys* keys() const;
-
     std::string toString() const override;
 
 private:
     std::unique_ptr<std::string>                edge_;
-    std::unique_ptr<EdgeKeys>                   edgeKeys_;
 };
 
 

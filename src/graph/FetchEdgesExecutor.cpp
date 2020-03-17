@@ -27,9 +27,10 @@ Status FetchEdgesExecutor::prepareClauses() {
             break;
         }
 
+        spaceId_ = ectx()->rctx()->session()->space();
         expCtx_ = std::make_unique<ExpressionContext>();
         expCtx_->setStorageClient(ectx()->getStorageClient());
-        spaceId_ = ectx()->rctx()->session()->space();
+        expCtx_->setSpace(spaceId_);
         yieldClause_ = DCHECK_NOTNULL(sentence_)->yieldClause();
         labelName_ = sentence_->edge();
         auto result = ectx()->schemaManager()->toEdgeType(spaceId_, *labelName_);
@@ -42,11 +43,6 @@ Status FetchEdgesExecutor::prepareClauses() {
         if (labelSchema_ == nullptr) {
             LOG(ERROR) << *labelName_ << " edge schema not exist.";
             status = Status::Error("%s edge schema not exist.", labelName_->c_str());
-            break;
-        }
-
-        status = prepareEdgeKeys();
-        if (!status.ok()) {
             break;
         }
 
@@ -68,47 +64,6 @@ Status FetchEdgesExecutor::prepareClauses() {
             break;
         }
     } while (false);
-    return status;
-}
-
-Status FetchEdgesExecutor::prepareEdgeKeys() {
-    Status status = Status::OK();
-    do {
-        if (sentence_->isRef()) {
-            auto *edgeKeyRef = sentence_->ref();
-
-            srcid_ = edgeKeyRef->srcid();
-            if (srcid_ == nullptr) {
-                status = Status::Error("Src id nullptr.");
-                LOG(ERROR) << "Get src nullptr.";
-                break;
-            }
-
-            dstid_ = edgeKeyRef->dstid();
-            if (dstid_ == nullptr) {
-                status = Status::Error("Dst id nullptr.");
-                LOG(ERROR) << "Get dst nullptr.";
-                break;
-            }
-
-            rank_ = edgeKeyRef->rank();
-
-            if ((*srcid_ == "*")
-                    || (*dstid_ == "*")
-                    || (rank_ != nullptr && *rank_ == "*")) {
-                status = Status::Error("Can not use `*' to reference a vertex id column.");
-                break;
-            }
-
-            auto ret = edgeKeyRef->varname();
-            if (!ret.ok()) {
-                status = std::move(ret).status();
-                break;
-            }
-            varname_ = std::move(ret).value();
-        }
-    } while (false);
-
     return status;
 }
 
@@ -140,160 +95,20 @@ void FetchEdgesExecutor::execute() {
         doError(std::move(status));
         return;
     }
-    status = setupEdgeKeys();
-    if (!status.ok()) {
-        doError(std::move(status));
+    auto ret = getEdgeKeys(expCtx_.get(), sentence_, edgeType_, distinct_);
+    if (!ret.ok()) {
+        LOG(ERROR) << ret.status();
+        doError(std::move(ret).status());
         return;
     }
 
+    edgeKeys_ = std::move(ret).value();
     if (edgeKeys_.empty()) {
         onEmptyInputs();
         return;
     }
 
     fetchEdges();
-}
-
-Status FetchEdgesExecutor::setupEdgeKeys() {
-    Status status = Status::OK();
-    hash_ = [] (const storage::cpp2::EdgeKey &key) -> size_t {
-            return std::hash<VertexID>()(key.src)
-                    ^ std::hash<VertexID>()(key.dst)
-                    ^ std::hash<EdgeRanking>()(key.ranking);
-    };
-    if (sentence_->isRef()) {
-        status = setupEdgeKeysFromRef();
-    } else {
-        status = setupEdgeKeysFromExpr();
-    }
-
-    VLOG(3) << "EdgeKey length: " << edgeKeys_.size();
-
-    return status;
-}
-
-Status FetchEdgesExecutor::setupEdgeKeysFromRef() {
-    const InterimResult *inputs;
-    if (sentence_->ref()->isInputExpr()) {
-        inputs = inputs_.get();
-    } else {
-        bool existing = false;
-        inputs = ectx()->variableHolder()->get(varname_, &existing);
-        if (!existing) {
-            return Status::Error("Variable `%s' not defined", varname_.c_str());
-        }
-    }
-    if (inputs == nullptr || !inputs->hasData()) {
-        // we have empty imputs from pipe.
-        return Status::OK();
-    }
-
-    auto status = checkIfDuplicateColumn();
-    if (!status.ok()) {
-        return status;
-    }
-    auto ret = inputs->getVIDs(*srcid_);
-    if (!ret.ok()) {
-        return ret.status();
-    }
-    auto srcVids = std::move(ret).value();
-    ret = inputs->getVIDs(*dstid_);
-    if (!ret.ok()) {
-        return ret.status();
-    }
-    auto dstVids = std::move(ret).value();
-
-    std::vector<EdgeRanking> ranks;
-    if (rank_ != nullptr) {
-        ret = inputs->getVIDs(*rank_);
-        if (!ret.ok()) {
-            return ret.status();
-        }
-        ranks = std::move(ret).value();
-    }
-
-    std::unique_ptr<EdgeKeyHashSet> uniq;
-    if (distinct_) {
-        uniq = std::make_unique<EdgeKeyHashSet>(256, hash_);
-    }
-    for (decltype(srcVids.size()) index = 0u; index < srcVids.size(); ++index) {
-        storage::cpp2::EdgeKey key;
-        key.set_src(srcVids[index]);
-        key.set_edge_type(edgeType_);
-        key.set_dst(dstVids[index]);
-        key.set_ranking(rank_ == nullptr ? 0 : ranks[index]);
-
-        if (distinct_) {
-            auto result = uniq->emplace(key);
-            if (result.second) {
-                edgeKeys_.emplace_back(std::move(key));
-            }
-        } else {
-            edgeKeys_.emplace_back(std::move(key));
-        }
-    }
-
-    return Status::OK();
-}
-
-Status FetchEdgesExecutor::setupEdgeKeysFromExpr() {
-    Status status = Status::OK();
-    std::unique_ptr<EdgeKeyHashSet> uniq;
-    if (distinct_) {
-        uniq = std::make_unique<EdgeKeyHashSet>(256, hash_);
-    }
-
-    auto edgeKeyExprs = sentence_->keys()->keys();
-    expCtx_->setSpace(spaceId_);
-    Getters getters;
-
-    for (auto *keyExpr : edgeKeyExprs) {
-        auto *srcExpr = keyExpr->srcid();
-        srcExpr->setContext(expCtx_.get());
-
-        auto *dstExpr = keyExpr->dstid();
-        dstExpr->setContext(expCtx_.get());
-
-        auto rank = keyExpr->rank();
-        status = srcExpr->prepare();
-        if (!status.ok()) {
-            break;
-        }
-        status = dstExpr->prepare();
-        if (!status.ok()) {
-            break;
-        }
-        auto value = srcExpr->eval(getters);
-        if (!value.ok()) {
-            return value.status();
-        }
-        auto srcid = value.value();
-        value = dstExpr->eval(getters);
-        if (!value.ok()) {
-            return value.status();
-        }
-        auto dstid = value.value();
-        if (!Expression::isInt(srcid) || !Expression::isInt(dstid)) {
-            status = Status::Error("ID should be of type integer.");
-            break;
-        }
-        storage::cpp2::EdgeKey key;
-        key.set_src(Expression::asInt(srcid));
-        key.set_edge_type(edgeType_);
-        key.set_dst(Expression::asInt(dstid));
-        key.set_ranking(rank);
-
-        if (distinct_) {
-            auto ret = uniq->emplace(key);
-            if (ret.second) {
-                edgeKeys_.emplace_back(std::move(key));
-            }
-        } else {
-            edgeKeys_.emplace_back(std::move(key));
-        }
-    }
-
-    return status;
 }
 
 void FetchEdgesExecutor::fetchEdges() {

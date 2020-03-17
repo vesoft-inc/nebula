@@ -271,7 +271,11 @@ std::string DeleteVerticesSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "DELETE VERTEX ";
-    buf += vidList_->toString();
+    if (isRef()) {
+        buf += vidRef_->toString();
+    } else {
+        buf += vidList_->toString();
+    }
     return buf;
 }
 
@@ -281,20 +285,14 @@ std::string DeleteEdgesSentence::toString() const {
     buf += "DELETE EDGE ";
     buf += *edge_;
     buf += " ";
-    buf += edgeKeys_->toString();
+    if (isRef()) {
+        buf += keyRef_->toString();
+    } else {
+        buf += edgeKeys_->toString();
+    }
     return buf;
 }
 
-DeleteEdgesSentence::DeleteEdgesSentence(std::string *edge,
-                                         EdgeKeys    *keys) {
-        edge_.reset(edge);
-        edgeKeys_.reset(keys);
-        kind_ = Kind::kDeleteEdges;
-}
-
-EdgeKeys* DeleteEdgesSentence::keys() const {
-    return edgeKeys_.get();
-}
 
 std::string DownloadSentence::toString() const {
     return folly::stringPrintf("DOWNLOAD HDFS \"%s:%d/%s\"", host_.get()->c_str(),

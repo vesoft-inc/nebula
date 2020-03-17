@@ -32,6 +32,7 @@ Status FetchVerticesExecutor::prepareClauses() {
         expCtx_ = std::make_unique<ExpressionContext>();
         spaceId_ = ectx()->rctx()->session()->space();
         expCtx_->setStorageClient(ectx()->getStorageClient());
+        expCtx_->setSpace(spaceId_);
         if (sentence_->isAllTagProps()) {
             break;
         }
@@ -52,12 +53,6 @@ Status FetchVerticesExecutor::prepareClauses() {
             break;
         }
 
-        status = prepareVids();
-        if (!status.ok()) {
-            LOG(ERROR) << "Prepare vertex id failed: " << status;
-            break;
-        }
-
         // Add VertexID before prepareYield()
         returnColNames_.emplace_back("VertexID");
         status = prepareYield();
@@ -72,29 +67,6 @@ Status FetchVerticesExecutor::prepareClauses() {
         }
     } while (false);
     return status;
-}
-
-Status FetchVerticesExecutor::prepareVids() {
-    if (sentence_->isRef()) {
-        auto *expr = sentence_->ref();
-        if (expr->isInputExpression()) {
-            auto *iexpr = static_cast<InputPropertyExpression*>(expr);
-            colname_ = iexpr->prop();
-        } else if (expr->isVariableExpression()) {
-            auto *vexpr = static_cast<VariablePropertyExpression*>(expr);
-            varname_ = vexpr->alias();
-            colname_ = vexpr->prop();
-        } else {
-            //  should never come to here.
-            //  only support input and variable yet.
-            LOG(ERROR) << "Unknown kind of expression.";
-            return Status::Error("Unknown kind of expression.");
-        }
-        if (colname_ != nullptr && *colname_ == "*") {
-            return Status::Error("Cant not use `*' to reference a vertex id column.");
-        }
-    }
-    return Status::OK();
 }
 
 Status FetchVerticesExecutor::checkTagProps() {
@@ -122,11 +94,14 @@ void FetchVerticesExecutor::execute() {
         return;
     }
 
-    status = setupVids();
-    if (!status.ok()) {
-        doError(std::move(status));
+    auto ret = getVids(expCtx_.get(), sentence_, distinct_);
+    if (!ret.ok()) {
+        LOG(ERROR) << ret.status();
+        doError(std::move(ret).status());
         return;
     }
+
+    vids_ = std::move(ret).value();
     if (vids_.empty()) {
         LOG(WARNING) << "Empty vids";
         onEmptyInputs();
@@ -261,89 +236,6 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
     }      // for `resp'
 
     finishExecution(std::move(rsWriter));
-}
-
-Status FetchVerticesExecutor::setupVids() {
-    Status status = Status::OK();
-    if (sentence_->isRef() && !sentence_->isAllTagProps()) {
-        status = setupVidsFromRef();
-    } else {
-        status = setupVidsFromExpr();
-    }
-
-    return status;
-}
-
-Status FetchVerticesExecutor::setupVidsFromExpr() {
-    Status status = Status::OK();
-    std::unique_ptr<std::unordered_set<VertexID>> uniqID;
-    if (distinct_) {
-        uniqID = std::make_unique<std::unordered_set<VertexID>>();
-    }
-
-    expCtx_->setSpace(spaceId_);
-    auto vidList = sentence_->vidList();
-    Getters getters;
-    for (auto *expr : vidList) {
-        expr->setContext(expCtx_.get());
-        status = expr->prepare();
-        if (!status.ok()) {
-            break;
-        }
-        auto value = expr->eval(getters);
-        if (!value.ok()) {
-            return value.status();
-        }
-        auto v = value.value();
-        if (!Expression::isInt(v)) {
-            status = Status::Error("Vertex ID should be of type integer");
-            break;
-        }
-
-        auto valInt = Expression::asInt(v);
-        if (distinct_) {
-            auto result = uniqID->emplace(valInt);
-            if (result.second) {
-                vids_.emplace_back(valInt);
-            }
-        } else {
-            vids_.emplace_back(valInt);
-        }
-    }
-
-    return status;
-}
-
-Status FetchVerticesExecutor::setupVidsFromRef() {
-    const InterimResult *inputs;
-    if (varname_ == nullptr) {
-        inputs = inputs_.get();
-    } else {
-        bool existing = false;
-        inputs = ectx()->variableHolder()->get(*varname_, &existing);
-        if (!existing) {
-            return Status::Error("Variable `%s' not defined", varname_->c_str());
-        }
-    }
-    if (inputs == nullptr || !inputs->hasData()) {
-        return Status::OK();
-    }
-
-    auto status = checkIfDuplicateColumn();
-    if (!status.ok()) {
-        return status;
-    }
-    StatusOr<std::vector<VertexID>> result;
-    if (distinct_) {
-        result = inputs->getDistinctVIDs(*colname_);
-    } else {
-        result = inputs->getVIDs(*colname_);
-    }
-    if (!result.ok()) {
-        return std::move(result).status();
-    }
-    vids_ = std::move(result).value();
-    return Status::OK();
 }
 
 void FetchVerticesExecutor::processAllPropsResult(RpcResponse &&result) {

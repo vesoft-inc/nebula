@@ -10,6 +10,7 @@
 #include "parser/Sentence.h"
 #include "parser/Clauses.h"
 #include "parser/MutateSentences.h"
+#include "parser/BaseSentence.h"
 
 namespace nebula {
 
@@ -289,27 +290,27 @@ private:
     std::unique_ptr<OrderFactors>               orderFactors_;
 };
 
-class FetchVerticesSentence final : public Sentence {
+class FetchVerticesSentence final : public BaseVerticesSentence {
 public:
     FetchVerticesSentence(std::string  *tag,
                           VertexIDList *vidList,
-                          YieldClause  *clause) {
+                          YieldClause  *clause)
+                          : BaseVerticesSentence(vidList) {
         kind_ = Kind::kFetchVertices;
         tag_.reset(tag);
-        vidList_.reset(vidList);
         yieldClause_.reset(clause);
     }
 
     FetchVerticesSentence(std::string  *tag,
                           Expression   *ref,
-                          YieldClause  *clause) {
+                          YieldClause  *clause)
+                          : BaseVerticesSentence(ref) {
         kind_ = Kind::kFetchVertices;
         tag_.reset(tag);
-        vidRef_.reset(ref);
         yieldClause_.reset(clause);
     }
 
-    explicit FetchVerticesSentence(Expression *vid) {
+    explicit FetchVerticesSentence(Expression *vid) : BaseVerticesSentence() {
         kind_ = Kind::kFetchVertices;
         tag_ = std::make_unique<std::string>("*");
         vidList_ = std::make_unique<VertexIDList>();
@@ -324,18 +325,6 @@ public:
         return tag_.get();
     }
 
-    auto vidList() const {
-        return vidList_->vidList();
-    }
-
-    bool isRef() const {
-        return vidRef_ != nullptr;
-    }
-
-    Expression* ref() const {
-        return vidRef_.get();
-    }
-
     YieldClause* yieldClause() const {
         return yieldClause_.get();
     }
@@ -348,134 +337,27 @@ public:
 
 private:
     std::unique_ptr<std::string>    tag_;
-    std::unique_ptr<VertexIDList>   vidList_;
-    std::unique_ptr<Expression>     vidRef_;
     std::unique_ptr<YieldClause>    yieldClause_;
 };
 
-class EdgeKey final {
-public:
-    EdgeKey(Expression *srcid, Expression *dstid, int64_t rank) {
-        srcid_.reset(srcid);
-        dstid_.reset(dstid);
-        rank_ = rank;
-    }
-
-    Expression* srcid() const {
-        return srcid_.get();
-    }
-
-    Expression* dstid() const {
-        return dstid_.get();
-    }
-
-    int64_t rank() {
-        return rank_;
-    }
-
-    std::string toString() const;
-
-private:
-    std::unique_ptr<Expression>     srcid_;
-    std::unique_ptr<Expression>     dstid_;
-    EdgeRanking                     rank_;
-};
-
-class EdgeKeys final {
-public:
-    EdgeKeys() = default;
-
-    void addEdgeKey(EdgeKey *key) {
-        keys_.emplace_back(key);
-    }
-
-    std::vector<EdgeKey*> keys() {
-        std::vector<EdgeKey*> result;
-        result.resize(keys_.size());
-        auto get = [](const auto&key) { return key.get(); };
-        std::transform(keys_.begin(), keys_.end(), result.begin(), get);
-        return result;
-    }
-
-    std::string toString() const;
-
-private:
-    std::vector<std::unique_ptr<EdgeKey>>   keys_;
-};
-
-class EdgeKeyRef final {
-public:
-    EdgeKeyRef(
-            Expression *srcid,
-            Expression *dstid,
-            Expression *rank,
-            bool isInputExpr = true) {
-        srcid_.reset(srcid);
-        dstid_.reset(dstid);
-        rank_.reset(rank);
-        isInputExpr_ = isInputExpr;
-    }
-
-    StatusOr<std::string> varname() const;
-
-    std::string* srcid();
-
-    std::string* dstid();
-
-    std::string* rank();
-
-    bool isInputExpr() const {
-        return isInputExpr_;
-    }
-
-    std::string toString() const;
-
-private:
-    std::unique_ptr<Expression>             srcid_;
-    std::unique_ptr<Expression>             dstid_;
-    std::unique_ptr<Expression>             rank_;
-    std::unordered_set<std::string>         uniqVar_;
-    bool                                    isInputExpr_;
-};
-
-class FetchEdgesSentence final : public Sentence {
+class FetchEdgesSentence final : public BaseEdgesSentence {
 public:
     FetchEdgesSentence(std::string *edge,
                        EdgeKeys    *keys,
-                       YieldClause *clause) {
+                       YieldClause *clause)
+                       : BaseEdgesSentence(keys) {
         kind_ = Kind::kFetchEdges;
         edge_.reset(edge);
-        edgeKeys_.reset(keys);
         yieldClause_.reset(clause);
     }
 
     FetchEdgesSentence(std::string *edge,
                        EdgeKeyRef  *ref,
-                       YieldClause *clause) {
+                       YieldClause *clause)
+                       : BaseEdgesSentence(ref) {
         kind_ = Kind::kFetchEdges;
         edge_.reset(edge);
-        keyRef_.reset(ref);
         yieldClause_.reset(clause);
-    }
-
-    bool isRef() const  {
-        return keyRef_ != nullptr;
-    }
-
-    void setKeyRef(EdgeKeyRef *ref) {
-        keyRef_.reset(ref);
-    }
-
-    EdgeKeyRef* ref() const {
-        return keyRef_.get();
-    }
-
-    void setKeys(EdgeKeys *keys) {
-        edgeKeys_.reset(keys);
-    }
-
-    EdgeKeys* keys() const {
-        return edgeKeys_.get();
     }
 
     void setYieldClause(YieldClause *clause) {
@@ -494,8 +376,6 @@ public:
 
 private:
     std::unique_ptr<std::string>    edge_;
-    std::unique_ptr<EdgeKeys>       edgeKeys_;
-    std::unique_ptr<EdgeKeyRef>     keyRef_;
     std::unique_ptr<YieldClause>    yieldClause_;
 };
 

@@ -24,6 +24,8 @@
 #include "graph/YieldExecutor.h"
 #include "graph/GroupByExecutor.h"
 #include "graph/SchemaHelper.h"
+#include "graph/DeleteVerticesExecutor.h"
+#include "graph/DeleteEdgesExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -74,6 +76,12 @@ TraverseExecutor::makeTraverseExecutor(Sentence *sentence, ExecutionContext *ect
             break;
         case Sentence::Kind::KGroupBy:
             executor = std::make_unique<GroupByExecutor>(sentence, ectx);
+            break;
+        case Sentence::Kind::kDeleteVertices:
+            executor = std::make_unique<DeleteVerticesExecutor>(sentence, ectx);
+            break;
+        case Sentence::Kind::kDeleteEdges:
+            executor = std::make_unique<DeleteEdgesExecutor>(sentence, ectx);
             break;
         case Sentence::Kind::kUnknown:
             LOG(FATAL) << "Sentence kind unknown";
@@ -170,6 +178,248 @@ Status TraverseExecutor::checkIfDuplicateColumn() const {
         }
     }
     return Status::OK();
+}
+
+StatusOr<std::vector<VertexID>>
+TraverseExecutor::getVids(ExpressionContext* expCtx,
+        BaseVerticesSentence *sentence, bool distinct) const {
+    std::vector <VertexID> vids;
+    if (sentence->isRef()) {
+        std::string *colName = nullptr;
+        std::string *varName = nullptr;
+        auto *expr = sentence->ref();
+        if (expr->isInputExpression()) {
+            auto *iexpr = static_cast<InputPropertyExpression *>(expr);
+            colName = iexpr->prop();
+        } else if (expr->isVariableExpression()) {
+            auto *vexpr = static_cast<VariablePropertyExpression *>(expr);
+            varName = vexpr->alias();
+            colName = vexpr->prop();
+        } else {
+            //  should never come to here.
+            //  only support input and variable yet.
+            return Status::Error("Unknown kind of expression.");
+        }
+        if (colName != nullptr && *colName == "*") {
+            return Status::Error("Cant not use `*' to reference a vertex id column.");
+        }
+        const InterimResult *inputs;
+        if (varName == nullptr) {
+            inputs = inputs_.get();
+        } else {
+            bool existing = false;
+            inputs = ectx()->variableHolder()->get(*varName, &existing);
+            if (!existing) {
+                return Status::Error("Variable `%s' not defined", varName->c_str());
+            }
+        }
+        if (inputs == nullptr || !inputs->hasData()) {
+            return vids;
+        }
+
+        auto status = checkIfDuplicateColumn();
+        if (!status.ok()) {
+            return status;
+        }
+        StatusOr <std::vector<VertexID>> result;
+        if (distinct) {
+            result = inputs->getDistinctVIDs(*colName);
+        } else {
+            result = inputs->getVIDs(*colName);
+        }
+        if (!result.ok()) {
+            return std::move(result).status();
+        }
+        vids = std::move(result).value();
+    } else {
+        if (expCtx == nullptr) {
+            return Status::Error("ExpressionContext is nullptr");
+        }
+        std::unique_ptr <std::unordered_set<VertexID>> uniqID;
+        if (distinct) {
+            uniqID = std::make_unique<std::unordered_set<VertexID>> ();
+        }
+
+        auto vidList = sentence->vidList();
+        Getters getters;
+        for (auto *expr : vidList) {
+            expr->setContext(expCtx);
+            auto status = expr->prepare();
+            if (!status.ok()) {
+                return status;
+            }
+            auto value = expr->eval(getters);
+            if (!value.ok()) {
+                return std::move(value).status();
+            }
+            auto v = value.value();
+            if (!Expression::isInt(v)) {
+                return Status::Error("Vertex ID should be of type integer");
+            }
+
+            auto valInt = Expression::asInt(v);
+            if (distinct) {
+                auto result = uniqID->emplace(valInt);
+                if (result.second) {
+                    vids.emplace_back(valInt);
+                }
+            } else {
+                vids.emplace_back(valInt);
+            }
+        }
+    }
+    return vids;
+}
+
+StatusOr<std::vector<storage::cpp2::EdgeKey>>
+TraverseExecutor::getEdgeKeys(ExpressionContext* expCtx,
+        BaseEdgesSentence *sentence, EdgeType edgeType, bool distinct) const {
+    std::vector<storage::cpp2::EdgeKey> edgeKeys;
+    using EdgeKeyHashSet = std::unordered_set<
+            storage::cpp2::EdgeKey,
+            std::function<size_t(const storage::cpp2::EdgeKey& key)>>;
+
+    auto hash = [] (const storage::cpp2::EdgeKey &key) -> size_t {
+        return std::hash<VertexID>()(key.src)
+               ^ std::hash<VertexID>()(key.dst)
+               ^ std::hash<EdgeRanking>()(key.ranking);
+    };
+    if (sentence->isRef()) {
+        auto *edgeKeyRef = sentence->ref();
+        auto srcId = edgeKeyRef->srcid();
+        auto dstId = edgeKeyRef->dstid();
+        auto rank = edgeKeyRef->rank();
+        if (srcId == nullptr || dstId == nullptr) {
+            return Status::Error("SrcId or dstId is nullptr.");
+        }
+
+        if ((*srcId == "*") || (*dstId == "*") || (rank != nullptr && *rank == "*")) {
+            return Status::Error("Can not use `*' to reference a vertex id column.");
+        }
+
+        auto ret = edgeKeyRef->varname();
+        if (!ret.ok()) {
+            return std::move(ret).status();
+        }
+        auto varName = std::move(ret).value();
+        const InterimResult *inputs;
+        if (sentence->ref()->isInputExpr()) {
+            inputs = inputs_.get();
+        } else {
+            bool existing = false;
+            inputs = ectx()->variableHolder()->get(varName, &existing);
+            if (!existing) {
+                return Status::Error("Variable `%s' not defined", varName.c_str());
+            }
+        }
+        if (inputs == nullptr || !inputs->hasData()) {
+            // we have empty imputs from pipe.
+            return edgeKeys;
+        }
+
+        auto status = checkIfDuplicateColumn();
+        if (!status.ok()) {
+            return status;
+        }
+        auto srcRet = inputs->getVIDs(*srcId);
+        if (!srcRet.ok()) {
+            return srcRet.status();
+        }
+        auto srcVids = std::move(srcRet).value();
+        auto dstRet = inputs->getVIDs(*dstId);
+        if (!dstRet.ok()) {
+            return dstRet.status();
+        }
+        auto dstVids = std::move(dstRet).value();
+
+        std::vector<EdgeRanking> ranks;
+        if (rank != nullptr) {
+            auto rankRet = inputs->getVIDs(*rank);
+            if (!rankRet.ok()) {
+                return rankRet.status();
+            }
+            ranks = std::move(rankRet).value();
+        }
+
+        std::unique_ptr<EdgeKeyHashSet> uniq;
+        if (distinct) {
+            uniq = std::make_unique<EdgeKeyHashSet>(256, hash);
+        }
+        for (decltype(srcVids.size()) index = 0u; index < srcVids.size(); ++index) {
+            storage::cpp2::EdgeKey key;
+            key.set_src(srcVids[index]);
+            key.set_edge_type(edgeType);
+            key.set_dst(dstVids[index]);
+            key.set_ranking(rank == nullptr ? 0 : ranks[index]);
+
+            if (distinct) {
+                auto result = uniq->emplace(key);
+                if (result.second) {
+                    edgeKeys.emplace_back(std::move(key));
+                }
+            } else {
+                edgeKeys.emplace_back(std::move(key));
+            }
+        }
+
+    } else {
+        if (expCtx == nullptr) {
+            return Status::Error("ExpressionContext is nullptr");
+        }
+        std::unique_ptr<EdgeKeyHashSet> uniq;
+        if (distinct) {
+            uniq = std::make_unique<EdgeKeyHashSet>(256, hash);
+        }
+
+        auto edgeKeyExprs = sentence->keys()->keys();
+        Getters getters;
+
+        for (auto *keyExpr : edgeKeyExprs) {
+            auto *srcExpr = keyExpr->srcid();
+            srcExpr->setContext(expCtx);
+
+            auto *dstExpr = keyExpr->dstid();
+            dstExpr->setContext(expCtx);
+
+            auto rank = keyExpr->rank();
+            auto status = srcExpr->prepare();
+            if (!status.ok()) {
+                return status;
+            }
+            status = dstExpr->prepare();
+            if (!status.ok()) {
+                return status;
+            }
+            auto value = srcExpr->eval(getters);
+            if (!value.ok()) {
+                return std::move(value).status();
+            }
+            auto srcid = value.value();
+            value = dstExpr->eval(getters);
+            if (!value.ok()) {
+                return std::move(value).status();
+            }
+            auto dstid = value.value();
+            if (!Expression::isInt(srcid) || !Expression::isInt(dstid)) {
+                return Status::Error("ID should be of type integer.");
+            }
+            storage::cpp2::EdgeKey key;
+            key.set_src(Expression::asInt(srcid));
+            key.set_edge_type(edgeType);
+            key.set_dst(Expression::asInt(dstid));
+            key.set_ranking(rank);
+
+            if (distinct) {
+                auto ret = uniq->emplace(key);
+                if (ret.second) {
+                    edgeKeys.emplace_back(std::move(key));
+                }
+            } else {
+                edgeKeys.emplace_back(std::move(key));
+            }
+        }
+    }
+    return edgeKeys;
 }
 
 Status Collector::collect(VariantType &var, RowWriter *writer) {
@@ -378,10 +628,10 @@ StatusOr<bool> YieldClauseWrapper::needAllPropsFromVar(
     auto *variableExpr = static_cast<VariablePropertyExpression*>(col->expr());
     auto *colName = variableExpr->prop();
     bool existing = false;
-    auto *varname = variableExpr->alias();
-    auto varInputs = varHolder->get(*varname, &existing);
+    auto *varName = variableExpr->alias();
+    auto varInputs = varHolder->get(*varName, &existing);
     if (varInputs == nullptr && !existing) {
-        return Status::Error("Variable `%s' not defined.", varname->c_str());
+        return Status::Error("Variable `%s' not defined.", varName->c_str());
     }
     if (*colName == "*") {
         if (varInputs != nullptr) {
@@ -396,7 +646,7 @@ StatusOr<bool> YieldClauseWrapper::needAllPropsFromVar(
             }
         } else {
             // should not reach here.
-            return Status::Error("Variable `%s' is nullptr.", varname->c_str());
+            return Status::Error("Variable `%s' is nullptr.", varName->c_str());
         }
         return true;
     }

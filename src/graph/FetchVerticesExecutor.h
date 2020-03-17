@@ -30,15 +30,7 @@ public:
 private:
     Status prepareClauses();
 
-    Status prepareVids();
-
     Status checkTagProps();
-
-    Status setupVids();
-
-    Status setupVidsFromRef();
-
-    Status setupVidsFromExpr();
 
     std::vector<storage::cpp2::PropDef> getPropNames();
 
@@ -52,9 +44,7 @@ private:
 private:
     FetchVerticesSentence                      *sentence_{nullptr};
     std::vector<VertexID>                       vids_;
-    TagID                                       tagId_{INT_MIN};
-    std::string                                *varname_{nullptr};
-    std::string                                *colname_{nullptr};
+    TagID                                       tagID_{INT_MIN};
 };
 }  // namespace graph
 }  // namespace nebula

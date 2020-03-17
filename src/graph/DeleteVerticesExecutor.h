@@ -8,12 +8,12 @@
 #define GRAPH_DELETEVERTEXEXECUTOR_H_
 
 #include "base/Base.h"
-#include "graph/Executor.h"
+#include "graph/TraverseExecutor.h"
 
 namespace nebula {
 namespace graph {
 
-class DeleteVerticesExecutor final : public Executor {
+class DeleteVerticesExecutor final : public TraverseExecutor {
 public:
     DeleteVerticesExecutor(Sentence *sentence, ExecutionContext *ectx);
 
@@ -28,12 +28,14 @@ public:
 private:
     void deleteEdges(std::vector<storage::cpp2::EdgeKey>& edges);
     void deleteVertices();
+    void onEmptyInputs();
 
 private:
     DeleteVerticesSentence                     *sentence_{nullptr};
     std::unique_ptr<ExpressionContext>          expCtx_;
     std::vector<VertexID>                       vids_;
     GraphSpaceID                                space_{-1};
+    std::unique_ptr<cpp2::ExecutionResponse>    resp_;
 };
 
 }   // namespace graph
