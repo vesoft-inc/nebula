@@ -18,7 +18,7 @@ Obtain information about space.
 ```ngql
 nebula> DESCRIBE SPACE nba;
 ========================================================
-| ID |        Name | Partition number | Replica Factor |
+| ID |     Name    | Partition number | Replica Factor |
 ========================================================
 |  1 |     nba     |             100  |              1 |
 --------------------------------------------------------  
@@ -27,27 +27,27 @@ nebula> DESCRIBE SPACE nba;
 Obtain information about tag in a given space.
 
 ```ngql
-nebula> DESCRIBE TAG player
-==================
-| Field |   Type |
-==================
-|  name | string |
-------------------
-|   age |    int |
-------------------  
+nebula> DESCRIBE TAG player;
+==================================================
+| Field | Type   |  Null | Key | Default | Extra |
+==================================================
+| name  | string | false |     |         |       |
+--------------------------------------------------
+|  age  | int    | false |     |         |       |
+--------------------------------------------------
 ```
 
 Obtain information about edge in a given space.
 
 ```ngql
-nebula> DESCRIBE EDGE serve
-=====================
-|      Field | Type |
-=====================
-| start_year |  int |
----------------------
-|   end_year |  int |
----------------------
+nebula> DESCRIBE EDGE serve;
+======================================================
+|      Field | Type |   Null | Key | Default | Extra |
+======================================================
+| start_year |  int |  false |     |         |       |
+------------------------------------------------------
+|   end_year |  int |  false |     |         |       |
+------------------------------------------------------
 ```
 
 Obtain information about the index.
