@@ -279,7 +279,7 @@ TEST_F(FetchVerticesTest, SyntaxError) {
     }
 }
 
-TEST_F(FetchVerticesTest, ExecutionError) {
+TEST_F(FetchVerticesTest, NonexistentTag) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
@@ -290,7 +290,7 @@ TEST_F(FetchVerticesTest, ExecutionError) {
     }
 }
 
-TEST_F(FetchVerticesTest, NonExistVertex) {
+TEST_F(FetchVerticesTest, NonexistentVertex) {
     std::string name = "NON EXIST VERTEX ID";
     int64_t nonExistPlayerID = std::hash<std::string>()(name);
     auto iter = players_.begin();
@@ -406,6 +406,17 @@ TEST_F(FetchVerticesTest, DuplicateColumnName) {
         auto &player = players_["Boris Diaw"];
         auto *fmt = "GO FROM %ld over like YIELD like._dst as id, like._dst as id"
                     "| FETCH PROP ON player $-.id YIELD player.name, player.age";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+}
+
+TEST_F(FetchVerticesTest, NonexistentProp) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "FETCH PROP ON player %ld YIELD player.name1";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
