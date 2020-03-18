@@ -63,6 +63,21 @@ nebula> UPDATE CONFIGS storage:rocksdb_column_family_options = \
         { disable_auto_compactions = false ,         level0_file_num_compaction_trigger = 10 }
 ```
 
+### Reservoir Sampling Parameters
+
+Set the following parameters in the configuration file `storaged-conf`:
+
+```bash
+enable_reservoir_sampling = true/false # Enable reservoir sampling with true.
+max_edge_returned_per_vertex = number # Set the sampling number.
+```
+
+For super vertex with a large number of edges, currently there are two truncation strategies:
+
+1. Truncate directly. Set the `enable_reservoir_sampling` parameter to `false`. A certain number of edges specified in the `Max_edge_returned_per_vertex` parameter are truncated by default.
+
+2. Truncate with the reservoir sampling algorithm. Based on the algorithm, a certain number of edges specified in the `Max_edge_returned_per_vertex` parameter are truncated with equal probability from the total n edges. Equal probability sampling is useful in some business scenarios. However, the performance is effected compared to direct truncation due to the probability calculation.
+
 ## SHOW CONFIGS
 
 ```ngql
