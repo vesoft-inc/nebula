@@ -50,7 +50,7 @@ option(ENABLE_FUZZ_TEST "Whether to turn Fuzz Test ON or OFF" OFF)
 option(ENABLE_WERROR "Whether to error on warnings" ON)
 option(ENABLE_TSAN "Whether to turn Thread Sanitizer ON or OFF" OFF)
 option(ENABLE_STATIC_ASAN "Whether directs the GCC driver to link libasan statically" OFF)
-option(ENABLE_STATIC_UBAN "Whether directs the GCC driver to link libaubsan statically" OFF)
+option(ENABLE_STATIC_UBSAN "Whether directs the GCC driver to link libubsan statically" OFF)
 option(ENABLE_PACK_ONE "Whether to package into one" ON)
 
 message(STATUS "ENABLE_ASAN: ${ENABLE_ASAN}")
@@ -59,7 +59,7 @@ message(STATUS "ENABLE_UBSAN: ${ENABLE_UBSAN}")
 message(STATUS "ENABLE_FUZZ_TEST: ${ENABLE_FUZZ_TEST}")
 message(STATUS "ENABLE_TSAN: ${ENABLE_TSAN}")
 message(STATUS "ENABLE_STATIC_ASAN : ${ENABLE_STATIC_ASAN}")
-message(STATUS "ENABLE_STATIC_UBAN : ${ENABLE_STATIC_UBAN}")
+message(STATUS "ENABLE_STATIC_UBSAN : ${ENABLE_STATIC_UBSAN}")
 
 
 add_compile_options(-fno-strict-aliasing)
