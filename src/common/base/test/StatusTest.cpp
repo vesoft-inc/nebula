@@ -20,11 +20,11 @@ TEST(Status, Basic) {
 
 
 TEST(Status, toString) {
-    ASSERT_EQ("OK", Status().toString());
-    ASSERT_EQ("OK", Status::OK().toString());
-    ASSERT_EQ("Error", Status::Error("Error").toString());
-    ASSERT_EQ("SomeError", Status::Error("SomeError").toString());
-    ASSERT_EQ("SomeError(-1)", Status::Error("%s(%d)", "SomeError", -1).toString());
+    ASSERT_EQ("Ok: ", Status().toString());
+    ASSERT_EQ("Ok: ", Status::OK().toString());
+    ASSERT_EQ("Error: Error", Status::Error("Error").toString());
+    ASSERT_EQ("Error: SomeError", Status::Error("SomeError").toString());
+    ASSERT_EQ("Error: SomeError(-1)", Status::Error("%s(%d)", "SomeError", -1).toString());
 }
 
 
@@ -32,27 +32,27 @@ TEST(Status, StreamOperator) {
     {
         auto result = testing::AssertionSuccess();
         result << Status::OK();
-        ASSERT_STREQ("OK", result.message());
+        ASSERT_STREQ("Ok: ", result.message());
     }
     {
         auto result = testing::AssertionSuccess();
         result << Status::Error("SomeError");
-        ASSERT_STREQ("SomeError", result.message());
+        ASSERT_STREQ("Error: SomeError", result.message());
     }
     {
         std::ostringstream os;
         os << Status();
-        ASSERT_EQ("OK", os.str());
+        ASSERT_EQ("Ok: ", os.str());
     }
     {
         std::ostringstream os;
         os << Status::OK();
-        ASSERT_EQ("OK", os.str());
+        ASSERT_EQ("Ok: ", os.str());
     }
     {
         std::ostringstream os;
         os << Status::Error("SomeError");
-        ASSERT_EQ("SomeError", os.str());
+        ASSERT_EQ("Error: SomeError", os.str());
     }
 }
 
@@ -69,8 +69,8 @@ TEST(Status, Copy) {
         auto copy = error;
         ASSERT_FALSE(error.ok());
         ASSERT_FALSE(copy.ok());
-        ASSERT_EQ("SomeError", error.toString());
-        ASSERT_EQ("SomeError", copy.toString());
+        ASSERT_EQ("Error: SomeError", error.toString());
+        ASSERT_EQ("Error: SomeError", copy.toString());
     }
 }
 
@@ -85,12 +85,12 @@ TEST(Status, Move) {
     {
         auto error = Status::Error("SomeError");
         ASSERT_FALSE(error.ok());
-        ASSERT_EQ("SomeError", error.toString());
+        ASSERT_EQ("Error: SomeError", error.toString());
         auto move = std::move(error);
         ASSERT_TRUE(error.ok());
-        ASSERT_EQ("OK", error.toString());
+        ASSERT_EQ("Ok: ", error.toString());
         ASSERT_FALSE(move.ok());
-        ASSERT_EQ("SomeError", move.toString());
+        ASSERT_EQ("Error: SomeError", move.toString());
     }
 }
 

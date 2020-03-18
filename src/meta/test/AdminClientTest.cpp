@@ -268,7 +268,7 @@ TEST(AdminClientTest, RetryTest) {
         folly::Baton<true, std::atomic> baton;
         client->memberChange(0, 1, HostAddr(0, 0), true).thenValue([&baton](auto&& st) {
             CHECK(!st.ok());
-            CHECK_EQ("Leader changed!", st.toString());
+            CHECK_EQ("Error: Leader changed!", st.toString());
             baton.post();
         });
         baton.wait();

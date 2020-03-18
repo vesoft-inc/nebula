@@ -146,13 +146,13 @@ TEST(NebulaCodec, decode) {
     auto empty_encoded = codec.decode("", schema);
     ASSERT_FALSE(empty_encoded.ok());
     ASSERT_FALSE(empty_encoded.status().ok());
-    ASSERT_EQ("encoded string is empty", empty_encoded.status().toString());
+    ASSERT_EQ("Error: encoded string is empty", empty_encoded.status().toString());
 
     // check empty schema
     auto empty_schema = codec.decode(encoded, nullptr);
     ASSERT_FALSE(empty_schema.ok());
     ASSERT_FALSE(empty_schema.status().ok());
-    ASSERT_EQ("schema is not set", empty_schema.status().toString());
+    ASSERT_EQ("Error: schema is not set", empty_schema.status().toString());
 }
 }  // namespace nebula
 

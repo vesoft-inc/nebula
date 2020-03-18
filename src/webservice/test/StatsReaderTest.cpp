@@ -105,7 +105,7 @@ TEST(StatsReaderTest, GetStatsTest) {
         ASSERT_TRUE(getUrl("/get_stats?stats=stat01.sum.60,stat01.avg.60,stat01.count.60,"
                                             "stat01.p99.60", resp1));
         EXPECT_EQ(std::string("stat01.sum.60=5050\nstat01.avg.60=50\nstat01.count.60=100\n"
-                              "stat01.p99.60=Invalid stats\n"), resp1);
+                              "stat01.p99.60=Error: Invalid stats\n"), resp1);
     }
 
     {
@@ -199,7 +199,7 @@ TEST(StatsReaderTest, GetHistoTest) {
         EXPECT_FALSE(StatsManager::readValue("stat02.t99.3600").ok());
         std::string resp3;
         ASSERT_TRUE(getUrl("/get_stats?stats=stat02.t99.3600", resp3));
-        EXPECT_EQ("stat02.t99.3600=Unsupported statistic method \"t99\"\n", resp3);
+        EXPECT_EQ("stat02.t99.3600=Error: Unsupported statistic method \"t99\"\n", resp3);
     }
 }
 

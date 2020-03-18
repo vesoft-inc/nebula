@@ -22,13 +22,13 @@ TEST(StatusOr, ConstructFromStatus) {
         StatusOr<std::string> result(Status::OK());
         ASSERT_FALSE(result.ok());
         ASSERT_TRUE(result.status().ok());
-        ASSERT_EQ("OK", result.status().toString());
+        ASSERT_EQ("Ok: ", result.status().toString());
     }
     {
         StatusOr<std::string> result(Status::Error("SomeError"));
         ASSERT_FALSE(result.ok());
         ASSERT_FALSE(result.status().ok());
-        ASSERT_EQ("SomeError", result.status().toString());
+        ASSERT_EQ("Error: SomeError", result.status().toString());
     }
 }
 
@@ -49,7 +49,7 @@ TEST(StatusOr, ReturnFromStatus) {
         auto result = foo();
         ASSERT_FALSE(result.ok());
         ASSERT_FALSE(result.status().ok());
-        ASSERT_EQ("SomeError", result.status().toString());
+        ASSERT_EQ("Error: SomeError", result.status().toString());
     }
     {
         auto foo = [] () -> StatusOr<std::string> {
@@ -60,7 +60,7 @@ TEST(StatusOr, ReturnFromStatus) {
         auto result = foo();
         ASSERT_FALSE(result.ok());
         ASSERT_FALSE(result.status().ok());
-        ASSERT_EQ("SomeError", result.status().toString());
+        ASSERT_EQ("Error: SomeError", result.status().toString());
     }
 }
 
@@ -131,8 +131,8 @@ TEST(StatusOr, CopyConstructFromStatus) {
     ASSERT_FALSE(result1.status().ok());
     ASSERT_FALSE(result2.ok());
     ASSERT_FALSE(result2.status().ok());
-    ASSERT_EQ("SomeError", result1.status().toString());
-    ASSERT_EQ("SomeError", result2.status().toString());
+    ASSERT_EQ("Error: SomeError", result1.status().toString());
+    ASSERT_EQ("Error: SomeError", result2.status().toString());
 }
 
 
@@ -162,8 +162,8 @@ TEST(StatusOr, CopyAssignFromStatus) {
     ASSERT_FALSE(result1.status().ok());
     ASSERT_FALSE(result2.ok());
     ASSERT_FALSE(result2.status().ok());
-    ASSERT_EQ("SomeError", result1.status().toString());
-    ASSERT_EQ("SomeError", result2.status().toString());
+    ASSERT_EQ("Error: SomeError", result1.status().toString());
+    ASSERT_EQ("Error: SomeError", result2.status().toString());
 }
 
 
@@ -191,7 +191,7 @@ TEST(StatusOr, MoveConstructFromStatus) {
     ASSERT_FALSE(result1.ok());
     ASSERT_FALSE(result2.ok());
     ASSERT_FALSE(result2.status().ok());
-    ASSERT_EQ("SomeError", result2.status().toString());
+    ASSERT_EQ("Error: SomeError", result2.status().toString());
 }
 
 
@@ -219,7 +219,7 @@ TEST(StatusOr, MoveAssignFromStatus) {
     ASSERT_FALSE(result1.ok());
     ASSERT_FALSE(result2.ok());
     ASSERT_FALSE(result2.status().ok());
-    ASSERT_EQ("SomeError", result2.status().toString());
+    ASSERT_EQ("Error: SomeError", result2.status().toString());
 }
 
 
@@ -243,7 +243,7 @@ TEST(StatusOr, AssignFromStatus) {
         result = Status::Error("SomeError");
         ASSERT_FALSE(result.ok());
         ASSERT_FALSE(result.status().ok());
-        ASSERT_EQ("SomeError", result.status().toString());
+        ASSERT_EQ("Error: SomeError", result.status().toString());
     }
     {
         StatusOr<std::string> result;
@@ -256,7 +256,7 @@ TEST(StatusOr, AssignFromStatus) {
         result = status;
         ASSERT_FALSE(result.ok());
         ASSERT_FALSE(result.status().ok());
-        ASSERT_EQ("SomeError", result.status().toString());
+        ASSERT_EQ("Error: SomeError", result.status().toString());
     }
     {
         StatusOr<std::string> result;
@@ -271,7 +271,7 @@ TEST(StatusOr, AssignFromStatus) {
         ASSERT_TRUE(status.ok());
         ASSERT_FALSE(result.ok());
         ASSERT_FALSE(result.status().ok());
-        ASSERT_EQ("SomeError", result.status().toString());
+        ASSERT_EQ("Error: SomeError", result.status().toString());
     }
 }
 

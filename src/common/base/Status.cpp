@@ -21,26 +21,51 @@ Status::Status(Code code, folly::StringPiece msg) {
 
 
 std::string Status::toString() const {
-    if (code() == kOk) {
-        return "OK";
-    }
-    char tmp[64];
-    const char *str;
+    std::string errMsg;
+    errMsg.reserve(128);
+#define ERROR_TEMPLATE(err) \
+    case k##err: { errMsg += (#err  ": ");} \
+    break;
+
     switch (code()) {
-        case kError:
-            str = "";
-            break;
-        case kSyntaxError:
-            str = "SyntaxError: ";
-            break;
-        default:
+        // OK
+        ERROR_TEMPLATE(Ok)
+        ERROR_TEMPLATE(Inserted)
+        // 1xx, for genral errors
+        ERROR_TEMPLATE(Error)
+        ERROR_TEMPLATE(NoSuchFile)
+        ERROR_TEMPLATE(NotSupported)
+        // 2xx, for grah engine errors
+        ERROR_TEMPLATE(SyntaxError)
+        ERROR_TEMPLATE(StatementEmpty)
+        // 3xx, for stoage engine errors
+        ERROR_TEMPLATE(KeyNotFound)
+        // 4xx, for met service errors
+        ERROR_TEMPLATE(SpaceNotFound)
+        ERROR_TEMPLATE(HostNotFound)
+        ERROR_TEMPLATE(TagNotFound)
+        ERROR_TEMPLATE(EdgeNotFound)
+        ERROR_TEMPLATE(UserNotFound)
+        ERROR_TEMPLATE(LeaderChanged)
+        ERROR_TEMPLATE(Balanced)
+        ERROR_TEMPLATE(IndexNotFound)
+        ERROR_TEMPLATE(PartNotFound)
+        // 5xx for useror permission error
+        ERROR_TEMPLATE(PermissionError)
+#undef ERROR_TEMPLATE
+        default: {
+            char tmp[64];
             snprintf(tmp, sizeof(tmp), "Unknown error(%hu): ", static_cast<uint16_t>(code()));
-            str = tmp;
+            errMsg += tmp;
             break;
+        }
     }
-    std::string result(str);
-    result.append(&state_[kHeaderSize], size());
-    return result;
+    if (ok()) {
+        // nullptr as OK too
+        return errMsg;
+    }
+    errMsg.append(&state_[kHeaderSize], size());
+    return errMsg;
 }
 
 
