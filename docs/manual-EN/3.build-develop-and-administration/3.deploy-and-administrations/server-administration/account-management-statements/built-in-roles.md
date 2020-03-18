@@ -3,9 +3,8 @@
 **Nebula Graph** provides the following roles:
 
 - God
-  - The initial user similar to the root in Linux.
-  - Create/delete access to spaces.
-  - Read/write access to both the schema and data in the space.
+  - The initial root user similar to the root in Linux.
+  - All the operation access.
 - Admin
   - The administration user.
   - Read/write access to both the schema and data limited to its authorized space.
@@ -23,74 +22,17 @@ A user who has no assigned roles will not have any accesses to the space. A user
 
 The set of executor prescribed by each role are described below.
 
-| Operation | God | Admin | DBA | User | Guest |
-| --- | --- | --- | --- | --- | --- |
-| **kGo** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **kSet** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **kPipe** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **kUse** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **kMatch** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **kAssignment** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **kCreateTag** | ✅ | ✅ | ✅ |  |  |
-| **kAlterTag** | ✅ | ✅ | ✅ |  |  |
-| **kCreateEdge** | ✅ | ✅ | ✅ |  |  |
-| **kAlterEdge** | ✅ | ✅ | ✅ |  |  |
-| **kDescribeTag** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **kDescribeEdge** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **kCreateTagIndex** | ✅ | ✅ | ✅ |  |  |
-| **kCreateEdgeIndex** | ✅ | ✅ | ✅ |  |  |
-| **kDropTagIndex** | ✅ | ✅ | ✅ |  |  |
-| **kDropEdgeIndex** | ✅ | ✅ | ✅ |  |  |
-| **kDescribeTagIndex** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **kDescribeEdgeIndex** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **kBuildTagIndex** | ✅ | ✅ | ✅ | ✅ |  |
-| **kBuildEdgeIndex** | ✅ | ✅ | ✅ | ✅ |  |
-| **kDropTag** | ✅ | ✅ | ✅ |  |  |
-| **kDropEdge** | ✅ | ✅ | ✅ |  |  |
-| **kInsertVertex** | ✅ | ✅ | ✅ | ✅ |  |
-| **kUpdateVertex** | ✅ | ✅ | ✅ | ✅ |  |
-| **kInsertEdge** | ✅ | ✅ | ✅ | ✅ |  |
-| **kUpdateEdge** | ✅ | ✅ | ✅ | ✅ |  |
-| **kShow** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **kDeleteVertex** | ✅ | ✅ | ✅ | ✅ |  |
-| **kDeleteEdges** | ✅ | ✅ | ✅ | ✅ |  |
-| **kLookup** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **kCreateSpace** | ✅ |  |  |  |  |
-| **kDropSpace** | ✅ |  |  |  |  |
-| **kDescribeSpace** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **kYield** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **kCreateUser** | ✅ | ✅ |  |  |  |
-| **kDropUser** | ✅ | ✅ |  |  |  |
-| **kAlterUser** | ✅ | ✅ |  |  |  |
-| **kGrant** | ✅ | ✅ |  |  |  |
-| **kRevoke** | ✅ | ✅ |  |  |  |
-| **kChangePassword** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **kDownload** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **kIngest** | ✅ | ✅ | ✅ | ✅ |  |
-| **kOrderBy** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **kConfig** | ✅ | ✅ | ✅ |  |  |
-| **kFetchVertices** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **kFetchEdges** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **kBalance** | ✅ | ✅ | ✅ |  |  |
-| **kFindPath** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **kLimit** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **KGroupBy** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **kReturn** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **kCreateSnapshot** | ✅ | ✅ | ✅ |  |  |
-| **kDropSnapshot** | ✅ | ✅ | ✅ |  |  |
-| **kAdmin** | ✅ | ✅ | ✅ |  |  |
-
 Divided by operation permissions.
 
-- _Read space_: kUse, kDescribeSpace
-- _Write space_: kCreateSpace, kDropSpace, kCreateSnapshot, kDropSnapshot,  kBalance, kAdmin, kConfig, kIngest, kDownload
-- _Read schema_: kDescribeTag, kDescribeEdge,  kDescribeTagIndex, kDescribeEdgeIndex
-- _Write schema_: kCreateTag, kAlterTag, kCreateEdge,  kAlterEdge, kDropTag, kDropEdge, kCreateTagIndex, kCreateEdgeIndex, kDropTagIndex, kDropEdgeIndex,
+- _Read space_: Use, DescribeSpace
+- _Write space_: CreateSpace, DropSpace, CreateSnapshot, DropSnapshot, Balance, Admin, Config, Ingest, Download
+- _Read schema_: DescribeTag, DescribeEdge,  DescribeTagIndex, DescribeEdgeIndex
+- _Write schema_: CreateTag, AlterTag, CreateEdge,  AlterEdge, DropTag, DropEdge, CreateTagIndex, CreateEdgeIndex, DropTagIndex, DropEdgeIndex
 - _Read user_:
-- _Write user_: kCreateUser, kDropUser, kAlterUser, kGrant, kRevoke
-- _Read data_: kGo , kSet, kPipe, kMatch, kAssignment, kLookup, kYield, kOrderBy, kFetchVertices, kFind, kFetchEdges, kFindPath, kLimit, KGroupBy, kReturn
-- _Write data_: kBuildTagIndex, kBuildEdgeIndex, kInsertVertex, kUpdateVertex, kInsertEdge, kUpdateEdge, kDeleteVertex, kDeleteEdges
-- _Special operation_: kShow, kChangePassword
+- _Write user_: CreateUser, DropUser, AlterUser, Grant, Revoke
+- _Read data_: Go, Set, Pipe, Match, Assignment, Lookup, Yield, OrderBy, FetchVertices, Find, FetchEdges, FindPath, Limit, GroupBy, Return
+- _Write data_: BuildTagIndex, BuildEdgeIndex, InsertVertex, UpdateVertex, InsertEdge, UpdateEdge, DeleteVertex, DeleteEdges
+- _Special operation_: Show, ChangePassword
 
 Divided by operations.
 

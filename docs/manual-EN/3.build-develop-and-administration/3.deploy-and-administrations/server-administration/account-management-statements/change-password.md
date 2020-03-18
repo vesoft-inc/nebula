@@ -4,4 +4,4 @@
 CHANGE PASSWORD <user_name> FROM <old_psw> TO <new-psw>
 ```
 
-The `CHANGE PASSWORD` statement changes a password to a **Nebula Graph** user account. The old password is required in addition to the new one. Changing the password for a named account requires the `CREATE USER` privilege. Changing the password for yourself requires no special privileges.
+The `CHANGE PASSWORD` statement changes a password to a **Nebula Graph** user account. The old password is required in addition to the new one.
