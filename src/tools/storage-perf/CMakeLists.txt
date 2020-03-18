@@ -38,6 +38,8 @@ install(
         storage_perf
     DESTINATION
         bin
+    COMPONENT
+        tool
 )
 
 nebula_add_executable(
@@ -80,4 +82,6 @@ install(
         storage_integrity
     DESTINATION
         bin
+    COMPONENT
+        tool
 )

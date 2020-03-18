@@ -37,5 +37,7 @@ install(
         simple_kv_verify
     DESTINATION
         bin
+    COMPONENT
+        tool
 )
 
