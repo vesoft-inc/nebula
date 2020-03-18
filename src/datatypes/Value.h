@@ -81,6 +81,8 @@ struct Value {
     Value(double&& v);              // NOLINT
     Value(const std::string& v);    // NOLINT
     Value(std::string&& v);         // NOLINT
+    Value(const char* v);           // NOLINT
+    Value(folly::StringPiece v);    // NOLINT
     Value(const Date& v);           // NOLINT
     Value(Date&& v);                // NOLINT
     Value(const DateTime& v);       // NOLINT
@@ -127,6 +129,8 @@ struct Value {
     void setFloat(double&& v);
     void setStr(const std::string& v);
     void setStr(std::string&& v);
+    void setStr(const char* v);
+    void setStr(folly::StringPiece v);
     void setDate(const Date& v);
     void setDate(Date&& v);
     void setDateTime(const DateTime& v);
@@ -241,6 +245,8 @@ private:
     // String value
     void setS(const std::string& v);
     void setS(std::string&& v);
+    void setS(const char* v);
+    void setS(folly::StringPiece v);
     // Date value
     void setD(const Date& v);
     void setD(Date&& v);

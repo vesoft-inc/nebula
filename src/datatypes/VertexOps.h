@@ -18,6 +18,194 @@
 namespace apache {
 namespace thrift {
 
+/**************************************
+ *
+ * Ops for class Tag
+ *
+ *************************************/
+namespace detail {
+
+template<>
+struct TccStructTraits<nebula::Tag> {
+    static void translateFieldName(
+            FOLLY_MAYBE_UNUSED folly::StringPiece _fname,
+            FOLLY_MAYBE_UNUSED int16_t& fid,
+            FOLLY_MAYBE_UNUSED apache::thrift::protocol::TType& _ftype) {
+        if (_fname == "name") {
+            fid = 1;
+            _ftype = apache::thrift::protocol::T_STRING;
+        } else if (_fname == "props") {
+            fid = 2;
+            _ftype = apache::thrift::protocol::T_MAP;
+        }
+    }
+};
+
+}  // namespace detail
+
+
+template <>
+inline void Cpp2Ops<nebula::Tag>::clear(nebula::Tag* obj) {
+    return obj->clear();
+}
+
+
+template <>
+inline constexpr apache::thrift::protocol::TType Cpp2Ops<nebula::Tag>::thriftType() {
+    return apache::thrift::protocol::T_STRUCT;
+}
+
+
+template <>
+template <class Protocol>
+uint32_t Cpp2Ops<nebula::Tag>::write(Protocol* proto, nebula::Tag const* obj) {
+    uint32_t xfer = 0;
+    xfer += proto->writeStructBegin("Tag");
+
+    xfer += proto->writeFieldBegin("name", apache::thrift::protocol::T_STRING, 1);
+    xfer += proto->writeBinary(obj->name);
+    xfer += proto->writeFieldEnd();
+
+    xfer += proto->writeFieldBegin("props", apache::thrift::protocol::T_MAP, 2);
+    xfer += detail::pm::protocol_methods<
+            type_class::map<type_class::binary, type_class::structure>,
+            std::unordered_map<std::string, nebula::Value>
+        >::write(*proto, obj->props);
+    xfer += proto->writeFieldEnd();
+
+    xfer += proto->writeFieldStop();
+    xfer += proto->writeStructEnd();
+    return xfer;
+}
+
+
+template <>
+template <class Protocol>
+void Cpp2Ops<nebula::Tag>::read(Protocol* proto, nebula::Tag* obj) {
+    apache::thrift::detail::ProtocolReaderStructReadState<Protocol> readState;
+
+    readState.readStructBegin(proto);
+
+    using apache::thrift::TProtocolException;
+
+    if (UNLIKELY(!readState.advanceToNextField(proto, 0, 1, protocol::T_STRING))) {
+        goto _loop;
+    }
+
+_readField_name:
+    {
+        proto->readBinary(obj->name);
+    }
+
+    if (UNLIKELY(!readState.advanceToNextField(proto, 1, 2, protocol::T_MAP))) {
+        goto _loop;
+    }
+
+_readField_props:
+    {
+        obj->props = std::unordered_map<std::string, nebula::Value>();
+        detail::pm::protocol_methods<
+                type_class::map<type_class::binary, type_class::structure>,
+                std::unordered_map<std::string, nebula::Value>
+            >::read(*proto, obj->props);
+    }
+
+    if (UNLIKELY(!readState.advanceToNextField(proto, 2, 0, protocol::T_STOP))) {
+        goto _loop;
+    }
+
+_end:
+    readState.readStructEnd(proto);
+
+    return;
+
+_loop:
+    if (readState.fieldType == apache::thrift::protocol::T_STOP) {
+        goto _end;
+    }
+
+    if (proto->kUsesFieldNames()) {
+        detail::TccStructTraits<nebula::Tag>::translateFieldName(readState.fieldName(),
+                                                                 readState.fieldId,
+                                                                 readState.fieldType);
+    }
+
+    switch (readState.fieldId) {
+        case 1:
+        {
+            if (LIKELY(readState.fieldType == apache::thrift::protocol::T_STRING)) {
+                goto _readField_name;
+            } else {
+                goto _skip;
+            }
+        }
+        case 2:
+        {
+            if (LIKELY(readState.fieldType == apache::thrift::protocol::T_MAP)) {
+                goto _readField_props;
+            } else {
+                goto _skip;
+            }
+        }
+        default:
+        {
+_skip:
+            proto->skip(readState.fieldType);
+            readState.readFieldEnd(proto);
+            readState.readFieldBeginNoInline(proto);
+            goto _loop;
+        }
+    }
+}
+
+
+template <>
+template <class Protocol>
+uint32_t Cpp2Ops<nebula::Tag>::serializedSize(Protocol const* proto,
+                                              nebula::Tag const* obj) {
+    uint32_t xfer = 0;
+    xfer += proto->serializedStructSize("Tag");
+
+    xfer += proto->serializedFieldSize("name", apache::thrift::protocol::T_STRING, 1);
+    xfer += proto->serializedSizeBinary(obj->name);
+
+    xfer += proto->serializedFieldSize("props", apache::thrift::protocol::T_MAP, 2);
+    xfer += detail::pm::protocol_methods<
+            type_class::map<type_class::binary, type_class::structure>,
+            std::unordered_map<std::string, nebula::Value>
+        >::serializedSize<false>(*proto, obj->props);
+
+    xfer += proto->serializedSizeStop();
+    return xfer;
+}
+
+
+template <>
+template <class Protocol>
+uint32_t Cpp2Ops<nebula::Tag>::serializedSizeZC(Protocol const* proto,
+                                                nebula::Tag const* obj) {
+    uint32_t xfer = 0;
+    xfer += proto->serializedStructSize("Tag");
+
+    xfer += proto->serializedFieldSize("name", apache::thrift::protocol::T_STRING, 1);
+    xfer += proto->serializedSizeZCBinary(obj->name);
+
+    xfer += proto->serializedFieldSize("props", apache::thrift::protocol::T_MAP, 2);
+    xfer += detail::pm::protocol_methods<
+            type_class::map<type_class::binary, type_class::structure>,
+            std::unordered_map<std::string, nebula::Value>
+        >::serializedSize<false>(*proto, obj->props);
+
+    xfer += proto->serializedSizeStop();
+    return xfer;
+}
+
+
+/**************************************
+ *
+ * Ops for class Vertex
+ *
+ *************************************/
 namespace detail {
 
 template <>

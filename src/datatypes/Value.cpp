@@ -294,6 +294,14 @@ Value::Value(std::string&& v) {
     setS(std::move(v));
 }
 
+Value::Value(const char* v) {
+    setS(v);
+}
+
+Value::Value(folly::StringPiece v) {
+    setS(v);
+}
+
 Value::Value(const Date& v) {
     setD(v);
 }
@@ -440,6 +448,16 @@ void Value::setStr(const std::string& v) {
 void Value::setStr(std::string&& v) {
     clear();
     setS(std::move(v));
+}
+
+void Value::setStr(const char* v) {
+    clear();
+    setS(v);
+}
+
+void Value::setStr(folly::StringPiece v) {
+    clear();
+    setS(v);
 }
 
 void Value::setDate(const Date& v) {
@@ -1126,6 +1144,16 @@ void Value::setS(const std::string& v) {
 void Value::setS(std::string&& v) {
     type_ = Type::STRING;
     new (std::addressof(value_.sVal)) std::string(std::move(v));
+}
+
+void Value::setS(const char* v) {
+    type_ = Type::STRING;
+    new (std::addressof(value_.sVal)) std::string(v);
+}
+
+void Value::setS(folly::StringPiece v) {
+    type_ = Type::STRING;
+    new (std::addressof(value_.sVal)) std::string(v.data(), v.size());
 }
 
 void Value::setD(const Date& v) {
