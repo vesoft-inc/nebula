@@ -34,9 +34,9 @@ class AdminTask {
 public:
     AdminTask() = default;
     AdminTask(int jobId, int taskId, TCallBack cb) :
-                    jobId_(jobId),
-                    taskId_(taskId),
-                    onFinished_(cb) {}
+              jobId_(jobId),
+              taskId_(taskId),
+              onFinished_(cb) {}
     virtual ErrorOr<ResultCode, std::vector<AdminSubTask>> genSubTasks() = 0;
     virtual ~AdminTask() {}
 
@@ -53,6 +53,8 @@ public:
     }
 
     virtual void finish(ResultCode rc) {
+        LOG(INFO) << folly::stringPrintf("job[%d], task[%d] finished, rc=[%d]",
+                                         jobId_, taskId_, static_cast<int>(rc));
         onFinished_(rc);
     }
 

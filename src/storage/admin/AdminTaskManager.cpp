@@ -60,10 +60,13 @@ void AdminTaskManager::shutdown() {
 }
 
 void AdminTaskManager::runTask(AdminTask& task) {
-    LOG(ERROR) << "runTask()";
+    LOG(INFO) << folly::stringPrintf("runTask(%d, %d)",
+                                     task.getJobId(), task.getTaskId());
     auto errOrSubTasks = task.genSubTasks();
     if (!nebula::ok(errOrSubTasks)) {
-        LOG(ERROR)  << __PRETTY_FUNCTION__ << " generate sub tasks failed ";
+        LOG(ERROR)  << folly::stringPrintf("task(%d, %d) generate sub tasks failed [%d]",
+                                            task.getJobId(), task.getTaskId(),
+                                            static_cast<int>(error(errOrSubTasks)));
         task.finish(nebula::error(errOrSubTasks));
         return;
     }
@@ -74,20 +77,18 @@ void AdminTaskManager::runTask(AdminTask& task) {
     size_t concurrency = std::min(subTasks_.size(), (size_t)subTaskLimit_);
     subTaskIndex_ = 0;
 
-    LOG(ERROR) << "use " << concurrency << " thread to run " << subTasks_.size() << " subTasks";
+    LOG(INFO) << folly::stringPrintf("run %zu sub task in %zu thread",
+                                     subTasks_.size(), concurrency);
     std::vector<std::thread> threads;
     for (size_t i = 0; i < concurrency; ++i) {
         threads.emplace_back(std::thread(&AdminTaskManager::pickSubTaskThread, this));
     }
-
-    LOG(ERROR) << "wait for all sub tasks finished";
     for (auto& t : threads) {
         t.join();
     }
 
     // maybe some task will tolerant some err code
     task.finish(subTaskStatus_);
-    LOG(ERROR) << "exit " << __PRETTY_FUNCTION__;
 }
 
 void AdminTaskManager::pickTaskThread() {
@@ -108,7 +109,6 @@ void AdminTaskManager::pickTaskThread() {
 }
 
 void AdminTaskManager::pickSubTaskThread() {
-    LOG(ERROR) << "enter " << __PRETTY_FUNCTION__;
     auto& currTask = *taskList_.begin();
     size_t idx = subTaskIndex_.fetch_add(1);
 
@@ -121,7 +121,6 @@ void AdminTaskManager::pickSubTaskThread() {
         }
         idx = subTaskIndex_.fetch_add(1);
     }
-    LOG(ERROR) << "exit " << __PRETTY_FUNCTION__;
 }
 
 }  // namespace storage

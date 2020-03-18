@@ -1,11 +1,10 @@
-/* Copyright (c) 2019 vesoft inc. All rights reserved.
+/* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "meta/processors/jobMan/SimpleConcurrentJobExecutor.h"
-#include <bits/stdint-intn.h>
 #include "meta/MetaServiceUtils.h"
 #include "meta/processors/Common.h"
 #include "meta/processors/admin/AdminClient.h"

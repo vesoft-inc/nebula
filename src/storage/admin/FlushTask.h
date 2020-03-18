@@ -28,7 +28,6 @@ public:
               spaceId_(spaceId) {}
 
     ErrorOr<ResultCode, std::vector<AdminSubTask>> genSubTasks() override;
-    // ResultCode subTask(nebula::kvstore::KVEngine* engine);
 
 private:
     kvstore::NebulaStore* store_;

@@ -26,11 +26,6 @@ FlushTask::genSubTasks() {
 
     auto space = nebula::value(errOrSpace);
 
-    // using FuncObj = std::function<ResultCode()>;
-    // for (auto& engine : space->engines_) {
-    //     FuncObj obj = std::bind(&FlushTask::subTask, this, engine.get());
-    //     ret.emplace_back(obj);
-    // }
     ret.emplace_back([space = space](){
         for (auto& engine : space->engines_) {
             auto code = engine->flush();
@@ -42,10 +37,6 @@ FlushTask::genSubTasks() {
     });
     return ret;
 }
-
-// ResultCode CompactTask::subTask(nebula::kvstore::KVEngine* engine) {
-//     return engine->compact();
-// }
 
 }  // namespace storage
 }  // namespace nebula
