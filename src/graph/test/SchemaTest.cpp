@@ -406,20 +406,6 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         }
         ASSERT_TRUE(verifyResult(resp, expected));
     }
-    // Test same prop name
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "CREATE TAG samePropTag(name string, name int)";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
-    }
-    // Test same prop name
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "CREATE EDGE samePropEdge(name string, name int)";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
-    }
     // Test create tag without prop
     {
         cpp2::ExecutionResponse resp;
@@ -464,6 +450,19 @@ TEST_F(SchemaTest, TestTagAndEdge) {
                             "age int, gender string, row_timestamp timestamp)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Create Tag with duplicate field
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG duplicate_tag(name string, name int)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG duplicate_tag(name string, name string)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
     // Create Tag with default value
     {
@@ -535,7 +534,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
     // Test unreserved keyword
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE TAG upper(name string, EMAIL string, "
+        std::string query = "CREATE TAG upper(name string, ACCOUNT string, "
                             "age int, gender string, row_timestamp timestamp)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -548,7 +547,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
 
         std::vector<uniform_tuple_t<std::string, 2>> expected{
             {"name", "string"},
-            {"email", "string"},
+            {"account", "string"},
             {"age", "int"},
             {"gender", "string"},
             {"row_timestamp", "timestamp"},
@@ -671,6 +670,19 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         std::string query = "CREATE EDGE buy(id int, time string)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Create Edge with duplicate field
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE EDGE duplicate_buy(time int, time string)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE EDGE duplicate_buy(time int, time int)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -1669,30 +1681,6 @@ TEST_F(SchemaTest, TTLtest) {
         std::string query = "DROP SPACE default_space";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-}
-
-TEST_F(SchemaTest, UserAdminTest) {
-    auto client = gEnv->getClient();
-    ASSERT_NE(nullptr, client);
-    // Test command is comment
-    {
-        cpp2::ExecutionResponse resp;
-        std::string cmd = "SHOW USERS";
-        auto code = client->execute(cmd, resp);
-        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string cmd = "SHOW USER test";
-        auto code = client->execute(cmd, resp);
-        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string cmd = "SHOW ROLES";
-        auto code = client->execute(cmd, resp);
-        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
 }
 

@@ -146,7 +146,7 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
         auto reader = RowReader::getEdgePropReader(this->schemaMan_,
                                                    val_,
                                                    this->spaceId_,
-                                                   edgeKey.edge_type);
+                                                   std::abs(edgeKey.edge_type));
         const auto constSchema = reader->getSchema();
         for (auto index = 0UL; index < constSchema->getNumFields(); index++) {
             auto propName = std::string(constSchema->getFieldName(index));
@@ -167,7 +167,7 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
         key_ = NebulaKeyUtils::edgeKey(partId, edgeKey.src, edgeKey.edge_type,
                                        edgeKey.ranking, edgeKey.dst, now);
         const auto constSchema = this->schemaMan_->getEdgeSchema(this->spaceId_,
-                                                                 edgeKey.edge_type);
+                                                                 std::abs(edgeKey.edge_type));
         if (constSchema == nullptr) {
             return kvstore::ResultCode::ERR_UNKNOWN;
         }
@@ -224,12 +224,14 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
         auto prop = item.get_prop();
         auto exp = Expression::decode(item.get_value());
         if (!exp.ok()) {
+            LOG(ERROR) << "Decode item expr failed";
             return std::string("");
         }
         auto vexp = std::move(exp).value();
         vexp->setContext(this->expCtx_.get());
         auto value = vexp->eval(getters);
         if (!value.ok()) {
+            LOG(ERROR) << "Eval item expr failed";
             return std::string("");
         }
         auto expValue = value.value();
@@ -264,7 +266,8 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
     }
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
     auto nVal = updater_->encode();
-    if (!indexes_.empty()) {
+    // TODO(heng) we don't update the index for reverse edge.
+    if (!indexes_.empty() && edgeKey.edge_type > 0) {
         std::unique_ptr<RowReader> reader, rReader;
         for (auto& index : indexes_) {
             auto indexId = index->get_index_id();
@@ -310,18 +313,18 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
 }
 
 
-bool UpdateEdgeProcessor::checkFilter(const PartitionID partId,
+FilterResult UpdateEdgeProcessor::checkFilter(const PartitionID partId,
                                       const cpp2::EdgeKey& edgeKey) {
     auto ret = collectEdgesProps(partId, edgeKey);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        return false;
+        return FilterResult::E_ERROR;
     }
     for (auto& tc : this->tagContexts_) {
         VLOG(3) << "partId " << partId << ", vId " << edgeKey.src
                 << ", tagId " << tc.tagId_ << ", prop size " << tc.props_.size();
         ret = collectVertexProps(partId, edgeKey.src, tc.tagId_, tc.props_);
         if (ret != kvstore::ResultCode::SUCCEEDED) {
-            return false;
+            return FilterResult::E_ERROR;
         }
     }
 
@@ -354,12 +357,16 @@ bool UpdateEdgeProcessor::checkFilter(const PartitionID partId,
 
     if (this->exp_ != nullptr) {
         auto filterResult = this->exp_->eval(getters);
-        if (!filterResult.ok() || !Expression::asBool(filterResult.value())) {
+        if (!filterResult.ok()) {
+            VLOG(1) << "Invalid filter expression";
+            return FilterResult::E_ERROR;
+        }
+        if (!Expression::asBool(filterResult.value())) {
             VLOG(1) << "Filter skips the update";
-            return false;
+            return FilterResult::E_FILTER_OUT;
         }
     }
-    return true;
+    return FilterResult::SUCCEEDED;
 }
 
 
@@ -405,6 +412,7 @@ cpp2::ErrorCode UpdateEdgeProcessor::checkAndBuildContexts(
         edgePropExp.setContext(this->expCtx_.get());
         auto status = edgePropExp.prepare();
         if (!status.ok() || !this->checkExp(&edgePropExp)) {
+            VLOG(1) << "Invalid item expression!";
             return cpp2::ErrorCode::E_INVALID_UPDATER;
         }
         auto exp = Expression::decode(item.get_value());
@@ -457,10 +465,21 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
     CHECK_NOTNULL(kvstore_);
     this->kvstore_->asyncAtomicOp(this->spaceId_, partId,
         [partId, edgeKey, this] () -> std::string {
-            if (checkFilter(partId, edgeKey)) {
+            // TODO(shylock) the AtomicOP can't return various error
+            // so put it in the processor
+            filterResult_ = checkFilter(partId, edgeKey);
+            switch (filterResult_) {
+            case FilterResult::SUCCEEDED : {
                 return updateAndWriteBack(partId, edgeKey);
             }
-            return std::string("");
+            case FilterResult::E_FILTER_OUT:
+            // fallthrough
+            case FilterResult::E_ERROR:
+            // fallthrough
+            default: {
+                return "";
+            }
+            }
         },
         [this, partId, edgeKey, req] (kvstore::ResultCode code) {
             while (true) {
@@ -478,7 +497,18 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
                     handleLeaderChanged(this->spaceId_, partId);
                     break;
                 }
-                this->pushResultCode(to(code), partId);
+                if (code == kvstore::ResultCode::ERR_ATOMIC_OP_FAILED
+                    && filterResult_ == FilterResult::E_FILTER_OUT) {
+                    // https://github.com/vesoft-inc/nebula/issues/1888
+                    // Only filter out so we still return the data
+                    onProcessFinished(req.get_return_columns().size());
+                    this->pushResultCode(cpp2::ErrorCode::E_FILTER_OUT, partId);
+                } else if (code == kvstore::ResultCode::ERR_ATOMIC_OP_FAILED
+                    && filterResult_ == FilterResult::E_ERROR) {
+                    this->pushResultCode(cpp2::ErrorCode::E_INVALID_FILTER, partId);
+                } else {
+                    this->pushResultCode(to(code), partId);
+                }
                 break;
             }
             this->onFinished();

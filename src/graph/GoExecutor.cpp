@@ -458,7 +458,7 @@ void GoExecutor::stepOut() {
     auto spaceId = ectx()->rctx()->session()->space();
     auto status = getStepOutProps();
     if (!status.ok()) {
-        doError(Status::Error("Get step out props failed"));
+        doError(std::move(status).status());
         return;
     }
     auto returns = status.value();
@@ -471,10 +471,10 @@ void GoExecutor::stepOut() {
     VLOG(1) << "edge type size: " << edgeTypes_.size()
             << " return cols: " << returns.size();
     auto future  = ectx()->getStorageClient()->getNeighbors(spaceId,
-                                                   starts_,
-                                                   edgeTypes_,
-                                                   filterPushdown,
-                                                   std::move(returns));
+                                                            starts_,
+                                                            edgeTypes_,
+                                                            filterPushdown,
+                                                            std::move(returns));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&result) {
         auto completeness = result.completeness();

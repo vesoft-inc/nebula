@@ -78,7 +78,7 @@ AdHocSchemaManager::getTagSchema(GraphSpaceID space,
     }
 }
 
-StatusOr<SchemaVer> AdHocSchemaManager::getNewestTagSchemaVer(GraphSpaceID space, TagID tag) {
+StatusOr<SchemaVer> AdHocSchemaManager::getLatestTagSchemaVersion(GraphSpaceID space, TagID tag) {
     folly::RWSpinLock::ReadHolder rh(tagLock_);
     auto it = tagSchemas_.find(std::make_pair(space, tag));
     if (it == tagSchemas_.end() || it->second.empty()) {
@@ -122,7 +122,8 @@ AdHocSchemaManager::getEdgeSchema(GraphSpaceID space,
     }
 }
 
-StatusOr<SchemaVer> AdHocSchemaManager::getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) {
+StatusOr<SchemaVer> AdHocSchemaManager::getLatestEdgeSchemaVersion(GraphSpaceID space,
+                                                                   EdgeType edge) {
     folly::RWSpinLock::ReadHolder rh(edgeLock_);
     auto it = edgeSchemas_.find(std::make_pair(space, edge));
     if (it == edgeSchemas_.end() || it->second.empty()) {

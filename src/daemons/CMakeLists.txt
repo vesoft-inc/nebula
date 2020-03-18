@@ -32,6 +32,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:concurrent_obj>
+        $<TARGET_OBJECTS:encryption_obj>
     LIBRARIES
         proxygenhttpserver
         proxygenlib
@@ -120,6 +121,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:charset_obj>
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:encryption_obj>
     LIBRARIES
         proxygenhttpserver
         proxygenlib
@@ -131,8 +133,26 @@ nebula_add_executable(
 install(
     TARGETS
         nebula-graphd
+    DESTINATION
+        bin
+    COMPONENT
+        graph
+)
+
+install(
+    TARGETS
         nebula-storaged
+    DESTINATION
+        bin
+    COMPONENT
+        storage
+)
+
+install(
+    TARGETS
         nebula-metad
     DESTINATION
         bin
+    COMPONENT
+        meta
 )

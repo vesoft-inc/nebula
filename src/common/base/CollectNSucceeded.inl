@@ -28,6 +28,7 @@ folly::Future<SucceededResultList<FutureIter>> collectNSucceeded(
         ResultEval eval;
         Result results;
         std::atomic<size_t> numCompleted = {0};
+        std::atomic<size_t> nSucceeded = {0};
         folly::Promise<Result> promise;
         size_t nTotal;
     };
@@ -51,11 +52,13 @@ folly::Future<SucceededResultList<FutureIter>> collectNSucceeded(
         first->setCallback_([n, ctx, index] (
                 folly::Try<FutureReturnType<FutureIter>>&& t) {
             if (!ctx->promise.isFulfilled()) {
-                if (!t.hasException() && ctx->eval(index, t.value())) {
+                if (!t.hasException()) {
+                    if (ctx->eval(index, t.value())) {
+                        ++ctx->nSucceeded;
+                    }
                     ctx->results.emplace_back(index, std::move(t.value()));
                 }
-                if ((++ctx->numCompleted) == ctx->nTotal ||
-                    ctx->results.size() == n) {
+                if ((++ctx->numCompleted) == ctx->nTotal || ctx->nSucceeded == n) {
                     // Done
                     VLOG(2) << "Set Value [completed="
                             << ctx->numCompleted

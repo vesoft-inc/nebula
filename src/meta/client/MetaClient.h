@@ -81,6 +81,7 @@ using SpaceAllEdgeMap = std::unordered_map<GraphSpaceID, std::vector<std::string
 // get leader host via spaceId and partId
 using LeaderMap = std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>;
 
+using IndexStatus = std::tuple<std::string, std::string, std::string>;
 
 struct ConfigItem {
     ConfigItem() {}
@@ -284,7 +285,10 @@ public:
     listTagIndexes(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<bool>>
-    buildTagIndex(GraphSpaceID spaceID, std::string name);
+    rebuildTagIndex(GraphSpaceID spaceID, std::string name, bool isOffline);
+
+    folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>>
+    listTagIndexStatus(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<IndexID>>
     createEdgeIndex(GraphSpaceID spaceID,
@@ -304,7 +308,10 @@ public:
     listEdgeIndexes(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<bool>>
-    buildEdgeIndex(GraphSpaceID spaceId, std::string name);
+    rebuildEdgeIndex(GraphSpaceID spaceId, std::string name, bool isOffline);
+
+    folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>>
+    listEdgeIndexStatus(GraphSpaceID spaceId);
 
     // Operations for custom kv
     folly::Future<StatusOr<bool>>
@@ -325,6 +332,34 @@ public:
 
     folly::Future<StatusOr<bool>>
     removeRange(std::string segment, std::string start, std::string end);
+
+    // Operations for users.
+    folly::Future<StatusOr<bool>>
+    createUser(std::string account, std::string password, bool ifNotExists);
+
+    folly::Future<StatusOr<bool>>
+    dropUser(std::string account, bool ifExists);
+
+    folly::Future<StatusOr<bool>>
+    alterUser(std::string account, std::string password);
+
+    folly::Future<StatusOr<bool>>
+    grantToUser(nebula::cpp2::RoleItem roleItem);
+
+    folly::Future<StatusOr<bool>>
+    revokeFromUser(nebula::cpp2::RoleItem roleItem);
+
+    folly::Future<StatusOr<std::vector<std::string>>>
+    listUsers();
+
+    folly::Future<StatusOr<std::vector<nebula::cpp2::RoleItem>>>
+    listRoles(std::string space);
+
+    folly::Future<StatusOr<bool>>
+    changePassword(std::string account, std::string newPwd, std::string oldPwd);
+
+    folly::Future<StatusOr<bool>>
+    authCheck(std::string account, std::string password);
 
     // Operations for admin
     folly::Future<StatusOr<int64_t>>
@@ -365,17 +400,16 @@ public:
     StatusOr<std::string>
     getTagNameByIdFromCache(const GraphSpaceID& space, const TagID& tagId);
 
+    StatusOr<SchemaVer> getLatestTagVersionFromCache(const GraphSpaceID& space, const TagID& tagId);
+
+    StatusOr<SchemaVer> getLatestEdgeVersionFromCache(const GraphSpaceID& space,
+                                                      const EdgeType& edgeType);
+
     StatusOr<EdgeType>
     getEdgeTypeByNameFromCache(const GraphSpaceID& space, const std::string& name);
 
     StatusOr<std::string>
     getEdgeNameByTypeFromCache(const GraphSpaceID& space, const EdgeType edgeType);
-
-    StatusOr<SchemaVer>
-    getNewestTagVerFromCache(const GraphSpaceID& space, const TagID& tagId);
-
-    StatusOr<SchemaVer>
-    getNewestEdgeVerFromCache(const GraphSpaceID& space, const EdgeType& edgeType);
 
     StatusOr<std::vector<std::string>> getAllEdgeFromCache(const GraphSpaceID& space);
 
