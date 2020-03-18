@@ -1,6 +1,6 @@
 # TTL (time-to-live)
 
-**Nebula Graph** 支持 **TTL** ，在一定时间后自动从数据库中删除点或者边。过期数据会在下次 compaction 时被删除，在下次 compaction 前，query 会过滤掉过期的点和边。
+**Nebula Graph** 支持 **TTL** ，在一定时间后自动从数据库中删除点或者边。过期数据会在下次 compaction 时被删除，在下次 compaction 前，query 会过滤掉过期的点和边，这些 TTL 的点和边对外不可见。
 
 ttl 功能需要 `ttl_col` 和 `ttl_duration` 一起使用。自从 `ttl_col` 指定的字段的值起，经过 `ttl_duration` 指定的秒数后，该条数据过期。即，到期阈值是 `ttl_col` 指定的 property 的值加上 `ttl_duration` 设置的秒数。其中 `ttl_col` 指定的字段的类型需为 integer 或者 timestamp。
 
@@ -83,7 +83,7 @@ nebula> ALTER TAG t1 ttl_duration = 0; -- keep the ttl but the data never expire
 
 ## TTL 使用注意事项
 
-- 如果字段包含 TTL，则不支持对该字段的更改操作。
+- 如果包含 `ttl_col` 字段，则不支持对该字段的更改操作。
 
 ``` ngql
 nebula> CREATE TAG t1(a int, b int, c string) ttl_duration = 100, ttl_col = "a";
