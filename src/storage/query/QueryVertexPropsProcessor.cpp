@@ -88,9 +88,6 @@ kvstore::ResultCode QueryVertexPropsProcessor::collectVertexProps(
             // Already found the latest version.
             continue;
         }
-        // Build TTL info
-        buildTagTTLInfo(tagId);
-
         VLOG(3) << "Found tag " << tagId << " for vId" << vId;
 
         auto schema = this->schemaMan_->getTagSchema(spaceId_, tagId);
@@ -101,7 +98,7 @@ kvstore::ResultCode QueryVertexPropsProcessor::collectVertexProps(
         }
         auto reader = RowReader::getTagPropReader(this->schemaMan_, val, spaceId_, tagId);
         // Check if ttl data expired
-        auto retTTL = getTagTTLInfo(tagId);
+        auto retTTL = getTagTTLInfo(tagId, true);
         if (retTTL.has_value() && checkDataExpiredForTTL(schema.get(),
                                                          reader.get(),
                                                          retTTL.value().first,

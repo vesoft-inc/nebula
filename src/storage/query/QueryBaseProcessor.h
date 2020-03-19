@@ -118,11 +118,11 @@ protected:
 
     bool checkExp(const Expression* exp);
 
-    void buildTagTTLInfo(TagID tagId);
-
     void buildTTLInfoAndRespSchema();
 
-    folly::Optional<std::pair<std::string, int64_t>> getTagTTLInfo(TagID tagId);
+    // addTagInfo is true when fetch prop on * vertexID
+    folly::Optional<std::pair<std::string, int64_t>>
+    getTagTTLInfo(TagID tagId, bool addTagInfo = false);
 
     folly::Optional<std::pair<std::string, int64_t>> getEdgeTTLInfo(EdgeType edgeType);
 
