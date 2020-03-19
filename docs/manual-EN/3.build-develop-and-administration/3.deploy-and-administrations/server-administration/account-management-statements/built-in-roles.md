@@ -18,32 +18,34 @@
 - Guest
   - Read-only access to both the schema and data limited to its authorized space.
 
-A user who has no assigned roles will not have any accesses to the space. A user can only have one assigned role. A user can have different roles in different spaces.
+A user who has no assigned roles will not have any accesses to the space. A user can only have one assigned role in the same space. A user can have different roles in different spaces.
 
 The set of executor prescribed by each role are described below.
 
 Divided by operation permissions.
 
-- _Read space_: Use, DescribeSpace
-- _Write space_: CreateSpace, DropSpace, CreateSnapshot, DropSnapshot, Balance, Admin, Config, Ingest, Download
-- _Read schema_: DescribeTag, DescribeEdge,  DescribeTagIndex, DescribeEdgeIndex
-- _Write schema_: CreateTag, AlterTag, CreateEdge,  AlterEdge, DropTag, DropEdge, CreateTagIndex, CreateEdgeIndex, DropTagIndex, DropEdgeIndex
-- _Read user_:
-- _Write user_: CreateUser, DropUser, AlterUser, Grant, Revoke
-- _Read data_: Go, Set, Pipe, Match, Assignment, Lookup, Yield, OrderBy, FetchVertices, Find, FetchEdges, FindPath, Limit, GroupBy, Return
-- _Write data_: BuildTagIndex, BuildEdgeIndex, InsertVertex, UpdateVertex, InsertEdge, UpdateEdge, DeleteVertex, DeleteEdges
-- _Special operation_: Show, ChangePassword
+| OPERATION | STATEMENTS |
+| --- | --- |
+| Read space | Use, DescribeSpace |
+| Write space | CreateSpace, DropSpace, CreateSnapshot, DropSnapshot, Balance, Admin, Config, Ingest, Download |
+| Read schema |  DescribeTag, DescribeEdge,  DescribeTagIndex, DescribeEdgeIndex |
+| Write schema | CreateTag, AlterTag, CreateEdge,  AlterEdge, DropTag, DropEdge, CreateTagIndex, CreateEdgeIndex, DropTagIndex, DropEdgeIndex |
+| Write user | CreateUser, DropUser, AlterUser |
+| Write role | Grant, Revoke |
+| Read data | Go, Set, Pipe, Match, Assignment, Lookup, Yield, OrderBy, FetchVertices, Find, FetchEdges, FindPath, Limit, GroupBy, Return |
+| Write data | BuildTagIndex, BuildEdgeIndex, InsertVertex, UpdateVertex, InsertEdge, UpdateEdge, DeleteVertex, DeleteEdges |
+| Special operation | Show, ChangePassword |
 
 Divided by operations.
 
-| OP | GOD | ADMIN | DBA | USER | GUEST |
+| OPERATION | GOD | ADMIN | DBA | USER | GUEST |
 | --- | --- | --- | --- | --- | --- |
-| Read space | ✅ | ✅ | ✅ |  |  |
-| Write space | ✅ |  |  |  |  |
-| Read schema | ✅ | ✅ | ✅ |  |  |
-| Write schema | ✅ | ✅ |  |  |  |
-| Read user | ✅ | ✅ | ✅ |  |  |
-| Write user | ✅ | ✅ |  |  |  |
-| Read data | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Write data | ✅ | ✅ | ✅ | ✅ |  |
-| Special operation | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Read space | Y | Y | Y | Y | Y |
+| Write space | Y |  |  |  |  |
+| Read schema | Y | Y | Y | Y | Y |
+| Write schema | Y | Y | Y |  |  |
+| Write user | Y | Y |  |  |  |
+| Write role | Y | Y |  |  |  |
+| Read data | Y | Y | Y | Y | Y |
+| Write data | Y | Y | Y | Y |  |
+| Special operation | Y | Y | Y | Y | Y |

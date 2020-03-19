@@ -18,32 +18,34 @@
 - Guest
   - 对权限内的 space 拥有 schema 和 data 的只读权限。
 
-未被分配角色的用户将无权访问该 space。一个用户只能分配一个角色。一个用户在不同 space 可拥有不同权限。
+未被分配角色的用户将无权访问该 space。一个用户在同一个 space 中只能分配一个角色。一个用户在不同 space 可拥有不同权限。
 
 各角色的 Executor 权限见下表。
 
 按操作权限划分。
 
-- _Read space_: Use, DescribeSpace
-- _Write space_: CreateSpace, DropSpace, CreateSnapshot, DropSnapshot, Balance, Admin, Config, Ingest, Download
-- _Read schema_: DescribeTag, DescribeEdge,  DescribeTagIndex, DescribeEdgeIndex
-- _Write schema_: CreateTag, AlterTag, CreateEdge,  AlterEdge, DropTag, DropEdge, CreateTagIndex, CreateEdgeIndex, DropTagIndex, DropEdgeIndex
-- _Read user_:
-- _Write user_: CreateUser, DropUser, AlterUser, Grant, Revoke
-- _Read data_: Go, Set, Pipe, Match, Assignment, Lookup, Yield, OrderBy, FetchVertices, Find, FetchEdges, FindPath, Limit, GroupBy, Return
-- _Write data_: BuildTagIndex, BuildEdgeIndex, InsertVertex, UpdateVertex, InsertEdge, UpdateEdge, DeleteVertex, DeleteEdges
-- _Special operation_: Show, ChangePassword
+| OPERATION | STATEMENTS |
+| --- | --- |
+| Read space | Use, DescribeSpace |
+| Write space | CreateSpace, DropSpace, CreateSnapshot, DropSnapshot, Balance, Admin, Config, Ingest, Download |
+| Read schema |  DescribeTag, DescribeEdge,  DescribeTagIndex, DescribeEdgeIndex |
+| Write schema | CreateTag, AlterTag, CreateEdge,  AlterEdge, DropTag, DropEdge, CreateTagIndex, CreateEdgeIndex, DropTagIndex, DropEdgeIndex |
+| Write user | CreateUser, DropUser, AlterUser |
+| Write role | Grant, Revoke |
+| Read data | Go, Set, Pipe, Match, Assignment, Lookup, Yield, OrderBy, FetchVertices, Find, FetchEdges, FindPath, Limit, GroupBy, Return |
+| Write data | BuildTagIndex, BuildEdgeIndex, InsertVertex, UpdateVertex, InsertEdge, UpdateEdge, DeleteVertex, DeleteEdges |
+| Special operation | Show, ChangePassword |
 
 按操作划分。
 
-| OP | GOD | ADMIN | DBA | USER | GUEST |
+| OPERATION | GOD | ADMIN | DBA | USER | GUEST |
 | --- | --- | --- | --- | --- | --- |
-| Read space | ✅ | ✅ | ✅ |  |  |
-| Write space | ✅ |  |  |  |  |
-| Read schema | ✅ | ✅ | ✅ |  |  |
-| Write schema | ✅ | ✅ |  |  |  |
-| Read user | ✅ | ✅ | ✅ |  |  |
-| Write user | ✅ | ✅ |  |  |  |
-| Read data | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Write data | ✅ | ✅ | ✅ | ✅ |  |
-| Special operation | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Read space | Y | Y | Y | Y | Y |
+| Write space | Y |  |  |  |  |
+| Read schema | Y | Y | Y | Y | Y |
+| Write schema | Y | Y | Y |  |  |
+| Write user | Y | Y |  |  |  |
+| Write role | Y | Y |  |  |  |
+| Read data | Y | Y | Y | Y | Y |
+| Write data | Y | Y | Y | Y |  |
+| Special operation | Y | Y | Y | Y | Y |
