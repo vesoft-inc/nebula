@@ -171,49 +171,10 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
 
 template<typename REQ, typename RESP>
 folly::Optional<std::pair<std::string, int64_t>>
-QueryBaseProcessor<REQ, RESP>::getTagTTLInfo(TagID tagId, bool addTagInfo) {
+QueryBaseProcessor<REQ, RESP>::getTagTTLInfo(TagID tagId) {
     folly::Optional<std::pair<std::string, int64_t>> ret;
     auto tagFound = tagTTLInfo_.find(tagId);
-
-    if (tagFound == tagTTLInfo_.end()) {
-        if (addTagInfo) {
-            // Build tag ttl info
-            auto tagschema = this->schemaMan_->getTagSchema(spaceId_, tagId);
-            if (!tagschema) {
-                VLOG(3) << "Can't find spaceId " << spaceId_ << ", tagId " << tagId;
-                return ret;
-            }
-
-            const meta::NebulaSchemaProvider* nschema =
-                dynamic_cast<const meta::NebulaSchemaProvider*>(tagschema.get());
-            if (nschema == NULL) {
-                VLOG(3) << "Can't find NebulaSchemaProvider in spaceId " << spaceId_;
-                return ret;
-            }
-
-            const nebula::cpp2::SchemaProp schemaProp = nschema->getProp();
-
-            int64_t ttlDuration = 0;
-            if (schemaProp.get_ttl_duration()) {
-                ttlDuration = *schemaProp.get_ttl_duration();
-            }
-            std::string ttlCol;
-            if (schemaProp.get_ttl_col()) {
-                ttlCol = *schemaProp.get_ttl_col();
-            }
-
-            // Only support the specified ttl_col mode
-            // Not specifying or non-positive ttl_duration behaves like ttl_duration = infinity
-            if (ttlCol.empty() || ttlDuration <= 0) {
-                VLOG(3) << "TTL property is invalid";
-                return ret;
-            }
-
-            tagTTLInfo_.emplace(tagId, std::make_pair(ttlCol, ttlDuration));
-            ret.emplace(ttlCol, ttlDuration);
-        }
-        return ret;
-    } else {
+    if (tagFound != tagTTLInfo_.end()) {
         ret.emplace(tagFound->second.first, tagFound->second.second);
     }
     return ret;
@@ -754,6 +715,7 @@ void QueryBaseProcessor<REQ, RESP>::buildTTLInfoAndRespSchema() {
             }
 
             const nebula::cpp2::SchemaProp schemaProp = nschema->getProp();
+
             int64_t ttlDuration = 0;
             if (schemaProp.get_ttl_duration()) {
                 ttlDuration = *schemaProp.get_ttl_duration();

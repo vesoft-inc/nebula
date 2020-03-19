@@ -57,6 +57,45 @@ void QueryVertexPropsProcessor::process(const cpp2::VertexPropRequest& vertexReq
     }
 }
 
+folly::Optional<std::pair<std::string, int64_t>>
+QueryVertexPropsProcessor::getTagTTLInfo(TagID tagId, const meta::SchemaProviderIf* tagschema) {
+    folly::Optional<std::pair<std::string, int64_t>> ret;
+    auto tagFound = tagTTLInfo_.find(tagId);
+
+    if (tagFound == tagTTLInfo_.end()) {
+        const meta::NebulaSchemaProvider* nschema =
+            dynamic_cast<const meta::NebulaSchemaProvider*>(tagschema);
+        if (nschema == NULL) {
+            VLOG(3) << "Can't find NebulaSchemaProvider in spaceId " << spaceId_;
+            return ret;
+        }
+
+        const nebula::cpp2::SchemaProp schemaProp = nschema->getProp();
+        int64_t ttlDuration = 0;
+        if (schemaProp.get_ttl_duration()) {
+            ttlDuration = *schemaProp.get_ttl_duration();
+        }
+        std::string ttlCol;
+        if (schemaProp.get_ttl_col()) {
+            ttlCol = *schemaProp.get_ttl_col();
+        }
+
+        // Only support the specified ttl_col mode
+        // Not specifying or non-positive ttl_duration behaves like ttl_duration = infinity
+        if (ttlCol.empty() || ttlDuration <= 0) {
+            VLOG(3) << "TTL property is invalid";
+            return ret;
+        }
+
+        tagTTLInfo_.emplace(tagId, std::make_pair(ttlCol, ttlDuration));
+        ret.emplace(ttlCol, ttlDuration);
+        return ret;
+    } else {
+        ret.emplace(tagFound->second.first, tagFound->second.second);
+    }
+    return ret;
+}
+
 kvstore::ResultCode QueryVertexPropsProcessor::collectVertexProps(
                             PartitionID partId,
                             VertexID vId,
@@ -98,7 +137,7 @@ kvstore::ResultCode QueryVertexPropsProcessor::collectVertexProps(
         }
         auto reader = RowReader::getTagPropReader(this->schemaMan_, val, spaceId_, tagId);
         // Check if ttl data expired
-        auto retTTL = getTagTTLInfo(tagId, true);
+        auto retTTL = getTagTTLInfo(tagId, schema.get());
         if (retTTL.has_value() && checkDataExpiredForTTL(schema.get(),
                                                          reader.get(),
                                                          retTTL.value().first,
