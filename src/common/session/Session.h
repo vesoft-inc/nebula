@@ -115,7 +115,7 @@ private:
     std::string       account_;
     time::Duration    idleDuration_;
     /*
-     * map<space name, role>
+     * map<spaceId, role>
      * One user can have roles in multiple spaces
      * But a user has only one role in one space
      */
