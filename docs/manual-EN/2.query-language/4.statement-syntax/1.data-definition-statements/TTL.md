@@ -31,7 +31,7 @@ nebula> CREATE TAG t2(a int, b int, c string) ttl_duration= 100, ttl_col = "a";
 nebula> INSERT VERTEX t2(a, b, c) values 102:(1584441231, 30, "Word");
 ```
 
-The vertex 102 property in tag t2 will expire after 100 seconds since March 17 2020 at 18:33:51 CST.
+The vertex 102 property in tag t2 will expire after 100 seconds since March 17 2020 at 18:33:51 CST i.e. the timestamp of 1584441231.
 
 - When a vertex has multiple TAGs, the TTL of each TAG is independent from each other.
 
