@@ -44,7 +44,7 @@
 | Write space | Y |  |  |  |  |
 | Read schema | Y | Y | Y | Y | Y |
 | Write schema | Y | Y | Y |  |  |
-| Write user | Y | Y |  |  |  |
+| Write user | Y |  |  |  |  |
 | Write role | Y | Y |  |  |  |
 | Read data | Y | Y | Y | Y | Y |
 | Write data | Y | Y | Y | Y |  |
