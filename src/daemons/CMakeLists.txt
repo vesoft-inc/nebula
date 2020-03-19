@@ -33,6 +33,8 @@ nebula_add_executable(
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:concurrent_obj>
         $<TARGET_OBJECTS:encryption_obj>
+        $<TARGET_OBJECTS:session_obj>
+        $<TARGET_OBJECTS:permission_obj>
     LIBRARIES
         proxygenhttpserver
         proxygenlib
