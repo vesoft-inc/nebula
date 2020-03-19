@@ -31,7 +31,7 @@ nebula> CREATE TAG t2(a int, b int, c string) ttl_duration= 100, ttl_col = "a";
 nebula> INSERT VERTEX t2(a, b, c) values 102:(1584441231, 30, "Word");
 ```
 
-点 102 的 TAG t2 属性会在 2020年3月17日 18时33分51秒 CST （即 1584441231 的时间戳），经过 100s 后过期。
+点 102 的 TAG t2 属性会在 2020年3月17日 18时33分51秒 CST （即时间戳为 1584441231），经过 100s 后过期。
 
 - 当点有多个 TAG 时，各 TAG 的 TTL 相互独立。
 
