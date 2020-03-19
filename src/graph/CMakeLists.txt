@@ -2,10 +2,11 @@ nebula_add_library(
     graph_obj OBJECT
     GraphFlags.cpp
     GraphService.cpp
-    ClientSession.cpp
     SessionManager.cpp
+    PasswordAuthenticator.cpp
     ExecutionEngine.cpp
     ExecutionContext.cpp
+    PermissionCheck.cpp
     ExecutionPlan.cpp
     Executor.cpp
     TraverseExecutor.cpp
