@@ -1,6 +1,6 @@
 # TTL (time-to-live)
 
-With **TTL**, **Nebula Graph** provides the ability to delete the expired vertices or edges automatically. The system will automatically delete the expired data during the compaction phase. Before compaction, query will filter the expired data. And the TTL data is not available.
+With **TTL**, **Nebula Graph** provides the ability to delete the expired vertices or edges automatically. The system will automatically delete the expired data during the compaction phase. Before compaction, query will filter the expired data.
 
 TTl requires `ttl_col` and `ttl_duration` together. `ttl_col` indicates the TTL column, while `ttl_duration` indicates the duration of the TTL. When the sum of the TTL column and the ttl_duration is less than the current time, we consider the data as expired. The `ttl_col` type is integer or timestamp, and is set in seconds. `ttl_duration` is also set in seconds.
 
