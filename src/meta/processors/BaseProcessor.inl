@@ -331,7 +331,7 @@ template<typename RESP>
 bool BaseProcessor<RESP>::checkPassword(const std::string& account, const std::string& password) {
     auto userKey = MetaServiceUtils::userKey(account);
     auto ret = doGet(userKey);
-    return ret.value() == password;
+    return MetaServiceUtils::parseUserPwd(ret.value()) == password;
 }
 
 template<typename RESP>
