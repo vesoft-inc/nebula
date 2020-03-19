@@ -394,3 +394,18 @@ nebula_add_test(
         gtest
 )
 
+nebula_add_test(
+    NAME
+        ttl_test
+    SOURCES
+        TTLTest.cpp
+    OBJECTS
+        ${GRAPH_TEST_CLIENT_LIBS}
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        proxygenlib
+        wangle
+        gtest
+)
