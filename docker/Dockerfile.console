@@ -1,7 +1,5 @@
 FROM vesoft/nebula-dev:centos7 as builder
 
-RUN echo `pwd`
-
 COPY . /home/nebula/BUILD
 
 RUN cd /home/nebula/BUILD/package \
