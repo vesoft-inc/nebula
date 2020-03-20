@@ -4,11 +4,11 @@ ARG build_with_sanitizer
 COPY . /home/nebula/BUILD
 
 RUN cd /home/nebula/BUILD/package \
-  && ./make_srpm.sh $build_with_sanitizer -v $(git rev-parse --short HEAD) -p /home/nebula
+  && ./package.sh $build_with_sanitizer -v $(git rev-parse --short HEAD)
 
 FROM centos:7
 
-COPY --from=builder /home/nebula/RPMS/x86_64/*.rpm /usr/local/nebula/
+COPY --from=builder /home/nebula/BUILD/build/cpack_output/*.rpm /usr/local/nebula/
 
 WORKDIR /usr/local/nebula
 

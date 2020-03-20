@@ -59,6 +59,12 @@ Status FetchEdgesExecutor::prepareClauses() {
         returnColNames_.emplace_back(edgeRankName_);
         status = prepareYield();
         if (!status.ok()) {
+            LOG(ERROR) << "Prepare yield failed: " << status;
+            break;
+        }
+        status = checkEdgeProps();
+        if (!status.ok()) {
+            LOG(ERROR) << "Check edge props failed: " << status;
             break;
         }
     } while (false);
@@ -104,6 +110,27 @@ Status FetchEdgesExecutor::prepareEdgeKeys() {
     } while (false);
 
     return status;
+}
+
+Status FetchEdgesExecutor::checkEdgeProps() {
+    auto aliasProps = expCtx_->aliasProps();
+    for (auto &pair : aliasProps) {
+        if (pair.first != *labelName_) {
+            return Status::SyntaxError(
+                "Near [%s.%s], edge should be declared in `ON' clause first.",
+                    pair.first.c_str(), pair.second.c_str());
+        }
+        auto propName = pair.second;
+        if (propName == _SRC || propName == _DST
+                || propName == _RANK || propName == _TYPE) {
+            continue;
+        }
+        if (labelSchema_->getFieldIndex(propName) == -1) {
+            return Status::Error("`%s' is not a prop of `%s'",
+                    propName.c_str(), pair.first.c_str());
+        }
+    }
+    return Status::OK();
 }
 
 void FetchEdgesExecutor::execute() {
@@ -161,6 +188,10 @@ Status FetchEdgesExecutor::setupEdgeKeysFromRef() {
         return Status::OK();
     }
 
+    auto status = checkIfDuplicateColumn();
+    if (!status.ok()) {
+        return status;
+    }
     auto ret = inputs->getVIDs(*srcid_);
     if (!ret.ok()) {
         return ret.status();

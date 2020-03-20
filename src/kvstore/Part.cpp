@@ -276,7 +276,10 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
                     code = batch->remove(op.second.first);
                 } else if (op.first == BatchLogType::OP_BATCH_REMOVE_RANGE) {
                     code = batch->removeRange(op.second.first, op.second.second);
+                } else if (op.first == BatchLogType::OP_BATCH_REMOVE_PREFIX) {
+                    code = batch->removePrefix(op.second.first);
                 }
+
                 if (code != ResultCode::SUCCEEDED) {
                     LOG(ERROR) << idStr_ << "Failed to call WriteBatch";
                     return false;
@@ -431,6 +434,8 @@ ResultCode Part::toResultCode(raftex::AppendLogResult res) {
             return ResultCode::ERR_LEADER_CHANGED;
         case raftex::AppendLogResult::E_WRITE_BLOCKING:
             return ResultCode::ERR_WRITE_BLOCK_ERROR;
+        case raftex::AppendLogResult::E_ATOMIC_OP_FAILURE:
+            return ResultCode::ERR_ATOMIC_OP_FAILED;
         default:
             LOG(ERROR) << idStr_ << "Consensus error "
                        << static_cast<int32_t>(res);

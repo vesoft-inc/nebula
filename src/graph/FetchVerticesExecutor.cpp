@@ -44,8 +44,8 @@ Status FetchVerticesExecutor::prepareClauses() {
             status = result.status();
             break;
         }
-        tagID_ = result.value();
-        labelSchema_ = ectx()->schemaManager()->getTagSchema(spaceId_, tagID_);
+        tagId_ = result.value();
+        labelSchema_ = ectx()->schemaManager()->getTagSchema(spaceId_, tagId_);
         if (labelSchema_ == nullptr) {
             LOG(ERROR) << *labelName_ << " tag schema not exist.";
             status = Status::Error("%s tag schema not exist.", labelName_->c_str());
@@ -63,6 +63,11 @@ Status FetchVerticesExecutor::prepareClauses() {
         status = prepareYield();
         if (!status.ok()) {
             LOG(ERROR) << "Prepare yield failed: " << status;
+            break;
+        }
+        status = checkTagProps();
+        if (!status.ok()) {
+            LOG(ERROR) << "Check props failed: " << status;
             break;
         }
     } while (false);
@@ -87,6 +92,23 @@ Status FetchVerticesExecutor::prepareVids() {
         }
         if (colname_ != nullptr && *colname_ == "*") {
             return Status::Error("Cant not use `*' to reference a vertex id column.");
+        }
+    }
+    return Status::OK();
+}
+
+Status FetchVerticesExecutor::checkTagProps() {
+    auto aliasProps = expCtx_->aliasProps();
+    for (auto &pair : aliasProps) {
+        if (pair.first != *labelName_) {
+            return Status::SyntaxError(
+                "Near [%s.%s], tag should be declared in `ON' clause first.",
+                    pair.first.c_str(), pair.second.c_str());
+        }
+
+        if (labelSchema_->getFieldIndex(pair.second) == -1) {
+            return Status::Error("`%s' is not a prop of `%s'",
+                    pair.second.c_str(), pair.first.c_str());
         }
     }
     return Status::OK();
@@ -161,7 +183,7 @@ std::vector<storage::cpp2::PropDef> FetchVerticesExecutor::getPropNames() {
         storage::cpp2::PropDef pd;
         pd.owner = storage::cpp2::PropOwner::SOURCE;
         pd.name = prop.second;
-        pd.id.set_tag_id(tagID_);
+        pd.id.set_tag_id(tagId_);
         props.emplace_back(std::move(pd));
     }
 
@@ -307,6 +329,10 @@ Status FetchVerticesExecutor::setupVidsFromRef() {
         return Status::OK();
     }
 
+    auto status = checkIfDuplicateColumn();
+    if (!status.ok()) {
+        return status;
+    }
     StatusOr<std::vector<VertexID>> result;
     if (distinct_) {
         result = inputs->getDistinctVIDs(*colname_);
@@ -344,13 +370,9 @@ void FetchVerticesExecutor::processAllPropsResult(RpcResponse &&result) {
                 }
                 auto schema = ectx()->schemaManager()->getTagSchema(spaceId_, tdata.tag_id, ver);
                 if (schema == nullptr) {
-                    // It actually should never be null here.
-                    // But issue1699 indicates that it would be nullptr when schema
-                    // was altered. This is a hot fix through reporting error, and we will
-                    // find out why it is null.
-                    LOG(ERROR) << "Schema not found for id: " << tdata.tag_id;
-                    doError(Status::Error("Get schema failed when handle data."));
-                    return;
+                    VLOG(3) << "Schema not found for tag id: " << tdata.tag_id;
+                    // Ignore the bad data.
+                    continue;
                 }
                 if (rsWriter == nullptr) {
                     outputSchema = std::make_shared<SchemaWriter>();
@@ -363,9 +385,9 @@ void FetchVerticesExecutor::processAllPropsResult(RpcResponse &&result) {
 
                 auto tagFound = ectx()->schemaManager()->toTagName(spaceId_, tdata.tag_id);
                 if (!tagFound.ok()) {
-                    LOG(ERROR) << "Tag not found for id: " << tdata.tag_id;
-                    doError(Status::Error("Tag not found for id: %d", tdata.tag_id));
-                    return;
+                    VLOG(3) << "Tag name not found for tag id: " << tdata.tag_id;
+                    // Ignore the bad data.
+                    continue;
                 }
                 auto tagName = std::move(tagFound).value();
                 auto iter = schema->begin();

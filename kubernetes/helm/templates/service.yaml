@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: nebula-metad
+  name: nebula-metad
+  namespace: {{ .Values.namespace }}
+  annotations:
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+spec:
+  publishNotReadyAddresses: true
+  ports:
+  - name: thrift
+    port: {{ .Values.port.metad.thriftPort }}
+  - name: raft
+    port: {{ .Values.port.metad.raftPort }}
+  - name: http
+    port: {{ .Values.port.metad.httpPort }}
+  - name: http2
+    port: {{ .Values.port.metad.http2Port }}
+  selector:
+    app: nebula-metad
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: nebula-storaged
+  name: nebula-storaged
+  namespace: {{ .Values.namespace }}
+  annotations:
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"  
+spec:
+  publishNotReadyAddresses: true
+  ports:
+  - name: thrift
+    port: {{ .Values.port.storaged.thriftPort }}
+  - name: raft
+    port: {{ .Values.port.storaged.raftPort }}
+  - name: http
+    port: {{ .Values.port.storaged.httpPort }}
+  - name: http2
+    port: {{ .Values.port.storaged.http2Port }}
+  selector:
+    app: nebula-storaged
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: nebula-graphd
+  name: nebula-graphd
+  namespace: {{ .Values.namespace }}
+  annotations:
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+spec:
+  publishNotReadyAddresses: true
+  type: NodePort
+  ports:
+  - name: thrift
+    port: {{ .Values.port.graphd.thriftPort }}
+  - name: http
+    port: {{ .Values.port.graphd.httpPort }}
+  - name: http2
+    port: {{ .Values.port.graphd.http2Port }}
+  selector:
+    app: nebula-graphd

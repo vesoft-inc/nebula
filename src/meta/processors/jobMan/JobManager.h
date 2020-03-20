@@ -57,12 +57,12 @@ private:
     int getSpaceId(const std::string& name);
     nebula::kvstore::ResultCode save(const std::string& k, const std::string& v);
 
-    bool                shutDown_{false};
     static bool isExpiredJob(const cpp2::JobDesc& jobDesc);
     void removeExpiredJobs(const std::vector<std::string>& jobKeys);
     std::unique_ptr<folly::UMPSCQueue<int32_t, true>> queue_;
     std::unique_ptr<thread::GenericWorker> bgThread_;
 
+    bool shutDown_{false};
     nebula::kvstore::KVStore* kvStore_{nullptr};
     std::unique_ptr<nebula::thread::GenericThreadPool> pool_{nullptr};
 };

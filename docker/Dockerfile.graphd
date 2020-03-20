@@ -5,12 +5,12 @@ ARG build_with_sanitizer
 COPY . /home/nebula/BUILD
 
 RUN cd /home/nebula/BUILD/package \
-  && ./make_srpm.sh $build_with_sanitizer -v $(git rev-parse --short HEAD) -p /home/nebula graphd
+  && ./package.sh $build_with_sanitizer -v $(git rev-parse --short HEAD) -n OFF
 
 FROM centos:7
 
-COPY --from=builder /home/nebula/RPMS/x86_64/nebula-base-*.el7.x86_64.rpm /usr/local/nebula/nebula-base.rpm
-COPY --from=builder /home/nebula/RPMS/x86_64/nebula-graphd-*.el7.x86_64.rpm /usr/local/nebula/nebula-graphd.rpm
+COPY --from=builder /home/nebula/BUILD/build/nebula-graph-*-Linux-common.rpm /usr/local/nebula/nebula-common.rpm
+COPY --from=builder /home/nebula/BUILD/build/nebula-graph-*-Linux-graph.rpm /usr/local/nebula/nebula-graphd.rpm
 
 WORKDIR /usr/local/nebula
 

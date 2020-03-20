@@ -134,7 +134,9 @@ public:
 
     using OnResult = std::function<void(std::unique_ptr<InterimResult>)>;
 
-    virtual void feedResult(std::unique_ptr<InterimResult> result) = 0;
+    virtual void feedResult(std::unique_ptr<InterimResult> result) {
+        inputs_ = std::move(result);
+    }
 
     /**
      * `onResult_' must be set except for the right most executor
@@ -156,8 +158,13 @@ public:
 protected:
     std::unique_ptr<TraverseExecutor> makeTraverseExecutor(Sentence *sentence);
 
+    nebula::cpp2::SupportedType calculateExprType(Expression* exp) const;
+
+    Status checkIfDuplicateColumn() const;
+
 protected:
     OnResult                                    onResult_;
+    std::unique_ptr<InterimResult>              inputs_;
 };
 
 }   // namespace graph

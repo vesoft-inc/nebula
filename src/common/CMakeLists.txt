@@ -12,3 +12,8 @@ nebula_add_subdirectory(stats)
 nebula_add_subdirectory(filter)
 nebula_add_subdirectory(test)
 nebula_add_subdirectory(charset)
+nebula_add_subdirectory(algorithm)
+nebula_add_subdirectory(encryption)
+nebula_add_subdirectory(permission)
+nebula_add_subdirectory(session)
+

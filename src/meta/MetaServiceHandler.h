@@ -119,6 +119,9 @@ public:
     future_listTagIndexes(const cpp2::ListTagIndexesReq& req) override;
 
     folly::Future<cpp2::ExecResp>
+    future_rebuildTagIndex(const cpp2::RebuildIndexReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
     future_createEdgeIndex(const cpp2::CreateEdgeIndexReq& req) override;
 
     folly::Future<cpp2::ExecResp>
@@ -129,6 +132,15 @@ public:
 
     folly::Future<cpp2::ListEdgeIndexesResp>
     future_listEdgeIndexes(const cpp2::ListEdgeIndexesReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_rebuildEdgeIndex(const cpp2::RebuildIndexReq& req) override;
+
+    folly::Future<cpp2::ListIndexStatusResp>
+    future_listTagIndexStatus(const cpp2::ListIndexStatusReq& req) override;
+
+    folly::Future<cpp2::ListIndexStatusResp>
+    future_listEdgeIndexStatus(const cpp2::ListIndexStatusReq& req) override;
 
     /**
      * User manager
@@ -148,9 +160,6 @@ public:
     folly::Future<cpp2::ExecResp>
     future_revokeRole(const cpp2::RevokeRoleReq& req) override;
 
-    folly::Future<cpp2::GetUserResp>
-    future_getUser(const cpp2::GetUserReq& req) override;
-
     folly::Future<cpp2::ListUsersResp>
     future_listUsers(const cpp2::ListUsersReq& req) override;
 
@@ -160,8 +169,8 @@ public:
     folly::Future<cpp2::ExecResp>
     future_changePassword(const cpp2::ChangePasswordReq& req) override;
 
-    folly::Future<cpp2::ExecResp>
-    future_checkPassword(const cpp2::CheckPasswordReq& req) override;
+    folly::Future<cpp2::ListRolesResp>
+    future_getUserRoles(const cpp2::GetUserRolesReq& req) override;
 
     /**
      * HeartBeat

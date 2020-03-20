@@ -20,6 +20,7 @@
 #   ENABLE_JEMALLOC                 -- Link jemalloc into all executables
 #   ENABLE_NATIVE                   -- Build native client
 #   ENABLE_TESTING                  -- Build unit test
+#   ENABLE_PACK_ONE                 -- Package to one or multi packages
 #
 # CMake version check
 cmake_minimum_required(VERSION 3.5.0)
@@ -43,10 +44,12 @@ option(ENABLE_NATIVE "Whether to build native client" OFF)
 option(ENABLE_CCACHE "Whether to use ccache to speed up compiling" ON)
 option(ENABLE_ASAN "Whether to turn AddressSanitizer ON or OFF" OFF)
 option(ENABLE_TESTING "Whether to turn unit test ON or OFF" ON)
+option(ENABLE_COVERAGE "Whether to turn unit test coverage ON or OFF" OFF)
 option(ENABLE_UBSAN "Whether to turn Undefined Behavior Sanitizer ON or OFF" OFF)
 option(ENABLE_FUZZ_TEST "Whether to turn Fuzz Test ON or OFF" OFF)
 option(ENABLE_WERROR "Whether to error on warnings" ON)
 option(ENABLE_TSAN "Whether to turn Thread Sanitizer ON or OFF" OFF)
+option(ENABLE_PACK_ONE "Whether to package into one" ON)
 
 message(STATUS "ENABLE_ASAN: ${ENABLE_ASAN}")
 message(STATUS "ENABLE_TESTING: ${ENABLE_TESTING}")
@@ -73,6 +76,15 @@ endif()
 set(CMAKE_CXX_STANDARD 14)  # specify the C++ standard
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+# coverage
+if (ENABLE_TESTING AND ENABLE_COVERAGE)
+    add_compile_options(--coverage)
+    add_compile_options(-g)
+    add_compile_options(-O0)
+
+    set(COVERAGES --coverage)
+endif()
 
 # To detect if ccache is available
 find_program(ccache_program_found "ccache")
@@ -517,6 +529,7 @@ macro(nebula_link_libraries target)
         ${GETTIME_LIB}
         ${libatomic_link_flags}
         -pthread
+        ${COVERAGES}
     )
 endmacro(nebula_link_libraries)
 
@@ -580,27 +593,7 @@ IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git/")
     ENDIF()
 ENDIF()
 
-# package nebula to a deb/rpm file
-set(CPACK_PACKAGE_DESCRIPTION "nebula-graph")
-set(CPACK_PACKAGE_CONTACT "nebula-graph")
-set(CPACK_PACKAGE_VERSION ${NEBULA_BUILD_VERSION})
-set(CPACK_RPM_PACKAGE_LICENSE "Apache 2.0 + Common Clause 1.0")
-set(CPACK_PACKAGE_NAME nebula-graph)
-set(CPACK_SET_DESTDIR TRUE)
-set(CPACK_PACKAGE_RELOCATABLE FALSE)
-set(CPACK_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
-
-set(CPACK_DEB_COMPONENT_INSTALL ON)
-set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
-set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/vesoft-inc/nebula/releases")
-set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA ${CMAKE_CURRENT_SOURCE_DIR}/package/postinst)
-
-set(CPACK_RPM_SPEC_MORE_DEFINE "%define debug_package %{nil}
-        %define __os_install_post %{nil}")
-set(CPACK_RPM_COMPONENT_INSTALL ON)
-set(CPACK_RPM_PACKAGE_ARCHITECTURE "x86_64")
-set(CPACK_RPM_PACKAGE_URL "https://github.com/vesoft-inc/nebula/releases")
-set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE ${CMAKE_CURRENT_SOURCE_DIR}/package/postinst)
-set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION /usr/local)
-
-include(CPack)
+# package to rpm/deb
+MESSAGE(STATUS "ENABLE_PACK_ONE: ${ENABLE_PACK_ONE}")
+include(CPackage)
+package(${ENABLE_PACK_ONE})

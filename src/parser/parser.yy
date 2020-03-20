@@ -13,6 +13,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <cstddef>
 #include "parser/SequentialSentences.h"
 
 namespace nebula {
@@ -20,6 +21,8 @@ namespace nebula {
 class GraphScanner;
 
 }
+
+static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 
 }
 
@@ -72,8 +75,6 @@ class GraphScanner;
     nebula::SpaceOptItem                   *space_opt_item;
     nebula::AlterSchemaOptList             *alter_schema_opt_list;
     nebula::AlterSchemaOptItem             *alter_schema_opt_item;
-    nebula::WithUserOptList                *with_user_opt_list;
-    nebula::WithUserOptItem                *with_user_opt_item;
     nebula::RoleTypeClause                 *role_type_clause;
     nebula::AclItemClause                  *acl_item_clause;
     nebula::SchemaPropList                 *create_schema_prop_list;
@@ -100,16 +101,15 @@ class GraphScanner;
 
 /* keywords */
 %token KW_GO KW_AS KW_TO KW_OR KW_AND KW_XOR KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
-%token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX
-%token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND KW_BUILD
+%token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_OFFLINE
+%token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND KW_REBUILD
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_PART KW_PARTS KW_TIMESTAMP KW_ADD
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_CHARSET KW_COLLATE KW_COLLATION
 %token KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_INDEX KW_INDEXES
-%token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
+%token KW_IF KW_NOT KW_EXISTS KW_WITH
 %token KW_COUNT KW_COUNT_DISTINCT KW_SUM KW_AVG KW_MAX KW_MIN KW_STD KW_BIT_AND KW_BIT_OR KW_BIT_XOR
-%token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
-%token KW_ROLES KW_BY KW_DOWNLOAD KW_HDFS KW_UUID KW_CONFIGS KW_FORCE
+%token KW_BY KW_DOWNLOAD KW_HDFS KW_UUID KW_CONFIGS KW_FORCE KW_STATUS
 %token KW_VARIABLES KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
 %token KW_TTL KW_TTL_DURATION KW_TTL_COL KW_DATA KW_STOP
 %token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
@@ -120,6 +120,10 @@ class GraphScanner;
 %token KW_IS KW_NULL KW_DEFAULT
 %token KW_SNAPSHOT KW_SNAPSHOTS KW_LOOKUP
 %token KW_JOBS KW_JOB KW_RECOVER KW_FLUSH KW_COMPACT KW_SUBMIT
+%token KW_BIDIRECT
+%token KW_USER KW_USERS KW_ACCOUNT
+%token KW_PASSWORD KW_CHANGE KW_ROLE KW_ROLES
+%token KW_GOD KW_ADMIN KW_DBA KW_GUEST KW_GRANT KW_REVOKE KW_ON
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -198,38 +202,41 @@ class GraphScanner;
 %type <colspeclist> column_spec_list
 %type <colsnamelist> column_name_list
 
-%type <with_user_opt_list> with_user_opt_list
-%type <with_user_opt_item> with_user_opt_item
 %type <role_type_clause> role_type_clause
 %type <acl_item_clause> acl_item_clause
 
-%type <sentence> go_sentence match_sentence use_sentence lookup_sentence find_path_sentence
-%type <sentence> order_by_sentence limit_sentence group_by_sentence
-%type <sentence> fetch_vertices_sentence fetch_edges_sentence
-
+%type <sentence> maintain_sentence
+%type <sentence> create_space_sentence describe_space_sentence drop_space_sentence
 %type <sentence> create_tag_sentence create_edge_sentence
 %type <sentence> alter_tag_sentence alter_edge_sentence
 %type <sentence> drop_tag_sentence drop_edge_sentence
 %type <sentence> describe_tag_sentence describe_edge_sentence
-
 %type <sentence> create_tag_index_sentence create_edge_index_sentence
 %type <sentence> drop_tag_index_sentence drop_edge_index_sentence
 %type <sentence> describe_tag_index_sentence describe_edge_index_sentence
-%type <sentence> build_tag_index_sentence build_edge_index_sentence
+%type <sentence> rebuild_tag_index_sentence rebuild_edge_index_sentence
+%type <sentence> create_snapshot_sentence drop_snapshot_sentence
 
-%type <sentence> traverse_sentence set_sentence piped_sentence assignment_sentence fetch_sentence
-%type <sentence> maintain_sentence insert_vertex_sentence insert_edge_sentence
-%type <sentence> mutate_sentence update_vertex_sentence update_edge_sentence delete_vertex_sentence delete_edge_sentence
-%type <sentence> show_sentence create_space_sentence describe_space_sentence
 %type <sentence> admin_sentence
-%type <sentence> drop_space_sentence
-%type <sentence> yield_sentence
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
-%type <sentence> grant_sentence revoke_sentence
+%type <sentence> show_sentence 
+
+%type <sentence> mutate_sentence
+%type <sentence> insert_vertex_sentence insert_edge_sentence
+%type <sentence> delete_vertex_sentence delete_edge_sentence
+%type <sentence> update_vertex_sentence update_edge_sentence
 %type <sentence> download_sentence ingest_sentence
+
+%type <sentence> traverse_sentence
+%type <sentence> go_sentence match_sentence lookup_sentence find_path_sentence
+%type <sentence> group_by_sentence order_by_sentence limit_sentence
+%type <sentence> fetch_sentence fetch_vertices_sentence fetch_edges_sentence
+%type <sentence> set_sentence piped_sentence assignment_sentence
+%type <sentence> yield_sentence use_sentence
+
+%type <sentence> grant_sentence revoke_sentence
 %type <sentence> set_config_sentence get_config_sentence balance_sentence
 %type <sentence> process_control_sentence return_sentence
-%type <sentence> create_snapshot_sentence drop_snapshot_sentence
 %type <sentence> sentence
 %type <sentences> sentences
 
@@ -251,10 +258,6 @@ unreserved_keyword
      | KW_VALUES             { $$ = new std::string("values"); }
      | KW_HOSTS              { $$ = new std::string("hosts"); }
      | KW_SPACES             { $$ = new std::string("spaces"); }
-     | KW_FIRSTNAME          { $$ = new std::string("firstname"); }
-     | KW_LASTNAME           { $$ = new std::string("lastname"); }
-     | KW_EMAIL              { $$ = new std::string("email"); }
-     | KW_PHONE              { $$ = new std::string("phone"); }
      | KW_USER               { $$ = new std::string("user"); }
      | KW_USERS              { $$ = new std::string("users"); }
      | KW_PASSWORD           { $$ = new std::string("password"); }
@@ -262,6 +265,7 @@ unreserved_keyword
      | KW_ROLES              { $$ = new std::string("roles"); }
      | KW_GOD                { $$ = new std::string("god"); }
      | KW_ADMIN              { $$ = new std::string("admin"); }
+     | KW_DBA                { $$ = new std::string("dba"); }
      | KW_GUEST              { $$ = new std::string("guest"); }
      | KW_GROUP              { $$ = new std::string("group"); }
      | KW_COUNT              { $$ = new std::string("count"); }
@@ -284,6 +288,16 @@ unreserved_keyword
      | KW_RECOVER            { $$ = new std::string("recover"); }
      | KW_FLUSH              { $$ = new std::string("flush"); }
      | KW_COMPACT            { $$ = new std::string("compact"); }
+     | KW_BIDIRECT           { $$ = new std::string("bidirect"); }
+     | KW_OFFLINE            { $$ = new std::string("offline"); }
+     | KW_FORCE              { $$ = new std::string("force"); }
+     | KW_STATUS             { $$ = new std::string("status"); }
+     | KW_REBUILD            { $$ = new std::string("rebuild"); }
+     | KW_PART               { $$ = new std::string("part"); }
+     | KW_PARTS              { $$ = new std::string("parts"); }
+     | KW_DEFAULT            { $$ = new std::string("default"); }
+     | KW_CONFIGS            { $$ = new std::string("configs"); }
+     | KW_ACCOUNT            { $$ = new std::string("account"); }
      ;
 
 agg_function
@@ -677,13 +691,23 @@ over_clause
         auto s = new std::string("*");
         auto edge = new OverEdge(s, nullptr);
         edges->addEdge(edge);
-        $$ = new OverClause(edges, true);
+        $$ = new OverClause(edges, OverClause::Direction::kBackward);
+    }
+    | KW_OVER MUL KW_BIDIRECT {
+        auto edges = new OverEdges();
+        auto s = new std::string("*");
+        auto edge = new OverEdge(s, nullptr);
+        edges->addEdge(edge);
+        $$ = new OverClause(edges, OverClause::Direction::kBidirect);
     }
     | KW_OVER over_edges {
         $$ = new OverClause($2);
     }
     | KW_OVER over_edges KW_REVERSELY {
-        $$ = new OverClause($2, true);
+        $$ = new OverClause($2, OverClause::Direction::kBackward);
+    }
+    | KW_OVER over_edges KW_BIDIRECT {
+        $$ = new OverClause($2, OverClause::Direction::kBidirect);
     }
     ;
 
@@ -1210,15 +1234,21 @@ describe_edge_index_sentence
     }
     ;
 
-build_tag_index_sentence
-    : KW_BUILD KW_TAG KW_INDEX name_label {
-        $$ = new BuildTagIndexSentence($4);
+rebuild_tag_index_sentence
+    : KW_REBUILD KW_TAG KW_INDEX name_label {
+        $$ = new RebuildTagIndexSentence($4, false);
+    }
+    | KW_REBUILD KW_TAG KW_INDEX name_label KW_OFFLINE {
+        $$ = new RebuildTagIndexSentence($4, true);
     }
     ;
 
-build_edge_index_sentence
-    : KW_BUILD KW_EDGE KW_INDEX name_label {
-        $$ = new BuildEdgeIndexSentence($4);
+rebuild_edge_index_sentence
+    : KW_REBUILD KW_EDGE KW_INDEX name_label {
+        $$ = new RebuildEdgeIndexSentence($4, false);
+    }
+    | KW_REBUILD KW_EDGE KW_INDEX name_label KW_OFFLINE {
+        $$ = new RebuildEdgeIndexSentence($4, true);
     }
     ;
 
@@ -1494,8 +1524,8 @@ update_edge_sentence
     ;
 
 delete_vertex_sentence
-    : KW_DELETE KW_VERTEX vid {
-        auto sentence = new DeleteVertexSentence($3);
+    : KW_DELETE KW_VERTEX vid_list {
+        auto sentence = new DeleteVerticesSentence($3);
         $$ = sentence;
     }
     ;
@@ -1595,9 +1625,6 @@ show_sentence
     | KW_SHOW KW_USERS {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowUsers);
     }
-    | KW_SHOW KW_USER name_label {
-        $$ = new ShowSentence(ShowSentence::ShowType::kShowUser, $3);
-    }
     | KW_SHOW KW_ROLES KW_IN name_label {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowRoles, $4);
     }
@@ -1618,6 +1645,12 @@ show_sentence
     }
     | KW_SHOW KW_CREATE KW_EDGE KW_INDEX name_label {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowCreateEdgeIndex, $5);
+    }
+    | KW_SHOW KW_TAG KW_INDEX KW_STATUS {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowTagIndexStatus);
+    }
+    | KW_SHOW KW_EDGE KW_INDEX KW_STATUS {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowEdgeIndexStatus);
     }
     | KW_SHOW KW_SNAPSHOTS {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowSnapshots);
@@ -1735,78 +1768,30 @@ drop_space_sentence
 
 //  User manager sentences.
 
-with_user_opt_item
-    : KW_FIRSTNAME STRING {
-        $$ = new WithUserOptItem(WithUserOptItem::FIRST, $2);
-    }
-    | KW_LASTNAME STRING {
-        $$ = new WithUserOptItem(WithUserOptItem::LAST, $2);
-    }
-    | KW_EMAIL STRING {
-        $$ = new WithUserOptItem(WithUserOptItem::EMAIL, $2);
-    }
-    | KW_PHONE STRING {
-        $$ = new WithUserOptItem(WithUserOptItem::PHONE, $2);
-    }
-    ;
-
-with_user_opt_list
-    : with_user_opt_item {
-        $$ = new WithUserOptList();
-        $$->addOpt($1);
-    }
-    | with_user_opt_list COMMA with_user_opt_item {
-        $$ = $1;
-        $$->addOpt($3);
-    }
-    ;
-
 create_user_sentence
-    : KW_CREATE KW_USER name_label KW_WITH KW_PASSWORD STRING {
-        $$ = new CreateUserSentence($3, $6);
+    : KW_CREATE KW_USER opt_if_not_exists name_label KW_WITH KW_PASSWORD STRING {
+        $$ = new CreateUserSentence($4, $7, $3);
     }
-    | KW_CREATE KW_USER KW_IF KW_NOT KW_EXISTS name_label KW_WITH KW_PASSWORD STRING {
-        auto sentence = new CreateUserSentence($6, $9);
-        sentence->setMissingOk(true);
-        $$ = sentence;
+    | KW_CREATE KW_USER opt_if_not_exists name_label {
+        $$ = new CreateUserSentence($4, new std::string(""), $3);
     }
-    | KW_CREATE KW_USER name_label KW_WITH KW_PASSWORD STRING COMMA with_user_opt_list {
-        auto sentence = new CreateUserSentence($3, $6);
-        sentence->setOpts($8);
-        $$ = sentence;
-    }
-    | KW_CREATE KW_USER KW_IF KW_NOT KW_EXISTS name_label KW_WITH KW_PASSWORD STRING COMMA with_user_opt_list {
-        auto sentence = new CreateUserSentence($6, $9);
-        sentence->setMissingOk(true);
-        sentence->setOpts($11);
-        $$ = sentence;
-    }
+    ;
 
 alter_user_sentence
-    : KW_ALTER KW_USER name_label KW_WITH with_user_opt_list {
-        auto sentence = new AlterUserSentence($3);
-        sentence->setOpts($5);
-        $$ = sentence;
+    : KW_ALTER KW_USER name_label KW_WITH KW_PASSWORD STRING {
+        $$ = new AlterUserSentence($3, $6);
     }
     ;
 
 drop_user_sentence
-    : KW_DROP KW_USER name_label {
-        $$ = new DropUserSentence($3);
-    }
-    | KW_DROP KW_USER KW_IF KW_EXISTS name_label {
-        auto sentence = new DropUserSentence($5);
-        sentence->setMissingOk(true);
+    : KW_DROP KW_USER opt_if_exists name_label {
+        auto sentence = new DropUserSentence($4, $3);
         $$ = sentence;
     }
     ;
 
 change_password_sentence
-    : KW_CHANGE KW_PASSWORD name_label KW_TO STRING {
-        auto sentence = new ChangePasswordSentence($3, $5);
-        $$ = sentence;
-    }
-    | KW_CHANGE KW_PASSWORD name_label KW_FROM STRING KW_TO STRING {
+    : KW_CHANGE KW_PASSWORD name_label KW_FROM STRING KW_TO STRING {
         auto sentence = new ChangePasswordSentence($3, $5, $7);
         $$ = sentence;
     }
@@ -1815,6 +1800,7 @@ change_password_sentence
 role_type_clause
     : KW_GOD { $$ = new RoleTypeClause(RoleTypeClause::GOD); }
     | KW_ADMIN { $$ = new RoleTypeClause(RoleTypeClause::ADMIN); }
+    | KW_DBA { $$ = new RoleTypeClause(RoleTypeClause::DBA); }
     | KW_USER { $$ = new RoleTypeClause(RoleTypeClause::USER); }
     | KW_GUEST { $$ = new RoleTypeClause(RoleTypeClause::GUEST); }
     ;
@@ -1944,7 +1930,10 @@ mutate_sentence
     ;
 
 maintain_sentence
-    : create_tag_sentence { $$ = $1; }
+    : create_space_sentence { $$ = $1; }
+    | describe_space_sentence { $$ = $1; }
+    | drop_space_sentence { $$ = $1; }
+    | create_tag_sentence { $$ = $1; }
     | create_edge_sentence { $$ = $1; }
     | alter_tag_sentence { $$ = $1; }
     | alter_edge_sentence { $$ = $1; }
@@ -1958,12 +1947,9 @@ maintain_sentence
     | drop_edge_index_sentence { $$ = $1; }
     | describe_tag_index_sentence { $$ = $1; }
     | describe_edge_index_sentence { $$ = $1; }
-    | build_tag_index_sentence { $$ = $1; }
-    | build_edge_index_sentence { $$ = $1; }
+    | rebuild_tag_index_sentence { $$ = $1; }
+    | rebuild_edge_index_sentence { $$ = $1; }
     | show_sentence { $$ = $1; }
-    | create_space_sentence { $$ = $1; }
-    | describe_space_sentence { $$ = $1; }
-    | drop_space_sentence { $$ = $1; }
     ;
     | create_user_sentence { $$ = $1; }
     | alter_user_sentence { $$ = $1; }
@@ -2046,7 +2032,11 @@ void nebula::GraphParser::error(const nebula::GraphParser::location_type& loc,
         || begin >= query->size()) {
         os << " at " << loc;
     } else if (loc.begin.column < (loc.end.column ? loc.end.column - 1 : 0)) {
-        os << " near `" << query->substr(begin, loc.end.column - loc.begin.column) << "'";
+        uint32_t len = loc.end.column - loc.begin.column;
+        if (len > 80) {
+            len = 80;
+        }
+        os << " near `" << query->substr(begin, len) << "'";
     } else {
         os << " near `" << query->substr(begin, 8) << "'";
     }
@@ -2054,10 +2044,14 @@ void nebula::GraphParser::error(const nebula::GraphParser::location_type& loc,
     errmsg = os.str();
 }
 
+// check the positive integer boundary
+// parameter input accept the INTEGER value
+// which filled as uint64_t
+// so the conversion is expected
 void ifOutOfRange(const int64_t input,
                   const nebula::GraphParser::location_type& loc) {
-    if ((uint64_t)input == 9223372036854775808ULL) {
-        throw nebula::GraphParser::syntax_error(loc, "out of range");
+    if ((uint64_t)input >= MAX_ABS_INTEGER) {
+        throw nebula::GraphParser::syntax_error(loc, "Out of range:");
     }
 }
 

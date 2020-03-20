@@ -23,8 +23,11 @@ UpdateEdgeExecutor::UpdateEdgeExecutor(Sentence *sentence,
     sentence_ = static_cast<UpdateEdgeSentence*>(sentence);
 }
 
-
 Status UpdateEdgeExecutor::prepare() {
+    return Status::OK();
+}
+
+Status UpdateEdgeExecutor::prepareData() {
     DCHECK(sentence_ != nullptr);
     Status status = Status::OK();
 
@@ -141,7 +144,7 @@ std::vector<std::string> UpdateEdgeExecutor::getReturnColumns() {
 }
 
 
-void UpdateEdgeExecutor::finishExecution(storage::cpp2::UpdateResponse &&rpcResp) {
+void UpdateEdgeExecutor::toResponse(storage::cpp2::UpdateResponse &&rpcResp) {
     resp_ = std::make_unique<cpp2::ExecutionResponse>();
     std::vector<std::string> columnNames;
     columnNames.reserve(yields_.size());
@@ -190,9 +193,7 @@ void UpdateEdgeExecutor::finishExecution(storage::cpp2::UpdateResponse &&rpcResp
         rows.back().set_columns(std::move(row));
     }
     resp_->set_rows(std::move(rows));
-    doFinish(Executor::ProcessControl::kNext);
 }
-
 
 void UpdateEdgeExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
     if (resp_ == nullptr) {
@@ -201,57 +202,27 @@ void UpdateEdgeExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
     resp = std::move(*resp_);
 }
 
-
-void UpdateEdgeExecutor::insertReverselyEdge(storage::cpp2::UpdateResponse &&rpcResp) {
-    std::vector<storage::cpp2::Edge> edges;
-    storage::cpp2::Edge reverselyEdge;
-    reverselyEdge.key.set_src(edge_.dst);
-    reverselyEdge.key.set_dst(edge_.src);
-    reverselyEdge.key.set_ranking(edge_.ranking);
-    reverselyEdge.key.set_edge_type(-edge_.edge_type);
-    // TODO(heng) For upsert, we should take the properties
-    reverselyEdge.props = "";
-    edges.emplace_back(reverselyEdge);
-    auto future = ectx()->getStorageClient()->addEdges(spaceId_, std::move(edges), false);
-    auto *runner = ectx()->rctx()->runner();
-    auto cb = [this, updateResp = std::move(rpcResp)] (auto &&resp) mutable {
-        auto completeness = resp.completeness();
-        if (completeness != 100) {
-            // Very bad, it should delete the upsert positive edge!!!
-            doError(Status::Error(
-                        "Insert the reversely edge(%s) `%ld->%ld@%ld' failed when update.",
-                        edgeTypeName_->c_str(),
-                        edge_.dst, edge_.src, edge_.ranking));
-            return;
-        }
-        this->finishExecution(std::move(updateResp));
-    };
-    auto error = [this] (auto &&e) {
-        auto msg = folly::stringPrintf(
-                "Insert reversely edge(%s) `%ld->%ld@%ld' exception when update: %s",
-                edgeTypeName_->c_str(),
-                edge_.dst, edge_.src, edge_.ranking,
-                e.what().c_str());
-        LOG(ERROR) << msg;
-        // Very bad, it should delete the upsert positive edge!!!
-        doError(Status::Error(std::move(msg)));
-    };
-    std::move(future).via(runner).thenValue(cb).thenError(error);
-}
-
-
-void UpdateEdgeExecutor::execute() {
-    FLOG_INFO("Executing UpdateEdge: %s", sentence_->toString().c_str());
-    std::string filterStr = filter_ ? Expression::encode(filter_) : "";
-    auto returns = getReturnColumns();
+void UpdateEdgeExecutor::updateEdge(bool reversely) {
+    std::string filterStr = "";
+    std::vector<std::string> returns;
+    if (reversely) {
+        auto src = edge_.src;
+        auto dst = edge_.dst;
+        edge_.set_src(dst);
+        edge_.set_dst(src);
+        edge_.set_edge_type(-edge_.edge_type);
+    } else {
+        filterStr = filter_ ? Expression::encode(filter_) : "";
+        returns = getReturnColumns();
+    }
     auto future = ectx()->getStorageClient()->updateEdge(spaceId_,
                                                          edge_,
-                                                         filterStr,
-                                                         std::move(updateItems_),
+                                                         std::move(filterStr),
+                                                         updateItems_,
                                                          std::move(returns),
                                                          insertable_);
     auto *runner = ectx()->rctx()->runner();
-    auto cb = [this] (auto &&resp) {
+    auto cb = [this, reversely] (auto &&resp) {
         if (!resp.ok()) {
             doError(Status::Error("Update edge(%s) `%ld->%ld@%ld' failed: %s",
                         edgeTypeName_->c_str(),
@@ -263,27 +234,35 @@ void UpdateEdgeExecutor::execute() {
         for (auto& code : rpcResp.get_result().get_failed_codes()) {
             switch (code.get_code()) {
                 case nebula::storage::cpp2::ErrorCode::E_INVALID_FILTER:
-                      doError(Status::Error("Maybe invalid edge or property in WHEN clause!"));
-                      return;
+                    doError(Status::Error("Maybe invalid edge or property in WHEN clause!"));
+                    return;
                 case nebula::storage::cpp2::ErrorCode::E_INVALID_UPDATER:
-                      doError(Status::Error("Maybe invalid property in SET/YIELD clasue!"));
-                      return;
+                    doError(Status::Error("Maybe invalid property in SET/YIELD clasue!"));
+                    return;
+                case nebula::storage::cpp2::ErrorCode::E_FILTER_OUT:
+                    // Return ok when filter out without exception
+                    // so do nothing
+                    // https://github.com/vesoft-inc/nebula/issues/1888
+                    // TODO(shylock) maybe we need alert user execute ok but no data affect
+                    this->toResponse(std::move(rpcResp));
+                    doFinish(Executor::ProcessControl::kNext);
+                    return;
                 default:
-                      std::string errMsg =
-                            folly::stringPrintf("Maybe edge does not exist or filter failed, "
-                                                "part: %d, error code: %d!",
-                                                code.get_part_id(),
-                                                static_cast<int32_t>(code.get_code()));
-                      LOG(ERROR) << errMsg;
-                      doError(Status::Error(errMsg));
-                      return;
+                    std::string errMsg =
+                        folly::stringPrintf("Maybe edge does not exist or filter failed, "
+                                            "part: %d, error code: %d!",
+                                            code.get_part_id(),
+                                            static_cast<int32_t>(code.get_code()));
+                    LOG(ERROR) << errMsg;
+                    doError(Status::Error(errMsg));
+                    return;
             }
         }
-        if (insertable_ && rpcResp.get_upsert()) {
-            // TODO(zhangguoqing) Making the reverse edge of insertion is transactional
-            this->insertReverselyEdge(std::move(rpcResp));
+        if (reversely) {
+            doFinish(Executor::ProcessControl::kNext);
         } else {
-            this->finishExecution(std::move(rpcResp));
+            this->toResponse(std::move(rpcResp));
+            this->updateEdge(true);
         }
     };
     auto error = [this] (auto &&e) {
@@ -295,6 +274,16 @@ void UpdateEdgeExecutor::execute() {
         doError(Status::Error(std::move(msg)));
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
+}
+
+void UpdateEdgeExecutor::execute() {
+    FLOG_INFO("Executing UpdateEdge: %s", sentence_->toString().c_str());
+    auto status = prepareData();
+    if (!status.ok()) {
+        doError(std::move(status));
+        return;
+    }
+    updateEdge(false);
 }
 
 }   // namespace graph

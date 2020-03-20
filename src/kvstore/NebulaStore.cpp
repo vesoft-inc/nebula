@@ -101,7 +101,14 @@ bool NebulaStore::init() {
                             enginePtr->removePart(partId);
                             continue;
                         } else {
-                             partIds.emplace_back(partId);
+                             auto it = std::find(partIds.begin(), partIds.end(), partId);
+                             if (it != partIds.end()) {
+                                LOG(INFO) << "Part " << partId
+                                          << " has been loaded, skip current one, remove it!";
+                                enginePtr->removePart(partId);
+                             } else {
+                                partIds.emplace_back(partId);
+                             }
                         }
                     }
                     if (partIds.empty()) {
@@ -359,19 +366,30 @@ ResultCode NebulaStore::get(GraphSpaceID spaceId,
 }
 
 
-ResultCode NebulaStore::multiGet(GraphSpaceID spaceId,
-                                 PartitionID partId,
-                                 const std::vector<std::string>& keys,
-                                 std::vector<std::string>* values) {
+std::pair<ResultCode, std::vector<Status>> NebulaStore::multiGet(
+        GraphSpaceID spaceId,
+        PartitionID partId,
+        const std::vector<std::string>& keys,
+        std::vector<std::string>* values) {
+    std::vector<Status> status;
     auto ret = part(spaceId, partId);
     if (!ok(ret)) {
-        return error(ret);
+        return {error(ret), status};
     }
     auto part = nebula::value(ret);
     if (!checkLeader(part)) {
-        return ResultCode::ERR_LEADER_CHANGED;
+        return {ResultCode::ERR_LEADER_CHANGED, status};
     }
-    return part->engine()->multiGet(keys, values);
+    status = part->engine()->multiGet(keys, values);
+    auto allExist = std::all_of(status.begin(), status.end(),
+                                [] (const auto& s) {
+                                    return s.ok();
+                                });
+    if (allExist) {
+        return {ResultCode::SUCCEEDED, status};
+    } else {
+        return {ResultCode::ERR_PARTIAL_RESULT, status};
+    }
 }
 
 
@@ -713,6 +731,7 @@ ResultCode NebulaStore::dropCheckpoint(GraphSpaceID spaceId, const std::string& 
 ResultCode NebulaStore::setWriteBlocking(GraphSpaceID spaceId, bool sign) {
     auto spaceRet = space(spaceId);
     if (!ok(spaceRet)) {
+        LOG(ERROR) << "Get Space " << spaceId << " Failed";
         return error(spaceRet);
     }
     auto space = nebula::value(spaceRet);
@@ -803,7 +822,7 @@ int32_t NebulaStore::allLeader(std::unordered_map<GraphSpaceID,
 }
 
 bool NebulaStore::checkLeader(std::shared_ptr<Part> part) const {
-    return !FLAGS_check_leader || part->isLeader();
+    return !FLAGS_check_leader || (part->isLeader() && part->leaseValid());
 }
 
 

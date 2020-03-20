@@ -127,6 +127,14 @@ bool checkDataExpiredForTTL(const meta::SchemaProviderIf* schema,
                             const std::string& ttlCol,
                             int64_t ttlDuration);
 
+
+enum class FilterResult {
+    SUCCEEDED     = 0,   // pass filter
+    E_FILTER_OUT  = -1,  // filter out
+    E_ERROR       = -2,  // exception when filter
+};
+
+
 }  // namespace storage
 }  // namespace nebula
 #endif  // STORAGE_COMMON_H_

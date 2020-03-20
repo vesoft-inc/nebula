@@ -2,10 +2,11 @@ nebula_add_library(
     graph_obj OBJECT
     GraphFlags.cpp
     GraphService.cpp
-    ClientSession.cpp
     SessionManager.cpp
+    PasswordAuthenticator.cpp
     ExecutionEngine.cpp
     ExecutionContext.cpp
+    PermissionCheck.cpp
     ExecutionPlan.cpp
     Executor.cpp
     TraverseExecutor.cpp
@@ -27,11 +28,11 @@ nebula_add_library(
     CreateEdgeIndexExecutor.cpp
     DropEdgeIndexExecutor.cpp
     DescribeEdgeIndexExecutor.cpp
-    BuildEdgeIndexExecutor.cpp
+    RebuildEdgeIndexExecutor.cpp
     CreateTagIndexExecutor.cpp
     DropTagIndexExecutor.cpp
     DescribeTagIndexExecutor.cpp
-    BuildTagIndexExecutor.cpp
+    RebuildTagIndexExecutor.cpp
     UpdateEdgeExecutor.cpp
     AssignmentExecutor.cpp
     InterimResult.cpp
@@ -52,7 +53,7 @@ nebula_add_library(
     FetchExecutor.cpp
     SetExecutor.cpp
     MatchExecutor.cpp
-    DeleteVertexExecutor.cpp
+    DeleteVerticesExecutor.cpp
     DeleteEdgesExecutor.cpp
     FindPathExecutor.cpp
     LimitExecutor.cpp
@@ -62,6 +63,8 @@ nebula_add_library(
     DropSnapshotExecutor.cpp
     AdminJobExecutor.cpp
     LookupExecutor.cpp
+    UserExecutor.cpp
+    PrivilegeExecutor.cpp
 )
 nebula_add_subdirectory(test)
 

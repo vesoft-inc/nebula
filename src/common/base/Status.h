@@ -106,6 +106,10 @@ public:
     // Nothing is executed When command is comment
     STATUS_GENERATOR(StatementEmpty);
 
+    // Storage engine errors
+    STATUS_GENERATOR(KeyNotFound);
+
+    // Meta engine errors
     // TODO(dangleptr) we could use ErrorOr to replace SpaceNotFound here.
     STATUS_GENERATOR(SpaceNotFound);
     STATUS_GENERATOR(HostNotFound);
@@ -116,6 +120,9 @@ public:
     STATUS_GENERATOR(LeaderChanged);
     STATUS_GENERATOR(Balanced);
     STATUS_GENERATOR(PartNotFound);
+
+    // User or permission errors
+    STATUS_GENERATOR(PermissionError);
 
 #undef STATUS_GENERATOR
 
@@ -138,7 +145,7 @@ public:
         kSyntaxError            = 201,
         kStatementEmpty         = 202,
         // 3xx, for storage engine errors
-        // ...
+        kKeyNotFound            = 301,
         // 4xx, for meta service errors
         kSpaceNotFound          = 404,
         kHostNotFound           = 405,
@@ -149,6 +156,8 @@ public:
         kBalanced               = 410,
         kIndexNotFound          = 411,
         kPartNotFound           = 412,
+        // 5xx for user or permission error
+        kPermissionError        = 501,
     };
 
     Code code() const {

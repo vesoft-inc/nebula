@@ -445,6 +445,10 @@ Status FindPathExecutor::setupVidsFromRef(Clause::Vertices &vertices) {
         }
     }
 
+    auto status = checkIfDuplicateColumn();
+    if (!status.ok()) {
+        return status;
+    }
     auto result = inputs->getDistinctVIDs(*(vertices.colname_));
     if (!result.ok()) {
         return std::move(result).status();
