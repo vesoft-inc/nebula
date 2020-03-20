@@ -8,14 +8,14 @@ Non-reserved keywords are permitted as identifiers without quoting. Reserved wor
 nebula> CREATE TAG TAG(name string);
 [ERROR (-7)]: SyntaxError: syntax error near `TAG'
 
-nebula> CREATE TAG SPACE(name string);
+nebula> CREATE TAG SPACE(name string); -- SPACE is an unreserved KEY WORD
 Execution succeeded
 ```
 
 `TAG` is a reserved keyword and must be quoted to be used as an identifier. `SPACE` is keyword but not reserved, so its use as identifiers does not require quoting.
 
 ```ngql
-nebula> CREATE TAG 'TAG' (name string);
+nebula> CREATE TAG 'TAG' (name string); -- TAG is a reserved word here
 Execution succeeded
 ```
 

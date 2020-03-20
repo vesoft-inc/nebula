@@ -8,14 +8,14 @@
 nebula> CREATE TAG TAG(name string);
 [ERROR (-7)]: SyntaxError: syntax error near `TAG'
 
-nebula> CREATE TAG SPACE(name string);
+nebula> CREATE TAG SPACE(name string); -- SPACE 为非保留关键字
 Execution succeeded
 ```
 
 `TAG` 为保留字使用时必须使用引号。 `SPACE` 为非保留字使用时无需加引号。
 
 ```ngql
-nebula> CREATE TAG 'TAG' (name string);
+nebula> CREATE TAG 'TAG' (name string); -- 此处 TAG 为保留字
 Execution succeeded
 ```
 
