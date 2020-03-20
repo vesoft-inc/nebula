@@ -12,7 +12,8 @@ namespace graph {
 /**
  * Read space : kUse, kDescribeSpace
  * Write space : kCreateSpace, kDropSpace, kCreateSnapshot, kDropSnapshot
- *               kBalance, kAdmin, kConfig, kIngest, kDownload
+ *               kBalance, kAdmin, kConfig, kIngest, kDownload, kInstallPlugin
+ *               kUninstallPlugin
  * Read schema : kDescribeTag, kDescribeEdge,
  *               kDescribeTagIndex, kDescribeEdgeIndex
  * Write schema : kCreateTag, kAlterTag, kCreateEdge,
@@ -54,7 +55,9 @@ bool PermissionCheck::permissionCheck(session::Session *session, Sentence* sente
         case Sentence::Kind::kAdmin :
         case Sentence::Kind::kConfig :
         case Sentence::Kind::kIngest :
-        case Sentence::Kind::kDownload : {
+        case Sentence::Kind::kDownload :
+        case Sentence::Kind::kInstallPlugin :
+        case Sentence::Kind::kUninstallPlugin : {
             return permission::PermissionManager::canWriteSpace(session);
         }
         case Sentence::Kind::kCreateTag :

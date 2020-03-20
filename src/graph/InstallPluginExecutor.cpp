@@ -20,7 +20,7 @@ InstallPluginExecutor::InstallPluginExecutor(Sentence *sentence,
 Status InstallPluginExecutor::prepare() {
     pluginName_ = sentence_->pluginName();
     soName_ = sentence_->soName();
-    // Open to check if the so file is normal
+    // Check if the so file is normal
     return ectx()->getPluginManager()->tryOpen(*pluginName_, *soName_);
 }
 

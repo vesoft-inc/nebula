@@ -218,6 +218,7 @@ bool MetaClient::loadData() {
         LOG(ERROR) << "Load Plugins Failed";
         return false;
     }
+
     decltype(localCache_) oldCache;
     {
         folly::RWSpinLock::WriteHolder holder(localCacheLock_);
