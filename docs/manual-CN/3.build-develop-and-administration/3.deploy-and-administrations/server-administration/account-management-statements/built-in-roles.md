@@ -18,6 +18,8 @@
 - Guest
   - 对权限内的 space 拥有 schema 和 data 的只读权限。
 
+如果开启用户权限开关，则默认用户名为 root，默认密码为 nebula，且用户名不可更改。将 `/usr/local/nebula/etc/nebula-graphd.conf` 文件中的 `enable_authorize` 设置为 `true` 即可打开权限开关。
+
 未被分配角色的用户将无权访问该 space。一个用户在同一个 space 中只能分配一个角色。一个用户在不同 space 可拥有不同权限。
 
 各角色的 Executor 权限见下表。

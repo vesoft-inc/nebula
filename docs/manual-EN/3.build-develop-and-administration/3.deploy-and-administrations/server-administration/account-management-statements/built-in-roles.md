@@ -18,6 +18,8 @@
 - Guest
   - Read-only access to both the schema and data limited to its authorized space.
 
+If the authorization is enabled, the default user name and password are `root` and `nebula` respectively, and the user name is immutable. Set the `enable_authorize` parameter in the `/usr/local/nebula/etc/nebula-graphd.conf` file to `true` to enable the authorization.
+
 A user who has no assigned roles will not have any accesses to the space. A user can only have one assigned role in the same space. A user can have different roles in different spaces.
 
 The set of executor prescribed by each role are described below.
