@@ -245,7 +245,7 @@ void ShowExecutor::showSpaces() {
         for (auto &space : retShowSpaces) {
             auto canShow = permission::PermissionManager::canShow(ectx()->rctx()->session(),
                                                                   sentence_->showType(),
-                                                                  space.first);
+                                                                  space.get_space_id());
             if (!canShow) {
                 continue;
             }
