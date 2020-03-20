@@ -21,6 +21,14 @@
 #include "graph/DropEdgeExecutor.h"
 #include "graph/DescribeTagExecutor.h"
 #include "graph/DescribeEdgeExecutor.h"
+#include "graph/CreateTagIndexExecutor.h"
+#include "graph/CreateEdgeIndexExecutor.h"
+#include "graph/DropTagIndexExecutor.h"
+#include "graph/DropEdgeIndexExecutor.h"
+#include "graph/DescribeTagIndexExecutor.h"
+#include "graph/DescribeEdgeIndexExecutor.h"
+#include "graph/RebuildTagIndexExecutor.h"
+#include "graph/RebuildEdgeIndexExecutor.h"
 #include "graph/InsertVertexExecutor.h"
 #include "graph/InsertEdgeExecutor.h"
 #include "graph/AssignmentExecutor.h"
@@ -32,21 +40,27 @@
 #include "graph/DownloadExecutor.h"
 #include "graph/OrderByExecutor.h"
 #include "graph/IngestExecutor.h"
+#include "graph/AdminJobExecutor.h"
 #include "graph/ConfigExecutor.h"
 #include "graph/FetchVerticesExecutor.h"
 #include "graph/FetchEdgesExecutor.h"
 #include "graph/ConfigExecutor.h"
 #include "graph/SetExecutor.h"
-#include "graph/FindExecutor.h"
+#include "graph/LookupExecutor.h"
 #include "graph/MatchExecutor.h"
 #include "graph/BalanceExecutor.h"
-#include "graph/DeleteVertexExecutor.h"
+#include "graph/DeleteVerticesExecutor.h"
+#include "graph/DeleteEdgesExecutor.h"
 #include "graph/UpdateVertexExecutor.h"
 #include "graph/UpdateEdgeExecutor.h"
 #include "graph/FindPathExecutor.h"
 #include "graph/LimitExecutor.h"
 #include "graph/GroupByExecutor.h"
 #include "graph/ReturnExecutor.h"
+#include "graph/CreateSnapshotExecutor.h"
+#include "graph/DropSnapshotExecutor.h"
+#include "graph/UserExecutor.h"
+#include "graph/PrivilegeExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -87,6 +101,30 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
              break;
         case Sentence::Kind::kDropEdge:
              executor = std::make_unique<DropEdgeExecutor>(sentence, ectx());
+             break;
+        case Sentence::Kind::kCreateTagIndex:
+            executor = std::make_unique<CreateTagIndexExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kCreateEdgeIndex:
+            executor = std::make_unique<CreateEdgeIndexExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kDescribeTagIndex:
+            executor = std::make_unique<DescribeTagIndexExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kDescribeEdgeIndex:
+            executor = std::make_unique<DescribeEdgeIndexExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kDropTagIndex:
+             executor = std::make_unique<DropTagIndexExecutor>(sentence, ectx());
+             break;
+        case Sentence::Kind::kDropEdgeIndex:
+             executor = std::make_unique<DropEdgeIndexExecutor>(sentence, ectx());
+             break;
+        case Sentence::Kind::kRebuildTagIndex:
+             executor = std::make_unique<RebuildTagIndexExecutor>(sentence, ectx());
+             break;
+        case Sentence::Kind::kRebuildEdgeIndex:
+             executor = std::make_unique<RebuildEdgeIndexExecutor>(sentence, ectx());
              break;
         case Sentence::Kind::kInsertVertex:
             executor = std::make_unique<InsertVertexExecutor>(sentence, ectx());
@@ -139,14 +177,17 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
         case Sentence::Kind::kMatch:
             executor = std::make_unique<MatchExecutor>(sentence, ectx());
             break;
-        case Sentence::Kind::kFind:
-            executor = std::make_unique<FindExecutor>(sentence, ectx());
+        case Sentence::Kind::kLookup:
+            executor = std::make_unique<LookupExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kBalance:
             executor = std::make_unique<BalanceExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kDeleteVertex:
-            executor = std::make_unique<DeleteVertexExecutor>(sentence, ectx());
+            executor = std::make_unique<DeleteVerticesExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kDeleteEdges:
+            executor = std::make_unique<DeleteEdgesExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kUpdateVertex:
             executor = std::make_unique<UpdateVertexExecutor>(sentence, ectx());
@@ -162,6 +203,33 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             break;
         case Sentence::Kind::kReturn:
             executor = std::make_unique<ReturnExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kCreateSnapshot:
+            executor = std::make_unique<CreateSnapshotExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kDropSnapshot:
+            executor = std::make_unique<DropSnapshotExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kAdmin:
+            executor = std::make_unique<AdminJobExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kCreateUser:
+            executor = std::make_unique<CreateUserExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kDropUser:
+            executor = std::make_unique<DropUserExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kAlterUser:
+            executor = std::make_unique<AlterUserExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kChangePassword:
+            executor = std::make_unique<ChangePasswordExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kGrant:
+            executor = std::make_unique<GrantExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kRevoke:
+            executor = std::make_unique<RevokeExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kUnknown:
             LOG(ERROR) << "Sentence kind unknown";
@@ -190,7 +258,7 @@ std::string Executor::valueTypeToString(nebula::cpp2::ValueType type) {
     }
 }
 
-void Executor::writeVariantType(RowWriter &writer, const VariantType &value) {
+Status Executor::writeVariantType(RowWriter &writer, const VariantType &value) {
     switch (value.which()) {
         case VAR_INT64:
             writer << boost::get<int64_t>(value);
@@ -205,8 +273,10 @@ void Executor::writeVariantType(RowWriter &writer, const VariantType &value) {
             writer << boost::get<std::string>(value);
             break;
         default:
-            LOG(FATAL) << "Unknown value type: " << static_cast<uint32_t>(value.which());
+            LOG(ERROR) << "Unknown value type: " << static_cast<uint32_t>(value.which());
+            return Status::Error("Unknown value type: %d", value.which());
     }
+    return Status::OK();
 }
 
 bool Executor::checkValueType(const nebula::cpp2::ValueType &type, const VariantType &value) {
@@ -371,6 +441,14 @@ StatusOr<VariantType> Executor::transformDefaultValue(nebula::cpp2::SupportedTyp
         case nebula::cpp2::SupportedType::STRING:
             return originalValue;
             break;
+        case nebula::cpp2::SupportedType::TIMESTAMP:
+            try {
+                return folly::to<int64_t>(originalValue);
+            } catch (const std::exception& ex) {
+                LOG(ERROR) << "Conversion to int64_t failed: " << originalValue;
+                return Status::Error("Type Conversion Failed");
+            }
+            break;
         default:
             LOG(ERROR) << "Unknow type";
             return Status::Error("Unknow type");
@@ -378,5 +456,16 @@ StatusOr<VariantType> Executor::transformDefaultValue(nebula::cpp2::SupportedTyp
     return Status::OK();
 }
 
+void Executor::doError(Status status, uint32_t count) const {
+    stats::Stats::addStatsValue(stats_.get(), false, duration().elapsedInUSec(), count);
+    DCHECK(onError_);
+    onError_(std::move(status));
+}
+
+void Executor::doFinish(ProcessControl pro, uint32_t count) const {
+    stats::Stats::addStatsValue(stats_.get(), true, duration().elapsedInUSec(), count);
+    DCHECK(onFinish_);
+    onFinish_(pro);
+}
 }   // namespace graph
 }   // namespace nebula

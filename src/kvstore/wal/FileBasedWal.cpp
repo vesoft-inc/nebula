@@ -44,7 +44,9 @@ FileBasedWal::FileBasedWal(const folly::StringPiece dir,
         , preProcessor_(std::move(preProcessor)) {
     // Make sure WAL directory exist
     if (FileUtils::fileType(dir_.c_str()) == fs::FileType::NOTEXIST) {
-        FileUtils::makeDir(dir_);
+        if (!FileUtils::makeDir(dir_)) {
+            LOG(FATAL) << "MakeDIR " << dir_ << " failed";
+        }
     }
 
     scanAllWalFiles();
@@ -54,7 +56,8 @@ FileBasedWal::FileBasedWal(const folly::StringPiece dir,
         lastLogId_ = info->lastId();
         lastLogTerm_ = info->lastTerm();
         LOG(INFO) << idStr_ << "lastLogId in wal is " << lastLogId_
-                  << ", lastLogTerm is " << lastLogTerm_;
+                  << ", lastLogTerm is " << lastLogTerm_
+                  << ", path is " << info->path();
         currFd_ = open(info->path(), O_WRONLY | O_APPEND);
         currInfo_ = info;
         CHECK_GE(currFd_, 0);
@@ -280,10 +283,13 @@ void FileBasedWal::closeCurrFile() {
         return;
     }
 
+    bool synced = false;
     if (lastLogId_ > firstLogId_) {
         if (::fsync(currFd_) == -1) {
             LOG(WARNING) << "sync wal \"" << currInfo_->path()
                          << "\" failed, error: " << strerror(errno);
+        } else {
+            synced = true;
         }
     }
     // Close the file
@@ -293,15 +299,17 @@ void FileBasedWal::closeCurrFile() {
     }
     currFd_ = -1;
 
-    auto now = time::WallClock::fastNowInSec();
-    currInfo_->setMTime(now);
-//    DCHECK_EQ(currInfo_->size(), FileUtils::fileSize(currInfo_->path()))
-//        << currInfo_->path() << " size does not match";
-    struct utimbuf timebuf;
-    timebuf.modtime = currInfo_->mtime();
-    timebuf.actime = currInfo_->mtime();
-    VLOG(1) << "Close cur file " << currInfo_->path() << ", mtime: " << currInfo_->mtime();
-    CHECK_EQ(utime(currInfo_->path(), &timebuf), 0);
+    if (!synced) {
+        auto now = time::WallClock::fastNowInSec();
+        currInfo_->setMTime(now);
+        //    DCHECK_EQ(currInfo_->size(), FileUtils::fileSize(currInfo_->path()))
+        //        << currInfo_->path() << " size does not match";
+        struct utimbuf timebuf;
+        timebuf.modtime = currInfo_->mtime();
+        timebuf.actime = currInfo_->mtime();
+        VLOG(1) << "Close cur file " << currInfo_->path() << ", mtime: " << currInfo_->mtime();
+        CHECK_EQ(utime(currInfo_->path(), &timebuf), 0);
+    }
     currInfo_.reset();
 }
 
@@ -464,7 +472,6 @@ void FileBasedWal::scanLastWal(WalFileInfoPtr info, LogID firstId) {
 
         ++curLogId;
     }
-    LOG(INFO) << idStr_ << "Scan last wal " << path << ", last wal id is " << id;
 
     if (0 < pos && pos < FileUtils::fileSize(path)) {
         LOG(WARNING) << "Invalid wal " << path << ", truncate from offset " << pos;
@@ -493,7 +500,7 @@ BufferPtr FileBasedWal::getLastBuffer(LogID id, size_t expectedToWrite) {
         }
         CHECK_LT(buffers_.size(), policy_.numBuffers);
     }
-    buffers_.emplace_back(std::make_shared<InMemoryLogBuffer>(id));
+    buffers_.emplace_back(std::make_shared<InMemoryLogBuffer>(id, idStr_));
     return buffers_.back();
 }
 
@@ -613,11 +620,21 @@ bool FileBasedWal::linkCurrentWAL(const char* newPath) {
     closeCurrFile();
     std::lock_guard<std::mutex> g(walFilesMutex_);
     if (walFiles_.empty()) {
-        LOG(INFO) << idStr_ << "Create link failed, there is no wal files!";
+        LOG(INFO) << idStr_ << "No wal files found, skip link";
+        return true;
+    }
+    if (!fs::FileUtils::makeDir(newPath)) {
+        LOG(INFO) << idStr_ << "Link file parent dir make failed : " << newPath;
         return false;
     }
+
     auto it = walFiles_.rbegin();
-    if (link(it->second->path(), newPath) != 0) {
+
+    // Using the original wal file name.
+    auto targetFile = fs::FileUtils::joinPath(newPath,
+                                              folly::stringPrintf("%019ld.wal", it->first));
+
+    if (link(it->second->path(), targetFile.data()) != 0) {
         LOG(INFO) << idStr_ << "Create link failed for " << it->second->path()
                   << " on " << newPath << ", error:" << strerror(errno);
         return false;

@@ -21,7 +21,7 @@ nebula> GET CONFIGS storage:rocksdb_column_family_options
 ---------------------------------------------------------------------------------------------------------
 ```
 
-**Note:** You can turn off auto compaction before bulk writing data, but remember to turn it on again since long-term shutdown auto compaction affects the subsequent read performance.
+**Note:** You can turn off auto compaction before bulk writing data, but remember to turn it on again since long-term shutdown auto compaction affects the subsequent read performance, or make service restart time much longer.
 
 ### Turn on Auto Compaction
 
@@ -60,3 +60,11 @@ curl "http://127.0.0.1:12000/admin?space=test&op=flush"
 ```
 
 > Notice that you should create space test before the above curl command.
+
+## Set Compaction Threads
+
+Set the Compaction threads to speed up Compaction with the following statement:
+
+```ngql
+nebula> UPDATE CONFIGS storage:rocksdb_db_options = { max_background_compactions = 4 }
+```

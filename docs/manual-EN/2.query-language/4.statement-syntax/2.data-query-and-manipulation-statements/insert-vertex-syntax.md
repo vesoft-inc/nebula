@@ -1,7 +1,7 @@
 # Insert Vertex Syntax
 
 ```ngql
-INSERT VERTEX tag_name[, tag_name] (prop_name_list[, prop_name_list])
+INSERT VERTEX <tag_name> [, <tag_name>, ...] (prop_name_list[, prop_name_list])
      {VALUES | VALUE} vid: (prop_value_list[, prop_value_list])
 
 prop_name_list:
@@ -16,8 +16,6 @@ INSERT VERTEX statement inserts one vertex into **Nebula Graph**.
 * `tag_name` denotes the `tag` (vertex type), which must be created before `INSERT VERTEX`.
 * `prop_name_list` is the property name list in the given `tag_name`.
 * `prop_value_list` must provide the value list according to the `prop_name_list`. If no value matches the type, an error will be returned.
-
-> No default value is given in this release.
 
 ## Examples
 

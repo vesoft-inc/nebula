@@ -80,6 +80,8 @@ public:
     Status applyTo(std::function<Status(const RowReader *reader)> visitor,
                    int64_t limit = INT64_MAX) const;
 
+    nebula::cpp2::SupportedType getColumnType(const std::string &col) const;
+
     class InterimResultIndex final {
     public:
         OptVariantType getColumnWithVID(VertexID id, const std::string &col) const;

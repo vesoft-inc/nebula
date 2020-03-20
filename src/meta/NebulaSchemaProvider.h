@@ -66,6 +66,8 @@ public:
     std::shared_ptr<const SchemaProviderIf::Field> field(
         const folly::StringPiece name) const override;
 
+    nebula::cpp2::Schema toSchema() const override;
+
     void addField(folly::StringPiece name, nebula::cpp2::ValueType&& type);
 
     void setProp(nebula::cpp2::SchemaProp schemaProp);

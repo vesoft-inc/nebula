@@ -26,12 +26,16 @@ public:
         return l; \
     }
 
+GENERATE_LOCK(lastUpdateTime);
 GENERATE_LOCK(space);
 GENERATE_LOCK(id);
 GENERATE_LOCK(tag);
 GENERATE_LOCK(edge);
+GENERATE_LOCK(tagIndex);
+GENERATE_LOCK(edgeIndex);
 GENERATE_LOCK(user);
 GENERATE_LOCK(config);
+GENERATE_LOCK(snapshot);
 
 #undef GENERATE_LOCK
 };

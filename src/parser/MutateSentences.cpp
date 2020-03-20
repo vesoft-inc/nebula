@@ -4,6 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 #include "base/Base.h"
+#include "parser/TraverseSentences.h"
 #include "parser/MutateSentences.h"
 
 namespace nebula {
@@ -167,7 +168,8 @@ StatusOr<std::string> UpdateItem::toEvaledString() const {
     buf.reserve(256);
     buf += *field_;
     buf += "=";
-    auto ret = value_->eval();
+    Getters getters;
+    auto ret = value_->eval(getters);
     if (!ret.ok()) {
         return ret.status();
     }
@@ -265,39 +267,33 @@ std::string UpdateEdgeSentence::toString() const {
     return buf;
 }
 
-std::string DeleteVertexSentence::toString() const {
+std::string DeleteVerticesSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "DELETE VERTEX ";
-    buf += vid_->toString();
+    buf += vidList_->toString();
     return buf;
 }
 
-std::string EdgeList::toString() const {
-    std::string buf;
-    buf.reserve(256);
-    for (auto &edge : edges_) {
-        buf += edge.first->toString();
-        buf += "->";
-        buf += edge.second->toString();
-        buf += ",";
-    }
-    if (!buf.empty()) {
-        buf.resize(buf.size() - 1);
-    }
-    return buf;
-}
-
-std::string DeleteEdgeSentence::toString() const {
+std::string DeleteEdgesSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "DELETE EDGE ";
-    buf += edgeList_->toString();
-    if (whereClause_ != nullptr) {
-        buf += " ";
-        buf += whereClause_->toString();
-    }
+    buf += *edge_;
+    buf += " ";
+    buf += edgeKeys_->toString();
     return buf;
+}
+
+DeleteEdgesSentence::DeleteEdgesSentence(std::string *edge,
+                                         EdgeKeys    *keys) {
+        edge_.reset(edge);
+        edgeKeys_.reset(keys);
+        kind_ = Kind::kDeleteEdges;
+}
+
+EdgeKeys* DeleteEdgesSentence::keys() const {
+    return edgeKeys_.get();
 }
 
 std::string DownloadSentence::toString() const {
@@ -307,6 +303,22 @@ std::string DownloadSentence::toString() const {
 
 std::string IngestSentence::toString() const {
     return "INGEST";
+}
+
+std::string AdminSentence::toString() const {
+    return op_;
+}
+
+std::string AdminSentence::getType() const {
+    return op_;
+}
+
+std::vector<std::string> AdminSentence::getParas() const {
+    return paras_;
+}
+
+void AdminSentence::addPara(const std::string& para) {
+    paras_.emplace_back(para);
 }
 
 }   // namespace nebula

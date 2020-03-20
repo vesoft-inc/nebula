@@ -99,9 +99,14 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
         , dataPath_(folly::stringPrintf("%s/nebula/%d", dataPath.c_str(), spaceId)) {
     auto path = folly::stringPrintf("%s/data", dataPath_.c_str());
     if (FileUtils::fileType(path.c_str()) == FileType::NOTEXIST) {
-        FileUtils::makeDir(path);
+        if (!FileUtils::makeDir(path)) {
+            LOG(FATAL) << "makeDir " << path << " failed";
+        }
     }
-    LOG(INFO) << "open rocksdb on " << path;
+
+    if (FileUtils::fileType(path.c_str()) != FileType::DIRECTORY) {
+        LOG(FATAL) << path << " is not directory";
+    }
 
     rocksdb::Options options;
     rocksdb::DB* db = nullptr;
@@ -117,6 +122,7 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
     CHECK(status.ok()) << status.ToString();
     db_.reset(db);
     partsNum_ = allParts().size();
+    LOG(INFO) << "open rocksdb on " << path;
 }
 
 
@@ -133,6 +139,7 @@ ResultCode RocksEngine::commitBatchWrite(std::unique_ptr<WriteBatch> batch) {
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     }
+    LOG(ERROR) << "Write into rocksdb failed because of " << status.ToString();
     return ResultCode::ERR_UNKNOWN;
 }
 
@@ -152,24 +159,27 @@ ResultCode RocksEngine::get(const std::string& key, std::string* value) {
 }
 
 
-ResultCode RocksEngine::multiGet(const std::vector<std::string>& keys,
-                                 std::vector<std::string>* values) {
+std::vector<Status> RocksEngine::multiGet(const std::vector<std::string>& keys,
+                                          std::vector<std::string>* values) {
     rocksdb::ReadOptions options;
     std::vector<rocksdb::Slice> slices;
     for (size_t index = 0; index < keys.size(); index++) {
         slices.emplace_back(keys[index]);
     }
 
-    std::vector<rocksdb::Status> status = db_->MultiGet(options, slices, values);
-    auto code = std::all_of(status.begin(), status.end(),
-                            [](rocksdb::Status s) {
-                                return s.ok();
-                            });
-    if (code) {
-        return ResultCode::SUCCEEDED;
-    } else {
-        return ResultCode::ERR_UNKNOWN;
-    }
+    auto status = db_->MultiGet(options, slices, values);
+    std::vector<Status> ret;
+    std::transform(status.begin(), status.end(), std::back_inserter(ret),
+                   [] (const auto& s) {
+                       if (s.ok()) {
+                           return Status::OK();
+                       } else if (s.IsNotFound()) {
+                           return Status::KeyNotFound();
+                       } else {
+                            return Status::Error();
+                       }
+                   });
+    return ret;
 }
 
 
@@ -192,6 +202,19 @@ ResultCode RocksEngine::prefix(const std::string& prefix,
     rocksdb::Iterator* iter = db_->NewIterator(options);
     if (iter) {
         iter->Seek(rocksdb::Slice(prefix));
+    }
+    storageIter->reset(new RocksPrefixIter(iter, prefix));
+    return ResultCode::SUCCEEDED;
+}
+
+
+ResultCode RocksEngine::rangeWithPrefix(const std::string& start,
+                                        const std::string& prefix,
+                                        std::unique_ptr<KVIterator>* storageIter) {
+    rocksdb::ReadOptions options;
+    rocksdb::Iterator* iter = db_->NewIterator(options);
+    if (iter) {
+        iter->Seek(rocksdb::Slice(start));
     }
     storageIter->reset(new RocksPrefixIter(iter, prefix));
     return ResultCode::SUCCEEDED;
@@ -423,6 +446,56 @@ ResultCode RocksEngine::flush() {
         LOG(ERROR) << "Flush Failed: " << status.ToString();
         return ResultCode::ERR_UNKNOWN;
     }
+}
+
+ResultCode RocksEngine::createCheckpoint(const std::string& name) {
+    LOG(INFO) << "Begin checkpoint : " << dataPath_;
+
+    /*
+     * The default checkpoint directory structure is :
+     *   |--FLAGS_data_path
+     *   |----nebula
+     *   |------space1
+     *   |--------data
+     *   |--------wal
+     *   |--------checkpoints
+     *   |----------snapshot1
+     *   |------------data
+     *   |------------wal
+     *   |----------snapshot2
+     *   |----------snapshot3
+     *
+     */
+
+    auto checkpointPath = folly::stringPrintf("%s/checkpoints/%s/data",
+                                              dataPath_.c_str(), name.c_str());
+    LOG(INFO) << "Target checkpoint path : " << checkpointPath;
+    if (fs::FileUtils::exist(checkpointPath)) {
+        LOG(ERROR) << "The snapshot file already exists: " << checkpointPath;
+        return ResultCode::ERR_CHECKPOINT_ERROR;
+    }
+
+    auto parent = checkpointPath.substr(0, checkpointPath.rfind('/'));
+    if (!FileUtils::exist(parent)) {
+        if (!FileUtils::makeDir(parent)) {
+            LOG(ERROR) << "Make dir " << parent << " failed";
+            return ResultCode::ERR_UNKNOWN;
+        }
+    }
+
+    rocksdb::Checkpoint* checkpoint;
+    rocksdb::Status status = rocksdb::Checkpoint::Create(db_.get(), &checkpoint);
+    std::unique_ptr<rocksdb::Checkpoint> cp(checkpoint);
+    if (!status.ok()) {
+        LOG(ERROR) << "Init checkpoint Failed: " << status.ToString();
+        return ResultCode::ERR_CHECKPOINT_ERROR;
+    }
+    status = cp->CreateCheckpoint(checkpointPath, 0);
+    if (!status.ok()) {
+        LOG(ERROR) << "Create checkpoint Failed: " << status.ToString();
+        return ResultCode::ERR_CHECKPOINT_ERROR;
+    }
+    return ResultCode::SUCCEEDED;
 }
 
 }  // namespace kvstore

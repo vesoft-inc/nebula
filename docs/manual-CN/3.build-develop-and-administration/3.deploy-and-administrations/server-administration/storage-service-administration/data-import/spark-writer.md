@@ -9,6 +9,14 @@ Spark Writer 是 Nebula Graph 基于 Spark 的分布式数据导入工具，能�
 
 Spark Writer 支持并发导入多个 tag、edge，支持不同 tag/edge 配置不同的数据仓库。
 
+## 软件要求
+
+**注意：** 为确保 **Nebula Graph Spark Writer** 正常使用，请确保你的机器已安装：
+
+* Spark 2.0 及以上版本
+* Hive 2.3 及以上版本
+* Hadoop 2.0 及以上版本
+
 ## 获取 Spark Writer
 
 ### 编译源码
@@ -194,73 +202,76 @@ Player 表结构如下：
     }
   }
 
-  # 标签处理
-  tags: {
+  # 处理标签
+  tags: [
 
     # 从 HDFS 文件加载数据， 此处数据类型为 Parquet
     # tag 名称为 tag name 0
-    #  HDFS Parquet 文件的中的 field 0、field 1、field 2 将写入 tag name 0
-    # 节点列为 vertex key field
-    tag name 0: {
+    #  HDFS Parquet 文件的中的 field_0、field_1、field_2 将写入 tag_name_0
+    # 节点列为 vertex_key_field
+    {
+      name: tag_name_0
       type: parquet
       path: hdfs path
       fields: {
-        field 0: nebula field 0,
-        field 1: nebula field 1,
-        field 2: nebula field 2
+        field_0: nebula_field_0,
+        field_1: nebula_field_1,
+        field_2: nebula_field_2
       }
-      vertex: vertex key field
+      vertex: vertex_key_field
       batch : 16
     }
 
     # 与上述类似
     # 从 Hive 加载将执行命令 $ {exec} 作为数据集
-    tag name 1: {
+    {
+      name: tag_name_1
       type: hive
-      exec: "select hive field 0, hive field 1, hive field 2 from database.table"
+      exec: "select hive_field_0, hive_field_1, hive_field_2 from database.table"
       fields: {
-        hive field 0: nebula field 0,
-        hive field 1: nebula field 1,
-        hive field 2: nebula field 2
+        hive_field_0: nebula_field_0,
+        hive_field_1: nebula_field_1,
+        hive_field_2: nebula_field_2
       }
-      vertex: vertex id field
+      vertex: vertex_id_field
     }
-  }
+  ]
 
-  # 边处理
-  edges: {
+  # 处理边
+  edges: [
     # 从 HDFS 加载数据，数据类型为 JSON
-    # 边名称为 edge name 0
-    # HDFS JSON 文件中的 field 0、field 1、field 2 将被写入 edge name 0
-    # 起始列为 source field
-    edge name 0: {
+    # 边名称为 edge_name_0
+    # HDFS JSON 文件中的 field_0、field_1、field 2 将被写入 edge_name_0
+    # 起始字段为 source_field，终止字段为 target_field ，边权重字段为 ranking_field。
+    {
+      name: edge_name_0
       type: json
-      path: hdfs path
+      path: hdfs_path
       fields: {
-        field 0: nebula field 0,
-        field 1: nebula field 1,
-        field 2: nebula field 2
+        field_0: nebula_field_0,
+        field_1: nebula_field_1,
+        field_2: nebula_field_2
       }
-      source:  source field
-      target:  target field
-      ranking: ranking field
+      source:  source_field
+      target:  target_field
+      ranking: ranking_field
     }
 
-
-   # 从 Hive 加载将执行命令 $ {exec} 作为数据集
-   # 边权重为可选
-   edge name 1: {
-    type: hive
-    exec: "select hive field 0, hive field 1, hive field 2 from database.table"
-    fields: {
-      hive field 0: nebula field 0,
-      hive field 1: nebula field 1,
-      hive field 2: nebula field 2
-     }
-    source:  source id field
-    target:  target id field
-   }
-  }
+    # 从 Hive 加载将执行命令 $ {exec} 作为数据集
+    # 边权重为可选
+    {
+      name: edge_name_1
+      type: hive
+      exec: "select hive_field_0, hive_field_1, hive_field_2 from database.table"
+      fields: {
+        hive_field_0: nebula_field_0,
+        hive_field_1: nebula_field_1,
+        hive_field_2: nebula_field_2
+      }
+      source:  source_id_field
+      target:  target_id_field
+    }
+  ]
 }
 ```
 

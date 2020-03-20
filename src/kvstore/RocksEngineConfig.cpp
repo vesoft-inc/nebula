@@ -36,10 +36,6 @@ DEFINE_string(rocksdb_block_based_table_options,
 DEFINE_int32(rocksdb_batch_size,
              4 * 1024,
              "default reserved bytes for one batch operation");
-
-DEFINE_string(part_man_type,
-              "memory",
-              "memory, meta");
 /*
  * For these un-supported string options as below, will need to specify them with gflag.
  */
@@ -88,7 +84,9 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options &baseOpts) {
         return s;
     }
 
-    bbtOpts.block_cache = rocksdb::NewLRUCache(FLAGS_rocksdb_block_cache * 1024 * 1024);
+    static std::shared_ptr<rocksdb::Cache> blockCache
+        = rocksdb::NewLRUCache(FLAGS_rocksdb_block_cache * 1024 * 1024);
+    bbtOpts.block_cache = blockCache;
     baseOpts.table_factory.reset(NewBlockBasedTableFactory(bbtOpts));
     baseOpts.create_if_missing = true;
     return s;

@@ -138,6 +138,7 @@ struct PartMeta {
 using PartsMap  = std::unordered_map<GraphSpaceID, std::unordered_map<PartitionID, PartMeta>>;
 
 using VariantType = boost::variant<int64_t, double, bool, std::string>;
+constexpr const char* VARIANT_TYPE_NAME[] = {"int", "double", "bool", "string"};
 
 #ifndef VAR_INT64
 #define VAR_INT64 0
@@ -161,6 +162,10 @@ constexpr char _SRC[]   = "_src";
 constexpr char _TYPE[]  = "_type";
 constexpr char _RANK[]  = "_rank";
 constexpr char _DST[]   = "_dst";
+
+#define ID_HASH(id, numShards) \
+    ((static_cast<uint64_t>(id)) % numShards + 1)
+
 // Useful type traits
 
 // Tell if `T' is copy-constructible

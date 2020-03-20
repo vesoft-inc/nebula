@@ -122,9 +122,13 @@ std::unique_ptr<RowReader> RowReader::getTagPropReader(
     CHECK_NOTNULL(schemaMan);
     int32_t ver = getSchemaVer(row);
     if (ver >= 0) {
+        auto schema = schemaMan->getTagSchema(space, tag, ver);
+        if (schema == nullptr) {
+            return nullptr;
+        }
         return std::unique_ptr<RowReader>(new RowReader(
             row,
-            schemaMan->getTagSchema(space, tag, ver)));
+            schema));
     } else {
         // Invalid data
         // TODO We need a better error handler here
@@ -153,7 +157,6 @@ std::unique_ptr<RowReader> RowReader::getEdgePropReader(
         return nullptr;
     }
 }
-
 
 // static
 std::unique_ptr<RowReader> RowReader::getRowReader(
@@ -293,7 +296,7 @@ int64_t RowReader::skipToNext(int64_t index, int64_t offset) const noexcept {
             break;
         }
         case cpp2::SupportedType::FLOAT: {
-            // Eight bytes
+            // Four bytes
             offset += sizeof(float);
             break;
         }

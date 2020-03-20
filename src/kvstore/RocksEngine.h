@@ -9,6 +9,7 @@
 
 #include <gtest/gtest_prod.h>
 #include <rocksdb/db.h>
+#include <rocksdb/utilities/checkpoint.h>
 #include "base/Base.h"
 #include "kvstore/KVIterator.h"
 #include "kvstore/KVEngine.h"
@@ -51,7 +52,6 @@ private:
     rocksdb::Slice end_;
 };
 
-
 class RocksPrefixIter : public KVIterator {
 public:
     RocksPrefixIter(rocksdb::Iterator* iter, rocksdb::Slice prefix)
@@ -80,11 +80,10 @@ public:
         return folly::StringPiece(iter_->value().data(), iter_->value().size());
     }
 
-private:
+protected:
     std::unique_ptr<rocksdb::Iterator> iter_;
     rocksdb::Slice prefix_;
 };
-
 
 /**************************************************************************
  *
@@ -116,8 +115,8 @@ public:
      ********************/
     ResultCode get(const std::string& key, std::string* value) override;
 
-    ResultCode multiGet(const std::vector<std::string>& keys,
-                        std::vector<std::string>* values) override;
+    std::vector<Status> multiGet(const std::vector<std::string>& keys,
+                                 std::vector<std::string>* values) override;
 
     ResultCode range(const std::string& start,
                      const std::string& end,
@@ -125,6 +124,10 @@ public:
 
     ResultCode prefix(const std::string& prefix,
                       std::unique_ptr<KVIterator>* iter) override;
+
+    ResultCode rangeWithPrefix(const std::string& start,
+                               const std::string& prefix,
+                               std::unique_ptr<KVIterator>* iter) override;
 
     /*********************
      * Data modification
@@ -164,6 +167,11 @@ public:
     ResultCode compact() override;
 
     ResultCode flush() override;
+
+    /*********************
+     * Checkpoint operation
+     ********************/
+    ResultCode createCheckpoint(const std::string& path) override;
 
 private:
     std::string partKey(PartitionID partId);

@@ -12,7 +12,7 @@ namespace nebula {
 namespace graph {
 
 GroupByExecutor::GroupByExecutor(Sentence *sentence, ExecutionContext *ectx)
-    : TraverseExecutor(ectx) {
+    : TraverseExecutor(ectx, "group_by") {
     sentence_ = static_cast<GroupBySentence*>(sentence);
 }
 
@@ -180,46 +180,54 @@ Status GroupByExecutor::checkAll() {
 
 void GroupByExecutor::execute() {
     FLOG_INFO("Executing Group by: %s", sentence_->toString().c_str());
-    DCHECK(onError_);
-    DCHECK(onFinish_);
 
-    if (rows_.empty()) {
+    if (inputs_ == nullptr || !inputs_->hasData()) {
         onEmptyInputs();
         return;
     }
 
-    auto status = checkAll();
+    auto status = checkIfDuplicateColumn();
     if (!status.ok()) {
-        onError_(std::move(status));
+        doError(std::move(status));
+        return;
+    }
+    auto ret = inputs_->getRows();
+    if (!ret.ok()) {
+        LOG(ERROR) << "Get rows failed: " << ret.status();
+        doError(std::move(ret).status());
+        return;
+    }
+    rows_ = std::move(ret).value();
+    schema_ = inputs_->schema();
+
+    status = checkAll();
+    if (!status.ok()) {
+        doError(std::move(status));
         return;
     }
 
     status = groupingData();
     if (!status.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(status));
+        doError(std::move(status));
         return;
     }
 
     status = generateOutputSchema();
     if (!status.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(status));
+        doError(std::move(status));
         return;
     }
 
     if (onResult_) {
-        auto ret = setupInterimResult();
-        if (!ret.ok()) {
-            DCHECK(onError_);
-            onError_(std::move(ret).status());
+        auto result = setupInterimResult();
+        if (!result.ok()) {
+            doError(std::move(result).status());
             return;
         }
-        onResult_(std::move(ret).value());
+        onResult_(std::move(result).value());
     }
 
-    DCHECK(onFinish_);
-    onFinish_(Executor::ProcessControl::kNext);
+    doFinish(Executor::ProcessControl::kNext);
 }
 
 
@@ -229,13 +237,13 @@ Status GroupByExecutor::groupingData() {
     using GroupData = std::unordered_map<ColVals, FunCols, ColsHasher>;
 
     GroupData data;
+    Getters getters;
     for (auto& it : rows_) {
         ColVals groupVals;
         FunCols calVals;
 
         // Firstly: group the cols
         for (auto &col : groupCols_) {
-            auto &getters = expCtx_->getters();
             cpp2::ColumnValue::Type valType = cpp2::ColumnValue::Type::__EMPTY__;
             getters.getInputProp = [&] (const std::string & prop) -> OptVariantType {
                 auto indexIt = schemaMap_.find(prop);
@@ -248,7 +256,7 @@ Status GroupByExecutor::groupingData() {
                 return toVariantType(val);
             };
 
-            auto eval = col->expr()->eval();
+            auto eval = col->expr()->eval(getters);
             if (!eval.ok()) {
                 return eval.status();
             }
@@ -277,7 +285,6 @@ Status GroupByExecutor::groupingData() {
         // Apply value
         auto i = 0u;
         for (auto &col : calVals) {
-            auto &getters = expCtx_->getters();
             cpp2::ColumnValue::Type valType = cpp2::ColumnValue::Type::__EMPTY__;
             getters.getInputProp = [&] (const std::string &prop) -> OptVariantType{
                 auto indexIt = schemaMap_.find(prop);
@@ -289,7 +296,7 @@ Status GroupByExecutor::groupingData() {
                 valType = val.getType();
                 return toVariantType(val);
             };
-            auto eval = yieldCols_[i]->expr()->eval();
+            auto eval = yieldCols_[i]->expr()->eval(getters);
             if (!eval.ok()) {
                 return eval.status();
             }
@@ -336,28 +343,11 @@ std::vector<std::string> GroupByExecutor::getResultColumnNames() const {
 }
 
 
-void GroupByExecutor::feedResult(std::unique_ptr<InterimResult> result) {
-    if (result == nullptr) {
-        LOG(ERROR) << "result is nullptr";
-        return;
-    }
-
-    auto ret = result->getRows();
-    if (!ret.ok()) {
-        LOG(ERROR) << "Get rows failed: " << ret.status();
-        return;
-    }
-    rows_ = std::move(ret).value();
-    schema_ = std::move(result->schema());
-}
-
-
 Status GroupByExecutor::generateOutputSchema() {
     using nebula::cpp2::SupportedType;
     if (resultSchema_ == nullptr) {
         resultSchema_ = std::make_shared<SchemaWriter>();
         auto colnames = getResultColumnNames();
-        CHECK(!rows_.empty());
         for (auto i = 0u; i < rows_[0].columns.size(); i++) {
             SupportedType type;
             switch (rows_[0].columns[i].getType()) {
@@ -412,7 +402,7 @@ void GroupByExecutor::onEmptyInputs() {
         auto result = std::make_unique<InterimResult>(getResultColumnNames());
         onResult_(std::move(result));
     }
-    onFinish_(Executor::ProcessControl::kNext);
+    doFinish(Executor::ProcessControl::kNext);
 }
 
 
