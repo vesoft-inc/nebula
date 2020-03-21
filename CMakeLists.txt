@@ -30,6 +30,13 @@ project("Nebula Graph" C CXX)
 
 # Set the project home dir
 set(NEBULA_HOME ${CMAKE_CURRENT_SOURCE_DIR})
+
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+	MESSAGE(FATAL_ERROR "Only Linux is supported")
+elseif (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+	MESSAGE(FATAL_ERROR "Only Linux is supported")
+endif ()
+
 # To include customized FindXXX.cmake modules
 set(CMAKE_MODULE_PATH "${NEBULA_HOME}/cmake" ${CMAKE_MODULE_PATH})
 include(LinkerConfig)
