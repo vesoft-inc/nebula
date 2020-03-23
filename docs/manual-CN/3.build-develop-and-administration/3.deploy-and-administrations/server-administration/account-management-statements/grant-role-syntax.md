@@ -1,7 +1,7 @@
 # GRANT ROLE 语法
 
 ```ngql
-REVOKE ROLE <role_type> ON <space> FROM <user>
+GRANT ROLE <role_type> ON <space> TO <user>
 ```
 
 使用 `GRANT` 语句为 **Nebula Graph** 用户授予权限。使用 `GRANT` 必须拥有 `GRANT` 权限。
