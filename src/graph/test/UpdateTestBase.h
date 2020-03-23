@@ -46,6 +46,18 @@ protected:
 
     static AssertionResult removeData();
 
+    AssertionResult verifyVertexUpdateAffected(cpp2::ExecutionResponse &resp) {
+        return verifyAffect(resp, 1, 0);
+    }
+
+    AssertionResult verifyEdgeUpdateAffected(cpp2::ExecutionResponse &resp) {
+        return verifyAffect(resp, 0, 1);
+    }
+
+    AssertionResult verifyUpdateNotAffected(cpp2::ExecutionResponse &resp) {
+        return verifyAffect(resp, 0, 0);
+    }
+
 protected:
     static uint16_t                             storagePort_;
     static std::unique_ptr<GraphClient>         client_;

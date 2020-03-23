@@ -144,7 +144,7 @@ std::vector<std::string> UpdateEdgeExecutor::getReturnColumns() {
 }
 
 
-void UpdateEdgeExecutor::toResponse(storage::cpp2::UpdateResponse &&rpcResp) {
+void UpdateEdgeExecutor::toResponse(storage::cpp2::UpdateResponse &&rpcResp, int32_t edge) {
     resp_ = std::make_unique<cpp2::ExecutionResponse>();
     std::vector<std::string> columnNames;
     columnNames.reserve(yields_.size());
@@ -193,6 +193,10 @@ void UpdateEdgeExecutor::toResponse(storage::cpp2::UpdateResponse &&rpcResp) {
         rows.back().set_columns(std::move(row));
     }
     resp_->set_rows(std::move(rows));
+    nebula::cpp2::Affect affect;
+    affect.set_vertex(0);
+    affect.set_edge(edge);
+    resp_->set_affect(affect);
 }
 
 void UpdateEdgeExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
@@ -243,8 +247,10 @@ void UpdateEdgeExecutor::updateEdge(bool reversely) {
                     // Return ok when filter out without exception
                     // so do nothing
                     // https://github.com/vesoft-inc/nebula/issues/1888
-                    // TODO(shylock) maybe we need alert user execute ok but no data affect
-                    this->toResponse(std::move(rpcResp));
+                    // Hard Code the affect in update statement
+                    // Assume which only affect almost one vertex or edge
+                    // So we represent the affect by succeeded/failure
+                    this->toResponse(std::move(rpcResp), 0);
                     doFinish(Executor::ProcessControl::kNext);
                     return;
                 default:
@@ -261,7 +267,7 @@ void UpdateEdgeExecutor::updateEdge(bool reversely) {
         if (reversely) {
             doFinish(Executor::ProcessControl::kNext);
         } else {
-            this->toResponse(std::move(rpcResp));
+            this->toResponse(std::move(rpcResp), 1);
             this->updateEdge(true);
         }
     };

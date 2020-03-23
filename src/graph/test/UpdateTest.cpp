@@ -72,6 +72,7 @@ TEST_P(UpdateUpsertTest, UpdateUpsertVertex) {
                     + "SET course.credits = $^.course.credits + 1, building.name = \"No6\" ";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexUpdateAffected(resp));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -79,6 +80,7 @@ TEST_P(UpdateUpsertTest, UpdateUpsertVertex) {
                     + "SET course.credits = $^.course.credits + 1, building.name = \"No6\" ";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexUpdateAffected(resp));
     }
     {
         // Filter out
@@ -89,6 +91,7 @@ TEST_P(UpdateUpsertTest, UpdateUpsertVertex) {
                     + "WHEN $^.course.name == \"English\" && $^.course.credits > 2";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyUpdateNotAffected(resp));
     }
     {   // SetFilter
         cpp2::ExecutionResponse resp;
@@ -97,6 +100,7 @@ TEST_P(UpdateUpsertTest, UpdateUpsertVertex) {
                     + "WHEN $^.course.name == \"Math\" && $^.course.credits > 2";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexUpdateAffected(resp));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -105,6 +109,7 @@ TEST_P(UpdateUpsertTest, UpdateUpsertVertex) {
                     + "WHEN $^.course.name == \"Math\" && $^.course.credits > 2";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexUpdateAffected(resp));
     }
     {   // SetYield
         cpp2::ExecutionResponse resp;
@@ -117,6 +122,7 @@ TEST_P(UpdateUpsertTest, UpdateUpsertVertex) {
             {"Math", 6, "No8"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_TRUE(verifyVertexUpdateAffected(resp));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -129,6 +135,7 @@ TEST_P(UpdateUpsertTest, UpdateUpsertVertex) {
             {"Math", 6, "No8"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_TRUE(verifyVertexUpdateAffected(resp));
     }
     {   // SetFilterYield
         cpp2::ExecutionResponse resp;
@@ -142,6 +149,7 @@ TEST_P(UpdateUpsertTest, UpdateUpsertVertex) {
             {"Math", 7, "No9"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_TRUE(verifyVertexUpdateAffected(resp));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -155,6 +163,7 @@ TEST_P(UpdateUpsertTest, UpdateUpsertVertex) {
             {"Math", 7, "No9"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_TRUE(verifyVertexUpdateAffected(resp));
     }
     {   // Filter out with Yield
         cpp2::ExecutionResponse resp;
@@ -168,6 +177,7 @@ TEST_P(UpdateUpsertTest, UpdateUpsertVertex) {
             {"Math", 7, "No9"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_TRUE(verifyUpdateNotAffected(resp));
     }
     {   // Filter out with Yield
         cpp2::ExecutionResponse resp;
@@ -181,6 +191,7 @@ TEST_P(UpdateUpsertTest, UpdateUpsertVertex) {
             {"Math", 7, "No9"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_TRUE(verifyUpdateNotAffected(resp));
     }
 }
 
@@ -206,6 +217,7 @@ TEST_P(UpdateUpsertTest, UpdateUpsertEdge) {
                         + "SET grade = select.grade + 1, year = 2000";
             auto code = client_->execute(query, resp);
             ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+            ASSERT_TRUE(verifyEdgeUpdateAffected(resp));
         }
         {
             cpp2::ExecutionResponse resp;
@@ -236,6 +248,7 @@ TEST_P(UpdateUpsertTest, UpdateUpsertEdge) {
                     + "SET grade = select.grade + 1, year = 2000";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyEdgeUpdateAffected(resp));
     }
     {   // Filter out
         // https://github.com/vesoft-inc/nebula/issues/1888
@@ -245,6 +258,7 @@ TEST_P(UpdateUpsertTest, UpdateUpsertEdge) {
                     + "WHEN select.grade > 1024 && $^.student.age > 15";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyUpdateNotAffected(resp));
     }
     {   // SetFilter
         cpp2::ExecutionResponse resp;
@@ -253,6 +267,7 @@ TEST_P(UpdateUpsertTest, UpdateUpsertEdge) {
                     + "WHEN select.grade > 4 && $^.student.age > 15";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyEdgeUpdateAffected(resp));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -261,6 +276,7 @@ TEST_P(UpdateUpsertTest, UpdateUpsertEdge) {
                     + "WHEN select.grade > 4 && $^.student.age > 15";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyEdgeUpdateAffected(resp));
     }
     {   // SetYield
         cpp2::ExecutionResponse resp;
@@ -273,6 +289,7 @@ TEST_P(UpdateUpsertTest, UpdateUpsertEdge) {
             {"Monica", 8, 2018},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_TRUE(verifyEdgeUpdateAffected(resp));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -285,6 +302,7 @@ TEST_P(UpdateUpsertTest, UpdateUpsertEdge) {
             {"Monica", 8, 2018},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_TRUE(verifyEdgeUpdateAffected(resp));
     }
     {   // SetFilterYield
         cpp2::ExecutionResponse resp;
@@ -298,6 +316,7 @@ TEST_P(UpdateUpsertTest, UpdateUpsertEdge) {
             {"Monica", 9, 2019},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_TRUE(verifyEdgeUpdateAffected(resp));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -311,6 +330,7 @@ TEST_P(UpdateUpsertTest, UpdateUpsertEdge) {
             {"Monica", 9, 2019},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_TRUE(verifyEdgeUpdateAffected(resp));
     }
     {   // Filter out with Yield
         cpp2::ExecutionResponse resp;
@@ -324,6 +344,7 @@ TEST_P(UpdateUpsertTest, UpdateUpsertEdge) {
             {"Monica", 9, 2019},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_TRUE(verifyUpdateNotAffected(resp));
     }
     {   // Filter out with Yield
         cpp2::ExecutionResponse resp;
@@ -337,6 +358,7 @@ TEST_P(UpdateUpsertTest, UpdateUpsertEdge) {
             {"Monica", 9, 2019},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_TRUE(verifyUpdateNotAffected(resp));
     }
 }
 
@@ -348,6 +370,7 @@ TEST_P(UpdateUpsertTest, InvalidTest) {
                     + "SET credits = $^.course.credits + 1, name = \"No9\"";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {   // update edge: the item is PropName = Expression in SET clause
         cpp2::ExecutionResponse resp;
@@ -355,6 +378,7 @@ TEST_P(UpdateUpsertTest, InvalidTest) {
                     + "SET select.grade = select.grade + 1, select.year = 2019";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {   // the $$.TagName.PropName expressions are not allowed in any update sentence
         cpp2::ExecutionResponse resp;
@@ -364,6 +388,7 @@ TEST_P(UpdateUpsertTest, InvalidTest) {
                 + "YIELD $^.course.name AS Name, $^.course.credits AS Credits, $$.building.name";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {   // make sure TagName and PropertyName must exist in all clauses
         cpp2::ExecutionResponse resp;
@@ -373,6 +398,7 @@ TEST_P(UpdateUpsertTest, InvalidTest) {
                     + "YIELD $^.course.name AS Name, $^.nonexistentTag.nonexistentProperty";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code) << resp.get_error_msg();
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {   // make sure EdgeName and PropertyName must exist in all clauses
         cpp2::ExecutionResponse resp;
@@ -382,6 +408,7 @@ TEST_P(UpdateUpsertTest, InvalidTest) {
                     + "YIELD $^.nonexistentTag.name AS Name, select.nonexistentProperty AS Grade";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code) << resp.get_error_msg();
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {   // make sure the edge_type must not exist
         cpp2::ExecutionResponse resp;
@@ -389,6 +416,7 @@ TEST_P(UpdateUpsertTest, InvalidTest) {
                     + "SET grade = select.grade + 1, year = 2019";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code) << resp.get_error_msg();
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -410,6 +438,7 @@ TEST_F(UpsertTest, NotExists) {
             {"CS", 6, "No10"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_TRUE(verifyVertexUpdateAffected(resp));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -423,6 +452,7 @@ TEST_F(UpsertTest, NotExists) {
             {"CS", 6, "No10"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_TRUE(verifyVertexUpdateAffected(resp));
     }
 
     {  // Insertable
@@ -437,6 +467,7 @@ TEST_F(UpsertTest, NotExists) {
             {3, 2019},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_TRUE(verifyEdgeUpdateAffected(resp));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -450,6 +481,7 @@ TEST_F(UpsertTest, NotExists) {
             {3, 2019},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_TRUE(verifyEdgeUpdateAffected(resp));
     }
 }
 
@@ -462,6 +494,7 @@ TEST_F(UpdateTest, NotExists) {
                      "YIELD $^.course.name AS Name, $^.course.credits AS Credits, $^.building.name";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code) << resp.get_error_msg();
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {   // make sure the edge(src, dst) must not exist
         cpp2::ExecutionResponse resp;
@@ -471,6 +504,7 @@ TEST_F(UpdateTest, NotExists) {
                      "YIELD $^.student.name AS Name, select.grade AS Grade, select.year AS Year";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code) << resp.get_error_msg();
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {   // make sure the edge(src, ranking, dst) must not exist
         cpp2::ExecutionResponse resp;
@@ -480,6 +514,7 @@ TEST_F(UpdateTest, NotExists) {
                      "YIELD $^.student.name AS Name, select.grade AS Grade, select.year AS Year";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code) << resp.get_error_msg();
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 

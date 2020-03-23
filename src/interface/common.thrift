@@ -134,4 +134,11 @@ struct RoleItem {
     3: RoleType      role_type,
 }
 
+// How many count vertex/edge affected
+struct Affect {
+    1: i32 vertex,
+    2: i32 edge,
+}
+
+
 const ValueType kInvalidValueType = {"type" : UNKNOWN}

@@ -14,6 +14,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:fs_obj>
+        $<TARGET_OBJECTS:common_thrift_obj>
         $<TARGET_OBJECTS:graph_thrift_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:thread_obj>

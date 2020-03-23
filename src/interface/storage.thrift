@@ -152,6 +152,9 @@ struct QueryResponse {
 
 struct ExecResponse {
     1: required ResponseCommon result,
+    // CC(shylock) the optional just for RPC protocol compatible
+    // Mutable reponse require affect field
+    2: optional common.Affect affect,
 }
 
 struct EdgePropResponse {

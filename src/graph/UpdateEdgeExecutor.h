@@ -52,7 +52,7 @@ private:
     void updateEdge(bool reversely);
 
     // All required data have arrived, finish the execution.
-    void toResponse(storage::cpp2::UpdateResponse &&rpcResp);
+    void toResponse(storage::cpp2::UpdateResponse &&rpcResp, int32_t edge);
 
 private:
     UpdateEdgeSentence                         *sentence_{nullptr};

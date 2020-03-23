@@ -133,8 +133,11 @@ void UpdateVertexExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
 }
 
 
-void UpdateVertexExecutor::finishExecution(storage::cpp2::UpdateResponse &&rpcResp) {
-    resp_ = std::make_unique<cpp2::ExecutionResponse>();
+void UpdateVertexExecutor::finishExecution(storage::cpp2::UpdateResponse &&rpcResp,
+    int32_t vertex) {
+    if (resp_ == nullptr) {
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+    }
     std::vector<std::string> columnNames;
     columnNames.reserve(yields_.size());
     for (auto *col : yields_) {
@@ -182,6 +185,13 @@ void UpdateVertexExecutor::finishExecution(storage::cpp2::UpdateResponse &&rpcRe
         rows.back().set_columns(std::move(row));
     }
     resp_->set_rows(std::move(rows));
+    // Hard Code the affect in update statement
+    // Assume which only affect almost one vertex or edge
+    // So we represent the affect by succeeded/failure
+    nebula::cpp2::Affect affect;
+    affect.set_vertex(vertex);
+    affect.set_edge(0);
+    resp_->set_affect(affect);
     doFinish(Executor::ProcessControl::kNext);
 }
 
@@ -210,6 +220,7 @@ void UpdateVertexExecutor::execute() {
             return;
         }
         auto rpcResp = std::move(resp).value();
+        int32_t vertex = 1;
         for (auto& code : rpcResp.get_result().get_failed_codes()) {
             switch (code.get_code()) {
                 case nebula::storage::cpp2::ErrorCode::E_INVALID_FILTER:
@@ -218,11 +229,12 @@ void UpdateVertexExecutor::execute() {
                 case nebula::storage::cpp2::ErrorCode::E_INVALID_UPDATER:
                     doError(Status::Error("Maybe invalid tag or property in SET/YIELD clasue!"));
                     return;
-                case nebula::storage::cpp2::ErrorCode::E_FILTER_OUT:
+                case nebula::storage::cpp2::ErrorCode::E_FILTER_OUT: {
                     // Treat as Ok so do nothing
                     // https://github.com/vesoft-inc/nebula/issues/1888
-                    // TODO(shylock) maybe we need alert user execute ok but no data affect
+                    vertex = 0;
                     break;
+                }
                 default:
                     std::string errMsg =
                         folly::stringPrintf("Maybe vertex does not exist or filter failed, "
@@ -234,7 +246,7 @@ void UpdateVertexExecutor::execute() {
                     return;
             }
         }
-        this->finishExecution(std::move(rpcResp));
+        this->finishExecution(std::move(rpcResp), vertex);
     };
     auto error = [this] (auto &&e) {
         auto msg = folly::stringPrintf("Insert vertex `%ld' exception: %s",

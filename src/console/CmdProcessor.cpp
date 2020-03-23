@@ -439,6 +439,11 @@ void CmdProcessor::processServerCmd(folly::StringPiece cmd) {
             std::cout << resp.get_latency_in_us() / 1000000.0 << "/"
                       << dur.elapsedInUSec() / 1000000.0 << " s)\n";
         }
+        // Affect
+        if (resp.get_affect() != nullptr) {
+            std::cout << resp.get_affect()->get_vertex() << " vertexes affected, "
+                << resp.get_affect()->get_edge() << " edges affected." << std::endl;
+        }
         std::cout << std::endl;
    } else if (res == cpp2::ErrorCode::E_SYNTAX_ERROR) {
         std::cout << "[ERROR (" << static_cast<int32_t>(res) << ")]: "

@@ -115,6 +115,9 @@ struct ExecutionResponse {
     4: optional list<binary> column_names;  // Column names
     5: optional list<RowValue> rows;
     6: optional string space_name;
+    // The vertex/edge affected in mutable query
+    // for immutable query it's null
+    7: optional common.Affect affect;
 }
 
 

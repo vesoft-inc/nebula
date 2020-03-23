@@ -48,7 +48,7 @@ private:
     std::vector<std::string> getReturnColumns();
 
     // All required data have arrived, finish the execution.
-    void finishExecution(storage::cpp2::UpdateResponse &&rpcResp);
+    void finishExecution(storage::cpp2::UpdateResponse &&rpcResp, int32_t vertex);
 
 private:
     UpdateVertexSentence                       *sentence_{nullptr};

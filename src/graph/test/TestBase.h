@@ -262,6 +262,22 @@ protected:
         return TestOK();
     }
 
+    AssertionResult verifyAffect(const cpp2::ExecutionResponse &resp,
+        int32_t vertex, int32_t edge) {
+        if (resp.get_affect() == nullptr) {
+            return TestError() << "Null affect field.";
+        }
+        if (resp.get_affect()->get_vertex() != vertex) {
+            return TestError() << "Expect " << vertex << " vertex affected, but "
+                << resp.get_affect()->get_vertex() << " done.";
+        }
+        if (resp.get_affect()->get_edge() != edge) {
+            return TestError() << "Expect " << edge << " edge affected, but "
+                << resp.get_affect()->get_edge() << " done.";
+        }
+        return TestOK();
+    }
+
 
 protected:
 };
