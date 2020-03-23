@@ -9,7 +9,8 @@
 
 #include "base/Base.h"
 #include "graph/Executor.h"
-
+#include "graph/GraphFlags.h"
+#include "graph/PermissionCheck.h"
 
 namespace nebula {
 namespace graph {
