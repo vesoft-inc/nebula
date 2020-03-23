@@ -63,7 +63,21 @@ nebula> UPDATE CONFIGS storage:rocksdb_column_family_options = \
         { disable_auto_compactions = false ,         level0_file_num_compaction_trigger = 10 }
 ```
 
-### 显示变量
+### Reservoir Sampling 参数
+
+在配置文件 `storaged-conf` 中设置如下参数：
+
+```bash
+enable_reservoir_sampling = true/false # true 时打开蓄水池采样
+max_edge_returned_per_vertex = number # 设置采样数量
+```
+
+针对大点的场景，目前有两种截断策略：
+
+1. 直接截断，设置 `enable_reservoir_sampling = false`。默认截取前 `max_edge_returned_per_vertex` 个边。
+2. 蓄水池采样。基于蓄水池算法，对出边进行等概率采样，从未知数量的 n 个出边中等概率采样 `max_edge_returned_per_vertex` 个边。当出边数量超过 `max_edge_returned_per_vertex` 时，由于需要计算概率，性能相对直接截取要差，但是等概率采样对某些业务场景更有应用价值。
+
+## 显示变量
 
 ```ngql
 SHOW CONFIGS [graph|meta|storage]
@@ -84,7 +98,7 @@ nebula> SHOW CONFIGS meta
 ----------------------------------------------------------------------------------------------------------------------------
 ```
 
-### 获取变量
+## 获取变量
 
 ```ngql
 GET CONFIGS [graph|meta|storage :] var
@@ -112,7 +126,7 @@ nebula> GET CONFIGS heartbeat_interval_secs
 -----------------------------------------------------------------
 ```
 
-### 更新变量
+## 更新变量
 
 ```ngql
 UPDATE CONFIGS [graph|meta|storage :] var = value

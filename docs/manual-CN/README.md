@@ -76,6 +76,7 @@
     * [查找数据 (Lookup)](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/lookup-syntax.md)
     * [返回满足条件的语句 (Return)](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/return-syntax.md)
     * [更新点和边](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/update-vertex-edge-syntax.md)
+    * [Upsert 语法](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/upsert-syntax.md)
     * [条件语句 (Where)](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/where-syntax.md)
     * [返回结果语句 (Yield)](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/yield-syntax.md)
 
@@ -104,6 +105,9 @@
     * [rpm 安装](3.build-develop-and-administration/3.deploy-and-administrations/deployment/install-with-rpm-deb.md)
   * 服务器管理操作
     * 账号管理
+      * [Alter User Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/alter-user-syntax.md)
+      * [Built-in Roles](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/built-in-roles.md)
+      * [Change Password](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/change-password.md)
       * [Create User](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/create-user-syntax.md)
       * [Drop User](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/drop-user-syntax.md)
       * [Grant Role](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/grant-role-syntax.md)

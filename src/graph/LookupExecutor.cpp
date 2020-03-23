@@ -527,13 +527,13 @@ LookupExecutor::toThriftResponse(EdgeRpcResponse&& eRpcResp,
     int64_t totalRows = 0;
     if (isEdge_) {
         for (auto& resp : eRpcResp.responses()) {
-            if (!resp.get_rows()->empty()) {
+            if (resp.__isset.rows) {
                 totalRows += resp.get_rows()->size();
             }
         }
     } else {
         for (auto& resp : vRpcResp.responses()) {
-            if (!resp.get_rows()->empty()) {
+            if (resp.__isset.rows) {
                 totalRows += resp.get_rows()->size();
             }
         }

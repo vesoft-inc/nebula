@@ -33,6 +33,8 @@ set(GRAPH_TEST_LIBS
     $<TARGET_OBJECTS:stats_obj>
     $<TARGET_OBJECTS:charset_obj>
     $<TARGET_OBJECTS:encryption_obj>
+    $<TARGET_OBJECTS:session_obj>
+    $<TARGET_OBJECTS:permission_obj>
 )
 
 set(GRAPH_TEST_CLIENT_LIBS
@@ -364,6 +366,41 @@ nebula_add_test(
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
         $<TARGET_OBJECTS:adHocIndex_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        proxygenlib
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        permission_test
+    SOURCES
+        PermissionTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:adHocIndex_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        proxygenlib
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        ttl_test
+    SOURCES
+        TTLTest.cpp
+    OBJECTS
+        ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}

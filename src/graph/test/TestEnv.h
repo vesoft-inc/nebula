@@ -13,6 +13,7 @@
 #include "test/ServerContext.h"
 #include <gtest/gtest.h>
 #include "TestUtils.h"
+#include "graph/GraphFlags.h"
 
 namespace nebula {
 namespace graph {
@@ -31,7 +32,8 @@ public:
     uint16_t metaServerPort() const;
     uint16_t storageServerPort() const;
 
-    std::unique_ptr<GraphClient> getClient() const;
+    std::unique_ptr<GraphClient> getClient(const std::string& user = "root",
+                                           const std::string& password = "nebula") const;
 
     meta::ClientBasedGflagsManager* gflagsManager();
 
