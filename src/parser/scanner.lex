@@ -17,7 +17,6 @@ using TokenType = nebula::GraphParser::token;
 
 static constexpr size_t MAX_STRING = 4096;
 
-
 %}
 
 %x DQ_STR
@@ -357,8 +356,8 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {LABEL}                     {
                                 yylval->strval = new std::string(yytext, yyleng);
                                 if (yylval->strval->size() > MAX_STRING) {
-                                    auto error = "Out of rang of the LABEL length, "
-                                                  "the  max length of LABLE is " +
+                                    auto error = "Out of range of the LABEL length, "
+                                                  "the  max length of LABEL is " +
                                                   std::to_string(MAX_STRING) + ":";
                                     delete yylval->strval;
                                     throw GraphParser::syntax_error(*yylloc, error);
@@ -380,11 +379,14 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
                                         i++;
                                     }
                                     if (yyleng - i > 16) {
-                                        throw GraphParser::syntax_error(*yylloc, "Out of rang:");
+                                        throw GraphParser::syntax_error(*yylloc, "Out of range:");
                                     }
                                 }
                                 uint64_t val = 0;
                                 sscanf(yytext, "%lx", &val);
+                                if (val > MAX_ABS_INTEGER) {
+                                    throw GraphParser::syntax_error(*yylloc, "Out of range:");
+                                }
                                 yylval->intval = static_cast<int64_t>(val);
                                 return TokenType::INTEGER;
                             }
@@ -396,11 +398,14 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
                                     }
                                     if (yyleng - i > 22 ||
                                             (yyleng - i == 22 && yytext[i] != '1')) {
-                                        throw GraphParser::syntax_error(*yylloc, "Out of rang:");
+                                        throw GraphParser::syntax_error(*yylloc, "Out of range:");
                                     }
                                 }
                                 uint64_t val = 0;
                                 sscanf(yytext, "%lo", &val);
+                                if (val > MAX_ABS_INTEGER) {
+                                    throw GraphParser::syntax_error(*yylloc, "Out of range:");
+                                }
                                 yylval->intval = static_cast<int64_t>(val);
                                 return TokenType::INTEGER;
                             }
@@ -408,12 +413,12 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
                                 try {
                                     folly::StringPiece text(yytext, yyleng);
                                     uint64_t val = folly::to<uint64_t>(text);
-                                    if (val > 9223372036854775808ULL) {
-                                        throw GraphParser::syntax_error(*yylloc, "Out of rang:");
+                                    if (val > MAX_ABS_INTEGER) {
+                                        throw GraphParser::syntax_error(*yylloc, "Out of range:");
                                     }
                                     yylval->intval = val;
                                 } catch (...) {
-                                    throw GraphParser::syntax_error(*yylloc, "Out of rang:");
+                                    throw GraphParser::syntax_error(*yylloc, "Out of range:");
                                 }
                                 return TokenType::INTEGER;
                             }
@@ -422,7 +427,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
                                     folly::StringPiece text(yytext, yyleng);
                                     yylval->doubleval = folly::to<double>(text);
                                 } catch (...) {
-                                    throw GraphParser::syntax_error(*yylloc, "Out of rang:");
+                                    throw GraphParser::syntax_error(*yylloc, "Out of range:");
                                 }
                                 return TokenType::DOUBLE;
                             }
@@ -431,7 +436,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
                                     folly::StringPiece text(yytext, yyleng);
                                     yylval->doubleval = folly::to<double>(text);
                                 } catch (...) {
-                                    throw GraphParser::syntax_error(*yylloc, "Out of rang:");
+                                    throw GraphParser::syntax_error(*yylloc, "Out of range:");
                                 }
                                 return TokenType::DOUBLE;
                             }

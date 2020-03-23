@@ -112,13 +112,13 @@ struct Pair {
 }
 
 /**
-** GOD is A global senior administrator.like root of Linux systems.
-** ADMIN is an administrator for a given Graph Space.
-** DBA is an schema administrator for a given Graph Space.
-** USER is a normal user for a given Graph Space. A User can access (read and write) the data in the Graph Space.
-** GUEST is a read-only role for a given Graph Space. A Guest cannot modify the data in the Graph Space.
-** Refer to header file src/graph/PermissionManager.h for details.
-**/
+ ** GOD is A global senior administrator.like root of Linux systems.
+ ** ADMIN is an administrator for a given Graph Space.
+ ** DBA is an schema administrator for a given Graph Space.
+ ** USER is a normal user for a given Graph Space. A User can access (read and write) the data in the Graph Space.
+ ** GUEST is a read-only role for a given Graph Space. A Guest cannot modify the data in the Graph Space.
+ ** Refer to header file src/graph/PermissionManager.h for details.
+ **/
 
 enum RoleType {
     GOD    = 0x01,

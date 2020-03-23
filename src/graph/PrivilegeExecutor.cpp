@@ -34,6 +34,19 @@ void GrantExecutor::execute() {
         doError(spaceRet.status());
         return;
     }
+    /**
+     * Permission check.
+     */
+    auto *session = ectx()->rctx()->session();
+    auto role = session->toRole(PrivilegeUtils::toRoleType(aclItem->getRoleType()));
+    auto rst = permission::PermissionManager::canWriteRole(session,
+                                                           role,
+                                                           spaceRet.value(),
+                                                           *account);
+    if (!rst) {
+        doError(Status::PermissionError("Permission denied"));
+        return;
+    }
 
     roleItem.set_user(*account);
     roleItem.set_space_id(spaceRet.value());
@@ -83,6 +96,20 @@ void RevokeExecutor::execute() {
     auto spaceRet = mc->getSpaceIdByNameFromCache(*aclItem->getSpaceName());
     if (!spaceRet.ok()) {
         doError(spaceRet.status());
+        return;
+    }
+
+    /**
+     * Permission check.
+     */
+    auto *session = ectx()->rctx()->session();
+    auto role = session->toRole(PrivilegeUtils::toRoleType(aclItem->getRoleType()));
+    auto rst = permission::PermissionManager::canWriteRole(session,
+                                                           role,
+                                                           spaceRet.value(),
+                                                           *account);
+    if (!rst) {
+        doError(Status::PermissionError("Permission denied"));
         return;
     }
 
