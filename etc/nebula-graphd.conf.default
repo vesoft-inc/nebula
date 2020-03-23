@@ -58,3 +58,5 @@
 ########## authorization ##########
 # Enable authorization
 --enable_authorize=false
+# Authentication type
+--auth_type=password

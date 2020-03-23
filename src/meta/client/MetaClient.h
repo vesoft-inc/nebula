@@ -481,6 +481,8 @@ public:
 
     bool authCheckFromCache(const std::string& account, const std::string& password);
 
+    bool checkShadowAccountFromCache(const std::string& account);
+
     Status refreshCache();
 
     StatusOr<LeaderMap> loadLeader();

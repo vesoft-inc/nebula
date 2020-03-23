@@ -1669,6 +1669,14 @@ bool MetaClient::authCheckFromCache(const std::string& account, const std::strin
     return iter->second == password;
 }
 
+bool MetaClient::checkShadowAccountFromCache(const std::string& account) {
+    auto iter = userPasswordMap_.find(account);
+    if (iter != userPasswordMap_.end()) {
+        return true;
+    }
+    return false;
+}
+
 StatusOr<SchemaVer> MetaClient::getLatestTagVersionFromCache(const GraphSpaceID& space,
                                                              const TagID& tagId) {
     if (!ready_) {

@@ -1,0 +1,12 @@
+nebula_add_test(
+    NAME
+        base64_test
+    SOURCES
+        Base64Test.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:encryption_obj>
+        $<TARGET_OBJECTS:base_obj>
+    LIBRARIES
+        gtest
+        gtest_main
+)

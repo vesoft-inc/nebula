@@ -29,6 +29,11 @@ DECLARE_string(meta_server_addrs);
 
 DECLARE_string(default_charset);
 DECLARE_string(default_collate);
+
 DECLARE_bool(enable_authorize);
+DECLARE_string(auth_type);
+
+DECLARE_string(cloud_server_ip);
+DECLARE_int32(cloud_server_port);
 
 #endif  // GRAPH_GRAPHFLAGS_H_
