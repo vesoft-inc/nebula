@@ -70,5 +70,21 @@ std::string Aggregate::explain() const {
     // TODO:
     return "Aggregate";
 }
+
+std::string Selector::explain() const {
+    return "Selector";
+}
+
+std::string Loop::explain() const {
+    return "Loop";
+}
+
+std::string RegisterSpaceToSession::explain() const {
+    return "RegisterS[aceToSession";
+}
+
+std::string RegisterVariable::explain() const {
+    return "RegisterVariable";
+}
 }  // namespace graph
 }  // namespace nebula

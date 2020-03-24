@@ -7,6 +7,7 @@
 #define PARSER_SEQUENTIALSENTENCES_H_
 
 #include "base/Base.h"
+#include "parser/Sentence.h"
 #include "parser/MaintainSentences.h"
 #include "parser/TraverseSentences.h"
 #include "parser/MutateSentences.h"
@@ -20,7 +21,7 @@ namespace graph {
 class SequentialExecutor;
 }
 
-class SequentialSentences final {
+class SequentialSentences final : public Sentence {
 public:
     explicit SequentialSentences(Sentence *sentence) {
         sentences_.emplace_back(sentence);
@@ -38,7 +39,7 @@ public:
         return result;
     }
 
-    std::string toString() const;
+    std::string toString() const override;
 
 private:
     friend class nebula::graph::SequentialExecutor;

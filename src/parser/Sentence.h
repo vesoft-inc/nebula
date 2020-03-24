@@ -18,6 +18,7 @@ public:
 
     enum class Kind : uint32_t {
         kUnknown,
+        kSequential,
         kGo,
         kSet,
         kPipe,

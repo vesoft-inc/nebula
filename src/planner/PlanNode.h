@@ -17,12 +17,12 @@ namespace graph {
  * PlanNode is an abstraction of nodes in an execution plan which
  * is a kind of directed cyclic graph.
  */
-class StartNode;
 class PlanNode {
 public:
     enum class Kind : uint8_t {
         kUnknown = 0,
         kStart,
+        kEnd,
         kGetNeighbors,
         kGetVertices,
         kGetEdges,
@@ -57,6 +57,12 @@ public:
      */
     virtual std::string explain() const = 0;
 
+    /**
+     * Append a sub-plan to another one.
+     */
+    static Status append(std::shared_ptr<PlanNode> node,
+                         std::shared_ptr<PlanNode> appended);
+
     Kind kind() const {
         return kind_;
     }
@@ -85,15 +91,9 @@ public:
         children_ = std::move(children);
     }
 
-    /**
-     * Append a sub-plan to another one.
-     */
-    Status append(std::shared_ptr<PlanNode> start);
-
-    /**
-     * Merge two sub-plan.
-     */
-    Status merge(std::shared_ptr<StartNode> start);
+    void addChild(std::shared_ptr<PlanNode> child) {
+        children_.emplace_back(std::move(child));
+    }
 
 protected:
     Kind                                     kind_{Kind::kUnknown};
@@ -102,9 +102,6 @@ protected:
     std::vector<std::shared_ptr<PlanNode>>   children_;
 };
 
-/**
- * An execution plan will start from a StartNode.
- */
 class StartNode final : public PlanNode {
 public:
     StartNode() {
@@ -119,6 +116,23 @@ public:
 
     std::string explain() const override {
         return "Start";
+    }
+};
+
+class EndNode final : public PlanNode {
+public:
+    EndNode() {
+        kind_ = PlanNode::Kind::kEnd;
+    }
+
+    EndNode(std::vector<std::string>&& colNames,
+            std::vector<std::shared_ptr<PlanNode>>&& children)
+        : PlanNode(std::move(colNames), std::move(children)) {
+        kind_ = PlanNode::Kind::kStart;
+    }
+
+    std::string explain() const override {
+        return "End";
     }
 };
 }  // namespace graph

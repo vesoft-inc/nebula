@@ -416,6 +416,8 @@ public:
         : BinarySelect(std::move(condition), std::move(colNames), std::move(children)) {
         kind_ = PlanNode::Kind::kSelector;
     }
+
+    std::string explain() const override;
 };
 
 class Loop : public BinarySelect {
@@ -431,6 +433,8 @@ public:
         : BinarySelect(std::move(condition), std::move(colNames), std::move(children)) {
         kind_ = PlanNode::Kind::kLoop;
     }
+
+    std::string explain() const override;
 };
 
 class BuildShortestPath : public PlanNode {
@@ -453,6 +457,8 @@ public:
         space_ = space;
     }
 
+    std::string explain() const override;
+
 private:
     GraphSpaceID    space_;
 };
@@ -472,6 +478,8 @@ public:
         kind_ = PlanNode::Kind::kRegisterVariable;
         var_ = std::move(var);
     }
+
+    std::string explain() const override;
 
 private:
     std::string     var_;
