@@ -161,7 +161,7 @@ protected:
     void collectProps(RowReader* reader, const std::vector<PropContext>& props,
                       Collector* collector);
 
-    void handleAsync(GraphSpaceID spaceId, PartitionID partId, kvstore::ResultCode code);
+    virtual void handleAsync(GraphSpaceID spaceId, PartitionID partId, kvstore::ResultCode code);
 
 protected:
     kvstore::KVStore*                               kvstore_{nullptr};

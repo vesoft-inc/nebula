@@ -226,6 +226,9 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
     return vertices;
 }
 
+void InsertVertexExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
+    resp = std::move(resp_);
+}
 
 void InsertVertexExecutor::execute() {
     auto status = check();
@@ -246,16 +249,30 @@ void InsertVertexExecutor::execute() {
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {
-        // For insertion, we regard partial success as failure.
+        // For insertion, we regard all failed as error
+        // Or given the entities affected
         auto completeness = resp.completeness();
-        if (completeness != 100) {
+        if (completeness == 0) {
             const auto& failedCodes = resp.failedParts();
             for (auto it = failedCodes.begin(); it != failedCodes.end(); it++) {
                 LOG(ERROR) << "Insert vertices failed, error " << static_cast<int32_t>(it->second)
                            << ", part " << it->first;
             }
             doError(Status::Error("Insert vertex not complete, completeness: %d", completeness));
-            return;
+        }
+        ::nebula::cpp2::Affect affect;
+        int32_t vertex = 0;
+        for (const auto &rpcResp : resp.responses()) {
+            if (LIKELY(DCHECK_NOTNULL(rpcResp.get_affect()) != nullptr)) {
+                vertex += rpcResp.get_affect()->get_vertex();
+            }
+        }
+        affect.set_vertex(vertex);
+        resp_.set_affect(affect);
+        const auto& failedCodes = resp.failedParts();
+        for (auto it = failedCodes.begin(); it != failedCodes.end(); it++) {
+            LOG(ERROR) << "Insert vertices failed, error " << static_cast<int32_t>(it->second)
+                        << ", part " << it->first;
         }
         doFinish(Executor::ProcessControl::kNext, rows_.size());
     };

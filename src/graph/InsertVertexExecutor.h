@@ -25,6 +25,8 @@ public:
 
     void execute() override;
 
+    void setupResponse(cpp2::ExecutionResponse &resp) override;
+
 private:
     Status check();
     StatusOr<std::vector<storage::cpp2::Vertex>> prepareVertices();
@@ -42,6 +44,7 @@ private:
     std::vector<std::unordered_map<std::string, int32_t>>  propsPositions_;
     GraphSpaceID                                           spaceId_{-1};
     std::unordered_map<std::string, std::string>           defaultValues_;
+    cpp2::ExecutionResponse                                resp_;
 };
 
 }   // namespace graph

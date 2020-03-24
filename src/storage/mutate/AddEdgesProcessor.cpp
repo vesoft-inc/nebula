@@ -20,6 +20,9 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
     version = folly::Endian::big(version);
 
     callingNum_ = req.parts.size();
+    for (const auto &part : req.parts) {
+        entities_.emplace(part.first, part.second.size());
+    }
     auto iRet = indexMan_->getEdgeIndexes(spaceId_);
     if (iRet.ok()) {
         indexes_ = std::move(iRet).value();
@@ -162,6 +165,23 @@ std::string AddEdgesProcessor::indexKey(PartitionID partId,
                                         NebulaKeyUtils::getRank(rawKey),
                                         NebulaKeyUtils::getDstId(rawKey),
                                         values);
+}
+
+void AddEdgesProcessor::handleAsync(GraphSpaceID spaceId, PartitionID partId,
+    kvstore::ResultCode code) {
+    // Collect the affect
+    if (code == kvstore::ResultCode::SUCCEEDED) {
+        std::lock_guard<std::mutex> lg(this->lock_);
+        if (resp_.get_affect() == nullptr) {
+            ::nebula::cpp2::Affect affect;
+            affect.set_edge(entities_[partId]);
+            resp_.set_affect(affect);
+        } else {
+            auto edge = resp_.get_affect()->get_edge();
+            resp_.get_affect()->set_edge(edge + entities_[partId]);
+        }
+    }
+    BaseProcessor<cpp2::ExecResponse>::handleAsync(spaceId, partId, code);
 }
 
 }  // namespace storage

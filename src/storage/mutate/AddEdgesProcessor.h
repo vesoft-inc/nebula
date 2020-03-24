@@ -45,10 +45,14 @@ private:
                          const folly::StringPiece& rawKey,
                          std::shared_ptr<nebula::cpp2::IndexItem> index);
 
+    void handleAsync(GraphSpaceID spaceId, PartitionID partId, kvstore::ResultCode code) override;
+
 private:
     GraphSpaceID                                          spaceId_;
     meta::IndexManager*                                   indexMan_{nullptr};
     std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> indexes_;
+    // Partition and the entities it plan to modify
+    std::unordered_map<PartitionID, int32_t>              entities_;
 };
 
 }  // namespace storage

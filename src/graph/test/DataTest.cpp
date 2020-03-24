@@ -39,6 +39,14 @@ protected:
         client_.reset();
     }
 
+    AssertionResult verifyVertexInsertAffected(cpp2::ExecutionResponse &resp, int32_t vertex) {
+        return verifyAffect(resp, vertex, 0);
+    }
+
+    AssertionResult verifyEdgeInsertAffected(cpp2::ExecutionResponse &resp, int32_t edge) {
+        return verifyAffect(resp, 0, edge);
+    }
+
 protected:
     static AssertionResult prepareSchema();
 
@@ -192,6 +200,7 @@ TEST_F(DataTest, InsertTest) {
         std::string cmd = "INSERT VERTEX person(name, age) VALUES hash(\"Tom\"):(\"Tom\", \"2\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Insert wrong num of value
     {
@@ -199,6 +208,7 @@ TEST_F(DataTest, InsertTest) {
         std::string cmd = "INSERT VERTEX person(name) VALUES hash(\"Tom\"):(\"Tom\", 2)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Insert wrong field
     {
@@ -206,6 +216,7 @@ TEST_F(DataTest, InsertTest) {
         std::string cmd = "INSERT VERTEX person(Name, age) VALUES hash(\"Tom\"):(\"Tom\", 3)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Insert vertex succeeded
     {
@@ -213,6 +224,7 @@ TEST_F(DataTest, InsertTest) {
         std::string cmd = "INSERT VERTEX person(name, age) VALUES hash(\"Tom\"):(\"Tom\", 22)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexInsertAffected(resp, 1));
     }
     // Insert unordered order prop vertex succeeded
     {
@@ -226,12 +238,14 @@ TEST_F(DataTest, InsertTest) {
                 {std::hash<std::string>()("Conan"), "Conan", 10},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_TRUE(verifyVertexInsertAffected(resp, 1));
     }
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "INSERT VERTEX person(name, age) VALUES uuid(\"Tom\"):(\"Tom\", 22)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexInsertAffected(resp, 1));
     }
     // One vertex multi tags
     {
@@ -240,6 +254,7 @@ TEST_F(DataTest, InsertTest) {
                           "VALUES hash(\"Lucy\"):(\"Lucy\", 8, \"three\", 20190901001)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexInsertAffected(resp, 1));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -247,6 +262,7 @@ TEST_F(DataTest, InsertTest) {
                           "VALUES uuid(\"Lucy\"):(\"Lucy\", 8, \"three\", 20190901001)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexInsertAffected(resp, 1));
     }
     // Insert unordered order prop vertex succeeded
     {
@@ -267,6 +283,7 @@ TEST_F(DataTest, InsertTest) {
                 {std::hash<std::string>()("Bob"), "four", 20191106001},
         };
         ASSERT_TRUE(verifyResult(resp, expected2));
+        ASSERT_TRUE(verifyVertexInsertAffected(resp, 1));
     }
     // Multi vertices multi tags
     {
@@ -276,6 +293,7 @@ TEST_F(DataTest, InsertTest) {
                           "hash(\"Amber\"):(\"Amber\", 9, \"four\", 20180901003)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexInsertAffected(resp, 2));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -284,6 +302,7 @@ TEST_F(DataTest, InsertTest) {
                           "uuid(\"Amber\"):(\"Amber\", 9, \"four\", 20180901003)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexInsertAffected(resp, 2));
     }
     // Multi vertices one tag
     {
@@ -292,6 +311,7 @@ TEST_F(DataTest, InsertTest) {
                           "VALUES hash(\"Kitty\"):(\"Kitty\", 8), hash(\"Peter\"):(\"Peter\", 9)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexInsertAffected(resp, 2));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -299,6 +319,7 @@ TEST_F(DataTest, InsertTest) {
                           "VALUES uuid(\"Kitty\"):(\"Kitty\", 8), uuid(\"Peter\"):(\"Peter\", 9)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexInsertAffected(resp, 2));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -306,6 +327,7 @@ TEST_F(DataTest, InsertTest) {
                           "hash(\"Tom\")->hash(\"Lucy\"):(85, \"Lily\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyEdgeInsertAffected(resp, 1));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -313,6 +335,7 @@ TEST_F(DataTest, InsertTest) {
                           "uuid(\"Tom\")->uuid(\"Lucy\"):(85, \"Lucy\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyEdgeInsertAffected(resp, 1));
     }
     // Insert unordered order prop edge succeeded
     {
@@ -321,6 +344,7 @@ TEST_F(DataTest, InsertTest) {
                           "hash(\"Tom\")->hash(\"Bob\"):(\"Superman\", 87)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyEdgeInsertAffected(resp, 1));
         cmd = "FETCH PROP ON schoolmate hash(\"Tom\")->hash(\"Bob\")";
         code = client_->execute(cmd, resp);
         std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, std::string>> expected = {
@@ -336,6 +360,7 @@ TEST_F(DataTest, InsertTest) {
                           "hash(\"Tom\")->hash(\"Peter\"):(83, \"Kitty\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyEdgeInsertAffected(resp, 2));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -344,6 +369,7 @@ TEST_F(DataTest, InsertTest) {
                           "uuid(\"Tom\")->uuid(\"Peter\"):(83, \"Petter\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyEdgeInsertAffected(resp, 2));
     }
     // Get result
     {
@@ -381,6 +407,7 @@ TEST_F(DataTest, InsertTest) {
                           "hash(\"Lucy\")->hash(\"Amber\"):(95, \"Amber\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyEdgeInsertAffected(resp, 2));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -389,6 +416,7 @@ TEST_F(DataTest, InsertTest) {
                           "uuid(\"Lucy\")->uuid(\"Amber\"):(95, \"Amber\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyEdgeInsertAffected(resp, 2));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -427,6 +455,8 @@ TEST_F(DataTest, InsertTest) {
                           "VALUES hash(\"Aero\"):(\"four\", 20190901003)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        // TODO(shylock) one response for two statement?
+        ASSERT_TRUE(verifyVertexInsertAffected(resp, 1));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -436,6 +466,7 @@ TEST_F(DataTest, InsertTest) {
                           "VALUES uuid(\"Aero\"):(\"four\", 20190901003)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexInsertAffected(resp, 1));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -443,6 +474,7 @@ TEST_F(DataTest, InsertTest) {
                           "hash(\"Laura\")->hash(\"Aero\"):(90, \"Aero\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyEdgeInsertAffected(resp, 1));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -450,6 +482,7 @@ TEST_F(DataTest, InsertTest) {
                           "uuid(\"Laura\")->uuid(\"Aero\"):(90, \"Aero\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyEdgeInsertAffected(resp, 1));
     }
     // Get result
     {
@@ -484,6 +517,7 @@ TEST_F(DataTest, InsertTest) {
                           "hash(\"Petter\"):(\"Petter\", 19, 456)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexInsertAffected(resp, 2));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -492,6 +526,7 @@ TEST_F(DataTest, InsertTest) {
                           "uuid(\"Petter\"):(\"Petter\", 19, 456)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexInsertAffected(resp, 2));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -499,6 +534,7 @@ TEST_F(DataTest, InsertTest) {
                           "hash(\"Joy\")->hash(\"Petter\"):(90, \"Petter\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyEdgeInsertAffected(resp, 1));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -506,6 +542,7 @@ TEST_F(DataTest, InsertTest) {
                           "uuid(\"Joy\")->uuid(\"Petter\"):(90, \"Petter\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyEdgeInsertAffected(resp, 1));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -536,6 +573,7 @@ TEST_F(DataTest, InsertTest) {
                           "VALUES hash(\"Bob\"):(\"Bob\", 19, \"basketball\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexInsertAffected(resp, 1));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -543,6 +581,7 @@ TEST_F(DataTest, InsertTest) {
                           "VALUES uuid(\"Bob\"):(\"Bob\", 19, \"basketball\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexInsertAffected(resp, 1));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -550,6 +589,7 @@ TEST_F(DataTest, InsertTest) {
                           "hash(\"Petter\")->hash(\"Bob\"):(90, \"Bob\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyEdgeInsertAffected(resp, 1));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -557,6 +597,7 @@ TEST_F(DataTest, InsertTest) {
                           "uuid(\"Petter\")->uuid(\"Bob\"):(90, \"Bob\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyEdgeInsertAffected(resp, 1));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -593,6 +634,7 @@ TEST_F(DataTest, InsertTest) {
                           "hash(\"Laura\")->hash(\"Amber\"):(\"87\", "")";
         auto code = client_->execute(cmd, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Insert wrong num of value
     {
@@ -601,6 +643,7 @@ TEST_F(DataTest, InsertTest) {
                           "VALUES hash(\"Laura\")->hash(\"Amber\"):(\"hello\", \"87\", "")";
         auto code = client_->execute(cmd, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Insert wrong num of prop
     {
@@ -609,6 +652,7 @@ TEST_F(DataTest, InsertTest) {
                           "hash(\"Laura\")->hash(\"Amber\"):(87)";
         auto code = client_->execute(cmd, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Insert wrong field name
     {
@@ -617,6 +661,7 @@ TEST_F(DataTest, InsertTest) {
                           "hash(\"Laura\")->hash(\"Amber\"):(88)";
         auto code = client_->execute(cmd, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Insert invalid timestamp
     {
@@ -626,6 +671,7 @@ TEST_F(DataTest, InsertTest) {
                           "(\"2300-01-01 10:00:00\", now()+3600*24*365*3)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Insert timestamp succeeded
     {
@@ -634,6 +680,7 @@ TEST_F(DataTest, InsertTest) {
                           "hash(\"sun_school\"):(\"sun_school\", \"2010-01-01 10:00:00\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexInsertAffected(resp, 1));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -641,6 +688,7 @@ TEST_F(DataTest, InsertTest) {
                           "uuid(\"sun_school\"):(\"sun_school\", \"2010-01-01 10:00:00\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexInsertAffected(resp, 1));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -649,6 +697,7 @@ TEST_F(DataTest, InsertTest) {
                           "(\"2019-01-01 10:00:00\", now()+3600*24*365*3)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyEdgeInsertAffected(resp, 1));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -657,6 +706,7 @@ TEST_F(DataTest, InsertTest) {
                           "(\"2019-01-01 10:00:00\", now()+3600*24*365*3)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyEdgeInsertAffected(resp, 1));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -713,6 +763,7 @@ TEST_F(DataTest, InsertWithDefaultValueTest) {
                           "VALUES hash(\"\"):()";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexInsertAffected(resp, 1));
     }
     // Insert lack of the column value
     {
@@ -722,6 +773,7 @@ TEST_F(DataTest, InsertWithDefaultValueTest) {
                           "VALUES hash(\"Tom\"):(18, false)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Insert column doesn't match value count
     {
@@ -731,6 +783,7 @@ TEST_F(DataTest, InsertWithDefaultValueTest) {
                           "VALUES hash(\"Tom\"):(\"one\", 111, \"\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -738,6 +791,7 @@ TEST_F(DataTest, InsertWithDefaultValueTest) {
                           "VALUES hash(\"Tom\"):(\"Tom\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexInsertAffected(resp, 1));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -745,6 +799,7 @@ TEST_F(DataTest, InsertWithDefaultValueTest) {
                           "VALUES hash(\"Tom\"):(\"Tom\", 20)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexInsertAffected(resp, 1));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -752,6 +807,7 @@ TEST_F(DataTest, InsertWithDefaultValueTest) {
                           "VALUES hash(\"Tom\"):(\"Tom\", 20.5)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexInsertAffected(resp, 1));
     }
     // Insert vertices multi tags
     {
@@ -762,6 +818,7 @@ TEST_F(DataTest, InsertWithDefaultValueTest) {
                           "hash(\"Amber\"):(\"Amber\", 22.5, 20180901003)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexInsertAffected(resp, 2));
     }
     // Multi vertices one tag
     {
@@ -771,6 +828,7 @@ TEST_F(DataTest, InsertWithDefaultValueTest) {
                           "hash(\"Peter\"):(\"Peter\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexInsertAffected(resp, 2));
     }
     // Insert lack of the column value
     {
@@ -779,6 +837,7 @@ TEST_F(DataTest, InsertWithDefaultValueTest) {
                           "hash(\"Tom\")->hash(\"Lucy\"):()";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Column count doesn't match value count
     {
@@ -787,6 +846,7 @@ TEST_F(DataTest, InsertWithDefaultValueTest) {
                           "hash(\"Tom\")->hash(\"Lucy\"):(60, \"\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -794,6 +854,7 @@ TEST_F(DataTest, InsertWithDefaultValueTest) {
                           "hash(\"Tom\")->hash(\"Lucy\"):()";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyEdgeInsertAffected(resp, 1));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -801,6 +862,7 @@ TEST_F(DataTest, InsertWithDefaultValueTest) {
                           "hash(\"Tom\")->hash(\"Lucy\"):(90, 0)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Insert multi edges with default value
     {
@@ -812,6 +874,7 @@ TEST_F(DataTest, InsertWithDefaultValueTest) {
                           "hash(\"Lucy\")->hash(\"Amber\"):()";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyEdgeInsertAffected(resp, 4));
     }
     // Get result
     {
@@ -852,6 +915,7 @@ TEST_F(DataTest, InsertMultiVersionTest) {
                           "hash(\"Mack\"):(\"Mack\", 19)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexInsertAffected(resp, 2));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -859,6 +923,7 @@ TEST_F(DataTest, InsertMultiVersionTest) {
                           "hash(\"Mack\"):(\"Mack\", 20)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexInsertAffected(resp, 1));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -866,6 +931,7 @@ TEST_F(DataTest, InsertMultiVersionTest) {
                           "hash(\"Mack\"):(\"Mack\", 21)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexInsertAffected(resp, 1));
     }
     // Insert multi version edge
     {
@@ -874,6 +940,7 @@ TEST_F(DataTest, InsertMultiVersionTest) {
                           "hash(\"Tony\")->hash(\"Mack\")@1:(1, \"\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyEdgeInsertAffected(resp, 1));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -881,6 +948,7 @@ TEST_F(DataTest, InsertMultiVersionTest) {
                           "hash(\"Tony\")->hash(\"Mack\")@1:(2, \"\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyEdgeInsertAffected(resp, 1));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -888,6 +956,7 @@ TEST_F(DataTest, InsertMultiVersionTest) {
                           "hash(\"Tony\")->hash(\"Mack\")@1:(3, \"\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyEdgeInsertAffected(resp, 1));
     }
     // Get result
     {
@@ -914,6 +983,7 @@ TEST_F(DataTest, InsertMultiVersionWithUUIDTest) {
                           "uuid(\"Mack\"):(\"Mack\", 19)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexInsertAffected(resp, 2));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -921,6 +991,7 @@ TEST_F(DataTest, InsertMultiVersionWithUUIDTest) {
                           "uuid(\"Mack\"):(\"Mack\", 20)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexInsertAffected(resp, 1));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -928,6 +999,7 @@ TEST_F(DataTest, InsertMultiVersionWithUUIDTest) {
                           "uuid(\"Mack\"):(\"Mack\", 21)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexInsertAffected(resp, 1));
     }
     // Insert multi version edge
     {
@@ -936,6 +1008,7 @@ TEST_F(DataTest, InsertMultiVersionWithUUIDTest) {
                           "uuid(\"Tony\")->uuid(\"Mack\")@1:(1, \"\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyEdgeInsertAffected(resp, 1));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -943,6 +1016,7 @@ TEST_F(DataTest, InsertMultiVersionWithUUIDTest) {
                           "uuid(\"Tony\")->uuid(\"Mack\")@1:(2, \"\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyEdgeInsertAffected(resp, 1));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -950,6 +1024,7 @@ TEST_F(DataTest, InsertMultiVersionWithUUIDTest) {
                           "uuid(\"Tony\")->uuid(\"Mack\")@1:(3, \"\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyEdgeInsertAffected(resp, 1));
     }
     // Get result
     {

@@ -234,6 +234,9 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
     return edges;
 }
 
+void InsertEdgeExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
+    resp = std::move(resp_);
+}
 
 void InsertEdgeExecutor::execute() {
     auto status = check();
@@ -249,15 +252,17 @@ void InsertEdgeExecutor::execute() {
         return;
     }
 
+    // TODO(shylock) Distributed Transaction for positive/negative edge consistency
     auto future = ectx()->getStorageClient()->addEdges(spaceId_,
                                                        std::move(result).value(),
                                                        overwritable_);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {
-        // For insertion, we regard partial success as failure.
+        // For insertion, we regard all failed as error
+        // Or given the entities affected
         auto completeness = resp.completeness();
-        if (completeness != 100) {
+        if (completeness == 0) {
             const auto& failedCodes = resp.failedParts();
             for (auto it = failedCodes.begin(); it != failedCodes.end(); it++) {
                 LOG(ERROR) << "Insert edge failed, error " << static_cast<int32_t>(it->second)
@@ -266,6 +271,20 @@ void InsertEdgeExecutor::execute() {
             doError(Status::Error("Insert edge `%s' not complete, completeness: %d",
                         sentence_->edge()->c_str(), completeness));
             return;
+        }
+        ::nebula::cpp2::Affect affect;
+        int32_t edge = 0;
+        for (const auto &rpcResp : resp.responses()) {
+            if (LIKELY(DCHECK_NOTNULL(rpcResp.get_affect()) != nullptr)) {
+                edge += rpcResp.get_affect()->get_edge();
+            }
+        }
+        affect.set_edge(edge/2);  // positive/negative
+        resp_.set_affect(affect);
+        const auto& failedCodes = resp.failedParts();
+        for (auto it = failedCodes.begin(); it != failedCodes.end(); it++) {
+            LOG(ERROR) << "Insert edge failed, error " << static_cast<int32_t>(it->second)
+                        << ", part " << it->first;
         }
         doFinish(Executor::ProcessControl::kNext, rows_.size());
     };

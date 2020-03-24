@@ -24,6 +24,9 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
     const auto& partVertices = req.get_parts();
     spaceId_ = req.get_space_id();
     callingNum_ = partVertices.size();
+    for (const auto &part : partVertices) {
+        entities_.emplace(part.first, part.second.size());
+    }
     auto iRet = indexMan_->getTagIndexes(spaceId_);
     if (iRet.ok()) {
         indexes_ = std::move(iRet).value();
@@ -172,6 +175,23 @@ std::string AddVerticesProcessor::indexKey(PartitionID partId,
     return NebulaKeyUtils::vertexIndexKey(partId,
                                           index->get_index_id(),
                                           vId, values);
+}
+
+void AddVerticesProcessor::handleAsync(GraphSpaceID spaceId, PartitionID partId,
+    kvstore::ResultCode code) {
+    // Collect the affect
+    if (code == kvstore::ResultCode::SUCCEEDED) {
+        std::lock_guard<std::mutex> lg(this->lock_);
+        if (resp_.get_affect() == nullptr) {
+            ::nebula::cpp2::Affect affect;
+            affect.set_vertex(entities_[partId]);
+            resp_.set_affect(affect);
+        } else {
+            auto vertex = resp_.get_affect()->get_vertex();
+            resp_.get_affect()->set_vertex(vertex + entities_[partId]);
+        }
+    }
+    BaseProcessor<cpp2::ExecResponse>::handleAsync(spaceId, partId, code);
 }
 
 }  // namespace storage
