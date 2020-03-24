@@ -1,6 +1,6 @@
 # Delete Syntax
 
-Given a list of vertices IDs, **Nebula Graph** supports `DELETE` the vertices and their associated in and out edges, syntax as the follows:
+Given a list of vertices IDs, hash IDs or UUIDs, **Nebula Graph** supports `DELETE` the vertices and their associated in and out edges, syntax as the follows:
 
 ```ngql
 DELETE VERTEX <vid_list>
