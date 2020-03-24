@@ -520,20 +520,6 @@ void NebulaStore::asyncRemoveRange(GraphSpaceID spaceId,
     part->asyncRemoveRange(start, end, std::move(cb));
 }
 
-
-void NebulaStore::asyncRemovePrefix(GraphSpaceID spaceId,
-                                    PartitionID partId,
-                                    const std::string& prefix,
-                                    KVCallback cb) {
-    auto ret = part(spaceId, partId);
-    if (!ok(ret)) {
-        cb(error(ret));
-        return;
-    }
-    auto part = nebula::value(ret);
-    part->asyncRemovePrefix(prefix, std::move(cb));
-}
-
 void NebulaStore::asyncAtomicOp(GraphSpaceID spaceId,
                                 PartitionID partId,
                                 raftex::AtomicOp op,
