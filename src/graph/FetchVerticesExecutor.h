@@ -44,7 +44,7 @@ private:
 private:
     FetchVerticesSentence                      *sentence_{nullptr};
     std::vector<VertexID>                       vids_;
-    TagID                                       tagID_{INT_MIN};
+    TagID                                       tagId_{INT_MIN};
 };
 }  // namespace graph
 }  // namespace nebula

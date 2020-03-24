@@ -26,7 +26,7 @@ namespace graph {
  *             kFetchEdges, kFindPath, kLimit, KGroupBy, kReturn
  * Write data: kBuildTagIndex, kBuildEdgeIndex,
  *             kInsertVertex, kUpdateVertex, kInsertEdge,
- *             kUpdateEdge, kDeleteVertex, kDeleteEdges
+ *             kUpdateEdge, kDeleteVertices, kDeleteEdges
  * Special operation : kShow, kChangePassword
  */
 
@@ -90,7 +90,7 @@ bool PermissionCheck::permissionCheck(session::Session *session, Sentence* sente
         case Sentence::Kind::kUpdateVertex :
         case Sentence::Kind::kInsertEdge :
         case Sentence::Kind::kUpdateEdge :
-        case Sentence::Kind::kDeleteVertex :
+        case Sentence::Kind::kDeleteVertices :
         case Sentence::Kind::kDeleteEdges : {
             return permission::PermissionManager::canWriteData(session);
         }
