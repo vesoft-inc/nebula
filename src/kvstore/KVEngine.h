@@ -23,8 +23,6 @@ public:
 
     virtual ResultCode remove(folly::StringPiece key) = 0;
 
-    virtual ResultCode removePrefix(folly::StringPiece prefix) = 0;
-
     // Remove all keys in the range [start, end)
     virtual ResultCode removeRange(folly::StringPiece start,
                                    folly::StringPiece end) = 0;
@@ -44,7 +42,9 @@ public:
     virtual const char* getDataRoot() const = 0;
 
     virtual std::unique_ptr<WriteBatch> startBatchWrite() = 0;
-    virtual ResultCode commitBatchWrite(std::unique_ptr<WriteBatch> batch) = 0;
+
+    virtual ResultCode commitBatchWrite(std::unique_ptr<WriteBatch> batch,
+                                        bool disableWAL = true) = 0;
 
     // Read a single key
     virtual ResultCode get(const std::string& key, std::string* value) = 0;
@@ -83,9 +83,6 @@ public:
     // Remove range [start, end)
     virtual ResultCode removeRange(const std::string& start,
                                    const std::string& end) = 0;
-
-    // Remove rows with the given prefix
-    virtual ResultCode removePrefix(const std::string& prefix) = 0;
 
     // Add partId into current storage engine.
     virtual void addPart(PartitionID partId) = 0;
