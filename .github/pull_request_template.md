@@ -23,7 +23,7 @@ Please clarify why the changes are needed. For instance,
 
 ### Will break the compatibility? How if so?
 <!--
-Please label `alert/break` if so, such as
+Please label `alert/break' if so, such as
   1. nGQL grammar changed;
   2. RPC protocol can't compatible with previous, refer to https://diwakergupta.github.io/thrift-missing-guide/#_versioning_compatibility;
   3. Storage format; etc.
