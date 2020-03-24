@@ -29,4 +29,6 @@ install(
         db_dump
     DESTINATION
         bin
+    COMPONENT
+        tool
 )

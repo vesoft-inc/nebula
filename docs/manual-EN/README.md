@@ -76,6 +76,7 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
     * [Lookup Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/lookup-syntax.md)
     * [Return Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/return-syntax.md)
     * [Update Vertex/Edge Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/update-vertex-edge-syntax.md)
+    * [Upsert Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/upsert-syntax.md)
     * [Where Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/where-syntax.md)
     * [Yield Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/yield-syntax.md)
 
@@ -106,7 +107,13 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
 
   * Server Administration
     * Account Management Statements
+      * [Alter User Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/alter-user-syntax.md)
+      * [Built-in Roles](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/built-in-roles.md)
+      * [Change Password](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/change-password.md)
+      * [Create User Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/create-user-syntax.md)
       * [Drop User Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/drop-user-syntax.md)
+      * [Grant Role Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/grant-role-syntax.md)
+      * [Revoke Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/revoke-syntax.md)
     * Configuration Statements
       * [Configs Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/configs-syntax.md)
       * [RocksDB Compaction and Flush](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/rocksdb-compaction-flush.md)

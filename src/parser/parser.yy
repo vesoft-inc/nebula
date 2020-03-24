@@ -13,6 +13,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <cstddef>
 #include "parser/SequentialSentences.h"
 
 namespace nebula {
@@ -20,6 +21,8 @@ namespace nebula {
 class GraphScanner;
 
 }
+
+static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 
 }
 
@@ -2039,10 +2042,14 @@ void nebula::GraphParser::error(const nebula::GraphParser::location_type& loc,
     errmsg = os.str();
 }
 
+// check the positive integer boundary
+// parameter input accept the INTEGER value
+// which filled as uint64_t
+// so the conversion is expected
 void ifOutOfRange(const int64_t input,
                   const nebula::GraphParser::location_type& loc) {
-    if ((uint64_t)input == 9223372036854775808ULL) {
-        throw nebula::GraphParser::syntax_error(loc, "out of range");
+    if ((uint64_t)input >= MAX_ABS_INTEGER) {
+        throw nebula::GraphParser::syntax_error(loc, "Out of range:");
     }
 }
 

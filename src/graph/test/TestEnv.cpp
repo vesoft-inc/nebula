@@ -8,6 +8,7 @@
 #include "graph/test/TestEnv.h"
 #include "meta/test/TestUtils.h"
 #include "storage/test/TestUtils.h"
+#include "meta/RootUserMan.h"
 
 DECLARE_int32(heartbeat_interval_secs);
 DECLARE_string(meta_server_addrs);
@@ -47,6 +48,10 @@ void TestEnv::SetUp() {
         LOG(ERROR) << "Bad local host addr, status:" << hostRet.status();
     }
     auto& localhost = hostRet.value();
+
+    if (!nebula::meta::RootUserMan::initRootUser(metaServer_->kvStore_.get())) {
+        LOG(ERROR) << "Init root user failed";
+    }
 
     meta::MetaClientOptions options;
     options.localHost_ = localhost;
@@ -92,9 +97,10 @@ uint16_t TestEnv::storageServerPort() const {
     return storageServer_->port_;
 }
 
-std::unique_ptr<GraphClient> TestEnv::getClient() const {
+std::unique_ptr<GraphClient> TestEnv::getClient(const std::string& user,
+                                                const std::string& password) const {
     auto client = std::make_unique<GraphClient>("127.0.0.1", graphServerPort());
-    if (cpp2::ErrorCode::SUCCEEDED != client->connect("user", "password")) {
+    if (cpp2::ErrorCode::SUCCEEDED != client->connect(user, password)) {
         return nullptr;
     }
     return client;

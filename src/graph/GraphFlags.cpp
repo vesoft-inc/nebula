@@ -5,7 +5,6 @@
  */
 
 #include "base/Base.h"
-#include "graph/GraphFlags.h"
 
 DEFINE_int32(port, 3699, "Nebula Graph daemon's listen port");
 DEFINE_int32(client_idle_timeout_secs, 0,
@@ -32,3 +31,5 @@ DEFINE_bool(local_config, false, "meta client will not retrieve latest configura
 
 DEFINE_string(default_charset, "utf8", "The default charset when a space is created");
 DEFINE_string(default_collate, "utf8_bin", "The default collate when a space is created");
+
+DEFINE_bool(enable_authorize, false, "Enable authorization, default false");
