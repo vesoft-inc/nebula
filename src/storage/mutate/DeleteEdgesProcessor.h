@@ -36,6 +36,8 @@ private:
                             PartitionID partId,
                             const std::vector<cpp2::EdgeKey>& edges);
 
+    void handleAsync(GraphSpaceID spaceId, PartitionID partId, kvstore::ResultCode code) override;
+
 private:
     meta::IndexManager*                                   indexMan_{nullptr};
     std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> indexes_;

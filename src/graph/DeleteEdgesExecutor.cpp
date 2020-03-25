@@ -61,11 +61,21 @@ void DeleteEdgesExecutor::execute() {
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         auto completeness = resp.completeness();
-        if (completeness != 100) {
+        if (completeness == 0) {
             // TODO Need to consider atomic issues
-            doError(Status::Error("Delete edge not complete, completeness: %d", completeness));
+            doError(Status::Error("Delete edges completely failed."));
             return;
         }
+        // Collect affect
+        ::nebula::cpp2::Affect affect;
+        int32_t edge = 0;
+        for (const auto &rpcResp : resp.responses()) {
+            if (LIKELY(DCHECK_NOTNULL(rpcResp.get_affect()) != nullptr)) {
+                edge += rpcResp.get_affect()->get_edge();
+            }
+        }
+        affect.set_edge(edge/2);  // positive/negative
+        resp_.set_affect(affect);
         doFinish(Executor::ProcessControl::kNext, edgeKeys_.size());
     };
 
@@ -129,6 +139,10 @@ Status DeleteEdgesExecutor::setupEdgeKeys(EdgeType edgeType) {
         edgeKeys_.emplace_back(std::move(inkey));
     }
     return status;
+}
+
+void DeleteEdgesExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
+    resp = std::move(resp_);
 }
 
 }   // namespace graph

@@ -109,6 +109,24 @@ std::string DeleteEdgesProcessor::deleteEdges(GraphSpaceID spaceId,
     }
     return encodeBatchValue(batchHolder->getBatch());
 }
+
+void DeleteEdgesProcessor::handleAsync(GraphSpaceID spaceId, PartitionID partId,
+    kvstore::ResultCode code) {
+    // Collect the affect
+    if (code == kvstore::ResultCode::SUCCEEDED) {
+        std::lock_guard<std::mutex> lg(this->lock_);
+        if (resp_.get_affect() == nullptr) {
+            ::nebula::cpp2::Affect affect;
+            affect.set_edge(1 /*Hard Code one edge once*/);
+            resp_.set_affect(affect);
+        } else {
+            auto edge = resp_.get_affect()->get_edge();
+            resp_.get_affect()->set_edge(edge + 1 /*Hard Code one edge once*/);
+        }
+    }
+    BaseProcessor<cpp2::ExecResponse>::handleAsync(spaceId, partId, code);
+}
+
 }  // namespace storage
 }  // namespace nebula
 

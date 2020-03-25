@@ -39,6 +39,10 @@ protected:
         client_.reset();
     }
 
+    AssertionResult verifyEdgeDeleteAffected(cpp2::ExecutionResponse &resp, int32_t edge) {
+        return verifyAffect(resp, 0, edge);
+    }
+
 protected:
     static AssertionResult prepareSchema();
 
@@ -199,18 +203,21 @@ TEST_F(DeleteEdgesTest, DeleteEdges) {
                          "uuid(\"Jack\")->uuid(\"Rose\")@13";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyEdgeDeleteAffected(resp, 2));
     }
     {
         cpp2::ExecutionResponse resp;
         std::string cmd ="DELETE EDGE schoolmate uuid(\"Lisi\")->uuid(\"Rose\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyEdgeDeleteAffected(resp, 1));
     }
     {
         cpp2::ExecutionResponse resp;
         std::string cmd ="DELETE EDGE transfer uuid(\"Zhangsan\")->uuid(\"Lisi\")@1561013237";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyEdgeDeleteAffected(resp, 1));
     }
     // Traverse again
     {
@@ -256,6 +263,9 @@ TEST_F(DeleteEdgesTest, DeleteEdges) {
                          "uuid(\"Zhangsan\")->uuid(\"Lisi\")@15";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        // TODO(shylock) non-existing edge not proper
+        // RocksDB not check the key existing if just delete, so we should check it before delete
+        ASSERT_TRUE(verifyEdgeDeleteAffected(resp, 3));
     }
     // Traverse again
     {

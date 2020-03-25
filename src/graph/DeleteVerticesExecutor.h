@@ -25,6 +25,8 @@ public:
 
     void execute() override;
 
+    void setupResponse(cpp2::ExecutionResponse &resp) override;
+
 private:
     void deleteEdges(std::vector<storage::cpp2::EdgeKey>& edges);
     void deleteVertices();
@@ -34,6 +36,7 @@ private:
     std::unique_ptr<ExpressionContext>          expCtx_;
     std::vector<VertexID>                       vids_;
     GraphSpaceID                                space_{-1};
+    cpp2::ExecutionResponse                     resp_;
 };
 
 }   // namespace graph

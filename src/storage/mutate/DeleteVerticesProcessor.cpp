@@ -141,5 +141,22 @@ std::string DeleteVerticesProcessor::deleteVertices(GraphSpaceID spaceId,
     return encodeBatchValue(batchHolder->getBatch());
 }
 
+void DeleteVerticesProcessor::handleAsync(GraphSpaceID spaceId, PartitionID partId,
+    kvstore::ResultCode code) {
+    // Collect the affect
+    if (code == kvstore::ResultCode::SUCCEEDED) {
+        std::lock_guard<std::mutex> lg(this->lock_);
+        if (resp_.get_affect() == nullptr) {
+            ::nebula::cpp2::Affect affect;
+            affect.set_vertex(1 /*Hard Code one vertex once*/);
+            resp_.set_affect(affect);
+        } else {
+            auto vertex = resp_.get_affect()->get_vertex();
+            resp_.get_affect()->set_vertex(vertex + 1 /*Hard Code one vertex once*/);
+        }
+    }
+    BaseProcessor<cpp2::ExecResponse>::handleAsync(spaceId, partId, code);
+}
+
 }  // namespace storage
 }  // namespace nebula

@@ -15,14 +15,19 @@ namespace nebula {
 namespace graph {
 
 class DeleteVerticesTest : public TraverseTestBase {
- protected:
-  void SetUp() override {
+protected:
+    void SetUp() override {
     TraverseTestBase::SetUp();
-  }
+    }
 
-  void TearDown() override {
+    void TearDown() override {
     TraverseTestBase::TearDown();
-  }
+    }
+
+    AssertionResult verifyVertexDeleteAffected(cpp2::ExecutionResponse &resp, int32_t vertex,
+        int32_t edge) {
+        return verifyAffect(resp, vertex, edge);
+    }
 };
 
 TEST_F(DeleteVerticesTest, Base) {
@@ -88,6 +93,7 @@ TEST_F(DeleteVerticesTest, Base) {
         auto query = folly::stringPrintf(fmt, players_["Tony Parker"].vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexDeleteAffected(resp, 1, 16));
     }
     // Check again
     {
@@ -169,6 +175,7 @@ TEST_F(DeleteVerticesTest, DeleteMultiVertices) {
                                          players_["Dwyane Wade"].vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexDeleteAffected(resp, 3, 28));
     }
     // Check again
     {
@@ -243,6 +250,7 @@ TEST_F(DeleteVerticesTest, DeleteWithHash) {
         auto query = folly::stringPrintf(fmt, players_["Grant Hill"].name().c_str());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexDeleteAffected(resp, 1, 6));
     }
     // Check again
     {
@@ -298,6 +306,9 @@ TEST_F(DeleteVerticesTest, DeleteWithHash) {
         auto query = "DELETE VERTEX hash(\"Non-existing Vertex\")";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        // TODO(shylock) non-existing vertex not proper
+        // RocksDB not check the key existing if just delete, so we should check it before delete
+        ASSERT_TRUE(verifyVertexDeleteAffected(resp, 1, 0));
     }
     // Delete a vertex without edges
     {
@@ -307,12 +318,14 @@ TEST_F(DeleteVerticesTest, DeleteWithHash) {
                      "VALUES hash(\"A Loner\"): (\"A Loner\", 0)";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexDeleteAffected(resp, 1, 0));
     }
     {
         cpp2::ExecutionResponse resp;
         auto query = "DELETE VERTEX hash(\"A Loner\")";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexDeleteAffected(resp, 1, 0));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -363,6 +376,7 @@ TEST_F(DeleteVerticesTest, DeleteWithUUID) {
         auto query = folly::stringPrintf(fmt, players_["Grant Hill"].name().c_str());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexDeleteAffected(resp, 1, 6));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -395,6 +409,7 @@ TEST_F(DeleteVerticesTest, DeleteWithUUID) {
         auto query = "DELETE VERTEX UUID(\"Non-existing Vertex\")";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexDeleteAffected(resp, 1, 0));
     }
     // Delete a vertex without edges
     {
@@ -404,12 +419,14 @@ TEST_F(DeleteVerticesTest, DeleteWithUUID) {
                      "VALUES UUID(\"A Loner\"): (\"A Loner\", 0)";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexDeleteAffected(resp, 1, 0));
     }
     {
         cpp2::ExecutionResponse resp;
         auto query = "DELETE VERTEX UUID(\"A Loner\")";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyVertexDeleteAffected(resp, 1, 0));
     }
     {
         cpp2::ExecutionResponse resp;

@@ -40,6 +40,8 @@ private:
                                PartitionID partId,
                                const std::vector<VertexID>& vertices);
 
+    void handleAsync(GraphSpaceID spaceId, PartitionID partId, kvstore::ResultCode code) override;
+
 private:
     meta::IndexManager*                                   indexMan_{nullptr};
     VertexCache*                                          vertexCache_{nullptr};

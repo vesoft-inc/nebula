@@ -193,11 +193,22 @@ void DeleteVerticesExecutor::deleteEdges(std::vector<storage::cpp2::EdgeKey>& ed
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         auto completeness = resp.completeness();
-        if (completeness != 100) {
-            LOG(ERROR) << "Delete edges partially failed: "  << completeness << "%";
+        if (completeness == 0) {
+            LOG(ERROR) << "Delete edges completely failed";
             doError(Status::Error("Internal error"));
             return;
         }
+        LOG(ERROR) << "Delete edges completeness: "  << completeness << "%";
+        // Collect affect
+        ::nebula::cpp2::Affect affect;
+        int32_t edge = 0;
+        for (const auto &rpcResp : resp.responses()) {
+            if (LIKELY(DCHECK_NOTNULL(rpcResp.get_affect()) != nullptr)) {
+                edge += rpcResp.get_affect()->get_edge();
+            }
+        }
+        affect.set_edge(edge/2);  // positive/negative
+        resp_.set_affect(affect);
         deleteVertices();
         return;
     };
@@ -215,10 +226,25 @@ void DeleteVerticesExecutor::deleteVertices() {
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         auto completeness = resp.completeness();
-        if (completeness != 100) {
-            LOG(ERROR) << "Delete vertices partially failed: "  << completeness << "%";
+        if (completeness == 0) {
+            LOG(ERROR) << "Delete vertices completely failed";
             doError(Status::Error("Internal error"));
             return;
+        }
+        LOG(ERROR) << "Delete vertices completeness: "  << completeness << "%";
+        // Collect affect
+        int32_t vertex = 0;
+        for (const auto &rpcResp : resp.responses()) {
+            if (LIKELY(DCHECK_NOTNULL(rpcResp.get_affect()) != nullptr)) {
+                vertex += rpcResp.get_affect()->get_vertex();
+            }
+        }
+        if (resp_.get_affect() != nullptr) {
+            resp_.get_affect()->set_vertex(vertex);
+        } else {
+            ::nebula::cpp2::Affect affect;
+            affect.set_vertex(vertex);
+            resp_.set_affect(affect);
         }
         doFinish(Executor::ProcessControl::kNext, vids_.size());
         return;
@@ -230,6 +256,10 @@ void DeleteVerticesExecutor::deleteVertices() {
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
+}
+
+void DeleteVerticesExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
+    resp = std::move(resp_);
 }
 
 }   // namespace graph

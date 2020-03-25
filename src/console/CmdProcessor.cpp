@@ -441,7 +441,7 @@ void CmdProcessor::processServerCmd(folly::StringPiece cmd) {
         }
         // Affect
         if (resp.get_affect() != nullptr) {
-            std::cout << resp.get_affect()->get_vertex() << " vertexes affected, "
+            std::cout << resp.get_affect()->get_vertex() << " vertices affected, "
                 << resp.get_affect()->get_edge() << " edges affected." << std::endl;
         }
         std::cout << std::endl;

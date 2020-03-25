@@ -25,6 +25,8 @@ public:
 
     void execute() override;
 
+    void setupResponse(cpp2::ExecutionResponse &resp) override;
+
 private:
     Status setupEdgeKeys(EdgeType edgeType);
 
@@ -32,6 +34,7 @@ private:
     DeleteEdgesSentence                         *sentence_{nullptr};
     std::vector<storage::cpp2::EdgeKey>         edgeKeys_;
     std::unique_ptr<ExpressionContext>          expCtx_;
+    cpp2::ExecutionResponse                     resp_;
 };
 
 }  // namespace graph
