@@ -81,9 +81,23 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
     * [Yield Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/yield-syntax.md)
 
   * Utility Statements
+    * Show Statements
+      * [Show Charset Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-charset-syntax.md)
+      * [Show Collation Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-collation-syntax.md)
+      * [Show Configs Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-configs-syntax.md)
+      * [Show Create Spaces Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-create-space-syntax.md)
+      * [Show Create Tag/Edge Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-create-tag-edge-syntax.md)
+      * [Show Hosts Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-hosts-syntax.md)
+      * [Show Indexes Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-indexes-syntax.md)
+      * [Show Parts Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-parts-syntax.md)
+      * [Show Roles Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-roles-syntax.md)
+      * [Show Snapshots Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-snapshots-syntax.md)
+      * [Show Spaces Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-spaces-syntax.md)
+      * [Show Tag/Edge Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-tags-edges-syntax.md)
+      * [Show Users Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-users-syntax.md)
     * [Describe Syntax](2.query-language/4.statement-syntax/3.utility-statements/describe-syntax.md)
     * [Use Syntax](2.query-language/4.statement-syntax/3.utility-statements/use-syntax.md)
-    * [Show Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-syntax.md)
+
   * Graph Algorithms
     * [Find Path Syntax](2.query-language/4.statement-syntax/4.graph-algorithms/find-path-syntax.md)
 
