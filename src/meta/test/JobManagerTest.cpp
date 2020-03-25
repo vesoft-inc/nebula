@@ -33,7 +33,7 @@ AdminCmd makeCmd(const std::string& str) {
     if (mapping.count(str)) {
         return mapping[str];
     }
-    return AdminCmd::INVALID;
+    return AdminCmd::COMPACT;
 }
 
 class JobManagerTest : public ::testing::Test {

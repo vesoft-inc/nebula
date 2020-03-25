@@ -211,7 +211,9 @@ public:
     listSpaces();
 
     folly::Future<StatusOr<cpp2::AdminJobResult>>
-    submitJob(cpp2::AdminJobOp op, std::vector<std::string> paras);
+    submitJob(cpp2::AdminJobOp op,
+              folly::Optional<nebula::cpp2::AdminCmd> optCmd,
+              std::vector<std::string> paras);
 
     folly::Future<StatusOr<cpp2::SpaceItem>>
     getSpace(std::string name);

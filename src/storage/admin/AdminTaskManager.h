@@ -13,21 +13,37 @@
 #include <gtest/gtest_prod.h>
 #include "kvstore/NebulaStore.h"
 #include "storage/admin/AdminTask.h"
+#include <folly/executors/task_queue/UnboundedBlockingQueue.h>
+#include <folly/concurrency/ConcurrentHashMap.h>
 
 namespace nebula {
 namespace storage {
+
 
 class AdminTaskManager {
     FRIEND_TEST(TaskManagerTest, happy_path);
     FRIEND_TEST(TaskManagerTest, gen_sub_task_failed);
 
+public:
+    struct TaskExecContext {
+        explicit TaskExecContext(std::shared_ptr<AdminTask> task_) : task(task_) {}
+        std::shared_ptr<AdminTask>  task{nullptr};
+        std::vector<AdminSubTask>   subTasks;
+        std::atomic<int>            finishedsubTasks{0};
+    };
+
     using ResultCode = nebula::kvstore::ResultCode;
     using ASyncTaskRet = folly::Promise<ResultCode>;
     using TaskAndResult = std::pair<std::shared_ptr<AdminTask>, ASyncTaskRet>;
-    using JobIdAndTaskId = std::pair<int, int>;
     using FutureResultCode = folly::Future<ResultCode>;
 
-public:
+    using TaskHandle = std::pair<int, int>;         // jobid + taskid
+    using SubTaskHandle = std::tuple<int, int, int>;    // jobid / taskid / subtaskid
+    using TaskQueue = folly::UnboundedBlockingQueue<TaskHandle>;
+    using SubTaskQueue = folly::UnboundedBlockingQueue<SubTaskHandle>;
+    using TaskVal = std::shared_ptr<TaskExecContext>;
+    using TaskContainer = folly::ConcurrentHashMap<TaskHandle, TaskVal>;
+
     AdminTaskManager() = default;
     static AdminTaskManager* instance() {
         static AdminTaskManager sAdminTaskManager;
@@ -44,27 +60,26 @@ public:
 
     void shutdown();
 
-    void setSubTaskLimit(int limit) { subTaskLimit_ = limit; }
+    void setSubTaskLimit(int limit) { activeWorker_ = limit; }
 
 private:
-    void runTask(AdminTask& task);
     void pickTaskThread();
-    void pickSubTaskThread();
+    void pickSubTaskThread(int threadIndex);
+    bool satisifyConcurrency(int concurrentReqNum);
 
 private:
     std::unique_ptr<thread::GenericWorker> bgThread_;
     std::unique_ptr<nebula::thread::GenericThreadPool>  pool_{nullptr};
 
-    int                                             subTaskLimit_{1};
-    bool                                            shutdown_;
+    bool                                            shutdown_{true};
 
-    std::deque<std::shared_ptr<AdminTask>>          taskList_;
-    std::mutex                                      taskListMutex_;
-    std::condition_variable                         taskListEmpty_;
-
-    std::vector<AdminSubTask>                       subTasks_;
-    std::vector<ResultCode>                         subTaskStatus_;
-    std::atomic<int>                                subTaskIndex_;
+    TaskContainer                                   tasks_;
+    TaskQueue                                       taskHandleQueue_;
+    SubTaskQueue                                    subTaskHandleQueue_;
+    std::mutex                                      muConLimits_;
+    std::multiset<int>                              concurrentLimits;
+    std::atomic<int>                                activeWorker_{0};
+    int                                             maxWorker_{0};
 };
 
 }  // namespace storage

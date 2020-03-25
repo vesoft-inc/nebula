@@ -23,8 +23,6 @@ public:
 private:
     explicit AdminJobProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::AdminJobResp>(kvstore) {}
-
-    nebula::cpp2::AdminCmd transformCmd(const std::string& cmd);
 };
 
 }  // namespace meta

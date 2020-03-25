@@ -22,9 +22,13 @@ AdminJobExecutor::AdminJobExecutor(Sentence *sentence,
 
 void AdminJobExecutor::execute() {
     LOG(INFO) << __func__ << " enter";
-    auto opEnum = toAdminJobOp(sentence_->getType());
+    auto optOpEnum = toAdminJobOp(sentence_->getType());
+    if (!optOpEnum) {
+        LOG(ERROR) << "unknown setence type[" << sentence_->getType() <<"]";
+    }
     auto paras = sentence_->getParas();
 
+    auto opEnum = *optOpEnum;
     if (opNeedsSpace(opEnum)) {
         auto status = checkIfGraphSpaceChosen();
         if (!status.ok()) {
@@ -35,7 +39,12 @@ void AdminJobExecutor::execute() {
         paras.emplace_back(ectx()->rctx()->session()->spaceName());
     }
 
-    auto future = ectx()->getMetaClient()->submitJob(opEnum, paras);
+    folly::Optional<AdminCmd> optAdminCmd = folly::none;
+    if (opEnum == nebula::meta::cpp2::AdminJobOp::ADD) {
+        optAdminCmd = toAdminCmd(paras[0]);
+    }
+
+    auto future = ectx()->getMetaClient()->submitJob(opEnum, optAdminCmd, paras);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this, opEnum] (auto &&resp) {
         if (!resp.ok()) {
@@ -98,7 +107,7 @@ AdminJobExecutor::getHeader(nebula::meta::cpp2::AdminJobOp op, bool succeed) {
     }
 }
 
-nebula::meta::cpp2::AdminJobOp
+folly::Optional<nebula::meta::cpp2::AdminJobOp>
 AdminJobExecutor::toAdminJobOp(const std::string& op) {
     if (op == "add_job") {
         return nebula::meta::cpp2::AdminJobOp::ADD;
@@ -111,7 +120,19 @@ AdminJobExecutor::toAdminJobOp(const std::string& op) {
     } else if (op == "recover_job") {
         return nebula::meta::cpp2::AdminJobOp::RECOVER;
     }
-    return nebula::meta::cpp2::AdminJobOp::INVALID;
+    return folly::none;
+}
+
+folly::Optional<nebula::cpp2::AdminCmd>
+AdminJobExecutor::toAdminCmd(const std::string& cmd) {
+    if (cmd == "compact") {
+        return nebula::cpp2::AdminCmd::COMPACT;
+    } else if (cmd == "flush") {
+        return nebula::cpp2::AdminCmd::FLUSH;
+    } else {
+        LOG(ERROR) << folly::stringPrintf("unknown AdminCmd[%s]", cmd.c_str());
+    }
+    return folly::none;
 }
 
 std::string AdminJobExecutor::time2string(int64_t t) {

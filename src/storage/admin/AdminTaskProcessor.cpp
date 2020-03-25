@@ -12,31 +12,28 @@ namespace nebula {
 namespace storage {
 
 void AdminTaskProcessor::process(const cpp2::AddAdminTaskRequest& req) {
-    bool processAsync = false;
+    bool runDirectly = false;
     auto rc = nebula::kvstore::ResultCode::SUCCEEDED;
     auto taskManager = AdminTaskManager::instance();
-    if (req.get_cmd() == nebula::cpp2::AdminCmd::STOP) {
-        rc = taskManager->cancelTask(req.get_job_id());
-    } else {
-        auto* store = dynamic_cast<kvstore::NebulaStore*>(kvstore_);
-        auto cb = [&](nebula::kvstore::ResultCode ret) {
-                if (ret != nebula::kvstore::ResultCode::SUCCEEDED) {
-                    cpp2::ResultCode thriftRet;
-                    thriftRet.set_code(to(ret));
-                    codes_.emplace_back(std::move(thriftRet));
-                }
-                onFinished();
-            };
-        auto task = AdminTaskFactory::createAdminTask(req, store, cb);
-        if (task) {
-            processAsync = true;
-            taskManager->addAsyncTask(task);
-        } else {
-            rc = kvstore::ResultCode::ERR_INVALID_ARGUMENT;
+
+    auto* store = dynamic_cast<kvstore::NebulaStore*>(kvstore_);
+    auto cb = [&](nebula::kvstore::ResultCode ret) {
+        if (ret != nebula::kvstore::ResultCode::SUCCEEDED) {
+            cpp2::ResultCode thriftRet;
+            thriftRet.set_code(to(ret));
+            codes_.emplace_back(std::move(thriftRet));
         }
+        onFinished();
+    };
+    auto task = AdminTaskFactory::createAdminTask(req, store, cb);
+    if (task) {
+        runDirectly = false;
+        taskManager->addAsyncTask(task);
+    } else {
+        rc = kvstore::ResultCode::ERR_INVALID_ARGUMENT;
     }
 
-    if (!processAsync) {
+    if (runDirectly) {
         if (rc != kvstore::ResultCode::SUCCEEDED) {
             cpp2::ResultCode thriftRet;
             thriftRet.set_code(to(rc));

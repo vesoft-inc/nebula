@@ -32,6 +32,12 @@ class AdminTask {
     using TCallBack = std::function<void(ResultCode)>;
 
 public:
+    enum class TaskPriority : int8_t {
+        LOW,
+        MID,
+        HIGH
+    };
+
     AdminTask() = default;
     AdminTask(int jobId, int taskId, TCallBack cb) :
               jobId_(jobId),
@@ -44,18 +50,39 @@ public:
         onFinished_ = cb;
     }
 
-    virtual void stop() {
+    virtual void cancel() {
         stop_ = true;
+        if (rc_ == ResultCode::SUCCEEDED) {
+            rc_ = ResultCode::ERR_USER_CANCELLED;
+        }
     }
 
-    virtual bool isStop() {
+    virtual bool cancelled() {
         return stop_;
+    }
+
+    virtual int8_t getPriority() {
+        return static_cast<int8_t>(pri_);
+    }
+
+    virtual int subFinish(ResultCode rc) {
+        if (rc_ == ResultCode::SUCCEEDED) {
+            rc_ = rc;
+        }
+        return --notFinishedSubtask_;
+    }
+
+    virtual void finish() {
+        finish(rc_);
     }
 
     virtual void finish(ResultCode rc) {
         LOG(INFO) << folly::stringPrintf("job[%d], task[%d] finished, rc=[%d]",
                                          jobId_, taskId_, static_cast<int>(rc));
-        onFinished_(rc);
+        if (rc_ == ResultCode::SUCCEEDED) {
+            rc_ = rc;
+        }
+        onFinished_(rc_);
     }
 
     virtual void finish(const std::vector<ResultCode>& subTaskResults) {
@@ -66,7 +93,7 @@ public:
                 break;
             }
         }
-        onFinished_(rc);
+        finish(rc);
     }
 
     virtual int getJobId() {
@@ -77,11 +104,24 @@ public:
         return taskId_;
     }
 
+    virtual void setConcurrent(int concurrcy) {
+        concurrency_ = std::max(1, concurrcy);
+    }
+
+    virtual int getConcurrent() {
+        return concurrency_;
+    }
+
 protected:
     int             jobId_{-1};
     int             taskId_{-1};
-    TCallBack     onFinished_;
-    bool          stop_{false};
+    TCallBack       onFinished_;
+    bool            stop_{false};
+    TaskPriority    pri_{TaskPriority::MID};
+    int             concurrency_{INT_MAX};
+    int             notFinishedSubtask_{0};
+    int             finishedSubtasks_{0};
+    ResultCode      rc_{ResultCode::SUCCEEDED};
 };
 
 class AdminTaskFactory {

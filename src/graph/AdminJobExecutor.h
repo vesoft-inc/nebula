@@ -14,7 +14,8 @@ namespace nebula {
 namespace graph {
 
 class AdminJobExecutor final : public Executor {
-    using JobOpEnum = nebula::meta::cpp2::AdminJobOp;
+    using AdminJobOp = nebula::meta::cpp2::AdminJobOp;
+    using AdminCmd = nebula::cpp2::AdminCmd;
     using TJobResult = nebula::meta::cpp2::AdminJobResult;
 
 public:
@@ -32,10 +33,11 @@ public:
 
 private:
     std::vector<std::string>
-    getHeader(JobOpEnum op, bool succeed = true);
-    bool opNeedsSpace(JobOpEnum op);
-    JobOpEnum toAdminJobOp(const std::string& op);
-    std::vector<cpp2::RowValue> toRowValues(JobOpEnum op, TJobResult &&resp);
+    getHeader(AdminJobOp op, bool succeed = true);
+    bool opNeedsSpace(AdminJobOp op);
+    folly::Optional<AdminJobOp> toAdminJobOp(const std::string& op);
+    folly::Optional<AdminCmd> toAdminCmd(const std::string& op);
+    std::vector<cpp2::RowValue> toRowValues(AdminJobOp op, TJobResult &&resp);
     cpp2::RowValue toRowValue(const nebula::meta::cpp2::JobDesc&);
     cpp2::RowValue toRowValue(const nebula::meta::cpp2::TaskDesc&);
     cpp2::RowValue toRowValue(std::string&& msg);

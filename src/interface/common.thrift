@@ -141,6 +141,4 @@ enum AdminCmd {
     FLUSH               = 1
     REBUILD_TAG_INDEX   = 2
     REBUILD_EDGE_INDEX  = 3
-    STOP                = 20
-    INVALID             = 99
 }

@@ -24,6 +24,7 @@ nebula_add_library(
     admin/RebuildTagIndexProcessor.cpp
     admin/RebuildEdgeIndexProcessor.cpp
     admin/AdminTaskProcessor.cpp
+    admin/StopAdminTaskProcessor.cpp
     admin/AdminTaskManager.cpp
     admin/AdminTask.cpp
     admin/CompactTask.cpp

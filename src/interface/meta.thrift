@@ -153,13 +153,13 @@ enum AdminJobOp {
     SHOW_All    = 0x02,
     SHOW        = 0x03,
     STOP        = 0x04,
-    RECOVER     = 0x05,
-    INVALID     = 0xFF,
+    RECOVER     = 0x05
 } (cpp.enum_strict)
 
 struct AdminJobReq {
     1: AdminJobOp       op
-    2: list<string>     paras;
+    2: common.AdminCmd  cmd
+    3: list<string>     paras;
 }
 
 enum JobStatus {

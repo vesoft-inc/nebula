@@ -14,19 +14,6 @@
 namespace nebula {
 namespace meta {
 
-nebula::cpp2::AdminCmd AdminJobProcessor::transformCmd(const std::string& cmd) {
-    using AdminCmd = nebula::cpp2::AdminCmd;
-
-    if ("compact" == cmd) {
-        return AdminCmd::COMPACT;
-    } else if ("flush" == cmd) {
-        return AdminCmd::FLUSH;
-    } else {
-        LOG(ERROR) << "unknown cmd=" << cmd;
-    }
-    return AdminCmd::INVALID;
-}
-
 void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
     cpp2::AdminJobResult result;
     cpp2::ErrorCode errorCode = cpp2::ErrorCode::SUCCEEDED;
@@ -52,9 +39,8 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
                 break;
             }
 
-            auto cmd = transformCmd(cmdAndParas[0]);
-            std::vector<std::string> paras(cmdAndParas.begin() + 1,
-                                           cmdAndParas.end());
+            auto  cmd = req.get_cmd();
+            auto paras = req.get_paras();
 
             JobDescription jobDesc(nebula::value(jobId), cmd, paras);
             auto rc = jobMgr->addJob(jobDesc);
