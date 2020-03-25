@@ -411,6 +411,7 @@ nebula_add_test(
 )
 
 nebula_add_test(
+    DISABLED
     NAME
         cloud_account_auth_test
     SOURCES

@@ -54,12 +54,9 @@ TEST_F(PermissionTest, SimpleTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code2);
     }
 
-
     sleep(FLAGS_heartbeat_interval_secs + 1);
     FLAGS_auth_type = "cloud";
-    FLAGS_cloud_server_ip = "192.168.8.51";
-    FLAGS_cloud_server_port = 3000;
-    FLAGS_cloud_http_path = "mock/12/api/account/login";
+    FLAGS_cloud_http_url = "http://192.168.8.51:3000/mock/12/api/account/login";
     {
         auto adminClient = gEnv->getClient("admin", "Aadmin");
         ASSERT_NE(nullptr, adminClient);
@@ -78,7 +75,6 @@ TEST_F(PermissionTest, SimpleTest) {
     }
 
     FLAGS_auth_type = "password";
-
     {
         auto client = gEnv->getClient();
         ASSERT_NE(nullptr, client);

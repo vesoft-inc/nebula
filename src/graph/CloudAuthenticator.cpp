@@ -26,12 +26,6 @@ bool CloudAuthenticator::auth(const std::string& user, const std::string& passwo
         return false;
     }
 
-    const char* tmp = "http://%s:%d/%s";
-    auto url = folly::stringPrintf(tmp,
-                                   FLAGS_cloud_server_ip.c_str(),
-                                   FLAGS_cloud_server_port,
-                                   FLAGS_cloud_http_path.c_str());
-
     // Second, use different authentication methods based on the password prefix
     // Use user + password method
     StatusOr<std::string> result;
@@ -42,13 +36,13 @@ bool CloudAuthenticator::auth(const std::string& user, const std::string& passwo
 
         std::string header = "-H \"Content-Type: application/json\"  -H \"Authorization:Basic ";
         header =  header + base64Str + "\"";
-        result = http::HttpClient::post(url, header);
+        result = http::HttpClient::post(FLAGS_cloud_http_url, header);
     } else if (password[0] == 'T') {
         // Use token method
         std::string passwd = password.substr(1);
         std::string header = "-H \"Content-Type: application/json\"  -H \"Authorization:Bearer ";
         header = header + passwd + "\"";
-        result = http::HttpClient::post(url, header);
+        result = http::HttpClient::post(FLAGS_cloud_http_url, header);
     } else {
         LOG(ERROR) << "Cloud authentication failed, password is incorrect";
         return false;

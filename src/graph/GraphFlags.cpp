@@ -38,6 +38,4 @@ DEFINE_string(auth_type, "password", "User login authentication type,"
                                      "ldap for ldap authentication,"
                                      "cloud for cloud authentication");
 
-DEFINE_string(cloud_server_ip, "", "cloud server ip");
-DEFINE_int32(cloud_server_port, 0, "cloud server port");
-DEFINE_string(cloud_http_path, "", "cloud http path");
+DEFINE_string(cloud_http_url, "", "cloud http url including ip, port, url path");

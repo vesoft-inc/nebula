@@ -3,5 +3,3 @@ nebula_add_library(
     MD5Utils.cpp
     Base64.cpp
 )
-
-nebula_add_subdirectory(test)
