@@ -9,3 +9,8 @@ nebula_add_library(
     GeneralStorageClient.cpp
 )
 
+
+nebula_add_library(
+    storage_client_gflags_obj OBJECT
+    GFlags.cpp
+)

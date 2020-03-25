@@ -7,8 +7,7 @@
 #include <folly/Try.h>
 #include "stats/StatsManager.h"
 #include "time/Duration.h"
-
-DECLARE_int32(storage_client_timeout_ms);
+#include "GFlags.h"
 
 namespace nebula {
 namespace storage {

@@ -9,7 +9,6 @@
 #include "base/Base.h"
 #include "thread/NamedThread.h"
 #include "kvstore/KVStore.h"
-#include "meta/client/MetaClient.h"
 #include "meta/SchemaManager.h"
 #include "meta/IndexManager.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
