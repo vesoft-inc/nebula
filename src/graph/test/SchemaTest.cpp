@@ -55,12 +55,14 @@ TEST_F(SchemaTest, TestDefaultValue) {
         std::string cmd = "CREATE TAG default_tag(name string DEFAULT 10)";
         auto code = client->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "CREATE TAG default_tag(name string, age int DEFAULT \"10\")";
         auto code = client->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -68,12 +70,14 @@ TEST_F(SchemaTest, TestDefaultValue) {
                           "age int DEFAULT \"10\")";
         auto code = client->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "CREATE TAG default_tag(name string  DEFAULT 10, age int DEFAULT 10)";
         auto code = client->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -94,6 +98,7 @@ TEST_F(SchemaTest, TestSpace) {
         std::string query = "CREATE SPACE space_with_default_options";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -104,12 +109,14 @@ TEST_F(SchemaTest, TestSpace) {
             {1, "space_with_default_options", 100, 1, "utf8", "utf8_bin"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DROP SPACE space_with_default_options";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 
     // Test create space succeeded
@@ -118,6 +125,7 @@ TEST_F(SchemaTest, TestSpace) {
         std::string query = "CREATE SPACE default_space(partition_num=9, replica_factor=1)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -127,6 +135,7 @@ TEST_F(SchemaTest, TestSpace) {
             {"default_space"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Test desc space
     {
@@ -138,6 +147,7 @@ TEST_F(SchemaTest, TestSpace) {
             {2, "default_space", 9, 1, "utf8", "utf8_bin"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -148,6 +158,7 @@ TEST_F(SchemaTest, TestSpace) {
             {2, "default_space", 9, 1, "utf8", "utf8_bin"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -163,12 +174,14 @@ TEST_F(SchemaTest, TestSpace) {
             {"default_space", createSpaceStr},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "USE default_space";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Test charset and collate
     {
@@ -177,6 +190,7 @@ TEST_F(SchemaTest, TestSpace) {
                             "replica_factor=1, charset=utf8, collate=utf8_bin)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -187,12 +201,14 @@ TEST_F(SchemaTest, TestSpace) {
             {3, "space_charset_collate", 9, 1, "utf8", "utf8_bin"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DROP SPACE space_charset_collate";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -200,6 +216,7 @@ TEST_F(SchemaTest, TestSpace) {
                             "replica_factor=1, charset=utf8)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -210,12 +227,14 @@ TEST_F(SchemaTest, TestSpace) {
             {4, "space_charset", 9, 1, "utf8", "utf8_bin"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DROP SPACE space_charset";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -223,6 +242,7 @@ TEST_F(SchemaTest, TestSpace) {
                             "replica_factor=1, collate=utf8_bin)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -233,12 +253,14 @@ TEST_F(SchemaTest, TestSpace) {
             {5, "space_collate", 9, 1, "utf8", "utf8_bin"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DROP SPACE space_collate";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -246,6 +268,7 @@ TEST_F(SchemaTest, TestSpace) {
                             "replica_factor=1, charset = utf8, collate=gbk_bin)";
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -253,6 +276,7 @@ TEST_F(SchemaTest, TestSpace) {
                             "replica_factor=1, charset = gbk, collate=utf8_bin)";
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -260,6 +284,7 @@ TEST_F(SchemaTest, TestSpace) {
                             "replica_factor=1, charset = gbk)";
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -267,6 +292,7 @@ TEST_F(SchemaTest, TestSpace) {
                             "replica_factor=1, collate = gbk_bin)";
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -274,6 +300,7 @@ TEST_F(SchemaTest, TestSpace) {
                             "replica_factor=1, charset=UTF8, collate=UTF8_bin)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -284,12 +311,14 @@ TEST_F(SchemaTest, TestSpace) {
             {6, "space_capital", 9, 1, "utf8", "utf8_bin"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DROP SPACE space_capital";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 
     // Test IF NOT EXISTS And IF EXISTS
@@ -298,24 +327,28 @@ TEST_F(SchemaTest, TestSpace) {
         cpp2::ExecutionResponse resp;
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         std::string query = "CREATE SPACE IF NOT EXISTS default_space";
         cpp2::ExecutionResponse resp;
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         std::string query = "DROP SPACE IF EXISTS not_exist_space";
         cpp2::ExecutionResponse resp;
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         std::string query = "DROP SPACE not_exist_space";
         cpp2::ExecutionResponse resp;
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         std::string query = "CREATE SPACE exist_space";
@@ -328,6 +361,7 @@ TEST_F(SchemaTest, TestSpace) {
         cpp2::ExecutionResponse resp1;
         auto code1 = client->execute(query1, resp1);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code1);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Test drop space
     {
@@ -338,18 +372,21 @@ TEST_F(SchemaTest, TestSpace) {
             {"default_space"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DROP SPACE default_space";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "SHOW SPACES";
         client->execute(query, resp);
         ASSERT_EQ(0, (*(resp.get_rows())).size());
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -368,6 +405,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
             {"Total", "", "", 0, "", ""},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -375,6 +413,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
                             "replica_factor=1, charset=utf8, collate=utf8_bin)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -385,12 +424,14 @@ TEST_F(SchemaTest, TestTagAndEdge) {
             {8, "default_space", 9, 1, "utf8", "utf8_bin"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "USE default_space";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // show parts of default_space
     {
@@ -405,6 +446,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
             expected.emplace_back(std::make_tuple(partId, "", host, ""));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Test create tag without prop
     {
@@ -412,12 +454,14 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         std::string query = "CREATE TAG tag1()";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG IF NOT EXISTS tag1()";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -426,12 +470,14 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<uniform_tuple_t<std::string, 1>> expected{};
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "ALTER TAG tag1 ADD (id int, name string)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -442,6 +488,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
                 {"name", "string"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Test create tag succeeded
     {
@@ -450,6 +497,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
                             "age int, gender string, row_timestamp timestamp)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Create Tag with duplicate field
     {
@@ -457,12 +505,14 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         std::string query = "CREATE TAG duplicate_tag(name string, name int)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG duplicate_tag(name string, name string)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Create Tag with default value
     {
@@ -470,6 +520,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         std::string query = "CREATE TAG person_with_default(name string, age int default 18)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -477,6 +528,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
                             "(name string, age int default \"hello\")";
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -491,6 +543,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
             {"row_timestamp", "timestamp"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Test desc tag command
     {
@@ -506,6 +559,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
             {"row_timestamp", "timestamp"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -523,6 +577,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
             {"person", createTagStr},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         // Test tag not exist
@@ -530,6 +585,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         std::string query = "DESCRIBE TAG not_exist";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Test unreserved keyword
     {
@@ -538,6 +594,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
                             "age int, gender string, row_timestamp timestamp)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -553,6 +610,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
             {"row_timestamp", "timestamp"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Test existent tag
     {
@@ -560,6 +618,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         std::string query = "CREATE TAG person(id int)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Test nonexistent tag
     {
@@ -567,6 +626,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         std::string query = "DESCRIBE TAG not_exist";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Test alter tag
     {
@@ -577,12 +637,14 @@ TEST_F(SchemaTest, TestTagAndEdge) {
                             "DROP (gender)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "ALTER TAG person DROP (gender)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -597,6 +659,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
                 {"col2", "string"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -615,6 +678,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
             {"person", createTagStr},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -628,6 +692,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
             {12, "upper"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Test create edge without prop
     {
@@ -635,24 +700,28 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         std::string query = "CREATE EDGE edge1()";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE EDGE IF NOT EXISTS edge1()";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE EDGE edge1";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "ALTER EDGE edge1 ADD (id int, name string)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -663,6 +732,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
                 {"name", "string"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Test create edge succeeded
     {
@@ -670,6 +740,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         std::string query = "CREATE EDGE buy(id int, time string)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Create Edge with duplicate field
     {
@@ -677,24 +748,28 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         std::string query = "CREATE EDGE duplicate_buy(time int, time string)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE EDGE duplicate_buy(time int, time int)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE EDGE buy_with_default(id int, time string default \"\")";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE EDGE buy_type_mismatch(id int, time string default 0)";
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Test existent edge
     {
@@ -702,6 +777,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         std::string query = "CREATE EDGE buy(id int, time string)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -713,6 +789,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
             {"time", "string"},
         };
         EXPECT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Test nonexistent edge
     {
@@ -720,6 +797,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         std::string query = "DESCRIBE EDGE not_exist";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Test desc edge
     {
@@ -732,6 +810,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
             {"time", "string"},
         };
         EXPECT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -746,6 +825,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
             {"buy", createEdgeStr},
         };
         EXPECT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         // Test edge not exist
@@ -753,6 +833,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         std::string query = "DESCRIBE EDGE not_exist";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Test create edge succeeded
     {
@@ -760,6 +841,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         std::string query = "CREATE EDGE education(id int, time timestamp, school string)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -771,6 +853,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
             {"school", "string"},
         };
         EXPECT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Test show edges
     {
@@ -785,6 +868,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
             {16, "education"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Test alter edge
     {
@@ -795,12 +879,14 @@ TEST_F(SchemaTest, TestTagAndEdge) {
                             "DROP (id, time)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "ALTER EDGE education DROP (id, time)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -812,6 +898,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
                 {"col2", "string"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Test multi sentences
     {
@@ -822,6 +909,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         }
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -833,6 +921,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
                 {"name", "string"},
             };
             ASSERT_TRUE(verifyResult(resp, expected));
+            ASSERT_EQ(resp.get_affect(), nullptr);
         }
     }
     // Test drop tag
@@ -841,29 +930,34 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         std::string query = "DROP TAG person";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DROP TAG not_exist_tag";
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DROP TAG IF EXISTS not_exist_tag";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG exist_tag(id int)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
 
         cpp2::ExecutionResponse resp1;
         std::string query1 = "DROP TAG IF EXISTS exist_tag";
         auto code1 = client->execute(query1, resp1);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code1);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Test drop edge
     {
@@ -871,29 +965,34 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         std::string query = "DROP EDGE buy";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DROP EDGE not_exist_edge";
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DROP EDGE IF EXISTS not_exist_edge";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE EDGE exist_edge(id int)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
 
         cpp2::ExecutionResponse resp1;
         std::string query1 = "DROP EDGE IF EXISTS exist_edge";
         auto code1 = client->execute(query1, resp1);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code1);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -909,6 +1008,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
             {"education", createEdgeStr},
         };
         EXPECT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // show parts of default_space
     {
@@ -929,6 +1029,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
             expected.emplace_back(std::make_tuple(partId, host, host, ""));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Tag with negative default value
     {
@@ -937,6 +1038,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
             "CREATE TAG default_tag_neg(id int DEFAULT -10, height double DEFAULT -176.0)";
         auto code = client->execute(cmd, resp);
         EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Tag with expression default value
     {
@@ -948,6 +1050,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
             "adult bool DEFAULT true && false)";  // logic
         auto code = client->execute(cmd, resp);
         EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Edge with negative default value
     {
@@ -956,6 +1059,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
             "CREATE EDGE default_edge_neg(id int DEFAULT -10, height double DEFAULT -176.0)";
         auto code = client->execute(cmd, resp);
         EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Edge with expression default value
     {
@@ -967,6 +1071,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
             "adult bool DEFAULT true && false)";  // logic
         auto code = client->execute(cmd, resp);
         EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Test different tag and edge in different space
     {
@@ -974,18 +1079,21 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         std::string query = "CREATE SPACE my_space(partition_num=9, replica_factor=1)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "USE my_space";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG animal(name string, kind string)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -997,6 +1105,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
             {"kind", "string"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Test the same tag in diff space
     {
@@ -1004,6 +1113,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         std::string query = "CREATE TAG person(name string, interest string)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -1015,6 +1125,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
             {1025, "person"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Test multi sentence
     {
@@ -1030,6 +1141,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
             {1027, "test_tag"},
         };
         ASSERT_TRUE(verifyResult(resp, expected1));
+        ASSERT_EQ(resp.get_affect(), nullptr);
 
         query = "USE test_multi; CREATE TAG test_tag1(); USE my_space; SHOW TAGS;";
         code = client->execute(query, resp);
@@ -1039,28 +1151,33 @@ TEST_F(SchemaTest, TestTagAndEdge) {
             {1025, "person"},
         };
         ASSERT_TRUE(verifyResult(resp, expected2));
+        ASSERT_EQ(resp.get_affect(), nullptr);
 
         query = "DROP SPACE test_multi";
         code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "SHOW SPACES";
         client->execute(query, resp);
         ASSERT_EQ(2, (*(resp.get_rows())).size());
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DROP SPACE my_space";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DROP SPACE default_space";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 
     int retry = 60;

@@ -43,6 +43,7 @@ TEST_F(FetchVerticesTest, Base) {
             {player.vid(), player.name(), player.age()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -62,6 +63,7 @@ TEST_F(FetchVerticesTest, Base) {
             {player.vid(), player.name(), player.age(), player.age() > 30},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -82,6 +84,7 @@ TEST_F(FetchVerticesTest, Base) {
             {players_["Tim Duncan"].vid(), "Tim Duncan", players_["Tim Duncan"].age()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -102,6 +105,7 @@ TEST_F(FetchVerticesTest, Base) {
             {players_["Tim Duncan"].vid(), "Tim Duncan", players_["Tim Duncan"].age()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -123,6 +127,7 @@ TEST_F(FetchVerticesTest, Base) {
             {players_["Tony Parker"].vid(), "Tony Parker", players_["Tony Parker"].age()},
         };
         ASSERT_TRUE(verifyResult(resp, expected, false));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -142,6 +147,7 @@ TEST_F(FetchVerticesTest, Base) {
             {player.vid(), player.name(), player.age()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -155,6 +161,7 @@ TEST_F(FetchVerticesTest, Base) {
             {player.name(), player.age()},
         };
         ASSERT_TRUE(verifyResult(resp, expected, true, {0}));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -176,6 +183,7 @@ TEST_F(FetchVerticesTest, NoYield) {
             {player.vid(), player.name(), player.age()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -194,6 +202,7 @@ TEST_F(FetchVerticesTest, NoYield) {
             {player.vid(), player.name(), player.age()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -206,6 +215,7 @@ TEST_F(FetchVerticesTest, NoYield) {
             {player.name(), player.age()},
         };
         ASSERT_TRUE(verifyResult(resp, expected, true, {0}));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -228,6 +238,7 @@ TEST_F(FetchVerticesTest, Distinct) {
             {player.vid(), player.name(), player.age()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -249,6 +260,7 @@ TEST_F(FetchVerticesTest, Distinct) {
             {tony.vid(), tony.age()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -309,6 +321,7 @@ TEST_F(FetchVerticesTest, NonexistentVertex) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         ASSERT_EQ(nullptr, resp.get_rows());
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -317,6 +330,7 @@ TEST_F(FetchVerticesTest, NonexistentVertex) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         ASSERT_EQ(nullptr, resp.get_rows());
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -325,6 +339,7 @@ TEST_F(FetchVerticesTest, NonexistentVertex) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         ASSERT_EQ(nullptr, resp.get_rows());
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -344,6 +359,7 @@ TEST_F(FetchVerticesTest, FetchAll) {
             {player.vid(), player.name(), player.age()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -360,6 +376,7 @@ TEST_F(FetchVerticesTest, FetchAll) {
             {player.vid(), bachelors_["Tim Duncan"].name(), bachelors_["Tim Duncan"].speciality()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -379,6 +396,7 @@ TEST_F(FetchVerticesTest, FetchAll) {
                 bachelors_["Tim Duncan"].name(), bachelors_["Tim Duncan"].speciality()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -400,6 +418,7 @@ TEST_F(FetchVerticesTest, DuplicateColumnName) {
             {player.vid(), player.name(), player.name()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -409,6 +428,7 @@ TEST_F(FetchVerticesTest, DuplicateColumnName) {
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 

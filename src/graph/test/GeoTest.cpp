@@ -248,6 +248,7 @@ TEST_F(GeoTest, Near) {
             {1}
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -270,6 +271,7 @@ TEST_F(GeoTest, Near) {
             {merchants_[1].name(), merchants_[1].coordinate(), merchants_[1].rate()},
         };
         ASSERT_TRUE(verifyResult(resp, expected, true, {0}));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -294,6 +296,7 @@ TEST_F(GeoTest, Near) {
             {merchants_[0].name(), merchants_[0].rate()},
         };
         ASSERT_TRUE(verifyResult(resp, expected, false, {0}));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 }  // namespace graph

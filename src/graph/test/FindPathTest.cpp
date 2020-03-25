@@ -37,6 +37,7 @@ TEST_F(FindPathTest, SingleEdgeShortest) {
             "5662213458193308137<like,0>-7579316172763586624",
         };
         ASSERT_TRUE(verifyPath(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -52,6 +53,7 @@ TEST_F(FindPathTest, SingleEdgeShortest) {
             "5662213458193308137<like,0>-7579316172763586624"
         };
         ASSERT_TRUE(verifyPath(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -65,6 +67,7 @@ TEST_F(FindPathTest, SingleEdgeShortest) {
             "5662213458193308137<like,0>-7579316172763586624<like,0>-1782445125509592239"
         };
         ASSERT_TRUE(verifyPath(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -82,6 +85,7 @@ TEST_F(FindPathTest, SingleEdgeShortest) {
             "5662213458193308137<like,0>-7579316172763586624<like,0>-1782445125509592239",
         };
         ASSERT_TRUE(verifyPath(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -96,6 +100,7 @@ TEST_F(FindPathTest, SingleEdgeShortest) {
                 "<like,0>-1782445125509592239"
         };
         ASSERT_TRUE(verifyPath(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         // we only find the shortest path to the dest,
@@ -117,6 +122,7 @@ TEST_F(FindPathTest, SingleEdgeShortest) {
             "-8160811731890648949<like,0>3394245602834314645"
         };
         ASSERT_TRUE(verifyPath(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -131,6 +137,7 @@ TEST_F(FindPathTest, SingleEdgeShortest) {
             "5662213458193308137<like,0>-7579316172763586624"
         };
         ASSERT_TRUE(verifyPath(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -145,6 +152,7 @@ TEST_F(FindPathTest, SingleEdgeShortest) {
             "5662213458193308137<like,0>-7579316172763586624"
         };
         ASSERT_TRUE(verifyPath(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -160,6 +168,7 @@ TEST_F(FindPathTest, SingleEdgeShortest) {
             "5662213458193308137<like,0>-7579316172763586624"
         };
         ASSERT_TRUE(verifyPath(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -186,6 +195,7 @@ TEST_F(FindPathTest, SingleEdgeAll) {
                 "<like,0>-7579316172763586624"
         };
         ASSERT_TRUE(verifyPath(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -212,6 +222,7 @@ TEST_F(FindPathTest, SingleEdgeAll) {
                 "<like,0>3394245602834314645"
         };
         ASSERT_TRUE(verifyPath(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -225,6 +236,7 @@ TEST_F(FindPathTest, SingleEdgeAll) {
             "5662213458193308137<like,0>-7579316172763586624<like,0>-1782445125509592239"
         };
         ASSERT_TRUE(verifyPath(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -239,6 +251,7 @@ TEST_F(FindPathTest, SingleEdgeAll) {
                 "<like,0>-1782445125509592239"
         };
         ASSERT_TRUE(verifyPath(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -255,6 +268,7 @@ TEST_F(FindPathTest, MultiEdgesShortest) {
             "5662213458193308137<like,0>-7579316172763586624",
         };
         ASSERT_TRUE(verifyPath(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -269,6 +283,7 @@ TEST_F(FindPathTest, MultiEdgesShortest) {
             "5662213458193308137<serve,0>7193291116733635180",
         };
         ASSERT_TRUE(verifyPath(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -290,6 +305,7 @@ TEST_F(FindPathTest, MultiEdgesShortest) {
             "5662213458193308137<serve,0>7193291116733635180",
         };
         ASSERT_TRUE(verifyPath(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -305,6 +321,7 @@ TEST_F(FindPathTest, MultiEdgesShortest) {
             "-8160811731890648949<serve,0>7193291116733635180",
         };
         ASSERT_TRUE(verifyPath(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -319,6 +336,7 @@ TEST_F(FindPathTest, MultiEdgesShortest) {
             "5662213458193308137<teammate,0>-7579316172763586624"
         };
         ASSERT_TRUE(verifyPath(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -334,6 +352,7 @@ TEST_F(FindPathTest, MultiEdgesShortest) {
             "5662213458193308137<teammate,0>-7579316172763586624",
         };
         ASSERT_TRUE(verifyPath(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -357,6 +376,7 @@ TEST_F(FindPathTest, MultiEdgesShortest) {
             "5662213458193308137<teammate,0>3394245602834314645"
         };
         ASSERT_TRUE(verifyPath(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -371,6 +391,7 @@ TEST_F(FindPathTest, MultiEdgesShortest) {
             "-8160811731890648949<serve,0>7193291116733635180",
         };
         ASSERT_TRUE(verifyPath(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -408,6 +429,7 @@ TEST_F(FindPathTest, MultiEdgesAll) {
                 "<serve,0>7193291116733635180",
         };
         ASSERT_TRUE(verifyPath(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -438,6 +460,7 @@ TEST_F(FindPathTest, MultiEdgesAll) {
                 "<serve,0>7193291116733635180",
         };
         ASSERT_TRUE(verifyPath(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -451,6 +474,7 @@ TEST_F(FindPathTest, VertexNotExist) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
         std::vector<std::string> expected;
         ASSERT_TRUE(verifyPath(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -461,6 +485,7 @@ TEST_F(FindPathTest, VertexNotExist) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
         std::vector<std::string> expected;
         ASSERT_TRUE(verifyPath(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -471,6 +496,7 @@ TEST_F(FindPathTest, VertexNotExist) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
         std::vector<std::string> expected;
         ASSERT_TRUE(verifyPath(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -481,6 +507,7 @@ TEST_F(FindPathTest, VertexNotExist) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
         std::vector<std::string> expected;
         ASSERT_TRUE(verifyPath(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -491,6 +518,7 @@ TEST_F(FindPathTest, VertexNotExist) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
         std::vector<std::string> expected;
         ASSERT_TRUE(verifyPath(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -501,6 +529,7 @@ TEST_F(FindPathTest, VertexNotExist) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
         std::vector<std::string> expected;
         ASSERT_TRUE(verifyPath(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -513,6 +542,7 @@ TEST_F(FindPathTest, DuplicateColumn) {
         auto query = folly::stringPrintf(fmt, tim.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code) << *(resp.get_error_msg());
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 }  // namespace graph

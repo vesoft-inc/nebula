@@ -49,6 +49,7 @@ TEST_P(GoTest, OneStepOutBound) {
             {teams_["Spurs"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -72,6 +73,7 @@ TEST_P(GoTest, OneStepOutBound) {
             {player.name(), 2016, 2017, "Jazz"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -95,6 +97,7 @@ TEST_P(GoTest, OneStepOutBound) {
             {player.name(), 2017, 2018, "Pelicans"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -120,6 +123,7 @@ TEST_P(GoTest, OneStepOutBound) {
             {teams_["Trail Blazers"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -146,6 +150,7 @@ TEST_P(GoTest, OneStepOutBound) {
             {teams_["Trail Blazers"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -170,6 +175,7 @@ TEST_P(GoTest, AssignmentSimple) {
             {players_["LaMarcus Aldridge"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -199,6 +205,7 @@ TEST_P(GoTest, AssignmentPipe) {
             {players_["Tim Duncan"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -223,6 +230,7 @@ TEST_P(GoTest, AssignmentEmptyResult) {
         std::vector<std::tuple<uint64_t>> expected = {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -244,6 +252,7 @@ TEST_P(GoTest, OneStepInBound) {
             {players_["Ray Allen"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -268,6 +277,7 @@ TEST_P(GoTest, DISABLED_OneStepInOutBound) {
             {players_["Dwight Howard"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // Ever been teammates
     {
@@ -284,6 +294,7 @@ TEST_P(GoTest, Distinct) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         ASSERT_EQ(nullptr, resp.get_rows());
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -306,6 +317,7 @@ TEST_P(GoTest, Distinct) {
             {teams_["Trail Blazers"].vid(), "Trail Blazers"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -319,6 +331,7 @@ TEST_P(GoTest, Distinct) {
             {5662213458193308137},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -341,6 +354,7 @@ TEST_P(GoTest, VertexNotExist) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         ASSERT_EQ(nullptr, resp.get_rows());
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -350,6 +364,7 @@ TEST_P(GoTest, VertexNotExist) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         ASSERT_EQ(nullptr, resp.get_rows());
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -359,6 +374,7 @@ TEST_P(GoTest, VertexNotExist) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         ASSERT_EQ(nullptr, resp.get_rows());
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -367,6 +383,7 @@ TEST_P(GoTest, VertexNotExist) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         ASSERT_EQ(nullptr, resp.get_rows());
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -376,6 +393,7 @@ TEST_P(GoTest, VertexNotExist) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         ASSERT_EQ(nullptr, resp.get_rows());
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -385,6 +403,7 @@ TEST_P(GoTest, VertexNotExist) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         ASSERT_EQ(nullptr, resp.get_rows());
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -403,6 +422,7 @@ TEST_P(GoTest, MULTI_EDGES) {
             {0, players_["James Harden"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -418,6 +438,7 @@ TEST_P(GoTest, MULTI_EDGES) {
             {0, players_["Paul George"].vid(), 0, -5},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -432,6 +453,7 @@ TEST_P(GoTest, MULTI_EDGES) {
             {0, player.vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -446,6 +468,7 @@ TEST_P(GoTest, MULTI_EDGES) {
             {0, players_["Paul George"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -460,6 +483,7 @@ TEST_P(GoTest, MULTI_EDGES) {
             {0, players_["Paul George"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -474,6 +498,7 @@ TEST_P(GoTest, MULTI_EDGES) {
             {0, player.vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -489,6 +514,7 @@ TEST_P(GoTest, MULTI_EDGES) {
             {0, players_["Paul George"].vid(), 0},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -507,6 +533,7 @@ TEST_P(GoTest, MULTI_EDGES) {
             {0, 2002, "Tony Parker"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -525,6 +552,7 @@ TEST_P(GoTest, MULTI_EDGES) {
             {0, 2002, 0, "Tony Parker"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -540,6 +568,7 @@ TEST_P(GoTest, MULTI_EDGES) {
             {0, 90, 0, 5},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 
     {
@@ -560,6 +589,7 @@ TEST_P(GoTest, MULTI_EDGES) {
             {0, players_["Tim Duncan"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 
     {
@@ -576,6 +606,7 @@ TEST_P(GoTest, MULTI_EDGES) {
             {0, players_["Dwyane Wade"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 
     {
@@ -597,6 +628,7 @@ TEST_P(GoTest, MULTI_EDGES) {
         };
 
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 
     {
@@ -613,6 +645,7 @@ TEST_P(GoTest, MULTI_EDGES) {
             {"Spurs", ""},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 
     {
@@ -634,6 +667,7 @@ TEST_P(GoTest, MULTI_EDGES) {
             {teams_["Trail Blazers"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 
     {
@@ -655,6 +689,7 @@ TEST_P(GoTest, MULTI_EDGES) {
             {teams_["Trail Blazers"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -687,6 +722,7 @@ TEST_P(GoTest, ReferencePipeInYieldAndWhere) {
             {"Chris Paul", "Dwyane Wade", "Carmelo Anthony"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -713,6 +749,7 @@ TEST_P(GoTest, ReferencePipeInYieldAndWhere) {
             {"Chris Paul", "Dwyane Wade", "Carmelo Anthony"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -741,6 +778,7 @@ TEST_P(GoTest, ReferencePipeInYieldAndWhere) {
             {"Chris Paul", wade.vid(), "Dwyane Wade", "Carmelo Anthony"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -774,6 +812,7 @@ TEST_P(GoTest, ReferenceVariableInYieldAndWhere) {
             {"Chris Paul", "Dwyane Wade", "Carmelo Anthony"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -800,6 +839,7 @@ TEST_P(GoTest, ReferenceVariableInYieldAndWhere) {
             {"Chris Paul", "Dwyane Wade", "Carmelo Anthony"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -828,6 +868,7 @@ TEST_P(GoTest, ReferenceVariableInYieldAndWhere) {
             {"Chris Paul", wade.vid(), "Dwyane Wade", "Carmelo Anthony"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -838,6 +879,7 @@ TEST_P(GoTest, NonexistentProp) {
         auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -845,6 +887,7 @@ TEST_P(GoTest, NonexistentProp) {
         auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -852,6 +895,7 @@ TEST_P(GoTest, NonexistentProp) {
         auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -876,6 +920,7 @@ TEST_P(GoTest, is_inCall) {
             {player.name(), 2005, 2008, "Suns"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -896,6 +941,7 @@ TEST_P(GoTest, is_inCall) {
             {teams_["Hornets"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -916,6 +962,7 @@ TEST_P(GoTest, is_inCall) {
             {teams_["Hornets"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -941,6 +988,7 @@ TEST_P(GoTest, ReturnTest) {
             {teams_["Hornets"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -962,6 +1010,7 @@ TEST_P(GoTest, ReturnTest) {
             {players_["Manu Ginobili"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -989,6 +1038,7 @@ TEST_P(GoTest, ReturnTest) {
             {teams_["Spurs"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -1006,6 +1056,7 @@ TEST_P(GoTest, ReturnTest) {
 
         std::vector<std::tuple<int64_t>> expected;
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -1026,6 +1077,7 @@ TEST_P(GoTest, ReturnTest) {
             {players_["Manu Ginobili"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -1035,6 +1087,7 @@ TEST_P(GoTest, ReturnTest) {
         auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -1044,12 +1097,14 @@ TEST_P(GoTest, ReturnTest) {
         auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "RETURN $rA IF $rA IS NOT NULL;"; /* will return error */
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -1073,6 +1128,7 @@ TEST_P(GoTest, ReverselyOneStep) {
             { players_["Shaquile O'Neal"].vid() },
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -1094,6 +1150,7 @@ TEST_P(GoTest, ReverselyOneStep) {
             { 0 },
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -1113,6 +1170,7 @@ TEST_P(GoTest, ReverselyOneStep) {
             { "Shaquile O'Neal" },
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -1129,6 +1187,7 @@ TEST_P(GoTest, ReverselyOneStep) {
             { "Dejounte Murray" },
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -1147,6 +1206,7 @@ TEST_P(GoTest, OnlyIdTwoSteps) {
             {5662213458193308137}
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -1163,6 +1223,7 @@ TEST_P(GoTest, ReverselyTwoStep) {
             { "Grant Hill" },
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -1176,6 +1237,7 @@ TEST_P(GoTest, ReverselyTwoStep) {
             { "Grant Hill" },
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -1208,6 +1270,7 @@ TEST_P(GoTest, ReverselyWithPipe) {
         };
 
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -1236,6 +1299,7 @@ TEST_P(GoTest, ReverselyWithPipe) {
         };
 
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -1254,6 +1318,7 @@ TEST_P(GoTest, ReverselyWithPipe) {
         };
 
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -1272,6 +1337,7 @@ TEST_P(GoTest, ReverselyWithPipe) {
         };
 
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     /**
      * TODO(dutor)
@@ -1324,6 +1390,7 @@ TEST_P(GoTest, Bidirect) {
             {teams_["Spurs"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -1352,6 +1419,7 @@ TEST_P(GoTest, Bidirect) {
             {players_["Shaquile O'Neal"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -1381,6 +1449,7 @@ TEST_P(GoTest, Bidirect) {
             {0, players_["Shaquile O'Neal"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -1416,6 +1485,7 @@ TEST_P(GoTest, Bidirect) {
             {0, 0, players_["Manu Ginobili"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -1433,6 +1503,7 @@ TEST_P(GoTest, Bidirect) {
             {"Spurs"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -1461,6 +1532,7 @@ TEST_P(GoTest, Bidirect) {
             {"Shaquile O'Neal"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -1483,6 +1555,7 @@ TEST_P(GoTest, Bidirect) {
             {"Tim Duncan", players_["Dejounte Murray"].vid(), "Dejounte Murray", 99},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -1523,6 +1596,7 @@ TEST_P(GoTest, Bidirect) {
             {"Tim Duncan", 0, "", 0, "Manu Ginobili"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -1570,6 +1644,7 @@ TEST_P(GoTest, FilterPushdown) {
             {teams_["Bulls"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         // Filter pushdown: !((serve.start_year>2013)&&(serve.end_year<2018))
@@ -1596,6 +1671,7 @@ TEST_P(GoTest, FilterPushdown) {
             {teams_["Lakers"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         // Filter pushdown: ((serve.start_year>2013)&&true)
@@ -1620,6 +1696,7 @@ TEST_P(GoTest, FilterPushdown) {
             {teams_["Kings"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         // Filter pushdown:
@@ -1643,6 +1720,7 @@ TEST_P(GoTest, FilterPushdown) {
 
         std::vector<std::tuple<int64_t>> expected;
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         // Filter pushdown: ((serve.start_year>2013)&&true)
@@ -1670,6 +1748,7 @@ TEST_P(GoTest, FilterPushdown) {
             {teams_["Bulls"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         // Filter pushdown: (true&&(serve.start_year>2013))
@@ -1697,6 +1776,7 @@ TEST_P(GoTest, FilterPushdown) {
             {teams_["Bulls"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         // Filter pushdown:
@@ -1723,6 +1803,7 @@ TEST_P(GoTest, FilterPushdown) {
             {teams_["Kings"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         // Filter pushdown: (((serve.start_year>2013)&&(serve.end_year<2018))&&true)
@@ -1748,6 +1829,7 @@ TEST_P(GoTest, FilterPushdown) {
             {teams_["Kings"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         // Filter pushdown: (((serve.start_year>2013)&&true)&&(serve.end_year<2018))
@@ -1774,6 +1856,7 @@ TEST_P(GoTest, FilterPushdown) {
             {teams_["Kings"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         // Filter pushdown: ((true&&(serve.start_year>2013))&&(serve.end_year<2018))
@@ -1800,6 +1883,7 @@ TEST_P(GoTest, FilterPushdown) {
             {teams_["Kings"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         // Filter pushdown:
@@ -1828,6 +1912,7 @@ TEST_P(GoTest, FilterPushdown) {
             {teams_["Bulls"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         // Filter pushdown:
@@ -1858,6 +1943,7 @@ TEST_P(GoTest, FilterPushdown) {
             {teams_["Bulls"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         // Filter pushdown:
@@ -1889,6 +1975,7 @@ TEST_P(GoTest, FilterPushdown) {
             {teams_["Bulls"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         // Filter pushdown:
@@ -1918,6 +2005,7 @@ TEST_P(GoTest, FilterPushdown) {
             {teams_["Pelicans"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         // Filter pushdown:
@@ -1948,6 +2036,7 @@ TEST_P(GoTest, FilterPushdown) {
             {teams_["Pelicans"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         // Filter pushdown:
@@ -1978,6 +2067,7 @@ TEST_P(GoTest, FilterPushdown) {
             {teams_["Bulls"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         // Filter pushdown:
@@ -2007,6 +2097,7 @@ TEST_P(GoTest, FilterPushdown) {
             {teams_["Bulls"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         // Filter pushdown: (($^.player.name=="Tony Parker")&&(serve.start_year>2013))
@@ -2033,6 +2124,7 @@ TEST_P(GoTest, FilterPushdown) {
             {teams_["Hornets"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         // Filter pushdown:
@@ -2061,6 +2153,7 @@ TEST_P(GoTest, FilterPushdown) {
             {teams_["Spurs"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         auto *fmt = "GO FROM %ld OVER serve "
@@ -2082,6 +2175,7 @@ TEST_P(GoTest, FilterPushdown) {
 
         std::vector<std::tuple<int64_t>> expected;
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         auto *fmt = "GO FROM %ld OVER serve "
@@ -2106,6 +2200,7 @@ TEST_P(GoTest, FilterPushdown) {
             {teams_["Celtics"].vid()}
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         auto *fmt = "GO FROM %ld OVER serve "
@@ -2127,6 +2222,7 @@ TEST_P(GoTest, FilterPushdown) {
 
         std::vector<std::tuple<int64_t>> expected;
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         auto *fmt = "GO FROM %ld OVER serve "
@@ -2150,6 +2246,7 @@ TEST_P(GoTest, FilterPushdown) {
             {teams_["Spurs"].vid()}
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         auto *fmt = "GO FROM %ld OVER serve "
@@ -2171,6 +2268,7 @@ TEST_P(GoTest, FilterPushdown) {
 
         std::vector<std::tuple<int64_t>> expected;
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 
 #undef TEST_FILTER_PUSHDWON_REWRITE
@@ -2194,6 +2292,7 @@ TEST_P(GoTest, DuplicateColumnName) {
             {teams_["Spurs"].vid(), teams_["Spurs"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -2202,6 +2301,7 @@ TEST_P(GoTest, DuplicateColumnName) {
         auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 

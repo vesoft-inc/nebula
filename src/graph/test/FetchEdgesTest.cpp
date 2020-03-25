@@ -51,6 +51,7 @@ TEST_F(FetchEdgesTest, Base) {
             {player.vid(), team.vid(), 0, std::get<1>(serve), std::get<2>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -76,6 +77,7 @@ TEST_F(FetchEdgesTest, Base) {
             {player.vid(), team.vid(), 0, std::get<1>(serve) > 2001, std::get<2>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -101,6 +103,7 @@ TEST_F(FetchEdgesTest, Base) {
             {player.vid(), team.vid(), 0, std::get<1>(serve), std::get<2>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -130,6 +133,7 @@ TEST_F(FetchEdgesTest, Base) {
             {player.vid(), team1.vid(), 0, std::get<1>(serve1), std::get<2>(serve1)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -157,6 +161,7 @@ TEST_F(FetchEdgesTest, Base) {
             expected.emplace_back(std::move(result));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -185,6 +190,7 @@ TEST_F(FetchEdgesTest, Base) {
             expected.emplace_back(std::move(result));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -200,6 +206,7 @@ TEST_F(FetchEdgesTest, Base) {
             {player.vid(), team.vid(), 0, std::get<1>(serve), std::get<2>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -215,6 +222,7 @@ TEST_F(FetchEdgesTest, Base) {
             {std::get<1>(serve), std::get<2>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected, true, {0, 1, 2}));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -242,6 +250,7 @@ TEST_F(FetchEdgesTest, NoYield) {
             {player.vid(), team.vid(), 0, std::get<1>(serve), std::get<2>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -266,6 +275,7 @@ TEST_F(FetchEdgesTest, NoYield) {
             {player.vid(), team.vid(), 0, std::get<1>(serve), std::get<2>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -290,6 +300,7 @@ TEST_F(FetchEdgesTest, NoYield) {
             {player.vid(), team.vid(), 0, std::get<1>(serve), std::get<2>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -304,6 +315,7 @@ TEST_F(FetchEdgesTest, NoYield) {
             {std::get<1>(serve), std::get<2>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected, true, {0, 1, 2}));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -333,6 +345,7 @@ TEST_F(FetchEdgesTest, Distinct) {
             {player.vid(), team.vid(), 0, std::get<1>(serve), std::get<2>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -360,6 +373,7 @@ TEST_F(FetchEdgesTest, Distinct) {
             expected.emplace_back(std::move(result));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -388,6 +402,7 @@ TEST_F(FetchEdgesTest, Distinct) {
             expected.emplace_back(std::move(result));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -411,6 +426,7 @@ TEST_F(FetchEdgesTest, Distinct) {
             {tony.vid(), teams_["Spurs"].vid(), 0, teams_["Spurs"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -435,6 +451,7 @@ TEST_F(FetchEdgesTest, EmptyInput) {
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
         ASSERT_EQ(nullptr, resp.get_rows());
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
@@ -518,6 +535,7 @@ TEST_F(FetchEdgesTest, DuplicateColumnName) {
             {player.vid(), team.vid(), 0, std::get<1>(serve), std::get<1>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -544,6 +562,7 @@ TEST_F(FetchEdgesTest, DuplicateColumnName) {
             {player.vid(), team.vid(), 0, player.vid(), team.vid(), 0},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;

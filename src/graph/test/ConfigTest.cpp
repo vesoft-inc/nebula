@@ -193,12 +193,14 @@ TEST_F(ConfigTest, ConfigTest) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         ASSERT_EQ(5, resp.get_rows()->size());
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "SHOW CONFIGS graph";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     // set and get a config of all module
     {
@@ -206,6 +208,7 @@ TEST_F(ConfigTest, ConfigTest) {
         std::string query = "UPDATE CONFIGS k3=vesoft";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -217,6 +220,7 @@ TEST_F(ConfigTest, ConfigTest) {
             {"STORAGE", "k3", "STRING", "MUTABLE", "vesoft"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -227,6 +231,7 @@ TEST_F(ConfigTest, ConfigTest) {
         query = "UPDATE CONFIGS storage:k3=cde";
         code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -238,6 +243,7 @@ TEST_F(ConfigTest, ConfigTest) {
             {"STORAGE", "k3", "STRING", "MUTABLE", "cde"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -247,6 +253,7 @@ TEST_F(ConfigTest, ConfigTest) {
                             "}";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(resp.get_affect(), nullptr);
     }
 }
 
