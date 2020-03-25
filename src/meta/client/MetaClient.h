@@ -83,6 +83,11 @@ using LeaderMap = std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostA
 
 using IndexStatus = std::tuple<std::string, std::string, std::string>;
 
+// get user roles by account
+using UserRolesMap = std::unordered_map<std::string, std::vector<nebula::cpp2::RoleItem>>;
+// get user password by account
+using UserPasswordMap = std::unordered_map<std::string, std::string>;
+
 struct ConfigItem {
     ConfigItem() {}
 
@@ -349,17 +354,17 @@ public:
     folly::Future<StatusOr<bool>>
     revokeFromUser(nebula::cpp2::RoleItem roleItem);
 
-    folly::Future<StatusOr<std::vector<std::string>>>
+    folly::Future<StatusOr<std::map<std::string, std::string>>>
     listUsers();
 
     folly::Future<StatusOr<std::vector<nebula::cpp2::RoleItem>>>
-    listRoles(std::string space);
+    listRoles(GraphSpaceID space);
 
     folly::Future<StatusOr<bool>>
     changePassword(std::string account, std::string newPwd, std::string oldPwd);
 
-    folly::Future<StatusOr<bool>>
-    authCheck(std::string account, std::string password);
+    folly::Future<StatusOr<std::vector<nebula::cpp2::RoleItem>>>
+    getUserRoles(std::string account);
 
     // Operations for admin
     folly::Future<StatusOr<int64_t>>
@@ -472,6 +477,10 @@ public:
                                                              EdgeType edgeType,
                                                              const std::string& field);
 
+    std::vector<nebula::cpp2::RoleItem> getRolesByUserFromCache(const std::string& user);
+
+    bool authCheckFromCache(const std::string& account, const std::string& password);
+
     Status refreshCache();
 
     StatusOr<LeaderMap> loadLeader();
@@ -495,6 +504,8 @@ protected:
                      SpaceNewestTagVerMap &newestTagVerMap,
                      SpaceNewestEdgeVerMap &newestEdgeVerMap,
                      SpaceAllEdgeMap &allEdgemap);
+
+    bool loadUsersAndRoles();
 
     bool loadIndexes(GraphSpaceID spaceId,
                      std::shared_ptr<SpaceInfoCache> cache);
@@ -576,6 +587,9 @@ private:
     SpaceNewestTagVerMap  spaceNewestTagVerMap_;
     SpaceNewestEdgeVerMap spaceNewestEdgeVerMap_;
     SpaceAllEdgeMap       spaceAllEdgeMap_;
+
+    UserRolesMap          userRolesMap_;
+    UserPasswordMap       userPasswordMap_;
 
     NameIndexMap          tagNameIndexMap_;
     NameIndexMap          edgeNameIndexMap_;

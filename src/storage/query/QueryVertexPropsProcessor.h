@@ -25,6 +25,12 @@ public:
 
     void process(const cpp2::VertexPropRequest& req);
 
+    // Only use in fetch *
+    // Check tagId in tagTTLInfo_, if any, get ttl information.
+    // If not, add it first, then return ttl information
+    folly::Optional<std::pair<std::string, int64_t>>
+    getTagTTLInfo(TagID tagId, const meta::SchemaProviderIf* tagschema);
+
 private:
     explicit QueryVertexPropsProcessor(kvstore::KVStore* kvstore,
                                        meta::SchemaManager* schemaMan,
@@ -37,6 +43,8 @@ private:
                             PartitionID partId,
                             VertexID vId,
                             std::vector<cpp2::TagData> &tds);
+
+    std::unordered_map<TagID, std::pair<std::string, int64_t>> tagTTLInfo_;
 };
 
 }  // namespace storage

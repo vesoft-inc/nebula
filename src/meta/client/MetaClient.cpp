@@ -132,9 +132,39 @@ void MetaClient::heartBeatThreadFunc() {
     }
 }
 
+bool MetaClient::loadUsersAndRoles() {
+    auto userRoleRet = listUsers().get();
+    if (!userRoleRet.ok()) {
+        LOG(ERROR) << "List users failed, status:" << userRoleRet.status();
+        return false;
+    }
+    decltype(userRolesMap_)       userRolesMap;
+    decltype(userPasswordMap_)    userPasswordMap;
+    for (auto& user : userRoleRet.value()) {
+        auto rolesRet = getUserRoles(user.first).get();
+        if (!rolesRet.ok()) {
+            LOG(ERROR) << "List role by user failed, user : " << user.first;
+            return false;
+        }
+        userRolesMap[user.first] = rolesRet.value();
+        userPasswordMap[user.first] = user.second;
+    }
+    {
+        folly::RWSpinLock::WriteHolder holder(localCacheLock_);
+        userRolesMap_ = std::move(userRolesMap);
+        userPasswordMap_ = std::move(userPasswordMap);
+    }
+    return true;
+}
+
 bool MetaClient::loadData() {
     if (ioThreadPool_->numThreads() <= 0) {
         LOG(ERROR) << "The threads number in ioThreadPool should be greater than 0";
+        return false;
+    }
+
+    if (!loadUsersAndRoles()) {
+        LOG(ERROR) << "Load roles Failed";
         return false;
     }
 
@@ -1622,6 +1652,23 @@ const std::vector<HostAddr>& MetaClient::getAddresses() {
     return addrs_;
 }
 
+std::vector<nebula::cpp2::RoleItem>
+MetaClient::getRolesByUserFromCache(const std::string& user) {
+    auto iter = userRolesMap_.find(user);
+    if (iter == userRolesMap_.end()) {
+        return std::vector<nebula::cpp2::RoleItem>(0);
+    }
+    return iter->second;
+}
+
+bool MetaClient::authCheckFromCache(const std::string& account, const std::string& password) {
+    auto iter = userPasswordMap_.find(account);
+    if (iter == userPasswordMap_.end()) {
+        return false;
+    }
+    return iter->second == password;
+}
+
 StatusOr<SchemaVer> MetaClient::getLatestTagVersionFromCache(const GraphSpaceID& space,
                                                              const TagID& tagId) {
     if (!ready_) {
@@ -1772,10 +1819,10 @@ MetaClient::revokeFromUser(nebula::cpp2::RoleItem roleItem) {
     return future;
 }
 
-folly::Future<StatusOr<std::vector<std::string>>>
+folly::Future<StatusOr<std::map<std::string, std::string>>>
 MetaClient::listUsers() {
     cpp2::ListUsersReq req;
-    folly::Promise<StatusOr<std::vector<std::string>>> promise;
+    folly::Promise<StatusOr<std::map<std::string, std::string>>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_listUsers(request);
@@ -1786,9 +1833,9 @@ MetaClient::listUsers() {
 }
 
 folly::Future<StatusOr<std::vector<nebula::cpp2::RoleItem>>>
-MetaClient::listRoles(std::string space) {
+MetaClient::listRoles(GraphSpaceID space) {
     cpp2::ListRolesReq req;
-    req.set_space(std::move(space));
+    req.set_space_id(std::move(space));
     folly::Promise<StatusOr<std::vector<nebula::cpp2::RoleItem>>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
@@ -1817,18 +1864,17 @@ MetaClient::changePassword(std::string account,
     return future;
 }
 
-folly::Future<StatusOr<bool>>
-MetaClient::authCheck(std::string account, std::string password) {
-    cpp2::AuthCheckReq req;
+folly::Future<StatusOr<std::vector<nebula::cpp2::RoleItem>>>
+MetaClient::getUserRoles(std::string account) {
+    cpp2::GetUserRolesReq req;
     req.set_account(std::move(account));
-    req.set_encoded_pwd(std::move(password));
-    folly::Promise<StatusOr<bool>> promise;
+    folly::Promise<StatusOr<std::vector<nebula::cpp2::RoleItem>>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
-        return client->future_authCheck(request);
-    }, [] (cpp2::ExecResp&& resp) -> bool {
-        return resp.code == cpp2::ErrorCode::SUCCEEDED;
-    }, std::move(promise), true);
+        return client->future_getUserRoles(request);
+    }, [] (cpp2::ListRolesResp&& resp) -> decltype(auto) {
+        return std::move(resp).get_roles();
+    }, std::move(promise));
     return future;
 }
 
