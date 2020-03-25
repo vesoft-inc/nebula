@@ -156,7 +156,7 @@ public:
     void asyncRemovePrefix(GraphSpaceID spaceId,
                            PartitionID partId,
                            const std::string& prefix,
-                           KVCallback cb) override;
+                           KVCallback cb);
 
     void asyncAtomicOp(GraphSpaceID,
                        PartitionID,

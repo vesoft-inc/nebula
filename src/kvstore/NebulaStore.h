@@ -171,11 +171,6 @@ public:
                           const std::string& end,
                           KVCallback cb) override;
 
-    void asyncRemovePrefix(GraphSpaceID spaceId,
-                           PartitionID partId,
-                           const std::string& prefix,
-                           KVCallback cb) override;
-
     void asyncAtomicOp(GraphSpaceID spaceId,
                        PartitionID partId,
                        raftex::AtomicOp op,

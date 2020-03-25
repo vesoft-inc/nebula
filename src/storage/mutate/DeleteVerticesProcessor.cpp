@@ -30,29 +30,31 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
             const auto& vertices = pv->second;
             for (auto v = vertices.begin(); v != vertices.end(); v++) {
                 auto prefix = NebulaKeyUtils::vertexPrefix(part, *v);
+                std::unique_ptr<kvstore::KVIterator> iter;
+                auto ret = this->kvstore_->prefix(spaceId, part, prefix, &iter);
+                if (ret != kvstore::ResultCode::SUCCEEDED) {
+                    VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret)
+                            << ", spaceID " << spaceId;
+                    this->onFinished();
+                    return;
+                }
 
-                // Evict vertices from cache
-                if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
-                    std::unique_ptr<kvstore::KVIterator> iter;
-                    auto ret = this->kvstore_->prefix(spaceId, part, prefix, &iter);
-                    if (ret != kvstore::ResultCode::SUCCEEDED) {
-                        VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret)
-                                << ", spaceID " << spaceId;
-                        this->onFinished();
-                        return;
-                    }
-
-                    while (iter->valid()) {
-                        auto key = iter->key();
-                        if (NebulaKeyUtils::isVertex(key)) {
-                            auto tag = NebulaKeyUtils::getTagId(key);
+                std::vector<std::string> keys;
+                keys.reserve(32);
+                while (iter->valid()) {
+                    auto key = iter->key();
+                    if (NebulaKeyUtils::isVertex(key)) {
+                        auto tag = NebulaKeyUtils::getTagId(key);
+                        // Evict vertices from cache
+                        if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
                             VLOG(3) << "Evict vertex cache for VID " << *v << ", TagID " << tag;
                             vertexCache_->evict(std::make_pair(*v, tag), part);
                         }
-                        iter->next();
+                        keys.emplace_back(key.str());
                     }
+                    iter->next();
                 }
-                doRemovePrefix(spaceId, part, std::move(prefix));
+                doRemove(spaceId, part, std::move(keys));
             }
         }
     } else {
