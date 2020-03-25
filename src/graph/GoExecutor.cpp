@@ -221,7 +221,6 @@ Status GoExecutor::prepareOverAll() {
     }
 
     auto allEdge = edgeAllStatus.value();
-    std::unordered_set<EdgeType> edges;
     for (auto &e : allEdge) {
         auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId, e);
         if (!edgeStatus.ok()) {
@@ -233,13 +232,6 @@ Status GoExecutor::prepareOverAll() {
         if (!status.ok()) {
             return status;
         }
-
-        // Since our keys are ordered, the latest version of each edge was the first.
-        if (edges.find(std::abs(v)) != edges.cend()) {
-            continue;
-        }
-
-        edges.emplace(std::abs(v));
 
         if (!expCtx_->addEdge(e, std::abs(v))) {
             return Status::Error(folly::sformat("edge alias({}) was dup", e));

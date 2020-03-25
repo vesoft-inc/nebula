@@ -1189,6 +1189,7 @@ folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>>
 MetaClient::listEdgeSchemas(GraphSpaceID spaceId) {
     cpp2::ListEdgesReq req;
     req.set_space_id(spaceId);
+    req.set_lastest_version(true);
     folly::Promise<StatusOr<std::vector<cpp2::EdgeItem>>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
