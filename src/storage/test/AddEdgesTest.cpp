@@ -41,6 +41,7 @@ TEST(AddEdgesTest, SimpleTest) {
     processor->process(req);
     auto resp = std::move(fut).get();
     EXPECT_EQ(0, resp.result.failed_codes.size());
+    EXPECT_EQ(resp.get_affect()->get_edge(), 3 * 10);
 
     LOG(INFO) << "Check data in kv store...";
     for (PartitionID partId = 1; partId <= 3; partId++) {

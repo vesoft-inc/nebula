@@ -19,6 +19,9 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
     if (iRet.ok()) {
         indexes_ = std::move(iRet).value();
     }
+    for (const auto &part : partVertices) {
+        entities_.emplace(part.first, part.second.size());
+    }
 
     if (indexes_.empty()) {
         std::for_each(partVertices.begin(), partVertices.end(), [&](auto& pv) {
@@ -55,9 +58,10 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
                     iter->next();
                 }
                 doRemove(spaceId, part, std::move(keys));
-            }
-        }
+            }  // vertices
+        }  // partitions
     } else {
+        entity_ = true;
         callingNum_ = req.parts.size();
         std::for_each(req.parts.begin(), req.parts.end(), [&](auto &partVerticse) {
             auto partId = partVerticse.first;
@@ -150,11 +154,12 @@ void DeleteVerticesProcessor::handleAsync(GraphSpaceID spaceId, PartitionID part
         std::lock_guard<std::mutex> lg(this->lock_);
         if (resp_.get_affect() == nullptr) {
             ::nebula::cpp2::Affect affect;
-            affect.set_vertex(1 /*Hard Code one vertex once*/);
+            affect.set_vertex(entity_ ? entities_[partId] : 1 /*Hard Code one without index*/);
             resp_.set_affect(affect);
         } else {
             auto vertex = resp_.get_affect()->get_vertex();
-            resp_.get_affect()->set_vertex(vertex + 1 /*Hard Code one vertex once*/);
+            resp_.get_affect()->set_vertex(vertex +
+                (entity_ ?  entities_[partId] : 1 /*Hard Code one without index*/));
         }
     }
     BaseProcessor<cpp2::ExecResponse>::handleAsync(spaceId, partId, code);

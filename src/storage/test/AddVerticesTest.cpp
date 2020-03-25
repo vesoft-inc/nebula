@@ -42,6 +42,7 @@ TEST(AddVerticesTest, SimpleTest) {
     processor->process(req);
     auto resp = std::move(fut).get();
     EXPECT_EQ(0, resp.result.failed_codes.size());
+    EXPECT_EQ(resp.get_affect()->get_vertex(), 3 * 10);
 
     LOG(INFO) << "Check data in kv store...";
     for (PartitionID partId = 0; partId < 3; partId++) {

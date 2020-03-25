@@ -18,6 +18,9 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
     if (iRet.ok()) {
         indexes_ = std::move(iRet).value();
     }
+    for (const auto& part : req.get_parts()) {
+        entities_.emplace(part.first, part.second.size());
+    }
 
     if (indexes_.empty()) {
         std::for_each(req.parts.begin(), req.parts.end(), [&](auto &partEdges) {
@@ -42,6 +45,7 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
             });
         });
     } else {
+        entity_ = true;
         callingNum_ = req.parts.size();
         std::for_each(req.parts.begin(), req.parts.end(), [&](auto &partEdges) {
             auto partId = partEdges.first;
@@ -117,11 +121,12 @@ void DeleteEdgesProcessor::handleAsync(GraphSpaceID spaceId, PartitionID partId,
         std::lock_guard<std::mutex> lg(this->lock_);
         if (resp_.get_affect() == nullptr) {
             ::nebula::cpp2::Affect affect;
-            affect.set_edge(1 /*Hard Code one edge once*/);
+            affect.set_edge(entity_ ? entities_[partId] : 1 /*Hard Code one edge once*/);
             resp_.set_affect(affect);
         } else {
             auto edge = resp_.get_affect()->get_edge();
-            resp_.get_affect()->set_edge(edge + 1 /*Hard Code one edge once*/);
+            resp_.get_affect()->set_edge(edge +
+                (entity_ ? entities_[partId] : 1) /*Hard Code one edge once*/);
         }
     }
     BaseProcessor<cpp2::ExecResponse>::handleAsync(spaceId, partId, code);

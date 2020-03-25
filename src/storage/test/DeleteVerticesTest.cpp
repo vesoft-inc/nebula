@@ -41,6 +41,7 @@ TEST(DeleteVerticesTest, SimpleTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_codes.size());
+        EXPECT_EQ(resp.get_affect()->get_vertex(), 3 * 10);
 
         for (PartitionID partId = 0; partId < 3; partId++) {
             for (VertexID vertexId = 10 * partId; vertexId < 10 * (partId + 1); vertexId++) {
@@ -78,6 +79,7 @@ TEST(DeleteVerticesTest, SimpleTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_codes.size());
+        EXPECT_EQ(resp.get_affect()->get_vertex(), 3 * 10);
     }
 
     for (PartitionID partId = 0; partId < 3; partId++) {

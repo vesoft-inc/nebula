@@ -41,6 +41,8 @@ private:
 private:
     meta::IndexManager*                                   indexMan_{nullptr};
     std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> indexes_;
+    std::unordered_map<PartitionID, int32_t>              entities_;
+    bool                                                  entity_{false};
 };
 
 }  // namespace storage
