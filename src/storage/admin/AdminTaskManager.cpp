@@ -44,7 +44,7 @@ void AdminTaskManager::addAsyncTask(std::shared_ptr<AdminTask> task) {
         return;
     }
 
-    LOG(INFO) << folly::stringPrintf("new task[%d, %d] inqueue, concurrent req=%d",
+    LOG(INFO) << folly::stringPrintf("enqueue task(%d, %d), con req=%d",
                                      task->getJobId(), task->getTaskId(), task->getConcurrent());
     auto ctx = std::make_shared<TaskExecContext>(task);
     tasks_.insert(handle, ctx);
@@ -96,11 +96,12 @@ void AdminTaskManager::pickTaskThread() {
         }
 
         if (shutdown_) {
-            break;
+            LOG(INFO) << "detect AdminTaskManager shutdown. exit";
+            return;
         }
 
         auto taskHandle = *optTaskHandle;
-        LOG(INFO) << folly::stringPrintf("take task(%d, %d) from queue",
+        LOG(INFO) << folly::stringPrintf("dequeue task(%d, %d)",
                                          taskHandle.first, taskHandle.second);
         auto it = tasks_.find(taskHandle);
         if (it == tasks_.end()) {
@@ -155,12 +156,12 @@ void AdminTaskManager::pickSubTaskThread(int threadIndex) {
     LOG(INFO) << "worker[" << workerNum << "] " << threadActive;
     std::chrono::milliseconds wakeup_interval{500};
     while (!shutdown_) {
-        // LOG(INFO) << "worker[" << workerNum << "] " << threadActive;
         if (workerNum >= maxWorker_) {
             LOG(INFO) << folly::stringPrintf("in workerNum(%d) >= maxWorker_(%d)",
                                              workerNum, maxWorker_);
             if (threadActive) {
                 int actWorker = --activeWorker_;
+                threadActive = false;
                 LOG(INFO) << folly::stringPrintf(
                             "workerNum(%d), maxWorker_(%d), threadActive(%d), actWorker(%d)",
                              workerNum, maxWorker_, threadActive, actWorker);
@@ -172,6 +173,7 @@ void AdminTaskManager::pickSubTaskThread(int threadIndex) {
         auto optSubtaskHandle = subTaskHandleQueue_.try_take_for(wakeup_interval);
         if (optSubtaskHandle == folly::none) {
             if (threadActive) {
+                threadActive = false;
                 --activeWorker_;
             }
             std::this_thread::sleep_for(wakeup_interval);
@@ -182,6 +184,7 @@ void AdminTaskManager::pickSubTaskThread(int threadIndex) {
         if (!threadActive) {
             LOG(INFO) << "worker[" << workerNum << "] " << threadActive;
             ++activeWorker_;
+            threadActive = true;
         }
         auto subtaskHandle = *optSubtaskHandle;
         auto taskHandle = std::make_pair(std::get<0>(subtaskHandle), std::get<1>(subtaskHandle));
