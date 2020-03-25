@@ -183,6 +183,9 @@ TEST(TaskManagerTest, happy_path) {
         size_t numSubTask = 1;
         std::shared_ptr<AdminTask> task(new HookableTask());
         HookableTask* mockTask = dynamic_cast<HookableTask*>(task.get());
+        int jobId = 1;
+        mockTask->setJobId(jobId);
+        mockTask->setTaskId(jobId);
         folly::Promise<ResultCode> pro;
         folly::Future<ResultCode> fut = pro.getFuture();
 
@@ -504,10 +507,7 @@ TEST(TaskManagerTest, cancel_1_task_in_a_2_tasks_queue) {
     taskMgr->init();
 
     auto err = kvstore::ResultCode::ERR_USER_CANCELLED;
-    // add 2 task into queue
-    // cancel task1
-    // check 1: task0 suc
-    // check 2: task1 err
+
     folly::Promise<ResultCode> pTask1;
     auto fTask1 = pTask1.getFuture();
 
@@ -524,10 +524,13 @@ TEST(TaskManagerTest, cancel_1_task_in_a_2_tasks_queue) {
     HookableTask* task1 = static_cast<HookableTask*>(vtask1.get());
     task1->setJobId(1);
 
-    task1->addSubTask([&]() {
+    task1->fGenSubTasks = [&]() {
         pRunTask1.setValue(0);
         fCancelTask2.wait();
-        std::this_thread::sleep_for(100ms);
+        return task1->subTasks;
+    };
+
+    task1->addSubTask([&]() {
         return suc;
     });
     task1->setCallback([&](ResultCode ret) {

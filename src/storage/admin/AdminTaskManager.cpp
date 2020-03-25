@@ -112,7 +112,12 @@ void AdminTaskManager::pickTaskThread() {
 
         std::shared_ptr<TaskExecContext> ctx = tasks_[taskHandle];
         auto task = ctx->task;
-        while (!shutdown_ && !task->cancelled()) {
+        while (!shutdown_) {
+            if (task->cancelled()) {
+                task->finish();
+                tasks_.erase(taskHandle);
+                break;
+            }
             if (!satisifyConcurrency(task->getConcurrent())) {
                 LOG(INFO) << folly::stringPrintf("waiting for task(%d, %d) satisify concurrency",
                                                  taskHandle.first, taskHandle.second);
@@ -186,8 +191,9 @@ void AdminTaskManager::pickSubTaskThread(int threadIndex) {
         taskExecCtx->task->subFinish(rc);
         size_t finishedsubTasks = ++taskExecCtx->finishedsubTasks;
         // LOG(INFO) << "finishedsubTasks: " << finishedsubTasks;
-        LOG(INFO) << folly::stringPrintf("%zu of %zu sub tasks finished",
-                                         finishedsubTasks, taskExecCtx->subTasks.size());
+        LOG(INFO) << folly::stringPrintf("%zu of %zu sub tasks finished (%d)",
+                                         finishedsubTasks, taskExecCtx->subTasks.size(),
+                                         static_cast<int>(rc));
         if (finishedsubTasks == taskExecCtx->subTasks.size()) {
             taskExecCtx->task->finish();
             tasks_.erase(taskHandle);
