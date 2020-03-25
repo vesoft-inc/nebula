@@ -21,23 +21,12 @@ void ListEdgesProcessor::process(const cpp2::ListEdgesReq& req) {
         onFinished();
         return;
     }
-    auto lastestVersion = req.get_lastest_version();
 
     decltype(resp_.edges) edges;
-    std::unordered_set<EdgeType> edgeTypes;
-
     while (iter->valid()) {
         auto key = iter->key();
         auto val = iter->val();
         auto edgeType = *reinterpret_cast<const EdgeType *>(key.data() + prefix.size());
-        if (lastestVersion) {
-            // Since our keys are ordered, the latest version of each edge was the first.
-            if (edgeTypes.find(edgeType) != edgeTypes.cend()) {
-                continue;
-            }
-            edgeTypes.emplace(edgeType);
-        }
-
         auto version = MetaServiceUtils::parseEdgeVersion(key);
         auto nameLen = *reinterpret_cast<const int32_t *>(val.data());
         auto edgeName = val.subpiece(sizeof(int32_t), nameLen).str();

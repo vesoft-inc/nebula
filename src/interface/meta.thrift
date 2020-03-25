@@ -310,7 +310,6 @@ struct DropEdgeReq {
 
 struct ListEdgesReq {
     1: common.GraphSpaceID space_id,
-    2: bool                lastest_version;
 }
 
 struct ListEdgesResp {

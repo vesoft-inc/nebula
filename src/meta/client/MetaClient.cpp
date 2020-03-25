@@ -290,6 +290,7 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
                 << ", Name " << tagIt.tag_name << ", Version " << tagIt.version << " Successfully!";
     }
 
+    std::unordered_set<std::pair<GraphSpaceID, EdgeType>> edges;
     for (auto& edgeIt : edgeItemVec) {
         std::shared_ptr<NebulaSchemaProvider> schema(new NebulaSchemaProvider(edgeIt.version));
         for (auto colIt : edgeIt.schema.get_columns()) {
@@ -304,7 +305,12 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
         if (it == allEdgeMap.end()) {
             std::vector<std::string> v = {edgeIt.edge_name};
             allEdgeMap.emplace(spaceId, std::move(v));
+            edges.emplace(spaceId, edgeIt.edge_type);
         } else {
+            if (edges.find({spaceId, edgeIt.edge_type}) != edges.cend()) {
+                continue;
+            }
+            edges.emplace(spaceId, edgeIt.edge_type);
             it->second.emplace_back(edgeIt.edge_name);
         }
         // get the latest edge version
@@ -1189,7 +1195,6 @@ folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>>
 MetaClient::listEdgeSchemas(GraphSpaceID spaceId) {
     cpp2::ListEdgesReq req;
     req.set_space_id(spaceId);
-    req.set_lastest_version(true);
     folly::Promise<StatusOr<std::vector<cpp2::EdgeItem>>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
