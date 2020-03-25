@@ -234,6 +234,7 @@ Status GoExecutor::prepareOverAll() {
             return status;
         }
 
+        // Since our keys are ordered, the latest version of each edge was the first.
         if (edges.find(std::abs(v)) != edges.cend()) {
             continue;
         }
