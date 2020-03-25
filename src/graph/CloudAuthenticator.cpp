@@ -26,9 +26,11 @@ bool CloudAuthenticator::auth(const std::string& user, const std::string& passwo
         return false;
     }
 
-    const char* tmp = "http://%s:%d/mock/12/api/account/login";
-    auto url = folly::stringPrintf(tmp, FLAGS_cloud_server_ip.c_str(),
-                                   FLAGS_cloud_server_port);
+    const char* tmp = "http://%s:%d/%s";
+    auto url = folly::stringPrintf(tmp,
+                                   FLAGS_cloud_server_ip.c_str(),
+                                   FLAGS_cloud_server_port,
+                                   FLAGS_cloud_http_path.c_str());
 
     // Second, use different authentication methods based on the password prefix
     // Use user + password method
@@ -47,6 +49,9 @@ bool CloudAuthenticator::auth(const std::string& user, const std::string& passwo
         std::string header = "-H \"Content-Type: application/json\"  -H \"Authorization:Bearer ";
         header = header + passwd + "\"";
         result = http::HttpClient::post(url, header);
+    } else {
+        LOG(ERROR) << "Cloud authentication failed, password is incorrect";
+        return false;
     }
 
     if (!result.ok()) {

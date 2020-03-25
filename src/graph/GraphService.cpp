@@ -57,7 +57,6 @@ folly::Future<cpp2::AuthResponse> GraphService::future_authenticate(
     if (!FLAGS_enable_authorize) {
         onHandle(ctx, cpp2::ErrorCode::SUCCEEDED);
     } else if (auth(username, password)) {
-        // cloud ldap here to handle
         auto roles = metaClient_->getRolesByUserFromCache(username);
         for (const auto& role : roles) {
             ctx.session()->setRole(role.get_space_id(), toRole(role.get_role_type()));

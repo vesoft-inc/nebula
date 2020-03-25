@@ -59,6 +59,7 @@ TEST_F(PermissionTest, SimpleTest) {
     FLAGS_auth_type = "cloud";
     FLAGS_cloud_server_ip = "192.168.8.51";
     FLAGS_cloud_server_port = 3000;
+    FLAGS_cloud_http_path = "mock/12/api/account/login";
     {
         auto adminClient = gEnv->getClient("admin", "Aadmin");
         ASSERT_NE(nullptr, adminClient);
