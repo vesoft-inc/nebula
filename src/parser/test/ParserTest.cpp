@@ -1969,5 +1969,14 @@ TEST(Parser, UseReservedKeyword) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok());
     }
+    // Test empty name_label
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG 'person'(\"\" string)";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+        auto error = "SyntaxError: Empty string: near `\" string'";
+        ASSERT_EQ(error, result.status().toString());
+    }
 }
 }   // namespace nebula

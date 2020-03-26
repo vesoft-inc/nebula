@@ -250,7 +250,12 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 
 name_label
      : LABEL { $$ = $1; }
-     | STRING { $$ = $1; }
+     | STRING {
+         if ($1->empty()) {
+             throw nebula::GraphParser::syntax_error(@1, "Empty string:");
+         }
+         $$ = $1;
+     }
      | unreserved_keyword { $$ = $1; }
      ;
 
@@ -348,12 +353,19 @@ base_expression
     : DOUBLE {
         $$ = new PrimaryExpression($1);
     }
+    | STRING {
+        $$ = new PrimaryExpression(*$1);
+        delete $1;
+    }
     | BOOL {
         $$ = new PrimaryExpression($1);
     }
-    | name_label {
+    | LABEL {
         $$ = new PrimaryExpression(*$1);
         delete $1;
+    }
+    | unreserved_keyword {
+        $$ = new PrimaryExpression(*$1);;
     }
     | input_ref_expression {
         $$ = $1;
@@ -1024,7 +1036,7 @@ create_schema_prop_item
         }
         $$ = new SchemaPropItem(SchemaPropItem::TTL_DURATION, $3);
     }
-    | KW_TTL_COL ASSIGN name_label {
+    | KW_TTL_COL ASSIGN STRING {
         $$ = new SchemaPropItem(SchemaPropItem::TTL_COL, *$3);
         delete $3;
     }
@@ -1105,7 +1117,7 @@ alter_schema_prop_item
         }
         $$ = new SchemaPropItem(SchemaPropItem::TTL_DURATION, $3);
     }
-    | KW_TTL_COL ASSIGN name_label {
+    | KW_TTL_COL ASSIGN STRING {
         $$ = new SchemaPropItem(SchemaPropItem::TTL_COL, *$3);
         delete $3;
     }
