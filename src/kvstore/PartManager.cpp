@@ -95,7 +95,6 @@ void MetaServerBasedPartManager::onSpaceOptionUpdated(
     static std::unordered_set<std::string> supportedOpt = {
         "disable_auto_compactions",
         "max_write_buffer_number",
-        // TODO: write_buffer_size will cause rocksdb crash
         "write_buffer_size",
         "level0_file_num_compaction_trigger",
         "level0_slowdown_writes_trigger",

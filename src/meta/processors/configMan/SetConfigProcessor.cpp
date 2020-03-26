@@ -92,7 +92,6 @@ void SetConfigProcessor::process(const cpp2::SetConfigReq& req) {
             doSyncPutAndUpdate(std::move(data));
             return;
         }
-        return;
     } while (false);
 
     handleErrorCode(code);
