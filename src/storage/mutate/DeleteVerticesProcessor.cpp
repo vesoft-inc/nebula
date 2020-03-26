@@ -21,8 +21,8 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
     }
 
     if (indexes_.empty()) {
-        std::for_each(partVertices.begin(), partVertices.end(), [&](auto& pv) {
-            callingNum_ += pv.second.size();
+        std::for_each(partVertices.begin(), partVertices.end(), [this](auto& pv) {
+            this->callingNum_ += pv.second.size();
         });
 
         for (auto pv = partVertices.begin(); pv != partVertices.end(); pv++) {
@@ -57,11 +57,10 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
         }
     } else {
         callingNum_ = req.parts.size();
-        std::for_each(req.parts.begin(), req.parts.end(), [&](auto &partVerticse) {
-            auto partId = partVerticse.first;
-            const auto &vertices = partVerticse.second;
-            auto atomic = [&]() -> std::string {
-                return deleteVertices(spaceId, partId, vertices);
+        std::for_each(req.parts.begin(), req.parts.end(), [spaceId, this](auto &pv) {
+            auto partId = pv.first;
+            auto atomic = [spaceId, partId, v = std::move(pv.second), this]() -> std::string {
+                return deleteVertices(spaceId, partId, v);
             };
 
             auto callback = [spaceId, partId, this](kvstore::ResultCode code) {
