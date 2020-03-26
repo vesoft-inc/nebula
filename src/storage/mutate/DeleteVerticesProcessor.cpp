@@ -25,6 +25,8 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
             this->callingNum_ += pv.second.size();
         });
 
+        std::vector<std::string> keys;
+        keys.reserve(32);
         for (auto pv = partVertices.begin(); pv != partVertices.end(); pv++) {
             auto part = pv->first;
             const auto& vertices = pv->second;
@@ -35,12 +37,11 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
                 if (ret != kvstore::ResultCode::SUCCEEDED) {
                     VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret)
                             << ", spaceID " << spaceId;
+                    this->handleErrorCode(ret, spaceId, part);
                     this->onFinished();
                     return;
                 }
-
-                std::vector<std::string> keys;
-                keys.reserve(32);
+                keys.clear();
                 while (iter->valid()) {
                     auto key = iter->key();
                     if (NebulaKeyUtils::isVertex(key)) {
@@ -54,7 +55,7 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
                     }
                     iter->next();
                 }
-                doRemove(spaceId, part, std::move(keys));
+                doRemove(spaceId, part, keys);
             }
         }
     } else {
