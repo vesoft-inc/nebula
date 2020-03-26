@@ -12,6 +12,20 @@ nebula_add_executable(
     LIBRARIES follybenchmark boost_regex
 )
 
+nebula_add_test(
+    NAME icord_test
+    SOURCES ICordTest.cpp
+    OBJECTS $<TARGET_OBJECTS:base_obj>
+    LIBRARIES gtest
+)
+
+nebula_add_executable(
+    NAME icord_bm
+    SOURCES ICordBenchmark.cpp
+    OBJECTS $<TARGET_OBJECTS:base_obj>
+    LIBRARIES follybenchmark boost_regex
+)
+
 nebula_add_executable(
     NAME logging_bm
     SOURCES LoggingBenchmark.cpp
