@@ -291,6 +291,7 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
                 << ", Name " << tagIt.tag_name << ", Version " << tagIt.version << " Successfully!";
     }
 
+    std::unordered_set<std::pair<GraphSpaceID, EdgeType>> edges;
     for (auto& edgeIt : edgeItemVec) {
         std::shared_ptr<NebulaSchemaProvider> schema(new NebulaSchemaProvider(edgeIt.version));
         for (auto colIt : edgeIt.schema.get_columns()) {
@@ -301,6 +302,10 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
         edgeSchemas.emplace(std::make_pair(edgeIt.edge_type, edgeIt.version), schema);
         edgeNameTypeMap.emplace(std::make_pair(spaceId, edgeIt.edge_name), edgeIt.edge_type);
         edgeTypeNameMap.emplace(std::make_pair(spaceId, edgeIt.edge_type), edgeIt.edge_name);
+        if (edges.find({spaceId, edgeIt.edge_type}) != edges.cend()) {
+            continue;
+        }
+        edges.emplace(spaceId, edgeIt.edge_type);
         allEdgeMap[spaceId].emplace_back(edgeIt.edge_name);
         // get the latest edge version
         auto it2 = newestEdgeVerMap.find(std::make_pair(spaceId, edgeIt.edge_type));
