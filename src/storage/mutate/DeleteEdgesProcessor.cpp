@@ -48,6 +48,7 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
                     this->onFinished();
                     return;
                 }
+                keys.clear();
                 while (iter && iter->valid()) {
                     auto key = iter->key();
                     keys.emplace_back(key.data(), key.size());
