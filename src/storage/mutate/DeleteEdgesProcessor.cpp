@@ -53,7 +53,7 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
                     keys.emplace_back(key.data(), key.size());
                     iter->next();
                 }
-                doRemove(spaceId, partId, std::move(keys));
+                doRemove(spaceId, partId, keys);
             }
         }
     } else {
