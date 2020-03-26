@@ -51,15 +51,6 @@ Status FetchExecutor::prepareYield() {
                     "`$-' and `$variable' not supported in fetch yet.");
     }
 
-    auto aliasProps = expCtx_->aliasProps();
-    for (auto pair : aliasProps) {
-        if (pair.first != *labelName_) {
-            return Status::SyntaxError(
-                "Near [%s.%s], tag or edge should be declared in statement first.",
-                    pair.first.c_str(), pair.second.c_str());
-        }
-    }
-
     return Status::OK();
 }
 

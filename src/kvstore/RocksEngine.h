@@ -108,7 +108,9 @@ public:
     }
 
     std::unique_ptr<WriteBatch> startBatchWrite() override;
-    ResultCode commitBatchWrite(std::unique_ptr<WriteBatch> batch) override;
+
+    ResultCode commitBatchWrite(std::unique_ptr<WriteBatch> batch,
+                                bool disableWAL) override;
 
     /*********************
      * Data retrieval
@@ -142,8 +144,6 @@ public:
 
     ResultCode removeRange(const std::string& start,
                            const std::string& end) override;
-
-    ResultCode removePrefix(const std::string& prefix) override;
 
     /*********************
      * Non-data operation

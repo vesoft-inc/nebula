@@ -531,8 +531,22 @@ std::string MetaServiceUtils::userKey(const std::string& account) {
     return key;
 }
 
+std::string MetaServiceUtils::userVal(const std::string& val) {
+    std::string key;
+    auto pwdLen = val.size();
+    key.reserve(sizeof(int64_t) + pwdLen);
+    key.append(reinterpret_cast<const char*>(&pwdLen), sizeof(size_t))
+       .append(val);
+    return key;
+}
+
 std::string MetaServiceUtils::parseUser(folly::StringPiece key) {
     return key.subpiece(kUsersTable.size(), key.size() - kUsersTable.size()).str();
+}
+
+std::string MetaServiceUtils::parseUserPwd(folly::StringPiece val) {
+    auto len = *reinterpret_cast<const size_t*>(val.data());
+    return val.subpiece(sizeof(size_t), len).str();
 }
 
 std::string MetaServiceUtils::roleKey(GraphSpaceID spaceId, const std::string& account) {
@@ -554,6 +568,10 @@ std::string MetaServiceUtils::roleVal(nebula::cpp2::RoleType roleType) {
 std::string MetaServiceUtils::parseRoleUser(folly::StringPiece key) {
     auto offset = kRolesTable.size() + sizeof(GraphSpaceID);
     return key.subpiece(offset, key.size() - offset).str();
+}
+
+GraphSpaceID MetaServiceUtils::parseRoleSpace(folly::StringPiece key) {
+    return *reinterpret_cast<const GraphSpaceID*>(key.data() + kRolesTable.size());
 }
 
 std::string MetaServiceUtils::rolesPrefix() {

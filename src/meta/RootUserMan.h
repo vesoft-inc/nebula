@@ -35,12 +35,14 @@ public:
 
     static bool initRootUser(kvstore::KVStore* kv) {
         LOG(INFO) << "Init root user";
+        auto encodedPwd = encryption::MD5Utils::md5Encode("nebula");
         auto userKey = MetaServiceUtils::userKey("root");
+        auto userVal = MetaServiceUtils::userVal(std::move(encodedPwd));
         auto roleKey = MetaServiceUtils::roleKey(kDefaultSpaceId, "root");
         auto roleVal = MetaServiceUtils::roleVal(nebula::cpp2::RoleType::GOD);
 
         std::vector<kvstore::KV> data;
-        data.emplace_back(std::move(userKey), encryption::MD5Utils::md5Encode("nebula"));
+        data.emplace_back(std::move(userKey), std::move(userVal));
         data.emplace_back(std::move(roleKey), std::move(roleVal));
         bool ret = true;
         folly::Baton<true, std::atomic> baton;

@@ -32,6 +32,8 @@ private:
 
     Status prepareEdgeKeys();
 
+    Status checkEdgeProps();
+
     Status setupEdgeKeys();
 
     Status setupEdgeKeysFromExpr();
