@@ -15,6 +15,13 @@ nebula> SUBMIT JOB COMPACT;
 ==============
 | 40         |
 --------------
+
+nebula> SUBMIT JOB FLUSH;
+==============
+| New Job Id |
+==============
+| 2          |
+--------------
 ```
 
 ### SHOW JOB

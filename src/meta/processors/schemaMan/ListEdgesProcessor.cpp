@@ -21,6 +21,7 @@ void ListEdgesProcessor::process(const cpp2::ListEdgesReq& req) {
         onFinished();
         return;
     }
+
     decltype(resp_.edges) edges;
     while (iter->valid()) {
         auto key = iter->key();

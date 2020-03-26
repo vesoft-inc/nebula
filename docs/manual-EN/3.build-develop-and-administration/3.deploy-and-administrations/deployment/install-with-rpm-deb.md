@@ -41,10 +41,30 @@ $ sudo rpm -ivh nebula-2019.12.23-nightly.el6-5.x86_64.rpm
 $ sudo dpkg -i nebula-2019.12.23-nightly.ubuntu1604.amd64.deb
 ```
 
-**Note**: 
+* Install **Nebula Graph** to your customized directory with the following command:
+
+```bash
+rpm -ivh --prefix=${your_dir} nebula-graph-${version}.rpm
+```
+
+* Package **Nebula Graph** to one package with the following command:
+
+```bash
+cd nebula/package
+./package.sh -v <version>
+```
+
+* Package **Nebula Graph** to multiple packages with the following command:
+
+```bash
+cd nebula/package
+./package.sh -v <version> -n OFF
+```
+
+**Note**:
 
 1. Replace the above file name with your own file name, otherwise, this command might fail.
-2. **Nebula Graph** is installed in the /usr/local/nebula directory.
+2. **Nebula Graph** is installed in the `/usr/local/nebula` directory by default.
 
 ## Starting **Nebula Graph** Services
 
