@@ -45,6 +45,7 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
                 if (ret != kvstore::ResultCode::SUCCEEDED) {
                     VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret)
                             << ", spaceID " << spaceId;
+                    this->handleErrorCode(ret, spaceId, partId);
                     this->onFinished();
                     return;
                 }
