@@ -34,24 +34,33 @@ Status SetValidator::validateImpl() {
 
 Status SetValidator::toPlan() {
     switch (op_) {
-        case SetSentence::Operator::UNION:
-            start_ = std::make_shared<Union>(distinct_);
+        case SetSentence::Operator::UNION: {
+            auto unionOp = Union::make(
+                    lValidator_->start(), rValidator_->start(), validateContext_->plan());
+            if (distinct_) {
+                start_ = Dedup::make(lValidator_->start(), "", validateContext_->plan());
+            } else {
+                start_ = unionOp;
+            }
             break;
-        case SetSentence::Operator::INTERSECT:
-            start_ = std::make_shared<Intersect>();
+        }
+        case SetSentence::Operator::INTERSECT: {
+            start_ = Intersect::make(
+                    lValidator_->start(), rValidator_->start(), validateContext_->plan());
             break;
-        case SetSentence::Operator::MINUS:
-            start_ = std::make_shared<Minus>();
+        }
+        case SetSentence::Operator::MINUS: {
+            start_ = Minus::make(
+                    lValidator_->start(), rValidator_->start(), validateContext_->plan());
             break;
+        }
         default:
             return Status::Error("Unkown operator: %ld", static_cast<int64_t>(op_));
     }
 
-    start_->addChild(lValidator_->start());
-    start_->addChild(lValidator_->start());
-    end_ = std::make_shared<EndNode>();
-    lValidator_->end()->addChild(end_);
-    rValidator_->end()->addChild(end_);
+    end_ = EndNode::make(nullptr, validateContext_->plan());
+    Validator::appendPlan(lValidator_->end(), end_);
+    Validator::appendPlan(rValidator_->end(), end_);
     return Status::OK();
 }
 }  // namespace graph

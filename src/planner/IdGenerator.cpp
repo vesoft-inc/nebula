@@ -4,9 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "ExecutionPlan.h"
+#include "planner/IdGenerator.h"
 
 namespace nebula {
 namespace graph {
+
+EPIdGenerator EPIdGenerator::instance_;
+
 }  // namespace graph
 }  // namespace nebula

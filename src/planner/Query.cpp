@@ -80,11 +80,11 @@ std::string Loop::explain() const {
 }
 
 std::string RegisterSpaceToSession::explain() const {
-    return "RegisterS[aceToSession";
+    return "RegisterSpaceToSession";
 }
 
-std::string RegisterVariable::explain() const {
-    return "RegisterVariable";
+std::string Dedup::explain() const {
+    return "Dedup";
 }
 }  // namespace graph
 }  // namespace nebula

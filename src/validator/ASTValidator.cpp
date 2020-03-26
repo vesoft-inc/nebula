@@ -8,8 +8,10 @@
 
 namespace nebula {
 namespace graph {
-Status ASTValidator::validate(std::shared_ptr<PlanNode> plan) {
+StatusOr<std::unique_ptr<ExecutionPlan>> ASTValidator::validate() {
     validateContext_ = std::make_unique<ValidateContext>();
+    auto plan = std::make_unique<ExecutionPlan>();
+    validateContext_->setPlan(plan.get());
 
     // check space chosen from session. if chosen, add it to context.
     if (session_->space() > -1) {
@@ -22,12 +24,13 @@ Status ASTValidator::validate(std::shared_ptr<PlanNode> plan) {
         return status;
     }
 
-    plan = validator->start();
-    if (!plan) {
+    auto root = validator->start();
+    if (!root) {
         return Status::Error("Get null plan from sequantial validator.");
     }
 
-    return Status::OK();
+    plan->setRoot(root);
+    return plan;
 }
 }  // namespace graph
 }  // namespace nebula

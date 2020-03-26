@@ -25,9 +25,8 @@ Status AssignmentValidator::validateImpl() {
 }
 
 Status AssignmentValidator::toPlan() {
-    start_ = std::make_shared<RegisterVariable>(std::move(var_));
-    start_->addChild(validator_->start());
-    end_ = validator_->end();
+    // start_ = std::make_shared<RegisterVariable>(validator_->start(), std::move(var_));
+    // end_ = validator_->end();
     return Status::OK();
 }
 }  // namespace graph

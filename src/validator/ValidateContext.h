@@ -10,6 +10,7 @@
 #include "meta/SchemaManager.h"
 #include "service/ClientSession.h"
 #include "datatypes/Value.h"
+#include "planner/ExecutionPlan.h"
 
 namespace nebula {
 namespace graph {
@@ -25,6 +26,10 @@ public:
         vars_.emplace(std::move(var), std::move(cols));
     }
 
+    void setPlan(ExecutionPlan* plan) {
+        plan_ = plan;
+    }
+
     bool spaceChosen() const {
         return !spaces_.empty();
     }
@@ -33,12 +38,16 @@ public:
         return spaces_.back();
     }
 
-    meta::SchemaManager* schemaMng() {
+    meta::SchemaManager* schemaMng() const {
         return schemaMng_;
     }
 
     int64_t getId() {
         return ++idCounter_;
+    }
+
+    ExecutionPlan* plan() const {
+        return plan_;
     }
 
 private:
@@ -47,6 +56,7 @@ private:
     std::vector<std::pair<std::string, GraphSpaceID>>   spaces_;
     std::unordered_map<std::string, ColsDef>            vars_;
     int64_t                                             idCounter_;
+    ExecutionPlan*                                      plan_;
 };
 }  // namespace graph
 }  // namespace nebula

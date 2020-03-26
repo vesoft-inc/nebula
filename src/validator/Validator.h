@@ -8,7 +8,7 @@
 #define VALIDATOR_VALIDATOR_H_
 
 #include "base/Base.h"
-#include "planner/PlanNode.h"
+#include "planner/ExecutionPlan.h"
 #include "parser/Sentence.h"
 #include "validator/ValidateContext.h"
 
@@ -23,6 +23,8 @@ public:
 
     static std::unique_ptr<Validator> makeValidator(Sentence* sentence,
                                                     ValidateContext* context);
+
+    static Status appendPlan(PlanNode* plan, PlanNode* appended);
 
     Status validate();
 
@@ -65,8 +67,8 @@ protected:
 protected:
     Sentence*                       sentence_;
     ValidateContext*                validateContext_;
-    std::shared_ptr<PlanNode>       start_;
-    std::shared_ptr<PlanNode>       end_;
+    PlanNode*                       start_;
+    PlanNode*                       end_;
     ColsDef                         outputs_;
     ColsDef                         inputs_;
 };

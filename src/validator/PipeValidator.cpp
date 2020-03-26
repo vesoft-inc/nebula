@@ -32,7 +32,7 @@ Status PipeValidator::validateImpl() {
 
 Status PipeValidator::toPlan() {
     start_ = rValidator_->start();
-    auto status = PlanNode::append(rValidator_->end(), lValidator_->start());
+    auto status = Validator::appendPlan(rValidator_->end(), lValidator_->start());
     if (!status.ok()) {
         return status;
     }

@@ -25,7 +25,7 @@ Status UseValidator::validateImpl() {
 
 Status UseValidator::toPlan() {
     auto space = validateContext_->whichSpace();
-    start_ = std::make_shared<RegisterSpaceToSession>(space.second);
+    start_ = RegisterSpaceToSession::make(nullptr, space.second, validateContext_->plan());
     end_ = start_;
     return Status::OK();
 }

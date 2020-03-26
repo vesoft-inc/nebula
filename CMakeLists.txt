@@ -195,6 +195,7 @@ find_package(FLEX REQUIRED)
 find_package(Readline REQUIRED)
 find_package(NCURSES REQUIRED)
 find_package(Libunwind REQUIRED)
+find_package(LibLZMA MODULE)
 
 add_compile_options(-Wall)
 add_compile_options(-Werror)
@@ -345,7 +346,7 @@ set(THRIFT_LIBRARIES
 )
 
 # All compression libraries
-set(COMPRESSION_LIBRARIES bz2 snappy zstd z)
+set(COMPRESSION_LIBRARIES bz2 snappy zstd z lz4)
 if (LIBLZMA_FOUND)
     include_directories(SYSTEM ${LIBLZMA_INCLUDE_DIRS})
     list(APPEND COMPRESSION_LIBRARIES ${LIBLZMA_LIBRARIES})

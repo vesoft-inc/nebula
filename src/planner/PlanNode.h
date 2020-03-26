@@ -9,9 +9,12 @@
 
 #include "base/Base.h"
 #include "filter/Expressions.h"
+#include "planner/IdGenerator.h"
 
 namespace nebula {
 namespace graph {
+
+class ExecutionPlan;
 
 /**
  * PlanNode is an abstraction of nodes in an execution plan which
@@ -37,18 +40,11 @@ public:
         kAggregate,
         kSelector,
         kLoop,
-        kBuildShortestPath,
-        kRegisterVariable,
         kRegisterSpaceToSession,
+        kDedup,
     };
 
     PlanNode() = default;
-
-    PlanNode(std::vector<std::string>&& colNames,
-             std::vector<std::shared_ptr<PlanNode>>&& children) {
-        outputColNames_ = std::move(colNames);
-        children_ = std::move(children);
-    }
 
     virtual ~PlanNode() = default;
 
@@ -56,12 +52,6 @@ public:
      * To explain how a query would be executed
      */
     virtual std::string explain() const = 0;
-
-    /**
-     * Append a sub-plan to another one.
-     */
-    static Status append(std::shared_ptr<PlanNode> node,
-                         std::shared_ptr<PlanNode> appended);
 
     Kind kind() const {
         return kind_;
@@ -71,69 +61,24 @@ public:
         return id_;
     }
 
-    std::vector<std::string> outputColNames() const {
-        return outputColNames_;
-    }
-
-    const std::vector<std::shared_ptr<PlanNode>>& children() const {
-        return children_;
+    const ExecutionPlan* plan() const {
+        return plan_;
     }
 
     void setId(int64_t id) {
         id_ = id;
     }
 
-    void setOutputColNames(std::vector<std::string>&& cols) {
-        outputColNames_ = std::move(cols);
-    }
-
-    void setChildren(std::vector<std::shared_ptr<PlanNode>>&& children) {
-        children_ = std::move(children);
-    }
-
-    void addChild(std::shared_ptr<PlanNode> child) {
-        children_.emplace_back(std::move(child));
+    void setPlan(ExecutionPlan* plan) {
+        plan_ = plan;
     }
 
 protected:
     Kind                                     kind_{Kind::kUnknown};
-    int64_t                                  id_{-1};
-    std::vector<std::string>                 outputColNames_;
-    std::vector<std::shared_ptr<PlanNode>>   children_;
-};
-
-class StartNode final : public PlanNode {
-public:
-    StartNode() {
-        kind_ = PlanNode::Kind::kStart;
-    }
-
-    StartNode(std::vector<std::string>&& colNames,
-              std::vector<std::shared_ptr<PlanNode>>&& children)
-              : PlanNode(std::move(colNames), std::move(children)) {
-        kind_ = PlanNode::Kind::kStart;
-    }
-
-    std::string explain() const override {
-        return "Start";
-    }
-};
-
-class EndNode final : public PlanNode {
-public:
-    EndNode() {
-        kind_ = PlanNode::Kind::kEnd;
-    }
-
-    EndNode(std::vector<std::string>&& colNames,
-            std::vector<std::shared_ptr<PlanNode>>&& children)
-        : PlanNode(std::move(colNames), std::move(children)) {
-        kind_ = PlanNode::Kind::kStart;
-    }
-
-    std::string explain() const override {
-        return "End";
-    }
+    int64_t                                  id_{IdGenerator::INVALID_ID};
+    ExecutionPlan*                           plan_;
+    using VariableName = std::string;
+    std::unordered_set<VariableName>         availableVars_;
 };
 }  // namespace graph
 }  // namespace nebula

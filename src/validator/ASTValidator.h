@@ -18,7 +18,7 @@ public:
     explicit ASTValidator(SequentialSentences* sentences)
         : sentences_(sentences) {}
 
-    Status validate(std::shared_ptr<PlanNode> plan);
+    StatusOr<std::unique_ptr<ExecutionPlan>> validate();
 
     const ValidateContext* context() const {
         return validateContext_.get();
