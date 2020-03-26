@@ -23,10 +23,11 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
         std::for_each(req.parts.begin(), req.parts.end(), [this](auto &partEdges) {
             this->callingNum_ += partEdges.second.size();
         });
-        std::for_each(req.parts.begin(), req.parts.end(), [spaceId, this](auto &partEdges) {
+        std::vector<std::string> keys;
+        keys.reserve(16);
+        for (auto& partEdges : req.parts) {
             auto partId = partEdges.first;
-            std::for_each(partEdges.second.begin(), partEdges.second.end(),
-                          [spaceId, partId, this](auto &edgeKey) {
+            for (auto& edgeKey : partEdges.second) {
                 auto start = NebulaKeyUtils::edgeKey(partId,
                                                      edgeKey.src,
                                                      edgeKey.edge_type,
@@ -39,9 +40,22 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
                                                    edgeKey.ranking,
                                                    edgeKey.dst,
                                                    std::numeric_limits<int64_t>::max());
-                this->doRemoveRange(spaceId, partId, start, end);
-            });
-        });
+                std::unique_ptr<kvstore::KVIterator> iter;
+                auto ret = this->kvstore_->range(spaceId, partId, start, end, &iter);
+                if (ret != kvstore::ResultCode::SUCCEEDED) {
+                    VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret)
+                            << ", spaceID " << spaceId;
+                    this->onFinished();
+                    return;
+                }
+                while (iter && iter->valid()) {
+                    auto key = iter->key();
+                    keys.emplace_back(key.data(), key.size());
+                    iter->next();
+                }
+                doRemove(spaceId, partId, std::move(keys));
+            }
+        }
     } else {
         callingNum_ = req.parts.size();
         std::for_each(req.parts.begin(), req.parts.end(), [spaceId, this](auto &partEdges) {
