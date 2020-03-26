@@ -20,12 +20,13 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
     }
 
     if (indexes_.empty()) {
-        std::for_each(req.parts.begin(), req.parts.end(), [&](auto &partEdges) {
-            callingNum_ += partEdges.second.size();
+        std::for_each(req.parts.begin(), req.parts.end(), [this](auto &partEdges) {
+            this->callingNum_ += partEdges.second.size();
         });
-        std::for_each(req.parts.begin(), req.parts.end(), [&](auto &partEdges) {
+        std::for_each(req.parts.begin(), req.parts.end(), [spaceId, this](auto &partEdges) {
             auto partId = partEdges.first;
-            std::for_each(partEdges.second.begin(), partEdges.second.end(), [&](auto &edgeKey) {
+            std::for_each(partEdges.second.begin(), partEdges.second.end(),
+                          [spaceId, partId, this](auto &edgeKey) {
                 auto start = NebulaKeyUtils::edgeKey(partId,
                                                      edgeKey.src,
                                                      edgeKey.edge_type,
@@ -38,12 +39,12 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
                                                    edgeKey.ranking,
                                                    edgeKey.dst,
                                                    std::numeric_limits<int64_t>::max());
-                doRemoveRange(spaceId, partId, start, end);
+                this->doRemoveRange(spaceId, partId, start, end);
             });
         });
     } else {
         callingNum_ = req.parts.size();
-        std::for_each(req.parts.begin(), req.parts.end(), [&](auto &partEdges) {
+        std::for_each(req.parts.begin(), req.parts.end(), [spaceId, this](auto &partEdges) {
             auto partId = partEdges.first;
             auto atomic = [spaceId, partId, edges = std::move(partEdges.second), this]()
                           -> std::string {
