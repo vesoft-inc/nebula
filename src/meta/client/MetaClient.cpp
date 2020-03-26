@@ -559,6 +559,10 @@ Status MetaClient::handleResponse(const RESP& resp) {
             return Status::Error("No valid collate");
         case cpp2::ErrorCode::E_CHARSET_COLLATE_NOT_MATCH:
             return Status::Error("Charset and collate not match");
+        case cpp2::ErrorCode::E_INVALID_PASSWORD:
+            return Status::Error("Invalid password");
+        case cpp2::ErrorCode::E_IMPROPER_ROLE:
+            return Status::Error("Improper role");
         default:
             return Status::Error("Unknown code %d", static_cast<int32_t>(resp.get_code()));
     }
