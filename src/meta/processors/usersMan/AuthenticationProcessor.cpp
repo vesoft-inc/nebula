@@ -136,7 +136,7 @@ void RevokeProcessor::process(const cpp2::RevokeRoleReq& req) {
     auto val = result.value();
     const auto role = *reinterpret_cast<const nebula::cpp2::RoleType *>(val.c_str());
     if (role != roleItem.get_role_type()) {
-        handleErrorCode(cpp2::ErrorCode::E_INPROPER_ROLE);
+        handleErrorCode(cpp2::ErrorCode::E_IMPROPER_ROLE);
         onFinished();
         return;
     }
