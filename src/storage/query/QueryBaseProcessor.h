@@ -27,7 +27,7 @@ const std::unordered_map<std::string, PropContext::PropInKeyType> kPropsInKey_ =
 };
 
 using EdgeProcessor
-    = std::function<void(RowReader* reader,
+    = std::function<void(std::unique_ptr<RowReader> reader,
                          folly::StringPiece key,
                          const std::vector<PropContext>& props)>;
 struct Bucket {
