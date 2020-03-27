@@ -81,9 +81,23 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
     * [Yield Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/yield-syntax.md)
 
   * Utility Statements
+    * Show Statements
+      * [Show Charset Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-charset-syntax.md)
+      * [Show Collation Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-collation-syntax.md)
+      * [Show Configs Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-configs-syntax.md)
+      * [Show Create Spaces Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-create-space-syntax.md)
+      * [Show Create Tag/Edge Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-create-tag-edge-syntax.md)
+      * [Show Hosts Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-hosts-syntax.md)
+      * [Show Indexes Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-indexes-syntax.md)
+      * [Show Parts Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-parts-syntax.md)
+      * [Show Roles Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-roles-syntax.md)
+      * [Show Snapshots Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-snapshots-syntax.md)
+      * [Show Spaces Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-spaces-syntax.md)
+      * [Show Tag/Edge Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-tags-edges-syntax.md)
+      * [Show Users Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-users-syntax.md)
     * [Describe Syntax](2.query-language/4.statement-syntax/3.utility-statements/describe-syntax.md)
     * [Use Syntax](2.query-language/4.statement-syntax/3.utility-statements/use-syntax.md)
-    * [Show Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-syntax.md)
+
   * Graph Algorithms
     * [Find Path Syntax](2.query-language/4.statement-syntax/4.graph-algorithms/find-path-syntax.md)
 
@@ -107,13 +121,16 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
 
   * Server Administration
     * Account Management Statements
+      * [Alter User Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/alter-user-syntax.md)
+      * [Built-in Roles](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/built-in-roles.md)
+      * [Change Password](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/change-password.md)
       * [Create User Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/create-user-syntax.md)
       * [Drop User Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/drop-user-syntax.md)
       * [Grant Role Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/grant-role-syntax.md)
       * [Revoke Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/revoke-syntax.md)
     * Configuration Statements
       * [Configs Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/configs-syntax.md)
-      * [RocksDB Compaction and Flush](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/rocksdb-compaction-flush.md)
+      <!-- * [RocksDB Compaction and Flush](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/rocksdb-compaction-flush.md) -->
       * [Logs](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/log.md)
     * Graph Service Administration
       * [Graph Metrics](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/graph-service-administration/graph-metrics.md)
@@ -140,8 +157,8 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
 
 ## Appendix
 
-* [Gremlin V.S. nGQL](5.appendix/gremlin-ngql.md)
-* [Cypher V.S. nGQL](5.appendix/cypher-ngql.md)
+* [Gremlin VS nGQL](5.appendix/gremlin-ngql.md)
+* [Cypher VS nGQL](5.appendix/cypher-ngql.md)
 
 ## Misc
 

@@ -26,6 +26,7 @@ jobs:
     needs: lint
     runs-on: self-hosted
     strategy:
+      fail-fast: false
       matrix:
         os:
           - centos7

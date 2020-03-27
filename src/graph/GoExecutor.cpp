@@ -90,7 +90,6 @@ Status GoExecutor::prepareClauses() {
 
 
 void GoExecutor::execute() {
-    FLOG_INFO("Executing Go: %s", sentence_->toString().c_str());
     auto status = prepareClauses();
     if (!status.ok()) {
         doError(std::move(status));

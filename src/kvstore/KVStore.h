@@ -153,11 +153,6 @@ public:
                                   const std::string& end,
                                   KVCallback cb) = 0;
 
-    virtual void asyncRemovePrefix(GraphSpaceID spaceId,
-                                   PartitionID partId,
-                                   const std::string& prefix,
-                                   KVCallback cb) = 0;
-
     virtual void asyncAtomicOp(GraphSpaceID spaceId,
                                PartitionID partId,
                                raftex::AtomicOp op,

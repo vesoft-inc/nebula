@@ -6,7 +6,7 @@ REVOKE ROLE <role_type> ON <space> FROM <user>
 
 The `REVOKE` statement removes access privileges from **Nebula Graph** user accounts. To use `REVOKE`, you must have the `REVOKE` privilege.
 
-Currently, there are four roles in **Nebula Graph**: `GOD`, `ADMIN`, `DBA` and `GUEST`.
+Currently, there are five roles in **Nebula Graph**: `GOD`, `ADMIN`, `DBA`, `USER` and `GUEST`.
 
 <!-- For information about roles, see [Using Roles](TODO). -->
 
