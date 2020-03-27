@@ -32,9 +32,9 @@ private:
             , indexMan_(indexMan) {}
 
 
-    std::string deleteEdges(GraphSpaceID spaceId,
-                            PartitionID partId,
-                            const std::vector<cpp2::EdgeKey>& edges);
+    folly::Optional<std::string> deleteEdges(GraphSpaceID spaceId,
+                                             PartitionID partId,
+                                             const std::vector<cpp2::EdgeKey>& edges);
 
 private:
     meta::IndexManager*                                   indexMan_{nullptr};

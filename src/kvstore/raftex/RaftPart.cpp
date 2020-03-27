@@ -28,7 +28,7 @@ DEFINE_uint64(raft_snapshot_timeout, 60 * 5, "Max seconds between two snapshot r
 
 DEFINE_uint32(max_batch_size, 256, "The max number of logs in a batch");
 
-DEFINE_int32(wal_ttl, 86400, "Default wal ttl");
+DEFINE_int32(wal_ttl, 14400, "Default wal ttl");
 DEFINE_int64(wal_file_size, 16 * 1024 * 1024, "Default wal file size");
 DEFINE_int32(wal_buffer_size, 8 * 1024 * 1024, "Default wal buffer size");
 DEFINE_int32(wal_buffer_num, 2, "Default wal buffer number");
@@ -42,12 +42,14 @@ using nebula::thrift::ThriftClientManager;
 using nebula::wal::FileBasedWal;
 using nebula::wal::FileBasedWalPolicy;
 
+using OpProcessor = folly::Function<folly::Optional<std::string>(AtomicOp op)>;
+
 class AppendLogsIterator final : public LogIterator {
 public:
     AppendLogsIterator(LogID firstLogId,
                        TermID termId,
                        RaftPart::LogCache logs,
-                       folly::Function<std::string(AtomicOp op)> opCB)
+                       OpProcessor opCB)
             : firstLogId_(firstLogId)
             , termId_(termId)
             , logId_(firstLogId)
@@ -92,7 +94,7 @@ public:
             // Process AtomicOp log
             CHECK(!!opCB_);
             opResult_ = opCB_(std::move(std::get<3>(tup)));
-            if (opResult_.size() > 0) {
+            if (opResult_.hasValue()) {
                 // AtomicOp Succeeded
                 return true;
             } else {
@@ -145,7 +147,8 @@ public:
     folly::StringPiece logMsg() const override {
         DCHECK(valid());
         if (currLogType_ == LogType::ATOMIC_OP) {
-            return opResult_;
+            CHECK(opResult_.hasValue());
+            return opResult_.value();
         } else {
             return std::get<2>(logs_.at(idx_));
         }
@@ -180,12 +183,12 @@ private:
     bool valid_{true};
     LogType lastLogType_{LogType::NORMAL};
     LogType currLogType_{LogType::NORMAL};
-    std::string opResult_;
+    folly::Optional<std::string> opResult_;
     LogID firstLogId_;
     TermID termId_;
     LogID logId_;
     RaftPart::LogCache logs_;
-    folly::Function<std::string(AtomicOp op)> opCB_;
+    OpProcessor opCB_;
 };
 
 
@@ -637,10 +640,10 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
         firstId,
         termId,
         std::move(swappedOutLogs),
-        [this] (AtomicOp opCB) -> std::string {
+        [this] (AtomicOp opCB) -> folly::Optional<std::string> {
             CHECK(opCB != nullptr);
             auto opRet = opCB();
-            if (opRet.empty()) {
+            if (!opRet.hasValue()) {
                 // Failed
                 sendingPromise_.setOneSingleValue(AppendLogResult::E_ATOMIC_OP_FAILURE);
             }
@@ -921,9 +924,9 @@ void RaftPart::processAppendLogResponses(
                         firstLogId,
                         currTerm,
                         std::move(logs_),
-                        [this] (AtomicOp op) -> std::string {
+                        [this] (AtomicOp op) -> folly::Optional<std::string> {
                             auto opRet = op();
-                            if (opRet.empty()) {
+                            if (!opRet.hasValue()) {
                                 // Failed
                                 sendingPromise_.setOneSingleValue(
                                     AppendLogResult::E_ATOMIC_OP_FAILURE);
