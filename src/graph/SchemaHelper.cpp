@@ -191,6 +191,7 @@ Status SchemaHelper::alterSchema(const std::vector<AlterSchemaOptItem*>& schemaO
                                  const std::vector<SchemaPropItem*>& schemaProps,
                                  std::vector<nebula::meta::cpp2::AlterSchemaItem>& options,
                                  nebula::cpp2::SchemaProp& prop) {
+    Getters g;
     for (auto& schemaOpt : schemaOpts) {
         nebula::meta::cpp2::AlterSchemaItem schemaItem;
         auto opType = schemaOpt->toType();
@@ -209,6 +210,65 @@ Status SchemaHelper::alterSchema(const std::vector<AlterSchemaOptItem*>& schemaO
                 nebula::cpp2::ColumnDef column;
                 column.name = *spec->name();
                 column.type.type = columnTypeToSupportedType(spec->type());
+                if (spec->hasDefault()) {
+                    nebula::cpp2::Value v;
+                    switch (spec->type()) {
+                    case ColumnType::TIMESTAMP: {
+                        auto valStatus = spec->getIntValue(g);
+                        if (valStatus.ok()) {
+                            v.set_timestamp(valStatus.value());
+                            column.set_default_value(v);
+                        } else {
+                            return std::move(valStatus).status();
+                        }
+                        break;
+                    }
+                    case ColumnType::BIGINT:
+                    // fallthrough
+                    case ColumnType::INT: {
+                        auto valStatus = spec->getIntValue(g);
+                        if (valStatus.ok()) {
+                            v.set_int_value(valStatus.value());
+                            column.set_default_value(v);
+                        } else {
+                            return std::move(valStatus).status();
+                        }
+                        break;
+                    }
+                    case ColumnType::BOOL: {
+                        auto valStatus = spec->getBoolValue(g);
+                        if (valStatus.ok()) {
+                            v.set_bool_value(valStatus.value());
+                            column.set_default_value(v);
+                        } else {
+                            return std::move(valStatus).status();
+                        }
+                        break;
+                    }
+                    case ColumnType::DOUBLE: {
+                        auto valStatus = spec->getDoubleValue(g);
+                        if (valStatus.ok()) {
+                            v.set_double_value(valStatus.value());
+                            column.set_default_value(v);
+                        } else {
+                            return std::move(valStatus).status();
+                        }
+                        break;
+                    }
+                    case ColumnType::STRING: {
+                        auto valStatus = spec->getStringValue(g);
+                        if (valStatus.ok()) {
+                            v.set_string_value(std::move(valStatus).value());
+                            column.set_default_value(std::move(v));
+                        } else {
+                            return std::move(valStatus).status();
+                        }
+                        break;
+                    }
+                    default:
+                        LOG(WARNING) << "Unkown type " << static_cast<int>(spec->type());
+                    }  // switch
+                }
                 schema.columns.emplace_back(std::move(column));
             }
         }

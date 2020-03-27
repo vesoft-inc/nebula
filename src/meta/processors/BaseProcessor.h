@@ -147,12 +147,16 @@ protected:
     /**
      * Scan keys from start to end, doesn't contain end.
      * */
-     StatusOr<std::vector<std::string>> doScan(const std::string& start,
+    StatusOr<std::vector<std::string>> doScan(const std::string& start,
                                                const std::string& end);
-     /**
+    /**
      * General multi remove function.
-     **/
-     void doMultiRemove(std::vector<std::string> keys);
+     * */
+    void doMultiRemove(std::vector<std::string> keys);
+
+    kvstore::ResultCode multiRemove(std::vector<std::string> keys);
+
+    kvstore::ResultCode multiRemoveAndUpdate(const std::vector<std::string> keys);
 
     /**
      * Get all hosts

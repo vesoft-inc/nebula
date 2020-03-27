@@ -28,6 +28,43 @@ protected:
     }
 };
 
+class SchemaTestIssue1987 : public TestBase, public ::testing::WithParamInterface<std::string> {
+protected:
+    void SetUp() override {
+        TestBase::SetUp();
+        client_ = gEnv->getClient();
+        ASSERT_NE(nullptr, client_);
+        setupSchema();
+    }
+
+    void TearDown() override {
+        {
+            cpp2::ExecutionResponse resp;
+            std::string cmd = "DROP SPACE issue1987";
+            auto code = client_->execute(cmd, resp);
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        }
+        TestBase::TearDown();
+    }
+
+    void setupSchema() {
+        {
+            cpp2::ExecutionResponse resp;
+            std::string cmd = "CREATE SPACE issue1987";
+            auto code = client_->execute(cmd, resp);
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        }
+        {
+            cpp2::ExecutionResponse resp;
+            std::string cmd = "USE issue1987";
+            auto code = client_->execute(cmd, resp);
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        }
+    }
+
+    std::unique_ptr<GraphClient> client_{nullptr};
+};
+
 TEST_F(SchemaTest, TestComment) {
     auto client = gEnv->getClient();
     ASSERT_NE(nullptr, client);
@@ -1073,6 +1110,120 @@ TEST_F(SchemaTest, TestTagAndEdge) {
     }
     LOG(FATAL) << "Space still exists after sleep " << retry << " seconds";
 }
+
+TEST_P(SchemaTestIssue1987, issue1987) {
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE " + GetParam()
+            + " t(name string default \"N/A\", age int default -1)";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // ADD
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "ALTER " + GetParam() + " t ADD (description string default \"none\");";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ::sleep(FLAGS_heartbeat_interval_secs + 1);
+    }
+    std::string ve;
+    std::string entity;
+    if (GetParam() == "TAG") {
+        ve = "VERTEX";
+        entity = "1";
+    } else if (GetParam() == "EDGE") {
+        ve = "EDGE";
+        entity = "1->2";
+    } else {
+        ASSERT_TRUE(false) << "Invalid parameter " << GetParam();
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "INSERT " + ve + " t() VALUES " + entity + ":()";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    std::unordered_set<uint16_t> ignore;
+    if (GetParam() == "TAG") {
+        ignore.emplace(0);
+    } else if (GetParam() == "EDGE") {
+        ignore.emplace(0);
+        ignore.emplace(1);
+        ignore.emplace(2);
+    } else {
+        ASSERT_TRUE(false) << "Invalid parameter " << GetParam();
+    }
+    {
+        std::vector<std::tuple<std::string, int64_t, std::string>> result {
+            {"N/A", -1, "none"}
+        };
+        cpp2::ExecutionResponse resp;
+        std::string query = std::string() + "FETCH PROP ON " + "t " + entity;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyResult(resp, result, true, ignore));
+    }
+
+    // CHANGE
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "ALTER " + GetParam()
+            + " t CHANGE (description string default \"NONE\")";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ::sleep(FLAGS_heartbeat_interval_secs + 1);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "INSERT " + ve + " t() VALUES " + entity + ":()";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        std::vector<std::tuple<std::string, int64_t, std::string>> result {
+            {"N/A", -1, "NONE"}
+        };
+        cpp2::ExecutionResponse resp;
+        std::string query = std::string() + "FETCH PROP ON " + "t " + entity;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyResult(resp, result, true, ignore));
+    }
+
+    // DROP
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "ALTER " + GetParam() + " t CHANGE (description string)";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ::sleep(FLAGS_heartbeat_interval_secs + 1);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "INSERT " + ve + " t(description) VALUES " + entity + ":(\"some one\")";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        std::vector<std::tuple<std::string, int64_t, std::string>> result {
+            {"N/A", -1, "some one"}
+        };
+        cpp2::ExecutionResponse resp;
+        std::string query = std::string() + "FETCH PROP ON " + "t " + entity;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyResult(resp, result, true, ignore));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "INSERT " + ve + " t() VALUES " + entity + ":()";
+        auto code = client_->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+}
+
+INSTANTIATE_TEST_CASE_P(SchemaIssue1987, SchemaTestIssue1987, ::testing::Values("TAG", "EDGE"));
 
 }   // namespace graph
 }   // namespace nebula
