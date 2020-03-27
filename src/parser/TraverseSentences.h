@@ -81,15 +81,20 @@ public:
 };
 
 
-class LookupSentence final : public Sentence {
+class FindSentence final : public Sentence {
 public:
-    explicit LookupSentence(std::string *from) {
-        from_.reset(from);
-        kind_ = Kind::kLookup;
+    FindSentence(std::string *type, PropertyList *props) {
+        type_.reset(type);
+        properties_.reset(props);
+        kind_ = Kind::kFind;
     }
 
-    const std::string* from() const {
-        return from_.get();
+    const std::string* type() const {
+        return type_.get();
+    }
+
+    std::vector<std::string*> properties() const {
+        return properties_->properties();
     }
 
     void setWhereClause(WhereClause *whereClause) {
@@ -100,20 +105,12 @@ public:
         return whereClause_.get();
     }
 
-    void setYieldClause(YieldClause *clause) {
-        yieldClause_.reset(clause);
-    }
-
-    const YieldClause* yieldClause() const {
-        return yieldClause_.get();
-    }
-
     std::string toString() const override;
 
 private:
-    std::unique_ptr<std::string>                from_;
+    std::unique_ptr<std::string>                type_;
+    std::unique_ptr<PropertyList>               properties_;
     std::unique_ptr<WhereClause>                whereClause_;
-    std::unique_ptr<YieldClause>                yieldClause_;
 };
 
 
@@ -307,17 +304,6 @@ public:
         tag_.reset(tag);
         vidRef_.reset(ref);
         yieldClause_.reset(clause);
-    }
-
-    explicit FetchVerticesSentence(Expression *vid) {
-        kind_ = Kind::kFetchVertices;
-        tag_ = std::make_unique<std::string>("*");
-        vidList_ = std::make_unique<VertexIDList>();
-        vidList_->add(vid);
-    }
-
-    bool isAllTagProps() {
-        return *tag_ == "*";
     }
 
     auto tag() const {

@@ -13,12 +13,58 @@
 
 namespace nebula {
 
+class WithUserOptItem final {
+public:
+    enum OptionType : uint8_t {
+        FIRST,
+        LAST,
+        EMAIL,
+        PHONE
+    };
+
+    WithUserOptItem(OptionType op, std::string *val) {
+        optType_ = op;
+        optValue_.reset(val);
+    }
+
+    const std::string* getValue() {
+        return optValue_.get();
+    }
+
+    const OptionType getOptType() {
+        return optType_;
+    }
+
+    std::string toString() const;
+
+private:
+    std::unique_ptr<std::string>     optValue_;
+    OptionType                       optType_;
+};
+
+
+class WithUserOptList final {
+public:
+    void addOpt(WithUserOptItem *item) {
+        items_.emplace_back(item);
+    }
+
+    std::vector<std::unique_ptr<WithUserOptItem>> getOpts() {
+        return std::move(items_);
+    }
+
+    std::string toString() const;
+
+private:
+    std::vector<std::unique_ptr<WithUserOptItem>>    items_;
+};
+
+
 class RoleTypeClause final {
 public:
     enum RoleType : uint8_t {
         GOD,
         ADMIN,
-        DBA,
         USER,
         GUEST
     };
@@ -27,7 +73,7 @@ public:
         roleType_ = roleType;
     }
 
-    RoleType getRoleType() const {
+    const RoleType getOptType() {
         return roleType_;
     }
 
@@ -46,7 +92,7 @@ public:
         spaceName_.reset(spaceName);
     }
 
-    bool isSet() const {
+    bool isSet() {
         return isSet_;
     }
 
@@ -54,11 +100,11 @@ public:
         type_.reset(type);
     }
 
-    RoleTypeClause::RoleType getRoleType() const {
-        return type_->getRoleType();
+    const RoleTypeClause::RoleType getRoleType() {
+        return type_->getOptType();
     }
 
-    const std::string* getSpaceName() const {
+    const std::string* getSpaceName() {
         return spaceName_.get();
     }
 
@@ -73,101 +119,130 @@ private:
 
 class CreateUserSentence final : public Sentence {
 public:
-    CreateUserSentence(std::string *account, std::string *password, bool ifNotExists) {
+    CreateUserSentence(std::string *account, std::string *password) {
         account_.reset(account);
         password_.reset(password);
-        ifNotExists_ = ifNotExists;
         kind_ = Kind::kCreateUser;
     }
 
-    const std::string* getAccount() const {
+    const std::string* getAccount() {
         return account_.get();
     }
 
-    const std::string* getPassword() const {
+    const std::string* getPassword() {
         return password_.get();
     }
 
-    bool ifNotExists() const {
-        return ifNotExists_;
+    void setMissingOk(bool missingOk) {
+        missingOk_ = missingOk;
+    }
+
+    bool getMissingOk() {
+        return missingOk_;
+    }
+
+    void setOpts(WithUserOptList* withUserOpts) {
+        withUserOpts_.reset(withUserOpts);
+    }
+
+    const std::vector<std::unique_ptr<WithUserOptItem>> getOpts() {
+        return withUserOpts_->getOpts();
     }
 
     std::string toString() const override;
 
 private:
-    bool                                  ifNotExists_{false};
+    bool                                  missingOk_{false};
     std::unique_ptr<std::string>          account_;
     std::unique_ptr<std::string>          password_;
+    std::unique_ptr<WithUserOptList>      withUserOpts_;
 };
 
 
 class AlterUserSentence final : public Sentence {
 public:
-    explicit AlterUserSentence(std::string *account, std::string *password) {
+    explicit AlterUserSentence(std::string *account) {
         account_.reset(account);
-        password_.reset(password);
         kind_ = Kind::kAlterUser;
     }
 
-    const std::string* getAccount() const {
+    const std::string* getAccount() {
         return account_.get();
     }
 
-    const std::string* getPassword() const {
-        return password_.get();
+    void setOpts(WithUserOptList* withUserOpts) {
+        withUserOpts_.reset(withUserOpts);
+    }
+
+    const std::vector<std::unique_ptr<WithUserOptItem>> getOpts() {
+        return withUserOpts_->getOpts();
     }
 
     std::string toString() const override;
 
 private:
     std::unique_ptr<std::string>          account_;
-    std::unique_ptr<std::string>          password_;
+    std::unique_ptr<WithUserOptList>      withUserOpts_;
 };
 
 
 class DropUserSentence final : public Sentence {
 public:
-    explicit DropUserSentence(std::string *account, bool ifExists) {
+    explicit DropUserSentence(std::string *account) {
         account_.reset(account);
-        ifExists_ = ifExists;
         kind_ = Kind::kDropUser;
     }
 
-    bool ifExists() const {
-        return ifExists_;
+    void setMissingOk(bool missingOk) {
+        missingOk_ = missingOk;
     }
 
-    const std::string* getAccount() const {
+    bool getMissingOk() {
+        return missingOk_;
+    }
+
+    const std::string* getAccount() {
         return account_.get();
     }
 
     std::string toString() const override;
 
 private:
-    bool                                  ifExists_{false};
+    bool                                  missingOk_{false};
     std::unique_ptr<std::string>          account_;
 };
 
 
 class ChangePasswordSentence final : public Sentence {
 public:
-    ChangePasswordSentence(std::string *account, std::string* oldPwd, std::string* newPwd) {
+    ChangePasswordSentence(std::string *account, std::string* newPwd) {
+        needVerify_ = false;
         account_.reset(account);
         newPwd_.reset(newPwd);
-        oldPwd_.reset(oldPwd);
         kind_ = Kind::kChangePassword;
     }
 
-    const std::string* getAccount() const {
+    ChangePasswordSentence(std::string *account, std::string* oldPwd, std::string* newPwd) {
+        needVerify_ = true;
+        account_.reset(account);
+        newPwd_.reset(newPwd);
+        oldPwd_.reset(oldPwd);
+    }
+
+    const std::string* getAccount() {
         return account_.get();
     }
 
-    const std::string* getNewPwd() const {
+    const std::string* getNewPwd() {
         return newPwd_.get();
     }
 
-    const std::string* getOldPwd() const {
+    const std::string* getOldPwd() {
         return oldPwd_.get();
+    }
+
+    bool needVerify() {
+        return needVerify_;
     }
 
     std::string toString() const override;
@@ -176,6 +251,7 @@ private:
     std::unique_ptr<std::string>          account_;
     std::unique_ptr<std::string>          newPwd_;
     std::unique_ptr<std::string>          oldPwd_;
+    bool                                  needVerify_;
 };
 
 
@@ -190,11 +266,11 @@ public:
         aclItemClause_.reset(aclItemClause);
     }
 
-    const AclItemClause* getAclItemClause() const {
+    const AclItemClause* getAclItemClause() {
         return aclItemClause_.get();
     }
 
-    const std::string* getAccount() const {
+    const std::string* getAccount() {
         return account_.get();
     }
 
@@ -217,11 +293,11 @@ public:
         aclItemClause_.reset(aclItemClause);
     }
 
-    const AclItemClause* getAclItemClause() const {
+    const AclItemClause* getAclItemClause() {
         return aclItemClause_.get();
     }
 
-    const std::string* getAccount() const {
+    const std::string* getAccount() {
         return account_.get();
     }
 

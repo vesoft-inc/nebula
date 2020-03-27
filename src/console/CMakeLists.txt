@@ -24,11 +24,4 @@ nebula_add_executable(
         ${NCURSES_LIBRARY}
 )
 
-install(
-    TARGETS
-        nebula
-    DESTINATION
-        bin
-    COMPONENT
-        console
-)
+install(TARGETS nebula DESTINATION bin)

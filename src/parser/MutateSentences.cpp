@@ -168,8 +168,7 @@ StatusOr<std::string> UpdateItem::toEvaledString() const {
     buf.reserve(256);
     buf += *field_;
     buf += "=";
-    Getters getters;
-    auto ret = value_->eval(getters);
+    auto ret = value_->eval();
     if (!ret.ok()) {
         return ret.status();
     }
@@ -267,11 +266,11 @@ std::string UpdateEdgeSentence::toString() const {
     return buf;
 }
 
-std::string DeleteVerticesSentence::toString() const {
+std::string DeleteVertexSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "DELETE VERTEX ";
-    buf += vidList_->toString();
+    buf += vid_->toString();
     return buf;
 }
 
@@ -303,22 +302,6 @@ std::string DownloadSentence::toString() const {
 
 std::string IngestSentence::toString() const {
     return "INGEST";
-}
-
-std::string AdminSentence::toString() const {
-    return op_;
-}
-
-std::string AdminSentence::getType() const {
-    return op_;
-}
-
-std::vector<std::string> AdminSentence::getParas() const {
-    return paras_;
-}
-
-void AdminSentence::addPara(const std::string& para) {
-    paras_.emplace_back(para);
 }
 
 }   // namespace nebula

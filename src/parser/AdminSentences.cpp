@@ -22,6 +22,8 @@ std::string ShowSentence::toString() const {
             return std::string("SHOW EDGES");
         case ShowType::kShowUsers:
             return std::string("SHOW USERS");
+        case ShowType::kShowUser:
+            return folly::stringPrintf("SHOW USER %s", name_.get()->c_str());
         case ShowType::kShowRoles:
             return folly::stringPrintf("SHOW ROLES IN %s", name_.get()->c_str());
         case ShowType::kShowCreateSpace:
@@ -32,10 +34,6 @@ std::string ShowSentence::toString() const {
             return folly::stringPrintf("SHOW CREATE EDGE %s", name_.get()->c_str());
         case ShowType::kShowSnapshots:
             return folly::stringPrintf("SHOW SNAPSHOTS");
-        case ShowType::kShowCharset:
-            return folly::stringPrintf("SHOW CHARSET");
-        case ShowType::kShowCollation:
-            return folly::stringPrintf("SHOW COLLATION");
         case ShowType::kUnknown:
         default:
             FLOG_FATAL("Type illegal");
@@ -50,10 +48,6 @@ std::string SpaceOptItem::toString() const {
             return folly::stringPrintf("partition_num = %ld", boost::get<int64_t>(optValue_));
         case REPLICA_FACTOR:
             return folly::stringPrintf("replica_factor = %ld", boost::get<int64_t>(optValue_));
-        case CHARSET:
-            return folly::stringPrintf("charset = %s", boost::get<std::string>(optValue_).c_str());
-        case COLLATE:
-            return folly::stringPrintf("collate = %s", boost::get<std::string>(optValue_).c_str());
         default:
              FLOG_FATAL("Space parameter illegal");
     }
@@ -107,8 +101,7 @@ std::string ConfigRowItem::toString() const {
         ss << *name_;
     }
     if (value_ != nullptr) {
-        Getters getters;
-        auto v = value_->eval(getters);
+        auto v = value_->eval();
         if (!v.ok()) {
             ss << "= ";
         } else {

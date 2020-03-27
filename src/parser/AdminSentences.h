@@ -26,30 +26,17 @@ public:
         kShowParts,
         kShowTags,
         kShowEdges,
-        kShowTagIndexes,
-        kShowEdgeIndexes,
         kShowUsers,
+        kShowUser,
         kShowRoles,
         kShowCreateSpace,
         kShowCreateTag,
         kShowCreateEdge,
-        kShowCreateTagIndex,
-        kShowCreateEdgeIndex,
-        kShowTagIndexStatus,
-        kShowEdgeIndexStatus,
-        kShowSnapshots,
-        kShowCharset,
-        kShowCollation
+        kShowSnapshots
     };
 
     explicit ShowSentence(ShowType sType) {
         kind_ = Kind::kShow;
-        showType_ = std::move(sType);
-    }
-
-    ShowSentence(ShowType sType, std::vector<int32_t>* list) {
-        kind_ = Kind::kShow;
-        list_.reset(list);
         showType_ = std::move(sType);
     }
 
@@ -65,22 +52,17 @@ public:
         return showType_;
     }
 
-    std::vector<int32_t>* getList() {
-        return list_.get();
-    }
-
     std::string* getName() {
         return name_.get();
     }
 
 private:
-    ShowType                              showType_{ShowType::kUnknown};
-    std::unique_ptr<std::vector<int32_t>> list_;
-    std::unique_ptr<std::string>          name_;
+    ShowType                        showType_{ShowType::kUnknown};
+    std::unique_ptr<std::string>    name_;
 };
 
 
-inline std::ostream& operator<<(std::ostream &os, const ShowSentence::ShowType &type) {
+inline std::ostream& operator<<(std::ostream &os, ShowSentence::ShowType type) {
     return os << static_cast<uint32_t>(type);
 }
 
@@ -90,10 +72,7 @@ public:
     using Value = boost::variant<int64_t, std::string>;
 
     enum OptionType : uint8_t {
-        PARTITION_NUM,
-        REPLICA_FACTOR,
-        CHARSET,
-        COLLATE
+        PARTITION_NUM, REPLICA_FACTOR
     };
 
     SpaceOptItem(OptionType op, std::string val) {
@@ -136,24 +115,6 @@ public:
             return asInt();
         } else {
             LOG(ERROR) << "replica_factor value illegal.";
-            return 0;
-        }
-    }
-
-    std::string get_charset() {
-        if (isString()) {
-            return asString();
-        } else {
-            LOG(ERROR) << "charset value illegal.";
-            return 0;
-        }
-    }
-
-    std::string get_collate() {
-        if (isString()) {
-            return asString();
-        } else {
-            LOG(ERROR) << "collate value illage.";
             return 0;
         }
     }
@@ -222,9 +183,9 @@ private:
 };
 
 
-class DropSpaceSentence final : public DropSentence {
+class DropSpaceSentence final : public Sentence {
 public:
-    explicit DropSpaceSentence(std::string *spaceName, bool ifExist) : DropSentence(ifExist) {
+    explicit DropSpaceSentence(std::string *spaceName) {
         spaceName_.reset(spaceName);
         kind_ = Kind::kDropSpace;
     }
@@ -356,9 +317,9 @@ public:
         hosts_.emplace_back(addr);
     }
 
-    std::string toString() const;
+     std::string toString() const;
 
-    std::vector<HostAddr> hosts() const {
+     std::vector<HostAddr> hosts() const {
         std::vector<HostAddr> result;
         result.reserve(hosts_.size());
         for (auto &host : hosts_) {

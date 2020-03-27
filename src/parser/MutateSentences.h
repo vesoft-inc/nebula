@@ -447,7 +447,7 @@ public:
         hasRank_ = true;
     }
 
-    int64_t getRank() const {
+    const int64_t getRank() const {
         return rank_;
     }
 
@@ -498,21 +498,21 @@ private:
 };
 
 
-class DeleteVerticesSentence final : public Sentence {
+class DeleteVertexSentence final : public Sentence {
 public:
-    explicit DeleteVerticesSentence(VertexIDList *vidList) {
-        vidList_.reset(vidList);
+    explicit DeleteVertexSentence(Expression *vid) {
+        vid_.reset(vid);
         kind_ = Kind::kDeleteVertex;
     }
 
-    VertexIDList* vidList() const {
-        return vidList_.get();
+    Expression* vid() const {
+        return vid_.get();
     }
 
     std::string toString() const override;
 
 private:
-    std::unique_ptr<VertexIDList>                vidList_;
+    std::unique_ptr<Expression>                  vid_;
 };
 
 
@@ -549,7 +549,7 @@ public:
         host_.reset(host);
     }
 
-    int32_t port() const {
+    const int32_t port() const {
         return port_;
     }
 
@@ -612,21 +612,5 @@ public:
 
     std::string toString() const override;
 };
-
-class AdminSentence final : public Sentence {
-public:
-    explicit AdminSentence(const std::string& op) : op_(op) {
-        kind_ = Kind::kAdmin;
-    }
-
-    void addPara(const std::string& para);
-    std::string toString() const override;
-    std::string getType() const;
-    std::vector<std::string> getParas() const;
-private:
-    std::string             op_;
-    std::vector<std::string> paras_;
-};
-
 }  // namespace nebula
 #endif  // PARSER_MUTATESENTENCES_H_

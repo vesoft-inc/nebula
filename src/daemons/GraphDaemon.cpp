@@ -15,6 +15,7 @@
 #include "process/ProcessUtils.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "graph/GraphService.h"
+#include "graph/GraphHttpHandler.h"
 #include "graph/GraphFlags.h"
 #include "webservice/WebService.h"
 
@@ -94,8 +95,11 @@ int main(int argc, char *argv[]) {
     }
 
     LOG(INFO) << "Starting Graph HTTP Service";
-    auto webSvc = std::make_unique<nebula::WebService>();
-    status = webSvc->start();
+    // http://127.0.0.1:XXXX/status is equivalent to http://127.0.0.1:XXXX
+    nebula::WebService::registerHandler("/status", [] {
+        return new nebula::graph::GraphHttpHandler();
+    });
+    status = nebula::WebService::start();
     if (!status.ok()) {
         return EXIT_FAILURE;
     }
@@ -145,6 +149,7 @@ int main(int argc, char *argv[]) {
     status = setupSignalHandler();
     if (!status.ok()) {
         LOG(ERROR) << status;
+        nebula::WebService::stop();
         return EXIT_FAILURE;
     }
 
@@ -152,10 +157,12 @@ int main(int argc, char *argv[]) {
     try {
         gServer->serve();  // Blocking wait until shut down via gServer->stop()
     } catch (const std::exception &e) {
+        nebula::WebService::stop();
         FLOG_ERROR("Exception thrown while starting the RPC server: %s", e.what());
         return EXIT_FAILURE;
     }
 
+    nebula::WebService::stop();
     FLOG_INFO("nebula-graphd on %s:%d has been stopped", localIP.c_str(), FLAGS_port);
 
     return EXIT_SUCCESS;

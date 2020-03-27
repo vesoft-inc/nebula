@@ -19,45 +19,24 @@ set(PARSER_TEST_LIBS
 )
 
 nebula_add_test(
-    NAME
-        parser_test
-    SOURCES
-        ParserTest.cpp
-    OBJECTS
-        ${PARSER_TEST_LIBS}
-    LIBRARIES
-        gtest
-        gtest_main
-        ${THRIFT_LIBRARIES}
-        wangle
+    NAME parser_test
+    SOURCES ParserTest.cpp
+    OBJECTS ${PARSER_TEST_LIBS}
+    LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} wangle
 )
 
 nebula_add_test(
-    NAME
-        scanner_test
-    SOURCES
-        ScannerTest.cpp
-    OBJECTS
-        ${PARSER_TEST_LIBS}
-    LIBRARIES
-        gtest
-        gtest_main
-        ${THRIFT_LIBRARIES}
-        wangle
+    NAME scanner_test
+    SOURCES ScannerTest.cpp
+    OBJECTS ${PARSER_TEST_LIBS}
+    LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} wangle
 )
 
 nebula_add_executable(
-    NAME
-        parser_bm
-    SOURCES
-        ParserBenchmark.cpp
-    OBJECTS
-        ${PARSER_TEST_LIBS}
-    LIBRARIES
-        follybenchmark
-        boost_regex
-        ${THRIFT_LIBRARIES}
-        wangle
+    NAME parser_benchmark
+    SOURCES ParserBenchmark.cpp
+    OBJECTS ${PARSER_TEST_LIBS}
+    LIBRARIES follybenchmark boost_regex ${THRIFT_LIBRARIES} wangle
 )
 
 if(ENABLE_FUZZ_TEST)

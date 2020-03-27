@@ -17,6 +17,7 @@ using TokenType = nebula::GraphParser::token;
 
 static constexpr size_t MAX_STRING = 4096;
 
+
 %}
 
 %x DQ_STR
@@ -49,7 +50,6 @@ UPSERT                      ([Uu][Pp][Ss][Ee][Rr][Tt])
 WHEN                        ([Ww][Hh][Ee][Nn])
 DELETE                      ([Dd][Ee][Ll][Ee][Tt][Ee])
 FIND                        ([Ff][Ii][Nn][Dd])
-LOOKUP                      ([Ll][Oo][Oo][Kk][Uu][Pp])
 ALTER                       ([Aa][Ll][Tt][Ee][Rr])
 STEPS                       ([Ss][Tt][Ee][Pp][Ss]?)
 OVER                        ([Oo][Vv][Ee][Rr])
@@ -57,10 +57,6 @@ UPTO                        ([Uu][Pp][Tt][Oo])
 REVERSELY                   ([Rr][Ee][Vv][Ee][Rr][Ss][Ee][Ll][Yy])
 SPACE                       ([Ss][Pp][Aa][Cc][Ee])
 SPACES                      ([Ss][Pp][Aa][Cc][Ee][Ss])
-INDEX                       ([Ii][Nn][Dd][Ee][Xx])
-INDEXES                     ([Ii][Nn][Dd][Ee][Xx][Ee][Ss])
-REBUILD                     ([Rr][Ee][Bb][Uu][Ii][Ll][Dd])
-STATUS                      ([Ss][Tt][Aa][Tt][Uu][Ss])
 INT                         ([Ii][Nn][Tt])
 BIGINT                      ([Bb][Ii][Gg][Ii][Nn][Tt])
 DOUBLE                      ([Dd][Oo][Uu][Bb][Ll][Ee])
@@ -78,20 +74,20 @@ FALSE                       ([Ff][Aa][Ll][Ss][Ee])
 SHOW                        ([Ss][Hh][Oo][Ww])
 ADD                         ([Aa][Dd][Dd])
 HOSTS                       ([Hh][Oo][Ss][Tt][Ss])
-PART                        ([Pp][Aa][Rr][Tt])
 PARTS                       ([Pp][Aa][Rr][Tt][Ss])
 TIMESTAMP                   ([Tt][Ii][Mm][Ee][Ss][Tt][Aa][Mm][Pp])
 PARTITION_NUM               ([Pp][Aa][Rr][Tt][Ii][Tt][Ii][[Oo][Nn][_][Nn][Uu][Mm])
 REPLICA_FACTOR              ([Rr][Ee][Pp][Ll][Ii][Cc][Aa][_][Ff][Aa][Cc][Tt][Oo][Rr])
-CHARSET                     ([Cc][Hh][Aa][Rr][Ss][Ee][Tt])
-COLLATE                     ([Cc][Oo][Ll][Ll][Aa][Tt][Ee])
-COLLATION                   ([Cc][Oo][Ll][Ll][Aa][Tt][Ii][Oo][Nn])
 DROP                        ([Dd][Rr][Oo][Pp])
 REMOVE                      ([Rr][Ee][Mm][Oo][Vv][Ee])
 IF                          ([Ii][Ff])
 NOT                         ([Nn][Oo][Tt])
 EXISTS                      ([Ee][Xx][Ii][Ss][Tt][Ss])
 WITH                        ([Ww][Ii][Tt][Hh])
+FIRSTNAME                   ([Ff][Ii][Rr][Ss][Tt][Nn][Aa][Mm][Ee])
+LASTNAME                    ([Ll][Aa][Ss][Tt][Nn][Aa][Mm][Ee])
+EMAIL                       ([Ee][Mm][Aa][Ii][Ll])
+PHONE                       ([Pp][Hh][Oo][Nn][Ee])
 USER                        ([Uu][Ss][Ee][Rr])
 USERS                       ([Uu][Ss][Ee][Rr][Ss])
 PASSWORD                    ([Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd])
@@ -112,9 +108,6 @@ DOWNLOAD                    ([Dd][Oo][Ww][Nn][Ll][Oo][Aa][Dd])
 HDFS                        ([Hh][Dd][Ff][Ss])
 ORDER                       ([Oo][Rr][Dd][Ee][Rr])
 INGEST                      ([Ii][Nn][Gg][Ee][Ss][Tt])
-SUBMIT                      ([Ss][Uu][Bb][Mm][Ii][Tt])
-COMPACT                     ([Cc][Oo][Mm][Pp][Aa][Cc][Tt])
-FLUSH                       ([Ff][Ll][Uu][Ss][Hh])
 ASC                         ([Aa][Ss][Cc])
 DISTINCT                    ([Dd][Ii][Ss][Tt][Ii][Nn][Cc][Tt])
 DEFAULT                     ([Dd][Ee][Ff][Aa][Uu][Ll][Tt])
@@ -152,10 +145,6 @@ NULL                        ([Nn][Uu][Ll][Ll])
 SNAPSHOT                    ([Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt])
 SNAPSHOTS                   ([Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt][Ss])
 FORCE                       ([Ff][Oo][Rr][Cc][Ee])
-OFFLINE                     ([Oo][Ff][Ff][Ll][Ii][Nn][Ee])
-BIDIRECT                    ([Bb][Ii][Dd][Ii][Rr][Ee][Cc][Tt])
-ACCOUNT                     ([Aa][Cc][Cc][Oo][Uu][Nn][Tt])
-DBA                         ([Dd][Bb][Aa])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -163,9 +152,6 @@ HEX                         ([0-9a-fA-F])
 OCT                         ([0-7])
 IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 
-JOBS                        ([Jj][Oo][Bb][Ss])
-JOB                         ([Jj][Oo][Bb])
-RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 
 %%
 
@@ -194,7 +180,6 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {WHEN}                      { return TokenType::KW_WHEN; }
 {DELETE}                    { return TokenType::KW_DELETE; }
 {FIND}                      { return TokenType::KW_FIND; }
-{LOOKUP}                    { return TokenType::KW_LOOKUP; }
 {ALTER}                     { return TokenType::KW_ALTER; }
 {STEPS}                     { return TokenType::KW_STEPS; }
 {OVER}                      { return TokenType::KW_OVER; }
@@ -202,10 +187,6 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {REVERSELY}                 { return TokenType::KW_REVERSELY; }
 {SPACE}                     { return TokenType::KW_SPACE; }
 {SPACES}                    { return TokenType::KW_SPACES; }
-{INDEX}                     { return TokenType::KW_INDEX; }
-{INDEXES}                   { return TokenType::KW_INDEXES; }
-{REBUILD}                   { return TokenType::KW_REBUILD; }
-{STATUS}                    { return TokenType::KW_STATUS; }
 {INT}                       { return TokenType::KW_INT; }
 {BIGINT}                    { return TokenType::KW_BIGINT; }
 {DOUBLE}                    { return TokenType::KW_DOUBLE; }
@@ -221,21 +202,21 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {SHOW}                      { return TokenType::KW_SHOW; }
 {ADD}                       { return TokenType::KW_ADD; }
 {HOSTS}                     { return TokenType::KW_HOSTS; }
-{PART}                      { return TokenType::KW_PART; }
 {PARTS}                     { return TokenType::KW_PARTS; }
 {TIMESTAMP}                 { return TokenType::KW_TIMESTAMP; }
 {CREATE}                    { return TokenType::KW_CREATE;}
 {PARTITION_NUM}             { return TokenType::KW_PARTITION_NUM; }
 {REPLICA_FACTOR}            { return TokenType::KW_REPLICA_FACTOR; }
-{CHARSET}                   { return TokenType::KW_CHARSET; }
-{COLLATE}                   { return TokenType::KW_COLLATE; }
-{COLLATION}                 { return TokenType::KW_COLLATION; }
 {DROP}                      { return TokenType::KW_DROP; }
 {REMOVE}                    { return TokenType::KW_REMOVE; }
 {IF}                        { return TokenType::KW_IF; }
 {NOT}                       { return TokenType::KW_NOT; }
 {EXISTS}                    { return TokenType::KW_EXISTS; }
 {WITH}                      { return TokenType::KW_WITH; }
+{FIRSTNAME}                 { return TokenType::KW_FIRSTNAME; }
+{LASTNAME}                  { return TokenType::KW_LASTNAME; }
+{EMAIL}                     { return TokenType::KW_EMAIL; }
+{PHONE}                     { return TokenType::KW_PHONE; }
 {USER}                      { return TokenType::KW_USER; }
 {USERS}                     { return TokenType::KW_USERS; }
 {PASSWORD}                  { return TokenType::KW_PASSWORD; }
@@ -243,7 +224,6 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {ROLE}                      { return TokenType::KW_ROLE; }
 {GOD}                       { return TokenType::KW_GOD; }
 {ADMIN}                     { return TokenType::KW_ADMIN; }
-{DBA}                       { return TokenType::KW_DBA; }
 {GUEST}                     { return TokenType::KW_GUEST; }
 {GRANT}                     { return TokenType::KW_GRANT; }
 {REVOKE}                    { return TokenType::KW_REVOKE; }
@@ -265,9 +245,6 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
 {ORDER}                     { return TokenType::KW_ORDER; }
 {INGEST}                    { return TokenType::KW_INGEST; }
-{COMPACT}                   { return TokenType::KW_COMPACT; }
-{FLUSH}                     { return TokenType::KW_FLUSH; }
-{SUBMIT}                    { return TokenType::KW_SUBMIT; }
 {ASC}                       { return TokenType::KW_ASC; }
 {DISTINCT}                  { return TokenType::KW_DISTINCT; }
 {DEFAULT}                   { return TokenType::KW_DEFAULT; }
@@ -299,14 +276,6 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {SNAPSHOT}                  { return TokenType::KW_SNAPSHOT; }
 {SNAPSHOTS}                 { return TokenType::KW_SNAPSHOTS; }
 {FORCE}                     { return TokenType::KW_FORCE; }
-{OFFLINE}                   { return TokenType::KW_OFFLINE; }
-{BIDIRECT}                  { return TokenType::KW_BIDIRECT; }
-
-{JOBS}                      { return TokenType::KW_JOBS; }
-{JOB}                       { return TokenType::KW_JOB; }
-{RECOVER}                   { return TokenType::KW_RECOVER; }
-
-{ACCOUNT}                   { return TokenType::KW_ACCOUNT; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }
@@ -356,17 +325,13 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {LABEL}                     {
                                 yylval->strval = new std::string(yytext, yyleng);
                                 if (yylval->strval->size() > MAX_STRING) {
-                                    auto error = "Out of range of the LABEL length, "
-                                                  "the  max length of LABEL is " +
-                                                  std::to_string(MAX_STRING) + ":";
-                                    delete yylval->strval;
-                                    throw GraphParser::syntax_error(*yylloc, error);
+                                    yyterminate();
                                 }
                                 return TokenType::LABEL;
                             }
 {IP_OCTET}(\.{IP_OCTET}){3} {
                                 uint32_t octets[4] = {0};
-                                sscanf(yytext, "%u.%u.%u.%u", &octets[3], &octets[2], &octets[1], &octets[0]);
+                                sscanf(yytext, "%i.%i.%i.%i", &octets[3], &octets[2], &octets[1], &octets[0]);
                                 // The bytes order conforms to the one used in NetworkUtils
                                 uint32_t ipv4 = (octets[3] << 24) | (octets[2] << 16) | (octets[1] << 8) | octets[0];
                                 yylval->intval = ipv4;
@@ -379,15 +344,12 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
                                         i++;
                                     }
                                     if (yyleng - i > 16) {
-                                        throw GraphParser::syntax_error(*yylloc, "Out of range:");
+                                        yyterminate();
                                     }
                                 }
-                                uint64_t val = 0;
+                                int64_t val = 0;
                                 sscanf(yytext, "%lx", &val);
-                                if (val > MAX_ABS_INTEGER) {
-                                    throw GraphParser::syntax_error(*yylloc, "Out of range:");
-                                }
-                                yylval->intval = static_cast<int64_t>(val);
+                                yylval->intval = val;
                                 return TokenType::INTEGER;
                             }
 0{OCT}+                     {
@@ -396,29 +358,23 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
                                     while (i < yyleng && yytext[i] == '0') {
                                         i++;
                                     }
-                                    if (yyleng - i > 22 ||
-                                            (yyleng - i == 22 && yytext[i] != '1')) {
-                                        throw GraphParser::syntax_error(*yylloc, "Out of range:");
+                                    if (yyleng - i > 22) {
+                                        yyterminate();
+                                    } else if (yyleng - i == 22 && yytext[i] != '1') {
+                                        yyterminate();
                                     }
                                 }
-                                uint64_t val = 0;
+                                int64_t val = 0;
                                 sscanf(yytext, "%lo", &val);
-                                if (val > MAX_ABS_INTEGER) {
-                                    throw GraphParser::syntax_error(*yylloc, "Out of range:");
-                                }
-                                yylval->intval = static_cast<int64_t>(val);
+                                yylval->intval = val;
                                 return TokenType::INTEGER;
                             }
 {DEC}+                      {
                                 try {
                                     folly::StringPiece text(yytext, yyleng);
-                                    uint64_t val = folly::to<uint64_t>(text);
-                                    if (val > MAX_ABS_INTEGER) {
-                                        throw GraphParser::syntax_error(*yylloc, "Out of range:");
-                                    }
-                                    yylval->intval = val;
+                                    yylval->intval = folly::to<int64_t>(text);
                                 } catch (...) {
-                                    throw GraphParser::syntax_error(*yylloc, "Out of range:");
+                                    yyterminate();
                                 }
                                 return TokenType::INTEGER;
                             }
@@ -427,7 +383,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
                                     folly::StringPiece text(yytext, yyleng);
                                     yylval->doubleval = folly::to<double>(text);
                                 } catch (...) {
-                                    throw GraphParser::syntax_error(*yylloc, "Out of range:");
+                                    yyterminate();
                                 }
                                 return TokenType::DOUBLE;
                             }
@@ -436,7 +392,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
                                     folly::StringPiece text(yytext, yyleng);
                                     yylval->doubleval = folly::to<double>(text);
                                 } catch (...) {
-                                    throw GraphParser::syntax_error(*yylloc, "Out of range:");
+                                    yyterminate();
                                 }
                                 return TokenType::DOUBLE;
                             }
@@ -458,7 +414,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
                             }
 <DQ_STR,SQ_STR><<EOF>>      {
                                 // Must match '' or ""
-                                throw GraphParser::syntax_error(*yylloc, "Unterminated string: ");
+                                throw GraphParser::syntax_error(*yylloc, "unterminated string");
                             }
 <DQ_STR,SQ_STR>\n           { yyterminate(); }
 <DQ_STR>[^\\\n\"]+          {
@@ -473,7 +429,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
                             }
 <DQ_STR,SQ_STR>\\{OCT}{1,3} {
                                 makeSpaceForString(1);
-                                uint32_t val = 0;
+                                int val = 0;
                                 sscanf(yytext + 1, "%o", &val);
                                 if (val > 0xFF) {
                                     yyterminate();

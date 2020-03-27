@@ -67,13 +67,12 @@ Status VerticesClause::prepare(Clause::Vertices &vertices) const {
         auto uniqID = std::make_unique<std::unordered_set<VertexID>>();
         auto vidList = vidList_->vidList();
         vertices.vids_.reserve(vidList.size());
-        Getters getters;
         for (auto *expr : vidList) {
             status = expr->prepare();
             if (!status.ok()) {
                 break;
             }
-            auto value = expr->eval(getters);
+            auto value = expr->eval();
             if (!value.ok()) {
                 status = value.status();
                 break;
@@ -120,6 +119,7 @@ std::string ToClause::toString() const {
 
 Status OverClause::prepare(Over &over) const {
     over.edges_ = edges();
+    over.isReversely_ = isReversely_;
     return Status::OK();
 }
 
@@ -142,9 +142,10 @@ std::string OverEdges::toString() const {
         buf += e->toString();
         buf += ",";
     }
+    buf.pop_back();
 
     if (!buf.empty()) {
-        buf.pop_back();
+        buf.resize(buf.size() - 1);
     }
 
     return buf;
@@ -156,10 +157,8 @@ std::string OverClause::toString() const {
     buf += "OVER ";
     buf += overEdges_->toString();
 
-    if (direction_ == OverClause::Direction::kBackward) {
+    if (isReversely()) {
         buf += " REVERSELY";
-    } else if (direction_ == OverClause::Direction::kBidirect) {
-        buf += " BIDIRECT";
     }
 
     return buf;
