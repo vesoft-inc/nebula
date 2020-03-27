@@ -1949,7 +1949,7 @@ TEST(Parser, UseReservedKeyword) {
         auto result = parser.parse(query);
         ASSERT_FALSE(result.ok());
 
-        query = "CREATE TAG 'tag'()";
+        query = "CREATE TAG `tag`()";
         result = parser.parse(query);
         ASSERT_TRUE(result.ok());
     }
@@ -1959,24 +1959,15 @@ TEST(Parser, UseReservedKeyword) {
         auto result = parser.parse(query);
         ASSERT_FALSE(result.ok());
 
-        query = "CREATE EDGE 'edge'()";
+        query = "CREATE EDGE `edge`()";
         result = parser.parse(query);
         ASSERT_TRUE(result.ok());
     }
     {
         GQLParser parser;
-        std::string query = "CREATE TAG 'person'('tag' string)";
+        std::string query = "CREATE TAG `person`(`tag` string)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok());
-    }
-    // Test empty name_label
-    {
-        GQLParser parser;
-        std::string query = "CREATE TAG 'person'(\"\" string)";
-        auto result = parser.parse(query);
-        ASSERT_FALSE(result.ok());
-        auto error = "SyntaxError: Empty string: near `\" string'";
-        ASSERT_EQ(error, result.status().toString());
     }
 }
 }   // namespace nebula
