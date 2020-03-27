@@ -20,7 +20,6 @@ Status ReturnExecutor::prepare() {
 }
 
 void ReturnExecutor::execute() {
-    FLOG_INFO("Executing Return: %s", sentence_->toString().c_str());
     DCHECK(sentence_);
 
     auto *var = sentence_->var();
