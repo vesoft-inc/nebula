@@ -277,7 +277,6 @@ void UpdateEdgeExecutor::updateEdge(bool reversely) {
 }
 
 void UpdateEdgeExecutor::execute() {
-    FLOG_INFO("Executing UpdateEdge: %s", sentence_->toString().c_str());
     auto status = prepareData();
     if (!status.ok()) {
         doError(std::move(status));

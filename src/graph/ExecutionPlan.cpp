@@ -13,7 +13,7 @@ namespace graph {
 
 void ExecutionPlan::execute() {
     auto *rctx = ectx()->rctx();
-    FLOG_INFO("Parsing query: %s", rctx->query().c_str());
+    VLOG(1) << "Parsing query: " << rctx->query().c_str();
 
     Status status;
     do {

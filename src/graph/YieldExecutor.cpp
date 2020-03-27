@@ -138,7 +138,6 @@ Status YieldExecutor::syntaxCheck() {
 }
 
 void YieldExecutor::execute() {
-    FLOG_INFO("Executing YIELD: %s", sentence_->toString().c_str());
     Status status;
     do {
         status = beforeExecute();
