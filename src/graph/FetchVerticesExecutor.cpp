@@ -44,8 +44,8 @@ Status FetchVerticesExecutor::prepareClauses() {
             status = result.status();
             break;
         }
-        tagID_ = result.value();
-        labelSchema_ = ectx()->schemaManager()->getTagSchema(spaceId_, tagID_);
+        tagId_ = result.value();
+        labelSchema_ = ectx()->schemaManager()->getTagSchema(spaceId_, tagId_);
         if (labelSchema_ == nullptr) {
             LOG(ERROR) << *labelName_ << " tag schema not exist.";
             status = Status::Error("%s tag schema not exist.", labelName_->c_str());
@@ -63,6 +63,11 @@ Status FetchVerticesExecutor::prepareClauses() {
         status = prepareYield();
         if (!status.ok()) {
             LOG(ERROR) << "Prepare yield failed: " << status;
+            break;
+        }
+        status = checkTagProps();
+        if (!status.ok()) {
+            LOG(ERROR) << "Check props failed: " << status;
             break;
         }
     } while (false);
@@ -92,8 +97,24 @@ Status FetchVerticesExecutor::prepareVids() {
     return Status::OK();
 }
 
+Status FetchVerticesExecutor::checkTagProps() {
+    auto aliasProps = expCtx_->aliasProps();
+    for (auto &pair : aliasProps) {
+        if (pair.first != *labelName_) {
+            return Status::SyntaxError(
+                "Near [%s.%s], tag should be declared in `ON' clause first.",
+                    pair.first.c_str(), pair.second.c_str());
+        }
+
+        if (labelSchema_->getFieldIndex(pair.second) == -1) {
+            return Status::Error("`%s' is not a prop of `%s'",
+                    pair.second.c_str(), pair.first.c_str());
+        }
+    }
+    return Status::OK();
+}
+
 void FetchVerticesExecutor::execute() {
-    FLOG_INFO("Executing FetchVertices: %s", sentence_->toString().c_str());
     auto status = prepareClauses();
     if (!status.ok()) {
         doError(std::move(status));
@@ -161,7 +182,7 @@ std::vector<storage::cpp2::PropDef> FetchVerticesExecutor::getPropNames() {
         storage::cpp2::PropDef pd;
         pd.owner = storage::cpp2::PropOwner::SOURCE;
         pd.name = prop.second;
-        pd.id.set_tag_id(tagID_);
+        pd.id.set_tag_id(tagId_);
         props.emplace_back(std::move(pd));
     }
 

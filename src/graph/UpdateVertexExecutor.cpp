@@ -187,8 +187,6 @@ void UpdateVertexExecutor::finishExecution(storage::cpp2::UpdateResponse &&rpcRe
 
 
 void UpdateVertexExecutor::execute() {
-    FLOG_INFO("Executing UpdateVertex: %s", sentence_->toString().c_str());
-
     auto status = prepareData();
     if (!status.ok()) {
         doError(std::move(status));
