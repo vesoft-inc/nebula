@@ -133,6 +133,7 @@ public:
 public:
     int32_t commitTimes_ = 0;
     int32_t currLogId_ = -1;
+    int32_t singleRegister_ = 0;
 
 private:
     const size_t idx_;

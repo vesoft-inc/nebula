@@ -170,6 +170,9 @@ bool TestShard::commitLogs(std::unique_ptr<LogIterator> iter) {
                     data_.emplace_back(currLogId_, log.toString());
                     VLOG(1) << idStr_ << "Write: " << log << ", LogId: " << currLogId_
                             << " state machine log size: " << data_.size();
+                    if (log.startsWith("set ")) {
+                        singleRegister_ = std::stoi(log.subpiece(4).toString());
+                    }
                     break;
                 }
             }

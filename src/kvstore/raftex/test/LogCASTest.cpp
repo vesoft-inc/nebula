@@ -217,6 +217,68 @@ TEST_F(LogCASTest, ZipCasTest) {
     checkConsensus(copies_, 0, 4, msgs);
 }
 
+TEST_F(LogCASTest, ReadModifyWriteTest) {
+    // Append logs
+    LOG(INFO) << "=====> Start appending logs";
+    std::vector<std::string> msgs;
+    for (int i = 1; i <= 10; i++) {
+        msgs.emplace_back(folly::stringPrintf("set %d", i));
+    }
+    for (int i = 1; i <= 10; ++i) {
+        auto fut = leader_->atomicOpAsync([&] () mutable {
+            return folly::stringPrintf("set %d", leader_->singleRegister_ + 1);
+        });
+        if (i == 10) {
+            fut.wait();
+        }
+    }
+    LOG(INFO) << "<===== Finish appending logs";
+
+    // Sleep a while to make sure the last log has been committed on followers
+    sleep(FLAGS_raft_heartbeat_interval_secs);
+
+    // Check every copy
+    for (auto& c : copies_) {
+        ASSERT_EQ(10, c->getNumLogs());
+    }
+    checkConsensus(copies_, 0, 9, msgs);
+    ASSERT_EQ(10, leader_->singleRegister_);
+}
+
+TEST_F(LogCASTest, MultiThreadReadModifyWriteTest) {
+    // Append logs
+    LOG(INFO) << "=====> Start appending logs";
+    std::vector<std::string> msgs;
+    for (int i = 1; i <= 100; i++) {
+        msgs.emplace_back(folly::stringPrintf("set %d", i));
+    }
+    // 10 thread, each thread inc by 1, the result should be 100
+    std::vector<std::thread> threads;
+    for (int i = 1; i <= 10; ++i) {
+        threads.emplace_back([&] () {
+            for (int j = 1; j <= 10; j++) {
+                leader_->atomicOpAsync([&] () mutable {
+                    return folly::stringPrintf("set %d", leader_->singleRegister_ + 1);
+                });
+            }
+        });
+    }
+    LOG(INFO) << "<===== Finish appending logs";
+    for (auto& t : threads) {
+        t.join();
+    }
+
+    // Sleep a while to make sure the last log has been committed on followers
+    sleep(FLAGS_raft_heartbeat_interval_secs);
+
+    // Check every copy
+    for (auto& c : copies_) {
+        ASSERT_EQ(100, c->getNumLogs());
+    }
+    checkConsensus(copies_, 0, 99, msgs);
+    ASSERT_EQ(100, leader_->singleRegister_);
+}
+
 }  // namespace raftex
 }  // namespace nebula
 
