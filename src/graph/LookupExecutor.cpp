@@ -357,7 +357,6 @@ void LookupExecutor::stepVertexOut() {
 }
 
 void LookupExecutor::execute() {
-    FLOG_INFO("Executing LOOKUP: %s", sentence_->toString().c_str());
     auto status = prepareClauses();
     if (!status.ok()) {
         doError(std::move(status));

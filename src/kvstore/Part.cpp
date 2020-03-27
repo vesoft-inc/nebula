@@ -292,7 +292,7 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
             break;
         }
         default: {
-            LOG(FATAL) << idStr_ << "Unknown operation: " << static_cast<uint8_t>(log[0]);
+            LOG(WARNING) << idStr_ << "Unknown operation: " << static_cast<int32_t>(log[0]);
         }
         }
 
