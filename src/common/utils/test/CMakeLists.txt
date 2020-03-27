@@ -5,7 +5,6 @@ nebula_add_test(
         NebulaKeyUtilsTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:common_thrift_obj>
         $<TARGET_OBJECTS:kvstore_storage_utils_obj>
     LIBRARIES
         gtest
