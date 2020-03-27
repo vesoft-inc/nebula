@@ -33,3 +33,6 @@
 ########## storage ##########
 # Root data path, here should be only single path for metad
 --data_path=data/meta
+
+############## rocksdb Options ##############
+--rocksdb_disable_wal=false
