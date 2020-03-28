@@ -470,14 +470,6 @@ public:
 
     const std::vector<HostAddr>& getAddresses();
 
-    folly::Future<StatusOr<std::string>> getTagDefaultValue(GraphSpaceID spaceId,
-                                                            TagID tagId,
-                                                            const std::string& field);
-
-    folly::Future<StatusOr<std::string>> getEdgeDefaultValue(GraphSpaceID spaceId,
-                                                             EdgeType edgeType,
-                                                             const std::string& field);
-
     std::vector<nebula::cpp2::RoleItem> getRolesByUserFromCache(const std::string& user);
 
     bool authCheckFromCache(const std::string& account, const std::string& password);
