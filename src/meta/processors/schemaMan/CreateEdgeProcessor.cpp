@@ -5,11 +5,19 @@
  */
 
 #include "meta/processors/schemaMan/CreateEdgeProcessor.h"
+#include "meta/processors/schemaMan/utils.h"
 
 namespace nebula {
 namespace meta {
 
 void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
+    auto checkRet = checkDefaultValueType(req.get_schema().get_columns());
+    if (checkRet != cpp2::ErrorCode::SUCCEEDED) {
+        LOG(ERROR) << "Conflict default value type.";
+        handleErrorCode(checkRet);
+        onFinished();
+        return;
+    }
     CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
     auto edgeName = req.get_edge_name();
     {
@@ -52,67 +60,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
     data.emplace_back(MetaServiceUtils::indexEdgeKey(req.get_space_id(), edgeName),
                       std::string(reinterpret_cast<const char*>(&edgeType), sizeof(EdgeType)));
     data.emplace_back(MetaServiceUtils::schemaEdgeKey(req.get_space_id(), edgeType, 0),
-                      MetaServiceUtils::schemaEdgeVal(edgeName, req.get_schema()));
-
-    LOG(INFO) << "Create Edge " << edgeName << ", edgeType " << edgeType;
-    auto columns = req.get_schema().get_columns();
-    for (auto& column : columns) {
-        if (column.__isset.default_value) {
-            auto name = column.get_name();
-            auto value = column.get_default_value();
-            std::string defaultValue;
-            switch (column.get_type().get_type()) {
-                case nebula::cpp2::SupportedType::BOOL:
-                    if (value->getType() != nebula::cpp2::Value::Type::bool_value) {
-                        LOG(ERROR) << "Create Edge Failed: " << name
-                                   << " type mismatch";
-                        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
-                        onFinished();
-                        return;
-                    }
-                    defaultValue = folly::to<std::string>(value->get_bool_value());
-                    break;
-                case nebula::cpp2::SupportedType::INT:
-                    if (value->getType() != nebula::cpp2::Value::Type::int_value) {
-                        LOG(ERROR) << "Create Edge Failed: " << name
-                                   << " type mismatch";
-                        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
-                        onFinished();
-                        return;
-                    }
-                    defaultValue = folly::to<std::string>(value->get_int_value());
-                    break;
-                case nebula::cpp2::SupportedType::DOUBLE:
-                    if (value->getType() != nebula::cpp2::Value::Type::double_value) {
-                        LOG(ERROR) << "Create Edge Failed: " << name
-                                   << " type mismatch";
-                        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
-                        onFinished();
-                        return;
-                    }
-                    defaultValue = folly::to<std::string>(value->get_double_value());
-                    break;
-                case nebula::cpp2::SupportedType::STRING:
-                    if (value->getType() != nebula::cpp2::Value::Type::string_value) {
-                        LOG(ERROR) << "Create Edge Failed: " << name
-                                   << " type mismatch";
-                        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
-                        onFinished();
-                        return;
-                    }
-                    defaultValue = value->get_string_value();
-                    break;
-                default:
-                    break;
-            }
-            VLOG(3) << "Get Edge Default value: Property Name " << name
-                    << ", Value " << defaultValue;
-            auto defaultKey = MetaServiceUtils::edgeDefaultKey(req.get_space_id(),
-                                                               edgeType,
-                                                               name);
-            data.emplace_back(std::move(defaultKey), std::move(defaultValue));
-        }
-    }
+                      MetaServiceUtils::schemaVal(req.get_edge_name(), req.get_schema()));
 
     LOG(INFO) << "Create Edge " << edgeName << ", edgeType " << edgeType;
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);

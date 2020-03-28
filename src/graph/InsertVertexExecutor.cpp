@@ -75,8 +75,6 @@ Status InsertVertexExecutor::check() {
             }
         }
 
-        auto *mc = ectx()->getMetaClient();
-
         std::unordered_map<std::string, int32_t> propsPosition;
         for (size_t i = 0; i < schema->getNumFields(); i++) {
             std::string name = schema->getFieldName(i);
@@ -86,13 +84,12 @@ Status InsertVertexExecutor::check() {
             // If the property name not find in schema's field
             // We need to check the default value and save it.
             if (it == props.end()) {
-                auto valueResult = mc->getTagDefaultValue(spaceId_, tagId, name).get();
+                auto valueResult = schema->getFieldDefaultValue(i);
                 if (!valueResult.ok()) {
                     LOG(ERROR) << "Not exist default value: " << name;
                     return Status::Error("`%s' not exist default value", name.c_str());
                 } else {
-                    VLOG(3) << "Default Value: " << name << ":" << valueResult.value();
-                    defaultValues_.emplace(name, valueResult.value());
+                    defaultValues_.emplace(name, std::move(valueResult).value());
                 }
             } else {
                 int index = std::distance(props.begin(), it);
@@ -185,7 +182,7 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
                     }
                 } else {
                     // fetch default value from cache
-                    auto result = transformDefaultValue(schemaType.type, defaultValues_[fieldName]);
+                    auto result = toVariantType(defaultValues_[fieldName]);
                     if (!result.ok()) {
                         return result.status();
                     }

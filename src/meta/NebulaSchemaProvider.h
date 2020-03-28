@@ -23,6 +23,13 @@ public:
             : name_(std::move(name))
             , type_(std::move(type)) {}
 
+        SchemaField(std::string name, nebula::cpp2::ValueType type, nebula::cpp2::Value val)
+            : name_(std::move(name))
+            , type_(std::move(type))
+            , defaultValue_(std::move(val)) {
+            hasDefault_ = true;
+        }
+
         const char* getName() const override {
             return name_.c_str();
         }
@@ -39,7 +46,7 @@ public:
             return hasDefault_;
         }
 
-        std::string getDefaultValue() const override {
+        const nebula::cpp2::Value& getDefaultValue() const override {
             return defaultValue_;
         }
 
@@ -47,7 +54,7 @@ public:
         std::string name_;
         nebula::cpp2::ValueType type_;
         bool hasDefault_;
-        std::string defaultValue_;
+        nebula::cpp2::Value defaultValue_;
     };
 
 public:
@@ -66,9 +73,26 @@ public:
     std::shared_ptr<const SchemaProviderIf::Field> field(
         const folly::StringPiece name) const override;
 
+    // nullptr if no default value
+    StatusOr<nebula::cpp2::Value> getFieldDefaultValue(int64_t index) const override {
+        if (UNLIKELY(index < 0) || UNLIKELY(index >= static_cast<int64_t>(fields_.size()))) {
+            LOG(ERROR) << "Index[" << index << "] is out of range[0-" << fields_.size() << "]";
+            return Status::Error("Out of index");
+        }
+
+        return fields_[index]->getDefaultValue();
+    }
+    StatusOr<nebula::cpp2::Value> getFieldDefaultValue(const folly::StringPiece name)
+        const override {
+        return getFieldDefaultValue(getFieldIndex(name));
+    }
+
     nebula::cpp2::Schema toSchema() const override;
 
     void addField(folly::StringPiece name, nebula::cpp2::ValueType&& type);
+
+    void addField(folly::StringPiece name, nebula::cpp2::ValueType&& type,
+        nebula::cpp2::Value defaultValue);
 
     void setProp(nebula::cpp2::SchemaProp schemaProp);
 

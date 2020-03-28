@@ -104,6 +104,8 @@ protected:
 
     OptVariantType toVariantType(const cpp2::ColumnValue& value) const;
 
+    OptVariantType toVariantType(const nebula::cpp2::Value& value) const;
+
     Status checkIfGraphSpaceChosen() const {
         if (ectx()->rctx()->session()->space() == -1) {
             return Status::Error("Please choose a graph space with `USE spaceName' firstly");

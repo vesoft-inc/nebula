@@ -96,7 +96,7 @@ TEST(MetaServiceUtilsTest, TagTest) {
         cols.emplace_back(std::move(column));
     }
     schema.set_columns(std::move(cols));
-    auto val = MetaServiceUtils::schemaTagVal("test_tag", schema);
+    auto val = MetaServiceUtils::schemaVal("test_tag", schema);
     auto parsedSchema = MetaServiceUtils::parseSchema(val);
     ASSERT_EQ(parsedSchema, schema);
 }

@@ -89,6 +89,15 @@ void NebulaSchemaProvider::addField(folly::StringPiece name,
                             static_cast<int64_t>(fields_.size() - 1));
 }
 
+void NebulaSchemaProvider::addField(folly::StringPiece name, nebula::cpp2::ValueType&& type,
+    nebula::cpp2::Value defaultValue) {
+    fields_.emplace_back(std::make_shared<SchemaField>(name.toString(),
+                                                       std::move(type),
+                                                       std::move(defaultValue)));
+    fieldNameIndex_.emplace(name.toString(),
+                            static_cast<int64_t>(fields_.size() - 1));
+}
+
 void NebulaSchemaProvider::setProp(nebula::cpp2::SchemaProp schemaProp) {
     schemaProp_ = std::move(schemaProp);
 }

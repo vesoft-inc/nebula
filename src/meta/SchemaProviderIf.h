@@ -8,6 +8,7 @@
 #define META_SCHEMAPROVIDERIF_H_
 
 #include "base/Base.h"
+#include "common/base/StatusOr.h"
 #include "gen-cpp2/common_constants.h"
 
 
@@ -28,7 +29,7 @@ public:
         virtual const nebula::cpp2::ValueType& getType() const = 0;
         virtual bool isValid() const = 0;
         virtual bool hasDefault() const = 0;
-        virtual std::string getDefaultValue() const = 0;
+        virtual const nebula::cpp2::Value& getDefaultValue() const = 0;
     };
 
     // Inherited classes do not need to implement the Iterator
@@ -95,7 +96,11 @@ public:
     virtual const char* getFieldName(int64_t index) const = 0;
 
     virtual const nebula::cpp2::ValueType& getFieldType(int64_t index) const = 0;
-    virtual const nebula::cpp2::ValueType& getFieldType(const folly::StringPiece name)
+    virtual const nebula::cpp2::ValueType& getFieldType(const folly::StringPiece name) const = 0;
+
+    // nullptr if no default value
+    virtual StatusOr<nebula::cpp2::Value> getFieldDefaultValue(int64_t index) const = 0;
+    virtual StatusOr<nebula::cpp2::Value> getFieldDefaultValue(const folly::StringPiece name)
         const = 0;
 
     virtual std::shared_ptr<const Field> field(int64_t index) const = 0;

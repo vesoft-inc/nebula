@@ -64,21 +64,18 @@ Status InsertEdgeExecutor::check() {
         }
     }
 
-    auto *mc = ectx()->getMetaClient();
-
     for (size_t i = 0; i < schema_->getNumFields(); i++) {
         std::string name = schema_->getFieldName(i);
         auto it = std::find_if(props_.begin(), props_.end(),
                                [name](std::string *prop) { return *prop == name;});
 
         if (it == props_.end()) {
-            auto valueResult = mc->getEdgeDefaultValue(spaceId_, edgeType_, name).get();
+            auto valueResult = schema_->getFieldDefaultValue(i);
 
             if (!valueResult.ok()) {
                 LOG(ERROR) << "Not exist default value: " << name;
                 return Status::Error("Not exist default value");
             } else {
-                VLOG(3) << "Default Value: " << name << " : " << valueResult.value();
                 defaultValues_.emplace(name, valueResult.value());
             }
         } else {
@@ -180,7 +177,7 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
                 }
             } else {
                 // fetch default value from cache
-                auto result = transformDefaultValue(schemaType.type, defaultValues_[fieldName]);
+                auto result = toVariantType(defaultValues_[fieldName]);
                 if (!result.ok()) {
                     return result.status();
                 }

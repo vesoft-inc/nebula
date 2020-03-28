@@ -45,7 +45,7 @@ bool ResultSchemaProvider::ResultSchemaField::hasDefault() const {
 }
 
 
-std::string ResultSchemaProvider::ResultSchemaField::getDefaultValue() const {
+const nebula::cpp2::Value& ResultSchemaProvider::ResultSchemaField::getDefaultValue() const {
     LOG(FATAL) << "Not Supported";
 }
 

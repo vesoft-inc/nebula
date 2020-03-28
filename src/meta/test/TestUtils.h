@@ -295,7 +295,7 @@ public:
             auto tagIdVal = std::string(reinterpret_cast<const char*>(&tagId), sizeof(tagId));
             tags.emplace_back(MetaServiceUtils::indexTagKey(1, tagName), tagIdVal);
             tags.emplace_back(MetaServiceUtils::schemaTagKey(1, tagId, ver++),
-                              MetaServiceUtils::schemaTagVal(tagName, srcsch));
+                              MetaServiceUtils::schemaVal(tagName, srcsch));
         }
         folly::Baton<true, std::atomic> baton;
         kv->asyncMultiPut(0, 0, std::move(tags),
@@ -323,7 +323,7 @@ public:
                                            sizeof(edgeType));
             edges.emplace_back(MetaServiceUtils::indexEdgeKey(1, edgeName), edgeTypeVal);
             edges.emplace_back(MetaServiceUtils::schemaEdgeKey(1, edgeType, ver++),
-                               MetaServiceUtils::schemaEdgeVal(edgeName, srcsch));
+                               MetaServiceUtils::schemaVal(edgeName, srcsch));
         }
 
         folly::Baton<true, std::atomic> baton;

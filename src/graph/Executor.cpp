@@ -411,6 +411,25 @@ OptVariantType Executor::toVariantType(const cpp2::ColumnValue& value) const {
     return Status::Error("Unknown ColumnType: %d", static_cast<int32_t>(value.getType()));
 }
 
+OptVariantType Executor::toVariantType(const nebula::cpp2::Value& value) const {
+    switch (value.getType()) {
+    case nebula::cpp2::Value::int_value:
+        return value.get_int_value();
+    case nebula::cpp2::Value::double_value:
+        return value.get_double_value();
+    case nebula::cpp2::Value::bool_value:
+        return value.get_bool_value();
+    case nebula::cpp2::Value::string_value:
+        return value.get_string_value();
+    case nebula::cpp2::Value::timestamp:
+        return value.get_timestamp();
+    default:
+        // nothing
+        break;
+    }
+    return Status::Error("Invalid value type %d", value.getType());
+}
+
 StatusOr<VariantType> Executor::transformDefaultValue(nebula::cpp2::SupportedType type,
                                                       std::string& originalValue) {
     switch (type) {

@@ -5,11 +5,21 @@
  */
 
 #include "meta/processors/schemaMan/AlterTagProcessor.h"
+#include "meta/processors/schemaMan/utils.h"
 
 namespace nebula {
 namespace meta {
 
 void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
+    for (const auto &item : req.get_tag_items()) {
+        auto checkRet = checkDefaultValueType(item.get_schema().get_columns());
+        if (checkRet != cpp2::ErrorCode::SUCCEEDED) {
+            LOG(ERROR) << "Conflict default value type.";
+            handleErrorCode(checkRet);
+            onFinished();
+            return;
+        }
+    }
     CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
     GraphSpaceID spaceId = req.get_space_id();
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
@@ -92,7 +102,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     std::vector<kvstore::KV> data;
     LOG(INFO) << "Alter Tag " << req.get_tag_name() << ", tagId " << tagId;
     data.emplace_back(MetaServiceUtils::schemaTagKey(spaceId, tagId, version),
-                      MetaServiceUtils::schemaTagVal(req.get_tag_name(), schema));
+                      MetaServiceUtils::schemaVal(req.get_tag_name(), schema));
     resp_.set_id(to(tagId, EntryType::TAG));
     doSyncPutAndUpdate(std::move(data));
 }
