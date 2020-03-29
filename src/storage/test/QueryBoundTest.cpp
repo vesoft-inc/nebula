@@ -206,6 +206,8 @@ void checkSamplingResponse(cpp2::QueryResponse& resp,
                            int32_t edgeFields,
                            int32_t dstIdStart,
                            int32_t dstIdEnd,
+                           int32_t dstIdStartReverse,
+                           int32_t dstIdEndReverse,
                            int32_t edgeNum) {
     EXPECT_EQ(0, resp.result.failed_codes.size());
 
@@ -250,8 +252,13 @@ void checkSamplingResponse(cpp2::QueryResponse& resp,
             for (auto& edge : ep.get_edges()) {
                 auto dst = edge.get_dst();
                 VLOG(1) << "Check edge " << vp.vertex_id << " -> " << dst << " props...";
-                CHECK_LE(dstIdStart, dst);
-                CHECK_GE(dstIdEnd, dst);
+                if (ep.type < 0) {
+                    CHECK_LE(dstIdStartReverse, dst);
+                    CHECK_GE(dstIdEndReverse, dst);
+                } else {
+                    CHECK_LE(dstIdStart, dst);
+                    CHECK_GE(dstIdEnd, dst);
+                }
                 auto reader = RowReader::getRowReader(edge.props, provider);
                 DCHECK(reader != nullptr);
                 EXPECT_EQ(edgeFields, reader->numFields() + 1);
@@ -607,7 +614,8 @@ TEST(QueryBoundTest, SamplingTest) {
         auto resp = std::move(f).get();
 
         LOG(INFO) << "Check the results...";
-        checkSamplingResponse(resp, 30, 12, 10001, 10007, FLAGS_max_edge_returned_per_vertex);
+        checkSamplingResponse(resp, 30, 12, 10001, 10007, 20001, 20005,
+                FLAGS_max_edge_returned_per_vertex);
     }
     {
         cpp2::GetNeighborsRequest req;
@@ -623,7 +631,25 @@ TEST(QueryBoundTest, SamplingTest) {
         auto resp = std::move(f).get();
 
         LOG(INFO) << "Check the results...";
-        checkSamplingResponse(resp, 30, 12, 10001, 10007, FLAGS_max_edge_returned_per_vertex);
+        checkSamplingResponse(resp, 30, 12, 10001, 10007, 20001, 20005,
+                FLAGS_max_edge_returned_per_vertex);
+    }
+    {
+        cpp2::GetNeighborsRequest req;
+        std::vector<EdgeType> et = {101, -101};
+        buildRequest(req, et);
+
+        LOG(INFO) << "Test QueryOutBoundRequest...";
+        auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
+        auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(),
+                                                        nullptr, executor.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+
+        LOG(INFO) << "Check the results...";
+        checkSamplingResponse(resp, 30, 12, 10001, 10007, 20001, 20005,
+                FLAGS_max_edge_returned_per_vertex);
     }
     FLAGS_max_edge_returned_per_vertex = old_max_edge_returned;
 }
