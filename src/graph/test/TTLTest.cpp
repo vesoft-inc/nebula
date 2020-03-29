@@ -681,16 +681,16 @@ TEST_F(TTLTest, Datatest) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "INSERT VERTEX person(id)"
-                          " VALUES 1:(100), 2:(200)";
+        std::string cmd = "INSERT VERTEX person(id) "
+                          "VALUES 1:(100), 2:(200)";
 
         auto code = client->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "INSERT VERTEX career(id)"
-                          " VALUES 2:(200)";
+        std::string cmd = "INSERT VERTEX career(id) "
+                          "VALUES 2:(200)";
 
         auto code = client->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -749,7 +749,8 @@ TEST_F(TTLTest, Datatest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"VertexID"}, {"career.id"}
+            {"VertexID"},
+            {"career.id"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
         std::vector<std::tuple<int64_t, int>> expected = {
@@ -764,7 +765,8 @@ TEST_F(TTLTest, Datatest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"VertexID"}, {"career.id"}
+            {"VertexID"},
+            {"career.id"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
         std::vector<std::tuple<int64_t, int>> expected = {
@@ -779,7 +781,8 @@ TEST_F(TTLTest, Datatest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"VertexID"}, {"career.id"}
+            {"VertexID"},
+            {"career.id"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
         std::vector<std::tuple<int64_t, int>> expected = {
@@ -790,16 +793,16 @@ TEST_F(TTLTest, Datatest) {
 
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "INSERT EDGE like(id)"
-                          "VALUES 100->1:(100),"
+        std::string cmd = "INSERT EDGE like(id) "
+                          "VALUES 100->1:(100), "
                           "100->2:(200)";
 
         auto code = client->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         cpp2::ExecutionResponse resp1;
-        std::string cmd1 = "INSERT EDGE friend(id)"
-                           "VALUES 100->1:(100),"
+        std::string cmd1 = "INSERT EDGE friend(id) "
+                           "VALUES 100->1:(100), "
                            "100->2:(200)";
 
         auto code1 = client->execute(cmd1, resp1);
@@ -878,7 +881,8 @@ TEST_F(TTLTest, Datatest) {
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
         std::vector<std::tuple<int64_t>> expected = {
-            {1}, {2},
+            {1},
+            {2},
         };
         ASSERT_TRUE(verifyResult(resp, expected, false));
     }
@@ -894,7 +898,8 @@ TEST_F(TTLTest, Datatest) {
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
         std::vector<std::tuple<int>> expected = {
-            {100}, {200},
+            {100},
+            {200},
         };
         ASSERT_TRUE(verifyResult(resp, expected, false));
     }
@@ -942,7 +947,8 @@ TEST_F(TTLTest, Datatest) {
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
         std::vector<std::tuple<int64_t>> expected = {
-            {1}, {2},
+            {1},
+            {2},
         };
         ASSERT_TRUE(verifyResult(resp, expected, false));
     }
@@ -958,7 +964,8 @@ TEST_F(TTLTest, Datatest) {
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
         std::vector<std::tuple<int>> expected = {
-            {100}, {200},
+            {100},
+            {200},
         };
         ASSERT_TRUE(verifyResult(resp, expected, false));
     }
