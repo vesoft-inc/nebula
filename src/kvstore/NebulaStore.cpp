@@ -627,6 +627,7 @@ ResultCode NebulaStore::compact(GraphSpaceID spaceId) {
 
     auto code = ResultCode::SUCCEEDED;
     std::vector<std::thread> threads;
+    LOG(INFO) << "Space " << spaceId << " start compaction.";
     for (auto& engine : space->engines_) {
         threads.emplace_back(std::thread([&engine, &code] {
             auto ret = engine->compact();
@@ -640,6 +641,7 @@ ResultCode NebulaStore::compact(GraphSpaceID spaceId) {
     for (auto& t : threads) {
         t.join();
     }
+    LOG(INFO) << "Space " << spaceId << " compaction done.";
     return code;
 }
 

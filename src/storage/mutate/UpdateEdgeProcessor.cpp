@@ -464,7 +464,7 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
             << ", dst: " << edgeKey.get_dst() << ", ranking: " << edgeKey.get_ranking();
     CHECK_NOTNULL(kvstore_);
     this->kvstore_->asyncAtomicOp(this->spaceId_, partId,
-        [partId, edgeKey, this] () -> std::string {
+        [partId, edgeKey, this] () -> folly::Optional<std::string> {
             // TODO(shylock) the AtomicOP can't return various error
             // so put it in the processor
             filterResult_ = checkFilter(partId, edgeKey);
@@ -477,7 +477,7 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
             case FilterResult::E_ERROR:
             // fallthrough
             default: {
-                return "";
+                return folly::none;
             }
             }
         },
