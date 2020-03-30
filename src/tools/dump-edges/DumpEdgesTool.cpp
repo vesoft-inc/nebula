@@ -5,17 +5,19 @@
  */
 
 #include "base/NebulaKeyUtils.h"
+#include "meta/MetaServiceUtils.h"
 #include <rocksdb/db.h>
 
 DEFINE_string(path, "", "rocksdb instance path");
 DEFINE_int64(vertex_id, 0, "Specify the vertex id");
 DEFINE_int64(parts_num, 100, "Specify the parts number");
+DEFINE_bool(dump_edge, true, "true for dump edge, false for dump meta");
 
 namespace nebula {
 
 class DumpEdges {
 public:
-    static void scan(const char* path) {
+    static void scanEdge(const char* path) {
         LOG(INFO) << "open rocksdb on " << path;
         rocksdb::DB* db = nullptr;
         rocksdb::Options options;
@@ -52,6 +54,43 @@ public:
             delete db;
         }
     }
+
+    static void scanAll(const char* path) {
+        LOG(INFO) << "open rocksdb on " << path;
+        rocksdb::DB* db = nullptr;
+        rocksdb::Options options;
+        auto status = rocksdb::DB::OpenForReadOnly(options, path, &db);
+        CHECK(status.ok()) << status.ToString();
+        rocksdb::ReadOptions roptions;
+        rocksdb::Iterator* iter = db->NewIterator(roptions);
+        if (!iter) {
+            LOG(FATAL) << "null iterator!";
+        }
+        iter->SeekToFirst();
+        size_t count = 0;
+        while (iter->Valid()) {
+            auto key = folly::StringPiece(iter->key().data(), iter->key().size());
+            if (key.startsWith("__spaces__")) {
+                LOG(INFO) << "Space Id: " << meta::MetaServiceUtils::spaceId(key);
+            } else if (key.startsWith("__parts__")) {
+                LOG(INFO) << "Space Id: " << meta::MetaServiceUtils::parsePartKeySpaceId(key)
+                          << ", Part Id: " << meta::MetaServiceUtils::parsePartKeyPartId(key);
+            } else {
+                LOG(INFO) << key;
+            }
+            iter->Next();
+            count++;
+        }
+        LOG(INFO) << "Total key:" << count;
+        if (iter) {
+            delete iter;
+        }
+
+        if (db) {
+            db->Close();
+            delete db;
+        }
+    }
 };
 
 }  // namespace nebula
@@ -66,6 +105,10 @@ int main(int argc, char *argv[]) {
         LOG(INFO) << "Specify the path!";
         return -1;
     }
-    nebula::DumpEdges::scan(FLAGS_path.c_str());
+    if (FLAGS_dump_edge) {
+        nebula::DumpEdges::scanEdge(FLAGS_path.c_str());
+    } else {
+        nebula::DumpEdges::scanAll(FLAGS_path.c_str());
+    }
     return 0;
 }
