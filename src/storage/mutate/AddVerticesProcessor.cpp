@@ -56,7 +56,7 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
         std::for_each(partVertices.begin(), partVertices.end(), [&](auto &pv) {
             auto partId = pv.first;
             auto atomic = [version, partId, vertices = std::move(pv.second), this]()
-                          -> std::string {
+                          -> folly::Optional<std::string> {
                 return addVertices(version, partId, vertices);
             };
             auto callback = [partId, this](kvstore::ResultCode code) {
