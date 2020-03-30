@@ -145,7 +145,7 @@ TEST_F(TTLTest, schematest) {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG woman(name string, email string, "
                             "age int, gender string, row_timestamp timestamp)"
-                            "ttl_duration = -100, ttl_col = \"row_timestamp\"";
+                            "ttl_duration = 0, ttl_col = \"row_timestamp\"";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -427,7 +427,7 @@ TEST_F(TTLTest, schematest) {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE EDGE work2(name string, email string, "
                             "age int, gender string, start_time timestamp)"
-                            "ttl_duration = -100, ttl_col = \"start_time\"";
+                            "ttl_duration = 0, ttl_col = \"start_time\"";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }

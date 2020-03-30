@@ -219,7 +219,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 
 %type <sentence> admin_sentence
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
-%type <sentence> show_sentence 
+%type <sentence> show_sentence
 
 %type <sentence> mutate_sentence
 %type <sentence> insert_vertex_sentence insert_edge_sentence
@@ -1005,11 +1005,8 @@ create_schema_prop_list
     ;
 
 create_schema_prop_item
-    : KW_TTL_DURATION ASSIGN unary_integer {
-        // Less than or equal to 0 means infinity, so less than 0 is equivalent to 0
-        if ($3 < 0) {
-            $3 = 0;
-        }
+    : KW_TTL_DURATION ASSIGN INTEGER {
+        ifOutOfRange($3, @3);
         $$ = new SchemaPropItem(SchemaPropItem::TTL_DURATION, $3);
     }
     | KW_TTL_COL ASSIGN STRING {
@@ -1086,11 +1083,8 @@ alter_schema_prop_list
     ;
 
 alter_schema_prop_item
-    : KW_TTL_DURATION ASSIGN unary_integer {
-        // Less than or equal to 0 means infinity, so less than 0 is equivalent to 0
-        if ($3 < 0) {
-            $3 = 0;
-        }
+    : KW_TTL_DURATION ASSIGN INTEGER {
+        ifOutOfRange($3, @3);
         $$ = new SchemaPropItem(SchemaPropItem::TTL_DURATION, $3);
     }
     | KW_TTL_COL ASSIGN STRING {
