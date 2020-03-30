@@ -179,8 +179,6 @@ Status GroupByExecutor::checkAll() {
 
 
 void GroupByExecutor::execute() {
-    FLOG_INFO("Executing Group by: %s", sentence_->toString().c_str());
-
     if (inputs_ == nullptr || !inputs_->hasData()) {
         onEmptyInputs();
         return;
