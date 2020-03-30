@@ -2,7 +2,7 @@
 
 关键字是在 nGQL 中具有重要意义的单词。保留关键字需引用方可使用。
 
-非保留关键字无需引用可直接使用，保留关键字需使用单引号或双引号标注方可使用，例如 \`AND\`。
+非保留关键字无需引用可直接使用，且所有非保留字都会自动转换成小写。保留关键字需使用反引号标注方可使用，例如 \`AND\`。
 
 ```ngql
 nebula> CREATE TAG TAG(name string);
@@ -11,15 +11,13 @@ nebula> CREATE TAG TAG(name string);
 nebula> CREATE TAG SPACE(name string); -- SPACE 为非保留关键字
 Execution succeeded
 
-nebula> SHOW TAGS;
+nebula> SHOW TAGS; -- 所有非保留字都会自动转换成小写
 =============
 | ID | Name |
 =============
 | 25 | space|
 -------------
 ```
-
-> 所有非保留字都会自动转换成小写。
 
 `TAG` 为保留字使用时必须使用反引号。 `SPACE` 为非保留字使用时无需加反引号。
 

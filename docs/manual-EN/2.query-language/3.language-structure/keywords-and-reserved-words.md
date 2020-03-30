@@ -2,7 +2,7 @@
 
 Keywords are words that have significance in nGQL. Certain keywords are reserved and require special treatment for use as identifiers.
 
-Non-reserved keywords are permitted as identifiers without quoting. Reserved words are permitted as identifiers if you quote them with single or double quotes such as \`AND\`.
+Non-reserved keywords are permitted as identifiers without quoting. All the non-reserved keywords are automatically converted to lower case. Reserved words are permitted as identifiers if you quote them with single or double quotes such as \`AND\`.
 
 ```ngql
 nebula> CREATE TAG TAG(name string);
@@ -11,15 +11,13 @@ nebula> CREATE TAG TAG(name string);
 nebula> CREATE TAG SPACE(name string); -- SPACE is an unreserved KEY WORD
 Execution succeeded
 
-nebula> SHOW TAGS;
+nebula> SHOW TAGS; -- All the non-reserved keywords are automatically converted to lower case.
 =============
 | ID | Name |
 =============
 | 25 | space|
 -------------
 ```
-
-> All the non-reserved keywords are automatically converted to lower case.
 
 `TAG` is a reserved keyword and must be quoted with backtick to be used as an identifier. `SPACE` is keyword but not reserved, so its use as identifiers does not require quoting.
 
