@@ -191,7 +191,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:storage_client>
         $<TARGET_OBJECTS:dataman_obj>
         $<TARGET_OBJECTS:filter_obj>
-        $<TARGET_OBJECTS:kvstore_storage_utils_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
         $<TARGET_OBJECTS:adHocIndex_obj>
         ${meta_test_deps}
