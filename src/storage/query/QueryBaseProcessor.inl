@@ -519,7 +519,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
         lastRank = rank;
         lastDstId = dstId;
         std::unique_ptr<RowReader> reader;
-        if (!val.empty()) {
+        if ((!onlyStructure || retTTL.has_value()) && !val.empty()) {
             reader = RowReader::getEdgePropReader(this->schemaMan_,
                                                   val,
                                                   spaceId_,
@@ -533,7 +533,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                     continue;
             }
 
-            if (!onlyStructure && exp_ != nullptr) {
+            if (exp_ != nullptr) {
                 getters.getAliasProp = [this, edgeType, &reader, &key](const std::string& edgeName,
                                            const std::string& prop) -> OptVariantType {
                     auto edgeFound = this->edgeMap_.find(edgeName);

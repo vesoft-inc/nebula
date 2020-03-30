@@ -888,6 +888,22 @@ TEST_F(TTLTest, Datatest) {
     }
     {
         cpp2::ExecutionResponse resp;
+        std::string cmd = "GO FROM 100 OVER friend WHERE friend.id == 100";
+        auto code = client->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"friend._dst"},
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {1},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected, false));
+    }
+    {
+        cpp2::ExecutionResponse resp;
         std::string cmd = "GO FROM 100 OVER friend YIELD friend.id";
         auto code = client->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -981,6 +997,15 @@ TEST_F(TTLTest, Datatest) {
     }
     {
         cpp2::ExecutionResponse resp;
+        std::string cmd = "GO FROM 100 OVER like WHERE like.id == 100;";
+        auto code = client->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::tuple<int64_t>> expected = {};
+        ASSERT_TRUE(verifyResult(resp, expected, false));
+    }
+    {
+        cpp2::ExecutionResponse resp;
         std::string cmd = "GO FROM 100 OVER like YIELD like.id";
         auto code = client->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -1034,7 +1059,45 @@ TEST_F(TTLTest, Datatest) {
         std::vector<std::tuple<int>> expected = {};
         ASSERT_TRUE(verifyResult(resp, expected, false));
     }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT EDGE like(id) "
+                          "VALUES 100->3:(2436781720)";
+        auto code = client->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "GO FROM 100 OVER like";
+        auto code = client->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
+        std::vector<std::string> expectedColNames{
+            {"like._dst"},
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {3},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected, false));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "GO FROM 100 OVER like WHERE like.id == 2436781720";
+        auto code = client->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"like._dst"},
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {3},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected, false));
+    }
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "DROP SPACE default_space";
