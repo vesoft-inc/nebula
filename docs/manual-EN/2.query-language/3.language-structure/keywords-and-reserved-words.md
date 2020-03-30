@@ -2,7 +2,7 @@
 
 Keywords are words that have significance in nGQL. Certain keywords are reserved and require special treatment for use as identifiers.
 
-Non-reserved keywords are permitted as identifiers without quoting. All the non-reserved keywords are automatically converted to lower case. Reserved words are permitted as identifiers if you quote them with single or double quotes such as \`AND\`.
+Non-reserved keywords are permitted as identifiers without quoting. All the non-reserved keywords are automatically converted to lower case. Non-reserved keywords are non case-sensitive. Reserved words are permitted as identifiers if you quote them with single or double quotes such as \`AND\`.
 
 ```ngql
 nebula> CREATE TAG TAG(name string);
