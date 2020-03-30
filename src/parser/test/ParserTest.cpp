@@ -1890,54 +1890,54 @@ TEST(Parser, ErrorMsg) {
     }
     {
         GQLParser parser;
-        std::string query = "INSERT VERTEX person(id) VALUES 100:(002777777777777777777777) ";
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(0o02777777777777777777777) ";
         auto result = parser.parse(query);
         ASSERT_FALSE(result.ok());
-        auto error = "SyntaxError: Out of range: near `002777777777777777777777'";
+        auto error = "SyntaxError: Out of range: near `0o02777777777777777777777'";
         ASSERT_EQ(error, result.status().toString());
     }
     // min oct integer bound
     {
         GQLParser parser;
-        std::string query = "INSERT VERTEX person(id) VALUES 100:(-01000000000000000000000) ";
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(-0o1000000000000000000000) ";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status().toString();
     }
     {
         GQLParser parser;
-        std::string query = "INSERT VERTEX person(id) VALUES 100:(-01000000000000000000001) ";
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(-0o1000000000000000000001) ";
         auto result = parser.parse(query);
         ASSERT_FALSE(result.ok());
-        auto error = "SyntaxError: Out of range: near `01000000000000000000001'";
+        auto error = "SyntaxError: Out of range: near `0o1000000000000000000001'";
         ASSERT_EQ(error, result.status().toString());
     }
     // max oct integer bound
     {
         GQLParser parser;
-        std::string query = "INSERT VERTEX person(id) VALUES 100:(0777777777777777777777) ";
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(0o777777777777777777777) ";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status().toString();
     }
     {
         GQLParser parser;
-        std::string query = "INSERT VERTEX person(id) VALUES 100:(+0777777777777777777777) ";
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(+0o777777777777777777777) ";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status().toString();
     }
     {
         GQLParser parser;
-        std::string query = "INSERT VERTEX person(id) VALUES 100:(01000000000000000000000) ";
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(0o1000000000000000000000) ";
         auto result = parser.parse(query);
         ASSERT_FALSE(result.ok());
-        auto error = "SyntaxError: Out of range: near `01000000000000000000000'";
+        auto error = "SyntaxError: Out of range: near `0o1000000000000000000000'";
         ASSERT_EQ(error, result.status().toString());
     }
     {
         GQLParser parser;
-        std::string query = "INSERT VERTEX person(id) VALUES 100:(+01000000000000000000000) ";
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(+0o1000000000000000000000) ";
         auto result = parser.parse(query);
         ASSERT_FALSE(result.ok());
-        auto error = "SyntaxError: Out of range: near `01000000000000000000000'";
+        auto error = "SyntaxError: Out of range: near `0o1000000000000000000000'";
         ASSERT_EQ(error, result.status().toString());
     }
 }

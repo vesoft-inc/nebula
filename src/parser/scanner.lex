@@ -390,9 +390,9 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
                                 yylval->intval = static_cast<int64_t>(val);
                                 return TokenType::INTEGER;
                             }
-0{OCT}+                     {
-                                if (yyleng > 22) {
-                                    auto i = 1;
+0[Oo]{OCT}+                 {
+                                if (yyleng > 23) {
+                                    auto i = 2;
                                     while (i < yyleng && yytext[i] == '0') {
                                         i++;
                                     }
@@ -402,7 +402,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
                                     }
                                 }
                                 uint64_t val = 0;
-                                sscanf(yytext, "%lo", &val);
+                                sscanf(yytext + 2, "%lo", &val);
                                 if (val > MAX_ABS_INTEGER) {
                                     throw GraphParser::syntax_error(*yylloc, "Out of range:");
                                 }
