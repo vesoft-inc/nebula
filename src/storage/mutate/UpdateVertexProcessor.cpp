@@ -413,7 +413,7 @@ void UpdateVertexProcessor::process(const cpp2::UpdateVertexRequest& req) {
             << ", partId: " << partId << ", vId: " << vId;
     CHECK_NOTNULL(kvstore_);
     this->kvstore_->asyncAtomicOp(this->spaceId_, partId,
-        [partId, vId, this] () -> std::string {
+        [partId, vId, this] () -> folly::Optional<std::string> {
             // TODO(shylock) the AtomicOP can't return various error
             // so put it in the processor
             filterResult_ = checkFilter(partId, vId);
@@ -426,7 +426,7 @@ void UpdateVertexProcessor::process(const cpp2::UpdateVertexRequest& req) {
             case FilterResult::E_ERROR:
             // Fallthrough
             default: {
-                return "";
+                return folly::none;
             }
             }
         },
