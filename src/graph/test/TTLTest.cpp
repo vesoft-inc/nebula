@@ -1100,6 +1100,22 @@ TEST_F(TTLTest, Datatest) {
     }
     {
         cpp2::ExecutionResponse resp;
+        std::string cmd = "GO FROM 100 OVER like WHERE like._dst == 3";
+        auto code = client->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"like._dst"},
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {3},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected, false));
+    }
+    {
+        cpp2::ExecutionResponse resp;
         std::string cmd = "DROP SPACE default_space";
         auto code = client->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
