@@ -8,7 +8,7 @@
 #include "storage/admin/AdminTask.h"
 #include "storage/admin/AdminTaskManager.h"
 
-DEFINE_uint32(task_concurrency, 10, "The tasks number could be invoked simultaneously");
+DEFINE_uint32(max_task_concurrency, 10, "The tasks number could be invoked simultaneously");
 DEFINE_uint32(max_concurrent_subtasks, 10, "The sub tasks could be invoked simultaneously");
 
 namespace nebula {
