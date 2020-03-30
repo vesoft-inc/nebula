@@ -5,7 +5,7 @@
  */
 
 #include "meta/processors/schemaMan/AlterTagProcessor.h"
-#include "meta/processors/schemaMan/utils.h"
+#include "meta/processors/schemaMan/Utils.h"
 
 namespace nebula {
 namespace meta {
@@ -14,7 +14,6 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     for (const auto &item : req.get_tag_items()) {
         auto checkRet = checkDefaultValueType(item.get_schema().get_columns());
         if (checkRet != cpp2::ErrorCode::SUCCEEDED) {
-            LOG(ERROR) << "Conflict default value type.";
             handleErrorCode(checkRet);
             onFinished();
             return;

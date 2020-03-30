@@ -5,7 +5,7 @@
  */
 
 #include "meta/processors/schemaMan/CreateEdgeProcessor.h"
-#include "meta/processors/schemaMan/utils.h"
+#include "meta/processors/schemaMan/Utils.h"
 
 namespace nebula {
 namespace meta {
@@ -13,7 +13,6 @@ namespace meta {
 void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
     auto checkRet = checkDefaultValueType(req.get_schema().get_columns());
     if (checkRet != cpp2::ErrorCode::SUCCEEDED) {
-        LOG(ERROR) << "Conflict default value type.";
         handleErrorCode(checkRet);
         onFinished();
         return;

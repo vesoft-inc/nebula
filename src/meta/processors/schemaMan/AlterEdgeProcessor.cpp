@@ -5,7 +5,7 @@
  */
 
 #include "meta/processors/schemaMan/AlterEdgeProcessor.h"
-#include "meta/processors/schemaMan/utils.h"
+#include "meta/processors/schemaMan/Utils.h"
 
 namespace nebula {
 namespace meta {
@@ -14,7 +14,6 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     for (const auto &item : req.get_edge_items()) {
         auto checkRet = checkDefaultValueType(item.get_schema().get_columns());
         if (checkRet != cpp2::ErrorCode::SUCCEEDED) {
-            LOG(ERROR) << "Conflict default value type.";
             handleErrorCode(checkRet);
             onFinished();
             return;

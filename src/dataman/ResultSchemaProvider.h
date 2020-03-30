@@ -52,14 +52,12 @@ public:
     std::shared_ptr<const meta::SchemaProviderIf::Field> field(
         const folly::StringPiece name) const override;
 
-    StatusOr<nebula::cpp2::Value> getFieldDefaultValue(int64_t index) const override {
-        UNUSED(index);
-        LOG(FATAL) << "Unimplement";
+    StatusOr<nebula::cpp2::Value> getFieldDefaultValue(int64_t) const override {
+        LOG(FATAL) << "Unimplemented";
     }
-    StatusOr<nebula::cpp2::Value> getFieldDefaultValue(const folly::StringPiece name)
+    StatusOr<nebula::cpp2::Value> getFieldDefaultValue(const folly::StringPiece)
         const override {
-        UNUSED(name);
-        LOG(FATAL) << "Unimplement";
+        LOG(FATAL) << "Unimplemented";
     }
 
     nebula::cpp2::Schema toSchema() const override;
