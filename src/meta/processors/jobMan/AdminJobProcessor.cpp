@@ -39,7 +39,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
                 break;
             }
 
-            auto  cmd = req.get_cmd();
+            auto cmd = req.get_cmd();
             auto paras = req.get_paras();
 
             JobDescription jobDesc(nebula::value(jobId), cmd, paras);

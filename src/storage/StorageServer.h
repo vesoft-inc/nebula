@@ -60,7 +60,7 @@ private:
     std::vector<HostAddr> metaAddrs_;
     std::vector<std::string> dataPaths_;
 
-    AdminTaskManager* taskMgr_;
+    AdminTaskManager* taskMgr_{nullptr};
 };
 
 }  // namespace storage

@@ -110,9 +110,14 @@ bool JobManager::runJobViaThrift(const JobDescription& jobDesc) {
         LOG(ERROR) << "unreconized job cmd " << static_cast<int>(jobDesc.getCmd());
         return false;
     }
+    if (jobDesc.getStatus() == cpp2::JobStatus::STOPPED) {
+        jobExecutor->stop();
+        return true;
+    }
     if (jobDesc.getParas().empty()) {
         return false;
     }
+
     std::string spaceName = jobDesc.getParas().back();
     int spaceId = getSpaceId(spaceName);
     if (spaceId < 0) {

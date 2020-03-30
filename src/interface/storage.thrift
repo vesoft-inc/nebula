@@ -470,9 +470,8 @@ struct AddAdminTaskRequest {
     3: i32                                  task_id    
     4: common.GraphSpaceID                  space_id, 
     5: optional list<common.PartitionID>    parts,
-    6: optional common.IndexID              index_id,
-    7: optional i64                         delay_ms    //
-    8: optional i32                         concurrent  //
+    6: optional common.IndexID              index_id
+    7: optional i32                         concurrency
 }
 
 struct StopAdminTaskRequest {

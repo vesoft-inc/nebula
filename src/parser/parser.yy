@@ -119,7 +119,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_SHORTEST KW_PATH
 %token KW_IS KW_NULL KW_DEFAULT
 %token KW_SNAPSHOT KW_SNAPSHOTS KW_LOOKUP
-%token KW_JOBS KW_JOB KW_RECOVER KW_FLUSH KW_COMPACT KW_SUBMIT
+%token KW_JOBS KW_JOB KW_RECOVER KW_FLUSH KW_COMPACT KW_SUBMIT KW_CONCURRENCY
 %token KW_BIDIRECT
 %token KW_USER KW_USERS KW_ACCOUNT
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_ROLES
@@ -1559,6 +1559,12 @@ admin_sentence
     : KW_SUBMIT KW_JOB admin_operation {
         auto sentence = new AdminSentence("add_job");
         sentence->addPara(*$3);
+        $$ = sentence;
+    }
+    | KW_SUBMIT KW_JOB admin_operation L_PAREN KW_CONCURRENCY ASSIGN INTEGER R_PAREN {
+        auto sentence = new AdminSentence("add_job");
+        sentence->addPara(*$3);
+        sentence->addPara(std::to_string($7));
         $$ = sentence;
     }
     | KW_SHOW KW_JOBS {

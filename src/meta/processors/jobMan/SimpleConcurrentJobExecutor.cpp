@@ -30,34 +30,21 @@ SimpleConcurrentJobExecutor::execute() {
     }
 
     std::string spaceName = paras_.back();
-    auto indexKey = MetaServiceUtils::indexSpaceKey(spaceName);
-    std::string val;
-    auto rc = kvStore_->get(kDefaultSpaceId, kDefaultPartId, indexKey, &val);
-    if (rc != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "KVStore get indexKey error spaceName: " << spaceName;
-        return rc;
+    auto errOrSpaceId = getSpaceIdFromName(spaceName);
+    if (!nebula::ok(errOrSpaceId)) {
+        return nebula::error(errOrSpaceId);
     }
-    int spaceId = *reinterpret_cast<const int*>(val.c_str());
+    int32_t spaceId = nebula::value(errOrSpaceId);
 
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto partPrefix = MetaServiceUtils::partPrefix(spaceId);
-    rc = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
-    if (rc != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Fetch Parts Failed";
-        return rc;
+    auto errOrTargetHost = getTargetHost(spaceId);
+    if (!nebula::ok(errOrTargetHost)) {
+        return nebula::error(errOrTargetHost);
     }
-
-    // use vector not set because this can convient for next step
-    std::vector<HostAddr> hosts;
-    while (iter->valid()) {
-        for (auto& host : MetaServiceUtils::parsePartVal(iter->val())) {
-            hosts.emplace_back(std::make_pair(host.get_ip(), host.get_port()));
-        }
-        iter->next();
+    std::vector<HostAddr>& hosts = nebula::value(errOrTargetHost);
+    int32_t concurrency = INT_MAX;
+    if (paras_.size() > 1) {
+        concurrency = std::atoi(paras_[0].c_str());
     }
-    std::sort(hosts.begin(), hosts.end());
-    auto last = std::unique(hosts.begin(), hosts.end());
-    hosts.erase(last, hosts.end());
 
     std::vector<folly::SemiFuture<Status>> futures;
     std::unique_ptr<AdminClient> client(new AdminClient(kvStore_));
@@ -65,7 +52,7 @@ SimpleConcurrentJobExecutor::execute() {
     std::vector<PartitionID> parts;
     for (auto& host : hosts) {
         auto future = client->addTask(cmd_, jobId_, taskId++, spaceId,
-                                      {host}, 0, parts);
+                                      {host}, 0, parts, concurrency);
         futures.push_back(std::move(future));
     }
 
@@ -101,6 +88,58 @@ SimpleConcurrentJobExecutor::execute() {
 }
 
 void SimpleConcurrentJobExecutor::stop() {
+    std::string spaceName = paras_.back();
+    auto errOrSpaceId = getSpaceIdFromName(spaceName);
+    if (!nebula::ok(errOrSpaceId)) {
+        return;
+    }
+    int32_t spaceId = nebula::value(errOrSpaceId);
+
+    auto errOrTargetHost = getTargetHost(spaceId);
+    if (!nebula::ok(errOrTargetHost)) {
+        return;
+    }
+    std::vector<HostAddr>& hosts = nebula::value(errOrTargetHost);
+    std::unique_ptr<AdminClient> client(new AdminClient(kvStore_));
+    for (auto& host : hosts) {
+        client->stopTask({host}, jobId_, 0);
+    }
+}
+
+ErrorOr<nebula::kvstore::ResultCode, int32_t>
+SimpleConcurrentJobExecutor::getSpaceIdFromName(const std::string& spaceName) {
+    auto indexKey = MetaServiceUtils::indexSpaceKey(spaceName);
+    std::string val;
+    auto rc = kvStore_->get(kDefaultSpaceId, kDefaultPartId, indexKey, &val);
+    if (rc != kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "KVStore get indexKey error spaceName: " << spaceName;
+        return rc;
+    }
+    return *reinterpret_cast<const int*>(val.c_str());
+}
+
+ErrorOr<nebula::kvstore::ResultCode, std::vector<HostAddr>>
+SimpleConcurrentJobExecutor::getTargetHost(int32_t spaceId) {
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto partPrefix = MetaServiceUtils::partPrefix(spaceId);
+    auto rc = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
+    if (rc != kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "Fetch Parts Failed";
+        return rc;
+    }
+
+    // use vector instead of set because this can convient for next step
+    std::vector<HostAddr> hosts;
+    while (iter->valid()) {
+        for (auto& host : MetaServiceUtils::parsePartVal(iter->val())) {
+            hosts.emplace_back(std::make_pair(host.get_ip(), host.get_port()));
+        }
+        iter->next();
+    }
+    std::sort(hosts.begin(), hosts.end());
+    auto last = std::unique(hosts.begin(), hosts.end());
+    hosts.erase(last, hosts.end());
+    return hosts;
 }
 
 }  // namespace meta

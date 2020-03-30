@@ -15,34 +15,38 @@
 #include "storage/admin/AdminTask.h"
 #include <folly/executors/task_queue/UnboundedBlockingQueue.h>
 #include <folly/concurrency/ConcurrentHashMap.h>
+#include <folly/executors/CPUThreadPoolExecutor.h>
 
 namespace nebula {
 namespace storage {
-
 
 class AdminTaskManager {
     FRIEND_TEST(TaskManagerTest, happy_path);
     FRIEND_TEST(TaskManagerTest, gen_sub_task_failed);
 
+    using ResultCode = nebula::kvstore::ResultCode;
+
 public:
     struct TaskExecContext {
         explicit TaskExecContext(std::shared_ptr<AdminTask> task_) : task(task_) {}
+        using SubTaskContainer = folly::UnboundedBlockingQueue<AdminSubTask>;
+        using ResultContainer = std::vector<folly::SemiFuture<ResultCode>>;
+
         std::shared_ptr<AdminTask>  task{nullptr};
-        std::vector<AdminSubTask>   subTasks;
-        std::atomic<int>            finishedsubTasks{0};
+        std::atomic<bool>           taskFinished{false};
+        size_t                      notFinishedThread{0};
+        std::mutex                  mutex;
+        std::condition_variable     cv;
+        SubTaskContainer            subtasks;
+        std::atomic<ResultCode>     rc{ResultCode::SUCCEEDED};
+        std::atomic<bool>           cancelled{false};
     };
 
-    using ResultCode = nebula::kvstore::ResultCode;
-    using ASyncTaskRet = folly::Promise<ResultCode>;
-    using TaskAndResult = std::pair<std::shared_ptr<AdminTask>, ASyncTaskRet>;
-    using FutureResultCode = folly::Future<ResultCode>;
-
-    using TaskHandle = std::pair<int, int>;         // jobid + taskid
-    using SubTaskHandle = std::tuple<int, int, int>;    // jobid / taskid / subtaskid
-    using TaskQueue = folly::UnboundedBlockingQueue<TaskHandle>;
-    using SubTaskQueue = folly::UnboundedBlockingQueue<SubTaskHandle>;
+    using ThreadPool = std::unique_ptr<nebula::thread::GenericThreadPool>;
+    using TaskHandle = std::pair<int, int>;  // jobid + taskid
     using TaskVal = std::shared_ptr<TaskExecContext>;
     using TaskContainer = folly::ConcurrentHashMap<TaskHandle, TaskVal>;
+    using HandleQueue = folly::UnboundedBlockingQueue<TaskHandle>;
 
     AdminTaskManager() = default;
     static AdminTaskManager* instance() {
@@ -60,26 +64,17 @@ public:
 
     void shutdown();
 
-    void setSubTaskLimit(int limit) { activeWorker_ = limit; }
-
 private:
     void pickTaskThread();
-    void pickSubTaskThread(int threadIndex);
-    bool satisifyConcurrency(int concurrentReqNum);
+    void pickSubTask(TaskHandle handle);
+    // ResultCode pickSubTask(std::shared_ptr<TaskExecContext> ctx);
 
 private:
-    std::unique_ptr<thread::GenericWorker> bgThread_;
-    std::unique_ptr<nebula::thread::GenericThreadPool>  pool_{nullptr};
-
-    bool                                            shutdown_{true};
-
-    TaskContainer                                   tasks_;
-    TaskQueue                                       taskHandleQueue_;
-    SubTaskQueue                                    subTaskHandleQueue_;
-    std::mutex                                      muConLimits_;
-    std::multiset<int>                              concurrentLimits;
-    std::atomic<int>                                activeWorker_{0};
-    int                                             maxWorker_{0};
+    bool                                    shutdown_{false};
+    ThreadPool                              pool_{nullptr};
+    TaskContainer                           tasks_;
+    HandleQueue                             taskHandleQueue_;
+    std::unique_ptr<thread::GenericWorker>  bgThread_;
 };
 
 }  // namespace storage

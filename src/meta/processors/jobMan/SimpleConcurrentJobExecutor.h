@@ -15,6 +15,8 @@ namespace meta {
 class SimpleConcurrentJobExecutor : public MetaJobExecutor {
 public:
     using ExecuteRet = ErrorOr<kvstore::ResultCode, std::map<HostAddr, Status>>;
+    using ErrOrInt  = ErrorOr<nebula::kvstore::ResultCode, int32_t>;
+    using ErrOrHostAddrVec  = ErrorOr<nebula::kvstore::ResultCode, std::vector<HostAddr>>;
 
     SimpleConcurrentJobExecutor(int jobId,
                                 nebula::cpp2::AdminCmd cmd,
@@ -23,6 +25,10 @@ public:
 
     ExecuteRet execute() override;
     void stop() override;
+
+private:
+    ErrOrInt getSpaceIdFromName(const std::string& spaceName);
+    ErrOrHostAddrVec getTargetHost(int32_t spaceId);
 
 private:
     int jobId_;

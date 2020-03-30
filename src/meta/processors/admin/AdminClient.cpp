@@ -671,16 +671,16 @@ folly::Future<Status> AdminClient::rebuildEdgeIndex(const HostAddr& address,
     return f;
 }
 
-folly::Future<Status> AdminClient::addTask(
-                                    nebula::cpp2::AdminCmd cmd,
-                                    int32_t jobId,
-                                    int32_t taskId,
-                                    GraphSpaceID spaceId,
-                                    const std::vector<HostAddr>& specificHosts,
-                                    IndexID indexID,
-                                    std::vector<PartitionID> parts) {
-    auto hosts = specificHosts.empty() ? ActiveHostsMan::getActiveHosts(kv_) :
-                                         specificHosts;
+folly::Future<Status>
+AdminClient::addTask(nebula::cpp2::AdminCmd cmd,
+                    int32_t jobId,
+                    int32_t taskId,
+                    GraphSpaceID spaceId,
+                    const std::vector<HostAddr>& targetHost,
+                    IndexID indexID,
+                    std::vector<PartitionID> parts,
+                    int concurrency) {
+    auto hosts = targetHost.empty() ? ActiveHostsMan::getActiveHosts(kv_) : targetHost;
     storage::cpp2::AddAdminTaskRequest req;
     req.set_cmd(cmd);
     req.set_job_id(jobId);
@@ -688,12 +688,32 @@ folly::Future<Status> AdminClient::addTask(
     req.set_space_id(spaceId);
     req.set_index_id(indexID);
     req.set_parts(std::move(parts));
+    req.set_concurrency(concurrency);
 
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
 
     getResponse(hosts, 0, std::move(req), [] (auto client, auto request) {
         return client->future_addAdminTask(request);
+    }, 0, std::move(pro), 1);
+
+    return f;
+}
+
+folly::Future<Status>
+AdminClient::stopTask(const std::vector<HostAddr>& target,
+                      int32_t jobId,
+                      int32_t taskId) {
+    LOG(INFO) << "AdminClient::stopTask()";
+    auto hosts = target.empty() ? ActiveHostsMan::getActiveHosts(kv_) : target;
+    storage::cpp2::StopAdminTaskRequest req;
+    req.set_job_id(jobId);
+    req.set_task_id(taskId);
+
+    folly::Promise<Status> pro;
+    auto f = pro.getFuture();
+    getResponse(hosts, 0, std::move(req), [] (auto client, auto request) {
+        return client->future_stopAdminTask(request);
     }, 0, std::move(pro), 1);
 
     return f;

@@ -156,7 +156,6 @@ AdminJobExecutor::toRowValue(const nebula::meta::cpp2::JobDesc& job) {
     std::vector<cpp2::ColumnValue> row(5);
     row[0].set_str(std::to_string(job.get_id()));
     std::stringstream oss;
-    oss << toString(job.get_cmd()) << " ";
     for (auto& p : job.get_paras()) {
         oss << p << " ";
     }

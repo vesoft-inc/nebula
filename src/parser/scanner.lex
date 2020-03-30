@@ -165,7 +165,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 JOBS                        ([Jj][Oo][Bb][Ss])
 JOB                         ([Jj][Oo][Bb])
 RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
-
+CONCURRENCY                 ([Cc][Oo][Nn][Cc][Uu][Rr][Rr][Ee][Nn][Cc][Yy])
 %%
 
  /* Reserved keyword */
@@ -306,6 +306,10 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {STORAGE}                   { return TokenType::KW_STORAGE; }
 {SHORTEST}                  { return TokenType::KW_SHORTEST; }
 
+{JOBS}                      { return TokenType::KW_JOBS; }
+{JOB}                       { return TokenType::KW_JOB; }
+{RECOVER}                   { return TokenType::KW_RECOVER; }
+{CONCURRENCY}             { return TokenType::KW_CONCURRENCY; }
 
 {TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }
 {FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }

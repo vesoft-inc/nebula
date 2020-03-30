@@ -8,7 +8,8 @@
 #include "storage/admin/AdminTask.h"
 #include "storage/admin/AdminTaskManager.h"
 
-DEFINE_uint32(subtask_concurrency, 10, "The tasks number could be invoked simultaneously");
+DEFINE_uint32(task_concurrency, 10, "The tasks number could be invoked simultaneously");
+DEFINE_uint32(max_concurrent_subtasks, 10, "The sub tasks could be invoked simultaneously");
 
 namespace nebula {
 namespace storage {
@@ -17,35 +18,24 @@ using ResultCode = nebula::kvstore::ResultCode;
 using TaskHandle = std::pair<int, int>;     // jobid + taskid
 
 bool AdminTaskManager::init() {
-    LOG(INFO) << "default subtask concurrency: " << FLAGS_subtask_concurrency;
-    concurrentLimits.insert(FLAGS_subtask_concurrency);
-    maxWorker_ = *concurrentLimits.begin();
-
+    LOG(INFO) << "max concurrenct subtasks: " << FLAGS_max_concurrent_subtasks;
     pool_ = std::make_unique<nebula::thread::GenericThreadPool>();
-    CHECK(pool_->start(FLAGS_subtask_concurrency));
-    for (auto i = 0U; i < FLAGS_subtask_concurrency; ++i) {
-        pool_->addTask(&AdminTaskManager::pickSubTaskThread, this, i);
-    }
+    CHECK(pool_->start(FLAGS_max_concurrent_subtasks));
 
     bgThread_ = std::make_unique<thread::GenericWorker>();
     CHECK(bgThread_->start());
     bgThread_->addTask(&AdminTaskManager::pickTaskThread, this);
 
     shutdown_ = false;
+    LOG(INFO) << "exit AdminTaskManager::init()";
     return true;
 }
 
 void AdminTaskManager::addAsyncTask(std::shared_ptr<AdminTask> task) {
     TaskHandle handle = std::make_pair(task->getJobId(), task->getTaskId());
-    if (shutdown_) {
-        LOG(ERROR) << folly::stringPrintf(
-                      "trying to add task[%d, %d] after stop",
-                      handle.first, handle.second);
-        return;
-    }
-
-    LOG(INFO) << folly::stringPrintf("enqueue task(%d, %d), con req=%d",
-                                     task->getJobId(), task->getTaskId(), task->getConcurrent());
+    LOG(INFO) << folly::stringPrintf("enqueue task(%d, %d), con req=%zu",
+                                     task->getJobId(), task->getTaskId(),
+                                     task->getConcurrentReq());
     auto ctx = std::make_shared<TaskExecContext>(task);
     tasks_.insert(handle, ctx);
     taskHandleQueue_.add(handle);
@@ -54,14 +44,16 @@ void AdminTaskManager::addAsyncTask(std::shared_ptr<AdminTask> task) {
 nebula::kvstore::ResultCode
 AdminTaskManager::cancelTask(int jobId) {
     LOG(INFO) << "AdminTaskManager::cancelTask() jobId=" << jobId;
-    auto ret = kvstore::ResultCode::ERR_KEY_NOT_FOUND;
+    auto ret = ResultCode::ERR_KEY_NOT_FOUND;
     auto it = tasks_.begin();
     while (it != tasks_.end()) {
         auto handle = it->first;
         if (handle.first == jobId) {
-            it->second->task->cancel();
-            LOG(INFO) << folly::stringPrintf("task[%d, %d] cancelled",
-                                                jobId, handle.second);
+            auto ctx = it->second;
+            ctx->cancelled = true;
+            ctx->rc = ResultCode::ERR_USER_CANCELLED;
+            LOG(INFO) << folly::stringPrintf("task(%d, %d) cancelled",
+                                             jobId, handle.second);
             ret = kvstore::ResultCode::SUCCEEDED;
         }
         ++it;
@@ -70,24 +62,26 @@ AdminTaskManager::cancelTask(int jobId) {
 }
 
 void AdminTaskManager::shutdown() {
-    LOG(INFO) << "enter " << __PRETTY_FUNCTION__;
+    LOG(INFO) << "enter AdminTaskManager::shutdown()";
     shutdown_ = true;
+    bgThread_->stop();
+    bgThread_->wait();
+
+    for (auto it = tasks_.begin(); it != tasks_.end(); ++it) {
+        it->second->cancelled = true;
+    }
+
     pool_->stop();
     pool_->wait();
 
     bgThread_->stop();
     bgThread_->wait();
-    LOG(INFO) << "exit " << __PRETTY_FUNCTION__;
+
+    LOG(INFO) << "exit AdminTaskManager::shutdown()";
 }
 
-// [Todo] (liuyu)
-// this will dequeue a task(t1) and hold it until
-// satisify the concurrent requirement
-// but it a hi priority task(t2) comes and meet the
-// current concurrent requirement
-// it can't be picked until t1 finished
 void AdminTaskManager::pickTaskThread() {
-    std::chrono::milliseconds interval{100};    // 100ms
+    std::chrono::milliseconds interval{20};    // 20ms
     while (!shutdown_) {
         LOG(INFO) << "waiting for incoming task";
         folly::Optional<TaskHandle> optTaskHandle{folly::none};
@@ -96,123 +90,82 @@ void AdminTaskManager::pickTaskThread() {
         }
 
         if (shutdown_) {
-            LOG(INFO) << "detect AdminTaskManager shutdown. exit";
+            LOG(INFO) << "detect AdminTaskManager::shutdown()";
             return;
         }
 
-        auto taskHandle = *optTaskHandle;
+        auto handle = *optTaskHandle;
         LOG(INFO) << folly::stringPrintf("dequeue task(%d, %d)",
-                                         taskHandle.first, taskHandle.second);
-        auto it = tasks_.find(taskHandle);
+                                         handle.first, handle.second);
+        auto it = tasks_.find(handle);
         if (it == tasks_.end()) {
             LOG(ERROR) << folly::stringPrintf(
-                        "trying to exec non-exist task[%d, %d]",
-                        taskHandle.first, taskHandle.second);
+                        "trying to exec non-exist task(%d, %d)",
+                        handle.first, handle.second);
             continue;
         }
 
-        std::shared_ptr<TaskExecContext> ctx = tasks_[taskHandle];
-        auto task = ctx->task;
-        while (!shutdown_) {
-            if (task->cancelled()) {
-                task->finish();
-                tasks_.erase(taskHandle);
-                break;
-            }
-            if (!satisifyConcurrency(task->getConcurrent())) {
-                LOG(INFO) << folly::stringPrintf("waiting for task(%d, %d) satisify concurrency",
-                                                 taskHandle.first, taskHandle.second);
-                std::this_thread::sleep_for(interval);
-                continue;
-            }
-            auto errOrSubTasks = task->genSubTasks();
-            if (!nebula::ok(errOrSubTasks)) {
-                task->finish(nebula::error(errOrSubTasks));
-                tasks_.erase(taskHandle);
-                break;
-            }
+        std::shared_ptr<TaskExecContext> ctx = tasks_[handle];
+        auto errOrSubTasks = ctx->task->genSubTasks();
+        if (!nebula::ok(errOrSubTasks)) {
+            LOG(ERROR) << "genSubTasks() failed=" << static_cast<int>(nebula::error(errOrSubTasks));
+            ctx->task->finish(nebula::error(errOrSubTasks));
+            tasks_.erase(handle);
+            return;
+        }
 
-            LOG(INFO) << folly::stringPrintf("extract sub tasks of task(%d, %d)",
-                                             taskHandle.first, taskHandle.second);
-            ctx->subTasks = nebula::value(errOrSubTasks);
-            for (auto i = 0U; i < ctx->subTasks.size(); ++i) {
-                auto subTaskHandle = std::make_tuple(taskHandle.first, taskHandle.second, i);
-                subTaskHandleQueue_.add(subTaskHandle);
-            }
+        auto subTasks = nebula::value(errOrSubTasks);
+        for (auto& subtask : subTasks) {
+            ctx->subtasks.add(subtask);
+        }
 
-            {
-                std::lock_guard<std::mutex> lk(muConLimits_);
-                concurrentLimits.insert(task->getConcurrent());
-                maxWorker_ = *concurrentLimits.begin();
-            }
+        auto subTaskConcurrency = std::min(ctx->task->getConcurrentReq(),
+                                           static_cast<size_t>(FLAGS_max_concurrent_subtasks));
+        subTaskConcurrency = std::min(subTaskConcurrency, subTasks.size());
+        ctx->notFinishedThread = subTaskConcurrency;
+
+        LOG(INFO) << folly::stringPrintf("run task(%d, %d) in %zu thread",
+                                         handle.first, handle.second, ctx->notFinishedThread);
+        for (size_t i = 0; i < subTaskConcurrency; ++i) {
+            pool_->addTask(&AdminTaskManager::pickSubTask, this, handle);
+        }
+    }  // end while (!shutdown_)
+    LOG(INFO) << "AdminTaskManager::pickTaskThread(~)";
+}
+
+void AdminTaskManager::pickSubTask(TaskHandle handle) {
+    std::chrono::milliseconds take_dura{10};
+    ResultCode successful{ResultCode::SUCCEEDED};
+    auto ctx = tasks_[handle];
+    while (auto subTask = ctx->subtasks.try_take_for(take_dura)) {
+        if (ctx->cancelled) {
+            break;
+        }
+        ResultCode rc = subTask->invoke();
+        if (rc != ResultCode::SUCCEEDED) {
+            ctx->rc.compare_exchange_strong(successful, rc);
             break;
         }
     }
-}
 
-void AdminTaskManager::pickSubTaskThread(int threadIndex) {
-    int workerNum = threadIndex;
-    bool threadActive = true;
-    LOG(INFO) << "worker[" << workerNum << "] " << threadActive;
-    std::chrono::milliseconds wakeup_interval{500};
-    while (!shutdown_) {
-        if (workerNum >= maxWorker_) {
-            LOG(INFO) << folly::stringPrintf("in workerNum(%d) >= maxWorker_(%d)",
-                                             workerNum, maxWorker_);
-            if (threadActive) {
-                int actWorker = --activeWorker_;
-                threadActive = false;
-                LOG(INFO) << folly::stringPrintf(
-                            "workerNum(%d), maxWorker_(%d), threadActive(%d), actWorker(%d)",
-                             workerNum, maxWorker_, threadActive, actWorker);
-            }
-            std::this_thread::sleep_for(wakeup_interval);
-            continue;
-        }
-
-        auto optSubtaskHandle = subTaskHandleQueue_.try_take_for(wakeup_interval);
-        if (optSubtaskHandle == folly::none) {
-            if (threadActive) {
-                threadActive = false;
-                --activeWorker_;
-            }
-            std::this_thread::sleep_for(wakeup_interval);
-            continue;
-        }
-
-        LOG(INFO) << "worker[" << workerNum << "] get sub task handle";
-        if (!threadActive) {
-            LOG(INFO) << "worker[" << workerNum << "] " << threadActive;
-            ++activeWorker_;
-            threadActive = true;
-        }
-        auto subtaskHandle = *optSubtaskHandle;
-        auto taskHandle = std::make_pair(std::get<0>(subtaskHandle), std::get<1>(subtaskHandle));
-        auto taskExecCtx = tasks_[taskHandle];
-        auto subTaskIdx = std::get<2>(subtaskHandle);
-        auto rc = taskExecCtx->subTasks[subTaskIdx].invoke();
-        taskExecCtx->task->subFinish(rc);
-        size_t finishedsubTasks = ++taskExecCtx->finishedsubTasks;
-        // LOG(INFO) << "finishedsubTasks: " << finishedsubTasks;
-        LOG(INFO) << folly::stringPrintf("%zu of %zu sub tasks finished (%d)",
-                                         finishedsubTasks, taskExecCtx->subTasks.size(),
-                                         static_cast<int>(rc));
-        if (finishedsubTasks == taskExecCtx->subTasks.size()) {
-            taskExecCtx->task->finish();
-            tasks_.erase(taskHandle);
-            {
-                std::lock_guard<std::mutex> lk(muConLimits_);
-                concurrentLimits.erase(taskExecCtx->task->getConcurrent());
-                maxWorker_ = *concurrentLimits.begin();
+    bool taskFinished{false};
+    if (ctx->taskFinished.compare_exchange_strong(taskFinished, true)) {
+        {
+            std::unique_lock<std::mutex> lk(ctx->mutex);
+            LOG(INFO) << folly::stringPrintf("waiting for all sub task(%d, %d) finished",
+                                         handle.first, handle.second);
+            while (ctx->notFinishedThread != 1) {
+                ctx->cv.wait(lk);
             }
         }
+        ctx->task->finish(ctx->rc);
+        tasks_.erase(handle);
+    } else {
+        std::lock_guard<std::mutex> lk(ctx->mutex);
+        --ctx->notFinishedThread;
+        ctx->cv.notify_one();
     }
-}
-
-bool AdminTaskManager::satisifyConcurrency(int concurrentReqNum) {
-    return maxWorker_ < concurrentReqNum || activeWorker_ < concurrentReqNum;
 }
 
 }  // namespace storage
 }  // namespace nebula
-

@@ -63,7 +63,7 @@ public:
     /*
      * return the status (e.g. Queue, running, finished, failed, stopped);
      * */
-    Status getStatus() { return status_; }
+    Status getStatus() const { return status_; }
 
     /*
      * return the key write to kv store

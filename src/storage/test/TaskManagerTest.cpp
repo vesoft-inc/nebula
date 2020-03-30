@@ -16,11 +16,28 @@ using namespace std::chrono_literals;   // NOLINT
 
 namespace nebula {
 namespace storage {
+/*
+ * summary:
+ * 1. ctor
+ * 2. happy_path:
+ *      use 3 background thread to run 1, 2, 4, 8 sub tasks
+ * 3. gen task failed directly
+ *      check task manger will return the right error code
+ * 4. some task return error code.
+ *      check task manger will return the right error code
+ * 5. cancel task in task queue
+ *      5.1 cancel_a_running_task_with_only_1_sub_task
+ *      5.2 cancel_1_task_in_a_2_tasks_queue
+ * 6. cancel some sub task
+ *      6.1 cancel_a_task_before_all_sub_task_running
+ *      6.2 cancel_a_task_while_some_sub_task_running
+ * */
 
 using ResultCode = nebula::kvstore::ResultCode;
 using ErrOrSubTasks = ErrorOr<nebula::kvstore::ResultCode, std::vector<AdminSubTask>>;
 
 auto suc = kvstore::ResultCode::SUCCEEDED;
+int test_loop = 5;
 
 struct HookableTask : public AdminTask {
     HookableTask() {
@@ -29,7 +46,7 @@ struct HookableTask : public AdminTask {
         };
     }
     ErrOrSubTasks genSubTasks() override {
-        LOG(INFO) << "genSubTasks() subTasks.size()=" << subTasks.size();
+        LOG(INFO) << "HookableTask::genSubTasks() subTasks.size()=" << subTasks.size();
         return fGenSubTasks();
     }
 
@@ -49,25 +66,86 @@ struct HookableTask : public AdminTask {
     std::vector<AdminSubTask> subTasks;
 };
 
-/*
- * summary:
- * 1. ctor
- * 2. happy_path:
- *      use 3 background thread to run 1, 2, 4, 8 sub tasks
- * 3. gen task failed directly
- *      check task manger will return the right error code
- * 4. some task return error code.
- *      check task manger will return the right error code
- * 5. cancel task in task queue
- *      5.1 cancel_a_running_task_with_only_1_sub_task
- *      5.2 cancel_1_task_in_a_2_tasks_queue
- * 6. cancel some sub task
- *      6.1 cancel_a_task_before_all_sub_task_running
- *      6.2 cancel_a_task_while_some_sub_task_running
- * */
+// *** 0. basic component
+TEST(TaskManagerTest, extract_subtasks_to_context) {
+    size_t numSubTask = 5;
+    std::shared_ptr<AdminTask> vtask(new HookableTask());
+    HookableTask* task = static_cast<HookableTask*>(vtask.get());
+    int subTaskCalled = 0;
+    for (size_t i = 0; i < numSubTask; ++i) {
+        task->addSubTask([&subTaskCalled]() {
+            ++subTaskCalled;
+            return kvstore::ResultCode::SUCCEEDED;
+        });
+    }
+    AdminTaskManager::TaskExecContext ctx(vtask);
+    for (auto& subtask : task->subTasks) {
+        ctx.subtasks.add(subtask);
+    }
 
-// 0. basic data structure
-TEST(TaskManagerTest, basic_data_structure) {
+    std::chrono::milliseconds ms10{10};
+    while (auto it = ctx.subtasks.try_take_for(ms10)) {
+        auto& subTask = *it;
+        subTask.invoke();
+    }
+
+    EXPECT_EQ(subTaskCalled, numSubTask);
+}
+
+TEST(TaskManagerTest, run_subtasks_using_pool) {
+    size_t numSubTask = 15;
+    size_t poolThread = 3;
+    std::shared_ptr<AdminTask> vtask(new HookableTask());
+    HookableTask* task = static_cast<HookableTask*>(vtask.get());
+    int subTaskCalled = 0;
+    for (size_t i = 0; i < numSubTask; ++i) {
+        task->addSubTask([&subTaskCalled]() {
+            ++subTaskCalled;
+            return kvstore::ResultCode::SUCCEEDED;
+        });
+    }
+    AdminTaskManager::TaskExecContext ctx(vtask);
+    for (auto& subtask : task->subTasks) {
+        ctx.subtasks.add(subtask);
+    }
+
+    auto pool = std::make_unique<nebula::thread::GenericThreadPool>();
+    pool->start(poolThread);
+
+    int taskFinCalled = 0;
+    auto onTaskFinish = [&]() {
+        ++taskFinCalled;
+    };
+
+    auto pickSubTask = [&ctx, cb = onTaskFinish]() {
+        std::chrono::milliseconds ms10{10};
+        while (!ctx.taskFinished.load()) {
+            auto subTask = ctx.subtasks.try_take_for(ms10);
+            if (subTask != folly::none) {
+                subTask->invoke();
+            } else {
+                bool taskFinished{false};
+                if (ctx.taskFinished.compare_exchange_weak(taskFinished, true)) {
+                    cb();
+                }
+            }
+        }
+    };
+
+    for (size_t i = 0; i < poolThread; ++i) {
+        pool->addTask(pickSubTask);
+    }
+
+    pool->stop();
+    pool->wait();
+
+    EXPECT_EQ(taskFinCalled, 1);
+    LOG(INFO) << folly::stringPrintf("%d subTaskCalled via %zu poolThread",
+                                     subTaskCalled, poolThread);
+    EXPECT_EQ(subTaskCalled, numSubTask);
+}
+
+TEST(TaskManagerTest, basic_component_ConcurrentHashMap) {
     using TKey = std::pair<int, int>;
     using TVal = std::shared_ptr<AdminTaskManager::TaskExecContext>;
     using TaskContainer = folly::ConcurrentHashMap<TKey, TVal>;
@@ -95,45 +173,6 @@ TEST(TaskManagerTest, basic_data_structure) {
     EXPECT_TRUE(tasks.empty());
 }
 
-std::atomic<int> conLimit;
-
-void mockPickSubTaskThread(int thread_idx) {
-    LOG(INFO) << "thread_idx: " << thread_idx;
-    while (conLimit > 0) {
-        if (thread_idx < conLimit) {
-            LOG(INFO) << folly::stringPrintf("exceed max conLimit waiting");
-            std::this_thread::sleep_for(100ms);
-        }
-    }
-}
-
-TEST(TaskManagerTest, concurrency_control) {
-    auto taskMgr = AdminTaskManager::instance();
-    taskMgr->init();
-    int maxThread = 5;
-
-    using Pool = nebula::thread::GenericThreadPool;
-    std::unique_ptr<Pool> pool_ = std::make_unique<Pool>();
-
-    pool_->start(maxThread);
-
-    int thread_idx = 0;
-    // std::atomic<int> conLimit;
-    conLimit = maxThread;
-
-    for (int i = 0; i < maxThread; ++i) {
-        pool_->addTask(mockPickSubTaskThread, thread_idx);
-    }
-
-    LOG(INFO) << "before sleep_for(2s)";
-    std::this_thread::sleep_for(1s);
-    LOG(INFO) << "after sleep_for(2s)";
-    conLimit = -1;
-    pool_->stop();
-    pool_->wait();
-    taskMgr->shutdown();
-}
-
 // 1. ctor
 TEST(TaskManagerTest, ctor) {
     auto taskMgr = AdminTaskManager::instance();
@@ -148,12 +187,12 @@ TEST(TaskManagerTest, happy_path_task1_sub1) {
     size_t numSubTask = 1;
     std::shared_ptr<AdminTask> task(new HookableTask());
     HookableTask* mockTask = dynamic_cast<HookableTask*>(task.get());
-    folly::Promise<ResultCode> pro;
-    folly::Future<ResultCode> fut = pro.getFuture();
+    folly::Promise<ResultCode> pTaskFini;
+    auto fTaskFini = pTaskFini.getFuture();
 
     auto taskCallback = [&](ResultCode ret) {
         LOG(INFO) << "taskCallback";
-        pro.setValue(ret);
+        pTaskFini.setValue(ret);
     };
     mockTask->setCallback(taskCallback);
     size_t subTaskCalled = 0;
@@ -167,7 +206,9 @@ TEST(TaskManagerTest, happy_path_task1_sub1) {
         mockTask->addSubTask(subTask);
     }
     taskMgr->addAsyncTask(task);
-    fut.wait();
+    LOG(INFO) << "fTaskFini.wait(0)";
+    fTaskFini.wait();
+    LOG(INFO) << "fTaskFini.wait(1)";
 
     EXPECT_EQ(numSubTask, subTaskCalled);
 
@@ -177,151 +218,206 @@ TEST(TaskManagerTest, happy_path_task1_sub1) {
 TEST(TaskManagerTest, happy_path) {
     auto taskMgr = AdminTaskManager::instance();
     taskMgr->init();
-    taskMgr->setSubTaskLimit(3);
+    for (int t = 0; t < test_loop; ++t) {
+        {
+            size_t numSubTask = 1;
+            std::shared_ptr<AdminTask> task(new HookableTask());
+            HookableTask* mockTask = dynamic_cast<HookableTask*>(task.get());
+            int jobId = 1;
+            mockTask->setJobId(jobId);
+            mockTask->setTaskId(jobId);
+            folly::Promise<ResultCode> pro;
+            folly::Future<ResultCode> fut = pro.getFuture();
 
-    {
-        size_t numSubTask = 1;
-        std::shared_ptr<AdminTask> task(new HookableTask());
-        HookableTask* mockTask = dynamic_cast<HookableTask*>(task.get());
-        int jobId = 1;
-        mockTask->setJobId(jobId);
-        mockTask->setTaskId(jobId);
-        folly::Promise<ResultCode> pro;
-        folly::Future<ResultCode> fut = pro.getFuture();
+            auto taskCallback = [&](ResultCode ret) {
+                pro.setValue(ret);
+            };
+            mockTask->setCallback(taskCallback);
+            size_t subTaskCalled = 0;
 
-        auto taskCallback = [&](ResultCode ret) {
-            pro.setValue(ret);
-        };
-        mockTask->setCallback(taskCallback);
-        size_t subTaskCalled = 0;
+            auto subTask = [&subTaskCalled]() {
+                ++subTaskCalled;
+                return kvstore::ResultCode::SUCCEEDED;
+            };
+            for (size_t i = 0; i < numSubTask; ++i) {
+                mockTask->addSubTask(subTask);
+            }
+            taskMgr->addAsyncTask(task);
+            fut.wait();
 
-        auto subTask = [&subTaskCalled]() {
-            ++subTaskCalled;
-            return kvstore::ResultCode::SUCCEEDED;
-        };
-        for (size_t i = 0; i < numSubTask; ++i) {
-            mockTask->addSubTask(subTask);
+            EXPECT_EQ(numSubTask, subTaskCalled);
         }
-        taskMgr->addAsyncTask(task);
-        fut.wait();
 
-        EXPECT_EQ(numSubTask, subTaskCalled);
-    }
+        {   // use 3 background to run 2 task
+            size_t numSubTask = 2;
+            std::shared_ptr<AdminTask> task(new HookableTask());
+            HookableTask* mockTask = dynamic_cast<HookableTask*>(task.get());
+            int jobId = 2;
+            mockTask->setJobId(jobId);
+            mockTask->setTaskId(jobId);
+            folly::Promise<ResultCode> pro;
+            folly::Future<ResultCode> fut = pro.getFuture();
 
-    {   // use 3 background to run 2 task
-        size_t numSubTask = 2;
-        std::shared_ptr<AdminTask> task(new HookableTask());
-        HookableTask* mockTask = dynamic_cast<HookableTask*>(task.get());
-        int jobId = 2;
-        mockTask->setJobId(jobId);
-        mockTask->setTaskId(jobId);
-        folly::Promise<ResultCode> pro;
-        folly::Future<ResultCode> fut = pro.getFuture();
+            auto taskCallback = [&](ResultCode ret) {
+                pro.setValue(ret);
+            };
+            mockTask->setCallback(taskCallback);
+            std::atomic<int> subTaskCalled{0};
 
-        auto taskCallback = [&](ResultCode ret) {
-            pro.setValue(ret);
-        };
-        mockTask->setCallback(taskCallback);
-        size_t subTaskCalled = 0;
+            auto subTask = [&subTaskCalled]() {
+                ++subTaskCalled;
+                return kvstore::ResultCode::SUCCEEDED;
+            };
+            for (size_t i = 0; i < numSubTask; ++i) {
+                mockTask->addSubTask(subTask);
+            }
+            taskMgr->addAsyncTask(task);
+            fut.wait();
 
-        auto subTask = [&subTaskCalled]() {
-            ++subTaskCalled;
-            return kvstore::ResultCode::SUCCEEDED;
-        };
-        for (size_t i = 0; i < numSubTask; ++i) {
-            mockTask->addSubTask(subTask);
+            EXPECT_EQ(numSubTask, subTaskCalled);
         }
-        taskMgr->addAsyncTask(task);
-        fut.wait();
 
-        EXPECT_EQ(numSubTask, subTaskCalled);
-    }
+        {   // use 3 background to run 3 task
+            size_t numSubTask = 3;
+            std::shared_ptr<AdminTask> task(new HookableTask());
+            HookableTask* mockTask = dynamic_cast<HookableTask*>(task.get());
+            folly::Promise<ResultCode> pro;
+            folly::Future<ResultCode> fut = pro.getFuture();
+            int jobId = 3;
+            mockTask->setJobId(jobId);
+            mockTask->setTaskId(jobId);
 
-    {   // use 3 background to run 3 task
-        size_t numSubTask = 3;
-        std::shared_ptr<AdminTask> task(new HookableTask());
-        HookableTask* mockTask = dynamic_cast<HookableTask*>(task.get());
-        folly::Promise<ResultCode> pro;
-        folly::Future<ResultCode> fut = pro.getFuture();
-        int jobId = 3;
-        mockTask->setJobId(jobId);
-        mockTask->setTaskId(jobId);
+            auto taskCallback = [&](ResultCode ret) {
+                pro.setValue(ret);
+            };
+            mockTask->setCallback(taskCallback);
+            std::atomic<int> subTaskCalled{0};
 
-        auto taskCallback = [&](ResultCode ret) {
-            pro.setValue(ret);
-        };
-        mockTask->setCallback(taskCallback);
-        size_t subTaskCalled = 0;
+            auto subTask = [&subTaskCalled]() {
+                ++subTaskCalled;
+                return kvstore::ResultCode::SUCCEEDED;
+            };
+            for (size_t i = 0; i < numSubTask; ++i) {
+                mockTask->addSubTask(subTask);
+            }
+            taskMgr->addAsyncTask(task);
+            fut.wait();
 
-        auto subTask = [&subTaskCalled]() {
-            ++subTaskCalled;
-            return kvstore::ResultCode::SUCCEEDED;
-        };
-        for (size_t i = 0; i < numSubTask; ++i) {
-            mockTask->addSubTask(subTask);
+            EXPECT_EQ(numSubTask, subTaskCalled);
         }
-        taskMgr->addAsyncTask(task);
-        fut.wait();
 
-        EXPECT_EQ(numSubTask, subTaskCalled);
-    }
+        {   // use 3 background to run 4 task
+            size_t numSubTask = 4;
+            std::shared_ptr<AdminTask> task(new HookableTask());
+            HookableTask* mockTask = dynamic_cast<HookableTask*>(task.get());
+            int jobId = 4;
+            mockTask->setJobId(jobId);
+            mockTask->setTaskId(jobId);
+            folly::Promise<ResultCode> pro;
+            folly::Future<ResultCode> fut = pro.getFuture();
 
-    {   // use 3 background to run 4 task
-        size_t numSubTask = 4;
-        std::shared_ptr<AdminTask> task(new HookableTask());
-        HookableTask* mockTask = dynamic_cast<HookableTask*>(task.get());
-        int jobId = 4;
-        mockTask->setJobId(jobId);
-        mockTask->setTaskId(jobId);
-        folly::Promise<ResultCode> pro;
-        folly::Future<ResultCode> fut = pro.getFuture();
+            auto taskCallback = [&](ResultCode ret) {
+                pro.setValue(ret);
+            };
+            mockTask->setCallback(taskCallback);
+            std::atomic<int> subTaskCalled{0};
+            auto subTask = [&subTaskCalled]() {
+                ++subTaskCalled;
+                return kvstore::ResultCode::SUCCEEDED;
+            };
+            for (size_t i = 0; i < numSubTask; ++i) {
+                mockTask->addSubTask(subTask);
+            }
+            taskMgr->addAsyncTask(task);
+            fut.wait();
 
-        auto taskCallback = [&](ResultCode ret) {
-            pro.setValue(ret);
-        };
-        mockTask->setCallback(taskCallback);
-        size_t subTaskCalled = 0;
-        auto subTask = [&subTaskCalled]() {
-            ++subTaskCalled;
-            return kvstore::ResultCode::SUCCEEDED;
-        };
-        for (size_t i = 0; i < numSubTask; ++i) {
-            mockTask->addSubTask(subTask);
+            EXPECT_EQ(numSubTask, subTaskCalled);
         }
-        taskMgr->addAsyncTask(task);
-        fut.wait();
 
-        EXPECT_EQ(numSubTask, subTaskCalled);
-    }
+        {   // 8 task
+            size_t numSubTask = 8;
+            std::shared_ptr<AdminTask> task(new HookableTask());
+            HookableTask* mockTask = dynamic_cast<HookableTask*>(task.get());
+            int jobId = 5;
+            mockTask->setJobId(jobId);
+            mockTask->setTaskId(jobId);
+            folly::Promise<ResultCode> pro;
+            folly::Future<ResultCode> fut = pro.getFuture();
 
-    {   // use 3 background to run 8 task
-        size_t numSubTask = 8;
-        std::shared_ptr<AdminTask> task(new HookableTask());
-        HookableTask* mockTask = dynamic_cast<HookableTask*>(task.get());
-        int jobId = 5;
-        mockTask->setJobId(jobId);
-        mockTask->setTaskId(jobId);
-        folly::Promise<ResultCode> pro;
-        folly::Future<ResultCode> fut = pro.getFuture();
+            auto taskCallback = [&](ResultCode ret) {
+                pro.setValue(ret);
+            };
+            mockTask->setCallback(taskCallback);
+            std::atomic<int> subTaskCalled{0};
+            auto subTask = [&subTaskCalled]() {
+                ++subTaskCalled;
+                return kvstore::ResultCode::SUCCEEDED;
+            };
+            for (size_t i = 0; i < numSubTask; ++i) {
+                mockTask->addSubTask(subTask);
+            }
+            taskMgr->addAsyncTask(task);
+            fut.wait();
 
-        auto taskCallback = [&](ResultCode ret) {
-            pro.setValue(ret);
-        };
-        mockTask->setCallback(taskCallback);
-        size_t subTaskCalled = 0;
-        auto subTask = [&subTaskCalled]() {
-            ++subTaskCalled;
-            return kvstore::ResultCode::SUCCEEDED;
-        };
-        for (size_t i = 0; i < numSubTask; ++i) {
-            mockTask->addSubTask(subTask);
+            EXPECT_EQ(numSubTask, subTaskCalled);
         }
-        taskMgr->addAsyncTask(task);
-        fut.wait();
 
-        EXPECT_EQ(numSubTask, subTaskCalled);
+        {   // 16 task
+            size_t numSubTask = 16;
+            std::shared_ptr<AdminTask> task(new HookableTask());
+            HookableTask* mockTask = dynamic_cast<HookableTask*>(task.get());
+            int jobId = 5;
+            mockTask->setJobId(jobId);
+            mockTask->setTaskId(jobId);
+            folly::Promise<ResultCode> pro;
+            folly::Future<ResultCode> fut = pro.getFuture();
+
+            auto taskCallback = [&](ResultCode ret) {
+                pro.setValue(ret);
+            };
+            mockTask->setCallback(taskCallback);
+            std::atomic<int> subTaskCalled{0};
+            auto subTask = [&subTaskCalled]() {
+                ++subTaskCalled;
+                return kvstore::ResultCode::SUCCEEDED;
+            };
+            for (size_t i = 0; i < numSubTask; ++i) {
+                mockTask->addSubTask(subTask);
+            }
+            taskMgr->addAsyncTask(task);
+            fut.wait();
+
+            EXPECT_EQ(numSubTask, subTaskCalled);
+        }
+
+        {   // 16 task
+            size_t numSubTask = 256;
+            std::shared_ptr<AdminTask> task(new HookableTask());
+            HookableTask* mockTask = dynamic_cast<HookableTask*>(task.get());
+            int jobId = 5;
+            mockTask->setJobId(jobId);
+            mockTask->setTaskId(jobId);
+            folly::Promise<ResultCode> pro;
+            folly::Future<ResultCode> fut = pro.getFuture();
+
+            auto taskCallback = [&](ResultCode ret) {
+                pro.setValue(ret);
+            };
+            mockTask->setCallback(taskCallback);
+            std::atomic<int> subTaskCalled{0};
+            auto subTask = [&subTaskCalled]() {
+                ++subTaskCalled;
+                return kvstore::ResultCode::SUCCEEDED;
+            };
+            for (size_t i = 0; i < numSubTask; ++i) {
+                mockTask->addSubTask(subTask);
+            }
+            taskMgr->addAsyncTask(task);
+            fut.wait();
+
+            EXPECT_EQ(numSubTask, subTaskCalled);
+        }
     }
-
     taskMgr->shutdown();
 }
 
@@ -357,104 +453,106 @@ TEST(TaskManagerTest, gen_sub_task_failed) {
 TEST(TaskManagerTest, some_subtask_failed) {
     auto taskMgr = AdminTaskManager::instance();
     taskMgr->init();
-    {
-        size_t numSubTask = 1;
-        size_t subTaskCalled = 0;
-        auto errorCode = kvstore::ResultCode::ERR_PART_NOT_FOUND;
+    for (int t = 0; t < test_loop; ++t) {
+        {
+            size_t numSubTask = 1;
+            std::atomic<int> subTaskCalled{0};
+            auto errorCode = kvstore::ResultCode::ERR_PART_NOT_FOUND;
 
-        std::shared_ptr<AdminTask> task(new HookableTask());
-        HookableTask* mockTask = static_cast<HookableTask*>(task.get());
-        folly::Promise<ResultCode> pro;
-        folly::Future<ResultCode> fut = pro.getFuture();
-        for (size_t i = 0; i < numSubTask; ++i) {
-            mockTask->addSubTask([&]() {
-                ++subTaskCalled;
-                return i == numSubTask / 2 ? suc : errorCode;
+            std::shared_ptr<AdminTask> task(new HookableTask());
+            HookableTask* mockTask = static_cast<HookableTask*>(task.get());
+            folly::Promise<ResultCode> pro;
+            folly::Future<ResultCode> fut = pro.getFuture();
+            for (size_t i = 0; i < numSubTask; ++i) {
+                mockTask->addSubTask([&]() {
+                    ++subTaskCalled;
+                    return i == numSubTask / 2 ? suc : errorCode;
+                });
+            }
+            mockTask->setCallback([&](ResultCode ret) {
+                pro.setValue(ret);
             });
+            taskMgr->addAsyncTask(task);
+            fut.wait();
+
+            EXPECT_EQ(numSubTask, subTaskCalled);
+            EXPECT_EQ(fut.value(), errorCode);
         }
-        mockTask->setCallback([&](ResultCode ret) {
-            pro.setValue(ret);
-        });
-        taskMgr->addAsyncTask(task);
-        fut.wait();
 
-        EXPECT_EQ(numSubTask, subTaskCalled);
-        EXPECT_EQ(fut.value(), errorCode);
-    }
+        {
+            size_t numSubTask = 2;
+            std::atomic<int> subTaskCalled{0};
+            auto errorCode = kvstore::ResultCode::ERR_LEADER_CHANGED;
 
-    {
-        size_t numSubTask = 2;
-        size_t subTaskCalled = 0;
-        auto errorCode = kvstore::ResultCode::ERR_LEADER_CHANGED;
-
-        std::shared_ptr<AdminTask> task(new HookableTask());
-        HookableTask* mockTask = static_cast<HookableTask*>(task.get());
-        folly::Promise<ResultCode> pro;
-        folly::Future<ResultCode> fut = pro.getFuture();
-        for (size_t i = 0; i < numSubTask; ++i) {
-            mockTask->addSubTask([&]() {
-                ++subTaskCalled;
-                return i == numSubTask / 2 ? suc : errorCode;
+            std::shared_ptr<AdminTask> task(new HookableTask());
+            HookableTask* mockTask = static_cast<HookableTask*>(task.get());
+            folly::Promise<ResultCode> pro;
+            folly::Future<ResultCode> fut = pro.getFuture();
+            for (size_t i = 0; i < numSubTask; ++i) {
+                mockTask->addSubTask([&]() {
+                    ++subTaskCalled;
+                    return i == numSubTask / 2 ? suc : errorCode;
+                });
+            }
+            mockTask->setCallback([&](ResultCode ret) {
+                pro.setValue(ret);
             });
+            taskMgr->addAsyncTask(task);
+            fut.wait();
+
+            EXPECT_EQ(numSubTask, subTaskCalled);
+            EXPECT_EQ(fut.value(), errorCode);
         }
-        mockTask->setCallback([&](ResultCode ret) {
-            pro.setValue(ret);
-        });
-        taskMgr->addAsyncTask(task);
-        fut.wait();
 
-        EXPECT_EQ(numSubTask, subTaskCalled);
-        EXPECT_EQ(fut.value(), errorCode);
-    }
+        {
+            size_t numSubTask = 4;
+            std::atomic<int> subTaskCalled{0};
+            auto errorCode = kvstore::ResultCode::ERR_TAG_NOT_FOUND;
 
-    {
-        size_t numSubTask = 4;
-        size_t subTaskCalled = 0;
-        auto errorCode = kvstore::ResultCode::ERR_TAG_NOT_FOUND;
-
-        std::shared_ptr<AdminTask> task(new HookableTask());
-        HookableTask* mockTask = static_cast<HookableTask*>(task.get());
-        folly::Promise<ResultCode> pro;
-        folly::Future<ResultCode> fut = pro.getFuture();
-        for (size_t i = 0; i < numSubTask; ++i) {
-            mockTask->addSubTask([&]() {
-                ++subTaskCalled;
-                return i == numSubTask / 2 ? suc : errorCode;
+            std::shared_ptr<AdminTask> task(new HookableTask());
+            HookableTask* mockTask = static_cast<HookableTask*>(task.get());
+            folly::Promise<ResultCode> pro;
+            folly::Future<ResultCode> fut = pro.getFuture();
+            for (size_t i = 0; i < numSubTask; ++i) {
+                mockTask->addSubTask([&]() {
+                    ++subTaskCalled;
+                    return i == numSubTask / 2 ? suc : errorCode;
+                });
+            }
+            mockTask->setCallback([&](ResultCode ret) {
+                pro.setValue(ret);
             });
+            taskMgr->addAsyncTask(task);
+            fut.wait();
+
+            EXPECT_EQ(numSubTask, subTaskCalled);
+            EXPECT_EQ(fut.value(), errorCode);
         }
-        mockTask->setCallback([&](ResultCode ret) {
-            pro.setValue(ret);
-        });
-        taskMgr->addAsyncTask(task);
-        fut.wait();
 
-        EXPECT_EQ(numSubTask, subTaskCalled);
-        EXPECT_EQ(fut.value(), errorCode);
-    }
+        {
+            int totalSubTask = 8;
+            std::atomic<int> calledSubTask{0};
+            auto errorCode = kvstore::ResultCode::ERR_UNKNOWN;
 
-    {
-        size_t numSubTask = 8;
-        size_t subTaskCalled = 0;
-        auto errorCode = kvstore::ResultCode::ERR_UNKNOWN;
-
-        std::shared_ptr<AdminTask> task(new HookableTask());
-        HookableTask* mockTask = static_cast<HookableTask*>(task.get());
-        folly::Promise<ResultCode> pro;
-        folly::Future<ResultCode> fut = pro.getFuture();
-        for (size_t i = 0; i < numSubTask; ++i) {
-            mockTask->addSubTask([&]() {
-                ++subTaskCalled;
-                return i == numSubTask / 2 ? suc : errorCode;
+            std::shared_ptr<AdminTask> task(new HookableTask());
+            HookableTask* mockTask = static_cast<HookableTask*>(task.get());
+            folly::Promise<ResultCode> pro;
+            folly::Future<ResultCode> fut = pro.getFuture();
+            for (int i = 0; i < totalSubTask; ++i) {
+                mockTask->addSubTask([&]() {
+                    ++calledSubTask;
+                    return i == totalSubTask / 2 ? suc : errorCode;
+                });
+            }
+            mockTask->setCallback([&](ResultCode ret) {
+                pro.setValue(ret);
             });
-        }
-        mockTask->setCallback([&](ResultCode ret) {
-            pro.setValue(ret);
-        });
-        taskMgr->addAsyncTask(task);
-        fut.wait();
+            taskMgr->addAsyncTask(task);
+            fut.wait();
 
-        EXPECT_EQ(numSubTask, subTaskCalled);
-        EXPECT_EQ(fut.value(), errorCode);
+            EXPECT_LE(totalSubTask, calledSubTask);
+            EXPECT_EQ(fut.value(), errorCode);
+        }
     }
 
     taskMgr->shutdown();
@@ -469,7 +567,7 @@ TEST(TaskManagerTest, cancel_a_running_task_with_only_1_sub_task) {
     HookableTask* mockTask = static_cast<HookableTask*>(task.get());
 
     folly::Promise<int> pTaskRun;
-    folly::Future<int> fTaskRun = pTaskRun.getFuture();
+    auto fTaskRun = pTaskRun.getFuture();
 
     folly::Promise<ResultCode> taskFinishedPro;
     folly::Future<ResultCode> taskFinished = taskFinishedPro.getFuture();
@@ -617,8 +715,7 @@ TEST(TaskManagerTest, cancel_a_task_before_all_sub_task_running) {
 TEST(TaskManagerTest, cancel_a_task_while_some_sub_task_running) {
     auto taskMgr = AdminTaskManager::instance();
     taskMgr->init();
-    taskMgr->setSubTaskLimit(1);
-    auto err = kvstore::ResultCode::ERR_USER_CANCELLED;
+    auto usr_cancel = kvstore::ResultCode::ERR_USER_CANCELLED;
 
     folly::Promise<ResultCode> task1_p;
     folly::Future<ResultCode> task1_f = task1_p.getFuture();
@@ -660,7 +757,7 @@ TEST(TaskManagerTest, cancel_a_task_while_some_sub_task_running) {
 
     task1_f.wait();
 
-    EXPECT_EQ(task1_f.value(), err);
+    EXPECT_EQ(task1_f.value(), usr_cancel);
 
     taskMgr->shutdown();
 }
@@ -674,3 +771,4 @@ int main(int argc, char** argv) {
     google::SetStderrLogging(google::INFO);
     return RUN_ALL_TESTS();
 }
+
