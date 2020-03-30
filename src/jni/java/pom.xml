@@ -12,7 +12,7 @@
 
     <groupId>com.vesoft</groupId>
     <artifactId>nebula-utils</artifactId>
-    <version>1.0.0-rc3</version>
+    <version>1.0.0-rc4</version>
 
     <name>nebula-utils</name>
     <description>Nebula jni utils</description>
