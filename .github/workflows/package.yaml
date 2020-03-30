@@ -30,17 +30,19 @@ jobs:
         shell: bash
       - name: Compute version
         id: version
+        env:
+          CPACK_OUTPUT_DIR: build/cpack_output
         run: |
-          [[ "${{ github.event_name }}" == "push" ]] && \
-            cd $CPACK_OUTPUT_DIR \
-            filename=$(find . -type f \( -iname \*.deb -o -iname \*.rpm \) -exec basename {} \;) \
-            echo "::set-output name=filepath::$CPACK_OUTPUT_DIR/$filename" \
+            [[ "${{ github.event_name }}" == "push" ]] && \
+            ( cd $CPACK_OUTPUT_DIR && \
+            filename=$(find . -type f \( -iname \*.deb -o -iname \*.rpm \) -exec basename {} \;)
+            echo "::set-output name=filepath::$CPACK_OUTPUT_DIR/$filename"
             echo "::set-output name=version::$(cut -d/ -f3 <<< ${{ github.ref }})" || \
-            echo "::set-output name=version::nightly"
+            echo "::set-output name=version::nightly")
         shell: bash
       - name: upload oss
         run: |
-          ./ci/scripts/upload-oss.sh OSS_ENDPOINT=${{ secrets.OSS_ENDPOINT }} OSS_ID=${{ secrets.OSS_ID }} OSS_SECRET=${{ secrets.OSS_SECRET }} filepath=${{ steps.version.outputs.filepath } nightly=true
+          ./ci/scripts/upload-oss.sh OSS_ENDPOINT=${{ secrets.OSS_ENDPOINT }} OSS_ID=${{ secrets.OSS_ID }} OSS_SECRET=${{ secrets.OSS_SECRET }} filepath=${{ steps.version.outputs.filepath }} nightly=true
         shell: bash
       - uses: actions/upload-artifact@v1
         with:

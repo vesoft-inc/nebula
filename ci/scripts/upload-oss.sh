@@ -29,8 +29,5 @@ else
   OSS_URL="oss://nebula-graph/build-deb"/${OSS_SUBDIR}
 fi
 
-wget -c http://gosspublic.alicdn.com/ossutil/1.6.10/ossutil64
-chmod +x ossutil64
-
 echo "Uploading oss... "
 ossutil64 -e ${OSS_ENDPOINT} -i ${OSS_ID} -k ${OSS_SECRET} -f cp ${filepath} ${OSS_URL}/$(basename ${filepath})
