@@ -73,7 +73,6 @@ public:
     std::shared_ptr<const SchemaProviderIf::Field> field(
         const folly::StringPiece name) const override;
 
-    // nullptr if no default value
     StatusOr<nebula::cpp2::Value> getFieldDefaultValue(int64_t index) const override {
         if (UNLIKELY(index < 0) || UNLIKELY(index >= static_cast<int64_t>(fields_.size()))) {
             LOG(ERROR) << "Index[" << index << "] is out of range[0-" << fields_.size() << "]";

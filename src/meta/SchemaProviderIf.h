@@ -98,7 +98,6 @@ public:
     virtual const nebula::cpp2::ValueType& getFieldType(int64_t index) const = 0;
     virtual const nebula::cpp2::ValueType& getFieldType(const folly::StringPiece name) const = 0;
 
-    // nullptr if no default value
     virtual StatusOr<nebula::cpp2::Value> getFieldDefaultValue(int64_t index) const = 0;
     virtual StatusOr<nebula::cpp2::Value> getFieldDefaultValue(const folly::StringPiece name)
         const = 0;
