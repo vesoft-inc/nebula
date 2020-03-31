@@ -100,6 +100,12 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
                                                   iter->val(),
                                                   this->spaceId_,
                                                   tagId);
+        if (reader == nullptr) {
+            LOG(WARNING) << "Can't find the schema for tagId " << tagId;
+            // It offen happens after updating schema but current storaged has not
+            // load it. To protect the data, we just return failed to graphd.
+            return kvstore::ResultCode::ERR_CORRUPT_DATA;
+        }
         const auto constSchema = reader->getSchema();
         for (auto& prop : props) {
             auto res = RowReader::getPropByName(reader.get(), prop.prop_.name);
@@ -157,7 +163,9 @@ cpp2::ErrorCode UpdateVertexProcessor::checkFilter(const PartitionID partId, con
         VLOG(3) << "partId " << partId << ", vId " << vId
                 << ", tagId " << tc.tagId_ << ", prop size " << tc.props_.size();
         auto ret = collectVertexProps(partId, vId, tc.tagId_, tc.props_);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
+        if (ret == kvstore::ResultCode::ERR_CORRUPT_DATA) {
+            return cpp2::ErrorCode::E_TAG_NOT_FOUND;
+        } else if (ret != kvstore::ResultCode::SUCCEEDED) {
             return to(ret);
         }
     }
@@ -445,6 +453,9 @@ void UpdateVertexProcessor::process(const cpp2::UpdateVertexRequest& req) {
                 } else if (code == kvstore::ResultCode::ERR_ATOMIC_OP_FAILED
                     && filterResult_ == cpp2::ErrorCode::E_INVALID_FILTER) {
                     this->pushResultCode(cpp2::ErrorCode::E_INVALID_FILTER, partId);
+                } else if (code == kvstore::ResultCode::ERR_ATOMIC_OP_FAILED
+                    && filterResult_ == cpp2::ErrorCode::E_TAG_NOT_FOUND) {
+                    this->pushResultCode(cpp2::ErrorCode::E_TAG_NOT_FOUND, partId);
                 } else {
                     this->pushResultCode(to(code), partId);
                 }
