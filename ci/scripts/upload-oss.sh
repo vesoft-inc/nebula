@@ -5,9 +5,8 @@
 # - OSS_ENDPOINT
 # - OSS_ID
 # - OSS_SECRET
-# - release
-# - tag
 # - filepath
+# - tag
 # - nightly
 #
 # Example:
