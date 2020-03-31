@@ -5,7 +5,7 @@
  */
 
 #include "base/Base.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include <limits>
@@ -405,6 +405,63 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
                     == resp.result.failed_codes[0].code);
     EXPECT_FALSE(nebula::storage::cpp2::ErrorCode::E_INVALID_UPDATER
                     == resp.result.failed_codes[0].code);
+}
+
+TEST(UpdateVertexTest, CorruptDataTest) {
+    fs::TempDir rootPath("/tmp/UpdateVertexTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+
+    LOG(INFO) << "Prepare meta...";
+    auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
+    LOG(INFO) << "Write a vertex with empty value!";
+
+    // partId, srcId, tagId, version
+    auto key = NebulaKeyUtils::vertexKey(0, 10, 3001, 0);
+    std::vector<kvstore::KV> data;
+    data.emplace_back(std::make_pair(key, ""));
+    folly::Baton<> baton;
+    kv->asyncMultiPut(0, 0, std::move(data),
+        [&](kvstore::ResultCode code) {
+            CHECK_EQ(code, kvstore::ResultCode::SUCCEEDED);
+            baton.post();
+        });
+    baton.wait();
+
+    LOG(INFO) << "Build UpdateVertexRequest...";
+    GraphSpaceID spaceId = 0;
+    PartitionID partId = 0;
+    VertexID vertexId = 10;
+    cpp2::UpdateVertexRequest req;
+    req.set_space_id(spaceId);
+    req.set_vertex_id(vertexId);
+    req.set_part_id(partId);
+    req.set_filter("");
+    LOG(INFO) << "Build update items...";
+    std::vector<cpp2::UpdateItem> items;
+    // int: 3001.tag_3001_col_0 = 1L
+    cpp2::UpdateItem item;
+    item.set_name("3001");
+    item.set_prop("tag_3001_col_0");
+    PrimaryExpression val(1L);
+    item.set_value(Expression::encode(&val));
+    items.emplace_back(item);
+    req.set_update_items(std::move(items));
+    req.set_insertable(false);
+
+    LOG(INFO) << "Test UpdateVertexRequest...";
+    auto* processor = UpdateVertexProcessor::instance(kv.get(),
+                                                      schemaMan.get(),
+                                                      indexMan.get(),
+                                                      nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    LOG(INFO) << "Check the results...";
+    EXPECT_EQ(1, resp.result.failed_codes.size());
+    EXPECT_TRUE(cpp2::ErrorCode::E_TAG_NOT_FOUND == resp.result.failed_codes[0].code);
+    EXPECT_EQ(0, resp.result.failed_codes[0].part_id);
 }
 
 }  // namespace storage
