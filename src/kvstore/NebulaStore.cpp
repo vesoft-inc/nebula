@@ -520,20 +520,6 @@ void NebulaStore::asyncRemoveRange(GraphSpaceID spaceId,
     part->asyncRemoveRange(start, end, std::move(cb));
 }
 
-
-void NebulaStore::asyncRemovePrefix(GraphSpaceID spaceId,
-                                    PartitionID partId,
-                                    const std::string& prefix,
-                                    KVCallback cb) {
-    auto ret = part(spaceId, partId);
-    if (!ok(ret)) {
-        cb(error(ret));
-        return;
-    }
-    auto part = nebula::value(ret);
-    part->asyncRemovePrefix(prefix, std::move(cb));
-}
-
 void NebulaStore::asyncAtomicOp(GraphSpaceID spaceId,
                                 PartitionID partId,
                                 raftex::AtomicOp op,
@@ -641,6 +627,7 @@ ResultCode NebulaStore::compact(GraphSpaceID spaceId) {
 
     auto code = ResultCode::SUCCEEDED;
     std::vector<std::thread> threads;
+    LOG(INFO) << "Space " << spaceId << " start compaction.";
     for (auto& engine : space->engines_) {
         threads.emplace_back(std::thread([&engine, &code] {
             auto ret = engine->compact();
@@ -654,6 +641,7 @@ ResultCode NebulaStore::compact(GraphSpaceID spaceId) {
     for (auto& t : threads) {
         t.join();
     }
+    LOG(INFO) << "Space " << spaceId << " compaction done.";
     return code;
 }
 

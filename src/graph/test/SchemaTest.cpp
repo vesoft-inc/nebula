@@ -1044,6 +1044,22 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    // Test tagName is reserved keyword
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "USE my_space; CREATE TAG `tag` (`edge` string)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESCRIBE TAG `tag`";
+        client->execute(query, resp);
+        std::vector<uniform_tuple_t<std::string, 2>> expected{
+                {"edge", "string"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "SHOW SPACES";
