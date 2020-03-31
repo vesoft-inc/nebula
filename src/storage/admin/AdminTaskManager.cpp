@@ -33,12 +33,15 @@ bool AdminTaskManager::init() {
 
 void AdminTaskManager::addAsyncTask(std::shared_ptr<AdminTask> task) {
     TaskHandle handle = std::make_pair(task->getJobId(), task->getTaskId());
-    LOG(INFO) << folly::stringPrintf("enqueue task(%d, %d), con req=%zu",
+    LOG(INFO) << folly::stringPrintf("try enqueue task(%d, %d), con req=%zu",
                                      task->getJobId(), task->getTaskId(),
                                      task->getConcurrentReq());
     auto ctx = std::make_shared<TaskExecContext>(task);
     tasks_.insert(handle, ctx);
-    taskHandleQueue_.add(handle);
+    taskQueue_.add(handle);
+    LOG(INFO) << folly::stringPrintf("enqueue task(%d, %d), con req=%zu",
+                                     task->getJobId(), task->getTaskId(),
+                                     task->getConcurrentReq());
 }
 
 nebula::kvstore::ResultCode
@@ -50,8 +53,8 @@ AdminTaskManager::cancelTask(int jobId) {
         auto handle = it->first;
         if (handle.first == jobId) {
             auto ctx = it->second;
-            ctx->cancelled = true;
-            ctx->rc = ResultCode::ERR_USER_CANCELLED;
+            ctx->cancelled_ = true;
+            ctx->rc_ = ResultCode::ERR_USER_CANCELLED;
             LOG(INFO) << folly::stringPrintf("task(%d, %d) cancelled",
                                              jobId, handle.second);
             ret = kvstore::ResultCode::SUCCEEDED;
@@ -68,7 +71,7 @@ void AdminTaskManager::shutdown() {
     bgThread_->wait();
 
     for (auto it = tasks_.begin(); it != tasks_.end(); ++it) {
-        it->second->cancelled = true;
+        it->second->cancelled_ = true;
     }
 
     pool_->stop();
@@ -86,7 +89,7 @@ void AdminTaskManager::pickTaskThread() {
         LOG(INFO) << "waiting for incoming task";
         folly::Optional<TaskHandle> optTaskHandle{folly::none};
         while (!optTaskHandle && !shutdown_) {
-            optTaskHandle = taskHandleQueue_.try_take_for(interval);
+            optTaskHandle = taskQueue_.try_take_for(interval);
         }
 
         if (shutdown_) {
@@ -105,27 +108,29 @@ void AdminTaskManager::pickTaskThread() {
             continue;
         }
 
-        std::shared_ptr<TaskExecContext> ctx = tasks_[handle];
-        auto errOrSubTasks = ctx->task->genSubTasks();
+        std::shared_ptr<TaskExecContext> ctx = it->second;
+        auto errOrSubTasks = ctx->task_->genSubTasks();
         if (!nebula::ok(errOrSubTasks)) {
             LOG(ERROR) << "genSubTasks() failed=" << static_cast<int>(nebula::error(errOrSubTasks));
-            ctx->task->finish(nebula::error(errOrSubTasks));
+            ctx->task_->finish(nebula::error(errOrSubTasks));
             tasks_.erase(handle);
             return;
         }
 
         auto subTasks = nebula::value(errOrSubTasks);
         for (auto& subtask : subTasks) {
-            ctx->subtasks.add(subtask);
+            ctx->subtasks_.add(subtask);
         }
 
-        auto subTaskConcurrency = std::min(ctx->task->getConcurrentReq(),
+        auto subTaskConcurrency = std::min(ctx->task_->getConcurrentReq(),
                                            static_cast<size_t>(FLAGS_max_concurrent_subtasks));
         subTaskConcurrency = std::min(subTaskConcurrency, subTasks.size());
-        ctx->notFinishedThread = subTaskConcurrency;
+        ctx->unFinishedTask_ = subTasks.size();
+        ctx->unFinishedThread_ = subTaskConcurrency;
 
         LOG(INFO) << folly::stringPrintf("run task(%d, %d) in %zu thread",
-                                         handle.first, handle.second, ctx->notFinishedThread);
+                                         handle.first, handle.second,
+                                         ctx->unFinishedTask_.load());
         for (size_t i = 0; i < subTaskConcurrency; ++i) {
             pool_->addTask(&AdminTaskManager::pickSubTask, this, handle);
         }
@@ -135,35 +140,31 @@ void AdminTaskManager::pickTaskThread() {
 
 void AdminTaskManager::pickSubTask(TaskHandle handle) {
     std::chrono::milliseconds take_dura{10};
-    ResultCode successful{ResultCode::SUCCEEDED};
+    ResultCode success{ResultCode::SUCCEEDED};
     auto ctx = tasks_[handle];
-    while (auto subTask = ctx->subtasks.try_take_for(take_dura)) {
-        if (ctx->cancelled) {
-            break;
-        }
-        ResultCode rc = subTask->invoke();
-        if (rc != ResultCode::SUCCEEDED) {
-            ctx->rc.compare_exchange_strong(successful, rc);
-            break;
-        }
-    }
-
-    bool taskFinished{false};
-    if (ctx->taskFinished.compare_exchange_strong(taskFinished, true)) {
-        {
-            std::unique_lock<std::mutex> lk(ctx->mutex);
-            LOG(INFO) << folly::stringPrintf("waiting for all sub task(%d, %d) finished",
-                                         handle.first, handle.second);
-            while (ctx->notFinishedThread != 1) {
-                ctx->cv.wait(lk);
+    while (auto subTask = ctx->subtasks_.try_take_for(take_dura)) {
+        if (!ctx->cancelled_ && ctx->rc_ == ResultCode::SUCCEEDED) {
+            ResultCode rc = subTask->invoke();
+            if (rc != ResultCode::SUCCEEDED) {
+                ctx->rc_.compare_exchange_strong(success, rc);
             }
         }
-        ctx->task->finish(ctx->rc);
-        tasks_.erase(handle);
-    } else {
-        std::lock_guard<std::mutex> lk(ctx->mutex);
-        --ctx->notFinishedThread;
-        ctx->cv.notify_one();
+        --ctx->unFinishedTask_;
+    }
+
+    {
+        std::unique_lock<std::mutex> lk(ctx->mutex_);
+        // report status to upper caller ASAP
+        if (ctx->unFinishedTask_ == 0 && !ctx->onFinishCalled) {
+            ctx->task_->finish(ctx->rc_);
+            ctx->onFinishCalled = true;
+        }
+
+        if (ctx->unFinishedThread_ > 1) {
+            --ctx->unFinishedThread_;
+        } else {  // the last worker do the clean up
+            tasks_.erase(handle);
+        }
     }
 }
 

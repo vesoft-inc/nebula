@@ -17,22 +17,12 @@ namespace storage {
 
 class CompactTask : public AdminTask {
     using ResultCode = nebula::kvstore::ResultCode;
+
 public:
-    CompactTask(int jobId,
-                int taskId,
-                nebula::kvstore::NebulaStore* store,
-                int32_t spaceId,
-                std::function<void(kvstore::ResultCode)> cb)
-                : AdminTask(jobId, taskId, cb),
-                store_(store),
-                spaceId_(spaceId) {}
+    explicit CompactTask(TaskContext&& ctx) : AdminTask(std::move(ctx))     {}
 
     ErrorOr<ResultCode, std::vector<AdminSubTask>> genSubTasks() override;
     ResultCode subTask(nebula::kvstore::KVEngine* engine);
-
-private:
-    kvstore::NebulaStore* store_;
-    int32_t               spaceId_;
 };
 
 }  // namespace storage

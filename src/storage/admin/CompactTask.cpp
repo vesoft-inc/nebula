@@ -15,11 +15,11 @@ using ResultCode = nebula::kvstore::ResultCode;
 ErrorOr<ResultCode, std::vector<AdminSubTask>>
 CompactTask::genSubTasks() {
     std::vector<AdminSubTask> ret;
-    if (!store_) {
+    if (!ctx_.store_) {
         return ret;
     }
 
-    auto errOrSpace = store_->space(spaceId_);
+    auto errOrSpace = ctx_.store_->space(ctx_.spaceId_);
     if (!ok(errOrSpace)) {
         return error(errOrSpace);
     }

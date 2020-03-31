@@ -19,6 +19,9 @@ namespace meta {
 using Status = cpp2::JobStatus;
 using AdminCmd = nebula::cpp2::AdminCmd;
 
+int32_t JobDescription::minDataVer_ = 1;
+int32_t JobDescription::currDataVer_ = 1;
+
 JobDescription::JobDescription(int32_t id,
                                nebula::cpp2::AdminCmd cmd,
                                std::vector<std::string> paras,
@@ -78,6 +81,9 @@ int32_t JobDescription::parseKey(const folly::StringPiece& rawKey) {
 std::string JobDescription::jobVal() const {
     std::string str;
     str.reserve(256);
+    // use a big num to avoid possible conflict
+    int32_t dataVersion = INT_MAX - currDataVer_;
+    str.append(reinterpret_cast<const char*>(&dataVersion), sizeof(dataVersion));
     str.append(reinterpret_cast<const char*>(&cmd_), sizeof(cmd_));
     auto paraSize = paras_.size();
     str.append(reinterpret_cast<const char*>(&paraSize), sizeof(size_t));
@@ -98,7 +104,16 @@ std::tuple<AdminCmd,
            int64_t,
            int64_t>
 JobDescription::parseVal(const folly::StringPiece& rawVal) {
-    size_t offset = 0;
+    return decodeVal1(rawVal);
+}
+
+std::tuple<AdminCmd,
+           std::vector<std::string>,
+           Status,
+           int64_t,
+           int64_t>
+JobDescription::decodeVal1(const folly::StringPiece& rawVal) {
+    size_t offset = sizeof(int32_t);
 
     auto cmd = JobUtil::parseFixedVal<AdminCmd>(rawVal, offset);
     offset += sizeof(cmd);
@@ -162,7 +177,20 @@ JobDescription::loadJobDescription(int32_t iJob, nebula::kvstore::KVStore* kv) {
     if (rc != nebula::kvstore::SUCCEEDED) {
         return folly::none;
     }
+    if (!isSupportedValue(val)) {
+        LOG(ERROR) << "not supported data ver of job " << iJob;
+        return folly::none;
+    }
     return makeJobDescription(key, val);
+}
+
+bool JobDescription::isSupportedValue(const folly::StringPiece& val) {
+    if (val.size() < sizeof(int32_t)) {
+        return false;
+    }
+
+    int32_t ver = INT_MAX - JobUtil::parseFixedVal<int32_t>(val, 0);
+    return ver >= minDataVer_ && ver <= currDataVer_;
 }
 
 }  // namespace meta

@@ -28,25 +28,25 @@ class AdminTaskManager {
 
 public:
     struct TaskExecContext {
-        explicit TaskExecContext(std::shared_ptr<AdminTask> task_) : task(task_) {}
-        using SubTaskContainer = folly::UnboundedBlockingQueue<AdminSubTask>;
+        explicit TaskExecContext(std::shared_ptr<AdminTask> task) : task_(task) {}
+        using SubTaskQueue = folly::UnboundedBlockingQueue<AdminSubTask>;
         using ResultContainer = std::vector<folly::SemiFuture<ResultCode>>;
 
-        std::shared_ptr<AdminTask>  task{nullptr};
-        std::atomic<bool>           taskFinished{false};
-        size_t                      notFinishedThread{0};
-        std::mutex                  mutex;
-        std::condition_variable     cv;
-        SubTaskContainer            subtasks;
-        std::atomic<ResultCode>     rc{ResultCode::SUCCEEDED};
-        std::atomic<bool>           cancelled{false};
+        std::shared_ptr<AdminTask>  task_{nullptr};
+        std::mutex                  mutex_;
+        std::atomic<size_t>         unFinishedTask_{0};
+        size_t                      unFinishedThread_{0};
+        SubTaskQueue                subtasks_;
+        std::atomic<ResultCode>     rc_{ResultCode::SUCCEEDED};
+        std::atomic<bool>           cancelled_{false};
+        bool                        onFinishCalled{false};
     };
 
     using ThreadPool = std::unique_ptr<nebula::thread::GenericThreadPool>;
     using TaskHandle = std::pair<int, int>;  // jobid + taskid
     using TaskVal = std::shared_ptr<TaskExecContext>;
     using TaskContainer = folly::ConcurrentHashMap<TaskHandle, TaskVal>;
-    using HandleQueue = folly::UnboundedBlockingQueue<TaskHandle>;
+    using TaskQueue = folly::UnboundedBlockingQueue<TaskHandle>;
 
     AdminTaskManager() = default;
     static AdminTaskManager* instance() {
@@ -73,7 +73,7 @@ private:
     bool                                    shutdown_{false};
     ThreadPool                              pool_{nullptr};
     TaskContainer                           tasks_;
-    HandleQueue                             taskHandleQueue_;
+    TaskQueue                               taskQueue_;
     std::unique_ptr<thread::GenericWorker>  bgThread_;
 };
 

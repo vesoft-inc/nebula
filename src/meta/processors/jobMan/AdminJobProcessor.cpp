@@ -18,10 +18,15 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
     cpp2::AdminJobResult result;
     cpp2::ErrorCode errorCode = cpp2::ErrorCode::SUCCEEDED;
     std::stringstream oss;
-    for (auto& p : req.get_paras()) {
-        oss << p << " ";
+    oss << " op=" << static_cast<int>(req.get_op());
+    if (req.get_op() == nebula::meta::cpp2::AdminJobOp::ADD) {
+        oss << ", cmd = " << static_cast<int>(req.get_cmd());
     }
-    LOG(INFO) << __PRETTY_FUNCTION__ << " paras = " << oss.str();
+    oss << ", paras =";
+    for (auto& p : req.get_paras()) {
+        oss << " " << p;
+    }
+    LOG(INFO) << __func__ << "() " << oss.str();
 
     JobManager* jobMgr = JobManager::getInstance();
     switch (req.get_op()) {
@@ -43,6 +48,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
             auto paras = req.get_paras();
 
             JobDescription jobDesc(nebula::value(jobId), cmd, paras);
+            jobDesc.setAdminClient(adminClient_);
             auto rc = jobMgr->addJob(jobDesc);
             if (rc == nebula::kvstore::SUCCEEDED) {
                 result.set_job_id(nebula::value(jobId));

@@ -28,71 +28,87 @@ private:
     std::function<ResultCode()> run_;
 };
 
+
+enum class TaskPriority : int8_t {
+    LO,
+    MID,
+    HI
+};
+
+struct TaskContext {
+    using ResultCode = nebula::kvstore::ResultCode;
+    using CallBack = std::function<void(ResultCode)>;
+
+    TaskContext() = default;
+    TaskContext(const cpp2::AddAdminTaskRequest& req,
+                kvstore::NebulaStore* store,
+                CallBack cb) : cmd_(req.get_cmd()),
+                               jobId_(req.get_job_id()),
+                               taskId_(req.get_task_id()),
+                               spaceId_(req.get_space_id()),
+                               store_(store),
+                               onFinish_(cb) {}
+    ::nebula::cpp2::AdminCmd    cmd_;
+    int32_t                     jobId_{-1};
+    int32_t                     taskId_{-1};
+    int32_t                     spaceId_{-1};
+    TaskPriority                pri_{TaskPriority::MID};
+    kvstore::NebulaStore*       store_{nullptr};
+    CallBack                    onFinish_;
+    size_t                      concurrentReq_{INT_MAX};
+};
+
 class AdminTask {
     using ResultCode = nebula::kvstore::ResultCode;
     using TCallBack = std::function<void(ResultCode)>;
 
 public:
-    enum class TaskPriority : int8_t {
-        LO,
-        MID,
-        HI
-    };
-
     AdminTask() = default;
-    AdminTask(int jobId, int taskId, TCallBack cb) :
-              jobId_(jobId),
-              taskId_(taskId),
-              onFinished_(cb) {}
+    explicit AdminTask(TaskContext&& ctx) : ctx_(ctx) {}
     virtual ErrorOr<ResultCode, std::vector<AdminSubTask>> genSubTasks() = 0;
     virtual ~AdminTask() {}
 
     virtual void setCallback(TCallBack cb) {
-        onFinished_ = cb;
+        ctx_.onFinish_ = cb;
     }
 
     virtual int8_t getPriority() {
-        return static_cast<int8_t>(pri_);
+        return static_cast<int8_t>(ctx_.pri_);
     }
 
     virtual void finish(ResultCode rc) {
         LOG(INFO) << folly::stringPrintf("task(%d, %d) finished, rc=[%d]",
-                                         jobId_, taskId_, static_cast<int>(rc));
-        onFinished_(rc);
+                                         ctx_.jobId_, ctx_.taskId_,
+                                         static_cast<int>(rc));
+        ctx_.onFinish_(rc);
     }
 
     virtual int getJobId() {
-        return jobId_;
+        return ctx_.jobId_;;
     }
 
     virtual int getTaskId() {
-        return taskId_;
+        return ctx_.taskId_;
     }
 
     virtual void setConcurrentReq(int concurrenctReq) {
         if (concurrenctReq > 0) {
-            concurrentReq_ = concurrenctReq;
+            ctx_.concurrentReq_ = concurrenctReq;
         }
     }
 
     virtual size_t getConcurrentReq() {
-        return concurrentReq_;
+        return ctx_.concurrentReq_;
     }
 
 protected:
-    int             jobId_{-1};
-    int             taskId_{-1};
-    size_t          concurrentReq_{INT_MAX};
-    TaskPriority    pri_{TaskPriority::MID};
-    TCallBack       onFinished_;
+    TaskContext     ctx_;
 };
 
 class AdminTaskFactory {
 public:
-    static std::shared_ptr<AdminTask> createAdminTask(
-            const nebula::storage::cpp2::AddAdminTaskRequest& req,
-            nebula::kvstore::NebulaStore* store,
-            std::function<void(nebula::kvstore::ResultCode)> cb);
+    static std::shared_ptr<AdminTask>
+    createAdminTask2(TaskContext&& ctx);
 };
 
 }  // namespace storage

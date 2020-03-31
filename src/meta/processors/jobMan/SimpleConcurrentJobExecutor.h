@@ -21,7 +21,8 @@ public:
     SimpleConcurrentJobExecutor(int jobId,
                                 nebula::cpp2::AdminCmd cmd,
                                 std::vector<std::string> params,
-                                nebula::kvstore::KVStore* kvStore);
+                                nebula::kvstore::KVStore* kvStore,
+                                AdminClient* adminClient);
 
     ExecuteRet execute() override;
     void stop() override;
@@ -31,11 +32,12 @@ private:
     ErrOrHostAddrVec getTargetHost(int32_t spaceId);
 
 private:
-    int jobId_;
-    nebula::cpp2::AdminCmd cmd_;
-    int spaceId_;
-    std::vector<std::string> paras_;
-    nebula::kvstore::KVStore* kvStore_;
+    int                         jobId_;
+    nebula::cpp2::AdminCmd      cmd_;
+    int                         spaceId_;
+    std::vector<std::string>    paras_;
+    nebula::kvstore::KVStore*   kvStore_;
+    AdminClient*                adminClient_;
 };
 
 }  // namespace meta

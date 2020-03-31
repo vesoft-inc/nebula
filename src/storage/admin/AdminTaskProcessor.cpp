@@ -12,7 +12,7 @@ namespace nebula {
 namespace storage {
 
 void AdminTaskProcessor::process(const cpp2::AddAdminTaskRequest& req) {
-    bool runDirectly = false;
+    bool runDirectly = true;
     auto rc = nebula::kvstore::ResultCode::SUCCEEDED;
     auto taskManager = AdminTaskManager::instance();
 
@@ -25,7 +25,8 @@ void AdminTaskProcessor::process(const cpp2::AddAdminTaskRequest& req) {
         }
         onFinished();
     };
-    auto task = AdminTaskFactory::createAdminTask(req, store, cb);
+    TaskContext ctx(req, store, cb);
+    auto task = AdminTaskFactory::createAdminTask2(std::move(ctx));
     if (task) {
         runDirectly = false;
         taskManager->addAsyncTask(task);

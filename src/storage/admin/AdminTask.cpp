@@ -12,19 +12,16 @@ namespace nebula {
 namespace storage {
 
 std::shared_ptr<AdminTask>
-AdminTaskFactory::createAdminTask(const cpp2::AddAdminTaskRequest& req,
-                                  kvstore::NebulaStore* store,
-                                  std::function<void(kvstore::ResultCode)> cb) {
+AdminTaskFactory::createAdminTask2(TaskContext&& ctx) {
+    LOG(INFO) << folly::stringPrintf("%s (%d, %d)",
+                                    __func__, ctx.jobId_, ctx.taskId_);
     std::shared_ptr<AdminTask> ret;
-    auto cmd = req.get_cmd();
-    int jobId = req.get_job_id();
-    int taskId = req.get_task_id();
-    switch (cmd) {
+    switch (ctx.cmd_) {
     case nebula::cpp2::AdminCmd::COMPACT:
-        ret.reset(new CompactTask(jobId, taskId, store, req.get_space_id(), cb));
+        ret.reset(new CompactTask(std::move(ctx)));
         break;
     case nebula::cpp2::AdminCmd::FLUSH:
-        ret.reset(new FlushTask(jobId, taskId, store, req.get_space_id(), cb));
+        ret.reset(new FlushTask(std::move(ctx)));
         break;
     case nebula::cpp2::AdminCmd::REBUILD_TAG_INDEX:
     case nebula::cpp2::AdminCmd::REBUILD_EDGE_INDEX:

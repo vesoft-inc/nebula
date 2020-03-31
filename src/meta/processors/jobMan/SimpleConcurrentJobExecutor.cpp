@@ -16,11 +16,13 @@ SimpleConcurrentJobExecutor::
 SimpleConcurrentJobExecutor(int jobId,
                             nebula::cpp2::AdminCmd cmd,
                             std::vector<std::string> paras,
-                            nebula::kvstore::KVStore* kvStore) :
-                            jobId_(jobId),
-                            cmd_(cmd),
-                            paras_(paras),
-                            kvStore_(kvStore) {}
+                            nebula::kvstore::KVStore* kvStore,
+                            AdminClient* adminClient)
+                        : jobId_(jobId)
+                        , cmd_(cmd)
+                        , paras_(paras)
+                        , kvStore_(kvStore)
+                        , adminClient_(adminClient) {}
 
 ErrorOr<nebula::kvstore::ResultCode, std::map<HostAddr, Status>>
 SimpleConcurrentJobExecutor::execute() {
@@ -47,11 +49,10 @@ SimpleConcurrentJobExecutor::execute() {
     }
 
     std::vector<folly::SemiFuture<Status>> futures;
-    std::unique_ptr<AdminClient> client(new AdminClient(kvStore_));
     int taskId = 0;
     std::vector<PartitionID> parts;
     for (auto& host : hosts) {
-        auto future = client->addTask(cmd_, jobId_, taskId++, spaceId,
+        auto future = adminClient_->addTask(cmd_, jobId_, taskId++, spaceId,
                                       {host}, 0, parts, concurrency);
         futures.push_back(std::move(future));
     }
@@ -100,9 +101,8 @@ void SimpleConcurrentJobExecutor::stop() {
         return;
     }
     std::vector<HostAddr>& hosts = nebula::value(errOrTargetHost);
-    std::unique_ptr<AdminClient> client(new AdminClient(kvStore_));
     for (auto& host : hosts) {
-        client->stopTask({host}, jobId_, 0);
+        adminClient_->stopTask({host}, jobId_, 0);
     }
 }
 

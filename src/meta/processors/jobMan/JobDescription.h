@@ -14,6 +14,7 @@
 #include <gtest/gtest_prod.h>
 
 #include "meta/processors/jobMan/JobStatus.h"
+#include "meta/processors/admin/AdminClient.h"
 #include "interface/gen-cpp2/meta_types.h"
 #include "kvstore/KVStore.h"
 
@@ -133,6 +134,25 @@ public:
      * */
     static bool isJobKey(const folly::StringPiece& rawKey);
 
+    void setAdminClient(AdminClient* adminClient) {
+        adminClient_ = adminClient;
+    }
+
+    AdminClient* getAdminClient() const {
+        return adminClient_;
+    }
+
+private:
+    static bool isSupportedValue(const folly::StringPiece& val);
+    /*
+     * decode val from kvstore, return
+     * {command, paras, status, start time, stop time}
+     * */
+    static std::tuple<nebula::cpp2::AdminCmd,
+                      std::vector<std::string>,
+                      Status, int64_t, int64_t>
+    decodeVal1(const folly::StringPiece& rawVal);
+
 private:
     int32_t                         id_;
     nebula::cpp2::AdminCmd          cmd_;
@@ -140,6 +160,14 @@ private:
     Status                          status_;
     int64_t                         startTime_;
     int64_t                         stopTime_;
+
+    AdminClient*                    adminClient_{nullptr};
+
+    // old job may have different format,
+    // will ignore some job if it is too old
+    // use a hard coded int mark data ver
+    static int32_t                  minDataVer_;
+    static int32_t                  currDataVer_;
 };
 
 }  // namespace meta
