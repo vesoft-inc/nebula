@@ -5,7 +5,7 @@
  */
 
 #include "storage/mutate/UpdateEdgeProcessor.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include "dataman/RowWriter.h"
 #include "kvstore/LogEncoder.h"
 

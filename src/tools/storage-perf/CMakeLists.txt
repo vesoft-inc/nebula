@@ -26,6 +26,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:gflags_man_obj>
         $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:kvstore_storage_utils_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
@@ -70,6 +71,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:gflags_man_obj>
         $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:kvstore_storage_utils_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
