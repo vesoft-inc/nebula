@@ -21,6 +21,7 @@ TEST(RocksEngineTest, SimpleTest) {
     std::string val;
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->get("key", &val));
     EXPECT_EQ("val", val);
+    engine.reset(nullptr);
 }
 
 

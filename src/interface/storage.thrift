@@ -25,6 +25,7 @@ enum ErrorCode {
     E_PART_NOT_FOUND = -14,
     E_KEY_NOT_FOUND = -15,
     E_CONSENSUS_ERROR = -16,
+    E_INDEX_EXEC_PLAN_ERROR = -17,
 
     // meta failures
     E_EDGE_PROP_NOT_FOUND = -21,
@@ -457,11 +458,12 @@ struct LookUpEdgeIndexResp {
 }
 
 struct LookUpIndexRequest {
-    1: common.GraphSpaceID       space_id,
-    2: list<common.PartitionID>  parts,
-    3: common.IndexID            index_id,
-    4: binary                    filter,
-    5: list<string>              return_columns,
+    1: required common.GraphSpaceID       space_id,
+    2: required list<common.PartitionID>  parts,
+    // For merger-index , multiple index hints are allowed
+    3: required list<common.Hint>         hints,
+    4: i32                                tag_or_edge_id,
+    5: optional list<string>              return_columns,
 }
 
 service StorageService {

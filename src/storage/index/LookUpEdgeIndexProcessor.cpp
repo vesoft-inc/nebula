@@ -11,7 +11,7 @@ namespace storage {
 
 void LookUpEdgeIndexProcessor::process(const cpp2::LookUpIndexRequest& req) {
     /**
-     * step 1 : prepare index meta and structure of return columns.
+     * step 1 : prepare request. check hints and return columns.
      */
     auto ret = prepareRequest(req);
     if (ret != cpp2::ErrorCode::SUCCEEDED) {
@@ -20,16 +20,7 @@ void LookUpEdgeIndexProcessor::process(const cpp2::LookUpIndexRequest& req) {
     }
 
     /**
-     * step 2 : build execution plan
-     */
-    ret = buildExecutionPlan(req.get_filter());
-    if (ret != cpp2::ErrorCode::SUCCEEDED) {
-        putResultCodes(ret, req.get_parts());
-        return;
-    }
-
-    /**
-     * step 3 : execute index scan.
+     * step 2 : execute index scan.
      */
     for (auto partId : req.get_parts()) {
         auto code = executeExecutionPlan(partId);
@@ -48,14 +39,14 @@ void LookUpEdgeIndexProcessor::process(const cpp2::LookUpIndexRequest& req) {
     }
 
     /**
-     * step 4 : collect result.
+     * step 3 : collect result.
      */
-    if (schema_ != nullptr) {
+    if (resultSchema_ != nullptr) {
         decltype(resp_.schema) s;
         decltype(resp_.schema.columns) cols;
-        for (auto i = 0; i < static_cast<int64_t>(schema_->getNumFields()); i++) {
-            cols.emplace_back(columnDef(schema_->getFieldName(i),
-                                        schema_->getFieldType(i).get_type()));
+        for (auto i = 0; i < static_cast<int64_t>(resultSchema_->getNumFields()); i++) {
+            cols.emplace_back(columnDef(resultSchema_->getFieldName(i),
+                                        resultSchema_->getFieldType(i).get_type()));
         }
         s.set_columns(std::move(cols));
         this->resp_.set_schema(std::move(s));

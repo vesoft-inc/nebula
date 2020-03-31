@@ -134,4 +134,32 @@ struct RoleItem {
     3: RoleType      role_type,
 }
 
+enum ScanType {
+   PREFIX = 1,
+   RANGE  = 2,
+} (cpp.enum_strict)
+
+struct ColumnHint {
+    1: string                   column_name,
+    // If scan_type == PREFIX, using begin_value to handler prefix.
+    // Else using begin_value and end_value to handler ranger.
+    2: ScanType                 scan_type,
+    3: binary                   begin_raw,
+    4: binary                   end_raw,
+}
+
+struct Hint {
+    // hint_id is the unique sequence number for scan execution.
+    // It will be used to execution policy of the storage layer。
+    1: i32                      hint_id,
+    // Allowed invalid index_id '-1' , means no matched index hit ,if so a full table scan required.
+    2: IndexID                  index_id,
+    // filter is an encoded expression of where clause.
+    // Used for secondary filtering from a result set
+    3: binary                   filter,
+    // There are three types of scan: 1, range scan; 2, match scan (prefix); 3, full table scan
+    // The columns_hint allowed empty when full scan, means no matched index column hit.
+    4: list<ColumnHint>         column_hints,
+}
+
 const ValueType kInvalidValueType = {"type" : UNKNOWN}

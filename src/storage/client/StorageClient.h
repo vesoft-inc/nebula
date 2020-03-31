@@ -180,15 +180,15 @@ public:
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::LookUpVertexIndexResp>> lookUpVertexIndex(
             GraphSpaceID space,
-            IndexID indexId,
-            std::string filter,
+            std::vector<nebula::cpp2::Hint> hints,
+            int32_t tagOrEdgeId,
             std::vector<std::string> returnCols,
             folly::EventBase *evb = nullptr);
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::LookUpEdgeIndexResp>> lookUpEdgeIndex(
             GraphSpaceID space,
-            IndexID indexId,
-            std::string filter,
+            std::vector<nebula::cpp2::Hint> hints,
+            int32_t tagOrEdgeId,
             std::vector<std::string> returnCols,
             folly::EventBase *evb = nullptr);
 

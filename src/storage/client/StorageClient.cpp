@@ -515,8 +515,8 @@ StorageClient::get(GraphSpaceID space,
 
 folly::SemiFuture<StorageRpcResponse<storage::cpp2::LookUpVertexIndexResp>>
 StorageClient::lookUpVertexIndex(GraphSpaceID space,
-                                 IndexID indexId,
-                                 std::string filter,
+                                 std::vector<nebula::cpp2::Hint> hints,
+                                 int32_t tagOrEdgeId,
                                  std::vector<std::string> returnCols,
                                  folly::EventBase *evb) {
     auto status = getHostParts(space);
@@ -531,8 +531,8 @@ StorageClient::lookUpVertexIndex(GraphSpaceID space,
         auto& req = requests[host];
         req.set_space_id(space);
         req.set_parts(std::move(c.second));
-        req.set_index_id(indexId);
-        req.set_filter(filter);
+        req.set_hints(hints);
+        req.set_tag_or_edge_id(tagOrEdgeId);
         req.set_return_columns(returnCols);
     }
     return collectResponse(evb, std::move(requests),
@@ -546,8 +546,8 @@ StorageClient::lookUpVertexIndex(GraphSpaceID space,
 
 folly::SemiFuture<StorageRpcResponse<storage::cpp2::LookUpEdgeIndexResp>>
 StorageClient::lookUpEdgeIndex(GraphSpaceID space,
-                               IndexID indexId,
-                               std::string filter,
+                               std::vector<nebula::cpp2::Hint> hints,
+                               int32_t tagOrEdgeId,
                                std::vector<std::string> returnCols,
                                folly::EventBase *evb) {
     auto status = getHostParts(space);
@@ -562,8 +562,8 @@ StorageClient::lookUpEdgeIndex(GraphSpaceID space,
         auto& req = requests[host];
         req.set_space_id(space);
         req.set_parts(std::move(c.second));
-        req.set_index_id(indexId);
-        req.set_filter(filter);
+        req.set_hints(hints);
+        req.set_tag_or_edge_id(tagOrEdgeId);
         req.set_return_columns(returnCols);
     }
     return collectResponse(evb, std::move(requests),
