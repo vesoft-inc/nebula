@@ -110,7 +110,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_IF KW_NOT KW_EXISTS KW_WITH
 %token KW_COUNT KW_COUNT_DISTINCT KW_SUM KW_AVG KW_MAX KW_MIN KW_STD KW_BIT_AND KW_BIT_OR KW_BIT_XOR
 %token KW_BY KW_DOWNLOAD KW_HDFS KW_UUID KW_CONFIGS KW_FORCE KW_STATUS
-%token KW_VARIABLES KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
+%token KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
 %token KW_TTL KW_TTL_DURATION KW_TTL_COL KW_DATA KW_STOP
 %token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
 %token KW_ORDER KW_ASC KW_LIMIT KW_OFFSET KW_GROUP
@@ -281,23 +281,33 @@ unreserved_keyword
      | KW_DATA               { $$ = new std::string("data"); }
      | KW_LEADER             { $$ = new std::string("leader"); }
      | KW_UUID               { $$ = new std::string("uuid"); }
-     | KW_VARIABLES          { $$ = new std::string("variables"); }
      | KW_JOB                { $$ = new std::string("job"); }
      | KW_JOBS               { $$ = new std::string("jobs"); }
-     | KW_SUBMIT             { $$ = new std::string("submit"); }
-     | KW_RECOVER            { $$ = new std::string("recover"); }
-     | KW_FLUSH              { $$ = new std::string("flush"); }
-     | KW_COMPACT            { $$ = new std::string("compact"); }
      | KW_BIDIRECT           { $$ = new std::string("bidirect"); }
      | KW_OFFLINE            { $$ = new std::string("offline"); }
      | KW_FORCE              { $$ = new std::string("force"); }
      | KW_STATUS             { $$ = new std::string("status"); }
-     | KW_REBUILD            { $$ = new std::string("rebuild"); }
      | KW_PART               { $$ = new std::string("part"); }
      | KW_PARTS              { $$ = new std::string("parts"); }
      | KW_DEFAULT            { $$ = new std::string("default"); }
      | KW_CONFIGS            { $$ = new std::string("configs"); }
      | KW_ACCOUNT            { $$ = new std::string("account"); }
+     | KW_HDFS               { $$ = new std::string("hdfs"); }
+     | KW_PARTITION_NUM      { $$ = new std::string("partition_num"); }
+     | KW_REPLICA_FACTOR     { $$ = new std::string("replica_factor"); }
+     | KW_CHARSET            { $$ = new std::string("charset"); }
+     | KW_COLLATE            { $$ = new std::string("collate"); }
+     | KW_COLLATION          { $$ = new std::string("collation"); }
+     | KW_TTL_DURATION       { $$ = new std::string("ttl_duration"); }
+     | KW_TTL_COL            { $$ = new std::string("ttl_col"); }
+     | KW_SNAPSHOT           { $$ = new std::string("snapshot"); }
+     | KW_SNAPSHOTS          { $$ = new std::string("snapshots"); }
+     | KW_GRAPH              { $$ = new std::string("graph"); }
+     | KW_META               { $$ = new std::string("meta"); }
+     | KW_STORAGE            { $$ = new std::string("storage"); }
+     | KW_ALL                { $$ = new std::string("all"); }
+     | KW_SHORTEST           { $$ = new std::string("shortest"); }
+     | KW_COUNT_DISTINCT     { $$ = new std::string("count_distinct"); }
      ;
 
 agg_function
