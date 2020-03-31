@@ -5,7 +5,7 @@
  */
 
 #include "storage/index/IndexPolicyMaker.h"
-#include "common/base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 
 namespace nebula {
 namespace storage {
