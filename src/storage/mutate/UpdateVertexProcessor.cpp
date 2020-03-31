@@ -443,19 +443,14 @@ void UpdateVertexProcessor::process(const cpp2::UpdateVertexRequest& req) {
                     handleLeaderChanged(this->spaceId_, partId);
                     break;
                 }
-                if (code == kvstore::ResultCode::ERR_ATOMIC_OP_FAILED
-                    && filterResult_ == cpp2::ErrorCode::E_FILTER_OUT) {
-                    // Filter out
-                    // https://github.com/vesoft-inc/nebula/issues/1888
-                    // Only filter out so we still return the data
-                    onProcessFinished(req.get_return_columns().size());
-                    this->pushResultCode(cpp2::ErrorCode::E_FILTER_OUT, partId);
-                } else if (code == kvstore::ResultCode::ERR_ATOMIC_OP_FAILED
-                    && filterResult_ == cpp2::ErrorCode::E_INVALID_FILTER) {
-                    this->pushResultCode(cpp2::ErrorCode::E_INVALID_FILTER, partId);
-                } else if (code == kvstore::ResultCode::ERR_ATOMIC_OP_FAILED
-                    && filterResult_ == cpp2::ErrorCode::E_TAG_NOT_FOUND) {
-                    this->pushResultCode(cpp2::ErrorCode::E_TAG_NOT_FOUND, partId);
+                if (code == kvstore::ResultCode::ERR_ATOMIC_OP_FAILED) {
+                    if (filterResult_ == cpp2::ErrorCode::E_FILTER_OUT) {
+                        // Filter out
+                        // https://github.com/vesoft-inc/nebula/issues/1888
+                        // Only filter out so we still return the data
+                        onProcessFinished(req.get_return_columns().size());
+                    }
+                    this->pushResultCode(filterResult_, partId);
                 } else {
                     this->pushResultCode(to(code), partId);
                 }
