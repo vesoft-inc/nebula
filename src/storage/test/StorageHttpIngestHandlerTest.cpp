@@ -28,7 +28,9 @@ public:
         int32_t partitions = 1;
         kv_ = TestUtils::initKV(rootPath_->path(), partitions,
             {0, network::NetworkUtils::getAvailablePort()});
-        TestUtils::waitUntilAllElected(kv_.get(), 0, {0}/*partitions*/);
+        std::set<PartitionID> parts;
+        parts.insert(0);
+        TestUtils::waitUntilAllElected(kv_.get(), 0, parts/*partitions*/);
 
 
         auto partPath = folly::stringPrintf("%s/disk1/nebula/0/download/0", rootPath_->path());
