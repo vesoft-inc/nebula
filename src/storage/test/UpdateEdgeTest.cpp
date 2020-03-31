@@ -378,7 +378,7 @@ TEST(UpdateEdgeTest, CorruptDataTest) {
     PartitionID partId = 0;
     VertexID srcId = 10;
     VertexID dstId = 11;
-    // src = 1, edge_type = 101, ranking = 0, dst = 10001
+    // src = 10, edge_type = 101, ranking = 0, dst = 11
     storage::cpp2::EdgeKey edgeKey;
     edgeKey.set_src(srcId);
     edgeKey.set_edge_type(101);

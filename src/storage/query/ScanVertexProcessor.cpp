@@ -84,6 +84,9 @@ void ScanVertexProcessor::process(const cpp2::ScanVertexRequest& req) {
         } else if (!ctxIter->second.empty()) {
             // only return specified columns
             auto reader = RowReader::getTagPropReader(schemaMan_, value, spaceId_, tagId);
+            if (reader == nullptr) {
+                continue;
+            }
             RowWriter writer;
             PropsCollector collector(&writer);
             auto& props = ctxIter->second;

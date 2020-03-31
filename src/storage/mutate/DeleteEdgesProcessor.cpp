@@ -107,6 +107,10 @@ DeleteEdgesProcessor::deleteEdges(GraphSpaceID spaceId,
                                                                   iter->val(),
                                                                   spaceId,
                                                                   type);
+                            if (reader == nullptr) {
+                                LOG(WARNING) << "Bad format row!";
+                                return folly::none;
+                            }
                         }
                         auto values = collectIndexValues(reader.get(),
                                                          index->get_fields());

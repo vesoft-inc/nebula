@@ -41,6 +41,9 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
                                                    iter->val(),
                                                    spaceId_,
                                                    std::abs(edgeKey.edge_type));
+        if (reader == nullptr) {
+            return kvstore::ResultCode::ERR_CORRUPT_DATA;
+        }
 
         // Check if ttl data expired
         if (retTTLOpt.has_value()) {
