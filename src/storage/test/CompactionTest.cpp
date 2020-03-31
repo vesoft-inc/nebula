@@ -201,12 +201,15 @@ TEST(NebulaCompactionFilterTest, InvalidSchemaAndMutliVersionsFilterTest) {
     std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder(
                                     new StorageCompactionFilterFactoryBuilder(schemaMan.get(),
                                                                               nullptr));
+    constexpr int32_t partitions = 6;
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path(),
-                                                           6,
-                                                           {0, 0},
-                                                           nullptr,
-                                                           false,
-                                                           std::move(cffBuilder)));
+                                         partitions,
+                                         {0, network::NetworkUtils::getAvailablePort()},
+                                         nullptr,
+                                         false,
+                                         std::move(cffBuilder)));
+    TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
+
     LOG(INFO) << "Write some data";
     mockData(kv.get());
     LOG(INFO) << "Let's delete one tag";
@@ -282,12 +285,14 @@ TEST(NebulaCompactionFilterTest, TTLFilterDataExpiredTest) {
     std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder(
                                     new StorageCompactionFilterFactoryBuilder(schemaMan.get(),
                                                                               nullptr));
+    constexpr int32_t partitions = 6;
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path(),
-                                                           6,
-                                                           {0, 0},
-                                                           nullptr,
-                                                           false,
-                                                           std::move(cffBuilder)));
+                                         partitions,
+                                         {0, network::NetworkUtils::getAvailablePort()},
+                                         nullptr,
+                                         false,
+                                         std::move(cffBuilder)));
+    TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
 
     LOG(INFO) << "Write some data";
     mockTTLDataExpired(kv.get());
@@ -353,12 +358,14 @@ TEST(NebulaCompactionFilterTest, TTLFilterDataNotExpiredTest) {
     std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder(
                                     new StorageCompactionFilterFactoryBuilder(schemaMan.get(),
                                                                               nullptr));
+    constexpr int32_t partitions = 6;
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path(),
-                                                           6,
-                                                           {0, 0},
-                                                           nullptr,
-                                                           false,
-                                                           std::move(cffBuilder)));
+                                         partitions,
+                                         {0, network::NetworkUtils::getAvailablePort()},
+                                         nullptr,
+                                         false,
+                                         std::move(cffBuilder)));
+    TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
 
     LOG(INFO) << "Write some data";
     mockTTLDataNotExpired(kv.get());
@@ -426,12 +433,14 @@ TEST(NebulaCompactionFilterTest, DropIndexTest) {
     std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder(
         new StorageCompactionFilterFactoryBuilder(schemaMan.get(),
                                                   indexMan.get()));
+    constexpr int32_t partitions = 6;
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path(),
-                                                           6,
-                                                           {0, 0},
-                                                           nullptr,
-                                                           false,
-                                                           std::move(cffBuilder)));
+                                         partitions,
+                                         {0, network::NetworkUtils::getAvailablePort()},
+                                         nullptr,
+                                         false,
+                                         std::move(cffBuilder)));
+    TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
 
     LOG(INFO) << "Write some data";
     mockIndexData(kv.get());

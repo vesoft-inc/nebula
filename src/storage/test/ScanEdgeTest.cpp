@@ -403,12 +403,14 @@ TEST(ScanEdgeTest, RetrieveMultiEdgeTest) {
 
 TEST(ScanEdgeTest, RetrieveManyPartsTest) {
     fs::TempDir rootPath("/tmp/ScanEdgeTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), 10);
+    int32_t partCount = 10;
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partCount,
+        {0, network::NetworkUtils::getAvailablePort()});
+    TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}/*partCount*/);
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
     LOG(INFO) << "Prepare data...";
-    int32_t partCount = 10;
     mockData(kv.get(), partCount);
 
     // scan through all partition

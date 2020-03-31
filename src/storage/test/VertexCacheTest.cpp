@@ -126,7 +126,11 @@ void fetchVertices(kvstore::KVStore* kv,
 TEST(VertexCacheTest, SimpleTest) {
     FLAGS_max_handlers_per_req = 1;
     fs::TempDir rootPath("/tmp/VertexCacheTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    constexpr int32_t partitions = 6;
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partitions,
+        {0, network::NetworkUtils::getAvailablePort()});
+    TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
+
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = std::make_unique<AdHocIndexManager>();
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(1);
