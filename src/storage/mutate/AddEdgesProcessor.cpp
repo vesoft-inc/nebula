@@ -102,6 +102,10 @@ std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
                                                                val,
                                                                spaceId_,
                                                                edgeType);
+                    if (reader == nullptr) {
+                        LOG(WARNING) << "Bad format row";
+                        return "";
+                    }
                     auto oi = indexKey(partId, reader.get(), e.first, index);
                     if (!oi.empty()) {
                         batchHolder->remove(std::move(oi));
@@ -115,6 +119,10 @@ std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
                                                            e.second,
                                                            spaceId_,
                                                            edgeType);
+                    if (nReader == nullptr) {
+                        LOG(WARNING) << "Bad format row";
+                        return "";
+                    }
                 }
                 auto ni = indexKey(partId, nReader.get(), e.first, index);
                 batchHolder->put(std::move(ni), "");

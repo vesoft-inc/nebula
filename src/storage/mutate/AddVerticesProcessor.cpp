@@ -119,6 +119,10 @@ std::string AddVerticesProcessor::addVertices(int64_t version, PartitionID partI
                                                               val,
                                                               spaceId_,
                                                               tagId);
+                    if (reader == nullptr) {
+                        LOG(WARNING) << "Bad format row";
+                        return "";
+                    }
                     auto oi = indexKey(partId, vId, reader.get(), index);
                     if (!oi.empty()) {
                         batchHolder->remove(std::move(oi));
@@ -132,6 +136,10 @@ std::string AddVerticesProcessor::addVertices(int64_t version, PartitionID partI
                                                           v.second,
                                                           spaceId_,
                                                           tagId);
+                    if (nReader == nullptr) {
+                        LOG(WARNING) << "Bad format row";
+                        return "";
+                    }
                 }
                 auto ni = indexKey(partId, vId, nReader.get(), index);
                 batchHolder->put(std::move(ni), "");
