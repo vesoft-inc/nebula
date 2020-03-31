@@ -5,7 +5,7 @@
  */
 
 #include "storage/query/QueryEdgePropsProcessor.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include <algorithm>
 #include "time/Duration.h"
 #include "dataman/RowReader.h"

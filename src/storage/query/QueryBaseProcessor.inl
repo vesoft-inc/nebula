@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 #include "storage/query/QueryBaseProcessor.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include <algorithm>
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"

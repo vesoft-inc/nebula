@@ -5,7 +5,7 @@
  */
 
 #include "storage/mutate/DeleteVerticesProcessor.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 
 DECLARE_bool(enable_vertex_cache);
 

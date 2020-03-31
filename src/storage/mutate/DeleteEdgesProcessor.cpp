@@ -6,7 +6,7 @@
 #include "storage/mutate/DeleteEdgesProcessor.h"
 #include <algorithm>
 #include <limits>
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 
 namespace nebula {
 namespace storage {

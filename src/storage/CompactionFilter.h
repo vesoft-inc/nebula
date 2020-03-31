@@ -8,7 +8,7 @@
 #define STORAGE_COMPACTIONFILTER_H_
 
 #include "base/Base.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include "dataman/RowReader.h"
 #include "meta/NebulaSchemaProvider.h"
 #include "kvstore/CompactionFilter.h"

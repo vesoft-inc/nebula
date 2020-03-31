@@ -1,14 +1,12 @@
-nebula_add_executable(
+nebula_add_test(
     NAME
-        dump_edges
+        nebula_key_utils_test
     SOURCES
-        DumpEdgesTool.cpp
+        NebulaKeyUtilsTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:kvstore_storage_utils_obj>
     LIBRARIES
-        ${ROCKSDB_LIBRARIES}
-        glog
-        gflags
+        gtest
+        gtest_main
 )
-
