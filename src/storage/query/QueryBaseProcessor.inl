@@ -412,6 +412,9 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
         if (result.ok()) {
             auto v = std::move(result).value();
             auto reader = RowReader::getTagPropReader(this->schemaMan_, v, spaceId_, tagId);
+            if (reader == nullptr) {
+                return kvstore::ResultCode::ERR_CORRUPT_DATA;
+            }
 
             // Check if ttl data expired
             auto retTtlOpt = getTagTTLInfo(tagId);
@@ -445,7 +448,9 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
     // stored along with the properties
     if (iter && iter->valid()) {
         auto reader = RowReader::getTagPropReader(this->schemaMan_, iter->val(), spaceId_, tagId);
-
+        if (reader == nullptr) {
+            return kvstore::ResultCode::ERR_CORRUPT_DATA;
+        }
         // Check if ttl data expired
         auto retTtlOpt = getTagTTLInfo(tagId);
         if (retTtlOpt.hasValue()) {
@@ -525,6 +530,10 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                                                   val,
                                                   spaceId_,
                                                   std::abs(edgeType));
+            if (reader == nullptr) {
+                LOG(WARNING) << "Skip the bad format row!";
+                continue;
+            }
             // Check if ttl data expired
             if (retTTL.has_value() && checkDataExpiredForTTL(schema.get(),
                                                              reader.get(),
