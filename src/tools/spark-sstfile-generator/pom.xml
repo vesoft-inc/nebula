@@ -17,12 +17,15 @@
         <version.scala.binary>2.12</version.scala.binary>
         <spark.version>2.4.4</spark.version>
         <scalatest.version>3.0.8</scalatest.version>
-        <rocksdb.version>5.17.2</rocksdb.version>
+        <rocksdb.version>6.7.3</rocksdb.version>
         <config.version>1.4.0</config.version>
         <scala-logging.version>3.9.2</scala-logging.version>
         <scopt.version>3.7.1</scopt.version>
         <nebula.version>1.0.0-rc4.20200323</nebula.version>
         <s2.version>1.0.0</s2.version>
+        <neo.version>2.4.0-M8</neo.version>
+        <gremlin.version>3.4.6</gremlin.version>
+        <janusgraph.version>0.5.0</janusgraph.version>
     </properties>
 
     <build>
@@ -111,7 +114,6 @@
         </plugins>
     </build>
 
-    <!--TODO remove overlapping dependency-->
     <dependencies>
         <dependency>
             <groupId>org.apache.spark</groupId>
@@ -378,6 +380,56 @@
             <groupId>com.vesoft</groupId>
             <artifactId>client</artifactId>
             <version>${nebula.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>commons-lang3</artifactId>
+                    <groupId>org.apache.commons</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>neo4j-contrib</groupId>
+            <artifactId>neo4j-spark-connector</artifactId>
+            <version>${neo.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>scala-library</artifactId>
+                    <groupId>org.scala-lang</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>slf4j-api</artifactId>
+                    <groupId>org.slf4j</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tinkerpop</groupId>
+            <artifactId>spark-gremlin</artifactId>
+            <version>${gremlin.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.janusgraph</groupId>
+            <artifactId>janusgraph-core</artifactId>
+            <version>${janusgraph.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>commons-codec</artifactId>
+                    <groupId>commons-codec</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>commons-logging</artifactId>
+                    <groupId>commons-logging</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>jsr305</artifactId>
+                    <groupId>com.google.code.findbugs</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.janusgraph</groupId>
+            <artifactId>janusgraph-driver</artifactId>
+            <version>${janusgraph.version}</version>
         </dependency>
     </dependencies>
 </project>
