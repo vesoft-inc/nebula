@@ -63,6 +63,8 @@ public:
     // Return bit-OR of StoreCapability values;
     virtual uint32_t capability() const = 0;
 
+    virtual void stop() = 0;
+
     // Retrieve the current leader for the given partition. This
     // is usually called when ERR_LEADER_CHANGED result code is
     // returned
