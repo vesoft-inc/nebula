@@ -236,6 +236,9 @@ JobManager::showJobs() {
         }
     }
     removeExpiredJobs(expiredJobKeys);
+    std::sort(ret.begin(), ret.end(), [](const auto& a, const auto& b) {
+        return a.get_id() > b.get_id();
+    });
     return ret;
 }
 

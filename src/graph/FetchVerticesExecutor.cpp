@@ -115,7 +115,6 @@ Status FetchVerticesExecutor::checkTagProps() {
 }
 
 void FetchVerticesExecutor::execute() {
-    FLOG_INFO("Executing FetchVertices: %s", sentence_->toString().c_str());
     auto status = prepareClauses();
     if (!status.ok()) {
         doError(std::move(status));

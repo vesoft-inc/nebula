@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 #include "storage/mutate/AddEdgesProcessor.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include <algorithm>
 #include <limits>
 #include "time/WallClock.h"
@@ -44,7 +44,7 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
         std::for_each(req.parts.begin(), req.parts.end(), [&](auto& partEdges) {
             auto partId = partEdges.first;
             auto atomic = [version, partId, edges = std::move(partEdges.second), this]()
-                          -> std::string {
+                          -> folly::Optional<std::string> {
                 return addEdges(version, partId, edges);
             };
             auto callback = [partId, this](kvstore::ResultCode code) {
@@ -102,6 +102,10 @@ std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
                                                                val,
                                                                spaceId_,
                                                                edgeType);
+                    if (reader == nullptr) {
+                        LOG(WARNING) << "Bad format row";
+                        return "";
+                    }
                     auto oi = indexKey(partId, reader.get(), e.first, index);
                     if (!oi.empty()) {
                         batchHolder->remove(std::move(oi));
@@ -115,6 +119,10 @@ std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
                                                            e.second,
                                                            spaceId_,
                                                            edgeType);
+                    if (nReader == nullptr) {
+                        LOG(WARNING) << "Bad format row";
+                        return "";
+                    }
                 }
                 auto ni = indexKey(partId, nReader.get(), e.first, index);
                 batchHolder->put(std::move(ni), "");

@@ -81,9 +81,22 @@
     * [返回结果语句 (Yield)](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/yield-syntax.md)
 
   * 辅助功能语句
+    * Show 语句
+      * [Show Charset 语法](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-charset-syntax.md)
+      * [Show Collation 语法](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-collation-syntax.md)
+      * [Show Configs 语法](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-configs-syntax.md)
+      * [Show Create Spaces 语法](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-create-space-syntax.md)
+      * [Show Create Tag/Edge 语法](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-create-tag-edge-syntax.md)
+      * [Show Hosts 语法](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-hosts-syntax.md)
+      * [Show Indexes 语法](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-indexes-syntax.md)
+      * [Show Parts 语法](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-parts-syntax.md)
+      * [Show Roles 语法](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-roles-syntax.md)
+      * [Show Snapshots 语法](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-snapshots-syntax.md)
+      * [Show Spaces 语法](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-spaces-syntax.md)
+      * [Show Tag/Edge 语法](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-tags-edges-syntax.md)
+      * [Show Users 语法](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-users-syntax.md)
     * [Describe](2.query-language/4.statement-syntax/3.utility-statements/describe-syntax.md)
     * [Use](2.query-language/4.statement-syntax/3.utility-statements/use-syntax.md)
-    * [Show](2.query-language/4.statement-syntax/3.utility-statements/show-syntax.md)
   * 图算法
     * [查找路径](2.query-language/4.statement-syntax/4.graph-algorithms/find-path-syntax.md)
 
@@ -105,13 +118,16 @@
     * [rpm 安装](3.build-develop-and-administration/3.deploy-and-administrations/deployment/install-with-rpm-deb.md)
   * 服务器管理操作
     * 账号管理
+      * [Alter User Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/alter-user-syntax.md)
+      * [Built-in Roles](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/built-in-roles.md)
+      * [Change Password](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/change-password.md)
       * [Create User](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/create-user-syntax.md)
       * [Drop User](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/drop-user-syntax.md)
       * [Grant Role](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/grant-role-syntax.md)
       * [Revoke](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/revoke-syntax.md)
     * 服务器配置
       * [服务器配置](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/configs-syntax.md)
-      * [RocksDB Compaction 和 Flush](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/rocksdb-compaction-flush.md)
+      <!-- * [RocksDB Compaction 和 Flush](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/rocksdb-compaction-flush.md) -->
       * [日志](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/log.md)
     * 计算服务相关运维
       * [计算层运行统计 (metrics)](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/graph-service-administration/graph-metrics.md)
@@ -139,7 +155,7 @@
 ## 附录
 
 * [Gremlin VS nGQL](5.appendix/gremlin-ngql.md)
-* [Cypher V.S. nGQL](5.appendix/cypher-ngql.md)
+* [Cypher VS nGQL](5.appendix/cypher-ngql.md)
 
 ## 其他
 

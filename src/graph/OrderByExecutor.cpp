@@ -78,7 +78,6 @@ Status OrderByExecutor::prepare() {
 }
 
 void OrderByExecutor::execute() {
-    FLOG_INFO("Executing Order By: %s", sentence_->toString().c_str());
     auto status = beforeExecute();
     if (!status.ok()) {
         LOG(ERROR) << "Error happened before execute: " << status.toString();
