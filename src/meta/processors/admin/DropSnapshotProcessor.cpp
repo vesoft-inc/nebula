@@ -74,6 +74,7 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
     }
     // Delete metadata of checkpoint
     doRemove(MetaServiceUtils::snapshotKey(snapshot));
+    LOG(INFO) << "Drop snapshot " << snapshot << " successfully";
 }
 }  // namespace meta
 }  // namespace nebula
