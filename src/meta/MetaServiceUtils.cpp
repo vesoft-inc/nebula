@@ -686,8 +686,8 @@ std::string MetaServiceUtils::parseRoleStr(folly::StringPiece key) {
 }
 
 std::string MetaServiceUtils::defaultKey(GraphSpaceID spaceId,
-                                            TagID id,
-                                            const std::string& field) {
+                                         TagID id,
+                                         const std::string& field) {
     // Assume edge/tag default value key is same formated
     static_assert(std::is_same<TagID, EdgeType>::value, "");
     std::string key;
