@@ -130,7 +130,7 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
       * [Revoke Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/revoke-syntax.md)
     * Configuration Statements
       * [Configs Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/configs-syntax.md)
-      * [RocksDB Compaction and Flush](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/rocksdb-compaction-flush.md)
+      <!-- * [RocksDB Compaction and Flush](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/rocksdb-compaction-flush.md) -->
       * [Logs](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/log.md)
     * Graph Service Administration
       * [Graph Metrics](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/graph-service-administration/graph-metrics.md)
@@ -157,8 +157,8 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
 
 ## Appendix
 
-* [Gremlin V.S. nGQL](5.appendix/gremlin-ngql.md)
-* [Cypher V.S. nGQL](5.appendix/cypher-ngql.md)
+* [Gremlin VS nGQL](5.appendix/gremlin-ngql.md)
+* [Cypher VS nGQL](5.appendix/cypher-ngql.md)
 
 ## Misc
 

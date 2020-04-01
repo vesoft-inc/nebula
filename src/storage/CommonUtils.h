@@ -132,6 +132,7 @@ enum class FilterResult {
     SUCCEEDED     = 0,   // pass filter
     E_FILTER_OUT  = -1,  // filter out
     E_ERROR       = -2,  // exception when filter
+    E_BAD_SCHEMA  = -3,  // Bad schema
 };
 
 

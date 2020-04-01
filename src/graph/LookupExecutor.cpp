@@ -129,12 +129,23 @@ Status LookupExecutor::prepareYield() {
                 return Status::SyntaxError("Expressions other than AliasProp are not supported");
             }
             auto* aExpr = dynamic_cast<const AliasPropertyExpression*>(prop);
+            auto st = checkAliasProperty(aExpr);
+            if (!st.ok()) {
+                return st;
+            }
             if (schema->getFieldIndex(aExpr->prop()->c_str()) < 0) {
                 LOG(ERROR) << "Unknown column " << aExpr->prop()->c_str();
                 return Status::Error("Unknown column `%s' in schema", aExpr->prop()->c_str());
             }
             returnCols_.emplace_back(aExpr->prop()->c_str());
         }
+    }
+    return Status::OK();
+}
+
+Status LookupExecutor::checkAliasProperty(const AliasPropertyExpression* aExpr) {
+    if (*aExpr->alias() != *from_) {
+        return Status::SyntaxError("Edge or Tag name error : %s ", aExpr->alias()->c_str());
     }
     return Status::OK();
 }
@@ -183,10 +194,18 @@ Status LookupExecutor::traversalExpr(const Expression *expr) {
              */
             if (left->kind() == nebula::Expression::kAliasProp) {
                 auto* aExpr = dynamic_cast<const AliasPropertyExpression*>(left);
+                auto st = checkAliasProperty(aExpr);
+                if (!st.ok()) {
+                    return st;
+                }
                 prop = *aExpr->prop();
                 filters_.emplace_back(std::make_pair(prop, rExpr->op()));
             } else if (right->kind() == nebula::Expression::kAliasProp) {
                 auto* aExpr = dynamic_cast<const AliasPropertyExpression*>(right);
+                auto st = checkAliasProperty(aExpr);
+                if (!st.ok()) {
+                    return st;
+                }
                 prop = *aExpr->prop();
                 filters_.emplace_back(std::make_pair(prop, rExpr->op()));
             } else {
@@ -357,7 +376,6 @@ void LookupExecutor::stepVertexOut() {
 }
 
 void LookupExecutor::execute() {
-    FLOG_INFO("Executing LOOKUP: %s", sentence_->toString().c_str());
     auto status = prepareClauses();
     if (!status.ok()) {
         doError(std::move(status));

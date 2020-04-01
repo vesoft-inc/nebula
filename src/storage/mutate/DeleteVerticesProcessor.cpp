@@ -5,7 +5,7 @@
  */
 
 #include "storage/mutate/DeleteVerticesProcessor.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 
 DECLARE_bool(enable_vertex_cache);
 
@@ -21,10 +21,12 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
     }
 
     if (indexes_.empty()) {
-        std::for_each(partVertices.begin(), partVertices.end(), [&](auto& pv) {
-            callingNum_ += pv.second.size();
+        std::for_each(partVertices.begin(), partVertices.end(), [this](auto& pv) {
+            this->callingNum_ += pv.second.size();
         });
 
+        std::vector<std::string> keys;
+        keys.reserve(32);
         for (auto pv = partVertices.begin(); pv != partVertices.end(); pv++) {
             auto part = pv->first;
             const auto& vertices = pv->second;
@@ -35,12 +37,11 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
                 if (ret != kvstore::ResultCode::SUCCEEDED) {
                     VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret)
                             << ", spaceID " << spaceId;
+                    this->handleErrorCode(ret, spaceId, part);
                     this->onFinished();
                     return;
                 }
-
-                std::vector<std::string> keys;
-                keys.reserve(32);
+                keys.clear();
                 while (iter->valid()) {
                     auto key = iter->key();
                     if (NebulaKeyUtils::isVertex(key)) {
@@ -54,16 +55,18 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
                     }
                     iter->next();
                 }
-                doRemove(spaceId, part, std::move(keys));
+                doRemove(spaceId, part, keys);
             }
         }
     } else {
         callingNum_ = req.parts.size();
-        std::for_each(req.parts.begin(), req.parts.end(), [&](auto &partVerticse) {
-            auto partId = partVerticse.first;
-            const auto &vertices = partVerticse.second;
-            auto atomic = [&]() -> std::string {
-                return deleteVertices(spaceId, partId, vertices);
+        std::for_each(req.parts.begin(), req.parts.end(), [spaceId, this](auto &pv) {
+            auto partId = pv.first;
+            auto atomic = [spaceId,
+                           partId,
+                           v = std::move(pv.second),
+                           this]() -> folly::Optional<std::string> {
+                return deleteVertices(spaceId, partId, v);
             };
 
             auto callback = [spaceId, partId, this](kvstore::ResultCode code) {
@@ -75,9 +78,10 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
     }
 }
 
-std::string DeleteVerticesProcessor::deleteVertices(GraphSpaceID spaceId,
-                                                    PartitionID partId,
-                                                    const std::vector<VertexID>& vertices) {
+folly::Optional<std::string>
+DeleteVerticesProcessor::deleteVertices(GraphSpaceID spaceId,
+                                        PartitionID partId,
+                                        const std::vector<VertexID>& vertices) {
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
     for (auto& vertex : vertices) {
         auto prefix = NebulaKeyUtils::vertexPrefix(partId, vertex);
@@ -86,7 +90,7 @@ std::string DeleteVerticesProcessor::deleteVertices(GraphSpaceID spaceId,
         if (ret != kvstore::ResultCode::SUCCEEDED) {
             VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret)
                     << ", spaceId " << spaceId;
-            return "";
+            return folly::none;
         }
         TagID latestVVId = -1;
         while (iter->valid()) {
@@ -124,6 +128,10 @@ std::string DeleteVerticesProcessor::deleteVertices(GraphSpaceID spaceId,
                                                                  iter->val(),
                                                                  spaceId,
                                                                  tagId);
+                            if (reader == nullptr) {
+                                LOG(WARNING) << "Bad format row";
+                                return folly::none;
+                            }
                         }
                         const auto& cols = index->get_fields();
                         auto values = collectIndexValues(reader.get(), cols);
