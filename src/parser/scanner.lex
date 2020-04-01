@@ -156,6 +156,7 @@ OFFLINE                     ([Oo][Ff][Ff][Ll][Ii][Nn][Ee])
 BIDIRECT                    ([Bb][Ii][Dd][Ii][Rr][Ee][Cc][Tt])
 ACCOUNT                     ([Aa][Cc][Cc][Oo][Uu][Nn][Tt])
 DBA                         ([Dd][Bb][Aa])
+SESSIONS                    ([Ss][Ee][Ss][Ss][Ii][Oo][Nn][Ss])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -272,6 +273,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {CHARSET}                   { return TokenType::KW_CHARSET; }
 {COLLATE}                   { return TokenType::KW_COLLATE; }
 {COLLATION}                 { return TokenType::KW_COLLATION; }
+{SESSIONS}                  { return TokenType::KW_SESSIONS; }
 {ALL}                       { return TokenType::KW_ALL; }
 {LEADER}                    { return TokenType::KW_LEADER; }
 {UUID}                      { return TokenType::KW_UUID; }

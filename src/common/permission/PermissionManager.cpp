@@ -206,6 +206,7 @@ bool PermissionManager::canShow(session::Session *session,
             break;
         }
         case ShowSentence::ShowType::kShowUsers:
+        case ShowSentence::ShowType::kShowSessions:
         case ShowSentence::ShowType::kShowSnapshots: {
             /**
              * Only GOD role can be show.

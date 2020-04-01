@@ -208,6 +208,21 @@ public:
     folly::Future<cpp2::AdminJobResp>
     future_runAdminJob(const cpp2::AdminJobReq& req) override;
 
+    /**
+     * Session related operations.
+     */
+    folly::Future<cpp2::ExecResp>
+    future_addSession(const cpp2::AddSessionReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_removeSession(const cpp2::RemoveSessionReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_updateSession(const cpp2::UpdateSessionReq& req) override;
+
+    folly::Future<cpp2::ListSessionsResp>
+    future_listSessions(const cpp2::ListSessionsReq& req) override;
+
 private:
     kvstore::KVStore* kvstore_ = nullptr;
     ClusterID clusterId_{0};

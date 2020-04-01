@@ -11,6 +11,7 @@
 #include "base/StatusOr.h"
 #include "thread/GenericWorker.h"
 #include "common/session/Session.h"
+#include "meta/client/MetaClient.h"
 
 /**
  * SessionManager manages the client sessions, e.g. create new, find existing and drop expired.
@@ -21,7 +22,7 @@ namespace graph {
 
 class SessionManager final {
 public:
-    SessionManager();
+    explicit SessionManager(meta::MetaClient* client);
     ~SessionManager();
 
     using SessionPtr = std::shared_ptr<session::Session>;
@@ -34,9 +35,17 @@ public:
      */
     SessionPtr createSession();
     /**
+     * Add a session to meta global session
+     */
+    void doAddSession(int64_t sid, std::string graphServerAddr, int64_t startTime);
+    /**
      * Remove a session
      */
     SessionPtr removeSession(int64_t id);
+    /**
+     * Remove a session from meta global session
+     */
+    void doRemoveSession(std::unordered_map<int64_t, int64_t> removeSess);
 
 private:
     /**
@@ -47,10 +56,16 @@ private:
     void reclaimExpiredSessions();
 
 private:
-    std::atomic<int64_t>                        nextId_{0};
-    folly::RWSpinLock                           rwlock_;        // TODO(dutor) writer might starve
-    std::unordered_map<int64_t, SessionPtr>     activeSessions_;
-    std::unique_ptr<thread::GenericWorker>      scavenger_;
+    std::atomic<int64_t>                                            nextId_{0};
+    // TODO(dutor) writer might starve
+    folly::RWSpinLock                                               rwlock_;
+    std::unordered_map<int64_t, std::pair<SessionPtr, int64_t>>     activeSessions_;
+    std::unordered_map<int64_t, int64_t>                            activeSessForMeta_;
+    std::unique_ptr<thread::GenericWorker>                          scavenger_;
+    meta::MetaClient                                               *metaClient_{nullptr};
+    std::unique_ptr<folly::Executor>                                executor_;
+    std::unique_ptr<folly::Executor>                                runner_;
+    std::string                                                     graphServerAddr_;
 };
 
 }   // namespace graph

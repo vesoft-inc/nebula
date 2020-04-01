@@ -289,3 +289,18 @@ nebula_add_test(
         gtest
 )
 
+nebula_add_test(
+    NAME
+        global_session_test
+    SOURCES
+        GlobalSessionProcessorTest.cpp
+    OBJECTS
+        ${meta_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        wangle
+        gtest
+)
+
+

@@ -429,6 +429,9 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("OFFLINE", TokenType::KW_OFFLINE),
         CHECK_SEMANTIC_TYPE("Offline", TokenType::KW_OFFLINE),
         CHECK_SEMANTIC_TYPE("offline", TokenType::KW_OFFLINE),
+        CHECK_SEMANTIC_TYPE("SESSIONS", TokenType::KW_SESSIONS),
+        CHECK_SEMANTIC_TYPE("Sessions", TokenType::KW_SESSIONS),
+        CHECK_SEMANTIC_TYPE("sessions", TokenType::KW_SESSIONS),
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
         CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),

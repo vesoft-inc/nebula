@@ -39,7 +39,8 @@ public:
         kShowEdgeIndexStatus,
         kShowSnapshots,
         kShowCharset,
-        kShowCollation
+        kShowCollation,
+        kShowSessions
     };
 
     explicit ShowSentence(ShowType sType) {

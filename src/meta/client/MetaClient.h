@@ -228,6 +228,20 @@ public:
     folly::Future<StatusOr<PartsAlloc>>
     getPartsAlloc(GraphSpaceID spaceId);
 
+    // Operations for session
+    folly::Future<StatusOr<bool>>
+    addSession(std::vector<cpp2::SessionItem> items);
+
+    folly::Future<StatusOr<bool>>
+    removeSession(std::vector<cpp2::SessionItem> items);
+
+    folly::Future<StatusOr<std::vector<cpp2::SessionItem>>>
+    listSessions();
+
+    folly::Future<StatusOr<bool>>
+    updateSession(std::unordered_map<std::string,
+                  std::unordered_map<int64_t, int64_t >> sessions);
+
     // Operations for schema
     folly::Future<StatusOr<TagID>> createTagSchema(GraphSpaceID spaceId,
                                                    std::string name,
@@ -480,6 +494,11 @@ public:
 
     std::vector<nebula::cpp2::RoleItem> getRolesByUserFromCache(const std::string& user);
 
+
+    bool pushSessionToCache(std::string& addr, std::unordered_map<int64_t, int64_t> sessions);
+
+    bool updateSessionToMeta();
+
     bool authCheckFromCache(const std::string& account, const std::string& password);
 
     Status refreshCache();
@@ -507,6 +526,10 @@ protected:
                      SpaceAllEdgeMap &allEdgemap);
 
     bool loadUsersAndRoles();
+
+    bool loadSessions();
+
+    bool uploadSession();
 
     bool loadIndexes(GraphSpaceID spaceId,
                      std::shared_ptr<SpaceInfoCache> cache);
@@ -610,6 +633,13 @@ private:
     std::unique_ptr<stats::Stats> stats_;
     bool                  skipConfig_ = false;
     MetaClientOptions     options_;
+
+    // Global sessions  manager
+    folly::RWSpinLock     sessionCacheLock_;
+    // Graphd addr -> map<sessionId, start_time>
+    std::unordered_map<std::string, std::unordered_map<int64_t, int64_t>> sessions_;
+    std::unordered_map<std::string,
+                       std::unordered_map<int64_t, std::pair<int64_t, int64_t>>> sessionsCache_;
 };
 
 }  // namespace meta

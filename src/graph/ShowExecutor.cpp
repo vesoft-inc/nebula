@@ -93,6 +93,9 @@ void ShowExecutor::execute() {
         case ShowSentence::ShowType::kShowCollation:
             showCollation();
             break;
+        case ShowSentence::ShowType::kShowSessions:
+            showSessions();
+            break;
         case ShowSentence::ShowType::kUnknown:
             doError(Status::Error("Type unknown"));
             break;
@@ -1178,6 +1181,56 @@ std::string ShowExecutor::roleToStr(nebula::cpp2::RoleType type) {
         }
     }
     return role;
+}
+
+void ShowExecutor::showSessions() {
+    auto future = ectx()->getMetaClient()->listSessions();
+    auto *runner = ectx()->rctx()->runner();
+
+    auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            doError(std::move(resp).status());
+            return;
+        }
+
+        auto sessionItems = std::move(resp).value();
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        std::vector<cpp2::RowValue> rows;
+        std::vector<std::string> header{"Host:Port", "Session ID", "Start Time", "Update Time"};
+        resp_->set_column_names(std::move(header));
+
+
+        std::sort(sessionItems.begin(), sessionItems.end(), [] (const auto& a, const auto& b) {
+            // sort with addr and ip
+            if (a.get_addr() == b.get_addr()) {
+                return a.get_session_id() < b.get_session_id();
+            }
+            return a.get_addr() < b.get_addr();
+        });
+
+
+        for (auto& item : sessionItems) {
+            std::vector<cpp2::ColumnValue> row;
+            row.resize(4);
+            row[0].set_str(item.get_addr());
+            row[1].set_integer(item.get_session_id());
+            row[2].set_integer(item.get_start_time());
+            row[3].set_integer(item.get_update_time());
+
+            rows.emplace_back();
+            rows.back().set_columns(std::move(row));
+        }
+        resp_->set_rows(std::move(rows));
+        doFinish(Executor::ProcessControl::kNext);
+    };
+
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        doError(Status::Error(folly::stringPrintf("Show sessions exception: %s",
+                                                  e.what().c_str())));
+        return;
+    };
+    std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
 void ShowExecutor::setupResponse(cpp2::ExecutionResponse &resp) {

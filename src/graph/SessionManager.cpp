@@ -7,11 +7,16 @@
 #include "base/Base.h"
 #include "graph/SessionManager.h"
 #include "graph/GraphFlags.h"
+#include <folly/executors/CPUThreadPoolExecutor.h>
 
 namespace nebula {
 namespace graph {
 
-SessionManager::SessionManager() {
+SessionManager::SessionManager(meta::MetaClient* client) {
+    metaClient_ = client;
+    executor_.reset(new folly::CPUThreadPoolExecutor(2));
+    runner_.reset(new folly::CPUThreadPoolExecutor(2));
+    graphServerAddr_ = FLAGS_graph_server_ip + ":" + folly::to<std::string>(FLAGS_port);
     scavenger_ = std::make_unique<thread::GenericWorker>();
     auto ok = scavenger_->start("session-manager");
     DCHECK(ok);
@@ -36,7 +41,7 @@ SessionManager::findSession(int64_t id) {
     if (iter == activeSessions_.end()) {
         return Status::Error("Session `%ld' has expired", id);
     }
-    return iter->second;
+    return iter->second.first;
 }
 
 
@@ -52,11 +57,78 @@ std::shared_ptr<session::Session> SessionManager::createSession() {
     }
     DCHECK_NE(sid, 0L);
     auto session = session::Session::create(sid);
-    activeSessions_[sid] = session;
+    auto now = time::WallClock::fastNowInSec();
+    activeSessions_[sid] = std::make_pair(session, now);
+    activeSessForMeta_[sid] = now;
     session->charge();
+
+    // sessionId, FLAGS_graph_server_ip:FLAGS_port, start_time
+    executor_->add([sid, now, this] () {
+        this->doAddSession(sid, graphServerAddr_, now);
+    });
+
     return session;
 }
 
+void SessionManager::doAddSession(int64_t sid, std::string graphServerAddr, int64_t startTime) {
+    std::vector<nebula::meta::cpp2::SessionItem> sessionItem;
+    nebula::meta::cpp2::SessionItem item;
+    item.set_session_id(sid);
+    item.set_addr(graphServerAddr);
+    item.set_start_time(startTime);
+    sessionItem.emplace_back(std::move(item));
+
+    auto future = metaClient_->addSession(std::move(sessionItem));
+    auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            LOG(ERROR) << "Add to global session failed.";
+            return;
+        }
+        auto ret = std::move(resp).value();
+        if (!ret) {
+            LOG(ERROR) << "Add to global session failed.";
+        }
+        return;
+    };
+
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: "  << e.what();
+        return;
+    };
+
+    std::move(future).via(runner_.get()).thenValue(cb).thenError(error);
+}
+
+void SessionManager::doRemoveSession(std::unordered_map<int64_t, int64_t> removeSess) {
+    std::vector<nebula::meta::cpp2::SessionItem> sessionItem;
+    for (auto& e : removeSess) {
+        nebula::meta::cpp2::SessionItem item;
+        item.set_session_id(e.first);
+        item.set_addr(graphServerAddr_);
+        item.set_start_time(e.second);
+        sessionItem.emplace_back(std::move(item));
+    }
+
+    auto future = metaClient_->removeSession(std::move(sessionItem));
+    auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            LOG(ERROR) << "Romove from global session failed.";
+            return;
+        }
+        auto ret = std::move(resp).value();
+        if (!ret) {
+            LOG(ERROR) << "Romove from global session failed.";
+        }
+        return;
+    };
+
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: "  << e.what();
+        return;
+    };
+
+    std::move(future).via(runner_.get()).thenValue(cb).thenError(error);
+}
 
 std::shared_ptr<session::Session> SessionManager::removeSession(int64_t id) {
     folly::RWSpinLock::WriteHolder holder(rwlock_);
@@ -64,8 +136,18 @@ std::shared_ptr<session::Session> SessionManager::removeSession(int64_t id) {
     if (iter == activeSessions_.end()) {
         return nullptr;
     }
-    auto session = std::move(iter->second);
+    auto session = std::move(iter->second.first);
+    auto startTime = iter->second.second;
+
     activeSessions_.erase(iter);
+    activeSessForMeta_.erase(id);
+
+    std::unordered_map<int64_t, int64_t> removeSess;
+    removeSess.emplace(id, startTime);
+    executor_->add([removeSess, this] () {
+        this->doRemoveSession(removeSess);
+    });
+
     return session;
 }
 
@@ -81,11 +163,12 @@ int64_t SessionManager::newSessionId() {
 
 // TODO(dutor) Now we do a brute-force scanning, of course we could make it more efficient.
 void SessionManager::reclaimExpiredSessions() {
+    folly::RWSpinLock::WriteHolder holder(rwlock_);
     if (FLAGS_session_idle_timeout_secs == 0) {
+        metaClient_->pushSessionToCache(graphServerAddr_, activeSessForMeta_);
         return;
     }
 
-    folly::RWSpinLock::WriteHolder holder(rwlock_);
     if (activeSessions_.empty()) {
         return;
     }
@@ -94,15 +177,18 @@ void SessionManager::reclaimExpiredSessions() {
     auto iter = activeSessions_.begin();
     auto end = activeSessions_.end();
     while (iter != end) {
-        auto *session = iter->second.get();
+        auto *session = iter->second.first.get();
         int32_t idleSecs = session->idleSeconds();
         if (idleSecs < FLAGS_session_idle_timeout_secs) {
             ++iter;
             continue;
         }
         FLOG_INFO("Session %ld has expired", session->id());
+        activeSessForMeta_.erase(iter->first);
         iter = activeSessions_.erase(iter);
     }
+
+    metaClient_->pushSessionToCache(graphServerAddr_, activeSessForMeta_);
 }
 
 }   // namespace graph

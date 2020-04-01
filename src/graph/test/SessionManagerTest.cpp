@@ -9,6 +9,8 @@
 #include "graph/SessionManager.h"
 #include "graph/GraphFlags.h"
 #include "thread/GenericWorker.h"
+#include "graph/test/TestEnv.h"
+#include "graph/test/TestBase.h"
 
 using nebula::thread::GenericWorker;
 
@@ -16,7 +18,7 @@ namespace nebula {
 namespace graph {
 
 TEST(SessionManager, Basic) {
-    auto sm = std::make_shared<SessionManager>();
+    auto sm = std::make_shared<SessionManager>(gEnv->metaClient());
 
     auto session = sm->createSession();
     ASSERT_NE(nullptr, session);
@@ -31,7 +33,7 @@ TEST(SessionManager, ExpiredSession) {
     FLAGS_session_idle_timeout_secs = 3;
     FLAGS_session_reclaim_interval_secs = 1;
 
-    auto sm = std::make_shared<SessionManager>();
+    auto sm = std::make_shared<SessionManager>(gEnv->metaClient());
 
     auto worker = std::make_shared<GenericWorker>();
     ASSERT_TRUE(worker->start());

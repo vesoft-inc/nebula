@@ -231,6 +231,36 @@ struct GetSpaceResp {
     3: SpaceItem         item,
 }
 
+// Session related operations
+struct SessionItem {
+    1: string            addr,
+    2: i64               session_id,
+    3: i64               start_time,
+    4: i64               update_time,
+}
+
+struct AddSessionReq {
+    1: list<SessionItem>    session_items,
+}
+
+struct RemoveSessionReq {
+    1: list<SessionItem>    session_items,
+}
+
+struct UpdateSessionReq {
+    1: list<SessionItem>    session_items,
+}
+
+struct ListSessionsReq {
+}
+
+struct ListSessionsResp {
+    1: ErrorCode            code,
+    // Valid if ret equals E_LEADER_CHANGED.
+    2: common.HostAddr      leader,
+    3: list<SessionItem>    items,
+}
+
 // Tags related operations
 struct CreateTagReq {
     1: common.GraphSpaceID space_id,
@@ -692,6 +722,11 @@ service MetaService {
     ExecResp dropSpace(1: DropSpaceReq req);
     GetSpaceResp getSpace(1: GetSpaceReq req);
     ListSpacesResp listSpaces(1: ListSpacesReq req);
+
+    ExecResp addSession(1: AddSessionReq req);
+    ExecResp removeSession(1: RemoveSessionReq req);
+    ListSessionsResp listSessions(1: ListSessionsReq req);
+    ExecResp updateSession(1: UpdateSessionReq req);
 
     ExecResp createTag(1: CreateTagReq req);
     ExecResp alterTag(1: AlterTagReq req);

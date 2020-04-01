@@ -44,6 +44,7 @@ public:
     void showCollation();
     void showUsers();
     void showRoles();
+    void showSessions();
 
     std::string roleToStr(nebula::cpp2::RoleType type);
 

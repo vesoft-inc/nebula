@@ -82,15 +82,18 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // Get the IPv4 address the server will listen on
-    std::string localIP;
+    // Check IPv4 if local valid ip
     {
-        auto result = NetworkUtils::getIPv4FromDevice(FLAGS_listen_netdev);
+        auto result = NetworkUtils::isLocalValidIP(FLAGS_graph_server_ip);
         if (!result.ok()) {
             LOG(ERROR) << result.status();
             return EXIT_FAILURE;
         }
-        localIP = std::move(result).value();
+        auto isValid = std::move(result).value();
+        if (!isValid) {
+            LOG(ERROR) << "Invalid local IPV4 address " << FLAGS_graph_server_ip;
+            return EXIT_FAILURE;
+        }
     }
 
     LOG(INFO) << "Starting Graph HTTP Service";
@@ -132,7 +135,7 @@ int main(int argc, char *argv[]) {
     }
 
     gServer->setInterface(std::move(interface));
-    gServer->setAddress(localIP, FLAGS_port);
+    gServer->setAddress(FLAGS_graph_server_ip, FLAGS_port);
     gServer->setReusePort(FLAGS_reuse_port);
     gServer->setIdleTimeout(std::chrono::seconds(FLAGS_client_idle_timeout_secs));
     gServer->setNumCPUWorkerThreads(FLAGS_num_worker_threads);
@@ -148,7 +151,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    FLOG_INFO("Starting nebula-graphd on %s:%d\n", localIP.c_str(), FLAGS_port);
+    FLOG_INFO("Starting nebula-graphd on %s:%d\n", FLAGS_graph_server_ip.c_str(), FLAGS_port);
     try {
         gServer->serve();  // Blocking wait until shut down via gServer->stop()
     } catch (const std::exception &e) {
@@ -156,7 +159,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    FLOG_INFO("nebula-graphd on %s:%d has been stopped", localIP.c_str(), FLAGS_port);
+    FLOG_INFO("nebula-graphd on %s:%d has been stopped", FLAGS_graph_server_ip.c_str(), FLAGS_port);
 
     return EXIT_SUCCESS;
 }

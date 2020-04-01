@@ -58,6 +58,9 @@ public:
     // it will use the first ip exclude "127.0.0.1"
     static StatusOr<std::string> getLocalIP(std::string defaultIP = "");
 
+    // Check IPv4 defaultIP if local valid ip
+    static StatusOr<bool> isLocalValidIP(std::string defaultIP);
+
     // Convert peers str which is a list of ipPort joined with comma into HostAddr list.
     // (Peers str format example: 192.168.1.1:10001, 192.168.1.2:10001)
     // Return Status::Error if peersStr is invalid.

@@ -16,6 +16,7 @@ nebula_add_library(
     MetaServiceHandler.cpp
     MetaServiceUtils.cpp
     ActiveHostsMan.cpp
+    SessionMan.cpp
     processors/partsMan/ListHostsProcessor.cpp
     processors/partsMan/ListPartsProcessor.cpp
     processors/partsMan/CreateSpaceProcessor.cpp
@@ -74,6 +75,7 @@ nebula_add_library(
     processors/jobMan/JobStatus.cpp
     processors/jobMan/AdminJobProcessor.cpp
     processors/jobMan/JobUtils.cpp
+    processors/sessionMan/GlobalSessionProcessor.cpp
 )
 
 nebula_add_library(

@@ -125,6 +125,25 @@ TEST(NetworkUtils, toHosts) {
     ASSERT_FALSE(s.ok());
 }
 
+TEST(NetworkUtils, isLocalValidIP) {
+    {
+        auto s = NetworkUtils::isLocalValidIP("127.0.0.1");
+        ASSERT_TRUE(s.ok());
+        auto ret = s.value();
+        ASSERT_TRUE(ret);
+    }
+    {
+        auto s = NetworkUtils::isLocalValidIP("");
+        ASSERT_FALSE(s.ok());
+    }
+    {
+        auto s = NetworkUtils::isLocalValidIP("127.0.0.12");
+        ASSERT_TRUE(s.ok());
+        auto ret = s.value();
+        ASSERT_FALSE(ret);
+    }
+}
+
 }   // namespace network
 }   // namespace nebula
 

@@ -36,7 +36,7 @@ Status GraphService::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecuto
         LOG(WARNING) << "Failed to synchronously wait for meta service ready";
     }
 
-    sessionManager_ = std::make_unique<SessionManager>();
+    sessionManager_ = std::make_unique<SessionManager>(metaClient_.get());
     executionEngine_ = std::make_unique<ExecutionEngine>(metaClient_.get());
 
     return executionEngine_->init(std::move(ioExecutor));

@@ -130,6 +130,7 @@ void MetaClient::heartBeatThreadFunc() {
             localLastUpdateTime_ = metadLastUpdateTime_;
         }
     }
+    uploadSession();
 }
 
 bool MetaClient::loadUsersAndRoles() {
@@ -157,6 +158,36 @@ bool MetaClient::loadUsersAndRoles() {
     return true;
 }
 
+bool MetaClient::loadSessions() {
+    auto ret = listSessions().get();
+    if (!ret.ok()) {
+        LOG(ERROR) << "List sesssions failed, status:" << ret.status();
+        return false;
+    }
+    decltype(sessionsCache_)       SessionMap;
+    for (auto& sess : ret.value()) {
+        auto& addr = sess.get_addr();
+        auto sessionId = sess.get_session_id();
+        auto startTime = sess.get_start_time();
+        auto updateTime = sess.get_update_time();
+        SessionMap[addr][sessionId] = std::make_pair(startTime, updateTime);
+    }
+    {
+        folly::RWSpinLock::WriteHolder holder(localCacheLock_);
+        sessionsCache_ = std::move(SessionMap);
+    }
+    return true;
+}
+
+bool MetaClient::uploadSession() {
+    auto ret = updateSession(sessions_).get();
+    if (!ret.ok()) {
+        LOG(ERROR) << "List sesssions failed, status:" << ret.status();
+        return false;
+    }
+    return true;
+}
+
 bool MetaClient::loadData() {
     if (ioThreadPool_->numThreads() <= 0) {
         LOG(ERROR) << "The threads number in ioThreadPool should be greater than 0";
@@ -164,6 +195,11 @@ bool MetaClient::loadData() {
     }
 
     if (!loadUsersAndRoles()) {
+        LOG(ERROR) << "Load roles Failed";
+        return false;
+    }
+
+    if (!loadSessions()) {
         LOG(ERROR) << "Load roles Failed";
         return false;
     }
@@ -1059,6 +1095,76 @@ StatusOr<int32_t> MetaClient::partsNum(GraphSpaceID spaceId) {
     return it->second->partsAlloc_.size();
 }
 
+folly::Future<StatusOr<bool>>
+MetaClient::addSession(std::vector<cpp2::SessionItem> items) {
+    cpp2::AddSessionReq req;
+    req.set_session_items(std::move(items));
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_addSession(request);
+                }, [] (cpp2::ExecResp&& resp) -> bool {
+                    return resp.code == cpp2::ErrorCode::SUCCEEDED;;
+                }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::removeSession(std::vector<cpp2::SessionItem> items) {
+    cpp2::RemoveSessionReq req;
+    req.set_session_items(std::move(items));
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_removeSession(request);
+                }, [] (cpp2::ExecResp&& resp) -> bool {
+                    return resp.code == cpp2::ErrorCode::SUCCEEDED;;
+                }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::updateSession(std::unordered_map<std::string,
+                          std::unordered_map<int64_t, int64_t >> sessions) {
+    cpp2::UpdateSessionReq req;
+
+    std::vector<cpp2::SessionItem> items;
+    for (auto& sess : sessions) {
+        auto& addr = sess.first;
+        auto sessRec = sess.second;
+        for (auto& rec : sessRec) {
+            cpp2::SessionItem item;
+            item.set_addr(addr);
+            item.set_session_id(rec.first);
+            item.set_start_time(rec.second);
+            items.emplace_back(std::move(item));
+       }
+    }
+    req.set_session_items(std::move(items));
+
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_updateSession(request);
+                }, [] (cpp2::ExecResp&& resp) -> bool {
+                    return resp.code == cpp2::ErrorCode::SUCCEEDED;;
+                }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<std::vector<cpp2::SessionItem>>>
+MetaClient::listSessions() {
+    cpp2::ListSessionsReq req;
+    folly::Promise<StatusOr<std::vector<cpp2::SessionItem>>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_listSessions(request);
+    }, [] (cpp2::ListSessionsResp&& resp) -> decltype(auto) {
+        return std::move(resp).get_items();
+    }, std::move(promise));
+    return future;
+}
+
 folly::Future<StatusOr<TagID>> MetaClient::createTagSchema(GraphSpaceID spaceId,
                                                            std::string name,
                                                            nebula::cpp2::Schema schema,
@@ -1663,6 +1769,16 @@ MetaClient::getRolesByUserFromCache(const std::string& user) {
         return std::vector<nebula::cpp2::RoleItem>(0);
     }
     return iter->second;
+}
+
+bool MetaClient::pushSessionToCache(std::string& addr,
+                                    std::unordered_map<int64_t, int64_t> sessions) {
+    if (!ready_) {
+        return false;
+    }
+    folly::RWSpinLock::WriteHolder holder(sessionCacheLock_);
+    sessions_[addr] = sessions;
+    return true;
 }
 
 bool MetaClient::authCheckFromCache(const std::string& account, const std::string& password) {

@@ -388,6 +388,22 @@ StatusOr<std::string> NetworkUtils::getLocalIP(std::string defaultIP) {
         }
     }
     return Status::Error("No IPv4 address found!");
+ }
+
+StatusOr<bool> NetworkUtils::isLocalValidIP(std::string defaultIP) {
+    if (defaultIP.empty()) {
+        return Status::Error("IPv4 address is empty!");
+    }
+    auto result = network::NetworkUtils::listDeviceAndIPv4s();
+    if (!result.ok()) {
+        return std::move(result).status();
+    }
+    for (auto& deviceIP : result.value()) {
+        if (!defaultIP.compare(deviceIP.second)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 }  // namespace network

@@ -20,6 +20,7 @@ DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
 DEFINE_int32(listen_backlog, 1024, "Backlog of the listen socket");
 DEFINE_string(listen_netdev, "any", "The network device to listen on");
 DEFINE_string(pid_file, "pids/nebula-graphd.pid", "File to hold the process id");
+DEFINE_string(graph_server_ip, "", "graphd used local ip");
 
 DEFINE_bool(redirect_stdout, true, "Whether to redirect stdout and stderr to separate files");
 DEFINE_string(stdout_log_file, "graphd-stdout.log", "Destination filename of stdout");

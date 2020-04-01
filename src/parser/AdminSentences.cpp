@@ -36,6 +36,8 @@ std::string ShowSentence::toString() const {
             return folly::stringPrintf("SHOW CHARSET");
         case ShowType::kShowCollation:
             return folly::stringPrintf("SHOW COLLATION");
+        case ShowType::kShowSessions:
+            return folly::stringPrintf("SHOW SESSIONS");
         case ShowType::kUnknown:
         default:
             FLOG_FATAL("Type illegal");
