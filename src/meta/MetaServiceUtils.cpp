@@ -438,7 +438,7 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
         switch (col.get_type().get_type()) {
             case nebula::cpp2::SupportedType::BOOL:
                 if (value->getType() != nebula::cpp2::Value::Type::bool_value) {
-                    LOG(ERROR) << "Create Tag Failed: " << name
+                    LOG(ERROR) << "Handle Column Failed: " << name
                                 << " type mismatch";
                     return cpp2::ErrorCode::E_CONFLICT;
                 }
@@ -446,7 +446,7 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
                 break;
             case nebula::cpp2::SupportedType::INT:
                 if (value->getType() != nebula::cpp2::Value::Type::int_value) {
-                    LOG(ERROR) << "Create Tag Failed: " << name
+                    LOG(ERROR) << "Handle Column Failed: " << name
                                 << " type mismatch";
                     return cpp2::ErrorCode::E_CONFLICT;
                 }
@@ -454,7 +454,7 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
                 break;
             case nebula::cpp2::SupportedType::DOUBLE:
                 if (value->getType() != nebula::cpp2::Value::Type::double_value) {
-                    LOG(ERROR) << "Create Tag Failed: " << name
+                    LOG(ERROR) << "Handle Column Failed: " << name
                                 << " type mismatch";
                     return  cpp2::ErrorCode::E_CONFLICT;
                 }
@@ -462,7 +462,7 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
                 break;
             case nebula::cpp2::SupportedType::STRING:
                 if (value->getType() != nebula::cpp2::Value::Type::string_value) {
-                    LOG(ERROR) << "Create Tag Failed: " << name
+                    LOG(ERROR) << "Handle Column Failed: " << name
                                 << " type mismatch";
                     return cpp2::ErrorCode::E_CONFLICT;
                 }
@@ -470,7 +470,7 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
                 break;
             case nebula::cpp2::SupportedType::TIMESTAMP:
                 if (value->getType() != nebula::cpp2::Value::Type::timestamp) {
-                    LOG(ERROR) << "Create Tag Failed: " << name
+                    LOG(ERROR) << "Handle Column Failed: " << name
                                 << " type mismatch";
                     return cpp2::ErrorCode::E_CONFLICT;
                 }
