@@ -24,7 +24,6 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
   * [Ingest .sst File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/download-and-ingest-sst-file.md)
   * [Nebula Graph Clients](1.overview/2.quick-start/3.supported-clients.md)
 
-
 * Design and Architecture
   * [Design Overview](1.overview/3.design-and-architecture/1.design-and-architecture.md)
   * [Storage Architecture](1.overview/3.design-and-architecture/2.storage-design.md)
@@ -66,6 +65,7 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
     * [Drop Space Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/drop-space-syntax.md)
     * [Drop Tag Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/drop-tag-syntax.md)
     * [Index](2.query-language/4.statement-syntax/1.data-definition-statements/index.md)
+    * [TTL (time-to-live)](2.query-language/4.statement-syntax/1.data-definition-statements/TTL.md)
   * Data Query and Manipulation Statements
     * [Delete Edge Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/delete-edge-syntax.md)
     * [Delete Vertex Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/delete-vertex-syntax.md)
@@ -73,14 +73,31 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
     * [Go Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/go-syntax.md)
     * [Insert Edge Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/insert-edge-syntax.md)
     * [Insert Vertex Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/insert-vertex-syntax.md)
+    * [Lookup Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/lookup-syntax.md)
+    * [Return Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/return-syntax.md)
     * [Update Vertex/Edge Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/update-vertex-edge-syntax.md)
+    * [Upsert Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/upsert-syntax.md)
     * [Where Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/where-syntax.md)
     * [Yield Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/yield-syntax.md)
-    * [Return Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/return-syntax.md)
+
   * Utility Statements
+    * Show Statements
+      * [Show Charset Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-charset-syntax.md)
+      * [Show Collation Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-collation-syntax.md)
+      * [Show Configs Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-configs-syntax.md)
+      * [Show Create Spaces Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-create-space-syntax.md)
+      * [Show Create Tag/Edge Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-create-tag-edge-syntax.md)
+      * [Show Hosts Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-hosts-syntax.md)
+      * [Show Indexes Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-indexes-syntax.md)
+      * [Show Parts Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-parts-syntax.md)
+      * [Show Roles Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-roles-syntax.md)
+      * [Show Snapshots Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-snapshots-syntax.md)
+      * [Show Spaces Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-spaces-syntax.md)
+      * [Show Tag/Edge Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-tags-edges-syntax.md)
+      * [Show Users Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-statements/show-users-syntax.md)
     * [Describe Syntax](2.query-language/4.statement-syntax/3.utility-statements/describe-syntax.md)
     * [Use Syntax](2.query-language/4.statement-syntax/3.utility-statements/use-syntax.md)
-    * [Show Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-syntax.md)
+
   * Graph Algorithms
     * [Find Path Syntax](2.query-language/4.statement-syntax/4.graph-algorithms/find-path-syntax.md)
 
@@ -104,10 +121,16 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
 
   * Server Administration
     * Account Management Statements
+      * [Alter User Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/alter-user-syntax.md)
+      * [Built-in Roles](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/built-in-roles.md)
+      * [Change Password](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/change-password.md)
+      * [Create User Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/create-user-syntax.md)
       * [Drop User Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/drop-user-syntax.md)
+      * [Grant Role Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/grant-role-syntax.md)
+      * [Revoke Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/revoke-syntax.md)
     * Configuration Statements
       * [Configs Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/configs-syntax.md)
-      * [RocksDB Compaction and Flush](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/rocksdb-compaction-flush.md)
+      <!-- * [RocksDB Compaction and Flush](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/rocksdb-compaction-flush.md) -->
       * [Logs](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/log.md)
     * Graph Service Administration
       * [Graph Metrics](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/graph-service-administration/graph-metrics.md)
@@ -134,8 +157,8 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
 
 ## Appendix
 
-* [Gremlin V.S. nGQL](5.appendix/gremlin-ngql.md)
-* [Cypher V.S. nGQL](5.appendix/cypher-ngql.md)
+* [Gremlin VS nGQL](5.appendix/gremlin-ngql.md)
+* [Cypher VS nGQL](5.appendix/cypher-ngql.md)
 
 ## Misc
 

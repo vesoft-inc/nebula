@@ -35,8 +35,6 @@ public:
 
     void execute() override;
 
-    void feedResult(std::unique_ptr<InterimResult> result) override;
-
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
 private:
@@ -61,6 +59,10 @@ private:
 
     Status prepareOverAll();
 
+    Status addToEdgeTypes(EdgeType type);
+
+    Status checkNeededProps();
+
     /**
      * To check if this is the final step.
      */
@@ -74,10 +76,6 @@ private:
      */
     bool isUpto() const {
         return upto_;
-    }
-
-    bool isReversely() const {
-        return isReversely_;
     }
 
     /**
@@ -200,10 +198,6 @@ private:
 
     OptVariantType getPropFromInterim(VertexID id, const std::string &prop) const;
 
-    nebula::cpp2::SupportedType getPropTypeFromInterim(const std::string &prop) const;
-
-    nebula::cpp2::SupportedType calculateExprType(Expression* exp) const;
-
     enum FromType {
         kInstantExpr,
         kVariable,
@@ -216,7 +210,7 @@ private:
     uint32_t                                    steps_{1};
     uint32_t                                    curStep_{1};
     bool                                        upto_{false};
-    bool                                        isReversely_{false};
+    OverClause::Direction                       direction_{OverClause::Direction::kForward};
     std::vector<EdgeType>                       edgeTypes_;
     std::string                                *varname_{nullptr};
     std::string                                *colname_{nullptr};
@@ -225,7 +219,6 @@ private:
     std::unique_ptr<YieldClauseWrapper>         yieldClauseWrapper_;
     bool                                        distinct_{false};
     bool                                        distinctPushDown_{false};
-    std::unique_ptr<InterimResult>              inputs_;
     using InterimIndex = InterimResult::InterimResultIndex;
     std::unique_ptr<InterimIndex>               index_;
     std::unique_ptr<ExpressionContext>          expCtx_;

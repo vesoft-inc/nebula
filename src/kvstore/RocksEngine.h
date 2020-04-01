@@ -85,7 +85,6 @@ protected:
     rocksdb::Slice prefix_;
 };
 
-
 /**************************************************************************
  *
  * An implementation of KVEngine based on Rocksdb
@@ -109,15 +108,17 @@ public:
     }
 
     std::unique_ptr<WriteBatch> startBatchWrite() override;
-    ResultCode commitBatchWrite(std::unique_ptr<WriteBatch> batch) override;
+
+    ResultCode commitBatchWrite(std::unique_ptr<WriteBatch> batch,
+                                bool disableWAL) override;
 
     /*********************
      * Data retrieval
      ********************/
     ResultCode get(const std::string& key, std::string* value) override;
 
-    ResultCode multiGet(const std::vector<std::string>& keys,
-                        std::vector<std::string>* values) override;
+    std::vector<Status> multiGet(const std::vector<std::string>& keys,
+                                 std::vector<std::string>* values) override;
 
     ResultCode range(const std::string& start,
                      const std::string& end,
@@ -143,8 +144,6 @@ public:
 
     ResultCode removeRange(const std::string& start,
                            const std::string& end) override;
-
-    ResultCode removePrefix(const std::string& prefix) override;
 
     /*********************
      * Non-data operation

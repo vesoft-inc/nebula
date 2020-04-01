@@ -45,11 +45,16 @@ Status SchemaHelper::createSchema(const std::vector<ColumnSpecification*>& specs
         column.name = *spec->name();
         column.type.type = columnTypeToSupportedType(spec->type());
         nebula::cpp2::Value v;
+        Getters getter;
         if (spec->hasDefault()) {
+            auto s = spec->prepare();
+            if (!s.ok()) {
+                return s;
+            }
             switch (spec->type()) {
                 case nebula::ColumnType::BOOL:
                 {
-                    auto ret = spec->getBoolValue();
+                    auto ret = spec->getBoolValue(getter);
                     if (!ret.ok()) {
                         auto error = "Column `%s' set wrong default value,"
                                      " schema type is `bool'";
@@ -60,7 +65,7 @@ Status SchemaHelper::createSchema(const std::vector<ColumnSpecification*>& specs
                 }
                 case nebula::ColumnType::INT:
                 {
-                    auto ret = spec->getIntValue();
+                    auto ret = spec->getIntValue(getter);
                     if (!ret.ok()) {
                         auto error = "Column `%s' set wrong default value,"
                                      " schema type is `int'";
@@ -71,7 +76,7 @@ Status SchemaHelper::createSchema(const std::vector<ColumnSpecification*>& specs
                 }
                 case nebula::ColumnType::DOUBLE:
                 {
-                    auto ret = spec->getDoubleValue();
+                    auto ret = spec->getDoubleValue(getter);
                     if (!ret.ok()) {
                         auto error = "Column `%s' set wrong type default value,"
                                      " schema type is `double'";
@@ -82,7 +87,7 @@ Status SchemaHelper::createSchema(const std::vector<ColumnSpecification*>& specs
                 }
                 case nebula::ColumnType::STRING:
                 {
-                    auto ret = spec->getStringValue();
+                    auto ret = spec->getStringValue(getter);
                     if (!ret.ok()) {
                         auto error = "Column `%s' set wrong type default value,"
                                      " schema type is `string'";
@@ -93,7 +98,7 @@ Status SchemaHelper::createSchema(const std::vector<ColumnSpecification*>& specs
                 }
                 case nebula::ColumnType::TIMESTAMP:
                 {
-                    auto ret = spec->getIntValue();
+                    auto ret = spec->getIntValue(getter);
                     if (!ret.ok()) {
                         auto error = "Column `%s' set wrong type default value,"
                                      " schema type is `timestamp'";

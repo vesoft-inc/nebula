@@ -15,6 +15,9 @@
   <a href="http://githubbadges.com/fork.svg?user=vesoft-inc&repo=nebula&style=default">
     <img src="http://githubbadges.com/fork.svg?user=vesoft-inc&repo=nebula&style=default" alt="nebula fork"/>
   </a>
+  <a href="https://codecov.io/gh/vesoft-inc/nebula">
+    <img src="https://codecov.io/gh/vesoft-inc/nebula/branch/master/graph/badge.svg" alt="codecov"/>
+  </a>
 </p>
 
 # Nebula Graph是什么？
@@ -52,8 +55,10 @@
 ## 获取帮助
 
 在使用 **Nebula Graph** 过程中遇到任何问题，都可以通过下面的方式寻求帮助：
+
 * [知乎](https://www.zhihu.com/org/nebulagraph/activities)
 * [SegmentFault](https://segmentfault.com/t/nebula)
+* [官方论坛](https://discuss.nebula-graph.io)
 
 ## 文档
 

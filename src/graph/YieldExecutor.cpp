@@ -138,7 +138,6 @@ Status YieldExecutor::syntaxCheck() {
 }
 
 void YieldExecutor::execute() {
-    FLOG_INFO("Executing YIELD: %s", sentence_->toString().c_str());
     Status status;
     do {
         status = beforeExecute();
@@ -190,8 +189,12 @@ Status YieldExecutor::executeInputs() {
         return Status::OK();
     }
 
+    auto status = checkIfDuplicateColumn();
+    if (!status.ok()) {
+        return status;
+    }
     auto outputSchema = std::make_shared<SchemaWriter>();
-    auto status = getOutputSchema(inputs, outputSchema.get());
+    status = getOutputSchema(inputs, outputSchema.get());
     if (!status.ok()) {
         return status;
     }

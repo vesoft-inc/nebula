@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 #include "storage/mutate/AddEdgesProcessor.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include <algorithm>
 #include <limits>
 #include "time/WallClock.h"
@@ -22,16 +22,14 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
     callingNum_ = req.parts.size();
     auto iRet = indexMan_->getEdgeIndexes(spaceId_);
     if (iRet.ok()) {
-        for (auto& index : iRet.value()) {
-            indexes_.emplace_back(index);
-        }
+        indexes_ = std::move(iRet).value();
     }
     CHECK_NOTNULL(kvstore_);
     if (indexes_.empty()) {
-        std::for_each(req.parts.begin(), req.parts.end(), [&](auto& partEdges){
+        std::for_each(req.parts.begin(), req.parts.end(), [&](auto& partEdges) {
             auto partId = partEdges.first;
             std::vector<kvstore::KV> data;
-            std::for_each(partEdges.second.begin(), partEdges.second.end(), [&](auto& edge){
+            std::for_each(partEdges.second.begin(), partEdges.second.end(), [&](auto& edge) {
                 VLOG(3) << "PartitionID: " << partId << ", VertexID: " << edge.key.src
                         << ", EdgeType: " << edge.key.edge_type << ", EdgeRanking: "
                         << edge.key.ranking << ", VertexID: "
@@ -43,10 +41,10 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
             doPut(spaceId_, partId, std::move(data));
         });
     } else {
-        std::for_each(req.parts.begin(), req.parts.end(), [&](auto& partEdges){
+        std::for_each(req.parts.begin(), req.parts.end(), [&](auto& partEdges) {
             auto partId = partEdges.first;
             auto atomic = [version, partId, edges = std::move(partEdges.second), this]()
-                          -> std::string {
+                          -> folly::Optional<std::string> {
                 return addEdges(version, partId, edges);
             };
             auto callback = [partId, this](kvstore::ResultCode code) {
@@ -75,7 +73,7 @@ std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
      * Ultimately, kv(part1_src1_edgeType1_rank1_dst1 , v4) . It's just what I need.
      */
     std::map<std::string, std::string> newEdges;
-    std::for_each(edges.begin(), edges.end(), [&](auto& edge){
+    std::for_each(edges.begin(), edges.end(), [&](auto& edge) {
         auto prop = edge.get_props();
         auto type = edge.key.edge_type;
         auto srcId = edge.key.src;
@@ -96,7 +94,7 @@ std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
                 /*
                  * step 1 , Delete old version index if exists.
                  */
-                if (val.empty() && !FLAGS_ignore_index_check_pre_insert) {
+                if (val.empty()) {
                     val = findObsoleteIndex(partId, e.first);
                 }
                 if (!val.empty()) {
@@ -104,6 +102,10 @@ std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
                                                                val,
                                                                spaceId_,
                                                                edgeType);
+                    if (reader == nullptr) {
+                        LOG(WARNING) << "Bad format row";
+                        return "";
+                    }
                     auto oi = indexKey(partId, reader.get(), e.first, index);
                     if (!oi.empty()) {
                         batchHolder->remove(std::move(oi));
@@ -117,6 +119,10 @@ std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
                                                            e.second,
                                                            spaceId_,
                                                            edgeType);
+                    if (nReader == nullptr) {
+                        LOG(WARNING) << "Bad format row";
+                        return "";
+                    }
                 }
                 auto ni = indexKey(partId, nReader.get(), e.first, index);
                 batchHolder->put(std::move(ni), "");

@@ -8,7 +8,7 @@
 #define STORAGE_COMPACTIONFILTER_H_
 
 #include "base/Base.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include "dataman/RowReader.h"
 #include "meta/NebulaSchemaProvider.h"
 #include "kvstore/CompactionFilter.h"
@@ -40,6 +40,9 @@ public:
             if (!schemaValid(spaceId, key)) {
                 return true;
             }
+            if (isInvalidReverseEdgeKey(key, val)) {
+                return true;
+            }
             if (!ttlValid(spaceId, key, val)) {
                 VLOG(3) << "TTL invalid for key " << key;
                 return true;
@@ -62,7 +65,7 @@ public:
     bool schemaValid(GraphSpaceID spaceId, const folly::StringPiece& key) const {
         if (NebulaKeyUtils::isVertex(key)) {
             auto tagId = NebulaKeyUtils::getTagId(key);
-            auto ret = schemaMan_->getNewestTagSchemaVer(spaceId, tagId);
+            auto ret = schemaMan_->getLatestTagSchemaVersion(spaceId, tagId);
             if (ret.ok() && ret.value() == -1) {
                 VLOG(3) << "Space " << spaceId << ", Tag " << tagId << " invalid";
                 return false;
@@ -72,13 +75,22 @@ public:
             if (edgeType < 0) {
                 edgeType = -edgeType;
             }
-            auto ret = schemaMan_->getNewestEdgeSchemaVer(spaceId, edgeType);
+            auto ret = schemaMan_->getLatestEdgeSchemaVersion(spaceId, edgeType);
             if (ret.ok() && ret.value() == -1) {
                 VLOG(3) << "Space " << spaceId << ", EdgeType " << edgeType << " invalid";
                 return false;
             }
         }
         return true;
+    }
+
+    bool isInvalidReverseEdgeKey(const folly::StringPiece& key,
+                                 const folly::StringPiece& val) const {
+        if (NebulaKeyUtils::isEdge(key)) {
+            auto edgeType = NebulaKeyUtils::getEdgeType(key);
+            return edgeType < 0 && val.empty();
+        }
+        return false;
     }
 
     bool ttlValid(GraphSpaceID spaceId, const folly::StringPiece& key,
@@ -91,6 +103,10 @@ public:
                 return false;
             }
             auto reader = nebula::RowReader::getTagPropReader(schemaMan_, val, spaceId, tagId);
+            if (reader == nullptr) {
+                VLOG(3) << "Remove the bad format vertex";
+                return false;
+            }
             return checkDataTtlValid(schema.get(), reader.get());
         } else if (NebulaKeyUtils::isEdge(key)) {
             auto edgeType = NebulaKeyUtils::getEdgeType(key);
@@ -101,6 +117,10 @@ public:
             }
             auto reader = nebula::RowReader::getEdgePropReader(schemaMan_, val,
                                                                spaceId, std::abs(edgeType));
+            if (reader == nullptr) {
+                VLOG(3) << "Remove the bad format edge!";
+                return false;
+            }
             return checkDataTtlValid(schema.get(), reader.get());
         }
         return true;

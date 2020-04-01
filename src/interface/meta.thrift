@@ -41,13 +41,20 @@ enum ErrorCode {
     E_NO_VALID_HOST             = -37,
     E_CORRUPTTED_BALANCE_PLAN   = -38,
 
-    E_INVALID_PASSWORD       = -41,
-    E_INPROPER_ROLE          = -42,
+    // Authentication Failure
+    E_INVALID_PASSWORD          = -41,
+    E_IMPROPER_ROLE             = -42,
+    E_INVALID_PARTITION_NUM     = -43,
+    E_INVALID_REPLICA_FACTOR    = -44,
+    E_INVALID_CHARSET           = -45,
+    E_INVALID_COLLATE           = -46,
+    E_CHARSET_COLLATE_NOT_MATCH = -47,
 
-    E_SNAPSHOT_FAILURE   = -51,
-
-    E_INDEX_CONFLICT = -61,
-    E_INDEX_WITH_TTL = -62,
+    // Admin Failure
+    E_SNAPSHOT_FAILURE       = -51,
+    E_BLOCK_WRITE_FAILURE    = -52,
+    E_REBUILD_INDEX_FAILURE  = -53,
+    E_INDEX_WITH_TTL         = -54,
 
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)
@@ -59,28 +66,12 @@ enum AlterSchemaOp {
     UNKNOWN = 0x04,
 } (cpp.enum_strict)
 
-/**
-** GOD is A global senior administrator.like root of Linux systems.
-** ADMIN is an administrator for a given Graph Space.
-** USER is a normal user for a given Graph Space. A User can access (read and write) the data in the Graph Space.
-** GUEST is a read-only role for a given Graph Space. A Guest cannot modify the data in the Graph Space.
-** Refer to header file src/graph/PermissionManager.h for details.
-**/
-
-enum RoleType {
-    GOD    = 0x01,
-    ADMIN  = 0x02,
-    USER   = 0x03,
-    GUEST  = 0x04,
-} (cpp.enum_strict)
-
 union ID {
     1: common.GraphSpaceID  space_id,
     2: common.TagID         tag_id,
     3: common.EdgeType      edge_type,
     4: common.IndexID       index_id,
-    5: common.UserID        user_id,
-    6: common.ClusterID     cluster_id,
+    5: common.ClusterID     cluster_id,
 }
 
 struct IdName {
@@ -92,6 +83,8 @@ struct SpaceProperties {
     1: string               space_name,
     2: i32                  partition_num,
     3: i32                  replica_factor,
+    4: string               charset_name,
+    5: string               collate_name,
 }
 
 struct SpaceItem {
@@ -134,26 +127,6 @@ struct HostItem {
     2: HostStatus           status,
     3: map<string, list<common.PartitionID>> (cpp.template = "std::unordered_map") leader_parts,
     4: map<string, list<common.PartitionID>> (cpp.template = "std::unordered_map") all_parts,
-}
-
-struct UserItem {
-    1: string account;
-    // Disable user if lock status is true.
-    2: bool   is_lock,
-    // The number of queries an account can issue per hour
-    3: i32    max_queries_per_hour,
-    // The number of updates an account can issue per hour
-    4: i32    max_updates_per_hour,
-    // The number of times an account can connect to the server per hour
-    5: i32    max_connections_per_hour,
-    // The number of simultaneous connections to the server by an account
-    6: i32    max_user_connections,
-}
-
-struct RoleItem {
-    1: common.UserID        user_id,
-    2: common.GraphSpaceID  space_id,
-    3: RoleType             role_type,
 }
 
 struct ExecResp {
@@ -388,7 +361,7 @@ struct GetPartsAllocResp {
 struct MultiPutReq {
     // segment is used to avoid conflict with system data.
     // it should be comprised of numbers and letters.
-    1: string     segment,
+    1: string            segment,
     2: list<common.Pair> pairs,
 }
 
@@ -398,9 +371,9 @@ struct GetReq {
 }
 
 struct GetResp {
-    1: ErrorCode code,
+    1: ErrorCode        code,
     2: common.HostAddr  leader,
-    3: string    value,
+    3: string           value,
 }
 
 struct MultiGetReq {
@@ -409,9 +382,9 @@ struct MultiGetReq {
 }
 
 struct MultiGetResp {
-    1: ErrorCode    code,
+    1: ErrorCode        code,
     2: common.HostAddr  leader,
-    3: list<string> values,
+    3: list<string>     values,
 }
 
 struct RemoveReq {
@@ -432,16 +405,16 @@ struct ScanReq {
 }
 
 struct ScanResp {
-    1: ErrorCode code,
+    1: ErrorCode        code,
     2: common.HostAddr  leader,
-    3: list<string> values,
+    3: list<string>     values,
 }
 
 struct HBResp {
-    1: ErrorCode code,
-    2: common.HostAddr  leader,
-    3: common.ClusterID cluster_id,
-    4: i64 last_update_time_in_ms,
+    1: ErrorCode         code,
+    2: common.HostAddr   leader,
+    3: common.ClusterID  cluster_id,
+    4: i64               last_update_time_in_ms,
 }
 
 struct HBReq {
@@ -521,70 +494,66 @@ struct ListEdgeIndexesResp {
     3: list<common.IndexItem>    items,
 }
 
+struct RebuildIndexReq {
+    1: common.GraphSpaceID space_id,
+    2: string              index_name,
+    3: bool                is_offline,
+}
+
 struct CreateUserReq {
-    1: UserItem user,
-    2: string encoded_pwd,
-    3: bool missing_ok,
+    1: string               account,
+    2: string               encoded_pwd,
+    3: bool                 if_not_exists,
 }
 
 struct DropUserReq {
-    1: string account,
-    2: bool missing_ok,
+    1: string               account,
+    2: bool                 if_exists,
 }
 
 struct AlterUserReq {
-    1: UserItem user_item,
+    1: string               account,
+    2: string               encoded_pwd,
 }
 
 struct GrantRoleReq {
-    1: RoleItem role_item,
+    1: common.RoleItem role_item,
 }
 
 struct RevokeRoleReq {
-    1: RoleItem role_item,
-}
-
-struct GetUserReq {
-    1: string account,
-}
-
-struct GetUserResp {
-    1: ErrorCode code,
-    // Valid if ret equals E_LEADER_CHANGED.
-    2: common.HostAddr  leader,
-    3: UserItem user_item,
+    1: common.RoleItem role_item,
 }
 
 struct ListUsersReq {
 }
 
 struct ListUsersResp {
-    1: ErrorCode code,
+    1: ErrorCode            code,
     // Valid if ret equals E_LEADER_CHANGED.
-    2: common.HostAddr  leader,
-    3: map<common.UserID, UserItem>(cpp.template = "std::unordered_map") users,
+    2: common.HostAddr      leader,
+    // map<account, encoded password>
+    3: map<string, string>  users,
 }
 
 struct ListRolesReq {
-    1: common.GraphSpaceID space_id,
+    1: common.GraphSpaceID   space_id,
+}
+
+struct GetUserRolesReq {
+    1: string                account,
 }
 
 struct ListRolesResp {
     1: ErrorCode code,
     // Valid if ret equals E_LEADER_CHANGED.
     2: common.HostAddr  leader,
-    3: list<RoleItem> roles,
+    3: list<common.RoleItem> roles,
 }
 
 struct ChangePasswordReq {
     1: string account,
     2: string new_encoded_pwd,
     3: string old_encoded_pwd,
-}
-
-struct CheckPasswordReq {
-    1: string account,
-    2: string encoded_pwd,
 }
 
 struct BalanceReq {
@@ -703,6 +672,21 @@ struct ListSnapshotsResp {
     3: list<Snapshot>       snapshots,
 }
 
+struct ListIndexStatusReq {
+    1: common.GraphSpaceID space_id,
+}
+
+struct IndexStatus {
+    1: string         name,
+    2: string         status,
+}
+
+struct ListIndexStatusResp {
+    1: ErrorCode            code,
+    2: common.HostAddr      leader,
+    3: list<IndexStatus>    statuses,
+}
+
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp dropSpace(1: DropSpaceReq req);
@@ -737,21 +721,24 @@ service MetaService {
     ExecResp             dropTagIndex(1: DropTagIndexReq req );
     GetTagIndexResp      getTagIndex(1: GetTagIndexReq req);
     ListTagIndexesResp   listTagIndexes(1:ListTagIndexesReq req);
+    ExecResp             rebuildTagIndex(1: RebuildIndexReq req);
+    ListIndexStatusResp  listTagIndexStatus(1: ListIndexStatusReq req);
     ExecResp             createEdgeIndex(1: CreateEdgeIndexReq req);
     ExecResp             dropEdgeIndex(1: DropEdgeIndexReq req );
     GetEdgeIndexResp     getEdgeIndex(1: GetEdgeIndexReq req);
     ListEdgeIndexesResp  listEdgeIndexes(1: ListEdgeIndexesReq req);
+    ExecResp             rebuildEdgeIndex(1: RebuildIndexReq req);
+    ListIndexStatusResp  listEdgeIndexStatus(1: ListIndexStatusReq req);
 
     ExecResp createUser(1: CreateUserReq req);
     ExecResp dropUser(1: DropUserReq req);
     ExecResp alterUser(1: AlterUserReq req);
     ExecResp grantRole(1: GrantRoleReq req);
     ExecResp revokeRole(1: RevokeRoleReq req);
-    GetUserResp getUser(1: GetUserReq req);
     ListUsersResp listUsers(1: ListUsersReq req);
     ListRolesResp listRoles(1: ListRolesReq req);
+    ListRolesResp getUserRoles(1: GetUserRolesReq req);
     ExecResp changePassword(1: ChangePasswordReq req);
-    ExecResp checkPassword(1: CheckPasswordReq req);
 
     HBResp           heartBeat(1: HBReq req);
     BalanceResp      balance(1: BalanceReq req);

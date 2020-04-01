@@ -17,7 +17,6 @@ enum LogType : char {
     OP_MULTI_PUT      = 0x2,
     OP_REMOVE         = 0x3,
     OP_MULTI_REMOVE   = 0x4,
-    OP_REMOVE_PREFIX  = 0x5,
     OP_REMOVE_RANGE   = 0x6,
     OP_ADD_LEARNER    = 0x07,
     OP_TRANS_LEADER   = 0x08,

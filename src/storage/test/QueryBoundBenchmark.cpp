@@ -12,7 +12,7 @@
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
 #include "storage/query/QueryBoundProcessor.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
 #include "meta/SchemaManager.h"
@@ -36,14 +36,7 @@ void mockData(kvstore::KVStore* kv) {
         for (VertexID vertexId = 1; vertexId < 1000; vertexId++) {
             for (TagID tagId = 3001; tagId < 3010; tagId++) {
                 auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, 0);
-                RowWriter writer;
-                for (uint64_t numInt = 0; numInt < 3; numInt++) {
-                    writer << numInt;
-                }
-                for (auto numString = 3; numString < 6; numString++) {
-                    writer << folly::stringPrintf("tag_string_col_%d", numString);
-                }
-                auto val = writer.encode();
+                auto val = TestUtils::setupEncode(3, 6);
                 data.emplace_back(std::move(key), std::move(val));
             }
             // Generate 7 out-edges for each edgeType.
@@ -54,14 +47,7 @@ void mockData(kvstore::KVStore* kv) {
                     auto key = NebulaKeyUtils::edgeKey(partId, vertexId, 101,
                                                  dstId - 10001, dstId,
                                                  std::numeric_limits<int>::max() - version);
-                    RowWriter writer(nullptr);
-                    for (uint64_t numInt = 0; numInt < 10; numInt++) {
-                        writer << numInt;
-                    }
-                    for (int32_t numString = 10; numString < 20; numString++) {
-                        writer << folly::stringPrintf("string_col_%d_%ld", numString, version);
-                    }
-                    auto val = writer.encode();
+                    auto val = TestUtils::setupEncode(10, 20);
                     data.emplace_back(std::move(key), std::move(val));
                 }
             }
@@ -188,4 +174,22 @@ query_bound_3                                               41.18ms    24.29
 query_bound_10                                              13.69ms    73.04
 ============================================================================
 
+2020/02/26:
+Debug version:
+============================================================================
+QueryBoundBenchmark.cpprelative  						  time/iter  iters/s
+============================================================================
+query_bound_1                                               79.76ms    12.54
+query_bound_3                                               27.89ms    35.85
+query_bound_10                                              10.88ms    91.87
+============================================================================
+
+Release version:
+============================================================================
+QueryBoundBenchmark.cpprelative                           time/iter  iters/s
+============================================================================
+query_bound_1                                               12.59ms    79.45
+query_bound_3                                                4.97ms   201.39
+query_bound_10                                               3.34ms   299.08
+============================================================================
 */

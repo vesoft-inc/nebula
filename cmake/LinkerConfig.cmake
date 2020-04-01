@@ -9,7 +9,7 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
-if (${default_linker_type} STREQUAL "ld")
+if ("${default_linker_type}" STREQUAL "ld")
     set(default_linker_type "bfd")
 endif()
 

@@ -12,14 +12,14 @@ namespace meta {
 void ListEdgeIndexesProcessor::process(const cpp2::ListEdgeIndexesReq& req) {
     CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
     folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeIndexLock());
-    auto spaceId = req.get_space_id();
-    auto prefix = MetaServiceUtils::indexPrefix(spaceId);
+    auto space = req.get_space_id();
+    auto prefix = MetaServiceUtils::indexPrefix(space);
 
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     handleErrorCode(MetaCommon::to(ret));
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "List Edge Index Failed: SpaceID " << req.get_space_id();
+        LOG(ERROR) << "List Edge Index Failed: SpaceID " << space;
         onFinished();
         return;
     }
@@ -33,6 +33,7 @@ void ListEdgeIndexesProcessor::process(const cpp2::ListEdgeIndexesReq& req) {
         }
         iter->next();
     }
+    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_items(std::move(items));
     onFinished();
 }

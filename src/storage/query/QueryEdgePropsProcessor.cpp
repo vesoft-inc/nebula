@@ -5,7 +5,7 @@
  */
 
 #include "storage/query/QueryEdgePropsProcessor.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include <algorithm>
 #include "time/Duration.h"
 #include "dataman/RowReader.h"
@@ -28,6 +28,10 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
     }
 
     auto schema = this->schemaMan_->getEdgeSchema(spaceId_, std::abs(edgeKey.edge_type));
+    if (schema == nullptr) {
+        VLOG(3) << "Schema not found for edge type: " << edgeKey.edge_type;
+        return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
+    }
     auto retTTLOpt = getEdgeTTLInfo(edgeKey.edge_type);
     // Only use the latest version.
     if (iter && iter->valid()) {
@@ -37,6 +41,9 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
                                                    iter->val(),
                                                    spaceId_,
                                                    std::abs(edgeKey.edge_type));
+        if (reader == nullptr) {
+            return kvstore::ResultCode::ERR_CORRUPT_DATA;
+        }
 
         // Check if ttl data expired
         if (retTTLOpt.has_value()) {

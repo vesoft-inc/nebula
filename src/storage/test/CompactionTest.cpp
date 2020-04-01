@@ -5,7 +5,7 @@
  */
 
 #include "base/Base.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
 #include <folly/synchronization/Baton.h>
 #include "fs/TempDir.h"
@@ -23,7 +23,7 @@ void mockData(kvstore::KVStore* kv) {
         for (VertexID vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
             for (TagID tagId = 3001; tagId < 3010; tagId++) {
                 auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, 0);
-                auto val = TestUtils::setupEncode();
+                auto val = TestUtils::encodeValue(partId, vertexId, tagId);
                 data.emplace_back(std::move(key), std::move(val));
             }
 
@@ -33,7 +33,7 @@ void mockData(kvstore::KVStore* kv) {
                 for (EdgeVersion version = 0; version < 3; version++) {
                     auto key = NebulaKeyUtils::edgeKey(partId, vertexId, 101, 0, dstId,
                                                        std::numeric_limits<int>::max() - version);
-                    auto val = TestUtils::setupEncode(10, 20);
+                    auto val = TestUtils::encodeValue(partId, vertexId, dstId, 101);
                     data.emplace_back(std::move(key), std::move(val));
                 }
             }

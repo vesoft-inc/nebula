@@ -39,6 +39,8 @@ private:
 
     Status prepareYield();
 
+    Status checkAliasProperty(const AliasPropertyExpression* aExpr);
+
     Status optimize();
 
     Status traversalExpr(const Expression *expr);
@@ -86,7 +88,6 @@ private:
     std::unique_ptr<ExpressionContext>             expCtx_;
     int32_t                                        tagOrEdge_;
     bool                                           isEdge_{false};
-    std::unique_ptr<InterimResult>                 inputs_;
     std::unique_ptr<cpp2::ExecutionResponse>       resp_;
     std::vector<std::string>                       returnCols_;
     std::vector<FilterItem>                        filters_;

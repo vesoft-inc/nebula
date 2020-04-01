@@ -77,22 +77,7 @@ Status OrderByExecutor::prepare() {
     return Status::OK();
 }
 
-void OrderByExecutor::feedResult(std::unique_ptr<InterimResult> result) {
-    if (result == nullptr) {
-        return;
-    }
-    DCHECK(sentence_ != nullptr);
-    inputs_ = std::move(result);
-    colNames_ = inputs_->getColNames();
-    auto ret = inputs_->getRows();
-    if (!ret.ok()) {
-        return;
-    }
-    rows_ = std::move(ret).value();
-}
-
 void OrderByExecutor::execute() {
-    FLOG_INFO("Executing Order By: %s", sentence_->toString().c_str());
     auto status = beforeExecute();
     if (!status.ok()) {
         LOG(ERROR) << "Error happened before execute: " << status.toString();
@@ -135,10 +120,26 @@ void OrderByExecutor::execute() {
 }
 
 Status OrderByExecutor::beforeExecute() {
-    if (inputs_ == nullptr || !inputs_->hasData()) {
+    if (inputs_ == nullptr) {
         return Status::OK();
     }
 
+    auto status = checkIfDuplicateColumn();
+    if (!status.ok()) {
+        return status;
+    }
+    colNames_ = inputs_->getColNames();
+    if (!inputs_->hasData()) {
+        return Status::OK();
+    }
+
+    auto ret = inputs_->getRows();
+    if (!ret.ok()) {
+        LOG(ERROR) << "Get rows failed: " << ret.status();
+        doError(ret.status());
+        return std::move(ret).status();
+    }
+    rows_ = std::move(ret).value();
     auto schema = inputs_->schema();
     auto factors = sentence_->factors();
     sortFactors_.reserve(factors.size());

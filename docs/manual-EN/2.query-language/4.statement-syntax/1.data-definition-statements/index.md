@@ -30,7 +30,11 @@ The above statement creates an index for the _degree_ property on all edges carr
 
 ### Create Composite Index
 
-The schema indexes also support spawning over multiple properties. An index on multiple properties for all vertices that have a particular tag is called a composite index. Consider the following example:
+The schema indexes also support spawning over multiple properties. An index on multiple properties is called a composite index.
+
+**Note:** Index across multiple tags is not yet supported.
+
+Consider the following example:
 
 ```ngql
 nebula> CREATE TAG INDEX player_index_1 on player(name,age);
@@ -110,3 +114,39 @@ DROP {TAG | EDGE} INDEX [IF EXISTS] <index_name>
 ```ngql
 nebula> DROP TAG INDEX player_index_0;
 ```
+
+## REBUILD INDEX
+
+```ngql
+REBUILD {TAG | EDGE} INDEX <index_name> [OFFLINE]
+```
+
+[Create Index](#create-index) section describes how to build indexes to improve query performance. If the index is created before inserting the data, there is no need to rebuild index and this section can be skipped; if data is updated or newly inserted after the index creation, it is necessary to rebuild the indexes in order to ensure that the indexes contain the previously added data. If the current database does not provide any services, use the `OFFLINE` keyword to speed up the rebuilding.
+
+<!-- > During the rebuilding, any idempotent queries will skip the index and perform sequential scans. This means that queries run slower during this operation. Non-idempotent commands, such as INSERT, UPDATE, and DELETE are blocked until the indexes are rebuilt. -->
+
+After rebuilding is complete, you can use the `SHOW {TAG | EDGE} INDEX STATUS` command to check if the index is successfully rebuilt. For example:
+
+```ngql
+nebula> CREATE TAG person(name string, age int, gender string, email string);
+Execution succeeded (Time spent: 10.051/11.397 ms)
+
+nebula> CREATE TAG INDEX single_person_index ON person(name);
+Execution succeeded (Time spent: 2.168/3.379 ms)
+
+nebula> REBUILD TAG INDEX single_person_index OFFLINE;
+Execution succeeded (Time spent: 2.352/3.568 ms)
+
+nebula> SHOW TAG INDEX STATUS;
+==========================================
+| Name                | Tag Index Status |
+==========================================
+| single_person_index | SUCCEEDED        |
+------------------------------------------
+```
+
+## Using Index
+
+After the index is created and data is inserted, you can use the [LOOKUP](../2.data-query-and-manipulation-statements/lookup-syntax.md) statement to query the data.
+
+There is usually no need to specify which indexes to use in a query, **Nebula Graph** will figure that out by itself.

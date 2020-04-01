@@ -5,7 +5,7 @@
  */
 
 #include "base/Base.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
@@ -80,9 +80,9 @@ void testWithVersion(kvstore::KVStore* kv,
 
         LOG(INFO) << "Test QueryVertexPropsRequest...";
         auto* processor = QueryVertexPropsProcessor::instance(kv,
-                                                            schemaMng,
-                                                            nullptr,
-                                                            executor);
+                                                              schemaMng,
+                                                              nullptr,
+                                                              executor);
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -132,9 +132,9 @@ void testWithVersion(kvstore::KVStore* kv,
 
         LOG(INFO) << "Test QueryVertexPropsRequest...";
         auto* processor = QueryVertexPropsProcessor::instance(kv,
-                                                            schemaMng,
-                                                            nullptr,
-                                                            executor);
+                                                              schemaMng,
+                                                              nullptr,
+                                                              executor);
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -159,7 +159,7 @@ void testWithVersion(kvstore::KVStore* kv,
             schema = schemaMng->getTagSchema(0, 3005, 0);
             ASSERT_NE(nullptr, schema);
             checkTagData<std::string>(vp.tag_data, 3005, "tag_3005_col_4", schema,
-                                    folly::stringPrintf("tag_string_col_%ld", 4 + version));
+                                      folly::stringPrintf("tag_string_col_%ld", 4 + version));
         }
     }
 }
@@ -237,9 +237,9 @@ TEST(QueryVertexPropsTest, QueryAfterTagAltered) {
 
         LOG(INFO) << "Test QueryVertexPropsRequest...";
         auto* processor = QueryVertexPropsProcessor::instance(kv.get(),
-                                                            schemaMng.get(),
-                                                            nullptr,
-                                                            executor.get());
+                                                              schemaMng.get(),
+                                                              nullptr,
+                                                              executor.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -267,7 +267,7 @@ TEST(QueryVertexPropsTest, QueryAfterTagAltered) {
             checkTagData<int64_t>(vp.tag_data, 3003, "tag_3003_col_2", vschema, 2 + version);
             checkTagData<std::string>(vp.tag_data, 3003, "AddedProp", vschema, "");
             checkTagData<std::string>(vp.tag_data, 3005, "tag_3005_col_4", vschema,
-                                    folly::stringPrintf("tag_string_col_%ld", 4 + version));
+                                      folly::stringPrintf("tag_string_col_%ld", 4 + version));
             checkTagData<std::string>(vp.tag_data, 3005, "AddedProp", vschema, "");
         }
     }
@@ -328,9 +328,9 @@ TEST(QueryVertexPropsTest, QueryAfterTagAltered) {
 
         LOG(INFO) << "Test QueryVertexPropsRequest...";
         auto* processor = QueryVertexPropsProcessor::instance(kv.get(),
-                                                            schemaMng.get(),
-                                                            nullptr,
-                                                            executor.get());
+                                                              schemaMng.get(),
+                                                              nullptr,
+                                                              executor.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -358,7 +358,7 @@ TEST(QueryVertexPropsTest, QueryAfterTagAltered) {
             checkTagData<int64_t>(vp.tag_data, 3003, "tag_3003_col_2", vschema, 2 + version);
             checkTagData<std::string>(vp.tag_data, 3003, "AddedProp", vschema, "AddedPropValue");
             checkTagData<std::string>(vp.tag_data, 3005, "tag_3005_col_4", vschema,
-                                    folly::stringPrintf("tag_string_col_%ld", 4 + version));
+                                      folly::stringPrintf("tag_string_col_%ld", 4 + version));
             checkTagData<std::string>(vp.tag_data, 3005, "AddedProp", vschema, "AddedPropValue");
         }
     }

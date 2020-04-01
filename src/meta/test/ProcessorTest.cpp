@@ -191,6 +191,8 @@ TEST(ProcessorTest, SpaceTest) {
         properties.set_space_name("default_space");
         properties.set_partition_num(8);
         properties.set_replica_factor(3);
+        properties.set_charset_name("utf8");
+        properties.set_collate_name("utf8_bin");
         cpp2::CreateSpaceReq req;
         req.set_properties(std::move(properties));
         auto* processor = CreateSpaceProcessor::instance(kv.get());
@@ -211,6 +213,8 @@ TEST(ProcessorTest, SpaceTest) {
         ASSERT_EQ("default_space", resp.item.properties.space_name);
         ASSERT_EQ(8, resp.item.properties.partition_num);
         ASSERT_EQ(3, resp.item.properties.replica_factor);
+        ASSERT_EQ("utf8", resp.item.properties.charset_name);
+        ASSERT_EQ("utf8_bin", resp.item.properties.collate_name);
     }
 
     {
@@ -294,6 +298,40 @@ TEST(ProcessorTest, SpaceTest) {
         processor1->process(req1);
         auto resp1 = std::move(f1).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp1.code);
+    }
+    // Test default value
+    {
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("space_with_no_option");
+        cpp2::CreateSpaceReq creq;
+        creq.set_properties(std::move(properties));
+        auto* cprocessor = CreateSpaceProcessor::instance(kv.get());
+        auto cf = cprocessor->getFuture();
+        cprocessor->process(creq);
+        auto cresp = std::move(cf).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, cresp.code);
+
+        cpp2::GetSpaceReq greq;
+        greq.set_space_name("space_with_no_option");
+        auto* gprocessor = GetSpaceProcessor::instance(kv.get());
+        auto gf = gprocessor->getFuture();
+        gprocessor->process(greq);
+        auto gresp = std::move(gf).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, gresp.code);
+        ASSERT_EQ("space_with_no_option", gresp.item.properties.space_name);
+        ASSERT_EQ(100, gresp.item.properties.partition_num);
+        ASSERT_EQ(1, gresp.item.properties.replica_factor);
+        // Because setting default value in graph
+        ASSERT_EQ("", gresp.item.properties.charset_name);
+        ASSERT_EQ("", gresp.item.properties.collate_name);
+
+        cpp2::DropSpaceReq dreq;
+        dreq.set_space_name("space_with_no_option");
+        auto* dprocessor = DropSpaceProcessor::instance(kv.get());
+        auto df = dprocessor->getFuture();
+        dprocessor->process(dreq);
+        auto dresp = std::move(df).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, dresp.code);
     }
 }
 
@@ -2002,6 +2040,19 @@ TEST(ProcessorTest, TagIndexTest) {
     {
         cpp2::CreateTagIndexReq req;
         req.set_space_id(1);
+        req.set_tag_name("tag_0");
+        std::vector<std::string> fields{"tag_0_col_0", "tag_0_col_0"};
+        req.set_fields(std::move(fields));
+        req.set_index_name("conflict_index");
+        auto* processor = CreateTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
+    }
+    {
+        cpp2::CreateTagIndexReq req;
+        req.set_space_id(1);
         req.set_tag_name("tag_not_exist");
         std::vector<std::string> fields{"tag_0_col_0"};
         req.set_fields(std::move(fields));
@@ -2176,6 +2227,19 @@ TEST(ProcessorTest, EdgeIndexTest) {
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    {
+        cpp2::CreateEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_edge_name("edge_0");
+        std::vector<std::string> fields{"edge_0_col_0", "edge_0_col_0"};
+        req.set_fields(std::move(fields));
+        req.set_index_name("conflict_index");
+        auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
     }
     {
         cpp2::CreateEdgeIndexReq req;
@@ -2419,7 +2483,7 @@ TEST(ProcessorTest, IndexCheckAlterEdgeTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INDEX_CONFLICT, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
     }
     // Verify ErrorCode of drop
     {
@@ -2442,7 +2506,7 @@ TEST(ProcessorTest, IndexCheckAlterEdgeTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INDEX_CONFLICT, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
     }
 }
 
@@ -2545,7 +2609,7 @@ TEST(ProcessorTest, IndexCheckAlterTagTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INDEX_CONFLICT, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
     }
     {
         cpp2::AlterTagReq req;
@@ -2566,7 +2630,7 @@ TEST(ProcessorTest, IndexCheckAlterTagTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INDEX_CONFLICT, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
     }
 }
 
@@ -2597,7 +2661,7 @@ TEST(ProcessorTest, IndexCheckDropEdgeTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INDEX_CONFLICT, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
     }
 }
 
@@ -2629,7 +2693,7 @@ TEST(ProcessorTest, IndexCheckDropTagTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INDEX_CONFLICT, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
     }
 }
 

@@ -32,7 +32,7 @@ Or you can download from OSS.
 ### Download From Cloud Storage OSS
 
 ```bash
-wget https://nebula-graph.oss-accelerate.aliyuncs.com/jar-packages/sst.generator-1.0.0-beta.jar
+wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/jar-packages/sst.generator-1.0.0-rc4.jar
 ```
 
 ## User Guide
@@ -203,7 +203,7 @@ Example of a mapping file for the input source:
   }
 
   # Processing tags
-  tags: {
+  tags: [
 
     # Loading tag from HDFS and the data type is parquet.
     # The tag's name is tag_name_0.
@@ -235,10 +235,10 @@ Example of a mapping file for the input source:
       }
       vertex: vertex_id_field
     }
-  }
+  ]
 
   # Processing edges
-  edges: {
+  edges: [
     # Loading edge from HDFS and data type is JSON.
     # The edge's name is edge_name_0.
     # field_0, field_1 and field_2 from HDFS's JSON file are written into edge_name_0
@@ -271,7 +271,7 @@ Example of a mapping file for the input source:
       source:  source_id_field
       target:  target_id_field
     }
-  }
+  ]
 }
 ```
 
