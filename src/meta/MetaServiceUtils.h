@@ -136,13 +136,13 @@ public:
     static std::string assembleSegmentKey(const std::string& segment, const std::string& key);
 
     static cpp2::ErrorCode alterColumnDefs(std::vector<nebula::cpp2::ColumnDef>& cols,
-                                            nebula::cpp2::SchemaProp&  prop,
-                                            std::vector<kvstore::KV>& defaultKVs,
-                                            std::vector<std::string>& removeDefaultKeys,
-                                            GraphSpaceID spaceId,
-                                            TagID/*EdgeType*/ id,
-                                            nebula::cpp2::ColumnDef col,
-                                            cpp2::AlterSchemaOp op);
+                                           nebula::cpp2::SchemaProp&  prop,
+                                           std::vector<kvstore::KV>& defaultKVs,
+                                           std::vector<std::string>& removeDefaultKeys,
+                                           GraphSpaceID spaceId,
+                                           TagID/*EdgeType*/ id,
+                                           nebula::cpp2::ColumnDef col,
+                                           cpp2::AlterSchemaOp op);
 
     static cpp2::ErrorCode alterSchemaProp(std::vector<nebula::cpp2::ColumnDef>& cols,
                                            nebula::cpp2::SchemaProp&  schemaProp,
