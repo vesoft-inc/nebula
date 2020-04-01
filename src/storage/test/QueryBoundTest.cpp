@@ -652,6 +652,7 @@ TEST(QueryBoundTest, SamplingTest) {
                 FLAGS_max_edge_returned_per_vertex);
     }
     FLAGS_max_edge_returned_per_vertex = old_max_edge_returned;
+    FLAGS_enable_reservoir_sampling = false;
 }
 }  // namespace storage
 }  // namespace nebula

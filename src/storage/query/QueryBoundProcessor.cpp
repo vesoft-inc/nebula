@@ -64,6 +64,24 @@ kvstore::ResultCode QueryBoundProcessor::processEdgeImpl(const PartitionID partI
     return ret;
 }
 
+kvstore::ResultCode QueryBoundProcessor::processEdge(PartitionID partId, VertexID vId,
+                                                     FilterContext& fcontext,
+                                                     cpp2::VertexData& vdata) {
+    for (const auto& ec : edgeContexts_) {
+        auto edgeType = ec.first;
+        auto& props   = ec.second;
+        if (!props.empty()) {
+            CHECK(!onlyVertexProps_);
+            auto ret = processEdgeImpl(partId, vId, edgeType, props, fcontext, vdata);
+            if (ret != kvstore::ResultCode::SUCCEEDED) {
+                return ret;
+            }
+        }
+    }
+
+    return kvstore::ResultCode::SUCCEEDED;
+}
+
 kvstore::ResultCode QueryBoundProcessor::processEdgeSampling(const PartitionID partId,
                                                              const VertexID vId,
                                                              FilterContext& fcontext,
@@ -83,10 +101,11 @@ kvstore::ResultCode QueryBoundProcessor::processEdgeSampling(const PartitionID p
             CHECK(!onlyVertexProps_);
             auto ret = collectEdgeProps(
                 partId, vId, edgeType, props, &fcontext,
-                [&, this](std::unique_ptr<RowReader> reader,
+                [&](std::unique_ptr<RowReader> reader,
                           folly::StringPiece k,
                           const std::vector<PropContext>& p) {
                     UNUSED(p);
+                    VLOG(1) << "Sampling: " << vId << "->" << NebulaKeyUtils::getDstId(k);
                     sampler->sampling(std::make_tuple(edgeType, std::move(reader), k.str()));
                 });
             if (ret != kvstore::ResultCode::SUCCEEDED) {
@@ -140,24 +159,6 @@ kvstore::ResultCode QueryBoundProcessor::processEdgeSampling(const PartitionID p
             [] (auto& data) {
                 return std::move(data).second;
             });
-    return kvstore::ResultCode::SUCCEEDED;
-}
-
-kvstore::ResultCode QueryBoundProcessor::processEdge(PartitionID partId, VertexID vId,
-                                                     FilterContext& fcontext,
-                                                     cpp2::VertexData& vdata) {
-    for (const auto& ec : edgeContexts_) {
-        auto edgeType = ec.first;
-        auto& props   = ec.second;
-        if (!props.empty()) {
-            CHECK(!onlyVertexProps_);
-            auto ret = processEdgeImpl(partId, vId, edgeType, props, fcontext, vdata);
-            if (ret != kvstore::ResultCode::SUCCEEDED) {
-                return ret;
-            }
-        }
-    }
-
     return kvstore::ResultCode::SUCCEEDED;
 }
 
