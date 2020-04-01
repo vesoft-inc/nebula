@@ -422,13 +422,13 @@ std::string MetaServiceUtils::assembleSegmentKey(const std::string& segment,
 }
 
 cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::ColumnDef>& cols,
-                                                nebula::cpp2::SchemaProp&  prop,
-                                                std::vector<kvstore::KV>& defaultKVs,
-                                                std::vector<std::string>& removeDefaultKeys,
-                                                const GraphSpaceID spaceId,
-                                                const TagID Id,
-                                                const nebula::cpp2::ColumnDef col,
-                                                const cpp2::AlterSchemaOp op) {
+                                                  nebula::cpp2::SchemaProp&  prop,
+                                                  std::vector<kvstore::KV>& defaultKVs,
+                                                  std::vector<std::string>& removeDefaultKeys,
+                                                  const GraphSpaceID spaceId,
+                                                  const TagID Id,
+                                                  const nebula::cpp2::ColumnDef col,
+                                                  const cpp2::AlterSchemaOp op) {
     static_assert(std::is_same<TagID, EdgeType>::value, "");
     auto name = col.get_name();
     auto dKey = MetaServiceUtils::defaultKey(spaceId, Id, name);
