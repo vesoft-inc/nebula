@@ -10,6 +10,7 @@
 #include "fs/FileUtils.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/RocksEngineConfig.h"
+#include <rocksdb/convenience.h>
 
 namespace nebula {
 namespace kvstore {
@@ -105,6 +106,13 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
     LOG(INFO) << "open rocksdb on " << path;
 }
 
+void RocksEngine::stop() {
+    if (db_) {
+        // Because we trigger compaction in WebService, we need to stop all background work
+        // before we stop HttpServer.
+        rocksdb::CancelAllBackgroundWork(db_.get(), true);
+    }
+}
 
 std::unique_ptr<WriteBatch> RocksEngine::startBatchWrite() {
     return std::make_unique<RocksWriteBatch>();

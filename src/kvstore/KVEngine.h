@@ -36,6 +36,8 @@ public:
 
     virtual ~KVEngine() = default;
 
+    virtual void stop() = 0;
+
     // Retrieve the root path for the data
     // If the store is persistent, a valid path will be returned
     // Otherwise, nullptr will be returned
