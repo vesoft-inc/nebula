@@ -102,8 +102,21 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
                     }
                     defaultValue = value->get_string_value();
                     break;
-                default:
+                case nebula::cpp2::SupportedType::TIMESTAMP:
+                    if (value->getType() != nebula::cpp2::Value::Type::timestamp) {
+                        LOG(ERROR) << "Create Edge Failed: " << name
+                                   << " type mismatch";
+                        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
+                        onFinished();
+                        return;
+                    }
+                    defaultValue = folly::to<std::string>(value->get_timestamp());
                     break;
+                default:
+                    LOG(ERROR) << "Unkown type " << static_cast<int>(column.get_type().get_type());
+                    handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
+                    onFinished();
+                    return;
             }
             VLOG(3) << "Get Edge Default value: Property Name " << name
                     << ", Value " << defaultValue;
