@@ -97,8 +97,13 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     resp_.set_id(to(edgeType, EntryType::EDGE));
     // Now we get default value from meta instead of cache
     // so don't update
-    if (multiRemove(removeDefaultKeys) != kvstore::SUCCEEDED) {
-        this->onFinished();
+    if (!removeDefaultKeys.empty()) {
+        auto retRemove = multiRemove(removeDefaultKeys);
+        if (retRemove != kvstore::ResultCode::SUCCEEDED) {
+            handleErrorCode(MetaCommon::to(retRemove));
+            onFinished();
+            return;
+        }
     }
     doSyncPutAndUpdate(std::move(data));
 }

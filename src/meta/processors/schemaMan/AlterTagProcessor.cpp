@@ -98,8 +98,13 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     resp_.set_id(to(tagId, EntryType::TAG));
     // Now we get default value from meta instead of cache
     // So don't update
-    if (multiRemove(removeDefaultKeys) != kvstore::SUCCEEDED) {
-        this->onFinished();
+    if (!removeDefaultKeys.empty()) {
+        auto retRemove = multiRemove(removeDefaultKeys);
+        if (retRemove != kvstore::ResultCode::SUCCEEDED) {
+            handleErrorCode(MetaCommon::to(retRemove));
+            onFinished();
+            return;
+        }
     }
     doSyncPutAndUpdate(std::move(data));
 }
