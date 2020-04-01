@@ -73,6 +73,8 @@ public:
     // the current store instance
     bool init();
 
+    void stop() override;
+
     uint32_t capability() const override {
         return 0;
     }
