@@ -110,19 +110,19 @@ TEST_F(JobManagerTest, showJobs) {
     ASSERT_TRUE(nebula::ok(statusOrShowResult));
 
     auto& jobs = nebula::value(statusOrShowResult);
-    ASSERT_EQ(jobs[0].get_id(), jd1.id_);
-    ASSERT_EQ(jobs[0].get_cmd(), type1);
-    ASSERT_EQ(jobs[0].get_paras()[0], para1);
-    ASSERT_EQ(jobs[0].get_status(), Status::FINISHED);
-    ASSERT_EQ(jobs[0].get_start_time(), jd1.startTime_);
-    ASSERT_EQ(jobs[0].get_stop_time(), jd1.stopTime_);
+    ASSERT_EQ(jobs[1].get_id(), jd1.id_);
+    ASSERT_EQ(jobs[1].get_cmd(), type1);
+    ASSERT_EQ(jobs[1].get_paras()[0], para1);
+    ASSERT_EQ(jobs[1].get_status(), Status::FINISHED);
+    ASSERT_EQ(jobs[1].get_start_time(), jd1.startTime_);
+    ASSERT_EQ(jobs[1].get_stop_time(), jd1.stopTime_);
 
-    ASSERT_EQ(jobs[1].get_id(), jd2.id_);
-    ASSERT_EQ(jobs[1].get_cmd(), type2);
-    ASSERT_EQ(jobs[1].get_paras()[0], para2);
-    ASSERT_EQ(jobs[1].get_status(), Status::FAILED);
-    ASSERT_EQ(jobs[1].get_start_time(), jd2.startTime_);
-    ASSERT_EQ(jobs[1].get_stop_time(), jd2.stopTime_);
+    ASSERT_EQ(jobs[0].get_id(), jd2.id_);
+    ASSERT_EQ(jobs[0].get_cmd(), type2);
+    ASSERT_EQ(jobs[0].get_paras()[0], para2);
+    ASSERT_EQ(jobs[0].get_status(), Status::FAILED);
+    ASSERT_EQ(jobs[0].get_start_time(), jd2.startTime_);
+    ASSERT_EQ(jobs[0].get_stop_time(), jd2.stopTime_);
 }
 
 nebula::cpp2::HostAddr toHost(std::string strIp) {

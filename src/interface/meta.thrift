@@ -43,7 +43,7 @@ enum ErrorCode {
 
     // Authentication Failure
     E_INVALID_PASSWORD          = -41,
-    E_INPROPER_ROLE             = -42,
+    E_IMPROPER_ROLE             = -42,
     E_INVALID_PARTITION_NUM     = -43,
     E_INVALID_REPLICA_FACTOR    = -44,
     E_INVALID_CHARSET           = -45,

@@ -28,7 +28,7 @@ std::string encodeLearner(const network::InetAddress& addr);
 
 network::InetAddress decodeLearner(const folly::StringPiece& log);
 
-std::string compareAndSet(const std::string& log);
+folly::Optional<std::string> compareAndSet(const std::string& log);
 
 std::string encodeTransferLeader(const network::InetAddress& addr);
 

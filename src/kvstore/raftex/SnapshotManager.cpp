@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 #include "kvstore/raftex/SnapshotManager.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include "kvstore/raftex/RaftPart.h"
 
 DEFINE_int32(snapshot_worker_threads, 4, "Threads number for snapshot");

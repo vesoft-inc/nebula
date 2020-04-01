@@ -41,10 +41,30 @@ $ sudo rpm -ivh nebula-2019.12.23-nightly.el6-5.x86_64.rpm
 $ sudo dpkg -i nebula-2019.12.23-nightly.ubuntu1604.amd64.deb
 ```
 
+* 如需安装至自定义目录，请使用以下命令：
+
+```bash
+rpm -ivh --prefix=${your_dir} nebula-graph-${version}.rpm
+```
+
+* 如需将 **Nebula Graph** 打包至一个包，请使用以下命令：
+
+```bash
+cd nebula/package
+./package.sh -v <version>
+```
+
+* 如需将 **Nebula Graph** 打包至多个包，请使用以下命令：
+
+```bash
+cd nebula/package
+./package.sh -v <version> -n OFF
+```
+
 **注意**：
 
 1. 使用您自己的文件名替换以上命令中的文件名，否则以上命令可能执行失败。
-2. **Nebula Graph** 安装在 /usr/local/nebula 目录下。
+2. **Nebula Graph** 默认会安装在 `/usr/local/nebula` 目录下。
 
 ## 启动 **Nebula Graph** 服务
 
