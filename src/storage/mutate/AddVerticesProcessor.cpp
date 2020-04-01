@@ -5,7 +5,7 @@
  */
 
 #include "storage/mutate/AddVerticesProcessor.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include <algorithm>
 #include <limits>
 #include "time/WallClock.h"
@@ -59,7 +59,7 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
         std::for_each(partVertices.begin(), partVertices.end(), [&](auto &pv) {
             auto partId = pv.first;
             auto atomic = [version, partId, vertices = std::move(pv.second), this]()
-                          -> std::string {
+                          -> folly::Optional<std::string> {
                 return addVertices(version, partId, vertices);
             };
             auto callback = [partId, this](kvstore::ResultCode code) {
@@ -122,6 +122,10 @@ std::string AddVerticesProcessor::addVertices(int64_t version, PartitionID partI
                                                               val,
                                                               spaceId_,
                                                               tagId);
+                    if (reader == nullptr) {
+                        LOG(WARNING) << "Bad format row";
+                        return "";
+                    }
                     auto oi = indexKey(partId, vId, reader.get(), index);
                     if (!oi.empty()) {
                         batchHolder->remove(std::move(oi));
@@ -135,6 +139,10 @@ std::string AddVerticesProcessor::addVertices(int64_t version, PartitionID partI
                                                           v.second,
                                                           spaceId_,
                                                           tagId);
+                    if (nReader == nullptr) {
+                        LOG(WARNING) << "Bad format row";
+                        return "";
+                    }
                 }
                 auto ni = indexKey(partId, vId, nReader.get(), index);
                 batchHolder->put(std::move(ni), "");

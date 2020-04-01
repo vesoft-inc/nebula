@@ -743,5 +743,65 @@ TEST_F(LookupTest, FunctionExprTest) {
     }
 }
 
+TEST_F(LookupTest, YieldClauseTest) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto stmt = "CREATE TAG student(name string, age int)";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto stmt = "CREATE TAG INDEX student_index ON student(name, age)";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto stmt = "CREATE TAG teacher(name string, age int)";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "INSERT VERTEX student(name, age), teacher(name, age)  VALUES "
+                     "220:(\"student_1\", 20, \"teacher_1\", 30), "
+                     "221:(\"student_2\", 22, \"teacher_1\", 32)";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Invalid tag name in yield clause.
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON student WHERE student.name == \"student_1\" YIELD teacher.age";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+    }
+    // Invalid tag name in yield clause. and Alias is same with tag name.
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON student WHERE student.name == \"student_1\" YIELD teacher.age"
+                     " as student_name";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+    }
+    // Invalid tag name in where clause.
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON student WHERE teacher.name == \"student_1\" YIELD student.age";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON student WHERE student.name == \"student_1\" YIELD student.age";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID, int64_t>> expected = {{220, 20}};
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
 }   // namespace graph
 }   // namespace nebula

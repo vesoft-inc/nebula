@@ -36,9 +36,10 @@ private:
             , indexMan_(indexMan)
             , vertexCache_(cache) {}
 
-    std::string deleteVertices(GraphSpaceID spaceId,
-                               PartitionID partId,
-                               const std::vector<VertexID>& vertices);
+    folly::Optional<std::string>
+    deleteVertices(GraphSpaceID spaceId,
+                   PartitionID partId,
+                   const std::vector<VertexID>& vertices);
 
     void handleAsync(GraphSpaceID spaceId, PartitionID partId, kvstore::ResultCode code) override;
 

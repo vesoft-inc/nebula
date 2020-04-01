@@ -5,7 +5,7 @@
  */
 
 #include "storage/mutate/UpdateEdgeProcessor.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include "dataman/RowWriter.h"
 #include "kvstore/LogEncoder.h"
 
@@ -108,6 +108,12 @@ kvstore::ResultCode UpdateEdgeProcessor::collectVertexProps(
                                                   iter->val(),
                                                   this->spaceId_,
                                                   tagId);
+        if (reader == nullptr) {
+            LOG(WARNING) << "Can't find the schema for tagId " << tagId;
+            // It offen happens after updating schema but current storaged has not
+            // load it. To protect the data, we just return failed to graphd.
+            return kvstore::ResultCode::ERR_UNKNOWN;
+        }
         const auto constSchema = reader->getSchema();
         for (auto& prop : props) {
             auto res = RowReader::getPropByName(reader.get(), prop.prop_.name);
@@ -147,6 +153,15 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
                                                    val_,
                                                    this->spaceId_,
                                                    std::abs(edgeKey.edge_type));
+        if (reader == nullptr) {
+            LOG(WARNING) << "Can't find related edge "
+                         << edgeKey.edge_type << " schema";
+            // TODO(heng)
+            // The case offen happens when updating the reverse edge but it is not exist.
+            // Because we don't ensure the consistency when inserting edges (Bidirect).
+            // So we leave the issue here. Now we just return failed to graphd.
+            return kvstore::ResultCode::ERR_CORRUPT_DATA;
+        }
         const auto constSchema = reader->getSchema();
         for (auto index = 0UL; index < constSchema->getNumFields(); index++) {
             auto propName = std::string(constSchema->getFieldName(index));
@@ -314,10 +329,15 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
 
 
 FilterResult UpdateEdgeProcessor::checkFilter(const PartitionID partId,
-                                      const cpp2::EdgeKey& edgeKey) {
+                                              const cpp2::EdgeKey& edgeKey) {
     auto ret = collectEdgesProps(partId, edgeKey);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        return FilterResult::E_ERROR;
+    switch (ret) {
+        case kvstore::ResultCode::SUCCEEDED:
+            break;
+        case kvstore::ResultCode::ERR_CORRUPT_DATA:
+            return FilterResult::E_BAD_SCHEMA;
+        default:
+            return FilterResult::E_ERROR;
     }
     for (auto& tc : this->tagContexts_) {
         VLOG(3) << "partId " << partId << ", vId " << edgeKey.src
@@ -464,7 +484,7 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
             << ", dst: " << edgeKey.get_dst() << ", ranking: " << edgeKey.get_ranking();
     CHECK_NOTNULL(kvstore_);
     this->kvstore_->asyncAtomicOp(this->spaceId_, partId,
-        [partId, edgeKey, this] () -> std::string {
+        [partId, edgeKey, this] () -> folly::Optional<std::string> {
             // TODO(shylock) the AtomicOP can't return various error
             // so put it in the processor
             filterResult_ = checkFilter(partId, edgeKey);
@@ -477,7 +497,7 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
             case FilterResult::E_ERROR:
             // fallthrough
             default: {
-                return "";
+                return folly::none;
             }
             }
         },
@@ -497,15 +517,25 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
                     handleLeaderChanged(this->spaceId_, partId);
                     break;
                 }
-                if (code == kvstore::ResultCode::ERR_ATOMIC_OP_FAILED
-                    && filterResult_ == FilterResult::E_FILTER_OUT) {
-                    // https://github.com/vesoft-inc/nebula/issues/1888
-                    // Only filter out so we still return the data
-                    onProcessFinished(req.get_return_columns().size());
-                    this->pushResultCode(cpp2::ErrorCode::E_FILTER_OUT, partId);
-                } else if (code == kvstore::ResultCode::ERR_ATOMIC_OP_FAILED
-                    && filterResult_ == FilterResult::E_ERROR) {
-                    this->pushResultCode(cpp2::ErrorCode::E_INVALID_FILTER, partId);
+                if (code == kvstore::ResultCode::ERR_ATOMIC_OP_FAILED) {
+                    switch (filterResult_) {
+                        case FilterResult::E_FILTER_OUT:
+                            // Filter out
+                            // https://github.com/vesoft-inc/nebula/issues/1888
+                            // Only filter out so we still return the data
+                            onProcessFinished(req.get_return_columns().size());
+                            this->pushResultCode(cpp2::ErrorCode::E_FILTER_OUT, partId);
+                            break;
+                         case FilterResult::E_ERROR:
+                            this->pushResultCode(cpp2::ErrorCode::E_INVALID_FILTER, partId);
+                            break;
+                         case FilterResult::E_BAD_SCHEMA:
+                            this->pushResultCode(cpp2::ErrorCode::E_EDGE_NOT_FOUND, partId);
+                            break;
+                         default:
+                            this->pushResultCode(to(code), partId);
+                            break;
+                    }
                 } else {
                     this->pushResultCode(to(code), partId);
                 }

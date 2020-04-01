@@ -6,7 +6,7 @@
 
 #include "base/Base.h"
 #include "DbDumper.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include "fs/FileUtils.h"
 #include "kvstore/RocksEngine.h"
 #include "time/Duration.h"

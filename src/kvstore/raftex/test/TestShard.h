@@ -28,7 +28,7 @@ std::string encodeLearner(const HostAddr& addr);
 
 HostAddr decodeLearner(const folly::StringPiece& log);
 
-std::string compareAndSet(const std::string& log);
+folly::Optional<std::string> compareAndSet(const std::string& log);
 
 std::string encodeTransferLeader(const HostAddr& addr);
 

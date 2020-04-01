@@ -94,12 +94,12 @@ nebula> ALTER TAG t1 CHANGE (a string); -- failed
 
 ``` ngql
 nebula> CREATE TAG t1(a int, b int, c string) ttl_duration = 100, ttl_col = "a";
-nebula> CREATE TAG INDEX id1 ON t(a); -- failed
+nebula> CREATE TAG INDEX id1 ON t1(a); -- failed
 ```
 
 ``` ngql
 nebula> CREATE TAG t1(a int, b int, c string) ttl_duration = 100, ttl_col = "a";
-nebula> CREATE TAG INDEX id1 ON t(b); -- failed
+nebula> CREATE TAG INDEX id1 ON t1(b); -- failed
 ```
 
 ```ngql
