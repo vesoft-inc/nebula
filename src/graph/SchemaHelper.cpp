@@ -223,8 +223,6 @@ Status SchemaHelper::alterSchema(const std::vector<AlterSchemaOptItem*>& schemaO
                         }
                         break;
                     }
-                    case ColumnType::BIGINT:
-                    // fallthrough
                     case ColumnType::INT: {
                         auto valStatus = spec->getIntValue(g);
                         if (valStatus.ok()) {
