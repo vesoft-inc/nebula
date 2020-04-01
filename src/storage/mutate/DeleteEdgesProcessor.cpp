@@ -6,7 +6,7 @@
 #include "storage/mutate/DeleteEdgesProcessor.h"
 #include <algorithm>
 #include <limits>
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 
 namespace nebula {
 namespace storage {
@@ -63,7 +63,7 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
         std::for_each(req.parts.begin(), req.parts.end(), [spaceId, this](auto &partEdges) {
             auto partId = partEdges.first;
             auto atomic = [spaceId, partId, edges = std::move(partEdges.second), this]()
-                          -> std::string {
+                          -> folly::Optional<std::string> {
                 return deleteEdges(spaceId, partId, edges);
             };
             auto callback = [spaceId, partId, this](kvstore::ResultCode code) {
@@ -74,9 +74,10 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
     }
 }
 
-std::string DeleteEdgesProcessor::deleteEdges(GraphSpaceID spaceId,
-                                              PartitionID partId,
-                                              const std::vector<cpp2::EdgeKey>& edges) {
+folly::Optional<std::string>
+DeleteEdgesProcessor::deleteEdges(GraphSpaceID spaceId,
+                                  PartitionID partId,
+                                  const std::vector<cpp2::EdgeKey>& edges) {
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
     for (auto& edge : edges) {
         auto type = edge.edge_type;
@@ -89,7 +90,7 @@ std::string DeleteEdgesProcessor::deleteEdges(GraphSpaceID spaceId,
         if (ret != kvstore::ResultCode::SUCCEEDED) {
             VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret)
                     << ", spaceId " << spaceId;
-            return "";
+            return folly::none;
         }
         bool isLatestVE = true;
         while (iter->valid()) {
@@ -106,6 +107,10 @@ std::string DeleteEdgesProcessor::deleteEdges(GraphSpaceID spaceId,
                                                                   iter->val(),
                                                                   spaceId,
                                                                   type);
+                            if (reader == nullptr) {
+                                LOG(WARNING) << "Bad format row!";
+                                return folly::none;
+                            }
                         }
                         auto values = collectIndexValues(reader.get(),
                                                          index->get_fields());
