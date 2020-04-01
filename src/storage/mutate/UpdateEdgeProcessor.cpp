@@ -329,7 +329,7 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
 
 
 cpp2::ErrorCode UpdateEdgeProcessor::checkFilter(const PartitionID partId,
-                                      const cpp2::EdgeKey& edgeKey) {
+                                                 const cpp2::EdgeKey& edgeKey) {
     auto ret = collectEdgesProps(partId, edgeKey);
     if (ret == kvstore::ResultCode::ERR_CORRUPT_DATA) {
         return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
