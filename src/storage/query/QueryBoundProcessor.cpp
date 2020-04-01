@@ -34,20 +34,19 @@ kvstore::ResultCode QueryBoundProcessor::processEdgeImpl(const PartitionID partI
     std::vector<cpp2::IdAndProp> edges;
     edges.reserve(FLAGS_reserved_edges_one_vertex);
     auto ret = collectEdgeProps(
-        partId, vId, edgeType, props, &fcontext,
+        partId, vId, edgeType, &fcontext,
         [&, this](std::unique_ptr<RowReader> reader,
-                  folly::StringPiece k,
-                  const std::vector<PropContext>& p) {
+                  folly::StringPiece k) {
             cpp2::IdAndProp edge;
             if (!onlyStructure) {
                 RowWriter writer(currEdgeSchema);
                 PropsCollector collector(&writer);
-                this->collectProps(reader.get(), k, p, &fcontext, &collector);
+                this->collectProps(reader.get(), k, props, &fcontext, &collector);
                 edge.set_dst(collector.getDstId());
                 edge.set_props(writer.encode());
             } else {
                 PropsCollector collector(nullptr);
-                this->collectProps(reader.get(), k, p, &fcontext, &collector);
+                this->collectProps(reader.get(), k, props, &fcontext, &collector);
                 edge.set_dst(collector.getDstId());
             }
             edges.emplace_back(std::move(edge));
@@ -86,27 +85,38 @@ kvstore::ResultCode QueryBoundProcessor::processEdgeSampling(const PartitionID p
                                                              const VertexID vId,
                                                              FilterContext& fcontext,
                                                              cpp2::VertexData& vdata) {
-    std::unique_ptr<nebula::algorithm::ReservoirSampling<
-        std::tuple<EdgeType, std::unique_ptr<RowReader>, std::string>>> sampler
-        = std::make_unique<
-            nebula::algorithm::ReservoirSampling<
-                std::tuple<EdgeType, std::unique_ptr<RowReader>, std::string>
-            >
-        >(FLAGS_max_edge_returned_per_vertex);
+    using Sample = std::tuple<
+        EdgeType, /* type */
+        std::string, /* key */
+        std::unique_ptr<RowReader>, /* val */
+        std::shared_ptr<meta::SchemaProviderIf>, /* schema of this value*/
+        const std::vector<PropContext>* /* props needed */>;
+    auto sampler = std::make_unique<
+                    nebula::algorithm::ReservoirSampling<Sample>
+                   >(FLAGS_max_edge_returned_per_vertex);
 
     for (const auto& ec : edgeContexts_) {
         auto edgeType = ec.first;
-        auto& props   = ec.second;
-        if (!props.empty()) {
+        auto* props   = &ec.second;
+        bool onlyStructure = onlyStructures_[edgeType];
+        std::shared_ptr<meta::SchemaProviderIf> currEdgeSchema;
+        if (!onlyStructure) {
+            auto schema = edgeSchema_.find(edgeType);
+            if (schema == edgeSchema_.end()) {
+                LOG(ERROR) << "Not found the edge type: " << edgeType;
+                return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
+            }
+            currEdgeSchema = schema->second;
+        }
+        if (!props->empty()) {
             CHECK(!onlyVertexProps_);
             auto ret = collectEdgeProps(
-                partId, vId, edgeType, props, &fcontext,
+                partId, vId, edgeType, &fcontext,
                 [&](std::unique_ptr<RowReader> reader,
-                          folly::StringPiece k,
-                          const std::vector<PropContext>& p) {
-                    UNUSED(p);
-                    VLOG(1) << "Sampling: " << vId << "->" << NebulaKeyUtils::getDstId(k);
-                    sampler->sampling(std::make_tuple(edgeType, std::move(reader), k.str()));
+                    folly::StringPiece k) {
+                    sampler->sampling(
+                        std::make_tuple(edgeType, k.str(), std::move(reader),
+                                        currEdgeSchema, props));
                 });
             if (ret != kvstore::ResultCode::SUCCEEDED) {
                 return ret;
@@ -118,30 +128,21 @@ kvstore::ResultCode QueryBoundProcessor::processEdgeSampling(const PartitionID p
     auto samples = std::move(*sampler).samples();
     for (auto& sample : samples) {
         auto edgeType = std::get<0>(sample);
-        auto& props = edgeContexts_[edgeType];
+        auto currEdgeSchema = std::get<3>(sample);
+        auto& props = *std::get<4>(sample);
         bool onlyStructure = onlyStructures_[edgeType];
-        std::shared_ptr<meta::SchemaProviderIf> currEdgeSchema;
-        if (!onlyStructure) {
-            auto schema = edgeSchema_.find(edgeType);
-            if (schema == edgeSchema_.end()) {
-                LOG(ERROR) << "Not found the edge type: " << edgeType;
-                return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
-            }
-            currEdgeSchema = schema->second;
-        }
-
         cpp2::IdAndProp edge;
         if (!onlyStructure) {
             RowWriter writer(currEdgeSchema);
             PropsCollector collector(&writer);
             this->collectProps(
-                    std::get<1>(sample).get(), std::get<2>(sample), props, &fcontext, &collector);
+                    std::get<2>(sample).get(), std::get<1>(sample), props, &fcontext, &collector);
             edge.set_dst(collector.getDstId());
             edge.set_props(writer.encode());
         } else {
             PropsCollector collector(nullptr);
             this->collectProps(
-                    std::get<1>(sample).get(), std::get<2>(sample), props, &fcontext, &collector);
+                    std::get<2>(sample).get(), std::get<1>(sample), props, &fcontext, &collector);
             edge.set_dst(collector.getDstId());
         }
         auto edges = edgeDataMap.find(edgeType);

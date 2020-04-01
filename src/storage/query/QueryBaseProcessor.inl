@@ -475,7 +475,6 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                                                PartitionID partId,
                                                VertexID vId,
                                                EdgeType edgeType,
-                                               const std::vector<PropContext>& props,
                                                FilterContext* fcontext,
                                                EdgeProcessor proc) {
     auto prefix = NebulaKeyUtils::edgePrefix(partId, vId, edgeType);
@@ -588,7 +587,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
             }
         }
 
-        proc(std::move(reader), key, props);
+        proc(std::move(reader), key);
         ++cnt;
         if (firstLoop) {
             firstLoop = false;
