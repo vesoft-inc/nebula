@@ -197,7 +197,9 @@ void checkResponse(PartitionID partId, cpp2::ScanEdgeResponse& resp, std::string
 
 TEST(ScanEdgeTest, RetrieveAllPropertyTest) {
     fs::TempDir rootPath("/tmp/ScanEdgeTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), 10);
+    int32_t partCount = 10;
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partCount,
+        {0, network::NetworkUtils::getAvailablePort()});
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
@@ -220,7 +222,9 @@ TEST(ScanEdgeTest, RetrieveAllPropertyTest) {
 
 TEST(ScanEdgeTest, RetrieveSomePropertyTest) {
     fs::TempDir rootPath("/tmp/ScanEdgeTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), 10);
+    int32_t partCount = 10;
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partCount,
+        {0, network::NetworkUtils::getAvailablePort()});
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
@@ -243,7 +247,9 @@ TEST(ScanEdgeTest, RetrieveSomePropertyTest) {
 
 TEST(ScanEdgeTest, RetrieveNonePropertyTest) {
     fs::TempDir rootPath("/tmp/ScanEdgeTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), 10);
+    int32_t partCount = 10;
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partCount,
+        {0, network::NetworkUtils::getAvailablePort()});
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
@@ -267,7 +273,9 @@ TEST(ScanEdgeTest, RetrieveNonePropertyTest) {
 // Retrive edges of all property in a part
 TEST(ScanEdgeTest, RetrieveConsecutiveBlockTest1) {
     fs::TempDir rootPath("/tmp/ScanEdgeTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), 10);
+    int32_t partCount = 10;
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partCount,
+        {0, network::NetworkUtils::getAvailablePort()});
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
@@ -300,7 +308,9 @@ TEST(ScanEdgeTest, RetrieveConsecutiveBlockTest1) {
 // Retrive edges of some property in a part
 TEST(ScanEdgeTest, RetrieveConsecutiveBlockTest2) {
     fs::TempDir rootPath("/tmp/ScanEdgeTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), 10);
+    int32_t partCount = 10;
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partCount,
+        {0, network::NetworkUtils::getAvailablePort()});
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
@@ -337,7 +347,9 @@ TEST(ScanEdgeTest, RetrieveConsecutiveBlockTest2) {
 // Retrive edges of none property in a part
 TEST(ScanEdgeTest, RetrieveConsecutiveBlockTest3) {
     fs::TempDir rootPath("/tmp/ScanEdgeTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), 10);
+    int32_t partCount = 10;
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partCount,
+        {0, network::NetworkUtils::getAvailablePort()});
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
@@ -370,7 +382,9 @@ TEST(ScanEdgeTest, RetrieveConsecutiveBlockTest3) {
 // Retrive multiple edges of all property in a part
 TEST(ScanEdgeTest, RetrieveMultiEdgeTest) {
     fs::TempDir rootPath("/tmp/ScanEdgeTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), 10);
+    int32_t partCount = 10;
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partCount,
+        {0, network::NetworkUtils::getAvailablePort()});
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
@@ -406,7 +420,6 @@ TEST(ScanEdgeTest, RetrieveManyPartsTest) {
     int32_t partCount = 10;
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partCount,
         {0, network::NetworkUtils::getAvailablePort()});
-    TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}/*partCount*/);
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();

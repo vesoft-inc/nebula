@@ -28,7 +28,6 @@ TEST(StorageServiceHandlerTest, FutureAddVerticesTest) {
     constexpr int32_t partitions = 6;
     std::unique_ptr<kvstore::KVStore> kvstore = TestUtils::initKV(rootPath.path(), partitions,
             {0, network::NetworkUtils::getAvailablePort()});
-    TestUtils::waitUntilAllElected(kvstore.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
     auto storageServiceHandler = std::make_unique<StorageServiceHandler>(kvstore.get(),

@@ -124,7 +124,6 @@ TEST(QueryStatsTest, StatsSimpleTest) {
     constexpr int32_t partitions = 6;
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partitions,
         {0, network::NetworkUtils::getAvailablePort()});
-    TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();

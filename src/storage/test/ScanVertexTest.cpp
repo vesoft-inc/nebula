@@ -198,7 +198,9 @@ void checkResponse(PartitionID partId, cpp2::ScanVertexResponse& resp, std::stri
 // Retrieve all tags 3001 with all property
 TEST(ScanVertexTest, RetrieveAllPropertyTest) {
     fs::TempDir rootPath("/tmp/ScanVertexTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), 10);
+    int32_t partCount = 10;
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partCount,
+        {0, network::NetworkUtils::getAvailablePort()});
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
@@ -222,7 +224,9 @@ TEST(ScanVertexTest, RetrieveAllPropertyTest) {
 // Retrieve all tags 3001 with some property
 TEST(ScanVertexTest, RetrieveSomePropertyTest) {
     fs::TempDir rootPath("/tmp/ScanVertexTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), 10);
+    int32_t partCount = 10;
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partCount,
+        {0, network::NetworkUtils::getAvailablePort()});
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
@@ -246,7 +250,9 @@ TEST(ScanVertexTest, RetrieveSomePropertyTest) {
 // Retrieve all tags 3001 with none property
 TEST(ScanVertexTest, RetrieveNonePropertyTest) {
     fs::TempDir rootPath("/tmp/ScanVertexTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), 10);
+    int32_t partCount = 10;
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partCount,
+        {0, network::NetworkUtils::getAvailablePort()});
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
@@ -270,7 +276,9 @@ TEST(ScanVertexTest, RetrieveNonePropertyTest) {
 // Retrive vertices of all property in a part
 TEST(ScanVertexTest, RetrieveConsecutiveBlockTest1) {
     fs::TempDir rootPath("/tmp/ScanVertexTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), 10);
+    int32_t partCount = 10;
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partCount,
+        {0, network::NetworkUtils::getAvailablePort()});
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
@@ -304,7 +312,9 @@ TEST(ScanVertexTest, RetrieveConsecutiveBlockTest1) {
 // Retrive vertices of some property in a part
 TEST(ScanVertexTest, RetrieveConsecutiveBlockTest2) {
     fs::TempDir rootPath("/tmp/ScanVertexTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), 10);
+    int32_t partCount = 10;
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partCount,
+        {0, network::NetworkUtils::getAvailablePort()});
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
@@ -345,7 +355,9 @@ TEST(ScanVertexTest, RetrieveConsecutiveBlockTest2) {
 // Retrive vertices of none property in a part
 TEST(ScanVertexTest, RetrieveConsecutiveBlockTest3) {
     fs::TempDir rootPath("/tmp/ScanVertexTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), 10);
+    int32_t partCount = 10;
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partCount,
+        {0, network::NetworkUtils::getAvailablePort()});
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
@@ -384,7 +396,6 @@ TEST(ScanVertexTest, RetrieveManyPartsTest) {
     int32_t partCount = 10;
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partCount,
         {0, network::NetworkUtils::getAvailablePort()});
-    TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}/*partCount*/);
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();

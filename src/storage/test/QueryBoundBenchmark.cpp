@@ -74,7 +74,6 @@ void setUp(const char* path) {
     constexpr int32_t partitions = 6;
     gKV = TestUtils::initKV(path, partitions,
          {0, network::NetworkUtils::getAvailablePort()});
-    TestUtils::waitUntilAllElected(gKV.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
     schema.reset(new storage::AdHocSchemaManager());
     schema->addEdgeSchema(
         0 /*space id*/, 101 /*edge type*/, TestUtils::genEdgeSchemaProvider(10, 10));

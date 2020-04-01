@@ -267,7 +267,6 @@ static cpp2::LookUpIndexResp execLookupVertices(const std::string& filter,
     constexpr int32_t partitions = 6;
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partitions,
         {0, network::NetworkUtils::getAvailablePort()});
-    TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
     GraphSpaceID spaceId = 0;
     TagID tagId = 3001;
     EdgeType type = 101;
@@ -305,7 +304,6 @@ static cpp2::LookUpIndexResp execLookupEdges(const std::string& filter,
     constexpr int32_t partitions = 6;
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partitions,
         {0, network::NetworkUtils::getAvailablePort()});
-    TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
     GraphSpaceID spaceId = 0;
     TagID tagId = 3001;
     EdgeType type = 101;
@@ -346,7 +344,6 @@ static cpp2::LookUpIndexResp checkLookupEdgesString(const std::string& filter) {
     constexpr int32_t partitions = 6;
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partitions,
         {0, network::NetworkUtils::getAvailablePort()});
-    TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
     GraphSpaceID spaceId = 0;
     EdgeType type = 101;
 
@@ -437,7 +434,6 @@ static cpp2::LookUpIndexResp checkLookupVerticesString(const std::string& filter
     constexpr int32_t partitions = 6;
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partitions,
         {0, network::NetworkUtils::getAvailablePort()});
-    TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
     GraphSpaceID spaceId = 0;
     TagID tagId = 3001;
     nebula::cpp2::Schema schema;
@@ -525,7 +521,6 @@ static cpp2::LookUpIndexResp checkLookupEdgesDouble(const std::string& filter) {
     constexpr int32_t partitions = 6;
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partitions,
         {0, network::NetworkUtils::getAvailablePort()});
-    TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
     GraphSpaceID spaceId = 0;
     EdgeType type = 101;
 
@@ -620,7 +615,6 @@ static cpp2::LookUpIndexResp checkLookupVerticesDouble(const std::string& filter
     constexpr int32_t partitions = 6;
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partitions,
         {0, network::NetworkUtils::getAvailablePort()});
-    TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
     GraphSpaceID spaceId = 0;
     TagID tagId = 3001;
     nebula::cpp2::Schema schema;

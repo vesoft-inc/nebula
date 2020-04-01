@@ -27,7 +27,6 @@ TEST(IndexTest, AddVerticesTest) {
     constexpr int32_t partitions = 6;
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partitions,
         {0, network::NetworkUtils::getAvailablePort()});
-    TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
 
@@ -85,7 +84,6 @@ TEST(IndexTest, AddEdgeTest) {
     constexpr int32_t partitions = 6;
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partitions,
         {0, network::NetworkUtils::getAvailablePort()});
-    TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
     auto* processor = AddEdgesProcessor::instance(kv.get(),
@@ -141,7 +139,6 @@ TEST(IndexTest, DeleteVertexTest) {
     constexpr int32_t partitions = 6;
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partitions,
         {0, network::NetworkUtils::getAvailablePort()});
-    TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
     {
@@ -198,7 +195,6 @@ TEST(IndexTest, DeleteEdgeTest) {
     constexpr int32_t partitions = 6;
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partitions,
         {0, network::NetworkUtils::getAvailablePort()});
-    TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
     {
@@ -283,7 +279,6 @@ TEST(IndexTest, UpdateVertexTest) {
     constexpr int32_t partitions = 6;
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partitions,
         {0, network::NetworkUtils::getAvailablePort()});
-    TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
     {
@@ -422,7 +417,6 @@ TEST(IndexTest, UpdateEdgeTest) {
     constexpr int32_t partitions = 6;
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partitions,
         {0, network::NetworkUtils::getAvailablePort()});
-    TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
     LOG(INFO) << "Build AddEdgesRequest...";
@@ -539,7 +533,6 @@ TEST(IndexTest, RebulidTagIndexWithOfflineTest) {
     constexpr int32_t partitions = 6;
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partitions,
         {0, network::NetworkUtils::getAvailablePort()});
-    TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
     {
@@ -599,7 +592,6 @@ TEST(IndexTest, RebulidEdgeIndexWithOfflineTest) {
     constexpr int32_t partitions = 6;
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partitions,
         {0, network::NetworkUtils::getAvailablePort()});
-    TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
     {

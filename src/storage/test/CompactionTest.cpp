@@ -208,8 +208,6 @@ TEST(NebulaCompactionFilterTest, InvalidSchemaAndMutliVersionsFilterTest) {
                                          nullptr,
                                          false,
                                          std::move(cffBuilder)));
-    TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
-
     LOG(INFO) << "Write some data";
     mockData(kv.get());
     LOG(INFO) << "Let's delete one tag";
@@ -292,8 +290,6 @@ TEST(NebulaCompactionFilterTest, TTLFilterDataExpiredTest) {
                                          nullptr,
                                          false,
                                          std::move(cffBuilder)));
-    TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
-
     LOG(INFO) << "Write some data";
     mockTTLDataExpired(kv.get());
 
@@ -365,8 +361,6 @@ TEST(NebulaCompactionFilterTest, TTLFilterDataNotExpiredTest) {
                                          nullptr,
                                          false,
                                          std::move(cffBuilder)));
-    TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
-
     LOG(INFO) << "Write some data";
     mockTTLDataNotExpired(kv.get());
 
@@ -440,8 +434,6 @@ TEST(NebulaCompactionFilterTest, DropIndexTest) {
                                          nullptr,
                                          false,
                                          std::move(cffBuilder)));
-    TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
-
     LOG(INFO) << "Write some data";
     mockIndexData(kv.get());
 

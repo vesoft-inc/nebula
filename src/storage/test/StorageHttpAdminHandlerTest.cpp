@@ -29,7 +29,6 @@ public:
         int32_t partitions = 6;
         kv_ = TestUtils::initKV(rootPath_->path(), partitions,
             {0, network::NetworkUtils::getAvailablePort()});
-        TestUtils::waitUntilAllElected(kv_.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
         schemaMan_ = TestUtils::mockSchemaMan();
 
         VLOG(1) << "Starting web service...";

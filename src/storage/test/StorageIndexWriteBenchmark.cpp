@@ -88,7 +88,6 @@ void insertVertices(bool withoutIndex) {
         constexpr int32_t partitions = 6;
         kv = TestUtils::initKV(std::move(rootPath).c_str(), partitions,
             {0, network::NetworkUtils::getAvailablePort()});
-        TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
         if (withoutIndex) {
             indexMan = std::make_unique<nebula::storage::AdHocIndexManager>();
             schemaMan = TestUtils::mockSchemaMan();
@@ -182,7 +181,6 @@ void insertUnmatchIndex() {
         constexpr int32_t partitions = 6;
         kv = TestUtils::initKV(std::move(rootPath).c_str(), partitions,
             {0, network::NetworkUtils::getAvailablePort()});
-        TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
         indexMan = TestUtils::mockIndexMan(0, 2001, 2002);
         schemaMan = TestUtils::mockSchemaMan(0);
     };
@@ -253,7 +251,6 @@ void insertDupVertices() {
         constexpr int32_t partitions = 6;
         kv = TestUtils::initKV(std::move(rootPath).c_str(), partitions,
             {0, network::NetworkUtils::getAvailablePort()});
-        TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
         schemaMan = TestUtils::mockSchemaMan();
         indexMan = TestUtils::mockIndexMan(0, 3001, 3002);
     };
@@ -329,7 +326,6 @@ void insertVerticesMultIndex() {
         constexpr int32_t partitions = 6;
         kv = TestUtils::initKV(std::move(rootPath).c_str(), partitions,
             {0, network::NetworkUtils::getAvailablePort()});
-        TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
         indexMan = TestUtils::mockMultiIndexMan(0, 3001, 3002);
         schemaMan = TestUtils::mockSchemaMan(0);
     };
