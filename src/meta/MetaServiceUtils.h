@@ -172,8 +172,8 @@ public:
     static std::string parseRoleStr(folly::StringPiece key);
 
     static std::string defaultKey(GraphSpaceID spaceId,
-                                     TagID/*EdgeType*/ id,
-                                     const std::string& field);
+                                  TagID/*EdgeType*/ id,
+                                  const std::string& field);
 
     static const std::string& defaultPrefix();
 
