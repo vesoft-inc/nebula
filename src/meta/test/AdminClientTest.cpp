@@ -306,7 +306,7 @@ TEST(AdminClientTest, SnapshotTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     auto now = time::WallClock::fastNowInMilliSec();
     ActiveHostsMan::updateHostInfo(
-        kv.get(), network::InetAddress(localIp, sc->port_), HostInfo(now));
+        kv.get(), network::InetAddress(localIp, sc->port_), "localhost", HostInfo(now));
     ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(kv.get()).size());
 
     std::vector<network::InetAddress> addresses;
@@ -348,7 +348,7 @@ TEST(AdminClientTest, RebuildIndexTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     auto now = time::WallClock::fastNowInMilliSec();
     ActiveHostsMan::updateHostInfo(
-        kv.get(), network::InetAddress(localIp, sc->port_), HostInfo(now));
+        kv.get(), network::InetAddress(localIp, sc->port_), "localhost", HostInfo(now));
     ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(kv.get()).size());
     auto address = network::InetAddress(localIp, sc->port_);
     auto client = std::make_unique<AdminClient>(kv.get());

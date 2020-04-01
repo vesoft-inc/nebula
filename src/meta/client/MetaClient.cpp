@@ -1743,6 +1743,7 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
             options_.clusterId_ = ClusterIdMan::getClusterIdFromFile(FLAGS_cluster_id_path);
         }
         req.set_cluster_id(options_.clusterId_.load());
+        req.set_host_name(options_.localHost_.getHostStr());
         std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
         if (listener_ != nullptr) {
             listener_->fetchLeaderInfo(leaderIds);

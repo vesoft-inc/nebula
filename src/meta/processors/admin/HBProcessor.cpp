@@ -40,11 +40,13 @@ void HBProcessor::process(const cpp2::HBReq& req) {
             return;
         }
         HostInfo info(time::WallClock::fastNowInMilliSec());
+        auto hostName = req.get_host_name();
+
         if (req.__isset.leader_partIds) {
-            ret = ActiveHostsMan::updateHostInfo(kvstore_, host, info,
+            ret = ActiveHostsMan::updateHostInfo(kvstore_, host, hostName, info,
                                                  req.get_leader_partIds());
         } else {
-            ret = ActiveHostsMan::updateHostInfo(kvstore_, host, info);
+            ret = ActiveHostsMan::updateHostInfo(kvstore_, host, hostName, info);
         }
         if (ret == kvstore::ResultCode::ERR_LEADER_CHANGED) {
             auto leaderRet = kvstore_->partLeader(kDefaultSpaceId, kDefaultPartId);

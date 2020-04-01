@@ -48,8 +48,14 @@ class ActiveHostsMan final {
 public:
     ~ActiveHostsMan() = default;
 
+    static int updateHostIPaddress(kvstore::KVStore* kv,
+                                   const network::InetAddress& hostAddr,
+                                   const std::string& oldIPAddr,
+                                   kvstore::ResultCode& ret);
+
     static kvstore::ResultCode updateHostInfo(kvstore::KVStore* kv,
                                               const network::InetAddress& hostAddr,
+                                              const std::string &hostName,
                                               const HostInfo& info,
                                               const LeaderParts* leaderParts = nullptr);
 

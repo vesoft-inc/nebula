@@ -128,17 +128,17 @@ TEST(ProcessorTest, ListPartsTest) {
         LeaderParts leaderParts;
         leaderParts[1] = {1, 2, 3, 4, 5};
         auto ret = ActiveHostsMan::updateHostInfo(
-            kv.get(), network::InetAddress{0, 0}, info, &leaderParts);
+            kv.get(), network::InetAddress{0, 0}, "", info, &leaderParts);
         CHECK_EQ(ret, kvstore::ResultCode::SUCCEEDED);
 
         leaderParts[1] = {6, 7, 8};
         ret = ActiveHostsMan::updateHostInfo(
-            kv.get(), network::InetAddress{1, 1}, info, &leaderParts);
+            kv.get(), network::InetAddress{1, 1}, "", info, &leaderParts);
         CHECK_EQ(ret, kvstore::ResultCode::SUCCEEDED);
 
         leaderParts[1] = {9};
         ret = ActiveHostsMan::updateHostInfo(
-            kv.get(), network::InetAddress{2, 2}, info, &leaderParts);
+            kv.get(), network::InetAddress{2, 2}, "", info, &leaderParts);
         CHECK_EQ(ret, kvstore::ResultCode::SUCCEEDED);
     }
 

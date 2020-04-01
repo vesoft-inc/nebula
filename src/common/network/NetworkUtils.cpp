@@ -199,7 +199,11 @@ StatusOr<InetAddress> NetworkUtils::toInetAddress(const std::string& ip, uint16_
     try {
         return InetAddress{ip, port};
     } catch (const std::exception& e) {
-        return Status::Error("Bad ip format: %s", e.what());
+        try {
+            return InetAddress{ip, port, true};
+        } catch (const std::exception& e) {
+            return Status::Error("Bad ip format: %s", e.what());
+        }
     }
 }
 

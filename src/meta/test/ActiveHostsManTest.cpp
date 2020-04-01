@@ -20,12 +20,16 @@ TEST(ActiveHostsManTest, NormalTest) {
     FLAGS_expired_threshold_sec = 2;
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     auto now = time::WallClock::fastNowInMilliSec();
-    ActiveHostsMan::updateHostInfo(kv.get(), network::InetAddress(0, 0), HostInfo(now));
-    ActiveHostsMan::updateHostInfo(kv.get(), network::InetAddress(0, 1), HostInfo(now));
-    ActiveHostsMan::updateHostInfo(kv.get(), network::InetAddress(0, 2), HostInfo(now));
+    ActiveHostsMan::updateHostInfo(
+        kv.get(), network::InetAddress(0, 0), "localhost0", HostInfo(now));
+    ActiveHostsMan::updateHostInfo(
+        kv.get(), network::InetAddress(0, 1), "localhost1", HostInfo(now));
+    ActiveHostsMan::updateHostInfo(
+        kv.get(), network::InetAddress(0, 2), "localhost2", HostInfo(now));
     ASSERT_EQ(3, ActiveHostsMan::getActiveHosts(kv.get()).size());
 
-    ActiveHostsMan::updateHostInfo(kv.get(), network::InetAddress(0, 0), HostInfo(now + 2000));
+    ActiveHostsMan::updateHostInfo(
+        kv.get(), network::InetAddress(0, 0), "localhost0", HostInfo(now + 2000));
     ASSERT_EQ(3, ActiveHostsMan::getActiveHosts(kv.get()).size());
     {
         const auto& prefix = MetaServiceUtils::hostPrefix();
@@ -58,15 +62,18 @@ TEST(ActiveHostsManTest, LeaderTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     auto now = time::WallClock::fastNowInMilliSec();
 
-    ActiveHostsMan::updateHostInfo(kv.get(), network::InetAddress(0, 0), HostInfo(now));
-    ActiveHostsMan::updateHostInfo(kv.get(), network::InetAddress(0, 1), HostInfo(now));
-    ActiveHostsMan::updateHostInfo(kv.get(), network::InetAddress(0, 2), HostInfo(now));
+    ActiveHostsMan::updateHostInfo(
+        kv.get(), network::InetAddress(0, 0), "localhost0", HostInfo(now));
+    ActiveHostsMan::updateHostInfo(
+        kv.get(), network::InetAddress(0, 1), "localhost1", HostInfo(now));
+    ActiveHostsMan::updateHostInfo(
+        kv.get(), network::InetAddress(0, 2), "localhost2", HostInfo(now));
     ASSERT_EQ(3, ActiveHostsMan::getActiveHosts(kv.get()).size());
 
     std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
     leaderIds.emplace(1, std::vector<PartitionID>{1, 2, 3});
     ActiveHostsMan::updateHostInfo(
-        kv.get(), network::InetAddress(0, 0), HostInfo(now + 2000), &leaderIds);
+        kv.get(), network::InetAddress(0, 0), "localhost0", HostInfo(now + 2000), &leaderIds);
     ASSERT_EQ(3, ActiveHostsMan::getActiveHosts(kv.get()).size());
     {
         const auto& prefix = MetaServiceUtils::leaderPrefix();
