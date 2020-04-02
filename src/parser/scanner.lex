@@ -169,6 +169,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 
 %%
 
+ /* Reserved keyword */
 {GO}                        { return TokenType::KW_GO; }
 {AS}                        { return TokenType::KW_AS; }
 {TO}                        { return TokenType::KW_TO; }
@@ -181,7 +182,6 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {WHERE}                     { return TokenType::KW_WHERE; }
 {MATCH}                     { return TokenType::KW_MATCH; }
 {INSERT}                    { return TokenType::KW_INSERT; }
-{VALUES}                    { return TokenType::KW_VALUES; }
 {YIELD}                     { return TokenType::KW_YIELD; }
 {RETURN}                    { return TokenType::KW_RETURN; }
 {DESCRIBE}                  { return TokenType::KW_DESCRIBE; }
@@ -200,12 +200,9 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {OVER}                      { return TokenType::KW_OVER; }
 {UPTO}                      { return TokenType::KW_UPTO; }
 {REVERSELY}                 { return TokenType::KW_REVERSELY; }
-{SPACE}                     { return TokenType::KW_SPACE; }
-{SPACES}                    { return TokenType::KW_SPACES; }
 {INDEX}                     { return TokenType::KW_INDEX; }
 {INDEXES}                   { return TokenType::KW_INDEXES; }
 {REBUILD}                   { return TokenType::KW_REBUILD; }
-{STATUS}                    { return TokenType::KW_STATUS; }
 {INT}                       { return TokenType::KW_INT; }
 {BIGINT}                    { return TokenType::KW_BIGINT; }
 {DOUBLE}                    { return TokenType::KW_DOUBLE; }
@@ -220,49 +217,23 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {OVERWRITE}                 { return TokenType::KW_OVERWRITE; }
 {SHOW}                      { return TokenType::KW_SHOW; }
 {ADD}                       { return TokenType::KW_ADD; }
-{HOSTS}                     { return TokenType::KW_HOSTS; }
-{PART}                      { return TokenType::KW_PART; }
-{PARTS}                     { return TokenType::KW_PARTS; }
 {TIMESTAMP}                 { return TokenType::KW_TIMESTAMP; }
 {CREATE}                    { return TokenType::KW_CREATE;}
-{PARTITION_NUM}             { return TokenType::KW_PARTITION_NUM; }
-{REPLICA_FACTOR}            { return TokenType::KW_REPLICA_FACTOR; }
-{CHARSET}                   { return TokenType::KW_CHARSET; }
-{COLLATE}                   { return TokenType::KW_COLLATE; }
-{COLLATION}                 { return TokenType::KW_COLLATION; }
 {DROP}                      { return TokenType::KW_DROP; }
 {REMOVE}                    { return TokenType::KW_REMOVE; }
 {IF}                        { return TokenType::KW_IF; }
 {NOT}                       { return TokenType::KW_NOT; }
 {EXISTS}                    { return TokenType::KW_EXISTS; }
 {WITH}                      { return TokenType::KW_WITH; }
-{USER}                      { return TokenType::KW_USER; }
-{USERS}                     { return TokenType::KW_USERS; }
-{PASSWORD}                  { return TokenType::KW_PASSWORD; }
 {CHANGE}                    { return TokenType::KW_CHANGE; }
-{ROLE}                      { return TokenType::KW_ROLE; }
-{GOD}                       { return TokenType::KW_GOD; }
-{ADMIN}                     { return TokenType::KW_ADMIN; }
-{DBA}                       { return TokenType::KW_DBA; }
-{GUEST}                     { return TokenType::KW_GUEST; }
 {GRANT}                     { return TokenType::KW_GRANT; }
 {REVOKE}                    { return TokenType::KW_REVOKE; }
 {ON}                        { return TokenType::KW_ON; }
-{ROLES}                     { return TokenType::KW_ROLES; }
 {BY}                        { return TokenType::KW_BY; }
 {IN}                        { return TokenType::KW_IN; }
-{TTL_DURATION}              { return TokenType::KW_TTL_DURATION; }
-{TTL_COL}                   { return TokenType::KW_TTL_COL; }
 {DOWNLOAD}                  { return TokenType::KW_DOWNLOAD; }
-{HDFS}                      { return TokenType::KW_HDFS; }
-{CONFIGS}                   { return TokenType::KW_CONFIGS; }
 {GET}                       { return TokenType::KW_GET; }
-{GRAPH}                     { return TokenType::KW_GRAPH; }
-{META}                      { return TokenType::KW_META; }
-{STORAGE}                   { return TokenType::KW_STORAGE; }
 {OF}                        { return TokenType::KW_OF; }
-{TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }
-{FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
 {ORDER}                     { return TokenType::KW_ORDER; }
 {INGEST}                    { return TokenType::KW_INGEST; }
 {COMPACT}                   { return TokenType::KW_COMPACT; }
@@ -270,20 +241,47 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {SUBMIT}                    { return TokenType::KW_SUBMIT; }
 {ASC}                       { return TokenType::KW_ASC; }
 {DISTINCT}                  { return TokenType::KW_DISTINCT; }
-{DEFAULT}                   { return TokenType::KW_DEFAULT; }
 {FETCH}                     { return TokenType::KW_FETCH; }
 {PROP}                      { return TokenType::KW_PROP; }
-{ALL}                       { return TokenType::KW_ALL; }
 {BALANCE}                   { return TokenType::KW_BALANCE; }
+{STOP}                      { return TokenType::KW_STOP; }
+{LIMIT}                     { return TokenType::KW_LIMIT; }
+{OFFSET}                    { return TokenType::KW_OFFSET; }
+{IS}                        { return TokenType::KW_IS; }
+{NULL}                      { return TokenType::KW_NULL; }
+{RECOVER}                   { return TokenType::KW_RECOVER; }
+
+
+ /* Unreserved keyword */
+{HOSTS}                     { return TokenType::KW_HOSTS; }
+{SPACE}                     { return TokenType::KW_SPACE; }
+{SPACES}                    { return TokenType::KW_SPACES; }
+{VALUES}                    { return TokenType::KW_VALUES; }
+{USER}                      { return TokenType::KW_USER; }
+{USERS}                     { return TokenType::KW_USERS; }
+{PASSWORD}                  { return TokenType::KW_PASSWORD; }
+{ROLE}                      { return TokenType::KW_ROLE; }
+{ROLES}                     { return TokenType::KW_ROLES; }
+{GOD}                       { return TokenType::KW_GOD; }
+{ADMIN}                     { return TokenType::KW_ADMIN; }
+{DBA}                       { return TokenType::KW_DBA; }
+{GUEST}                     { return TokenType::KW_GUEST; }
+{GROUP}                     { return TokenType::KW_GROUP; }
+{PARTITION_NUM}             { return TokenType::KW_PARTITION_NUM; }
+{REPLICA_FACTOR}            { return TokenType::KW_REPLICA_FACTOR; }
+{CHARSET}                   { return TokenType::KW_CHARSET; }
+{COLLATE}                   { return TokenType::KW_COLLATE; }
+{COLLATION}                 { return TokenType::KW_COLLATION; }
+{ALL}                       { return TokenType::KW_ALL; }
 {LEADER}                    { return TokenType::KW_LEADER; }
 {UUID}                      { return TokenType::KW_UUID; }
 {DATA}                      { return TokenType::KW_DATA; }
-{STOP}                      { return TokenType::KW_STOP; }
-{SHORTEST}                  { return TokenType::KW_SHORTEST; }
-{PATH}                      { return TokenType::KW_PATH; }
-{LIMIT}                     { return TokenType::KW_LIMIT; }
-{OFFSET}                    { return TokenType::KW_OFFSET; }
-{GROUP}                     { return TokenType::KW_GROUP; }
+{SNAPSHOT}                  { return TokenType::KW_SNAPSHOT; }
+{SNAPSHOTS}                 { return TokenType::KW_SNAPSHOTS; }
+{OFFLINE}                   { return TokenType::KW_OFFLINE; }
+{ACCOUNT}                   { return TokenType::KW_ACCOUNT; }
+{JOBS}                      { return TokenType::KW_JOBS; }
+{JOB}                       { return TokenType::KW_JOB; }
 {COUNT}                     { return TokenType::KW_COUNT; }
 {COUNT_DISTINCT}            { return TokenType::KW_COUNT_DISTINCT; }
 {SUM}                       { return TokenType::KW_SUM; }
@@ -294,19 +292,25 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {BIT_AND}                   { return TokenType::KW_BIT_AND; }
 {BIT_OR}                    { return TokenType::KW_BIT_OR; }
 {BIT_XOR}                   { return TokenType::KW_BIT_XOR; }
-{IS}                        { return TokenType::KW_IS; }
-{NULL}                      { return TokenType::KW_NULL; }
-{SNAPSHOT}                  { return TokenType::KW_SNAPSHOT; }
-{SNAPSHOTS}                 { return TokenType::KW_SNAPSHOTS; }
-{FORCE}                     { return TokenType::KW_FORCE; }
-{OFFLINE}                   { return TokenType::KW_OFFLINE; }
+{PATH}                      { return TokenType::KW_PATH; }
 {BIDIRECT}                  { return TokenType::KW_BIDIRECT; }
+{STATUS}                    { return TokenType::KW_STATUS; }
+{FORCE}                     { return TokenType::KW_FORCE; }
+{PART}                      { return TokenType::KW_PART; }
+{PARTS}                     { return TokenType::KW_PARTS; }
+{DEFAULT}                   { return TokenType::KW_DEFAULT; }
+{HDFS}                      { return TokenType::KW_HDFS; }
+{CONFIGS}                   { return TokenType::KW_CONFIGS; }
+{TTL_DURATION}              { return TokenType::KW_TTL_DURATION; }
+{TTL_COL}                   { return TokenType::KW_TTL_COL; }
+{GRAPH}                     { return TokenType::KW_GRAPH; }
+{META}                      { return TokenType::KW_META; }
+{STORAGE}                   { return TokenType::KW_STORAGE; }
+{SHORTEST}                  { return TokenType::KW_SHORTEST; }
 
-{JOBS}                      { return TokenType::KW_JOBS; }
-{JOB}                       { return TokenType::KW_JOB; }
-{RECOVER}                   { return TokenType::KW_RECOVER; }
 
-{ACCOUNT}                   { return TokenType::KW_ACCOUNT; }
+{TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }
+{FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }
@@ -355,6 +359,17 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 
 {LABEL}                     {
                                 yylval->strval = new std::string(yytext, yyleng);
+                                if (yylval->strval->size() > MAX_STRING) {
+                                    auto error = "Out of range of the LABEL length, "
+                                                  "the  max length of LABEL is " +
+                                                  std::to_string(MAX_STRING) + ":";
+                                    delete yylval->strval;
+                                    throw GraphParser::syntax_error(*yylloc, error);
+                                }
+                                return TokenType::LABEL;
+                            }
+\`{LABEL}\`                 {
+                                yylval->strval = new std::string(yytext + 1, yyleng - 2);
                                 if (yylval->strval->size() > MAX_STRING) {
                                     auto error = "Out of range of the LABEL length, "
                                                   "the  max length of LABEL is " +

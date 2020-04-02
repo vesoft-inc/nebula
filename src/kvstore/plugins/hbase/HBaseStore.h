@@ -65,6 +65,8 @@ public:
     // Connect to the HBase thrift server.
     void init();
 
+    void stop() override {}
+
     uint32_t capability() const override {
         return 0;
     }
@@ -156,7 +158,7 @@ public:
     void asyncRemovePrefix(GraphSpaceID spaceId,
                            PartitionID partId,
                            const std::string& prefix,
-                           KVCallback cb) override;
+                           KVCallback cb);
 
     void asyncAtomicOp(GraphSpaceID,
                        PartitionID,
