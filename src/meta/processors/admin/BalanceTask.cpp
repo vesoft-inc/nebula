@@ -250,8 +250,8 @@ std::string BalanceTask::taskKey() {
     str.append(reinterpret_cast<const char*>(&balanceId_), sizeof(balanceId_));
     str.append(reinterpret_cast<const char*>(&spaceId_), sizeof(spaceId_));
     str.append(reinterpret_cast<const char*>(&partId_), sizeof(partId_));
-    str.append(reinterpret_cast<const char*>(&src_), sizeof(src_));
-    str.append(reinterpret_cast<const char*>(&dst_), sizeof(dst_));
+    str.append(src_.encode());
+    str.append(dst_.encode());
     return str;
 }
 
@@ -282,9 +282,9 @@ BalanceTask::parseKey(const folly::StringPiece& rawKey) {
     offset += sizeof(GraphSpaceID);
     auto partId = *reinterpret_cast<const PartitionID*>(rawKey.begin() + offset);
     offset += sizeof(PartitionID);
-    auto src = *reinterpret_cast<const network::InetAddress*>(rawKey.begin() + offset);
-    offset += sizeof(network::InetAddress);
-    auto dst = *reinterpret_cast<const network::InetAddress*>(rawKey.begin() + offset);
+    auto src = network::InetAddress::make_inet_address(rawKey.begin() + offset);
+    offset += sizeof(IPv4) + sizeof(Port);
+    auto dst = network::InetAddress::make_inet_address(rawKey.begin() + offset);
     return std::make_tuple(balanceId, spaceId, partId, src, dst);
 }
 

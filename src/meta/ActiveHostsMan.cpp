@@ -50,7 +50,7 @@ int ActiveHostsMan::updateHostIPaddress(kvstore::KVStore* kv,
         std::string propstr;
         auto code = kv->get(kDefaultSpaceId, kDefaultPartId, spaceKey, &propstr);
         if (code != kvstore::SUCCEEDED) {
-            // LOG(WARNING) << "Get Space SpaceName: " << req.get_space_name() << " not found";
+            LOG(WARNING) << "update Space SpaceName: " << spaceName << " not found";
             continue;
         }
         auto properties = MetaServiceUtils::parseSpace(propstr);
