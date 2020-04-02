@@ -5,7 +5,7 @@
  */
 
 #include "base/Base.h"
-#include "graph/ClientSession.h"
+#include "service/ClientSession.h"
 
 
 namespace nebula {

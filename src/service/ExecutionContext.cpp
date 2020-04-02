@@ -5,7 +5,7 @@
  */
 
 #include "base/Base.h"
-#include "graph/ExecutionContext.h"
+#include "service/ExecutionContext.h"
 
 namespace nebula {
 namespace graph {
@@ -14,11 +14,11 @@ ExecutionContext::~ExecutionContext() {
     if (nullptr != sm_) {
         sm_ = nullptr;
     }
-
+/*
     if (nullptr != gflagsManager_) {
         gflagsManager_ = nullptr;
     }
-
+*/
     if (nullptr != storageClient_) {
         storageClient_ = nullptr;
     }

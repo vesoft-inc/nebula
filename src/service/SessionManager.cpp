@@ -5,8 +5,8 @@
  */
 
 #include "base/Base.h"
-#include "graph/SessionManager.h"
-#include "graph/GraphFlags.h"
+#include "service/SessionManager.h"
+#include "service/GraphFlags.h"
 
 namespace nebula {
 namespace graph {

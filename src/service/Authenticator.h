@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef GRAPH_AUTHENTICATOR_H_
-#define GRAPH_AUTHENTICATOR_H_
+#ifndef SERVICE_AUTHENTICATOR_H_
+#define SERVICE_AUTHENTICATOR_H_
 
 #include "base/Base.h"
 

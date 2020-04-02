@@ -12,7 +12,7 @@ namespace nebula {
 namespace graph {
 Status AssignmentValidator::validateImpl() {
     auto* assignSentence = static_cast<AssignmentSentence*>(sentence_);
-    validator_ = Validator::makeValidator(assignSentence->sentence(), validateContext_);
+    validator_ = makeValidator(assignSentence->sentence(), validateContext_);
     auto status = validator_->validate();
     if (!status.ok()) {
         return status;

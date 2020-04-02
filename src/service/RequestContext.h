@@ -11,7 +11,7 @@
 #include "gen-cpp2/GraphService.h"
 #include "cpp/helpers.h"
 #include "time/Duration.h"
-#include "graph/ClientSession.h"
+#include "service/ClientSession.h"
 
 /**
  * RequestContext holds context infos of a specific request from a client.

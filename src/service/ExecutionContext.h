@@ -4,18 +4,17 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef GRAPH_EXECUTIONCONTEXT_H_
-#define GRAPH_EXECUTIONCONTEXT_H_
+#ifndef SERVICE_EXECUTIONCONTEXT_H_
+#define SERVICE_EXECUTIONCONTEXT_H_
 
 #include "base/Base.h"
 #include "cpp/helpers.h"
-#include "graph/RequestContext.h"
-#include "graph/GraphStats.h"
+#include "service/RequestContext.h"
 #include "parser/SequentialSentences.h"
 #include "meta/SchemaManager.h"
-#include "meta/ClientBasedGflagsManager.h"
-#include "graph/VariableHolder.h"
-#include "meta/client/MetaClient.h"
+// #include "meta/ClientBasedGflagsManager.h"
+#include "clients/meta/MetaClient.h"
+#include "clients/storage/GraphStorageClient.h"
 
 /**
  * ExecutionContext holds context infos in the execution process, e.g. clients of storage or meta services.
@@ -32,17 +31,14 @@ public:
     using RequestContextPtr = std::unique_ptr<RequestContext<cpp2::ExecutionResponse>>;
     ExecutionContext(RequestContextPtr rctx,
                      meta::SchemaManager *sm,
-                     meta::ClientBasedGflagsManager *gflagsManager,
-                     storage::StorageClient *storage,
-                     meta::MetaClient *metaClient,
-                     GraphStats* stats) {
+                     // meta::ClientBasedGflagsManager *gflagsManager,
+                     storage::GraphStorageClient *storage,
+                     meta::MetaClient *metaClient) {
         rctx_ = std::move(rctx);
         sm_ = sm;
-        gflagsManager_ = gflagsManager;
+        // gflagsManager_ = gflagsManager;
         storageClient_ = storage;
         metaClient_ = metaClient;
-        variableHolder_ = std::make_unique<VariableHolder>();
-        stats_ = stats;
     }
 
     ~ExecutionContext();
@@ -55,34 +51,20 @@ public:
         return sm_;
     }
 
-    meta::ClientBasedGflagsManager* gflagsManager() const {
-        return gflagsManager_;
-    }
-
-    storage::StorageClient* getStorageClient() const {
+    storage::GraphStorageClient* getStorageClient() const {
         return storageClient_;
-    }
-
-    VariableHolder* variableHolder() const {
-        return variableHolder_.get();
     }
 
     meta::MetaClient* getMetaClient() const {
         return metaClient_;
     }
 
-    GraphStats* getGraphStats() const {
-        return stats_;
-    }
-
 private:
     RequestContextPtr                           rctx_;
     meta::SchemaManager                        *sm_{nullptr};
-    meta::ClientBasedGflagsManager             *gflagsManager_{nullptr};
-    storage::StorageClient                     *storageClient_{nullptr};
+    // meta::ClientBasedGflagsManager             *gflagsManager_{nullptr};
+    storage::GraphStorageClient                *storageClient_{nullptr};
     meta::MetaClient                           *metaClient_{nullptr};
-    std::unique_ptr<VariableHolder>             variableHolder_;
-    GraphStats                                 *stats_{nullptr};
 };
 
 }   // namespace graph

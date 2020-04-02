@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef GRAPH_GRAPHFLAGS_H_
-#define GRAPH_GRAPHFLAGS_H_
+#ifndef SERVICE_GRAPHFLAGS_H_
+#define SERVICE_GRAPHFLAGS_H_
 
 #include "base/Base.h"
 

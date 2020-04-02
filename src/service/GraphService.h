@@ -4,14 +4,14 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef GRAPH_GRAPHSERVICE_H_
-#define GRAPH_GRAPHSERVICE_H_
+#ifndef SERVICE_GRAPHSERVICE_H_
+#define SERVICE_GRAPHSERVICE_H_
 
 #include "base/Base.h"
 #include "gen-cpp2/GraphService.h"
-#include "graph/Authenticator.h"
-#include "graph/ExecutionEngine.h"
-#include "graph/SessionManager.h"
+#include "service/Authenticator.h"
+#include "service/QueryEngine.h"
+#include "service/SessionManager.h"
 
 namespace folly {
 class IOThreadPoolExecutor;
@@ -40,7 +40,7 @@ public:
 
 private:
     std::unique_ptr<SessionManager>             sessionManager_;
-    std::unique_ptr<ExecutionEngine>            executionEngine_;
+    std::unique_ptr<QueryEngine>                queryEngine_;
     std::unique_ptr<Authenticator>              authenticator_;
 };
 

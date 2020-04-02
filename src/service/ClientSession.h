@@ -4,11 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef GRAPH_CLIENTSESSION_H_
-#define GRAPH_CLIENTSESSION_H_
+#ifndef SERVICE_CLIENTSESSION_H_
+#define SERVICE_CLIENTSESSION_H_
 
 #include "base/Base.h"
 #include "time/Duration.h"
+#include "interface/gen-cpp2/common_types.h"
 
 /**
  * A ClientSession holds the context informations of a session opened by a client.

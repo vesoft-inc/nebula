@@ -5,7 +5,7 @@
  */
 
 #include "base/Base.h"
-#include "common/base/SignalHandler.h"
+#include "base/SignalHandler.h"
 #include "network/NetworkUtils.h"
 #include <signal.h>
 #include <errno.h>
@@ -14,9 +14,9 @@
 #include "fs/FileUtils.h"
 #include "process/ProcessUtils.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
-#include "graph/GraphService.h"
-#include "graph/GraphHttpHandler.h"
-#include "graph/GraphFlags.h"
+#include "service/GraphService.h"
+#include "service/GraphHttpHandler.h"
+#include "service/GraphFlags.h"
 #include "webservice/WebService.h"
 
 using nebula::Status;

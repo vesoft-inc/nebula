@@ -190,7 +190,31 @@ message(STATUS "CMAKE_INCLUDE_PATH: " ${INCLUDE_PATH_STR})
 message(STATUS "CMAKE_LIBRARY_PATH: " ${LIBRARY_PATH_STR})
 message(STATUS "CMAKE_PROGRAM_PATH: " ${PROGRAM_PATH_STR})
 
+find_package(Bzip2 REQUIRED)
+find_package(DoubleConversion REQUIRED)
+#find_package(Fatal REQUIRED)
+find_package(Fbthrift REQUIRED)
+find_package(Folly REQUIRED)
+find_package(Gflags REQUIRED)
+find_package(Glog REQUIRED)
+find_package(Googletest REQUIRED)
+if(ENABLE_JEMALLOC)
+    find_package(Jemalloc REQUIRED)
+endif()
+find_package(Libevent REQUIRED)
+find_package(Mstch REQUIRED)
+find_package(Proxygen REQUIRED)
+find_package(Snappy REQUIRED)
+find_package(Wangle REQUIRED)
+find_package(ZLIB REQUIRED)
+find_package(Zstd REQUIRED)
+find_package(Boost REQUIRED)
+find_package(OpenSSL REQUIRED)
+find_package(Krb5 REQUIRED gssapi)
+find_package(GPERF 2.8 REQUIRED)
+find_package(Libunwind REQUIRED)
 find_package(BISON 3.0.5 REQUIRED)
+#include(MakeBisonRelocatable)
 find_package(FLEX REQUIRED)
 find_package(Readline REQUIRED)
 find_package(NCURSES REQUIRED)
@@ -394,6 +418,7 @@ macro(nebula_link_libraries target)
         ${COMPRESSION_LIBRARIES}
         ${JEMALLOC_LIB}
         ${LIBUNWIND_LIBRARIES}
+        keyutils
         dl
         ${GETTIME_LIB}
         -pthread

@@ -4,12 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef GRAPH_SESSIONMANAGER_H_
-#define GRAPH_SESSIONMANAGER_H_
+#ifndef SERVICE_SESSIONMANAGER_H_
+#define SERVICE_SESSIONMANAGER_H_
 
 #include "base/Base.h"
 #include "base/StatusOr.h"
-#include "graph/ClientSession.h"
+#include "service/ClientSession.h"
 #include "thread/GenericWorker.h"
 
 /**

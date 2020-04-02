@@ -1,6 +1,7 @@
 #nebula_add_subdirectory(console)
 #nebula_add_subdirectory(graph)
-#nebula_add_subdirectory(daemons)
+nebula_add_subdirectory(daemons)
+nebula_add_subdirectory(service)
 nebula_add_subdirectory(parser)
 nebula_add_subdirectory(planner)
 nebula_add_subdirectory(validator)

@@ -4,37 +4,33 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef GRAPH_EXECUTION_ENGINE_H_
-#define GRAPH_EXECUTION_ENGINE_H_
+#ifndef SERVICE_QUERYENGINE_H_
+#define SERVICE_QUERYENGINE_H_
 
 #include "base/Base.h"
 #include "cpp/helpers.h"
-#include "graph/RequestContext.h"
+#include "service/RequestContext.h"
 #include "gen-cpp2/GraphService.h"
 #include "meta/SchemaManager.h"
-#include "meta/ClientBasedGflagsManager.h"
-#include "meta/client/MetaClient.h"
+// #include "meta/ClientBasedGflagsManager.h"
+#include "clients/meta/MetaClient.h"
+#include "clients/storage/GraphStorageClient.h"
 #include "network/NetworkUtils.h"
-#include "graph/GraphStats.h"
 #include <folly/executors/IOThreadPoolExecutor.h>
 
 /**
- * ExecutionEngine is responsible to create and manage ExecutionPlan.
+ * QueryEngine is responsible to create and manage ExecutionPlan.
  * For the time being, we don't have the execution plan cache support,
  * instead we create a plan for each query, and destroy it upon finish.
  */
 
 namespace nebula {
-namespace storage {
-class StorageClient;
-}   // namespace storage
-
 namespace graph {
 
-class ExecutionEngine final : public cpp::NonCopyable, public cpp::NonMovable {
+class QueryEngine final : public cpp::NonCopyable, public cpp::NonMovable {
 public:
-    ExecutionEngine();
-    ~ExecutionEngine();
+    QueryEngine();
+    ~QueryEngine();
 
     Status init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor);
 
@@ -43,10 +39,9 @@ public:
 
 private:
     std::unique_ptr<meta::SchemaManager>              schemaManager_;
-    std::unique_ptr<meta::ClientBasedGflagsManager>   gflagsManager_;
-    std::unique_ptr<storage::StorageClient>           storage_;
+    // std::unique_ptr<meta::ClientBasedGflagsManager>   gflagsManager_;
+    std::unique_ptr<storage::GraphStorageClient>      storage_;
     std::unique_ptr<meta::MetaClient>                 metaClient_;
-    std::unique_ptr<GraphStats>                       stats_;
 };
 
 }   // namespace graph

@@ -4,18 +4,18 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef GRAPH_EXECUTIONPLAN_H_
-#define GRAPH_EXECUTIONPLAN_H_
+#ifndef SERVICE_QUERYINSTANCE_H_
+#define SERVICE_QUERYINSTANCE_H_
 
 #include "base/Base.h"
 #include "base/Status.h"
 #include "cpp/helpers.h"
 #include "parser/GQLParser.h"
-#include "graph/ExecutionContext.h"
-#include "graph/SequentialExecutor.h"
+#include "validator/ASTValidator.h"
+#include "service/ExecutionContext.h"
 
 /**
- * ExecutionPlan coordinates the execution process,
+ * QueryInstance coordinates the execution process,
  * i.e. parse a query into a parsing tree, analyze the tree,
  * initiate and finalize the execution.
  */
@@ -23,13 +23,13 @@
 namespace nebula {
 namespace graph {
 
-class ExecutionPlan final : public cpp::NonCopyable, public cpp::NonMovable {
+class QueryInstance final : public cpp::NonCopyable, public cpp::NonMovable {
 public:
-    explicit ExecutionPlan(std::unique_ptr<ExecutionContext> ectx) {
+    explicit QueryInstance(std::unique_ptr<ExecutionContext> ectx) {
         ectx_ = std::move(ectx);
     }
 
-    ~ExecutionPlan() = default;
+    ~QueryInstance() = default;
 
     void execute();
 
@@ -52,11 +52,12 @@ public:
 
 private:
     std::unique_ptr<SequentialSentences>        sentences_;
+    // TODO: Will replace it with QueryContext.
     std::unique_ptr<ExecutionContext>           ectx_;
-    std::unique_ptr<SequentialExecutor>         executor_;
+    std::unique_ptr<ASTValidator>               validator_;
 };
 
 }   // namespace graph
 }   // namespace nebula
 
-#endif  // GRAPH_EXECUTIONPLAN_H_
+#endif  // GRAPH_QueryInstance_H_

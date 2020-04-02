@@ -5,13 +5,12 @@
  */
 
 #include "base/Base.h"
-#include "graph/ExecutionPlan.h"
-#include "stats/StatsManager.h"
+#include "service/QueryInstance.h"
 
 namespace nebula {
 namespace graph {
 
-void ExecutionPlan::execute() {
+void QueryInstance::execute() {
     auto *rctx = ectx()->rctx();
     FLOG_INFO("Parsing query: %s", rctx->query().c_str());
 
@@ -21,50 +20,41 @@ void ExecutionPlan::execute() {
         if (!result.ok()) {
             status = std::move(result).status();
             LOG(ERROR) << status;
-            stats::Stats::addStatsValue(ectx()->getGraphStats()->getParseErrorStats(), false);
             break;
         }
 
         sentences_ = std::move(result).value();
-        executor_ = std::make_unique<SequentialExecutor>(sentences_.get(), ectx());
-        status = executor_->prepare();
-        if (!status.ok()) {
+        validator_ = std::make_unique<ASTValidator>(sentences_.get());
+        // TODO: After pr#16 merging
+        auto validateResult = validator_->validate();
+        if (!validateResult.ok()) {
+            status = std::move(validateResult).status();
+            LOG(ERROR) << status;
             break;
         }
+
+        // TODO: optional optimize.
     } while (false);
 
-    // Prepare failed
     if (!status.ok()) {
         onError(std::move(status));
         return;
     }
 
-    // Prepared
-    auto onFinish = [this] (Executor::ProcessControl ctr) {
-        UNUSED(ctr);
-        this->onFinish();
-    };
-    auto onError = [this] (Status s) {
-        this->onError(std::move(s));
-    };
-    executor_->setOnFinish(std::move(onFinish));
-    executor_->setOnError(std::move(onError));
-
-    executor_->execute();
+    // TODO: execute query plan.
 }
 
 
-void ExecutionPlan::onFinish() {
+void QueryInstance::onFinish() {
     auto *rctx = ectx()->rctx();
-    executor_->setupResponse(rctx->resp());
+    // executor_->setupResponse(rctx->resp());
     auto latency = rctx->duration().elapsedInUSec();
-    stats::Stats::addStatsValue(ectx()->getGraphStats()->getGraphAllStats(), true, latency);
     rctx->resp().set_latency_in_us(latency);
     auto &spaceName = rctx->session()->spaceName();
     rctx->resp().set_space_name(spaceName);
     rctx->finish();
 
-    // The `ExecutionPlan' is the root node holding all resources during the execution.
+    // The `QueryInstance' is the root node holding all resources during the execution.
     // When the whole query process is done, it's safe to release this object, as long as
     // no other contexts have chances to access these resources later on,
     // e.g. previously launched uncompleted async sub-tasks, EVEN on failures.
@@ -72,7 +62,7 @@ void ExecutionPlan::onFinish() {
 }
 
 
-void ExecutionPlan::onError(Status status) {
+void QueryInstance::onError(Status status) {
     auto *rctx = ectx()->rctx();
     if (status.isSyntaxError()) {
         rctx->resp().set_error_code(cpp2::ErrorCode::E_SYNTAX_ERROR);
@@ -81,9 +71,8 @@ void ExecutionPlan::onError(Status status) {
     } else {
         rctx->resp().set_error_code(cpp2::ErrorCode::E_EXECUTION_ERROR);
     }
-    rctx->resp().set_error_msg(status.toString());
+    // rctx->resp().set_error_msg(status.toString());
     auto latency = rctx->duration().elapsedInUSec();
-    stats::Stats::addStatsValue(ectx()->getGraphStats()->getGraphAllStats(), false, latency);
     rctx->resp().set_latency_in_us(latency);
     rctx->finish();
     delete this;

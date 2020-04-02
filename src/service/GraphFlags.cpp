@@ -5,7 +5,7 @@
  */
 
 #include "base/Base.h"
-#include "graph/GraphFlags.h"
+#include "service/GraphFlags.h"
 
 DEFINE_int32(port, 3699, "Nebula Graph daemon's listen port");
 DEFINE_int32(client_idle_timeout_secs, 0,
