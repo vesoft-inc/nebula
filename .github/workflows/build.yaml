@@ -91,10 +91,8 @@ jobs:
         if: success() && matrix.compiler == 'gcc-9.2' && matrix.os == 'centos7'
         run: |
           set -e
-          /usr/local/bin/lcov --version
-          /usr/local/bin/lcov --capture --gcov-tool $GCOV --directory . --output-file coverage.info
-          /usr/local/bin/lcov --remove coverage.info '*/opt/vesoft/*' -o clean.info
-          bash <(curl -s https://codecov.io/bash) -Z -f clean.info
+          fastcov -o coverage.info -g $GCOV -l --exclude=/opt/vesoft/ --exclude=scanner.lex
+          bash <(curl -s https://codecov.io/bash) -Z -f coverage.info
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         shell: bash
