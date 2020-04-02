@@ -103,7 +103,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_GO KW_AS KW_TO KW_OR KW_AND KW_XOR KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
 %token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_OFFLINE
 %token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND KW_REBUILD
-%token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
+%token KW_INT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_PART KW_PARTS KW_TIMESTAMP KW_ADD
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_CHARSET KW_COLLATE KW_COLLATION
 %token KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_INDEX KW_INDEXES
@@ -219,7 +219,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 
 %type <sentence> admin_sentence
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
-%type <sentence> show_sentence 
+%type <sentence> show_sentence
 
 %type <sentence> mutate_sentence
 %type <sentence> insert_vertex_sentence insert_edge_sentence
@@ -484,7 +484,6 @@ type_spec
     | KW_DOUBLE { $$ = ColumnType::DOUBLE; }
     | KW_STRING { $$ = ColumnType::STRING; }
     | KW_BOOL { $$ = ColumnType::BOOL; }
-    | KW_BIGINT { $$ = ColumnType::BIGINT; }
     | KW_TIMESTAMP { $$ = ColumnType::TIMESTAMP; }
     ;
 
@@ -1015,11 +1014,8 @@ create_schema_prop_list
     ;
 
 create_schema_prop_item
-    : KW_TTL_DURATION ASSIGN unary_integer {
-        // Less than or equal to 0 means infinity, so less than 0 is equivalent to 0
-        if ($3 < 0) {
-            $3 = 0;
-        }
+    : KW_TTL_DURATION ASSIGN INTEGER {
+        ifOutOfRange($3, @3);
         $$ = new SchemaPropItem(SchemaPropItem::TTL_DURATION, $3);
     }
     | KW_TTL_COL ASSIGN STRING {
@@ -1096,11 +1092,8 @@ alter_schema_prop_list
     ;
 
 alter_schema_prop_item
-    : KW_TTL_DURATION ASSIGN unary_integer {
-        // Less than or equal to 0 means infinity, so less than 0 is equivalent to 0
-        if ($3 < 0) {
-            $3 = 0;
-        }
+    : KW_TTL_DURATION ASSIGN INTEGER {
+        ifOutOfRange($3, @3);
         $$ = new SchemaPropItem(SchemaPropItem::TTL_DURATION, $3);
     }
     | KW_TTL_COL ASSIGN STRING {
