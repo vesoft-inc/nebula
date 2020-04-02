@@ -47,6 +47,11 @@ private:
     kvstore::ResultCode processEdge(PartitionID partId, VertexID vId, FilterContext &fcontext,
                                     cpp2::VertexData& vdata);
 
+    kvstore::ResultCode processEdgeSampling(const PartitionID partId,
+                                            const VertexID vId,
+                                            FilterContext& fcontext,
+                                            cpp2::VertexData& vdata);
+
     kvstore::ResultCode processEdgeImpl(const PartitionID partId, const VertexID vId,
                                         const EdgeType edgeType,
                                         const std::vector<PropContext>& props,

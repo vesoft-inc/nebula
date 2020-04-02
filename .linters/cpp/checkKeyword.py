@@ -48,7 +48,6 @@ reserved_key_words = [
     'KW_INDEXES',
     'KW_REBUILD',
     'KW_INT',
-    'KW_BIGINT',
     'KW_DOUBLE',
     'KW_STRING',
     'KW_BOOL',
