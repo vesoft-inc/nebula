@@ -136,6 +136,10 @@ kvstore::ResultCode QueryVertexPropsProcessor::collectVertexProps(
             continue;
         }
         auto reader = RowReader::getTagPropReader(this->schemaMan_, val, spaceId_, tagId);
+        if (reader == nullptr) {
+            VLOG(3) << "Skip the bad format row!";
+            continue;
+        }
         // Check if ttl data expired
         auto retTTL = getTagTTLInfo(tagId, schema.get());
         if (retTTL.has_value() && checkDataExpiredForTTL(schema.get(),

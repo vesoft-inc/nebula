@@ -39,6 +39,8 @@ private:
 
     Status prepareYield();
 
+    Status checkAliasProperty(const AliasPropertyExpression* aExpr);
+
     Status optimize();
 
     Status traversalExpr(const Expression *expr);

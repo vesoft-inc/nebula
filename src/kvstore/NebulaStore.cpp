@@ -190,6 +190,13 @@ bool NebulaStore::init() {
     return true;
 }
 
+void NebulaStore::stop() {
+    for (const auto& space : spaces_) {
+        for (const auto& engine : space.second->engines_) {
+            engine->stop();
+        }
+    }
+}
 
 std::unique_ptr<KVEngine> NebulaStore::newEngine(GraphSpaceID spaceId,
                                                  const std::string& path) {
