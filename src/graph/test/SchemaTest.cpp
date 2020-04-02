@@ -1090,5 +1090,34 @@ TEST_F(SchemaTest, TestTagAndEdge) {
     LOG(FATAL) << "Space still exists after sleep " << retry << " seconds";
 }
 
+TEST_F(SchemaTest, issue2009) {
+    auto client = gEnv->getClient();
+    ASSERT_NE(nullptr, client);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE SPACE issue2009; USE issue2009";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE EDGE IF NOT EXISTS relation"
+            "(intimacy int default 0, "
+            "isReversible bool default false, "
+            "name string default \"N/A\", "
+            "startTime timestamp default 0)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
+    }
+    ::sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "INSERT EDGE relation (intimacy) VALUES "
+            "hash(\"person.Tom\") -> hash(\"person.Marry\")@0:(3)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
+    }
+}
+
 }   // namespace graph
 }   // namespace nebula
