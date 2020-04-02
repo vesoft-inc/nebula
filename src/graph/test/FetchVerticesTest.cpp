@@ -422,5 +422,17 @@ TEST_F(FetchVerticesTest, NonexistentProp) {
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
 }
+
+TEST_F(FetchVerticesTest, EmptyInput) {
+    // YIELD has input prop, and input is empty
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "GO FROM 11 over like YIELD like._dst as id "
+                     "| FETCH PROP ON player 11 YIELD $-.id";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+    }
+}
+
 }  // namespace graph
 }  // namespace nebula
