@@ -158,18 +158,15 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
 }
 
 
-FilterResult UpdateVertexProcessor::checkFilter(const PartitionID partId, const VertexID vId) {
+cpp2::ErrorCode UpdateVertexProcessor::checkFilter(const PartitionID partId, const VertexID vId) {
     for (auto& tc : this->tagContexts_) {
         VLOG(3) << "partId " << partId << ", vId " << vId
                 << ", tagId " << tc.tagId_ << ", prop size " << tc.props_.size();
         auto ret = collectVertexProps(partId, vId, tc.tagId_, tc.props_);
-        switch (ret) {
-            case kvstore::ResultCode::SUCCEEDED:
-                break;
-            case kvstore::ResultCode::ERR_CORRUPT_DATA:
-                return FilterResult::E_BAD_SCHEMA;
-            default:
-                return FilterResult::E_ERROR;
+        if (ret == kvstore::ResultCode::ERR_CORRUPT_DATA) {
+            return cpp2::ErrorCode::E_TAG_NOT_FOUND;
+        } else if (ret != kvstore::ResultCode::SUCCEEDED) {
+            return to(ret);
         }
     }
 
@@ -194,14 +191,14 @@ FilterResult UpdateVertexProcessor::checkFilter(const PartitionID partId, const 
     if (this->exp_ != nullptr) {
         auto filterResult = this->exp_->eval(getters);
         if (!filterResult.ok()) {
-            return FilterResult::E_ERROR;
+            return cpp2::ErrorCode::E_INVALID_FILTER;
         }
         if (!Expression::asBool(filterResult.value())) {
             VLOG(1) << "Filter skips the update";
-            return FilterResult::E_FILTER_OUT;
+            return cpp2::ErrorCode::E_FILTER_OUT;
         }
     }
-    return FilterResult::SUCCEEDED;
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
 
@@ -428,18 +425,10 @@ void UpdateVertexProcessor::process(const cpp2::UpdateVertexRequest& req) {
             // TODO(shylock) the AtomicOP can't return various error
             // so put it in the processor
             filterResult_ = checkFilter(partId, vId);
-            switch (filterResult_) {
-            case FilterResult::SUCCEEDED : {
+            if (filterResult_ == cpp2::ErrorCode::SUCCEEDED) {
                 return updateAndWriteBack(partId, vId);
-            }
-            case FilterResult::E_FILTER_OUT:
-            // Fallthrough
-            case FilterResult::E_ERROR:
-            // Fallthrough
-            case FilterResult::E_BAD_SCHEMA:
-            default: {
+            } else {
                 return folly::none;
-            }
             }
         },
         [this, partId, vId, req] (kvstore::ResultCode code) {
@@ -455,24 +444,13 @@ void UpdateVertexProcessor::process(const cpp2::UpdateVertexRequest& req) {
                     break;
                 }
                 if (code == kvstore::ResultCode::ERR_ATOMIC_OP_FAILED) {
-                    switch (filterResult_) {
-                        case FilterResult::E_FILTER_OUT:
-                            // Filter out
-                            // https://github.com/vesoft-inc/nebula/issues/1888
-                            // Only filter out so we still return the data
-                            onProcessFinished(req.get_return_columns().size());
-                            this->pushResultCode(cpp2::ErrorCode::E_FILTER_OUT, partId);
-                            break;
-                         case FilterResult::E_ERROR:
-                            this->pushResultCode(cpp2::ErrorCode::E_INVALID_FILTER, partId);
-                            break;
-                         case FilterResult::E_BAD_SCHEMA:
-                            this->pushResultCode(cpp2::ErrorCode::E_TAG_NOT_FOUND, partId);
-                            break;
-                         default:
-                            this->pushResultCode(to(code), partId);
-                            break;
+                    if (filterResult_ == cpp2::ErrorCode::E_FILTER_OUT) {
+                        // Filter out
+                        // https://github.com/vesoft-inc/nebula/issues/1888
+                        // Only filter out so we still return the data
+                        onProcessFinished(req.get_return_columns().size());
                     }
+                    this->pushResultCode(filterResult_, partId);
                 } else {
                     this->pushResultCode(to(code), partId);
                 }
