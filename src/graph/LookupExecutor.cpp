@@ -313,43 +313,10 @@ LookupExecutor::findValidIndex() {
     return Status::OK();
 }
 
-void LookupExecutor::stepEdgeOut() {
+void LookupExecutor::lookUp() {
     auto *sc = ectx()->getStorageClient();
     auto filter = Expression::encode(sentence_->whereClause()->filter());
-    auto future  = sc->lookUpEdgeIndex(spaceId_,
-                                       index_,
-                                       filter,
-                                       returnCols_);
-    auto *runner = ectx()->rctx()->runner();
-    auto cb = [this] (auto &&result) {
-        auto completeness = result.completeness();
-        if (completeness == 0) {
-            doError(Status::Error("Lookup edges failed"));
-            return;
-        } else if (completeness != 100) {
-            LOG(INFO) << "Lookup partially failed: "  << completeness << "%";
-            for (auto &error : result.failedParts()) {
-                LOG(ERROR) << "part: " << error.first
-                           << "error code: " << static_cast<int>(error.second);
-            }
-        }
-        finishExecution(std::forward<decltype(result)>(result));
-    };
-    auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception when handle lookup: " << e.what();
-        doError(Status::Error("Exception when handle lookup: %s.",
-                              e.what().c_str()));
-    };
-    std::move(future).via(runner).thenValue(cb).thenError(error);
-}
-
-void LookupExecutor::stepVertexOut() {
-    auto *sc = ectx()->getStorageClient();
-    auto filter = Expression::encode(sentence_->whereClause()->filter());
-    auto future  = sc->lookUpVertexIndex(spaceId_,
-                                         index_,
-                                         filter,
-                                         returnCols_);
+    auto future  = sc->lookUpIndex(spaceId_, index_, filter, returnCols_, isEdge_);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&result) {
         auto completeness = result.completeness();
@@ -386,11 +353,7 @@ void LookupExecutor::execute() {
         return;
     }
 
-    if (isEdge_) {
-        stepEdgeOut();
-    } else {
-        stepVertexOut();
-    }
+    lookUp();
 }
 
 void LookupExecutor::feedResult(std::unique_ptr<InterimResult> result) {

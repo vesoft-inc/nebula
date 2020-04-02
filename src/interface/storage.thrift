@@ -509,6 +509,5 @@ service StorageService {
     GetUUIDResp getUUID(1: GetUUIDReq req);
 
     // Interfaces for edge and vertex index scan
-    LookUpIndexResp   lookUpVertexIndex(1: LookUpIndexRequest req);
-    LookUpIndexResp   lookUpEdgeIndex(1: LookUpIndexRequest req);
+    LookUpIndexResp   lookUpIndex(1: LookUpIndexRequest req);
 }

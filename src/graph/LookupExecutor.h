@@ -52,9 +52,7 @@ private:
 
     Status findValidIndex();
 
-    void stepEdgeOut();
-
-    void stepVertexOut();
+    void lookUp();
 
     std::vector<std::string> getResultColumnNames() const;
 

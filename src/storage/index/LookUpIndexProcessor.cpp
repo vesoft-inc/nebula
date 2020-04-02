@@ -15,7 +15,7 @@ void LookUpIndexProcessor::process(const cpp2::LookUpIndexRequest& req) {
      */
     auto ret = prepareRequest(req);
     if (ret != cpp2::ErrorCode::SUCCEEDED) {
-        LOG(ERROR) << "Prepare Request " << "";
+        LOG(ERROR) << "Prepare Request Failed";
         putResultCodes(ret, req.get_parts());
         return;
     }
@@ -25,7 +25,7 @@ void LookUpIndexProcessor::process(const cpp2::LookUpIndexRequest& req) {
      */
     ret = buildExecutionPlan(req.get_filter());
     if (ret != cpp2::ErrorCode::SUCCEEDED) {
-        LOG(ERROR) << "Build Execution Plan";
+        LOG(ERROR) << "Build Execution Plan Failed";
         putResultCodes(ret, req.get_parts());
         return;
     }
@@ -61,8 +61,6 @@ void LookUpIndexProcessor::process(const cpp2::LookUpIndexRequest& req) {
         }
         s.set_columns(std::move(cols));
         this->resp_.set_schema(std::move(s));
-    } else {
-        LOG(ERROR) << "schema is null";
     }
 
     if (isEdgeIndex_) {

@@ -30,8 +30,7 @@ private:
                                   meta::IndexManager* indexMan,
                                   stats::Stats* stats,
                                   VertexCache* cache = nullptr)
-        : IndexExecutor<cpp2::LookUpIndexResp>
-                (kvstore, schemaMan, indexMan, stats, cache) {}
+        : IndexExecutor<cpp2::LookUpIndexResp>(kvstore, schemaMan, indexMan, stats, cache) {}
 };
 
 }  // namespace storage
