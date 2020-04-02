@@ -1081,6 +1081,22 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    // Test tagName is reserved keyword
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "USE my_space; CREATE TAG `tag` (`edge` string)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESCRIBE TAG `tag`";
+        client->execute(query, resp);
+        std::vector<uniform_tuple_t<std::string, 2>> expected{
+                {"edge", "string"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "SHOW SPACES";
@@ -1224,6 +1240,36 @@ TEST_P(SchemaTestIssue1987, issue1987) {
 }
 
 INSTANTIATE_TEST_CASE_P(SchemaIssue1987, SchemaTestIssue1987, ::testing::Values("TAG", "EDGE"));
+
+
+TEST_F(SchemaTest, issue2009) {
+    auto client = gEnv->getClient();
+    ASSERT_NE(nullptr, client);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE SPACE issue2009; USE issue2009";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE EDGE IF NOT EXISTS relation"
+            "(intimacy int default 0, "
+            "isReversible bool default false, "
+            "name string default \"N/A\", "
+            "startTime timestamp default 0)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
+    }
+    ::sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "INSERT EDGE relation (intimacy) VALUES "
+            "hash(\"person.Tom\") -> hash(\"person.Marry\")@0:(3)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
+    }
+}
 
 }   // namespace graph
 }   // namespace nebula

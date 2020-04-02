@@ -11,7 +11,7 @@
 #include "storage/test/TestUtils.h"
 #include "storage/mutate/DeleteVerticesProcessor.h"
 #include "storage/mutate/AddVerticesProcessor.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 
 
 namespace nebula {

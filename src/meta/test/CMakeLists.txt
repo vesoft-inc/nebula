@@ -20,6 +20,7 @@ set(meta_test_deps
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:kvstore_storage_utils_obj>
 )
 
 nebula_add_test(

@@ -142,7 +142,7 @@ nebula::cpp2::SupportedType TraverseExecutor::calculateExprType(Expression* exp)
         case Expression::kInputProp: {
             auto* propExp = static_cast<const AliasPropertyExpression*>(exp);
             const auto* propName = propExp->prop();
-            if (inputs_ == nullptr) {
+            if (inputs_ == nullptr || !inputs_->hasData()) {
                 return nebula::cpp2::SupportedType::UNKNOWN;
             } else {
                 return inputs_->getColumnType(*propName);
