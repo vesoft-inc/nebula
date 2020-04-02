@@ -21,7 +21,6 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
     }
 
     auto spaceId = spaceRet.value();
-    VLOG(3) << "Drop space " << req.get_space_name() << ", id " << spaceId;
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     std::vector<std::string> deleteKeys;
 
@@ -64,6 +63,7 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
     // TODO(YT) delete Tag/Edge under the space
     // TODO(YT) delete part files of the space
     doSyncMultiRemoveAndUpdate(std::move(deleteKeys));
+    LOG(INFO) << "Drop space " << req.get_space_name() << ", id " << spaceId;
 }
 
 }  // namespace meta

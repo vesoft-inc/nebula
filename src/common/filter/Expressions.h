@@ -19,7 +19,7 @@ class Cord;
 using OptVariantType = StatusOr<VariantType>;
 
 enum class ColumnType {
-    INT, STRING, DOUBLE, BIGINT, BOOL, TIMESTAMP,
+    INT, STRING, DOUBLE, BOOL, TIMESTAMP,
 };
 
 std::string columnTypeToString(ColumnType type);
