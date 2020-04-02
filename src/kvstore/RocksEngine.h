@@ -103,6 +103,8 @@ public:
         LOG(INFO) << "Release rocksdb on " << dataPath_;
     }
 
+    void stop() override;
+
     const char* getDataRoot() const override {
         return dataPath_.c_str();
     }
