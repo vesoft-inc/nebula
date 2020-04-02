@@ -26,7 +26,7 @@ public:
         }
     }
 
-    InetAddress(uint32_t ip, uint16_t port = 0) : addrs_(folly::IPAddress::fromLong(ip), port) {}
+    InetAddress(uint32_t ip, uint16_t port = 0) : addrs_(folly::IPAddress::fromLong(ip), port) {} //NOLINT
 
     explicit InetAddress(const nebula::cpp2::HostAddr& addr)
         : InetAddress(addr.get_ip(), addr.get_port()) {}
