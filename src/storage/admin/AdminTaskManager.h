@@ -33,16 +33,12 @@ public:
         using ResultContainer = std::vector<folly::SemiFuture<ResultCode>>;
 
         std::shared_ptr<AdminTask>  task_{nullptr};
-        std::mutex                  mutex_;
         std::atomic<size_t>         unFinishedTask_{0};
-        size_t                      unFinishedThread_{0};
         SubTaskQueue                subtasks_;
-        std::atomic<ResultCode>     rc_{ResultCode::SUCCEEDED};
-        std::atomic<bool>           cancelled_{false};
-        bool                        onFinishCalled{false};
     };
 
-    using ThreadPool = std::unique_ptr<nebula::thread::GenericThreadPool>;
+    // using ThreadPool = std::unique_ptr<nebula::thread::GenericThreadPool>;
+    using ThreadPool = folly::IOThreadPoolExecutor;
     using TaskHandle = std::pair<int, int>;  // jobid + taskid
     using TaskVal = std::shared_ptr<TaskExecContext>;
     using TaskContainer = folly::ConcurrentHashMap<TaskHandle, TaskVal>;
@@ -67,11 +63,11 @@ public:
 private:
     void pickTaskThread();
     void pickSubTask(TaskHandle handle);
-    // ResultCode pickSubTask(std::shared_ptr<TaskExecContext> ctx);
 
 private:
     bool                                    shutdown_{false};
-    ThreadPool                              pool_{nullptr};
+    // ThreadPool                              pool_{nullptr};
+    std::unique_ptr<ThreadPool>             pool_{nullptr};
     TaskContainer                           tasks_;
     TaskQueue                               taskQueue_;
     std::unique_ptr<thread::GenericWorker>  bgThread_;

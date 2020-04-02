@@ -31,7 +31,9 @@ protected:
 class MetaJobExecutorFactory {
 public:
     static std::unique_ptr<MetaJobExecutor>
-    createMetaJobExecutor(const JobDescription& jd, kvstore::KVStore* store);
+    createMetaJobExecutor(const JobDescription& jd,
+                          kvstore::KVStore* store,
+                          AdminClient* client);
 };
 
 }  // namespace meta

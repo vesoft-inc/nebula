@@ -9,6 +9,7 @@
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
+#include <folly/executors/IOThreadPoolExecutor.h>
 #include "storage/test/TestUtils.h"
 #include "storage/admin/AdminTaskManager.h"
 
@@ -18,6 +19,7 @@ namespace nebula {
 namespace storage {
 /*
  * summary:
+ * 0. validation for some basic data structure and component
  * 1. ctor
  * 2. happy_path:
  *      use 3 background thread to run 1, 2, 4, 8 sub tasks
@@ -92,53 +94,78 @@ TEST(TaskManagerTest, extract_subtasks_to_context) {
     EXPECT_EQ(subTaskCalled, numSubTask);
 }
 
-// TEST(TaskManagerTest, run_subtasks_using_pool) {
-//     size_t numSubTask = 15;
-//     size_t poolThread = 3;
-//     std::shared_ptr<AdminTask> vtask(new HookableTask());
-//     HookableTask* task = static_cast<HookableTask*>(vtask.get());
-//     int subTaskCalled = 0;
-//     for (size_t i = 0; i < numSubTask; ++i) {
-//         task->addSubTask([&subTaskCalled]() {
-//             ++subTaskCalled;
-//             return kvstore::ResultCode::SUCCEEDED;
-//         });
-//     }
-//     AdminTaskManager::TaskExecContext ctx(vtask);
-//     for (auto& subtask : task->subTasks) {
-//         ctx.subtasks_.add(subtask);
-//     }
+using Func = std::function<void()>;
+static Func burnMs(uint64_t ms) {
+  return [ms]() { std::this_thread::sleep_for(
+                  std::chrono::milliseconds(ms)); };
+}
 
-//     auto pool = std::make_unique<nebula::thread::GenericThreadPool>();
-//     pool->start(poolThread);
+TEST(TaskManagerTest, component_IOThreadPool) {
+    using ThreadPool = folly::IOThreadPoolExecutor;
+    size_t numThreads = 5;
+    {
+        std::atomic<int> completed(0);
+        auto f = [&]() {
+            burnMs(1)();
+            ++completed;
+        };
+        auto pool = std::make_unique<ThreadPool>(numThreads);
+        pool->add(f);
+        pool->join();
+        EXPECT_EQ(completed, 1);
+    }
 
-//     int taskFinCalled = 0;
-//     auto onTaskFinish = [&]() {
-//         ++taskFinCalled;
-//     };
+    {
+        int totalTask = 100;
+        std::mutex                  mu;
+        std::set<std::thread::id>   threadIds;
+        auto fo = [&]() {
+            std::lock_guard<std::mutex> lk(mu);
+            threadIds.insert(std::this_thread::get_id());
+        };
+        auto pool = std::make_unique<ThreadPool>(numThreads);
+        for (int i = 0; i < totalTask; ++i) {
+            pool->add(fo);
+        }
+        pool->join();
 
-//     auto pickSubTask = [&ctx, cb = onTaskFinish]() {
-//         std::chrono::milliseconds ms10{10};
-//         while (auto subTask = ctx.subtasks_.try_take_for(ms10)) {
-//             subTask->invoke();
-//         }
-//         cb();
-//     };
+        LOG(INFO) << "threadIds.size()=" << threadIds.size();
+        EXPECT_LE(threadIds.size(), numThreads);
+    }
 
-//     for (size_t i = 0; i < poolThread; ++i) {
-//         pool->addTask(pickSubTask);
-//     }
+    {
+        int totalTask = 100;
+        using Para = folly::Optional<std::thread::id>;
+        std::mutex mu;
+        int completed = 0;
+        auto pool = std::make_unique<ThreadPool>(numThreads);
+        std::function<void(Para)> f = [&](Para optTid) {
+            auto tid = std::this_thread::get_id();
+            if (optTid) {
+                EXPECT_EQ(tid, *optTid);
+            }
+            burnMs(10);
+            {
+                std::lock_guard<std::mutex> lk(mu);
+                if (completed < totalTask) {
+                    ++completed;
+                } else {
+                    return;
+                }
+            }
+            pool->add(std::bind(f, tid));
+        };
 
-//     pool->stop();
-//     pool->wait();
+        for (int i = 0; i < totalTask; ++i) {
+            pool->add(std::bind(f, folly::none));
+        }
+        pool->join();
 
-//     EXPECT_EQ(taskFinCalled, 1);
-//     LOG(INFO) << folly::stringPrintf("%d subTaskCalled via %zu poolThread",
-//                                      subTaskCalled, poolThread);
-//     EXPECT_EQ(subTaskCalled, numSubTask);
-// }
+        EXPECT_EQ(completed, totalTask);
+    }
+}
 
-TEST(TaskManagerTest, basic_component_ConcurrentHashMap) {
+TEST(TaskManagerTest, data_structure_ConcurrentHashMap) {
     using TKey = std::pair<int, int>;
     using TVal = std::shared_ptr<AdminTaskManager::TaskExecContext>;
     using TaskContainer = folly::ConcurrentHashMap<TKey, TVal>;
@@ -490,43 +517,43 @@ TEST(TaskManagerTest, some_subtask_failed) {
 TEST(TaskManagerTest, cancel_a_running_task_with_only_1_sub_task) {
     auto taskMgr = AdminTaskManager::instance();
     taskMgr->init();
-    size_t numTask = 1;
 
     std::shared_ptr<AdminTask> task(new HookableTask());
     HookableTask* mockTask = static_cast<HookableTask*>(task.get());
+    mockTask->setJobId(1);
 
     folly::Promise<int> pTaskRun;
     auto fTaskRun = pTaskRun.getFuture();
 
-    folly::Promise<ResultCode> taskFinishedPro;
-    folly::Future<ResultCode> taskFinished = taskFinishedPro.getFuture();
+    folly::Promise<ResultCode> pFinish;
+    folly::Future<ResultCode> fFinish = pFinish.getFuture();
 
-    folly::Promise<int> taskCancelledPro;
-    folly::Future<int> taskCancelledFut = taskCancelledPro.getFuture();
+    folly::Promise<int> pCancel;
+    folly::Future<int> fCancel = pCancel.getFuture();
 
     mockTask->addSubTask([&]() {
         LOG(INFO) << "sub task running, waiting for cancel";
         pTaskRun.setValue(0);
-        taskCancelledFut.wait();
+        fCancel.wait();
         LOG(INFO) << "cancel called";
         return suc;
     });
 
     mockTask->setCallback([&](ResultCode ret) {
-        LOG(INFO) << "task callback()";
-        ++numTask;
-        taskFinishedPro.setValue(ret);
+        LOG(INFO) << "task finish()";
+        pFinish.setValue(ret);
     });
 
-    mockTask->setJobId(1);
     taskMgr->addAsyncTask(task);
+
     fTaskRun.wait();
     taskMgr->cancelTask(1);
-    taskCancelledPro.setValue(0);
-    taskFinished.wait();
+    pCancel.setValue(0);
+    fFinish.wait();
 
     taskMgr->shutdown();
-    EXPECT_EQ(taskCancelledFut.value(), suc);
+    auto err = kvstore::ResultCode::ERR_USER_CANCELLED;
+    EXPECT_EQ(fFinish.value(), err);
 }
 
 TEST(TaskManagerTest, cancel_1_task_in_a_2_tasks_queue) {

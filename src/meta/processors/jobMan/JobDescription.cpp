@@ -43,6 +43,11 @@ JobDescription::makeJobDescription(folly::StringPiece rawkey,
             return folly::none;
         }
         auto key = parseKey(rawkey);
+
+        if (!isSupportedValue(rawval)) {
+            LOG(ERROR) << "not supported data ver of job " << key;
+            return folly::none;
+        }
         auto tup = parseVal(rawval);
 
         auto cmd = std::get<0>(tup);
@@ -104,15 +109,17 @@ std::tuple<AdminCmd,
            int64_t,
            int64_t>
 JobDescription::parseVal(const folly::StringPiece& rawVal) {
-    return decodeVal1(rawVal);
+    return decodeValV1(rawVal);
 }
 
+// old saved data may have different format
+// which means we have different decoder for each version
 std::tuple<AdminCmd,
            std::vector<std::string>,
            Status,
            int64_t,
            int64_t>
-JobDescription::decodeVal1(const folly::StringPiece& rawVal) {
+JobDescription::decodeValV1(const folly::StringPiece& rawVal) {
     size_t offset = sizeof(int32_t);
 
     auto cmd = JobUtil::parseFixedVal<AdminCmd>(rawVal, offset);
@@ -175,10 +182,6 @@ JobDescription::loadJobDescription(int32_t iJob, nebula::kvstore::KVStore* kv) {
     std::string val;
     auto rc = kv->get(0, 0, key, &val);
     if (rc != nebula::kvstore::SUCCEEDED) {
-        return folly::none;
-    }
-    if (!isSupportedValue(val)) {
-        LOG(ERROR) << "not supported data ver of job " << iJob;
         return folly::none;
     }
     return makeJobDescription(key, val);

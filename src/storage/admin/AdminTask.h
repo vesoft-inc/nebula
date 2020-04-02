@@ -42,12 +42,13 @@ struct TaskContext {
     TaskContext() = default;
     TaskContext(const cpp2::AddAdminTaskRequest& req,
                 kvstore::NebulaStore* store,
-                CallBack cb) : cmd_(req.get_cmd()),
-                               jobId_(req.get_job_id()),
-                               taskId_(req.get_task_id()),
-                               spaceId_(req.get_space_id()),
-                               store_(store),
-                               onFinish_(cb) {}
+                CallBack cb)
+            : cmd_(req.get_cmd())
+            , jobId_(req.get_job_id())
+            , taskId_(req.get_task_id())
+            , spaceId_(req.get_para().get_space_id())
+            , store_(store)
+            , onFinish_(cb) {}
     ::nebula::cpp2::AdminCmd    cmd_;
     int32_t                     jobId_{-1};
     int32_t                     taskId_{-1};
@@ -101,14 +102,37 @@ public:
         return ctx_.concurrentReq_;
     }
 
+    virtual ResultCode Status() const {
+        return rc_;
+    }
+
+    virtual void subTaskFinish(ResultCode rc) {
+        static ResultCode suc{ResultCode::SUCCEEDED};
+        rc_.compare_exchange_strong(suc, rc);
+    }
+
+    virtual void finish() {
+        LOG(INFO) << folly::stringPrintf("task(%d, %d) finished, rc=[%d]",
+                     ctx_.jobId_, ctx_.taskId_,
+                     static_cast<int>(rc_));
+        ctx_.onFinish_(rc_);
+    }
+
+    virtual void cancel() {
+        FLOG_INFO("task(%d, %d) cancelled", ctx_.jobId_, ctx_.taskId_);
+        static ResultCode suc{ResultCode::SUCCEEDED};
+        rc_.compare_exchange_strong(suc, ResultCode::ERR_USER_CANCELLED);
+    }
+
 protected:
-    TaskContext     ctx_;
+    TaskContext                 ctx_;
+    std::atomic<ResultCode>     rc_{ResultCode::SUCCEEDED};
 };
 
 class AdminTaskFactory {
 public:
     static std::shared_ptr<AdminTask>
-    createAdminTask2(TaskContext&& ctx);
+    createAdminTask(TaskContext&& ctx);
 };
 
 }  // namespace storage

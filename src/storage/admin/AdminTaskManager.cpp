@@ -19,8 +19,7 @@ using TaskHandle = std::pair<int, int>;     // jobid + taskid
 
 bool AdminTaskManager::init() {
     LOG(INFO) << "max concurrenct subtasks: " << FLAGS_max_concurrent_subtasks;
-    pool_ = std::make_unique<nebula::thread::GenericThreadPool>();
-    CHECK(pool_->start(FLAGS_max_concurrent_subtasks));
+    pool_ = std::make_unique<ThreadPool>(FLAGS_max_concurrent_subtasks);
 
     bgThread_ = std::make_unique<thread::GenericWorker>();
     CHECK(bgThread_->start());
@@ -53,10 +52,8 @@ AdminTaskManager::cancelTask(int jobId) {
         auto handle = it->first;
         if (handle.first == jobId) {
             auto ctx = it->second;
-            ctx->cancelled_ = true;
-            ctx->rc_ = ResultCode::ERR_USER_CANCELLED;
-            LOG(INFO) << folly::stringPrintf("task(%d, %d) cancelled",
-                                             jobId, handle.second);
+            ctx->task_->cancel();
+            FLOG_INFO("task(%d, %d) cancelled", jobId, handle.second);
             ret = kvstore::ResultCode::SUCCEEDED;
         }
         ++it;
@@ -71,18 +68,15 @@ void AdminTaskManager::shutdown() {
     bgThread_->wait();
 
     for (auto it = tasks_.begin(); it != tasks_.end(); ++it) {
-        it->second->cancelled_ = true;
+        it->second->task_->cancel();  // cancelled_ = true;
     }
 
-    pool_->stop();
-    pool_->wait();
-
-    bgThread_->stop();
-    bgThread_->wait();
+    pool_->join();
 
     LOG(INFO) << "exit AdminTaskManager::shutdown()";
 }
 
+// schedule
 void AdminTaskManager::pickTaskThread() {
     std::chrono::milliseconds interval{20};    // 20ms
     while (!shutdown_) {
@@ -126,44 +120,36 @@ void AdminTaskManager::pickTaskThread() {
                                            static_cast<size_t>(FLAGS_max_concurrent_subtasks));
         subTaskConcurrency = std::min(subTaskConcurrency, subTasks.size());
         ctx->unFinishedTask_ = subTasks.size();
-        ctx->unFinishedThread_ = subTaskConcurrency;
 
         LOG(INFO) << folly::stringPrintf("run task(%d, %d) in %zu thread",
                                          handle.first, handle.second,
                                          ctx->unFinishedTask_.load());
         for (size_t i = 0; i < subTaskConcurrency; ++i) {
-            pool_->addTask(&AdminTaskManager::pickSubTask, this, handle);
+            pool_->add(std::bind(&AdminTaskManager::pickSubTask, this, handle));
         }
     }  // end while (!shutdown_)
     LOG(INFO) << "AdminTaskManager::pickTaskThread(~)";
 }
 
+// runSubTask pickSubTask in loop
 void AdminTaskManager::pickSubTask(TaskHandle handle) {
-    std::chrono::milliseconds take_dura{10};
-    ResultCode success{ResultCode::SUCCEEDED};
-    auto ctx = tasks_[handle];
-    while (auto subTask = ctx->subtasks_.try_take_for(take_dura)) {
-        if (!ctx->cancelled_ && ctx->rc_ == ResultCode::SUCCEEDED) {
-            ResultCode rc = subTask->invoke();
-            if (rc != ResultCode::SUCCEEDED) {
-                ctx->rc_.compare_exchange_strong(success, rc);
-            }
-        }
-        --ctx->unFinishedTask_;
+    auto it = tasks_.find(handle);
+    if (it == tasks_.cend()) {
+        return;
     }
-
-    {
-        std::unique_lock<std::mutex> lk(ctx->mutex_);
-        // report status to upper caller ASAP
-        if (ctx->unFinishedTask_ == 0 && !ctx->onFinishCalled) {
-            ctx->task_->finish(ctx->rc_);
-            ctx->onFinishCalled = true;
+    auto ctx = it->second;
+    std::chrono::milliseconds take_dura{10};
+    if (auto subTask = ctx->subtasks_.try_take_for(take_dura)) {
+        if (ctx->task_->Status() == ResultCode::SUCCEEDED) {
+            ResultCode rc = subTask->invoke();
+            ctx->task_->subTaskFinish(rc);
         }
 
-        if (ctx->unFinishedThread_ > 1) {
-            --ctx->unFinishedThread_;
-        } else {  // the last worker do the clean up
+        if (0 == --ctx->unFinishedTask_) {
+            ctx->task_->finish();
             tasks_.erase(handle);
+        } else {
+            pool_->add(std::bind(&AdminTaskManager::pickSubTask, this, handle));
         }
     }
 }

@@ -685,10 +685,14 @@ AdminClient::addTask(nebula::cpp2::AdminCmd cmd,
     req.set_cmd(cmd);
     req.set_job_id(jobId);
     req.set_task_id(taskId);
-    req.set_space_id(spaceId);
-    req.set_index_id(indexID);
-    req.set_parts(std::move(parts));
     req.set_concurrency(concurrency);
+
+    storage::cpp2::TaskPara para;
+    para.set_space_id(spaceId);
+    para.set_index_id(indexID);
+    para.set_parts(std::move(parts));
+
+    req.set_para(para);
 
     folly::Promise<Status> pro;
     auto f = pro.getFuture();

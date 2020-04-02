@@ -51,7 +51,7 @@ bool JobManager::init(nebula::kvstore::KVStore* store) {
     queue_ = std::make_unique<folly::UMPSCQueue<int32_t, true>>();
     bgThread_ = std::make_unique<thread::GenericWorker>();
     CHECK(bgThread_->start());
-    bgThread_->addTask(&JobManager::runJobBackground, this);
+    bgThread_->addTask(&JobManager::scheduleThread, this);
     return true;
 }
 
@@ -68,7 +68,7 @@ void JobManager::shutDown() {
     LOG(INFO) << "JobManager::shutDown() end";
 }
 
-void JobManager::runJobBackground() {
+void JobManager::scheduleThread() {
     LOG(INFO) << "JobManager::runJobBackground() enter";
     while (!shutDown_) {
         int32_t iJob = 0;
@@ -91,7 +91,7 @@ void JobManager::runJobBackground() {
         }
         save(jobDesc->jobKey(), jobDesc->jobVal());
 
-        if (runJobViaThrift(*jobDesc)) {
+        if (runJobInternal(*jobDesc)) {
             jobDesc->setStatus(cpp2::JobStatus::FINISHED);
         } else {
             jobDesc->setStatus(cpp2::JobStatus::FAILED);
@@ -104,8 +104,10 @@ void JobManager::runJobBackground() {
 // tempory name,
 // will replace "runJobInternal" when task manager ready
 // @return: true if succeed, false if any task failed
-bool JobManager::runJobViaThrift(const JobDescription& jobDesc) {
-    auto jobExecutor = MetaJobExecutorFactory::createMetaJobExecutor(jobDesc, kvStore_);
+bool JobManager::runJobInternal(const JobDescription& jobDesc) {
+    auto jobExecutor = MetaJobExecutorFactory::createMetaJobExecutor(jobDesc,
+                                                                     kvStore_,
+                                                                     adminClient_);
     if (jobExecutor == nullptr) {
         LOG(ERROR) << "unreconized job cmd " << static_cast<int>(jobDesc.getCmd());
         return false;
@@ -145,11 +147,12 @@ bool JobManager::runJobViaThrift(const JobDescription& jobDesc) {
     return jobSuccess;
 }
 
-ResultCode JobManager::addJob(const JobDescription& jobDesc) {
+ResultCode JobManager::addJob(const JobDescription& jobDesc, AdminClient* client) {
     auto rc = save(jobDesc.jobKey(), jobDesc.jobVal());
     if (rc == nebula::kvstore::SUCCEEDED) {
         queue_->enqueue(jobDesc.getJobId());
     }
+    adminClient_ = client;
     return rc;
 }
 
@@ -169,6 +172,7 @@ JobManager::showJobs() {
         if (JobDescription::isJobKey(iter->key())) {
             auto optJob = JobDescription::makeJobDescription(iter->key(), iter->val());
             if (optJob == folly::none) {
+                expiredJobKeys.emplace_back(iter->key());
                 continue;
             }
             // skip expired job, default 1 week

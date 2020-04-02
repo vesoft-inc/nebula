@@ -48,8 +48,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
             auto paras = req.get_paras();
 
             JobDescription jobDesc(nebula::value(jobId), cmd, paras);
-            jobDesc.setAdminClient(adminClient_);
-            auto rc = jobMgr->addJob(jobDesc);
+            auto rc = jobMgr->addJob(jobDesc, adminClient_);
             if (rc == nebula::kvstore::SUCCEEDED) {
                 result.set_job_id(nebula::value(jobId));
             } else {

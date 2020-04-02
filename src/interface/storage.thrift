@@ -464,14 +464,18 @@ struct LookUpIndexRequest {
     5: list<string>              return_columns,
 }
 
+struct TaskPara {
+    1: common.GraphSpaceID                  space_id,
+    2: optional list<common.PartitionID>    parts,
+    3: optional common.IndexID              index_id
+}
+
 struct AddAdminTaskRequest {
     1: common.AdminCmd                      cmd        // rebuild index / flush / compact
     2: i32                                  job_id
     3: i32                                  task_id    
-    4: common.GraphSpaceID                  space_id, 
-    5: optional list<common.PartitionID>    parts,
-    6: optional common.IndexID              index_id
-    7: optional i32                         concurrency
+    4: TaskPara                             para
+    5: optional i32                         concurrency
 }
 
 struct StopAdminTaskRequest {

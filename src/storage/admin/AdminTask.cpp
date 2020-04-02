@@ -12,7 +12,7 @@ namespace nebula {
 namespace storage {
 
 std::shared_ptr<AdminTask>
-AdminTaskFactory::createAdminTask2(TaskContext&& ctx) {
+AdminTaskFactory::createAdminTask(TaskContext&& ctx) {
     LOG(INFO) << folly::stringPrintf("%s (%d, %d)",
                                     __func__, ctx.jobId_, ctx.taskId_);
     std::shared_ptr<AdminTask> ret;

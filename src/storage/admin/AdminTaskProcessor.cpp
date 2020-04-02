@@ -26,7 +26,7 @@ void AdminTaskProcessor::process(const cpp2::AddAdminTaskRequest& req) {
         onFinished();
     };
     TaskContext ctx(req, store, cb);
-    auto task = AdminTaskFactory::createAdminTask2(std::move(ctx));
+    auto task = AdminTaskFactory::createAdminTask(std::move(ctx));
     if (task) {
         runDirectly = false;
         taskManager->addAsyncTask(task);

@@ -66,7 +66,7 @@ TEST_F(JobManagerTest, addJob) {
     auto cmd = makeCmd("compact");
     std::vector<std::string> paras{"test"};
     JobDescription job(1, cmd, paras);
-    auto rc = jobMgr->addJob(job);
+    auto rc = jobMgr->addJob(job, nullptr);
     ASSERT_EQ(rc, nebula::kvstore::ResultCode::SUCCEEDED);
 }
 
@@ -77,7 +77,7 @@ TEST_F(JobManagerTest, loadJobDescription) {
     JobDescription job1(1, cmd, paras);
     job1.setStatus(Status::RUNNING);
     job1.setStatus(Status::FINISHED);
-    auto rc = jobMgr->addJob(job1);
+    auto rc = jobMgr->addJob(job1, nullptr);
     ASSERT_EQ(rc, ResultCode::SUCCEEDED);
     ASSERT_EQ(job1.id_, 1);
     ASSERT_EQ(job1.cmd_, cmd);
@@ -106,7 +106,7 @@ TEST_F(JobManagerTest, showJobs) {
     JobDescription jd1(1, type1, paras1);
     jd1.setStatus(Status::RUNNING);
     jd1.setStatus(Status::FINISHED);
-    jobMgr->addJob(jd1);
+    jobMgr->addJob(jd1, nullptr);
 
     auto type2 = makeCmd("flush");
     std::string para2("nba");
@@ -114,7 +114,7 @@ TEST_F(JobManagerTest, showJobs) {
     JobDescription jd2(2, type2, paras2);
     jd2.setStatus(Status::RUNNING);
     jd2.setStatus(Status::FAILED);
-    jobMgr->addJob(jd2);
+    jobMgr->addJob(jd2, nullptr);
 
     auto statusOrShowResult = jobMgr->showJobs();
     LOG(INFO) << "after show jobs";
@@ -136,14 +136,6 @@ TEST_F(JobManagerTest, showJobs) {
     ASSERT_EQ(jobs[0].get_stop_time(), jd2.stopTime_);
 }
 
-// nebula::cpp2::HostAddr toHost(std::string strIp) {
-//     nebula::cpp2::HostAddr host;
-//     int ip = 0;
-//     nebula::network::NetworkUtils::ipv4ToInt(strIp, ip);
-//     host.set_ip(ip);
-//     return host;
-// }
-
 HostAddr toHost(std::string strIp) {
     int ip = 0;
     nebula::network::NetworkUtils::ipv4ToInt(strIp, ip);
@@ -158,7 +150,7 @@ TEST_F(JobManagerTest, showJob) {
     JobDescription jd(1, type, paras);
     jd.setStatus(Status::RUNNING);
     jd.setStatus(Status::FINISHED);
-    jobMgr->addJob(jd);
+    jobMgr->addJob(jd, nullptr);
 
     int32_t iJob = jd.id_;
     int32_t task1 = 0;

@@ -134,24 +134,16 @@ public:
      * */
     static bool isJobKey(const folly::StringPiece& rawKey);
 
-    void setAdminClient(AdminClient* adminClient) {
-        adminClient_ = adminClient;
-    }
-
-    AdminClient* getAdminClient() const {
-        return adminClient_;
-    }
-
 private:
     static bool isSupportedValue(const folly::StringPiece& val);
     /*
-     * decode val from kvstore, return
+     * decode val if it stored in data ver.1, return
      * {command, paras, status, start time, stop time}
      * */
     static std::tuple<nebula::cpp2::AdminCmd,
                       std::vector<std::string>,
                       Status, int64_t, int64_t>
-    decodeVal1(const folly::StringPiece& rawVal);
+    decodeValV1(const folly::StringPiece& rawVal);
 
 private:
     int32_t                         id_;
@@ -160,8 +152,6 @@ private:
     Status                          status_;
     int64_t                         startTime_;
     int64_t                         stopTime_;
-
-    AdminClient*                    adminClient_{nullptr};
 
     // old job may have different format,
     // will ignore some job if it is too old
