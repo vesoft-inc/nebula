@@ -264,7 +264,9 @@ Status SchemaHelper::alterSchema(const std::vector<AlterSchemaOptItem*>& schemaO
                         break;
                     }
                     default:
-                        LOG(WARNING) << "Unkown type " << static_cast<int>(spec->type());
+                        LOG(WARNING) << "Unknown type " << static_cast<int>(spec->type());
+                        return Status::NotSupported("Unknown type %d",
+                                                    static_cast<int>(spec->type()));
                     }  // switch
                 }
                 schema.columns.emplace_back(std::move(column));
