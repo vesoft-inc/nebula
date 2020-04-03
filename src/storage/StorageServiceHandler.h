@@ -149,6 +149,9 @@ public:
     folly::Future<cpp2::AdminExecResp>
     future_addAdminTask(const cpp2::AddAdminTaskRequest& req) override;
 
+    folly::Future<cpp2::AdminExecResp>
+    future_stopAdminTask(const cpp2::StopAdminTaskRequest& req) override;
+
 private:
     kvstore::KVStore* kvstore_{nullptr};
     meta::SchemaManager* schemaMan_{nullptr};

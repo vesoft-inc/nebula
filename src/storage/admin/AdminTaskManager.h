@@ -54,7 +54,8 @@ public:
 
     void invoke();
 
-    ResultCode cancelTask(int jobId);
+    ResultCode cancelJob(int jobId);
+    ResultCode cancelTask(int jobId, int taskId = -1);
 
     bool init();
 
@@ -66,7 +67,6 @@ private:
 
 private:
     bool                                    shutdown_{false};
-    // ThreadPool                              pool_{nullptr};
     std::unique_ptr<ThreadPool>             pool_{nullptr};
     TaskContainer                           tasks_;
     TaskQueue                               taskQueue_;

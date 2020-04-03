@@ -44,8 +44,7 @@ void AdminTaskManager::addAsyncTask(std::shared_ptr<AdminTask> task) {
 }
 
 nebula::kvstore::ResultCode
-AdminTaskManager::cancelTask(int jobId) {
-    LOG(INFO) << "AdminTaskManager::cancelTask() jobId=" << jobId;
+AdminTaskManager::cancelJob(int jobId) {
     auto ret = ResultCode::ERR_KEY_NOT_FOUND;
     auto it = tasks_.begin();
     while (it != tasks_.end()) {
@@ -57,6 +56,22 @@ AdminTaskManager::cancelTask(int jobId) {
             ret = kvstore::ResultCode::SUCCEEDED;
         }
         ++it;
+    }
+    return ret;
+}
+
+nebula::kvstore::ResultCode
+AdminTaskManager::cancelTask(int jobId, int taskId) {
+    if (taskId < 0) {
+        return cancelJob(jobId);
+    }
+    auto ret = ResultCode::SUCCEEDED;
+    TaskHandle handle = std::make_pair(jobId, taskId);
+    auto it = tasks_.find(handle);
+    if (it == tasks_.cend()) {
+        ret = ResultCode::ERR_KEY_NOT_FOUND;
+    } else {
+        it->second->task_->cancel();
     }
     return ret;
 }

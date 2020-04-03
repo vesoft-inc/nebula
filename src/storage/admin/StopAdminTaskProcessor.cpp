@@ -13,7 +13,7 @@ namespace storage {
 
 void StopAdminTaskProcessor::process(const cpp2::StopAdminTaskRequest& req) {
     auto taskManager = AdminTaskManager::instance();
-    auto rc = taskManager->cancelTask(req.get_job_id());
+    auto rc = taskManager->cancelJob(req.get_job_id());
 
     if (rc != kvstore::ResultCode::SUCCEEDED) {
         cpp2::ResultCode thriftRet;
