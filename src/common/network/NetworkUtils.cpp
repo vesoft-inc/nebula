@@ -198,11 +198,11 @@ std::string NetworkUtils::intToIPv4(IPv4 ip) {
 StatusOr<InetAddress> NetworkUtils::toInetAddress(const std::string& ip, uint16_t port) {
     try {
         return InetAddress{ip, port};
-    } catch (const std::exception& e) {
+    } catch (const std::exception& e1) {
         try {
             return InetAddress{ip, port, true};
-        } catch (const std::exception& e) {
-            return Status::Error("Bad ip format: %s", e.what());
+        } catch (const std::exception& e2) {
+            return Status::Error("Bad ip format: %s", e2.what());
         }
     }
 }
@@ -230,12 +230,12 @@ StatusOr<std::vector<InetAddress>> NetworkUtils::toHosts(const std::string& peer
 
         try {
             hosts.emplace_back(ipStr, port);
-        } catch (const std::exception& e) {
+        } catch (const std::exception& e1) {
             try {
                 LOG(INFO) << "will resolve host: " << ipStr;
                 hosts.emplace_back(ipStr, port, true);
-            } catch (const std::exception& e) {
-                return Status::Error("Bad ip format: %s", e.what());
+            } catch (const std::exception& e2) {
+                return Status::Error("Bad ip format: %s", e2.what());
             }
         }
     }

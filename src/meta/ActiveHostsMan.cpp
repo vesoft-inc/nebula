@@ -114,7 +114,7 @@ kvstore::ResultCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
                     break;
                 }
             }
-                // pass
+                // fallthrough
             case kvstore::ERR_KEY_NOT_FOUND:
                 data.emplace_back(hostName, hostAddr.encode());
                 break;

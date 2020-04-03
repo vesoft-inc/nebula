@@ -29,19 +29,19 @@ TEST(ActiveHostsManTest, NormalTest) {
     ASSERT_EQ(3, ActiveHostsMan::getActiveHosts(kv.get()).size());
 
     ActiveHostsMan::updateHostInfo(
-        kv.get(), network::InetAddress(0, 0), "localhost0", HostInfo(now + 2000));
+        kv.get(), network::InetAddress(0, 3), "localhost0", HostInfo(now + 2000));
     ASSERT_EQ(3, ActiveHostsMan::getActiveHosts(kv.get()).size());
     {
         const auto& prefix = MetaServiceUtils::hostPrefix();
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
         CHECK_EQ(kvstore::ResultCode::SUCCEEDED, ret);
-        int i = 0;
+        int i = 1;
         while (iter->valid()) {
             auto host = MetaServiceUtils::parseHostKey(iter->key());
             HostInfo info = HostInfo::decode(iter->val());
             ASSERT_EQ(network::InetAddress(0, i), network::InetAddress(host.ip, host.port));
-            if (i == 0) {
+            if (i == 3) {
                 ASSERT_EQ(HostInfo(now + 2000), info);
             } else {
                 ASSERT_EQ(HostInfo(now), info);
@@ -49,7 +49,7 @@ TEST(ActiveHostsManTest, NormalTest) {
             iter->next();
             i++;
         }
-        ASSERT_EQ(3, i);
+        ASSERT_EQ(4, i);
     }
 
     sleep(3);
