@@ -6,9 +6,7 @@
 
 #pragma once
 
-#include <stdlib.h>
-#include <functional>
-#include <string>
+#include <base/Base.h>
 
 namespace nebula {
 
@@ -87,7 +85,7 @@ public:
 
         // Last block
         str.append(tail_,
-            len_ % kBlockContentSize == 0 ? kBlockContentSize : len_ % kBlockContentSize);
+                   len_ % kBlockContentSize == 0 ? kBlockContentSize : len_ % kBlockContentSize);
 
         return len_;
     }
@@ -110,8 +108,7 @@ public:
             std::min(len, static_cast<size_t>(kBlockContentSize - len_ % kBlockContentSize));
         if (isFull()) {
             allocateBlock();
-            bytesToWrite =
-                std::min(len, static_cast<size_t>(kBlockContentSize));
+            bytesToWrite = std::min(len, static_cast<size_t>(kBlockContentSize));
         }
         memcpy(tail_ + len_ % kBlockContentSize, value, bytesToWrite);
         len_ += bytesToWrite;
@@ -195,13 +192,18 @@ public:
     }
 
 private:
+    // Disable dynamic allocation
+    void* operator new(std::size_t) = delete;
+
     // Is the capacity full filled
     bool isFull() const {
         return len_ != 0 && len_ % kBlockContentSize == 0;
     }
 
     // Is there only inline allocation
-    bool isInline() const { return len_ < kBlockContentSize; }
+    bool isInline() const {
+        return len_ < kBlockContentSize;
+    }
 
     // return next block pointer
     char* next(char* p) const {
@@ -236,4 +238,4 @@ private:
     char inlineBlock_[kBlockSize];
 };
 
-}  // namespace nebula
+}   // namespace nebula
