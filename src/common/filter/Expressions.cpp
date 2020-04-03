@@ -615,8 +615,6 @@ std::string columnTypeToString(ColumnType type) {
             return "string";
         case ColumnType::DOUBLE:
             return "double";
-        case ColumnType::BIGINT:
-            return "bigint";
         case ColumnType::BOOL:
             return "bool";
         case ColumnType::TIMESTAMP:
@@ -656,8 +654,6 @@ OptVariantType TypeCastingExpression::eval(Getters &getters) const {
             return Expression::toDouble(result.value());
         case ColumnType::BOOL:
             return Expression::toBool(result.value());
-        case ColumnType::BIGINT:
-            return Status::Error("Type bigint not supported yet");
     }
     LOG(FATAL) << "casting to unknown type: " << static_cast<int>(type_);
 }

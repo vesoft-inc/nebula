@@ -184,6 +184,9 @@ kvstore::ResultCode IndexExecutor<RESP>::getVertexRow(PartitionID partId,
         if (result.ok()) {
             auto v = std::move(result).value();
             auto reader = RowReader::getTagPropReader(schemaMan_, v, spaceId_, tagOrEdge_);
+            if (reader == nullptr) {
+                return kvstore::ResultCode::ERR_CORRUPT_DATA;
+            }
             auto row = getRowFromReader(reader.get());
             data->set_props(std::move(row));
             VLOG(3) << "Hit cache for vId " << vId << ", tagId " << tagOrEdge_;
@@ -204,6 +207,9 @@ kvstore::ResultCode IndexExecutor<RESP>::getVertexRow(PartitionID partId,
                                                   iter->val(),
                                                   spaceId_,
                                                   tagOrEdge_);
+        if (reader == nullptr) {
+            return kvstore::ResultCode::ERR_CORRUPT_DATA;
+        }
         auto row = getRowFromReader(reader.get());
         data->set_props(std::move(row));
         if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
