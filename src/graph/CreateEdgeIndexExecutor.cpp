@@ -31,14 +31,16 @@ void CreateEdgeIndexExecutor::execute() {
     auto *edgeName = sentence_->edgeName();
     auto columns = sentence_->names();
     auto spaceId = ectx()->rctx()->session()->space();
-    if (columns.empty()) {
+    if (UNLIKELY(columns.empty())) {
+        // It's not allowed by parser in normal
+        LOG(WARNING) << "Impossible empty index fields.";
         onError_(Status::MalformedRequest("Empty fields."));
         return;
     }
     std::unordered_set<std::string> uniFields;
     uniFields.reserve(columns.size());
     uniFields.insert(columns.begin(), columns.end());
-    if (uniFields.size() != columns.size()) {
+    if (UNLIKELY(uniFields.size() != columns.size())) {
         onError_(Status::MalformedRequest("Duplicate fields."));
         return;
     }

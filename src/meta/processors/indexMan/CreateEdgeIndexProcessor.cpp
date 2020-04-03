@@ -13,7 +13,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq &req) {
     const auto &indexName = req.get_index_name();
     auto &edgeName = req.get_edge_name();
     auto &fieldNames = req.get_fields();
-    if (fieldNames.empty()) {
+    if (UNLIKELY(fieldNames.empty())) {
         LOG(ERROR) << "The index field of an edge type should not be empty.";
         handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
         onFinished();
@@ -21,7 +21,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq &req) {
     }
 
     std::set<std::string> columnSet(fieldNames.begin(), fieldNames.end());
-    if (fieldNames.size() != columnSet.size()) {
+    if (UNLIKELY(fieldNames.size() != columnSet.size())) {
         LOG(ERROR) << "Conflict field in the edge index.";
         handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
         onFinished();
