@@ -95,9 +95,7 @@ void MetaServerBasedPartManager::onSpaceOptionUpdated(
     static std::unordered_set<std::string> supportedOpt = {
         "disable_auto_compactions",
         "max_write_buffer_number",
-        // TODO: write_buffer_size will cause rocksdb crash
-        // "write_buffer_size",
-        "compression",
+        "write_buffer_size",
         "level0_file_num_compaction_trigger",
         "level0_slowdown_writes_trigger",
         "level0_stop_writes_trigger",
@@ -105,16 +103,11 @@ void MetaServerBasedPartManager::onSpaceOptionUpdated(
         "target_file_size_multiplier",
         "max_bytes_for_level_base",
         "max_bytes_for_level_multiplier",
-        "ttl",
-        "block_size",
-        "block_restart_interval"
     };
     static std::unordered_set<std::string> supportedDbOpt = {
         "max_total_wal_size",
         "delete_obsolete_files_period_micros",
         "max_background_jobs",
-        "base_background_compactions",
-        "max_background_compactions",
         "stats_dump_period_sec",
         "compaction_readahead_size",
         "writable_file_max_buffer_size",

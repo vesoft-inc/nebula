@@ -6,7 +6,7 @@
 
 #include "kvstore/Part.h"
 #include "kvstore/LogEncoder.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include "kvstore/RocksEngineConfig.h"
 
 DEFINE_int32(cluster_id, 0, "A unique id for each cluster");
@@ -292,7 +292,7 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
             break;
         }
         default: {
-            LOG(FATAL) << idStr_ << "Unknown operation: " << static_cast<uint8_t>(log[0]);
+            LOG(WARNING) << idStr_ << "Unknown operation: " << static_cast<int32_t>(log[0]);
         }
         }
 

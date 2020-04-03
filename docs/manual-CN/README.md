@@ -127,7 +127,7 @@
       * [Revoke](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/revoke-syntax.md)
     * 服务器配置
       * [服务器配置](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/configs-syntax.md)
-      * [RocksDB Compaction 和 Flush](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/rocksdb-compaction-flush.md)
+      <!-- * [RocksDB Compaction 和 Flush](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/rocksdb-compaction-flush.md) -->
       * [日志](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/log.md)
     * 计算服务相关运维
       * [计算层运行统计 (metrics)](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/graph-service-administration/graph-metrics.md)
@@ -155,7 +155,7 @@
 ## 附录
 
 * [Gremlin VS nGQL](5.appendix/gremlin-ngql.md)
-* [Cypher V.S. nGQL](5.appendix/cypher-ngql.md)
+* [Cypher VS nGQL](5.appendix/cypher-ngql.md)
 
 ## 其他
 
