@@ -39,7 +39,7 @@ void AdminJobExecutor::execute() {
         paras.emplace_back(ectx()->rctx()->session()->spaceName());
     }
 
-    folly::Optional<AdminCmd> optAdminCmd{folly::none};
+    folly::Optional<AdminCmd> optAdminCmd;
     if (opEnum == nebula::meta::cpp2::AdminJobOp::ADD) {
         optAdminCmd = toAdminCmd(paras[0]);
     }
