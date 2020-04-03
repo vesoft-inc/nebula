@@ -7,6 +7,7 @@
 #include "base/Base.h"
 #include "graph/InsertEdgeExecutor.h"
 #include "storage/client/StorageClient.h"
+#include "graph/SchemaHelper.h"
 
 namespace nebula {
 namespace graph {
@@ -175,7 +176,7 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
                 if (!checkValueType(schemaType, value)) {
                     LOG(ERROR) << "ValueType is wrong, schema type "
                                << static_cast<int32_t>(schemaType.type)
-                                << ", input type " <<  value.which();
+                               << ", input type " <<  value.which();
                     return Status::Error("ValueType is wrong");
                 }
             } else {
@@ -190,7 +191,7 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
             }
 
             if (schemaType.type == nebula::cpp2::SupportedType::TIMESTAMP) {
-                auto timestamp = toTimestamp(value);
+                auto timestamp = SchemaHelper::toTimestamp(value);
                 if (!timestamp.ok()) {
                     return timestamp.status();
                 }

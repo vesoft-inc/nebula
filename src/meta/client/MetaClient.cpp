@@ -263,6 +263,7 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
         return false;
     }
 
+    allEdgeMap[spaceId] = {};
     auto tagItemVec = tagRet.value();
     auto edgeItemVec = edgeRet.value();
     TagSchemas tagSchemas;
@@ -301,18 +302,11 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
         edgeSchemas.emplace(std::make_pair(edgeIt.edge_type, edgeIt.version), schema);
         edgeNameTypeMap.emplace(std::make_pair(spaceId, edgeIt.edge_name), edgeIt.edge_type);
         edgeTypeNameMap.emplace(std::make_pair(spaceId, edgeIt.edge_type), edgeIt.edge_name);
-        auto it = allEdgeMap.find(spaceId);
-        if (it == allEdgeMap.end()) {
-            std::vector<std::string> v = {edgeIt.edge_name};
-            allEdgeMap.emplace(spaceId, std::move(v));
-            edges.emplace(spaceId, edgeIt.edge_type);
-        } else {
-            if (edges.find({spaceId, edgeIt.edge_type}) != edges.cend()) {
-                continue;
-            }
-            edges.emplace(spaceId, edgeIt.edge_type);
-            it->second.emplace_back(edgeIt.edge_name);
+        if (edges.find({spaceId, edgeIt.edge_type}) != edges.cend()) {
+            continue;
         }
+        edges.emplace(spaceId, edgeIt.edge_type);
+        allEdgeMap[spaceId].emplace_back(edgeIt.edge_name);
         // get the latest edge version
         auto it2 = newestEdgeVerMap.find(std::make_pair(spaceId, edgeIt.edge_type));
         if (it2 != newestEdgeVerMap.end()) {
@@ -703,7 +697,7 @@ MetaClient::submitJob(cpp2::AdminJobOp op, std::vector<std::string> paras) {
                     return client->future_runAdminJob(request);
                 }, [] (cpp2::AdminJobResp&& resp) -> decltype(auto) {
                     return resp.get_result();
-                }, std::move(promise));
+                }, std::move(promise), true);
     return future;
 }
 
