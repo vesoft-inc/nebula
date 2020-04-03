@@ -9,9 +9,7 @@
 namespace nebula {
 namespace meta {
 
-void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
-    auto space = req.get_space_id();
-    CHECK_SPACE_ID_AND_RETURN(space);
+void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq &req) {
     const auto &indexName = req.get_index_name();
     auto &edgeName = req.get_edge_name();
     auto &fieldNames = req.get_fields();
@@ -29,6 +27,9 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
         onFinished();
         return;
     }
+
+    auto space = req.get_space_id();
+    CHECK_SPACE_ID_AND_RETURN(space);
 
     folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeIndexLock());
     auto ret = getIndexID(space, indexName);
@@ -62,17 +63,18 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
 
     auto latestEdgeSchema = retSchema.value();
     if (tagOrEdgeHasTTL(latestEdgeSchema)) {
-       LOG(ERROR) << "Edge: " << edgeName  << " has ttl, not create index";
-       handleErrorCode(cpp2::ErrorCode::E_INDEX_WITH_TTL);
-       onFinished();
-       return;
+        LOG(ERROR) << "Edge: " << edgeName << " has ttl, not create index";
+        handleErrorCode(cpp2::ErrorCode::E_INDEX_WITH_TTL);
+        onFinished();
+        return;
     }
 
     auto fields = getLatestEdgeFields(latestEdgeSchema);
     std::vector<nebula::cpp2::ColumnDef> columns;
     for (auto &field : fieldNames) {
-        auto iter = std::find_if(std::begin(fields), std::end(fields),
-                                 [field](const auto& pair) { return field == pair.first; });
+        auto iter = std::find_if(std::begin(fields), std::end(fields), [field](const auto &pair) {
+            return field == pair.first;
+        });
 
         if (iter == fields.end()) {
             LOG(ERROR) << "Field " << field << " not found in Edge " << edgeName;
@@ -108,7 +110,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     item.set_fields(std::move(columns));
 
     data.emplace_back(MetaServiceUtils::indexIndexKey(space, indexName),
-                      std::string(reinterpret_cast<const char*>(&edgeIndex), sizeof(IndexID)));
+                      std::string(reinterpret_cast<const char *>(&edgeIndex), sizeof(IndexID)));
     data.emplace_back(MetaServiceUtils::indexKey(space, edgeIndex),
                       MetaServiceUtils::indexVal(item));
     LOG(INFO) << "Create Edge Index " << indexName << ", edgeIndex " << edgeIndex;
@@ -116,6 +118,5 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     doSyncPutAndUpdate(std::move(data));
 }
 
-}  // namespace meta
-}  // namespace nebula
-
+}   // namespace meta
+}   // namespace nebula
