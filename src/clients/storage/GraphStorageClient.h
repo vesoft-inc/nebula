@@ -12,6 +12,9 @@
 #include "interface/gen-cpp2/GraphStorageServiceAsyncClient.h"
 #include "clients/storage/StorageClientBase.h"
 
+DEFINE_int32(storage_client_timeout_ms, 60 * 1000, "storage client timeout");
+
+
 namespace nebula {
 namespace storage {
 
@@ -34,10 +37,10 @@ public:
     folly::SemiFuture<StorageRpcResponse<cpp2::GetNeighborsResponse>> getNeighbors(
         GraphSpaceID space,
         std::vector<VertexID> vertices,
-        std::vector<EdgeType> edgeTypes,
-        std::vector<cpp2::VertexProp> vertexProps,
-        std::vector<cpp2::EdgeProp> edgeProps,
-        std::vector<cpp2::StatProp> statProps,
+        const std::vector<EdgeType>& edgeTypes,
+        const std::vector<cpp2::VertexProp>& vertexProps,
+        const std::vector<cpp2::EdgeProp>& edgeProps,
+        const std::vector<cpp2::StatProp>& statProps,
         std::string filter,
         folly::EventBase* evb = nullptr);
 
@@ -99,6 +102,22 @@ public:
         GraphSpaceID space,
         const std::string& name,
         folly::EventBase* evb = nullptr);
+
+    folly::SemiFuture<StorageRpcResponse<cpp2::LookUpVertexIndexResp>>
+    lookUpVertexIndex(
+        GraphSpaceID space,
+        IndexID indexId,
+        std::string filter,
+        std::vector<std::string> returnCols,
+        folly::EventBase *evb = nullptr);
+
+    folly::SemiFuture<StorageRpcResponse<cpp2::LookUpEdgeIndexResp>>
+    lookUpEdgeIndex(
+        GraphSpaceID space,
+        IndexID indexId,
+        std::string filter,
+        std::vector<std::string> returnCols,
+        folly::EventBase *evb = nullptr);
 };
 
 }   // namespace storage

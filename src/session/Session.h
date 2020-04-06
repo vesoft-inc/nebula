@@ -8,7 +8,7 @@
 
 #include "base/Base.h"
 #include "time/Duration.h"
-#include "interface/gen-cpp2/common_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
 namespace session {
@@ -67,21 +67,21 @@ public:
         return ret->second;
     }
 
-    Role toRole(nebula::cpp2::RoleType role) {
+    Role toRole(nebula::meta::cpp2::RoleType role) {
         switch (role) {
-            case nebula::cpp2::RoleType::GOD : {
+            case nebula::meta::cpp2::RoleType::GOD : {
                 return Role::GOD;
             }
-            case nebula::cpp2::RoleType::ADMIN : {
+            case nebula::meta::cpp2::RoleType::ADMIN : {
                 return Role::ADMIN;
             }
-            case nebula::cpp2::RoleType::DBA : {
+            case nebula::meta::cpp2::RoleType::DBA : {
                 return Role::DBA;
             }
-            case nebula::cpp2::RoleType::USER : {
+            case nebula::meta::cpp2::RoleType::USER : {
                 return Role::USER;
             }
-            case nebula::cpp2::RoleType::GUEST : {
+            case nebula::meta::cpp2::RoleType::GUEST : {
                 return Role::GUEST;
             }
         }

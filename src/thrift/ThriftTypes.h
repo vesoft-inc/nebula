@@ -20,9 +20,6 @@ using LogID = int64_t;
 using IPv4 = int32_t;
 using Port = int32_t;
 
-using TagIndexID = int32_t;
-using EdgeIndexID = int32_t;
-
 // Starting from 2.0, both string and int64 vertex ids will be supported.
 //
 // The string id must be fixed-length (the length of the id will be specified
@@ -38,7 +35,6 @@ using EdgeRanking = int64_t;
 using EdgeVersion = int64_t;
 using SchemaVer = int64_t;
 using IndexID = int32_t;
-using UserID = int32_t;
 using Timestamp = int64_t;
 
 

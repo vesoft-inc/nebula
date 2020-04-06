@@ -12,13 +12,13 @@ namespace storage {
 
 folly::SemiFuture<StorageRpcResponse<cpp2::KVGetResponse>>
 GeneralStorageClient::get(GraphSpaceID space,
-                          std::vector<std::string> keys,
+                          std::vector<std::string>&& keys,
+                          bool returnPartly,
                           folly::EventBase* evb) {
-    auto status = clusterIdsToHosts(space,
-                                    std::move(keys),
-                                    [] (const std::string& v) -> const std::string& {
-        return v;
-    });
+    auto status = clusterIdsToHosts(
+        space, std::move(keys), [] (const std::string& v) -> const std::string& {
+            return v;
+        });
 
     if (!status.ok()) {
         return folly::makeFuture<StorageRpcResponse<cpp2::KVGetResponse>>(
@@ -32,6 +32,7 @@ GeneralStorageClient::get(GraphSpaceID space,
         auto& req = requests[host];
         req.set_space_id(space);
         req.set_parts(std::move(c.second));
+        req.set_return_partly(returnPartly);
     }
 
     return collectResponse(
@@ -40,6 +41,9 @@ GeneralStorageClient::get(GraphSpaceID space,
         [] (cpp2::GeneralStorageServiceAsyncClient* client,
             const cpp2::KVGetRequest& r) {
             return client->future_get(r);
+        },
+        [](const std::pair<const PartitionID, std::vector<std::string>>& p) {
+            return p.first;
         });
 }
 
@@ -74,6 +78,9 @@ GeneralStorageClient::put(GraphSpaceID space,
         [] (cpp2::GeneralStorageServiceAsyncClient* client,
             const cpp2::KVPutRequest& r) {
             return client->future_put(r);
+        },
+        [](const std::pair<const PartitionID, std::vector<KeyValue>>& p) {
+            return p.first;
         });
 }
 

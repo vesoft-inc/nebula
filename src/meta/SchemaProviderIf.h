@@ -22,7 +22,7 @@ public:
         virtual ~Field() = default;
 
         virtual const char* name() const = 0;
-        virtual const cpp2::PropertyType type() const = 0;
+        virtual cpp2::PropertyType type() const = 0;
         virtual bool nullable() const = 0;
         virtual bool hasDefault() const = 0;
         virtual const Value& defaultValue() const = 0;
@@ -105,8 +105,8 @@ public:
     virtual int64_t getFieldIndex(const folly::StringPiece name) const = 0;
     virtual const char* getFieldName(int64_t index) const = 0;
 
-    virtual const cpp2::PropertyType getFieldType(int64_t index) const = 0;
-    virtual const cpp2::PropertyType getFieldType(const folly::StringPiece name)
+    virtual cpp2::PropertyType getFieldType(int64_t index) const = 0;
+    virtual cpp2::PropertyType getFieldType(const folly::StringPiece name)
         const = 0;
 
     virtual const Field* field(int64_t index) const = 0;

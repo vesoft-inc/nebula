@@ -15,6 +15,9 @@
 #include "thrift/ThriftClientManager.h"
 #include "clients/meta/MetaClient.h"
 
+DECLARE_int32(storage_client_timeout_ms);
+
+
 namespace nebula {
 namespace storage {
 
@@ -36,10 +39,11 @@ public:
         return maxLatency_;
     }
 
-    void setLatency(int32_t latency) {
+    void setLatency(HostAddr host, int32_t latency, int32_t e2eLatency) {
         if (latency > maxLatency_) {
             maxLatency_ = latency;
         }
+        hostLatency_.emplace_back(std::make_tuple(host, latency, e2eLatency));
     }
 
     void markFailure() {
@@ -49,7 +53,8 @@ public:
 
     // A value between [0, 100], representing a precentage
     int32_t completeness() const {
-        return (totalReqsSent_ - failedReqs_) * 100 / totalReqsSent_;
+        DCHECK_NE(totalReqsSent_, 0);
+        return totalReqsSent_ == 0 ? 0 : (totalReqsSent_ - failedReqs_) * 100 / totalReqsSent_;
     }
 
     std::unordered_map<PartitionID, storage::cpp2::ErrorCode>& failedParts() {
@@ -60,6 +65,10 @@ public:
         return responses_;
     }
 
+    const std::vector<std::tuple<HostAddr, int32_t, int32_t>>& hostLatency() const {
+        return hostLatency_;
+    }
+
 private:
     const size_t totalReqsSent_;
     size_t failedReqs_{0};
@@ -68,6 +77,7 @@ private:
     std::unordered_map<PartitionID, storage::cpp2::ErrorCode> failedParts_;
     int32_t maxLatency_{0};
     std::vector<Response> responses_;
+    std::vector<std::tuple<HostAddr, int32_t, int32_t>> hostLatency_;
 };
 
 
@@ -81,26 +91,31 @@ protected:
                       meta::MetaClient* metaClient);
     virtual ~StorageClientBase();
 
+    virtual void loadLeader() const;
     const HostAddr getLeader(const meta::PartHosts& partHosts) const;
     void updateLeader(GraphSpaceID spaceId, PartitionID partId, const HostAddr& leader);
     void invalidLeader(GraphSpaceID spaceId, PartitionID partId);
 
     template<class Request,
              class RemoteFunc,
+             class GetPartIDFunc,
              class Response =
-                typename std::result_of<RemoteFunc(ClientType*, const Request&)>
-                    ::type::value_type
+                typename std::result_of<
+                    RemoteFunc(ClientType*, const Request&)
+                >::type::value_type
             >
     folly::SemiFuture<StorageRpcResponse<Response>> collectResponse(
         folly::EventBase* evb,
         std::unordered_map<HostAddr, Request> requests,
-        RemoteFunc&& remoteFunc);
+        RemoteFunc&& remoteFunc,
+        GetPartIDFunc getPartIDFunc);
 
     template<class Request,
              class RemoteFunc,
              class Response =
-                typename std::result_of<RemoteFunc(ClientType* client, const Request&)>
-                    ::type::value_type
+                typename std::result_of<
+                    RemoteFunc(ClientType* client, const Request&)
+                >::type::value_type
             >
     folly::Future<StatusOr<Response>> getResponse(
             folly::EventBase* evb,
@@ -129,6 +144,9 @@ protected:
         return metaClient_->getPartHostsFromCache(spaceId, partId);
     }
 
+    virtual StatusOr<std::unordered_map<HostAddr, std::vector<PartitionID>>>
+    getHostParts(GraphSpaceID spaceId) const;
+
 protected:
     meta::MetaClient* metaClient_{nullptr};
 
@@ -138,6 +156,8 @@ private:
 
     mutable folly::RWSpinLock leadersLock_;
     mutable std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr> leaders_;
+    mutable std::atomic_bool loadLeaderBefore_{false};
+    mutable std::atomic_bool isLoadingLeader_{false};
 };
 
 }   // namespace storage

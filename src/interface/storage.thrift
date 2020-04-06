@@ -9,6 +9,7 @@ namespace java com.vesoft.nebula.storage
 namespace go nebula.storage
 
 include "common.thrift"
+include "meta.thrift"
 
 /*
  *
@@ -410,6 +411,44 @@ struct GetUUIDResp {
  */
 
 
+/*
+ * Start of Index section
+ */
+struct VertexIndexData {
+    1: common.VertexID              id,
+    2: optional list<common.Value>  props,
+}
+
+struct EdgeIndexData {
+    1: EdgeKey                      edge,
+    2: optional list<common.Value>  props,
+}
+
+struct LookUpVertexIndexResp {
+    1: required ResponseCommon          result,
+    2: optional list<VertexIndexData>   rows,
+}
+
+struct LookUpEdgeIndexResp {
+    1: required ResponseCommon          result,
+    2: optional list<EdgeIndexData>     rows,
+}
+
+struct LookUpIndexRequest {
+    1: common.GraphSpaceID      space_id,
+    2: list<common.PartitionID> parts,
+    3: common.IndexID           index_id,
+    4: binary                   filter,
+    // We only support specified fields here, not wild card "*"
+    // If the list is empty, only the VertexID or the EdgeKey will
+    // be returned
+    5: list<binary>             return_columns,
+}
+/*
+ * End of GetUUID section
+ */
+
+
 service GraphStorageService {
     GetNeighborsResponse getNeighbors(1: GetNeighborsRequest req)
 
@@ -428,6 +467,10 @@ service GraphStorageService {
     UpdateResponse updateEdge(1: UpdateEdgeRequest req);
 
     GetUUIDResp getUUID(1: GetUUIDReq req);
+
+    // Interfaces for edge and vertex index scan
+    LookUpVertexIndexResp lookUpVertexIndex(1: LookUpIndexRequest req);
+    LookUpEdgeIndexResp   lookUpEdgeIndex(1: LookUpIndexRequest req);
 }
 
 
@@ -523,6 +566,14 @@ struct CheckPeersReq {
 }
 
 
+//struct RebuildIndexRequest {
+//    1: common.GraphSpaceID          space_id,
+//    2: list<common.PartitionID>     parts,
+//    3: common.IndexID               index_id,
+//    4: bool                         is_offline,
+//}
+
+
 service StorageAdminService {
     // Interfaces for admin operations
     AdminExecResp transLeader(1: TransLeaderReq req);
@@ -536,6 +587,10 @@ service StorageAdminService {
     AdminExecResp createCheckpoint(1: CreateCPRequest req);
     AdminExecResp dropCheckpoint(1: DropCPRequest req);
     AdminExecResp blockingWrites(1: BlockingSignRequest req);
+
+    // Interfaces for rebuild index
+//    AdminExecResp rebuildTagIndex(1: RebuildIndexRequest req);
+//    AdminExecResp rebuildEdgeIndex(1: RebuildIndexRequest req);
 
     // Return all leader partitions on this host
     GetLeaderPartsResp getLeaderParts();
@@ -553,6 +608,9 @@ struct KVGetRequest {
     1: common.GraphSpaceID space_id,
     2: map<common.PartitionID, list<binary>>(
         cpp.template = "std::unordered_map") parts,
+    // When return_partly is true and some of the keys not found, will return the keys
+    // which exist
+    3: bool return_partly
 }
 
 

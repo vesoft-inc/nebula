@@ -37,6 +37,8 @@ typedef binary (cpp.type = "nebula::VertexID") VertexID
 
 typedef i64 (cpp.type = "nebula::Timestamp") Timestamp
 
+typedef i32 (cpp.type = "nebula::IndexID") IndexID
+
 typedef i32 (cpp.type = "nebula::IPv4") IPv4
 typedef i32 (cpp.type = "nebula::Port") Port
 

@@ -45,7 +45,7 @@ ServerBasedSchemaManager::getTagSchema(GraphSpaceID space, TagID tag, SchemaVer 
 StatusOr<SchemaVer> ServerBasedSchemaManager::getNewestTagSchemaVer(GraphSpaceID space,
                                                                     TagID tag) {
     CHECK(metaClient_);
-    return  metaClient_->getNewestTagVerFromCache(space, tag);
+    return  metaClient_->getLatestTagVersionFromCache(space, tag);
 }
 
 std::shared_ptr<const SchemaProviderIf>
@@ -73,7 +73,7 @@ ServerBasedSchemaManager::getEdgeSchema(GraphSpaceID space, EdgeType edge, Schem
 StatusOr<SchemaVer> ServerBasedSchemaManager::getNewestEdgeSchemaVer(GraphSpaceID space,
                                                                      EdgeType edge) {
     CHECK(metaClient_);
-    return  metaClient_->getNewestEdgeVerFromCache(space, edge);
+    return  metaClient_->getLatestEdgeVersionFromCache(space, edge);
 }
 
 StatusOr<GraphSpaceID> ServerBasedSchemaManager::toGraphSpaceID(folly::StringPiece spaceName) {

@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "common/encryption/MD5Utils.h"
+#include "encryption/MD5Utils.h"
 
 namespace nebula {
 namespace encryption {

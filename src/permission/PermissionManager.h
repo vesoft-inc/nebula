@@ -9,10 +9,10 @@
 
 #include "base/Base.h"
 #include "session/Session.h"
-#include "meta/client/MetaClient.h"
-#include "parser/Sentence.h"
-#include "parser/UserSentences.h"
-#include "parser/AdminSentences.h"
+#include "clients/meta/MetaClient.h"
+// #include "parser/Sentence.h"
+// #include "parser/UserSentences.h"
+// #include "parser/AdminSentences.h"
 #include "graph/GraphFlags.h"
 
 namespace nebula {
@@ -31,9 +31,9 @@ public:
                              GraphSpaceID spaceId,
                              const std::string& targetUser);
     static bool canWriteData(session::Session *session);
-    static bool canShow(session::Session *session,
-                        ShowSentence::ShowType type,
-                        GraphSpaceID targetSpace = -1);
+//    static bool canShow(session::Session *session,
+//                        ShowSentence::ShowType type,
+//                        GraphSpaceID targetSpace = -1);
 };
 }  // namespace permission
 }  // namespace nebula

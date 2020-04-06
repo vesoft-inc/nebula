@@ -34,7 +34,8 @@ public:
 
     folly::SemiFuture<StorageRpcResponse<cpp2::KVGetResponse>> get(
         GraphSpaceID space,
-        std::vector<std::string> keys,
+        std::vector<std::string>&& keys,
+        bool returnPartly = false,
         folly::EventBase* evb = nullptr);
 
     folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> put(

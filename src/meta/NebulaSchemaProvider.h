@@ -38,7 +38,7 @@ public:
             return name_.c_str();
         }
 
-        const cpp2::PropertyType type() const override {
+        cpp2::PropertyType type() const override {
             return type_;
         }
 
@@ -83,8 +83,8 @@ public:
     int64_t getFieldIndex(const folly::StringPiece name) const override;
     const char* getFieldName(int64_t index) const override;
 
-    const cpp2::PropertyType getFieldType(int64_t index) const override;
-    const cpp2::PropertyType getFieldType(const folly::StringPiece name) const override;
+    cpp2::PropertyType getFieldType(int64_t index) const override;
+    cpp2::PropertyType getFieldType(const folly::StringPiece name) const override;
 
     const SchemaProviderIf::Field* field(int64_t index) const override;
     const SchemaProviderIf::Field* field(const folly::StringPiece name) const override;

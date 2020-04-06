@@ -51,7 +51,7 @@ const char* NebulaSchemaProvider::getFieldName(int64_t index) const {
 }
 
 
-const cpp2::PropertyType NebulaSchemaProvider::getFieldType(int64_t index) const {
+cpp2::PropertyType NebulaSchemaProvider::getFieldType(int64_t index) const {
     if (UNLIKELY(index < 0) || UNLIKELY(index >= static_cast<int64_t>(fields_.size()))) {
         LOG(ERROR) << "Index[" << index << "] is out of range[0-" << fields_.size() << "]";
         return cpp2::PropertyType::UNKNOWN;
@@ -61,7 +61,7 @@ const cpp2::PropertyType NebulaSchemaProvider::getFieldType(int64_t index) const
 }
 
 
-const cpp2::PropertyType NebulaSchemaProvider::getFieldType(const folly::StringPiece name)
+cpp2::PropertyType NebulaSchemaProvider::getFieldType(const folly::StringPiece name)
         const {
     auto it = fieldNameIndex_.find(name.toString());
     if (UNLIKELY(fieldNameIndex_.end() == it)) {
