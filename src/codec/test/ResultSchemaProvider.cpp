@@ -29,14 +29,14 @@ const char* ResultSchemaProvider::ResultSchemaField::name() const {
 }
 
 
-const PropertyType ResultSchemaProvider::ResultSchemaField::type() const {
+PropertyType ResultSchemaProvider::ResultSchemaField::type() const {
     DCHECK(!!column_);
     return column_->get_type();
 }
 
 
-bool ResultSchemaProvider::ResultSchemaField::isValid() const {
-    return column_ != nullptr;
+bool ResultSchemaProvider::ResultSchemaField::nullable() const {
+    LOG(FATAL) << "Not Supported";
 }
 
 
@@ -47,6 +47,14 @@ bool ResultSchemaProvider::ResultSchemaField::hasDefault() const {
 
 const Value& ResultSchemaProvider::ResultSchemaField::defaultValue() const {
     LOG(FATAL) << "Not Supported";
+}
+
+size_t ResultSchemaProvider::ResultSchemaField::size() const {
+    return 0;
+}
+
+size_t ResultSchemaProvider::ResultSchemaField::offset() const {
+    return 0;
 }
 
 
@@ -88,7 +96,7 @@ const char* ResultSchemaProvider::getFieldName(int64_t index) const {
 }
 
 
-const PropertyType ResultSchemaProvider::getFieldType(int64_t index) const {
+PropertyType ResultSchemaProvider::getFieldType(int64_t index) const {
     if (index < 0 || index >= static_cast<int64_t>(columns_.size())) {
         return PropertyType::UNKNOWN;
     }
@@ -97,7 +105,7 @@ const PropertyType ResultSchemaProvider::getFieldType(int64_t index) const {
 }
 
 
-const PropertyType ResultSchemaProvider::getFieldType(const folly::StringPiece name) const {
+PropertyType ResultSchemaProvider::getFieldType(const folly::StringPiece name) const {
     auto index = getFieldIndex(name);
     if (index < 0) {
         return PropertyType::UNKNOWN;
@@ -106,22 +114,23 @@ const PropertyType ResultSchemaProvider::getFieldType(const folly::StringPiece n
 }
 
 
-std::shared_ptr<const meta::SchemaProviderIf::Field>
-ResultSchemaProvider::field(int64_t index) const {
+const meta::SchemaProviderIf::Field* ResultSchemaProvider::field(int64_t index) const {
     if (index < 0 || index >= static_cast<int64_t>(columns_.size())) {
-        return std::shared_ptr<ResultSchemaField>();
+        return nullptr;
     }
-    return std::make_shared<ResultSchemaField>(&(columns_[index]));
+    field_.reset(new ResultSchemaField(&(columns_[index])));
+    return field_.get();
 }
 
 
-std::shared_ptr<const meta::SchemaProviderIf::Field>
-ResultSchemaProvider::field(const folly::StringPiece name) const {
+const meta::SchemaProviderIf::Field* ResultSchemaProvider::field(
+        const folly::StringPiece name) const {
     auto index = getFieldIndex(name);
     if (index < 0) {
-        return std::shared_ptr<ResultSchemaField>();
+        return nullptr;
     }
-    return std::make_shared<ResultSchemaField>(&(columns_[index]));
+    field_.reset(new ResultSchemaField(&(columns_[index])));
+    return field_.get();
 }
 
 }  // namespace nebula
