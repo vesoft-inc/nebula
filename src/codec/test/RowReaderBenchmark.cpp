@@ -5,285 +5,224 @@
  */
 
 #include "base/Base.h"
+#include <gtest/gtest.h>
 #include <folly/Benchmark.h>
-#include "dataman/SchemaWriter.h"
-#include "dataman/RowWriter.h"
-#include "dataman/RowReader.h"
+#include "codec/test/SchemaWriter.h"
+#include "codec/test/RowWriterV1.h"
+#include "codec/RowWriterV2.h"
+#include "codec/RowReader.h"
 
 using nebula::SchemaWriter;
-using nebula::RowWriter;
+using nebula::RowWriterV1;
+using nebula::RowWriterV2;
 using nebula::RowReader;
+using nebula::meta::cpp2::PropertyType;
 
-auto schemaAllInts = std::make_shared<SchemaWriter>();
-auto schemaAllBools = std::make_shared<SchemaWriter>();
-auto schemaAllStrings = std::make_shared<SchemaWriter>();
-auto schemaAllDoubles = std::make_shared<SchemaWriter>();
-auto schemaAllVids = std::make_shared<SchemaWriter>();
-auto schemaAllTimestamps = std::make_shared<SchemaWriter>();
-auto schemaMix = std::make_shared<SchemaWriter>();
+SchemaWriter schemaShort;
+SchemaWriter schemaLong;
 
-static std::string dataAllBools;        // NOLINT
-static std::string dataAllInts;         // NOLINT
-static std::string dataAllDoubles;      // NOLINT
-static std::string dataAllStrings;      // NOLINT
-static std::string dataAllVids;         // NOLINT
-static std::string dataAllTimestamps;	// NOLINT
-static std::string dataMix;             // NOLINT
+std::string dataShortV1;    // NOLINT
+std::string dataShortV2;    // NOLINT
+std::string dataLongV1;     // NOLINT
+std::string dataLongV2;     // NOLINT
 
+std::vector<size_t> shortRandom;
+std::vector<size_t> longRandom;
 
-void prepareSchema() {
-    for (int i = 0; i < 32; i++) {
-        schemaAllInts->appendCol(
-            folly::stringPrintf("col%02d", i),
-            nebula::cpp2::SupportedType::INT);
-        schemaAllBools->appendCol(
-            folly::stringPrintf("col%02d", i),
-            nebula::cpp2::SupportedType::BOOL);
-        schemaAllStrings->appendCol(
-            folly::stringPrintf("col%02d", i),
-            nebula::cpp2::SupportedType::STRING);
-        schemaAllDoubles->appendCol(
-            folly::stringPrintf("col%02d", i),
-            nebula::cpp2::SupportedType::DOUBLE);
-        schemaAllVids->appendCol(
-            folly::stringPrintf("col%02d", i),
-            nebula::cpp2::SupportedType::VID);
-        schemaAllTimestamps->appendCol(
-            folly::stringPrintf("col%02d", i),
-            nebula::cpp2::SupportedType::TIMESTAMP);
-    }
-
-    schemaMix->appendCol("col01", nebula::cpp2::SupportedType::BOOL)
-             .appendCol("col02", nebula::cpp2::SupportedType::BOOL)
-             .appendCol("col03", nebula::cpp2::SupportedType::BOOL)
-             .appendCol("col04", nebula::cpp2::SupportedType::BOOL)
-             .appendCol("col05", nebula::cpp2::SupportedType::INT)
-             .appendCol("col06", nebula::cpp2::SupportedType::INT)
-             .appendCol("col07", nebula::cpp2::SupportedType::INT)
-             .appendCol("col08", nebula::cpp2::SupportedType::INT)
-             .appendCol("col09", nebula::cpp2::SupportedType::STRING)
-             .appendCol("col10", nebula::cpp2::SupportedType::STRING)
-             .appendCol("col11", nebula::cpp2::SupportedType::STRING)
-             .appendCol("col12", nebula::cpp2::SupportedType::STRING)
-             .appendCol("col13", nebula::cpp2::SupportedType::FLOAT)
-             .appendCol("col14", nebula::cpp2::SupportedType::FLOAT)
-             .appendCol("col15", nebula::cpp2::SupportedType::FLOAT)
-             .appendCol("col16", nebula::cpp2::SupportedType::FLOAT)
-             .appendCol("col17", nebula::cpp2::SupportedType::DOUBLE)
-             .appendCol("col18", nebula::cpp2::SupportedType::DOUBLE)
-             .appendCol("col19", nebula::cpp2::SupportedType::DOUBLE)
-             .appendCol("col20", nebula::cpp2::SupportedType::DOUBLE)
-             .appendCol("col21", nebula::cpp2::SupportedType::VID)
-             .appendCol("col22", nebula::cpp2::SupportedType::VID)
-             .appendCol("col23", nebula::cpp2::SupportedType::VID)
-             .appendCol("col24", nebula::cpp2::SupportedType::VID)
-             .appendCol("col25", nebula::cpp2::SupportedType::TIMESTAMP)
-             .appendCol("col26", nebula::cpp2::SupportedType::TIMESTAMP)
-             .appendCol("col27", nebula::cpp2::SupportedType::TIMESTAMP)
-             .appendCol("col28", nebula::cpp2::SupportedType::TIMESTAMP)
-             .appendCol("col29", nebula::cpp2::SupportedType::INT)
-             .appendCol("col30", nebula::cpp2::SupportedType::INT)
-             .appendCol("col31", nebula::cpp2::SupportedType::INT)
-             .appendCol("col32", nebula::cpp2::SupportedType::INT);
-}
+const double e = 2.71828182845904523536028747135266249775724709369995;
+const float pi = 3.14159265358979;
+const std::string str = "Hello world!";
 
 
-void prepareData() {
-    RowWriter wInts(schemaAllInts);
-    RowWriter wBools(schemaAllBools);
-    RowWriter wDoubles(schemaAllDoubles);
-    RowWriter wStrings(schemaAllStrings);
-    RowWriter wVids(schemaAllVids);
-    RowWriter wTimestamps(schemaAllTimestamps);
-    RowWriter wMix(schemaMix);
-
-    for (int i = 0; i < 32; i++) {
-        wBools << true;
-        wInts << i;
-        wDoubles << 3.1415926;
-        wStrings << "Hello World";
-        wVids << 0xABCDABCDABCDABCD;
-        wTimestamps << 1551331827;
-    }
-
-    wMix << true << false << true << false
-         << 123 << 456 << 0xFFFFFFFF88888888 << 0xABCDABCDABCDABCD
-         << "Hello" << "World" << "Back" << "Future"
-         << 1.23 << 2.34 << 3.1415926 << 2.17
-         << 1.23 << 2.34 << 3.1415926 << 2.17
-         << 0xFFFFFFFF << 0xABABABABABABABAB << 0x0 << -1
-         << 1551331827 << 1551331827 << 1551331827 << 1551331827
-         << 0 << 1 << 2 << 3;
-
-    dataAllBools = wBools.encode();
-    dataAllInts = wInts.encode();
-    dataAllDoubles = wDoubles.encode();
-    dataAllStrings = wStrings.encode();
-    dataAllVids = wVids.encode();
-    dataAllTimestamps = wTimestamps.encode();
-    dataMix = wMix.encode();
-}
-
-
-void readMix(int32_t iters) {
-    for (int i = 0; i < iters; i++) {
-        auto reader = RowReader::getRowReader(dataMix, schemaMix);
-        bool bVal;
-        int64_t iVal;
-        folly::StringPiece sVal;
-        float fVal;
-        double dVal;
-
-        reader->getBool(0, bVal);
-        folly::doNotOptimizeAway(bVal);
-        reader->getBool(1, bVal);
-        folly::doNotOptimizeAway(bVal);
-        reader->getBool(2, bVal);
-        folly::doNotOptimizeAway(bVal);
-        reader->getBool(3, bVal);
-        folly::doNotOptimizeAway(bVal);
-        reader->getInt(4, iVal);
-        folly::doNotOptimizeAway(iVal);
-        reader->getInt(5, iVal);
-        folly::doNotOptimizeAway(iVal);
-        reader->getInt(6, iVal);
-        folly::doNotOptimizeAway(iVal);
-        reader->getInt(7, iVal);
-        folly::doNotOptimizeAway(iVal);
-        reader->getString(8, sVal);
-        folly::doNotOptimizeAway(sVal);
-        reader->getString(9, sVal);
-        folly::doNotOptimizeAway(sVal);
-        reader->getString(10, sVal);
-        folly::doNotOptimizeAway(sVal);
-        reader->getString(11, sVal);
-        folly::doNotOptimizeAway(sVal);
-        reader->getFloat(12, fVal);
-        folly::doNotOptimizeAway(fVal);
-        reader->getFloat(13, fVal);
-        folly::doNotOptimizeAway(fVal);
-        reader->getFloat(14, fVal);
-        folly::doNotOptimizeAway(fVal);
-        reader->getFloat(15, fVal);
-        folly::doNotOptimizeAway(fVal);
-        reader->getDouble(16, dVal);
-        folly::doNotOptimizeAway(dVal);
-        reader->getDouble(17, dVal);
-        folly::doNotOptimizeAway(dVal);
-        reader->getDouble(18, dVal);
-        folly::doNotOptimizeAway(dVal);
-        reader->getDouble(19, dVal);
-        folly::doNotOptimizeAway(dVal);
-        reader->getVid(20, iVal);
-        folly::doNotOptimizeAway(iVal);
-        reader->getVid(21, iVal);
-        folly::doNotOptimizeAway(iVal);
-        reader->getVid(22, iVal);
-        folly::doNotOptimizeAway(iVal);
-        reader->getVid(23, iVal);
-        folly::doNotOptimizeAway(iVal);
-        reader->getInt(24, iVal);
-        folly::doNotOptimizeAway(iVal);
-        reader->getInt(25, iVal);
-        folly::doNotOptimizeAway(iVal);
-        reader->getInt(26, iVal);
-        folly::doNotOptimizeAway(iVal);
-        reader->getInt(27, iVal);
-        folly::doNotOptimizeAway(iVal);
-        reader->getInt(28, iVal);
-        folly::doNotOptimizeAway(iVal);
-        reader->getInt(29, iVal);
-        folly::doNotOptimizeAway(iVal);
-        reader->getInt(30, iVal);
-        folly::doNotOptimizeAway(iVal);
-        reader->getInt(31, iVal);
-        folly::doNotOptimizeAway(iVal);
+void prepareSchema(SchemaWriter* schema, size_t numRepeats) {
+    int32_t index = 1;
+    for (size_t i = 0; i < numRepeats; i++) {
+        schema->appendCol(folly::stringPrintf("col%02d", index++),
+                          PropertyType::BOOL);
+        schema->appendCol(folly::stringPrintf("col%02d", index++),
+                          PropertyType::INT64);
+        schema->appendCol(folly::stringPrintf("col%02d", index++),
+                          PropertyType::TIMESTAMP);
+        schema->appendCol(folly::stringPrintf("col%02d", index++),
+                          PropertyType::FLOAT);
+        schema->appendCol(folly::stringPrintf("col%02d", index++),
+                          PropertyType::DOUBLE);
+        schema->appendCol(folly::stringPrintf("col%02d", index++),
+                          PropertyType::STRING);
     }
 }
 
 
-#define READ_VALUE(T, SCHEMA, DATA, FN) \
-    for (uint64_t i = 0; i < iters; i++) { \
-        auto reader = RowReader::getRowReader(DATA, SCHEMA); \
-        T val; \
-        auto it = reader->begin(); \
-        for (int j = 0; j < 32; ++j, ++it) { \
-            it->get ## FN(val); \
-            folly::doNotOptimizeAway(val); \
-        } \
+std::string prepareV1Data(SchemaWriter* schema, size_t numRepeats) {
+    RowWriterV1 writer(schema);
+
+    for (size_t i = 0; i < numRepeats; i++) {
+        writer << true << i << 1551331827 << pi << e << str;
     }
 
-#define READ_VALUE_RANDOMLY(T, SCHEMA, DATA, FN) \
-    for (uint64_t i = 0; i < iters; i++) { \
-        auto reader = RowReader::getRowReader(DATA, SCHEMA); \
-        T val; \
-        for (int j = 0; j < 32; j++) { \
-            uint32_t idx = folly::Random::rand32(0, 32); \
-            reader->get ## FN(idx, val); \
-            folly::doNotOptimizeAway(val); \
-        } \
+    return writer.encode();
+}
+
+
+std::string prepareV2Data(SchemaWriter* schema, size_t numRepeats) {
+    RowWriterV2 writer(schema);
+
+    ssize_t index = 0;
+    for (size_t i = 0; i < numRepeats; i++) {
+        writer.set(index++, true);
+        writer.set(index++, i);
+        writer.set(index++, 1551331827);
+        writer.set(index++, pi);
+        writer.set(index++, e);
+        writer.set(index++, str);
     }
+    writer.finish();
+
+    return writer.moveEncodedStr();
+}
+
+
+std::vector<size_t> generateRandom(SchemaWriter* schema) {
+    size_t numFields = schema->getNumFields();
+    std::vector<size_t> randomList;
+
+    for (size_t i = 0; i < numFields; i++) {
+        randomList.push_back(i);
+    }
+
+    for (size_t i = 0; i < numFields; i++) {
+        size_t idx = folly::Random::rand32(numFields);
+        if (idx != i) {
+            auto temp = randomList[i];
+            randomList[i] = randomList[idx];
+            randomList[idx] = temp;
+        }
+    }
+
+    return randomList;
+}
+
+
+void sequentialRead(SchemaWriter* schema, const std::string& encoded, size_t iters) {
+    auto reader = RowReader::getRowReader(schema, encoded);
+    DCHECK_EQ(reader->readerVer(), ((encoded[0] & 0x18) >> 3) + 1);
+
+    for (size_t i = 0; i < iters; i++) {
+        for (size_t j = 0; j < schema->getNumFields(); j++) {
+            auto v = reader->getValueByIndex(j);
+            folly::doNotOptimizeAway(v);
+        }
+    }
+}
+
+
+void randomRead(SchemaWriter* schema,
+                const std::string& encoded,
+                const std::vector<size_t>& randomList,
+                size_t iters) {
+    auto reader = RowReader::getRowReader(schema, encoded);
+    DCHECK_EQ(reader->readerVer(), ((encoded[0] & 0x18) >> 3) + 1);
+
+    for (size_t i = 0; i < iters; i++) {
+        for (size_t j = 0; j < randomList.size(); j++) {
+            auto v = reader->getValueByIndex(randomList[j]);
+            folly::doNotOptimizeAway(v);
+        }
+    }
+}
+
+
+void sequentialTest(SchemaWriter* schema,
+                    const std::string& encodedV1,
+                    const std::string& encodedV2) {
+    auto reader1 = RowReader::getRowReader(schema, encodedV1);
+    DCHECK_EQ(reader1->readerVer(), ((encodedV1[0] & 0x18) >> 3) + 1);
+    auto reader2 = RowReader::getRowReader(schema, encodedV2);
+    DCHECK_EQ(reader2->readerVer(), ((encodedV2[0] & 0x18) >> 3) + 1);
+
+    for (size_t i = 0; i < schema->getNumFields(); i++) {
+        auto v1 = reader1->getValueByIndex(i);
+        auto v2 = reader2->getValueByIndex(i);
+        EXPECT_EQ(v1, v2);
+    }
+}
+
+
+void randomTest(SchemaWriter* schema,
+                const std::string& encodedV1,
+                const std::string& encodedV2,
+                const std::vector<size_t>& randomList) {
+    auto reader1 = RowReader::getRowReader(schema, encodedV1);
+    DCHECK_EQ(reader1->readerVer(), ((encodedV1[0] & 0x18) >> 3) + 1);
+    auto reader2 = RowReader::getRowReader(schema, encodedV2);
+    DCHECK_EQ(reader2->readerVer(), ((encodedV2[0] & 0x18) >> 3) + 1);
+
+    for (size_t i = 0; i < randomList.size(); i++) {
+        auto v1 = reader1->getValueByIndex(randomList[i]);
+        auto v2 = reader2->getValueByIndex(randomList[i]);
+        EXPECT_EQ(v1, v2);
+    }
+}
+
+
+/*************************
+ * Begining of Tests
+ ************************/
+TEST(RowReader, SequentialShort) {
+    sequentialTest(&schemaShort, dataShortV1, dataShortV2);
+}
+
+TEST(RowReader, SequentialLong) {
+    sequentialTest(&schemaLong, dataLongV1, dataLongV2);
+}
+
+TEST(RowReader, RandomShort) {
+    randomTest(&schemaShort, dataShortV1, dataShortV2, shortRandom);
+}
+
+TEST(RowReader, RandomLong) {
+    randomTest(&schemaLong, dataLongV1, dataLongV2, longRandom);
+}
+/*************************
+ * End of Tests
+ ************************/
 
 
 /*************************
  * Begining of benchmarks
  ************************/
-BENCHMARK(read_bool_seq, iters) {
-    READ_VALUE(bool, schemaAllBools, dataAllBools, Bool);
+BENCHMARK(seq_read_short_v1, iters) {
+    sequentialRead(&schemaShort, dataShortV1, iters);
 }
-BENCHMARK(read_bool_rand, iters) {
-    READ_VALUE_RANDOMLY(bool, schemaAllBools, dataAllBools, Bool);
-}
-
-BENCHMARK_DRAW_LINE();
-
-BENCHMARK(read_int_seq, iters) {
-    READ_VALUE(int64_t, schemaAllInts, dataAllInts, Int);
-}
-BENCHMARK(read_int_rand, iters) {
-    READ_VALUE_RANDOMLY(int64_t, schemaAllInts, dataAllInts, Int);
+BENCHMARK_RELATIVE(seq_read_short_v2, iters) {
+    sequentialRead(&schemaShort, dataShortV2, iters);
 }
 
 BENCHMARK_DRAW_LINE();
 
-BENCHMARK(read_double_seq, iters) {
-    READ_VALUE(double, schemaAllDoubles, dataAllDoubles, Double);
+BENCHMARK(seq_read_long_v1, iters) {
+    sequentialRead(&schemaLong, dataLongV1, iters);
 }
-BENCHMARK(read_double_rand, iters) {
-    READ_VALUE_RANDOMLY(double, schemaAllDoubles, dataAllDoubles, Double);
-}
-
-BENCHMARK_DRAW_LINE();
-
-BENCHMARK(read_string_seq, iters) {
-    READ_VALUE(folly::StringPiece, schemaAllStrings, dataAllStrings, String);
-}
-BENCHMARK(read_string_rand, iters) {
-    READ_VALUE_RANDOMLY(folly::StringPiece, schemaAllStrings, dataAllStrings, String);
+BENCHMARK_RELATIVE(seq_read_long_v2, iters) {
+    sequentialRead(&schemaLong, dataLongV2, iters);
 }
 
 BENCHMARK_DRAW_LINE();
 
-BENCHMARK(read_vid_seq, iters) {
-    READ_VALUE(int64_t, schemaAllVids, dataAllVids, Vid);
+BENCHMARK(random_read_short_v1, iters) {
+    randomRead(&schemaShort, dataShortV1, shortRandom, iters);
 }
-BENCHMARK(read_vid_rand, iters) {
-    READ_VALUE_RANDOMLY(int64_t, schemaAllVids, dataAllVids, Vid);
-}
-
-BENCHMARK_DRAW_LINE();
-
-BENCHMARK(read_timestamp_seq, iters) {
-    READ_VALUE(int64_t, schemaAllTimestamps, dataAllTimestamps, Int);
-}
-BENCHMARK(read_timestamp_rand, iters) {
-    READ_VALUE_RANDOMLY(int64_t, schemaAllTimestamps, dataAllTimestamps, Int);
+BENCHMARK_RELATIVE(random_read_short_v2, iters) {
+    randomRead(&schemaShort, dataShortV2, shortRandom, iters);
 }
 
 BENCHMARK_DRAW_LINE();
 
-BENCHMARK(read_mix, iters) {
-    readMix(iters);
+BENCHMARK(random_read_long_v1, iters) {
+    randomRead(&schemaLong, dataLongV1, longRandom, iters);
+}
+BENCHMARK_RELATIVE(random_read_long_v2, iters) {
+    randomRead(&schemaLong, dataLongV2, longRandom, iters);
 }
 /*************************
  * End of benchmarks
@@ -291,36 +230,45 @@ BENCHMARK(read_mix, iters) {
 
 
 int main(int argc, char** argv) {
+    testing::InitGoogleTest(&argc, argv);
     folly::init(&argc, &argv, true);
+    google::SetStderrLogging(google::INFO);
 
-    prepareSchema();
-    prepareData();
+    prepareSchema(&schemaShort, 2);
+    prepareSchema(&schemaLong, 24);
 
-    folly::runBenchmarks();
-    return 0;
+    dataShortV1 = prepareV1Data(&schemaShort, 2);
+    dataLongV1 = prepareV1Data(&schemaLong, 24);
+    dataShortV2 = prepareV2Data(&schemaShort, 2);
+    dataLongV2 = prepareV2Data(&schemaLong, 24);
+
+    shortRandom = generateRandom(&schemaShort);
+    longRandom = generateRandom(&schemaLong);
+
+    if (FLAGS_benchmark) {
+        folly::runBenchmarks();
+        return 0;
+    } else {
+        return RUN_ALL_TESTS();
+    }
 }
 
 /*
-Benchmarked in VirtualBox running on i7-8650
+Benchmarked in WSL 1.0 running on i9-9880H
 ============================================================================
 RowReaderBenchmark.cpp                          relative  time/iter  iters/s
 ============================================================================
-read_bool_seq                                                1.20us  831.66K
-read_bool_rand                                               7.84us  127.58K
+seq_read_short_v1                                            1.14us  878.08K
+seq_read_short_v2                                184.82%   616.19ns    1.62M
 ----------------------------------------------------------------------------
-read_int_seq                                                 1.20us  834.45K
-read_int_rand                                                8.50us  117.60K
+seq_read_long_v1                                            15.10us   66.23K
+seq_read_long_v2                                 189.05%     7.99us  125.20K
 ----------------------------------------------------------------------------
-read_double_seq                                              1.19us  837.64K
-read_double_rand                                             8.10us  123.53K
+random_read_short_v1                                         1.26us  794.68K
+random_read_short_v2                             180.33%   697.83ns    1.43M
 ----------------------------------------------------------------------------
-read_string_seq                                              1.38us  724.65K
-read_string_rand                                             8.60us  116.32K
-----------------------------------------------------------------------------
-read_vid_seq                                                 1.20us  831.74K
-read_vid_rand                                                8.14us  122.84K
-----------------------------------------------------------------------------
-read_mix                                                     8.07us  123.86K
+random_read_long_v1                                         15.81us   63.24K
+random_read_long_v2                              194.92%     8.11us  123.27K
 ============================================================================
 */
 

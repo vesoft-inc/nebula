@@ -4,69 +4,39 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef DATAMAN_ROWWRITER_H_
-#define DATAMAN_ROWWRITER_H_
+#ifndef CODEC_TEST_ROWWRITERV1_H_
+#define CODEC_TEST_ROWWRITERV1_H_
 
 #include "base/Base.h"
 #include "base/Cord.h"
-#include "dataman/SchemaWriter.h"
+#include "codec/test/SchemaWriter.h"
 
 namespace nebula {
 
 /**
  * It's a write-only data streamer, used to encode one row of data
  *
- * It can be used with or without schema. When no schema is assigned,
- * a new schema will be created according to the input data stream
+ * It can only be used with a schema provided
  */
-class RowWriter {
+class RowWriterV1 {
 public:
     /*******************
      *
      * Stream Control
      *
      ******************/
-    // Set the name for the next column
-    // This cannot be used if a schema is provided
-    struct ColName {
-        friend class RowWriter;
-        explicit ColName(std::string&& name) : name_(std::move(name)) {}
-        explicit ColName(const folly::StringPiece name)
-            : name_(name.begin(), name.size()) {}
-        explicit ColName(const char* name) : name_(name) {}
-        ColName(ColName&& rhs) : name_(std::move(rhs.name_)) {}
-    private:
-        std::string name_;
-    };
-
-    // Set the type for the next column
-    // This cannot be used if a schema is provided
-    struct ColType {
-        friend class RowWriter;
-        template<class VType>
-        explicit ColType(VType&& type) : type_(std::forward(type)) {}
-        explicit ColType(cpp2::SupportedType type) {
-            type_.set_type(type);
-        }
-        ColType(ColType&& rhs) : type_(std::move(rhs.type_)) {}
-    private:
-        cpp2::ValueType type_;
-    };
-
     // Skip next few columns. Default values will be written for those
     // fields
     // This cannot be used if a schema is not provided
     struct Skip {
-        friend class RowWriter;
+        friend class RowWriterV1;
         explicit Skip(int64_t toSkip) : toSkip_(toSkip) {}
     private:
         int64_t toSkip_;
     };
 
 public:
-    explicit RowWriter(
-        std::shared_ptr<const meta::SchemaProviderIf> schema
-            = std::shared_ptr<const meta::SchemaProviderIf>());
+    explicit RowWriterV1(const meta::SchemaProviderIf* schema);
 
     // Encode into a binary array
     std::string encode() noexcept;
@@ -78,40 +48,31 @@ public:
     // Calculate the exact length of the encoded binary array
     int64_t size() const noexcept;
 
-    std::shared_ptr<const meta::SchemaProviderIf> schema() const {
+    const meta::SchemaProviderIf* schema() const {
         return schema_;
     }
 
-    // Move the schema out of the writer
-    // After the schema being moved, **NO MORE** write should happen
-    cpp2::Schema moveSchema();
-
     // Data stream
-    RowWriter& operator<<(bool v) noexcept;
-    RowWriter& operator<<(float v) noexcept;
-    RowWriter& operator<<(double v) noexcept;
+    RowWriterV1& operator<<(bool v) noexcept;
+    RowWriterV1& operator<<(float v) noexcept;
+    RowWriterV1& operator<<(double v) noexcept;
 
     template<typename T>
-    typename std::enable_if<std::is_integral<T>::value, RowWriter&>::type
+    typename std::enable_if<std::is_integral<T>::value, RowWriterV1&>::type
     operator<<(T v) noexcept;
 
-    RowWriter& operator<<(const std::string& v) noexcept;
-    RowWriter& operator<<(folly::StringPiece v) noexcept;
-    RowWriter& operator<<(const char* v) noexcept;
+    RowWriterV1& operator<<(const std::string& v) noexcept;
+    RowWriterV1& operator<<(folly::StringPiece v) noexcept;
+    RowWriterV1& operator<<(const char* v) noexcept;
 
     // Control stream
-    RowWriter& operator<<(ColName&& colName) noexcept;
-    RowWriter& operator<<(ColType&& colType) noexcept;
-    RowWriter& operator<<(Skip&& skip) noexcept;
+    RowWriterV1& operator<<(Skip&& skip) noexcept;
 
 private:
-    std::shared_ptr<const meta::SchemaProviderIf> schema_;
-    std::shared_ptr<SchemaWriter> schemaWriter_;
+    const meta::SchemaProviderIf* schema_;
     Cord cord_;
 
     int64_t colNum_ = 0;
-    std::unique_ptr<ColName> colName_;
-    std::unique_ptr<ColType> colType_;
 
     // Block offsets for every 16 fields
     std::vector<int64_t> blockOffsets_;
@@ -127,42 +88,9 @@ private:
 }  // namespace nebula
 
 
-#define RW_GET_COLUMN_TYPE(STYPE) \
-    const cpp2::ValueType* type; \
-    if (colNum_ >= static_cast<int64_t>(schema_->getNumFields())) { \
-        CHECK(!!schemaWriter_) << "SchemaWriter cannot be NULL"; \
-        if (!colType_) { \
-            colType_.reset(new ColType(cpp2::SupportedType::STYPE)); \
-        } \
-        type = &(colType_->type_); \
-    } else { \
-        type = &(schema_->getFieldType(colNum_)); \
-    }
+#include "codec/test/RowWriterV1.inl"
 
-
-#define RW_CLEAN_UP_WRITE() \
-    colNum_++; \
-    if (colNum_ != 0 && (colNum_ >> 4 << 4) == colNum_) { \
-        /* We need to record offset for every 16 fields */ \
-        blockOffsets_.emplace_back(cord_.size()); \
-    } \
-    if (colNum_ > static_cast<int64_t>(schema_->getNumFields())) { \
-        /* Need to append the new column type to the schema */ \
-        if (!colName_) { \
-            schemaWriter_->appendCol(folly::stringPrintf("Column%ld", colNum_), \
-                                     std::move(colType_->type_)); \
-        } else { \
-            schemaWriter_->appendCol(std::move(colName_->name_), \
-                                     std::move(colType_->type_)); \
-        } \
-    } \
-    colName_.reset(); \
-    colType_.reset();
-
-
-#include "dataman/RowWriter.inl"
-
-#endif  // DATAMAN_ROWWRITER_H_
+#endif  // CODEC_TEST_ROWWRITERV1_H_
 
 
 

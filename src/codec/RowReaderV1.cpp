@@ -10,11 +10,11 @@
 
 #define RR_GET_OFFSET()                                             \
     if (index >= static_cast<int64_t>(schema_->getNumFields())) {   \
-        return NullType::BAD_DATA;                                   \
+        return NullType::BAD_DATA;                                  \
     }                                                               \
     int64_t offset = skipToField(index);                            \
     if (offset < 0) {                                               \
-        return NullType::BAD_DATA;                                   \
+        return NullType::BAD_DATA;                                  \
     }
 
 namespace nebula {
@@ -24,17 +24,25 @@ namespace nebula {
  * class RowReaderV1
  *
  ********************************************/
-RowReaderV1::RowReaderV1(folly::StringPiece row,
-                         std::shared_ptr<const meta::SchemaProviderIf> schema)
-        : RowReader(schema, row) {
-    CHECK(!!schema_) << "A schema must be provided";
+bool RowReaderV1::resetImpl(meta::SchemaProviderIf const* schema,
+                            folly::StringPiece row) noexcept {
+    RowReader::resetImpl(schema, row);
 
-    if (processHeader(row)) {
+    DCHECK(schema_ != nullptr) << "A schema must be provided";
+
+    headerLen_ = 0;
+    numBytesForOffset_ = 0;
+    blockOffsets_.clear();
+    offsets_.clear();
+
+    if (processHeader(data_)) {
         // data_.begin() points to the first field
-        data_.reset(row.begin() + headerLen_, row.size() - headerLen_);
+        data_ = data_.subpiece(headerLen_);
+        return true;
     } else {
         // Invalid data
-        LOG(FATAL) << "Invalid row data: " << toHexStr(row);
+        LOG(ERROR) << "Invalid row data: " << toHexStr(row);
+        return false;
     }
 }
 
@@ -45,7 +53,7 @@ bool RowReaderV1::processHeader(folly::StringPiece row) {
         return false;
     }
 
-    DCHECK(!!schema_) << "A schema must be provided";
+    DCHECK(schema_ != nullptr) << "A schema must be provided";
 
     // The last three bits indicate the number of bytes for offsets
     // The first three bits indicate the number of bytes for the
@@ -483,7 +491,7 @@ int32_t RowReaderV1::readString(int64_t offset, folly::StringPiece& v) const noe
         return -1;
     }
 
-    v = data_.subpiece(offset + intLen, strLen);
+    v = folly::StringPiece(data_.data() + offset + intLen, strLen);
     return intLen + strLen;
 }
 

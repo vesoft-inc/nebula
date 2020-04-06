@@ -5,25 +5,21 @@
  */
 
 #include "base/Base.h"
-#include "dataman/RowWriter.h"
+#include "codec/test/RowWriterV1.h"
 
 namespace nebula {
 
-using cpp2::Schema;
-using cpp2::SupportedType;
+using meta::cpp2::Schema;
+using meta::cpp2::PropertyType;
 using meta::SchemaProviderIf;
 
-RowWriter::RowWriter(std::shared_ptr<const SchemaProviderIf> schema)
-        : schema_(std::move(schema)) {
-    if (!schema_) {
-        // Need to create a new schema
-        schemaWriter_.reset(new SchemaWriter());
-        schema_ = schemaWriter_;
-    }
+RowWriterV1::RowWriterV1(const SchemaProviderIf* schema)
+        : schema_(schema) {
+    CHECK(!!schema_);
 }
 
 
-int64_t RowWriter::size() const noexcept {
+int64_t RowWriterV1::size() const noexcept {
     auto offsetBytes = calcOccupiedBytes(cord_.size());
     SchemaVer verBytes = 0;
     if (schema_->getVersion() > 0) {
@@ -36,7 +32,7 @@ int64_t RowWriter::size() const noexcept {
 }
 
 
-std::string RowWriter::encode() noexcept {
+std::string RowWriterV1::encode() noexcept {
     std::string encoded;
     // Reserve enough space so resize will not happen
     encoded.reserve(sizeof(int64_t) * blockOffsets_.size() + cord_.size() + 11);
@@ -46,10 +42,8 @@ std::string RowWriter::encode() noexcept {
 }
 
 
-void RowWriter::encodeTo(std::string& encoded) noexcept {
-    if (!schemaWriter_) {
-        operator<<(Skip(schema_->getNumFields() - colNum_));
-    }
+void RowWriterV1::encodeTo(std::string& encoded) noexcept {
+    operator<<(Skip(schema_->getNumFields() - colNum_));
 
     // Header information
     auto offsetBytes = calcOccupiedBytes(cord_.size());
@@ -75,16 +69,7 @@ void RowWriter::encodeTo(std::string& encoded) noexcept {
 }
 
 
-Schema RowWriter::moveSchema() {
-    if (schemaWriter_) {
-        return schemaWriter_->moveSchema();
-    } else {
-        return Schema();
-    }
-}
-
-
-int64_t RowWriter::calcOccupiedBytes(uint64_t v) const noexcept {
+int64_t RowWriterV1::calcOccupiedBytes(uint64_t v) const noexcept {
     int64_t bytes = 0;
     do {
         bytes++;
@@ -100,11 +85,9 @@ int64_t RowWriter::calcOccupiedBytes(uint64_t v) const noexcept {
  * Data Stream
  *
  ***************************/
-RowWriter& RowWriter::operator<<(bool v) noexcept {
-    RW_GET_COLUMN_TYPE(BOOL)
-
-    switch (type->get_type()) {
-        case SupportedType::BOOL:
+RowWriterV1& RowWriterV1::operator<<(bool v) noexcept {
+    switch (schema_->getFieldType(colNum_)) {
+        case PropertyType::BOOL:
             cord_ << v;
             break;
         default:
@@ -114,19 +97,22 @@ RowWriter& RowWriter::operator<<(bool v) noexcept {
             break;
     }
 
-    RW_CLEAN_UP_WRITE()
+    colNum_++;
+    if (colNum_ != 0 && (colNum_ >> 4 << 4) == colNum_) {
+        /* We need to record offset for every 16 fields */
+        blockOffsets_.emplace_back(cord_.size());
+    }
+
     return *this;
 }
 
 
-RowWriter& RowWriter::operator<<(float v) noexcept {
-    RW_GET_COLUMN_TYPE(FLOAT)
-
-    switch (type->get_type()) {
-        case SupportedType::FLOAT:
+RowWriterV1& RowWriterV1::operator<<(float v) noexcept {
+    switch (schema_->getFieldType(colNum_)) {
+        case PropertyType::FLOAT:
             cord_ << v;
             break;
-        case SupportedType::DOUBLE:
+        case PropertyType::DOUBLE:
             cord_ << static_cast<double>(v);
             break;
         default:
@@ -135,19 +121,22 @@ RowWriter& RowWriter::operator<<(float v) noexcept {
             break;
     }
 
-    RW_CLEAN_UP_WRITE()
+    colNum_++;
+    if (colNum_ != 0 && (colNum_ >> 4 << 4) == colNum_) {
+        /* We need to record offset for every 16 fields */
+        blockOffsets_.emplace_back(cord_.size());
+    }
+
     return *this;
 }
 
 
-RowWriter& RowWriter::operator<<(double v) noexcept {
-    RW_GET_COLUMN_TYPE(DOUBLE)
-
-    switch (type->get_type()) {
-        case SupportedType::FLOAT:
+RowWriterV1& RowWriterV1::operator<<(double v) noexcept {
+    switch (schema_->getFieldType(colNum_)) {
+        case PropertyType::FLOAT:
             cord_ << static_cast<float>(v);
             break;
-        case SupportedType::DOUBLE:
+        case PropertyType::DOUBLE:
             cord_ << v;
             break;
         default:
@@ -156,20 +145,29 @@ RowWriter& RowWriter::operator<<(double v) noexcept {
             break;
     }
 
-    RW_CLEAN_UP_WRITE()
+    colNum_++;
+    if (colNum_ != 0 && (colNum_ >> 4 << 4) == colNum_) {
+        /* We need to record offset for every 16 fields */
+        blockOffsets_.emplace_back(cord_.size());
+    }
+
     return *this;
 }
 
 
-RowWriter& RowWriter::operator<<(const std::string& v) noexcept {
+RowWriterV1& RowWriterV1::operator<<(const std::string& v) noexcept {
     return operator<<(folly::StringPiece(v));
 }
 
-RowWriter& RowWriter::operator<<(folly::StringPiece v) noexcept {
-    RW_GET_COLUMN_TYPE(STRING)
 
-    switch (type->get_type()) {
-        case SupportedType::STRING: {
+RowWriterV1& RowWriterV1::operator<<(const char* v) noexcept {
+    return operator<<(folly::StringPiece(v));
+}
+
+
+RowWriterV1& RowWriterV1::operator<<(folly::StringPiece v) noexcept {
+    switch (schema_->getFieldType(colNum_)) {
+        case PropertyType::STRING: {
             writeInt(v.size());
             cord_.write(v.data(), v.size());
             break;
@@ -181,13 +179,13 @@ RowWriter& RowWriter::operator<<(folly::StringPiece v) noexcept {
         }
     }
 
-    RW_CLEAN_UP_WRITE()
+    colNum_++;
+    if (colNum_ != 0 && (colNum_ >> 4 << 4) == colNum_) {
+        /* We need to record offset for every 16 fields */
+        blockOffsets_.emplace_back(cord_.size());
+    }
+
     return *this;
-}
-
-
-RowWriter& RowWriter::operator<<(const char* v) noexcept {
-    return operator<<(folly::StringPiece(v));
 }
 
 
@@ -196,22 +194,7 @@ RowWriter& RowWriter::operator<<(const char* v) noexcept {
  * Control Stream
  *
  ***************************/
-RowWriter& RowWriter::operator<<(ColName&& colName) noexcept {
-    DCHECK(!!schemaWriter_) << "ColName can only be used when a schema is missing";
-    colName_.reset(new ColName(std::move(colName)));
-    return *this;
-}
-
-
-RowWriter& RowWriter::operator<<(ColType&& colType) noexcept {
-    DCHECK(!!schemaWriter_) << "ColType can only be used when a schema is missing";
-    colType_.reset(new ColType(std::move(colType)));
-    return *this;
-}
-
-
-RowWriter& RowWriter::operator<<(Skip&& skip) noexcept {
-    DCHECK(!schemaWriter_) << "Skip can only be used when a schema is provided";
+RowWriterV1& RowWriterV1::operator<<(Skip&& skip) noexcept {
     if (skip.toSkip_ <= 0) {
         VLOG(2) << "Nothing to skip";
         return *this;
@@ -220,29 +203,29 @@ RowWriter& RowWriter::operator<<(Skip&& skip) noexcept {
     int32_t skipTo = std::min(colNum_ + skip.toSkip_,
                               static_cast<int64_t>(schema_->getNumFields()));
     for (int i = colNum_; i < skipTo; i++) {
-        switch (schema_->getFieldType(i).get_type()) {
-            case SupportedType::BOOL: {
+        switch (schema_->getFieldType(i)) {
+            case PropertyType::BOOL: {
                 cord_ << false;
                 break;
             }
-            case SupportedType::INT:
-            case SupportedType::TIMESTAMP: {
+            case PropertyType::INT64:
+            case PropertyType::TIMESTAMP: {
                 writeInt(0);
                 break;
             }
-            case SupportedType::FLOAT: {
+            case PropertyType::FLOAT: {
                 cord_ << static_cast<float>(0.0);
                 break;
             }
-            case SupportedType::DOUBLE: {
+            case PropertyType::DOUBLE: {
                 cord_ << static_cast<double>(0.0);
                 break;
             }
-            case SupportedType::STRING: {
+            case PropertyType::STRING: {
                 writeInt(0);
                 break;
             }
-            case SupportedType::VID: {
+            case PropertyType::VID: {
                 cord_ << static_cast<uint64_t>(0);
                 break;
             }

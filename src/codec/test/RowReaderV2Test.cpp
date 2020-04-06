@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -12,9 +12,11 @@
 
 namespace nebula {
 
-TEST(RowReaderV1, headerInfo) {
+using meta::cpp2::PropertyType;
+
+TEST(RowReaderV2, headerInfo) {
     // Simplest row, nothing in it
-    char data1[] = {0x00};
+    char data1[] = {0x08};
     SchemaWriter schema1;
     auto reader = RowReader::getRowReader(&schema1,
                                           folly::StringPiece(data1, sizeof(data1)));
@@ -23,7 +25,7 @@ TEST(RowReaderV1, headerInfo) {
     EXPECT_EQ(sizeof(data1), reader->headerLen());
 
     // With schema version
-    char data2[] = {0x40, 0x01, static_cast<char>(0xFF)};
+    char data2[] = {0x0A, 0x01, static_cast<char>(0xFF)};
     SchemaWriter schema2(0x00FF01);
     ASSERT_TRUE(reader->reset(&schema2, folly::StringPiece(data2, sizeof(data2))));
     EXPECT_EQ(0x0000FF01, reader->schemaVer());
@@ -32,108 +34,87 @@ TEST(RowReaderV1, headerInfo) {
     // Insert 33 fields into schema, so we will get 2 offsets
     SchemaWriter schema3(0x00FFFF01);
     for (int i = 0; i < 33; i++) {
-        schema3.appendCol(folly::stringPrintf("Column%02d", i),
-                          meta::cpp2::PropertyType::INT64);
+        schema3.appendCol(folly::stringPrintf("Column%02d", i), PropertyType::INT64);
     }
 
     // With schema version and offsets
-    char data3[] = {0x60, 0x01, static_cast<char>(0xFF),
-                    static_cast<char>(0xFF), 0x40,
-                    static_cast<char>(0xF0)};
+    char data3[] = {0x0B, 0x01, static_cast<char>(0xFF), static_cast<char>(0xFF)};
     ASSERT_TRUE(reader->reset(&schema3, folly::StringPiece(data3, sizeof(data3))));
     EXPECT_EQ(0x00FFFF01, reader->schemaVer());
     EXPECT_EQ(sizeof(data3), reader->headerLen());
 
-    RowReaderWrapper* r = dynamic_cast<RowReaderWrapper*>(reader.get());
-    ASSERT_EQ(&(r->readerV1_), r->currReader_);
-    ASSERT_EQ(3, r->readerV1_.blockOffsets_.size());
-    EXPECT_EQ(0x0000, r->readerV1_.blockOffsets_[0].first);
-    EXPECT_EQ(0x0040, r->readerV1_.blockOffsets_[1].first);
-    EXPECT_EQ(0x00F0, r->readerV1_.blockOffsets_[2].first);
-
     // No schema version, with offsets
     SchemaWriter schema4;
     for (int i = 0; i < 33; i++) {
-        schema4.appendCol(folly::stringPrintf("Column%02d", i),
-                          meta::cpp2::PropertyType::INT64);
+        schema4.appendCol(folly::stringPrintf("Column%02d", i), PropertyType::INT64);
     }
 
-    char data4[] = {0x01, static_cast<char>(0xFF), 0x40, 0x08, static_cast<char>(0xF0)};
+    char data4[] = {0x08};
     ASSERT_TRUE(reader->reset(&schema4, folly::StringPiece(data4, sizeof(data4))));
     EXPECT_EQ(0, reader->schemaVer());
     EXPECT_EQ(sizeof(data4), reader->headerLen());
-
-    ASSERT_EQ(&(r->readerV1_), r->currReader_);
-    ASSERT_EQ(3, r->readerV1_.blockOffsets_.size());
-    EXPECT_EQ(0x000000, r->readerV1_.blockOffsets_[0].first);
-    EXPECT_EQ(0x0040FF, r->readerV1_.blockOffsets_[1].first);
-    EXPECT_EQ(0x00F008, r->readerV1_.blockOffsets_[2].first);
 }
 
 
-TEST(RowReaderV1, encodedData) {
-    const char* colName1 = "int_col1";
-    const std::string colName2("int_col2");
-    std::string colName3("vid_col");
-
+TEST(RowReaderV2, encodedData) {
     SchemaWriter schema;
     // Col 0: bool_col1 -- BOOL
-    schema.appendCol("bool_col1", meta::cpp2::PropertyType::BOOL);
-    // Col 1: str_col1 -- STRING
-    schema.appendCol(folly::stringPrintf("str_col1"),
-                      meta::cpp2::PropertyType::STRING);
-    // Col 2: int_col1 -- INT
-    schema.appendCol(colName1, meta::cpp2::PropertyType::INT64);
-    // Col 3: int_col2 -- INT
-    schema.appendCol(colName2, meta::cpp2::PropertyType::INT64);
+    schema.appendCol("bool_col1", PropertyType::BOOL);
+    // Col 1: str_col1 -- FIXED_STRING
+    schema.appendCol("fixed_str_col", PropertyType::FIXED_STRING, 12);
+    // Col 2: int_col1 -- INT32
+    schema.appendCol("int32_col", PropertyType::INT32);
+    // Col 3: int_col2 -- INT64
+    schema.appendCol("int64_col", PropertyType::INT64);
     // Col 4: vid_col -- VID
-    schema.appendCol(folly::StringPiece(colName3),
-                      meta::cpp2::PropertyType::VID);
+    schema.appendCol("vid_col", PropertyType::VID);
     // Col 5: str_col2 -- STRING
-    schema.appendCol("str_col2", meta::cpp2::PropertyType::STRING);
+    schema.appendCol("str_col", PropertyType::STRING);
     // Col 6: bool_col2 -- BOOL
-    schema.appendCol(std::string("bool_col2"),
-                      meta::cpp2::PropertyType::BOOL);
+    schema.appendCol("bool_col2", PropertyType::BOOL);
     // Col 7: float_col -- FLOAT
-    schema.appendCol(std::string("float_col"),
-                      meta::cpp2::PropertyType::FLOAT);
+    schema.appendCol("float_col", PropertyType::FLOAT);
     // Col 8: double_col -- DOUBLE
-    schema.appendCol(std::string("double_col"),
-                      meta::cpp2::PropertyType::DOUBLE);
+    schema.appendCol("double_col", PropertyType::DOUBLE);
     // Col 9: timestamp_col -- TIMESTAMP
-    schema.appendCol("timestamp_col", meta::cpp2::PropertyType::TIMESTAMP);
+    schema.appendCol("timestamp_col", PropertyType::TIMESTAMP);
+    // Col 10: date_col -- DATE
+    schema.appendCol("date_col", PropertyType::DATE);
+    // Col 11: datetime_col -- DATETIME
+    schema.appendCol("datetime_col", PropertyType::DATETIME);
 
     std::string encoded;
     // Single byte header (Schema version is 0, no offset)
-    encoded.append(1, 0x00);
-    // Col 0
-    encoded.append(1, 0x01);
+    encoded.append(1, 0x08);
+    // There is no nullable fields, so no need to reserve the space for
+    // the NULL flag
 
     const char* str1 = "Hello World!";
     const char* str2 = "Welcome to the future!";
 
+    // Col 0
+    encoded.append(1, 0x01);
+
     // Col 1
-    uint8_t buf[10];
-    size_t len = folly::encodeVarint(strlen(str1), buf);
-    encoded.append(reinterpret_cast<char*>(buf), len);
     encoded.append(str1, strlen(str1));
 
     // Col 2
-    len = folly::encodeVarint(100, buf);
-    encoded.append(reinterpret_cast<char*>(buf), len);
+    encoded.append(1, 100);
+    encoded.append(3, 0);
 
     // Col 3
-    len = folly::encodeVarint(0xFFFFFFFFFFFFFFFFL, buf);
-    encoded.append(reinterpret_cast<char*>(buf), len);
+    encoded.append(8, 0xFF);
 
     // Col 4
-    int64_t id = 0x8877665544332211L;
-    encoded.append(reinterpret_cast<char*>(&id), sizeof(int64_t));
+    encoded.append(1, 0x11).append(1, 0x22).append(1, 0x33).append(1, 0x44)
+           .append(1, 0x55).append(1, 0x66).append(1, 0x77).append(1, 0x88);
 
     // Col 5
-    len = folly::encodeVarint(strlen(str2), buf);
-    encoded.append(reinterpret_cast<char*>(buf), len);
-    encoded.append(str2, strlen(str2));
+    int32_t offset = 1 + schema.size();  // Header and data (no NULL flag)
+    int32_t len = strlen(str2);
+    encoded.append(reinterpret_cast<char*>(&offset), sizeof(int32_t));
+    encoded.append(reinterpret_cast<char*>(&len), sizeof(int32_t));
+    // String content will be append at the end
 
     // Col 6
     encoded.append(1, 0x00);
@@ -147,8 +128,34 @@ TEST(RowReaderV1, encodedData) {
     encoded.append(reinterpret_cast<char*>(&e), sizeof(double));
 
     // Col 9
-    len = folly::encodeVarint(1551331827, buf);
-    encoded.append(reinterpret_cast<char*>(buf), len);
+    Timestamp ts = 1551331827;
+    encoded.append(reinterpret_cast<char*>(&ts), sizeof(Timestamp));
+
+    // Col 10
+    int16_t year = 2020;
+    int8_t month = 2;
+    int8_t day = 20;
+    encoded.append(reinterpret_cast<char*>(&year), sizeof(int16_t));
+    encoded.append(reinterpret_cast<char*>(&month), sizeof(int8_t));
+    encoded.append(reinterpret_cast<char*>(&day), sizeof(int8_t));
+
+    // Col 11
+    int8_t hour = 10;
+    int8_t minute = 30;
+    int8_t sec = 45;
+    int32_t microsec = 54321;
+    int32_t timezone = -8 * 3600;
+    encoded.append(reinterpret_cast<char*>(&year), sizeof(int16_t));
+    encoded.append(reinterpret_cast<char*>(&month), sizeof(int8_t));
+    encoded.append(reinterpret_cast<char*>(&day), sizeof(int8_t));
+    encoded.append(reinterpret_cast<char*>(&hour), sizeof(int8_t));
+    encoded.append(reinterpret_cast<char*>(&minute), sizeof(int8_t));
+    encoded.append(reinterpret_cast<char*>(&sec), sizeof(int8_t));
+    encoded.append(reinterpret_cast<char*>(&microsec), sizeof(int32_t));
+    encoded.append(reinterpret_cast<char*>(&timezone), sizeof(int32_t));
+
+    // Append the Col5's string content
+    encoded.append(str2, strlen(str2));
 
     /**************************
      * Now let's read it
@@ -157,12 +164,11 @@ TEST(RowReaderV1, encodedData) {
 
     // Header info
     RowReaderWrapper* r = dynamic_cast<RowReaderWrapper*>(reader.get());
-    ASSERT_EQ(&(r->readerV1_), r->currReader_);
+    ASSERT_EQ(&(r->readerV2_), r->currReader_);
     EXPECT_EQ(0, reader->schemaVer());
     EXPECT_EQ(1, reader->headerLen());
-    ASSERT_EQ(&(r->readerV1_), r->currReader_);
-    EXPECT_EQ(1, r->readerV1_.blockOffsets_.size());
-    EXPECT_EQ(0, r->readerV1_.blockOffsets_[0].first);
+    // There is no nullable fields, so no space reserved for the NULL flag
+    EXPECT_EQ(0, r->readerV2_.numNullBytes_);
 
     Value val;
 
@@ -178,7 +184,7 @@ TEST(RowReaderV1, encodedData) {
     val = reader->getValueByIndex(1);
     EXPECT_EQ(Value::Type::STRING, val.type());
     EXPECT_EQ(str1, val.getStr());
-    val = reader->getValueByName("str_col1");
+    val = reader->getValueByName("fixed_str_col");
     EXPECT_EQ(Value::Type::STRING, val.type());
     EXPECT_EQ(str1, val.getStr());
 
@@ -186,7 +192,7 @@ TEST(RowReaderV1, encodedData) {
     val = reader->getValueByIndex(2);
     EXPECT_EQ(Value::Type::INT, val.type());
     EXPECT_EQ(100, val.getInt());
-    val = reader->getValueByName("int_col1");
+    val = reader->getValueByName("int32_col");
     EXPECT_EQ(Value::Type::INT, val.type());
     EXPECT_EQ(100, val.getInt());
 
@@ -194,7 +200,7 @@ TEST(RowReaderV1, encodedData) {
     val = reader->getValueByIndex(3);
     EXPECT_EQ(Value::Type::INT, val.type());
     EXPECT_EQ(0xFFFFFFFFFFFFFFFFL, val.getInt());
-    val = reader->getValueByName("int_col2");
+    val = reader->getValueByName("int64_col");
     EXPECT_EQ(Value::Type::INT, val.type());
     EXPECT_EQ(0xFFFFFFFFFFFFFFFFL, val.getInt());
 
@@ -216,7 +222,7 @@ TEST(RowReaderV1, encodedData) {
     val = reader->getValueByIndex(5);
     EXPECT_EQ(Value::Type::STRING, val.type());
     EXPECT_EQ(str2, val.getStr());
-    val = reader->getValueByName("str_col2");
+    val = reader->getValueByName("str_col");
     EXPECT_EQ(Value::Type::STRING, val.type());
     EXPECT_EQ(str2, val.getStr());
 
@@ -252,25 +258,54 @@ TEST(RowReaderV1, encodedData) {
     EXPECT_EQ(Value::Type::INT, val.type());
     EXPECT_EQ(1551331827, val.getInt());
 
-    // Col 10 -- non-existing column
+    // Col 10
+    Date date;
+    date.year = 2020;
+    date.month = 2;
+    date.day = 20;
     val = reader->getValueByIndex(10);
+    EXPECT_EQ(Value::Type::DATE, val.type());
+    EXPECT_EQ(date, val.getDate());
+    val = reader->getValueByName("date_col");
+    EXPECT_EQ(Value::Type::DATE, val.type());
+    EXPECT_EQ(date, val.getDate());
+
+    // Col 11
+    DateTime dt;
+    dt.year = 2020;
+    dt.month = 2;
+    dt.day = 20;
+    dt.hour = 10;
+    dt.minute = 30;
+    dt.sec = 45;
+    dt.microsec = 54321;
+    dt.timezone = -8 * 3600;
+    val = reader->getValueByIndex(11);
+    EXPECT_EQ(Value::Type::DATETIME, val.type());
+    EXPECT_EQ(dt, val.getDateTime());
+    val = reader->getValueByName("datetime_col");
+    EXPECT_EQ(Value::Type::DATETIME, val.type());
+    EXPECT_EQ(dt, val.getDateTime());
+
+    // Col 12 -- non-existing column
+    val = reader->getValueByIndex(12);
     EXPECT_EQ(Value::Type::NULLVALUE, val.type());
 }
 
 
-TEST(RowReaderV1, iterator) {
+TEST(RowReaderV2, iterator) {
     std::string encoded;
-    encoded.append(1, 0);
-    encoded.append(1, 16);
-    encoded.append(1, 32);
-    encoded.append(1, 48);
-    encoded.append(1, 64);
+    // Header
+    encoded.append(1, 0x08);
+    // There is no nullable field, so no need to reserve space for
+    // the Null flags
 
     SchemaWriter schema;
     for (int i = 0; i < 64; i++) {
         schema.appendCol(folly::stringPrintf("Col%02d", i),
                          meta::cpp2::PropertyType::INT64);
         encoded.append(1, i + 1);
+        encoded.append(7, 0);
     }
 
     auto reader = RowReader::getRowReader(&schema, encoded);
@@ -278,8 +313,8 @@ TEST(RowReaderV1, iterator) {
     int32_t index = 0;
     while (it != reader->end()) {
         Value v = reader->getValueByIndex(index);
-        EXPECT_EQ(Value::Type::INT, v.type());
-        EXPECT_EQ(v, it->value());
+        EXPECT_EQ(Value::Type::INT, v.type()) << index;
+        EXPECT_EQ(v, it->value()) << index;
         ++it;
         ++index;
     }

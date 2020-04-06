@@ -7,17 +7,15 @@
 namespace nebula {
 
 template<typename T>
-typename std::enable_if<std::is_integral<T>::value, RowWriter&>::type
-RowWriter::operator<<(T v) noexcept {
-    RW_GET_COLUMN_TYPE(INT)
-
-    switch (type->get_type()) {
-        case cpp2::SupportedType::INT:
-        case cpp2::SupportedType::TIMESTAMP: {
+typename std::enable_if<std::is_integral<T>::value, RowWriterV1&>::type
+RowWriterV1::operator<<(T v) noexcept {
+    switch (schema_->getFieldType(colNum_)) {
+        case meta::cpp2::PropertyType::INT64:
+        case meta::cpp2::PropertyType::TIMESTAMP: {
             writeInt(v);
             break;
         }
-        case cpp2::SupportedType::VID: {
+        case meta::cpp2::PropertyType::VID: {
             cord_ << (uint64_t)v;
             break;
         }
@@ -28,14 +26,19 @@ RowWriter::operator<<(T v) noexcept {
         }
     }
 
-    RW_CLEAN_UP_WRITE()
+    colNum_++;
+    if (colNum_ != 0 && (colNum_ >> 4 << 4) == colNum_) {
+        /* We need to record offset for every 16 fields */
+        blockOffsets_.emplace_back(cord_.size());
+    }
+
     return *this;
 }
 
 
 template<typename T>
 typename std::enable_if<std::is_integral<T>::value>::type
-RowWriter::writeInt(T v) {
+RowWriterV1::writeInt(T v) {
     uint8_t buf[10];
     size_t len = folly::encodeVarint(v, buf);
     DCHECK_GT(len, 0UL);

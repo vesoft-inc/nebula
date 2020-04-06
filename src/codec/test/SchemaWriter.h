@@ -16,11 +16,11 @@ class SchemaWriter : public ResultSchemaProvider {
 public:
     explicit SchemaWriter(SchemaVer ver = 0) : ResultSchemaProvider(ver) {}
 
-    // Move the schema out of the writer
-    meta::cpp2::Schema moveSchema() noexcept;
-
     SchemaWriter& appendCol(folly::StringPiece name,
-                            meta::cpp2::PropertyType type) noexcept;
+                            meta::cpp2::PropertyType type,
+                            int32_t fixedStrLen = 0,
+                            bool nullable = false,
+                            Value defaultValue = Value()) noexcept;
 
 private:
 };
