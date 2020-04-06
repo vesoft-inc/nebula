@@ -33,9 +33,13 @@ public:
         // For the fixed length string, the size will be the pre-defined
         // string length
         virtual size_t size() const = 0;
-        // In v1, this will always return 0
-        // In v2, this will return the offset of the field
+        // In v1, this always returns 0
+        // In v2, this returns the offset of the field
         virtual size_t offset() const = 0;
+        // In v1, this always returns 0
+        // In v2, if the field is nullable, it returns the position of
+        // the null flag bit, otherwise, it returns 0
+        virtual size_t nullFlagPos() const = 0;
     };
 
     // Inherited classes do not need to implement the Iterator
@@ -97,6 +101,7 @@ public:
 
     virtual SchemaVer getVersion() const noexcept = 0;
     virtual size_t getNumFields() const noexcept = 0;
+    virtual size_t getNumNullableFields() const noexcept = 0;
 
     // Return the number of bytes occupied by when each row of data
     // persisted on the disk

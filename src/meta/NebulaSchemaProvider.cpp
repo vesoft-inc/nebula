@@ -20,6 +20,11 @@ size_t NebulaSchemaProvider::getNumFields() const noexcept {
 }
 
 
+size_t NebulaSchemaProvider::getNumNullableFields() const noexcept {
+    return numNullableFields_;
+}
+
+
 size_t NebulaSchemaProvider::size() const noexcept {
     if (fields_.size() > 0) {
         auto& lastField = fields_.back();
@@ -166,13 +171,20 @@ void NebulaSchemaProvider::addField(folly::StringPiece name,
         auto& lastField = fields_.back();
         offset = lastField.offset() + lastField.size();
     }
+
+    size_t nullFlagPos = 0;
+    if (nullable) {
+        nullFlagPos = numNullableFields_++;
+    }
+
     fields_.emplace_back(name.toString(),
                          type,
                          nullable,
                          !defaultValue.empty(),
                          std::move(defaultValue),
                          size,
-                         offset);
+                         offset,
+                         nullFlagPos);
     fieldNameIndex_.emplace(name.toString(),
                             static_cast<int64_t>(fields_.size() - 1));
 }

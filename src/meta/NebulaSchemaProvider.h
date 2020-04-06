@@ -25,14 +25,16 @@ public:
                     bool hasDefault,
                     Value defaultValue,
                     size_t size,
-                    size_t offset)
+                    size_t offset,
+                    size_t nullFlagPos)
             : name_(std::move(name))
             , type_(std::move(type))
             , nullable_(nullable)
             , hasDefault_(hasDefault)
             , defaultValue_(defaultValue)
             , size_(size)
-            , offset_(offset) {}
+            , offset_(offset)
+            , nullFlagPos_(nullFlagPos) {}
 
         const char* name() const override {
             return name_.c_str();
@@ -62,6 +64,11 @@ public:
             return offset_;
         }
 
+        size_t nullFlagPos() const override {
+            DCHECK(nullable_);
+            return nullFlagPos_;
+        }
+
     private:
         std::string name_;
         cpp2::PropertyType type_;
@@ -70,13 +77,17 @@ public:
         Value defaultValue_;
         size_t size_;
         size_t offset_;
+        size_t nullFlagPos_;
     };
 
 public:
-    explicit NebulaSchemaProvider(SchemaVer ver) : ver_(ver) {}
+    explicit NebulaSchemaProvider(SchemaVer ver)
+        : ver_(ver)
+        , numNullableFields_(0) {}
 
     SchemaVer getVersion() const noexcept override;
     size_t getNumFields() const noexcept override;
+    size_t getNumNullableFields() const noexcept override;
 
     size_t size() const noexcept override;
 
@@ -108,6 +119,7 @@ protected:
     // fieldname -> index
     std::unordered_map<std::string, int64_t>    fieldNameIndex_;
     std::vector<SchemaField>                    fields_;
+    size_t                                      numNullableFields_;
     cpp2::SchemaProp                            schemaProp_;
 };
 
