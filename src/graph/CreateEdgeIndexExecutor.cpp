@@ -45,8 +45,8 @@ void CreateEdgeIndexExecutor::execute() {
         return;
     }
 
-    auto future =
-        mc->createEdgeIndex(spaceId, *name, *edgeName, columns, sentence_->isIfNotExist());
+    auto future = mc->createEdgeIndex(
+        spaceId, *name, *edgeName, std::move(columns), sentence_->isIfNotExist());
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this](auto &&resp) {
         if (!resp.ok()) {
