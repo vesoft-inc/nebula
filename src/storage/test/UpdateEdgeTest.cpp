@@ -5,7 +5,7 @@
  */
 
 #include "base/Base.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include <limits>
@@ -350,6 +350,72 @@ TEST(UpdateEdgeTest, Insertable_Test) {
     EXPECT_TRUE(ok(res));
     auto&& v3 = value(std::move(res));
     EXPECT_STREQ("", boost::get<std::string>(v3).c_str());
+}
+
+
+TEST(UpdateEdgeTest, CorruptDataTest) {
+    fs::TempDir rootPath("/tmp/UpdateEdgeTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    LOG(INFO) << "Prepare meta...";
+    auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
+    LOG(INFO) << "Write an edge with empty value!";
+
+    // partId, srcId, edgeType, rank, dstId, version
+    auto key = NebulaKeyUtils::edgeKey(0, 10, 101, 0, 11, 0);
+    std::vector<kvstore::KV> data;
+    data.emplace_back(std::make_pair(key, ""));
+    folly::Baton<> baton;
+    kv->asyncMultiPut(0, 0, std::move(data),
+        [&](kvstore::ResultCode code) {
+            CHECK_EQ(code, kvstore::ResultCode::SUCCEEDED);
+            baton.post();
+        });
+    baton.wait();
+
+    LOG(INFO) << "Build UpdateEdgeRequest...";
+    GraphSpaceID spaceId = 0;
+    PartitionID partId = 0;
+    VertexID srcId = 10;
+    VertexID dstId = 11;
+    // src = 10, edge_type = 101, ranking = 0, dst = 11
+    storage::cpp2::EdgeKey edgeKey;
+    edgeKey.set_src(srcId);
+    edgeKey.set_edge_type(101);
+    edgeKey.set_ranking(0);
+    edgeKey.set_dst(dstId);
+
+    cpp2::UpdateEdgeRequest req;
+    req.set_space_id(spaceId);
+    req.set_edge_key(edgeKey);
+    req.set_part_id(partId);
+    req.set_filter("");
+    LOG(INFO) << "Build update items...";
+    std::vector<cpp2::UpdateItem> items;
+    // string: 101.col_10 = string_col_10_2_new
+    cpp2::UpdateItem item;
+    item.set_name("101");
+    item.set_prop("col_10");
+    std::string col10new("string_col_10_2_new");
+    PrimaryExpression val2(col10new);
+    item.set_value(Expression::encode(&val2));
+    items.emplace_back(item);
+    req.set_update_items(std::move(items));
+    req.set_insertable(true);
+
+    LOG(INFO) << "Test UpdateEdgeRequest...";
+    auto* processor = UpdateEdgeProcessor::instance(kv.get(),
+                                                    schemaMan.get(),
+                                                    indexMan.get(),
+                                                    nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+
+    EXPECT_EQ(1, resp.result.failed_codes.size());
+    EXPECT_TRUE(cpp2::ErrorCode::E_EDGE_NOT_FOUND == resp.result.failed_codes[0].code);
+    EXPECT_EQ(0, resp.result.failed_codes[0].part_id);
 }
 
 }  // namespace storage

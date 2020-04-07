@@ -86,7 +86,7 @@ jobs:
         continue-on-error: false
         working-directory: build
         env:
-          ASAN_SYMBOLIZER_PATH: /usr/bin/llvm-symbolizer
+          ASAN_SYMBOLIZER_PATH: /opt/vesoft/toolset/clang/9.0.0/bin/llvm-symbolizer
           ASAN_OPTIONS: fast_unwind_on_malloc=1
         run: |
           ctest \
@@ -99,7 +99,7 @@ jobs:
         timeout-minutes: 30
         working-directory: build
         env:
-          ASAN_SYMBOLIZER_PATH: /usr/bin/llvm-symbolizer
+          ASAN_SYMBOLIZER_PATH: /opt/vesoft/toolset/clang/9.0.0/bin/llvm-symbolizer
           ASAN_OPTIONS: fast_unwind_on_malloc=0
         run: |
           ctest \
@@ -111,10 +111,8 @@ jobs:
         if: success() && matrix.compiler == 'gcc-9.2' && matrix.os == 'centos7' && steps.ignore_docs.outputs.num_source_files != 0
         run: |
           set -e
-          /usr/local/bin/lcov --version
-          /usr/local/bin/lcov --capture --gcov-tool $GCOV --directory . --output-file coverage.info
-          /usr/local/bin/lcov --remove coverage.info '*/opt/vesoft/*' -o clean.info
-          bash <(curl -s https://codecov.io/bash) -Z -t $(cat /etc/action/secrets/codecov) -f clean.info
+          fastcov -o coverage.info -l --exclude=/opt/vesoft/ --exclude=scanner.lex
+          bash <(curl -s https://codecov.io/bash) -Z -t $(cat /etc/action/secrets/codecov) -f coverage.info
         shell: bash
       - name: Cleanup
         if: always()

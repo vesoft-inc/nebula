@@ -129,12 +129,23 @@ Status LookupExecutor::prepareYield() {
                 return Status::SyntaxError("Expressions other than AliasProp are not supported");
             }
             auto* aExpr = dynamic_cast<const AliasPropertyExpression*>(prop);
+            auto st = checkAliasProperty(aExpr);
+            if (!st.ok()) {
+                return st;
+            }
             if (schema->getFieldIndex(aExpr->prop()->c_str()) < 0) {
                 LOG(ERROR) << "Unknown column " << aExpr->prop()->c_str();
                 return Status::Error("Unknown column `%s' in schema", aExpr->prop()->c_str());
             }
             returnCols_.emplace_back(aExpr->prop()->c_str());
         }
+    }
+    return Status::OK();
+}
+
+Status LookupExecutor::checkAliasProperty(const AliasPropertyExpression* aExpr) {
+    if (*aExpr->alias() != *from_) {
+        return Status::SyntaxError("Edge or Tag name error : %s ", aExpr->alias()->c_str());
     }
     return Status::OK();
 }
@@ -183,10 +194,18 @@ Status LookupExecutor::traversalExpr(const Expression *expr) {
              */
             if (left->kind() == nebula::Expression::kAliasProp) {
                 auto* aExpr = dynamic_cast<const AliasPropertyExpression*>(left);
+                auto st = checkAliasProperty(aExpr);
+                if (!st.ok()) {
+                    return st;
+                }
                 prop = *aExpr->prop();
                 filters_.emplace_back(std::make_pair(prop, rExpr->op()));
             } else if (right->kind() == nebula::Expression::kAliasProp) {
                 auto* aExpr = dynamic_cast<const AliasPropertyExpression*>(right);
+                auto st = checkAliasProperty(aExpr);
+                if (!st.ok()) {
+                    return st;
+                }
                 prop = *aExpr->prop();
                 filters_.emplace_back(std::make_pair(prop, rExpr->op()));
             } else {
@@ -294,44 +313,10 @@ LookupExecutor::findValidIndex() {
     return Status::OK();
 }
 
-void LookupExecutor::stepEdgeOut() {
+void LookupExecutor::lookUp() {
     auto *sc = ectx()->getStorageClient();
     auto filter = Expression::encode(sentence_->whereClause()->filter());
-    auto future  = sc->lookUpEdgeIndex(spaceId_,
-                                       index_,
-                                       filter,
-                                       returnCols_);
-    auto *runner = ectx()->rctx()->runner();
-    auto cb = [this] (auto &&result) {
-        auto completeness = result.completeness();
-        if (completeness == 0) {
-            doError(Status::Error("Lookup edges failed"));
-            return;
-        } else if (completeness != 100) {
-            LOG(INFO) << "Lookup partially failed: "  << completeness << "%";
-            for (auto &error : result.failedParts()) {
-                LOG(ERROR) << "part: " << error.first
-                           << "error code: " << static_cast<int>(error.second);
-            }
-        }
-        storage::StorageRpcResponse<storage::cpp2::LookUpVertexIndexResp> vResp(0);
-        finishExecution(std::forward<decltype(result)>(result), std::move(vResp));
-    };
-    auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception when handle lookup: " << e.what();
-        doError(Status::Error("Exception when handle lookup: %s.",
-                              e.what().c_str()));
-    };
-    std::move(future).via(runner).thenValue(cb).thenError(error);
-}
-
-void LookupExecutor::stepVertexOut() {
-    auto *sc = ectx()->getStorageClient();
-    auto filter = Expression::encode(sentence_->whereClause()->filter());
-    auto future  = sc->lookUpVertexIndex(spaceId_,
-                                         index_,
-                                         filter,
-                                         returnCols_);
+    auto future  = sc->lookUpIndex(spaceId_, index_, filter, returnCols_, isEdge_);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&result) {
         auto completeness = result.completeness();
@@ -345,8 +330,7 @@ void LookupExecutor::stepVertexOut() {
                            << "error code: " << static_cast<int>(error.second);
             }
         }
-        storage::StorageRpcResponse<storage::cpp2::LookUpEdgeIndexResp> eResp(0);
-        finishExecution(std::move(eResp), std::forward<decltype(result)>(result));
+        finishExecution(std::forward<decltype(result)>(result));
     };
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception when handle lookup: " << e.what();
@@ -369,11 +353,7 @@ void LookupExecutor::execute() {
         return;
     }
 
-    if (isEdge_) {
-        stepEdgeOut();
-    } else {
-        stepVertexOut();
-    }
+    lookUp();
 }
 
 void LookupExecutor::feedResult(std::unique_ptr<InterimResult> result) {
@@ -407,19 +387,17 @@ std::vector<std::string> LookupExecutor::getResultColumnNames() const {
     return result;
 }
 
-void LookupExecutor::finishExecution(EdgeRpcResponse &&eRpcResp,
-                                     VertexRpcResponse &&vRpcResp) {
+void LookupExecutor::finishExecution(RpcResponse &&resp) {
     if (onResult_) {
         std::unique_ptr<InterimResult> outputs;
-        if (!setupInterimResult(std::move(eRpcResp), std::move(vRpcResp), outputs)) {
+        if (!setupInterimResult(std::move(resp), outputs)) {
             return;
         }
         onResult_(std::move(outputs));
     } else {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         resp_->set_column_names(getResultColumnNames());
-        auto ret = toThriftResponse(std::forward<EdgeRpcResponse>(eRpcResp),
-                                    std::forward<VertexRpcResponse>(vRpcResp));
+        auto ret = toThriftResponse(std::forward<RpcResponse>(resp));
         if (!ret.ok()) {
             LOG(ERROR) << "Get rows failed: " << ret.status();
             return;
@@ -431,8 +409,7 @@ void LookupExecutor::finishExecution(EdgeRpcResponse &&eRpcResp,
     doFinish(Executor::ProcessControl::kNext);
 }
 
-bool LookupExecutor::setupInterimResult(EdgeRpcResponse &&eRpcResp,
-                                        VertexRpcResponse &&vRpcResp,
+bool LookupExecutor::setupInterimResult(RpcResponse &&resp,
                                         std::unique_ptr<InterimResult> &result) {
     // Generic results
     result = std::make_unique<InterimResult>(getResultColumnNames());
@@ -503,11 +480,11 @@ bool LookupExecutor::setupInterimResult(EdgeRpcResponse &&eRpcResp,
         return Status::OK();
     };  // cb
     if (isEdge_) {
-        if (!processFinalEdgeResult(eRpcResp, cb)) {
+        if (!processFinalEdgeResult(resp, cb)) {
             return false;
         }
     } else {
-        if (!processFinalVertexResult(vRpcResp, cb)) {
+        if (!processFinalVertexResult(resp, cb)) {
             return false;
         }
     }
@@ -520,20 +497,19 @@ bool LookupExecutor::setupInterimResult(EdgeRpcResponse &&eRpcResp,
 }
 
 StatusOr<std::vector<cpp2::RowValue>>
-LookupExecutor::toThriftResponse(EdgeRpcResponse&& eRpcResp,
-                                 VertexRpcResponse &&vRpcResp) {
+LookupExecutor::toThriftResponse(RpcResponse&& response) {
     std::vector<cpp2::RowValue> rows;
     int64_t totalRows = 0;
     if (isEdge_) {
-        for (auto& resp : eRpcResp.responses()) {
-            if (resp.__isset.rows) {
-                totalRows += resp.get_rows()->size();
+        for (auto& resp : response.responses()) {
+            if (resp.__isset.edges) {
+                totalRows += resp.get_edges()->size();
             }
         }
     } else {
-        for (auto& resp : vRpcResp.responses()) {
-            if (resp.__isset.rows) {
-                totalRows += resp.get_rows()->size();
+        for (auto& resp : response.responses()) {
+            if (resp.__isset.vertices) {
+                totalRows += resp.get_vertices()->size();
             }
         }
     }
@@ -596,25 +572,25 @@ LookupExecutor::toThriftResponse(EdgeRpcResponse&& eRpcResp,
     };  // cb
 
     if (isEdge_) {
-        if (!processFinalEdgeResult(eRpcResp, cb)) {
+        if (!processFinalEdgeResult(response, cb)) {
             return Status::Error("process failed");
         }
     } else {
-        if (!processFinalVertexResult(vRpcResp, cb)) {
+        if (!processFinalVertexResult(response, cb)) {
             return Status::Error("process failed");
         }
     }
     return rows;
 }
 
-bool LookupExecutor::processFinalEdgeResult(EdgeRpcResponse &rpcResp, const Callback& cb) const {
+bool LookupExecutor::processFinalEdgeResult(RpcResponse &rpcResp, const Callback& cb) const {
     auto& all = rpcResp.responses();
     std::vector<nebula::cpp2::SupportedType> colTypes;
     std::vector<VariantType> record;
     record.reserve(returnCols_.size() + 3);
     std::shared_ptr<ResultSchemaProvider> schema = nullptr;
     for (auto &resp : all) {
-        if (!resp.__isset.rows || resp.get_rows() == nullptr || resp.rows.empty()) {
+        if (!resp.__isset.edges || resp.get_edges() == nullptr || resp.get_edges()->empty()) {
             continue;
         }
         if (colTypes.empty()) {
@@ -628,7 +604,7 @@ bool LookupExecutor::processFinalEdgeResult(EdgeRpcResponse &rpcResp, const Call
                 });
             }
         }
-        for (const auto& data : *resp.get_rows()) {
+        for (const auto& data : *resp.get_edges()) {
             const auto& edge = data.get_key();
             record.emplace_back(edge.get_src());
             record.emplace_back(edge.get_dst());
@@ -654,7 +630,7 @@ bool LookupExecutor::processFinalEdgeResult(EdgeRpcResponse &rpcResp, const Call
     return true;
 }
 
-bool LookupExecutor::processFinalVertexResult(VertexRpcResponse &rpcResp,
+bool LookupExecutor::processFinalVertexResult(RpcResponse &rpcResp,
                                               const Callback& cb) const {
     auto& all = rpcResp.responses();
     std::vector<nebula::cpp2::SupportedType> colTypes;
@@ -662,7 +638,9 @@ bool LookupExecutor::processFinalVertexResult(VertexRpcResponse &rpcResp,
     record.reserve(returnCols_.size() + 1);
     std::shared_ptr<ResultSchemaProvider> schema = nullptr;
     for (auto &resp : all) {
-        if (!resp.__isset.rows || resp.get_rows() == nullptr || resp.rows.empty()) {
+        if (!resp.__isset.vertices ||
+            resp.get_vertices() == nullptr ||
+            resp.get_vertices()->empty()) {
             continue;
         }
         if (colTypes.empty()) {
@@ -674,7 +652,7 @@ bool LookupExecutor::processFinalVertexResult(VertexRpcResponse &rpcResp,
                 });
             }
         }
-        for (const auto& data : *resp.get_rows()) {
+        for (const auto& data : *resp.get_vertices()) {
             const auto& vertexId = data.get_vertex_id();
             record.emplace_back(vertexId);
             for (auto& column : returnCols_) {
