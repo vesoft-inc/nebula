@@ -24,6 +24,7 @@ class SequentialExecutor;
 class SequentialSentences final : public Sentence {
 public:
     explicit SequentialSentences(Sentence *sentence) {
+        kind_ = Kind::kSequential;
         sentences_.emplace_back(sentence);
     }
 

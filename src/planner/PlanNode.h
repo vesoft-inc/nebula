@@ -46,6 +46,8 @@ public:
 
     PlanNode() = default;
 
+    explicit PlanNode(ExecutionPlan* plan);
+
     virtual ~PlanNode() = default;
 
     /**
@@ -67,6 +69,7 @@ public:
 
     void setId(int64_t id) {
         id_ = id;
+        varGenerated_ = folly::stringPrintf("UNAMED_%ld", id_);
     }
 
     void setPlan(ExecutionPlan* plan) {
@@ -76,9 +79,10 @@ public:
 protected:
     Kind                                     kind_{Kind::kUnknown};
     int64_t                                  id_{IdGenerator::INVALID_ID};
-    ExecutionPlan*                           plan_;
+    ExecutionPlan*                           plan_{nullptr};
     using VariableName = std::string;
     std::unordered_set<VariableName>         availableVars_;
+    VariableName                             varGenerated_;
 };
 }  // namespace graph
 }  // namespace nebula

@@ -87,6 +87,9 @@ class GraphScanner;
     nebula::GroupClause                    *group_clause;
     nebula::HostList                       *host_list;
     nebula::HostAddr                       *host_item;
+    nebula::InBoundClause                  *in_bound_clause;
+    nebula::OutBoundClause                 *out_bound_clause;
+    nebula::BothInOutClause                *both_in_out_clause;
 }
 
 /* destructors */
@@ -114,6 +117,7 @@ class GraphScanner;
 %token KW_SHORTEST KW_PATH
 %token KW_IS KW_NULL
 %token KW_SNAPSHOT KW_SNAPSHOTS
+%token KW_OUT KW_BOTH KW_SUBGRAPH
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -183,6 +187,9 @@ class GraphScanner;
 %type <group_clause> group_clause
 %type <host_list> host_list
 %type <host_item> host_item
+%type <in_bound_clause> in_bound_clause
+%type <out_bound_clause> out_bound_clause
+%type <both_in_out_clause> both_in_out_clause
 
 %type <intval> unary_integer rank port
 
@@ -195,7 +202,7 @@ class GraphScanner;
 %type <role_type_clause> role_type_clause
 %type <acl_item_clause> acl_item_clause
 
-%type <sentence> go_sentence match_sentence use_sentence find_sentence find_path_sentence
+%type <sentence> go_sentence match_sentence use_sentence find_sentence find_path_sentence get_subgraph_sentence
 %type <sentence> order_by_sentence limit_sentence group_by_sentence
 %type <sentence> fetch_vertices_sentence fetch_edges_sentence
 %type <sentence> create_tag_sentence create_edge_sentence
@@ -886,6 +893,23 @@ group_by_sentence
     }
     ;
 
+in_bound_clause
+    : %empty { $$ = nullptr; }
+    | KW_IN over_edges { $$ = new InBoundClause($2); }
+
+out_bound_clause
+    : %empty { $$ = nullptr; }
+    | KW_OUT over_edges { $$ = new OutBoundClause($2); }
+
+both_in_out_clause
+    : %empty { $$ = nullptr; }
+    | KW_BOTH over_edges { $$ = new BothInOutClause($2); }
+
+get_subgraph_sentence
+    : KW_GET KW_SUBGRAPH step_clause from_clause in_bound_clause out_bound_clause both_in_out_clause {
+        $$ = new GetSubgraphSentence($3, $4, $5, $6, $7);
+    }
+
 use_sentence
     : KW_USE name_label { $$ = new UseSentence($2); }
     ;
@@ -1127,6 +1151,7 @@ traverse_sentence
     | find_path_sentence { $$ = $1; }
     | limit_sentence { $$ = $1; }
     | yield_sentence { $$ = $1; }
+    | get_subgraph_sentence { $$ = $1; }
     ;
 
 set_sentence

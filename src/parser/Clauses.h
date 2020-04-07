@@ -360,6 +360,26 @@ public:
 private:
     std::unique_ptr<YieldColumns>               groupColumns_;
 };
+
+class InBoundClause final : public Clause {
+public:
+    explicit InBoundClause(OverEdges *edges) {
+        kind_ = kOverClause;
+        overEdges_.reset(edges);
+    }
+
+    std::vector<OverEdge *> edges() const { return overEdges_->edges(); }
+
+    Status prepare(Over &over) const;
+
+    std::string toString() const;
+
+private:
+    std::unique_ptr<OverEdges> overEdges_;
+};
+
+using OutBoundClause = InBoundClause;
+using BothInOutClause = InBoundClause;
 }   // namespace nebula
 #endif  // PARSER_CLAUSES_H_
 

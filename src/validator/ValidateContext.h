@@ -16,10 +16,18 @@ namespace nebula {
 namespace graph {
 using ColDef = std::pair<std::string, Value::Type>;
 using ColsDef = std::vector<ColDef>;
+
+struct SpaceDescription {
+    std::string name;
+    GraphSpaceID id;
+};
 class ValidateContext final {
 public:
     void switchToSpace(std::string spaceName, GraphSpaceID spaceId) {
-        spaces_.emplace_back(std::make_pair(std::move(spaceName), spaceId));
+        SpaceDescription space;
+        space.name = std::move(spaceName);
+        space.id = spaceId;
+        spaces_.emplace_back(std::move(space));
     }
 
     void registerVariable(std::string var, ColsDef cols) {
@@ -30,11 +38,19 @@ public:
         plan_ = plan;
     }
 
+    void setSession(ClientSession* session) {
+        session_ = session;
+    }
+
+    void setSchemaMng(meta::SchemaManager* schemaMng) {
+        schemaMng_ = schemaMng;
+    }
+
     bool spaceChosen() const {
         return !spaces_.empty();
     }
 
-    const std::pair<std::string, GraphSpaceID>& whichSpace() const {
+    const SpaceDescription& whichSpace() const {
         return spaces_.back();
     }
 
@@ -42,21 +58,16 @@ public:
         return schemaMng_;
     }
 
-    int64_t getId() {
-        return ++idCounter_;
-    }
-
     ExecutionPlan* plan() const {
         return plan_;
     }
 
 private:
-    meta::SchemaManager*                                schemaMng_;
-    ClientSession*                                      session_;
-    std::vector<std::pair<std::string, GraphSpaceID>>   spaces_;
+    meta::SchemaManager*                                schemaMng_{nullptr};
+    ClientSession*                                      session_{nullptr};
+    std::vector<SpaceDescription>                       spaces_;
     std::unordered_map<std::string, ColsDef>            vars_;
-    int64_t                                             idCounter_;
-    ExecutionPlan*                                      plan_;
+    ExecutionPlan*                                      plan_{nullptr};
 };
 }  // namespace graph
 }  // namespace nebula

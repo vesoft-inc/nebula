@@ -24,8 +24,10 @@ void QueryInstance::execute() {
         }
 
         sentences_ = std::move(result).value();
-        validator_ = std::make_unique<ASTValidator>(sentences_.get());
-        // TODO: After pr#16 merging
+        validator_ = std::make_unique<ASTValidator>(
+                            sentences_.get(),
+                            ectx_->rctx()->session(),
+                            ectx_->schemaManager());
         auto validateResult = validator_->validate();
         if (!validateResult.ok()) {
             status = std::move(validateResult).status();

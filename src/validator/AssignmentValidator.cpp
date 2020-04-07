@@ -25,8 +25,7 @@ Status AssignmentValidator::validateImpl() {
 }
 
 Status AssignmentValidator::toPlan() {
-    // start_ = std::make_shared<RegisterVariable>(validator_->start(), std::move(var_));
-    // end_ = validator_->end();
+    // TODO: Set variable to the root of subquery.
     return Status::OK();
 }
 }  // namespace graph

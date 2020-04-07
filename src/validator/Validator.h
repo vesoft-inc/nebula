@@ -16,7 +16,7 @@ namespace nebula {
 namespace graph {
 class Validator {
 public:
-    explicit Validator(Sentence* sentence, ValidateContext* context)
+    Validator(Sentence* sentence, ValidateContext* context)
         : sentence_(sentence), validateContext_(context) {}
 
     virtual ~Validator() = default;
@@ -32,12 +32,12 @@ public:
         inputs_ = std::move(inputs);
     }
 
-    auto start() const {
-        return start_;
+    auto root() const {
+        return root_;
     }
 
-    auto end() const {
-        return end_;
+    auto tail() const {
+        return tail_;
     }
 
     auto outputs() const {
@@ -65,10 +65,10 @@ protected:
     virtual Status toPlan() = 0;
 
 protected:
-    Sentence*                       sentence_;
-    ValidateContext*                validateContext_;
-    PlanNode*                       start_;
-    PlanNode*                       end_;
+    Sentence*                       sentence_{nullptr};
+    ValidateContext*                validateContext_{nullptr};
+    PlanNode*                       root_{nullptr};
+    PlanNode*                       tail_{nullptr};
     ColsDef                         outputs_;
     ColsDef                         inputs_;
 };

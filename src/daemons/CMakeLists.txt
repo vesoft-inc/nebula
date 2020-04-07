@@ -5,6 +5,8 @@ nebula_add_executable(
         GraphDaemon.cpp
     OBJECTS
         $<TARGET_OBJECTS:service_obj>
+        $<TARGET_OBJECTS:session_obj>
+        $<TARGET_OBJECTS:graph_gflags_obj>
         $<TARGET_OBJECTS:parser_obj>
         $<TARGET_OBJECTS:validator_obj>
         $<TARGET_OBJECTS:planner_obj>

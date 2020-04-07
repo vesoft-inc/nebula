@@ -31,12 +31,12 @@ Status PipeValidator::validateImpl() {
 }
 
 Status PipeValidator::toPlan() {
-    start_ = rValidator_->start();
-    auto status = Validator::appendPlan(rValidator_->end(), lValidator_->start());
+    root_ = rValidator_->root();
+    auto status = Validator::appendPlan(rValidator_->tail(), lValidator_->root());
     if (!status.ok()) {
         return status;
     }
-    end_ = lValidator_->end();
+    tail_ = lValidator_->tail();
     return Status::OK();
 }
 }  // namespace graph

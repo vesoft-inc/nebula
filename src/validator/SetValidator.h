@@ -14,7 +14,7 @@ namespace nebula {
 namespace graph {
 class SetValidator final : public Validator {
 public:
-    explicit SetValidator(Sentence* sentence, ValidateContext* context)
+    SetValidator(Sentence* sentence, ValidateContext* context)
         : Validator(sentence, context) {}
 
 private:

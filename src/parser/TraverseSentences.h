@@ -628,6 +628,54 @@ private:
     std::unique_ptr<YieldClause>   yieldClause_;
 };
 
+class GetSubgraphSentence final : public Sentence {
+public:
+    GetSubgraphSentence(StepClause* step,
+                        FromClause* from,
+                        InBoundClause* in,
+                        OutBoundClause* out,
+                        BothInOutClause* both) {
+        kind_ = Kind::kGetSubgraph;
+        step_.reset(step);
+        from_.reset(from);
+        in_.reset(in);
+        out_.reset(out);
+        both_.reset(both);
+    }
+
+    StepClause* step() const {
+        return step_.get();
+    }
+
+    FromClause* from() const {
+        return from_.get();
+    }
+
+    InBoundClause* in() const {
+        return in_.get();
+    }
+
+    OutBoundClause* out() const {
+        return out_.get();
+    }
+
+    BothInOutClause* both() const {
+        return both_.get();
+    }
+
+    std::string toString() const override {
+        // TODO:
+        return "";
+    }
+
+private:
+    std::unique_ptr<StepClause>         step_;
+    std::unique_ptr<FromClause>         from_;
+    std::unique_ptr<InBoundClause>      in_;
+    std::unique_ptr<OutBoundClause>     out_;
+    std::unique_ptr<BothInOutClause>    both_;
+};
+
 }   // namespace nebula
 #endif  // PARSER_TRAVERSESENTENCES_H_
 

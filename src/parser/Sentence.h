@@ -64,6 +64,7 @@ public:
         kReturn,
         kCreateSnapshot,
         kDropSnapshot,
+        kGetSubgraph,
     };
 
     Kind kind() const {

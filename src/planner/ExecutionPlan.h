@@ -16,24 +16,30 @@ class ExecutionPlan final {
 public:
     ExecutionPlan() {
         id_ = EPIdGenerator::instance().id();
+        nodeIdGen_ = std::make_unique<IdGenerator>(0);
+    }
+
+    ~ExecutionPlan() {
+        for (auto* n : nodes_) {
+            delete n;
+        }
     }
 
     void setRoot(PlanNode* root) {
         root_ = root;
     }
 
-    PlanNode* addPlanNode(std::unique_ptr<PlanNode>&& node) {
-        node->setId(nodeIdGen_.id());
-        auto* tmp = node.get();
-        nodes_.emplace_back(std::move(node));
-        return tmp;
+    PlanNode* addPlanNode(PlanNode* node) {
+        node->setId(nodeIdGen_->id());
+        nodes_.emplace_back(node);
+        return node;
     }
 
 private:
     int64_t                                 id_{IdGenerator::INVALID_ID};
-    PlanNode*                               root_;
-    std::vector<std::unique_ptr<PlanNode>>  nodes_;
-    IdGenerator                             nodeIdGen_;
+    PlanNode*                               root_{nullptr};
+    std::vector<PlanNode*>                  nodes_;
+    std::unique_ptr<IdGenerator>            nodeIdGen_;
 };
 }  // namespace graph
 }  // namespace nebula

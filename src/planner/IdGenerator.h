@@ -24,7 +24,7 @@ public:
     }
 
 private:
-    std::atomic<int64_t>    counter_;
+    std::atomic<int64_t>    counter_{0};
 };
 
 class EPIdGenerator final : public IdGenerator {
