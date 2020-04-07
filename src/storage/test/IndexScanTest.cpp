@@ -11,8 +11,7 @@
 #include <limits>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
-#include "storage/index/LookUpVertexIndexProcessor.h"
-#include "storage/index/LookUpEdgeIndexProcessor.h"
+#include "storage/index/LookUpIndexProcessor.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
 
@@ -262,7 +261,7 @@ static std::unique_ptr<meta::IndexManager> mockIndexMan(GraphSpaceID spaceId = 0
     return im;
 }
 
-static cpp2::LookUpVertexIndexResp execLookupVertices(const std::string& filter,
+static cpp2::LookUpIndexResp execLookupVertices(const std::string& filter,
                                                       bool hasReturnCols = true) {
     fs::TempDir rootPath("/tmp/execLookupVertices.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
@@ -273,15 +272,12 @@ static cpp2::LookUpVertexIndexResp execLookupVertices(const std::string& filter,
     auto schemaMan = mockSchemaMan(spaceId, type, tagId);
     auto indexMan = mockIndexMan(spaceId, tagId, type);
     mockData(kv.get(), schemaMan.get(), indexMan.get(), type, tagId, spaceId);
-    auto *processor = LookUpVertexIndexProcessor::instance(kv.get(),
-                                                           schemaMan.get(),
-                                                           indexMan.get(),
-                                                           nullptr);
+    auto *processor = LookUpIndexProcessor::instance(kv.get(),
+                                                     schemaMan.get(),
+                                                     indexMan.get(),
+                                                     nullptr);
     cpp2::LookUpIndexRequest req;
-    decltype(req.parts) parts;
-    parts.emplace_back(0);
-    parts.emplace_back(1);
-    parts.emplace_back(2);
+    std::vector<int32_t> parts = {0, 1, 2};
     if (hasReturnCols) {
         decltype(req.return_columns) cols;
         cols.emplace_back("tag_3001_col_0");
@@ -293,15 +289,15 @@ static cpp2::LookUpVertexIndexResp execLookupVertices(const std::string& filter,
     req.set_space_id(spaceId);
     req.set_parts(std::move(parts));
     req.set_index_id(tagId);
-
     req.set_filter(filter);
+    req.set_is_edge(false);
     auto f = processor->getFuture();
     processor->process(req);
     return std::move(f).get();
 }
 
-static cpp2::LookUpEdgeIndexResp execLookupEdges(const std::string& filter,
-                                                 bool hasReturnCols = true) {
+static cpp2::LookUpIndexResp execLookupEdges(const std::string& filter,
+                                             bool hasReturnCols = true) {
     fs::TempDir rootPath("/tmp/execLookupEdges.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     GraphSpaceID spaceId = 0;
@@ -311,15 +307,12 @@ static cpp2::LookUpEdgeIndexResp execLookupEdges(const std::string& filter,
     auto schemaMan = mockSchemaMan(spaceId, type, tagId);
     auto indexMan = mockIndexMan(spaceId, tagId, type);
     mockData(kv.get(), schemaMan.get(), indexMan.get(), type, tagId, spaceId);
-    auto *processor = LookUpEdgeIndexProcessor::instance(kv.get(),
-                                                         schemaMan.get(),
-                                                         indexMan.get(),
-                                                         nullptr);
+    auto *processor = LookUpIndexProcessor::instance(kv.get(),
+                                                     schemaMan.get(),
+                                                     indexMan.get(),
+                                                     nullptr);
     cpp2::LookUpIndexRequest req;
-    decltype(req.parts) parts;
-    parts.emplace_back(0);
-    parts.emplace_back(1);
-    parts.emplace_back(2);
+    std::vector<int32_t> parts = {0, 1, 2};
     if (hasReturnCols) {
         decltype(req.return_columns) cols;
         cols.emplace_back("col_0");
@@ -335,14 +328,14 @@ static cpp2::LookUpEdgeIndexResp execLookupEdges(const std::string& filter,
     req.set_space_id(spaceId);
     req.set_parts(std::move(parts));
     req.set_index_id(type);
-
     req.set_filter(filter);
+    req.set_is_edge(true);
     auto f = processor->getFuture();
     processor->process(req);
     return std::move(f).get();
 }
 
-static cpp2::LookUpEdgeIndexResp checkLookupEdgesString(const std::string& filter) {
+static cpp2::LookUpIndexResp checkLookupEdgesString(const std::string& filter) {
     fs::TempDir rootPath("/tmp/checkLookupEdgesString.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     GraphSpaceID spaceId = 0;
@@ -412,30 +405,25 @@ static cpp2::LookUpEdgeIndexResp checkLookupEdgesString(const std::string& filte
             baton.wait();
         }
     }
-    auto *processor = LookUpEdgeIndexProcessor::instance(kv.get(),
-                                                         schemaMan.get(),
-                                                         indexMan.get(),
-                                                         nullptr);
+    auto *processor = LookUpIndexProcessor::instance(kv.get(),
+                                                     schemaMan.get(),
+                                                     indexMan.get(),
+                                                     nullptr);
     cpp2::LookUpIndexRequest req;
-    decltype(req.parts) parts;
-    parts.emplace_back(0);
-    parts.emplace_back(1);
-    parts.emplace_back(2);
-    decltype(req.return_columns) cols;
-    cols.emplace_back("col_0");
-    cols.emplace_back("col_1");
-    cols.emplace_back("col_2");
+    std::vector<int32_t> parts = {0, 1, 2};
+    std::vector<std::string> cols = {"col_0", "col_1", "col_2"};
     req.set_space_id(spaceId);
     req.set_parts(std::move(parts));
     req.set_index_id(type);
     req.set_return_columns(cols);
     req.set_filter(filter);
+    req.set_is_edge(true);
     auto f = processor->getFuture();
     processor->process(req);
     return std::move(f).get();
 }
 
-static cpp2::LookUpVertexIndexResp checkLookupVerticesString(const std::string& filter) {
+static cpp2::LookUpIndexResp checkLookupVerticesString(const std::string& filter) {
     fs::TempDir rootPath("/tmp/checkLookupVerticesString.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     GraphSpaceID spaceId = 0;
@@ -502,30 +490,25 @@ static cpp2::LookUpVertexIndexResp checkLookupVerticesString(const std::string& 
             baton.wait();
         }
     }
-    auto *processor = LookUpVertexIndexProcessor::instance(kv.get(),
-                                                           schemaMan.get(),
-                                                           indexMan.get(),
-                                                           nullptr);
+    auto *processor = LookUpIndexProcessor::instance(kv.get(),
+                                                     schemaMan.get(),
+                                                     indexMan.get(),
+                                                     nullptr);
     cpp2::LookUpIndexRequest req;
-    decltype(req.parts) parts;
-    parts.emplace_back(0);
-    parts.emplace_back(1);
-    parts.emplace_back(2);
-    decltype(req.return_columns) cols;
-    cols.emplace_back("col_0");
-    cols.emplace_back("col_1");
-    cols.emplace_back("col_2");
+    std::vector<int32_t> parts = {0, 1, 2};
+    std::vector<std::string> cols = {"col_0", "col_1", "col_2"};
     req.set_space_id(spaceId);
     req.set_parts(std::move(parts));
     req.set_index_id(tagId);
     req.set_return_columns(cols);
     req.set_filter(filter);
+    req.set_is_edge(false);
     auto f = processor->getFuture();
     processor->process(req);
     return std::move(f).get();
 }
 
-static cpp2::LookUpEdgeIndexResp checkLookupEdgesDouble(const std::string& filter) {
+static cpp2::LookUpIndexResp checkLookupEdgesDouble(const std::string& filter) {
     fs::TempDir rootPath("/tmp/checkLookupEdgesDouble.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     GraphSpaceID spaceId = 0;
@@ -599,30 +582,25 @@ static cpp2::LookUpEdgeIndexResp checkLookupEdgesDouble(const std::string& filte
             baton.wait();
         }
     }
-    auto *processor = LookUpEdgeIndexProcessor::instance(kv.get(),
-                                                         schemaMan.get(),
-                                                         indexMan.get(),
-                                                         nullptr);
+    auto *processor = LookUpIndexProcessor::instance(kv.get(),
+                                                     schemaMan.get(),
+                                                     indexMan.get(),
+                                                     nullptr);
     cpp2::LookUpIndexRequest req;
-    decltype(req.parts) parts;
-    parts.emplace_back(0);
-    parts.emplace_back(1);
-    parts.emplace_back(2);
-    decltype(req.return_columns) cols;
-    cols.emplace_back("col_0");
-    cols.emplace_back("col_1");
-    cols.emplace_back("col_2");
+    std::vector<int32_t> parts = {0, 1, 2};
+    std::vector<std::string> cols = {"col_0", "col_1", "col_2"};
     req.set_space_id(spaceId);
     req.set_parts(std::move(parts));
     req.set_index_id(type);
     req.set_return_columns(cols);
     req.set_filter(filter);
+    req.set_is_edge(true);
     auto f = processor->getFuture();
     processor->process(req);
     return std::move(f).get();
 }
 
-static cpp2::LookUpVertexIndexResp checkLookupVerticesDouble(const std::string& filter) {
+static cpp2::LookUpIndexResp checkLookupVerticesDouble(const std::string& filter) {
     fs::TempDir rootPath("/tmp/checkLookupVerticesDouble.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     GraphSpaceID spaceId = 0;
@@ -693,24 +671,19 @@ static cpp2::LookUpVertexIndexResp checkLookupVerticesDouble(const std::string& 
             baton.wait();
         }
     }
-    auto *processor = LookUpVertexIndexProcessor::instance(kv.get(),
-                                                           schemaMan.get(),
-                                                           indexMan.get(),
-                                                           nullptr);
+    auto *processor = LookUpIndexProcessor::instance(kv.get(),
+                                                     schemaMan.get(),
+                                                     indexMan.get(),
+                                                     nullptr);
     cpp2::LookUpIndexRequest req;
-    decltype(req.parts) parts;
-    parts.emplace_back(0);
-    parts.emplace_back(1);
-    parts.emplace_back(2);
-    decltype(req.return_columns) cols;
-    cols.emplace_back("col_0");
-    cols.emplace_back("col_1");
-    cols.emplace_back("col_2");
+    std::vector<int32_t> parts = {0, 1, 2};
+    std::vector<std::string> cols = {"col_0", "col_1", "col_2"};
     req.set_space_id(spaceId);
     req.set_parts(std::move(parts));
     req.set_index_id(tagId);
     req.set_return_columns(cols);
     req.set_filter(filter);
+    req.set_is_edge(false);
     auto f = processor->getFuture();
     processor->process(req);
     return std::move(f).get();
@@ -730,7 +703,7 @@ TEST(IndexScanTest, SimpleScanTest) {
 
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(4, resp.get_schema()->get_columns().size());
-        EXPECT_EQ(30, resp.rows.size());
+        EXPECT_EQ(30, resp.get_vertices()->size());
     }
     {
         LOG(INFO) << "Build filter...";
@@ -744,7 +717,7 @@ TEST(IndexScanTest, SimpleScanTest) {
         auto resp = execLookupEdges(Expression::encode(relExp.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(8, resp.get_schema()->get_columns().size());
-        EXPECT_EQ(210, resp.rows.size());
+        EXPECT_EQ(210, resp.get_edges()->size());
     }
 }
 
@@ -761,8 +734,8 @@ TEST(IndexScanTest, AccurateScanTest) {
         auto* ape0 = new AliasPropertyExpression(new std::string(""), alias0, col0);
         auto* pe0 = new PrimaryExpression(1L);
         auto* r1 =  new RelationalExpression(ape0,
-                                              RelationalExpression::Operator::EQ,
-                                              pe0);
+                                             RelationalExpression::Operator::EQ,
+                                             pe0);
 
         auto* col1 = new std::string("tag_3001_col_1");
         auto* alias1 = new std::string("3001");
@@ -789,7 +762,7 @@ TEST(IndexScanTest, AccurateScanTest) {
         auto resp = execLookupVertices(Expression::encode(logExp.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(4, resp.get_schema()->get_columns().size());
-        EXPECT_EQ(30, resp.rows.size());
+        EXPECT_EQ(30, resp.get_vertices()->size());
     }
     {
         LOG(INFO) << "Build filter...";
@@ -832,7 +805,7 @@ TEST(IndexScanTest, AccurateScanTest) {
 
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(8, resp.get_schema()->get_columns().size());
-        EXPECT_EQ(210, resp.rows.size());
+        EXPECT_EQ(210, resp.get_edges()->size());
     }
 }
 TEST(IndexScanTest, SeekScanTest) {
@@ -851,7 +824,7 @@ TEST(IndexScanTest, SeekScanTest) {
         auto resp = execLookupVertices(Expression::encode(r1.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(4, resp.get_schema()->get_columns().size());
-        EXPECT_EQ(30, resp.rows.size());
+        EXPECT_EQ(30, resp.get_vertices()->size());
     }
     {
         LOG(INFO) << "Build filter...";
@@ -868,7 +841,7 @@ TEST(IndexScanTest, SeekScanTest) {
         auto resp = execLookupEdges(Expression::encode(r1.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(8, resp.get_schema()->get_columns().size());
-        EXPECT_EQ(210, resp.rows.size());
+        EXPECT_EQ(210, resp.get_edges()->size());
     }
     {
         LOG(INFO) << "Build filter...";
@@ -885,7 +858,7 @@ TEST(IndexScanTest, SeekScanTest) {
         auto resp = execLookupVertices(Expression::encode(r1.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(4, resp.get_schema()->get_columns().size());
-        EXPECT_EQ(30, resp.rows.size());
+        EXPECT_EQ(30, resp.get_vertices()->size());
     }
     {
         LOG(INFO) << "Build filter...";
@@ -902,7 +875,7 @@ TEST(IndexScanTest, SeekScanTest) {
         auto resp = execLookupEdges(Expression::encode(r1.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(8, resp.get_schema()->get_columns().size());
-        EXPECT_EQ(210, resp.rows.size());
+        EXPECT_EQ(210, resp.get_edges()->size());
     }
 }
 
@@ -935,7 +908,7 @@ TEST(IndexScanTest, PrefixScanTest) {
         auto resp = execLookupVertices(Expression::encode(logExp.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(4, resp.get_schema()->get_columns().size());
-        EXPECT_EQ(30, resp.rows.size());
+        EXPECT_EQ(30, resp.get_vertices()->size());
     }
     {
         LOG(INFO) << "Build filter...";
@@ -965,7 +938,7 @@ TEST(IndexScanTest, PrefixScanTest) {
         auto resp = execLookupEdges(Expression::encode(logExp.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(8, resp.get_schema()->get_columns().size());
-        EXPECT_EQ(210, resp.rows.size());
+        EXPECT_EQ(210, resp.get_edges()->size());
     }
 }
 
@@ -998,7 +971,7 @@ TEST(IndexScanTest, NoReturnColumnsTest) {
         auto resp = execLookupVertices(Expression::encode(logExp.get()), false);
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(NULL, resp.get_schema());
-        EXPECT_EQ(30, resp.rows.size());
+        EXPECT_EQ(30, resp.get_vertices()->size());
     }
     {
         LOG(INFO) << "Build filter...";
@@ -1028,7 +1001,7 @@ TEST(IndexScanTest, NoReturnColumnsTest) {
         auto resp = execLookupEdges(Expression::encode(logExp.get()), false);
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(NULL, resp.get_schema());
-        EXPECT_EQ(210, resp.rows.size());
+        EXPECT_EQ(210, resp.get_edges()->size());
     }
 }
 
@@ -1054,11 +1027,11 @@ TEST(IndexScanTest, EdgeStringTest) {
         auto resp = checkLookupEdgesString(Expression::encode(r1.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(3, resp.get_schema()->get_columns().size());
-        EXPECT_EQ(3, resp.rows.size());
+        EXPECT_EQ(3, resp.get_edges()->size());
         RowWriter ewriter(nullptr);
         ewriter << "ABC" << "ABC" << "ABC";
         auto eval = ewriter.encode();
-        for (const auto& row : resp.rows) {
+        for (const auto& row : *resp.get_edges()) {
             EXPECT_EQ(eval, row.get_props());
             EXPECT_EQ(2, row.get_key().get_src());
             EXPECT_EQ(20, row.get_key().get_dst());
@@ -1087,11 +1060,11 @@ TEST(IndexScanTest, EdgeStringTest) {
         auto resp = checkLookupEdgesString(Expression::encode(r1.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(3, resp.get_schema()->get_columns().size());
-        EXPECT_EQ(3, resp.rows.size());
+        EXPECT_EQ(3, resp.get_edges()->size());
         RowWriter ewriter(nullptr);
         ewriter << "AB" << "CAB" << "CABC";
         auto eval = ewriter.encode();
-        for (const auto& row : resp.rows) {
+        for (const auto& row : *resp.get_edges()) {
             EXPECT_EQ(eval, row.get_props());
             EXPECT_EQ(1, row.get_key().get_src());
             EXPECT_EQ(10, row.get_key().get_dst());
@@ -1120,11 +1093,11 @@ TEST(IndexScanTest, EdgeStringTest) {
         auto resp = checkLookupEdgesString(Expression::encode(r1.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(3, resp.get_schema()->get_columns().size());
-        EXPECT_EQ(3, resp.rows.size());
+        EXPECT_EQ(3, resp.get_edges()->size());
         RowWriter ewriter(nullptr);
         ewriter << "AB" << "CAB" << "CABC";
         auto eval = ewriter.encode();
-        for (const auto& row : resp.rows) {
+        for (const auto& row : *resp.get_edges()) {
             EXPECT_EQ(eval, row.get_props());
             EXPECT_EQ(1, row.get_key().get_src());
             EXPECT_EQ(10, row.get_key().get_dst());
@@ -1156,11 +1129,11 @@ TEST(IndexScanTest, VertexStringTest) {
         auto resp = checkLookupVerticesString(Expression::encode(r1.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(3, resp.get_schema()->get_columns().size());
-        EXPECT_EQ(3, resp.rows.size());
+        EXPECT_EQ(3, resp.get_vertices()->size());
         RowWriter ewriter(nullptr);
         ewriter << "ABC" << "ABC" << "ABC";
         auto eval = ewriter.encode();
-        for (const auto& row : resp.rows) {
+        for (const auto& row : *resp.get_vertices()) {
             EXPECT_EQ(eval, row.get_props());
             EXPECT_EQ(200, row.get_vertex_id());
         }
@@ -1186,11 +1159,11 @@ TEST(IndexScanTest, VertexStringTest) {
         auto resp = checkLookupVerticesString(Expression::encode(r1.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(3, resp.get_schema()->get_columns().size());
-        EXPECT_EQ(3, resp.rows.size());
+        EXPECT_EQ(3, resp.get_vertices()->size());
         RowWriter ewriter(nullptr);
         ewriter << "AB" << "CAB" << "CABC";
         auto eval = ewriter.encode();
-        for (const auto& row : resp.rows) {
+        for (const auto& row : *resp.get_vertices()) {
             EXPECT_EQ(eval, row.get_props());
             EXPECT_EQ(100, row.get_vertex_id());
         }
@@ -1216,11 +1189,11 @@ TEST(IndexScanTest, VertexStringTest) {
         auto resp = checkLookupVerticesString(Expression::encode(r1.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(3, resp.get_schema()->get_columns().size());
-        EXPECT_EQ(3, resp.rows.size());
+        EXPECT_EQ(3, resp.get_vertices()->size());
         RowWriter ewriter(nullptr);
         ewriter << "AB" << "CAB" << "CABC";
         auto eval = ewriter.encode();
-        for (const auto& row : resp.rows) {
+        for (const auto& row : *resp.get_vertices()) {
             EXPECT_EQ(eval, row.get_props());
             EXPECT_EQ(100, row.get_vertex_id());
         }
@@ -1249,13 +1222,13 @@ TEST(IndexScanTest, EdgeDoubleTest) {
         auto resp = checkLookupEdgesDouble(Expression::encode(r1.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(3, resp.get_schema()->get_columns().size());
-        EXPECT_EQ(3, resp.rows.size());
+        EXPECT_EQ(3, resp.get_edges()->size());
         RowWriter ewriter(nullptr);
         ewriter << boost::get<double>(1.1)
                 << boost::get<double>(0.0)
                 << boost::get<double>(-1.1);
         auto eval = ewriter.encode();
-        for (const auto& row : resp.rows) {
+        for (const auto& row : *resp.get_edges()) {
             EXPECT_EQ(eval, row.get_props());
             EXPECT_EQ(1, row.get_key().get_src());
             EXPECT_EQ(10, row.get_key().get_dst());
@@ -1284,13 +1257,13 @@ TEST(IndexScanTest, EdgeDoubleTest) {
         auto resp = checkLookupEdgesDouble(Expression::encode(r1.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(3, resp.get_schema()->get_columns().size());
-        EXPECT_EQ(3, resp.rows.size());
+        EXPECT_EQ(3, resp.get_edges()->size());
         RowWriter ewriter(nullptr);
         ewriter << boost::get<double>(1.1)
                 << boost::get<double>(0.0)
                 << boost::get<double>(-1.1);
         auto eval = ewriter.encode();
-        for (const auto& row : resp.rows) {
+        for (const auto& row : *resp.get_edges()) {
             EXPECT_EQ(eval, row.get_props());
             EXPECT_EQ(1, row.get_key().get_src());
             EXPECT_EQ(10, row.get_key().get_dst());
@@ -1319,13 +1292,13 @@ TEST(IndexScanTest, EdgeDoubleTest) {
         auto resp = checkLookupEdgesDouble(Expression::encode(r1.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(3, resp.get_schema()->get_columns().size());
-        EXPECT_EQ(3, resp.rows.size());
+        EXPECT_EQ(3, resp.get_edges()->size());
         RowWriter ewriter(nullptr);
         ewriter << boost::get<double>(2.2)
                 << boost::get<double>(0.0)
                 << boost::get<double>(-2.2);
         auto eval = ewriter.encode();
-        for (const auto& row : resp.rows) {
+        for (const auto& row : *resp.get_edges()) {
             EXPECT_EQ(eval, row.get_props());
             EXPECT_EQ(2, row.get_key().get_src());
             EXPECT_EQ(20, row.get_key().get_dst());
@@ -1354,7 +1327,7 @@ TEST(IndexScanTest, EdgeDoubleTest) {
         auto resp = checkLookupEdgesDouble(Expression::encode(r1.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(3, resp.get_schema()->get_columns().size());
-        EXPECT_EQ(6, resp.rows.size());
+        EXPECT_EQ(6, resp.get_edges()->size());
     }
 }
 
@@ -1380,13 +1353,13 @@ TEST(IndexScanTest, VertexDoubleTest) {
         auto resp = checkLookupVerticesDouble(Expression::encode(r1.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(3, resp.get_schema()->get_columns().size());
-        EXPECT_EQ(3, resp.rows.size());
+        EXPECT_EQ(3, resp.get_vertices()->size());
         RowWriter ewriter(nullptr);
         ewriter << boost::get<double>(1.1)
                 << boost::get<double>(0.0)
                 << boost::get<double>(-1.1);
         auto eval = ewriter.encode();
-        for (const auto& row : resp.rows) {
+        for (const auto& row : *resp.get_vertices()) {
             EXPECT_EQ(eval, row.get_props());
             EXPECT_EQ(100, row.get_vertex_id());
         }
@@ -1412,13 +1385,13 @@ TEST(IndexScanTest, VertexDoubleTest) {
         auto resp = checkLookupVerticesDouble(Expression::encode(r1.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(3, resp.get_schema()->get_columns().size());
-        EXPECT_EQ(3, resp.rows.size());
+        EXPECT_EQ(3, resp.get_vertices()->size());
         RowWriter ewriter(nullptr);
         ewriter << boost::get<double>(1.1)
                 << boost::get<double>(0.0)
                 << boost::get<double>(-1.1);
         auto eval = ewriter.encode();
-        for (const auto& row : resp.rows) {
+        for (const auto& row : *resp.get_vertices()) {
             EXPECT_EQ(eval, row.get_props());
             EXPECT_EQ(100, row.get_vertex_id());
         }
@@ -1444,13 +1417,13 @@ TEST(IndexScanTest, VertexDoubleTest) {
         auto resp = checkLookupVerticesDouble(Expression::encode(r1.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(3, resp.get_schema()->get_columns().size());
-        EXPECT_EQ(3, resp.rows.size());
+        EXPECT_EQ(3, resp.get_vertices()->size());
         RowWriter ewriter(nullptr);
         ewriter << boost::get<double>(2.2)
                 << boost::get<double>(0.0)
                 << boost::get<double>(-2.2);
         auto eval = ewriter.encode();
-        for (const auto& row : resp.rows) {
+        for (const auto& row : *resp.get_vertices()) {
             EXPECT_EQ(eval, row.get_props());
             EXPECT_EQ(200, row.get_vertex_id());
         }
@@ -1476,7 +1449,7 @@ TEST(IndexScanTest, VertexDoubleTest) {
         auto resp = checkLookupVerticesDouble(Expression::encode(r1.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(3, resp.get_schema()->get_columns().size());
-        EXPECT_EQ(6, resp.rows.size());
+        EXPECT_EQ(6, resp.get_vertices()->size());
     }
 }
 

@@ -62,7 +62,6 @@ INDEXES                     ([Ii][Nn][Dd][Ee][Xx][Ee][Ss])
 REBUILD                     ([Rr][Ee][Bb][Uu][Ii][Ll][Dd])
 STATUS                      ([Ss][Tt][Aa][Tt][Uu][Ss])
 INT                         ([Ii][Nn][Tt])
-BIGINT                      ([Bb][Ii][Gg][Ii][Nn][Tt])
 DOUBLE                      ([Dd][Oo][Uu][Bb][Ll][Ee])
 STRING                      ([Ss][Tt][Rr][Ii][Nn][Gg])
 BOOL                        ([Bb][Oo][Oo][Ll])
@@ -204,7 +203,6 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {INDEXES}                   { return TokenType::KW_INDEXES; }
 {REBUILD}                   { return TokenType::KW_REBUILD; }
 {INT}                       { return TokenType::KW_INT; }
-{BIGINT}                    { return TokenType::KW_BIGINT; }
 {DOUBLE}                    { return TokenType::KW_DOUBLE; }
 {STRING}                    { return TokenType::KW_STRING; }
 {BOOL}                      { return TokenType::KW_BOOL; }
