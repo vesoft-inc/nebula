@@ -50,6 +50,7 @@
     * [字符串类型](2.query-language/3.language-structure/literal-values/string-literals.md)
   * [注释语法](2.query-language/3.language-structure/comment-syntax.md)
   * [标识符大小写](2.query-language/3.language-structure/identifier-case-sensitivity.md)
+  * [关键字和保留字](2.query-language/3.language-structure/keywords-and-reserved-words.md)
   * [管道](2.query-language/3.language-structure/pipe-syntax.md)
   * [属性引用](2.query-language/3.language-structure/property-reference.md)
   * [标识符命名规则](2.query-language/3.language-structure/schema-object-names.md)
