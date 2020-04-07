@@ -75,11 +75,11 @@ public:
                                                             workers);
         store->init();
 
-        // When useMetaServer is ture we deal with it using waitUntilAllElected
+        // When useMetaServer is true, we deal with it using waitUntilAllElected.
         if (useMetaServer) {
             sleep(1);
         } else {
-            // wait until all part leader exists, here only use when spaceId is 0
+            // Wait until all part leader exist, here spaceId can only be 0.
             GraphSpaceID spaceId = 0;
             while (true) {
                 int readyNum = 0;
