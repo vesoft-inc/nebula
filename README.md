@@ -40,7 +40,7 @@ Compared with other graph database solutions, **Nebula Graph** has the following
 
 ## Roadmap
 
-See our [Roadmap](https://github.com/vesoft-inc/nebula/wiki/Nebula-Graph-Roadmap-2019) for what's coming soon in **Nebula Graph**.
+See our [Roadmap](https://github.com/vesoft-inc/nebula/wiki/Nebula-Graph-Roadmap) for what's coming soon in **Nebula Graph**.
 
 ## Graph Visualization
 
