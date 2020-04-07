@@ -140,11 +140,8 @@ public:
     folly::Future<cpp2::AdminExecResp>
     future_rebuildEdgeIndex(const cpp2::RebuildIndexRequest& req) override;
 
-    folly::Future<cpp2::LookUpVertexIndexResp>
-    future_lookUpVertexIndex(const cpp2::LookUpIndexRequest& req) override;
-
-    folly::Future<cpp2::LookUpEdgeIndexResp>
-    future_lookUpEdgeIndex(const cpp2::LookUpIndexRequest& req) override;
+    folly::Future<cpp2::LookUpIndexResp>
+    future_lookUpIndex(const cpp2::LookUpIndexRequest& req) override;
 
 private:
     kvstore::KVStore* kvstore_{nullptr};
