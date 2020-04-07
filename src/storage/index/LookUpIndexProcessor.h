@@ -16,10 +16,16 @@ class LookUpIndexProcessor: public IndexExecutor<cpp2::LookUpIndexResp> {
 public:
     static LookUpIndexProcessor* instance(kvstore::KVStore* kvstore,
                                           meta::SchemaManager* schemaMan,
+                                          CharsetInfo* charsetInfo,
                                           meta::IndexManager* indexMan,
                                           stats::Stats* stats,
                                           VertexCache* cache = nullptr) {
-        return new LookUpIndexProcessor(kvstore, schemaMan, indexMan, stats, cache);
+        return new LookUpIndexProcessor(kvstore,
+                                        schemaMan,
+                                        charsetInfo,
+                                        indexMan,
+                                        stats,
+                                        cache);
     }
 
     void process(const cpp2::LookUpIndexRequest& req);
@@ -27,10 +33,16 @@ public:
 private:
     explicit LookUpIndexProcessor(kvstore::KVStore* kvstore,
                                   meta::SchemaManager* schemaMan,
+                                  CharsetInfo* charsetInfo,
                                   meta::IndexManager* indexMan,
                                   stats::Stats* stats,
                                   VertexCache* cache = nullptr)
-        : IndexExecutor<cpp2::LookUpIndexResp>(kvstore, schemaMan, indexMan, stats, cache) {}
+        : IndexExecutor<cpp2::LookUpIndexResp>(kvstore,
+                                               schemaMan,
+                                               charsetInfo,
+                                               indexMan,
+                                               stats,
+                                               cache) {}
 };
 
 }  // namespace storage

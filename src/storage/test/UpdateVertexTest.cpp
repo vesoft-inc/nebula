@@ -418,6 +418,7 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
 TEST(UpdateVertexTest, CorruptDataTest) {
     fs::TempDir rootPath("/tmp/UpdateVertexTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    CharsetInfo* charsetInfo = CharsetInfo::instance();
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
@@ -460,6 +461,7 @@ TEST(UpdateVertexTest, CorruptDataTest) {
     LOG(INFO) << "Test UpdateVertexRequest...";
     auto* processor = UpdateVertexProcessor::instance(kv.get(),
                                                       schemaMan.get(),
+                                                      charsetInfo,
                                                       indexMan.get(),
                                                       nullptr);
     auto f = processor->getFuture();

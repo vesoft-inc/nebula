@@ -72,11 +72,8 @@ nebula_add_executable(
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:gflags_man_obj>
         $<TARGET_OBJECTS:stats_obj>
-<<<<<<< HEAD
         $<TARGET_OBJECTS:kvstore_storage_utils_obj>
-=======
         $<TARGET_OBJECTS:charset_obj>
->>>>>>> rebase master
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}

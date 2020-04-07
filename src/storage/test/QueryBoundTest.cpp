@@ -650,8 +650,11 @@ TEST(QueryBoundTest, SamplingTest) {
 
         LOG(INFO) << "Test QueryOutBoundRequest...";
         auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
-        auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(),
-                                                        nullptr, executor.get());
+        auto* processor = QueryBoundProcessor::instance(kv.get(),
+                                                        schemaMan.get(),
+                                                        charsetInfo,
+                                                        nullptr,
+                                                        executor.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -667,8 +670,11 @@ TEST(QueryBoundTest, SamplingTest) {
 
         LOG(INFO) << "Test QueryOutBoundRequest...";
         auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
-        auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(),
-                                                        nullptr, executor.get());
+        auto* processor = QueryBoundProcessor::instance(kv.get(),
+                                                        schemaMan.get(),
+                                                        charsetInfo,
+                                                        nullptr,
+                                                        executor.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();

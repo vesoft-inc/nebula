@@ -360,6 +360,8 @@ TEST(UpdateEdgeTest, Insertable_Test) {
 TEST(UpdateEdgeTest, CorruptDataTest) {
     fs::TempDir rootPath("/tmp/UpdateEdgeTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    CharsetInfo* charsetInfo = CharsetInfo::instance();
+
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
@@ -410,6 +412,7 @@ TEST(UpdateEdgeTest, CorruptDataTest) {
     LOG(INFO) << "Test UpdateEdgeRequest...";
     auto* processor = UpdateEdgeProcessor::instance(kv.get(),
                                                     schemaMan.get(),
+                                                    charsetInfo,
                                                     indexMan.get(),
                                                     nullptr);
     auto f = processor->getFuture();
