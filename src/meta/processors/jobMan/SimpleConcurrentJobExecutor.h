@@ -34,7 +34,6 @@ private:
 private:
     int                         jobId_;
     nebula::cpp2::AdminCmd      cmd_;
-    int                         spaceId_;
     std::vector<std::string>    paras_;
     nebula::kvstore::KVStore*   kvStore_;
     AdminClient*                adminClient_;
