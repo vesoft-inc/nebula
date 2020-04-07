@@ -114,7 +114,9 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
                     defaultValue = folly::to<std::string>(value->get_timestamp());
                     break;
                 default:
-                    LOG(ERROR) << "Unsupported type";
+                    LOG(ERROR) << "Unknown type " << static_cast<int>(column.get_type().get_type());
+                    handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
+                    onFinished();
                     return;
             }
 
