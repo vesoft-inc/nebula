@@ -23,7 +23,7 @@ bool AdminTaskManager::init() {
 
     bgThread_ = std::make_unique<thread::GenericWorker>();
     CHECK(bgThread_->start());
-    bgThread_->addTask(&AdminTaskManager::pickTaskThread, this);
+    bgThread_->addTask(&AdminTaskManager::schedule, this);
 
     shutdown_ = false;
     LOG(INFO) << "exit AdminTaskManager::init()";
@@ -92,7 +92,7 @@ void AdminTaskManager::shutdown() {
 }
 
 // schedule
-void AdminTaskManager::pickTaskThread() {
+void AdminTaskManager::schedule() {
     std::chrono::milliseconds interval{20};    // 20ms
     while (!shutdown_) {
         LOG(INFO) << "waiting for incoming task";
@@ -136,36 +136,45 @@ void AdminTaskManager::pickTaskThread() {
         subTaskConcurrency = std::min(subTaskConcurrency, subTasks.size());
         ctx->unFinishedTask_ = subTasks.size();
 
-        LOG(INFO) << folly::stringPrintf("run task(%d, %d) in %zu thread",
+        LOG(INFO) << folly::stringPrintf("run task(%d, %d), %zu subtasks in %zu thread",
                                          handle.first, handle.second,
-                                         ctx->unFinishedTask_.load());
+                                         ctx->unFinishedTask_,
+                                         subTaskConcurrency);
         for (size_t i = 0; i < subTaskConcurrency; ++i) {
-            pool_->add(std::bind(&AdminTaskManager::pickSubTask, this, handle));
+            pool_->add(std::bind(&AdminTaskManager::runSubTask, this, handle));
         }
     }  // end while (!shutdown_)
     LOG(INFO) << "AdminTaskManager::pickTaskThread(~)";
 }
 
-// runSubTask pickSubTask in loop
-void AdminTaskManager::pickSubTask(TaskHandle handle) {
+void AdminTaskManager::runSubTask(TaskHandle handle) {
     auto it = tasks_.find(handle);
     if (it == tasks_.cend()) {
+        FLOG_INFO("task(%d, %d) runSubTask() exit", handle.first, handle.second);
         return;
     }
     auto ctx = it->second;
     std::chrono::milliseconds take_dura{10};
     if (auto subTask = ctx->subtasks_.try_take_for(take_dura)) {
+        // LOG(INFO) << "take sub task";
         if (ctx->task_->Status() == ResultCode::SUCCEEDED) {
             ResultCode rc = subTask->invoke();
             ctx->task_->subTaskFinish(rc);
         }
 
-        if (0 == --ctx->unFinishedTask_) {
-            ctx->task_->finish();
-            tasks_.erase(handle);
-        } else {
-            pool_->add(std::bind(&AdminTaskManager::pickSubTask, this, handle));
+        {
+            std::lock_guard<std::mutex> lk(ctx->mu_);
+            if (0 == --ctx->unFinishedTask_) {
+                FLOG_INFO("task(%d, %d) finished", ctx->task_->getJobId(),
+                                                   ctx->task_->getTaskId());
+                ctx->task_->finish();
+                tasks_.erase(handle);
+            } else {
+                pool_->add(std::bind(&AdminTaskManager::runSubTask, this, handle));
+            }
         }
+    } else {
+        FLOG_INFO("task(%d, %d) runSubTask() exit", handle.first, handle.second);
     }
 }
 
