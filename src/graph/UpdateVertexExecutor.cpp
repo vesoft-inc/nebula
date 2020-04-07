@@ -223,7 +223,7 @@ void UpdateVertexExecutor::execute() {
                     break;
                 default:
                     std::string errMsg =
-                        folly::stringPrintf("Maybe vertex does not exist or filter failed, "
+                        folly::stringPrintf("Maybe vertex does not exist, "
                                             "part: %d, error code: %d!",
                                             code.get_part_id(),
                                             static_cast<int32_t>(code.get_code()));
