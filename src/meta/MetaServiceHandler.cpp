@@ -314,12 +314,6 @@ MetaServiceHandler::future_revokeRole(const cpp2::RevokeRoleReq& req) {
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::GetUserResp>
-MetaServiceHandler::future_getUser(const cpp2::GetUserReq& req) {
-    auto* processor = GetUserProcessor::instance(kvstore_);
-    RETURN_FUTURE(processor);
-}
-
 folly::Future<cpp2::ListUsersResp>
 MetaServiceHandler::future_listUsers(const cpp2::ListUsersReq& req) {
     auto* processor = ListUsersProcessor::instance(kvstore_);
@@ -338,9 +332,9 @@ MetaServiceHandler::future_changePassword(const cpp2::ChangePasswordReq& req) {
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ExecResp>
-MetaServiceHandler::future_checkPassword(const cpp2::CheckPasswordReq& req) {
-    auto* processor = CheckPasswordProcessor::instance(kvstore_);
+folly::Future<cpp2::ListRolesResp>
+MetaServiceHandler::future_getUserRoles(const cpp2::GetUserRolesReq& req) {
+    auto* processor = GetUserRolesProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 
@@ -382,13 +376,13 @@ MetaServiceHandler::future_listConfigs(const cpp2::ListConfigsReq &req) {
 
 folly::Future<cpp2::ExecResp>
 MetaServiceHandler::future_createSnapshot(const cpp2::CreateSnapshotReq& req) {
-    auto* processor = CreateSnapshotProcessor::instance(kvstore_);
+    auto* processor = CreateSnapshotProcessor::instance(kvstore_, adminClient_.get());
     RETURN_FUTURE(processor);
 }
 
 folly::Future<cpp2::ExecResp>
 MetaServiceHandler::future_dropSnapshot(const cpp2::DropSnapshotReq& req) {
-    auto* processor = DropSnapshotProcessor::instance(kvstore_);
+    auto* processor = DropSnapshotProcessor::instance(kvstore_, adminClient_.get());
     RETURN_FUTURE(processor);
 }
 

@@ -4,25 +4,26 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "base/Base.h"
 #include "common/base/SignalHandler.h"
-#include <thrift/lib/cpp2/server/ThriftServer.h>
-#include "meta/MetaServiceHandler.h"
-#include "meta/MetaHttpIngestHandler.h"
+#include "hdfs/HdfsCommandHelper.h"
+#include "hdfs/HdfsHelper.h"
+#include "kvstore/NebulaStore.h"
+#include "kvstore/PartManager.h"
+#include "meta/ActiveHostsMan.h"
+#include "meta/ClusterIdMan.h"
 #include "meta/MetaHttpDownloadHandler.h"
+#include "meta/MetaHttpIngestHandler.h"
 #include "meta/MetaHttpReplaceHostHandler.h"
-#include "webservice/Router.h"
-#include "webservice/WebService.h"
+#include "meta/MetaServiceHandler.h"
+#include "meta/RootUserMan.h"
+#include "meta/processors/jobMan/JobManager.h"
 #include "network/NetworkUtils.h"
 #include "process/ProcessUtils.h"
-#include "hdfs/HdfsHelper.h"
-#include "hdfs/HdfsCommandHelper.h"
 #include "thread/GenericThreadPool.h"
-#include "kvstore/PartManager.h"
-#include "meta/ClusterIdMan.h"
-#include "kvstore/NebulaStore.h"
-#include "meta/ActiveHostsMan.h"
-#include "meta/processors/jobMan/JobManager.h"
+#include "webservice/Router.h"
+#include "webservice/WebService.h"
 
 using nebula::operator<<;
 using nebula::ProcessUtils;
@@ -52,25 +53,22 @@ static Status setupSignalHandler();
 
 namespace nebula {
 namespace meta {
-const std::string kClusterIdKey = "__meta_cluster_id_key__";  // NOLINT
-}  // namespace meta
-}  // namespace nebula
+const std::string kClusterIdKey = "__meta_cluster_id_key__";   // NOLINT
+}   // namespace meta
+}   // namespace nebula
 
 nebula::ClusterID gClusterId = 0;
 
 std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> peers,
                                                  nebula::HostAddr localhost) {
-    auto partMan
-        = std::make_unique<nebula::kvstore::MemPartManager>();
+    auto partMan = std::make_unique<nebula::kvstore::MemPartManager>();
     // The meta server has only one space (0), one part (0)
-    partMan->addPart(nebula::meta::kDefaultSpaceId,
-                     nebula::meta::kDefaultPartId,
-                     std::move(peers));
+    partMan->addPart(nebula::meta::kDefaultSpaceId, nebula::meta::kDefaultPartId, std::move(peers));
     // folly IOThreadPoolExecutor
     auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
     std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(
         apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
-                                 FLAGS_num_worker_threads, true /*stats*/));
+            FLAGS_num_worker_threads, true /*stats*/));
     threadManager->setNamePrefix("executor");
     threadManager->start();
     // On metad, we are allowed to read on follower
@@ -79,10 +77,7 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
     options.dataPaths_ = {FLAGS_data_path};
     options.partMan_ = std::move(partMan);
     auto kvstore = std::make_unique<nebula::kvstore::NebulaStore>(
-                                                        std::move(options),
-                                                        ioPool,
-                                                        localhost,
-                                                        threadManager);
+        std::move(options), ioPool, localhost, threadManager);
     if (!(kvstore->init())) {
         LOG(ERROR) << "Nebula store init failed";
         return nullptr;
@@ -91,8 +86,7 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
     LOG(INFO) << "Waiting for the leader elected...";
     nebula::HostAddr leader;
     while (true) {
-        auto ret = kvstore->partLeader(nebula::meta::kDefaultSpaceId,
-                                       nebula::meta::kDefaultPartId);
+        auto ret = kvstore->partLeader(nebula::meta::kDefaultSpaceId, nebula::meta::kDefaultPartId);
         if (!nebula::ok(ret)) {
             LOG(ERROR) << "Nebula store init failed";
             return nullptr;
@@ -105,15 +99,14 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
         sleep(1);
     }
 
-    gClusterId = nebula::meta::ClusterIdMan::getClusterIdFromKV(kvstore.get(),
-                                                                nebula::meta::kClusterIdKey);
+    gClusterId =
+        nebula::meta::ClusterIdMan::getClusterIdFromKV(kvstore.get(), nebula::meta::kClusterIdKey);
     if (gClusterId == 0) {
         if (leader == localhost) {
             LOG(INFO) << "I am leader, create cluster Id";
             gClusterId = nebula::meta::ClusterIdMan::create(FLAGS_meta_server_addrs);
-            if (!nebula::meta::ClusterIdMan::persistInKV(kvstore.get(),
-                                                         nebula::meta::kClusterIdKey,
-                                                         gClusterId)) {
+            if (!nebula::meta::ClusterIdMan::persistInKV(
+                    kvstore.get(), nebula::meta::kClusterIdKey, gClusterId)) {
                 LOG(ERROR) << "Persist cluster failed!";
                 return nullptr;
             }
@@ -123,8 +116,7 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
                 LOG(INFO) << "Waiting for the leader's clusterId";
                 sleep(1);
                 gClusterId = nebula::meta::ClusterIdMan::getClusterIdFromKV(
-                                                kvstore.get(),
-                                                nebula::meta::kClusterIdKey);
+                    kvstore.get(), nebula::meta::kClusterIdKey);
             }
         }
     }
@@ -148,7 +140,7 @@ Status initWebService(nebula::WebService* svc,
         handler->init(kvstore, pool);
         return handler;
     });
-    router.get("/replace").handler([kvstore](PathParams &&) {
+    router.get("/replace").handler([kvstore](PathParams&&) {
         auto handler = new nebula::meta::MetaHttpReplaceHostHandler();
         handler->init(kvstore);
         return handler;
@@ -156,7 +148,7 @@ Status initWebService(nebula::WebService* svc,
     return svc->start();
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     google::SetVersionString(nebula::versionString());
     folly::init(&argc, &argv, true);
     if (FLAGS_data_path.empty()) {
@@ -235,6 +227,26 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    {
+        /**
+         *  Only leader part needed.
+         */
+        auto ret = kvstore->partLeader(nebula::meta::kDefaultSpaceId, nebula::meta::kDefaultPartId);
+        if (!nebula::ok(ret)) {
+            LOG(ERROR) << "Part leader get failed";
+            return EXIT_FAILURE;
+        }
+        if (nebula::value(ret) == localhost) {
+            LOG(INFO) << "Check and init root user";
+            if (!nebula::meta::RootUserMan::isUserExists(kvstore.get())) {
+                if (!nebula::meta::RootUserMan::initRootUser(kvstore.get())) {
+                    LOG(ERROR) << "Init root user failed";
+                    return EXIT_FAILURE;
+                }
+            }
+        }
+    }
+
     // Setup the signal handlers
     status = setupSignalHandler();
     if (!status.ok()) {
@@ -248,10 +260,10 @@ int main(int argc, char *argv[]) {
         gServer = std::make_unique<apache::thrift::ThriftServer>();
         gServer->setPort(FLAGS_port);
         gServer->setReusePort(FLAGS_reuse_port);
-        gServer->setIdleTimeout(std::chrono::seconds(0));  // No idle timeout on client connection
+        gServer->setIdleTimeout(std::chrono::seconds(0));   // No idle timeout on client connection
         gServer->setInterface(std::move(handler));
-        gServer->serve();  // Will wait until the server shuts down
-    } catch (const std::exception &e) {
+        gServer->serve();   // Will wait until the server shuts down
+    } catch (const std::exception& e) {
         LOG(ERROR) << "Exception thrown: " << e.what();
         return EXIT_FAILURE;
     }
@@ -260,15 +272,11 @@ int main(int argc, char *argv[]) {
     return EXIT_SUCCESS;
 }
 
-
 Status setupSignalHandler() {
     return nebula::SignalHandler::install(
         {SIGINT, SIGTERM},
-        [](nebula::SignalHandler::GeneralSignalInfo *info) {
-            signalHandler(info->sig());
-        });
+        [](nebula::SignalHandler::GeneralSignalInfo* info) { signalHandler(info->sig()); });
 }
-
 
 void signalHandler(int sig) {
     switch (sig) {

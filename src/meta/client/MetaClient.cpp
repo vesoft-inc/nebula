@@ -132,9 +132,39 @@ void MetaClient::heartBeatThreadFunc() {
     }
 }
 
+bool MetaClient::loadUsersAndRoles() {
+    auto userRoleRet = listUsers().get();
+    if (!userRoleRet.ok()) {
+        LOG(ERROR) << "List users failed, status:" << userRoleRet.status();
+        return false;
+    }
+    decltype(userRolesMap_)       userRolesMap;
+    decltype(userPasswordMap_)    userPasswordMap;
+    for (auto& user : userRoleRet.value()) {
+        auto rolesRet = getUserRoles(user.first).get();
+        if (!rolesRet.ok()) {
+            LOG(ERROR) << "List role by user failed, user : " << user.first;
+            return false;
+        }
+        userRolesMap[user.first] = rolesRet.value();
+        userPasswordMap[user.first] = user.second;
+    }
+    {
+        folly::RWSpinLock::WriteHolder holder(localCacheLock_);
+        userRolesMap_ = std::move(userRolesMap);
+        userPasswordMap_ = std::move(userPasswordMap);
+    }
+    return true;
+}
+
 bool MetaClient::loadData() {
     if (ioThreadPool_->numThreads() <= 0) {
         LOG(ERROR) << "The threads number in ioThreadPool should be greater than 0";
+        return false;
+    }
+
+    if (!loadUsersAndRoles()) {
+        LOG(ERROR) << "Load roles Failed";
         return false;
     }
 
@@ -233,6 +263,7 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
         return false;
     }
 
+    allEdgeMap[spaceId] = {};
     auto tagItemVec = tagRet.value();
     auto edgeItemVec = edgeRet.value();
     TagSchemas tagSchemas;
@@ -260,6 +291,7 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
                 << ", Name " << tagIt.tag_name << ", Version " << tagIt.version << " Successfully!";
     }
 
+    std::unordered_set<std::pair<GraphSpaceID, EdgeType>> edges;
     for (auto& edgeIt : edgeItemVec) {
         std::shared_ptr<NebulaSchemaProvider> schema(new NebulaSchemaProvider(edgeIt.version));
         for (auto colIt : edgeIt.schema.get_columns()) {
@@ -270,13 +302,11 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
         edgeSchemas.emplace(std::make_pair(edgeIt.edge_type, edgeIt.version), schema);
         edgeNameTypeMap.emplace(std::make_pair(spaceId, edgeIt.edge_name), edgeIt.edge_type);
         edgeTypeNameMap.emplace(std::make_pair(spaceId, edgeIt.edge_type), edgeIt.edge_name);
-        auto it = allEdgeMap.find(spaceId);
-        if (it == allEdgeMap.end()) {
-            std::vector<std::string> v = {edgeIt.edge_name};
-            allEdgeMap.emplace(spaceId, std::move(v));
-        } else {
-            it->second.emplace_back(edgeIt.edge_name);
+        if (edges.find({spaceId, edgeIt.edge_type}) != edges.cend()) {
+            continue;
         }
+        edges.emplace(spaceId, edgeIt.edge_type);
+        allEdgeMap[spaceId].emplace_back(edgeIt.edge_name);
         // get the latest edge version
         auto it2 = newestEdgeVerMap.find(std::make_pair(spaceId, edgeIt.edge_type));
         if (it2 != newestEdgeVerMap.end()) {
@@ -523,6 +553,10 @@ Status MetaClient::handleResponse(const RESP& resp) {
             return Status::Error("No valid collate");
         case cpp2::ErrorCode::E_CHARSET_COLLATE_NOT_MATCH:
             return Status::Error("Charset and collate not match");
+        case cpp2::ErrorCode::E_INVALID_PASSWORD:
+            return Status::Error("Invalid password");
+        case cpp2::ErrorCode::E_IMPROPER_ROLE:
+            return Status::Error("Improper role");
         default:
             return Status::Error("Unknown code %d", static_cast<int32_t>(resp.get_code()));
     }
@@ -663,7 +697,7 @@ MetaClient::submitJob(cpp2::AdminJobOp op, std::vector<std::string> paras) {
                     return client->future_runAdminJob(request);
                 }, [] (cpp2::AdminJobResp&& resp) -> decltype(auto) {
                     return resp.get_result();
-                }, std::move(promise));
+                }, std::move(promise), true);
     return future;
 }
 
@@ -1622,6 +1656,23 @@ const std::vector<HostAddr>& MetaClient::getAddresses() {
     return addrs_;
 }
 
+std::vector<nebula::cpp2::RoleItem>
+MetaClient::getRolesByUserFromCache(const std::string& user) {
+    auto iter = userRolesMap_.find(user);
+    if (iter == userRolesMap_.end()) {
+        return std::vector<nebula::cpp2::RoleItem>(0);
+    }
+    return iter->second;
+}
+
+bool MetaClient::authCheckFromCache(const std::string& account, const std::string& password) {
+    auto iter = userPasswordMap_.find(account);
+    if (iter == userPasswordMap_.end()) {
+        return false;
+    }
+    return iter->second == password;
+}
+
 StatusOr<SchemaVer> MetaClient::getLatestTagVersionFromCache(const GraphSpaceID& space,
                                                              const TagID& tagId) {
     if (!ready_) {
@@ -1695,6 +1746,139 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
                     VLOG(1) << "Metad last update time: " << metadLastUpdateTime_;
                     return true;  // resp.code == cpp2::ErrorCode::SUCCEEDED
                 }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::createUser(std::string account, std::string password, bool ifNotExists) {
+    cpp2::CreateUserReq req;
+    req.set_account(std::move(account));
+    req.set_encoded_pwd(std::move(password));
+    req.set_if_not_exists(ifNotExists);
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_createUser(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::dropUser(std::string account, bool ifExists) {
+    cpp2::DropUserReq req;
+    req.set_account(std::move(account));
+    req.set_if_exists(ifExists);
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_dropUser(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::alterUser(std::string account, std::string password) {
+    cpp2::AlterUserReq req;
+    req.set_account(std::move(account));
+    req.set_encoded_pwd(std::move(password));
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_alterUser(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::grantToUser(nebula::cpp2::RoleItem roleItem) {
+    cpp2::GrantRoleReq req;
+    req.set_role_item(std::move(roleItem));
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_grantRole(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::revokeFromUser(nebula::cpp2::RoleItem roleItem) {
+    cpp2::RevokeRoleReq req;
+    req.set_role_item(std::move(roleItem));
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_revokeRole(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<std::map<std::string, std::string>>>
+MetaClient::listUsers() {
+    cpp2::ListUsersReq req;
+    folly::Promise<StatusOr<std::map<std::string, std::string>>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_listUsers(request);
+    }, [] (cpp2::ListUsersResp&& resp) -> decltype(auto) {
+        return std::move(resp).get_users();
+    }, std::move(promise));
+    return future;
+}
+
+folly::Future<StatusOr<std::vector<nebula::cpp2::RoleItem>>>
+MetaClient::listRoles(GraphSpaceID space) {
+    cpp2::ListRolesReq req;
+    req.set_space_id(std::move(space));
+    folly::Promise<StatusOr<std::vector<nebula::cpp2::RoleItem>>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_listRoles(request);
+    }, [] (cpp2::ListRolesResp&& resp) -> decltype(auto) {
+        return std::move(resp).get_roles();
+    }, std::move(promise));
+    return future;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::changePassword(std::string account,
+                           std::string newPwd,
+                           std::string oldPwd) {
+    cpp2::ChangePasswordReq req;
+    req.set_account(std::move(account));
+    req.set_new_encoded_pwd(std::move(newPwd));
+    req.set_old_encoded_pwd(std::move(oldPwd));
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_changePassword(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<std::vector<nebula::cpp2::RoleItem>>>
+MetaClient::getUserRoles(std::string account) {
+    cpp2::GetUserRolesReq req;
+    req.set_account(std::move(account));
+    folly::Promise<StatusOr<std::vector<nebula::cpp2::RoleItem>>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_getUserRoles(request);
+    }, [] (cpp2::ListRolesResp&& resp) -> decltype(auto) {
+        return std::move(resp).get_roles();
+    }, std::move(promise));
     return future;
 }
 

@@ -187,8 +187,6 @@ void UpdateVertexExecutor::finishExecution(storage::cpp2::UpdateResponse &&rpcRe
 
 
 void UpdateVertexExecutor::execute() {
-    FLOG_INFO("Executing UpdateVertex: %s", sentence_->toString().c_str());
-
     auto status = prepareData();
     if (!status.ok()) {
         doError(std::move(status));
@@ -213,20 +211,25 @@ void UpdateVertexExecutor::execute() {
         for (auto& code : rpcResp.get_result().get_failed_codes()) {
             switch (code.get_code()) {
                 case nebula::storage::cpp2::ErrorCode::E_INVALID_FILTER:
-                      doError(Status::Error("Maybe invalid tag or property in WHEN clause!"));
-                      return;
+                    doError(Status::Error("Maybe invalid tag or property in WHEN clause!"));
+                    return;
                 case nebula::storage::cpp2::ErrorCode::E_INVALID_UPDATER:
-                      doError(Status::Error("Maybe invalid tag or property in SET/YIELD clasue!"));
-                      return;
+                    doError(Status::Error("Maybe invalid tag or property in SET/YIELD clasue!"));
+                    return;
+                case nebula::storage::cpp2::ErrorCode::E_FILTER_OUT:
+                    // Treat as Ok so do nothing
+                    // https://github.com/vesoft-inc/nebula/issues/1888
+                    // TODO(shylock) maybe we need alert user execute ok but no data affect
+                    break;
                 default:
-                      std::string errMsg =
-                            folly::stringPrintf("Maybe vertex does not exist or filter failed, "
-                                                "part: %d, error code: %d!",
-                                                code.get_part_id(),
-                                                static_cast<int32_t>(code.get_code()));
-                      LOG(ERROR) << errMsg;
-                      doError(Status::Error(errMsg));
-                      return;
+                    std::string errMsg =
+                        folly::stringPrintf("Maybe vertex does not exist, "
+                                            "part: %d, error code: %d!",
+                                            code.get_part_id(),
+                                            static_cast<int32_t>(code.get_code()));
+                    LOG(ERROR) << errMsg;
+                    doError(Status::Error(errMsg));
+                    return;
             }
         }
         this->finishExecution(std::move(rpcResp));

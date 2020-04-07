@@ -199,9 +199,8 @@ Status BaseProcessor<RESP>::spaceExist(GraphSpaceID spaceId) {
 
 
 template<typename RESP>
-Status BaseProcessor<RESP>::userExist(UserID spaceId) {
-    folly::SharedMutex::ReadHolder rHolder(LockUtils::userLock());
-    auto userKey = MetaServiceUtils::userKey(spaceId);
+Status BaseProcessor<RESP>::userExist(const std::string& account) {
+    auto userKey = MetaServiceUtils::userKey(account);
     auto ret = doGet(userKey);
     if (ret.ok()) {
         return Status::OK();
@@ -329,36 +328,10 @@ BaseProcessor<RESP>::getIndexID(GraphSpaceID spaceId, const std::string& indexNa
 }
 
 template<typename RESP>
-StatusOr<UserID>
-BaseProcessor<RESP>::getUserId(const std::string& account) {
-    auto indexKey = MetaServiceUtils::indexUserKey(account);
-    auto ret = doGet(indexKey);
-    if (ret.ok()) {
-        return *reinterpret_cast<const UserID*>(ret.value().c_str());
-    }
-    return Status::UserNotFound(folly::stringPrintf("User %s not found", account.c_str()));
-}
-
-template<typename RESP>
-bool BaseProcessor<RESP>::checkPassword(UserID userId, const std::string& password) {
-    auto userKey = MetaServiceUtils::userKey(userId);
+bool BaseProcessor<RESP>::checkPassword(const std::string& account, const std::string& password) {
+    auto userKey = MetaServiceUtils::userKey(account);
     auto ret = doGet(userKey);
-    if (ret.ok()) {
-        return  ret.value().compare(sizeof(int32_t), password.size(), password) == 0;
-    }
-    return false;
-}
-
-template<typename RESP>
-StatusOr<std::string>
-BaseProcessor<RESP>::getUserAccount(UserID userId) {
-    auto key = MetaServiceUtils::userKey(userId);
-    auto ret = doGet(key);
-    if (!ret.ok()) {
-        return Status::UserNotFound(folly::stringPrintf("User not found by id %d", userId));
-    }
-
-    return MetaServiceUtils::parseUserItem(ret.value()).get_account();
+    return MetaServiceUtils::parseUserPwd(ret.value()) == password;
 }
 
 template<typename RESP>

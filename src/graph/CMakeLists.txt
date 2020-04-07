@@ -2,10 +2,11 @@ nebula_add_library(
     graph_obj OBJECT
     GraphFlags.cpp
     GraphService.cpp
-    ClientSession.cpp
     SessionManager.cpp
+    PasswordAuthenticator.cpp
     ExecutionEngine.cpp
     ExecutionContext.cpp
+    PermissionCheck.cpp
     ExecutionPlan.cpp
     Executor.cpp
     TraverseExecutor.cpp
@@ -63,6 +64,8 @@ nebula_add_library(
     DropSnapshotExecutor.cpp
     AdminJobExecutor.cpp
     LookupExecutor.cpp
+    UserExecutor.cpp
+    PrivilegeExecutor.cpp
 )
 nebula_add_subdirectory(test)
 

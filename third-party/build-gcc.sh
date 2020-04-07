@@ -230,6 +230,7 @@ function configure_binutils {
         --disable-shared                        \
         --disable-nls                           \
         --enable-gold                           \
+        --enable-plugins                        \
         --enable-ld=default                     \
         --with-system-zlib                      \
         --build=$triplet                        \

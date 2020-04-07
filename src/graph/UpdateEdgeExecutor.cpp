@@ -234,20 +234,28 @@ void UpdateEdgeExecutor::updateEdge(bool reversely) {
         for (auto& code : rpcResp.get_result().get_failed_codes()) {
             switch (code.get_code()) {
                 case nebula::storage::cpp2::ErrorCode::E_INVALID_FILTER:
-                      doError(Status::Error("Maybe invalid edge or property in WHEN clause!"));
-                      return;
+                    doError(Status::Error("Maybe invalid edge or property in WHEN clause!"));
+                    return;
                 case nebula::storage::cpp2::ErrorCode::E_INVALID_UPDATER:
-                      doError(Status::Error("Maybe invalid property in SET/YIELD clasue!"));
-                      return;
+                    doError(Status::Error("Maybe invalid property in SET/YIELD clasue!"));
+                    return;
+                case nebula::storage::cpp2::ErrorCode::E_FILTER_OUT:
+                    // Return ok when filter out without exception
+                    // so do nothing
+                    // https://github.com/vesoft-inc/nebula/issues/1888
+                    // TODO(shylock) maybe we need alert user execute ok but no data affect
+                    this->toResponse(std::move(rpcResp));
+                    doFinish(Executor::ProcessControl::kNext);
+                    return;
                 default:
-                      std::string errMsg =
-                            folly::stringPrintf("Maybe edge does not exist or filter failed, "
-                                                "part: %d, error code: %d!",
-                                                code.get_part_id(),
-                                                static_cast<int32_t>(code.get_code()));
-                      LOG(ERROR) << errMsg;
-                      doError(Status::Error(errMsg));
-                      return;
+                    std::string errMsg =
+                        folly::stringPrintf("Maybe edge does not exist, "
+                                            "part: %d, error code: %d!",
+                                            code.get_part_id(),
+                                            static_cast<int32_t>(code.get_code()));
+                    LOG(ERROR) << errMsg;
+                    doError(Status::Error(errMsg));
+                    return;
             }
         }
         if (reversely) {
@@ -269,7 +277,6 @@ void UpdateEdgeExecutor::updateEdge(bool reversely) {
 }
 
 void UpdateEdgeExecutor::execute() {
-    FLOG_INFO("Executing UpdateEdge: %s", sentence_->toString().c_str());
     auto status = prepareData();
     if (!status.ok()) {
         doError(std::move(status));

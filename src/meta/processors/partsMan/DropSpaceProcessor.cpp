@@ -21,7 +21,6 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
     }
 
     auto spaceId = spaceRet.value();
-    VLOG(3) << "Drop space " << req.get_space_name() << ", id " << spaceId;
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     std::vector<std::string> deleteKeys;
 
@@ -43,10 +42,28 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
     deleteKeys.emplace_back(MetaServiceUtils::spaceKey(spaceId));
 
     // delete related role data.
-    // TODO(boshengchen) delete related role data under the space
+    auto rolePrefix = MetaServiceUtils::roleSpacePrefix(spaceId);
+    std::unique_ptr<kvstore::KVIterator> roleIter;
+    auto roleRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, rolePrefix, &roleIter);
+    if (roleRet != kvstore::ResultCode::SUCCEEDED) {
+        handleErrorCode(MetaCommon::to(roleRet));
+        onFinished();
+        return;
+    }
+    while (roleIter->valid()) {
+        auto user = MetaServiceUtils::parseRoleUser(roleIter->key());
+        VLOG(3) << "Revoke role "
+                << MetaServiceUtils::parseRoleStr(roleIter->val())
+                << " for user "
+                << MetaServiceUtils::parseRoleUser(roleIter->key());
+        deleteKeys.emplace_back(roleIter->key());
+        roleIter->next();
+    }
+
     // TODO(YT) delete Tag/Edge under the space
     // TODO(YT) delete part files of the space
     doSyncMultiRemoveAndUpdate(std::move(deleteKeys));
+    LOG(INFO) << "Drop space " << req.get_space_name() << ", id " << spaceId;
 }
 
 }  // namespace meta

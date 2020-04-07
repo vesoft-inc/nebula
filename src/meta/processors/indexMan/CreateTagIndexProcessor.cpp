@@ -16,8 +16,15 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     auto &tagName = req.get_tag_name();
     auto &fieldNames = req.get_fields();
     if (fieldNames.empty()) {
-        LOG(ERROR) << "Tag's Field should not empty";
+        LOG(ERROR) << "The index field of an tag should not be empty.";
         handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
+        onFinished();
+        return;
+    }
+    std::set<std::string> columnSet(fieldNames.begin(), fieldNames.end());
+    if (fieldNames.size() != columnSet.size()) {
+        LOG(ERROR) << "Conflict field in the tag index.";
+        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
         onFinished();
         return;
     }
