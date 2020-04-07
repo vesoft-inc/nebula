@@ -11,12 +11,6 @@ nebula_add_test(
         ../lib/ConnectionThread.cpp
         ../lib/ConnectionPool.cpp
     OBJECTS
-        $<TARGET_OBJECTS:graph_test_common_obj>
-        $<TARGET_OBJECTS:ws_obj>
-        $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:process_obj>
-        $<TARGET_OBJECTS:adHocSchema_obj>
-        $<TARGET_OBJECTS:adHocIndex_obj>
         $<TARGET_OBJECTS:graph_obj>
         $<TARGET_OBJECTS:graph_thrift_obj>
         $<TARGET_OBJECTS:storage_service_handler>
@@ -48,11 +42,21 @@ nebula_add_test(
         $<TARGET_OBJECTS:meta_gflags_man_obj>
         $<TARGET_OBJECTS:gflags_man_obj>
         $<TARGET_OBJECTS:ws_common_obj>
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:charset_obj>
+        $<TARGET_OBJECTS:encryption_obj>
+        $<TARGET_OBJECTS:session_obj>
+        $<TARGET_OBJECTS:permission_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:adHocIndex_obj>
+        $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:process_obj>
+        $<TARGET_OBJECTS:kvstore_storage_utils_obj>
     LIBRARIES
-        proxygenhttpserver
-        proxygenlib
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        proxygenlib
         wangle
         gtest
 )

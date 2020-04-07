@@ -51,8 +51,10 @@ ConnectionThread::authenticate(const std::string& username, const std::string& p
                 return;
             }
             auto resp = std::move(t).value();
-            sessionId_ = *(resp.get_session_id());
-            LOG(INFO) << "sessionId = " << sessionId_;
+            if (resp.get_session_id() != nullptr) {
+                sessionId_ = *(resp.get_session_id());
+                LOG(INFO) << "sessionId = " << sessionId_;
+            }
             p->setValue(std::move(resp));
         };
         connection_->future_authenticate(username, password).then(getEventBase(), handler);

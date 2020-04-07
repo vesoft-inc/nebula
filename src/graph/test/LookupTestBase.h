@@ -48,11 +48,11 @@ protected:
 
 protected:
     static uint16_t storagePort_;
-    static std::unique_ptr<GraphClient> client_;
+    static std::unique_ptr<NebulaClientImpl> client_;
 };
 
 uint16_t LookupTestBase::storagePort_ = 0;
-std::unique_ptr<GraphClient> LookupTestBase::client_;
+std::unique_ptr<NebulaClientImpl> LookupTestBase::client_;
 
 // static
 AssertionResult LookupTestBase::prepareSchema() {

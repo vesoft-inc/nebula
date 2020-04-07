@@ -66,7 +66,7 @@ TEST_F(PermissionTest, SimpleTest) {
         query = "CREATE TAG person(name string)";
         code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        client->disconnect();
+        client->signout();
     }
     /*
      * change root password, incorrect password.
@@ -78,7 +78,7 @@ TEST_F(PermissionTest, SimpleTest) {
         std::string query = "CHANGE PASSWORD root FROM \"aa\" TO \"bb\"";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
-        client->disconnect();
+        client->signout();
     }
     /*
      * change root password, correct password.
@@ -90,7 +90,7 @@ TEST_F(PermissionTest, SimpleTest) {
         std::string query = "CHANGE PASSWORD root FROM \"nebula\" TO \"bb\"";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        client->disconnect();
+        client->signout();
     }
     /*
      * verify password changed
@@ -107,7 +107,7 @@ TEST_F(PermissionTest, SimpleTest) {
         std::string query = "CHANGE PASSWORD root FROM \"bb\" TO \"nebula\"";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        client->disconnect();
+        client->signout();
     }
     sleep(FLAGS_heartbeat_interval_secs + 1);
 }
