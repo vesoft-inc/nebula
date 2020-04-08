@@ -22,6 +22,20 @@ using sessionRec = std::unordered_map<int64_t, std::pair<int64_t, int64_t>>;
  */
 class SessionMan {
 public:
+    static void addOrUpdateSession(const std::string& addr, int64_t sessionId,
+                                   int64_t startTime, int64_t updateTime);
+
+    static void removeSession(const std::string& addr, int64_t sessionId);
+
+    static void removeInvalidSession(const std::unordered_set<std::string>& addrs,
+                                     int64_t UpdateTime);
+
+    static std::unordered_map<std::string, sessionRec> getGlobalSessions() {
+        return globalSessions_;
+    }
+
+
+private:
     // Global session manager
     // Graphd addr -> map<sessionId, std::pair<start_time, update_time>>
     static std::unordered_map<std::string, sessionRec> globalSessions_;

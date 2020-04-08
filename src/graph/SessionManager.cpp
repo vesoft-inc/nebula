@@ -64,39 +64,45 @@ std::shared_ptr<session::Session> SessionManager::createSession() {
 
     // sessionId, FLAGS_graph_server_ip:FLAGS_port, start_time
     executor_->add([sid, now, this] () {
-        this->doAddSession(sid, graphServerAddr_, now);
+        this->doAddSession(sid, now);
     });
 
     return session;
 }
 
-void SessionManager::doAddSession(int64_t sid, std::string graphServerAddr, int64_t startTime) {
+void SessionManager::doAddSession(int64_t sid, int64_t startTime) {
     std::vector<nebula::meta::cpp2::SessionItem> sessionItem;
     nebula::meta::cpp2::SessionItem item;
     item.set_session_id(sid);
-    item.set_addr(graphServerAddr);
+    item.set_addr(graphServerAddr_);
     item.set_start_time(startTime);
     sessionItem.emplace_back(std::move(item));
 
     auto future = metaClient_->addSession(std::move(sessionItem));
-    auto cb = [this] (auto &&resp) {
+    auto cb = [sid, this] (auto &&resp) {
         if (!resp.ok()) {
-            LOG(ERROR) << "Add to global session failed.";
+            auto msg = folly::stringPrintf("Add global session %ld on %s failed.",
+                                           sid, graphServerAddr_.c_str());
+            LOG(ERROR) << msg;
             return;
         }
         auto ret = std::move(resp).value();
         if (!ret) {
-            LOG(ERROR) << "Add to global session failed.";
+            auto msg = folly::stringPrintf("Add global session %ld on %s failed.",
+                                           sid, graphServerAddr_.c_str());
+            LOG(ERROR) << msg;
         }
         return;
     };
 
-    auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: "  << e.what();
+    auto error = [sid, this] (auto &&e) {
+        auto msg = folly::stringPrintf("Add global session %ld on %s exception: %s.",
+                                       sid, graphServerAddr_.c_str(), e.what().c_str());
+        LOG(ERROR) << msg;
         return;
     };
 
-    std::move(future).via(runner_.get()).thenValue(cb).thenError(error);
+    std::move(future).thenValue(cb).thenError(error);
 }
 
 void SessionManager::doRemoveSession(std::unordered_map<int64_t, int64_t> removeSess) {
@@ -112,22 +118,28 @@ void SessionManager::doRemoveSession(std::unordered_map<int64_t, int64_t> remove
     auto future = metaClient_->removeSession(std::move(sessionItem));
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            LOG(ERROR) << "Romove from global session failed.";
+            auto msg = folly::stringPrintf("Romove global session on %s failed.",
+                                           graphServerAddr_.c_str());
+            LOG(ERROR) << msg;
             return;
         }
         auto ret = std::move(resp).value();
         if (!ret) {
-            LOG(ERROR) << "Romove from global session failed.";
+            auto msg = folly::stringPrintf("Romove global session on %s failed.",
+                                           graphServerAddr_.c_str());
+            LOG(ERROR) << msg;
         }
         return;
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: "  << e.what();
+        auto msg = folly::stringPrintf("Remove global session on %s exception: %s.",
+                                       graphServerAddr_.c_str(), e.what().c_str());
+        LOG(ERROR) << msg;
         return;
     };
 
-    std::move(future).via(runner_.get()).thenValue(cb).thenError(error);
+    std::move(future).thenValue(cb).thenError(error);
 }
 
 std::shared_ptr<session::Session> SessionManager::removeSession(int64_t id) {

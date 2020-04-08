@@ -37,7 +37,7 @@ public:
     /**
      * Add a session to meta global session
      */
-    void doAddSession(int64_t sid, std::string graphServerAddr, int64_t startTime);
+    void doAddSession(int64_t sid, int64_t startTime);
     /**
      * Remove a session
      */
