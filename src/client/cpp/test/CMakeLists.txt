@@ -56,6 +56,7 @@ nebula_add_test(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        proxygenhttpserver
         proxygenlib
         wangle
         gtest
