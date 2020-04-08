@@ -44,7 +44,7 @@ endmacro()
 # This will prevent cmake from complaining about missing source files
 #
 
-macro(thrift_generate file_name services file_path output_path include_prefix)
+macro(thrift_generate file_name services file_path output_path include_prefix type)
 set("${file_name}-cpp2-HEADERS"
   ${output_path}/gen-cpp2/${file_name}_constants.h
   ${output_path}/gen-cpp2/${file_name}_data.h
@@ -90,25 +90,48 @@ add_custom_command(
   COMMENT "Generating thrift files for ${file_name}"
 )
 
-bypass_source_check(${file_name}_cpp2-SOURCES)
-add_library(
-  "${file_name}_thrift_obj"
-  OBJECT
-  ${${file_name}-cpp2-SOURCES}
-)
+function(generate_object file_name)
+    add_library(
+        ${file_name}_thrift_obj
+        OBJECT
+        ${${file_name}-cpp2-SOURCES}
+    )
+    target_compile_options(${file_name}_thrift_obj PRIVATE "-Wno-pedantic")
+    target_compile_options(${file_name}_thrift_obj PRIVATE "-Wno-extra")
+    if(NOT "${file_name}" STREQUAL "common")
+        add_dependencies(
+            ${file_name}_thrift_obj
+            common_thrift_headers
+        )
+    endif()
+endfunction()
 
-add_library(
-  "${file_name}_thrift_lib"
-  SHARED
-  ${${file_name}-cpp2-SOURCES}
-)
-target_compile_options(${file_name}_thrift_obj PRIVATE "-Wno-pedantic")
-target_compile_options(${file_name}_thrift_obj PRIVATE "-Wno-extra")
-add_custom_target(${file_name}_thrift_headers DEPENDS ${${file_name}-cpp2-HEADERS})
-if(NOT "${file_name}" STREQUAL "common")
-add_dependencies(
-  "${file_name}_thrift_obj"
-  common_thrift_headers
-)
+function(generate_library file_name)
+    add_library(
+        ${file_name}_thrift_lib
+        SHARED
+        ${${file_name}-cpp2-SOURCES}
+    )
+    target_compile_options(${file_name}_thrift_lib PRIVATE "-Wno-pedantic")
+    target_compile_options(${file_name}_thrift_lib PRIVATE "-Wno-extra")
+    if(NOT "${file_name}" STREQUAL "common")
+        add_dependencies(
+            ${file_name}_thrift_lib
+            common_thrift_headers
+        )
+    endif()
+endfunction()
+
+bypass_source_check(${file_name}_cpp2-SOURCES)
+if ("${type}" STREQUAL "OBJECT")
+    generate_object(${file_name})
+elseif("${type}" STREQUAL "SHARED")
+    generate_library(${file_name})
+else()
+    generate_object(${file_name})
+    generate_library(${file_name})
 endif()
+
+add_custom_target(${file_name}_thrift_headers DEPENDS ${${file_name}-cpp2-HEADERS})
+
 endmacro()

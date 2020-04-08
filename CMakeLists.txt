@@ -461,10 +461,17 @@ endmacro()
 macro(nebula_add_library name type)
     add_library(${name} ${type} ${ARGN})
     if (PCHSupport_FOUND)
-        add_dependencies(
-            ${name}
-            base_obj_gch
-        )
+        if ("${type}" STREQUAL "OBJECT")
+            add_dependencies(
+                ${name}
+                base_obj_gch
+            )
+        else()
+            add_dependencies(
+                ${name}
+                base_lib_gch
+            )
+        endif()
     endif()
     add_dependencies(
         ${name}
@@ -638,3 +645,7 @@ ENDIF()
 MESSAGE(STATUS "ENABLE_PACK_ONE: ${ENABLE_PACK_ONE}")
 include(CPackage)
 package(${ENABLE_PACK_ONE})
+
+if (ENABLE_TESTING OR ENABLE_ONLY_SHARED)
+    MESSAGE(STATUS "You could run 'export LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/lib:\$LD_LIBRARY_PATH' if you want to run ctest")
+endif()

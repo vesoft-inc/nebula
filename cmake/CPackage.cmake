@@ -1,7 +1,6 @@
 # Used to package into deb or RPM files
 
 macro(package is_one)
-    message(STATUS "is_one is ${is_one}")
     set(CPACK_PACKAGE_DESCRIPTION "nebula-graph")
     set(CPACK_PACKAGE_CONTACT "nebula-graph")
     set(CPACK_PACKAGE_VERSION ${NEBULA_BUILD_VERSION})
