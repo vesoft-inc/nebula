@@ -25,9 +25,7 @@ public:
         VLOG(1) << "Starting web service...";
 
         rootPath_ = std::make_unique<fs::TempDir>("/tmp/StorageHttpIngestHandler.XXXXXX");
-        int32_t partitions = 1;
-        kv_ = TestUtils::initKV(rootPath_->path(), partitions,
-            {0, network::NetworkUtils::getAvailablePort()});
+        kv_ = TestUtils::initKV(rootPath_->path(), 1);
 
         auto partPath = folly::stringPrintf("%s/disk1/nebula/0/download/0", rootPath_->path());
         ASSERT_TRUE(nebula::fs::FileUtils::makeDir(partPath));

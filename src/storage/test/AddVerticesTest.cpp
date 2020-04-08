@@ -17,9 +17,7 @@ namespace storage {
 
 TEST(AddVerticesTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/AddVerticesTest.XXXXXX");
-    constexpr int32_t partitions = 6;
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partitions,
-        {0, network::NetworkUtils::getAvailablePort()});
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
     auto* processor = AddVerticesProcessor::instance(kv.get(),

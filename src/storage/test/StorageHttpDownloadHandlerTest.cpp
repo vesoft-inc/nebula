@@ -28,9 +28,7 @@ public:
         FLAGS_ws_h2_port = 0;
 
         rootPath_ = std::make_unique<fs::TempDir>("/tmp/StorageHttpDownloadHandler.XXXXXX");
-        int32_t partitions = 6;
-        kv_ = TestUtils::initKV(rootPath_->path(), partitions,
-            {0, network::NetworkUtils::getAvailablePort()});
+        kv_ = TestUtils::initKV(rootPath_->path());
 
         pool_ = std::make_unique<nebula::thread::GenericThreadPool>();
         pool_->start(1);

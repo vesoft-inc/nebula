@@ -264,9 +264,7 @@ static std::unique_ptr<meta::IndexManager> mockIndexMan(GraphSpaceID spaceId = 0
 static cpp2::LookUpIndexResp execLookupVertices(const std::string& filter,
                                                       bool hasReturnCols = true) {
     fs::TempDir rootPath("/tmp/execLookupVertices.XXXXXX");
-    constexpr int32_t partitions = 6;
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partitions,
-        {0, network::NetworkUtils::getAvailablePort()});
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     GraphSpaceID spaceId = 0;
     TagID tagId = 3001;
     EdgeType type = 101;
@@ -301,9 +299,7 @@ static cpp2::LookUpIndexResp execLookupVertices(const std::string& filter,
 static cpp2::LookUpIndexResp execLookupEdges(const std::string& filter,
                                              bool hasReturnCols = true) {
     fs::TempDir rootPath("/tmp/execLookupEdges.XXXXXX");
-    constexpr int32_t partitions = 6;
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partitions,
-        {0, network::NetworkUtils::getAvailablePort()});
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     GraphSpaceID spaceId = 0;
     TagID tagId = 3001;
     EdgeType type = 101;
@@ -341,9 +337,7 @@ static cpp2::LookUpIndexResp execLookupEdges(const std::string& filter,
 
 static cpp2::LookUpIndexResp checkLookupEdgesString(const std::string& filter) {
     fs::TempDir rootPath("/tmp/checkLookupEdgesString.XXXXXX");
-    constexpr int32_t partitions = 6;
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partitions,
-        {0, network::NetworkUtils::getAvailablePort()});
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     GraphSpaceID spaceId = 0;
     EdgeType type = 101;
 
@@ -431,9 +425,7 @@ static cpp2::LookUpIndexResp checkLookupEdgesString(const std::string& filter) {
 
 static cpp2::LookUpIndexResp checkLookupVerticesString(const std::string& filter) {
     fs::TempDir rootPath("/tmp/checkLookupVerticesString.XXXXXX");
-    constexpr int32_t partitions = 6;
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partitions,
-        {0, network::NetworkUtils::getAvailablePort()});
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     GraphSpaceID spaceId = 0;
     TagID tagId = 3001;
     nebula::cpp2::Schema schema;
@@ -518,9 +510,7 @@ static cpp2::LookUpIndexResp checkLookupVerticesString(const std::string& filter
 
 static cpp2::LookUpIndexResp checkLookupEdgesDouble(const std::string& filter) {
     fs::TempDir rootPath("/tmp/checkLookupEdgesDouble.XXXXXX");
-    constexpr int32_t partitions = 6;
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partitions,
-        {0, network::NetworkUtils::getAvailablePort()});
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     GraphSpaceID spaceId = 0;
     EdgeType type = 101;
 
@@ -612,9 +602,7 @@ static cpp2::LookUpIndexResp checkLookupEdgesDouble(const std::string& filter) {
 
 static cpp2::LookUpIndexResp checkLookupVerticesDouble(const std::string& filter) {
     fs::TempDir rootPath("/tmp/checkLookupVerticesDouble.XXXXXX");
-    constexpr int32_t partitions = 6;
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partitions,
-        {0, network::NetworkUtils::getAvailablePort()});
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     GraphSpaceID spaceId = 0;
     TagID tagId = 3001;
     nebula::cpp2::Schema schema;

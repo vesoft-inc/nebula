@@ -35,7 +35,7 @@ public:
     static std::unique_ptr<kvstore::KVStore>
     initKV(const char* rootPath,
            int32_t partitionNumber = 6,
-           HostAddr localhost = {0, 0},
+           HostAddr localhost = {0, network::NetworkUtils::getAvailablePort()},
            meta::MetaClient* mClient = nullptr,
            bool useMetaServer = false,
            std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder = nullptr) {

@@ -121,9 +121,7 @@ void checkResponse(const cpp2::QueryStatsResponse& resp) {
 
 TEST(QueryStatsTest, StatsSimpleTest) {
     fs::TempDir rootPath("/tmp/QueryStatsTest.XXXXXX");
-    constexpr int32_t partitions = 6;
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partitions,
-        {0, network::NetworkUtils::getAvailablePort()});
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();

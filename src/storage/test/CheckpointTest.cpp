@@ -16,9 +16,7 @@ namespace nebula {
 namespace storage {
 TEST(CheckpointTest, simpleTest) {
     fs::TempDir dataPath("/tmp/Checkpoint_Test_src.XXXXXX");
-    constexpr int32_t partitions = 6;
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(dataPath.path(), partitions,
-        {0, network::NetworkUtils::getAvailablePort()}));
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(dataPath.path()));
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
     // Add vertices

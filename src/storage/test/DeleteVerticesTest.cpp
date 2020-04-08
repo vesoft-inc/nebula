@@ -19,9 +19,7 @@ namespace storage {
 
 TEST(DeleteVerticesTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/DeleteVertexTest.XXXXXX");
-    constexpr int32_t partitions = 6;
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path(), partitions,
-        {0, network::NetworkUtils::getAvailablePort()}));
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
     // Add vertices

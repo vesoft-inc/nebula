@@ -191,9 +191,7 @@ void checkTTLResponse(cpp2::EdgePropResponse& resp) {
 
 TEST(QueryEdgePropsTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/QueryEdgePropsTest.XXXXXX");
-    constexpr int32_t partitions = 6;
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partitions,
-        {0, network::NetworkUtils::getAvailablePort()});
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMng = TestUtils::mockSchemaMan();
@@ -215,9 +213,7 @@ TEST(QueryEdgePropsTest, SimpleTest) {
 
 TEST(QueryEdgePropsTest, TTLTest) {
     fs::TempDir rootPath("/tmp/QueryEdgePropsTest.XXXXXX");
-    constexpr int32_t partitions = 6;
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partitions,
-        {0, network::NetworkUtils::getAvailablePort()});
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMng = TestUtils::mockSchemaWithTTLMan();
@@ -239,9 +235,7 @@ TEST(QueryEdgePropsTest, TTLTest) {
 
 TEST(QueryEdgePropsTest, QueryAfterEdgeAltered) {
     fs::TempDir rootPath("/tmp/QueryEdgePropsTest.XXXXXX");
-    constexpr int32_t partitions = 6;
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(), partitions,
-        {0, network::NetworkUtils::getAvailablePort()});
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMng = TestUtils::mockSchemaMan();

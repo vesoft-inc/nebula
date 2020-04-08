@@ -201,9 +201,8 @@ TEST(NebulaCompactionFilterTest, InvalidSchemaAndMutliVersionsFilterTest) {
     std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder(
                                     new StorageCompactionFilterFactoryBuilder(schemaMan.get(),
                                                                               nullptr));
-    constexpr int32_t partitions = 6;
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path(),
-                                         partitions,
+                                         6,
                                          {0, network::NetworkUtils::getAvailablePort()},
                                          nullptr,
                                          false,
@@ -283,9 +282,8 @@ TEST(NebulaCompactionFilterTest, TTLFilterDataExpiredTest) {
     std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder(
                                     new StorageCompactionFilterFactoryBuilder(schemaMan.get(),
                                                                               nullptr));
-    constexpr int32_t partitions = 6;
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path(),
-                                         partitions,
+                                         6,
                                          {0, network::NetworkUtils::getAvailablePort()},
                                          nullptr,
                                          false,
@@ -354,9 +352,8 @@ TEST(NebulaCompactionFilterTest, TTLFilterDataNotExpiredTest) {
     std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder(
                                     new StorageCompactionFilterFactoryBuilder(schemaMan.get(),
                                                                               nullptr));
-    constexpr int32_t partitions = 6;
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path(),
-                                         partitions,
+                                         6,
                                          {0, network::NetworkUtils::getAvailablePort()},
                                          nullptr,
                                          false,
@@ -427,9 +424,8 @@ TEST(NebulaCompactionFilterTest, DropIndexTest) {
     std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder(
         new StorageCompactionFilterFactoryBuilder(schemaMan.get(),
                                                   indexMan.get()));
-    constexpr int32_t partitions = 6;
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path(),
-                                         partitions,
+                                         6,
                                          {0, network::NetworkUtils::getAvailablePort()},
                                          nullptr,
                                          false,

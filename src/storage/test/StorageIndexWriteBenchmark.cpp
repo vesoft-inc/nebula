@@ -85,9 +85,7 @@ void insertVertices(bool withoutIndex) {
                                            FLAGS_root_data_path.c_str(),
                                            "attachIndex");
         }
-        constexpr int32_t partitions = 6;
-        kv = TestUtils::initKV(std::move(rootPath).c_str(), partitions,
-            {0, network::NetworkUtils::getAvailablePort()});
+        kv = TestUtils::initKV(std::move(rootPath).c_str());
         if (withoutIndex) {
             indexMan = std::make_unique<nebula::storage::AdHocIndexManager>();
             schemaMan = TestUtils::mockSchemaMan();
@@ -178,9 +176,7 @@ void insertUnmatchIndex() {
     VertexID vId = 0;
     BENCHMARK_SUSPEND {
         auto rootPath = folly::stringPrintf("%s/%s", FLAGS_root_data_path.c_str(), "unmatchIndex");
-        constexpr int32_t partitions = 6;
-        kv = TestUtils::initKV(std::move(rootPath).c_str(), partitions,
-            {0, network::NetworkUtils::getAvailablePort()});
+        kv = TestUtils::initKV(std::move(rootPath).c_str());
         indexMan = TestUtils::mockIndexMan(0, 2001, 2002);
         schemaMan = TestUtils::mockSchemaMan(0);
     };
@@ -248,9 +244,7 @@ void insertDupVertices() {
         auto rootPath = folly::stringPrintf("%s/%s",
                                             FLAGS_root_data_path.c_str(),
                                             "duplicateIndex");
-        constexpr int32_t partitions = 6;
-        kv = TestUtils::initKV(std::move(rootPath).c_str(), partitions,
-            {0, network::NetworkUtils::getAvailablePort()});
+        kv = TestUtils::initKV(std::move(rootPath).c_str());
         schemaMan = TestUtils::mockSchemaMan();
         indexMan = TestUtils::mockIndexMan(0, 3001, 3002);
     };
@@ -323,9 +317,7 @@ void insertVerticesMultIndex() {
                                        FLAGS_root_data_path.c_str(),
                                        "multIndex");
 
-        constexpr int32_t partitions = 6;
-        kv = TestUtils::initKV(std::move(rootPath).c_str(), partitions,
-            {0, network::NetworkUtils::getAvailablePort()});
+        kv = TestUtils::initKV(std::move(rootPath).c_str());
         indexMan = TestUtils::mockMultiIndexMan(0, 3001, 3002);
         schemaMan = TestUtils::mockSchemaMan(0);
     };

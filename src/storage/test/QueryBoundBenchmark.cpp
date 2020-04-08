@@ -71,9 +71,7 @@ void mockData(kvstore::KVStore* kv) {
 }
 
 void setUp(const char* path) {
-    constexpr int32_t partitions = 6;
-    gKV = TestUtils::initKV(path, partitions,
-         {0, network::NetworkUtils::getAvailablePort()});
+    gKV = TestUtils::initKV(path);
     schema.reset(new storage::AdHocSchemaManager());
     schema->addEdgeSchema(
         0 /*space id*/, 101 /*edge type*/, TestUtils::genEdgeSchemaProvider(10, 10));

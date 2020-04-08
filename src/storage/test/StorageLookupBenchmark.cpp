@@ -182,9 +182,7 @@ void lookupExec(int32_t expectRowNum,
         rootPath = folly::stringPrintf("%s/%s_%d",
                                        FLAGS_root_data_path.c_str(),
                                        "Precise", expectRowNum);
-        constexpr int32_t partitions = 6;
-        kv = TestUtils::initKV(std::move(rootPath).c_str(), partitions,
-            {0, network::NetworkUtils::getAvailablePort()});
+        kv = TestUtils::initKV(std::move(rootPath).c_str());
         schemaMan = mockSchemaMan();
         indexMan = mockIndexMan();
         auto iRet = indexMan->getTagIndex(spaceId, indexId);
