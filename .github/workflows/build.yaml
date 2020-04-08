@@ -72,7 +72,7 @@ jobs:
         continue-on-error: false
         working-directory: build
         env:
-          ASAN_SYMBOLIZER_PATH: /usr/bin/llvm-symbolizer
+          ASAN_SYMBOLIZER_PATH: /opt/vesoft/toolset/clang/9.0.0/bin/llvm-symbolizer
           ASAN_OPTIONS: fast_unwind_on_malloc=1
         run: |
           ctest \
@@ -84,7 +84,7 @@ jobs:
         timeout-minutes: 40
         working-directory: build
         env:
-          ASAN_SYMBOLIZER_PATH: /usr/bin/llvm-symbolizer
+          ASAN_SYMBOLIZER_PATH: /opt/vesoft/toolset/clang/9.0.0/bin/llvm-symbolizer
           ASAN_OPTIONS: fast_unwind_on_malloc=0
         run: |
           ctest \
