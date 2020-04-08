@@ -1,14 +1,14 @@
 set(RAFTEX_TEST_LIBS
-    $<TARGET_OBJECTS:raftex_obj>
-    $<TARGET_OBJECTS:raftex_thrift_obj>
-    $<TARGET_OBJECTS:wal_obj>
-    $<TARGET_OBJECTS:base_obj>
-    $<TARGET_OBJECTS:thread_obj>
-    $<TARGET_OBJECTS:fs_obj>
-    $<TARGET_OBJECTS:network_obj>
-    $<TARGET_OBJECTS:thrift_obj>
-    $<TARGET_OBJECTS:time_obj>
-    $<TARGET_OBJECTS:kvstore_storage_utils_obj>
+    raftex_lib
+    raftex_thrift_lib
+    wal_lib
+    base_lib
+    thread_lib
+    fs_lib
+    network_lib
+    thrift_lib
+    time_lib
+    kvstore_storage_utils_lib
 )
 
 
@@ -19,9 +19,8 @@ nebula_add_test(
         LeaderElectionTest.cpp
         RaftexTestBase.cpp
         TestShard.cpp
-    OBJECTS
-        ${RAFTEX_TEST_LIBS}
     LIBRARIES
+        ${RAFTEX_TEST_LIBS}
         ${THRIFT_LIBRARIES}
         wangle
         gtest
@@ -35,9 +34,8 @@ nebula_add_test(
         LogAppendTest.cpp
         RaftexTestBase.cpp
         TestShard.cpp
-    OBJECTS
-        ${RAFTEX_TEST_LIBS}
     LIBRARIES
+        ${RAFTEX_TEST_LIBS}
         ${THRIFT_LIBRARIES}
         wangle
         gtest
@@ -51,9 +49,8 @@ nebula_add_test(
         LogCASTest.cpp
         RaftexTestBase.cpp
          TestShard.cpp
-    OBJECTS
-        ${RAFTEX_TEST_LIBS}
     LIBRARIES
+        ${RAFTEX_TEST_LIBS}
         ${THRIFT_LIBRARIES}
         wangle
         gtest
@@ -67,9 +64,8 @@ nebula_add_test(
         LearnerTest.cpp
         RaftexTestBase.cpp
         TestShard.cpp
-    OBJECTS
-        ${RAFTEX_TEST_LIBS}
     LIBRARIES
+        ${RAFTEX_TEST_LIBS}
         ${THRIFT_LIBRARIES}
         wangle
         gtest
@@ -83,9 +79,8 @@ nebula_add_test(
         LogCommandTest.cpp
         RaftexTestBase.cpp
         TestShard.cpp
-    OBJECTS
-        ${RAFTEX_TEST_LIBS}
     LIBRARIES
+        ${RAFTEX_TEST_LIBS}
         ${THRIFT_LIBRARIES}
         wangle
         gtest
@@ -98,9 +93,8 @@ nebula_add_test(
         RaftCase.cpp
         RaftexTestBase.cpp
         TestShard.cpp
-    OBJECTS
-        ${RAFTEX_TEST_LIBS}
     LIBRARIES
+        ${RAFTEX_TEST_LIBS}
         ${THRIFT_LIBRARIES}
         wangle
         gtest
@@ -113,9 +107,8 @@ nebula_add_test(
         LeaderTransferTest.cpp
         RaftexTestBase.cpp
         TestShard.cpp
-    OBJECTS
-        ${RAFTEX_TEST_LIBS}
     LIBRARIES
+        ${RAFTEX_TEST_LIBS}
         ${THRIFT_LIBRARIES}
         wangle
         gtest
@@ -128,9 +121,8 @@ nebula_add_test(
         SnapshotTest.cpp
         RaftexTestBase.cpp
         TestShard.cpp
-    OBJECTS
-        ${RAFTEX_TEST_LIBS}
     LIBRARIES
+        ${RAFTEX_TEST_LIBS}
         ${THRIFT_LIBRARIES}
         wangle
         gtest
@@ -143,9 +135,8 @@ nebula_add_test(
         MemberChangeTest.cpp
         RaftexTestBase.cpp
         TestShard.cpp
-    OBJECTS
-        ${RAFTEX_TEST_LIBS}
     LIBRARIES
+        ${RAFTEX_TEST_LIBS}
         ${THRIFT_LIBRARIES}
         wangle
         gtest

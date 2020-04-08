@@ -10,8 +10,8 @@ add_flex_bison_dependency(Scanner Parser)
 
 add_compile_options(-Wno-sign-compare -Wno-conversion-null -Wno-pedantic -Wno-extra)
 
-nebula_add_library(
-    parser_obj OBJECT
+nebula_add_all_library(
+    parser
     ${FLEX_Scanner_OUTPUTS}
     ${BISON_Parser_OUTPUTS}
     Clauses.cpp

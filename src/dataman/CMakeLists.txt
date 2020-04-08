@@ -1,5 +1,5 @@
-nebula_add_library(
-    dataman_obj OBJECT
+nebula_add_all_library(
+    dataman
     ResultSchemaProvider.cpp
     SchemaWriter.cpp
     RowSetReader.cpp

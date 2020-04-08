@@ -2,11 +2,11 @@ set(THRIFT1 ${Fbthrift_BIN})
 set(THRIFT_TEMPLATES ${Fbthrift_INCLUDE_DIR}/thrift/templates)
 include(ThriftGenerate)
 
-# Target object name : hbase_thrift_obj
+# Target object name : hbase_thrift
 thrift_generate("hbase" "THBaseService" ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} "hbase")
 
-nebula_add_library(
-    hbasestore_obj OBJECT
+nebula_add_all_library(
+    hbasestore
     HBaseStore.cpp
     HBaseClient.cpp
 )

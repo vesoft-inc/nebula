@@ -1,4 +1,4 @@
-nebula_add_library(
-    encryption_obj OBJECT
+nebula_add_all_library(
+    encryption
     MD5Utils.cpp
 )

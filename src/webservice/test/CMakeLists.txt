@@ -1,18 +1,21 @@
+set(WEB_TEST_LIBS
+    http_client_lib
+    ws_lib
+    ws_common_lib
+    base_lib
+    process_lib
+    fs_lib
+    stats_lib
+    time_lib
+)
+
 nebula_add_test(
     NAME
         flags_access_test
     SOURCES
         FlagsAccessTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:http_client_obj>
-        $<TARGET_OBJECTS:ws_obj>
-        $<TARGET_OBJECTS:ws_common_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:process_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:time_obj>
     LIBRARIES
+        ${WEB_TEST_LIBS}
         proxygenhttpserver
         proxygenlib
         wangle
@@ -25,16 +28,8 @@ nebula_add_test(
         stats_read_test
     SOURCES
         StatsReaderTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:http_client_obj>
-        $<TARGET_OBJECTS:ws_obj>
-        $<TARGET_OBJECTS:ws_common_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:process_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:time_obj>
     LIBRARIES
+        ${WEB_TEST_LIBS}
         proxygenhttpserver
         proxygenlib
         wangle
@@ -46,16 +41,8 @@ nebula_add_test(
         router_test
     SOURCES
         RouterTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:http_client_obj>
-        $<TARGET_OBJECTS:ws_obj>
-        $<TARGET_OBJECTS:ws_common_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:process_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:time_obj>
     LIBRARIES
+        ${WEB_TEST_LIBS}
         proxygenhttpserver
         proxygenlib
         wangle
@@ -67,16 +54,8 @@ nebula_add_test(
         http_status_test
     SOURCES
         StatusHandlerTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:http_client_obj>
-        $<TARGET_OBJECTS:ws_obj>
-        $<TARGET_OBJECTS:ws_common_obj>
-        $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:process_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:base_obj>
     LIBRARIES
+        ${WEB_TEST_LIBS}
         proxygenhttpserver
         proxygenlib
         wangle

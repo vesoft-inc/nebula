@@ -1,5 +1,5 @@
-nebula_add_library(
-    kvstore_obj OBJECT
+nebula_add_all_library(
+    kvstore
     Part.cpp
     RocksEngine.cpp
     PartManager.cpp

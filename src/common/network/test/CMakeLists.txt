@@ -3,11 +3,10 @@ nebula_add_test(
         network_utils_test
     SOURCES
         NetworkUtilsTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:network_obj>
-        $<TARGET_OBJECTS:fs_obj>
     LIBRARIES
+        base_lib
+        network_lib
+        fs_lib
         ${THRIFT_LIBRARIES}
         wangle
         gtest
@@ -19,11 +18,10 @@ nebula_add_executable(
         network_utils_bm
     SOURCES
         NetworkUtilsBenchmark.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:network_obj>
-        $<TARGET_OBJECTS:fs_obj>
     LIBRARIES
+        base_lib
+        network_lib
+        fs_lib
         wangle
         follybenchmark
         boost_regex

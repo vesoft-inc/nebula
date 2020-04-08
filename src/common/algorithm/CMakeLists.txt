@@ -1,5 +1,5 @@
-nebula_add_library(
-    nebula_algo_obj OBJECT
+nebula_add_all_library(
+    nebula_algo
     ReservoirSampling.cpp
 )
 

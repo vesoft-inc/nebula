@@ -1,22 +1,22 @@
 set(KVSTORE_TEST_LIBS
-    $<TARGET_OBJECTS:kvstore_obj>
-    $<TARGET_OBJECTS:meta_client>
-    $<TARGET_OBJECTS:stats_obj>
-    $<TARGET_OBJECTS:time_obj>
-    $<TARGET_OBJECTS:meta_thrift_obj>
-    $<TARGET_OBJECTS:common_thrift_obj>
-    $<TARGET_OBJECTS:raftex_obj>
-    $<TARGET_OBJECTS:raftex_thrift_obj>
-    $<TARGET_OBJECTS:wal_obj>
-    $<TARGET_OBJECTS:base_obj>
-    $<TARGET_OBJECTS:thread_obj>
-    $<TARGET_OBJECTS:fs_obj>
-    $<TARGET_OBJECTS:schema_obj>
-    $<TARGET_OBJECTS:network_obj>
-    $<TARGET_OBJECTS:thrift_obj>
-    $<TARGET_OBJECTS:time_obj>
-    $<TARGET_OBJECTS:gflags_man_obj>
-    $<TARGET_OBJECTS:kvstore_storage_utils_obj>
+    kvstore_lib
+    meta_client_lib
+    stats_lib
+    time_lib
+    meta_thrift_lib
+    common_thrift_lib
+    raftex_lib
+    raftex_thrift_lib
+    wal_lib
+    base_lib
+    thread_lib
+    fs_lib
+    schema_lib
+    network_lib
+    thrift_lib
+    time_lib
+    gflags_man_lib
+    kvstore_storage_utils_lib
 )
 
 nebula_add_test(
@@ -24,9 +24,8 @@ nebula_add_test(
         part_test
     SOURCES
         PartTest.cpp
-    OBJECTS
-        ${KVSTORE_TEST_LIBS}
     LIBRARIES
+        ${KVSTORE_TEST_LIBS}
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         wangle
@@ -38,9 +37,8 @@ nebula_add_test(
         rocks_engine_test
     SOURCES
         RocksEngineTest.cpp
-    OBJECTS
-        ${KVSTORE_TEST_LIBS}
     LIBRARIES
+        ${KVSTORE_TEST_LIBS}
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         wangle
@@ -52,9 +50,8 @@ nebula_add_test(
         nebula_store_test
     SOURCES
         NebulaStoreTest.cpp
-    OBJECTS
-        ${KVSTORE_TEST_LIBS}
     LIBRARIES
+        ${KVSTORE_TEST_LIBS}
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         wangle
@@ -68,18 +65,17 @@ nebula_add_test(
         RocksEngineConfigTest.cpp
         ../RocksEngine.cpp
         ../RocksEngineConfig.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:raftex_obj>
-        $<TARGET_OBJECTS:raftex_thrift_obj>
-        $<TARGET_OBJECTS:wal_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:thread_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        $<TARGET_OBJECTS:network_obj>
-        $<TARGET_OBJECTS:thrift_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:kvstore_storage_utils_obj>
     LIBRARIES
+        raftex_lib
+        raftex_thrift_lib
+        wal_lib
+        base_lib
+        thread_lib
+        fs_lib
+        network_lib
+        thrift_lib
+        time_lib
+        kvstore_storage_utils_lib
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         wangle
@@ -92,9 +88,8 @@ nebula_add_test(
         log_encoder_test
     SOURCES
         LogEncoderTest.cpp
-    OBJECTS
-        ${KVSTORE_TEST_LIBS}
     LIBRARIES
+        ${KVSTORE_TEST_LIBS}
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         wangle
@@ -106,9 +101,8 @@ nebula_add_test(
         snapshot_link_test
     SOURCES
         SnapshotLinkTest.cpp
-    OBJECTS
-        ${KVSTORE_TEST_LIBS}
     LIBRARIES
+        ${KVSTORE_TEST_LIBS}
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         wangle
@@ -120,10 +114,9 @@ nebula_add_executable(
         multi_versions_perf_test_bm
     SOURCES
         MultiVersionBenchmark.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:fs_obj>
     LIBRARIES
+        base_lib
+        fs_lib
         ${ROCKSDB_LIBRARIES}
         follybenchmark
         boost_regex
@@ -134,9 +127,8 @@ nebula_add_executable(
         part_performance_test
     SOURCES
         PartPerformanceTest.cpp
-    OBJECTS
-        ${KVSTORE_TEST_LIBS}
     LIBRARIES
+        ${KVSTORE_TEST_LIBS}
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         follybenchmark

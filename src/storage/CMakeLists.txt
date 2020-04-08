@@ -1,5 +1,5 @@
-nebula_add_library(
-    storage_service_handler OBJECT
+nebula_add_all_library(
+    storage_service_handler
     StorageServiceHandler.cpp
     StorageFlags.cpp
     CommonUtils.cpp
@@ -28,20 +28,20 @@ nebula_add_library(
     index/LookUpIndexProcessor.cpp
 )
 
-nebula_add_library(
-    storage_http_handler OBJECT
+nebula_add_all_library(
+    storage_http_handler
     http/StorageHttpIngestHandler.cpp
     http/StorageHttpDownloadHandler.cpp
     http/StorageHttpAdminHandler.cpp
 )
 
-nebula_add_library(
-    storage_client OBJECT
+nebula_add_all_library(
+    storage_client
     client/StorageClient.cpp
 )
 
-nebula_add_library(
-    storage_server OBJECT
+nebula_add_all_library(
+    storage_server
     StorageServer.cpp
 )
 

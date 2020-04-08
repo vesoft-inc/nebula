@@ -1,29 +1,48 @@
-nebula_add_library(
-    console_obj OBJECT
+nebula_add_all_library(
+    console
     CliManager.cpp
     CmdProcessor.cpp
 )
-
-nebula_add_executable(
-    NAME
-        nebula
-    SOURCES
-        NebulaConsole.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:console_obj>
-        $<TARGET_OBJECTS:client_cpp_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        $<TARGET_OBJECTS:graph_thrift_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:thread_obj>
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
-        wangle
-        ${Readline_LIBRARY}
-        ${NCURSES_LIBRARY}
-)
-
+if (ENABLE_ONLY_SHARED)
+    nebula_add_executable(
+        NAME
+            nebula
+        SOURCES
+            NebulaConsole.cpp
+        LIBRARIES
+            console_lib
+            client_cpp_lib
+            base_lib
+            fs_lib
+            graph_thrift_lib
+            time_lib
+            thread_lib
+            ${THRIFT_LIBRARIES}
+            wangle
+            ${Readline_LIBRARY}
+            ${NCURSES_LIBRARY}
+    )
+else()
+    nebula_add_executable(
+        NAME
+            nebula
+        SOURCES
+            NebulaConsole.cpp
+        OBJECTS
+            $<TARGET_OBJECTS:console_obj>
+            $<TARGET_OBJECTS:client_cpp_obj>
+            $<TARGET_OBJECTS:base_obj>
+            $<TARGET_OBJECTS:fs_obj>
+            $<TARGET_OBJECTS:graph_thrift_obj>
+            $<TARGET_OBJECTS:time_obj>
+            $<TARGET_OBJECTS:thread_obj>
+        LIBRARIES
+            ${THRIFT_LIBRARIES}
+            wangle
+            ${Readline_LIBRARY}
+            ${NCURSES_LIBRARY}
+    )
+endif()
 install(
     TARGETS
         nebula

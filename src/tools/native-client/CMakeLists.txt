@@ -11,7 +11,7 @@ nebula_add_library(nebula_native_client SHARED
             $<TARGET_OBJECTS:storage_thrift_obj>
             $<TARGET_OBJECTS:common_thrift_obj>
             $<TARGET_OBJECTS:thrift_obj>
-            $<TARGET_OBJECTS:meta_client>
+            $<TARGET_OBJECTS:meta_client_obj>
             $<TARGET_OBJECTS:stats_obj>
             $<TARGET_OBJECTS:time_obj>
             $<TARGET_OBJECTS:meta_thrift_obj>
@@ -38,6 +38,6 @@ target_link_libraries(nebula_native_client
 
 add_custom_target(
     nebula_native_java_client ALL
-    COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/build.sh" ${CMAKE_CURRENT_SOURCE_DIR} ">" "./_build.log" "2>&1"
+    COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/build.sh" ${CMAKE_CURRENT_SOURCE_DIR} "_obj>" "./_build.log" "2_obj>&1"
     DEPENDS nebula_native_client
 )

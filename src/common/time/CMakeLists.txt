@@ -1,5 +1,5 @@
-nebula_add_library(
-    time_obj OBJECT
+nebula_add_all_library(
+    time
     detail/TscHelper.cpp
     Duration.cpp
     WallClock.cpp

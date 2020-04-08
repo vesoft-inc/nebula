@@ -59,11 +59,11 @@ jobs:
       - name: CMake with gcc-9.2
         if: matrix.compiler == 'gcc-9.2' && matrix.os != 'centos7' && steps.ignore_docs.outputs.num_source_files != 0
         run: |
-          cmake -DCMAKE_BUILD_TYPE=Release -B build/
+          cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_ONLY_SHARED=ON -B build/
       - name: CMake with Coverage
         if: matrix.compiler == 'gcc-9.2' && matrix.os == 'centos7' && steps.ignore_docs.outputs.num_source_files != 0
         run: |
-          cmake -DENABLE_COVERAGE=ON -B build/
+          cmake -DENABLE_COVERAGE=ON -DENABLE_ONLY_SHARED=ON -B build/
       - name: CMake with clang-9
         if: matrix.compiler == 'clang-9' && steps.ignore_docs.outputs.num_source_files != 0
         run: |
@@ -71,6 +71,7 @@ jobs:
             -DCMAKE_CXX_COMPILER=clang++ \
             -DCMAKE_C_COMPILER=clang \
             -DENABLE_ASAN=on \
+            -DENABLE_ONLY_SHARED=ON \
             -B build/
       - name: Make
         if: (matrix.compiler != 'gcc-9.2' || matrix.os != 'centos7') && steps.ignore_docs.outputs.num_source_files != 0

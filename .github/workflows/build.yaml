@@ -46,18 +46,19 @@ jobs:
       - name: CMake with gcc-9.2
         if: matrix.compiler == 'gcc-9.2' && matrix.os != 'centos7'
         run: |
-          cmake -DCMAKE_BUILD_TYPE=Release -B build/
+          cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_ONLY_SHARED=ON -B build/
       - name: CMake with Coverage
         if: matrix.compiler == 'gcc-9.2' && matrix.os == 'centos7'
         run: |
-          cmake -DENABLE_COVERAGE=ON -B build/
+          cmake -DENABLE_COVERAGE=ON -DENABLE_ONLY_SHARED=ON -B build/
       - name: CMake with clang-9
         if: matrix.compiler == 'clang-9'
         run: |
           cmake \
             -DCMAKE_CXX_COMPILER=clang++ \
             -DCMAKE_C_COMPILER=clang \
-            -DENABLE_ASAN=on \
+            -DENABLE_ASAN=ON \
+            -DENABLE_ONLY_SHARED=ON \
             -B build/
       - name: Make with one thread
         if: matrix.compiler == 'gcc-9.2' && matrix.os == 'centos7'

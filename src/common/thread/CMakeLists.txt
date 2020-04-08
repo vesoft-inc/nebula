@@ -1,5 +1,5 @@
-nebula_add_library(
-    thread_obj OBJECT
+nebula_add_all_library(
+    thread
     NamedThread.cpp
     GenericWorker.cpp
     GenericThreadPool.cpp

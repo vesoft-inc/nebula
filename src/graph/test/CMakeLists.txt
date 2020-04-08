@@ -1,52 +1,52 @@
 set(GRAPH_TEST_LIBS
-    $<TARGET_OBJECTS:graph_obj>
-    $<TARGET_OBJECTS:graph_thrift_obj>
-    $<TARGET_OBJECTS:kvstore_storage_utils_obj>
-    $<TARGET_OBJECTS:storage_service_handler>
-    $<TARGET_OBJECTS:storage_client>
-    $<TARGET_OBJECTS:storage_thrift_obj>
-    $<TARGET_OBJECTS:common_thrift_obj>
-    $<TARGET_OBJECTS:parser_obj>
-    $<TARGET_OBJECTS:filter_obj>
-    $<TARGET_OBJECTS:schema_obj>
-    $<TARGET_OBJECTS:index_obj>
-    $<TARGET_OBJECTS:dataman_obj>
-    $<TARGET_OBJECTS:http_client_obj>
-    $<TARGET_OBJECTS:ws_common_obj>
-    $<TARGET_OBJECTS:storage_client>
-    $<TARGET_OBJECTS:meta_client>
-    $<TARGET_OBJECTS:meta_thrift_obj>
-    $<TARGET_OBJECTS:meta_service_handler>
-    $<TARGET_OBJECTS:kvstore_obj>
-    $<TARGET_OBJECTS:raftex_obj>
-    $<TARGET_OBJECTS:raftex_thrift_obj>
-    $<TARGET_OBJECTS:wal_obj>
-    $<TARGET_OBJECTS:time_obj>
-    $<TARGET_OBJECTS:fs_obj>
-    $<TARGET_OBJECTS:network_obj>
-    $<TARGET_OBJECTS:thread_obj>
-    $<TARGET_OBJECTS:thrift_obj>
-    $<TARGET_OBJECTS:process_obj>
-    $<TARGET_OBJECTS:base_obj>
-    $<TARGET_OBJECTS:meta_gflags_man_obj>
-    $<TARGET_OBJECTS:gflags_man_obj>
-    $<TARGET_OBJECTS:ws_common_obj>
-    $<TARGET_OBJECTS:stats_obj>
-    $<TARGET_OBJECTS:charset_obj>
-    $<TARGET_OBJECTS:encryption_obj>
-    $<TARGET_OBJECTS:session_obj>
-    $<TARGET_OBJECTS:permission_obj>
+    graph_lib
+    graph_thrift_lib
+    kvstore_storage_utils_lib
+    storage_service_handler_lib
+    storage_client_lib
+    storage_thrift_lib
+    common_thrift_lib
+    parser_lib
+    filter_lib
+    schema_lib
+    index_lib
+    dataman_lib
+    http_client_lib
+    ws_common_lib
+    storage_client_lib
+    meta_client_lib
+    meta_thrift_lib
+    meta_service_handler_lib
+    kvstore_lib
+    raftex_lib
+    raftex_thrift_lib
+    wal_lib
+    time_lib
+    fs_lib
+    network_lib
+    thread_lib
+    thrift_lib
+    process_lib
+    base_lib
+    meta_gflags_man_lib
+    gflags_man_lib
+    ws_common_lib
+    stats_lib
+    charset_lib
+    encryption_lib
+    session_lib
+    permission_lib
 )
 
 set(GRAPH_TEST_CLIENT_LIBS
-    $<TARGET_OBJECTS:graph_test_common_obj>
-    $<TARGET_OBJECTS:client_cpp_obj>
-    $<TARGET_OBJECTS:adHocSchema_obj>
-    $<TARGET_OBJECTS:adHocIndex_obj>
+    graph_test_common_lib
+    client_cpp_lib
+    adHocSchema_lib
+    adHocIndex_lib
 )
 
-nebula_add_library(
-    graph_test_common_obj OBJECT
+nebula_add_all_library(
+    graph_test_common
     TestMain.cpp
     TestEnv.cpp
     TestBase.cpp
@@ -57,9 +57,8 @@ nebula_add_test(
         session_manager_test
     SOURCES
         SessionManagerTest.cpp
-    OBJECTS
-        ${GRAPH_TEST_LIBS}
     LIBRARIES
+        ${GRAPH_TEST_LIBS}
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         proxygenlib
@@ -74,10 +73,9 @@ nebula_add_test(
     SOURCES
         SchemaTest.cpp
         ConfigTest.cpp
-    OBJECTS
+    LIBRARIES
         ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}
-    LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         proxygenlib
@@ -90,10 +88,9 @@ nebula_add_test(
         go_test
     SOURCES
         GoTest.cpp
-    OBJECTS
+    LIBRARIES
         ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}
-    LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         proxygenlib
@@ -106,10 +103,9 @@ nebula_add_test(
         data_test
     SOURCES
         DataTest.cpp
-    OBJECTS
+    LIBRARIES
         ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}
-    LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         proxygenlib
@@ -122,10 +118,9 @@ nebula_add_test(
         order_by_test
     SOURCES
         OrderByTest.cpp
-    OBJECTS
+    LIBRARIES
         ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}
-    LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         proxygenlib
@@ -138,10 +133,9 @@ nebula_add_test(
         fetch_vertices_test
     SOURCES
         FetchVerticesTest.cpp
-    OBJECTS
+    LIBRARIES
         ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}
-    LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         proxygenlib
@@ -154,10 +148,9 @@ nebula_add_test(
         fetch_edges_test
     SOURCES
         FetchEdgesTest.cpp
-    OBJECTS
+    LIBRARIES
         ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}
-    LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         proxygenlib
@@ -170,10 +163,9 @@ nebula_add_test(
         set_test
     SOURCES
         SetTest.cpp
-    OBJECTS
+    LIBRARIES
         ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}
-    LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         proxygenlib
@@ -186,10 +178,9 @@ nebula_add_test(
         delete_vertices_sentence_test
     SOURCES
         DeleteVerticesTest.cpp
-    OBJECTS
+    LIBRARIES
         ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}
-    LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         proxygenlib
@@ -202,10 +193,9 @@ nebula_add_test(
         delete_edges_sentence_test
     SOURCES
         DeleteEdgesTest.cpp
-    OBJECTS
+    LIBRARIES
         ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}
-    LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         proxygenlib
@@ -218,10 +208,9 @@ nebula_add_test(
         update_test
     SOURCES
         UpdateTest.cpp
-    OBJECTS
+    LIBRARIES
         ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}
-    LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         proxygenlib
@@ -234,10 +223,9 @@ nebula_add_test(
         find_path_test
     SOURCES
         FindPathTest.cpp
-    OBJECTS
+    LIBRARIES
         ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}
-    LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         proxygenlib
@@ -250,10 +238,9 @@ nebula_add_test(
         group_by_limit_test
     SOURCES
         GroupByLimitTest.cpp
-    OBJECTS
+    LIBRARIES
         ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}
-    LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         proxygenlib
@@ -266,10 +253,9 @@ nebula_add_test(
         yield_test
     SOURCES
         YieldTest.cpp
-    OBJECTS
+    LIBRARIES
         ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}
-    LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         proxygenlib
@@ -282,10 +268,9 @@ nebula_add_test(
         geo_test
     SOURCES
         GeoTest.cpp
-    OBJECTS
+    LIBRARIES
         ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}
-    LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         proxygenlib
@@ -298,10 +283,9 @@ nebula_add_test(
         snapshot_command_test
     SOURCES
         SnapshotCommandTest.cpp
-    OBJECTS
+    LIBRARIES
         ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}
-    LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         proxygenlib
@@ -314,10 +298,9 @@ nebula_add_test(
         index_test
     SOURCES
         IndexTest.cpp
-    OBJECTS
+    LIBRARIES
         ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}
-    LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         proxygenlib
@@ -330,10 +313,9 @@ nebula_add_test(
         lookup_test
     SOURCES
         LookupTest.cpp
-    OBJECTS
+    LIBRARIES
         ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}
-    LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         proxygenlib
@@ -346,10 +328,9 @@ nebula_add_test(
     charsetCollate_test
     SOURCES
         CharsetCollateTest.cpp
-    OBJECTS
+    LIBRARIES
         ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}
-    LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         proxygenlib
@@ -362,13 +343,9 @@ nebula_add_test(
         user_test
     SOURCES
         UserTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:graph_test_common_obj>
-        $<TARGET_OBJECTS:client_cpp_obj>
-        $<TARGET_OBJECTS:adHocSchema_obj>
-        $<TARGET_OBJECTS:adHocIndex_obj>
-        ${GRAPH_TEST_LIBS}
     LIBRARIES
+        ${GRAPH_TEST_CLIENT_LIBS}
+        ${GRAPH_TEST_LIBS}
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         proxygenlib
@@ -381,13 +358,9 @@ nebula_add_test(
         permission_test
     SOURCES
         PermissionTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:graph_test_common_obj>
-        $<TARGET_OBJECTS:client_cpp_obj>
-        $<TARGET_OBJECTS:adHocSchema_obj>
-        $<TARGET_OBJECTS:adHocIndex_obj>
-        ${GRAPH_TEST_LIBS}
     LIBRARIES
+        ${GRAPH_TEST_CLIENT_LIBS}
+        ${GRAPH_TEST_LIBS}
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         proxygenlib
@@ -400,10 +373,9 @@ nebula_add_test(
         ttl_test
     SOURCES
         TTLTest.cpp
-    OBJECTS
+    LIBRARIES
         ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}
-    LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         proxygenlib

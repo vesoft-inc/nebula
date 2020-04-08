@@ -1,14 +1,17 @@
+set(STATS_TEST_LIBS
+    stats_lib
+    time_lib
+    base_lib
+    thread_lib
+)
+
 nebula_add_test(
     NAME
         stats_manager_test
     SOURCES
         StatsManagerTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:thread_obj>
     LIBRARIES
+        ${STATS_TEST_LIBS}
         gtest
 )
 
@@ -17,12 +20,8 @@ nebula_add_test(
         stats_manager_rate_test
     SOURCES
         StatsManagerRateTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:thread_obj>
     LIBRARIES
+        ${STATS_TEST_LIBS}
         gtest
 )
 
@@ -31,12 +30,8 @@ nebula_add_test(
         stats_manager_cross_level_test
     SOURCES
         StatsManagerCrossLevelTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:thread_obj>
     LIBRARIES
+        ${STATS_TEST_LIBS}
         gtest
 )
 
@@ -46,10 +41,10 @@ nebula_add_executable(
         stats_manager_bm
     SOURCES
         StatsManagerBenchmark.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:base_obj>
     LIBRARIES
-        follybenchmark boost_regex
+        stats_lib
+        time_lib
+        base_lib
+        follybenchmark
+        boost_regex
 )

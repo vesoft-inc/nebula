@@ -1,27 +1,30 @@
+set(HBASE_TEST_LIBS
+    hbasestore_lib
+    hbase_thrift_lib
+    dataman_lib
+    schema_lib
+    common_thrift_lib
+    thrift_lib
+    network_lib
+    fs_lib
+    base_lib
+    thread_lib
+    meta_client_lib
+    stats_lib
+    time_lib
+    meta_thrift_lib
+    gflags_man_lib
+    kvstore_storage_utils_lib
+)
+
 nebula_add_test(
     DISABLED
     NAME
         hbase_client_test
     SOURCES
         HBaseClientTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:hbasestore_obj>
-        $<TARGET_OBJECTS:hbase_thrift_obj>
-        $<TARGET_OBJECTS:dataman_obj>
-        $<TARGET_OBJECTS:schema_obj>
-        $<TARGET_OBJECTS:common_thrift_obj>
-        $<TARGET_OBJECTS:thrift_obj>
-        $<TARGET_OBJECTS:network_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:thread_obj>
-        $<TARGET_OBJECTS:meta_client>
-        $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:meta_thrift_obj>
-        $<TARGET_OBJECTS:gflags_man_obj>
-        $<TARGET_OBJECTS:kvstore_storage_utils_obj>
     LIBRARIES
+        ${HBASE_TEST_LIBS}
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         wangle
@@ -34,25 +37,9 @@ nebula_add_test(
         hbase_store_test
     SOURCES
         HBaseStoreTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:hbasestore_obj>
-        $<TARGET_OBJECTS:hbase_thrift_obj>
-        $<TARGET_OBJECTS:dataman_obj>
-        $<TARGET_OBJECTS:schema_obj>
-        $<TARGET_OBJECTS:common_thrift_obj>
-        $<TARGET_OBJECTS:thrift_obj>
-        $<TARGET_OBJECTS:network_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:thread_obj>
-        $<TARGET_OBJECTS:meta_client>
-        $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:meta_thrift_obj>
-        $<TARGET_OBJECTS:adHocSchema_obj>
-        $<TARGET_OBJECTS:gflags_man_obj>
-        $<TARGET_OBJECTS:kvstore_storage_utils_obj>
     LIBRARIES
+        adHocSchema_lib
+        ${HBASE_TEST_LIBS}
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         wangle

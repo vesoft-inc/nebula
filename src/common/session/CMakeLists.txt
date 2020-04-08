@@ -1,4 +1,4 @@
-nebula_add_library(
-    session_obj OBJECT
+nebula_add_all_library(
+    session
     Session.cpp
 )

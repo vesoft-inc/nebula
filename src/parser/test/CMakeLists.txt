@@ -1,21 +1,21 @@
 set(PARSER_TEST_LIBS
-    $<TARGET_OBJECTS:parser_obj>
-    $<TARGET_OBJECTS:filter_obj>
-    $<TARGET_OBJECTS:network_obj>
-    $<TARGET_OBJECTS:fs_obj>
-    $<TARGET_OBJECTS:time_obj>
-    $<TARGET_OBJECTS:gflags_man_obj>
-    $<TARGET_OBJECTS:schema_obj>
-    $<TARGET_OBJECTS:meta_client>
-    $<TARGET_OBJECTS:stats_obj>
-    $<TARGET_OBJECTS:time_obj>
-    $<TARGET_OBJECTS:meta_thrift_obj>
-    $<TARGET_OBJECTS:storage_client>
-    $<TARGET_OBJECTS:storage_thrift_obj>
-    $<TARGET_OBJECTS:common_thrift_obj>
-    $<TARGET_OBJECTS:thrift_obj>
-    $<TARGET_OBJECTS:thread_obj>
-    $<TARGET_OBJECTS:base_obj>
+    parser_lib
+    filter_lib
+    network_lib
+    fs_lib
+    time_lib
+    gflags_man_lib
+    schema_lib
+    meta_client_lib
+    stats_lib
+    time_lib
+    meta_thrift_lib
+    storage_client_lib
+    storage_thrift_lib
+    common_thrift_lib
+    thrift_lib
+    thread_lib
+    base_lib
 )
 
 nebula_add_test(
@@ -23,9 +23,8 @@ nebula_add_test(
         parser_test
     SOURCES
         ParserTest.cpp
-    OBJECTS
-        ${PARSER_TEST_LIBS}
     LIBRARIES
+        ${PARSER_TEST_LIBS}
         gtest
         gtest_main
         ${THRIFT_LIBRARIES}
@@ -37,9 +36,8 @@ nebula_add_test(
         scanner_test
     SOURCES
         ScannerTest.cpp
-    OBJECTS
-        ${PARSER_TEST_LIBS}
     LIBRARIES
+        ${PARSER_TEST_LIBS}
         gtest
         gtest_main
         ${THRIFT_LIBRARIES}
@@ -51,9 +49,8 @@ nebula_add_executable(
         parser_bm
     SOURCES
         ParserBenchmark.cpp
-    OBJECTS
-        ${PARSER_TEST_LIBS}
     LIBRARIES
+        ${PARSER_TEST_LIBS}
         follybenchmark
         boost_regex
         ${THRIFT_LIBRARIES}

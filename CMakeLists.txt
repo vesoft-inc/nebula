@@ -21,6 +21,7 @@
 #   ENABLE_NATIVE                   -- Build native client
 #   ENABLE_TESTING                  -- Build unit test
 #   ENABLE_PACK_ONE                 -- Package to one or multi packages
+#   ENABLE_ONLY_SHARED              -- All binarys use shared libs which build in the nebula, only for testing
 #
 # CMake version check
 cmake_minimum_required(VERSION 3.5.0)
@@ -58,6 +59,7 @@ option(ENABLE_TSAN "Whether to turn Thread Sanitizer ON or OFF" OFF)
 option(ENABLE_STATIC_ASAN "Whether directs the GCC driver to link libasan statically" OFF)
 option(ENABLE_STATIC_UBSAN "Whether directs the GCC driver to link libubsan statically" OFF)
 option(ENABLE_PACK_ONE "Whether to package into one" ON)
+option(ENABLE_ONLY_SHARED "Whether to use shared libs in all binarys" OFF)
 
 message(STATUS "ENABLE_ASAN: ${ENABLE_ASAN}")
 message(STATUS "ENABLE_TESTING: ${ENABLE_TESTING}")
@@ -68,6 +70,7 @@ message(STATUS "ENABLE_STATIC_ASAN : ${ENABLE_STATIC_ASAN}")
 message(STATUS "ENABLE_STATIC_UBSAN : ${ENABLE_STATIC_UBSAN}")
 message(STATUS "ENABLE_WERROR: ${ENABLE_WERROR}")
 message(STATUS "ENABLE_STRICT_ALIASING: ${ENABLE_STRICT_ALIASING}")
+message(STATUS "ENABLE_ONLY_SHARED: ${ENABLE_ONLY_SHARED}")
 
 if (ENABLE_NATIVE)
     message(STATUS "ENABLE_NATIVE is ${ENABLE_NATIVE}")
@@ -76,6 +79,12 @@ endif()
 
 if (ENABLE_TESTING)
     enable_testing()
+endif()
+
+if (ENABLE_TESTING OR ENABLE_ONLY_SHARED)
+    add_compile_options(-fPIC)
+    message(STATUS "${CMAKE_BINARY_DIR}/lib")
+    set(ENV{LD_LIBRARY_PATH} "${CMAKE_BINARY_DIR}/lib:$ENV{LD_LIBRARY_PATH}")
 endif()
 
 if (!CMAKE_CXX_COMPILER)
@@ -467,6 +476,16 @@ macro(nebula_add_library name type)
         hbase_thrift_headers
         parser_target
     )
+endmacro()
+
+# Generate object or shared lib
+macro(nebula_add_all_library name)
+    if (NOT ENABLE_ONLY_SHARED)
+        nebula_add_library(${name}_obj OBJECT ${ARGN})
+    endif()
+    if (ENABLE_TESTING OR ENABLE_ONLY_SHARED)
+        nebula_add_library(${name}_lib SHARED ${ARGN})
+    endif()
 endmacro()
 
 include_directories(AFTER ${NEBULA_HOME}/src)

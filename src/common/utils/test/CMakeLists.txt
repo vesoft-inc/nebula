@@ -3,10 +3,9 @@ nebula_add_test(
         nebula_key_utils_test
     SOURCES
         NebulaKeyUtilsTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:kvstore_storage_utils_obj>
     LIBRARIES
+        base_lib
+        kvstore_storage_utils_lib
         gtest
         gtest_main
 )

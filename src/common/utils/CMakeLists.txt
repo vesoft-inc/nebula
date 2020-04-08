@@ -1,5 +1,5 @@
-nebula_add_library(
-    kvstore_storage_utils_obj OBJECT
+nebula_add_all_library(
+    kvstore_storage_utils
     NebulaKeyUtils.cpp
 )
 

@@ -1,5 +1,5 @@
-nebula_add_library(
-    filter_obj
+nebula_add_all_library(
+    filter
     OBJECT
     Expressions.cpp
     FunctionManager.cpp

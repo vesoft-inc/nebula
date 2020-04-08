@@ -1,5 +1,5 @@
-nebula_add_library(
-    stats_obj
+nebula_add_all_library(
+    stats
     OBJECT
     StatsManager.cpp
     Stats.cpp

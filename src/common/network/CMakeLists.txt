@@ -1,5 +1,5 @@
-nebula_add_library(
-    network_obj OBJECT
+nebula_add_all_library(
+    network
     NetworkUtils.cpp
 )
 

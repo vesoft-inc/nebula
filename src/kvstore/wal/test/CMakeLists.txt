@@ -3,13 +3,12 @@ nebula_add_test(
         file_based_wal_test
     SOURCES
         FileBasedWalTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:wal_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:thread_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        $<TARGET_OBJECTS:time_obj>
     LIBRARIES
+        wal_lib
+        base_lib
+        thread_lib
+        fs_lib
+        time_lib
         gtest
 )
 
@@ -18,11 +17,10 @@ nebula_add_test(
         inmemory_log_buffer_test
     SOURCES
         InMemoryLogBufferTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:wal_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        $<TARGET_OBJECTS:time_obj>
     LIBRARIES
+        wal_lib
+        base_lib
+        fs_lib
+        time_lib
         gtest
 )

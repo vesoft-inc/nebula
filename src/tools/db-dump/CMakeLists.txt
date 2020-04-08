@@ -1,30 +1,57 @@
-nebula_add_executable(
-    NAME
-        db_dump
-    SOURCES
-        DbDumpTool.cpp
-        DbDumper.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:meta_client>
-        $<TARGET_OBJECTS:meta_thrift_obj>
-        $<TARGET_OBJECTS:common_thrift_obj>
-        $<TARGET_OBJECTS:thrift_obj>
-        $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:thread_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:gflags_man_obj>
-        $<TARGET_OBJECTS:network_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        $<TARGET_OBJECTS:schema_obj>
-        $<TARGET_OBJECTS:dataman_obj>
-        $<TARGET_OBJECTS:kvstore_storage_utils_obj>
-    LIBRARIES
-        ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
-        wangle
-)
-
+if (ENABLE_ONLY_SHARED)
+    nebula_add_executable(
+        NAME
+            db_dump
+        SOURCES
+            DbDumpTool.cpp
+            DbDumper.cpp
+        LIBRARIES
+            base_lib
+            meta_client_lib
+            meta_thrift_lib
+            common_thrift_lib
+            thrift_lib
+            stats_lib
+            thread_lib
+            time_lib
+            gflags_man_lib
+            network_lib
+            fs_lib
+            schema_lib
+            dataman_lib
+            kvstore_storage_utils_lib
+            ${ROCKSDB_LIBRARIES}
+            ${THRIFT_LIBRARIES}
+            wangle
+    )
+else()
+    nebula_add_executable(
+        NAME
+            db_dump
+        SOURCES
+            DbDumpTool.cpp
+            DbDumper.cpp
+        OBJECTS
+            $<TARGET_OBJECTS:base_obj>
+            $<TARGET_OBJECTS:meta_client_obj>
+            $<TARGET_OBJECTS:meta_thrift_obj>
+            $<TARGET_OBJECTS:common_thrift_obj>
+            $<TARGET_OBJECTS:thrift_obj>
+            $<TARGET_OBJECTS:stats_obj>
+            $<TARGET_OBJECTS:thread_obj>
+            $<TARGET_OBJECTS:time_obj>
+            $<TARGET_OBJECTS:gflags_man_obj>
+            $<TARGET_OBJECTS:network_obj>
+            $<TARGET_OBJECTS:fs_obj>
+            $<TARGET_OBJECTS:schema_obj>
+            $<TARGET_OBJECTS:dataman_obj>
+            $<TARGET_OBJECTS:kvstore_storage_utils_obj>
+        LIBRARIES
+            ${ROCKSDB_LIBRARIES}
+            ${THRIFT_LIBRARIES}
+            wangle
+    )
+endif()
 install(
     TARGETS
         db_dump

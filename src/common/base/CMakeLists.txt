@@ -1,5 +1,5 @@
 
-# The base_obj is a basic library. Other libraries are not allowed to depend on it.
+# The base is a basic library. Other libraries are not allowed to depend on it.
 
 add_library(
     base_obj OBJECT
@@ -12,8 +12,20 @@ add_library(
     SlowOpTracker.cpp
 )
 
+add_library(
+    base_lib SHARED
+    Base.cpp
+    Cord.cpp
+    Configuration.cpp
+    Status.cpp
+    SanitizerOptions.cpp
+    SignalHandler.cpp
+    SlowOpTracker.cpp
+)
+
 IF(${PCHSupport_FOUND})
     add_precompiled_header(base_obj Base.h)
+    add_precompiled_header(base_lib Base.h)
 ENDIF(${PCHSupport_FOUND})
 
 add_custom_target(

@@ -1,5 +1,5 @@
-nebula_add_library(
-    graph_obj OBJECT
+nebula_add_all_library(
+    graph
     GraphFlags.cpp
     GraphService.cpp
     SessionManager.cpp

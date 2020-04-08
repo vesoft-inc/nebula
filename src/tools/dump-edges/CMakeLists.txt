@@ -1,14 +1,28 @@
-nebula_add_executable(
-    NAME
-        dump_edges
-    SOURCES
-        DumpEdgesTool.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:kvstore_storage_utils_obj>
-    LIBRARIES
-        ${ROCKSDB_LIBRARIES}
-        glog
-        gflags
-)
-
+if (ENABLE_ONLY_SHARED)
+    nebula_add_executable(
+        NAME
+            dump_edges
+        SOURCES
+            DumpEdgesTool.cpp
+        LIBRARIES
+            base_lib
+            kvstore_storage_utils_lib
+            ${ROCKSDB_LIBRARIES}
+            glog
+            gflags
+    )
+else()
+    nebula_add_executable(
+        NAME
+            dump_edges
+        SOURCES
+            DumpEdgesTool.cpp
+        OBJECTS
+            $<TARGET_OBJECTS:base_obj>
+            $<TARGET_OBJECTS:kvstore_storage_utils_obj>
+        LIBRARIES
+            ${ROCKSDB_LIBRARIES}
+            glog
+            gflags
+    )
+endif()

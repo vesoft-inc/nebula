@@ -1,5 +1,5 @@
-nebula_add_library(
-    ws_obj OBJECT
+nebula_add_all_library(
+    ws
     WebService.cpp
     Router.cpp
     NotFoundHandler.cpp
@@ -9,8 +9,8 @@ nebula_add_library(
     StatusHandler.cpp
 )
 
-nebula_add_library(
-    ws_common_obj OBJECT
+nebula_add_all_library(
+    ws_common
     Common.cpp
 )
 

@@ -1,4 +1,4 @@
-nebula_add_library(
-    permission_obj OBJECT
+nebula_add_all_library(
+    permission
     PermissionManager.cpp
 )

@@ -1,5 +1,5 @@
-nebula_add_library(
-    thrift_obj OBJECT
+nebula_add_all_library(
+    thrift
     ReconnectingRequestChannel.cpp
     ThriftClientManager.cpp
 )

@@ -1,5 +1,5 @@
-nebula_add_library(
-    hdfs_helper_obj OBJECT
+nebula_add_all_library(
+    hdfs_helper
     HdfsCommandHelper.cpp
 )
 

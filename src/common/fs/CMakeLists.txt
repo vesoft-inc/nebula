@@ -1,5 +1,5 @@
-nebula_add_library(
-    fs_obj OBJECT
+nebula_add_all_library(
+    fs
     FileUtils.cpp
     TempDir.cpp
     TempFile.cpp

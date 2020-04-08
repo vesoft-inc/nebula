@@ -3,11 +3,10 @@ nebula_add_test(
         concurrent_test
     SOURCES
         BarrierTest.cpp LatchTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:concurrent_obj>
-        $<TARGET_OBJECTS:thread_obj>
-        $<TARGET_OBJECTS:time_obj>
     LIBRARIES
+        concurrent_lib
+        thread_lib
+        time_lib
         gtest
         gtest_main
 )

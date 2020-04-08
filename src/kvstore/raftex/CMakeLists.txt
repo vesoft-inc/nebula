@@ -1,5 +1,5 @@
-nebula_add_library(
-    raftex_obj OBJECT
+nebula_add_all_library(
+    raftex
     LogStrListIterator.cpp
     RaftPart.cpp
     RaftexService.cpp

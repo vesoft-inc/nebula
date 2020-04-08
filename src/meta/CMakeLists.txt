@@ -1,18 +1,18 @@
-nebula_add_library(
-    schema_obj OBJECT
+nebula_add_all_library(
+    schema
     SchemaManager.cpp
     ServerBasedSchemaManager.cpp
     NebulaSchemaProvider.cpp
 )
 
-nebula_add_library(
-    index_obj OBJECT
+nebula_add_all_library(
+    index
     IndexManager.cpp
     ServerBasedIndexManager.cpp
 )
 
-nebula_add_library(
-    meta_service_handler OBJECT
+nebula_add_all_library(
+    meta_service_handler
     MetaServiceHandler.cpp
     MetaServiceUtils.cpp
     ActiveHostsMan.cpp
@@ -76,25 +76,25 @@ nebula_add_library(
     processors/jobMan/JobUtils.cpp
 )
 
-nebula_add_library(
-    meta_http_handler OBJECT
+nebula_add_all_library(
+    meta_http_handler
     MetaHttpIngestHandler.cpp
     MetaHttpDownloadHandler.cpp
     MetaHttpReplaceHostHandler.cpp
 )
 
-nebula_add_library(
-    meta_client OBJECT
+nebula_add_all_library(
+    meta_client
     client/MetaClient.cpp
 )
 
-nebula_add_library(
-    gflags_man_obj OBJECT
+nebula_add_all_library(
+    gflags_man
     GflagsManager.cpp
 )
 
-nebula_add_library(
-    meta_gflags_man_obj OBJECT
+nebula_add_all_library(
+    meta_gflags_man
     ClientBasedGflagsManager.cpp
 )
 

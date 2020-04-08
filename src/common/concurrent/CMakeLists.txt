@@ -1,5 +1,5 @@
-nebula_add_library(
-    concurrent_obj OBJECT
+nebula_add_all_library(
+    concurrent
     Barrier.cpp
     Latch.cpp
 )

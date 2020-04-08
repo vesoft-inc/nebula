@@ -1,5 +1,5 @@
-nebula_add_library(
-    wal_obj OBJECT
+nebula_add_all_library(
+    wal
     InMemoryLogBuffer.cpp
     FileBasedWalIterator.cpp
     FileBasedWal.cpp

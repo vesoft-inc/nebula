@@ -1,5 +1,5 @@
-nebula_add_library(
-    charset_obj OBJECT
+nebula_add_all_library(
+    charset
     Charset.cpp
 )
 

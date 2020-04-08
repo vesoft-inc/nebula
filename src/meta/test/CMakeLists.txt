@@ -1,26 +1,26 @@
 set(meta_test_deps
-    $<TARGET_OBJECTS:meta_client>
-    $<TARGET_OBJECTS:meta_service_handler>
-    $<TARGET_OBJECTS:ws_common_obj>
-    $<TARGET_OBJECTS:http_client_obj>
-    $<TARGET_OBJECTS:gflags_man_obj>
-    $<TARGET_OBJECTS:raftex_thrift_obj>
-    $<TARGET_OBJECTS:storage_thrift_obj>
-    $<TARGET_OBJECTS:meta_thrift_obj>
-    $<TARGET_OBJECTS:common_thrift_obj>
-    $<TARGET_OBJECTS:thrift_obj>
-    $<TARGET_OBJECTS:raftex_obj>
-    $<TARGET_OBJECTS:wal_obj>
-    $<TARGET_OBJECTS:kvstore_obj>
-    $<TARGET_OBJECTS:process_obj>
-    $<TARGET_OBJECTS:schema_obj>
-    $<TARGET_OBJECTS:stats_obj>
-    $<TARGET_OBJECTS:fs_obj>
-    $<TARGET_OBJECTS:time_obj>
-    $<TARGET_OBJECTS:network_obj>
-    $<TARGET_OBJECTS:thread_obj>
-    $<TARGET_OBJECTS:base_obj>
-    $<TARGET_OBJECTS:kvstore_storage_utils_obj>
+    meta_client_lib
+    meta_service_handler_lib
+    ws_common_lib
+    http_client_lib
+    gflags_man_lib
+    raftex_thrift_lib
+    storage_thrift_lib
+    meta_thrift_lib
+    common_thrift_lib
+    thrift_lib
+    raftex_lib
+    wal_lib
+    kvstore_lib
+    process_lib
+    schema_lib
+    stats_lib
+    fs_lib
+    time_lib
+    network_lib
+    thread_lib
+    base_lib
+    kvstore_storage_utils_lib
 )
 
 nebula_add_test(
@@ -29,15 +29,14 @@ nebula_add_test(
     SOURCES
         MetaServiceUtilsTest.cpp
         ../MetaServiceUtils.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:meta_thrift_obj>
-        $<TARGET_OBJECTS:common_thrift_obj>
-        $<TARGET_OBJECTS:thrift_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        $<TARGET_OBJECTS:network_obj>
-        $<TARGET_OBJECTS:thread_obj>
     LIBRARIES
+        meta_thrift_lib
+        common_thrift_lib
+        thrift_lib
+        base_lib
+        fs_lib
+        network_lib
+        thread_lib
         ${THRIFT_LIBRARIES}
         gtest
 )
@@ -47,10 +46,9 @@ nebula_add_test(
         processor_test
     SOURCES
         ProcessorTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:index_obj>
-        ${meta_test_deps}
     LIBRARIES
+        index_lib
+        ${meta_test_deps}
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         wangle
@@ -62,9 +60,8 @@ nebula_add_test(
         hb_processor_test
     SOURCES
         HBProcessorTest.cpp
-    OBJECTS
-        ${meta_test_deps}
     LIBRARIES
+        ${meta_test_deps}
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         wangle
@@ -76,10 +73,9 @@ nebula_add_test(
         meta_client_test
     SOURCES
         MetaClientTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:meta_gflags_man_obj>
-        ${meta_test_deps}
     LIBRARIES
+        meta_gflags_man_lib
+        ${meta_test_deps}
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         wangle
@@ -91,17 +87,16 @@ nebula_add_test(
         config_man_test
     SOURCES
         ConfigManTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:storage_client>
-        $<TARGET_OBJECTS:meta_gflags_man_obj>
-        $<TARGET_OBJECTS:storage_service_handler>
-        $<TARGET_OBJECTS:adHocSchema_obj>
-        $<TARGET_OBJECTS:adHocIndex_obj>
-        $<TARGET_OBJECTS:dataman_obj>
-        $<TARGET_OBJECTS:filter_obj>
-        $<TARGET_OBJECTS:index_obj>
-        ${meta_test_deps}
     LIBRARIES
+        storage_client_lib
+        meta_gflags_man_lib
+        storage_service_handler_lib
+        adHocSchema_lib
+        adHocIndex_lib
+        dataman_lib
+        filter_lib
+        index_lib
+        ${meta_test_deps}
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         wangle
@@ -113,9 +108,8 @@ nebula_add_test(
         active_hosts_man_test
     SOURCES
         ActiveHostsManTest.cpp
-    OBJECTS
-        ${meta_test_deps}
     LIBRARIES
+        ${meta_test_deps}
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         wangle
@@ -127,15 +121,14 @@ nebula_add_test(
         meta_http_download_test
     SOURCES
         MetaHttpDownloadHandlerTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:storage_http_handler>
-        $<TARGET_OBJECTS:meta_http_handler>
-        $<TARGET_OBJECTS:ws_obj>
-        $<TARGET_OBJECTS:ws_common_obj>
-        $<TARGET_OBJECTS:hdfs_helper_obj>
-        $<TARGET_OBJECTS:http_client_obj>
-        ${meta_test_deps}
     LIBRARIES
+        storage_http_handler_lib
+        meta_http_handler_lib
+        ws_lib
+        ws_common_lib
+        hdfs_helper_lib
+        http_client_lib
+        ${meta_test_deps}
         proxygenhttpserver
         proxygenlib
         ${ROCKSDB_LIBRARIES}
@@ -149,15 +142,14 @@ nebula_add_test(
         meta_http_ingest_test
     SOURCES
         MetaHttpIngestHandlerTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:storage_http_handler>
-        $<TARGET_OBJECTS:meta_http_handler>
-        $<TARGET_OBJECTS:ws_obj>
-        $<TARGET_OBJECTS:ws_common_obj>
-        $<TARGET_OBJECTS:hdfs_helper_obj>
-        $<TARGET_OBJECTS:http_client_obj>
-        ${meta_test_deps}
     LIBRARIES
+        storage_http_handler_lib
+        meta_http_handler_lib
+        ws_lib
+        ws_common_lib
+        hdfs_helper_lib
+        http_client_lib
+        ${meta_test_deps}
         proxygenhttpserver
         proxygenlib
         ${ROCKSDB_LIBRARIES}
@@ -170,9 +162,8 @@ nebula_add_test(
         balancer_test
     SOURCES
         BalancerTest.cpp
-    OBJECTS
-        ${meta_test_deps}
     LIBRARIES
+        ${meta_test_deps}
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         wangle
@@ -185,16 +176,15 @@ nebula_add_test(
         balance_integration_test
     SOURCES
         BalanceIntegrationTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:index_obj>
-        $<TARGET_OBJECTS:storage_service_handler>
-        $<TARGET_OBJECTS:storage_client>
-        $<TARGET_OBJECTS:dataman_obj>
-        $<TARGET_OBJECTS:filter_obj>
-        $<TARGET_OBJECTS:adHocSchema_obj>
-        $<TARGET_OBJECTS:adHocIndex_obj>
-        ${meta_test_deps}
     LIBRARIES
+        index_lib
+        storage_service_handler_lib
+        storage_client_lib
+        dataman_lib
+        filter_lib
+        adHocSchema_lib
+        adHocIndex_lib
+        ${meta_test_deps}
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         wangle
@@ -207,9 +197,8 @@ nebula_add_test(
         admin_client_test
     SOURCES
         AdminClientTest.cpp
-    OBJECTS
-        ${meta_test_deps}
     LIBRARIES
+        ${meta_test_deps}
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         wangle
@@ -222,9 +211,8 @@ nebula_add_test(
         authentication_test
     SOURCES
         AuthProcessorTest.cpp
-    OBJECTS
-        ${meta_test_deps}
     LIBRARIES
+        ${meta_test_deps}
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         wangle
@@ -236,9 +224,8 @@ nebula_add_test(
         cluster_id_man_test
     SOURCES
         ClusterIdManTest.cpp
-    OBJECTS
-        ${meta_test_deps}
     LIBRARIES
+        ${meta_test_deps}
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         wangle
@@ -250,15 +237,14 @@ nebula_add_test(
         meta_http_replace_test
     SOURCES
         MetaHttpReplaceHandlerTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:storage_http_handler>
-        $<TARGET_OBJECTS:meta_http_handler>
-        $<TARGET_OBJECTS:ws_obj>
-        $<TARGET_OBJECTS:ws_common_obj>
-        $<TARGET_OBJECTS:hdfs_helper_obj>
-        $<TARGET_OBJECTS:http_client_obj>
-        ${meta_test_deps}
     LIBRARIES
+        storage_http_handler_lib
+        meta_http_handler_lib
+        ws_lib
+        ws_common_lib
+        hdfs_helper_lib
+        http_client_lib
+        ${meta_test_deps}
         proxygenhttpserver
         proxygenlib
         ${ROCKSDB_LIBRARIES}
@@ -272,15 +258,14 @@ nebula_add_test(
         job_manager_test
     SOURCES
         JobManagerTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:meta_http_handler>
-        $<TARGET_OBJECTS:ws_obj>
-        $<TARGET_OBJECTS:ws_common_obj>
-        $<TARGET_OBJECTS:http_client_obj>
-        $<TARGET_OBJECTS:charset_obj>
-        $<TARGET_OBJECTS:gflags_man_obj>
-        ${meta_test_deps}
     LIBRARIES
+        meta_http_handler_lib
+        ws_lib
+        ws_common_lib
+        http_client_lib
+        charset_lib
+        gflags_man_lib
+        ${meta_test_deps}
         proxygenhttpserver
         proxygenlib
         ${ROCKSDB_LIBRARIES}
