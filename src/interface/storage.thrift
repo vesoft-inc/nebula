@@ -444,24 +444,20 @@ struct RebuildIndexRequest {
     4: bool                         is_offline,
 }
 
-struct LookUpVertexIndexResp {
-    1: required ResponseCommon             result,
-    2: optional common.Schema              schema,
-    3: optional list<VertexIndexData>      rows,
-}
-
-struct LookUpEdgeIndexResp {
-    1: required ResponseCommon             result,
-    2: optional common.Schema              schema,
-    3: optional list<Edge>                 rows,
-}
-
 struct LookUpIndexRequest {
     1: common.GraphSpaceID       space_id,
     2: list<common.PartitionID>  parts,
     3: common.IndexID            index_id,
     4: binary                    filter,
     5: list<string>              return_columns,
+    6: bool                      is_edge,
+}
+
+struct LookUpIndexResp {
+    1: required ResponseCommon             result,
+    2: optional common.Schema              schema,
+    3: optional list<VertexIndexData>      vertices,
+    4: optional list<Edge>                 edges,
 }
 
 service StorageService {
@@ -513,6 +509,5 @@ service StorageService {
     GetUUIDResp getUUID(1: GetUUIDReq req);
 
     // Interfaces for edge and vertex index scan
-    LookUpVertexIndexResp lookUpVertexIndex(1: LookUpIndexRequest req);
-    LookUpEdgeIndexResp   lookUpEdgeIndex(1: LookUpIndexRequest req);
+    LookUpIndexResp   lookUpIndex(1: LookUpIndexRequest req);
 }

@@ -27,8 +27,7 @@
 #include "storage/admin/SendBlockSignProcessor.h"
 #include "storage/admin/RebuildTagIndexProcessor.h"
 #include "storage/admin/RebuildEdgeIndexProcessor.h"
-#include "storage/index/LookUpVertexIndexProcessor.h"
-#include "storage/index/LookUpEdgeIndexProcessor.h"
+#include "storage/index/LookUpIndexProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -247,22 +246,13 @@ StorageServiceHandler::future_rebuildEdgeIndex(const cpp2::RebuildIndexRequest& 
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::LookUpVertexIndexResp>
-StorageServiceHandler::future_lookUpVertexIndex(const cpp2::LookUpIndexRequest& req) {
-    auto* processor = LookUpVertexIndexProcessor::instance(kvstore_,
-                                                           schemaMan_,
-                                                           indexMan_,
-                                                           &lookupVerticesQpsStat_,
-                                                           &vertexCache_);
-    RETURN_FUTURE(processor);
-}
-
-folly::Future<cpp2::LookUpEdgeIndexResp>
-StorageServiceHandler::future_lookUpEdgeIndex(const cpp2::LookUpIndexRequest& req) {
-    auto* processor = LookUpEdgeIndexProcessor::instance(kvstore_,
-                                                         schemaMan_,
-                                                         indexMan_,
-                                                         &lookupEdgesQpsStat_);
+folly::Future<cpp2::LookUpIndexResp>
+StorageServiceHandler::future_lookUpIndex(const cpp2::LookUpIndexRequest& req) {
+    auto* processor = LookUpIndexProcessor::instance(kvstore_,
+                                                     schemaMan_,
+                                                     indexMan_,
+                                                     &lookupVerticesQpsStat_,
+                                                     &vertexCache_);
     RETURN_FUTURE(processor);
 }
 

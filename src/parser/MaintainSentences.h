@@ -42,54 +42,6 @@ public:
         return Status::Error();
     }
 
-    StatusOr<int64_t> getIntValue(Getters& getter) {
-        auto r = defaultExpr_->eval(getter);
-        if (!r.ok()) {
-            return std::move(r).status();
-        }
-        auto v = std::move(r).value();
-        if (!Value::isInt(v)) {
-            return Status::Error("Wrong type");
-        }
-        return Value::toInt(v);
-    }
-
-    StatusOr<bool> getBoolValue(Getters& getter) {
-        auto r = defaultExpr_->eval(getter);
-        if (!r.ok()) {
-            return std::move(r).status();
-        }
-        auto v = std::move(r).value();
-        if (!Value::isBool(v)) {
-            return Status::Error("Wrong type");
-        }
-        return Value::toBool(v);
-    }
-
-    StatusOr<double> getDoubleValue(Getters& getter) {
-        auto r = defaultExpr_->eval(getter);
-        if (!r.ok()) {
-            return std::move(r).status();
-        }
-        auto v = std::move(r).value();
-        if (!Value::isDouble(v)) {
-            return Status::Error("Wrong type");
-        }
-        return Value::toDouble(v);
-    }
-
-    StatusOr<std::string> getStringValue(Getters& getter) {
-        auto r = defaultExpr_->eval(getter);
-        if (!r.ok()) {
-            return std::move(r).status();
-        }
-        auto v = std::move(r).value();
-        if (!Value::isString(v)) {
-            return Status::Error("Wrong type");
-        }
-        return Value::toString(v);
-    }
-
     void setContext(ExpressionContext* ctx) {
         if (defaultExpr_ != nullptr) {
             defaultExpr_->setContext(ctx);
@@ -98,6 +50,14 @@ public:
 
     bool hasDefault() {
         return defaultExpr_ != nullptr;
+    }
+
+    OptVariantType getDefault(Getters& getter) {
+        auto r = defaultExpr_->eval(getter);
+        if (!r.ok()) {
+            return std::move(r).status();
+        }
+        return std::move(r).value();
     }
 
 private:
