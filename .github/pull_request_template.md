@@ -40,5 +40,5 @@ If tests were not added, please describe why they were not added and/or why it w
 <!--Tick the checkbox(es) below to choose what you have done.-->
 
 - [ ] I've run the tests to see all new and existing tests pass
-- [ ] If this Pull Request resolves an issue, I linked to the issue in the text above (and used the correct [keyword to close issues using keywords](https://help.github.com/articles/closing-issues-using-keywords/))
+- [ ] If this Pull Request resolves an issue, I linked to the issue in the text above
 - [ ] I've informed the technical writer about the documentation change if necessary
