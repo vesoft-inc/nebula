@@ -64,7 +64,6 @@ private:
     std::unique_ptr<thread::GenericWorker>                          scavenger_;
     meta::MetaClient                                               *metaClient_{nullptr};
     std::unique_ptr<folly::Executor>                                executor_;
-    std::unique_ptr<folly::Executor>                                runner_;
     std::string                                                     graphServerAddr_;
 };
 

@@ -182,7 +182,7 @@ bool MetaClient::loadSessions() {
 bool MetaClient::uploadSession() {
     auto ret = updateSession(sessions_).get();
     if (!ret.ok()) {
-        LOG(ERROR) << "List sesssions failed, status:" << ret.status();
+        LOG(ERROR) << "Update sesssions failed, status:" << ret.status();
         return false;
     }
     return true;
@@ -1158,10 +1158,10 @@ MetaClient::listSessions() {
     folly::Promise<StatusOr<std::vector<cpp2::SessionItem>>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
-        return client->future_listSessions(request);
-    }, [] (cpp2::ListSessionsResp&& resp) -> decltype(auto) {
-        return std::move(resp).get_items();
-    }, std::move(promise));
+                    return client->future_listSessions(request);
+                }, [] (cpp2::ListSessionsResp&& resp) -> decltype(auto) {
+                     return std::move(resp).get_items();
+                }, std::move(promise));
     return future;
 }
 

@@ -1183,6 +1183,17 @@ std::string ShowExecutor::roleToStr(nebula::cpp2::RoleType type) {
     return role;
 }
 
+std::string ShowExecutor::timestampToStr(int64_t t) {
+    std::string ret;
+    if (t == 0) {
+        return ret;
+    }
+    std::time_t tm = t;
+    char mbstr[50];
+    std::strftime(mbstr, sizeof(mbstr), "%Y-%m-%d %H:%M:%S", std::localtime(&tm));
+    return std::string(mbstr);
+}
+
 void ShowExecutor::showSessions() {
     auto future = ectx()->getMetaClient()->listSessions();
     auto *runner = ectx()->rctx()->runner();
@@ -1212,8 +1223,8 @@ void ShowExecutor::showSessions() {
             row.resize(4);
             row[0].set_str(item.get_addr());
             row[1].set_integer(item.get_session_id());
-            row[2].set_integer(item.get_start_time());
-            row[3].set_integer(item.get_update_time());
+            row[2].set_str(timestampToStr(item.get_start_time()));
+            row[3].set_str(timestampToStr(item.get_update_time()));
 
             rows.emplace_back();
             rows.back().set_columns(std::move(row));

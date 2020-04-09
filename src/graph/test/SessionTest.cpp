@@ -35,6 +35,11 @@ TEST_F(SessionTest, ShowSessions) {
         auto query = fmt;
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        for (auto& row : *resp.get_rows()) {
+            const auto &columns = row.get_columns();
+            ASSERT_LE(1, columns[1].get_integer());
+        }
     }
 }
 

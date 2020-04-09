@@ -15,7 +15,6 @@ namespace graph {
 SessionManager::SessionManager(meta::MetaClient* client) {
     metaClient_ = client;
     executor_.reset(new folly::CPUThreadPoolExecutor(2));
-    runner_.reset(new folly::CPUThreadPoolExecutor(2));
     graphServerAddr_ = FLAGS_graph_server_ip + ":" + folly::to<std::string>(FLAGS_port);
     scavenger_ = std::make_unique<thread::GenericWorker>();
     auto ok = scavenger_->start("session-manager");

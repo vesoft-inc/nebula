@@ -46,6 +46,8 @@ public:
     void showRoles();
     void showSessions();
 
+    std::string timestampToStr(int64_t t);
+
     std::string roleToStr(nebula::cpp2::RoleType type);
 
     void setupResponse(cpp2::ExecutionResponse &resp) override;
