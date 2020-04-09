@@ -90,7 +90,7 @@ jobs:
           ASAN_SYMBOLIZER_PATH: /opt/vesoft/toolset/clang/9.0.0/bin/llvm-symbolizer
           ASAN_OPTIONS: fast_unwind_on_malloc=1
         run: |
-          export LD_LIBRARY_PATH=`pwd`/build/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=`pwd`/build/lib:/opt/vesoft/toolset/clang/9.0.0/lib64/:$LD_LIBRARY_PATH
           ctest \
             -j $(($(nproc)/2)) \
             --timeout 400 \
@@ -104,7 +104,7 @@ jobs:
           ASAN_SYMBOLIZER_PATH: /opt/vesoft/toolset/clang/9.0.0/bin/llvm-symbolizer
           ASAN_OPTIONS: fast_unwind_on_malloc=0
         run: |
-          export LD_LIBRARY_PATH=`pwd`/build/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=`pwd`/build/lib:/opt/vesoft/toolset/clang/9.0.0/lib64/:$LD_LIBRARY_PATH
           ctest \
             --timeout 400 \
             --output-on-failure \

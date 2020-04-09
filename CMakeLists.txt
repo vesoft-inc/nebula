@@ -85,6 +85,7 @@ if (ENABLE_TESTING OR ENABLE_ONLY_SHARED)
     add_compile_options(-fPIC)
     message(STATUS "${CMAKE_BINARY_DIR}/lib")
     set(ENV{LD_LIBRARY_PATH} "${CMAKE_BINARY_DIR}/lib:$ENV{LD_LIBRARY_PATH}")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath-link=${CMAKE_BINARY_DIR}/lib:/opt/vesoft/toolset/clang/9.0.0/lib64/")
 endif()
 
 if (!CMAKE_CXX_COMPILER)
@@ -102,6 +103,7 @@ if (ENABLE_TESTING AND ENABLE_COVERAGE)
     add_compile_options(-O0)
 
     set(COVERAGES --coverage)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
 endif()
 
 # To detect if ccache is available
@@ -647,5 +649,5 @@ include(CPackage)
 package(${ENABLE_PACK_ONE})
 
 if (ENABLE_TESTING OR ENABLE_ONLY_SHARED)
-    MESSAGE(STATUS "You could run 'export LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/lib:\$LD_LIBRARY_PATH' if you want to run ctest")
+    MESSAGE(STATUS "You could run 'export LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/lib:/opt/vesoft/toolset/clang/9.0.0/lib64/:\$LD_LIBRARY_PATH' if you want to run ctest")
 endif()
