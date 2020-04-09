@@ -756,14 +756,14 @@ Vertex Value::moveVertex() {
     CHECK_EQ(type_, Type::VERTEX);
     Vertex v = std::move(*(value_.vVal));
     clear();
-    return std::move(v);
+    return v;
 }
 
 Edge Value::moveEdge() {
     CHECK_EQ(type_, Type::EDGE);
     Edge v = std::move(*(value_.eVal));
     clear();
-    return std::move(v);
+    return v;
 }
 
 Path Value::movePath() {
@@ -791,7 +791,7 @@ Set Value::moveSet() {
     CHECK_EQ(type_, Type::SET);
     Set set = std::move(*(value_.uVal));
     clear();
-    return std::move(set);
+    return set;
 }
 
 
