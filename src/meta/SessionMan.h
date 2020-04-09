@@ -14,7 +14,7 @@
 namespace nebula {
 namespace meta {
 
-// sessionId, std::pair<start_time, update_time>>
+// SessionId, std::pair<start_time, update_time>>
 using sessionRec = std::unordered_map<int64_t, std::pair<int64_t, int64_t>>;
 
 /**
@@ -33,7 +33,6 @@ public:
     static std::unordered_map<std::string, sessionRec> getGlobalSessions() {
         return globalSessions_;
     }
-
 
 private:
     // Global session manager

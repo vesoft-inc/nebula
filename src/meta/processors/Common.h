@@ -38,7 +38,6 @@ GENERATE_LOCK(config);
 GENERATE_LOCK(snapshot);
 GENERATE_LOCK(session);
 
-
 #undef GENERATE_LOCK
 };
 

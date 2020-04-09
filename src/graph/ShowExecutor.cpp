@@ -1199,7 +1199,6 @@ void ShowExecutor::showSessions() {
         std::vector<std::string> header{"Host:Port", "Session ID", "Start Time", "Update Time"};
         resp_->set_column_names(std::move(header));
 
-
         std::sort(sessionItems.begin(), sessionItems.end(), [] (const auto& a, const auto& b) {
             // sort with addr and ip
             if (a.get_addr() == b.get_addr()) {
@@ -1207,7 +1206,6 @@ void ShowExecutor::showSessions() {
             }
             return a.get_addr() < b.get_addr();
         });
-
 
         for (auto& item : sessionItems) {
             std::vector<cpp2::ColumnValue> row;
