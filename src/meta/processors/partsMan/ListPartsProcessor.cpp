@@ -17,7 +17,7 @@ namespace meta {
 void ListPartsProcessor::process(const cpp2::ListPartsReq& req) {
     spaceId_ = req.get_space_id();
     partIds_ = req.get_part_ids();
-    std::unordered_map<PartitionID, std::vector<nebula::cpp2::HostAddr>> partHostsMap;
+    std::unordered_map<PartitionID, std::vector<HostAddr>> partHostsMap;
 
     if (!partIds_.empty()) {
         // Only show the specified parts
@@ -39,7 +39,7 @@ void ListPartsProcessor::process(const cpp2::ListPartsReq& req) {
             onFinished();
             return;
         }
-        partHostsMap = std::move(status.value());
+        partHostsMap = std::move(status).value();
     }
     std::vector<cpp2::PartItem> partItems;
     auto activeHosts = ActiveHostsMan::getActiveHosts(kvstore_);
@@ -47,13 +47,11 @@ void ListPartsProcessor::process(const cpp2::ListPartsReq& req) {
         cpp2::PartItem partItem;
         partItem.set_part_id(partEntry.first);
         partItem.set_peers(std::move(partEntry.second));
-        std::vector<nebula::cpp2::HostAddr> losts;
+        std::vector<HostAddr> losts;
         for (auto& host : partItem.get_peers()) {
             if (std::find(activeHosts.begin(), activeHosts.end(),
                           HostAddr(host.ip, host.port)) == activeHosts.end()) {
-                losts.emplace_back();
-                losts.back().set_ip(host.ip);
-                losts.back().set_port(host.port);
+                losts.emplace_back(host.ip, host.port);
             }
         }
         partItem.set_losts(std::move(losts));
@@ -69,9 +67,9 @@ void ListPartsProcessor::process(const cpp2::ListPartsReq& req) {
 }
 
 
-StatusOr<std::unordered_map<PartitionID, std::vector<nebula::cpp2::HostAddr>>>
+StatusOr<std::unordered_map<PartitionID, std::vector<HostAddr>>>
 ListPartsProcessor::getAllParts() {
-    std::unordered_map<PartitionID, std::vector<nebula::cpp2::HostAddr>> partHostsMap;
+    std::unordered_map<PartitionID, std::vector<HostAddr>> partHostsMap;
 
     folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
     auto prefix = MetaServiceUtils::partPrefix(spaceId_);
@@ -87,7 +85,7 @@ ListPartsProcessor::getAllParts() {
         auto key = iter->key();
         PartitionID partId;
         memcpy(&partId, key.data() + prefix.size(), sizeof(PartitionID));
-        std::vector<nebula::cpp2::HostAddr> partHosts = MetaServiceUtils::parsePartVal(iter->val());
+        std::vector<HostAddr> partHosts = MetaServiceUtils::parsePartVal(iter->val());
         partHostsMap.emplace(partId, std::move(partHosts));
         iter->next();
     }

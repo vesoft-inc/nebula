@@ -7,7 +7,7 @@
 
 #include "meta/processors/admin/DropSnapshotProcessor.h"
 #include "meta/processors/admin/SnapShot.h"
-#include "common/fs/FileUtils.h"
+#include "fs/FileUtils.h"
 
 namespace nebula {
 namespace meta {

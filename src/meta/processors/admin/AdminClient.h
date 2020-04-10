@@ -11,7 +11,7 @@
 #include <folly/executors/IOThreadPoolExecutor.h>
 #include "base/Status.h"
 #include "thrift/ThriftClientManager.h"
-#include "gen-cpp2/StorageServiceAsyncClient.h"
+#include "interface/gen-cpp2/StorageAdminServiceAsyncClient.h"
 #include "kvstore/KVStore.h"
 
 namespace nebula {
@@ -52,7 +52,7 @@ public:
         : kv_(kv) {
         ioThreadPool_ = std::make_unique<folly::IOThreadPoolExecutor>(10);
         clientsMan_ = std::make_unique<
-            thrift::ThriftClientManager<storage::cpp2::StorageServiceAsyncClient>>();
+            thrift::ThriftClientManager<storage::cpp2::StorageAdminServiceAsyncClient>>();
     }
 
     explicit AdminClient(std::unique_ptr<FaultInjector> injector)
@@ -145,13 +145,13 @@ private:
                      int32_t retryLimit);
 
     void getLeaderDist(const HostAddr& host,
-                       folly::Promise<StatusOr<storage::cpp2::GetLeaderResp>>&& pro,
+                       folly::Promise<StatusOr<storage::cpp2::GetLeaderPartsResp>>&& pro,
                        int32_t retry,
                        int32_t retryLimit);
 
     Status handleResponse(const storage::cpp2::AdminExecResp& resp);
 
-    nebula::cpp2::HostAddr toThriftHost(const HostAddr& addr);
+    HostAddr toThriftHost(const HostAddr& addr);
 
     StatusOr<std::vector<HostAddr>> getPeers(GraphSpaceID spaceId, PartitionID partId);
 
@@ -159,7 +159,7 @@ private:
     std::unique_ptr<FaultInjector> injector_{nullptr};
     kvstore::KVStore* kv_ = nullptr;
     std::unique_ptr<folly::IOThreadPoolExecutor> ioThreadPool_{nullptr};
-    std::unique_ptr<thrift::ThriftClientManager<storage::cpp2::StorageServiceAsyncClient>>
+    std::unique_ptr<thrift::ThriftClientManager<storage::cpp2::StorageAdminServiceAsyncClient>>
     clientsMan_;
 };
 }  // namespace meta

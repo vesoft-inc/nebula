@@ -153,7 +153,7 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& hdfsHost,
         PartitionID partId;
         memcpy(&partId, key.data() + prefix.size(), sizeof(PartitionID));
         for (auto host : MetaServiceUtils::parsePartVal(iter->val())) {
-            auto address = std::make_pair(host.get_ip(), host.get_port());
+            auto address = HostAddr(host.ip, host.port);
             auto addressIter = hostPartition.find(address);
             if (addressIter == hostPartition.end()) {
                 std::vector<PartitionID> partitions;
@@ -177,7 +177,7 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& hdfsHost,
         std::string partsStr;
         folly::join(",", pair.second, partsStr);
 
-        auto storageIP = network::NetworkUtils::intToIPv4(pair.first.first);
+        auto storageIP = network::NetworkUtils::intToIPv4(pair.first.ip);
         auto dispatcher = [storageIP, hdfsHost, hdfsPort, hdfsPath, partsStr, this]() {
             static const char *tmp = "http://%s:%d/%s?host=%s&port=%d&path=%s&parts=%s&space=%d";
             std::string url = folly::stringPrintf(tmp, storageIP.c_str(),

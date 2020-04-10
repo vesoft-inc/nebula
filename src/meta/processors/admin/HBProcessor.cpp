@@ -8,7 +8,7 @@
 #include "meta/processors/admin/HBProcessor.h"
 #include "time/WallClock.h"
 #include "meta/ActiveHostsMan.h"
-#include "meta/ClusterIdMan.h"
+#include "meta/KVBasedClusterIdMan.h"
 
 DEFINE_bool(hosts_whitelist_enabled, false, "Check host whether in whitelist when received hb");
 
@@ -18,7 +18,7 @@ namespace meta {
 void HBProcessor::process(const cpp2::HBReq& req) {
     HostAddr host(req.host.ip, req.host.port);
     if (FLAGS_hosts_whitelist_enabled
-            && hostExist(MetaServiceUtils::hostKey(host.first, host.second))
+            && hostExist(MetaServiceUtils::hostKey(host.ip, host.port))
                 == Status::HostNotFound()) {
         LOG(INFO) << "Reject unregistered host " << host << "!";
         handleErrorCode(cpp2::ErrorCode::E_INVALID_HOST);

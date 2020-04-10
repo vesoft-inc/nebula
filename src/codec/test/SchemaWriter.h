@@ -14,7 +14,8 @@ namespace nebula {
 
 class SchemaWriter : public ResultSchemaProvider {
 public:
-    explicit SchemaWriter(SchemaVer ver = 0) : ResultSchemaProvider(ver) {}
+    explicit SchemaWriter(SchemaVer ver = 0)
+        : ResultSchemaProvider(ver) {}
 
     SchemaWriter& appendCol(folly::StringPiece name,
                             meta::cpp2::PropertyType type,

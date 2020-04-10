@@ -10,12 +10,12 @@ namespace nebula {
 namespace storage {
 
 void DropCheckpointProcessor::process(const cpp2::DropCPRequest& req) {
-    CHECK_NOTNULL(kvstore_);
+    CHECK_NOTNULL(env_);
     auto spaceId = req.get_space_id();
     auto& name = req.get_name();
-    auto retCode = kvstore_->dropCheckpoint(spaceId, std::move(name));
+    auto retCode = env_->kvstore_->dropCheckpoint(spaceId, std::move(name));
     if (retCode != kvstore::ResultCode::SUCCEEDED) {
-        cpp2::ResultCode thriftRet;
+        cpp2::PartitionResult thriftRet;
         thriftRet.set_code(to(retCode));
         codes_.emplace_back(std::move(thriftRet));
     }

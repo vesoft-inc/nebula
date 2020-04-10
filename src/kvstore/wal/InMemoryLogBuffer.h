@@ -8,6 +8,7 @@
 #define WAL_INMEMORYLOGBUFFER_H_
 
 #include "base/Base.h"
+#include "thrift/ThriftTypes.h"
 
 namespace nebula {
 namespace wal {

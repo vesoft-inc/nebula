@@ -13,6 +13,9 @@ set(CODEC_TEST_LIBS
     $<TARGET_OBJECTS:common_network_obj>
     $<TARGET_OBJECTS:common_fs_obj>
     $<TARGET_OBJECTS:common_thread_obj>
+    $<TARGET_OBJECTS:common_stats_obj>
+    $<TARGET_OBJECTS:common_time_obj>
+    $<TARGET_OBJECTS:common_conf_obj>
 )
 
 

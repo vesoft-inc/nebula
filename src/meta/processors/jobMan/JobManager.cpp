@@ -21,7 +21,7 @@
 #include "meta/processors/jobMan/JobStatus.h"
 #include "meta/MetaServiceUtils.h"
 #include "webservice/Common.h"
-#include "common/time/WallClock.h"
+#include "time/WallClock.h"
 
 DEFINE_int32(dispatch_thread_num, 3, "Number of job dispatch http thread");
 DEFINE_int32(job_check_intervals, 5000, "job intervals in us");
@@ -116,15 +116,15 @@ bool JobManager::runJobInternal(const JobDescription& jobDesc) {
     std::string op = jobDesc.getCmd();
 
     struct HostAddrCmp {
-        bool operator()(const nebula::cpp2::HostAddr& a,
-                        const nebula::cpp2::HostAddr& b) const {
-            if (a.get_ip() == b.get_ip()) {
-                return a.get_port() < b.get_port();
+        bool operator()(const HostAddr& a,
+                        const HostAddr& b) const {
+            if (a.ip == b.ip) {
+                return a.port < b.port;
             }
-            return a.get_ip() < b.get_ip();
+            return a.ip < b.ip;
         }
     };
-    std::set<nebula::cpp2::HostAddr, HostAddrCmp> hosts;
+    std::set<HostAddr, HostAddrCmp> hosts;
     while (iter->valid()) {
         for (auto &host : MetaServiceUtils::parsePartVal(iter->val())) {
             hosts.insert(host);
@@ -138,7 +138,7 @@ bool JobManager::runJobInternal(const JobDescription& jobDesc) {
     for (auto& host : hosts) {
         auto dispatcher = [=]() {
             static const char *tmp = "http://%s:%d/admin?op=%s&space=%s";
-            auto strIP = network::NetworkUtils::intToIPv4(host.get_ip());
+            auto strIP = network::NetworkUtils::intToIPv4(host.ip);
             auto url = folly::stringPrintf(tmp, strIP.c_str(),
                                            FLAGS_ws_storage_http_port,
                                            op.c_str(),

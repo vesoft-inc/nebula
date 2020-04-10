@@ -9,8 +9,8 @@
 
 #include "base/Base.h"
 #include "base/StatusOr.h"
-#include "gen-cpp2/raftex_types.h"
-#include "gen-cpp2/RaftexServiceAsyncClient.h"
+#include "interface/gen-cpp2/raftex_types.h"
+#include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
 #include "thrift/ThriftClientManager.h"
 #include <folly/futures/Future.h>
 #include <folly/Function.h>

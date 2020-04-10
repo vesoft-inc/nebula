@@ -17,15 +17,15 @@ namespace storage {
 
 class CreateCheckpointProcessor : public BaseProcessor<cpp2::AdminExecResp> {
 public:
-    static CreateCheckpointProcessor* instance(kvstore::KVStore* kvstore) {
-        return new CreateCheckpointProcessor(kvstore);
+    static CreateCheckpointProcessor* instance(StorageEnv* env) {
+        return new CreateCheckpointProcessor(env);
     }
 
     void process(const cpp2::CreateCPRequest& req);
 
 private:
-    explicit CreateCheckpointProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr, nullptr) {}
+    explicit CreateCheckpointProcessor(StorageEnv* env)
+            : BaseProcessor<cpp2::AdminExecResp>(env) {}
 };
 
 }  // namespace storage

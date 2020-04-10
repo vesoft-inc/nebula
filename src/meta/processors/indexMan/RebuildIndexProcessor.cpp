@@ -57,8 +57,8 @@ void RebuildIndexProcessor::processInternal(const cpp2::RebuildIndexReq& req) {
     auto activeHosts = ActiveHostsMan::getActiveHosts(kvstore_, FLAGS_heartbeat_interval_secs + 1);
     while (leaderIter->valid()) {
         auto host = MetaServiceUtils::parseLeaderKey(leaderIter->key());
-        auto ip = NetworkUtils::intToIPv4(host.get_ip());
-        auto port = host.get_port();
+        auto ip = NetworkUtils::intToIPv4(host.ip);
+        auto port = host.port;
         auto hostAddrRet = NetworkUtils::toHostAddr(ip, port);
         if (!hostAddrRet.ok()) {
             LOG(ERROR) << "Can't cast to host " << ip + ":" << port;

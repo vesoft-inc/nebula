@@ -4,7 +4,6 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 #include "kvstore/raftex/SnapshotManager.h"
-#include "base/NebulaKeyUtils.h"
 #include "kvstore/raftex/RaftPart.h"
 
 DEFINE_int32(snapshot_worker_threads, 4, "Threads number for snapshot");
@@ -113,8 +112,8 @@ folly::Future<raftex::cpp2::SendSnapshotResponse> SnapshotManager::send(
     req.set_term(termId);
     req.set_committed_log_id(committedLogId);
     req.set_committed_log_term(committedLogTerm);
-    req.set_leader_ip(localhost.first);
-    req.set_leader_port(localhost.second);
+    req.set_leader_ip(localhost.ip);
+    req.set_leader_port(localhost.port);
     req.set_rows(data);
     req.set_total_size(totalSize);
     req.set_total_count(totalCount);

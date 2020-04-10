@@ -5,7 +5,7 @@
  */
 
 #include "base/Base.h"
-#include "common/base/SignalHandler.h"
+#include "base/SignalHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "meta/MetaServiceHandler.h"
 #include "meta/MetaHttpIngestHandler.h"
@@ -19,7 +19,7 @@
 #include "hdfs/HdfsCommandHelper.h"
 #include "thread/GenericThreadPool.h"
 #include "kvstore/PartManager.h"
-#include "meta/ClusterIdMan.h"
+#include "meta/KVBasedClusterIdMan.h"
 #include "kvstore/NebulaStore.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/processors/jobMan/JobManager.h"

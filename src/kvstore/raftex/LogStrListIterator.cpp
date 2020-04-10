@@ -5,6 +5,7 @@
  */
 
 #include "base/Base.h"
+#include "thrift/ThriftTypes.h"
 #include "kvstore/raftex/LogStrListIterator.h"
 
 namespace nebula {

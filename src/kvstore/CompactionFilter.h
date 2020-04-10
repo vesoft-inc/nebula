@@ -9,7 +9,6 @@
 
 #include "base/Base.h"
 #include <rocksdb/compaction_filter.h>
-#include "base/NebulaKeyUtils.h"
 #include "time/WallClock.h"
 #include "kvstore/Common.h"
 

@@ -59,14 +59,14 @@ public:
         if (srvcAddr == HostAddr(0, 0)) {
             return srvcAddr;
         }
-        return HostAddr(srvcAddr.first, srvcAddr.second + 1);
+        return HostAddr(srvcAddr.ip, srvcAddr.port + 1);
     }
 
     static HostAddr getStoreAddr(HostAddr raftAddr) {
         if (raftAddr == HostAddr(0, 0)) {
             return raftAddr;
         }
-        return HostAddr(raftAddr.first, raftAddr.second - 1);
+        return HostAddr(raftAddr.ip, raftAddr.port - 1);
     }
 
     // Pull meta information from the PartManager and initiate

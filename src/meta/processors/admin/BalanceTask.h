@@ -87,10 +87,10 @@ private:
                                    balanceId_,
                                    spaceId_,
                                    partId_,
-                                   network::NetworkUtils::intToIPv4(src_.first).c_str(),
-                                   src_.second,
-                                   network::NetworkUtils::intToIPv4(dst_.first).c_str(),
-                                   dst_.second);
+                                   network::NetworkUtils::intToIPv4(src_.ip).c_str(),
+                                   src_.port,
+                                   network::NetworkUtils::intToIPv4(dst_.ip).c_str(),
+                                   dst_.port);
     }
 
     bool saveInStore();

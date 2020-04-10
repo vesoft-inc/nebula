@@ -38,20 +38,17 @@ TEST(MetaServiceUtilsTest, PartKeyTest) {
     ASSERT_EQ(prefix, partKey.substr(0, partKey.size() - sizeof(PartitionID)));
     ASSERT_EQ(1, *reinterpret_cast<const PartitionID*>(partKey.c_str() + prefix.size()));
 
-    std::vector<nebula::cpp2::HostAddr> hosts;
+    std::vector<HostAddr> hosts;
     for (int i = 0; i < 10; i++) {
-        nebula::cpp2::HostAddr host;
-        host.set_ip(i * 20 + 1);
-        host.set_port(i * 20 + 2);
-        hosts.emplace_back(std::move(host));
+        hosts.emplace_back(i * 20 + 1, i * 20 + 2);
     }
     auto partVal = MetaServiceUtils::partVal(hosts);
     ASSERT_EQ(10 * sizeof(int32_t) * 2, partVal.size());
     auto result = MetaServiceUtils::parsePartVal(partVal);
     ASSERT_EQ(hosts.size(), result.size());
     for (int i = 0; i < 10; i++) {
-        ASSERT_EQ(i * 20 + 1, result[i].get_ip());
-        ASSERT_EQ(i * 20 + 2, result[i].get_port());
+        ASSERT_EQ(i * 20 + 1, result[i].ip);
+        ASSERT_EQ(i * 20 + 2, result[i].port);
     }
 }
 
@@ -64,35 +61,29 @@ TEST(MetaServiceUtilsTest, HostKeyTest) {
     ASSERT_EQ(11, *reinterpret_cast<const Port*>(hostKey.c_str() + prefix.size() + sizeof(IPv4)));
 
     auto addr = MetaServiceUtils::parseHostKey(hostKey);
-    ASSERT_EQ(10, addr.get_ip());
-    ASSERT_EQ(11, addr.get_port());
+    ASSERT_EQ(10, addr.ip);
+    ASSERT_EQ(11, addr.port);
 }
 
 TEST(MetaServiceUtilsTest, TagTest) {
-    nebula::cpp2::Schema schema;
+    cpp2::Schema schema;
     decltype(schema.columns) cols;
     for (auto i = 1; i <= 3; i++) {
-        nebula::cpp2::ColumnDef column;
+        cpp2::ColumnDef column;
         column.set_name(folly::stringPrintf("col_%d", i));
-        nebula::cpp2::ValueType vType;
-        vType.set_type(nebula::cpp2::SupportedType::INT);
-        column.set_type(std::move(vType));
+        column.set_type(cpp2::PropertyType::INT64);
         cols.emplace_back(std::move(column));
     }
     for (auto i = 4; i <= 6; i++) {
-        nebula::cpp2::ColumnDef column;
+        cpp2::ColumnDef column;
         column.set_name(folly::stringPrintf("col_%d", i));
-        nebula::cpp2::ValueType vType;
-        vType.set_type(nebula::cpp2::SupportedType::FLOAT);
-        column.set_type(std::move(vType));
+        column.set_type(cpp2::PropertyType::FLOAT);
         cols.emplace_back(std::move(column));
     }
     for (auto i = 7; i < 10; i++) {
-        nebula::cpp2::ColumnDef column;
+        cpp2::ColumnDef column;
         column.set_name(folly::stringPrintf("col_%d", i));
-        nebula::cpp2::ValueType vType;
-        vType.set_type(nebula::cpp2::SupportedType::STRING);
-        column.set_type(std::move(vType));
+        column.set_type(cpp2::PropertyType::STRING);
         cols.emplace_back(std::move(column));
     }
     schema.set_columns(std::move(cols));

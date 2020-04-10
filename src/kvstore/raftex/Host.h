@@ -10,7 +10,7 @@
 #include "base/Base.h"
 #include <folly/futures/Future.h>
 #include "interface/gen-cpp2/raftex_types.h"
-#include "gen-cpp2/RaftexServiceAsyncClient.h"
+#include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
 #include "thrift/ThriftClientManager.h"
 
 namespace folly {

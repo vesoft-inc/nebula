@@ -21,7 +21,7 @@ public:
     void process(const cpp2::CreateSpaceReq& req);
 
 protected:
-    std::vector<nebula::cpp2::HostAddr> pickHosts(
+    std::vector<HostAddr> pickHosts(
                                             PartitionID partId,
                                             const std::vector<HostAddr>& hosts,
                                             int32_t replicaFactor);

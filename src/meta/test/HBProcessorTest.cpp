@@ -25,10 +25,7 @@ TEST(HBProcessorTest, HBTest) {
         for (auto i = 0; i < 5; i++) {
             cpp2::HBReq req;
             req.set_in_storaged(true);
-            nebula::cpp2::HostAddr thriftHost;
-            thriftHost.set_ip(i);
-            thriftHost.set_port(i);
-            req.set_host(std::move(thriftHost));
+            req.set_host(HostAddr(i, i));
             req.set_cluster_id(kClusterId);
             req.set_in_storaged(true);
             auto* processor = HBProcessor::instance(kv.get(), kClusterId);
@@ -44,10 +41,7 @@ TEST(HBProcessorTest, HBTest) {
 
         LOG(INFO) << "Test for invalid host!";
         cpp2::HBReq req;
-        nebula::cpp2::HostAddr thriftHost;
-        thriftHost.set_ip(11);
-        thriftHost.set_port(11);
-        req.set_host(std::move(thriftHost));
+        req.set_host(HostAddr(11, 11));
         req.set_cluster_id(1);
         req.set_in_storaged(true);
         auto* processor = HBProcessor::instance(kv.get());

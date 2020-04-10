@@ -67,7 +67,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     }
 
     auto fields = getLatestTagFields(latestTagSchema);
-    std::vector<nebula::cpp2::ColumnDef> columns;
+    std::vector<cpp2::ColumnDef> columns;
     for (auto &field : fieldNames) {
         auto iter = std::find_if(std::begin(fields), std::end(fields),
                                  [field](const auto& pair) { return field == pair.first; });
@@ -78,7 +78,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
             return;
         } else {
             auto type = fields[field];
-            nebula::cpp2::ColumnDef column;
+            cpp2::ColumnDef column;
             column.set_name(std::move(field));
             column.set_type(std::move(type));
             columns.emplace_back(std::move(column));
@@ -95,10 +95,10 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     }
 
     auto tagIndex = nebula::value(tagIndexRet);
-    nebula::cpp2::IndexItem item;
+    cpp2::IndexItem item;
     item.set_index_id(tagIndex);
     item.set_index_name(indexName);
-    nebula::cpp2::SchemaID schemaID;
+    cpp2::SchemaID schemaID;
     schemaID.set_tag_id(tagID);
     item.set_schema_id(schemaID);
     item.set_schema_name(tagName);

@@ -43,7 +43,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
         return;
     }
 
-    std::map<std::string, std::vector<nebula::cpp2::ColumnDef>> edgeColumns;
+    std::map<std::string, std::vector<cpp2::ColumnDef>> edgeColumns;
     auto edgeTypeRet = getEdgeType(space, edgeName);
     if (!edgeTypeRet.ok()) {
         LOG(ERROR) << "Create Edge Index Failed: " << edgeName << " not exist";
@@ -69,7 +69,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     }
 
     auto fields = getLatestEdgeFields(latestEdgeSchema);
-    std::vector<nebula::cpp2::ColumnDef> columns;
+    std::vector<cpp2::ColumnDef> columns;
     for (auto &field : fieldNames) {
         auto iter = std::find_if(std::begin(fields), std::end(fields),
                                  [field](const auto& pair) { return field == pair.first; });
@@ -81,7 +81,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
             return;
         } else {
             auto type = fields[field];
-            nebula::cpp2::ColumnDef column;
+            cpp2::ColumnDef column;
             column.set_name(std::move(field));
             column.set_type(std::move(type));
             columns.emplace_back(std::move(column));
@@ -98,10 +98,10 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     }
 
     auto edgeIndex = nebula::value(edgeIndexRet);
-    nebula::cpp2::IndexItem item;
+    cpp2::IndexItem item;
     item.set_index_id(edgeIndex);
     item.set_index_name(indexName);
-    nebula::cpp2::SchemaID schemaID;
+    cpp2::SchemaID schemaID;
     schemaID.set_edge_type(edgeType);
     item.set_schema_id(schemaID);
     item.set_schema_name(edgeName);

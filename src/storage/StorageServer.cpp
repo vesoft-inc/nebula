@@ -7,13 +7,15 @@
 #include "storage/StorageServer.h"
 #include "network/NetworkUtils.h"
 #include "storage/StorageFlags.h"
-#include "storage/StorageServiceHandler.h"
+#include "storage/StorageAdminServiceHandler.h"
 #include "storage/http/StorageHttpDownloadHandler.h"
 #include "storage/http/StorageHttpIngestHandler.h"
 #include "storage/http/StorageHttpAdminHandler.h"
+#include "storage/BaseProcessor.h"
 #include "kvstore/PartManager.h"
 #include "webservice/Router.h"
 #include "webservice/WebService.h"
+#include "meta/ServerBasedSchemaManager.h"
 #include "storage/CompactionFilter.h"
 #include "hdfs/HdfsCommandHelper.h"
 #include "thread/GenericThreadPool.h"
@@ -117,7 +119,7 @@ bool StorageServer::start() {
 
     LOG(INFO) << "Init schema manager";
     schemaMan_ = meta::SchemaManager::create();
-    schemaMan_->init(metaClient_.get());
+    static_cast<meta::ServerBasedSchemaManager*>(schemaMan_.get())->init(metaClient_.get());
 
     LOG(INFO) << "Init index manager";
     indexMan_ = meta::IndexManager::create();
@@ -136,10 +138,13 @@ bool StorageServer::start() {
         return false;
     }
 
-    auto handler = std::make_shared<StorageServiceHandler>(kvstore_.get(),
-                                                           schemaMan_.get(),
-                                                           indexMan_.get(),
-                                                           metaClient_.get());
+    StorageEnv env;
+    env.kvstore_ = kvstore_.get();
+    env.indexMan_ = indexMan_.get();
+    env.schemaMan_ = schemaMan_.get();
+
+    // TODO
+    auto handler = std::make_shared<StorageAdminServiceHandler>(&env);
     try {
         LOG(INFO) << "The storage deamon start on " << localHost_;
         tfServer_ = std::make_unique<apache::thrift::ThriftServer>();

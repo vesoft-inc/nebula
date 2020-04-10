@@ -6,7 +6,7 @@
 
 #include <string>
 #include <vector>
-#include "common/base/StatusOr.h"
+#include "base/StatusOr.h"
 #include "meta/processors/jobMan/AdminJobProcessor.h"
 #include "meta/processors/jobMan/JobManager.h"
 #include "meta/processors/jobMan/JobDescription.h"

@@ -130,8 +130,8 @@ StatusOr<std::vector<std::string>> BaseProcessor<RESP>::doScan(const std::string
 
 
 template<typename RESP>
-StatusOr<std::vector<nebula::cpp2::HostAddr>> BaseProcessor<RESP>::allHosts() {
-    std::vector<nebula::cpp2::HostAddr> hosts;
+StatusOr<std::vector<HostAddr>> BaseProcessor<RESP>::allHosts() {
+    std::vector<HostAddr> hosts;
     const auto& prefix = MetaServiceUtils::hostPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
@@ -140,7 +140,7 @@ StatusOr<std::vector<nebula::cpp2::HostAddr>> BaseProcessor<RESP>::allHosts() {
     }
 
     while (iter->valid()) {
-        nebula::cpp2::HostAddr h;
+        HostAddr h;
         auto hostAddrPiece = iter->key().subpiece(prefix.size());
         memcpy(&h, hostAddrPiece.data(), hostAddrPiece.size());
         hosts.emplace_back(std::move(h));
@@ -253,9 +253,9 @@ StatusOr<EdgeType> BaseProcessor<RESP>::getEdgeType(GraphSpaceID spaceId,
 
 
 template <typename RESP>
-std::unordered_map<std::string, nebula::cpp2::ValueType>
-BaseProcessor<RESP>::getLatestTagFields(const nebula::cpp2::Schema& latestTagSchema) {
-    std::unordered_map<std::string, nebula::cpp2::ValueType> propertyNames;
+std::unordered_map<std::string, cpp2::PropertyType>
+BaseProcessor<RESP>::getLatestTagFields(const cpp2::Schema& latestTagSchema) {
+    std::unordered_map<std::string, cpp2::PropertyType> propertyNames;
     for (auto &column : latestTagSchema.get_columns()) {
         propertyNames.emplace(std::move(column.get_name()),
                               std::move(column.get_type()));
@@ -265,7 +265,7 @@ BaseProcessor<RESP>::getLatestTagFields(const nebula::cpp2::Schema& latestTagSch
 
 
 template <typename RESP>
-StatusOr<nebula::cpp2::Schema>
+StatusOr<cpp2::Schema>
 BaseProcessor<RESP>::getLatestTagSchema(GraphSpaceID spaceId, const TagID tagId) {
     auto key = MetaServiceUtils::schemaTagPrefix(spaceId, tagId);
     auto ret = doPrefix(key);
@@ -280,9 +280,9 @@ BaseProcessor<RESP>::getLatestTagSchema(GraphSpaceID spaceId, const TagID tagId)
 
 
 template <typename RESP>
-std::unordered_map<std::string, nebula::cpp2::ValueType>
-BaseProcessor<RESP>::getLatestEdgeFields(const nebula::cpp2::Schema& latestEdgeSchema) {
-    std::unordered_map<std::string, nebula::cpp2::ValueType> propertyNames;
+std::unordered_map<std::string, cpp2::PropertyType>
+BaseProcessor<RESP>::getLatestEdgeFields(const cpp2::Schema& latestEdgeSchema) {
+    std::unordered_map<std::string, cpp2::PropertyType> propertyNames;
     for (auto &column : latestEdgeSchema.get_columns()) {
         propertyNames.emplace(std::move(column.get_name()),
                               std::move(column.get_type()));
@@ -292,7 +292,7 @@ BaseProcessor<RESP>::getLatestEdgeFields(const nebula::cpp2::Schema& latestEdgeS
 
 
 template <typename RESP>
-StatusOr<nebula::cpp2::Schema>
+StatusOr<cpp2::Schema>
 BaseProcessor<RESP>::getLatestEdgeSchema(GraphSpaceID spaceId, const EdgeType edgeType) {
     auto key = MetaServiceUtils::schemaEdgePrefix(spaceId, edgeType);
     auto ret = doPrefix(key);
@@ -307,7 +307,7 @@ BaseProcessor<RESP>::getLatestEdgeSchema(GraphSpaceID spaceId, const EdgeType ed
 
 
 template <typename RESP>
-bool BaseProcessor<RESP>::tagOrEdgeHasTTL(const nebula::cpp2::Schema& latestSchema) {
+bool BaseProcessor<RESP>::tagOrEdgeHasTTL(const cpp2::Schema& latestSchema) {
     auto schemaProp = latestSchema.get_schema_prop();
     if (schemaProp.get_ttl_col() && !schemaProp.get_ttl_col()->empty()) {
          return true;
@@ -403,10 +403,10 @@ void BaseProcessor<RESP>::doSyncMultiRemoveAndUpdate(std::vector<std::string> ke
 }
 
 template<typename RESP>
-StatusOr<std::vector<nebula::cpp2::IndexItem>>
+StatusOr<std::vector<cpp2::IndexItem>>
 BaseProcessor<RESP>::getIndexes(GraphSpaceID spaceId,
                                 int32_t tagOrEdge) {
-    std::vector<nebula::cpp2::IndexItem> items;
+    std::vector<cpp2::IndexItem> items;
     auto indexPrefix = MetaServiceUtils::indexPrefix(spaceId);
     auto iterRet = doPrefix(indexPrefix);
     if (!iterRet.ok()) {
@@ -415,10 +415,10 @@ BaseProcessor<RESP>::getIndexes(GraphSpaceID spaceId,
     auto indexIter = iterRet.value().get();
     while (indexIter->valid()) {
         auto item = MetaServiceUtils::parseIndex(indexIter->val());
-        if (item.get_schema_id().getType() == nebula::cpp2::SchemaID::Type::tag_id &&
+        if (item.get_schema_id().getType() == cpp2::SchemaID::Type::tag_id &&
             item.get_schema_id().get_tag_id() == tagOrEdge) {
             items.emplace_back(std::move(item));
-        } else if (item.get_schema_id().getType() == nebula::cpp2::SchemaID::Type::edge_type &&
+        } else if (item.get_schema_id().getType() == cpp2::SchemaID::Type::edge_type &&
                    item.get_schema_id().get_edge_type() == tagOrEdge) {
             items.emplace_back(std::move(item));
         }
@@ -429,7 +429,7 @@ BaseProcessor<RESP>::getIndexes(GraphSpaceID spaceId,
 
 template<typename RESP>
 cpp2::ErrorCode
-BaseProcessor<RESP>::indexCheck(const std::vector<nebula::cpp2::IndexItem>& items,
+BaseProcessor<RESP>::indexCheck(const std::vector<cpp2::IndexItem>& items,
                                 const std::vector<cpp2::AlterSchemaItem>& alterItems) {
     for (const auto& index : items) {
         for (const auto& tagItem : alterItems) {

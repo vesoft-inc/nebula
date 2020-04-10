@@ -5,7 +5,7 @@
  */
 
 #include "meta/processors/configMan/SetConfigProcessor.h"
-#include "base/Configuration.h"
+#include "conf/Configuration.h"
 
 namespace nebula {
 namespace meta {
@@ -136,7 +136,7 @@ cpp2::ErrorCode SetConfigProcessor::setNestedConfig(const cpp2::ConfigModule& mo
         return cpp2::ErrorCode::E_CONFIG_IMMUTABLE;
     }
 
-    Configuration conf;
+    conf::Configuration conf;
     std::vector<std::string> updateFields;
     folly::split(",", updateList, updateFields, true);
     bool updated = false;

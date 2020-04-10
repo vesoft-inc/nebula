@@ -8,7 +8,9 @@
 #define KVSTORE_COMMON_H_
 
 #include "base/Base.h"
-#include "rocksdb/slice.h"
+#include "thrift/ThriftTypes.h"
+#include "datatypes/HostAddr.h"
+#include <rocksdb/slice.h>
 #include <folly/Function.h>
 
 namespace nebula {

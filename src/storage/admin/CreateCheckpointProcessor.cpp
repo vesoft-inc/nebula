@@ -10,12 +10,12 @@ namespace nebula {
 namespace storage {
 
 void CreateCheckpointProcessor::process(const cpp2::CreateCPRequest& req) {
-    CHECK_NOTNULL(kvstore_);
+    CHECK_NOTNULL(env_);
     auto spaceId = req.get_space_id();
     auto& name = req.get_name();
-    auto retCode = kvstore_->createCheckpoint(spaceId, std::move(name));
+    auto retCode = env_->kvstore_->createCheckpoint(spaceId, std::move(name));
     if (retCode != kvstore::ResultCode::SUCCEEDED) {
-        cpp2::ResultCode thriftRet;
+        cpp2::PartitionResult thriftRet;
         thriftRet.set_code(to(retCode));
         codes_.emplace_back(std::move(thriftRet));
     }

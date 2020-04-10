@@ -9,17 +9,9 @@
 namespace nebula {
 
 bool RowReaderWrapper::reset(meta::SchemaProviderIf const* schema,
-                             folly::StringPiece row) noexcept {
-    SchemaVer schemaVer;
-    int32_t readerVer;
-    getVersions(row, schemaVer, readerVer);
-    if (schemaVer != schema->getVersion()) {
-        LOG(ERROR) << "The given schema version is " << schema->getVersion()
-                   << ". It does not match the version used to encode the data"
-                   << ". The data is encoded by the schema version " << schemaVer;
-        return false;
-    }
-
+                             folly::StringPiece row,
+                             int32_t readerVer) noexcept {
+    CHECK_NOTNULL(schema);
     if (readerVer == 1) {
         readerV1_.resetImpl(schema, row);
         currReader_ = &readerV1_;

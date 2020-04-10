@@ -8,7 +8,7 @@
 #define WAL_FILEBASEDWALITERATOR_H_
 
 #include "base/Base.h"
-#include "base/LogIterator.h"
+#include "common/LogIterator.h"
 #include "kvstore/wal/InMemoryLogBuffer.h"
 
 namespace nebula {

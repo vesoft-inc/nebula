@@ -8,7 +8,7 @@
 #include <gtest/gtest.h>
 #include <folly/String.h>
 #include <rocksdb/db.h>
-#include "base/Configuration.h"
+#include "conf/Configuration.h"
 #include "fs/TempDir.h"
 #include "meta/test/TestUtils.h"
 #include "meta/GflagsManager.h"

@@ -8,6 +8,7 @@
 #define COMMON_BASE_LOGITERATOR_H_
 
 #include "base/Base.h"
+#include "thrift/ThriftTypes.h"
 
 namespace nebula {
 

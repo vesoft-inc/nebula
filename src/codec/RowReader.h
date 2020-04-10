@@ -11,6 +11,7 @@
 #include "datatypes/Value.h"
 #include "codec/Common.h"
 #include "meta/SchemaProviderIf.h"
+#include "meta/SchemaManager.h"
 
 namespace nebula {
 
@@ -69,22 +70,37 @@ public:
 
 
 public:
-/*
+
     static std::unique_ptr<RowReader> getTagPropReader(
         meta::SchemaManager* schemaMan,
         GraphSpaceID space,
         TagID tag,
-        std::string row);
+        folly::StringPiece row);
+
     static std::unique_ptr<RowReader> getEdgePropReader(
         meta::SchemaManager* schemaMan,
         GraphSpaceID space,
         EdgeType edge,
-        std::string row);
-*/
+        folly::StringPiece row);
 
     static std::unique_ptr<RowReader> getRowReader(
         meta::SchemaProviderIf const* schema,
         folly::StringPiece row);
+
+    bool resetTagPropReader(
+        meta::SchemaManager* schemaMan,
+        GraphSpaceID space,
+        TagID tag,
+        folly::StringPiece row);
+
+    bool resetEdgePropReader(
+        meta::SchemaManager* schemaMan,
+        GraphSpaceID space,
+        EdgeType edge,
+        folly::StringPiece row);
+
+    bool reset(meta::SchemaProviderIf const* schema,
+               folly::StringPiece row) noexcept;
 
     virtual ~RowReader() = default;
 
@@ -96,8 +112,6 @@ public:
     // Return the number of bytes used for the header info
     virtual size_t headerLen() const noexcept = 0;
 
-    virtual bool reset(meta::SchemaProviderIf const* schema,
-                       folly::StringPiece row) noexcept = 0;
 
     virtual Iterator begin() const noexcept {
         return Iterator(this, 0);
@@ -131,6 +145,10 @@ protected:
 
     virtual bool resetImpl(meta::SchemaProviderIf const* schema,
                            folly::StringPiece row) noexcept;
+
+    virtual bool reset(meta::SchemaProviderIf const* schema,
+                       folly::StringPiece row,
+                       int32_t readerVer) noexcept = 0;
 
 private:
     Iterator endIter_;

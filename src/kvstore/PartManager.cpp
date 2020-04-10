@@ -8,12 +8,12 @@
 namespace nebula {
 namespace kvstore {
 
-PartsMap MemPartManager::parts(const HostAddr& hostAddr) {
+meta::PartsMap MemPartManager::parts(const HostAddr& hostAddr) {
     UNUSED(hostAddr);
     return partsMap_;
 }
 
-StatusOr<PartMeta> MemPartManager::partMeta(GraphSpaceID spaceId, PartitionID partId) {
+StatusOr<meta::PartHosts> MemPartManager::partMeta(GraphSpaceID spaceId, PartitionID partId) {
     auto it = partsMap_.find(spaceId);
     if (it == partsMap_.end()) {
         return Status::Error("Space not found, spaceid: %d", spaceId);
@@ -54,12 +54,12 @@ MetaServerBasedPartManager::~MetaServerBasedPartManager() {
     }
 }
 
-PartsMap MetaServerBasedPartManager::parts(const HostAddr& hostAddr) {
+meta::PartsMap MetaServerBasedPartManager::parts(const HostAddr& hostAddr) {
     return client_->getPartsMapFromCache(hostAddr);
 }
 
-StatusOr<PartMeta> MetaServerBasedPartManager::partMeta(GraphSpaceID spaceId, PartitionID partId) {
-    return client_->getPartMetaFromCache(spaceId, partId);
+StatusOr<meta::PartHosts> MetaServerBasedPartManager::partMeta(GraphSpaceID spaceId, PartitionID partId) {
+    return client_->getPartHostsFromCache(spaceId, partId);
 }
 
 Status MetaServerBasedPartManager::partExist(const HostAddr& host,
@@ -140,7 +140,7 @@ void MetaServerBasedPartManager::onSpaceOptionUpdated(
     }
 }
 
-void MetaServerBasedPartManager::onPartAdded(const PartMeta& partMeta) {
+void MetaServerBasedPartManager::onPartAdded(const meta::PartHosts& partMeta) {
     if (handler_ != nullptr) {
         handler_->addPart(partMeta.spaceId_, partMeta.partId_, false);
     } else {
@@ -156,7 +156,7 @@ void MetaServerBasedPartManager::onPartRemoved(GraphSpaceID spaceId, PartitionID
     }
 }
 
-void MetaServerBasedPartManager::onPartUpdated(const PartMeta& partMeta) {
+void MetaServerBasedPartManager::onPartUpdated(const meta::PartHosts& partMeta) {
     UNUSED(partMeta);
 }
 

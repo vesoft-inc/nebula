@@ -7,7 +7,7 @@
 #include "base/Base.h"
 #include <gtest/gtest.h>
 #include "fs/TempDir.h"
-#include "meta/ClusterIdMan.h"
+#include "meta/KVBasedClusterIdMan.h"
 #include "meta/test/TestUtils.h"
 
 namespace nebula {

@@ -8,7 +8,7 @@
 #include "meta/processors/jobMan/TaskDescription.h"
 #include "meta/processors/jobMan/JobStatus.h"
 #include "meta/processors/jobMan/JobUtils.h"
-#include "common/time/WallClock.h"
+#include "time/WallClock.h"
 
 namespace nebula {
 namespace meta {
@@ -17,7 +17,7 @@ using Status = cpp2::JobStatus;
 
 TaskDescription::TaskDescription(int32_t iJob,
                                  int32_t iTask,
-                                 const nebula::cpp2::HostAddr& dest)
+                                 const HostAddr& dest)
                                  : iJob_(iJob),
                                    iTask_(iTask),
                                    dest_(dest),
@@ -29,7 +29,7 @@ TaskDescription::TaskDescription(int32_t iJob,
 /*
  * int32_t                         iJob_;
  * int32_t                         iTask_;
- * nebula::cpp2::HostAddr          dest_;
+ * HostAddr          dest_;
  * cpp2::JobStatus                 status_;
  * int64_t                         startTime_;
  * int64_t                         stopTime_;
@@ -87,16 +87,16 @@ std::string TaskDescription::taskVal() {
 }
 
 /*
- * nebula::cpp2::HostAddr          dest_;
+ * HostAddr          dest_;
  * cpp2::JobStatus                 status_;
  * int64_t                         startTime_;
  * int64_t                         stopTime_;
  * */
-std::tuple<nebula::cpp2::HostAddr, Status, int64_t, int64_t>
+std::tuple<HostAddr, Status, int64_t, int64_t>
 TaskDescription::parseVal(const folly::StringPiece& rawVal) {
     size_t offset = 0;
 
-    auto host = JobUtil::parseFixedVal<nebula::cpp2::HostAddr>(rawVal, offset);
+    auto host = JobUtil::parseFixedVal<HostAddr>(rawVal, offset);
     offset += sizeof(host);
 
     auto status = JobUtil::parseFixedVal<Status>(rawVal, offset);

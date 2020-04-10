@@ -10,6 +10,7 @@
 #include "fs/FileUtils.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/RocksEngineConfig.h"
+#include "common/NebulaKeyUtils.h"
 
 namespace nebula {
 namespace kvstore {
@@ -156,7 +157,7 @@ std::vector<Status> RocksEngine::multiGet(const std::vector<std::string>& keys,
                        } else if (s.IsNotFound()) {
                            return Status::KeyNotFound();
                        } else {
-                            return Status::Error();
+                           return Status::Error();
                        }
                    });
     return ret;

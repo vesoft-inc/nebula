@@ -8,8 +8,8 @@
 #define STORAGE_COMPACTIONFILTER_H_
 
 #include "base/Base.h"
-#include "base/NebulaKeyUtils.h"
-#include "dataman/RowReader.h"
+#include "common/NebulaKeyUtils.h"
+#include "codec/RowReader.h"
 #include "meta/NebulaSchemaProvider.h"
 #include "kvstore/CompactionFilter.h"
 #include "storage/CommonUtils.h"
@@ -102,7 +102,7 @@ public:
                 VLOG(3) << "Space " << spaceId << ", Tag " << tagId << " invalid";
                 return false;
             }
-            auto reader = nebula::RowReader::getTagPropReader(schemaMan_, val, spaceId, tagId);
+            auto reader = nebula::RowReader::getTagPropReader(schemaMan_, spaceId, tagId, val);
             return checkDataTtlValid(schema.get(), reader.get());
         } else if (NebulaKeyUtils::isEdge(key)) {
             auto edgeType = NebulaKeyUtils::getEdgeType(key);
@@ -111,8 +111,10 @@ public:
                 VLOG(3) << "Space " << spaceId << ", EdgeType " << edgeType << " invalid";
                 return false;
             }
-            auto reader = nebula::RowReader::getEdgePropReader(schemaMan_, val,
-                                                               spaceId, std::abs(edgeType));
+            auto reader = nebula::RowReader::getEdgePropReader(schemaMan_,
+                                                               spaceId,
+                                                               std::abs(edgeType),
+                                                               val);
             return checkDataTtlValid(schema.get(), reader.get());
         }
         return true;

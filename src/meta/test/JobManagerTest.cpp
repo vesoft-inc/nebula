@@ -125,11 +125,11 @@ TEST_F(JobManagerTest, showJobs) {
     ASSERT_EQ(jobs[1].get_stop_time(), jd2.stopTime_);
 }
 
-nebula::cpp2::HostAddr toHost(std::string strIp) {
-    nebula::cpp2::HostAddr host;
+HostAddr toHost(std::string strIp) {
+    HostAddr host;
     int ip = 0;
     nebula::network::NetworkUtils::ipv4ToInt(strIp, ip);
-    host.set_ip(ip);
+    host.ip = ip;
     return host;
 }
 

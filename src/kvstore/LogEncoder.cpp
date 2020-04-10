@@ -232,10 +232,10 @@ HostAddr decodeHost(LogType type, const folly::StringPiece& encoded) {
     HostAddr addr;
     CHECK_EQ(sizeof(int64_t) + 1 + sizeof(HostAddr), encoded.size());
     CHECK(encoded[sizeof(int64_t)] == type);
-    memcpy(&addr.first, encoded.begin() + sizeof(int64_t) + 1, sizeof(addr.first));
-    memcpy(&addr.second,
-           encoded.begin() + sizeof(int64_t) + 1 + sizeof(addr.first),
-           sizeof(addr.second));
+    memcpy(&addr.ip, encoded.begin() + sizeof(int64_t) + 1, sizeof(addr.ip));
+    memcpy(&addr.port,
+           encoded.begin() + sizeof(int64_t) + 1 + sizeof(addr.ip),
+           sizeof(addr.port));
     return addr;
 }
 

@@ -10,7 +10,7 @@
 #include "rocksdb/env.h"
 #include "rocksdb/utilities/checkpoint.h"
 #include <folly/Benchmark.h>
-#include <common/fs/FileUtils.h>
+#include "fs/FileUtils.h"
 #include "fs/TempDir.h"
 
 namespace nebula {

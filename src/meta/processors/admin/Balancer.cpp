@@ -500,7 +500,7 @@ Balancer::buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap, GraphSpaceID spac
             std::vector<HostAddr> peers;
             peers.resize(thriftPeers.size());
             std::transform(thriftPeers.begin(), thriftPeers.end(), peers.begin(),
-                           [] (const auto& h) { return HostAddr(h.get_ip(), h.get_port()); });
+                           [] (const auto& h) { return HostAddr(h.ip, h.port); });
             peersMap[partId] = std::move(peers);
             ++leaderParts;
             iter->next();
@@ -597,10 +597,10 @@ int32_t Balancer::acquireLeaders(
                     hostLeaders.emplace_back(partId);
                     plan.emplace_back(spaceId, partId, peer, host);
                     LOG(INFO) << "plan trans leader: " << spaceId << " " << partId << " from "
-                              << network::NetworkUtils::intToIPv4(peer.first) << ":"
-                              << peer.second << " to "
-                              << network::NetworkUtils::intToIPv4(host.first)
-                              << ":" << host.second;
+                              << network::NetworkUtils::intToIPv4(peer.ip) << ":"
+                              << peer.port << " to "
+                              << network::NetworkUtils::intToIPv4(host.ip)
+                              << ":" << host.port;
                     ++taskCount;
                     break;
                 }
@@ -641,10 +641,10 @@ int32_t Balancer::giveupLeaders(
                 peerLeaders.emplace_back(partId);
                 plan.emplace_back(spaceId, partId, host, peer);
                 LOG(INFO) << "plan trans leader: " << spaceId << " " << partId << " host "
-                    << network::NetworkUtils::intToIPv4(host.first) << ":"
-                    << host.second << " peer "
-                    << network::NetworkUtils::intToIPv4(peer.first)
-                    << ":" << peer.second;
+                    << network::NetworkUtils::intToIPv4(host.ip) << ":"
+                    << host.port << " peer "
+                    << network::NetworkUtils::intToIPv4(peer.ip)
+                    << ":" << peer.port;
                 ++taskCount;
                 transfered = true;
                 break;

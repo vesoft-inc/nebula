@@ -10,7 +10,7 @@
 #include "base/Base.h"
 #include "kvstore/KVStore.h"
 #include "meta/MetaServiceUtils.h"
-#include "common/encryption/MD5Utils.h"
+#include "encryption/MD5Utils.h"
 
 namespace nebula {
 namespace meta {
@@ -39,7 +39,7 @@ public:
         auto userKey = MetaServiceUtils::userKey("root");
         auto userVal = MetaServiceUtils::userVal(std::move(encodedPwd));
         auto roleKey = MetaServiceUtils::roleKey(kDefaultSpaceId, "root");
-        auto roleVal = MetaServiceUtils::roleVal(nebula::cpp2::RoleType::GOD);
+        auto roleVal = MetaServiceUtils::roleVal(cpp2::RoleType::GOD);
 
         std::vector<kvstore::KV> data;
         data.emplace_back(std::move(userKey), std::move(userVal));

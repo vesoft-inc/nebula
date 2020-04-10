@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef META_METACOMMON_H_
-#define META_METACOMMON_H_
+#ifndef META_COMMON_H_
+#define META_COMMON_H_
 
 #include "base/Base.h"
 #include "base/Status.h"
@@ -86,4 +86,4 @@ public:
 }  // namespace meta
 }  // namespace nebula
 
-#endif  // META_METACOMMON_H_
+#endif  // META_COMMON_H_

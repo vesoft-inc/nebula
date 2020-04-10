@@ -24,8 +24,8 @@ std::string encodeLearner(const HostAddr& addr) {
 
 HostAddr decodeLearner(const folly::StringPiece& log) {
     HostAddr learner;
-    memcpy(&learner.first, log.begin() + 1, sizeof(learner.first));
-    memcpy(&learner.second, log.begin() + 1 + sizeof(learner.first), sizeof(learner.second));
+    memcpy(&learner.ip, log.begin() + 1, sizeof(learner.ip));
+    memcpy(&learner.port, log.begin() + 1 + sizeof(learner.ip), sizeof(learner.port));
     return learner;
 }
 
@@ -48,8 +48,8 @@ std::string encodeTransferLeader(const HostAddr& addr) {
 
 HostAddr decodeTransferLeader(const folly::StringPiece& log) {
     HostAddr leader;
-    memcpy(&leader.first, log.begin() + 1, sizeof(leader.first));
-    memcpy(&leader.second, log.begin() + 1 + sizeof(leader.first), sizeof(leader.second));
+    memcpy(&leader.ip, log.begin() + 1, sizeof(leader.ip));
+    memcpy(&leader.port, log.begin() + 1 + sizeof(leader.ip), sizeof(leader.port));
     return leader;
 }
 
@@ -77,8 +77,8 @@ std::string encodeAddPeer(const HostAddr& addr) {
 
 HostAddr decodeAddPeer(const folly::StringPiece& log) {
     HostAddr addr;
-    memcpy(&addr.first, log.begin() + 1, sizeof(addr.first));
-    memcpy(&addr.second, log.begin() + 1 + sizeof(addr.first), sizeof(addr.second));
+    memcpy(&addr.ip, log.begin() + 1, sizeof(addr.ip));
+    memcpy(&addr.port, log.begin() + 1 + sizeof(addr.ip), sizeof(addr.port));
     return addr;
 }
 
@@ -92,8 +92,8 @@ std::string encodeRemovePeer(const HostAddr& addr) {
 
 HostAddr decodeRemovePeer(const folly::StringPiece& log) {
     HostAddr addr;
-    memcpy(&addr.first, log.begin() + 1, sizeof(addr.first));
-    memcpy(&addr.second, log.begin() + 1 + sizeof(addr.first), sizeof(addr.second));
+    memcpy(&addr.ip, log.begin() + 1, sizeof(addr.ip));
+    memcpy(&addr.port, log.begin() + 1 + sizeof(addr.ip), sizeof(addr.port));
     return addr;
 }
 

@@ -12,7 +12,7 @@
 #include "kvstore/NebulaStore.h"
 #include "meta/SchemaManager.h"
 #include "meta/IndexManager.h"
-#include "meta/client/MetaClient.h"
+#include "clients/meta/MetaClient.h"
 #include "meta/ClientBasedGflagsManager.h"
 #include "hdfs/HdfsHelper.h"
 

@@ -21,7 +21,8 @@ class RowReaderWrapper : public RowReader {
 
 public:
     bool reset(meta::SchemaProviderIf const* schema,
-               folly::StringPiece row) noexcept override;
+               folly::StringPiece row,
+               int32_t readVer) noexcept override;
 
     Value getValueByName(const std::string& prop) const noexcept override {
         DCHECK(!!currReader_);
@@ -74,14 +75,15 @@ public:
         return currReader_->getData();
     }
 
+    static void getVersions(const folly::StringPiece& row,
+                            SchemaVer& schemaVer,
+                            int32_t& readerVer);
+
 private:
     RowReaderV1 readerV1_;
     RowReaderV2 readerV2_;
     RowReader* currReader_;
 
-    static void getVersions(const folly::StringPiece& row,
-                            SchemaVer& schemaVer,
-                            int32_t& readerVer);
 };
 
 }  // namespace nebula

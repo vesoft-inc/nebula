@@ -13,7 +13,7 @@
 namespace nebula {
 namespace storage {
 
-using IndexItem = nebula::cpp2::IndexItem;
+using IndexItem = nebula::meta::cpp2::IndexItem;
 
 class AdHocIndexManager final : public nebula::meta::IndexManager {
 public:
@@ -23,12 +23,12 @@ public:
     void addTagIndex(GraphSpaceID space,
                      IndexID indexID,
                      TagID tagID,
-                     std::vector<nebula::cpp2::ColumnDef>&& fields);
+                     std::vector<nebula::meta::cpp2::ColumnDef>&& fields);
 
     void addEdgeIndex(GraphSpaceID space,
                       IndexID indexID,
                       EdgeType edgeType,
-                      std::vector<nebula::cpp2::ColumnDef>&& fields);
+                      std::vector<nebula::meta::cpp2::ColumnDef>&& fields);
 
     StatusOr<std::shared_ptr<IndexItem>>
     getTagIndex(GraphSpaceID space, IndexID index) override;

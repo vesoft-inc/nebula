@@ -9,6 +9,7 @@
 
 #include "base/Base.h"
 #include "base/Status.h"
+#include "datatypes/HostAddr.h"
 #include "interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
@@ -51,13 +52,13 @@ public:
 
     static PartitionID parsePartKeyPartId(folly::StringPiece key);
 
-    static std::string partVal(const std::vector<nebula::cpp2::HostAddr>& hosts);
+    static std::string partVal(const std::vector<HostAddr>& hosts);
 
     static const std::string& partPrefix();
 
     static std::string partPrefix(GraphSpaceID spaceId);
 
-    static std::vector<nebula::cpp2::HostAddr> parsePartVal(folly::StringPiece val);
+    static std::vector<HostAddr> parsePartVal(folly::StringPiece val);
 
     static std::string hostKey(IPv4 ip, Port port);
 
@@ -67,7 +68,7 @@ public:
 
     static const std::string& hostPrefix();
 
-    static nebula::cpp2::HostAddr parseHostKey(folly::StringPiece key);
+    static HostAddr parseHostKey(folly::StringPiece key);
 
     static std::string leaderKey(IPv4 ip, Port port);
 
@@ -75,7 +76,7 @@ public:
 
     static const std::string& leaderPrefix();
 
-    static nebula::cpp2::HostAddr parseLeaderKey(folly::StringPiece key);
+    static HostAddr parseLeaderKey(folly::StringPiece key);
 
     static LeaderParts parseLeaderVal(folly::StringPiece val);
 
@@ -85,13 +86,13 @@ public:
 
     static std::string schemaEdgeKey(GraphSpaceID spaceId, EdgeType edgeType, SchemaVer version);
 
-    static std::string schemaEdgeVal(const std::string& name, const nebula::cpp2::Schema& schema);
+    static std::string schemaEdgeVal(const std::string& name, const cpp2::Schema& schema);
 
     static SchemaVer parseEdgeVersion(folly::StringPiece key);
 
     static std::string schemaTagKey(GraphSpaceID spaceId, TagID tagId, SchemaVer version);
 
-    static std::string schemaTagVal(const std::string& name, const nebula::cpp2::Schema& schema);
+    static std::string schemaTagVal(const std::string& name, const cpp2::Schema& schema);
 
     static SchemaVer parseTagVersion(folly::StringPiece key);
 
@@ -99,15 +100,15 @@ public:
 
     static std::string schemaTagsPrefix(GraphSpaceID spaceId);
 
-    static nebula::cpp2::Schema parseSchema(folly::StringPiece rawData);
+    static cpp2::Schema parseSchema(folly::StringPiece rawData);
 
     static std::string indexKey(GraphSpaceID spaceId, IndexID indexID);
 
-    static std::string indexVal(const nebula::cpp2::IndexItem& item);
+    static std::string indexVal(const cpp2::IndexItem& item);
 
     static std::string indexPrefix(GraphSpaceID spaceId);
 
-    static nebula::cpp2::IndexItem parseIndex(const folly::StringPiece& rawData);
+    static cpp2::IndexItem parseIndex(const folly::StringPiece& rawData);
 
     static std::string rebuildIndexStatus(GraphSpaceID space,
                                           char type,
@@ -133,14 +134,14 @@ public:
 
     static std::string assembleSegmentKey(const std::string& segment, const std::string& key);
 
-    static cpp2::ErrorCode alterColumnDefs(std::vector<nebula::cpp2::ColumnDef>& cols,
-                                           nebula::cpp2::SchemaProp&  prop,
-                                           const nebula::cpp2::ColumnDef col,
+    static cpp2::ErrorCode alterColumnDefs(std::vector<cpp2::ColumnDef>& cols,
+                                           cpp2::SchemaProp&  prop,
+                                           const cpp2::ColumnDef col,
                                            const cpp2::AlterSchemaOp op);
 
-    static cpp2::ErrorCode alterSchemaProp(std::vector<nebula::cpp2::ColumnDef>& cols,
-                                           nebula::cpp2::SchemaProp&  schemaProp,
-                                           nebula::cpp2::SchemaProp alterSchemaProp,
+    static cpp2::ErrorCode alterSchemaProp(std::vector<cpp2::ColumnDef>& cols,
+                                           cpp2::SchemaProp&  schemaProp,
+                                           cpp2::SchemaProp alterSchemaProp,
                                            bool existIndex);
 
     static std::string userKey(const std::string& account);
@@ -153,7 +154,7 @@ public:
 
     static std::string roleKey(GraphSpaceID spaceId, const std::string& account);
 
-    static std::string roleVal(nebula::cpp2::RoleType roleType);
+    static std::string roleVal(cpp2::RoleType roleType);
 
     static std::string parseRoleUser(folly::StringPiece key);
 

@@ -38,7 +38,7 @@ public:
         return headerLen_;
     }
 
-    bool reset(meta::SchemaProviderIf const*, folly::StringPiece) noexcept override {
+    bool reset(meta::SchemaProviderIf const*, folly::StringPiece, int32_t) noexcept override {
         LOG(FATAL) << "Not implemented";
     }
 

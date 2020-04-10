@@ -25,7 +25,7 @@ void GetPartsAllocProcessor::process(const cpp2::GetPartsAllocReq& req) {
         auto key = iter->key();
         PartitionID partId;
         memcpy(&partId, key.data() + prefix.size(), sizeof(PartitionID));
-        std::vector<nebula::cpp2::HostAddr> partHosts = MetaServiceUtils::parsePartVal(iter->val());
+        std::vector<HostAddr> partHosts = MetaServiceUtils::parsePartVal(iter->val());
         parts.emplace(partId, std::move(partHosts));
         iter->next();
     }

@@ -10,8 +10,7 @@
 #include "base/Base.h"
 #include <folly/RWSpinLock.h>
 #include <thrift/lib/cpp2/server/ThriftServer.h>
-#include "gen-cpp2/RaftexService.h"
-#include "thread/GenericThreadPool.h"
+#include "interface/gen-cpp2/RaftexService.h"
 
 namespace nebula {
 namespace raftex {

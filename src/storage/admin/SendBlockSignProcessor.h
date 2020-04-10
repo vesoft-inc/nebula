@@ -16,15 +16,15 @@ namespace nebula {
 namespace storage {
 class SendBlockSignProcessor : public BaseProcessor<cpp2::AdminExecResp> {
 public:
-    static SendBlockSignProcessor* instance(kvstore::KVStore* kvstore) {
-        return new SendBlockSignProcessor(kvstore);
+    static SendBlockSignProcessor* instance(StorageEnv* env) {
+        return new SendBlockSignProcessor(env);
     }
 
     void process(const cpp2::BlockingSignRequest& req);
 
 private:
-    explicit SendBlockSignProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr, nullptr) {}
+    explicit SendBlockSignProcessor(StorageEnv* env)
+            : BaseProcessor<cpp2::AdminExecResp>(env) {}
 };
 }  // namespace storage
 }  // namespace nebula

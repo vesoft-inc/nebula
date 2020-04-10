@@ -6,7 +6,7 @@
 
 #include "base/Base.h"
 #include "storage/StorageServer.h"
-#include "common/base/SignalHandler.h"
+#include "base/SignalHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "network/NetworkUtils.h"
 #include "process/ProcessUtils.h"

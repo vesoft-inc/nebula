@@ -95,9 +95,9 @@ PartitionID MetaServiceUtils::parsePartKeyPartId(folly::StringPiece key) {
                                                  + sizeof(GraphSpaceID));
 }
 
-std::string MetaServiceUtils::partVal(const std::vector<nebula::cpp2::HostAddr>& hosts) {
+std::string MetaServiceUtils::partVal(const std::vector<HostAddr>& hosts) {
     std::string val;
-    val.reserve(hosts.size() * (sizeof(nebula::cpp2::IPv4) + sizeof(nebula::cpp2::Port)));
+    val.reserve(hosts.size() * (sizeof(IPv4) + sizeof(Port)));
     for (auto& h : hosts) {
         val.append(reinterpret_cast<const char*>(&h.ip), sizeof(h.ip))
            .append(reinterpret_cast<const char*>(&h.port), sizeof(h.port));
@@ -113,8 +113,8 @@ std::string MetaServiceUtils::partPrefix(GraphSpaceID spaceId) {
     return prefix;
 }
 
-std::vector<nebula::cpp2::HostAddr> MetaServiceUtils::parsePartVal(folly::StringPiece val) {
-    std::vector<nebula::cpp2::HostAddr> hosts;
+std::vector<HostAddr> MetaServiceUtils::parsePartVal(folly::StringPiece val) {
+    std::vector<HostAddr> hosts;
     static const size_t unitSize = sizeof(int32_t) * 2;
     auto hostsNum = val.size() / unitSize;
     hosts.reserve(hostsNum);
@@ -122,9 +122,9 @@ std::vector<nebula::cpp2::HostAddr> MetaServiceUtils::parsePartVal(folly::String
             << ", host size:" << unitSize
             << ", host num:" << hostsNum;
     for (decltype(hostsNum) i = 0; i < hostsNum; i++) {
-        nebula::cpp2::HostAddr h;
-        h.set_ip(*reinterpret_cast<const int32_t*>(val.data() + i * unitSize));
-        h.set_port(*reinterpret_cast<const int32_t*>(val.data() + i * unitSize + sizeof(int32_t)));
+        HostAddr h;
+        h.ip = *reinterpret_cast<const int32_t*>(val.data() + i * unitSize);
+        h.port = *reinterpret_cast<const int32_t*>(val.data() + i * unitSize + sizeof(int32_t));
         hosts.emplace_back(std::move(h));
     }
     return hosts;
@@ -132,7 +132,7 @@ std::vector<nebula::cpp2::HostAddr> MetaServiceUtils::parsePartVal(folly::String
 
 std::string MetaServiceUtils::hostKey(IPv4 ip, Port port) {
     std::string key;
-    key.reserve(kHostsTable.size() + sizeof(nebula::cpp2::IPv4) + sizeof(nebula::cpp2::Port));
+    key.reserve(kHostsTable.size() + sizeof(IPv4) + sizeof(Port));
     key.append(kHostsTable.data(), kHostsTable.size())
        .append(reinterpret_cast<const char*>(&ip), sizeof(ip))
        .append(reinterpret_cast<const char*>(&port), sizeof(port));
@@ -151,15 +151,15 @@ const std::string& MetaServiceUtils::hostPrefix() {
     return kHostsTable;
 }
 
-nebula::cpp2::HostAddr MetaServiceUtils::parseHostKey(folly::StringPiece key) {
-    nebula::cpp2::HostAddr host;
+HostAddr MetaServiceUtils::parseHostKey(folly::StringPiece key) {
+    HostAddr host;
     memcpy(&host, key.data() + kHostsTable.size(), sizeof(host));
     return host;
 }
 
 std::string MetaServiceUtils::leaderKey(IPv4 ip, Port port) {
     std::string key;
-    key.reserve(kLeadersTable.size() + sizeof(nebula::cpp2::IPv4) + sizeof(nebula::cpp2::Port));
+    key.reserve(kLeadersTable.size() + sizeof(IPv4) + sizeof(Port));
     key.append(kLeadersTable.data(), kLeadersTable.size());
     key.append(reinterpret_cast<const char*>(&ip), sizeof(ip));
     key.append(reinterpret_cast<const char*>(&port), sizeof(port));
@@ -185,8 +185,8 @@ const std::string& MetaServiceUtils::leaderPrefix() {
     return kLeadersTable;
 }
 
-nebula::cpp2::HostAddr MetaServiceUtils::parseLeaderKey(folly::StringPiece key) {
-    nebula::cpp2::HostAddr host;
+HostAddr MetaServiceUtils::parseLeaderKey(folly::StringPiece key) {
+    HostAddr host;
     memcpy(&host, key.data() + kLeadersTable.size(), sizeof(host));
     return host;
 }
@@ -242,7 +242,7 @@ std::string MetaServiceUtils::schemaEdgeKey(GraphSpaceID spaceId,
 }
 
 std::string MetaServiceUtils::schemaEdgeVal(const std::string& name,
-                                            const nebula::cpp2::Schema& schema) {
+                                            const cpp2::Schema& schema) {
     auto len = name.size();
     std::string val, sval;
     apache::thrift::CompactSerializer::serialize(schema, &sval);
@@ -271,7 +271,7 @@ std::string MetaServiceUtils::schemaTagKey(GraphSpaceID spaceId, TagID tagId, Sc
 }
 
 std::string MetaServiceUtils::schemaTagVal(const std::string& name,
-                                           const nebula::cpp2::Schema& schema) {
+                                           const cpp2::Schema& schema) {
     int32_t len = name.size();
     std::string val, sval;
     apache::thrift::CompactSerializer::serialize(schema, &sval);
@@ -305,8 +305,8 @@ std::string MetaServiceUtils::schemaTagsPrefix(GraphSpaceID spaceId) {
     return key;
 }
 
-nebula::cpp2::Schema MetaServiceUtils::parseSchema(folly::StringPiece rawData) {
-    nebula::cpp2::Schema schema;
+cpp2::Schema MetaServiceUtils::parseSchema(folly::StringPiece rawData) {
+    cpp2::Schema schema;
     int32_t offset = sizeof(int32_t) + *reinterpret_cast<const int32_t *>(rawData.begin());
     auto schval = rawData.subpiece(offset, rawData.size() - offset);
     apache::thrift::CompactSerializer::deserialize(schval, schema);
@@ -322,7 +322,7 @@ std::string MetaServiceUtils::indexKey(GraphSpaceID spaceID, IndexID indexID) {
     return key;
 }
 
-std::string MetaServiceUtils::indexVal(const nebula::cpp2::IndexItem& item) {
+std::string MetaServiceUtils::indexVal(const nebula::meta::cpp2::IndexItem& item) {
     std::string value;
     apache::thrift::CompactSerializer::serialize(item, &value);
     return value;
@@ -336,8 +336,8 @@ std::string MetaServiceUtils::indexPrefix(GraphSpaceID spaceId) {
     return key;
 }
 
-nebula::cpp2::IndexItem MetaServiceUtils::parseIndex(const folly::StringPiece& rawData) {
-    nebula::cpp2::IndexItem item;
+nebula::meta::cpp2::IndexItem MetaServiceUtils::parseIndex(const folly::StringPiece& rawData) {
+    nebula::meta::cpp2::IndexItem item;
     apache::thrift::CompactSerializer::deserialize(rawData, item);
     return item;
 }
@@ -421,9 +421,9 @@ std::string MetaServiceUtils::assembleSegmentKey(const std::string& segment,
     return segmentKey;
 }
 
-cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::ColumnDef>& cols,
-                                                  nebula::cpp2::SchemaProp&  prop,
-                                                  const nebula::cpp2::ColumnDef col,
+cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<cpp2::ColumnDef>& cols,
+                                                  cpp2::SchemaProp&  prop,
+                                                  const cpp2::ColumnDef col,
                                                   const cpp2::AlterSchemaOp op) {
     switch (op) {
         case cpp2::AlterSchemaOp::ADD:
@@ -470,9 +470,9 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
     }
 }
 
-cpp2::ErrorCode MetaServiceUtils::alterSchemaProp(std::vector<nebula::cpp2::ColumnDef>& cols,
-                                                  nebula::cpp2::SchemaProp& schemaProp,
-                                                  nebula::cpp2::SchemaProp alterSchemaProp,
+cpp2::ErrorCode MetaServiceUtils::alterSchemaProp(std::vector<cpp2::ColumnDef>& cols,
+                                                  cpp2::SchemaProp& schemaProp,
+                                                  cpp2::SchemaProp alterSchemaProp,
                                                   bool existIndex) {
     if (existIndex && (alterSchemaProp.__isset.ttl_duration || alterSchemaProp.__isset.ttl_col)) {
         LOG(ERROR) << "Has index, can't set ttl";
@@ -495,8 +495,8 @@ cpp2::ErrorCode MetaServiceUtils::alterSchemaProp(std::vector<nebula::cpp2::Colu
         for (auto& col : cols) {
             if (col.get_name() == ttlCol) {
                 // Only integer and timestamp columns can be used as ttl_col
-                if (col.type.type != nebula::cpp2::SupportedType::INT &&
-                    col.type.type != nebula::cpp2::SupportedType::TIMESTAMP) {
+                if (col.type != cpp2::PropertyType::INT64 &&
+                    col.type != cpp2::PropertyType::TIMESTAMP) {
                     LOG(ERROR) << "TTL column type illegal";
                     return cpp2::ErrorCode::E_UNSUPPORTED;
                 }
@@ -558,10 +558,10 @@ std::string MetaServiceUtils::roleKey(GraphSpaceID spaceId, const std::string& a
     return key;
 }
 
-std::string MetaServiceUtils::roleVal(nebula::cpp2::RoleType roleType) {
+std::string MetaServiceUtils::roleVal(cpp2::RoleType roleType) {
     std::string val;
-    val.reserve(sizeof(nebula::cpp2::RoleType));
-    val.append(reinterpret_cast<const char*>(&roleType), sizeof(nebula::cpp2::RoleType));
+    val.reserve(sizeof(cpp2::RoleType));
+    val.append(reinterpret_cast<const char*>(&roleType), sizeof(cpp2::RoleType));
     return val;
 }
 
@@ -587,26 +587,26 @@ std::string MetaServiceUtils::roleSpacePrefix(GraphSpaceID spaceId) {
 }
 
 std::string MetaServiceUtils::parseRoleStr(folly::StringPiece key) {
-    auto type = *reinterpret_cast<const nebula::cpp2::RoleType*>(&key);
+    auto type = *reinterpret_cast<const cpp2::RoleType*>(&key);
     std::string role;
     switch (type) {
-        case nebula::cpp2::RoleType::GOD : {
+        case cpp2::RoleType::GOD : {
             role = "GOD";
             break;
         }
-        case nebula::cpp2::RoleType::ADMIN : {
+        case cpp2::RoleType::ADMIN : {
             role = "ADMIN";
             break;
         }
-        case nebula::cpp2::RoleType::DBA : {
+        case cpp2::RoleType::DBA : {
             role = "DBA";
             break;
         }
-        case nebula::cpp2::RoleType::USER : {
+        case cpp2::RoleType::USER : {
             role = "USER";
             break;
         }
-        case nebula::cpp2::RoleType::GUEST : {
+        case cpp2::RoleType::GUEST : {
             role = "GUEST";
             break;
         }

@@ -99,7 +99,7 @@ void GrantProcessor::process(const cpp2::GrantRoleReq& req) {
     const auto& roleItem = req.get_role_item();
     auto spaceId = roleItem.get_space_id();
     CHECK_SPACE_ID_AND_RETURN(spaceId);
-    auto userRet = userExist(roleItem.get_user());
+    auto userRet = userExist(roleItem.get_user_id());
     if (!userRet.ok()) {
         handleErrorCode(MetaCommon::to(userRet));
         onFinished();
@@ -107,7 +107,7 @@ void GrantProcessor::process(const cpp2::GrantRoleReq& req) {
     }
 
     std::vector<kvstore::KV> data;
-    data.emplace_back(MetaServiceUtils::roleKey(spaceId, roleItem.get_user()),
+    data.emplace_back(MetaServiceUtils::roleKey(spaceId, roleItem.get_user_id()),
                       MetaServiceUtils::roleVal(roleItem.get_role_type()));
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     doSyncPutAndUpdate(std::move(data));
@@ -119,14 +119,14 @@ void RevokeProcessor::process(const cpp2::RevokeRoleReq& req) {
     const auto& roleItem = req.get_role_item();
     auto spaceId = roleItem.get_space_id();
     CHECK_SPACE_ID_AND_RETURN(spaceId);
-    auto userRet = userExist(roleItem.get_user());
+    auto userRet = userExist(roleItem.get_user_id());
     if (!userRet.ok()) {
         handleErrorCode(MetaCommon::to(userRet));
         onFinished();
         return;
     }
 
-    auto roleKey = MetaServiceUtils::roleKey(spaceId, roleItem.get_user());
+    auto roleKey = MetaServiceUtils::roleKey(spaceId, roleItem.get_user_id());
     auto result = doGet(roleKey);
     if (!result.ok()) {
         handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
@@ -134,7 +134,7 @@ void RevokeProcessor::process(const cpp2::RevokeRoleReq& req) {
         return;
     }
     auto val = result.value();
-    const auto role = *reinterpret_cast<const nebula::cpp2::RoleType *>(val.c_str());
+    const auto role = *reinterpret_cast<const cpp2::RoleType *>(val.c_str());
     if (role != roleItem.get_role_type()) {
         handleErrorCode(cpp2::ErrorCode::E_IMPROPER_ROLE);
         onFinished();
@@ -212,10 +212,10 @@ void ListRolesProcessor::process(const cpp2::ListRolesReq& req) {
     while (iter->valid()) {
         auto account = MetaServiceUtils::parseRoleUser(iter->key());
         auto val = iter->val();
-        nebula::cpp2::RoleItem role;
-        role.set_user(std::move(account));
+        cpp2::RoleItem role;
+        role.set_user_id(std::move(account));
         role.set_space_id(spaceId);
-        role.set_role_type(*reinterpret_cast<const nebula::cpp2::RoleType *>(val.begin()));
+        role.set_role_type(*reinterpret_cast<const cpp2::RoleType *>(val.begin()));
         roles.emplace_back(role);
         iter->next();
     }
@@ -242,10 +242,10 @@ void GetUserRolesProcessor::process(const cpp2::GetUserRolesReq& req) {
         auto spaceId = MetaServiceUtils::parseRoleSpace(iter->key());
         if (account == req.get_account()) {
             auto val = iter->val();
-            nebula::cpp2::RoleItem role;
-            role.set_user(std::move(account));
+            cpp2::RoleItem role;
+            role.set_user_id(std::move(account));
             role.set_space_id(spaceId);
-            role.set_role_type(*reinterpret_cast<const nebula::cpp2::RoleType *>(val.begin()));
+            role.set_role_type(*reinterpret_cast<const cpp2::RoleType *>(val.begin()));
             roles.emplace_back(role);
         }
         iter->next();

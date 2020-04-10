@@ -7,7 +7,7 @@
 #ifndef META_PROCESSORS_COMMON_H_
 #define META_PROCESSORS_COMMON_H_
 
-#include "base/Base.h"
+#include "common/Types.h"
 
 namespace nebula {
 namespace meta {

@@ -33,8 +33,8 @@ std::vector<HostAddr> getPeers(const std::vector<HostAddr>& all,
     for (const auto& host : all) {
         if (host != self && !isLearner[index]) {
             VLOG(2) << "Adding host "
-                    << NetworkUtils::intToIPv4(host.first)
-                    << ":" << host.second;
+                    << NetworkUtils::intToIPv4(host.ip)
+                    << ":" << host.port;
             peers.emplace_back(host);
         }
         index++;
@@ -130,7 +130,7 @@ void waitUntilAllHasLeader(const std::vector<std::shared_ptr<test::TestShard>>& 
         bool allHaveLeader = true;
         for (auto& c : copies) {
             if (c != nullptr && c->isRunning()) {
-                if (c->leader().first == 0 && c->leader().second == 0) {
+                if (c->leader().ip == 0 && c->leader().port == 0) {
                     allHaveLeader = false;
                     break;
                 }

@@ -8,7 +8,7 @@
 #define WAL_WAL_H_
 
 #include "base/Base.h"
-#include "base/LogIterator.h"
+#include "common/LogIterator.h"
 
 namespace nebula {
 namespace wal {

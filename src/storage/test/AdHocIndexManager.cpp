@@ -12,12 +12,12 @@ namespace storage {
 void AdHocIndexManager::addTagIndex(GraphSpaceID space,
                                     IndexID indexID,
                                     TagID tagID,
-                                    std::vector<nebula::cpp2::ColumnDef>&& fields) {
+                                    std::vector<nebula::meta::cpp2::ColumnDef>&& fields) {
     folly::RWSpinLock::WriteHolder wh(tagIndexLock_);
-    nebula::cpp2::IndexItem item;
+    IndexItem item;
     item.set_index_id(indexID);
     item.set_index_name(folly::stringPrintf("index_%d", indexID));
-    nebula::cpp2::SchemaID schemaID;
+    nebula::meta::cpp2::SchemaID schemaID;
     schemaID.set_tag_id(tagID);
     item.set_schema_id(schemaID);
     item.set_schema_name(folly::stringPrintf("tag_%d", tagID));
@@ -36,12 +36,12 @@ void AdHocIndexManager::addTagIndex(GraphSpaceID space,
 void AdHocIndexManager::addEdgeIndex(GraphSpaceID space,
                                      IndexID indexID,
                                      EdgeType edgeType,
-                                     std::vector<nebula::cpp2::ColumnDef>&& fields) {
+                                     std::vector<nebula::meta::cpp2::ColumnDef>&& fields) {
     folly::RWSpinLock::WriteHolder wh(edgeIndexLock_);
-    nebula::cpp2::IndexItem item;
+    IndexItem item;
     item.set_index_id(indexID);
     item.set_index_name(folly::stringPrintf("index_%d", indexID));
-    nebula::cpp2::SchemaID schemaID;
+    nebula::meta::cpp2::SchemaID schemaID;
     schemaID.set_edge_type(edgeType);
     item.set_schema_id(schemaID);
     item.set_schema_name(folly::stringPrintf("edge_%d", edgeType));

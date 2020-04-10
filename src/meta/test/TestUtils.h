@@ -28,7 +28,7 @@ DECLARE_string(part_man_type);
 namespace nebula {
 namespace meta {
 
-using nebula::cpp2::SupportedType;
+using nebula::meta::cpp2::PropertyType;
 
 class TestFaultInjector : public FaultInjector {
 public:
@@ -134,7 +134,7 @@ public:
         // GraphSpaceID =>  {PartitionIDs}
         // 0 => {0}
         auto& partsMap = partMan->partsMap();
-        partsMap[0][0] = PartMeta();
+        partsMap[0][0] = PartHosts();
 
         std::vector<std::string> paths;
         paths.emplace_back(folly::stringPrintf("%s/disk1", rootPath));
@@ -168,35 +168,31 @@ public:
         return store;
     }
 
-    static nebula::cpp2::ColumnDef columnDef(int32_t index, nebula::cpp2::SupportedType st) {
-        nebula::cpp2::ColumnDef column;
+    static cpp2::ColumnDef columnDef(int32_t index, cpp2::PropertyType type) {
+        cpp2::ColumnDef column;
         column.set_name(folly::stringPrintf("col_%d", index));
-        nebula::cpp2::ValueType vType;
-        vType.set_type(st);
-        column.set_type(std::move(vType));
+        column.set_type(type);
         return column;
     }
 
-    static nebula::cpp2::ColumnDef columnDefWithDefault(int32_t index,
-                                                        nebula::cpp2::SupportedType st) {
-        nebula::cpp2::ColumnDef column;
+    static cpp2::ColumnDef columnDefWithDefault(int32_t index,
+                                                cpp2::PropertyType type) {
+        cpp2::ColumnDef column;
         column.set_name(folly::stringPrintf("col_%d", index));
-        nebula::cpp2::ValueType vType;
-        vType.set_type(std::move(st));
-        column.set_type(std::move(vType));
-        nebula::cpp2::Value defaultValue;
-        switch (st) {
-            case nebula::cpp2::SupportedType::BOOL:
-                defaultValue.set_bool_value(true);
+        column.set_type(type);
+        nebula::Value defaultValue;
+        switch (type) {
+            case cpp2::PropertyType::BOOL:
+                defaultValue.setBool(true);
                 break;
-            case nebula::cpp2::SupportedType::INT:
-                defaultValue.set_int_value(1);
+            case cpp2::PropertyType::INT64:
+                defaultValue.setInt(1);
                 break;
-            case nebula::cpp2::SupportedType::DOUBLE:
-                defaultValue.set_double_value(3.14);
+            case cpp2::PropertyType::DOUBLE:
+                defaultValue.setFloat(3.14);
                 break;
-            case nebula::cpp2::SupportedType::STRING:
-                defaultValue.set_string_value("default value");
+            case cpp2::PropertyType::STRING:
+                defaultValue.setStr("default value");
                 break;
             default:
                 LOG(ERROR) << "Unsupoort type";
@@ -216,14 +212,7 @@ public:
     static int32_t createSomeHosts(kvstore::KVStore* kv,
                                    std::vector<HostAddr> hosts
                                        = {{0, 0}, {1, 1}, {2, 2}, {3, 3}}) {
-        std::vector<nebula::cpp2::HostAddr> thriftHosts;
-        thriftHosts.resize(hosts.size());
-        std::transform(hosts.begin(), hosts.end(), thriftHosts.begin(), [](const auto& h) {
-            nebula::cpp2::HostAddr th;
-            th.set_ip(h.first);
-            th.set_port(h.second);
-            return th;
-        });
+        std::vector<HostAddr> thriftHosts(hosts);
         registerHB(kv, hosts);
         {
             cpp2::ListHostsReq req;
@@ -233,8 +222,7 @@ public:
             auto resp = std::move(f).get();
             EXPECT_EQ(hosts.size(), resp.hosts.size());
             for (decltype(hosts.size()) i = 0; i < hosts.size(); i++) {
-                EXPECT_EQ(hosts[i].first, resp.hosts[i].hostAddr.ip);
-                EXPECT_EQ(hosts[i].second, resp.hosts[i].hostAddr.port);
+                EXPECT_EQ(hosts[i], resp.hosts[i].hostAddr);
             }
         }
         return hosts.size();
@@ -252,16 +240,13 @@ public:
         std::vector<nebula::kvstore::KV> data;
         data.emplace_back(MetaServiceUtils::spaceKey(id), MetaServiceUtils::spaceVal(properties));
 
-        std::vector<nebula::cpp2::HostAddr> allHosts;
+        std::vector<HostAddr> allHosts;
         for (int i = 0; i < totalHost; i++) {
-            nebula::cpp2::HostAddr address;
-            address.set_ip(i);
-            address.set_port(i);
-            allHosts.emplace_back(std::move(address));
+            allHosts.emplace_back(i, i);
         }
 
         for (auto partId = 1; partId <= partitionNum; partId++) {
-            std::vector<nebula::cpp2::HostAddr> hosts;
+            std::vector<HostAddr> hosts;
             size_t idx = partId;
             for (int32_t i = 0; i < replica; i++, idx++) {
                 hosts.emplace_back(allHosts[idx % totalHost]);
@@ -284,11 +269,11 @@ public:
         SchemaVer ver = version;
         for (auto t = 0; t < tagNum; t++) {
             TagID tagId = t;
-            nebula::cpp2::Schema srcsch;
+            cpp2::Schema srcsch;
             for (auto i = 0; i < 2; i++) {
-                nebula::cpp2::ColumnDef column;
+                cpp2::ColumnDef column;
                 column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
-                column.type.type = i < 1 ? SupportedType::INT : SupportedType::STRING;
+                column.type = i < 1 ? PropertyType::INT64 : PropertyType::STRING;
                 srcsch.columns.emplace_back(std::move(column));
             }
             auto tagName = folly::stringPrintf("tag_%d", tagId);
@@ -311,11 +296,11 @@ public:
         SchemaVer ver = version;
         for (auto t = 0; t < edgeNum; t++) {
             EdgeType edgeType = t;
-            nebula::cpp2::Schema srcsch;
+            cpp2::Schema srcsch;
             for (auto i = 0; i < 2; i++) {
-                nebula::cpp2::ColumnDef column;
+                cpp2::ColumnDef column;
                 column.name = folly::stringPrintf("edge_%d_col_%d", edgeType, i);
-                column.type.type = i < 1 ? SupportedType::INT : SupportedType::STRING;
+                column.type = i < 1 ? PropertyType::INT64 : PropertyType::STRING;
                 srcsch.columns.emplace_back(std::move(column));
             }
             auto edgeName = folly::stringPrintf("edge_%d", edgeType);
@@ -351,20 +336,20 @@ public:
         return sc;
     }
 
-    static bool verifySchema(nebula::cpp2::Schema &result,
-                             nebula::cpp2::Schema &expected) {
+    static bool verifySchema(cpp2::Schema &result,
+                             cpp2::Schema &expected) {
         if (result.get_columns().size() != expected.get_columns().size()) {
             return false;
         }
 
-        std::vector<nebula::cpp2::ColumnDef> resultColumns = result.get_columns();
-        std::vector<nebula::cpp2::ColumnDef> expectedColumns = expected.get_columns();
+        std::vector<cpp2::ColumnDef> resultColumns = result.get_columns();
+        std::vector<cpp2::ColumnDef> expectedColumns = expected.get_columns();
         std::sort(resultColumns.begin(), resultColumns.end(),
-                  [](nebula::cpp2::ColumnDef col0, nebula::cpp2::ColumnDef col1) {
+                  [](cpp2::ColumnDef col0, cpp2::ColumnDef col1) {
                       return col0.get_name() < col1.get_name();
                   });
         std::sort(expectedColumns.begin(), expectedColumns.end(),
-                  [](nebula::cpp2::ColumnDef col0, nebula::cpp2::ColumnDef col1) {
+                  [](cpp2::ColumnDef col0, cpp2::ColumnDef col1) {
                       return col0.get_name() < col1.get_name();
                   });
 
@@ -396,8 +381,8 @@ public:
         return true;
     }
 
-    static bool verifyMap(std::map<std::string, std::vector<nebula::cpp2::ColumnDef>> &result,
-                          std::map<std::string, std::vector<nebula::cpp2::ColumnDef>> &expected) {
+    static bool verifyMap(std::map<std::string, std::vector<cpp2::ColumnDef>> &result,
+                          std::map<std::string, std::vector<cpp2::ColumnDef>> &expected) {
         if (result.size() != expected.size()) {
             return false;
         }
@@ -431,18 +416,18 @@ public:
         return true;
     }
 
-    static bool verifyResult(std::vector<nebula::cpp2::ColumnDef> &result,
-                             std::vector<nebula::cpp2::ColumnDef> &expected) {
+    static bool verifyResult(std::vector<cpp2::ColumnDef> &result,
+                             std::vector<cpp2::ColumnDef> &expected) {
         if (result.size() != expected.size()) {
             return false;
         }
 
         std::sort(result.begin(), result.end(),
-                  [](nebula::cpp2::ColumnDef& x, nebula::cpp2::ColumnDef& y) {
+                  [](cpp2::ColumnDef& x, cpp2::ColumnDef& y) {
                       return x.get_name().compare(y.get_name());
                   });
         std::sort(expected.begin(), expected.end(),
-                  [](nebula::cpp2::ColumnDef& x, nebula::cpp2::ColumnDef& y) {
+                  [](cpp2::ColumnDef& x, cpp2::ColumnDef& y) {
                       return x.get_name().compare(y.get_name());
                   });
         int32_t size = result.size();

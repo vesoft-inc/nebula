@@ -15,28 +15,29 @@
 #include "kvstore/KVStore.h"
 #include "meta/SchemaManager.h"
 #include "meta/IndexManager.h"
-#include "dataman/RowSetWriter.h"
-#include "dataman/RowReader.h"
-#include "dataman/RowWriter.h"
-#include "storage/Collector.h"
 #include "meta/SchemaManager.h"
 #include "time/Duration.h"
 #include "stats/StatsManager.h"
 #include "stats/Stats.h"
+#include "codec/RowReader.h"
 
 namespace nebula {
 namespace storage {
 
 using PartCode = std::pair<PartitionID, kvstore::ResultCode>;
 
+struct StorageEnv {
+    kvstore::KVStore*                               kvstore_{nullptr};
+    meta::SchemaManager*                            schemaMan_{nullptr};
+    meta::IndexManager*                             indexMan_{nullptr};
+};
+
 template<typename RESP>
 class BaseProcessor {
 public:
-    explicit BaseProcessor(kvstore::KVStore* kvstore,
-                           meta::SchemaManager* schemaMan,
+    explicit BaseProcessor(StorageEnv* env,
                            stats::Stats* stats = nullptr)
-            : kvstore_(kvstore)
-            , schemaMan_(schemaMan)
+            : env_(env)
             , stats_(stats) {}
 
     virtual ~BaseProcessor() = default;
@@ -46,12 +47,12 @@ public:
     }
 
 protected:
-    virtual void onFinished() {
+    void onFinished() {
         stats::Stats::addStatsValue(stats_,
-                                    this->result_.get_failed_codes().empty(),
+                                    this->result_.get_failed_parts().empty(),
                                     this->duration_.elapsedInUSec());
         this->result_.set_latency_in_us(this->duration_.elapsedInUSec());
-        this->result_.set_failed_codes(this->codes_);
+        this->result_.set_failed_parts(this->codes_);
         this->resp_.set_result(std::move(this->result_));
         this->promise_.setValue(std::move(this->resp_));
         delete this;
@@ -65,109 +66,30 @@ protected:
 
     void doRemove(GraphSpaceID spaceId, PartitionID partId, std::vector<std::string> keys);
 
-    kvstore::ResultCode doRange(GraphSpaceID spaceId, PartitionID partId, std::string start,
-                                std::string end, std::unique_ptr<kvstore::KVIterator>* iter);
-
-    kvstore::ResultCode doRange(GraphSpaceID spaceId, PartitionID partId, const std::string& start,
-                                const std::string& end, std::unique_ptr<kvstore::KVIterator>* iter);
-
-    kvstore::ResultCode doRange(GraphSpaceID spaceId, PartitionID partId,
-                                std::string&& start, std::string&& end,
-                                std::unique_ptr<kvstore::KVIterator>* iter) = delete;
-
-    kvstore::ResultCode doPrefix(GraphSpaceID spaceId, PartitionID partId,
-                                 const std::string& prefix,
-                                 std::unique_ptr<kvstore::KVIterator>* iter);
-
-    kvstore::ResultCode doPrefix(GraphSpaceID spaceId, PartitionID partId,
-                                 std::string prefix,
-                                 std::unique_ptr<kvstore::KVIterator>* iter) = delete;
-
-    kvstore::ResultCode doRangeWithPrefix(GraphSpaceID spaceId, PartitionID partId,
-                                          const std::string& start, const std::string& prefix,
-                                          std::unique_ptr<kvstore::KVIterator>* iter);
-
-    kvstore::ResultCode doRangeWithPrefix(GraphSpaceID spaceId, PartitionID partId,
-                                          std::string&& start, std::string&& prefix,
-                                          std::unique_ptr<kvstore::KVIterator>* iter) = delete;
-
-    nebula::cpp2::ColumnDef columnDef(std::string name, nebula::cpp2::SupportedType type) {
-        nebula::cpp2::ColumnDef column;
-        column.set_name(std::move(name));
-        nebula::cpp2::ValueType vType;
-        vType.set_type(type);
-        column.set_type(std::move(vType));
-        return column;
-    }
-
     cpp2::ErrorCode to(kvstore::ResultCode code);
 
-    void pushResultCode(cpp2::ErrorCode code, PartitionID partId) {
-        if (code != cpp2::ErrorCode::SUCCEEDED) {
-            cpp2::ResultCode thriftRet;
-            thriftRet.set_code(code);
-            thriftRet.set_part_id(partId);
-            codes_.emplace_back(std::move(thriftRet));
-        }
-    }
+    nebula::meta::cpp2::ColumnDef columnDef(std::string name,
+                                            nebula::meta::cpp2::PropertyType type);
 
-    void pushResultCode(cpp2::ErrorCode code, PartitionID partId, HostAddr leader) {
-        if (code != cpp2::ErrorCode::SUCCEEDED) {
-            cpp2::ResultCode thriftRet;
-            thriftRet.set_code(code);
-            thriftRet.set_part_id(partId);
-            thriftRet.set_leader(toThriftHost(leader));
-            codes_.emplace_back(std::move(thriftRet));
-        }
-    }
+    void pushResultCode(cpp2::ErrorCode code, PartitionID partId);
 
-    void handleErrorCode(kvstore::ResultCode code, GraphSpaceID spaceId, PartitionID partId) {
-        if (code != kvstore::ResultCode::SUCCEEDED) {
-            if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
-                handleLeaderChanged(spaceId, partId);
-            } else {
-                pushResultCode(to(code), partId);
-            }
-        }
-    }
+    void pushResultCode(cpp2::ErrorCode code, PartitionID partId, HostAddr leader);
 
-    void handleLeaderChanged(GraphSpaceID spaceId, PartitionID partId) {
-        auto addrRet = kvstore_->partLeader(spaceId, partId);
-        if (ok(addrRet)) {
-            auto leader = value(std::move(addrRet));
-            this->pushResultCode(cpp2::ErrorCode::E_LEADER_CHANGED, partId, leader);
-        } else {
-            LOG(ERROR) << "Fail to get part leader, spaceId: " << spaceId
-                       << ", partId: " << partId << ", ResultCode: " << error(addrRet);
-            this->pushResultCode(to(error(addrRet)), partId);
-        }
-    }
+    void handleErrorCode(kvstore::ResultCode code, GraphSpaceID spaceId, PartitionID partId);
 
-    nebula::cpp2::HostAddr toThriftHost(const HostAddr& host) {
-        nebula::cpp2::HostAddr tHost;
-        tHost.set_ip(host.first);
-        tHost.set_port(host.second);
-        return tHost;
-    }
-
-    IndexValues collectIndexValues(RowReader* reader,
-                                   const std::vector<nebula::cpp2::ColumnDef>& cols);
-
-    void collectProps(RowReader* reader, const std::vector<PropContext>& props,
-                      Collector* collector);
+    void handleLeaderChanged(GraphSpaceID spaceId, PartitionID partId);
 
     void handleAsync(GraphSpaceID spaceId, PartitionID partId, kvstore::ResultCode code);
 
 protected:
-    kvstore::KVStore*                               kvstore_{nullptr};
-    meta::SchemaManager*                            schemaMan_{nullptr};
+    StorageEnv*                                     env_{nullptr};
     stats::Stats*                                   stats_{nullptr};
     RESP                                            resp_;
     folly::Promise<RESP>                            promise_;
     cpp2::ResponseCommon                            result_;
 
     time::Duration                                  duration_;
-    std::vector<cpp2::ResultCode>                   codes_;
+    std::vector<cpp2::PartitionResult>              codes_;
     std::mutex                                      lock_;
     int32_t                                         callingNum_{0};
 };

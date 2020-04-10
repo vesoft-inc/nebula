@@ -18,7 +18,7 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
     auto indexID = req.get_index_id();
     auto itemRet = indexMan_->getEdgeIndex(space, indexID);
     if (!itemRet.ok()) {
-        cpp2::ResultCode thriftRet;
+        cpp2::PartitionResult thriftRet;
         thriftRet.set_code(cpp2::ErrorCode::E_INDEX_NOT_FOUND);
         codes_.emplace_back(thriftRet);
         onFinished();

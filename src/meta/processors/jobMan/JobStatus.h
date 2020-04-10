@@ -9,7 +9,7 @@
 
 #include <vector>
 #include <string>
-#include "gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
 namespace meta {
