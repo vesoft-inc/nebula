@@ -844,7 +844,7 @@ std::string RowWriterV2::processOutOfSpace() noexcept {
                sizeof(int32_t));
     }
 
-    return std::move(temp);
+    return temp;
 }
 
 
