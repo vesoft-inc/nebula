@@ -51,6 +51,7 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
     * [String Literals](2.query-language/3.language-structure/literal-values/string-literals.md)
   * [Comment Syntax](2.query-language/3.language-structure/comment-syntax.md)
   * [Identifier Case Sensitivity](2.query-language/3.language-structure/identifier-case-sensitivity.md)
+  * [Keywords and Reserved Words](2.query-language/3.language-structure/keywords-and-reserved-words.md)
   * [Pipe Syntax](2.query-language/3.language-structure/pipe-syntax.md)
   * [Property Reference](2.query-language/3.language-structure/property-reference.md)
   * [Schema Object Names](2.query-language/3.language-structure/schema-object-names.md)
