@@ -63,6 +63,10 @@ public:
     }
 
     bool schemaValid(GraphSpaceID spaceId, const folly::StringPiece& key) const {
+        // todo(doodle)
+        UNUSED(spaceId);
+        UNUSED(key);
+        /*
         if (NebulaKeyUtils::isVertex(key)) {
             auto tagId = NebulaKeyUtils::getTagId(key);
             auto ret = schemaMan_->getLatestTagSchemaVersion(spaceId, tagId);
@@ -81,20 +85,31 @@ public:
                 return false;
             }
         }
+        */
         return true;
     }
 
     bool isInvalidReverseEdgeKey(const folly::StringPiece& key,
                                  const folly::StringPiece& val) const {
+        // todo(doodle)
+        UNUSED(key);
+        UNUSED(val);
+        /*
         if (NebulaKeyUtils::isEdge(key)) {
             auto edgeType = NebulaKeyUtils::getEdgeType(key);
             return edgeType < 0 && val.empty();
         }
+        */
         return false;
     }
 
     bool ttlValid(GraphSpaceID spaceId, const folly::StringPiece& key,
                   const folly::StringPiece& val) const {
+        // todo(doodle)
+        UNUSED(spaceId);
+        UNUSED(key);
+        UNUSED(val);
+        /*
         if (NebulaKeyUtils::isVertex(key)) {
             auto tagId = NebulaKeyUtils::getTagId(key);
             auto schema = this->schemaMan_->getTagSchema(spaceId, tagId);
@@ -117,6 +132,7 @@ public:
                                                                val);
             return checkDataTtlValid(schema.get(), reader.get());
         }
+        */
         return true;
     }
 

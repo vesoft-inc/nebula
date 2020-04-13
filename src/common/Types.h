@@ -34,12 +34,11 @@ readInt(const char* data, int32_t len) {
     return *reinterpret_cast<const T*>(data);
 }
 
-static constexpr int32_t kVertexLen = sizeof(PartitionID) + sizeof(VertexIntID)
-                                    + sizeof(TagID) + sizeof(TagVersion);
+// size of vertex key except vertexId
+static constexpr int32_t kVertexLen = sizeof(PartitionID) + sizeof(TagID) + sizeof(TagVersion);
 
-static constexpr int32_t kEdgeLen = sizeof(PartitionID) + sizeof(VertexIntID)
-                                  + sizeof(EdgeType) + sizeof(VertexIntID)
-                                  + sizeof(EdgeRanking) + sizeof(EdgeVersion);
+// size of vertex key except srcId and dstId
+static constexpr int32_t kEdgeLen = sizeof(PartitionID) + sizeof(EdgeType) + sizeof(EdgeRanking) + sizeof(EdgeVersion);
 
 static constexpr int32_t kSystemLen = sizeof(PartitionID) + sizeof(NebulaSystemKeyType);
 
@@ -50,9 +49,8 @@ static constexpr uint8_t kPartitionOffset = 8;
 // See KeyType enum
 static constexpr uint32_t kTypeMask     = 0x000000FF;
 
-// The Tag/Edge type bit Mask
-// 0 for Tag, 1 for Edge
-// 0x40 - 0b0100,0000
+// The Tag/Edge type bit Mask, the most significant bit is to indicate sign,
+// the next bit is to indicate it is tag or edge, 0 for Tag, 1 for Edge
 static constexpr uint32_t kTagEdgeMask      = 0x40000000;
 // For extract Tag/Edge value
 static constexpr uint32_t kTagEdgeValueMask = ~kTagEdgeMask;

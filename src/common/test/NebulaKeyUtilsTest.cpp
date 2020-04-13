@@ -5,92 +5,176 @@
  */
 
 #include "base/Base.h"
-#include "base/NebulaKeyUtils.h"
+#include "common/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
 
 namespace nebula {
 
-TEST(NebulaKeyUtilsTest, SimpleTest) {
-    PartitionID partId = 15;
-    VertexID srcId = 1001L, dstId = 2001L;
-    TagID tagId = 1001;
-    TagVersion tagVersion = 20L;
-    EdgeType type = 101;
+class KeyUtilsTestBase : public ::testing::Test {
+public:
+    explicit KeyUtilsTestBase(size_t vIdLen)
+        : vIdLen_(vIdLen) {}
+
+    ~KeyUtilsTestBase() = default;
+
+    void verifyVertex(PartitionID partId, VertexID vId, TagID tagId, TagVersion tagVersion, size_t actualSize) {
+        auto vertexKey = NebulaKeyUtils::vertexKey(vIdLen_, partId, vId, tagId, tagVersion);
+        ASSERT_EQ(vertexKey.size(), kVertexLen + vIdLen_);
+        ASSERT_EQ(vertexKey.substr(0, sizeof(PartitionID) + vIdLen_ + sizeof(TagID)),
+                NebulaKeyUtils::vertexPrefix(vIdLen_, partId, vId, tagId));
+        ASSERT_EQ(vertexKey.substr(0, sizeof(PartitionID) + vIdLen_),
+                NebulaKeyUtils::vertexPrefix(vIdLen_, partId, vId));
+        ASSERT_TRUE(NebulaKeyUtils::isVertex(vIdLen_, vertexKey));
+        ASSERT_FALSE(NebulaKeyUtils::isEdge(vIdLen_, vertexKey));
+        ASSERT_EQ(partId, NebulaKeyUtils::getPart(vertexKey));
+        ASSERT_EQ(tagId, NebulaKeyUtils::getTagId(vIdLen_, vertexKey));
+        ASSERT_EQ(vId, NebulaKeyUtils::getVertexId(vIdLen_, vertexKey).subpiece(0, actualSize));
+        ASSERT_EQ(tagVersion, NebulaKeyUtils::getVersion(vIdLen_, vertexKey));
+        ASSERT_TRUE(NebulaKeyUtils::isDataKey(vertexKey));
+    }
+
+    void verifyEdge(PartitionID partId, VertexID srcId, EdgeType type, EdgeRanking rank,
+                    VertexID dstId, EdgeVersion edgeVersion, size_t actualSize) {
+        auto edgeKey = NebulaKeyUtils::edgeKey(vIdLen_, partId, srcId, type, rank, dstId, edgeVersion);
+        ASSERT_EQ(edgeKey.size(), kEdgeLen + (vIdLen_ << 1));
+        ASSERT_EQ(edgeKey.substr(0, sizeof(PartitionID) + vIdLen_ + sizeof(EdgeType)),
+                  NebulaKeyUtils::edgePrefix(vIdLen_, partId, srcId, type));
+        ASSERT_EQ(edgeKey.substr(0, sizeof(PartitionID) + vIdLen_),
+                  NebulaKeyUtils::edgePrefix(vIdLen_, partId, srcId));
+        ASSERT_EQ(edgeKey.substr(0, sizeof(PartitionID) + (vIdLen_ << 1) + sizeof(EdgeType) + sizeof(EdgeRanking)),
+                  NebulaKeyUtils::edgePrefix(vIdLen_, partId, srcId, type, rank, dstId));
+        ASSERT_TRUE(NebulaKeyUtils::isEdge(vIdLen_, edgeKey));
+        ASSERT_FALSE(NebulaKeyUtils::isVertex(vIdLen_, edgeKey));
+        ASSERT_EQ(partId, NebulaKeyUtils::getPart(edgeKey));
+        ASSERT_EQ(srcId, NebulaKeyUtils::getSrcId(vIdLen_, edgeKey).subpiece(0, actualSize));
+        ASSERT_EQ(dstId, NebulaKeyUtils::getDstId(vIdLen_, edgeKey).subpiece(0, actualSize));
+        ASSERT_EQ(type, NebulaKeyUtils::getEdgeType(vIdLen_, edgeKey));
+        ASSERT_EQ(rank, NebulaKeyUtils::getRank(vIdLen_, edgeKey));
+        ASSERT_EQ(edgeVersion, NebulaKeyUtils::getVersion(vIdLen_, edgeKey));
+        ASSERT_TRUE(NebulaKeyUtils::isDataKey(edgeKey));
+    }
+
+protected:
+    size_t vIdLen_;
+};
+
+class V1Test : public KeyUtilsTestBase {
+public:
+    V1Test() : KeyUtilsTestBase(8) {}
+
+    VertexID getStringId(int64_t vId) {
+        std::string id;
+        id.append(reinterpret_cast<const char*>(&vId), sizeof(int64_t));
+        return id;
+    }
+};
+
+class V2ShortTest : public KeyUtilsTestBase {
+public:
+    V2ShortTest() : KeyUtilsTestBase(10) {}
+};
+
+class V2LongTest : public KeyUtilsTestBase {
+public:
+    V2LongTest() : KeyUtilsTestBase(100) {}
+};
+
+
+TEST_F(V1Test, SimpleTest) {
+    PartitionID partId = 123;
+    VertexID vId = getStringId(1001L);
+    TagID tagId = 2020;
+    TagVersion tagVersion = folly::Random::rand64();
+    verifyVertex(partId, vId, tagId, tagVersion, sizeof(int64_t));
+
+    VertexID srcId = getStringId(1001L), dstId = getStringId(2001L);
+    EdgeType type = 1010;
     EdgeRanking rank = 10L;
-    EdgeVersion edgeVersion = 20;
+    EdgeVersion edgeVersion = folly::Random::rand64();
+    verifyEdge(partId, srcId, type, rank, dstId, edgeVersion, sizeof(int64_t));
+}
 
-    auto vertexKey = NebulaKeyUtils::vertexKey(partId, srcId, tagId, tagVersion);
-    ASSERT_TRUE(NebulaKeyUtils::isVertex(vertexKey));
-    ASSERT_EQ(partId, NebulaKeyUtils::getPart(vertexKey));
-    ASSERT_EQ(tagId, NebulaKeyUtils::getTagId(vertexKey));
-    ASSERT_EQ(srcId, NebulaKeyUtils::getVertexId(vertexKey));
+TEST_F(V1Test, NegativeEdgeTypeTest) {
+    PartitionID partId = 123;
+    VertexID vId = getStringId(1001L);
+    TagID tagId = 2020;
+    TagVersion tagVersion = folly::Random::rand64();
+    verifyVertex(partId, vId, tagId, tagVersion, sizeof(int64_t));
 
-    std::string invalidLenKey(12, 'A');
-    ASSERT_EQ(12, invalidLenKey.size());
-    ASSERT_FALSE(NebulaKeyUtils::isVertex(invalidLenKey));
-    ASSERT_FALSE(NebulaKeyUtils::isEdge(invalidLenKey));
+    VertexID srcId = getStringId(1001L), dstId = getStringId(2001L);
+    EdgeType type = -1010;
+    EdgeRanking rank = 10L;
+    EdgeVersion edgeVersion = folly::Random::rand64();
+    verifyEdge(partId, srcId, type, rank, dstId, edgeVersion, sizeof(int64_t));
+}
 
-    auto edgeKey = NebulaKeyUtils::edgeKey(partId, srcId, type, rank, dstId, edgeVersion);
-    ASSERT_TRUE(NebulaKeyUtils::isEdge(edgeKey));
-    ASSERT_EQ(partId, NebulaKeyUtils::getPart(edgeKey));
-    ASSERT_EQ(srcId, NebulaKeyUtils::getSrcId(edgeKey));
-    ASSERT_EQ(dstId, NebulaKeyUtils::getDstId(edgeKey));
-    ASSERT_EQ(type, NebulaKeyUtils::getEdgeType(edgeKey));
-    ASSERT_EQ(rank, NebulaKeyUtils::getRank(edgeKey));
-    auto uuidKey = NebulaKeyUtils::uuidKey(partId, "nebula");
+TEST_F(V2ShortTest, SimpleTest) {
+    PartitionID partId = 123;
+    VertexID vId = "0123456789";
+    TagID tagId = 2020;
+    TagVersion tagVersion = folly::Random::rand64();
+    verifyVertex(partId, vId, tagId, tagVersion, 10);
+
+    VertexID srcId = "0123456789", dstId = "9876543210";
+    EdgeType type = 1010;
+    EdgeRanking rank = 10L;
+    EdgeVersion edgeVersion = folly::Random::rand64();
+    verifyEdge(partId, srcId, type, rank, dstId, edgeVersion, 10);
+}
+
+TEST_F(V2ShortTest, NegativeEdgeTypeTest) {
+    PartitionID partId = 123;
+    VertexID vId = "0123456789";
+    TagID tagId = 2020;
+    TagVersion tagVersion = folly::Random::rand64();
+    verifyVertex(partId, vId, tagId, tagVersion, 10);
+
+    VertexID srcId = "0123456789", dstId = "9876543210";
+    EdgeType type = -1010;
+    EdgeRanking rank = 10L;
+    EdgeVersion edgeVersion = folly::Random::rand64();
+    verifyEdge(partId, srcId, type, rank, dstId, edgeVersion, 10);
+}
+
+TEST_F(V2LongTest, SimpleTest) {
+    PartitionID partId = 123;
+    VertexID vId = "0123456789";
+    TagID tagId = 2020;
+    TagVersion tagVersion = folly::Random::rand64();
+    verifyVertex(partId, vId, tagId, tagVersion, 10);
+
+    VertexID srcId = "0123456789", dstId = "9876543210";
+    EdgeType type = 1010;
+    EdgeRanking rank = 10L;
+    EdgeVersion edgeVersion = folly::Random::rand64();
+    verifyEdge(partId, srcId, type, rank, dstId, edgeVersion, 10);
+}
+
+TEST_F(V2LongTest, NegativeEdgeTypeTest) {
+    PartitionID partId = 123;
+    VertexID vId = "0123456789";
+    TagID tagId = 2020;
+    TagVersion tagVersion = folly::Random::rand64();
+    verifyVertex(partId, vId, tagId, tagVersion, 10);
+
+    VertexID srcId = "0123456789", dstId = "9876543210";
+    EdgeType type = -1010;
+    EdgeRanking rank = 10L;
+    EdgeVersion edgeVersion = folly::Random::rand64();
+    verifyEdge(partId, srcId, type, rank, dstId, edgeVersion, 10);
+}
+
+TEST(KeyUtilsTest, MiscTest) {
+    PartitionID partId = 123;
+    auto commitKey = NebulaKeyUtils::systemCommitKey(partId);
+    ASSERT_TRUE(NebulaKeyUtils::isSystemCommit(commitKey));
+    auto partKey = NebulaKeyUtils::systemPartKey(partId);
+    ASSERT_TRUE(NebulaKeyUtils::isSystemPart(partKey));
+    auto systemPrefix = NebulaKeyUtils::systemPrefix();
+    ASSERT_EQ(commitKey.find(systemPrefix), 0);
+    ASSERT_EQ(partKey.find(systemPrefix), 0);
+    auto uuidKey = NebulaKeyUtils::uuidKey(partId, "abc");
     ASSERT_TRUE(NebulaKeyUtils::isUUIDKey(uuidKey));
-}
-
-template<class T>
-VariantType getVal(T v) {
-    return v;
-}
-
-bool evalInt64(int64_t val) {
-    auto v = getVal(val);
-    auto str = NebulaKeyUtils::encodeVariant(v);
-    auto res = NebulaKeyUtils::decodeVariant(str, nebula::cpp2::SupportedType::INT);
-    if (!res.ok()) {
-        return false;
-    }
-
-    EXPECT_EQ(VAR_INT64, res.value().which());
-    EXPECT_EQ(v, res.value());
-    return val == boost::get<int64_t>(res.value());
-}
-
-bool evalDouble(double val) {
-    auto v = getVal(val);
-    auto str = NebulaKeyUtils::encodeVariant(v);
-    auto res = NebulaKeyUtils::decodeVariant(str, nebula::cpp2::SupportedType::DOUBLE);
-    if (!res.ok()) {
-        return false;
-    }
-    EXPECT_EQ(VAR_DOUBLE, res.value().which());
-    EXPECT_EQ(v, res.value());
-    return val == boost::get<double>(res.value());
-}
-
-TEST(NebulaKeyUtilsTest, encodeVariant) {
-    EXPECT_TRUE(evalInt64(1));
-    EXPECT_TRUE(evalInt64(0));
-    EXPECT_TRUE(evalInt64(std::numeric_limits<int64_t>::max()));
-    EXPECT_TRUE(evalInt64(std::numeric_limits<int64_t>::min()));
-    EXPECT_TRUE(evalDouble(1.1));
-    EXPECT_TRUE(evalDouble(0.0));
-    EXPECT_TRUE(evalDouble(std::numeric_limits<double>::max()));
-    EXPECT_TRUE(evalDouble(std::numeric_limits<double>::min()));
-    EXPECT_TRUE(evalDouble(-std::numeric_limits<double>::max()));
-    EXPECT_TRUE(evalDouble(-(0.000000001 - std::numeric_limits<double>::min())));
-}
-
-TEST(NebulaKeyUtilsTest, encodeDouble) {
-    EXPECT_TRUE(evalDouble(100.5));
-    EXPECT_TRUE(evalDouble(200.5));
-    EXPECT_TRUE(evalDouble(300.5));
-    EXPECT_TRUE(evalDouble(400.5));
-    EXPECT_TRUE(evalDouble(500.5));
-    EXPECT_TRUE(evalDouble(600.5));
 }
 
 }  // namespace nebula
@@ -103,4 +187,3 @@ int main(int argc, char** argv) {
 
     return RUN_ALL_TESTS();
 }
-
