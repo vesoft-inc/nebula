@@ -35,7 +35,7 @@ enum class NullType {
     NaN      = 1,
     BAD_DATA = 2,
     BAD_TYPE = 3,
-    OVERFLOW = 4,
+    ERR_OVERFLOW = 4,
     UNKNOWN_PROP = 5,
 };
 
