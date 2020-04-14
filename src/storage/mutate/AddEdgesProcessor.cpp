@@ -125,7 +125,9 @@ std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
                     }
                 }
                 auto ni = indexKey(partId, nReader.get(), e.first, index);
-                batchHolder->put(std::move(ni), "");
+                if (!ni.empty()) {
+                    batchHolder->put(std::move(ni), "");
+                }
             }
         }
         /*
@@ -164,12 +166,15 @@ std::string AddEdgesProcessor::indexKey(PartitionID partId,
                                         const folly::StringPiece& rawKey,
                                         std::shared_ptr<nebula::cpp2::IndexItem> index) {
     auto values = collectIndexValues(reader, index->get_fields());
+    if (!values.ok()) {
+        return "";
+    }
     return NebulaKeyUtils::edgeIndexKey(partId,
                                         index->get_index_id(),
                                         NebulaKeyUtils::getSrcId(rawKey),
                                         NebulaKeyUtils::getRank(rawKey),
                                         NebulaKeyUtils::getDstId(rawKey),
-                                        values);
+                                        values.value());
 }
 
 }  // namespace storage
