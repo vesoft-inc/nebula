@@ -14,6 +14,7 @@
 #include "meta/Common.h"
 #include "thrift/ThriftClientManager.h"
 #include "clients/meta/MetaClient.h"
+#include "interface/gen-cpp2/storage_types.h"
 
 DECLARE_int32(storage_client_timeout_ms);
 

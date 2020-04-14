@@ -9,3 +9,8 @@ nebula_add_library(
     GeneralStorageClient.cpp
 )
 
+
+nebula_add_library(
+    storage_client_base_obj OBJECT
+    StorageClientBase.cpp
+)
