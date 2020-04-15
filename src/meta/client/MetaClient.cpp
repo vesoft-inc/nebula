@@ -134,6 +134,11 @@ void MetaClient::dnsQUeryThreadFunc() {
             continue;
         }
     }
+
+    if (addrsIndex.empty()) {
+        return;
+    }
+
     folly::SharedMutexReadPriority::WriteHolder holder(addrsLock_);
     for (auto index : addrsIndex) {
         LOG(INFO) << "meta will update host from " << addrs_[index] << " to: " << addrs[index];

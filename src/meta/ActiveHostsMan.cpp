@@ -43,7 +43,7 @@ int ActiveHostsMan::updateHostIPaddress(kvstore::KVStore* kv,
         return -1;
     }
     std::vector<kvstore::KV> data;
-    while (iter->valid()) {
+    for (; iter->valid(); iter->next()) {
         auto spaceId = MetaServiceUtils::spaceId(iter->key());
         auto spaceName = MetaServiceUtils::spaceName(iter->val());
         std::string spaceKey = MetaServiceUtils::spaceKey(spaceId);
@@ -73,7 +73,6 @@ int ActiveHostsMan::updateHostIPaddress(kvstore::KVStore* kv,
             data.emplace_back(MetaServiceUtils::partKey(spaceId, i),
                               MetaServiceUtils::partVal(hosts));
         }
-        iter->next();
     }
 
     if (!data.empty()) {
