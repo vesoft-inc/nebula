@@ -6,7 +6,7 @@
 
 #include "base/Base.h"
 #include "storage/mutate/UpdateVertexProcessor.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include "dataman/RowWriter.h"
 #include "kvstore/LogEncoder.h"
 
@@ -100,6 +100,12 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
                                                   iter->val(),
                                                   this->spaceId_,
                                                   tagId);
+        if (reader == nullptr) {
+            LOG(WARNING) << "Can't find the schema for tagId " << tagId;
+            // It offen happens after updating schema but current storaged has not
+            // load it. To protect the data, we just return failed to graphd.
+            return kvstore::ResultCode::ERR_CORRUPT_DATA;
+        }
         const auto constSchema = reader->getSchema();
         for (auto& prop : props) {
             auto res = RowReader::getPropByName(reader.get(), prop.prop_.name);
@@ -152,13 +158,15 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
 }
 
 
-bool UpdateVertexProcessor::checkFilter(const PartitionID partId, const VertexID vId) {
+cpp2::ErrorCode UpdateVertexProcessor::checkFilter(const PartitionID partId, const VertexID vId) {
     for (auto& tc : this->tagContexts_) {
         VLOG(3) << "partId " << partId << ", vId " << vId
                 << ", tagId " << tc.tagId_ << ", prop size " << tc.props_.size();
         auto ret = collectVertexProps(partId, vId, tc.tagId_, tc.props_);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
-            return false;
+        if (ret == kvstore::ResultCode::ERR_CORRUPT_DATA) {
+            return cpp2::ErrorCode::E_TAG_NOT_FOUND;
+        } else if (ret != kvstore::ResultCode::SUCCEEDED) {
+            return to(ret);
         }
     }
 
@@ -182,12 +190,15 @@ bool UpdateVertexProcessor::checkFilter(const PartitionID partId, const VertexID
 
     if (this->exp_ != nullptr) {
         auto filterResult = this->exp_->eval(getters);
-        if (!filterResult.ok() || !Expression::asBool(filterResult.value())) {
+        if (!filterResult.ok()) {
+            return cpp2::ErrorCode::E_INVALID_FILTER;
+        }
+        if (!Expression::asBool(filterResult.value())) {
             VLOG(1) << "Filter skips the update";
-            return false;
+            return cpp2::ErrorCode::E_FILTER_OUT;
         }
     }
-    return true;
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
 
@@ -403,20 +414,22 @@ void UpdateVertexProcessor::process(const cpp2::UpdateVertexRequest& req) {
     updateItems_ = req.get_update_items();
     auto iRet = indexMan_->getTagIndexes(spaceId_);
     if (iRet.ok()) {
-        for (auto& index : iRet.value()) {
-            indexes_.emplace_back(index);
-        }
+        indexes_ = std::move(iRet).value();
     }
 
     VLOG(3) << "Update vertex, spaceId: " << this->spaceId_
             << ", partId: " << partId << ", vId: " << vId;
     CHECK_NOTNULL(kvstore_);
     this->kvstore_->asyncAtomicOp(this->spaceId_, partId,
-        [partId, vId, this] () -> std::string {
-            if (checkFilter(partId, vId)) {
+        [partId, vId, this] () -> folly::Optional<std::string> {
+            // TODO(shylock) the AtomicOP can't return various error
+            // so put it in the processor
+            filterResult_ = checkFilter(partId, vId);
+            if (filterResult_ == cpp2::ErrorCode::SUCCEEDED) {
                 return updateAndWriteBack(partId, vId);
+            } else {
+                return folly::none;
             }
-            return std::string("");
         },
         [this, partId, vId, req] (kvstore::ResultCode code) {
             while (true) {
@@ -430,7 +443,17 @@ void UpdateVertexProcessor::process(const cpp2::UpdateVertexRequest& req) {
                     handleLeaderChanged(this->spaceId_, partId);
                     break;
                 }
-                this->pushResultCode(to(code), partId);
+                if (code == kvstore::ResultCode::ERR_ATOMIC_OP_FAILED) {
+                    if (filterResult_ == cpp2::ErrorCode::E_FILTER_OUT) {
+                        // Filter out
+                        // https://github.com/vesoft-inc/nebula/issues/1888
+                        // Only filter out so we still return the data
+                        onProcessFinished(req.get_return_columns().size());
+                    }
+                    this->pushResultCode(filterResult_, partId);
+                } else {
+                    this->pushResultCode(to(code), partId);
+                }
                 break;
             }
             this->onFinished();

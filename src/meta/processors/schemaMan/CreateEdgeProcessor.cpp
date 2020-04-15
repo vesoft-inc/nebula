@@ -21,7 +21,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
             LOG(ERROR) << "Failed to create edge `" << edgeName
                        << "': some edge with the same name already exists.";
             resp_.set_id(to(conflictRet.value(), EntryType::EDGE));
-            resp_.set_code(cpp2::ErrorCode::E_CONFLICT);
+            handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
             onFinished();
             return;
         }
@@ -31,9 +31,9 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
     auto ret = getEdgeType(req.get_space_id(), edgeName);
     if (ret.ok()) {
         if (req.get_if_not_exists()) {
-            resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+            handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
         } else {
-            resp_.set_code(cpp2::ErrorCode::E_EXISTED);
+            handleErrorCode(cpp2::ErrorCode::E_EXISTED);
         }
         resp_.set_id(to(ret.value(), EntryType::EDGE));
         onFinished();
@@ -43,7 +43,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
     auto edgeTypeRet = autoIncrementId();
     if (!nebula::ok(edgeTypeRet)) {
         LOG(ERROR) << "Create edge failed : Get edge type id failed";
-        resp_.set_code(nebula::error(edgeTypeRet));
+        handleErrorCode(nebula::error(edgeTypeRet));
         onFinished();
         return;
     }
@@ -66,7 +66,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
                     if (value->getType() != nebula::cpp2::Value::Type::bool_value) {
                         LOG(ERROR) << "Create Edge Failed: " << name
                                    << " type mismatch";
-                        resp_.set_code(cpp2::ErrorCode::E_CONFLICT);
+                        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
                         onFinished();
                         return;
                     }
@@ -76,7 +76,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
                     if (value->getType() != nebula::cpp2::Value::Type::int_value) {
                         LOG(ERROR) << "Create Edge Failed: " << name
                                    << " type mismatch";
-                        resp_.set_code(cpp2::ErrorCode::E_CONFLICT);
+                        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
                         onFinished();
                         return;
                     }
@@ -86,7 +86,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
                     if (value->getType() != nebula::cpp2::Value::Type::double_value) {
                         LOG(ERROR) << "Create Edge Failed: " << name
                                    << " type mismatch";
-                        resp_.set_code(cpp2::ErrorCode::E_CONFLICT);
+                        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
                         onFinished();
                         return;
                     }
@@ -96,14 +96,27 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
                     if (value->getType() != nebula::cpp2::Value::Type::string_value) {
                         LOG(ERROR) << "Create Edge Failed: " << name
                                    << " type mismatch";
-                        resp_.set_code(cpp2::ErrorCode::E_CONFLICT);
+                        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
                         onFinished();
                         return;
                     }
                     defaultValue = value->get_string_value();
                     break;
-                default:
+                case nebula::cpp2::SupportedType::TIMESTAMP:
+                    if (value->getType() != nebula::cpp2::Value::Type::timestamp) {
+                        LOG(ERROR) << "Create Edge Failed: " << name
+                                   << " type mismatch";
+                        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
+                        onFinished();
+                        return;
+                    }
+                    defaultValue = folly::to<std::string>(value->get_timestamp());
                     break;
+                default:
+                    LOG(ERROR) << "Unknown type " << static_cast<int>(column.get_type().get_type());
+                    handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
+                    onFinished();
+                    return;
             }
             VLOG(3) << "Get Edge Default value: Property Name " << name
                     << ", Value " << defaultValue;
@@ -115,7 +128,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
     }
 
     LOG(INFO) << "Create Edge " << edgeName << ", edgeType " << edgeType;
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_id(to(edgeType, EntryType::EDGE));
     doSyncPutAndUpdate(std::move(data));
 }

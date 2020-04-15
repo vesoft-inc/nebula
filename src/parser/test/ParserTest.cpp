@@ -146,6 +146,27 @@ TEST(Parser, SpaceOperation) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    {
+        GQLParser parser;
+        std::string query = "CREATE SPACE default_space(partition_num=9, replica_factor=3,"
+                            "charset=utf8, collate=utf8_bin)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE SPACE default_space(partition_num=9, replica_factor=3,"
+                            "charset=utf8)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE SPACE default_space(partition_num=9, replica_factor=3,"
+                            "collate=utf8_bin)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
 }
 
 TEST(Parser, TagOperation) {
@@ -175,7 +196,7 @@ TEST(Parser, TagOperation) {
         GQLParser parser;
         std::string query = "CREATE TAG woman(name string, age int, "
                             "married bool, salary double, create_time timestamp)"
-                            "ttl_duration = 100, ttl_col = create_time";
+                            "ttl_duration = 100, ttl_col = \"create_time\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -211,7 +232,13 @@ TEST(Parser, TagOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "ALTER TAG woman ttl_duration = 50, ttl_col = age";
+        std::string query = "ALTER TAG man ttl_col = \"\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "ALTER TAG woman ttl_duration = 50, ttl_col = \"age\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -281,7 +308,7 @@ TEST(Parser, EdgeOperation) {
         GQLParser parser;
         std::string query = "CREATE EDGE woman(name string, age int, "
                             "married bool, salary double, create_time timestamp)"
-                            "ttl_duration = 100, ttl_col = create_time";
+                            "ttl_duration = 100, ttl_col = \"create_time\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -301,7 +328,13 @@ TEST(Parser, EdgeOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "ALTER EDGE woman ttl_duration = 50, ttl_col = age";
+        std::string query = "ALTER EDGE man ttl_col = \"\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "ALTER EDGE woman ttl_duration = 50, ttl_col = \"age\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -465,13 +498,25 @@ TEST(Parser, IndexOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "BUILD TAG INDEX name_index";
+        std::string query = "REBUILD TAG INDEX name_index";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "BUILD EDGE INDEX like_index";
+        std::string query = "REBUILD TAG INDEX name_index OFFLINE";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "REBUILD EDGE INDEX like_index";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "REBUILD EDGE INDEX like_index OFFLINE";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -816,7 +861,31 @@ TEST(Parser, DeleteVertex) {
     }
     {
         GQLParser parser;
-        std::string query = "DELETE VERTEX hash(\"zhangsan\")";
+        std::string query = "DELETE VERTEX 12345,23456,34567";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DELETE VERTEX hash(\"Tom\")";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DELETE VERTEX hash(\"Tom\"), hash(\"Jerry\"), hash(\"Mickey\")";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DELETE VERTEX uuid(\"Tom\")";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DELETE VERTEX uuid(\"Tom\"), uuid(\"Jerry\"), uuid(\"Mickey\")";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -977,28 +1046,35 @@ TEST(Parser, FetchEdge) {
     }
 }
 
-TEST(Parser, Find) {
+TEST(Parser, Lookup) {
     {
         GQLParser parser;
-        std::string query = "FIND name FROM person";
+        std::string query = "LOOKUP ON person";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "FIND name, salary, age FROM person";
+        std::string query = "LOOKUP ON salary, age";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON person WHERE person.gender == \"man\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "FIND name, salary, age FROM person WHERE gender == \"man\"";
+        std::string query = "LOOKUP ON transfer WHERE transfer.amount > 1000 YIELD transfer.amount";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "FIND amount, time FROM transfer WHERE amount > 1000";
+        std::string query = "LOOKUP ON transfer WHERE transfer.amount > 1000 YIELD transfer.amount,"
+                            " transfer.test";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -1067,7 +1143,43 @@ TEST(Parser, AdminOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "SHOW CREATE EDGE e1";
+        std::string query = "SHOW CREATE EDGE like";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW CREATE TAG INDEX person_index";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW CREATE EDGE INDEX like_index";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW TAG INDEX STATUS";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW EDGE INDEX STATUS";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW CHARSET";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW COLLATION";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -1076,7 +1188,19 @@ TEST(Parser, AdminOperation) {
 TEST(Parser, UserOperation) {
     {
         GQLParser parser;
-        std::string query = "CREATE USER user1 WITH PASSWORD \"aaa\" ";
+        std::string query = "CREATE USER user1";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE USER user1 WITH PASSWORD aaa";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE USER user1 WITH PASSWORD \"aaa\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
         auto& sentence = result.value();
@@ -1084,8 +1208,7 @@ TEST(Parser, UserOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "CREATE USER IF NOT EXISTS user1 WITH PASSWORD \"aaa\" , "
-                            "FIRSTNAME \"a\", LASTNAME \"a\", EMAIL \"a\", PHONE \"111\"";
+        std::string query = "CREATE USER IF NOT EXISTS user1 WITH PASSWORD \"aaa\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
         auto& sentence = result.value();
@@ -1093,8 +1216,15 @@ TEST(Parser, UserOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "ALTER USER user1 WITH FIRSTNAME \"a\","
-                            " LASTNAME \"a\", EMAIL \"a\", PHONE \"111\"";
+        std::string query = "ALTER USER user1 WITH PASSWORD \"a\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+        auto& sentence = result.value();
+        EXPECT_EQ(query, sentence->toString());
+    }
+    {
+        GQLParser parser;
+        std::string query = "ALTER USER user1 WITH PASSWORD \"a\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
         auto& sentence = result.value();
@@ -1118,6 +1248,18 @@ TEST(Parser, UserOperation) {
     }
     {
         GQLParser parser;
+        std::string query = "CHANGE PASSWORD \"new password\"";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "CHANGE PASSWORD account TO \"new password\"";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
         std::string query = "CHANGE PASSWORD account FROM \"old password\" TO \"new password\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
@@ -1134,6 +1276,20 @@ TEST(Parser, UserOperation) {
     }
     {
         GQLParser parser;
+        std::string query = "GRANT ROLE DBA ON spacename TO account";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+        auto& sentence = result.value();
+        EXPECT_EQ(query, sentence->toString());
+    }
+    {
+        GQLParser parser;
+        std::string query = "GRANT ROLE SYSTEM ON spacename TO account";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
         std::string query = "REVOKE ROLE ADMIN ON spacename FROM account";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
@@ -1143,14 +1299,6 @@ TEST(Parser, UserOperation) {
     {
         GQLParser parser;
         std::string query = "SHOW ROLES IN spacename";
-        auto result = parser.parse(query);
-        ASSERT_TRUE(result.ok()) << result.status();
-        auto& sentence = result.value();
-        EXPECT_EQ(query, sentence->toString());
-    }
-    {
-        GQLParser parser;
-        std::string query = "SHOW USER account";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
         auto& sentence = result.value();
@@ -1221,6 +1369,13 @@ TEST(Parser, UnreservedKeywords) {
         std::string query = "$var = GO FROM UUID(\"tom\") OVER like;GO FROM $var.SPACE OVER like";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG status(part int, parts int, job string, jobs string,"
+                            " offline bool, rebuild bool, submit bool, compact bool, "
+                            " bidirect bool, force bool, configs string)";
+        auto result = parser.parse(query);
     }
 }
 
@@ -1616,6 +1771,203 @@ TEST(Parser, Return) {
         std::string query = "RETURN $A IF $A IS NOT NULL";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
+TEST(Parser, ErrorMsg) {
+    {
+        GQLParser parser;
+        std::string query = "CREATE SPACE " + std::string(4097, 'A');
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+        auto error = "SyntaxError: Out of range of the LABEL length, "
+                     "the  max length of LABEL is 4096: near `" + std::string(80, 'A') + "'";
+        ASSERT_EQ(error, result.status().toString());
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(9223372036854775809) ";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+        auto error = "SyntaxError: Out of range: near `9223372036854775809'";
+        ASSERT_EQ(error, result.status().toString());
+    }
+    // min integer bound checking
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(-9223372036854775808) ";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(-9223372036854775809) ";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+        auto error = "SyntaxError: Out of range: near `9223372036854775809'";
+        ASSERT_EQ(error, result.status().toString());
+    }
+    // max integer bound checking
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(9223372036854775807) ";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(+9223372036854775807) ";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(9223372036854775808) ";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+        auto error = "SyntaxError: Out of range: near `9223372036854775808'";
+        ASSERT_EQ(error, result.status().toString());
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(+9223372036854775808) ";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+        auto error = "SyntaxError: Out of range: near `9223372036854775808'";
+        ASSERT_EQ(error, result.status().toString());
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(0xFFFFFFFFFFFFFFFFF) ";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+        auto error = "SyntaxError: Out of range: near `0xFFFFFFFFFFFFFFFFF'";
+        ASSERT_EQ(error, result.status().toString());
+    }
+    // min hex integer bound
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(-0x8000000000000000) ";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(-0x8000000000000001) ";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+        auto error = "SyntaxError: Out of range: near `0x8000000000000001'";
+        ASSERT_EQ(error, result.status().toString());
+    }
+    // max hex integer bound
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(0x7FFFFFFFFFFFFFFF) ";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(+0x7FFFFFFFFFFFFFFF) ";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(0x8000000000000000) ";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+        auto error = "SyntaxError: Out of range: near `0x8000000000000000'";
+        ASSERT_EQ(error, result.status().toString());
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(+0x8000000000000000) ";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+        auto error = "SyntaxError: Out of range: near `0x8000000000000000'";
+        ASSERT_EQ(error, result.status().toString());
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(002777777777777777777777) ";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+        auto error = "SyntaxError: Out of range: near `002777777777777777777777'";
+        ASSERT_EQ(error, result.status().toString());
+    }
+    // min oct integer bound
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(-01000000000000000000000) ";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status().toString();
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(-01000000000000000000001) ";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+        auto error = "SyntaxError: Out of range: near `01000000000000000000001'";
+        ASSERT_EQ(error, result.status().toString());
+    }
+    // max oct integer bound
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(0777777777777777777777) ";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status().toString();
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(+0777777777777777777777) ";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status().toString();
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(01000000000000000000000) ";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+        auto error = "SyntaxError: Out of range: near `01000000000000000000000'";
+        ASSERT_EQ(error, result.status().toString());
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(id) VALUES 100:(+01000000000000000000000) ";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+        auto error = "SyntaxError: Out of range: near `01000000000000000000000'";
+        ASSERT_EQ(error, result.status().toString());
+    }
+}
+
+TEST(Parser, UseReservedKeyword) {
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG tag()";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+
+        query = "CREATE TAG `tag`()";
+        result = parser.parse(query);
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE EDGE edge()";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+
+        query = "CREATE EDGE `edge`()";
+        result = parser.parse(query);
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG `person`(`tag` string)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok());
     }
 }
 }   // namespace nebula

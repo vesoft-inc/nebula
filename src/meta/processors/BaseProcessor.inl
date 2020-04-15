@@ -17,7 +17,7 @@ void BaseProcessor<RESP>::doPut(std::vector<kvstore::KV> data) {
                             kDefaultPartId,
                             std::move(data),
                             [this, &baton] (kvstore::ResultCode code) {
-        this->resp_.set_code(to(code));
+        this->handleErrorCode(MetaCommon::to(code));
         baton.post();
     });
     baton.wait();
@@ -56,8 +56,8 @@ template<typename RESP>
 StatusOr<std::vector<std::string>>
 BaseProcessor<RESP>::doMultiGet(const std::vector<std::string>& keys) {
     std::vector<std::string> values;
-    auto code = kvstore_->multiGet(kDefaultSpaceId, kDefaultPartId, keys, &values);
-    if (code != kvstore::ResultCode::SUCCEEDED) {
+    auto ret = kvstore_->multiGet(kDefaultSpaceId, kDefaultPartId, keys, &values);
+    if (ret.first != kvstore::ResultCode::SUCCEEDED) {
         return Status::Error("MultiGet Failed");
     }
     return values;
@@ -71,7 +71,7 @@ void BaseProcessor<RESP>::doRemove(const std::string& key) {
                           kDefaultPartId,
                           key,
                           [this, &baton] (kvstore::ResultCode code) {
-        this->resp_.set_code(to(code));
+        this->handleErrorCode(MetaCommon::to(code));
         baton.post();
     });
     baton.wait();
@@ -86,7 +86,7 @@ void BaseProcessor<RESP>::doMultiRemove(std::vector<std::string> keys) {
                                kDefaultPartId,
                                std::move(keys),
                                [this, &baton] (kvstore::ResultCode code) {
-        this->resp_.set_code(to(code));
+        this->handleErrorCode(MetaCommon::to(code));
         baton.post();
     });
     baton.wait();
@@ -103,7 +103,7 @@ void BaseProcessor<RESP>::doRemoveRange(const std::string& start,
                                start,
                                end,
                                [this, &baton] (kvstore::ResultCode code) {
-        this->resp_.set_code(to(code));
+        this->handleErrorCode(MetaCommon::to(code));
         baton.post();
     });
     baton.wait();
@@ -159,7 +159,7 @@ ErrorOr<cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::autoIncrementId() {
     auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, kIdKey, &val);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         if (ret != kvstore::ResultCode::ERR_KEY_NOT_FOUND) {
-            return to(ret);
+            return MetaCommon::to(ret);
         }
         id = 1;
     } else {
@@ -179,7 +179,7 @@ ErrorOr<cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::autoIncrementId() {
     });
     baton.wait();
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        return to(ret);
+        return MetaCommon::to(ret);
     } else {
         return id;
     }
@@ -199,9 +199,8 @@ Status BaseProcessor<RESP>::spaceExist(GraphSpaceID spaceId) {
 
 
 template<typename RESP>
-Status BaseProcessor<RESP>::userExist(UserID spaceId) {
-    folly::SharedMutex::ReadHolder rHolder(LockUtils::userLock());
-    auto userKey = MetaServiceUtils::userKey(spaceId);
+Status BaseProcessor<RESP>::userExist(const std::string& account) {
+    auto userKey = MetaServiceUtils::userKey(account);
     auto ret = doGet(userKey);
     if (ret.ok()) {
         return Status::OK();
@@ -252,23 +251,22 @@ StatusOr<EdgeType> BaseProcessor<RESP>::getEdgeType(GraphSpaceID spaceId,
     return Status::EdgeNotFound(folly::stringPrintf("Edge %s not found", name.c_str()));
 }
 
-template<typename RESP>
-StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
-BaseProcessor<RESP>::getLatestTagFields(GraphSpaceID spaceId,
-                                        const std::string& name) {
-    auto result = getTagId(spaceId, name);
-    if (!result.ok()) {
-        LOG(ERROR) << "Tag " << name << " not found";
-        return Status::Error(folly::stringPrintf("Tag %s not found", name.c_str()));
-    }
 
-    return getLatestTagFields(spaceId, result.value());
+template <typename RESP>
+std::unordered_map<std::string, nebula::cpp2::ValueType>
+BaseProcessor<RESP>::getLatestTagFields(const nebula::cpp2::Schema& latestTagSchema) {
+    std::unordered_map<std::string, nebula::cpp2::ValueType> propertyNames;
+    for (auto &column : latestTagSchema.get_columns()) {
+        propertyNames.emplace(std::move(column.get_name()),
+                              std::move(column.get_type()));
+    }
+    return propertyNames;
 }
 
 
 template <typename RESP>
-StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
-BaseProcessor<RESP>::getLatestTagFields(GraphSpaceID spaceId, const TagID tagId) {
+StatusOr<nebula::cpp2::Schema>
+BaseProcessor<RESP>::getLatestTagSchema(GraphSpaceID spaceId, const TagID tagId) {
     auto key = MetaServiceUtils::schemaTagPrefix(spaceId, tagId);
     auto ret = doPrefix(key);
     if (!ret.ok()) {
@@ -277,31 +275,25 @@ BaseProcessor<RESP>::getLatestTagFields(GraphSpaceID spaceId, const TagID tagId)
     }
 
     auto iter = ret.value().get();
-    auto latestSchema = MetaServiceUtils::parseSchema(iter->val());
+    return MetaServiceUtils::parseSchema(iter->val());
+}
+
+
+template <typename RESP>
+std::unordered_map<std::string, nebula::cpp2::ValueType>
+BaseProcessor<RESP>::getLatestEdgeFields(const nebula::cpp2::Schema& latestEdgeSchema) {
     std::unordered_map<std::string, nebula::cpp2::ValueType> propertyNames;
-    for (auto &column : latestSchema.get_columns()) {
+    for (auto &column : latestEdgeSchema.get_columns()) {
         propertyNames.emplace(std::move(column.get_name()),
                               std::move(column.get_type()));
     }
     return propertyNames;
 }
 
-template<typename RESP>
-StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
-BaseProcessor<RESP>::getLatestEdgeFields(GraphSpaceID spaceId,
-                                         const std::string& name) {
-    auto result = getEdgeType(spaceId, name);
-    if (!result.ok()) {
-        LOG(ERROR) << "Edge " << name << " not found";
-        return Status::Error(folly::stringPrintf("Edge %s not found", name.c_str()));
-    }
-    return getLatestEdgeFields(spaceId, result.value());
-}
-
 
 template <typename RESP>
-StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
-BaseProcessor<RESP>::getLatestEdgeFields(GraphSpaceID spaceId, const EdgeType edgeType) {
+StatusOr<nebula::cpp2::Schema>
+BaseProcessor<RESP>::getLatestEdgeSchema(GraphSpaceID spaceId, const EdgeType edgeType) {
     auto key = MetaServiceUtils::schemaEdgePrefix(spaceId, edgeType);
     auto ret = doPrefix(key);
     if (!ret.ok()) {
@@ -310,14 +302,19 @@ BaseProcessor<RESP>::getLatestEdgeFields(GraphSpaceID spaceId, const EdgeType ed
     }
 
     auto iter = ret.value().get();
-    auto latestSchema = MetaServiceUtils::parseSchema(iter->val());
-    std::unordered_map<std::string, nebula::cpp2::ValueType> propertyNames;
-    for (auto &column : latestSchema.get_columns()) {
-        propertyNames.emplace(std::move(column.get_name()),
-                              std::move(column.get_type()));
-    }
-    return propertyNames;
+    return MetaServiceUtils::parseSchema(iter->val());
 }
+
+
+template <typename RESP>
+bool BaseProcessor<RESP>::tagOrEdgeHasTTL(const nebula::cpp2::Schema& latestSchema) {
+    auto schemaProp = latestSchema.get_schema_prop();
+    if (schemaProp.get_ttl_col() && !schemaProp.get_ttl_col()->empty()) {
+         return true;
+    }
+    return false;
+}
+
 
 template<typename RESP>
 StatusOr<IndexID>
@@ -331,49 +328,22 @@ BaseProcessor<RESP>::getIndexID(GraphSpaceID spaceId, const std::string& indexNa
 }
 
 template<typename RESP>
-StatusOr<UserID>
-BaseProcessor<RESP>::getUserId(const std::string& account) {
-    auto indexKey = MetaServiceUtils::indexUserKey(account);
-    auto ret = doGet(indexKey);
-    if (ret.ok()) {
-        return *reinterpret_cast<const UserID*>(ret.value().c_str());
-    }
-    return Status::UserNotFound(folly::stringPrintf("User %s not found", account.c_str()));
-}
-
-template<typename RESP>
-bool BaseProcessor<RESP>::checkPassword(UserID userId, const std::string& password) {
-    auto userKey = MetaServiceUtils::userKey(userId);
+bool BaseProcessor<RESP>::checkPassword(const std::string& account, const std::string& password) {
+    auto userKey = MetaServiceUtils::userKey(account);
     auto ret = doGet(userKey);
-    if (ret.ok()) {
-        return  ret.value().compare(sizeof(int32_t), password.size(), password) == 0;
-    }
-    return false;
+    return MetaServiceUtils::parseUserPwd(ret.value()) == password;
 }
 
 template<typename RESP>
-StatusOr<std::string>
-BaseProcessor<RESP>::getUserAccount(UserID userId) {
-    auto key = MetaServiceUtils::userKey(userId);
-    auto ret = doGet(key);
-    if (!ret.ok()) {
-        return Status::UserNotFound(folly::stringPrintf("User not found by id %d", userId));
-    }
-
-    return MetaServiceUtils::parseUserItem(ret.value()).get_account();
-}
-
-template<typename RESP>
-bool BaseProcessor<RESP>::doSyncPut(std::vector<kvstore::KV> data) {
+kvstore::ResultCode BaseProcessor<RESP>::doSyncPut(std::vector<kvstore::KV> data) {
     folly::Baton<true, std::atomic> baton;
-    bool ret = false;
+    auto ret = kvstore::ResultCode::SUCCEEDED;
     kvstore_->asyncMultiPut(kDefaultSpaceId,
                             kDefaultPartId,
                             std::move(data),
                             [&ret, &baton] (kvstore::ResultCode code) {
-                                if (kvstore::ResultCode::SUCCEEDED == code) {
-                                    ret = true;
-                                } else {
+                                if (kvstore::ResultCode::SUCCEEDED != code) {
+                                    ret = code;
                                     LOG(INFO) << "Put data error on meta server";
                                 }
                                 baton.post();
@@ -398,12 +368,12 @@ void BaseProcessor<RESP>::doSyncPutAndUpdate(std::vector<kvstore::KV> data) {
     });
     baton.wait();
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        this->resp_.set_code(to(ret));
+        this->handleErrorCode(MetaCommon::to(ret));
         this->onFinished();
         return;
     }
     ret = LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
-    this->resp_.set_code(to(ret));
+    this->handleErrorCode(MetaCommon::to(ret));
     this->onFinished();
 }
 
@@ -423,13 +393,65 @@ void BaseProcessor<RESP>::doSyncMultiRemoveAndUpdate(std::vector<std::string> ke
     });
     baton.wait();
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        this->resp_.set_code(to(ret));
+        this->handleErrorCode(MetaCommon::to(ret));
         this->onFinished();
         return;
     }
     ret = LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
-    this->resp_.set_code(to(ret));
+    this->handleErrorCode(MetaCommon::to(ret));
     this->onFinished();
+}
+
+template<typename RESP>
+StatusOr<std::vector<nebula::cpp2::IndexItem>>
+BaseProcessor<RESP>::getIndexes(GraphSpaceID spaceId,
+                                int32_t tagOrEdge) {
+    std::vector<nebula::cpp2::IndexItem> items;
+    auto indexPrefix = MetaServiceUtils::indexPrefix(spaceId);
+    auto iterRet = doPrefix(indexPrefix);
+    if (!iterRet.ok()) {
+        return iterRet.status();
+    }
+    auto indexIter = iterRet.value().get();
+    while (indexIter->valid()) {
+        auto item = MetaServiceUtils::parseIndex(indexIter->val());
+        if (item.get_schema_id().getType() == nebula::cpp2::SchemaID::Type::tag_id &&
+            item.get_schema_id().get_tag_id() == tagOrEdge) {
+            items.emplace_back(std::move(item));
+        } else if (item.get_schema_id().getType() == nebula::cpp2::SchemaID::Type::edge_type &&
+                   item.get_schema_id().get_edge_type() == tagOrEdge) {
+            items.emplace_back(std::move(item));
+        }
+        indexIter->next();
+    }
+    return items;
+}
+
+template<typename RESP>
+cpp2::ErrorCode
+BaseProcessor<RESP>::indexCheck(const std::vector<nebula::cpp2::IndexItem>& items,
+                                const std::vector<cpp2::AlterSchemaItem>& alterItems) {
+    for (const auto& index : items) {
+        for (const auto& tagItem : alterItems) {
+            if (tagItem.op == nebula::meta::cpp2::AlterSchemaOp::CHANGE ||
+                tagItem.op == nebula::meta::cpp2::AlterSchemaOp::DROP) {
+                const auto& tagCols = tagItem.get_schema().get_columns();
+                const auto& indexCols = index.get_fields();
+                for (const auto& tCol : tagCols) {
+                    auto it = std::find_if(indexCols.begin(), indexCols.end(),
+                                           [&] (const auto& iCol) {
+                                               return tCol.name == iCol.name;
+                                           });
+                    if (it != indexCols.end()) {
+                        LOG(ERROR) << "Index conflict, index :" << index.get_index_name()
+                                   << ", column : " << tCol.name;
+                        return cpp2::ErrorCode::E_CONFLICT;
+                    }
+                }
+            }
+        }
+    }
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
 }  // namespace meta

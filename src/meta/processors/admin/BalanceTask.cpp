@@ -36,6 +36,11 @@ void BalanceTask::invoke() {
         onError_();
         return;
     }
+    if (ret_ == Result::SUCCEEDED) {
+        CHECK(status_ == Status::END);
+        onFinished_();
+        return;
+    }
     switch (status_) {
         case Status::START: {
             LOG(INFO) << taskIdStr_ << "Start to move part!";
@@ -47,7 +52,8 @@ void BalanceTask::invoke() {
         case Status::CHANGE_LEADER: {
             LOG(INFO) << taskIdStr_ << "Ask the src to give up the leadership.";
             SAVE_STATE();
-            if (srcLived_) {
+            bool srcLived = ActiveHostsMan::isLived(kv_, src_);
+            if (srcLived) {
                 client_->transLeader(spaceId_, partId_, src_).thenValue([this](auto&& resp) {
                     if (!resp.ok()) {
                         LOG(INFO) << taskIdStr_ << "Transfer leader failed, status " << resp;
@@ -160,15 +166,15 @@ void BalanceTask::invoke() {
             break;
         }
         case Status::REMOVE_PART_ON_SRC: {
-            LOG(INFO) << taskIdStr_ << "Close part on src host, srcLived " << srcLived_;
+            bool srcLived = ActiveHostsMan::isLived(kv_, src_);
+            LOG(INFO) << taskIdStr_ << "Close part on src host, srcLived " << srcLived;
             SAVE_STATE();
-            if (srcLived_) {
+            if (srcLived) {
                 client_->removePart(spaceId_, partId_, src_).thenValue([this](auto&& resp) {
                     if (!resp.ok()) {
                         LOG(INFO) << taskIdStr_ << "Remove part failed, status " << resp;
                         ret_ = Result::FAILED;
                     } else {
-                        ret_ = Result::SUCCEEDED;
                         status_ = Status::CHECK;
                     }
                     invoke();
@@ -188,7 +194,6 @@ void BalanceTask::invoke() {
                     LOG(INFO) << taskIdStr_ << "Check the peers failed, status " << resp;
                     ret_ = Result::FAILED;
                 } else {
-                    ret_ = Result::SUCCEEDED;
                     status_ = Status::END;
                 }
                 invoke();
@@ -198,6 +203,7 @@ void BalanceTask::invoke() {
         case Status::END: {
             LOG(INFO) << taskIdStr_ <<  "Part has been moved successfully!";
             endTimeMs_ = time::WallClock::fastNowInSec();
+            ret_ = Result::SUCCEEDED;
             SAVE_STATE();
             onFinished_();
             break;
@@ -254,7 +260,6 @@ std::string BalanceTask::taskVal() {
     str.reserve(32);
     str.append(reinterpret_cast<const char*>(&status_), sizeof(status_));
     str.append(reinterpret_cast<const char*>(&ret_), sizeof(ret_));
-    str.append(reinterpret_cast<const char*>(&srcLived_), sizeof(srcLived_));
     str.append(reinterpret_cast<const char*>(&startTimeMs_), sizeof(startTimeMs_));
     str.append(reinterpret_cast<const char*>(&endTimeMs_), sizeof(endTimeMs_));
     return str;
@@ -283,19 +288,17 @@ BalanceTask::parseKey(const folly::StringPiece& rawKey) {
     return std::make_tuple(balanceId, spaceId, partId, src, dst);
 }
 
-std::tuple<BalanceTask::Status, BalanceTask::Result, bool, int64_t, int64_t>
+std::tuple<BalanceTask::Status, BalanceTask::Result, int64_t, int64_t>
 BalanceTask::parseVal(const folly::StringPiece& rawVal) {
     int32_t offset = 0;
     auto status = *reinterpret_cast<const BalanceTask::Status*>(rawVal.begin() + offset);
     offset += sizeof(BalanceTask::Status);
     auto ret = *reinterpret_cast<const BalanceTask::Result*>(rawVal.begin() + offset);
     offset += sizeof(BalanceTask::Result);
-    auto srcLived = *reinterpret_cast<const bool*>(rawVal.begin() + offset);
-    offset += sizeof(bool);
     auto start = *reinterpret_cast<const int64_t*>(rawVal.begin() + offset);
     offset += sizeof(int64_t);
     auto end = *reinterpret_cast<const int64_t*>(rawVal.begin() + offset);
-    return std::make_tuple(status, ret, srcLived, start, end);
+    return std::make_tuple(status, ret, start, end);
 }
 
 }  // namespace meta

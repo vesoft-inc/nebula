@@ -5,7 +5,7 @@
  */
 
 #include "base/Base.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
@@ -45,12 +45,15 @@ TEST(AddEdgesTest, SimpleTest) {
     LOG(INFO) << "Check data in kv store...";
     for (PartitionID partId = 1; partId <= 3; partId++) {
         for (VertexID srcId = 10 * partId; srcId < 10 * (partId + 1); srcId++) {
-            auto prefix = NebulaKeyUtils::edgePrefix(partId, srcId, srcId * 100 + 1);
+            auto prefix = NebulaKeyUtils::edgePrefix(partId, srcId, 101);
             std::unique_ptr<kvstore::KVIterator> iter;
             EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
             int num = 0;
             while (iter->valid()) {
-                EXPECT_EQ(folly::stringPrintf("%d_%ld", partId, srcId), iter->val());
+                auto edgeType = 101;
+                auto dstId = srcId * 100 + 2;
+                EXPECT_EQ(TestUtils::encodeValue(partId, srcId, dstId, edgeType),
+                          iter->val().str());
                 num++;
                 iter->next();
             }

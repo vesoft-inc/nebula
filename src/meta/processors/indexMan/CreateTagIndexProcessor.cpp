@@ -16,8 +16,15 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     auto &tagName = req.get_tag_name();
     auto &fieldNames = req.get_fields();
     if (fieldNames.empty()) {
-        LOG(ERROR) << "Tag's Field should not empty";
-        resp_.set_code(cpp2::ErrorCode::E_INVALID_PARM);
+        LOG(ERROR) << "The index field of an tag should not be empty.";
+        handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
+        onFinished();
+        return;
+    }
+    std::set<std::string> columnSet(fieldNames.begin(), fieldNames.end());
+    if (fieldNames.size() != columnSet.size()) {
+        LOG(ERROR) << "Conflict field in the tag index.";
+        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
         onFinished();
         return;
     }
@@ -27,9 +34,9 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     if (ret.ok()) {
         LOG(ERROR) << "Create Tag Index Failed: " << indexName << " have existed";
         if (req.get_if_not_exists()) {
-            resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+            handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
         } else {
-            resp_.set_code(cpp2::ErrorCode::E_EXISTED);
+            handleErrorCode(cpp2::ErrorCode::E_EXISTED);
         }
         onFinished();
         return;
@@ -38,28 +45,35 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     auto tagIDRet = getTagId(space, tagName);
     if (!tagIDRet.ok()) {
         LOG(ERROR) << "Create Tag Index Failed: Tag " << tagName << " not exist";
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
 
     auto tagID = tagIDRet.value();
-    auto fieldsResult = getLatestTagFields(space, tagID);
-    if (!fieldsResult.ok()) {
-        LOG(ERROR) << "Get Latest Tag Fields Failed";
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+    auto retSchema = getLatestTagSchema(space, tagID);
+    if (!retSchema.ok()) {
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
 
-    auto fields = fieldsResult.value();
+    auto latestTagSchema = retSchema.value();
+    if (tagOrEdgeHasTTL(latestTagSchema)) {
+       LOG(ERROR) << "Tag: " << tagName << " has ttl, not create index";
+       handleErrorCode(cpp2::ErrorCode::E_INDEX_WITH_TTL);
+       onFinished();
+       return;
+    }
+
+    auto fields = getLatestTagFields(latestTagSchema);
     std::vector<nebula::cpp2::ColumnDef> columns;
     for (auto &field : fieldNames) {
         auto iter = std::find_if(std::begin(fields), std::end(fields),
                                  [field](const auto& pair) { return field == pair.first; });
         if (iter == fields.end()) {
             LOG(ERROR) << "Field " << field << " not found in Tag " << tagName;
-            resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+            handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
             onFinished();
             return;
         } else {
@@ -75,7 +89,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     auto tagIndexRet = autoIncrementId();
     if (!nebula::ok(tagIndexRet)) {
         LOG(ERROR) << "Create tag index failed : Get tag index ID failed";
-        resp_.set_code(nebula::error(tagIndexRet));
+        handleErrorCode(nebula::error(tagIndexRet));
         onFinished();
         return;
     }

@@ -20,6 +20,8 @@ class BalancePlan {
     FRIEND_TEST(BalanceTest, NormalTest);
     FRIEND_TEST(BalanceTest, SpecifyHostTest);
     FRIEND_TEST(BalanceTest, SpecifyMultiHostTest);
+    FRIEND_TEST(BalanceTest, MockReplaceMachineTest);
+    FRIEND_TEST(BalanceTest, SingleReplicaTest);
     FRIEND_TEST(BalanceTest, RecoveryTest);
     FRIEND_TEST(BalanceTest, DispatchTasksTest);
     FRIEND_TEST(BalanceTest, StopBalanceDataTest);
@@ -68,7 +70,7 @@ public:
         return status_;
     }
 
-    bool saveInStore(bool onlyPlan = false);
+    cpp2::ErrorCode saveInStore(bool onlyPlan = false);
 
     BalanceID id() const {
         return id_;
@@ -84,7 +86,7 @@ public:
     }
 
 private:
-    bool recovery(bool resume = true);
+    cpp2::ErrorCode recovery(bool resume = true);
 
     std::string planKey() const;
 

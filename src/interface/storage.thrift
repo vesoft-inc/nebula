@@ -32,6 +32,7 @@ enum ErrorCode {
     E_IMPROPER_DATA_TYPE = -23,
     E_EDGE_NOT_FOUND = -24,
     E_TAG_NOT_FOUND = -25,
+    E_INDEX_NOT_FOUND = -26,
 
     // Invalid request
     E_INVALID_FILTER = -31,
@@ -47,6 +48,12 @@ enum ErrorCode {
     // checkpoint failed
     E_FAILED_TO_CHECKPOINT = -50,
     E_CHECKPOINT_BLOCKED = -51,
+
+    // Filter out
+    E_FILTER_OUT         = -60,
+
+    // partial result, used for kv interfaces
+    E_PARTIAL_RESULT = -99,
 
     E_UNKNOWN = -100,
 } (cpp.enum_strict)
@@ -71,8 +78,8 @@ union EntryId {
 struct PropDef {
     1: PropOwner owner,
     2: EntryId   id,
-    3: string name,      // Property name
-    4: StatType stat,    // calc stats when setted.
+    3: string    name,    // Property name
+    4: StatType  stat,    // calc stats when setted.
 }
 
 enum StatType {
@@ -123,6 +130,11 @@ struct VertexData {
     3: list<EdgeData>        edge_data,
 }
 
+struct VertexIndexData {
+    1: common.VertexID       vertex_id,
+    2: binary                props,
+}
+
 struct ResponseCommon {
     // Only contains the partition that returns error
     1: required list<ResultCode> failed_codes,
@@ -154,11 +166,6 @@ struct QueryStatsResponse {
     3: optional binary data,
 }
 
-struct EdgeKeyResponse {
-    1: required ResponseCommon result,
-    2: optional list<EdgeKey> edge_keys,      // out-edges and in-edges
-}
-
 struct Tag {
     1: common.TagID tag_id,
     2: binary props,
@@ -168,6 +175,7 @@ struct Vertex {
     1: common.VertexID id,
     2: list<Tag> tags,
 }
+
 struct GetNeighborsRequest {
     1: common.GraphSpaceID space_id,
     // partId => ids
@@ -209,16 +217,9 @@ struct AddEdgesRequest {
     3: bool overwritable,
 }
 
-struct EdgeKeyRequest {
+struct DeleteVerticesRequest {
     1: common.GraphSpaceID space_id,
-    2: common.PartitionID part_id,
-    3: common.VertexID vid,
-}
-
-struct DeleteVertexRequest {
-    1: common.GraphSpaceID      space_id,
-    2: common.PartitionID       part_id,
-    3: common.VertexID          vid;
+    2: map<common.PartitionID, list<common.VertexID>>(cpp.template = "std::unordered_map") parts,
 }
 
 struct DeleteEdgesRequest {
@@ -390,6 +391,9 @@ struct RemoveRangeRequest {
 struct GetRequest {
     1: common.GraphSpaceID space_id,
     2: map<common.PartitionID, list<string>>(cpp.template = "std::unordered_map") parts,
+    // When return_partly is true and some of the keys not found, will return the keys
+    // which exist
+    3: bool return_partly
 }
 
 struct PrefixRequest {
@@ -433,6 +437,29 @@ struct DropCPRequest {
     2: string                       name,
 }
 
+struct RebuildIndexRequest {
+    1: common.GraphSpaceID          space_id,
+    2: list<common.PartitionID>     parts,
+    3: common.IndexID               index_id,
+    4: bool                         is_offline,
+}
+
+struct LookUpIndexRequest {
+    1: common.GraphSpaceID       space_id,
+    2: list<common.PartitionID>  parts,
+    3: common.IndexID            index_id,
+    4: binary                    filter,
+    5: list<string>              return_columns,
+    6: bool                      is_edge,
+}
+
+struct LookUpIndexResp {
+    1: required ResponseCommon             result,
+    2: optional common.Schema              schema,
+    3: optional list<VertexIndexData>      vertices,
+    4: optional list<Edge>                 edges,
+}
+
 service StorageService {
     QueryResponse getBound(1: GetNeighborsRequest req)
 
@@ -445,9 +472,8 @@ service StorageService {
     ExecResponse addVertices(1: AddVerticesRequest req);
     ExecResponse addEdges(1: AddEdgesRequest req);
 
-    EdgeKeyResponse getEdgeKeys(1: EdgeKeyRequest req);
     ExecResponse deleteEdges(1: DeleteEdgesRequest req);
-    ExecResponse deleteVertex(1: DeleteVertexRequest req);
+    ExecResponse deleteVertices(1: DeleteVerticesRequest req);
 
     UpdateResponse updateVertex(1: UpdateVertexRequest req)
     UpdateResponse updateEdge(1: UpdateEdgeRequest req)
@@ -465,10 +491,14 @@ service StorageService {
     AdminExecResp checkPeers(1: CheckPeersReq req);
     GetLeaderResp getLeaderPart(1: GetLeaderReq req);
 
-    // Interfaces for nebula cluster checkpoint
+    // Interfaces for manage checkpoint
     AdminExecResp createCheckpoint(1: CreateCPRequest req);
     AdminExecResp dropCheckpoint(1: DropCPRequest req);
     AdminExecResp blockingWrites(1: BlockingSignRequest req);
+
+    // Interfaces for rebuild index
+    AdminExecResp rebuildTagIndex(1: RebuildIndexRequest req);
+    AdminExecResp rebuildEdgeIndex(1: RebuildIndexRequest req);
 
     // Interfaces for key-value storage
     ExecResponse      put(1: PutRequest req);
@@ -477,4 +507,7 @@ service StorageService {
     ExecResponse      removeRange(1: RemoveRangeRequest req);
 
     GetUUIDResp getUUID(1: GetUUIDReq req);
+
+    // Interfaces for edge and vertex index scan
+    LookUpIndexResp   lookUpIndex(1: LookUpIndexRequest req);
 }

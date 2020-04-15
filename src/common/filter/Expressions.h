@@ -19,7 +19,7 @@ class Cord;
 using OptVariantType = StatusOr<VariantType>;
 
 enum class ColumnType {
-    INT, STRING, DOUBLE, BIGINT, BOOL, TIMESTAMP,
+    INT, STRING, DOUBLE, BOOL, TIMESTAMP,
 };
 
 std::string columnTypeToString(ColumnType type);
@@ -46,6 +46,10 @@ public:
     void addDstTagProp(const std::string &tag, const std::string &prop) {
         tagMap_.emplace(tag, -1);
         dstTagProps_.emplace(tag, prop);
+    }
+
+    std::unordered_map<std::string, EdgeType>& getEdgeMap() {
+        return edgeMap_;
     }
 
     std::unordered_map<std::string, TagID>& getTagMap() {
@@ -81,6 +85,7 @@ public:
             return false;
         }
         edgeMap_.emplace(alias, edgeType);
+        edgeAlias_.emplace_back(alias);
         return true;
     }
 
@@ -92,6 +97,10 @@ public:
 
         edgeType = it->second;
         return true;
+    }
+
+    std::vector<std::string>& getEdgeAlias() {
+        return edgeAlias_;
     }
 
     using PropPair = std::pair<std::string, std::string>;
@@ -175,6 +184,7 @@ private:
     // alias => edgeType
     std::unordered_map<std::string, EdgeType> edgeMap_;
     std::unordered_map<std::string, TagID>    tagMap_;
+    std::vector<std::string>                  edgeAlias_;
     bool                                      overAll_{false};
     GraphSpaceID                              space_;
     nebula::storage::StorageClient            *storageClient_{nullptr};
@@ -929,6 +939,10 @@ public:
 
     const Expression* left() const {
         return left_.get();
+    }
+
+    Operator op() const {
+        return op_;
     }
 
     const Expression* right() const {

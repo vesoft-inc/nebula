@@ -6,6 +6,7 @@
 
 #include "meta/processors/admin/BalancePlan.h"
 #include <folly/synchronization/Baton.h>
+#include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 #include "meta/ActiveHostsMan.h"
 
@@ -52,6 +53,8 @@ void BalancePlan::invoke() {
                 {
                     std::lock_guard<std::mutex> lg(lock_);
                     finishedTaskNum_++;
+                    VLOG(1) << "Balance " << id_ << " has completed "
+                            << finishedTaskNum_ << " task";
                     if (finishedTaskNum_ == tasks_.size()) {
                         finished = true;
                         if (status_ == Status::IN_PROGRESS) {
@@ -79,6 +82,8 @@ void BalancePlan::invoke() {
                 {
                     std::lock_guard<std::mutex> lg(lock_);
                     finishedTaskNum_++;
+                    VLOG(1) << "Balance " << id_ << " has completed "
+                            << finishedTaskNum_ << " task";
                     status_ = Status::FAILED;
                     if (finishedTaskNum_ == tasks_.size()) {
                         finished = true;
@@ -114,7 +119,7 @@ void BalancePlan::invoke() {
     }
 }
 
-bool BalancePlan::saveInStore(bool onlyPlan) {
+cpp2::ErrorCode BalancePlan::saveInStore(bool onlyPlan) {
     if (kv_) {
         std::vector<kvstore::KV> data;
         data.emplace_back(planKey(), planVal());
@@ -124,32 +129,31 @@ bool BalancePlan::saveInStore(bool onlyPlan) {
             }
         }
         folly::Baton<true, std::atomic> baton;
-        bool ret = false;
+        auto ret = kvstore::ResultCode::SUCCEEDED;
         kv_->asyncMultiPut(kDefaultSpaceId,
                            kDefaultPartId,
                            std::move(data),
                            [&baton, &ret] (kvstore::ResultCode code) {
-            if (kvstore::ResultCode::SUCCEEDED == code) {
-                ret = true;
-            } else {
+            if (kvstore::ResultCode::SUCCEEDED != code) {
+                ret = code;
                 LOG(ERROR) << "Can't write the kvstore, ret = " << static_cast<int32_t>(code);
             }
             baton.post();
         });
         baton.wait();
-        return ret;
+        return MetaCommon::to(ret);
     }
-    return true;
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
-bool BalancePlan::recovery(bool resume) {
+cpp2::ErrorCode BalancePlan::recovery(bool resume) {
     if (kv_) {
         const auto& prefix = BalanceTask::prefix(id_);
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
         if (ret != kvstore::ResultCode::SUCCEEDED) {
             LOG(ERROR) << "Can't access kvstore, ret = " << static_cast<int32_t>(ret);
-            return false;
+            return MetaCommon::to(ret);
         }
         while (iter->valid()) {
             BalanceTask task;
@@ -168,20 +172,14 @@ bool BalancePlan::recovery(bool resume) {
                 auto tup = BalanceTask::parseVal(iter->val());
                 task.status_ = std::get<0>(tup);
                 task.ret_ = std::get<1>(tup);
-                task.srcLived_ = std::get<2>(tup);
-                task.startTimeMs_ = std::get<3>(tup);
-                task.endTimeMs_ = std::get<4>(tup);
+                task.startTimeMs_ = std::get<2>(tup);
+                task.endTimeMs_ = std::get<3>(tup);
                 if (resume && task.ret_ != BalanceTask::Result::SUCCEEDED) {
                     // Resume the failed task, skip the in-progress and invalid tasks
                     if (task.ret_ == BalanceTask::Result::FAILED) {
                         task.ret_ = BalanceTask::Result::IN_PROGRESS;
                     }
                     task.status_ = BalanceTask::Status::START;
-                    if (ActiveHostsMan::isLived(kv_, task.src_)) {
-                        task.srcLived_ = true;
-                    } else {
-                        task.srcLived_ = false;
-                    }
                     if (!ActiveHostsMan::isLived(kv_, task.dst_)) {
                         task.ret_ = BalanceTask::Result::INVALID;
                     }
@@ -191,7 +189,7 @@ bool BalancePlan::recovery(bool resume) {
             iter->next();
         }
     }
-    return true;
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
 std::string BalancePlan::planKey() const {

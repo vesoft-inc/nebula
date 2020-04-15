@@ -47,13 +47,13 @@ You can use the `If NOT EXISTS` keywords when creating tags or edges. This keywo
 
 * **Default Constraint**
 
-    You can set the default value of a property when creating a tag/edge with the `DEFAULT` constraint. The default value will be added to all new vertices and edges IF no other value is specified. Also you can write a user-specified value if you don't want to use the default one.
+    You can set the default value of a property when creating a tag/edge with the `DEFAULT` constraint. The default value will be added to all new vertices and edges if no other value is specified. The default value can be any of the data type supported by  **Nebula Graph** or  expressions. Also you can write a user-specified value if you don't want to use the default one.
 
     > Using `Alter` to change the default value is not supported.
 
     <!-- > Since it's so error-prone to modify the default value with new one, using `Alter` to change the default value is not supported. -->
 
-<!-- ### Time-to-Live (TTL) Syntax
+### Time-to-Live (TTL) Syntax
 
 * TTL_DURATION
 
@@ -65,9 +65,11 @@ You can use the `If NOT EXISTS` keywords when creating tags or edges. This keywo
 
     The data type of prop_name must be either int64 or timestamp.
 
-* multiple TTL definition
+* single TTL definition
 
-    If TTL_COL is a list of prop_name, and there are multiple ttl_duration, **Nebula Graph** uses the lowest(i.e. earliest) expiration threshold to expire data. -->
+    Only a single TTL_COL field can be specified.
+
+Details about TTL refer to the [TTL Doc](TTL.md).
 
 ### Examples
 
@@ -82,21 +84,15 @@ nebula> CREATE TAG player_with_default(name string, age int DEFAULT 20)  -- age 
 nebula> CREATE EDGE follow_with_default(start_time timestamp DEFAULT 0, grade double DEFAULT 0.0)  -- start_time is set to 0 by default, grade is set to 0.0 by default
 ```
 
-<!-- ```ngql
+```ngql
 nebula> CREATE TAG woman(name string, age int,
    married bool, salary double, create_time timestamp)
-   TTL_DURATION = 100, TTL_COL = create_time -- expired when now is later than create_time + 100
+   TTL_DURATION = 100, TTL_COL = "create_time" -- time interval is 100s, starting from the create_time filed
 
 nebula> CREATE EDGE marriage(location string, since timestamp)
-    TTL_DURATION = 0, TTL_COL = since -- negative or zero, not expire
+    TTL_DURATION = 0, TTL_COL = "since" -- negative or zero, not expire
 
-nebula> CREATE TAG icecream(made timestamp, temprature int)
-   TTL_DURATION = 100, TTL_COL = made,
-   TTL_DURATION = 10, TTL_COL = temperature
-   --  no matter which comes first: made + 100 or temprature + 10
-
-nebula> CREATE EDGE garbge (thrown timestamp, temprature int)
-   TTL_DURATION = -2, TTL_COL = thrown,
-   TTL_DURATION = 10, TTL_COL = thrown
-   --  legal, but not recommended. expired at thrown + 10
-``` -->
+nebula> CREATE TAG icecream(made timestamp, temperature int)
+   TTL_DURATION = 100, TTL_COL = "made",
+   --  Data expires after TTL_DURATION
+```

@@ -18,9 +18,8 @@ enum class EntryType : int8_t {
     SPACE       = 0x01,
     TAG         = 0x02,
     EDGE        = 0x03,
-    USER        = 0x04,
-    INDEX       = 0x05,
-    CONFIG      = 0x07,
+    INDEX       = 0x04,
+    CONFIG      = 0x05,
 };
 
 using ConfigName = std::pair<cpp2::ConfigModule, std::string>;
@@ -110,6 +109,20 @@ public:
 
     static nebula::cpp2::IndexItem parseIndex(const folly::StringPiece& rawData);
 
+    static std::string rebuildIndexStatus(GraphSpaceID space,
+                                          char type,
+                                          const std::string& indexName);
+
+    static std::string rebuildIndexStatusPrefix(GraphSpaceID spaceId, char type);
+
+    static std::string rebuildTagIndexStatusPrefix(GraphSpaceID spaceId) {
+        return rebuildIndexStatusPrefix(spaceId, 'T');
+    }
+
+    static std::string rebuildEdgeIndexStatusPrefix(GraphSpaceID spaceId) {
+        return rebuildIndexStatusPrefix(spaceId, 'E');
+    }
+
     static std::string indexSpaceKey(const std::string& name);
 
     static std::string indexTagKey(GraphSpaceID spaceId, const std::string& name);
@@ -127,34 +140,30 @@ public:
 
     static cpp2::ErrorCode alterSchemaProp(std::vector<nebula::cpp2::ColumnDef>& cols,
                                            nebula::cpp2::SchemaProp&  schemaProp,
-                                           nebula::cpp2::SchemaProp alterSchemaProp);
+                                           nebula::cpp2::SchemaProp alterSchemaProp,
+                                           bool existIndex);
 
-    static std::string indexUserKey(const std::string& account);
+    static std::string userKey(const std::string& account);
 
-    static std::string userKey(UserID userId);
+    static std::string userVal(const std::string& val);
 
-    static std::string userVal(const std::string& password,
-                               const cpp2::UserItem& userItem);
+    static std::string parseUser(folly::StringPiece key);
 
-    static folly::StringPiece userItemVal(folly::StringPiece rawVal);
+    static std::string parseUserPwd(folly::StringPiece val);
 
-    static std::string replaceUserVal(const cpp2::UserItem& user, folly::StringPiece rawVal);
+    static std::string roleKey(GraphSpaceID spaceId, const std::string& account);
 
-    static std::string roleKey(GraphSpaceID spaceId, UserID userId);
+    static std::string roleVal(nebula::cpp2::RoleType roleType);
 
-    static std::string roleVal(cpp2::RoleType roleType);
+    static std::string parseRoleUser(folly::StringPiece key);
 
-    static std::string changePassword(folly::StringPiece val, folly::StringPiece newPwd);
-
-    static cpp2::UserItem parseUserItem(folly::StringPiece val);
+    static GraphSpaceID parseRoleSpace(folly::StringPiece key);
 
     static std::string rolesPrefix();
 
     static std::string roleSpacePrefix(GraphSpaceID spaceId);
 
-    static UserID parseRoleUserId(folly::StringPiece val);
-
-    static UserID parseUserId(folly::StringPiece val);
+    static std::string parseRoleStr(folly::StringPiece key);
 
     static std::string tagDefaultKey(GraphSpaceID spaceId,
                                      TagID tag,

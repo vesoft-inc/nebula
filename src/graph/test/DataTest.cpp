@@ -85,7 +85,8 @@ AssertionResult DataTest::prepareSchema() {
                                                        "isMarried bool DEFAULT false, "
                                                        "BMI double DEFAULT 18.5, "
                                                        "department string DEFAULT \"engineering\","
-                                                       "birthday timestamp DEFAULT 0)";
+                                                       "birthday timestamp DEFAULT "
+                                                       "\"2020-01-10 10:00:00\")";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
             return TestError() << "Do cmd:" << cmd
@@ -831,13 +832,15 @@ TEST_F(DataTest, InsertWithDefaultValueTest) {
         cpp2::ExecutionResponse resp;
         std::string cmd = "GO FROM hash(\"Lucy\") OVER schoolmateWithDefault YIELD "
                           "schoolmateWithDefault.likeness, $$.personWithDefault.name,"
+                          "$$.personWithDefault.birthday, $$.personWithDefault.department,"
                           "$$.studentWithDefault.grade, $$.studentWithDefault.number";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        using valueType = std::tuple<int64_t, std::string, std::string, int64_t>;
+        using valueType = std::tuple<int64_t, std::string, int64_t,
+                                     std::string, std::string, int64_t>;
         std::vector<valueType> expected = {
-            {80, "Laura", "one", 20190901008},
-            {80, "Amber", "one", 20180901003},
+            {80, "Laura", 1578621600, "engineering", "one", 20190901008},
+            {80, "Amber", 1578621600, "engineering", "one", 20180901003},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -967,10 +970,11 @@ TEST_F(DataTest, InsertMultiVersionWithUUIDTest) {
     }
 }
 
-TEST_F(DataTest, FindTest) {
+TEST_F(DataTest, LookupTest) {
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "FIND name FROM person";
+        std::string cmd = "LOOKUP ON person where person.name == \"Tony\" "
+                          "YIELD person.name, person.age";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }

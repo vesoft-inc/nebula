@@ -19,9 +19,8 @@ namespace meta {
 
 class Snapshot {
 public:
-    static Snapshot* instance(kvstore::KVStore* kv) {
-        static std::unique_ptr<AdminClient> client(new AdminClient(kv));
-        static std::unique_ptr<Snapshot> snapshot(new Snapshot(kv, std::move(client)));
+    static Snapshot* instance(kvstore::KVStore* kv, AdminClient* client) {
+        static std::unique_ptr<Snapshot> snapshot(new Snapshot(kv, client));
         return snapshot.get();
     }
 
@@ -37,17 +36,15 @@ public:
     getLeaderParts(HostLeaderMap *hostLeaderMap, GraphSpaceID spaceId);
 
 private:
-    Snapshot(kvstore::KVStore* kv, std::unique_ptr<AdminClient> client)
-            : kv_(kv)
-            , client_(std::move(client)) {
+    Snapshot(kvstore::KVStore* kv, AdminClient* client) : kv_(kv), client_(client) {
         executor_.reset(new folly::CPUThreadPoolExecutor(1));
     }
 
     bool getAllSpaces(std::vector<GraphSpaceID>& spaces, kvstore::ResultCode& retCode);
 
 private:
-    kvstore::KVStore* kv_ = nullptr;
-    std::unique_ptr<AdminClient> client_{nullptr};
+    kvstore::KVStore* kv_{nullptr};
+    AdminClient* client_{nullptr};
     std::unique_ptr<folly::Executor> executor_;
 };
 

@@ -5,7 +5,7 @@
  */
 
 #include "base/Base.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
@@ -51,7 +51,7 @@ TEST(AddVerticesTest, SimpleTest) {
             EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
             TagID tagId = 0;
             while (iter->valid()) {
-                EXPECT_EQ(folly::stringPrintf("%d_%ld_%d", partId, vertexId, tagId), iter->val());
+                EXPECT_EQ(TestUtils::encodeValue(partId, vertexId, tagId), iter->val());
                 tagId++;
                 iter->next();
             }

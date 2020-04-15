@@ -5,7 +5,7 @@
  */
 
 #include "storage/mutate/AddVerticesProcessor.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include <algorithm>
 #include <limits>
 #include "time/WallClock.h"
@@ -26,9 +26,7 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
     callingNum_ = partVertices.size();
     auto iRet = indexMan_->getTagIndexes(spaceId_);
     if (iRet.ok()) {
-        for (auto& index : iRet.value()) {
-            indexes_.emplace_back(index);
-        }
+        indexes_ = std::move(iRet).value();
     }
 
     CHECK_NOTNULL(kvstore_);
@@ -37,7 +35,7 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
             auto partId = pv.first;
             const auto& vertices = pv.second;
             std::vector<kvstore::KV> data;
-            std::for_each(vertices.begin(), vertices.end(), [&](auto& v){
+            std::for_each(vertices.begin(), vertices.end(), [&](auto& v) {
                 const auto& tags = v.get_tags();
                 std::for_each(tags.begin(), tags.end(), [&](auto& tag) {
                     VLOG(3) << "PartitionID: " << partId << ", VertexID: " << v.get_id()
@@ -58,7 +56,7 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
         std::for_each(partVertices.begin(), partVertices.end(), [&](auto &pv) {
             auto partId = pv.first;
             auto atomic = [version, partId, vertices = std::move(pv.second), this]()
-                          -> std::string {
+                          -> folly::Optional<std::string> {
                 return addVertices(version, partId, vertices);
             };
             auto callback = [partId, this](kvstore::ResultCode code) {
@@ -113,7 +111,7 @@ std::string AddVerticesProcessor::addVertices(int64_t version, PartitionID partI
                 /*
                  * step 1 , Delete old version index if exists.
                  */
-                if (val.empty() && !FLAGS_ignore_index_check_pre_insert) {
+                if (val.empty()) {
                     val = findObsoleteIndex(partId, vId, tagId);
                 }
                 if (!val.empty()) {
@@ -121,6 +119,10 @@ std::string AddVerticesProcessor::addVertices(int64_t version, PartitionID partI
                                                               val,
                                                               spaceId_,
                                                               tagId);
+                    if (reader == nullptr) {
+                        LOG(WARNING) << "Bad format row";
+                        return "";
+                    }
                     auto oi = indexKey(partId, vId, reader.get(), index);
                     if (!oi.empty()) {
                         batchHolder->remove(std::move(oi));
@@ -134,11 +136,12 @@ std::string AddVerticesProcessor::addVertices(int64_t version, PartitionID partI
                                                           v.second,
                                                           spaceId_,
                                                           tagId);
+                    if (nReader == nullptr) {
+                        LOG(WARNING) << "Bad format row";
+                        return "";
+                    }
                 }
-                auto ni = indexKey(partId,
-                                   vId,
-                                   nReader.get(),
-                                   index);
+                auto ni = indexKey(partId, vId, nReader.get(), index);
                 batchHolder->put(std::move(ni), "");
             }
         }

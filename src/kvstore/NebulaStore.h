@@ -73,6 +73,8 @@ public:
     // the current store instance
     bool init();
 
+    void stop() override;
+
     uint32_t capability() const override {
         return 0;
     }
@@ -101,10 +103,11 @@ public:
                    const std::string& key,
                    std::string* value) override;
 
-    ResultCode multiGet(GraphSpaceID spaceId,
-                        PartitionID partId,
-                        const std::vector<std::string>& keys,
-                        std::vector<std::string>* values) override;
+    std::pair<ResultCode, std::vector<Status>>
+    multiGet(GraphSpaceID spaceId,
+             PartitionID partId,
+             const std::vector<std::string>& keys,
+             std::vector<std::string>* values) override;
 
     // Get all results in range [start, end)
     ResultCode range(GraphSpaceID spaceId,
@@ -169,11 +172,6 @@ public:
                           const std::string& start,
                           const std::string& end,
                           KVCallback cb) override;
-
-    void asyncRemovePrefix(GraphSpaceID spaceId,
-                           PartitionID partId,
-                           const std::string& prefix,
-                           KVCallback cb) override;
 
     void asyncAtomicOp(GraphSpaceID spaceId,
                        PartitionID partId,

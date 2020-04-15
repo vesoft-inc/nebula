@@ -1,5 +1,7 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
+ *
+ *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
@@ -460,7 +462,7 @@ TEST_F(FetchEdgesTest, SyntaxError) {
     }
 }
 
-TEST_F(FetchEdgesTest, NonExistEdge) {
+TEST_F(FetchEdgesTest, NonexistentEdge) {
     {
         cpp2::ExecutionResponse resp;
         auto query = "FETCH PROP ON serve hash(\"Zion Williamson\")->hash(\"Spurs\") "
@@ -488,6 +490,83 @@ TEST_F(FetchEdgesTest, NonExistEdge) {
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
         ASSERT_EQ(nullptr, resp.get_rows());
+    }
+}
+
+TEST_F(FetchEdgesTest, DuplicateColumnName) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto &serve = player.serves()[0];
+        auto &team = teams_[std::get<0>(serve)];
+        auto *fmt = "FETCH PROP ON serve %ld->%ld"
+                    " YIELD serve.start_year, serve.start_year";
+        auto query = folly::stringPrintf(fmt, player.vid(), team.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve._src"},
+            {"serve._dst"},
+            {"serve._rank"},
+            {"serve.start_year"},
+            {"serve.start_year"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
+            {player.vid(), team.vid(), 0, std::get<1>(serve), std::get<1>(serve)},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto &serve = player.serves()[0];
+        auto &team = teams_[std::get<0>(serve)];
+        auto *fmt = "FETCH PROP ON serve %ld->%ld"
+                    " YIELD serve._src, serve._dst, serve._rank";
+        auto query = folly::stringPrintf(fmt, player.vid(), team.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve._src"},
+            {"serve._dst"},
+            {"serve._rank"},
+            {"serve._src"},
+            {"serve._dst"},
+            {"serve._rank"},
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
+            {player.vid(), team.vid(), 0, player.vid(), team.vid(), 0},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "GO FROM %ld OVER serve YIELD serve._src AS src, serve._dst AS src"
+                    "| FETCH PROP ON serve $-.src->$-.dst"
+                    " YIELD serve.start_year, serve.end_year";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+}
+
+TEST_F(FetchEdgesTest, NonexistentProp) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto &serve = player.serves()[0];
+        auto &team = teams_[std::get<0>(serve)];
+        auto *fmt = "FETCH PROP ON serve %ld->%ld YIELD serve.start_year1";
+        auto query = folly::stringPrintf(fmt, player.vid(), team.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
 }
 }  // namespace graph

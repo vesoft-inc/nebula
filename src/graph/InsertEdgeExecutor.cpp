@@ -7,6 +7,7 @@
 #include "base/Base.h"
 #include "graph/InsertEdgeExecutor.h"
 #include "storage/client/StorageClient.h"
+#include "graph/SchemaHelper.h"
 
 namespace nebula {
 namespace graph {
@@ -175,7 +176,7 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
                 if (!checkValueType(schemaType, value)) {
                     LOG(ERROR) << "ValueType is wrong, schema type "
                                << static_cast<int32_t>(schemaType.type)
-                                << ", input type " <<  value.which();
+                               << ", input type " <<  value.which();
                     return Status::Error("ValueType is wrong");
                 }
             } else {
@@ -190,7 +191,7 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
             }
 
             if (schemaType.type == nebula::cpp2::SupportedType::TIMESTAMP) {
-                auto timestamp = toTimestamp(value);
+                auto timestamp = SchemaHelper::toTimestamp(value);
                 if (!timestamp.ok()) {
                     return timestamp.status();
                 }
@@ -208,13 +209,14 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
             return Status::Error("Column count doesn't match value count");
         }
 
+        auto props = writer.encode();
         {
             auto &out = edges[index++];
             out.key.set_src(src);
             out.key.set_dst(dst);
             out.key.set_ranking(rank);
             out.key.set_edge_type(edgeType_);
-            out.props = writer.encode();
+            out.props = props;
             out.__isset.key = true;
             out.__isset.props = true;
         }
@@ -224,7 +226,7 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
             in.key.set_dst(src);
             in.key.set_ranking(rank);
             in.key.set_edge_type(-edgeType_);
-            in.props = "";
+            in.props = std::move(props);
             in.__isset.key = true;
             in.__isset.props = true;
         }

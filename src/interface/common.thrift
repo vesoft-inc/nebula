@@ -24,10 +24,7 @@ typedef i32 (cpp.type = "nebula::Port") Port
 
 typedef i64 (cpp.type = "nebula::SchemaVer") SchemaVer
 
-typedef i32 (cpp.type = "nebula::UserID") UserID
 typedef i64 (cpp.type = "nebula::ClusterID") ClusterID
-
-typedef i32 (cpp.type = "nebula::IndexID") IndexID
 
 // These are all data types supported in the graph properties
 enum SupportedType {
@@ -114,5 +111,27 @@ struct Pair {
     2: string value,
 }
 
+/**
+ ** GOD is A global senior administrator.like root of Linux systems.
+ ** ADMIN is an administrator for a given Graph Space.
+ ** DBA is an schema administrator for a given Graph Space.
+ ** USER is a normal user for a given Graph Space. A User can access (read and write) the data in the Graph Space.
+ ** GUEST is a read-only role for a given Graph Space. A Guest cannot modify the data in the Graph Space.
+ ** Refer to header file src/graph/PermissionManager.h for details.
+ **/
+
+enum RoleType {
+    GOD    = 0x01,
+    ADMIN  = 0x02,
+    DBA    = 0x03,
+    USER   = 0x04,
+    GUEST  = 0x05,
+} (cpp.enum_strict)
+
+struct RoleItem {
+    1: string        user,
+    2: GraphSpaceID  space_id,
+    3: RoleType      role_type,
+}
 
 const ValueType kInvalidValueType = {"type" : UNKNOWN}

@@ -10,6 +10,7 @@
 #include "base/Base.h"
 #include "base/ConcurrentLRUCache.h"
 #include "filter/Expressions.h"
+#include "dataman/RowReader.h"
 
 namespace nebula {
 namespace storage {
@@ -119,6 +120,14 @@ struct TagContext {
         propNameIndex_.emplace(propName, props_.size() - 1);
     }
 };
+
+
+bool checkDataExpiredForTTL(const meta::SchemaProviderIf* schema,
+                            RowReader* reader,
+                            const std::string& ttlCol,
+                            int64_t ttlDuration);
+
+
 
 }  // namespace storage
 }  // namespace nebula

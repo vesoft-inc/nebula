@@ -36,8 +36,8 @@ public:
         kDropEdgeIndex,
         kDescribeTagIndex,
         kDescribeEdgeIndex,
-        kBuildTagIndex,
-        kBuildEdgeIndex,
+        kRebuildTagIndex,
+        kRebuildEdgeIndex,
         kDropTag,
         kDropEdge,
         kInsertVertex,
@@ -47,7 +47,7 @@ public:
         kShow,
         kDeleteVertex,
         kDeleteEdges,
-        kFind,
+        kLookup,
         kCreateSpace,
         kDropSpace,
         kDescribeSpace,
@@ -71,6 +71,7 @@ public:
         kReturn,
         kCreateSnapshot,
         kDropSnapshot,
+        kAdmin,
     };
 
     Kind kind() const {

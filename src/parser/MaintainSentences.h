@@ -16,7 +16,7 @@ namespace nebula {
 
 class ColumnSpecification final {
 public:
-    using Value = boost::variant<int64_t, bool, double, std::string>;
+    using Value = Expression;
 
     ColumnSpecification(ColumnType type, std::string *name) {
         type_ = type;
@@ -31,65 +31,39 @@ public:
         return name_.get();
     }
 
-    void setIntValue(int64_t v) {
-        defaultValue_ = v;
-        hasDefault_ = true;
+    void setValue(Value* expr) {
+        defaultExpr_.reset(DCHECK_NOTNULL(expr));
     }
 
-    StatusOr<int64_t> getIntValue() {
-        if (defaultValue_.which() != VAR_INT64) {
-            return Status::Error("Wrong type");
+    Status MUST_USE_RESULT prepare() {
+        if (hasDefault()) {
+            return defaultExpr_->prepare();
         }
-        int64_t v = boost::get<int64_t>(defaultValue_);
-        return v;
+        return Status::Error();
     }
 
-    void setBoolValue(bool v) {
-        defaultValue_ = v;
-        hasDefault_ = true;
-    }
-
-    StatusOr<bool> getBoolValue() {
-        if (defaultValue_.which() != VAR_BOOL) {
-            return Status::Error("Wrong type");
+    void setContext(ExpressionContext* ctx) {
+        if (defaultExpr_ != nullptr) {
+            defaultExpr_->setContext(ctx);
         }
-        return boost::get<bool>(defaultValue_);
-    }
-
-    void setDoubleValue(double v) {
-        defaultValue_ = v;
-        hasDefault_ = true;
-    }
-
-    StatusOr<double> getDoubleValue() {
-        if (defaultValue_.which() != VAR_DOUBLE) {
-            return Status::Error("Wrong type");
-        }
-        return boost::get<double>(defaultValue_);
-    }
-
-    void setStringValue(std::string *v) {
-        defaultValue_ = *v;
-        hasDefault_ = true;
-        delete v;
-    }
-
-    StatusOr<std::string> getStringValue() {
-        if (defaultValue_.which() != VAR_STR) {
-            return Status::Error("Wrong type");
-        }
-        return boost::get<std::string>(defaultValue_);
     }
 
     bool hasDefault() {
-        return hasDefault_;
+        return defaultExpr_ != nullptr;
+    }
+
+    OptVariantType getDefault(Getters& getter) {
+        auto r = defaultExpr_->eval(getter);
+        if (!r.ok()) {
+            return std::move(r).status();
+        }
+        return std::move(r).value();
     }
 
 private:
     ColumnType                                  type_;
     std::unique_ptr<std::string>                name_;
-    bool                                        hasDefault_{false};
-    VariantType                                 defaultValue_;
+    std::unique_ptr<Value>                      defaultExpr_{nullptr};
 };
 
 
@@ -661,11 +635,12 @@ private:
 };
 
 
-class BuildTagIndexSentence final : public Sentence {
+class RebuildTagIndexSentence final : public Sentence {
 public:
-    explicit BuildTagIndexSentence(std::string *indexName) {
+    explicit RebuildTagIndexSentence(std::string *indexName, bool isOffline) {
         indexName_.reset(indexName);
-        kind_ = Kind::kBuildTagIndex;
+        isOffline_ = isOffline;
+        kind_ = Kind::kRebuildTagIndex;
     }
 
     std::string toString() const override;
@@ -674,16 +649,22 @@ public:
         return indexName_.get();
     }
 
+    bool isOffline() {
+        return isOffline_;
+    }
+
 private:
     std::unique_ptr<std::string>                indexName_;
+    bool                                        isOffline_;
 };
 
 
-class BuildEdgeIndexSentence final : public Sentence {
+class RebuildEdgeIndexSentence final : public Sentence {
 public:
-    explicit BuildEdgeIndexSentence(std::string *indexName) {
+    explicit RebuildEdgeIndexSentence(std::string *indexName, bool isOffline) {
         indexName_.reset(indexName);
-        kind_ = Kind::kBuildEdgeIndex;
+        isOffline_ = isOffline;
+        kind_ = Kind::kRebuildEdgeIndex;
     }
 
     std::string toString() const override;
@@ -692,8 +673,13 @@ public:
         return indexName_.get();
     }
 
+    bool isOffline() {
+        return isOffline_;
+    }
+
 private:
     std::unique_ptr<std::string>                indexName_;
+    bool                                        isOffline_;
 };
 
 }   // namespace nebula

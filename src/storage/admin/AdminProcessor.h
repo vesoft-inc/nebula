@@ -40,10 +40,31 @@ public:
         auto part = nebula::value(ret);
         auto host = kvstore::NebulaStore::getRaftAddr(HostAddr(req.get_new_leader().get_ip(),
                                                                req.get_new_leader().get_port()));
+        if (part->isLeader() && part->address() == host) {
+            LOG(INFO) << "I am already leader of space " << spaceId
+                      << " part " << partId << ", skip transLeader";
+            onFinished();
+            return;
+        }
+        auto* partManager = kvstore_->partManager();
+        auto status = partManager->partMeta(spaceId, partId);
+        if (!status.ok()) {
+            this->pushResultCode(cpp2::ErrorCode::E_PART_NOT_FOUND, partId);
+            onFinished();
+            return;
+        }
+        auto partMeta = status.value();
+        if (partMeta.peers_.size() == 1) {
+            LOG(INFO) << "Skip transfer leader of space " << spaceId
+                      << ", part " << partId << " because of single replica.";
+            onFinished();
+            return;
+        }
+
         part->asyncTransferLeader(host,
                                   [this, spaceId, partId, part] (kvstore::ResultCode code) {
             if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
-                LOG(INFO) << "I am not the leader yet!";
+                LOG(INFO) << "I am not the leader of space " << spaceId << " part " << partId;
                 handleLeaderChanged(spaceId, partId);
                 onFinished();
                 return;
@@ -61,24 +82,27 @@ public:
                         auto leader = value(std::move(leaderRet));
                         auto* store = static_cast<kvstore::NebulaStore*>(kvstore_);
                         if (leader != HostAddr(0, 0) && leader != store->address()) {
-                            LOG(INFO) << "Found new leader " << leader;
+                            LOG(INFO) << "Found new leader of space " << spaceId
+                                      << " part " << partId << ": " << leader;
                             onFinished();
                             return;
                         } else if (leader != HostAddr(0, 0)) {
-                            LOG(INFO) << "I am choosen as leader again!";
+                            LOG(INFO) << "I am choosen as leader of space " << spaceId
+                                      << " part " << partId << " again!";
                             this->pushResultCode(cpp2::ErrorCode::E_TRANSFER_LEADER_FAILED, partId);
                             onFinished();
                             return;
                         }
-                        LOG(INFO) << "Can't find leader for part " << partId << " on "
-                                  << store->address();
+                        LOG(INFO) << "Can't find leader for space " << spaceId
+                                  << " part " << partId << " on " << store->address();
                         sleep(FLAGS_waiting_new_leader_interval_in_secs);
                     }
                     this->pushResultCode(cpp2::ErrorCode::E_RETRY_EXHAUSTED, partId);
                     onFinished();
                 });
             } else {
-                LOG(ERROR) << "Failed transfer leader, error:" << static_cast<int32_t>(code);
+                LOG(ERROR) << "Space " << spaceId << " part " << partId
+                           << " failed transfer leader, error:" << static_cast<int32_t>(code);
                 this->pushResultCode(to(code), partId);
                 onFinished();
                 return;
@@ -93,8 +117,8 @@ private:
 
 class AddPartProcessor : public BaseProcessor<cpp2::AdminExecResp> {
 public:
-    static AddPartProcessor* instance(kvstore::KVStore* kvstore, meta::MetaClient* mClient) {
-        return new AddPartProcessor(kvstore, mClient);
+    static AddPartProcessor* instance(kvstore::KVStore* kvstore) {
+        return new AddPartProcessor(kvstore);
     }
 
     void process(const cpp2::AddPartReq& req) {
@@ -114,23 +138,13 @@ public:
             LOG(INFO) << "Space " << spaceId << " not exist, create it!";
             store->addSpace(spaceId);
         }
-        auto st = mClient_->refreshCache();
-        if (!st.ok()) {
-            this->pushResultCode(cpp2::ErrorCode::E_LOAD_META_FAILED, partId);
-            onFinished();
-            return;
-        }
         store->addPart(spaceId, partId, req.get_as_learner());
         onFinished();
     }
 
 private:
-    explicit AddPartProcessor(kvstore::KVStore* kvstore, meta::MetaClient* mClient)
-            : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr, nullptr)
-            , mClient_(mClient) {}
-
-private:
-    meta::MetaClient* mClient_ = nullptr;
+    explicit AddPartProcessor(kvstore::KVStore* kvstore)
+            : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr, nullptr) {}
 };
 
 class RemovePartProcessor : public BaseProcessor<cpp2::AdminExecResp> {
@@ -259,6 +273,7 @@ public:
             while (retry-- > 0) {
                 auto res = part->isCatchedUp(peer);
                 LOG(INFO) << "Waiting for catching up data, peer " << peer
+                          << ", space " << spaceId << ", part " << partId
                           << ", remaining " << retry << " retry times"
                           << ", result " << static_cast<int32_t>(res);
                 switch (res) {
@@ -275,7 +290,8 @@ public:
                         return;
                     }
                     case raftex::AppendLogResult::E_SENDING_SNAPSHOT:
-                        LOG(INFO) << "Still sending snapshot, please wait...";
+                        LOG(INFO) << "Space " << spaceId << ", partId " << partId
+                                  << " is still sending snapshot, please wait...";
                         break;
                     default:
                         LOG(INFO) << "Unknown error " << static_cast<int32_t>(res);
