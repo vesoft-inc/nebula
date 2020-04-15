@@ -21,6 +21,8 @@ class GraphScanner;
 
 }
 
+static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
+
 }
 
 %code {

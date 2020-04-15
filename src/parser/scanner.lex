@@ -17,7 +17,6 @@ using TokenType = nebula::GraphParser::token;
 
 static constexpr size_t MAX_STRING = 4096;
 
-
 %}
 
 %x DQ_STR
@@ -58,7 +57,6 @@ REVERSELY                   ([Rr][Ee][Vv][Ee][Rr][Ss][Ee][Ll][Yy])
 SPACE                       ([Ss][Pp][Aa][Cc][Ee])
 SPACES                      ([Ss][Pp][Aa][Cc][Ee][Ss])
 INT                         ([Ii][Nn][Tt])
-BIGINT                      ([Bb][Ii][Gg][Ii][Nn][Tt])
 DOUBLE                      ([Dd][Oo][Uu][Bb][Ll][Ee])
 STRING                      ([Ss][Tt][Rr][Ii][Nn][Gg])
 BOOL                        ([Bb][Oo][Oo][Ll])
@@ -84,10 +82,6 @@ IF                          ([Ii][Ff])
 NOT                         ([Nn][Oo][Tt])
 EXISTS                      ([Ee][Xx][Ii][Ss][Tt][Ss])
 WITH                        ([Ww][Ii][Tt][Hh])
-FIRSTNAME                   ([Ff][Ii][Rr][Ss][Tt][Nn][Aa][Mm][Ee])
-LASTNAME                    ([Ll][Aa][Ss][Tt][Nn][Aa][Mm][Ee])
-EMAIL                       ([Ee][Mm][Aa][Ii][Ll])
-PHONE                       ([Pp][Hh][Oo][Nn][Ee])
 USER                        ([Uu][Ss][Ee][Rr])
 USERS                       ([Uu][Ss][Ee][Rr][Ss])
 PASSWORD                    ([Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd])
@@ -158,6 +152,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 
 %%
 
+ /* Reserved keyword */
 {GO}                        { return TokenType::KW_GO; }
 {AS}                        { return TokenType::KW_AS; }
 {TO}                        { return TokenType::KW_TO; }
@@ -170,7 +165,6 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {WHERE}                     { return TokenType::KW_WHERE; }
 {MATCH}                     { return TokenType::KW_MATCH; }
 {INSERT}                    { return TokenType::KW_INSERT; }
-{VALUES}                    { return TokenType::KW_VALUES; }
 {YIELD}                     { return TokenType::KW_YIELD; }
 {RETURN}                    { return TokenType::KW_RETURN; }
 {DESCRIBE}                  { return TokenType::KW_DESCRIBE; }
@@ -188,10 +182,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {OVER}                      { return TokenType::KW_OVER; }
 {UPTO}                      { return TokenType::KW_UPTO; }
 {REVERSELY}                 { return TokenType::KW_REVERSELY; }
-{SPACE}                     { return TokenType::KW_SPACE; }
-{SPACES}                    { return TokenType::KW_SPACES; }
 {INT}                       { return TokenType::KW_INT; }
-{BIGINT}                    { return TokenType::KW_BIGINT; }
 {DOUBLE}                    { return TokenType::KW_DOUBLE; }
 {STRING}                    { return TokenType::KW_STRING; }
 {BOOL}                      { return TokenType::KW_BOOL; }
@@ -204,66 +195,59 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {OVERWRITE}                 { return TokenType::KW_OVERWRITE; }
 {SHOW}                      { return TokenType::KW_SHOW; }
 {ADD}                       { return TokenType::KW_ADD; }
-{HOSTS}                     { return TokenType::KW_HOSTS; }
-{PARTS}                     { return TokenType::KW_PARTS; }
 {TIMESTAMP}                 { return TokenType::KW_TIMESTAMP; }
 {CREATE}                    { return TokenType::KW_CREATE;}
-{PARTITION_NUM}             { return TokenType::KW_PARTITION_NUM; }
-{REPLICA_FACTOR}            { return TokenType::KW_REPLICA_FACTOR; }
 {DROP}                      { return TokenType::KW_DROP; }
 {REMOVE}                    { return TokenType::KW_REMOVE; }
 {IF}                        { return TokenType::KW_IF; }
 {NOT}                       { return TokenType::KW_NOT; }
 {EXISTS}                    { return TokenType::KW_EXISTS; }
 {WITH}                      { return TokenType::KW_WITH; }
-{FIRSTNAME}                 { return TokenType::KW_FIRSTNAME; }
-{LASTNAME}                  { return TokenType::KW_LASTNAME; }
-{EMAIL}                     { return TokenType::KW_EMAIL; }
-{PHONE}                     { return TokenType::KW_PHONE; }
-{USER}                      { return TokenType::KW_USER; }
-{USERS}                     { return TokenType::KW_USERS; }
-{PASSWORD}                  { return TokenType::KW_PASSWORD; }
 {CHANGE}                    { return TokenType::KW_CHANGE; }
-{ROLE}                      { return TokenType::KW_ROLE; }
-{GOD}                       { return TokenType::KW_GOD; }
-{ADMIN}                     { return TokenType::KW_ADMIN; }
-{GUEST}                     { return TokenType::KW_GUEST; }
 {GRANT}                     { return TokenType::KW_GRANT; }
 {REVOKE}                    { return TokenType::KW_REVOKE; }
 {ON}                        { return TokenType::KW_ON; }
-{ROLES}                     { return TokenType::KW_ROLES; }
 {BY}                        { return TokenType::KW_BY; }
 {IN}                        { return TokenType::KW_IN; }
-{TTL_DURATION}              { return TokenType::KW_TTL_DURATION; }
-{TTL_COL}                   { return TokenType::KW_TTL_COL; }
 {DOWNLOAD}                  { return TokenType::KW_DOWNLOAD; }
-{HDFS}                      { return TokenType::KW_HDFS; }
-{CONFIGS}                   { return TokenType::KW_CONFIGS; }
 {GET}                       { return TokenType::KW_GET; }
-{GRAPH}                     { return TokenType::KW_GRAPH; }
-{META}                      { return TokenType::KW_META; }
-{STORAGE}                   { return TokenType::KW_STORAGE; }
 {OF}                        { return TokenType::KW_OF; }
-{TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }
-{FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
 {ORDER}                     { return TokenType::KW_ORDER; }
 {INGEST}                    { return TokenType::KW_INGEST; }
 {ASC}                       { return TokenType::KW_ASC; }
 {DISTINCT}                  { return TokenType::KW_DISTINCT; }
-{DEFAULT}                   { return TokenType::KW_DEFAULT; }
 {FETCH}                     { return TokenType::KW_FETCH; }
 {PROP}                      { return TokenType::KW_PROP; }
-{ALL}                       { return TokenType::KW_ALL; }
 {BALANCE}                   { return TokenType::KW_BALANCE; }
+{STOP}                      { return TokenType::KW_STOP; }
+{LIMIT}                     { return TokenType::KW_LIMIT; }
+{OFFSET}                    { return TokenType::KW_OFFSET; }
+{IS}                        { return TokenType::KW_IS; }
+{NULL}                      { return TokenType::KW_NULL; }
+
+
+ /* Unreserved keyword */
+{HOSTS}                     { return TokenType::KW_HOSTS; }
+{SPACE}                     { return TokenType::KW_SPACE; }
+{SPACES}                    { return TokenType::KW_SPACES; }
+{VALUES}                    { return TokenType::KW_VALUES; }
+{USER}                      { return TokenType::KW_USER; }
+{USERS}                     { return TokenType::KW_USERS; }
+{PASSWORD}                  { return TokenType::KW_PASSWORD; }
+{ROLE}                      { return TokenType::KW_ROLE; }
+{ROLES}                     { return TokenType::KW_ROLES; }
+{GOD}                       { return TokenType::KW_GOD; }
+{ADMIN}                     { return TokenType::KW_ADMIN; }
+{GUEST}                     { return TokenType::KW_GUEST; }
+{GROUP}                     { return TokenType::KW_GROUP; }
+{PARTITION_NUM}             { return TokenType::KW_PARTITION_NUM; }
+{REPLICA_FACTOR}            { return TokenType::KW_REPLICA_FACTOR; }
+{ALL}                       { return TokenType::KW_ALL; }
 {LEADER}                    { return TokenType::KW_LEADER; }
 {UUID}                      { return TokenType::KW_UUID; }
 {DATA}                      { return TokenType::KW_DATA; }
-{STOP}                      { return TokenType::KW_STOP; }
-{SHORTEST}                  { return TokenType::KW_SHORTEST; }
-{PATH}                      { return TokenType::KW_PATH; }
-{LIMIT}                     { return TokenType::KW_LIMIT; }
-{OFFSET}                    { return TokenType::KW_OFFSET; }
-{GROUP}                     { return TokenType::KW_GROUP; }
+{SNAPSHOT}                  { return TokenType::KW_SNAPSHOT; }
+{SNAPSHOTS}                 { return TokenType::KW_SNAPSHOTS; }
 {COUNT}                     { return TokenType::KW_COUNT; }
 {COUNT_DISTINCT}            { return TokenType::KW_COUNT_DISTINCT; }
 {SUM}                       { return TokenType::KW_SUM; }
@@ -274,14 +258,25 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {BIT_AND}                   { return TokenType::KW_BIT_AND; }
 {BIT_OR}                    { return TokenType::KW_BIT_OR; }
 {BIT_XOR}                   { return TokenType::KW_BIT_XOR; }
-{IS}                        { return TokenType::KW_IS; }
-{NULL}                      { return TokenType::KW_NULL; }
-{SNAPSHOT}                  { return TokenType::KW_SNAPSHOT; }
-{SNAPSHOTS}                 { return TokenType::KW_SNAPSHOTS; }
+{PATH}                      { return TokenType::KW_PATH; }
 {FORCE}                     { return TokenType::KW_FORCE; }
+{PARTS}                     { return TokenType::KW_PARTS; }
+{DEFAULT}                   { return TokenType::KW_DEFAULT; }
+{HDFS}                      { return TokenType::KW_HDFS; }
+{CONFIGS}                   { return TokenType::KW_CONFIGS; }
+{TTL_DURATION}              { return TokenType::KW_TTL_DURATION; }
+{TTL_COL}                   { return TokenType::KW_TTL_COL; }
+{GRAPH}                     { return TokenType::KW_GRAPH; }
+{META}                      { return TokenType::KW_META; }
+{STORAGE}                   { return TokenType::KW_STORAGE; }
+{SHORTEST}                  { return TokenType::KW_SHORTEST; }
 {OUT}                       { return TokenType::KW_OUT; }
 {BOTH}                      { return TokenType::KW_BOTH; }
 {SUBGRAPH}                  { return TokenType::KW_SUBGRAPH; }
+
+
+{TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }
+{FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }
@@ -331,13 +326,28 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {LABEL}                     {
                                 yylval->strval = new std::string(yytext, yyleng);
                                 if (yylval->strval->size() > MAX_STRING) {
-                                    yyterminate();
+                                    auto error = "Out of range of the LABEL length, "
+                                                  "the  max length of LABEL is " +
+                                                  std::to_string(MAX_STRING) + ":";
+                                    delete yylval->strval;
+                                    throw GraphParser::syntax_error(*yylloc, error);
+                                }
+                                return TokenType::LABEL;
+                            }
+\`{LABEL}\`                 {
+                                yylval->strval = new std::string(yytext + 1, yyleng - 2);
+                                if (yylval->strval->size() > MAX_STRING) {
+                                    auto error = "Out of range of the LABEL length, "
+                                                  "the  max length of LABEL is " +
+                                                  std::to_string(MAX_STRING) + ":";
+                                    delete yylval->strval;
+                                    throw GraphParser::syntax_error(*yylloc, error);
                                 }
                                 return TokenType::LABEL;
                             }
 {IP_OCTET}(\.{IP_OCTET}){3} {
                                 uint32_t octets[4] = {0};
-                                sscanf(yytext, "%i.%i.%i.%i", &octets[3], &octets[2], &octets[1], &octets[0]);
+                                sscanf(yytext, "%u.%u.%u.%u", &octets[3], &octets[2], &octets[1], &octets[0]);
                                 // The bytes order conforms to the one used in NetworkUtils
                                 uint32_t ipv4 = (octets[3] << 24) | (octets[2] << 16) | (octets[1] << 8) | octets[0];
                                 yylval->intval = ipv4;
@@ -350,12 +360,15 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                         i++;
                                     }
                                     if (yyleng - i > 16) {
-                                        yyterminate();
+                                        throw GraphParser::syntax_error(*yylloc, "Out of range:");
                                     }
                                 }
-                                int64_t val = 0;
+                                uint64_t val = 0;
                                 sscanf(yytext, "%lx", &val);
-                                yylval->intval = val;
+                                if (val > MAX_ABS_INTEGER) {
+                                    throw GraphParser::syntax_error(*yylloc, "Out of range:");
+                                }
+                                yylval->intval = static_cast<int64_t>(val);
                                 return TokenType::INTEGER;
                             }
 0{OCT}+                     {
@@ -364,23 +377,29 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                     while (i < yyleng && yytext[i] == '0') {
                                         i++;
                                     }
-                                    if (yyleng - i > 22) {
-                                        yyterminate();
-                                    } else if (yyleng - i == 22 && yytext[i] != '1') {
-                                        yyterminate();
+                                    if (yyleng - i > 22 ||
+                                            (yyleng - i == 22 && yytext[i] != '1')) {
+                                        throw GraphParser::syntax_error(*yylloc, "Out of range:");
                                     }
                                 }
-                                int64_t val = 0;
+                                uint64_t val = 0;
                                 sscanf(yytext, "%lo", &val);
-                                yylval->intval = val;
+                                if (val > MAX_ABS_INTEGER) {
+                                    throw GraphParser::syntax_error(*yylloc, "Out of range:");
+                                }
+                                yylval->intval = static_cast<int64_t>(val);
                                 return TokenType::INTEGER;
                             }
 {DEC}+                      {
                                 try {
                                     folly::StringPiece text(yytext, yyleng);
-                                    yylval->intval = folly::to<int64_t>(text);
+                                    uint64_t val = folly::to<uint64_t>(text);
+                                    if (val > MAX_ABS_INTEGER) {
+                                        throw GraphParser::syntax_error(*yylloc, "Out of range:");
+                                    }
+                                    yylval->intval = val;
                                 } catch (...) {
-                                    yyterminate();
+                                    throw GraphParser::syntax_error(*yylloc, "Out of range:");
                                 }
                                 return TokenType::INTEGER;
                             }
@@ -389,7 +408,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                     folly::StringPiece text(yytext, yyleng);
                                     yylval->doubleval = folly::to<double>(text);
                                 } catch (...) {
-                                    yyterminate();
+                                    throw GraphParser::syntax_error(*yylloc, "Out of range:");
                                 }
                                 return TokenType::DOUBLE;
                             }
@@ -398,7 +417,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                     folly::StringPiece text(yytext, yyleng);
                                     yylval->doubleval = folly::to<double>(text);
                                 } catch (...) {
-                                    yyterminate();
+                                    throw GraphParser::syntax_error(*yylloc, "Out of range:");
                                 }
                                 return TokenType::DOUBLE;
                             }
@@ -420,7 +439,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                             }
 <DQ_STR,SQ_STR><<EOF>>      {
                                 // Must match '' or ""
-                                throw GraphParser::syntax_error(*yylloc, "unterminated string");
+                                throw GraphParser::syntax_error(*yylloc, "Unterminated string: ");
                             }
 <DQ_STR,SQ_STR>\n           { yyterminate(); }
 <DQ_STR>[^\\\n\"]+          {
@@ -435,7 +454,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                             }
 <DQ_STR,SQ_STR>\\{OCT}{1,3} {
                                 makeSpaceForString(1);
-                                int val = 0;
+                                uint32_t val = 0;
                                 sscanf(yytext + 1, "%o", &val);
                                 if (val > 0xFF) {
                                     yyterminate();

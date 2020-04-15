@@ -164,7 +164,7 @@ std::string UpdateItem::toString() const {
 }
 
 StatusOr<std::string> UpdateItem::toEvaledString() const {
-    return Status::Error("");
+    return Status::Error(std::string(""));
 }
 
 std::string UpdateList::toString() const {

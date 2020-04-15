@@ -34,7 +34,6 @@ nebula_add_executable(
         $<TARGET_OBJECTS:common_concurrent_obj>
         $<TARGET_OBJECTS:common_datatypes_obj>
         $<TARGET_OBJECTS:common_conf_obj>
-        $<TARGET_OBJECTS:common_storage_client_gflags_obj>
         $<TARGET_OBJECTS:common_file_based_cluster_id_man_obj>
     LIBRARIES
         proxygenhttpserver

@@ -118,11 +118,16 @@ TEST(Scanner, Basic) {
         lexer.setReadBuffer(input);                                         \
         nebula::GraphParser::semantic_type dumyyylval;                      \
         nebula::GraphParser::location_type dumyyyloc;                       \
-        auto token = lexer.yylex(&dumyyylval, &dumyyyloc);                  \
-        if (token != 0) {                                                   \
-            return AssertionFailure() << "Lexical error should've happened "\
-                                      << "for `" << STR << "'";             \
-        } else {                                                            \
+        try {                                                               \
+            auto token = lexer.yylex(&dumyyylval, &dumyyyloc);              \
+            if (token != 0) {                                               \
+                return AssertionFailure() << "Lexical error should've "     \
+                                          << "happened for `" << STR << "'";\
+            } else {                                                        \
+                return AssertionSuccess();                                  \
+            }                                                               \
+        } catch (const std::exception &e) {                                 \
+            LOG(INFO) << e.what() << STR;                                   \
             return AssertionSuccess();                                      \
         }                                                                   \
     })
@@ -217,8 +222,7 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("spaces", TokenType::KW_SPACES),
         CHECK_SEMANTIC_TYPE("PARTS", TokenType::KW_PARTS),
         CHECK_SEMANTIC_TYPE("Parts", TokenType::KW_PARTS),
-        CHECK_SEMANTIC_TYPE("BIGINT", TokenType::KW_BIGINT),
-        CHECK_SEMANTIC_TYPE("bigint", TokenType::KW_BIGINT),
+        CHECK_SEMANTIC_TYPE("parts", TokenType::KW_PARTS),
         CHECK_SEMANTIC_TYPE("DOUBLE", TokenType::KW_DOUBLE),
         CHECK_SEMANTIC_TYPE("double", TokenType::KW_DOUBLE),
         CHECK_SEMANTIC_TYPE("STRING", TokenType::KW_STRING),
@@ -295,20 +299,6 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("WITH", TokenType::KW_WITH),
         CHECK_SEMANTIC_TYPE("With", TokenType::KW_WITH),
         CHECK_SEMANTIC_TYPE("with", TokenType::KW_WITH),
-        CHECK_SEMANTIC_TYPE("FIRSTNAME", TokenType::KW_FIRSTNAME),
-        CHECK_SEMANTIC_TYPE("Firstname", TokenType::KW_FIRSTNAME),
-        CHECK_SEMANTIC_TYPE("FirstName", TokenType::KW_FIRSTNAME),
-        CHECK_SEMANTIC_TYPE("firstname", TokenType::KW_FIRSTNAME),
-        CHECK_SEMANTIC_TYPE("LASTNAME", TokenType::KW_LASTNAME),
-        CHECK_SEMANTIC_TYPE("Lastname", TokenType::KW_LASTNAME),
-        CHECK_SEMANTIC_TYPE("LastName", TokenType::KW_LASTNAME),
-        CHECK_SEMANTIC_TYPE("lastname", TokenType::KW_LASTNAME),
-        CHECK_SEMANTIC_TYPE("EMAIL", TokenType::KW_EMAIL),
-        CHECK_SEMANTIC_TYPE("Email", TokenType::KW_EMAIL),
-        CHECK_SEMANTIC_TYPE("email", TokenType::KW_EMAIL),
-        CHECK_SEMANTIC_TYPE("PHONE", TokenType::KW_PHONE),
-        CHECK_SEMANTIC_TYPE("Phone", TokenType::KW_PHONE),
-        CHECK_SEMANTIC_TYPE("phone", TokenType::KW_PHONE),
         CHECK_SEMANTIC_TYPE("USER", TokenType::KW_USER),
         CHECK_SEMANTIC_TYPE("User", TokenType::KW_USER),
         CHECK_SEMANTIC_TYPE("user", TokenType::KW_USER),
@@ -432,14 +422,14 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_VALUE(".123", TokenType::DOUBLE, 0.123),
         CHECK_SEMANTIC_VALUE("123.456", TokenType::DOUBLE, 123.456),
 
-        CHECK_SEMANTIC_VALUE("0xFFFFFFFFFFFFFFFF", TokenType::INTEGER, 0xFFFFFFFFFFFFFFFFL),
-        CHECK_SEMANTIC_VALUE("0x00FFFFFFFFFFFFFFFF", TokenType::INTEGER, 0x00FFFFFFFFFFFFFFFFL),
+        CHECK_SEMANTIC_VALUE("0x7FFFFFFFFFFFFFFF", TokenType::INTEGER, 0x7FFFFFFFFFFFFFFFL),
+        CHECK_SEMANTIC_VALUE("0x007FFFFFFFFFFFFFFF", TokenType::INTEGER, 0x007FFFFFFFFFFFFFFFL),
         CHECK_SEMANTIC_VALUE("9223372036854775807", TokenType::INTEGER, 9223372036854775807L),
-        CHECK_SEMANTIC_VALUE("001777777777777777777777", TokenType::INTEGER,
-                              001777777777777777777777),
-        CHECK_LEXICAL_ERROR("9223372036854775808"),
-        CHECK_LEXICAL_ERROR("0xFFFFFFFFFFFFFFFFF"),
-        CHECK_LEXICAL_ERROR("002777777777777777777777"),
+        CHECK_SEMANTIC_VALUE("00777777777777777777777", TokenType::INTEGER,
+                              00777777777777777777777),
+        CHECK_LEXICAL_ERROR("9223372036854775809"),
+        CHECK_LEXICAL_ERROR("0x8000000000000001"),
+        CHECK_LEXICAL_ERROR("001000000000000000000001"),
         // TODO(dutor) It's too tedious to paste an overflowed double number here,
         // thus we rely on `folly::to<double>' to cover those cases for us.
 

@@ -63,7 +63,7 @@ public:
         }
         auto *sentences = sentences_;
         sentences_ = nullptr;
-        return sentences;
+        return std::make_unique<SequentialSentences>(sentences);
     }
 
 private:

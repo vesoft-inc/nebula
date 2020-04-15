@@ -991,24 +991,6 @@ TEST(Parser, UserOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "CREATE USER IF NOT EXISTS user1 WITH PASSWORD \"aaa\" , "
-                            "FIRSTNAME \"a\", LASTNAME \"a\", EMAIL \"a\", PHONE \"111\"";
-        auto result = parser.parse(query);
-        ASSERT_TRUE(result.ok()) << result.status();
-        auto& sentence = result.value();
-        EXPECT_EQ(query, sentence->toString());
-    }
-    {
-        GQLParser parser;
-        std::string query = "ALTER USER user1 WITH FIRSTNAME \"a\","
-                            " LASTNAME \"a\", EMAIL \"a\", PHONE \"111\"";
-        auto result = parser.parse(query);
-        ASSERT_TRUE(result.ok()) << result.status();
-        auto& sentence = result.value();
-        EXPECT_EQ(query, sentence->toString());
-    }
-    {
-        GQLParser parser;
         std::string query = "DROP USER user1";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();

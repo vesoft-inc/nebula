@@ -447,7 +447,7 @@ public:
         hasRank_ = true;
     }
 
-    const int64_t getRank() const {
+    int64_t getRank() const {
         return rank_;
     }
 
@@ -549,7 +549,7 @@ public:
         host_.reset(host);
     }
 
-    const int32_t port() const {
+    int32_t port() const {
         return port_;
     }
 

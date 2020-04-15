@@ -50,7 +50,7 @@ std::string VertexIDList::toString() const {
 
 Status VerticesClause::prepare(Clause::Vertices &vertices) const {
     UNUSED(vertices);
-    return Status::Error("");
+    return Status::Error(std::string(""));
 }
 
 std::string FromClause::toString() const {

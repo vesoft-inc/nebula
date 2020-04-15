@@ -9,6 +9,7 @@
 #include "service/QueryInstance.h"
 #include "service/ExecutionContext.h"
 
+DECLARE_bool(local_config);
 DECLARE_string(meta_server_addrs);
 
 namespace nebula {
@@ -28,11 +29,12 @@ Status QueryEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor
         return addrs.status();
     }
 
+    meta::MetaClientOptions options;
+    options.serviceName_ = "graph";
+    options.skipConfig_ = FLAGS_local_config;
     metaClient_ = std::make_unique<meta::MetaClient>(ioExecutor,
                                                      std::move(addrs.value()),
-                                                     HostAddr(0, 0),
-                                                     0,
-                                                     false);
+                                                     options);
     // load data try 3 time
     bool loadDataOk = metaClient_->waitForMetadReady(3);
     if (!loadDataOk) {
