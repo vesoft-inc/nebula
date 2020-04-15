@@ -4,7 +4,7 @@
 CREATE {TAG | EDGE} [IF NOT EXISTS] {<tag_name> | <edge_name>}
     ([<create_definition>, ...])
     [tag_edge_options]
-  
+
 <create_definition> ::=
     <prop_name> <data_type>
 
@@ -46,9 +46,9 @@ CREATE {TAG | EDGE} [IF NOT EXISTS] {<tag_name> | <edge_name>}
     > NULL 和 NOT NULL 在创建 tag 和 edge 时不可用。(相比于关系型数据库)。
 
 * **默认值约束**
-  
+
   您可以在创建标签/边时使用 `DEFAULT` 约束设置属性的默认值。如果没有指定其他值，那么会将默认值插入新的顶点或边。默认值可以为 **Nebula Graph** 支持的任一数据类型，且支持表达式。如果您不想使用默认值，也可以写一个用户指定的值。
-  
+
   > 暂时不支持使用 `Alter` 更改默认值。
 
 ### Time-to-Live (TTL) 语法
@@ -66,6 +66,8 @@ CREATE {TAG | EDGE} [IF NOT EXISTS] {<tag_name> | <edge_name>}
 * 单 TTL 定义
 
     仅支持指定单个 TTL_COL 字段。
+
+TTL 详细用法参见 [TTL 文档](TTL.md)。
 
 ### 示例
 
@@ -86,9 +88,9 @@ nebula> CREATE TAG woman(name string, age int,
    TTL_DURATION = 100, TTL_COL = "create_time" -- 时间间隔是 100s，从 create_time 字段的值开始
 
 nebula> CREATE EDGE marriage(location string, since timestamp)
-    TTL_DURATION = 0, TTL_COL = since -- 负值或 0 数据不会失效
+    TTL_DURATION = 0, TTL_COL = "since" -- 负值或 0 数据不会失效
 
 nebula> CREATE TAG icecream(made timestamp, temperature int)
-   TTL_DURATION = 100, TTL_COL = made,
+   TTL_DURATION = 100, TTL_COL = "made",
    --  超过 TTL_DURATION 数据即失效
 ```
