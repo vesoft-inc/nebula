@@ -29,7 +29,7 @@ public:
         VLOG(1) << "Starting web service...";
 
         rootPath_ = std::make_unique<fs::TempDir>("/tmp/MetaHttpIngestHandler.XXXXXX");
-        kv_ = TestUtils::initKV(rootPath_->path());
+        kv_ = MockCluster::initMetaKV(rootPath_->path());
         TestUtils::createSomeHosts(kv_.get());
         TestUtils::assembleSpace(kv_.get(), 1, 1);
         pool_ = std::make_unique<nebula::thread::GenericThreadPool>();

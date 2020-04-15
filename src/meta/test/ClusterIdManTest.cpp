@@ -25,7 +25,7 @@ TEST(ClusterIDManTest, FileTest) {
 
 TEST(ClusterIDManTest, KVTest) {
     fs::TempDir rootPath("/tmp/ClusterIDManTest.XXXXXX");
-    auto kv = TestUtils::initKV(rootPath.path());
+    auto kv = MockCluster::initMetaKV(rootPath.path());
     auto clusterId = ClusterIdMan::create("127.0.0.1:44500");
     CHECK_NE(0, clusterId);
     CHECK(ClusterIdMan::persistInKV(kv.get(), "clusterId", clusterId));

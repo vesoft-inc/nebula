@@ -8,7 +8,7 @@
 #define META_TEST_TESTUTILS_H_
 
 #include "base/Base.h"
-#include "test/ServerContext.h"
+#include "mock/MockCluster.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/NebulaStore.h"
@@ -29,6 +29,7 @@ namespace nebula {
 namespace meta {
 
 using nebula::meta::cpp2::PropertyType;
+using mock::MockCluster;
 
 class TestFaultInjector : public FaultInjector {
 public:
@@ -123,51 +124,6 @@ private:
 
 class TestUtils {
 public:
-    static std::unique_ptr<kvstore::KVStore> initKV(const char* rootPath, uint16_t port = 0) {
-        auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
-        auto partMan = std::make_unique<kvstore::MemPartManager>();
-        auto workers = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
-                                 1, true /*stats*/);
-        workers->setNamePrefix("executor");
-        workers->start();
-
-        // GraphSpaceID =>  {PartitionIDs}
-        // 0 => {0}
-        auto& partsMap = partMan->partsMap();
-        partsMap[0][0] = PartHosts();
-
-        std::vector<std::string> paths;
-        paths.emplace_back(folly::stringPrintf("%s/disk1", rootPath));
-
-        kvstore::KVOptions options;
-        options.dataPaths_ = std::move(paths);
-        options.partMan_ = std::move(partMan);
-        IPv4 localIp;
-        network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
-        if (port == 0) {
-            port = network::NetworkUtils::getAvailablePort();
-        }
-        HostAddr localhost = HostAddr(localIp, port);
-
-        auto store = std::make_unique<kvstore::NebulaStore>(std::move(options),
-                                                            ioPool,
-                                                            localhost,
-                                                            workers);
-        store->init();
-        while (true) {
-            auto retLeader = store->partLeader(0, 0);
-            if (ok(retLeader)) {
-                auto leader = value(std::move(retLeader));
-                LOG(INFO) << "Leader: " << leader;
-                if (leader == localhost) {
-                    break;
-                }
-            }
-            usleep(100000);
-        }
-        return store;
-    }
-
     static cpp2::ColumnDef columnDef(int32_t index, cpp2::PropertyType type) {
         cpp2::ColumnDef column;
         column.set_name(folly::stringPrintf("col_%d", index));
@@ -317,23 +273,6 @@ public:
             baton.post();
         });
         baton.wait();
-    }
-
-    static std::unique_ptr<test::ServerContext> mockMetaServer(uint16_t port,
-                                                               const char* dataPath,
-                                                               ClusterID clusterId = 0) {
-        LOG(INFO) << "Initializing KVStore at \"" << dataPath << "\"";
-
-        auto sc = std::make_unique<test::ServerContext>();
-        sc->kvStore_ = TestUtils::initKV(dataPath, port);
-
-        auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(sc->kvStore_.get(),
-                                                                          clusterId);
-        sc->mockCommon("meta", port, handler);
-        LOG(INFO) << "The Meta Daemon started on port " << sc->port_
-                  << ", data path is at \"" << dataPath << "\"";
-
-        return sc;
     }
 
     static bool verifySchema(cpp2::Schema &result,

@@ -16,6 +16,7 @@
 #include "meta/test/TestUtils.h"
 #include "meta/GflagsManager.h"
 #include "meta/ClientBasedGflagsManager.h"
+#include "mock/MockCluster.h"
 
 DECLARE_int32(heartbeat_interval_secs);
 DECLARE_string(rocksdb_db_options);
@@ -31,23 +32,17 @@ TEST(MetaClientTest, InterfacesTest) {
     FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
 
-    // Let the system choose an available port for us
-    uint32_t localMetaPort = 0;
-    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
+    mock::MockCluster cluster;
+    cluster.startMeta(0, rootPath.path());
+    cluster.initMetaClient();
+    auto* kv = cluster.metaKV_.get();
+    auto* client = cluster.metaClient_.get();
 
     GraphSpaceID spaceId = 0;
-    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-    IPv4 localIp;
-    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
-    auto clientPort = network::NetworkUtils::getAvailablePort();
-    HostAddr localHost{localIp, clientPort};
-    auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
-    client->waitForMetadReady();
     {
         // Add hosts automatically, then testing listHosts interface.
         std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
-        TestUtils::registerHB(sc->kvStore_.get(), hosts);
+        TestUtils::registerHB(kv, hosts);
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
         for (auto i = 0u; i < hosts.size(); i++) {
@@ -158,7 +153,7 @@ TEST(MetaClientTest, InterfacesTest) {
         }
 
         auto schemaMan = std::make_unique<ServerBasedSchemaManager>();
-        schemaMan->init(client.get());
+        schemaMan->init(client);
         {
             // listTagSchemas
             auto ret1 = client->listTagSchemas(spaceId).get();
@@ -335,26 +330,25 @@ TEST(MetaClientTest, InterfacesTest) {
         ASSERT_TRUE(ret1.ok()) << ret1.status();
         ASSERT_EQ(0, ret1.value().size());
     }
-
-    client.reset();
 }
 
 TEST(MetaClientTest, TagTest) {
     FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaClientTagTest.XXXXXX");
 
-    // Let the system choose an available port for us
-    int32_t localMetaPort = 0;
-    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
+    mock::MockCluster cluster;
+    cluster.startMeta(0, rootPath.path());
+    uint32_t localMetaPort = cluster.metaServer_->port_;
+    auto* kv = cluster.metaKV_.get();
+    auto localIp = cluster.localIP();
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-    IPv4 localIp;
-    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
-    auto localhosts = std::vector<HostAddr>{HostAddr(localIp, sc->port_)};
+    auto localhosts = std::vector<HostAddr>{HostAddr(localIp, localMetaPort)};
     auto client = std::make_shared<MetaClient>(threadPool, localhosts);
-    std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
     client->waitForMetadReady();
-    TestUtils::registerHB(sc->kvStore_.get(), hosts);
+
+    std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
+    TestUtils::registerHB(kv, hosts);
     SpaceDesc spaceDesc("default", 9, 3);
     auto ret = client->createSpace(spaceDesc).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
@@ -453,18 +447,14 @@ TEST(MetaClientTest, EdgeTest) {
     FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaClientEdgeTest.XXXXXX");
 
-    // Let the system choose an available port for us
-    int32_t localMetaPort = 0;
-    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
+    mock::MockCluster cluster;
+    cluster.startMeta(0, rootPath.path());
+    cluster.initMetaClient();
+    auto* kv = cluster.metaKV_.get();
+    auto* client = cluster.metaClient_.get();
 
-    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-    IPv4 localIp;
-    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
-    auto localhosts = std::vector<HostAddr>{HostAddr(localIp, sc->port_)};
-    auto client = std::make_shared<MetaClient>(threadPool, localhosts);
     std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
-    client->waitForMetadReady();
-    TestUtils::registerHB(sc->kvStore_.get(), hosts);
+    TestUtils::registerHB(kv, hosts);
     SpaceDesc spaceDesc("default_space", 9, 3);
     auto ret = client->createSpace(spaceDesc).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
@@ -567,19 +557,14 @@ TEST(MetaClientTest, TagIndexTest) {
     FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaClientTagIndexTest.XXXXXX");
 
-    // Let the system choose an available port for us
-    int32_t localMetaPort = 0;
-    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
+    mock::MockCluster cluster;
+    cluster.startMeta(0, rootPath.path());
+    cluster.initMetaClient();
+    auto* kv = cluster.metaKV_.get();
+    auto* client = cluster.metaClient_.get();
 
-    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-    IPv4 localIp;
-    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
-    auto localhosts = std::vector<HostAddr>{HostAddr(localIp, sc->port_)};
     std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
-    auto client = std::make_shared<MetaClient>(threadPool, localhosts);
-    client->waitForMetadReady();
-    TestUtils::registerHB(sc->kvStore_.get(), hosts);
-
+    TestUtils::registerHB(kv, hosts);
     SpaceDesc spaceDesc("default_space", 8, 3);
     auto ret = client->createSpace(spaceDesc).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
@@ -732,19 +717,14 @@ TEST(MetaClientTest, EdgeIndexTest) {
     FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaClientEdgeIndexTest.XXXXXX");
 
-    // Let the system choose an available port for us
-    int32_t localMetaPort = 0;
-    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
+    mock::MockCluster cluster;
+    cluster.startMeta(0, rootPath.path());
+    cluster.initMetaClient();
+    auto* kv = cluster.metaKV_.get();
+    auto* client = cluster.metaClient_.get();
 
-    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-    IPv4 localIp;
-    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
-    auto localhosts = std::vector<HostAddr>{HostAddr(localIp, sc->port_)};
-    auto client = std::make_shared<MetaClient>(threadPool, localhosts);
-
-    client->waitForMetadReady();
     std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
-    TestUtils::registerHB(sc->kvStore_.get(), hosts);
+    TestUtils::registerHB(kv, hosts);
     SpaceDesc spaceDesc("default_space", 8, 3);
     auto ret = client->createSpace(spaceDesc).get();
     GraphSpaceID space = ret.value();
@@ -952,23 +932,18 @@ TEST(MetaClientTest, DiffTest) {
     FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
 
-    // Let the system choose an available port for us
-    int32_t localMetaPort = 0;
-    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
+    mock::MockCluster cluster;
+    cluster.startMeta(0, rootPath.path());
+    cluster.initMetaClient();
+    auto* kv = cluster.metaKV_.get();
+    auto* client = cluster.metaClient_.get();
 
-    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-    IPv4 localIp;
-    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto listener = std::make_unique<TestListener>();
-    auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{
-                                                    HostAddr(localIp, sc->port_)});
-    client->waitForMetadReady();
     client->registerListener(listener.get());
     {
         // Add hosts automatically, then testing listHosts interface.
         std::vector<HostAddr> hosts = {{0, 0}};
-        TestUtils::registerHB(sc->kvStore_.get(), hosts);
+        TestUtils::registerHB(kv, hosts);
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
         for (auto i = 0u; i < hosts.size(); i++) {
@@ -1008,23 +983,18 @@ TEST(MetaClientTest, HeartbeatTest) {
     FLAGS_heartbeat_interval_secs = 1;
     const nebula::ClusterID kClusterId = 10;
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
-    auto sc = TestUtils::mockMetaServer(10001, rootPath.path(), kClusterId);
+    mock::MockCluster cluster;
+    cluster.startMeta(0, rootPath.path());
 
-    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-    IPv4 localIp;
-    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
-    auto listener = std::make_unique<TestListener>();
-    auto clientPort = network::NetworkUtils::getAvailablePort();
-    HostAddr localHost{localIp, clientPort};
-
-    MetaClientOptions options;
+    meta::MetaClientOptions options;
+    HostAddr localHost(cluster.localIP(), network::NetworkUtils::getAvailablePort());
     options.localHost_ = localHost;
     options.clusterId_ = kClusterId;
     options.inStoraged_ = true;
-    auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{HostAddr(localIp, 10001)},
-                                               options);
-    client->waitForMetadReady();
+    cluster.initMetaClient(std::move(options));
+    auto* client = cluster.metaClient_.get();
+
+    auto listener = std::make_unique<TestListener>();
     client->registerListener(listener.get());
     {
         // Add hosts automatically, then testing listHosts interface.
@@ -1038,7 +1008,7 @@ TEST(MetaClientTest, HeartbeatTest) {
         }
     }
     sleep(FLAGS_heartbeat_interval_secs + 1);
-    ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(sc->kvStore_.get()).size());
+    ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(cluster.metaKV_.get()).size());
 }
 
 
@@ -1092,16 +1062,17 @@ TEST(MetaClientTest, SimpleTest) {
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
 
-    auto sc = std::make_unique<test::ServerContext>();
+    auto mockMetad = std::make_unique<mock::RpcServer>();
     auto handler = std::make_shared<TestMetaService>();
-    sc->mockCommon("meta", 0, handler);
+    mockMetad->start("meta", 0, handler);
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     auto clientPort = network::NetworkUtils::getAvailablePort();
     HostAddr localHost{localIp, clientPort};
-    auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{
-                                                   HostAddr(localIp, sc->port_)});
+    auto client = std::make_shared<MetaClient>(
+                                            threadPool,
+                                            std::vector<HostAddr>{
+                                                HostAddr(localIp, mockMetad->port_)});
     {
         LOG(INFO) << "Test heart beat...";
         folly::Baton<true, std::atomic> baton;
@@ -1140,15 +1111,15 @@ TEST(MetaClientTest, RetryOnceTest) {
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
 
-    std::vector<std::unique_ptr<test::ServerContext>> contexts;
+    std::vector<std::unique_ptr<mock::RpcServer>> metads;
     std::vector<std::shared_ptr<TestMetaServiceRetry>> handlers;
     std::vector<HostAddr> addrs;
     for (size_t i = 0; i < 3; i++) {
-        auto sc = std::make_unique<test::ServerContext>();
+        auto metad = std::make_unique<mock::RpcServer>();
         auto handler = std::make_shared<TestMetaServiceRetry>();
-        sc->mockCommon("meta", 0, handler);
-        addrs.emplace_back(localIp, sc->port_);
-        contexts.emplace_back(std::move(sc));
+        metad->start(folly::stringPrintf("meta-%ld", i), 0, handler);
+        addrs.emplace_back(localIp, metad->port_);
+        metads.emplace_back(std::move(metad));
         handlers.emplace_back(handler);
     }
     // set leaders to first service
@@ -1179,17 +1150,18 @@ TEST(MetaClientTest, RetryUntilLimitTest) {
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
 
-    std::vector<std::unique_ptr<test::ServerContext>> contexts;
+    std::vector<std::unique_ptr<mock::RpcServer>> metads;
     std::vector<std::shared_ptr<TestMetaServiceRetry>> handlers;
     std::vector<HostAddr> addrs;
     for (size_t i = 0; i < 3; i++) {
-        auto sc = std::make_unique<test::ServerContext>();
+        auto metad = std::make_unique<mock::RpcServer>();
         auto handler = std::make_shared<TestMetaServiceRetry>();
-        sc->mockCommon("meta", 0, handler);
-        addrs.emplace_back(localIp, sc->port_);
-        contexts.emplace_back(std::move(sc));
+        metad->start(folly::stringPrintf("meta-%ld", i), 0, handler);
+        addrs.emplace_back(localIp, metad->port_);
+        metads.emplace_back(std::move(metad));
         handlers.emplace_back(handler);
     }
+
     for (size_t i = 0; i < addrs.size(); i++) {
         handlers[i]->setLeader(addrs[(i + 1) % addrs.size()]);
         handlers[i]->setAddr(addrs[i]);
@@ -1216,22 +1188,16 @@ TEST(MetaClientTest, Config) {
     FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaClientTest.Config.XXXXXX");
 
-    // Let the system choose an available port for us
-    int32_t localMetaPort = 0;
-    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
+    mock::MockCluster cluster;
+    cluster.startMeta(0, rootPath.path());
 
-    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-    IPv4 localIp;
-    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     MetaClientOptions options;
     // Now the `--local_config' option only affect if initialize the configuration from meta
     // not affect `show/update/get configs'
     options.skipConfig_ = false;
-    auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{
-                                                    HostAddr(localIp, sc->port_)},
-                                                options);
-    client->waitForMetadReady();
+
+    cluster.initMetaClient(std::move(options));
+    auto* client = cluster.metaClient_.get();
 
     // Empty Configuration
     // List
@@ -1352,24 +1318,27 @@ TEST(MetaClientTest, Config) {
 TEST(MetaClientTest, RocksdbOptionsTest) {
     FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/RocksdbOptionsTest.XXXXXX");
-    uint32_t localMetaPort = 0;
-    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
-    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-    IPv4 localIp;
-    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+
+    mock::MockCluster cluster;
+    cluster.startMeta(0, rootPath.path());
+
+    MetaClientOptions options;
+    // Now the `--local_config' option only affect if initialize the configuration from meta
+    // not affect `show/update/get configs'
+    options.skipConfig_ = false;
+
+    cluster.initMetaClient(std::move(options));
+    auto* client = cluster.metaClient_.get();
 
     auto listener = std::make_unique<TestListener>();
     auto module = cpp2::ConfigModule::STORAGE;
     auto type = cpp2::ConfigType::NESTED;
     auto mode = meta::cpp2::ConfigMode::MUTABLE;
 
-    auto client = std::make_shared<MetaClient>(threadPool,
-        std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
-    client->waitForMetadReady();
     client->registerListener(listener.get());
     client->gflagsModule_ = module;
 
-    ClientBasedGflagsManager cfgMan(client.get());
+    ClientBasedGflagsManager cfgMan(client);
     // mock some rocksdb gflags to meta
     {
         std::vector<cpp2::ConfigItem> configItems;
@@ -1384,7 +1353,7 @@ TEST(MetaClientTest, RocksdbOptionsTest) {
     }
     {
         std::vector<HostAddr> hosts = {{0, 0}};
-        TestUtils::registerHB(sc->kvStore_.get(), hosts);
+        TestUtils::registerHB(cluster.metaKV_.get(), hosts);
         SpaceDesc spaceDesc("default_space", 9, 1);
         client->createSpace(spaceDesc).get();
         sleep(FLAGS_heartbeat_interval_secs + 1);

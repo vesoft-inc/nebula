@@ -30,7 +30,7 @@ protected:
     void SetUp() override {
         LOG(INFO) << "enter" << __func__;
         rootPath_ = std::make_unique<fs::TempDir>("/tmp/JobManager.XXXXXX");
-        kv_ = TestUtils::initKV(rootPath_->path());
+        kv_ = MockCluster::initMetaKV(rootPath_->path());
         TestUtils::createSomeHosts(kv_.get());
         TestUtils::assembleSpace(kv_.get(), 1, 1);
         jobMgr = JobManager::getInstance();

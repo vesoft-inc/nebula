@@ -42,7 +42,7 @@ namespace meta {
 
 TEST(ConfigManTest, ConfigProcessorTest) {
     fs::TempDir rootPath("/tmp/ConfigProcessorTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
 
     cpp2::ConfigItem item1;
     item1.set_module(cpp2::ConfigModule::STORAGE);

@@ -31,7 +31,7 @@ public:
 
 TEST(BalanceTaskTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/BalanceTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
     TestUtils::registerHB(kv.get(), {{0, 0}, {1, 1}});
     {
         std::vector<Status> sts(9, Status::OK());
@@ -251,7 +251,7 @@ TEST(BalanceTest, DispatchTasksTest) {
 
 TEST(BalanceTest, BalancePlanTest) {
     fs::TempDir rootPath("/tmp/BalanceTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
     std::vector<HostAddr> hosts;
     for (int i = 0; i < 10; i++) {
         hosts.emplace_back(i, 0);
@@ -352,7 +352,7 @@ TEST(BalanceTest, BalancePlanTest) {
 
 TEST(BalanceTest, NormalTest) {
     fs::TempDir rootPath("/tmp/BalanceTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
     FLAGS_expired_threshold_sec = 1;
     TestUtils::createSomeHosts(kv.get());
     {
@@ -437,7 +437,7 @@ TEST(BalanceTest, NormalTest) {
 
 TEST(BalanceTest, SpecifyHostTest) {
     fs::TempDir rootPath("/tmp/BalanceTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
     FLAGS_expired_threshold_sec = 1;
     TestUtils::createSomeHosts(kv.get(), {{0, 0}, {1, 1}, {2, 2}, {3, 3}});
     {
@@ -520,7 +520,7 @@ TEST(BalanceTest, SpecifyHostTest) {
 
 TEST(BalanceTest, SpecifyMultiHostTest) {
     fs::TempDir rootPath("/tmp/BalanceTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
     FLAGS_expired_threshold_sec = 1;
     TestUtils::createSomeHosts(kv.get(), {{0, 0}, {1, 1}, {2, 2}, {3, 3}, {4, 4}, {5, 5}});
     {
@@ -621,7 +621,7 @@ TEST(BalanceTest, SpecifyMultiHostTest) {
 
 TEST(BalanceTest, MockReplaceMachineTest) {
     fs::TempDir rootPath("/tmp/BalanceTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
     FLAGS_expired_threshold_sec = 1;
     TestUtils::createSomeHosts(kv.get(), {{0, 0}, {1, 1}, {2, 2}});
     {
@@ -708,7 +708,7 @@ TEST(BalanceTest, MockReplaceMachineTest) {
 
 TEST(BalanceTest, SingleReplicaTest) {
     fs::TempDir rootPath("/tmp/BalanceTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
     FLAGS_expired_threshold_sec = 1;
     TestUtils::createSomeHosts(kv.get(), {{0, 0}, {1, 1}, {2, 2}, {3, 3}, {4, 4}, {5, 5}});
     {
@@ -803,7 +803,7 @@ TEST(BalanceTest, SingleReplicaTest) {
 
 TEST(BalanceTest, RecoveryTest) {
     fs::TempDir rootPath("/tmp/BalanceTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
     FLAGS_expired_threshold_sec = 1;
     TestUtils::createSomeHosts(kv.get());
     {
@@ -951,7 +951,7 @@ TEST(BalanceTest, RecoveryTest) {
 TEST(BalanceTest, StopBalanceDataTest) {
     FLAGS_task_concurrency = 1;
     fs::TempDir rootPath("/tmp/BalanceTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
     FLAGS_expired_threshold_sec = 1;
     TestUtils::createSomeHosts(kv.get());
     {
@@ -1082,7 +1082,7 @@ void verifyLeaderBalancePlan(std::unordered_map<HostAddr, std::vector<PartitionI
 
 TEST(BalanceTest, SimpleLeaderBalancePlanTest) {
     fs::TempDir rootPath("/tmp/SimpleLeaderBalancePlanTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
     std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}};
     TestUtils::createSomeHosts(kv.get(), hosts);
     // 9 partition in space 1, 3 replica, 3 hosts
@@ -1144,7 +1144,7 @@ TEST(BalanceTest, SimpleLeaderBalancePlanTest) {
 
 TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest) {
     fs::TempDir rootPath("/tmp/IntersectHostsLeaderBalancePlanTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
     std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}, {4, 4}, {5, 5}};
     TestUtils::createSomeHosts(kv.get(), hosts);
     // 7 partition in space 1, 3 replica, 6 hosts, so not all hosts have intersection parts
@@ -1221,7 +1221,7 @@ TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest) {
 
 TEST(BalanceTest, ManyHostsLeaderBalancePlanTest) {
     fs::TempDir rootPath("/tmp/SimpleLeaderBalancePlanTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
     FLAGS_expired_threshold_sec = 600;
 
     int partCount = 99999;
@@ -1263,7 +1263,7 @@ TEST(BalanceTest, ManyHostsLeaderBalancePlanTest) {
 
 TEST(BalanceTest, LeaderBalanceTest) {
     fs::TempDir rootPath("/tmp/LeaderBalanceTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
     std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}};
     TestUtils::createSomeHosts(kv.get(), hosts);
     TestUtils::assembleSpace(kv.get(), 1, 9, 3, 3);

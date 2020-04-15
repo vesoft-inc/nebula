@@ -34,7 +34,7 @@ public:
         LOG(INFO) << "Starting web service...";
 
         rootPath_ = std::make_unique<fs::TempDir>("/tmp/MetaHttpReplaceHandler.XXXXXX");
-        kv_ = TestUtils::initKV(rootPath_->path());
+        kv_ = MockCluster::initMetaKV(rootPath_->path());
         TestUtils::createSomeHosts(kv_.get());
         TestUtils::assembleSpace(kv_.get(), 1, 1, 1);
 

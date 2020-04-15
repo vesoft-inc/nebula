@@ -10,7 +10,6 @@
 #include "meta/processors/admin/Balancer.h"
 #include "interface/gen-cpp2/StorageAdminService.h"
 #include "fs/TempDir.h"
-#include "test/ServerContext.h"
 #include "meta/test/TestUtils.h"
 
 #define RETURN_OK(req) \
@@ -134,21 +133,21 @@ private:
 };
 
 TEST(AdminClientTest, SimpleTest) {
-    auto sc = std::make_unique<test::ServerContext>();
+    auto rpcServer = std::make_unique<mock::RpcServer>();
     auto handler = std::make_shared<TestStorageService>();
-    sc->mockCommon("storage", 0, handler);
-    LOG(INFO) << "Start storage server on " << sc->port_;
+    rpcServer->start("storage-admin", 0, handler);
+    LOG(INFO) << "Start storage server on " << rpcServer->port_;
 
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     fs::TempDir rootPath("/tmp/AdminTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
     auto client = std::make_unique<AdminClient>(kv.get());
 
     {
         LOG(INFO) << "Test transLeader...";
         folly::Baton<true, std::atomic> baton;
-        client->transLeader(0, 0, {localIp, sc->port_}, HostAddr(1, 1))
+        client->transLeader(0, 0, {localIp, rpcServer->port_}, HostAddr(1, 1))
             .thenValue([&baton](auto&&) {
             baton.post();
         });
@@ -157,7 +156,7 @@ TEST(AdminClientTest, SimpleTest) {
     {
         LOG(INFO) << "Test addPart...";
         folly::Baton<true, std::atomic> baton;
-        client->addPart(0, 0, {localIp, sc->port_}, true).thenValue([&baton](auto&&) {
+        client->addPart(0, 0, {localIp, rpcServer->port_}, true).thenValue([&baton](auto&&) {
             baton.post();
         });
         baton.wait();
@@ -165,7 +164,7 @@ TEST(AdminClientTest, SimpleTest) {
     {
         LOG(INFO) << "Test removePart...";
         folly::Baton<true, std::atomic> baton;
-        client->removePart(0, 0, {localIp, sc->port_}).thenValue([&baton](auto&&) {
+        client->removePart(0, 0, {localIp, rpcServer->port_}).thenValue([&baton](auto&&) {
             baton.post();
         });
         baton.wait();
@@ -173,23 +172,24 @@ TEST(AdminClientTest, SimpleTest) {
 }
 
 TEST(AdminClientTest, RetryTest) {
-    auto sc1 = std::make_unique<test::ServerContext>();
+
+    auto rpcServer1 = std::make_unique<mock::RpcServer>();
     auto handler1 = std::make_shared<TestStorageService>();
-    sc1->mockCommon("storage", 0, handler1);
-    LOG(INFO) << "Start storage1 server on " << sc1->port_;
+    rpcServer1->start("storage-admin-1", 0, handler1);
+    LOG(INFO) << "Start storage server on " << rpcServer1->port_;
 
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
 
-    auto sc2 = std::make_unique<test::ServerContext>();
-    auto handler2 = std::make_shared<TestStorageServiceRetry>(localIp, sc1->port_);
-    sc2->mockCommon("storage", 0, handler2);
-    LOG(INFO) << "Start storage2 server on " << sc2->port_;
+    auto rpcServer2 = std::make_unique<mock::RpcServer>();
+    auto handler2 = std::make_shared<TestStorageServiceRetry>(localIp, rpcServer1->port_);
+    rpcServer2->start("storage-admin-2", 0, handler2);
+    LOG(INFO) << "Start storage2 server on " << rpcServer2->port_;
 
 
     LOG(INFO) << "Now test interfaces with retry to leader!";
     fs::TempDir rootPath("/tmp/AdminTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
     {
         LOG(INFO) << "Write some part information!";
         std::vector<HostAddr> thriftPeers;
@@ -197,10 +197,10 @@ TEST(AdminClientTest, RetryTest) {
         thriftPeers.emplace_back(0, 0);
 
         // The second one is not leader.
-        thriftPeers.emplace_back(localIp, sc2->port_);
+        thriftPeers.emplace_back(localIp, rpcServer2->port_);
 
         // The third one is healthy.
-        thriftPeers.emplace_back(localIp, sc1->port_);
+        thriftPeers.emplace_back(localIp, rpcServer1->port_);
 
         std::vector<kvstore::KV> data;
         data.emplace_back(MetaServiceUtils::partKey(0, 1),
@@ -221,7 +221,7 @@ TEST(AdminClientTest, RetryTest) {
     {
         LOG(INFO) << "Test transLeader, return ok if target is not leader";
         folly::Baton<true, std::atomic> baton;
-        client->transLeader(0, 1, {localIp, sc2->port_}, HostAddr(1, 1))
+        client->transLeader(0, 1, {localIp, rpcServer2->port_}, HostAddr(1, 1))
             .thenValue([&baton](auto&& st) {
             CHECK(st.ok());
             baton.post();
@@ -278,30 +278,30 @@ TEST(AdminClientTest, RetryTest) {
         CHECK(peersRet.ok());
         auto hosts = std::move(peersRet).value();
         ASSERT_EQ(3, hosts.size());
-        ASSERT_EQ(HostAddr(localIp, sc2->port_), hosts[0]);
-        ASSERT_EQ(HostAddr(localIp, sc1->port_), hosts[1]);
+        ASSERT_EQ(HostAddr(localIp, rpcServer2->port_), hosts[0]);
+        ASSERT_EQ(HostAddr(localIp, rpcServer1->port_), hosts[1]);
         ASSERT_EQ(HostAddr(1, 1), hosts[2]);
     }
 }
 
 TEST(AdminClientTest, SnapshotTest) {
-    auto sc = std::make_unique<test::ServerContext>();
+    auto rpcServer = std::make_unique<mock::RpcServer>();
     auto handler = std::make_shared<TestStorageService>();
-    sc->mockCommon("storage", 0, handler);
-    LOG(INFO) << "Start storage1 server on " << sc->port_;
+    rpcServer->start("storage-admin", 0, handler);
+    LOG(INFO) << "Start storage server on " << rpcServer->port_;
 
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
 
     LOG(INFO) << "Now test interfaces with retry to leader!";
     fs::TempDir rootPath("/tmp/admin_snapshot_test.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
     auto now = time::WallClock::fastNowInMilliSec();
-    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr(localIp, sc->port_), HostInfo(now));
+    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr(localIp, rpcServer->port_), HostInfo(now));
     ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(kv.get()).size());
 
     std::vector<HostAddr> addresses;
-    addresses.emplace_back(localIp, sc->port_);
+    addresses.emplace_back(localIp, rpcServer->port_);
     auto client = std::make_unique<AdminClient>(kv.get());
     {
         LOG(INFO) << "Test Blocking Writes On...";
@@ -326,21 +326,22 @@ TEST(AdminClientTest, SnapshotTest) {
 }
 
 TEST(AdminClientTest, RebuildIndexTest) {
-    auto sc = std::make_unique<test::ServerContext>();
+
+    auto rpcServer = std::make_unique<mock::RpcServer>();
     auto handler = std::make_shared<TestStorageService>();
-    sc->mockCommon("storage", 0, handler);
-    LOG(INFO) << "Start storage server on " << sc->port_;
+    rpcServer->start("storage-admin", 0, handler);
+    LOG(INFO) << "Start storage server on " << rpcServer->port_;
 
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
 
     LOG(INFO) << "Now test interfaces with retry to leader!";
     fs::TempDir rootPath("/tmp/admin_snapshot_test.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
     auto now = time::WallClock::fastNowInMilliSec();
-    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr(localIp, sc->port_), HostInfo(now));
+    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr(localIp, rpcServer->port_), HostInfo(now));
     ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(kv.get()).size());
-    auto address = HostAddr(localIp, sc->port_);
+    auto address = HostAddr(localIp, rpcServer->port_);
     auto client = std::make_unique<AdminClient>(kv.get());
     {
         LOG(INFO) << "Test Blocking Writes On...";
