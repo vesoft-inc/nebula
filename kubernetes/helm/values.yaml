@@ -1,23 +1,20 @@
-# specify kubernetes namespace
-namespace: default 
-
 # the nebula images
 image:
   # the nebula-graphd images,change tag to use a different version.
   graphd:
     repository: vesoft/nebula-graphd
     tag: nightly
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
   # the nebula-metad images,change tag to use a different version.
   metad: 
     repository: vesoft/nebula-metad
     tag: nightly 
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
   # the nebula storaged images,change tag to use a different version.
   storaged:
     repository: vesoft/nebula-storaged
     tag: nightly
-    pullPolicy: Always 
+    pullPolicy: IfNotPresent
 
 # set livenessProbe, kubelet will check nebula pod alive
 livenessProbe:
@@ -87,18 +84,15 @@ port:
     httpPort: 11000
     http2Port: 11002
 
-MetadHosts:
-  - 192.168.8.21:44500
-  - 192.168.8.22:44500
-  - 192.168.8.23:44500
-
 ## Storage Setting of Nebula-Metad and Nebula-Storaged
-storage:
-  storageClass: fast-disks
-  storaged:
-    size: 20Gi 
-  metad:
-    size: 20Gi 
+persistence:
+  enabled: false
+  storage:
+    storageClass: fast-disks
+    storaged:
+      size: 20Gi
+    metad:
+      size: 20Gi
 
 nodeSelector: 
   nebula: "yes"

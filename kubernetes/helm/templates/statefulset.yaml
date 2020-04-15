@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: nebula-metad
-  namespace: {{ .Values.namespace }}
   labels:
     app: nebula-metad
 spec:
@@ -23,7 +22,6 @@ spec:
       nodeSelector:
 {{ toYaml .Values.nodeSelector | indent 8 }}
 {{- end }}
-      hostNetwork: true
       containers:
       - name: nebula-metad
         image: "{{ .Values.image.metad.repository }}:{{ .Values.image.metad.tag }}"
@@ -76,23 +74,28 @@ spec:
         hostPath:
           path: /etc/localtime
       - name: data
+        {{- if .Values.persistence.enabled }}
         persistentVolumeClaim:
           claimName: data
+        {{- else }}
+        emptyDir: {}
+        {{- end}}
       - name: log
-        hostPath:
-          path: /var/log
+        emptyDir: {}
   podManagementPolicy: Parallel
   updateStrategy:
     type: RollingUpdate
+  {{- if .Values.persistence.enabled }}
   volumeClaimTemplates:
   - metadata:
       name: data
     spec:
       accessModes: [ "ReadWriteOnce" ]
-      storageClassName: {{ .Values.storage.storageClass }}
+      storageClassName: {{ .Values.persistence.storage.storageClass }}
       resources:
         requests:
-          storage: {{ .Values.storage.metad.size }}
+          storage: {{ .Values.persistence.storage.metad.size }}
+  {{- end}}
 
 ---
 apiVersion: apps/v1
@@ -118,7 +121,6 @@ spec:
       nodeSelector:
 {{ toYaml .Values.nodeSelector | indent 8 }}
 {{- end }}
-      hostNetwork: true
       containers:
       - name: nebula-storaged
         image: "{{ .Values.image.storaged.repository }}:{{ .Values.image.storaged.tag }}"
@@ -171,20 +173,25 @@ spec:
         hostPath:
           path: /etc/localtime
       - name: data
+        {{- if .Values.persistence.enabled }}
         persistentVolumeClaim:
           claimName: data
-      - name: log 
-        hostPath: 
-          path: /var/log
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+      - name: log
+        emptyDir: {}
   podManagementPolicy: Parallel
   updateStrategy:
     type: RollingUpdate
+  {{- if .Values.persistence.enabled }}
   volumeClaimTemplates:
   - metadata:
       name: data
     spec:
       accessModes: [ "ReadWriteOnce" ]
-      storageClassName: {{ .Values.storage.storageClass }}
+      storageClassName: {{ .Values.persistence.storage.storageClass }}
       resources:
         requests:
-          storage: {{ .Values.storage.storaged.size }}
+          storage: {{ .Values.persistence.storage.storaged.size }}
+  {{- end }}

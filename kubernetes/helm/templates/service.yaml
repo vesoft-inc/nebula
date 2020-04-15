@@ -4,7 +4,6 @@ metadata:
   labels:
     app: nebula-metad
   name: nebula-metad
-  namespace: {{ .Values.namespace }}
   annotations:
     service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
 spec:
@@ -27,7 +26,6 @@ metadata:
   labels:
     app: nebula-storaged
   name: nebula-storaged
-  namespace: {{ .Values.namespace }}
   annotations:
     service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"  
 spec:
@@ -50,7 +48,6 @@ metadata:
   labels:
     app: nebula-graphd
   name: nebula-graphd
-  namespace: {{ .Values.namespace }}
   annotations:
     service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
 spec:
