@@ -29,7 +29,7 @@ data:
     ########## networking ##########
     # Meta Server Address
     {{- $global := . }}
-    --meta_server_addrs={{ range $i, $e := until (.Values.replication.metad.replicas | int) }}{{ if ne $i 0 }},{{ end }}nebula-metad-{{ printf "%d" $i }}.nebula-metad.{{ $global.Release.Namespace }}.svc.cluster.local:{{ $global.Values.port.storaged.thriftPort }}{{ end }}
+    --meta_server_addrs={{ range $i, $e := until (.Values.replication.metad.replicas | int) }}{{ if ne $i 0 }},{{ end }}nebula-metad-{{ printf "%d" $i }}.nebula-metad.{{ $global.Release.Namespace }}.svc.cluster.local:{{ $global.Values.port.metad.thriftPort }}{{ end }}
     # Local ip
     --local_ip=0.0.0.0
     # Network device to listen on
@@ -83,7 +83,7 @@ data:
     ########## networking ##########
     # Meta Server Address
     {{- $global := . }}
-    --meta_server_addrs={{ range $i, $e := until (.Values.replication.metad.replicas | int) }}{{ if ne $i 0 }},{{ end }}nebula-metad-{{ printf "%d" $i }}.nebula-metad.{{ $global.Release.Namespace }}.svc.cluster.local:{{ $global.Values.port.storaged.thriftPort }}{{ end }}
+    --meta_server_addrs={{ range $i, $e := until (.Values.replication.metad.replicas | int) }}{{ if ne $i 0 }},{{ end }}nebula-metad-{{ printf "%d" $i }}.nebula-metad.{{ $global.Release.Namespace }}.svc.cluster.local:{{ $global.Values.port.metad.thriftPort }}{{ end }}
     # Local ip
     --local_ip=0.0.·0.0
     # Meta daemon listening port
@@ -130,7 +130,7 @@ data:
     ########## networking ##########
     # Meta server address
     {{- $global := . }}
-    --meta_server_addrs={{ range $i, $e := until (.Values.replication.metad.replicas | int) }}{{ if ne $i 0 }},{{ end }}nebula-metad-{{ printf "%d" $i }}.nebula-metad.{{ $global.Release.Namespace }}.svc.cluster.local:{{ $global.Values.port.storaged.thriftPort }}{{ end }}
+    --meta_server_addrs={{ range $i, $e := until (.Values.replication.metad.replicas | int) }}{{ if ne $i 0 }},{{ end }}nebula-metad-{{ printf "%d" $i }}.nebula-metad.{{ $global.Release.Namespace }}.svc.cluster.local:{{ $global.Values.port.metad.thriftPort }}{{ end }}
     # Local ip
     --local_ip=0.0.0.0
     # Storage daemon listening port
