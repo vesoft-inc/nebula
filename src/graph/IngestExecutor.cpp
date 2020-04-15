@@ -16,7 +16,7 @@ namespace nebula {
 namespace graph {
 
 IngestExecutor::IngestExecutor(Sentence *sentence,
-                               ExecutionContext *ectx) : Executor(ectx) {
+                               ExecutionContext *ectx) : Executor(ectx, "ingest") {
     sentence_ = static_cast<IngestSentence*>(sentence);
 }
 
@@ -27,8 +27,7 @@ Status IngestExecutor::prepare() {
 void IngestExecutor::execute() {
     auto status = checkIfGraphSpaceChosen();
     if (!status.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(status));
+        doError(std::move(status));
         return;
     }
     auto *mc = ectx()->getMetaClient();
@@ -56,19 +55,16 @@ void IngestExecutor::execute() {
 
     auto cb = [this] (auto &&resp) {
         if (!resp) {
-            DCHECK(onError_);
-            onError_(Status::Error("Ingest Failed"));
+            doError(Status::Error("Ingest Failed"));
             return;
         }
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
-        DCHECK(onFinish_);
-        onFinish_();
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        LOG(ERROR) << "Ingest exception: " << e.what();
+        doError(Status::Error("Ingest exception: %s", e.what().c_str()));
         return;
     };
 

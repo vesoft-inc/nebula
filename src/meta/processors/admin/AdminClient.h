@@ -31,7 +31,13 @@ public:
     virtual folly::Future<Status> memberChange() = 0;
     virtual folly::Future<Status> updateMeta() = 0;
     virtual folly::Future<Status> removePart() = 0;
+    virtual folly::Future<Status> checkPeers() = 0;
     virtual folly::Future<Status> getLeaderDist(HostLeaderMap* hostLeaderMap) = 0;
+    virtual folly::Future<Status> createSnapshot() = 0;
+    virtual folly::Future<Status> dropSnapshot() = 0;
+    virtual folly::Future<Status> blockingWrites() = 0;
+    virtual folly::Future<Status> rebuildTagIndex() = 0;
+    virtual folly::Future<Status> rebuildEdgeIndex() = 0;
 };
 
 static const HostAddr kRandomPeer(0, 0);
@@ -88,7 +94,31 @@ public:
                                      PartitionID partId,
                                      const HostAddr& host);
 
+    folly::Future<Status> checkPeers(GraphSpaceID spaceId,
+                                     PartitionID partId);
+
     folly::Future<Status> getLeaderDist(HostLeaderMap* result);
+
+    folly::Future<Status> createSnapshot(GraphSpaceID spaceId, const std::string& name);
+
+    folly::Future<Status> dropSnapshot(GraphSpaceID spaceId,
+                                       const std::string& name,
+                                       const std::vector<HostAddr>& hosts);
+
+    folly::Future<Status> blockingWrites(GraphSpaceID spaceId,
+                                         storage::cpp2::EngineSignType sign);
+
+    folly::Future<Status> rebuildTagIndex(const HostAddr& address,
+                                          GraphSpaceID spaceId,
+                                          IndexID indexID,
+                                          std::vector<PartitionID> parts,
+                                          bool isOffline);
+
+    folly::Future<Status> rebuildEdgeIndex(const HostAddr& address,
+                                           GraphSpaceID spaceId,
+                                           IndexID indexID,
+                                           std::vector<PartitionID> parts,
+                                           bool isOffline);
 
     FaultInjector* faultInjector() {
         return injector_.get();

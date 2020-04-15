@@ -8,12 +8,16 @@
 #define STORAGE_COMMON_H_
 
 #include "base/Base.h"
+#include "base/ConcurrentLRUCache.h"
 #include "filter/Expressions.h"
+#include "dataman/RowReader.h"
 
 namespace nebula {
 namespace storage {
 
 using TagProp = std::pair<std::string, std::string>;
+
+using VertexCache = ConcurrentLRUCache<std::pair<VertexID, TagID>, std::string>;
 
 struct FilterContext {
     // key: <tagName, propName> -> propValue
@@ -116,6 +120,14 @@ struct TagContext {
         propNameIndex_.emplace(propName, props_.size() - 1);
     }
 };
+
+
+bool checkDataExpiredForTTL(const meta::SchemaProviderIf* schema,
+                            RowReader* reader,
+                            const std::string& ttlCol,
+                            int64_t ttlDuration);
+
+
 
 }  // namespace storage
 }  // namespace nebula

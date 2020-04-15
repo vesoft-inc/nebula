@@ -6,6 +6,15 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
 CPPLINT=`dirname $0`/../../.linters/cpp/cpplint.py
+CHECKKEYWORD=`dirname $0`/../../.linters/cpp/checkKeyword.py
+
+echo "Performing checkout keyword..."
+python $CHECKKEYWORD
+
+if [ $? -ne 0 ]; then
+    echo "Checkout keyword failed"
+    exit 1
+fi
 
 if [ $# -eq 0 ];then
     # Since cpplint.py could only apply on our working tree,
@@ -16,13 +25,14 @@ if [ $# -eq 0 ];then
         echo "You have unstaged changes, please stage or stash them first."
         exit 1
     fi
-    CHECK_FILES=$(git diff --name-only --diff-filter=ACMRTUXB HEAD | egrep '.*\.cpp$|.*\.h$|.*\.inl$' | grep -v 'com_vesoft_client_NativeClient.h')
+    CHECK_FILES=$(git diff --name-only --diff-filter=ACMRTUXB HEAD | egrep '.*\.cpp$|.*\.h$|.*\.inl$' | grep -v 'com_vesoft_client_NativeClient.h' | grep -v 'com_vesoft_nebula_NebulaCodec.h')
 else
     CHECK_FILES=$(find $@ -not \( -path src/CMakeFiles -prune \) \
                           -not \( -path src/interface/gen-cpp2 -prune \) \
                           -name "*.[h]" -o -name "*.cpp" -o -name '*.inl' \
                           | grep -v 'GraphScanner.*' | grep -v 'GraphParser.*' \
-                          | grep -v 'com_vesoft_client_NativeClient.h')
+                          | grep -v 'com_vesoft_client_NativeClient.h' \
+                          | grep -v 'com_vesoft_nebula_NebulaCodec.h')
 fi
 
 # No changes on interested files

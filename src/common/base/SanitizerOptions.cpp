@@ -58,6 +58,12 @@ const char* __lsan_default_suppressions() {
            "";
 }
 
+
+SANITIZER_HOOK_ATTRIBUTES
+const char* __ubsan_default_options() {
+    return "print_stacktrace=1 \n";
+}
+
 }   // extern "C"
 
 #undef SANITIZER_HOOK_ATTRIBUTES

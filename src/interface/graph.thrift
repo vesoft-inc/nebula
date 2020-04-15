@@ -29,6 +29,11 @@ enum ErrorCode {
     E_EXECUTION_ERROR = -8,
     // Nothing is executed When command is comment
     E_STATEMENT_EMTPY = -9,
+
+    // User and permission error
+    E_USER_NOT_FOUND = -10,
+    E_BAD_PERMISSION = -11,
+
 } (cpp.enum_strict)
 
 
@@ -102,7 +107,6 @@ union ColumnValue {
 struct RowValue {
     1: list<ColumnValue> columns;
 }
-
 
 struct ExecutionResponse {
     1: required ErrorCode error_code;

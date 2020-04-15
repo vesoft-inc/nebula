@@ -19,20 +19,51 @@ class Cord;
 using OptVariantType = StatusOr<VariantType>;
 
 enum class ColumnType {
-    INT, STRING, DOUBLE, BIGINT, BOOL, TIMESTAMP,
+    INT, STRING, DOUBLE, BOOL, TIMESTAMP,
 };
 
 std::string columnTypeToString(ColumnType type);
+
+
+struct Getters {
+    std::function<OptVariantType()>                                       getEdgeRank;
+    std::function<OptVariantType(const std::string&)>                     getInputProp;
+    std::function<OptVariantType(const std::string&)>                     getVariableProp;
+    std::function<OptVariantType(const std::string&, const std::string&)> getSrcTagProp;
+    std::function<OptVariantType(const std::string&, const std::string&)> getDstTagProp;
+    std::function<OptVariantType(const std::string&, const std::string&)> getAliasProp;
+    std::function<OptVariantType(const std::string&)>                     getEdgeDstId;
+};
 
 class ExpressionContext final {
 public:
     using EdgeInfo = boost::variant<std::string, EdgeType>;
     void addSrcTagProp(const std::string &tag, const std::string &prop) {
+        tagMap_.emplace(tag, -1);
         srcTagProps_.emplace(tag, prop);
     }
 
     void addDstTagProp(const std::string &tag, const std::string &prop) {
+        tagMap_.emplace(tag, -1);
         dstTagProps_.emplace(tag, prop);
+    }
+
+    std::unordered_map<std::string, EdgeType>& getEdgeMap() {
+        return edgeMap_;
+    }
+
+    std::unordered_map<std::string, TagID>& getTagMap() {
+        return tagMap_;
+    }
+
+    bool getTagId(const std::string &tag, TagID &tagId) const {
+        auto tagFound = tagMap_.find(tag);
+        if (tagFound == tagMap_.end() || tagFound->second < 0) {
+            return false;
+        }
+
+        tagId = tagFound->second;
+        return true;
     }
 
     void addVariableProp(const std::string &var, const std::string &prop) {
@@ -49,22 +80,27 @@ public:
     }
 
     bool addEdge(const std::string &alias, EdgeType edgeType) {
-        auto it = edgeMaps_.find(alias);
-        if (it != edgeMaps_.end()) {
+        auto it = edgeMap_.find(alias);
+        if (it != edgeMap_.end()) {
             return false;
         }
-        edgeMaps_.emplace(alias, edgeType);
+        edgeMap_.emplace(alias, edgeType);
+        edgeAlias_.emplace_back(alias);
         return true;
     }
 
     bool getEdgeType(const std::string &alias, EdgeType &edgeType) {
-        auto it = edgeMaps_.find(alias);
-        if (it == edgeMaps_.end()) {
+        auto it = edgeMap_.find(alias);
+        if (it == edgeMap_.end()) {
             return false;
         }
 
         edgeType = it->second;
         return true;
+    }
+
+    std::vector<std::string>& getEdgeAlias() {
+        return edgeAlias_;
     }
 
     using PropPair = std::pair<std::string, std::string>;
@@ -132,19 +168,6 @@ public:
         return space_;
     }
 
-    struct Getters {
-        std::function<OptVariantType()>                                       getEdgeRank;
-        std::function<OptVariantType(const std::string&)>                     getInputProp;
-        std::function<OptVariantType(const std::string&)>                     getVariableProp;
-        std::function<OptVariantType(const std::string&, const std::string&)> getSrcTagProp;
-        std::function<OptVariantType(const std::string&, const std::string&)> getDstTagProp;
-        std::function<OptVariantType(const std::string&, const std::string&)> getAliasProp;
-    };
-
-    Getters& getters() {
-        return getters_;
-    }
-
     void print() const;
 
     bool isOverAllEdge() const { return overAll_; }
@@ -152,7 +175,6 @@ public:
     void setOverAllEdge() { overAll_ = true; }
 
 private:
-    Getters                                   getters_;
     std::unordered_set<PropPair>              srcTagProps_;
     std::unordered_set<PropPair>              dstTagProps_;
     std::unordered_set<PropPair>              aliasProps_;
@@ -160,7 +182,9 @@ private:
     std::unordered_set<std::string>           variables_;
     std::unordered_set<std::string>           inputProps_;
     // alias => edgeType
-    std::unordered_map<std::string, EdgeType> edgeMaps_;
+    std::unordered_map<std::string, EdgeType> edgeMap_;
+    std::unordered_map<std::string, TagID>    tagMap_;
+    std::vector<std::string>                  edgeAlias_;
     bool                                      overAll_{false};
     GraphSpaceID                              space_;
     nebula::storage::StorageClient            *storageClient_{nullptr};
@@ -179,7 +203,7 @@ public:
 
     virtual Status MUST_USE_RESULT prepare() = 0;
 
-    virtual OptVariantType eval() const = 0;
+    virtual OptVariantType eval(Getters &getters) const = 0;
 
     virtual bool isInputExpression() const {
         return kind_ == kInputProp;
@@ -199,6 +223,14 @@ public:
 
     virtual bool isFunCallExpression() const {
         return kind_ == kFunctionCall;
+    }
+
+    virtual bool isLogicalExpression() const {
+        return kind_ == kLogical;
+    }
+
+    bool isEdgeDstIdExpression() const {
+        return kind_ == kEdgeDstId;
     }
 
     /**
@@ -414,7 +446,7 @@ public:
 
     std::string toString() const override;
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -445,18 +477,13 @@ public:
 
     explicit InputPropertyExpression(std::string *prop);
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
-
-private:
-    void encode(Cord &cord) const override;
-
-    const char* decode(const char *pos, const char *end) override;
 };
 
 
-// $$[TagName].any_prop_name
+// $$.TagName.any_prop_name
 class DestPropertyExpression final : public AliasPropertyExpression {
 public:
     DestPropertyExpression() {
@@ -465,14 +492,9 @@ public:
 
     DestPropertyExpression(std::string *tag, std::string *prop);
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
-
-private:
-    void encode(Cord &cord) const override;
-
-    const char* decode(const char *pos, const char *end) override;
 };
 
 
@@ -485,14 +507,9 @@ public:
 
     VariablePropertyExpression(std::string *var, std::string *prop);
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
-
-private:
-    void encode(Cord &cord) const override;
-
-    const char* decode(const char *pos, const char *end) override;
 };
 
 
@@ -510,14 +527,9 @@ public:
         prop_.reset(new std::string(_TYPE));
     }
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
-
-private:
-    void encode(Cord &cord) const override;
-
-    const char* decode(const char *pos, const char *end) override;
 };
 
 
@@ -535,14 +547,9 @@ public:
         prop_.reset(new std::string(_SRC));
     }
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
-
-private:
-    void encode(Cord &cord) const override;
-
-    const char* decode(const char *pos, const char *end) override;
 };
 
 
@@ -560,14 +567,9 @@ public:
         prop_.reset(new std::string(_DST));
     }
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
-
-private:
-    void encode(Cord &cord) const override;
-
-    const char* decode(const char *pos, const char *end) override;
 };
 
 
@@ -585,18 +587,13 @@ public:
         prop_.reset(new std::string(_RANK));
     }
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
-
-private:
-    void encode(Cord &cord) const override;
-
-    const char* decode(const char *pos, const char *end) override;
 };
 
 
-// $^[TagName].any_prop_name
+// $^.TagName.any_prop_name
 class SourcePropertyExpression final : public AliasPropertyExpression {
 public:
     SourcePropertyExpression() {
@@ -605,14 +602,9 @@ public:
 
     SourcePropertyExpression(std::string *tag, std::string *prop);
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
-
-private:
-    void encode(Cord &cord) const override;
-
-    const char* decode(const char *pos, const char *end) override;
 };
 
 
@@ -645,7 +637,7 @@ public:
 
     std::string toString() const override;
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -689,9 +681,20 @@ public:
         }
     }
 
+    const std::string* name() const {
+        return name_.get();
+    }
+
+    const std::vector<Expression*> args() const {
+        std::vector<Expression*> args;
+        std::transform(args_.begin(), args_.end(), std::back_inserter(args),
+                [] (auto &e) { return e.get(); } );
+        return args;
+    }
+
     std::string toString() const override;
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -700,6 +703,10 @@ public:
         for (auto &arg : args_) {
             arg->setContext(ctx);
         }
+    }
+
+    void setFunc(std::function<VariantType(const std::vector<VariantType>&)> func) {
+        function_ = func;
     }
 
 private:
@@ -727,7 +734,7 @@ public:
 
     std::string toString() const override;
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -768,7 +775,7 @@ public:
 
     std::string toString() const override;
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -807,7 +814,7 @@ public:
 
     std::string toString() const override;
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -820,7 +827,7 @@ public:
         return operand_.get();
     }
 
-    const ColumnType getType() const {
+    ColumnType getType() const {
         return type_;
     }
 
@@ -858,7 +865,7 @@ public:
 
     std::string toString() const override;
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -909,7 +916,7 @@ public:
 
     std::string toString() const override;
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -921,6 +928,10 @@ public:
 
     const Expression* left() const {
         return left_.get();
+    }
+
+    Operator op() const {
+        return op_;
     }
 
     const Expression* right() const {
@@ -962,7 +973,7 @@ public:
 
     std::string toString() const override;
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -970,6 +981,18 @@ public:
         Expression::setContext(context);
         left_->setContext(context);
         right_->setContext(context);
+    }
+
+    void resetLeft(Expression *expr) {
+        left_.reset(expr);
+    }
+
+    void resetRight(Expression *expr) {
+        right_.reset(expr);
+    }
+
+    Operator op() const {
+        return op_;
     }
 
     const Expression* left() const {
@@ -990,7 +1013,6 @@ private:
     std::unique_ptr<Expression>                 left_;
     std::unique_ptr<Expression>                 right_;
 };
-
 }   // namespace nebula
 
 #endif  // COMMON_FILTER_EXPRESSIONS_H_

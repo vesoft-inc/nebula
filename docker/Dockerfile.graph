@@ -3,12 +3,11 @@ FROM vesoft/nebula-dev:centos7 as builder
 COPY . /home/nebula/BUILD
 
 RUN cd /home/nebula/BUILD/package \
-  && . ~/.bashrc \
-  && ./make_srpm.sh -v $(git rev-parse --short HEAD) -p /home/nebula
+  && ./package.sh -v $(git rev-parse --short HEAD)
 
 FROM centos:7
 
-COPY --from=builder /home/nebula/RPMS/x86_64/*.rpm /usr/local/nebula/
+COPY --from=builder /home/nebula/BUILD/build/cpack_output/*.rpm /usr/local/nebula/
 
 WORKDIR /usr/local/nebula
 
@@ -21,4 +20,4 @@ EXPOSE 45500 45501 11000 11002
 # storage ports
 EXPOSE 44500 44501 12000 12002
 # graph ports
-EXPOSE 3369 13000 13002
+EXPOSE 3699 13000 13002

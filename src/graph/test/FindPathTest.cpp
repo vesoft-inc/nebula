@@ -24,7 +24,7 @@ protected:
     }
 };
 
-TEST_F(FindPathTest, singleEdgeShortest) {
+TEST_F(FindPathTest, SingleEdgeShortest) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld OVER like UPTO 5 STEPS";
@@ -79,7 +79,7 @@ TEST_F(FindPathTest, singleEdgeShortest) {
         std::vector<std::string> expected = {
             "5662213458193308137<like,0>3394245602834314645",
             "5662213458193308137<like,0>-7579316172763586624",
-            "5662213458193308137<like,0>-7579316172763586624<like,0>-1782445125509592239"
+            "5662213458193308137<like,0>-7579316172763586624<like,0>-1782445125509592239",
         };
         ASSERT_TRUE(verifyPath(resp, expected));
     }
@@ -99,7 +99,6 @@ TEST_F(FindPathTest, singleEdgeShortest) {
     }
     {
         // we only find the shortest path to the dest,
-        // so -8160811731890648949 to -1782445125509592239 is not in result
         cpp2::ExecutionResponse resp;
         auto *fmt = "FIND SHORTEST PATH FROM %ld,%ld TO %ld,%ld,%ld OVER like UPTO 5 STEPS";
         auto &tim = players_["Tim Duncan"];
@@ -114,7 +113,8 @@ TEST_F(FindPathTest, singleEdgeShortest) {
         std::vector<std::string> expected = {
             "5662213458193308137<like,0>3394245602834314645",
             "5662213458193308137<like,0>-7579316172763586624",
-            "5662213458193308137<like,0>-7579316172763586624<like,0>-1782445125509592239"
+            "5662213458193308137<like,0>-7579316172763586624<like,0>-1782445125509592239",
+            "-8160811731890648949<like,0>3394245602834314645"
         };
         ASSERT_TRUE(verifyPath(resp, expected));
     }
@@ -163,7 +163,7 @@ TEST_F(FindPathTest, singleEdgeShortest) {
     }
 }
 
-TEST_F(FindPathTest, singleEdgeAll) {
+TEST_F(FindPathTest, SingleEdgeAll) {
     /*
      * TODO: There might exist loops when find all path,
      * we should provide users with an option on whether or not a loop is required.
@@ -242,7 +242,7 @@ TEST_F(FindPathTest, singleEdgeAll) {
     }
 }
 
-TEST_F(FindPathTest, multiEdgesShortest) {
+TEST_F(FindPathTest, MultiEdgesShortest) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld OVER like,serve UPTO 5 STEPS";
@@ -316,6 +316,7 @@ TEST_F(FindPathTest, multiEdgesShortest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
         std::vector<std::string> expected = {
             "5662213458193308137<like,0>-7579316172763586624",
+            "5662213458193308137<teammate,0>-7579316172763586624"
         };
         ASSERT_TRUE(verifyPath(resp, expected));
     }
@@ -330,6 +331,7 @@ TEST_F(FindPathTest, multiEdgesShortest) {
         std::vector<std::string> expected = {
             "5662213458193308137<like,0>-7579316172763586624",
             "5662213458193308137<serve,0>7193291116733635180",
+            "5662213458193308137<teammate,0>-7579316172763586624",
         };
         ASSERT_TRUE(verifyPath(resp, expected));
     }
@@ -347,10 +349,12 @@ TEST_F(FindPathTest, multiEdgesShortest) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
         std::vector<std::string> expected = {
-            "5662213458193308137<like,0>3394245602834314645",
             "5662213458193308137<like,0>-7579316172763586624",
-            "5662213458193308137<like,0>-7579316172763586624<like,0>-1782445125509592239",
+            "5662213458193308137<like,0>3394245602834314645",
             "5662213458193308137<serve,0>7193291116733635180",
+            "5662213458193308137<teammate,0>-1782445125509592239",
+            "5662213458193308137<teammate,0>-7579316172763586624",
+            "5662213458193308137<teammate,0>3394245602834314645"
         };
         ASSERT_TRUE(verifyPath(resp, expected));
     }
@@ -363,15 +367,14 @@ TEST_F(FindPathTest, multiEdgesShortest) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
         std::vector<std::string> expected = {
-            "-8160811731890648949<like,0>5662213458193308137<like,0>-7579316172763586624"
-                "<like,0>-1782445125509592239",
+            "-8160811731890648949<like,0>5662213458193308137<teammate,0>-1782445125509592239",
             "-8160811731890648949<serve,0>7193291116733635180",
         };
         ASSERT_TRUE(verifyPath(resp, expected));
     }
 }
 
-TEST_F(FindPathTest, multiEdgesAll) {
+TEST_F(FindPathTest, MultiEdgesAll) {
     /*
      * TODO: There might exist loops when find all path,
      * we should provide users with an option on whether or not a loop is required.
@@ -408,7 +411,7 @@ TEST_F(FindPathTest, multiEdgesAll) {
     }
     {
         cpp2::ExecutionResponse resp;
-        auto *fmt = "FIND ALL PATH FROM %ld TO %ld,%ld OVER * UPTO 3 STEPS";
+        auto *fmt = "FIND ALL PATH FROM %ld TO %ld,%ld OVER like,serve UPTO 3 STEPS";
         auto &tim = players_["Tim Duncan"];
         auto &tony = players_["Tony Parker"];
         auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid(), teams_["Spurs"].vid());
@@ -438,7 +441,7 @@ TEST_F(FindPathTest, multiEdgesAll) {
     }
 }
 
-TEST_F(FindPathTest, vertexNotExist) {
+TEST_F(FindPathTest, VertexNotExist) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld OVER like UPTO 5 STEPS";
@@ -498,6 +501,18 @@ TEST_F(FindPathTest, vertexNotExist) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
         std::vector<std::string> expected;
         ASSERT_TRUE(verifyPath(resp, expected));
+    }
+}
+
+TEST_F(FindPathTest, DuplicateColumn) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER like yield like._src AS src, like._dst AS src| "
+                    "FIND SHORTEST PATH FROM $-.src TO $-.dst OVER like UPTO 5 STEPS";
+        auto &tim = players_["Tim Duncan"];
+        auto query = folly::stringPrintf(fmt, tim.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code) << *(resp.get_error_msg());
     }
 }
 }  // namespace graph

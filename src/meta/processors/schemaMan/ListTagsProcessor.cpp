@@ -16,7 +16,7 @@ void ListTagsProcessor::process(const cpp2::ListTagsReq& req) {
     auto prefix = MetaServiceUtils::schemaTagsPrefix(spaceId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    resp_.set_code(to(ret));
+    handleErrorCode(MetaCommon::to(ret));
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         onFinished();
         return;
@@ -26,12 +26,16 @@ void ListTagsProcessor::process(const cpp2::ListTagsReq& req) {
         auto key = iter->key();
         auto val = iter->val();
         auto tagID = *reinterpret_cast<const TagID *>(key.data() + prefix.size());
-        auto vers = MetaServiceUtils::parseTagVersion(key);
+        auto version = MetaServiceUtils::parseTagVersion(key);
         auto nameLen = *reinterpret_cast<const int32_t *>(val.data());
         auto tagName = val.subpiece(sizeof(int32_t), nameLen).str();
         auto schema = MetaServiceUtils::parseSchema(val);
-        tags.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                          tagID, tagName, vers, schema);
+        cpp2::TagItem item;
+        item.set_tag_id(tagID);
+        item.set_tag_name(std::move(tagName));
+        item.set_version(version);
+        item.set_schema(std::move(schema));
+        tags.emplace_back(std::move(item));
         iter->next();
     }
     resp_.set_tags(std::move(tags));

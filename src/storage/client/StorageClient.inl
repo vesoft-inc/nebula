@@ -4,7 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include "stats/StatsManager.h"
+#include "time/Duration.h"
+#include "time/WallClock.h"
 #include <folly/Try.h>
+
+DECLARE_int32(storage_client_timeout_ms);
 
 namespace nebula {
 namespace storage {

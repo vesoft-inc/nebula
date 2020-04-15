@@ -2,28 +2,46 @@
 
 `UUID` is used to generate the global unique identifiers.  
 
-When the number of vertices reaches billions, using Hash Function to generate vid has a certain conflict probability. Therefore Nebula provides UUID Function to avoid vid conflicts in a large number of vertices. UUID Function is composed of the Murmur hash function and the current timestamp (in units of seconds).
+When the number of vertices reaches billions, using `Hash` Function to generate vids has a certain conflict probability. Therefore, **Nebula Graph** provides `UUID` Function to avoid vid conflicts in a large number of vertices. `UUID` Function is composed of the `Murmur` hash function and the current timestamp (in seconds).
 
-Values generated with the UUID are stored in the `Nebula` Storage service in key-value mode. When called, it checks whether this key exists or conflicts. So the performance may be slower than hash.
+Values generated with the `UUID` are stored in the **Nebula Graph** Storage service in key-value mode. When called, it checks whether this key exists or conflicts. So the performance may be slower than hash.
 
-Insert with UUID:
+Insert with `UUID`:
 
 ```ngql
--- INSERT VERTEX player (name, age) VALUES hash("n0"):("n0", 13.0)
-nebula> INSERT VERTEX player (name, age) VALUES uuid("n0"):("n0", 13.0)
--- INSERT EDGE like(likeness) VALUES hash("n0") -> hash("n1"): (90.0)
-nebula> INSERT EDGE like(likeness) VALUES uuid("n0") -> uuid("n1"): (90.0)
+-- Insert a vertex with the UUID function.
+nebula> INSERT VERTEX player (name, age) VALUES uuid("n0"):("n0", 21);
+-- Insert an edge with the UUID function.
+nebula> INSERT EDGE follow(degree) VALUES uuid("n0") -> uuid("n1"): (90);
 ```
 
-Fetch with UUID:
+Fetch with `UUID`:
 
 ```ngql
-nebula> FETCH PROP ON player uuid("n0")  YIELD player.name, player.age
-nebula> FETCH PROP ON like uuid("n0") -> uuid("n1")
+nebula> FETCH PROP ON player uuid("n0") YIELD player.name, player.age;
+-- The following result is returned:
+===================================================
+| VertexID             | player.name | player.age |
+===================================================
+| -5057115778034027261 | n0          | 21         |
+---------------------------------------------------
+nebula> FETCH PROP ON follow uuid("n0") -> uuid("n1");
+-- The following result is returned:
+=============================================================================
+| follow._src          | follow._dst         | follow._rank | follow.degree |
+=============================================================================
+| -5057115778034027261 | 4039977434270020867 | 0            | 90            |
+-----------------------------------------------------------------------------
 ```
 
-Go with UUID:
+`Go` with `UUID`:
 
 ```ngql
-nebula> GO FROM uuid("n0") OVER like
+nebula> GO FROM uuid("n0") OVER follow;
+--The following result is returned:
+=======================
+| follow._dst         |
+=======================
+| 4039977434270020867 |
+-----------------------
 ```

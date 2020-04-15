@@ -7,7 +7,9 @@
 #ifndef COMMON_BASE_CORD_H_
 #define COMMON_BASE_CORD_H_
 
-#include "base/Base.h"
+#include <stdlib.h>
+#include <functional>
+#include <string>
 
 namespace nebula {
 
@@ -53,8 +55,6 @@ public:
 
     Cord& operator<<(const std::string& value);
     Cord& operator<<(const char* value);
-    Cord& operator<<(const folly::StringPiece value);
-    Cord& operator<<(const folly::ByteRange value);
 
     Cord& operator<<(const Cord& rhs);
 

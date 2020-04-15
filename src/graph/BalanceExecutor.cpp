@@ -10,7 +10,8 @@ namespace nebula {
 namespace graph {
 
 BalanceExecutor::BalanceExecutor(Sentence *sentence,
-                                 ExecutionContext *ectx) : Executor(ectx) {
+                                 ExecutionContext *ectx)
+    : Executor(ectx, "balance") {
     sentence_ = static_cast<BalanceSentence*>(sentence);
 }
 
@@ -34,7 +35,7 @@ void BalanceExecutor::execute() {
             showBalancePlan();
             break;
         case BalanceSentence::SubType::kUnknown:
-            onError_(Status::Error("Type unknown"));
+            doError(Status::Error("Type unknown"));
             break;
     }
 }
@@ -45,24 +46,20 @@ void BalanceExecutor::balanceLeader() {
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(std::move(resp).status());
+            doError(std::move(resp).status());
             return;
         }
         auto ret = std::move(resp).value();
         if (!ret) {
-            DCHECK(onError_);
-            onError_(Status::Error("Balance leader failed"));
+            doError(Status::Error("Balance leader failed"));
             return;
         }
-        DCHECK(onFinish_);
-        onFinish_();
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        LOG(ERROR) << "Balance leader exception: " << e.what();
+        doError(Status::Error("Balance leader exception: %s", e.what().c_str()));
         return;
     };
 
@@ -70,13 +67,18 @@ void BalanceExecutor::balanceLeader() {
 }
 
 void BalanceExecutor::balanceData(bool isStop) {
-    auto future = ectx()->getMetaClient()->balance(isStop);
+    std::vector<HostAddr> hostDelList;
+    auto hostDel = sentence_->hostDel();
+    if (hostDel != nullptr) {
+        hostDelList = hostDel->hosts();
+    }
+    auto future = ectx()->getMetaClient()->balance(std::move(hostDelList),
+                                                   isStop);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(std::move(resp).status());
+            doError(std::move(resp).status());
             return;
         }
         auto balanceId = std::move(resp).value();
@@ -94,14 +96,12 @@ void BalanceExecutor::balanceData(bool isStop) {
 
         resp_->set_rows(std::move(rows));
 
-        DCHECK(onFinish_);
-        onFinish_();
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        LOG(ERROR) << "Balance data exception: " << e.what();
+        doError(Status::Error("Balance data exception: %s", e.what().c_str()));
         return;
     };
 
@@ -114,8 +114,7 @@ void BalanceExecutor::showBalancePlan() {
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(std::move(resp).status());
+            doError(std::move(resp).status());
             return;
         }
         auto tasks = std::move(resp).value();
@@ -165,14 +164,12 @@ void BalanceExecutor::showBalancePlan() {
         rows.emplace_back();
         rows.back().set_columns(std::move(row));
         resp_->set_rows(std::move(rows));
-        DCHECK(onFinish_);
-        onFinish_();
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        LOG(ERROR) << "Show balance plan exception: " << e.what();
+        doError(Status::Error("Show balance plan exception: %s", e.what().c_str()));
         return;
     };
 

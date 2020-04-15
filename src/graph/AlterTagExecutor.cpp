@@ -12,7 +12,8 @@ namespace nebula {
 namespace graph {
 
 AlterTagExecutor::AlterTagExecutor(Sentence *sentence,
-                                   ExecutionContext *ectx) : Executor(ectx) {
+                                   ExecutionContext *ectx)
+    : Executor(ectx, "alter_tag") {
     sentence_ = static_cast<AlterTagSentence*>(sentence);
 }
 
@@ -39,8 +40,7 @@ Status AlterTagExecutor::getSchema() {
 void AlterTagExecutor::execute() {
     auto status = getSchema();
     if (!status.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(status));
+        doError(std::move(status));
         return;
     }
 
@@ -52,18 +52,19 @@ void AlterTagExecutor::execute() {
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(resp.status());
+            doError(Status::Error("Alter tag `%s' failed: %s",
+                        sentence_->name()->c_str(), resp.status().toString().c_str()));
             return;
         }
 
-        DCHECK(onFinish_);
-        onFinish_();
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        onError_(Status::Error("Internal error"));
+        auto msg = folly::stringPrintf("Alter tag `%s' exception: %s.",
+                sentence_->name()->c_str(), e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(std::move(msg)));
     };
 
     std::move(future).via(runner).thenValue(cb).thenError(error);

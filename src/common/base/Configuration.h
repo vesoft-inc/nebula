@@ -19,7 +19,7 @@ namespace nebula {
 
 class Configuration final {
 public:
-    Configuration() = default;
+    Configuration();
     explicit Configuration(folly::dynamic content);
 
     ~Configuration() = default;
@@ -58,7 +58,7 @@ public:
 
     Status MUST_USE_RESULT fetchAsSubConf(const char *key, Configuration &val) const;
 
-    Status MUST_USE_RESULT updateStringField(const char* key, const std::string& val);
+    Status MUST_USE_RESULT upsertStringField(const char* key, const std::string& val);
 
     // Iterate through every key in the configuration
     Status forEachKey(std::function<void(const std::string&)> processor) const;

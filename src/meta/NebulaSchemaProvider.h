@@ -26,16 +26,28 @@ public:
         const char* getName() const override {
             return name_.c_str();
         }
+
         const nebula::cpp2::ValueType& getType() const override {
             return type_;
         }
+
         bool isValid() const override {
             return true;
+        }
+
+        bool hasDefault() const override {
+            return hasDefault_;
+        }
+
+        std::string getDefaultValue() const override {
+            return defaultValue_;
         }
 
     private:
         std::string name_;
         nebula::cpp2::ValueType type_;
+        bool hasDefault_;
+        std::string defaultValue_;
     };
 
 public:
@@ -53,6 +65,8 @@ public:
     std::shared_ptr<const SchemaProviderIf::Field> field(int64_t index) const override;
     std::shared_ptr<const SchemaProviderIf::Field> field(
         const folly::StringPiece name) const override;
+
+    nebula::cpp2::Schema toSchema() const override;
 
     void addField(folly::StringPiece name, nebula::cpp2::ValueType&& type);
 

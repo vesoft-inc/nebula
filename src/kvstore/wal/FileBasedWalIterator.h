@@ -71,6 +71,8 @@ private:
     int64_t currPos_{0};
     int32_t currMsgLen_{0};
     mutable std::string currLog_;
+    // we hold the read lock to avoid wal being rolled back during iterator
+    std::unique_ptr<folly::RWSpinLock::ReadHolder> holder_;
 };
 
 }  // namespace wal

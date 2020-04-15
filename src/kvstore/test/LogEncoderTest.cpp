@@ -127,6 +127,29 @@ TEST(LogEncoderTest, HostTest) {
     ASSERT_EQ(HostAddr(1, 1), decoded);
 }
 
+TEST(LogEncoderTest, BatchTest) {
+    auto helper = std::make_unique<BatchHolder>();
+    helper->remove("remove");
+    helper->put("put_key", "put_value");
+    helper->rangeRemove("begin", "end");
+    helper->put("put_key_again", "put_value_again");
+
+    auto encoded = encodeBatchValue(helper->getBatch());
+    auto decoded = decodeBatchValue(encoded.c_str());
+
+    std::vector<std::pair<BatchLogType,
+                std::pair<folly::StringPiece, folly::StringPiece>>> expectd;
+    expectd.emplace_back(OP_BATCH_REMOVE,
+            std::pair<folly::StringPiece, folly::StringPiece>("remove", ""));
+    expectd.emplace_back(OP_BATCH_PUT,
+            std::pair<folly::StringPiece, folly::StringPiece>("put_key", "put_value"));
+    expectd.emplace_back(OP_BATCH_REMOVE_RANGE,
+            std::pair<folly::StringPiece, folly::StringPiece>("begin", "end"));
+    expectd.emplace_back(OP_BATCH_PUT,
+            std::pair<folly::StringPiece, folly::StringPiece>("put_key_again", "put_value_again"));
+    ASSERT_EQ(expectd, decoded);
+}
+
 }  // namespace kvstore
 }  // namespace nebula
 

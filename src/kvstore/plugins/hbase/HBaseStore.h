@@ -65,6 +65,8 @@ public:
     // Connect to the HBase thrift server.
     void init();
 
+    void stop() override {}
+
     uint32_t capability() const override {
         return 0;
     }
@@ -81,10 +83,11 @@ public:
                    const std::string& key,
                    std::string* value) override;
 
-    ResultCode multiGet(GraphSpaceID spaceId,
-                        PartitionID partId,
-                        const std::vector<std::string>& keys,
-                        std::vector<std::string>* values) override;
+    std::pair<ResultCode, std::vector<Status>> multiGet(
+            GraphSpaceID spaceId,
+            PartitionID partId,
+            const std::vector<std::string>& keys,
+            std::vector<std::string>* values) override;
 
     // Get all results in range [start, end)
     ResultCode range(GraphSpaceID spaceId,
@@ -93,11 +96,42 @@ public:
                      const std::string& end,
                      std::unique_ptr<KVIterator>* iter) override;
 
+    // Since the `range' interface will hold references to its 3rd & 4th parameter, in `iter',
+    // thus the arguments must outlive `iter'.
+    // Here we forbid one to invoke `range' with rvalues, which is the common mistake.
+    ResultCode range(GraphSpaceID spaceId,
+                     PartitionID  partId,
+                     std::string&& start,
+                     std::string&& end,
+                     std::unique_ptr<KVIterator>* iter) override = delete;
+
     // Get all results with prefix.
     ResultCode prefix(GraphSpaceID spaceId,
                       PartitionID  partId,
                       const std::string& prefix,
                       std::unique_ptr<KVIterator>* iter) override;
+
+    // To forbid to pass rvalue via the `prefix' parameter.
+    ResultCode prefix(GraphSpaceID spaceId,
+                      PartitionID  partId,
+                      std::string&& prefix,
+                      std::unique_ptr<KVIterator>* iter) override = delete;
+
+    // Get all results with prefix starting from start
+    ResultCode rangeWithPrefix(GraphSpaceID spaceId,
+                               PartitionID  partId,
+                               const std::string& start,
+                               const std::string& prefix,
+                               std::unique_ptr<KVIterator>* iter) override;
+
+    // To forbid to pass rvalue via the `rangeWithPrefix' parameter.
+    ResultCode rangeWithPrefix(GraphSpaceID spaceId,
+                               PartitionID  partId,
+                               std::string&& start,
+                               std::string&& prefix,
+                               std::unique_ptr<KVIterator>* iter) override = delete;
+
+    ResultCode sync(GraphSpaceID spaceId, PartitionID partId) override;
 
     // async batch put.
     void asyncMultiPut(GraphSpaceID spaceId,
@@ -124,7 +158,7 @@ public:
     void asyncRemovePrefix(GraphSpaceID spaceId,
                            PartitionID partId,
                            const std::string& prefix,
-                           KVCallback cb) override;
+                           KVCallback cb);
 
     void asyncAtomicOp(GraphSpaceID,
                        PartitionID,
@@ -148,6 +182,18 @@ public:
     }
 
     ResultCode flush(GraphSpaceID) override {
+        return ResultCode::ERR_UNSUPPORTED;
+    }
+
+    ResultCode createCheckpoint(GraphSpaceID, const std::string&) override {
+        return ResultCode::ERR_UNSUPPORTED;
+    }
+
+    ResultCode dropCheckpoint(GraphSpaceID, const std::string&) override {
+        return ResultCode::ERR_UNSUPPORTED;
+    }
+
+    ResultCode setWriteBlocking(GraphSpaceID, bool) override {
         return ResultCode::ERR_UNSUPPORTED;
     }
 

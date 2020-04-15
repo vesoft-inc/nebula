@@ -81,7 +81,8 @@ public:
         return Status(k##ERROR, msg);                   \
     }                                                   \
                                                         \
-    static Status ERROR(const char *fmt, ...) {         \
+    static Status ERROR(const char *fmt, ...)           \
+        __attribute__((format(printf, 1, 2))) {         \
         va_list args;                                   \
         va_start(args, fmt);                            \
         auto msg = format(fmt, args);                   \
@@ -92,6 +93,8 @@ public:
     bool is##ERROR() const {                            \
         return code() == k##ERROR;                      \
     }
+    // Some succeeded codes
+    STATUS_GENERATOR(Inserted);
 
     // General errors
     STATUS_GENERATOR(Error);
@@ -103,18 +106,23 @@ public:
     // Nothing is executed When command is comment
     STATUS_GENERATOR(StatementEmpty);
 
+    // Storage engine errors
+    STATUS_GENERATOR(KeyNotFound);
+
+    // Meta engine errors
     // TODO(dangleptr) we could use ErrorOr to replace SpaceNotFound here.
     STATUS_GENERATOR(SpaceNotFound);
     STATUS_GENERATOR(HostNotFound);
     STATUS_GENERATOR(TagNotFound);
     STATUS_GENERATOR(EdgeNotFound);
     STATUS_GENERATOR(UserNotFound);
-    STATUS_GENERATOR(CfgNotFound);
-    STATUS_GENERATOR(CfgRegistered);
-    STATUS_GENERATOR(CfgErrorType);
-    STATUS_GENERATOR(CfgImmutable);
+    STATUS_GENERATOR(IndexNotFound);
     STATUS_GENERATOR(LeaderChanged);
     STATUS_GENERATOR(Balanced);
+    STATUS_GENERATOR(PartNotFound);
+
+    // User or permission errors
+    STATUS_GENERATOR(PermissionError);
 
 #undef STATUS_GENERATOR
 
@@ -128,6 +136,7 @@ public:
     enum Code : uint16_t {
         // OK
         kOk                     = 0,
+        kInserted               = 1,
         // 1xx, for general errors
         kError                  = 101,
         kNoSuchFile             = 102,
@@ -136,19 +145,19 @@ public:
         kSyntaxError            = 201,
         kStatementEmpty         = 202,
         // 3xx, for storage engine errors
-        // ...
+        kKeyNotFound            = 301,
         // 4xx, for meta service errors
         kSpaceNotFound          = 404,
         kHostNotFound           = 405,
         kTagNotFound            = 406,
         kEdgeNotFound           = 407,
         kUserNotFound           = 408,
-        kCfgNotFound            = 409,
-        kCfgRegistered          = 410,
-        kCfgErrorType           = 411,
-        kCfgImmutable           = 412,
-        kLeaderChanged          = 413,
-        kBalanced               = 414,
+        kLeaderChanged          = 409,
+        kBalanced               = 410,
+        kIndexNotFound          = 411,
+        kPartNotFound           = 412,
+        // 5xx for user or permission error
+        kPermissionError        = 501,
     };
 
     Code code() const {
