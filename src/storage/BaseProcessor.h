@@ -150,8 +150,8 @@ protected:
         return tHost;
     }
 
-    IndexValues collectIndexValues(RowReader* reader,
-                                   const std::vector<nebula::cpp2::ColumnDef>& cols);
+    StatusOr<IndexValues> collectIndexValues(RowReader* reader,
+                                             const std::vector<nebula::cpp2::ColumnDef>& cols);
 
     void collectProps(RowReader* reader, const std::vector<PropContext>& props,
                       Collector* collector);

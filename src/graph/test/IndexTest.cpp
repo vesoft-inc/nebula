@@ -687,6 +687,83 @@ TEST_F(IndexTest, EdgeIndexTTL) {
     }
 }
 
+TEST_F(IndexTest, AlterTag) {
+    auto client = gEnv->getClient();
+    ASSERT_NE(nullptr, client);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE SPACE tag_index_space(partition_num=1, replica_factor=1)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        query = "USE tag_index_space";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        query = "CREATE TAG person(name string, age int, gender string, email string)";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    // Single Tag Single Field
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG INDEX single_person_index ON person(name)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "INSERT VERTEX person(name, age, gender, email) VALUES "
+                     "100:  (\"Tim\",  18, \"M\", \"tim@ve.com\")";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "ALTER TAG person ADD (col1 int)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    // Single Tag Single Field
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG INDEX single_person_index2 ON person(col1)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "INSERT VERTEX person(name, age, gender, email, col1) VALUES "
+                     "100:(\"Tim\",  18, \"M\", \"tim@ve.com\", 5)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON person WHERE person.col1 == 5 YIELD person.col1, person.name";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID, int64_t, std::string>> expected = {
+            {100, 5, "Tim"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON person where person.name == \"Tim\" YIELD person.name, person.col1";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID, std::string, int64_t>> expected = {
+            {100, "Tim", 5},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
 }   // namespace graph
 }   // namespace nebula
 
