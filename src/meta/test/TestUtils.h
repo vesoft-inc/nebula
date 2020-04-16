@@ -221,7 +221,7 @@ public:
          thriftHosts.resize(hosts.size());
          std::transform(hosts.begin(), hosts.end(), thriftHosts.begin(), [](const auto& h) {
              nebula::cpp2::HostAddr th;
-             th.set_ip(h.toLong());
+             th.set_ip(h.toLongHBO());
              th.set_port(h.getPort());
              return th;
          });
@@ -234,7 +234,7 @@ public:
              auto resp = std::move(f).get();
              EXPECT_EQ(hosts.size(), resp.hosts.size());
              for (decltype(hosts.size()) i = 0; i < hosts.size(); i++) {
-                 EXPECT_EQ(hosts[i].toLong(), resp.hosts[i].hostAddr.ip);
+                 EXPECT_EQ(hosts[i].toLongHBO(), resp.hosts[i].hostAddr.ip);
                  EXPECT_EQ(hosts[i].getPort(), resp.hosts[i].hostAddr.port);
              }
          }

@@ -1745,7 +1745,7 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
     req.set_in_storaged(options_.inStoraged_);
     if (options_.inStoraged_) {
         nebula::cpp2::HostAddr thriftHost;
-        thriftHost.set_ip(options_.localHost_.toLong());
+        thriftHost.set_ip(options_.localHost_.toLongHBO());
         thriftHost.set_port(options_.localHost_.getPort());
         req.set_host(std::move(thriftHost));
         if (options_.clusterId_.load() == 0) {
@@ -1933,7 +1933,7 @@ folly::Future<StatusOr<int64_t>> MetaClient::balance(std::vector<network::InetAd
         std::transform(hostDel.begin(), hostDel.end(),
                        std::back_inserter(tHostDel), [](const auto& h) {
             nebula::cpp2::HostAddr th;
-            th.set_ip(h.toLong());
+            th.set_ip(h.toLongHBO());
             th.set_port(h.getPort());
             return th;
         });

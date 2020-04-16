@@ -112,7 +112,7 @@ protected:
 
     nebula::cpp2::HostAddr toThriftHost(const network::InetAddress& host) {
         nebula::cpp2::HostAddr tHost;
-        tHost.set_ip(host.toLong());
+        tHost.set_ip(host.toLongHBO());
         tHost.set_port(host.getPort());
         return tHost;
     }

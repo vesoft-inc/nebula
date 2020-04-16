@@ -17,14 +17,15 @@ int ActiveHostsMan::updateHostIPaddress(kvstore::KVStore* kv,
                                         const network::InetAddress& hostAddr,
                                         const std::string& oldIPAddr,
                                         kvstore::ResultCode& ret) {
-    auto ipAddress = network::InetAddress::make_inet_address(oldIPAddr.c_str());
+    auto ipAddress = network::InetAddress::makeInetAddress(oldIPAddr.c_str());
     if (ipAddress == hostAddr) {
         return 0;
     }
     std::vector<std::string> removeData;
     folly::Baton<true, std::atomic> baton;
-    removeData.emplace_back(MetaServiceUtils::hostKey(ipAddress.toLong(), ipAddress.getPort()));
-    removeData.emplace_back(MetaServiceUtils::leaderKey(ipAddress.toLong(), ipAddress.getPort()));
+    removeData.emplace_back(MetaServiceUtils::hostKey(ipAddress.toLongHBO(), ipAddress.getPort()));
+    removeData.emplace_back(
+        MetaServiceUtils::leaderKey(ipAddress.toLongHBO(), ipAddress.getPort()));
     kv->asyncMultiRemove(
         kDefaultSpaceId, kDefaultPartId, removeData, [&baton, &ret](kvstore::ResultCode code) {
             ret = code;
@@ -64,8 +65,8 @@ int ActiveHostsMan::updateHostIPaddress(kvstore::KVStore* kv,
             }
             auto hosts = MetaServiceUtils::parsePartVal(value);
             for (auto it = hosts.begin(); it != hosts.end(); ++it) {
-                if (it->ip == ipAddress.toLong()) {
-                    it->ip = hostAddr.toLong();
+                if (it->ip == ipAddress.toLongHBO()) {
+                    it->ip = hostAddr.toLongHBO();
                     it->port = hostAddr.getPort();
                 }
             }
@@ -122,10 +123,10 @@ kvstore::ResultCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
         }
     }
 
-    data.emplace_back(MetaServiceUtils::hostKey(hostAddr.toLong(), hostAddr.getPort()),
+    data.emplace_back(MetaServiceUtils::hostKey(hostAddr.toLongHBO(), hostAddr.getPort()),
                       HostInfo::encode(info));
     if (leaderParts != nullptr) {
-        data.emplace_back(MetaServiceUtils::leaderKey(hostAddr.toLong(), hostAddr.getPort()),
+        data.emplace_back(MetaServiceUtils::leaderKey(hostAddr.toLongHBO(), hostAddr.getPort()),
                           MetaServiceUtils::leaderVal(*leaderParts));
     }
     folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());

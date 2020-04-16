@@ -467,7 +467,7 @@ void AdminClient::getResponse(
 
 nebula::cpp2::HostAddr AdminClient::toThriftHost(const network::InetAddress& addr) {
     nebula::cpp2::HostAddr thriftAddr;
-    thriftAddr.set_ip(addr.toLong());
+    thriftAddr.set_ip(addr.toLongHBO());
     thriftAddr.set_port(addr.getPort());
     return thriftAddr;
 }

@@ -255,7 +255,7 @@ TEST(MetaClientTest, InterfacesTest) {
         auto partMeta = metaStatus.value();
         ASSERT_EQ(3, partMeta.peers_.size());
         for (auto& h : partMeta.peers_) {
-            ASSERT_EQ(h.toLong(), h.getPort());
+            ASSERT_EQ(h.toLongHBO(), h.getPort());
         }
     }
     {
@@ -1100,12 +1100,12 @@ public:
 class TestMetaServiceRetry : public cpp2::MetaServiceSvIf {
 public:
     void setLeader(network::InetAddress leader) {
-        leader_.set_ip(leader.toLong());
+        leader_.set_ip(leader.toLongHBO());
         leader_.set_port(leader.getPort());
     }
 
     void setAddr(network::InetAddress addr) {
-        addr_.set_ip(addr.toLong());
+        addr_.set_ip(addr.toLongHBO());
         addr_.set_port(addr.getPort());
     }
 

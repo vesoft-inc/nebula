@@ -231,7 +231,7 @@ std::string encodeHost(LogType type, const network::InetAddress& host) {
 network::InetAddress decodeHost(LogType type, const folly::StringPiece& encoded) {
     CHECK_EQ(sizeof(int64_t) + 1 + sizeof(IPv4) + sizeof(Port), encoded.size());
     CHECK(encoded[sizeof(int64_t)] == type);
-    return network::InetAddress::make_inet_address(encoded.begin() + sizeof(int64_t) + 1);
+    return network::InetAddress::makeInetAddress(encoded.begin() + sizeof(int64_t) + 1);
 }
 
 int64_t getTimestamp(const folly::StringPiece& command) {

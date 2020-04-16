@@ -176,7 +176,7 @@ TEST(ProcessorTest, ListPartsTest) {
             for (auto& peer : part.peers) {
                 auto it = std::find_if(hosts.begin(), hosts.end(),
                         [&] (const auto& host) {
-                            return host.toLong() == peer.ip && host.getPort() == peer.port;
+                            return host.toLongHBO() == peer.ip && host.getPort() == peer.port;
                     });
                 EXPECT_TRUE(it != hosts.end());
             }

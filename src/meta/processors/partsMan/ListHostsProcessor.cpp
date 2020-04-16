@@ -50,6 +50,7 @@ Status ListHostsProcessor::allHostsWithStatus() {
     while (iter->valid()) {
         cpp2::HostItem item;
         auto host = MetaServiceUtils::parseHostKey(iter->key());
+        VLOG(1) << "HostAddr: " << host.ip;
         item.set_hostAddr(std::move(host));
         HostInfo info = HostInfo::decode(iter->val());
         if (now - info.lastHBTimeInMilliSec_ < FLAGS_removed_threshold_sec * 1000) {

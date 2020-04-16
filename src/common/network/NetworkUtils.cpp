@@ -183,7 +183,7 @@ uint16_t NetworkUtils::getAvailablePort() {
 bool NetworkUtils::ipv4ToInt(const std::string& ipStr, IPv4& ip) {
     try {
         folly::IPAddress addr(ipStr);
-        ip = addr.asV4().toLong();
+        ip = addr.asV4().toLongHBO();
         return true;
     } catch (std::exception& e) {
         LOG(ERROR) << "Invalid ip string: \"" << ipStr << "\", err: %s", e.what();
@@ -192,12 +192,12 @@ bool NetworkUtils::ipv4ToInt(const std::string& ipStr, IPv4& ip) {
 }
 
 std::string NetworkUtils::intToIPv4(IPv4 ip) {
-    return folly::IPAddress::fromLong(ip).str();
+    return folly::IPAddress::fromLongHBO(ip).str();
 }
 
 StatusOr<InetAddress> NetworkUtils::toInetAddress(const std::string& ip, uint16_t port) {
     try {
-        return InetAddress{ip, port};
+        return InetAddress{ip, port, false};
     } catch (const std::exception& e1) {
         try {
             return InetAddress{ip, port, true};

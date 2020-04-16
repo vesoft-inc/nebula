@@ -18,7 +18,7 @@ namespace meta {
 void HBProcessor::process(const cpp2::HBReq& req) {
     network::InetAddress host(req.host.ip, req.host.port);
     if (FLAGS_hosts_whitelist_enabled
-            && hostExist(MetaServiceUtils::hostKey(host.toLong(), host.getPort()))
+            && hostExist(MetaServiceUtils::hostKey(host.toLongHBO(), host.getPort()))
                 == Status::HostNotFound()) {
         LOG(INFO) << "Reject unregistered host " << host << "!";
         handleErrorCode(cpp2::ErrorCode::E_INVALID_HOST);

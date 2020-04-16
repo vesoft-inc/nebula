@@ -19,7 +19,7 @@ TEST(InetAddress, build) {
     });
     ASSERT_NO_THROW({
         auto addr = InetAddress("192.168.0.1", 20);
-        auto addr2 = InetAddress(addr.toLong(), 20);
+        auto addr2 = InetAddress(addr.toLongHBO(), 20);
         ASSERT_EQ(addr, addr2);
     });
 

@@ -7,9 +7,9 @@
 #ifndef COMMON_NETWORK_INETADDRESS_H_
 #define COMMON_NETWORK_INETADDRESS_H_
 
-#include <iostream>
-#include <unistd.h>
 #include <folly/String.h>
+#include <unistd.h>
+#include <iostream>
 
 #include <folly/SocketAddress.h>
 #include "interface/gen-cpp2/common_types.h"
@@ -26,7 +26,8 @@ public:
         }
     }
 
-    InetAddress(uint32_t ip, uint16_t port = 0) : addrs_(folly::IPAddress::fromLong(ip), port) {} //NOLINT
+    // host byte order (Compatible with previous versions)
+    InetAddress(uint32_t ip, uint16_t port = 0) : addrs_(folly::IPAddress::fromLongHBO(ip), port) {} // NOLINT
 
     explicit InetAddress(const nebula::cpp2::HostAddr& addr)
         : InetAddress(addr.get_ip(), addr.get_port()) {}
@@ -37,7 +38,10 @@ public:
     InetAddress(InetAddress&&) = default;
     InetAddress(const InetAddress&) = default;
 
-    static InetAddress make_inet_address(const char* p);
+    // host byte order (Compatible with previous versions)
+    static InetAddress makeInetAddress(const char* p);
+
+    static InetAddress makeInetAddress(uint32_t ip, uint16_t port = 0, bool hbo = true);
 
     InetAddress& operator=(const InetAddress&) = default;
 
@@ -61,8 +65,13 @@ public:
         return hostName_;
     }
 
+    // for IPV4
     uint32_t toLong() const {
-        return addrs_.getIPAddress().asV4().toLong();
+        return addrs_.getIPAddress().asV4().toLongHBO();
+    }
+
+    uint32_t toLongHBO() const {
+        return addrs_.getIPAddress().asV4().toLongHBO();
     }
 
     const folly::SocketAddress& getAddress() const {
@@ -90,6 +99,7 @@ public:
 private:
     folly::SocketAddress addrs_;
     std::string hostName_;
+    explicit InetAddress(folly::SocketAddress addr) : addrs_(std::move(addr)) {}
 };
 
 std::ostream& operator<<(std::ostream&, const InetAddress&);

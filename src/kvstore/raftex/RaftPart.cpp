@@ -1023,7 +1023,7 @@ bool RaftPart::prepareElectionRequest(
 
     req.set_space(spaceId_);
     req.set_part(partId_);
-    req.set_candidate_ip(addr_.toLong());
+    req.set_candidate_ip(addr_.toLongHBO());
     req.set_candidate_port(addr_.getPort());
     req.set_term(++proposedTerm_);  // Bump up the proposed term
     req.set_last_log_id(lastLogId_);
@@ -1432,7 +1432,7 @@ void RaftPart::processAppendLogRequest(
     std::lock_guard<std::mutex> g(raftLock_);
 
     resp.set_current_term(term_);
-    resp.set_leader_ip(leader_.toLong());
+    resp.set_leader_ip(leader_.toLongHBO());
     resp.set_leader_port(leader_.getPort());
     resp.set_committed_log_id(committedLogId_);
     resp.set_last_log_id(lastLogId_ < committedLogId_ ? committedLogId_ : lastLogId_);
@@ -1638,7 +1638,7 @@ cpp2::ErrorCode RaftPart::verifyLeader(
         case Role::LEARNER:
         case Role::FOLLOWER: {
             if (req.get_current_term() == term_ &&
-                req.get_leader_ip() == leader_.toLong() &&
+                req.get_leader_ip() == leader_.toLongHBO() &&
                 req.get_leader_port() == leader_.getPort()) {
                 VLOG(3) << idStr_ << "Same leader";
                 return cpp2::ErrorCode::SUCCEEDED;

@@ -130,6 +130,7 @@ void ShowExecutor::showHosts() {
         for (auto& item : hostItems) {
             std::vector<cpp2::ColumnValue> row;
             row.resize(6);
+            VLOG(1) << "hostAddr: " << item.hostAddr.ip;
             auto hostAddr = network::InetAddress(item.hostAddr.ip, item.hostAddr.port);
             row[0].set_str(hostAddr.getAddressStr());
             row[1].set_str(folly::to<std::string>(hostAddr.getPort()));

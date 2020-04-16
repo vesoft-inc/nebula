@@ -282,9 +282,9 @@ BalanceTask::parseKey(const folly::StringPiece& rawKey) {
     offset += sizeof(GraphSpaceID);
     auto partId = *reinterpret_cast<const PartitionID*>(rawKey.begin() + offset);
     offset += sizeof(PartitionID);
-    auto src = network::InetAddress::make_inet_address(rawKey.begin() + offset);
+    auto src = network::InetAddress::makeInetAddress(rawKey.begin() + offset);
     offset += sizeof(IPv4) + sizeof(Port);
-    auto dst = network::InetAddress::make_inet_address(rawKey.begin() + offset);
+    auto dst = network::InetAddress::makeInetAddress(rawKey.begin() + offset);
     return std::make_tuple(balanceId, spaceId, partId, src, dst);
 }
 

@@ -23,7 +23,7 @@ std::string encodeLearner(const network::InetAddress& addr) {
 }
 
 network::InetAddress decodeLearner(const folly::StringPiece& log) {
-    return network::InetAddress::make_inet_address(log.begin() + 1);
+    return network::InetAddress::makeInetAddress(log.begin() + 1);
 }
 
 folly::Optional<std::string> compareAndSet(const std::string& log) {
@@ -44,7 +44,7 @@ std::string encodeTransferLeader(const network::InetAddress& addr) {
 }
 
 network::InetAddress decodeTransferLeader(const folly::StringPiece& log) {
-    return network::InetAddress::make_inet_address(log.begin() + 1);
+    return network::InetAddress::makeInetAddress(log.begin() + 1);
 }
 
 std::string encodeSnapshotRow(LogID logId, const std::string& row) {
@@ -70,7 +70,7 @@ std::string encodeAddPeer(const network::InetAddress& addr) {
 }
 
 network::InetAddress decodeAddPeer(const folly::StringPiece& log) {
-    return network::InetAddress::make_inet_address(log.begin() + 1);
+    return network::InetAddress::makeInetAddress(log.begin() + 1);
 }
 
 std::string encodeRemovePeer(const network::InetAddress& addr) {
@@ -82,7 +82,7 @@ std::string encodeRemovePeer(const network::InetAddress& addr) {
 }
 
 network::InetAddress decodeRemovePeer(const folly::StringPiece& log) {
-    return network::InetAddress::make_inet_address(log.begin() + 1);
+    return network::InetAddress::makeInetAddress(log.begin() + 1);
 }
 
 TestShard::TestShard(size_t idx,

@@ -417,7 +417,7 @@ public:
         // Always use the Meta Service in this case
         sc->kvStore_ = TestUtils::initKV(dataPath, 6, addr, mClient, true);
         auto port = addr.getPort();
-        auto ip = addr.toLong();
+        auto ip = addr.toLongHBO();
 
         if (!useMetaServer) {
             sc->schemaMan_ = TestUtils::mockSchemaMan(space);
