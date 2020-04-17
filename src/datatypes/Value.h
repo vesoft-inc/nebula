@@ -29,6 +29,7 @@ struct Path;
 struct Map;
 struct List;
 struct Set;
+struct DataSet;
 
 enum class NullType {
     __NULL__ = 0,
@@ -58,6 +59,7 @@ struct Value {
         LIST = 11,
         MAP = 12,
         SET = 13,
+        DATASET = 14,
     };
 
     // Constructors
@@ -99,6 +101,8 @@ struct Value {
     Value(Map&& v);                 // NOLINT
     Value(const Set& v);            // NOLINT
     Value(Set&& v);                 // NOLINT
+    Value(const DataSet& v);        // NOLINT
+    Value(DataSet&& v);             // NOLINT
 
     Type type() const noexcept {
         return type_;
@@ -137,16 +141,25 @@ struct Value {
     void setDateTime(DateTime&& v);
     void setVertex(const Vertex& v);
     void setVertex(Vertex&& v);
+    void setVertex(std::unique_ptr<Vertex>&& v);
     void setEdge(const Edge& v);
     void setEdge(Edge&& v);
+    void setEdge(std::unique_ptr<Edge>&& v);
     void setPath(const Path& v);
     void setPath(Path&& v);
+    void setPath(std::unique_ptr<Path>&& v);
     void setList(const List& v);
     void setList(List&& v);
+    void setList(std::unique_ptr<List>&& v);
     void setMap(const Map& v);
     void setMap(Map&& v);
+    void setMap(std::unique_ptr<Map>&& v);
     void setSet(const Set& v);
     void setSet(Set&& v);
+    void setSet(std::unique_ptr<Set>&& v);
+    void setDataSet(const DataSet& v);
+    void setDataSet(DataSet&& v);
+    void setDataSet(std::unique_ptr<DataSet>&& v);
 
     const NullType& getNull() const;
     const bool& getBool() const;
@@ -167,6 +180,8 @@ struct Value {
     const Map* getMapPtr() const;
     const Set& getSet() const;
     const Set* getSetPtr() const;
+    const DataSet& getDataSet() const;
+    const DataSet* getDataSetPtr() const;
 
     NullType moveNull();
     bool moveBool();
@@ -181,6 +196,7 @@ struct Value {
     List moveList();
     Map moveMap();
     Set moveSet();
+    DataSet moveDataSet();
 
     NullType& mutableNull();
     bool& mutableBool();
@@ -195,6 +211,7 @@ struct Value {
     List& mutableList();
     Map& mutableMap();
     Set& mutableSet();
+    DataSet& mutableDataSet();
 
     bool operator==(const Value& rhs) const;
 
@@ -207,19 +224,20 @@ private:
     Type type_;
 
     union Storage {
-        NullType                nVal;
-        bool                    bVal;
-        int64_t                 iVal;
-        double                  fVal;
-        std::string             sVal;
-        Date                    dVal;
-        DateTime                tVal;
-        std::unique_ptr<Vertex> vVal;
-        std::unique_ptr<Edge>   eVal;
-        std::unique_ptr<Path>   pVal;
-        std::unique_ptr<List>   lVal;
-        std::unique_ptr<Map>    mVal;
-        std::unique_ptr<Set>    uVal;
+        NullType                    nVal;
+        bool                        bVal;
+        int64_t                     iVal;
+        double                      fVal;
+        std::string                 sVal;
+        Date                        dVal;
+        DateTime                    tVal;
+        std::unique_ptr<Vertex>     vVal;
+        std::unique_ptr<Edge>       eVal;
+        std::unique_ptr<Path>       pVal;
+        std::unique_ptr<List>       lVal;
+        std::unique_ptr<Map>        mVal;
+        std::unique_ptr<Set>        uVal;
+        std::unique_ptr<DataSet>    gVal;
 
         Storage() {}
         ~Storage() {}
@@ -283,6 +301,11 @@ private:
     void setU(std::unique_ptr<Set>&& v);
     void setU(const Set& v);
     void setU(Set&& v);
+    // DataSet value
+    void setG(const std::unique_ptr<DataSet>& v);
+    void setG(std::unique_ptr<DataSet>&& v);
+    void setG(const DataSet& v);
+    void setG(DataSet&& v);
 };
 
 void swap(Value& a, Value& b);

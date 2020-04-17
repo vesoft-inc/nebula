@@ -18,6 +18,7 @@ cpp_include "datatypes/ValueOps.h"
 cpp_include "datatypes/MapOps.h"
 cpp_include "datatypes/ListOps.h"
 cpp_include "datatypes/SetOps.h"
+cpp_include "datatypes/DataSetOps.h"
 cpp_include "datatypes/KeyValueOps.h"
 cpp_include "datatypes/HostAddrOps.h"
 
@@ -75,19 +76,20 @@ enum NullType {
 
 // The type to hold any supported values during the query
 union Value {
-    1: NullType                             nVal;
-    2: bool                                 bVal;
-    3: i64                                  iVal;
-    4: double                               fVal;
-    5: binary                               sVal;
-    6: Date                                 dVal;
-    7: DateTime                             tVal;
-    8: Vertex (cpp.type = "nebula::Vertex") vVal (cpp.ref_type = "unique");
-    9: Edge (cpp.type = "nebula::Edge")     eVal (cpp.ref_type = "unique");
-    10: Path (cpp.type = "nebula::Path")    pVal (cpp.ref_type = "unique");
-    11: List (cpp.type = "nebula::List")    lVal (cpp.ref_type = "unique");
-    12: Map (cpp.type = "nebula::Map")      mVal (cpp.ref_type = "unique");
-    13: Set (cpp.type = "nebula::Set")      uVal (cpp.ref_type = "unique");
+    1: NullType                                 nVal;
+    2: bool                                     bVal;
+    3: i64                                      iVal;
+    4: double                                   fVal;
+    5: binary                                   sVal;
+    6: Date                                     dVal;
+    7: DateTime                                 tVal;
+    8: Vertex (cpp.type = "nebula::Vertex")     vVal (cpp.ref_type = "unique");
+    9: Edge (cpp.type = "nebula::Edge")         eVal (cpp.ref_type = "unique");
+    10: Path (cpp.type = "nebula::Path")        pVal (cpp.ref_type = "unique");
+    11: List (cpp.type = "nebula::List")        lVal (cpp.ref_type = "unique");
+    12: Map (cpp.type = "nebula::Map")          mVal (cpp.ref_type = "unique");
+    13: Set (cpp.type = "nebula::Set")          uVal (cpp.ref_type = "unique");
+    14: DataSet (cpp.type = "nebula::DataSet")  gVal (cpp.ref_type = "unique");
 } (cpp.type = "nebula::Value")
 
 
@@ -107,6 +109,17 @@ struct Map {
 struct Set {
     1: set<Value> (cpp.template = "std::unordered_set") values;
 } (cpp.type = "nebula::Set")
+
+
+struct Row {
+    1: list<Value> columns;
+} (cpp.type = "nebula::Row")
+
+
+struct DataSet {
+    1: list<binary>    column_names;   // Column names
+    2: list<Row>       rows;
+} (cpp.type = "nebula::DataSet")
 
 
 struct Tag {
