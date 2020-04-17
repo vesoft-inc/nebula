@@ -59,12 +59,7 @@ jobs:
             -DCMAKE_C_COMPILER=clang \
             -DENABLE_ASAN=on \
             -B build/
-      - name: Make with one thread
-        if: matrix.compiler == 'gcc-9.2' && matrix.os == 'centos7'
-        run: |
-          cmake --build build/
       - name: Make
-        if: matrix.compiler != 'gcc-9.2' || matrix.os != 'centos7'
         run: |
           cmake --build build/ -j $(nproc)
       - name: CTest with multiple thread
