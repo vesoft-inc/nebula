@@ -40,7 +40,7 @@ Compared with other graph database solutions, **Nebula Graph** has the following
 
 ## Roadmap
 
-See our [Roadmap](https://github.com/vesoft-inc/nebula/wiki/Nebula-Graph-Roadmap-2019) for what's coming soon in **Nebula Graph**.
+See our [Roadmap](https://github.com/vesoft-inc/nebula/wiki/Nebula-Graph-Roadmap) for what's coming soon in **Nebula Graph**.
 
 ## Graph Visualization
 
@@ -53,9 +53,9 @@ Visit [Graph Visualization](https://github.com/vesoft-inc/nebula-web-docker) for
 
 ## Quick start
 
-Read the [Getting started](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/1.overview/2.quick-start/1.get-started.md) article for a quick start.
+Read the [Getting started](https://docs.nebula-graph.io/manual-EN/1.overview/2.quick-start/1.get-started/) article for a quick start.
 
-Please note that you must install **Nebula Graph** by [installing source code](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/3.build-develop-and-administration/1.build/1.build-source-code.md), [rpm/deb packages](https://github.com/vesoft-inc/nebula/tree/master/docs/manual-EN/3.build-develop-and-administration/3.deploy-and-administrations/deployment/install-with-rpm-deb.md) or [docker compose](https://github.com/vesoft-inc/nebula-docker-compose), before you can actually start using it. If you prefer a video tutorial, visit our [YouTube channel](https://www.youtube.com/channel/UC73V8q795eSEMxDX4Pvdwmw).
+Please note that you must install **Nebula Graph** by [installing source code](https://docs.nebula-graph.io/manual-EN/3.build-develop-and-administration/1.build/1.build-source-code/), [rpm/deb packages](https://docs.nebula-graph.io/manual-EN/3.build-develop-and-administration/3.deploy-and-administrations/deployment/install-with-rpm-deb/) or [docker compose](https://github.com/vesoft-inc/nebula-docker-compose), before you can actually start using it. If you prefer a video tutorial, visit our [YouTube channel](https://www.youtube.com/channel/UC73V8q795eSEMxDX4Pvdwmw).
 
 ## Getting help
 
@@ -67,8 +67,8 @@ In case you encounter any problems playing around **Nebula Graph**, please reach
 
 ## Documentation
 
-* [English](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/README.md)
-* [简体中文](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-CN/README.md)
+* [English](https://docs.nebula-graph.io/)
+* [简体中文](https://docs.nebula-graph.io/manual-CN/)
 
 ## Architecture
 
@@ -79,7 +79,7 @@ In case you encounter any problems playing around **Nebula Graph**, please reach
 Contributions are warmly welcomed and greatly appreciated. And here are a few ways you can contribute:
 
 * Start by some [good first issues](https://github.com/vesoft-inc/nebula/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-* Submit Pull Requests to us. See [how-to-contribute](docs/manual-EN/4.contributions/how-to-contribute.md).
+* Submit Pull Requests to us. See [how-to-contribute](https://docs.nebula-graph.io/manual-EN/4.contributions/how-to-contribute/).
 
 ## Licensing
 
