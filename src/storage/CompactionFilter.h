@@ -9,6 +9,7 @@
 
 #include "base/Base.h"
 #include "common/NebulaKeyUtils.h"
+#include "common/IndexKeyUtils.h"
 #include "codec/RowReader.h"
 #include "meta/NebulaSchemaProvider.h"
 #include "kvstore/CompactionFilter.h"
@@ -51,7 +52,7 @@ public:
                 VLOG(3) << "Extra versions has been filtered!";
                 return true;
             }
-        } else if (NebulaKeyUtils::isIndexKey(key)) {
+        } else if (IndexKeyUtils::isIndexKey(key)) {
             if (!indexValid(spaceId, key)) {
                 VLOG(3) << "Index invalid for the key " << key;
                 return true;
@@ -172,7 +173,7 @@ public:
     }
 
     bool indexValid(GraphSpaceID spaceId, const folly::StringPiece& key) const {
-        auto indexId = NebulaKeyUtils::getIndexId(key);
+        auto indexId = IndexKeyUtils::getIndexId(key);
         auto eRet = this->indexMan_->getEdgeIndex(spaceId, indexId);
         if (eRet.ok()) {
             return true;

@@ -24,6 +24,7 @@ enum class NebulaSystemKeyType : uint32_t {
     kSystemPart        = 0x00000002,
 };
 
+using VertexIDSlice = folly::StringPiece;
 using VertexIntID = int64_t;
 using IndexID = int32_t;
 
@@ -38,7 +39,8 @@ readInt(const char* data, int32_t len) {
 static constexpr int32_t kVertexLen = sizeof(PartitionID) + sizeof(TagID) + sizeof(TagVersion);
 
 // size of vertex key except srcId and dstId
-static constexpr int32_t kEdgeLen = sizeof(PartitionID) + sizeof(EdgeType) + sizeof(EdgeRanking) + sizeof(EdgeVersion);
+static constexpr int32_t kEdgeLen = sizeof(PartitionID) + sizeof(EdgeType) +
+                                    sizeof(EdgeRanking) + sizeof(EdgeVersion);
 
 static constexpr int32_t kSystemLen = sizeof(PartitionID) + sizeof(NebulaSystemKeyType);
 
@@ -59,13 +61,10 @@ static constexpr uint32_t kEdgeMaskSet      = kTagEdgeMask;
 // Write Tag by |=
 static constexpr uint32_t kTagMaskSet       = ~kTagEdgeMask;
 
-static constexpr int32_t kVertexIndexLen = sizeof(PartitionID) + sizeof(IndexID)
-                                           + sizeof(VertexID);
+static constexpr int32_t kVertexIndexLen = sizeof(PartitionID) + sizeof(IndexID);
 
-static constexpr int32_t kEdgeIndexLen = sizeof(PartitionID) + sizeof(IndexID)
-                                         + sizeof(VertexID) * 2 + sizeof(EdgeRanking);
-
-static constexpr int32_t kIndexLen = std::min(kVertexIndexLen, kEdgeIndexLen);
+static constexpr int32_t kEdgeIndexLen = sizeof(PartitionID) + sizeof(IndexID) + 
+                                         sizeof(EdgeRanking);
 
 }  // namespace nebula
 #endif  // COMMON_TYPES_H_

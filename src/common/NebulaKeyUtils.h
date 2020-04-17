@@ -11,8 +11,6 @@
 
 namespace nebula {
 
-using VertexIDSlice = folly::StringPiece;
-
 /**
  * VertexKeyUtils:
  * type(1) + partId(3) + vertexId(*) + tagId(4) + version(8)
@@ -200,17 +198,6 @@ public:
     static folly::StringPiece keyWithNoVersion(const folly::StringPiece& rawKey) {
         // TODO(heng) We should change the method if varint data version supportted.
         return rawKey.subpiece(0, rawKey.size() - sizeof(int64_t));
-    }
-
-    static bool isIndexKey(const folly::StringPiece& key) {
-        constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
-        auto type = readInt<int32_t>(key.data(), len) & kTypeMask;
-        return static_cast<uint32_t>(NebulaKeyType::kIndex) == type;
-    }
-
-    static IndexID getIndexId(const folly::StringPiece& rawKey) {
-        auto offset = sizeof(PartitionID);
-        return readInt<IndexID>(rawKey.data() + offset, sizeof(IndexID));
     }
 
     static void dumpBadKey(const folly::StringPiece& rawKey, size_t expect, size_t vIdLen) {
