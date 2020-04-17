@@ -15,7 +15,6 @@ namespace storage {
 
 class StorageEnv;
 class GraphStorageServiceHandler final : public cpp2::GraphStorageServiceSvIf {
-
 public:
     explicit GraphStorageServiceHandler(StorageEnv* env) : env_(env) {
     }
