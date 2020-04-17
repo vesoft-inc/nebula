@@ -73,13 +73,9 @@ jobs:
             -DENABLE_ASAN=on \
             -B build/
       - name: Make
-        if: (matrix.compiler != 'gcc-9.2' || matrix.os != 'centos7') && steps.ignore_docs.outputs.num_source_files != 0
+        if: steps.ignore_docs.outputs.num_source_files != 0
         run: |
           cmake --build build/ -j $(nproc)
-      - name: Make with less concurrency
-        if: matrix.compiler == 'gcc-9.2' && matrix.os == 'centos7' && steps.ignore_docs.outputs.num_source_files != 0
-        run: |
-          cmake --build build/ -j $(($(nproc)/2))
       - name: CTest with multiple threads
         if: steps.ignore_docs.outputs.num_source_files != 0
         timeout-minutes: 15
