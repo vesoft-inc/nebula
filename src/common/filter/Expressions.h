@@ -19,7 +19,7 @@ class Cord;
 using OptVariantType = StatusOr<VariantType>;
 
 enum class ColumnType {
-    INT, STRING, DOUBLE, BIGINT, BOOL, TIMESTAMP,
+    INT, STRING, DOUBLE, BOOL, TIMESTAMP,
 };
 
 std::string columnTypeToString(ColumnType type);
@@ -244,6 +244,17 @@ public:
      * To decode an expression from a byte buffer.
      */
     static StatusOr<std::unique_ptr<Expression>> decode(folly::StringPiece buffer) noexcept;
+
+    template <typename T>
+    static T as(const VariantType &value) {
+        static_assert(
+            std::is_same<std::remove_cv_t<T>, int64_t>::value
+            || std::is_same<std::remove_cv_t<T>, double>::value
+            || std::is_same<std::remove_cv_t<T>, bool>::value
+            || std::is_same<std::remove_cv_t<T>, std::string>::value,
+            "Invalid value type");
+        return boost::get<std::remove_reference_t<T>>(value);
+    }
 
     // Procedures used to do type conversions only between compatible ones.
     static int64_t asInt(const VariantType &value) {

@@ -18,6 +18,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:schema_obj>
         $<TARGET_OBJECTS:dataman_obj>
+        $<TARGET_OBJECTS:kvstore_storage_utils_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}

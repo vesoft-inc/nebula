@@ -6,11 +6,13 @@
 
 #include "base/Base.h"
 #include "kvstore/RocksEngineConfig.h"
+#include "kvstore/EventListner.h"
 #include "rocksdb/db.h"
 #include "rocksdb/cache.h"
 #include "rocksdb/convenience.h"
 #include "rocksdb/utilities/options_util.h"
 #include "rocksdb/slice_transform.h"
+#include "rocksdb/filter_policy.h"
 #include "base/Configuration.h"
 
 // [WAL]
@@ -44,6 +46,7 @@ DEFINE_int32(rocksdb_batch_size,
 DEFINE_int64(rocksdb_block_cache, 1024,
              "The default block cache size used in BlockBasedTable. The unit is MB");
 
+DEFINE_bool(enable_partitioned_index_filter, false, "True for partitioned index filters");
 
 namespace nebula {
 namespace kvstore {
@@ -62,6 +65,7 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options &baseOpts) {
     if (!s.ok()) {
         return s;
     }
+    dbOpts.listeners.emplace_back(new EventListener());
 
     std::unordered_map<std::string, std::string> cfOptsMap;
     if (!loadOptionsMap(cfOptsMap, FLAGS_rocksdb_column_family_options)) {
@@ -87,6 +91,15 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options &baseOpts) {
     static std::shared_ptr<rocksdb::Cache> blockCache
         = rocksdb::NewLRUCache(FLAGS_rocksdb_block_cache * 1024 * 1024);
     bbtOpts.block_cache = blockCache;
+    bbtOpts.filter_policy.reset(rocksdb::NewBloomFilterPolicy(10, false));
+    if (FLAGS_enable_partitioned_index_filter) {
+        bbtOpts.index_type = rocksdb::BlockBasedTableOptions::IndexType::kTwoLevelIndexSearch;
+        bbtOpts.partition_filters = true;
+        bbtOpts.cache_index_and_filter_blocks = true;
+        bbtOpts.cache_index_and_filter_blocks_with_high_priority = true;
+        bbtOpts.pin_l0_filter_and_index_blocks_in_cache =
+            baseOpts.compaction_style == rocksdb::CompactionStyle::kCompactionStyleLevel;
+    }
     baseOpts.table_factory.reset(NewBlockBasedTableFactory(bbtOpts));
     baseOpts.create_if_missing = true;
     return s;

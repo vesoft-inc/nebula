@@ -12,7 +12,7 @@
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
 #include "storage/query/QueryBoundProcessor.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
 #include "meta/SchemaManager.h"

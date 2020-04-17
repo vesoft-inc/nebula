@@ -5,7 +5,7 @@
  */
 
 #include "base/Base.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include "network/NetworkUtils.h"
 #include "dataman/NebulaCodecImpl.h"
 #include "kvstore/plugins/hbase/HBaseStore.h"

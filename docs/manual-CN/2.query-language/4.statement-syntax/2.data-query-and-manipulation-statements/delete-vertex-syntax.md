@@ -1,6 +1,6 @@
 # Delete Vertex 语法
 
-**Nebula Graph** 支持给定点 ID，删除这些顶点和与其相关联的入边和出边，语法如下：
+**Nebula Graph** 支持给定点 ID（或 hash ID、UUID），删除这些顶点和与其相关联的入边和出边，语法如下：
 
 ```ngql
 DELETE VERTEX <vid_list>

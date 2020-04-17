@@ -76,13 +76,6 @@ nebula_add_test(
 )
 
 nebula_add_test(
-    NAME nebulakey_utils_test
-    SOURCES NebulaKeyUtilsTest.cpp
-    OBJECTS $<TARGET_OBJECTS:base_obj>
-    LIBRARIES gtest gtest_main
-)
-
-nebula_add_test(
     NAME slow_op_tracker_test
     SOURCES SlowOpTrackerTest.cpp
     OBJECTS $<TARGET_OBJECTS:base_obj> $<TARGET_OBJECTS:time_obj>

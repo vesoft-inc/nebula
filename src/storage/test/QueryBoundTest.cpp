@@ -5,7 +5,7 @@
  */
 
 #include "base/Base.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include <limits>
@@ -206,6 +206,8 @@ void checkSamplingResponse(cpp2::QueryResponse& resp,
                            int32_t edgeFields,
                            int32_t dstIdStart,
                            int32_t dstIdEnd,
+                           int32_t dstIdStartReverse,
+                           int32_t dstIdEndReverse,
                            int32_t edgeNum) {
     EXPECT_EQ(0, resp.result.failed_codes.size());
 
@@ -242,16 +244,21 @@ void checkSamplingResponse(cpp2::QueryResponse& resp,
         checkTagData<std::string>(vp.tag_data, 3005, "tag_3005_col_4", vschema,
                                   folly::stringPrintf("tag_string_col_4"));
 
+        int32_t rowNum = 0;
         for (auto& ep : vp.edge_data) {
             auto it2 = schema.find(ep.type);
             DCHECK(it2 != schema.end());
             auto provider = it2->second;
-            int32_t rowNum = 0;
             for (auto& edge : ep.get_edges()) {
                 auto dst = edge.get_dst();
                 VLOG(1) << "Check edge " << vp.vertex_id << " -> " << dst << " props...";
-                CHECK_LE(dstIdStart, dst);
-                CHECK_GE(dstIdEnd, dst);
+                if (ep.type < 0) {
+                    CHECK_LE(dstIdStartReverse, dst);
+                    CHECK_GE(dstIdEndReverse, dst);
+                } else {
+                    CHECK_LE(dstIdStart, dst);
+                    CHECK_GE(dstIdEnd, dst);
+                }
                 auto reader = RowReader::getRowReader(edge.props, provider);
                 DCHECK(reader != nullptr);
                 EXPECT_EQ(edgeFields, reader->numFields() + 1);
@@ -275,9 +282,9 @@ void checkSamplingResponse(cpp2::QueryResponse& resp,
                 }
                 rowNum++;
             }
-            EXPECT_EQ(edgeNum, rowNum);
-            totalEdges += rowNum;
         }
+        totalEdges += rowNum;
+        EXPECT_EQ(edgeNum, rowNum);
     }
     EXPECT_EQ(totalEdges, *resp.get_total_edges());
 }
@@ -306,7 +313,7 @@ TEST(QueryBoundTest, OutBoundSimpleTest) {
     checkResponse(resp, 30, 12, 10001, 7);
 }
 
-TEST(QueryBoundTest, inBoundSimpleTest) {
+TEST(QueryBoundTest, InBoundSimpleTest) {
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
     LOG(INFO) << "Prepare meta...";
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
@@ -593,21 +600,59 @@ TEST(QueryBoundTest, SamplingTest) {
     auto schemaMan = TestUtils::mockSchemaMan();
     mockData(kv.get());
 
-    cpp2::GetNeighborsRequest req;
-    std::vector<EdgeType> et = {101};
-    buildRequest(req, et);
+    {
+        cpp2::GetNeighborsRequest req;
+        std::vector<EdgeType> et = {101};
+        buildRequest(req, et);
 
-    LOG(INFO) << "Test QueryOutBoundRequest...";
-    auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
-    auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(),
-                                                    nullptr, executor.get());
-    auto f = processor->getFuture();
-    processor->process(req);
-    auto resp = std::move(f).get();
+        LOG(INFO) << "Test QueryOutBoundRequest...";
+        auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
+        auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(),
+                                                        nullptr, executor.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
 
-    LOG(INFO) << "Check the results...";
-    checkSamplingResponse(resp, 30, 12, 10001, 10007, FLAGS_max_edge_returned_per_vertex);
+        LOG(INFO) << "Check the results...";
+        checkSamplingResponse(resp, 30, 12, 10001, 10007, 20001, 20005,
+                FLAGS_max_edge_returned_per_vertex);
+    }
+    {
+        cpp2::GetNeighborsRequest req;
+        std::vector<EdgeType> et = {101, 102, 103};
+        buildRequest(req, et);
+
+        LOG(INFO) << "Test QueryOutBoundRequest...";
+        auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
+        auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(),
+                                                        nullptr, executor.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+
+        LOG(INFO) << "Check the results...";
+        checkSamplingResponse(resp, 30, 12, 10001, 10007, 20001, 20005,
+                FLAGS_max_edge_returned_per_vertex);
+    }
+    {
+        cpp2::GetNeighborsRequest req;
+        std::vector<EdgeType> et = {101, -101};
+        buildRequest(req, et);
+
+        LOG(INFO) << "Test QueryOutBoundRequest...";
+        auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
+        auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(),
+                                                        nullptr, executor.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+
+        LOG(INFO) << "Check the results...";
+        checkSamplingResponse(resp, 30, 12, 10001, 10007, 20001, 20005,
+                FLAGS_max_edge_returned_per_vertex);
+    }
     FLAGS_max_edge_returned_per_vertex = old_max_edge_returned;
+    FLAGS_enable_reservoir_sampling = false;
 }
 }  // namespace storage
 }  // namespace nebula
