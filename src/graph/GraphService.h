@@ -10,6 +10,7 @@
 #include "base/Base.h"
 #include "gen-cpp2/GraphService.h"
 #include "graph/PasswordAuthenticator.h"
+#include "graph/CloudAuthenticator.h"
 #include "graph/ExecutionEngine.h"
 #include "graph/SessionManager.h"
 
