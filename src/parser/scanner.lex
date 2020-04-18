@@ -158,6 +158,7 @@ DBA                         ([Dd][Bb][Aa])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
+EXP                         ([eE][-+]?[0-9]*)
 HEX                         ([0-9a-fA-F])
 OCT                         ([0-7])
 IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
@@ -434,6 +435,15 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
                                     throw GraphParser::syntax_error(*yylloc, "Out of range:");
                                 }
                                 return TokenType::INTEGER;
+                            }
+{DEC}+\.{DEC}*{EXP}         {
+                                try {
+                                    folly::StringPiece text(yytext, yyleng);
+                                    yylval->doubleval = folly::to<double>(text);
+                                } catch (...) {
+                                    throw GraphParser::syntax_error(*yylloc, "Out of range:");
+                                }
+                                return TokenType::DOUBLE;
                             }
 {DEC}+\.{DEC}*              {
                                 try {
