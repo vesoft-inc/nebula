@@ -8,19 +8,33 @@
 #define DATATYPES_DATE_H_
 
 #include "base/Base.h"
-#include "folly/hash/Hash.h"
+#include <folly/hash/Hash.h>
+#include <gtest/gtest_prod.h>
 
 namespace nebula {
 
 struct Date {
-    int16_t year;
-    int8_t month;
-    int8_t day;
+    FRIEND_TEST(Date, DaysConversion);
+
+    int16_t year;   // Any integer
+    int8_t month;   // 1 - 12
+    int8_t day;     // 1 - 31
+
+    Date() : year{0}, month{1}, day{1} {}
+    Date(int16_t y, int8_t m, int8_t d) : year{y}, month{m}, day{d} {}
+    // Tak the number of days since -32768/1/1, and convert to the real date
+    explicit Date(uint64_t days);
 
     void clear() {
         year = 0;
-        month = 0;
-        day = 0;
+        month = 1;
+        day = 1;
+    }
+
+    void reset(int16_t y, int8_t m, int8_t d) {
+        year = y;
+        month = m;
+        day = d;
     }
 
     bool operator==(const Date& rhs) const {
@@ -28,6 +42,16 @@ struct Date {
                month == rhs.month &&
                day == rhs.day;
     }
+
+    Date operator+(int64_t days) const;
+    Date operator-(int64_t days) const;
+
+    std::string toString() const;
+
+    // Return the number of days since -32768/1/1
+    int64_t toInt() const;
+    // Convert the number of days since -32768/1/1 to the real date
+    void fromInt(int64_t days);
 };
 
 
@@ -62,6 +86,8 @@ struct DateTime {
                microsec == rhs.microsec &&
                timezone == rhs.timezone;
     }
+
+    std::string toString() const;
 };
 
 }  // namespace nebula

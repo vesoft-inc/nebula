@@ -1504,6 +1504,274 @@ std::ostream& operator<<(std::ostream& os, const Value::Type& type) {
     return os;
 }
 
+
+Value operator+(const Value& left, const Value& right) {
+    if (left.isNull() || right.isNull()) {
+        return Value(NullType::NaN);
+    }
+
+    switch (left.type()) {
+        case Value::Type::BOOL: {
+            switch (right.type()) {
+                case Value::Type::STRING: {
+                    return folly::stringPrintf("%s%s",
+                                               left.getBool() ? "true" : "false",
+                                               right.getStr().c_str());
+                }
+                default: {
+                    return Value(NullType::BAD_TYPE);
+                }
+            }
+        }
+        case Value::Type::INT: {
+            switch (right.type()) {
+                case Value::Type::INT: {
+                    return left.getInt() + right.getInt();
+                }
+                case Value::Type::FLOAT: {
+                    return left.getInt() + right.getFloat();
+                }
+                case Value::Type::STRING: {
+                    return folly::stringPrintf("%ld%s",
+                                               left.getInt(),
+                                               right.getStr().c_str());
+                }
+                case Value::Type::DATE: {
+                    return right.getDate() + left.getInt();
+                }
+                default: {
+                    return Value(NullType::BAD_TYPE);
+                }
+            }
+        }
+        case Value::Type::FLOAT: {
+            switch (right.type()) {
+                case Value::Type::INT: {
+                    return left.getFloat() + right.getInt();
+                }
+                case Value::Type::FLOAT: {
+                    return left.getFloat() + right.getFloat();
+                }
+                case Value::Type::STRING: {
+                    return folly::stringPrintf("%lf%s",
+                                               left.getFloat(),
+                                               right.getStr().c_str());
+                }
+                default: {
+                    return Value(NullType::BAD_TYPE);
+                }
+            }
+        }
+        case Value::Type::STRING: {
+            switch (right.type()) {
+                case Value::Type::BOOL: {
+                    return folly::stringPrintf("%s%s",
+                                               left.getStr().c_str(),
+                                               right.getBool() ? "true" : "false");
+                }
+                case Value::Type::INT: {
+                    return folly::stringPrintf("%s%ld",
+                                               left.getStr().c_str(),
+                                               right.getInt());
+                }
+                case Value::Type::FLOAT: {
+                    return folly::stringPrintf("%s%lf",
+                                               left.getStr().c_str(),
+                                               right.getFloat());
+                }
+                case Value::Type::STRING: {
+                    return left.getStr() + right.getStr();
+                }
+                case Value::Type::DATE: {
+                    return left.getStr() + right.getDate().toString();
+                }
+                case Value::Type::DATETIME: {
+                    return left.getStr() + right.getDateTime().toString();
+                }
+                default: {
+                    return Value(NullType::BAD_TYPE);
+                }
+            }
+        }
+        case Value::Type::DATE: {
+            switch (right.type()) {
+                case Value::Type::INT: {
+                    return left.getDate() + right.getInt();
+                }
+                case Value::Type::STRING: {
+                    return left.getDate().toString() + right.getStr();
+                }
+                default: {
+                    return Value(NullType::BAD_TYPE);
+                }
+            }
+        }
+        case Value::Type::DATETIME: {
+            switch (right.type()) {
+                case Value::Type::STRING: {
+                    return left.getDateTime().toString() + right.getStr();
+                }
+                default: {
+                    return Value(NullType::BAD_TYPE);
+                }
+            }
+        }
+        default: {
+            return Value(NullType::BAD_TYPE);
+        }
+    }
+}
+
+
+Value operator-(const Value& left, const Value& right) {
+    if (left.isNull() || right.isNull()) {
+        return Value(NullType::NaN);
+    }
+
+    switch (left.type()) {
+        case Value::Type::INT: {
+            switch (right.type()) {
+                case Value::Type::INT: {
+                    return left.getInt() - right.getInt();
+                }
+                case Value::Type::FLOAT: {
+                    return left.getInt() - right.getFloat();
+                }
+                default: {
+                    return Value(NullType::BAD_TYPE);
+                }
+            }
+        }
+        case Value::Type::FLOAT: {
+            switch (right.type()) {
+                case Value::Type::INT: {
+                    return left.getFloat() - right.getInt();
+                }
+                case Value::Type::FLOAT: {
+                    return left.getFloat() - right.getFloat();
+                }
+                default: {
+                    return Value(NullType::BAD_TYPE);
+                }
+            }
+        }
+        case Value::Type::DATE: {
+            switch (right.type()) {
+                case Value::Type::INT: {
+                    return left.getDate() - right.getInt();
+                }
+                case Value::Type::DATE: {
+                    return left.getDate().toInt() - right.getDate().toInt();
+                }
+                default: {
+                    return Value(NullType::BAD_TYPE);
+                }
+            }
+        }
+        default: {
+            return Value(NullType::BAD_TYPE);
+        }
+    }
+}
+
+
+Value operator*(const Value& left, const Value& right) {
+    if (left.isNull() || right.isNull()) {
+        return Value(NullType::NaN);
+    }
+
+    switch (left.type()) {
+        case Value::Type::INT: {
+            switch (right.type()) {
+                case Value::Type::INT: {
+                    return left.getInt() * right.getInt();
+                }
+                case Value::Type::FLOAT: {
+                    return left.getInt() * right.getFloat();
+                }
+                default: {
+                    return Value(NullType::BAD_TYPE);
+                }
+            }
+        }
+        case Value::Type::FLOAT: {
+            switch (right.type()) {
+                case Value::Type::INT: {
+                    return left.getFloat() * right.getInt();
+                }
+                case Value::Type::FLOAT: {
+                    return left.getFloat() * right.getFloat();
+                }
+                default: {
+                    return Value(NullType::BAD_TYPE);
+                }
+            }
+        }
+        default: {
+            return Value(NullType::BAD_TYPE);
+        }
+    }
+}
+
+
+Value operator/(const Value& left, const Value& right) {
+    if (left.isNull() || right.isNull()) {
+        return Value(NullType::NaN);
+    }
+
+    switch (left.type()) {
+        case Value::Type::INT: {
+            switch (right.type()) {
+                case Value::Type::INT: {
+                    int64_t denom = right.getInt();
+                    if (denom != 0) {
+                        return left.getInt() / denom;
+                    } else {
+                        return Value(NullType::DIV_BY_ZERO);
+                    }
+                }
+                case Value::Type::FLOAT: {
+                    double denom = right.getFloat();
+                    if (denom != 0.0) {
+                        return left.getInt() / denom;
+                    } else {
+                        return Value(NullType::DIV_BY_ZERO);
+                    }
+                }
+                default: {
+                    return Value(NullType::BAD_TYPE);
+                }
+            }
+        }
+        case Value::Type::FLOAT: {
+            switch (right.type()) {
+                case Value::Type::INT: {
+                    int64_t denom = right.getInt();
+                    if (denom != 0) {
+                        return left.getFloat() / denom;
+                    } else {
+                        return Value(NullType::DIV_BY_ZERO);
+                    }
+                }
+                case Value::Type::FLOAT: {
+                    double denom = right.getFloat();
+                    if (denom != 0.0) {
+                        return left.getFloat() / denom;
+                    } else {
+                        return Value(NullType::DIV_BY_ZERO);
+                    }
+                }
+                default: {
+                    return Value(NullType::BAD_TYPE);
+                }
+            }
+        }
+        default: {
+            return Value(NullType::BAD_TYPE);
+        }
+    }
+}
+
 }  // namespace nebula
 
 

@@ -38,6 +38,7 @@ enum class NullType {
     BAD_TYPE = 3,
     ERR_OVERFLOW = 4,
     UNKNOWN_PROP = 5,
+    DIV_BY_ZERO = 6,
 };
 
 
@@ -110,6 +111,10 @@ struct Value {
 
     bool empty() const {
         return type_ == Type::__EMPTY__;
+    }
+
+    bool isNull() const {
+        return type_ == Type::NULLVALUE;
     }
 
     void clear();
@@ -311,6 +316,13 @@ private:
 void swap(Value& a, Value& b);
 
 std::ostream& operator<<(std::ostream& os, const Value::Type& type);
+
+
+// Arithmetic operations
+Value operator+(const Value& left, const Value& right);
+Value operator-(const Value& left, const Value& right);
+Value operator*(const Value& left, const Value& right);
+Value operator/(const Value& left, const Value& right);
 
 }  // namespace nebula
 
