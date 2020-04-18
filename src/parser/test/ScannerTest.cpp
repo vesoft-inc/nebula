@@ -73,7 +73,7 @@ static Validator __CHECK_SEMANTIC_TYPE(const std::string &str,
                                        std::string &stream) {
     stream += " ";
     stream += str;
-    return [&scanner, &yylval, &yyloc, type, &str]() {
+    return [&scanner, &yylval, &yyloc, type, str]() {
         auto actual = scanner.yylex(&yylval, &yyloc);
         if (actual != type) {
             return AssertionFailure() << "Token type not match for `" << str
@@ -98,7 +98,7 @@ static Validator __CHECK_SEMANTIC_VALUE(const std::string &str,
                                         std::string &stream) {
     stream += " ";
     stream += str;
-    return [&scanner, &yylval, &yyloc, type, &str, value = std::forward<T>(value)]() {
+    return [&scanner, &yylval, &yyloc, type, str, value = std::forward<T>(value)]() {
         auto actual = scanner.yylex(&yylval, &yyloc);
         if (actual != type) {
             return AssertionFailure() << "Token type not match for `" << str
@@ -113,8 +113,8 @@ static Validator __CHECK_SEMANTIC_VALUE(const std::string &str,
 #define CHECK_SEMANTIC_VALUE(STR, TYPE, VALUE)                                                     \
     __CHECK_SEMANTIC_VALUE(STR, TYPE, VALUE, yylval, yyloc, scanner, stream)
 
-static Validator CHECK_LEXICAL_ERROR(const std::string &str) {
-    return [&str]() {
+static Validator CHECK_LEXICAL_ERROR(std::string &&str) {
+    return [str]() {
         auto input = [&str](char *buf, int) -> int {
             static bool first = true;
             if (!first) {
