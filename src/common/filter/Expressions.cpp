@@ -460,7 +460,7 @@ OptVariantType FunctionCallExpression::eval(Getters &getters) const {
 
     // TODO(simon.liu)
     auto r = function_(args);
-    return OptVariantType(r);
+    return r;
 }
 
 Status FunctionCallExpression::prepare() {

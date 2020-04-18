@@ -10,6 +10,7 @@
 #include "base/StatusOr.h"
 #include "base/Status.h"
 #include "storage/client/StorageClient.h"
+#include "filter/FunctionManager.h"
 #include <boost/variant.hpp>
 #include <folly/futures/Future.h>
 
@@ -716,7 +717,7 @@ public:
         }
     }
 
-    void setFunc(std::function<VariantType(const std::vector<VariantType>&)> func) {
+    void setFunc(FunctionManager::Function func) {
         function_ = func;
     }
 
@@ -728,7 +729,7 @@ private:
 private:
     std::unique_ptr<std::string>                name_;
     std::vector<std::unique_ptr<Expression>>    args_;
-    std::function<VariantType(const std::vector<VariantType>&)> function_;
+    FunctionManager::Function                   function_;
 };
 
 // (uuid)expr
