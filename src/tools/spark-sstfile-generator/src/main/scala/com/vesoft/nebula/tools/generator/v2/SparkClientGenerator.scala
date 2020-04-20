@@ -374,7 +374,15 @@ object SparkClientGenerator {
                       new FutureCallback[Optional[Integer]] {
                         override def onSuccess(result: Optional[Integer]): Unit = {
                           latch.countDown()
-                          batchSuccess.add(1)
+                          if (result.get == ErrorCode.SUCCEEDED) {
+                            batchSuccess.add(1)
+                          } else {
+                            if (batchFailure.value > DEFAULT_ERROR_TIMES) {
+                              throw TooManyErrorsException("too many errors")
+                            } else {
+                              batchFailure.add(1)
+                            }
+                          }
                         }
 
                         override def onFailure(t: Throwable): Unit = {
@@ -647,7 +655,15 @@ object SparkClientGenerator {
                       new FutureCallback[Optional[Integer]] {
                         override def onSuccess(result: Optional[Integer]): Unit = {
                           latch.countDown()
-                          batchSuccess.add(1)
+                          if (result.get == ErrorCode.SUCCEEDED) {
+                            batchSuccess.add(1)
+                          } else {
+                            if (batchFailure.value > DEFAULT_ERROR_TIMES) {
+                              throw TooManyErrorsException("too many errors")
+                            } else {
+                              batchFailure.add(1)
+                            }
+                          }
                         }
 
                         override def onFailure(t: Throwable): Unit = {
