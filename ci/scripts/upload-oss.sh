@@ -21,11 +21,11 @@ for op in $@; do
 done
 
 if [[ $nightly != "" ]]; then
-  OSS_SUBDIR=`date +%Y%m%d`
-  OSS_URL="oss://nebula-graph/build-deb"/nightly/${OSS_SUBDIR}
+  OSS_SUBDIR=`date -u +%Y.%m.%d`
+  OSS_URL="oss://nebula-graph/package"/nightly/${OSS_SUBDIR}
 else
   OSS_SUBDIR=`echo $tag |sed 's/^v//'`
-  OSS_URL="oss://nebula-graph/build-deb"/${OSS_SUBDIR}
+  OSS_URL="oss://nebula-graph/package"/${OSS_SUBDIR}
 fi
 
 echo "Uploading oss... "
