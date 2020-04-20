@@ -142,7 +142,9 @@ std::string AddVerticesProcessor::addVertices(int64_t version, PartitionID partI
                     }
                 }
                 auto ni = indexKey(partId, vId, nReader.get(), index);
-                batchHolder->put(std::move(ni), "");
+                if (!ni.empty()) {
+                    batchHolder->put(std::move(ni), "");
+                }
             }
         }
         /*
@@ -177,9 +179,12 @@ std::string AddVerticesProcessor::indexKey(PartitionID partId,
                                            RowReader* reader,
                                            std::shared_ptr<nebula::cpp2::IndexItem> index) {
     auto values = collectIndexValues(reader, index->get_fields());
+    if (!values.ok()) {
+        return "";
+    }
     return NebulaKeyUtils::vertexIndexKey(partId,
                                           index->get_index_id(),
-                                          vId, values);
+                                          vId, values.value());
 }
 
 }  // namespace storage
