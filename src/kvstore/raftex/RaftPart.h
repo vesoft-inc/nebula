@@ -386,6 +386,9 @@ private:
 
     void updateQuorum();
 
+    std::vector<std::shared_ptr<Host>>::iterator updateAndFindHost(
+        std::function<bool(std::shared_ptr<Host> &h)> f);
+
 protected:
     template<class ValueType>
     class PromiseSet final {

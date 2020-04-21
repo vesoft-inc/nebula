@@ -67,7 +67,7 @@ public:
 
     // for IPV4
     uint32_t toLong() const {
-        return addrs_.getIPAddress().asV4().toLongHBO();
+        return addrs_.getIPAddress().asV4().toLong();
     }
 
     uint32_t toLongHBO() const {

@@ -277,5 +277,22 @@ StatusOr<std::string> NetworkUtils::getLocalIP(std::string defaultIP) {
     return Status::Error("No IPv4 address found!");
 }
 
+boost::optional<InetAddress> NetworkUtils::updateHost(const InetAddress& host) {
+    if (!host.getHostStr().empty()) {
+        try {
+            LOG(INFO) << "will resolve host: " << host.getHostStr()
+                      << ", ipaddress: " << host.toString();
+            auto newAddr = InetAddress(host.getHostStr(), host.getPort(), true);
+            if (newAddr != host) {
+                return newAddr;
+            }
+        } catch (std::exception& e) {
+            LOG(ERROR) << "update host addr failed, err: " << e.what();
+        }
+    }
+
+    return boost::none;
+}
+
 }  // namespace network
 }  // namespace nebula

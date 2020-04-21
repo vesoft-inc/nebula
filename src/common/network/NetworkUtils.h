@@ -9,6 +9,7 @@
 
 #include "base/Base.h"
 #include "base/StatusOr.h"
+#include <boost/optional.hpp>
 
 namespace nebula {
 namespace network {
@@ -60,6 +61,8 @@ public:
     // Return Status::Error if peersStr is invalid.
     static StatusOr<std::vector<InetAddress>> toHosts(const std::string& peersStr);
     static std::string toHostsString(const std::vector<InetAddress>& hosts);
+
+    static boost::optional<InetAddress> updateHost(const InetAddress& host);
 
 private:
 };

@@ -366,22 +366,46 @@ AppendLogResult RaftPart::canAppendLogs() {
     return AppendLogResult::SUCCEEDED;
 }
 
+std::vector<std::shared_ptr<Host>>::iterator RaftPart::updateAndFindHost(
+    std::function<bool(std::shared_ptr<Host> &h)> f) {
+    CHECK(!raftLock_.try_lock());
+
+    std::vector<std::shared_ptr<Host>>::iterator itera = hosts_.end();
+    for (auto it = hosts_.begin(); it != hosts_.end(); ++it) {
+        auto hostOptions = network::NetworkUtils::updateHost((*it)->address());
+        if (hostOptions == boost::none) {
+            continue;
+        }
+        (*it)->setAddress(hostOptions.value());
+        if (itera != it && f(*it)) {
+            itera = it;
+        }
+    }
+
+    return itera;
+}
+
 void RaftPart::addLearner(const network::InetAddress& addr) {
     CHECK(!raftLock_.try_lock());
     if (addr == addr_) {
         LOG(INFO) << idStr_ << "I am learner!";
         return;
     }
-    auto it = std::find_if(hosts_.begin(), hosts_.end(), [&addr] (const auto& h) {
-                return h->address() == addr;
-            });
+
+    auto it = std::find_if(
+        hosts_.begin(), hosts_.end(), [&addr](const auto& h) { return h->address() == addr; });
     if (it == hosts_.end()) {
-        hosts_.emplace_back(std::make_shared<Host>(addr, shared_from_this(), true));
-        LOG(INFO) << idStr_ << "Add learner " << addr;
-    } else {
-        LOG(INFO) << idStr_ << "The host " << addr << " has been existed as "
-                  << ((*it)->isLearner() ? " learner " : " group member");
+        it = updateAndFindHost([&addr](const auto& h) { return h->address() == addr; });
+
+        if (it == hosts_.end()) {
+            hosts_.emplace_back(std::make_shared<Host>(addr, shared_from_this(), true));
+            LOG(INFO) << idStr_ << "Add learner " << addr;
+            return;
+        }
     }
+
+    LOG(INFO) << idStr_ << "The host " << addr << " has been existed as "
+              << ((*it)->isLearner() ? " learner " : " group member");
 }
 
 void RaftPart::preProcessTransLeader(const network::InetAddress& target) {
@@ -467,22 +491,23 @@ void RaftPart::addPeer(const network::InetAddress& peer) {
         }
         return;
     }
-    auto it = std::find_if(hosts_.begin(), hosts_.end(), [&peer] (const auto& h) {
-                return h->address() == peer;
-            });
+    auto it = std::find_if(
+        hosts_.begin(), hosts_.end(), [&peer](const auto& h) { return h->address() == peer; });
     if (it == hosts_.end()) {
-        hosts_.emplace_back(std::make_shared<Host>(peer, shared_from_this()));
-        updateQuorum();
-        LOG(INFO) << idStr_ << "Add peer " << peer;
-    } else {
-        if ((*it)->isLearner()) {
-            LOG(INFO) << idStr_ << "The host " << peer
-                      << " has been existed as learner, promote it!";
-            (*it)->setLearner(false);
+        it = updateAndFindHost([&peer](const auto& h) { return h->address() == peer; });
+        if (it == hosts_.end()) {
+            hosts_.emplace_back(std::make_shared<Host>(peer, shared_from_this()));
             updateQuorum();
-        } else {
-            LOG(INFO) << idStr_ << "The host " << peer << " has been existed as follower!";
+            LOG(INFO) << idStr_ << "Add peer " << peer;
+            return;
         }
+    }
+    if ((*it)->isLearner()) {
+        LOG(INFO) << idStr_ << "The host " << peer << " has been existed as learner, promote it!";
+        (*it)->setLearner(false);
+        updateQuorum();
+    } else {
+        LOG(INFO) << idStr_ << "The host " << peer << " has been existed as follower!";
     }
 }
 
@@ -493,21 +518,23 @@ void RaftPart::removePeer(const network::InetAddress& peer) {
         LOG(INFO) << idStr_ << "Remove myself from the raft group.";
         return;
     }
-    auto it = std::find_if(hosts_.begin(), hosts_.end(), [&peer] (const auto& h) {
-                  return h->address() == peer;
-              });
+    auto it = std::find_if(
+        hosts_.begin(), hosts_.end(), [&peer](const auto& h) { return h->address() == peer; });
     if (it == hosts_.end()) {
-        LOG(INFO) << idStr_ << "The peer " << peer << " not exist!";
-    } else {
-        if ((*it)->isLearner()) {
-            LOG(INFO) << idStr_ << "The peer is learner, remove it directly!";
-            hosts_.erase(it);
+        it = updateAndFindHost([&peer](const auto& h) { return h->address() == peer; });
+        if (it == hosts_.end()) {
+            LOG(INFO) << idStr_ << "The peer " << peer << " not exist!";
             return;
         }
-        hosts_.erase(it);
-        updateQuorum();
-        LOG(INFO) << idStr_ << "Remove peer " << peer;
     }
+    if ((*it)->isLearner()) {
+        LOG(INFO) << idStr_ << "The peer is learner, remove it directly!";
+        hosts_.erase(it);
+        return;
+    }
+    hosts_.erase(it);
+    updateQuorum();
+    LOG(INFO) << idStr_ << "Remove peer " << peer;
 }
 
 void RaftPart::preProcessRemovePeer(const network::InetAddress& peer) {
@@ -1268,13 +1295,10 @@ bool RaftPart::needToCleanWal() {
 void RaftPart::processAskForVoteRequest(
         const cpp2::AskForVoteRequest& req,
         cpp2::AskForVoteResponse& resp) {
-    LOG(INFO) << idStr_
-              << "Recieved a VOTING request"
-              << ": space = " << req.get_space()
-              << ", partition = " << req.get_part()
-              << ", candidateAddr = "
-              << network::InetAddress(req.get_candidate_ip(), req.get_candidate_port())
-              << ", term = " << req.get_term()
+    auto candidate = network::InetAddress(req.get_candidate_ip(), req.get_candidate_port());
+    LOG(INFO) << idStr_ << "Recieved a VOTING request"
+              << ": space = " << req.get_space() << ", partition = " << req.get_part()
+              << ", candidateAddr = " << candidate << ", term = " << req.get_term()
               << ", lastLogId = " << req.get_last_log_id()
               << ", lastLogTerm = " << req.get_last_log_term();
 
@@ -1310,7 +1334,6 @@ void RaftPart::processAskForVoteRequest(
         return;
     }
 
-    auto candidate = network::InetAddress(req.get_candidate_ip(), req.get_candidate_port());
     if (role_ == Role::FOLLOWER && !leader_.isZero() && leader_ != candidate &&
         lastMsgRecvDur_.elapsedInMSec() < FLAGS_raft_heartbeat_interval_secs * 1000) {
         LOG(INFO) << idStr_ << "I believe the leader exists. "
@@ -1357,15 +1380,20 @@ void RaftPart::processAskForVoteRequest(
         }
     }
 
-    auto hosts = followers();
-    auto it = std::find_if(hosts.begin(), hosts.end(), [&candidate] (const auto& h){
-                return h->address() == candidate;
-            });
-    if (it == hosts.end()) {
-        LOG(INFO) << idStr_ << "The candidate " << candidate << " is not my peers";
-        resp.set_error_code(cpp2::ErrorCode::E_WRONG_LEADER);
-        return;
+    auto it = std::find_if(hosts_.begin(), hosts_.end(), [&candidate](const auto& h) {
+        return !h->isLearner() && h->address() == candidate;
+    });
+
+    if (it == hosts_.end()) {
+        it = updateAndFindHost(
+            [&candidate](const auto& h) { return h->isLearner() && h->address() == candidate; });
+        if (it == hosts_.end()) {
+            LOG(INFO) << idStr_ << "The candidate " << candidate << " is not my peers";
+            resp.set_error_code(cpp2::ErrorCode::E_WRONG_LEADER);
+            return;
+        }
     }
+
     // Ok, no reason to refuse, we will vote for the candidate
     LOG(INFO) << idStr_ << "The partition will vote for the candidate";
     resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
@@ -1374,7 +1402,7 @@ void RaftPart::processAskForVoteRequest(
     TermID oldTerm = term_;
     role_ = Role::FOLLOWER;
     term_ = proposedTerm_ = req.get_term();
-    leader_ = network::InetAddress(req.get_candidate_ip(), req.get_candidate_port());
+    leader_ = candidate;
 
     // Reset the last message time
     lastMsgRecvDur_.reset();
@@ -1617,13 +1645,17 @@ cpp2::ErrorCode RaftPart::verifyLeader(
         const cpp2::AppendLogRequest& req) {
     CHECK(!raftLock_.try_lock());
     auto candidate = network::InetAddress(req.get_leader_ip(), req.get_leader_port());
-    auto hosts = followers();
-    auto it = std::find_if(hosts.begin(), hosts.end(), [&candidate] (const auto& h){
-                return h->address() == candidate;
-            });
-    if (it == hosts.end()) {
-        VLOG(2) << idStr_ << "The candidate leader " << candidate << " is not my peers";
-        return cpp2::ErrorCode::E_WRONG_LEADER;
+    auto it = std::find_if(hosts_.begin(), hosts_.end(), [&candidate](const auto& h) {
+        return !h->isLearner() && h->address() == candidate;
+    });
+
+    if (it == hosts_.end()) {
+        it = updateAndFindHost(
+            [&candidate](const auto& h) { return h->isLearner() && h->address() == candidate; });
+        if (it == hosts_.end()) {
+            VLOG(2) << idStr_ << "The candidate leader " << candidate << " is not my peers";
+            return cpp2::ErrorCode::E_WRONG_LEADER;
+        }
     }
 
     if (role_ == Role::FOLLOWER && !leader_.isZero() && leader_ != candidate &&
@@ -1732,10 +1764,10 @@ void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
         resp.set_error_code(cpp2::ErrorCode::E_BAD_STATE);
         return;
     }
-    if (UNLIKELY(leader_ != network::InetAddress(req.get_leader_ip(), req.get_leader_port())
-            || term_ != req.get_term())) {
-        LOG(ERROR) << idStr_ << "Term out of date, current term " << term_
-                   << ", received term " << req.get_term();
+    if (UNLIKELY(leader_ != network::InetAddress(req.get_leader_ip(), req.get_leader_port()) ||
+                 term_ != req.get_term())) {
+        LOG(ERROR) << idStr_ << "Term out of date, current term " << term_ << ", received term "
+                   << req.get_term();
         resp.set_error_code(cpp2::ErrorCode::E_TERM_OUT_OF_DATE);
         return;
     }

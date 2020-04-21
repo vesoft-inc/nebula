@@ -63,6 +63,10 @@ public:
         isLearner_ = isLearner;
     }
 
+    std::string getHostStr() {
+        return addr_.getHostStr();
+    }
+
     folly::Future<cpp2::AskForVoteResponse> askForVote(
         const cpp2::AskForVoteRequest& req,
         folly::EventBase* eb);
@@ -78,6 +82,10 @@ public:
 
     const network::InetAddress& address() const {
         return addr_;
+    }
+
+    void setAddress(const network::InetAddress &addr) {
+        addr_ = addr;
     }
 
 private:
@@ -107,7 +115,7 @@ private:
     using Request = std::tuple<TermID, LogID, LogID>;
 
     std::shared_ptr<RaftPart> part_;
-    const network::InetAddress addr_;
+    network::InetAddress addr_;
     bool isLearner_ = false;
     const std::string idStr_;
 
