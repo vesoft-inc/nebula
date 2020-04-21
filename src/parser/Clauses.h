@@ -21,7 +21,6 @@ public:
     };
 
     struct Over {
-        bool                    isReversely_{false};
         std::vector<OverEdge*>  edges_{nullptr};
         std::vector<EdgeType>   edgeTypes_;
         std::vector<EdgeType>   oppositeTypes_;
@@ -114,6 +113,33 @@ public:
             result.push_back(expr.get());
         }
         return result;
+    }
+
+    void setContext(ExpressionContext *context) {
+        for (auto &expr : vidList_) {
+            expr->setContext(context);
+        }
+    }
+
+    Status prepare() const {
+        auto status = Status::OK();
+        for (auto& vertex : vidList_) {
+            status = vertex->prepare();
+            if (!status.ok()) {
+                break;
+            }
+        }
+        return status;
+    }
+
+    std::vector<nebula::OptVariantType> eval() const {
+        Getters getters;
+        std::vector<nebula::OptVariantType> vertices;
+        for (auto& vertex : vidList_) {
+            auto vid = vertex->eval(getters);
+            vertices.emplace_back(vid);
+        }
+        return vertices;
     }
 
     std::string toString() const;
@@ -219,10 +245,17 @@ private:
 
 class OverClause final : public Clause {
 public:
-    explicit OverClause(OverEdges *edges, bool isReversely = false) {
+    enum class Direction : uint8_t {
+        kForward,
+        kBackward,
+        kBidirect
+    };
+
+    OverClause(OverEdges *edges,
+               Direction direction = Direction::kForward) {
         kind_ = kOverClause;
         overEdges_.reset(edges);
-        isReversely_ = isReversely;
+        direction_ = direction;
     }
 
     std::vector<OverEdge *> edges() const { return overEdges_->edges(); }
@@ -231,12 +264,12 @@ public:
 
     std::string toString() const;
 
-    bool isReversely() const {
-        return isReversely_;
+    Direction direction() const {
+        return direction_;
     }
 
 private:
-    bool isReversely_{false};
+    Direction                  direction_;
     std::unique_ptr<OverEdges> overEdges_;
 };
 
@@ -380,6 +413,7 @@ private:
 
 using OutBoundClause = InBoundClause;
 using BothInOutClause = InBoundClause;
+
 }   // namespace nebula
 #endif  // PARSER_CLAUSES_H_
 

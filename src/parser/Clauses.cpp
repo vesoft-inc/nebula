@@ -48,9 +48,8 @@ std::string VertexIDList::toString() const {
     return buf;
 }
 
-Status VerticesClause::prepare(Clause::Vertices &vertices) const {
-    UNUSED(vertices);
-    return Status::Error(std::string(""));
+Status VerticesClause::prepare(Clause::Vertices&) const {
+    return Status::OK();
 }
 
 std::string FromClause::toString() const {
@@ -79,7 +78,6 @@ std::string ToClause::toString() const {
 
 Status OverClause::prepare(Over &over) const {
     over.edges_ = edges();
-    over.isReversely_ = isReversely_;
     return Status::OK();
 }
 
@@ -102,10 +100,9 @@ std::string OverEdges::toString() const {
         buf += e->toString();
         buf += ",";
     }
-    buf.pop_back();
 
     if (!buf.empty()) {
-        buf.resize(buf.size() - 1);
+        buf.pop_back();
     }
 
     return buf;
@@ -117,8 +114,10 @@ std::string OverClause::toString() const {
     buf += "OVER ";
     buf += overEdges_->toString();
 
-    if (isReversely()) {
+    if (direction_ == OverClause::Direction::kBackward) {
         buf += " REVERSELY";
+    } else if (direction_ == OverClause::Direction::kBidirect) {
+        buf += " BIDIRECT";
     }
 
     return buf;

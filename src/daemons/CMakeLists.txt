@@ -16,6 +16,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:common_process_obj>
         $<TARGET_OBJECTS:common_graph_thrift_obj>
         $<TARGET_OBJECTS:common_graph_storage_client_obj>
+        $<TARGET_OBJECTS:common_storage_client_base_obj>
         $<TARGET_OBJECTS:common_storage_thrift_obj>
         $<TARGET_OBJECTS:common_meta_client_obj>
         $<TARGET_OBJECTS:common_stats_obj>

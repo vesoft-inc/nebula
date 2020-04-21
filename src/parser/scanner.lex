@@ -49,6 +49,7 @@ UPSERT                      ([Uu][Pp][Ss][Ee][Rr][Tt])
 WHEN                        ([Ww][Hh][Ee][Nn])
 DELETE                      ([Dd][Ee][Ll][Ee][Tt][Ee])
 FIND                        ([Ff][Ii][Nn][Dd])
+LOOKUP                      ([Ll][Oo][Oo][Kk][Uu][Pp])
 ALTER                       ([Aa][Ll][Tt][Ee][Rr])
 STEPS                       ([Ss][Tt][Ee][Pp][Ss]?)
 OVER                        ([Oo][Vv][Ee][Rr])
@@ -56,6 +57,10 @@ UPTO                        ([Uu][Pp][Tt][Oo])
 REVERSELY                   ([Rr][Ee][Vv][Ee][Rr][Ss][Ee][Ll][Yy])
 SPACE                       ([Ss][Pp][Aa][Cc][Ee])
 SPACES                      ([Ss][Pp][Aa][Cc][Ee][Ss])
+INDEX                       ([Ii][Nn][Dd][Ee][Xx])
+INDEXES                     ([Ii][Nn][Dd][Ee][Xx][Ee][Ss])
+REBUILD                     ([Rr][Ee][Bb][Uu][Ii][Ll][Dd])
+STATUS                      ([Ss][Tt][Aa][Tt][Uu][Ss])
 INT                         ([Ii][Nn][Tt])
 DOUBLE                      ([Dd][Oo][Uu][Bb][Ll][Ee])
 STRING                      ([Ss][Tt][Rr][Ii][Nn][Gg])
@@ -72,10 +77,14 @@ FALSE                       ([Ff][Aa][Ll][Ss][Ee])
 SHOW                        ([Ss][Hh][Oo][Ww])
 ADD                         ([Aa][Dd][Dd])
 HOSTS                       ([Hh][Oo][Ss][Tt][Ss])
+PART                        ([Pp][Aa][Rr][Tt])
 PARTS                       ([Pp][Aa][Rr][Tt][Ss])
 TIMESTAMP                   ([Tt][Ii][Mm][Ee][Ss][Tt][Aa][Mm][Pp])
 PARTITION_NUM               ([Pp][Aa][Rr][Tt][Ii][Tt][Ii][[Oo][Nn][_][Nn][Uu][Mm])
 REPLICA_FACTOR              ([Rr][Ee][Pp][Ll][Ii][Cc][Aa][_][Ff][Aa][Cc][Tt][Oo][Rr])
+CHARSET                     ([Cc][Hh][Aa][Rr][Ss][Ee][Tt])
+COLLATE                     ([Cc][Oo][Ll][Ll][Aa][Tt][Ee])
+COLLATION                   ([Cc][Oo][Ll][Ll][Aa][Tt][Ii][Oo][Nn])
 DROP                        ([Dd][Rr][Oo][Pp])
 REMOVE                      ([Rr][Ee][Mm][Oo][Vv][Ee])
 IF                          ([Ii][Ff])
@@ -102,6 +111,9 @@ DOWNLOAD                    ([Dd][Oo][Ww][Nn][Ll][Oo][Aa][Dd])
 HDFS                        ([Hh][Dd][Ff][Ss])
 ORDER                       ([Oo][Rr][Dd][Ee][Rr])
 INGEST                      ([Ii][Nn][Gg][Ee][Ss][Tt])
+SUBMIT                      ([Ss][Uu][Bb][Mm][Ii][Tt])
+COMPACT                     ([Cc][Oo][Mm][Pp][Aa][Cc][Tt])
+FLUSH                       ([Ff][Ll][Uu][Ss][Hh])
 ASC                         ([Aa][Ss][Cc])
 DISTINCT                    ([Dd][Ii][Ss][Tt][Ii][Nn][Cc][Tt])
 DEFAULT                     ([Dd][Ee][Ff][Aa][Uu][Ll][Tt])
@@ -139,6 +151,10 @@ NULL                        ([Nn][Uu][Ll][Ll])
 SNAPSHOT                    ([Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt])
 SNAPSHOTS                   ([Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt][Ss])
 FORCE                       ([Ff][Oo][Rr][Cc][Ee])
+OFFLINE                     ([Oo][Ff][Ff][Ll][Ii][Nn][Ee])
+BIDIRECT                    ([Bb][Ii][Dd][Ii][Rr][Ee][Cc][Tt])
+ACCOUNT                     ([Aa][Cc][Cc][Oo][Uu][Nn][Tt])
+DBA                         ([Dd][Bb][Aa])
 OUT                         ([Oo][Uu][Tt])
 BOTH                        ([Bb][Oo][Tt][Hh])
 SUBGRAPH                    ([Ss][Uu][Bb][Gg][Rr][Aa][Pp][Hh])
@@ -149,6 +165,9 @@ HEX                         ([0-9a-fA-F])
 OCT                         ([0-7])
 IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 
+JOBS                        ([Jj][Oo][Bb][Ss])
+JOB                         ([Jj][Oo][Bb])
+RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 
 %%
 
@@ -177,11 +196,15 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {WHEN}                      { return TokenType::KW_WHEN; }
 {DELETE}                    { return TokenType::KW_DELETE; }
 {FIND}                      { return TokenType::KW_FIND; }
+{LOOKUP}                    { return TokenType::KW_LOOKUP; }
 {ALTER}                     { return TokenType::KW_ALTER; }
 {STEPS}                     { return TokenType::KW_STEPS; }
 {OVER}                      { return TokenType::KW_OVER; }
 {UPTO}                      { return TokenType::KW_UPTO; }
 {REVERSELY}                 { return TokenType::KW_REVERSELY; }
+{INDEX}                     { return TokenType::KW_INDEX; }
+{INDEXES}                   { return TokenType::KW_INDEXES; }
+{REBUILD}                   { return TokenType::KW_REBUILD; }
 {INT}                       { return TokenType::KW_INT; }
 {DOUBLE}                    { return TokenType::KW_DOUBLE; }
 {STRING}                    { return TokenType::KW_STRING; }
@@ -214,6 +237,9 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {OF}                        { return TokenType::KW_OF; }
 {ORDER}                     { return TokenType::KW_ORDER; }
 {INGEST}                    { return TokenType::KW_INGEST; }
+{COMPACT}                   { return TokenType::KW_COMPACT; }
+{FLUSH}                     { return TokenType::KW_FLUSH; }
+{SUBMIT}                    { return TokenType::KW_SUBMIT; }
 {ASC}                       { return TokenType::KW_ASC; }
 {DISTINCT}                  { return TokenType::KW_DISTINCT; }
 {FETCH}                     { return TokenType::KW_FETCH; }
@@ -224,6 +250,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {OFFSET}                    { return TokenType::KW_OFFSET; }
 {IS}                        { return TokenType::KW_IS; }
 {NULL}                      { return TokenType::KW_NULL; }
+{RECOVER}                   { return TokenType::KW_RECOVER; }
 
 
  /* Unreserved keyword */
@@ -238,16 +265,24 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {ROLES}                     { return TokenType::KW_ROLES; }
 {GOD}                       { return TokenType::KW_GOD; }
 {ADMIN}                     { return TokenType::KW_ADMIN; }
+{DBA}                       { return TokenType::KW_DBA; }
 {GUEST}                     { return TokenType::KW_GUEST; }
 {GROUP}                     { return TokenType::KW_GROUP; }
 {PARTITION_NUM}             { return TokenType::KW_PARTITION_NUM; }
 {REPLICA_FACTOR}            { return TokenType::KW_REPLICA_FACTOR; }
+{CHARSET}                   { return TokenType::KW_CHARSET; }
+{COLLATE}                   { return TokenType::KW_COLLATE; }
+{COLLATION}                 { return TokenType::KW_COLLATION; }
 {ALL}                       { return TokenType::KW_ALL; }
 {LEADER}                    { return TokenType::KW_LEADER; }
 {UUID}                      { return TokenType::KW_UUID; }
 {DATA}                      { return TokenType::KW_DATA; }
 {SNAPSHOT}                  { return TokenType::KW_SNAPSHOT; }
 {SNAPSHOTS}                 { return TokenType::KW_SNAPSHOTS; }
+{OFFLINE}                   { return TokenType::KW_OFFLINE; }
+{ACCOUNT}                   { return TokenType::KW_ACCOUNT; }
+{JOBS}                      { return TokenType::KW_JOBS; }
+{JOB}                       { return TokenType::KW_JOB; }
 {COUNT}                     { return TokenType::KW_COUNT; }
 {COUNT_DISTINCT}            { return TokenType::KW_COUNT_DISTINCT; }
 {SUM}                       { return TokenType::KW_SUM; }
@@ -259,7 +294,10 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {BIT_OR}                    { return TokenType::KW_BIT_OR; }
 {BIT_XOR}                   { return TokenType::KW_BIT_XOR; }
 {PATH}                      { return TokenType::KW_PATH; }
+{BIDIRECT}                  { return TokenType::KW_BIDIRECT; }
+{STATUS}                    { return TokenType::KW_STATUS; }
 {FORCE}                     { return TokenType::KW_FORCE; }
+{PART}                      { return TokenType::KW_PART; }
 {PARTS}                     { return TokenType::KW_PARTS; }
 {DEFAULT}                   { return TokenType::KW_DEFAULT; }
 {HDFS}                      { return TokenType::KW_HDFS; }
