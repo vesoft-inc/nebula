@@ -464,7 +464,6 @@ Status GoExecutor::setupStarts() {
     }
     const auto *inputs = inputs_.get();
     // Take one column from a variable
-    // Get GO var and YIELD var(if exist) togater
     if (varname_ != nullptr) {
         bool existing = false;
         auto *varInputs = ectx()->variableHolder()->get(*varname_, &existing);
