@@ -408,6 +408,7 @@ Host::prepareAppendLogRequest() {
     req->set_part(part_->partitionId());
     req->set_current_term(logTermToSend_);
     req->set_last_log_id(logIdToSend_);
+    req->set_leader_hostname(part_->address().getHostStr());
     req->set_leader_ip(part_->address().toLongHBO());
     req->set_leader_port(part_->address().getPort());
     req->set_committed_log_id(committedLogId_);

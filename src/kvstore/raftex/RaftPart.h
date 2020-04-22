@@ -492,6 +492,7 @@ protected:
     Role role_;
 
     // When the partition is the leader, the leader_ is same as addr_
+    std::string          leaderHostname_;
     network::InetAddress leader_;
 
     // The current term id

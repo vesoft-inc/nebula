@@ -1050,6 +1050,7 @@ bool RaftPart::prepareElectionRequest(
 
     req.set_space(spaceId_);
     req.set_part(partId_);
+    req.set_candidate_hostname(addr_.getHostStr());
     req.set_candidate_ip(addr_.toLongHBO());
     req.set_candidate_port(addr_.getPort());
     req.set_term(++proposedTerm_);  // Bump up the proposed term
@@ -1092,9 +1093,10 @@ typename RaftPart::Role RaftPart::processElectionResponses(
 
     size_t numSucceeded = 0;
     for (auto& r : results) {
-        if (r.second.get_error_code() == cpp2::ErrorCode::SUCCEEDED) {
+        auto errorCode = r.second.get_error_code();
+        if (errorCode == cpp2::ErrorCode::SUCCEEDED) {
             ++numSucceeded;
-        } else if (r.second.get_error_code() == cpp2::ErrorCode::E_LOG_STALE) {
+        } else if (errorCode == cpp2::ErrorCode::E_LOG_STALE) {
             LOG(INFO) << idStr_ << "My last log id is less than " << hosts[r.first]->address()
                       << ", double my election interval.";
             uint64_t curWeight = weight_.load();
@@ -1334,7 +1336,9 @@ void RaftPart::processAskForVoteRequest(
         return;
     }
 
-    if (role_ == Role::FOLLOWER && !leader_.isZero() && leader_ != candidate &&
+    auto candidateHostname = req.get_candidate_hostname();
+    if (role_ == Role::FOLLOWER && !leader_.isZero() &&
+        (leader_ != candidate && candidateHostname != leaderHostname_) &&
         lastMsgRecvDur_.elapsedInMSec() < FLAGS_raft_heartbeat_interval_secs * 1000) {
         LOG(INFO) << idStr_ << "I believe the leader exists. "
                   << "Refuse to vote for " << candidate;
@@ -1354,6 +1358,21 @@ void RaftPart::processAskForVoteRequest(
                      " no greater, so it will be rejected";
         resp.set_error_code(cpp2::ErrorCode::E_TERM_OUT_OF_DATE);
         return;
+    }
+
+    // Here you need to check if the IP address of the Hostname has changed.
+    auto it = std::find_if(hosts_.begin(), hosts_.end(), [&candidate](const auto& h) {
+        return !h->isLearner() && h->address() == candidate;
+    });
+
+    if (it == hosts_.end()) {
+        it = updateAndFindHost(
+            [&candidate](const auto& h) { return !h->isLearner() && h->address() == candidate; });
+        if (it == hosts_.end()) {
+            LOG(INFO) << idStr_ << "The candidate " << candidate << " is not my peers";
+            resp.set_error_code(cpp2::ErrorCode::E_WRONG_LEADER);
+            return;
+        }
     }
 
     // Check the last term to receive a log
@@ -1380,20 +1399,6 @@ void RaftPart::processAskForVoteRequest(
         }
     }
 
-    auto it = std::find_if(hosts_.begin(), hosts_.end(), [&candidate](const auto& h) {
-        return !h->isLearner() && h->address() == candidate;
-    });
-
-    if (it == hosts_.end()) {
-        it = updateAndFindHost(
-            [&candidate](const auto& h) { return h->isLearner() && h->address() == candidate; });
-        if (it == hosts_.end()) {
-            LOG(INFO) << idStr_ << "The candidate " << candidate << " is not my peers";
-            resp.set_error_code(cpp2::ErrorCode::E_WRONG_LEADER);
-            return;
-        }
-    }
-
     // Ok, no reason to refuse, we will vote for the candidate
     LOG(INFO) << idStr_ << "The partition will vote for the candidate";
     resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
@@ -1403,6 +1408,7 @@ void RaftPart::processAskForVoteRequest(
     role_ = Role::FOLLOWER;
     term_ = proposedTerm_ = req.get_term();
     leader_ = candidate;
+    leaderHostname_ = candidateHostname;
 
     // Reset the last message time
     lastMsgRecvDur_.reset();
@@ -1440,6 +1446,7 @@ void RaftPart::processAppendLogRequest(
                   << "Received logAppend "
                   << ": GraphSpaceId = " << req.get_space()
                   << ", partition = " << req.get_part()
+                  << ", leaderHostname = " << req.get_leader_hostname()
                   << ", leaderIp = " << req.get_leader_ip()
                   << ", leaderPort = " << req.get_leader_port()
                   << ", current_term = " << req.get_current_term()
@@ -1651,7 +1658,7 @@ cpp2::ErrorCode RaftPart::verifyLeader(
 
     if (it == hosts_.end()) {
         it = updateAndFindHost(
-            [&candidate](const auto& h) { return h->isLearner() && h->address() == candidate; });
+            [&candidate](const auto& h) { return !h->isLearner() && h->address() == candidate; });
         if (it == hosts_.end()) {
             VLOG(2) << idStr_ << "The candidate leader " << candidate << " is not my peers";
             return cpp2::ErrorCode::E_WRONG_LEADER;
@@ -1719,6 +1726,7 @@ cpp2::ErrorCode RaftPart::verifyLeader(
         role_ = Role::FOLLOWER;
     }
     leader_ = network::InetAddress(req.get_leader_ip(), req.get_leader_port());
+    leaderHostname_ = req.get_leader_hostname();
     term_ = proposedTerm_ = req.get_current_term();
     weight_ = 1;
     if (oldRole == Role::LEADER) {

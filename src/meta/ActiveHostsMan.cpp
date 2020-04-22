@@ -21,11 +21,28 @@ int ActiveHostsMan::updateHostIPaddress(kvstore::KVStore* kv,
     if (ipAddress == hostAddr) {
         return 0;
     }
+
+    LOG(INFO) << "updateHostIPaddress will update " << ipAddress << " to " << hostAddr;
+
+    std::string leaderValue;
+    std::vector<kvstore::KV> data;
+    auto leaderKey = MetaServiceUtils::leaderKey(ipAddress.toLongHBO(), ipAddress.getPort());
+    ret = kv->get(kDefaultSpaceId, kDefaultPartId, leaderKey, &leaderValue);
+    if (ret != kvstore::SUCCEEDED && ret != kvstore::ERR_KEY_NOT_FOUND) {
+        return -1;
+    }
+
     std::vector<std::string> removeData;
     folly::Baton<true, std::atomic> baton;
     removeData.emplace_back(MetaServiceUtils::hostKey(ipAddress.toLongHBO(), ipAddress.getPort()));
-    removeData.emplace_back(
-        MetaServiceUtils::leaderKey(ipAddress.toLongHBO(), ipAddress.getPort()));
+
+    if (ret != kvstore::ERR_KEY_NOT_FOUND) {
+        removeData.emplace_back(
+            MetaServiceUtils::leaderKey(ipAddress.toLongHBO(), ipAddress.getPort()));
+        data.emplace_back(MetaServiceUtils::leaderKey(hostAddr.toLongHBO(), hostAddr.getPort()),
+                          leaderValue);
+    }
+
     kv->asyncMultiRemove(
         kDefaultSpaceId, kDefaultPartId, removeData, [&baton, &ret](kvstore::ResultCode code) {
             ret = code;
@@ -43,35 +60,36 @@ int ActiveHostsMan::updateHostIPaddress(kvstore::KVStore* kv,
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         return -1;
     }
-    std::vector<kvstore::KV> data;
     for (; iter->valid(); iter->next()) {
         auto spaceId = MetaServiceUtils::spaceId(iter->key());
         auto spaceName = MetaServiceUtils::spaceName(iter->val());
         std::string spaceKey = MetaServiceUtils::spaceKey(spaceId);
-        std::string propstr;
-        auto code = kv->get(kDefaultSpaceId, kDefaultPartId, spaceKey, &propstr);
+
+        prefix = MetaServiceUtils::partPrefix(spaceId);
+        std::unique_ptr<kvstore::KVIterator> partIter;
+        auto code = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &partIter);
         if (code != kvstore::SUCCEEDED) {
             LOG(WARNING) << "update Space SpaceName: " << spaceName << " not found";
             continue;
         }
-        auto properties = MetaServiceUtils::parseSpace(propstr);
-        auto pnum = properties.get_partition_num();
-        for (int i = 1; i <= pnum; i++) {
-            auto key = MetaServiceUtils::partKey(spaceId, i);
-            std::string value;
-            code = kv->get(kDefaultSpaceId, kDefaultSpaceId, key, &value);
-            if (code != kvstore::SUCCEEDED) {
-                continue;
-            }
-            auto hosts = MetaServiceUtils::parsePartVal(value);
+
+        for (; partIter->valid(); partIter->next()) {
+            auto hosts = MetaServiceUtils::parsePartVal(partIter->val());
+            bool changed = false;
             for (auto it = hosts.begin(); it != hosts.end(); ++it) {
                 if (it->ip == ipAddress.toLongHBO()) {
                     it->ip = hostAddr.toLongHBO();
                     it->port = hostAddr.getPort();
+                    changed = true;
                 }
             }
 
-            data.emplace_back(MetaServiceUtils::partKey(spaceId, i),
+            if (!changed) {
+                continue;
+            }
+
+            data.emplace_back(MetaServiceUtils::partKey(
+                                  spaceId, MetaServiceUtils::parsePartKeyPartId(partIter->key())),
                               MetaServiceUtils::partVal(hosts));
         }
     }
