@@ -464,6 +464,7 @@ Status GoExecutor::setupStarts() {
     }
     const auto *inputs = inputs_.get();
     // Take one column from a variable
+    // Get GO var and YIELD var(if exist) togater
     if (varname_ != nullptr) {
         bool existing = false;
         auto *varInputs = ectx()->variableHolder()->get(*varname_, &existing);
@@ -488,6 +489,14 @@ Status GoExecutor::setupStarts() {
         return std::move(result).status();
     }
     starts_ = std::move(result).value();
+    std::unordered_set<VertexID> uni;
+    uni.reserve(starts_.size());
+    uni.insert(starts_.begin(), starts_.end());
+    if (starts_.size() == uni.size()) {
+        uniqueStart_ = true;
+    } else {
+        uniqueStart_ = false;
+    }
 
     auto indexResult = inputs->buildIndex(*colname_);
     if (!indexResult.ok()) {
@@ -1130,7 +1139,10 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         return getPropFromInterim(srcId, prop);
                     };
                     getters.getInputProp = [&srcId,
-                                            this] (const std::string &prop) {
+                                            this] (const std::string &prop) -> OptVariantType {
+                        if (!uniqueStart_) {
+                            return Status::NotSupported("Not supported duplicate start from input");
+                        }
                         return getPropFromInterim(srcId, prop);
                     };
 
