@@ -296,13 +296,15 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
                     }
                     auto rValues = collectIndexValues(rReader.get(),
                                                       index->get_fields());
-                    auto rIndexKey = NebulaKeyUtils::edgeIndexKey(partId,
-                                                                  indexId,
-                                                                  edgeKey.src,
-                                                                  edgeKey.ranking,
-                                                                  edgeKey.dst,
-                                                                  rValues);
-                    batchHolder->remove(std::move(rIndexKey));
+                    if (rValues.ok()) {
+                        auto rIndexKey = NebulaKeyUtils::edgeIndexKey(partId,
+                                                                      indexId,
+                                                                      edgeKey.src,
+                                                                      edgeKey.ranking,
+                                                                      edgeKey.dst,
+                                                                      rValues.value());
+                        batchHolder->remove(std::move(rIndexKey));
+                    }
                 }
                 if (reader == nullptr) {
                     reader = RowReader::getEdgePropReader(this->schemaMan_,
@@ -313,13 +315,15 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
 
                 auto values = collectIndexValues(reader.get(),
                                                  index->get_fields());
-                auto indexKey = NebulaKeyUtils::edgeIndexKey(partId,
-                                                             indexId,
-                                                             edgeKey.src,
-                                                             edgeKey.ranking,
-                                                             edgeKey.dst,
-                                                             values);
-                batchHolder->put(std::move(indexKey), "");
+                if (values.ok()) {
+                    auto indexKey = NebulaKeyUtils::edgeIndexKey(partId,
+                                                                 indexId,
+                                                                 edgeKey.src,
+                                                                 edgeKey.ranking,
+                                                                 edgeKey.dst,
+                                                                 values.value());
+                    batchHolder->put(std::move(indexKey), "");
+                }
             }
         }
     }
