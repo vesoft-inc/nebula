@@ -173,5 +173,11 @@ StatusOr<std::string> AdHocSchemaManager::toEdgeName(GraphSpaceID space, EdgeTyp
     return "";
 }
 
+StatusOr<int32_t> AdHocSchemaManager::getSpaceVidLen(GraphSpaceID space) {
+    UNUSED(space);
+    // Here default 32
+    return 32;
+}
+
 }  // namespace mock
 }  // namespace nebula

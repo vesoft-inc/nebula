@@ -67,6 +67,8 @@ public:
         return Status::Error("Unimplemented");
     }
 
+    StatusOr<int32_t> getSpaceVidLen(GraphSpaceID space) override;
+
 protected:
     folly::RWSpinLock tagLock_;
     std::unordered_map<std::pair<GraphSpaceID, TagID>,
