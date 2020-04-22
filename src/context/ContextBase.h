@@ -26,17 +26,15 @@ public:
     virtual ~ContextBase() = default;
 
     // Get the latest version of the value
-    const Value& getValue(const std::string& name) const = 0;
+    virtual const Value& getValue(const std::string& name) const = 0;
 
     // Return the number of versions for the given variable
-    size_t numVersions(const std::string& name) const = 0;
+    virtual size_t numVersions(const std::string& name) const = 0;
 
     // Return all existing history of the value. The front is the latest value
     // and the back is the oldest value
-    const std::list<Value>& getHistory(const std::string& name) const = 0;
+    virtual const std::list<Value>& getHistory(const std::string& name) const = 0;
 };
 
 }  // namespace nebula
 #endif  // CONTEXT_CONTEXTBASE_H_
-
-
