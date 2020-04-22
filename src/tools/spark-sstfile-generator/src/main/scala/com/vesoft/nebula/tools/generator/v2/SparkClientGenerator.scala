@@ -10,7 +10,7 @@ import org.apache.spark.sql.{DataFrame, Encoders, Row, SparkSession}
 import org.apache.spark.sql.functions.col
 import com.typesafe.config.{Config, ConfigFactory}
 import java.io.File
-import java.util.concurrent.{CountDownLatch, Executors, TimeUnit}
+import java.util.concurrent.{CountDownLatch, Executor, Executors, TimeUnit}
 
 import com.google.common.base.Optional
 import com.google.common.geometry.{S2CellId, S2LatLng}
@@ -222,7 +222,8 @@ object SparkClientGenerator {
             records.foreach { row =>
               val exec = row.getString(0)
               if (rateLimiter.tryAcquire(rateTimeout, TimeUnit.MILLISECONDS)) {
-                val future = client.execute(exec)
+                val future  = client.execute(exec)
+                val service = Executors.newFixedThreadPool(1);
                 Futures.addCallback(
                   future,
                   new FutureCallback[Optional[Integer]] {
@@ -236,7 +237,8 @@ object SparkClientGenerator {
                       }
                       batchFailure.add(1)
                     }
-                  }
+                  },
+                  service
                 )
               } else {
                 batchFailure.add(1)
@@ -980,4 +982,3 @@ object SparkClientGenerator {
       yield s2CellId.parent(index).id()
   }
 }
-
