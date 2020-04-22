@@ -78,6 +78,8 @@ std::size_t hash<nebula::Value>::operator()(const nebula::Value& v) const noexce
 
 namespace nebula {
 
+constexpr auto EPSILON = 1e-8;
+
 Value::Value(Value&& rhs) : type_(Value::Type::__EMPTY__) {
     if (this == &rhs) { return; }
     if (rhs.type_ == Type::__EMPTY__) { return; }
@@ -884,74 +886,6 @@ DataSet Value::moveDataSet() {
     return std::move(ds);
 }
 
-
-bool Value::operator==(const Value& rhs) const {
-    if (type_ != rhs.type_) { return false; }
-    switch (type_) {
-        case Type::NULLVALUE:
-        {
-          return value_.nVal == rhs.value_.nVal;
-        }
-        case Type::BOOL:
-        {
-          return value_.bVal == rhs.value_.bVal;
-        }
-        case Type::INT:
-        {
-          return value_.iVal == rhs.value_.iVal;
-        }
-        case Type::FLOAT:
-        {
-          return value_.fVal == rhs.value_.fVal;
-        }
-        case Type::STRING:
-        {
-          return value_.sVal == rhs.value_.sVal;
-        }
-        case Type::DATE:
-        {
-          return value_.dVal == rhs.value_.dVal;
-        }
-        case Type::DATETIME:
-        {
-          return value_.tVal == rhs.value_.tVal;
-        }
-        case Type::VERTEX:
-        {
-          return *value_.vVal == *rhs.value_.vVal;
-        }
-        case Type::EDGE:
-        {
-          return *value_.eVal == *rhs.value_.eVal;
-        }
-        case Type::PATH:
-        {
-          return *value_.pVal == *rhs.value_.pVal;
-        }
-        case Type::LIST:
-        {
-          return *value_.lVal == *rhs.value_.lVal;
-        }
-        case Type::MAP:
-        {
-          return *value_.mVal == *rhs.value_.mVal;
-        }
-        case Type::SET:
-        {
-          return *value_.uVal == *rhs.value_.uVal;
-        }
-        case Type::DATASET:
-        {
-          return *value_.gVal == *rhs.value_.gVal;
-        }
-        default:
-        {
-          return true;
-        }
-    }
-}
-
-
 void Value::clear() {
     switch (type_) {
         case Type::__EMPTY__:
@@ -1505,18 +1439,22 @@ std::ostream& operator<<(std::ostream& os, const Value::Type& type) {
 }
 
 
-Value operator+(const Value& left, const Value& right) {
-    if (left.isNull() || right.isNull()) {
-        return Value(NullType::NaN);
+Value operator+(const Value& lhs, const Value& rhs) {
+    if (lhs.isNull()) {
+        return lhs.getNull();
     }
 
-    switch (left.type()) {
+    if (rhs.isNull()) {
+        return rhs.getNull();
+    }
+
+    switch (lhs.type()) {
         case Value::Type::BOOL: {
-            switch (right.type()) {
+            switch (rhs.type()) {
                 case Value::Type::STRING: {
                     return folly::stringPrintf("%s%s",
-                                               left.getBool() ? "true" : "false",
-                                               right.getStr().c_str());
+                                               lhs.getBool() ? "true" : "false",
+                                               rhs.getStr().c_str());
                 }
                 default: {
                     return Value(NullType::BAD_TYPE);
@@ -1524,20 +1462,20 @@ Value operator+(const Value& left, const Value& right) {
             }
         }
         case Value::Type::INT: {
-            switch (right.type()) {
+            switch (rhs.type()) {
                 case Value::Type::INT: {
-                    return left.getInt() + right.getInt();
+                    return lhs.getInt() + rhs.getInt();
                 }
                 case Value::Type::FLOAT: {
-                    return left.getInt() + right.getFloat();
+                    return lhs.getInt() + rhs.getFloat();
                 }
                 case Value::Type::STRING: {
                     return folly::stringPrintf("%ld%s",
-                                               left.getInt(),
-                                               right.getStr().c_str());
+                                               lhs.getInt(),
+                                               rhs.getStr().c_str());
                 }
                 case Value::Type::DATE: {
-                    return right.getDate() + left.getInt();
+                    return rhs.getDate() + lhs.getInt();
                 }
                 default: {
                     return Value(NullType::BAD_TYPE);
@@ -1545,17 +1483,17 @@ Value operator+(const Value& left, const Value& right) {
             }
         }
         case Value::Type::FLOAT: {
-            switch (right.type()) {
+            switch (rhs.type()) {
                 case Value::Type::INT: {
-                    return left.getFloat() + right.getInt();
+                    return lhs.getFloat() + rhs.getInt();
                 }
                 case Value::Type::FLOAT: {
-                    return left.getFloat() + right.getFloat();
+                    return lhs.getFloat() + rhs.getFloat();
                 }
                 case Value::Type::STRING: {
                     return folly::stringPrintf("%lf%s",
-                                               left.getFloat(),
-                                               right.getStr().c_str());
+                                               lhs.getFloat(),
+                                               rhs.getStr().c_str());
                 }
                 default: {
                     return Value(NullType::BAD_TYPE);
@@ -1563,30 +1501,30 @@ Value operator+(const Value& left, const Value& right) {
             }
         }
         case Value::Type::STRING: {
-            switch (right.type()) {
+            switch (rhs.type()) {
                 case Value::Type::BOOL: {
                     return folly::stringPrintf("%s%s",
-                                               left.getStr().c_str(),
-                                               right.getBool() ? "true" : "false");
+                                               lhs.getStr().c_str(),
+                                               rhs.getBool() ? "true" : "false");
                 }
                 case Value::Type::INT: {
                     return folly::stringPrintf("%s%ld",
-                                               left.getStr().c_str(),
-                                               right.getInt());
+                                               lhs.getStr().c_str(),
+                                               rhs.getInt());
                 }
                 case Value::Type::FLOAT: {
                     return folly::stringPrintf("%s%lf",
-                                               left.getStr().c_str(),
-                                               right.getFloat());
+                                               lhs.getStr().c_str(),
+                                               rhs.getFloat());
                 }
                 case Value::Type::STRING: {
-                    return left.getStr() + right.getStr();
+                    return lhs.getStr() + rhs.getStr();
                 }
                 case Value::Type::DATE: {
-                    return left.getStr() + right.getDate().toString();
+                    return lhs.getStr() + rhs.getDate().toString();
                 }
                 case Value::Type::DATETIME: {
-                    return left.getStr() + right.getDateTime().toString();
+                    return lhs.getStr() + rhs.getDateTime().toString();
                 }
                 default: {
                     return Value(NullType::BAD_TYPE);
@@ -1594,12 +1532,12 @@ Value operator+(const Value& left, const Value& right) {
             }
         }
         case Value::Type::DATE: {
-            switch (right.type()) {
+            switch (rhs.type()) {
                 case Value::Type::INT: {
-                    return left.getDate() + right.getInt();
+                    return lhs.getDate() + rhs.getInt();
                 }
                 case Value::Type::STRING: {
-                    return left.getDate().toString() + right.getStr();
+                    return lhs.getDate().toString() + rhs.getStr();
                 }
                 default: {
                     return Value(NullType::BAD_TYPE);
@@ -1607,9 +1545,9 @@ Value operator+(const Value& left, const Value& right) {
             }
         }
         case Value::Type::DATETIME: {
-            switch (right.type()) {
+            switch (rhs.type()) {
                 case Value::Type::STRING: {
-                    return left.getDateTime().toString() + right.getStr();
+                    return lhs.getDateTime().toString() + rhs.getStr();
                 }
                 default: {
                     return Value(NullType::BAD_TYPE);
@@ -1623,19 +1561,23 @@ Value operator+(const Value& left, const Value& right) {
 }
 
 
-Value operator-(const Value& left, const Value& right) {
-    if (left.isNull() || right.isNull()) {
-        return Value(NullType::NaN);
+Value operator-(const Value& lhs, const Value& rhs) {
+    if (lhs.isNull()) {
+        return lhs.getNull();
     }
 
-    switch (left.type()) {
+    if (rhs.isNull()) {
+        return rhs.getNull();
+    }
+
+    switch (lhs.type()) {
         case Value::Type::INT: {
-            switch (right.type()) {
+            switch (rhs.type()) {
                 case Value::Type::INT: {
-                    return left.getInt() - right.getInt();
+                    return lhs.getInt() - rhs.getInt();
                 }
                 case Value::Type::FLOAT: {
-                    return left.getInt() - right.getFloat();
+                    return lhs.getInt() - rhs.getFloat();
                 }
                 default: {
                     return Value(NullType::BAD_TYPE);
@@ -1643,12 +1585,12 @@ Value operator-(const Value& left, const Value& right) {
             }
         }
         case Value::Type::FLOAT: {
-            switch (right.type()) {
+            switch (rhs.type()) {
                 case Value::Type::INT: {
-                    return left.getFloat() - right.getInt();
+                    return lhs.getFloat() - rhs.getInt();
                 }
                 case Value::Type::FLOAT: {
-                    return left.getFloat() - right.getFloat();
+                    return lhs.getFloat() - rhs.getFloat();
                 }
                 default: {
                     return Value(NullType::BAD_TYPE);
@@ -1656,12 +1598,12 @@ Value operator-(const Value& left, const Value& right) {
             }
         }
         case Value::Type::DATE: {
-            switch (right.type()) {
+            switch (rhs.type()) {
                 case Value::Type::INT: {
-                    return left.getDate() - right.getInt();
+                    return lhs.getDate() - rhs.getInt();
                 }
                 case Value::Type::DATE: {
-                    return left.getDate().toInt() - right.getDate().toInt();
+                    return lhs.getDate().toInt() - rhs.getDate().toInt();
                 }
                 default: {
                     return Value(NullType::BAD_TYPE);
@@ -1675,19 +1617,23 @@ Value operator-(const Value& left, const Value& right) {
 }
 
 
-Value operator*(const Value& left, const Value& right) {
-    if (left.isNull() || right.isNull()) {
-        return Value(NullType::NaN);
+Value operator*(const Value& lhs, const Value& rhs) {
+    if (lhs.isNull()) {
+        return lhs.getNull();
     }
 
-    switch (left.type()) {
+    if (rhs.isNull()) {
+        return rhs.getNull();
+    }
+
+    switch (lhs.type()) {
         case Value::Type::INT: {
-            switch (right.type()) {
+            switch (rhs.type()) {
                 case Value::Type::INT: {
-                    return left.getInt() * right.getInt();
+                    return lhs.getInt() * rhs.getInt();
                 }
                 case Value::Type::FLOAT: {
-                    return left.getInt() * right.getFloat();
+                    return lhs.getInt() * rhs.getFloat();
                 }
                 default: {
                     return Value(NullType::BAD_TYPE);
@@ -1695,12 +1641,12 @@ Value operator*(const Value& left, const Value& right) {
             }
         }
         case Value::Type::FLOAT: {
-            switch (right.type()) {
+            switch (rhs.type()) {
                 case Value::Type::INT: {
-                    return left.getFloat() * right.getInt();
+                    return lhs.getFloat() * rhs.getInt();
                 }
                 case Value::Type::FLOAT: {
-                    return left.getFloat() * right.getFloat();
+                    return lhs.getFloat() * rhs.getFloat();
                 }
                 default: {
                     return Value(NullType::BAD_TYPE);
@@ -1714,26 +1660,30 @@ Value operator*(const Value& left, const Value& right) {
 }
 
 
-Value operator/(const Value& left, const Value& right) {
-    if (left.isNull() || right.isNull()) {
-        return Value(NullType::NaN);
+Value operator/(const Value& lhs, const Value& rhs) {
+    if (lhs.isNull()) {
+        return lhs.getNull();
     }
 
-    switch (left.type()) {
+    if (rhs.isNull()) {
+        return rhs.getNull();
+    }
+
+    switch (lhs.type()) {
         case Value::Type::INT: {
-            switch (right.type()) {
+            switch (rhs.type()) {
                 case Value::Type::INT: {
-                    int64_t denom = right.getInt();
+                    int64_t denom = rhs.getInt();
                     if (denom != 0) {
-                        return left.getInt() / denom;
+                        return lhs.getInt() / denom;
                     } else {
                         return Value(NullType::DIV_BY_ZERO);
                     }
                 }
                 case Value::Type::FLOAT: {
-                    double denom = right.getFloat();
-                    if (denom != 0.0) {
-                        return left.getInt() / denom;
+                    double denom = rhs.getFloat();
+                    if (std::abs(denom) > EPSILON) {
+                        return lhs.getInt() / denom;
                     } else {
                         return Value(NullType::DIV_BY_ZERO);
                     }
@@ -1744,19 +1694,19 @@ Value operator/(const Value& left, const Value& right) {
             }
         }
         case Value::Type::FLOAT: {
-            switch (right.type()) {
+            switch (rhs.type()) {
                 case Value::Type::INT: {
-                    int64_t denom = right.getInt();
+                    int64_t denom = rhs.getInt();
                     if (denom != 0) {
-                        return left.getFloat() / denom;
+                        return lhs.getFloat() / denom;
                     } else {
                         return Value(NullType::DIV_BY_ZERO);
                     }
                 }
                 case Value::Type::FLOAT: {
-                    double denom = right.getFloat();
-                    if (denom != 0.0) {
-                        return left.getFloat() / denom;
+                    double denom = rhs.getFloat();
+                    if (std::abs(denom) > EPSILON) {
+                        return lhs.getFloat() / denom;
                     } else {
                         return Value(NullType::DIV_BY_ZERO);
                     }
@@ -1772,6 +1722,289 @@ Value operator/(const Value& left, const Value& right) {
     }
 }
 
+Value operator%(const Value& lhs, const Value& rhs) {
+    if (lhs.isNull()) {
+        return lhs.getNull();
+    }
+
+    if (rhs.isNull()) {
+        return rhs.getNull();
+    }
+
+    switch (lhs.type()) {
+        case Value::Type::INT: {
+            switch (rhs.type()) {
+                case Value::Type::INT: {
+                    int64_t denom = rhs.getInt();
+                    if (denom != 0) {
+                        return lhs.getInt() % denom;
+                    } else {
+                        return Value(NullType::DIV_BY_ZERO);
+                    }
+                }
+                case Value::Type::FLOAT: {
+                    double denom = rhs.getFloat();
+                    if (std::abs(denom) > EPSILON) {
+                        return std::fmod(lhs.getInt(), denom);
+                    } else {
+                        return Value(NullType::DIV_BY_ZERO);
+                    }
+                }
+                default: {
+                    return Value(NullType::BAD_TYPE);
+                }
+            }
+        }
+        case Value::Type::FLOAT: {
+            switch (rhs.type()) {
+                case Value::Type::INT: {
+                    int64_t denom = rhs.getInt();
+                    if (denom != 0) {
+                        return std::fmod(lhs.getFloat(), denom);
+                    } else {
+                        return Value(NullType::DIV_BY_ZERO);
+                    }
+                }
+                case Value::Type::FLOAT: {
+                    double denom = rhs.getFloat();
+                    if (std::abs(denom) > EPSILON) {
+                        return std::fmod(lhs.getFloat(), denom);
+                    } else {
+                        return Value(NullType::DIV_BY_ZERO);
+                    }
+                }
+                default: {
+                    return Value(NullType::BAD_TYPE);
+                }
+            }
+        }
+        default: {
+            return Value(NullType::BAD_TYPE);
+        }
+    }
+}
+
+Value operator-(const Value& rhs) {
+    if (rhs.isNull()) {
+        return rhs.getNull();
+    }
+
+    switch (rhs.type()) {
+        case Value::Type::INT: {
+            auto val = -rhs.getInt();
+            return val;
+        }
+        case Value::Type::FLOAT: {
+            auto val = -rhs.getFloat();
+            return val;
+        }
+        default: {
+            return Value(NullType::BAD_TYPE);
+        }
+    }
+}
+
+Value operator!(const Value& rhs) {
+    if (rhs.isNull()) {
+        return rhs.getNull();
+    }
+
+    if (rhs.type() != Value::Type::BOOL) {
+        return Value(NullType::BAD_TYPE);
+    }
+
+    auto val = rhs.getBool();
+    return !val;
+}
+
+bool operator<(const Value& lhs, const Value& rhs) {
+    if (lhs.isNull() || rhs.isNull()) {
+        return false;
+    }
+
+    if (!(lhs.isNumeric() && rhs.isNumeric())
+            && (lhs.type() != rhs.type())) {
+        return false;
+    }
+
+    switch (lhs.type()) {
+        case Value::Type::BOOL: {
+            return lhs.getBool() < rhs.getBool();
+        }
+        case Value::Type::INT: {
+            switch (rhs.type()) {
+                case Value::Type::INT: {
+                    return lhs.getInt() < rhs.getInt();
+                }
+                case Value::Type::FLOAT: {
+                    return lhs.getInt() < rhs.getFloat();
+                }
+                default: {
+                    return false;
+                }
+            }
+        }
+        case Value::Type::FLOAT: {
+            switch (rhs.type()) {
+                case Value::Type::INT: {
+                    return lhs.getFloat() < rhs.getInt();
+                }
+                case Value::Type::FLOAT: {
+                    return lhs.getFloat() < rhs.getFloat();
+                }
+                default: {
+                    return false;
+                }
+            }
+        }
+        case Value::Type::STRING: {
+            return lhs.getStr() < rhs.getStr();
+        }
+        case Value::Type::DATE: {
+            return lhs.getDate() < rhs.getDate();
+        }
+        case Value::Type::DATETIME:
+        case Value::Type::VERTEX:
+        case Value::Type::EDGE:
+        case Value::Type::PATH:
+        case Value::Type::LIST:
+        case Value::Type::MAP:
+        case Value::Type::SET:
+        case Value::Type::DATASET: {
+            // TODO:
+            return false;
+        }
+        default: {
+            return false;
+        }
+    }
+}
+
+bool operator==(const Value& lhs, const Value& rhs) {
+    if (lhs.isNull() || rhs.isNull()) {
+        return false;
+    }
+
+    if (!(lhs.isNumeric() && rhs.isNumeric())
+            && (lhs.type() != rhs.type())) {
+        return false;
+    }
+
+    switch (lhs.type()) {
+        case Value::Type::BOOL: {
+            return lhs.getBool() == rhs.getBool();
+        }
+        case Value::Type::INT: {
+            switch (rhs.type()) {
+                case Value::Type::INT: {
+                    return lhs.getInt() == rhs.getInt();
+                }
+                case Value::Type::FLOAT: {
+                    return std::abs(lhs.getInt() - rhs.getFloat()) < EPSILON;
+                }
+                default: {
+                    return false;
+                }
+            }
+        }
+        case Value::Type::FLOAT: {
+            switch (rhs.type()) {
+                case Value::Type::INT: {
+                    return std::abs(lhs.getFloat() - rhs.getInt()) < EPSILON;
+                }
+                case Value::Type::FLOAT: {
+                    return std::abs(lhs.getFloat() - rhs.getFloat()) < EPSILON;
+                }
+                default: {
+                    return false;
+                }
+            }
+        }
+        case Value::Type::STRING: {
+            return lhs.getStr() == rhs.getStr();
+        }
+        case Value::Type::DATE: {
+            return lhs.getDate() == rhs.getDate();
+        }
+        case Value::Type::DATETIME: {
+            return lhs.getDateTime() == rhs.getDateTime();
+        }
+        case Value::Type::VERTEX: {
+            return lhs.getVertex() == rhs.getVertex();
+        }
+        case Value::Type::EDGE: {
+            return lhs.getEdge() == rhs.getEdge();
+        }
+        case Value::Type::PATH: {
+            return lhs.getPath() == rhs.getPath();
+        }
+        case Value::Type::LIST: {
+            return lhs.getList() == rhs.getList();
+        }
+        case Value::Type::MAP: {
+            return lhs.getMap() == rhs.getMap();
+        }
+        case Value::Type::SET: {
+            return lhs.getSet() == rhs.getSet();
+        }
+        case Value::Type::DATASET: {
+            return lhs.getDataSet() == rhs.getDataSet();
+        }
+        default: {
+            return false;
+        }
+    }
+}
+
+bool operator!=(const Value& lhs, const Value& rhs) {
+    return !(lhs == rhs);
+}
+
+bool operator> (const Value& lhs, const Value& rhs) {
+    return rhs < lhs;
+}
+
+bool operator<=(const Value& lhs, const Value& rhs) {
+    return !(rhs < lhs);
+}
+
+bool operator>=(const Value& lhs, const Value& rhs) {
+    return !(lhs < rhs);
+}
+
+Value operator&&(const Value& lhs, const Value& rhs) {
+    if (lhs.isNull()) {
+        return lhs.getNull();
+    }
+
+    if (rhs.isNull()) {
+        return rhs.getNull();
+    }
+
+    if (lhs.type() == Value::Type::BOOL
+            && rhs.type() == Value::Type::BOOL) {
+        return lhs.getBool() && rhs.getBool();
+    } else {
+        return Value(NullType::BAD_TYPE);
+    }
+}
+
+Value operator||(const Value& lhs, const Value& rhs) {
+    if (lhs.isNull()) {
+        return lhs.getNull();
+    }
+
+    if (rhs.isNull()) {
+        return rhs.getNull();
+    }
+
+    if (lhs.type() == Value::Type::BOOL
+            && rhs.type() == Value::Type::BOOL) {
+        return lhs.getBool() || rhs.getBool();
+    } else {
+        return Value(NullType::BAD_TYPE);
+    }
+}
 }  // namespace nebula
 
 

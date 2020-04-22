@@ -4,24 +4,25 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef EXPRESSION_CONSTANTEXPRESSION_H_
-#define EXPRESSION_CONSTANTEXPRESSION_H_
+#ifndef EXPRESSION_UNARYEXPRESSION_H_
+#define EXPRESSION_UNARYEXPRESSION_H_
 
-#include "base/Base.h"
 #include "expression/Expression.h"
 
 namespace nebula {
-
-class ConstantExpression : public Expression {
+class UnaryExpression final : public Expression {
 public:
-    explicit ConstantExpression(Value v)
-        : Expression(Expression::Type::EXP_CONSTANT), val_(std::move(v)) {}
-
-    Value eval() const override {
-        return val_;
+    UnaryExpression(Type type, Expression* operand)
+        : Expression(type) {
+        operand_.reset(operand);
     }
 
-    std::string encode() const override;
+    Value eval() const override;
+
+    std::string encode() const override {
+        // TODO
+        return "";
+    }
 
     std::string decode() const override {
         // TODO
@@ -34,8 +35,7 @@ public:
     }
 
 private:
-    Value val_;
+    std::unique_ptr<Expression>                 operand_;
 };
-
 }  // namespace nebula
-#endif  // EXPRESSION_CONSTANTEXPRESSION_H_
+#endif

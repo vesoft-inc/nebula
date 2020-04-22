@@ -117,6 +117,10 @@ struct Value {
         return type_ == Type::NULLVALUE;
     }
 
+    bool isNumeric() const {
+        return type_ == Type::INT || type_ == Type::FLOAT;
+    }
+
     void clear();
 
     Value& operator=(Value&& rhs);
@@ -218,8 +222,6 @@ struct Value {
     Set& mutableSet();
     DataSet& mutableDataSet();
 
-    bool operator==(const Value& rhs) const;
-
     static const Value& null() noexcept {
         static const Value kNullValue(NullType::__NULL__);
         return kNullValue;
@@ -319,11 +321,24 @@ std::ostream& operator<<(std::ostream& os, const Value::Type& type);
 
 
 // Arithmetic operations
-Value operator+(const Value& left, const Value& right);
-Value operator-(const Value& left, const Value& right);
-Value operator*(const Value& left, const Value& right);
-Value operator/(const Value& left, const Value& right);
-
+Value operator+(const Value& lhs, const Value& rhs);
+Value operator-(const Value& lhs, const Value& rhs);
+Value operator*(const Value& lhs, const Value& rhs);
+Value operator/(const Value& lhs, const Value& rhs);
+Value operator%(const Value& lhs, const Value& rhs);
+// Unary operations
+Value operator-(const Value& rhs);
+Value operator!(const Value& rhs);
+// Comparison operations
+bool operator< (const Value& lhs, const Value& rhs);
+bool operator==(const Value& lhs, const Value& rhs);
+bool operator!=(const Value& lhs, const Value& rhs);
+bool operator> (const Value& lhs, const Value& rhs);
+bool operator<=(const Value& lhs, const Value& rhs);
+bool operator>=(const Value& lhs, const Value& rhs);
+// Logical operations
+Value operator&&(const Value& lhs, const Value& rhs);
+Value operator||(const Value& lhs, const Value& rhs);
 }  // namespace nebula
 
 

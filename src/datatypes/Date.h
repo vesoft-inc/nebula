@@ -43,6 +43,19 @@ struct Date {
                day == rhs.day;
     }
 
+    bool operator<(const Date& rhs) const {
+        if (!(year == rhs.year)) {
+            return year < rhs.year;
+        }
+        if (!(month == rhs.month)) {
+            return month < rhs.month;
+        }
+        if (!(day == rhs.day)) {
+            return day < rhs.day;
+        }
+        return false;
+    }
+
     Date operator+(int64_t days) const;
     Date operator-(int64_t days) const;
 

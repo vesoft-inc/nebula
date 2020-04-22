@@ -4,18 +4,17 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef EXPRESSION_ARITHMETICEXPRESSION_H_
-#define EXPRESSION_ARITHMETICEXPRESSION_H_
+#ifndef EXPRESSION_LOGICALEXPRESSION_H_
+#define EXPRESSION_LOGICALEXPRESSION_H_
 
 #include "expression/Expression.h"
 
 namespace nebula {
-
-class ArithmeticExpression : public Expression {
+class LogicalExpression final : public Expression {
 public:
-    ArithmeticExpression(Type type,
-                         Expression* lhs,
-                         Expression* rhs)
+    LogicalExpression(Type type,
+                      Expression* lhs,
+                      Expression* rhs)
         : Expression(type) {
         lhs_.reset(lhs);
         rhs_.reset(rhs);
@@ -23,7 +22,10 @@ public:
 
     Value eval() const override;
 
-    std::string encode() const override;
+    std::string encode() const override {
+        // TODO
+        return "";
+    }
 
     std::string decode() const override {
         // TODO
@@ -36,9 +38,8 @@ public:
     }
 
 private:
-    std::unique_ptr<Expression> lhs_;
-    std::unique_ptr<Expression> rhs_;
+    std::unique_ptr<Expression>                 lhs_;
+    std::unique_ptr<Expression>                 rhs_;
 };
-
 }  // namespace nebula
-#endif  // EXPRESSION_EXPRESSION_H_
+#endif

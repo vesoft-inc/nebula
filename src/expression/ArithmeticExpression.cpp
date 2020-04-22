@@ -11,13 +11,15 @@ namespace nebula {
 Value ArithmeticExpression::eval() const {
     switch (type_) {
         case Type::EXP_ADD:
-            return left_->eval() + right_->eval();
+            return lhs_->eval() + rhs_->eval();
         case Type::EXP_MINUS:
-            return left_->eval() - right_->eval();
+            return lhs_->eval() - rhs_->eval();
         case Type::EXP_MULTIPLY:
-            return left_->eval() * right_->eval();
+            return lhs_->eval() * rhs_->eval();
         case Type::EXP_DIVIDE:
-            return left_->eval() / right_->eval();
+            return lhs_->eval() / rhs_->eval();
+        case Type::EXP_MOD:
+            return lhs_->eval() % rhs_->eval();
         default:
             break;
     }
