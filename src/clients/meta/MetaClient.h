@@ -19,7 +19,6 @@
 #include "thrift/ThriftClientManager.h"
 #include "meta/SchemaProviderIf.h"
 #include "meta/GflagsManager.h"
-#include "stats/Stats.h"
 
 DECLARE_int32(meta_client_retry_times);
 
