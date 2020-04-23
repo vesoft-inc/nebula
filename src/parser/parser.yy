@@ -40,13 +40,13 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
     int64_t                                 intval;
     double                                  doubleval;
     std::string                            *strval;
+    nebula::meta::cpp2::PropertyType        type;
     nebula::Expression                     *expr;
     nebula::Sentence                       *sentence;
     nebula::SequentialSentences            *sentences;
     nebula::ColumnSpecification            *colspec;
     nebula::ColumnSpecificationList        *colspeclist;
     nebula::ColumnNameList                 *colsnamelist;
-    nebula::ColumnType                      type;
     nebula::StepClause                     *step_clause;
     nebula::StepClause                     *find_path_upto_clause;
     nebula::FromClause                     *from_clause;
@@ -144,8 +144,8 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %type <strval> name_label unreserved_keyword agg_function
 %type <strval> admin_operation admin_para
 %type <expr> expression logic_xor_expression logic_or_expression logic_and_expression
-%type <expr> relational_expression multiplicative_expression additive_expression arithmetic_xor_expression
-%type <expr> unary_expression primary_expression equality_expression base_expression
+%type <expr> relational_expression multiplicative_expression additive_expression
+%type <expr> unary_expression constant_expression equality_expression base_expression
 %type <expr> src_ref_expression
 %type <expr> dst_ref_expression
 %type <expr> input_ref_expression
@@ -330,16 +330,16 @@ agg_function
      | KW_BIT_XOR            { $$ = new std::string("BIT_XOR"); }
      ;
 
-primary_expression
+constant_expression
     : INTEGER {
         ifOutOfRange($1, @1);
-        $$ = new PrimaryExpression($1);
+        $$ = new ConstantExpression($1);
     }
     | MINUS INTEGER {
-        $$ = new PrimaryExpression(-$2);;
+        $$ = new ConstantExpression(-$2);;
     }
     | MINUS base_expression {
-        $$ = new UnaryExpression(UnaryExpression::NEGATE, $2);
+        $$ = new UnaryExpression(Expression::Type::EXP_UNARY_NEGATE, $2);
     }
     | base_expression {
         $$ = $1;
@@ -347,17 +347,17 @@ primary_expression
 
 base_expression
     : DOUBLE {
-        $$ = new PrimaryExpression($1);
+        $$ = new ConstantExpression($1);
     }
     | STRING {
-        $$ = new PrimaryExpression(*$1);
+        $$ = new ConstantExpression(*$1);
         delete $1;
     }
     | BOOL {
-        $$ = new PrimaryExpression($1);
+        $$ = new ConstantExpression($1);
     }
     | name_label {
-        $$ = new PrimaryExpression(*$1);
+        $$ = new ConstantExpression(*$1);
         delete $1;
     }
     | input_ref_expression {
@@ -387,10 +387,6 @@ input_ref_expression
     : INPUT_REF DOT name_label {
         $$ = new InputPropertyExpression($3);
     }
-    | INPUT_REF {
-        // To reference the `id' column implicitly
-        $$ = new InputPropertyExpression(new std::string("id"));
-    }
     | INPUT_REF DOT MUL {
         $$ = new InputPropertyExpression(new std::string("*"));
     }
@@ -412,9 +408,6 @@ var_ref_expression
     : VARIABLE DOT name_label {
         $$ = new VariablePropertyExpression($1, $3);
     }
-    | VARIABLE {
-        $$ = new VariablePropertyExpression($1, new std::string("id"));
-    }
     | VARIABLE DOT MUL {
         $$ = new VariablePropertyExpression($1, new std::string("*"));
     }
@@ -422,7 +415,8 @@ var_ref_expression
 
 alias_ref_expression
     : name_label DOT name_label {
-        $$ = new AliasPropertyExpression(new std::string(""), $1, $3);
+        $$ = new AliasPropertyExpression(
+                Expression::Type::EXP_ALIAS_PROPERTY, new std::string(""), $1, $3);
     }
     | name_label DOT TYPE_PROP {
         $$ = new EdgeTypeExpression($1);
@@ -471,109 +465,104 @@ argument_list
     ;
 
 unary_expression
-    : primary_expression { $$ = $1; }
+    : constant_expression { $$ = $1; }
     | PLUS unary_expression {
-        $$ = new UnaryExpression(UnaryExpression::PLUS, $2);
+        $$ = new UnaryExpression(Expression::Type::EXP_UNARY_PLUS, $2);
     }
     | NOT unary_expression {
-        $$ = new UnaryExpression(UnaryExpression::NOT, $2);
+        $$ = new UnaryExpression(Expression::Type::EXP_UNARY_NOT, $2);
     }
     | KW_NOT unary_expression {
-        $$ = new UnaryExpression(UnaryExpression::NOT, $2);
+        $$ = new UnaryExpression(Expression::Type::EXP_UNARY_NOT, $2);
     }
+/*
     | L_PAREN type_spec R_PAREN unary_expression {
         $$ = new TypeCastingExpression($2, $4);
     }
+*/
     ;
 
 type_spec
-    : KW_INT { $$ = ColumnType::INT; }
-    | KW_DOUBLE { $$ = ColumnType::DOUBLE; }
-    | KW_STRING { $$ = ColumnType::STRING; }
-    | KW_BOOL { $$ = ColumnType::BOOL; }
-    | KW_TIMESTAMP { $$ = ColumnType::TIMESTAMP; }
-    ;
-
-arithmetic_xor_expression
-    : unary_expression { $$ = $1; }
-    | arithmetic_xor_expression XOR unary_expression {
-        $$ = new ArithmeticExpression($1, ArithmeticExpression::XOR, $3);
-    }
+    : KW_INT { $$ = meta::cpp2::PropertyType::INT64; }
+    | KW_DOUBLE { $$ = meta::cpp2::PropertyType::FLOAT; }
+    | KW_STRING { $$ = meta::cpp2::PropertyType::STRING; }
+    | KW_BOOL { $$ = meta::cpp2::PropertyType::BOOL; }
+/*  TODO: Support other type. int8, int16, etc.*/
     ;
 
 multiplicative_expression
-    : arithmetic_xor_expression { $$ = $1; }
-    | multiplicative_expression MUL arithmetic_xor_expression {
-        $$ = new ArithmeticExpression($1, ArithmeticExpression::MUL, $3);
+    : unary_expression { $$ = $1; }
+    | multiplicative_expression MUL unary_expression {
+        $$ = new ArithmeticExpression(Expression::Type::EXP_MULTIPLY, $1, $3);
     }
-    | multiplicative_expression DIV arithmetic_xor_expression {
-        $$ = new ArithmeticExpression($1, ArithmeticExpression::DIV, $3);
+    | multiplicative_expression DIV unary_expression {
+        $$ = new ArithmeticExpression(Expression::Type::EXP_DIVIDE, $1, $3);
     }
-    | multiplicative_expression MOD arithmetic_xor_expression {
-        $$ = new ArithmeticExpression($1, ArithmeticExpression::MOD, $3);
+    | multiplicative_expression MOD unary_expression {
+        $$ = new ArithmeticExpression(Expression::Type::EXP_MOD, $1, $3);
     }
     ;
 
 additive_expression
     : multiplicative_expression { $$ = $1; }
     | additive_expression PLUS multiplicative_expression {
-        $$ = new ArithmeticExpression($1, ArithmeticExpression::ADD, $3);
+        $$ = new ArithmeticExpression(Expression::Type::EXP_ADD, $1, $3);
     }
     | additive_expression MINUS multiplicative_expression {
-        $$ = new ArithmeticExpression($1, ArithmeticExpression::SUB, $3);
+        $$ = new ArithmeticExpression(Expression::Type::EXP_MINUS, $1, $3);
     }
     ;
 
 relational_expression
     : additive_expression { $$ = $1; }
     | relational_expression LT additive_expression {
-        $$ = new RelationalExpression($1, RelationalExpression::LT, $3);
+        $$ = new RelationalExpression(Expression::Type::EXP_REL_LT, $1, $3);
     }
     | relational_expression GT additive_expression {
-        $$ = new RelationalExpression($1, RelationalExpression::GT, $3);
+        $$ = new RelationalExpression(Expression::Type::EXP_REL_GT, $1, $3);
     }
     | relational_expression LE additive_expression {
-        $$ = new RelationalExpression($1, RelationalExpression::LE, $3);
+        $$ = new RelationalExpression(Expression::Type::EXP_REL_LE, $1, $3);
     }
     | relational_expression GE additive_expression {
-        $$ = new RelationalExpression($1, RelationalExpression::GE, $3);
+        $$ = new RelationalExpression(Expression::Type::EXP_REL_GE, $1, $3);
     }
     ;
 
 equality_expression
     : relational_expression { $$ = $1; }
     | equality_expression EQ relational_expression {
-        $$ = new RelationalExpression($1, RelationalExpression::EQ, $3);
+        $$ = new RelationalExpression(Expression::Type::EXP_REL_EQ, $1, $3);
     }
     | equality_expression NE relational_expression {
-        $$ = new RelationalExpression($1, RelationalExpression::NE, $3);
+        $$ = new RelationalExpression(Expression::Type::EXP_REL_NE, $1, $3);
     }
     ;
 
 logic_and_expression
     : equality_expression { $$ = $1; }
     | logic_and_expression AND equality_expression {
-        $$ = new LogicalExpression($1, LogicalExpression::AND, $3);
+        $$ = new LogicalExpression(Expression::Type::EXP_LOGICAL_AND, $1, $3);
     }
     | logic_and_expression KW_AND equality_expression {
-        $$ = new LogicalExpression($1, LogicalExpression::AND, $3);
+        $$ = new LogicalExpression(Expression::Type::EXP_LOGICAL_AND, $1, $3);
     }
     ;
 
 logic_or_expression
     : logic_and_expression { $$ = $1; }
     | logic_or_expression OR logic_and_expression {
-        $$ = new LogicalExpression($1, LogicalExpression::OR, $3);
+        $$ = new LogicalExpression(Expression::Type::EXP_LOGICAL_OR, $1, $3);
     }
     | logic_or_expression KW_OR logic_and_expression {
-        $$ = new LogicalExpression($1, LogicalExpression::OR, $3);
+        $$ = new LogicalExpression(Expression::Type::EXP_LOGICAL_OR, $1, $3);
     }
     ;
 
 logic_xor_expression
     : logic_or_expression { $$ = $1; }
     | logic_xor_expression KW_XOR logic_or_expression {
-        $$ = new LogicalExpression($1, LogicalExpression::XOR, $3);
+        $$ = new LogicalExpression(Expression::Type::EXP_LOGICAL_XOR, $1, $3);
     }
     ;
 
@@ -640,7 +629,7 @@ vid_list
 
 vid
     : unary_integer {
-        $$ = new PrimaryExpression($1);
+        $$ = new ConstantExpression($1);
     }
     | function_call_expression {
         $$ = $1;
@@ -773,13 +762,13 @@ yield_column
         $$ = yield;
     }
     | agg_function L_PAREN MUL R_PAREN {
-        auto expr = new PrimaryExpression(std::string("*"));
+        auto expr = new ConstantExpression(std::string("*"));
         auto yield = new YieldColumn(expr);
         yield->setFunction($1);
         $$ = yield;
     }
     | agg_function L_PAREN MUL R_PAREN KW_AS name_label {
-        auto expr = new PrimaryExpression(std::string("*"));
+        auto expr = new ConstantExpression(std::string("*"));
         auto yield = new YieldColumn(expr, $6);
         yield->setFunction($1);
         $$ = yield;
@@ -1185,7 +1174,7 @@ column_spec
     : name_label type_spec { $$ = new ColumnSpecification($2, $1); }
     | name_label type_spec KW_DEFAULT expression {
         $$ = new ColumnSpecification($2, $1);
-        $$->setValue($4);
+        $$->setDefault($4);
     }
     ;
 

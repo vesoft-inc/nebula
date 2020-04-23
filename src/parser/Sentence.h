@@ -7,7 +7,16 @@
 #define PARSER_SENTENCE_H_
 
 #include "base/Base.h"
-#include "filter/Expressions.h"
+#include "expression/Expression.h"
+#include "expression/AliasPropertyExpression.h"
+#include "expression/ArithmeticExpression.h"
+#include "expression/ConstantExpression.h"
+#include "expression/FunctionCallExpression.h"
+#include "expression/LogicalExpression.h"
+#include "expression/RelationalExpression.h"
+#include "expression/TypeCastingExpression.h"
+#include "expression/UnaryExpression.h"
+#include "expression/UUIDExpression.h"
 
 namespace nebula {
 

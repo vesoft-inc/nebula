@@ -4,7 +4,7 @@ set(VALIDATOR_TEST_LIBS
     $<TARGET_OBJECTS:session_obj>
     $<TARGET_OBJECTS:graph_gflags_obj>
     $<TARGET_OBJECTS:parser_obj>
-    $<TARGET_OBJECTS:common_filter_obj>
+    $<TARGET_OBJECTS:common_expression_obj>
     $<TARGET_OBJECTS:common_network_obj>
     $<TARGET_OBJECTS:common_fs_obj>
     $<TARGET_OBJECTS:common_time_obj>

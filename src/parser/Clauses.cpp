@@ -48,10 +48,6 @@ std::string VertexIDList::toString() const {
     return buf;
 }
 
-Status VerticesClause::prepare(Clause::Vertices&) const {
-    return Status::OK();
-}
-
 std::string FromClause::toString() const {
     std::string buf;
     buf.reserve(256);
@@ -74,11 +70,6 @@ std::string ToClause::toString() const {
         buf += vidList_->toString();
     }
     return buf;
-}
-
-Status OverClause::prepare(Over &over) const {
-    over.edges_ = edges();
-    return Status::OK();
 }
 
 std::string OverEdge::toString() const {
@@ -121,11 +112,6 @@ std::string OverClause::toString() const {
     }
 
     return buf;
-}
-
-Status WhereClause::prepare(Where &where) const {
-    where.filter_ = filter_.get();
-    return Status::OK();
 }
 
 std::string WhereClause::toString() const {

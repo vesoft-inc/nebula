@@ -7,64 +7,14 @@
 #define PARSER_CLAUSES_H_
 
 #include "base/Base.h"
-#include "filter/Expressions.h"
+#include "expression/Expression.h"
 
 namespace nebula {
-
-class OverEdge;
-class Clause {
-public:
-    struct Vertices {
-        std::string             *colname_{nullptr};
-        std::string             *varname_{nullptr};
-        std::vector<VertexID>    vids_;
-    };
-
-    struct Over {
-        std::vector<OverEdge*>  edges_{nullptr};
-        std::vector<EdgeType>   edgeTypes_;
-        std::vector<EdgeType>   oppositeTypes_;
-    };
-
-    struct Step {
-        uint32_t steps_{0};
-        bool     upto_{false};
-    };
-
-    struct Where {
-        Expression *filter_{nullptr};
-    };
-
-protected:
-    enum Kind : uint8_t {
-        kUnknown = 0,
-
-        kStepClause,
-        kOverClause,
-        kFromClause,
-        kToClause,
-        kWhereClause,
-        kYieldClause,
-
-        kMax,
-    };
-
-protected:
-    Kind    kind_{kUnknown};
-};
-
-class StepClause final : public Clause {
+class StepClause final {
 public:
     explicit StepClause(uint64_t steps = 1, bool isUpto = false) {
         steps_ = steps;
         isUpto_ = isUpto;
-        kind_ = Kind::kStepClause;
-    }
-
-    Status prepare(Step &step) const {
-        step.steps_ = steps_;
-        step.upto_ = isUpto_;
-        return Status::OK();
     }
 
     uint32_t steps() const {
@@ -115,33 +65,6 @@ public:
         return result;
     }
 
-    void setContext(ExpressionContext *context) {
-        for (auto &expr : vidList_) {
-            expr->setContext(context);
-        }
-    }
-
-    Status prepare() const {
-        auto status = Status::OK();
-        for (auto& vertex : vidList_) {
-            status = vertex->prepare();
-            if (!status.ok()) {
-                break;
-            }
-        }
-        return status;
-    }
-
-    std::vector<nebula::OptVariantType> eval() const {
-        Getters getters;
-        std::vector<nebula::OptVariantType> vertices;
-        for (auto& vertex : vidList_) {
-            auto vid = vertex->eval(getters);
-            vertices.emplace_back(vid);
-        }
-        return vertices;
-    }
-
     std::string toString() const;
 
 private:
@@ -149,7 +72,7 @@ private:
 };
 
 
-class VerticesClause : public Clause {
+class VerticesClause {
 public:
     explicit VerticesClause(VertexIDList *vidList) {
         vidList_.reset(vidList);
@@ -171,8 +94,6 @@ public:
         return ref_.get();
     }
 
-    Status prepare(Vertices &vertices) const;
-
 protected:
     std::unique_ptr<VertexIDList>               vidList_;
     std::unique_ptr<Expression>                 ref_;
@@ -181,11 +102,9 @@ protected:
 class FromClause final : public VerticesClause {
 public:
     explicit FromClause(VertexIDList *vidList) : VerticesClause(vidList) {
-        kind_ = kFromClause;
     }
 
     explicit FromClause(Expression *ref) : VerticesClause(ref) {
-        kind_ = kFromClause;
     }
 
     std::string toString() const;
@@ -194,11 +113,9 @@ public:
 class ToClause final : public VerticesClause {
 public:
     explicit ToClause(VertexIDList *vidList) : VerticesClause(vidList) {
-        kind_ = kToClause;
     }
 
     explicit ToClause(Expression *ref) : VerticesClause(ref) {
-        kind_ = kToClause;
     }
 
     std::string toString() const;
@@ -243,7 +160,7 @@ private:
     std::vector<std::unique_ptr<OverEdge>> edges_;
 };
 
-class OverClause final : public Clause {
+class OverClause final {
 public:
     enum class Direction : uint8_t {
         kForward,
@@ -253,14 +170,11 @@ public:
 
     OverClause(OverEdges *edges,
                Direction direction = Direction::kForward) {
-        kind_ = kOverClause;
         overEdges_.reset(edges);
         direction_ = direction;
     }
 
     std::vector<OverEdge *> edges() const { return overEdges_->edges(); }
-
-    Status prepare(Over &over) const;
 
     std::string toString() const;
 
@@ -273,7 +187,7 @@ private:
     std::unique_ptr<OverEdges> overEdges_;
 };
 
-class WhereClause final : public Clause {
+class WhereClause final {
 public:
     explicit WhereClause(Expression *filter) {
         filter_.reset(filter);
@@ -282,8 +196,6 @@ public:
     Expression* filter() const {
         return filter_.get();
     }
-
-    Status prepare(Where &where) const;
 
     std::string toString() const;
 
@@ -394,16 +306,13 @@ private:
     std::unique_ptr<YieldColumns>               groupColumns_;
 };
 
-class InBoundClause final : public Clause {
+class InBoundClause final {
 public:
     explicit InBoundClause(OverEdges *edges) {
-        kind_ = kOverClause;
         overEdges_.reset(edges);
     }
 
     std::vector<OverEdge *> edges() const { return overEdges_->edges(); }
-
-    Status prepare(Over &over) const;
 
     std::string toString() const;
 

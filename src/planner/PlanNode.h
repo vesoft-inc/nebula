@@ -8,7 +8,7 @@
 #define PLANNER_PLANNODE_H_
 
 #include "base/Base.h"
-#include "filter/Expressions.h"
+#include "expression/Expression.h"
 #include "planner/IdGenerator.h"
 
 namespace nebula {

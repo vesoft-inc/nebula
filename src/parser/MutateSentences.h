@@ -7,6 +7,7 @@
 #define PARSER_MUTATESENTENCES_H_
 
 #include "base/Base.h"
+#include "base/StatusOr.h"
 #include "parser/Clauses.h"
 #include "parser/Sentence.h"
 
@@ -309,7 +310,9 @@ public:
     }
 
     UpdateItem(Expression *field, Expression *value) {
-        field_ = std::make_unique<std::string>(Expression::encode(field));
+        // TODO
+        UNUSED(field);
+        field_ = std::make_unique<std::string>("");
         value_.reset(value);
     }
 

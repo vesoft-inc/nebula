@@ -6,7 +6,7 @@
 #include "base/Base.h"
 #include <folly/Benchmark.h>
 #include "parser/GQLParser.h"
-#include "filter/Expressions.h"
+#include "expression/Expression.h"
 
 using nebula::GQLParser;
 

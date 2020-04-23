@@ -173,7 +173,7 @@ TEST(Parser, TagOperation) {
     {
         GQLParser parser;
         std::string query = "CREATE TAG person(name string, age int, "
-                            "married bool, salary double, create_time timestamp)";
+                            "married bool, salary double)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -187,7 +187,7 @@ TEST(Parser, TagOperation) {
     {
         GQLParser parser;
         std::string query = "CREATE TAG man(name string, age int, "
-                            "married bool, salary double, create_time timestamp)"
+                            "married bool, salary double)"
                             "ttl_duration = 100";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
@@ -195,7 +195,7 @@ TEST(Parser, TagOperation) {
     {
         GQLParser parser;
         std::string query = "CREATE TAG woman(name string, age int, "
-                            "married bool, salary double, create_time timestamp)"
+                            "married bool, salary double)"
                             "ttl_duration = 100, ttl_col = \"create_time\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
@@ -203,16 +203,14 @@ TEST(Parser, TagOperation) {
     {
         GQLParser parser;
         std::string query = "CREATE TAG woman(name string, age int default 22, "
-                            "married bool default false, salary double default 1000.0, "
-                            "create_time timestamp)";
+                            "married bool default false, salary double default 1000.0)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
         std::string query = "CREATE TAG woman(name string default \"\", age int default 22, "
-                            "married bool default false, salary double default 1000.0, "
-                            "create_time timestamp default 1566541858)";
+                            "married bool default false, salary double default 1000.0)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -278,7 +276,7 @@ TEST(Parser, EdgeOperation) {
     {
         GQLParser parser;
         std::string query = "CREATE EDGE e1(name string, age int, "
-                            "married bool, salary double, create_time timestamp)";
+                            "married bool, salary double)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -292,7 +290,7 @@ TEST(Parser, EdgeOperation) {
     {
         GQLParser parser;
         std::string query = "CREATE EDGE man(name string, age int, "
-                            "married bool, salary double, create_time timestamp)"
+                            "married bool, salary double)"
                             "ttl_duration = 100";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
@@ -307,7 +305,7 @@ TEST(Parser, EdgeOperation) {
     {
         GQLParser parser;
         std::string query = "CREATE EDGE woman(name string, age int, "
-                            "married bool, salary double, create_time timestamp)"
+                            "married bool, salary double)"
                             "ttl_duration = 100, ttl_col = \"create_time\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
@@ -394,7 +392,7 @@ TEST(Parser, ColumnSpacesTest) {
         GQLParser parser;
         std::string query = "ALTER TAG person ADD (col1 int, col2 string), "
                             "CHANGE (married int, salary int), "
-                            "DROP (age int, create_time timestamp)";
+                            "DROP (age int)";
         auto result = parser.parse(query);
         ASSERT_FALSE(result.ok());
     }
@@ -572,9 +570,9 @@ TEST(Parser, Set) {
     }
     {
         GQLParser parser;
-        std::string query = "(GO FROM 1 OVER friend UNION "
-                            "GO FROM 2 OVER friend) | "
-                            "GO FROM $- OVER friend";
+        std::string query = "(GO FROM 1 OVER friend YIELD friend._dst AS id UNION "
+                            "GO FROM 2 OVER friend YIELD friend._dst AS id) | "
+                            "GO FROM $-.id OVER friend";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -954,8 +952,8 @@ TEST(Parser, FetchVertex) {
     }
     {
         GQLParser parser;
-        std::string query = "GO FROM 1 over edu | "
-                            "FETCH PROP ON person $- YIELD person.name, person.age";
+        std::string query = "GO FROM 1 over edu YIELD edu._dst AS id | "
+                            "FETCH PROP ON person $-.id YIELD person.name, person.age";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
