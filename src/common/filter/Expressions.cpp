@@ -137,6 +137,9 @@ std::string AliasPropertyExpression::toString() const {
 }
 
 OptVariantType AliasPropertyExpression::eval(Getters &getters) const {
+    if (getters.getAliasProp == nullptr) {
+        return Status::Error("`getAliasProp' function is not implemented");
+    }
     return getters.getAliasProp(*alias_, *prop_);
 }
 
@@ -201,6 +204,9 @@ Status InputPropertyExpression::prepare() {
 
 
 OptVariantType InputPropertyExpression::eval(Getters &getters) const {
+    if (getters.getInputProp == nullptr) {
+        return Status::Error("`getInputProp' function is not implemented");
+    }
     return getters.getInputProp(*prop_);
 }
 
@@ -213,6 +219,9 @@ DestPropertyExpression::DestPropertyExpression(std::string *tag, std::string *pr
 }
 
 OptVariantType DestPropertyExpression::eval(Getters &getters) const {
+    if (getters.getDstTagProp == nullptr) {
+        return Status::Error("`getDstTagProp' function is not implemented");
+    }
     return getters.getDstTagProp(*alias_, *prop_);
 }
 
@@ -231,6 +240,9 @@ VariablePropertyExpression::VariablePropertyExpression(std::string *var, std::st
 }
 
 OptVariantType VariablePropertyExpression::eval(Getters &getters) const {
+    if (getters.getVariableProp == nullptr) {
+        return Status::Error("`getVariableProp' function is not implemented");
+    }
     return getters.getVariableProp(*prop_);
 }
 
@@ -239,10 +251,11 @@ Status VariablePropertyExpression::prepare() {
     return Status::OK();
 }
 
-
 OptVariantType EdgeTypeExpression::eval(Getters &getters) const {
-    UNUSED(getters);
-    return *alias_;
+    if (getters.getAliasProp == nullptr) {
+        return Status::Error("`getAliasProp' function is not implemented");
+    }
+    return getters.getAliasProp(*alias_, *prop_);
 }
 
 Status EdgeTypeExpression::prepare() {
@@ -252,6 +265,9 @@ Status EdgeTypeExpression::prepare() {
 
 
 OptVariantType EdgeSrcIdExpression::eval(Getters &getters) const {
+    if (getters.getAliasProp == nullptr) {
+        return Status::Error("`getAliasProp' function is not implemented");
+    }
     return getters.getAliasProp(*alias_, *prop_);
 }
 
@@ -263,6 +279,9 @@ Status EdgeSrcIdExpression::prepare() {
 
 
 OptVariantType EdgeDstIdExpression::eval(Getters &getters) const {
+    if (getters.getEdgeDstId == nullptr) {
+        return Status::Error("`getEdgeDstId' function is not implemented");
+    }
     return getters.getEdgeDstId(*alias_);
 }
 
@@ -273,6 +292,9 @@ Status EdgeDstIdExpression::prepare() {
 
 
 OptVariantType EdgeRankExpression::eval(Getters &getters) const {
+    if (getters.getAliasProp == nullptr) {
+        return Status::Error("`getAliasProp' function is not implemented");
+    }
     return getters.getAliasProp(*alias_, *prop_);
 }
 
@@ -291,6 +313,9 @@ SourcePropertyExpression::SourcePropertyExpression(std::string *tag, std::string
 }
 
 OptVariantType SourcePropertyExpression::eval(Getters &getters) const {
+    if (getters.getSrcTagProp== nullptr) {
+        return Status::Error("`getSrcTagProp' function is not implemented");
+    }
     return getters.getSrcTagProp(*alias_, *prop_);
 }
 
@@ -590,8 +615,6 @@ std::string columnTypeToString(ColumnType type) {
             return "string";
         case ColumnType::DOUBLE:
             return "double";
-        case ColumnType::BIGINT:
-            return "bigint";
         case ColumnType::BOOL:
             return "bool";
         case ColumnType::TIMESTAMP:
@@ -631,8 +654,6 @@ OptVariantType TypeCastingExpression::eval(Getters &getters) const {
             return Expression::toDouble(result.value());
         case ColumnType::BOOL:
             return Expression::toBool(result.value());
-        case ColumnType::BIGINT:
-            return Status::Error("Type bigint not supported yet");
     }
     LOG(FATAL) << "casting to unknown type: " << static_cast<int>(type_);
 }
@@ -643,7 +664,19 @@ Status TypeCastingExpression::prepare() {
 }
 
 
-void TypeCastingExpression::encode(Cord &) const {
+void TypeCastingExpression::encode(Cord &cord) const {
+    cord << kindToInt(kind());
+    cord << static_cast<uint8_t>(type_);
+    operand_->encode(cord);
+}
+
+
+const char* TypeCastingExpression::decode(const char *pos, const char *end) {
+    THROW_IF_NO_SPACE(pos, end, 2UL);
+    type_ = *reinterpret_cast<const ColumnType*>(pos++);
+
+    operand_ = makeExpr(*reinterpret_cast<const uint8_t*>(pos++));
+    return operand_->decode(pos, end);
 }
 
 
@@ -884,6 +917,9 @@ std::string RelationalExpression::toString() const {
         case NE:
             buf += "!=";
             break;
+        case CONTAINS:
+            buf += " CONTAINS ";
+            break;
     }
     buf.append(right_->toString());
     buf += ')';
@@ -936,6 +972,10 @@ OptVariantType RelationalExpression::eval(Getters &getters) const {
                 }
             }
             return OptVariantType(l != r);
+        case CONTAINS:
+            if (isString(l) && isString(r)) {
+                return OptVariantType(contains(asString(l), asString(r)));
+            }
     }
 
     return OptVariantType(Status::Error("Wrong operator"));
@@ -985,7 +1025,9 @@ void RelationalExpression::encode(Cord &cord) const {
 const char* RelationalExpression::decode(const char *pos, const char *end) {
     THROW_IF_NO_SPACE(pos, end, 2UL);
     op_ = *reinterpret_cast<const Operator*>(pos++);
-    DCHECK(op_ == LT || op_ == LE || op_ == GT || op_ == GE || op_ == EQ || op_ == NE);
+    DCHECK(op_ == LT || op_ == LE || op_ == GT ||
+            op_ == GE || op_ == EQ || op_ == NE ||
+            op_ == CONTAINS);
 
     left_ = makeExpr(*reinterpret_cast<const uint8_t*>(pos++));
     pos = left_->decode(pos, end);

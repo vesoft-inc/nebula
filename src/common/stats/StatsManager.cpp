@@ -40,6 +40,15 @@ int32_t StatsManager::registerStats(folly::StringPiece counterName) {
     auto& sm = get();
 
     std::string name = counterName.toString();
+    {
+        folly::RWSpinLock::ReadHolder rh(sm.nameMapLock_);
+        auto it = sm.nameMap_.find(name);
+        if (it != sm.nameMap_.end()) {
+            VLOG(2) << "The counter \"" << name << "\" already exists";
+            return it->second;
+        }
+    }
+
     folly::RWSpinLock::WriteHolder wh(sm.nameMapLock_);
     auto it = sm.nameMap_.find(name);
     if (it != sm.nameMap_.end()) {
@@ -72,6 +81,15 @@ int32_t StatsManager::registerHisto(folly::StringPiece counterName,
 
     auto& sm = get();
     std::string name = counterName.toString();
+    {
+        folly::RWSpinLock::ReadHolder rh(sm.nameMapLock_);
+        auto it = sm.nameMap_.find(name);
+        if (it != sm.nameMap_.end()) {
+            VLOG(2) << "The counter \"" << name << "\" already exists";
+            return it->second;
+        }
+    }
+
     folly::RWSpinLock::WriteHolder wh(sm.nameMapLock_);
     auto it = sm.nameMap_.find(name);
     if (it != sm.nameMap_.end()) {

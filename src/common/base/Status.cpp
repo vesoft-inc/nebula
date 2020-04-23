@@ -33,6 +33,12 @@ std::string Status::toString() const {
         case kSyntaxError:
             str = "SyntaxError: ";
             break;
+        case kPermissionError:
+            str = "PermissionError: ";
+            break;
+        case kSpaceNotFound:
+            str = "Space not found";
+            break;
         default:
             snprintf(tmp, sizeof(tmp), "Unknown error(%hu): ", static_cast<uint16_t>(code()));
             str = tmp;

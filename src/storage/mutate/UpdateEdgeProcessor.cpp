@@ -5,7 +5,7 @@
  */
 
 #include "storage/mutate/UpdateEdgeProcessor.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include "dataman/RowWriter.h"
 #include "kvstore/LogEncoder.h"
 
@@ -108,6 +108,12 @@ kvstore::ResultCode UpdateEdgeProcessor::collectVertexProps(
                                                   iter->val(),
                                                   this->spaceId_,
                                                   tagId);
+        if (reader == nullptr) {
+            LOG(WARNING) << "Can't find the schema for tagId " << tagId;
+            // It offen happens after updating schema but current storaged has not
+            // load it. To protect the data, we just return failed to graphd.
+            return kvstore::ResultCode::ERR_UNKNOWN;
+        }
         const auto constSchema = reader->getSchema();
         for (auto& prop : props) {
             auto res = RowReader::getPropByName(reader.get(), prop.prop_.name);
@@ -147,6 +153,15 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
                                                    val_,
                                                    this->spaceId_,
                                                    std::abs(edgeKey.edge_type));
+        if (reader == nullptr) {
+            LOG(WARNING) << "Can't find related edge "
+                         << edgeKey.edge_type << " schema";
+            // TODO(heng)
+            // The case offen happens when updating the reverse edge but it is not exist.
+            // Because we don't ensure the consistency when inserting edges (Bidirect).
+            // So we leave the issue here. Now we just return failed to graphd.
+            return kvstore::ResultCode::ERR_CORRUPT_DATA;
+        }
         const auto constSchema = reader->getSchema();
         for (auto index = 0UL; index < constSchema->getNumFields(); index++) {
             auto propName = std::string(constSchema->getFieldName(index));
@@ -281,13 +296,15 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
                     }
                     auto rValues = collectIndexValues(rReader.get(),
                                                       index->get_fields());
-                    auto rIndexKey = NebulaKeyUtils::edgeIndexKey(partId,
-                                                                  indexId,
-                                                                  edgeKey.src,
-                                                                  edgeKey.ranking,
-                                                                  edgeKey.dst,
-                                                                  rValues);
-                    batchHolder->remove(std::move(rIndexKey));
+                    if (rValues.ok()) {
+                        auto rIndexKey = NebulaKeyUtils::edgeIndexKey(partId,
+                                                                      indexId,
+                                                                      edgeKey.src,
+                                                                      edgeKey.ranking,
+                                                                      edgeKey.dst,
+                                                                      rValues.value());
+                        batchHolder->remove(std::move(rIndexKey));
+                    }
                 }
                 if (reader == nullptr) {
                     reader = RowReader::getEdgePropReader(this->schemaMan_,
@@ -298,13 +315,15 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
 
                 auto values = collectIndexValues(reader.get(),
                                                  index->get_fields());
-                auto indexKey = NebulaKeyUtils::edgeIndexKey(partId,
-                                                             indexId,
-                                                             edgeKey.src,
-                                                             edgeKey.ranking,
-                                                             edgeKey.dst,
-                                                             values);
-                batchHolder->put(std::move(indexKey), "");
+                if (values.ok()) {
+                    auto indexKey = NebulaKeyUtils::edgeIndexKey(partId,
+                                                                 indexId,
+                                                                 edgeKey.src,
+                                                                 edgeKey.ranking,
+                                                                 edgeKey.dst,
+                                                                 values.value());
+                    batchHolder->put(std::move(indexKey), "");
+                }
             }
         }
     }
@@ -313,18 +332,20 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
 }
 
 
-FilterResult UpdateEdgeProcessor::checkFilter(const PartitionID partId,
-                                      const cpp2::EdgeKey& edgeKey) {
+cpp2::ErrorCode UpdateEdgeProcessor::checkFilter(const PartitionID partId,
+                                                 const cpp2::EdgeKey& edgeKey) {
     auto ret = collectEdgesProps(partId, edgeKey);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        return FilterResult::E_ERROR;
+    if (ret == kvstore::ResultCode::ERR_CORRUPT_DATA) {
+        return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
+    } else if (ret != kvstore::ResultCode::SUCCEEDED) {
+        return to(ret);
     }
     for (auto& tc : this->tagContexts_) {
         VLOG(3) << "partId " << partId << ", vId " << edgeKey.src
                 << ", tagId " << tc.tagId_ << ", prop size " << tc.props_.size();
         ret = collectVertexProps(partId, edgeKey.src, tc.tagId_, tc.props_);
         if (ret != kvstore::ResultCode::SUCCEEDED) {
-            return FilterResult::E_ERROR;
+            return to(ret);
         }
     }
 
@@ -359,14 +380,14 @@ FilterResult UpdateEdgeProcessor::checkFilter(const PartitionID partId,
         auto filterResult = this->exp_->eval(getters);
         if (!filterResult.ok()) {
             VLOG(1) << "Invalid filter expression";
-            return FilterResult::E_ERROR;
+            return cpp2::ErrorCode::E_INVALID_FILTER;
         }
         if (!Expression::asBool(filterResult.value())) {
             VLOG(1) << "Filter skips the update";
-            return FilterResult::E_FILTER_OUT;
+            return cpp2::ErrorCode::E_FILTER_OUT;
         }
     }
-    return FilterResult::SUCCEEDED;
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
 
@@ -464,21 +485,14 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
             << ", dst: " << edgeKey.get_dst() << ", ranking: " << edgeKey.get_ranking();
     CHECK_NOTNULL(kvstore_);
     this->kvstore_->asyncAtomicOp(this->spaceId_, partId,
-        [partId, edgeKey, this] () -> std::string {
+        [partId, edgeKey, this] () -> folly::Optional<std::string> {
             // TODO(shylock) the AtomicOP can't return various error
             // so put it in the processor
             filterResult_ = checkFilter(partId, edgeKey);
-            switch (filterResult_) {
-            case FilterResult::SUCCEEDED : {
+            if (filterResult_ == cpp2::ErrorCode::SUCCEEDED) {
                 return updateAndWriteBack(partId, edgeKey);
-            }
-            case FilterResult::E_FILTER_OUT:
-            // fallthrough
-            case FilterResult::E_ERROR:
-            // fallthrough
-            default: {
-                return "";
-            }
+            } else {
+                return folly::none;
             }
         },
         [this, partId, edgeKey, req] (kvstore::ResultCode code) {
@@ -497,15 +511,13 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
                     handleLeaderChanged(this->spaceId_, partId);
                     break;
                 }
-                if (code == kvstore::ResultCode::ERR_ATOMIC_OP_FAILED
-                    && filterResult_ == FilterResult::E_FILTER_OUT) {
+                if (code == kvstore::ResultCode::ERR_ATOMIC_OP_FAILED) {
                     // https://github.com/vesoft-inc/nebula/issues/1888
                     // Only filter out so we still return the data
-                    onProcessFinished(req.get_return_columns().size());
-                    this->pushResultCode(cpp2::ErrorCode::E_FILTER_OUT, partId);
-                } else if (code == kvstore::ResultCode::ERR_ATOMIC_OP_FAILED
-                    && filterResult_ == FilterResult::E_ERROR) {
-                    this->pushResultCode(cpp2::ErrorCode::E_INVALID_FILTER, partId);
+                    if (filterResult_ == cpp2::ErrorCode::E_FILTER_OUT) {
+                        onProcessFinished(req.get_return_columns().size());
+                    }
+                    this->pushResultCode(filterResult_, partId);
                 } else {
                     this->pushResultCode(to(code), partId);
                 }

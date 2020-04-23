@@ -52,3 +52,11 @@
 --ws_h2_port=13002
 
 --heartbeat_interval_secs=10
+
+########## authorization ##########
+# Enable authorization
+--enable_authorize=false
+
+########## authentication ##########
+# User login authentication type, password for nebula authentication, ldap for ldap authentication, cloud for cloud authentication
+--auth_type=password
