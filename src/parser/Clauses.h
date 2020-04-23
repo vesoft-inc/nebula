@@ -27,8 +27,8 @@ public:
     };
 
     struct Step {
-        uint32_t steps_{0};
-        bool     upto_{false};
+        uint32_t recordFrom_;
+        uint32_t recordTo_;
     };
 
     struct Where {
@@ -55,31 +55,42 @@ protected:
 
 class StepClause final : public Clause {
 public:
-    explicit StepClause(uint64_t steps = 1, bool isUpto = false) {
-        steps_ = steps;
-        isUpto_ = isUpto;
+    explicit StepClause(uint32_t recordTo = 1)  // Keep same with before
+        : step_({recordTo, recordTo}) {
+        // check range validation in parser
+        kind_ = Kind::kStepClause;
+    }
+
+    //  GO recoredFrom TO recordTo STEPS
+    // [recordFrom, recordTo]
+    explicit StepClause(uint32_t recordFrom, uint32_t recordTo)
+        : step_({recordFrom, recordTo}) {
+        // check range validation in parser
         kind_ = Kind::kStepClause;
     }
 
     Status prepare(Step &step) const {
-        step.steps_ = steps_;
-        step.upto_ = isUpto_;
+        step.recordFrom_ = step_.recordFrom_;
+        step.recordTo_   = step_.recordTo_;
         return Status::OK();
     }
 
     uint32_t steps() const {
-        return steps_;
+        return step_.recordTo_;
     }
 
-    bool isUpto() const {
-        return isUpto_;
+    uint32_t recordFrom() const {
+        return step_.recordFrom_;
+    }
+
+    uint32_t recordTo() const {
+        return step_.recordTo_;
     }
 
     std::string toString() const;
 
 private:
-    uint32_t                                    steps_{1};
-    bool                                        isUpto_{false};
+    Step step_;
 };
 
 

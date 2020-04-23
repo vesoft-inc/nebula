@@ -312,7 +312,8 @@ TEST_P(GoTest, Distinct) {
         auto &player = players_["Tony Parker"];
         auto *fmt = "GO 2 STEPS FROM %ld OVER like YIELD DISTINCT like._dst";
         auto query = folly::stringPrintf(fmt, player.vid());
-        client_->execute(query, resp);
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<VertexID>> expected = {
             {3394245602834314645},
             {-7579316172763586624},

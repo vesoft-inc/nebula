@@ -200,6 +200,10 @@ protected:
             return TestOK();
         }
 
+        if (resp.get_rows() == nullptr) {
+            return TestError() << "No response data";
+        }
+
         std::vector<Tuple> rows;
         try {
             rows = rowsToTuples<Tuple>(respToRecords(resp, std::move(ignoreColIndex)));
