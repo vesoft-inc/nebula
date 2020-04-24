@@ -615,7 +615,7 @@ void GoExecutor::onVertexProps(RpcResponse &&rpcResp) {
 std::vector<VertexID> GoExecutor::getDstIdsFromResps(std::vector<RpcResponse>::iterator begin,
                                                      std::vector<RpcResponse>::iterator end) const {
     std::unordered_set<VertexID> set;
-    for (auto it = begin; it < end; ++it) {
+    for (auto it = begin; it != end; ++it) {
         for (const auto &resp : it->responses()) {
             auto *vertices = resp.get_vertices();
             if (vertices == nullptr) {
@@ -999,15 +999,15 @@ void GoExecutor::onEmptyInputs() {
 }
 
 bool GoExecutor::processFinalResult(Callback cb) const {
+    auto uniqResult = std::make_unique<std::unordered_set<size_t>>();
+    auto spaceId = ectx()->rctx()->session()->space();
+    std::vector<SupportedType> colTypes;
+    for (auto *column : yields_) {
+        colTypes.emplace_back(calculateExprType(column->expr()));
+    }
     for (auto rpcResp = records_.begin() + recordFrom_ - 1; rpcResp != records_.end(); ++rpcResp) {
         const auto& all = rpcResp->responses();
-        auto spaceId = ectx()->rctx()->session()->space();
 
-        auto uniqResult = std::make_unique<std::unordered_set<size_t>>();
-        std::vector<SupportedType> colTypes;
-        for (auto *column : yields_) {
-            colTypes.emplace_back(calculateExprType(column->expr()));
-        }
         std::vector<VariantType> record;
         record.reserve(yields_.size());
         for (const auto &resp : all) {
