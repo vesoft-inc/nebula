@@ -34,6 +34,6 @@
 
 ########## Misc #########
 # The default number of parts when a space is created
---default_parts_num=100
+# --default_parts_num=100
 # The default replica factor when a space is created
---default_replica_factor=1
+# --default_replica_factor=3
