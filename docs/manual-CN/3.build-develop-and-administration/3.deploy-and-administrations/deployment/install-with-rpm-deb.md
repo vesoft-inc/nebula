@@ -13,21 +13,59 @@
 
 ## 安装 **Nebula Graph**
 
-使用 `rpm/deb` 包来安装 **Nebula Graph**，需要完成以下步骤：
+ 使用 `rpm/deb` 包来安装 **Nebula Graph**，需要完成以下步骤：
 
-1. 登录到 GitHub 并单击 [rpm/deb](https://github.com/vesoft-inc/nebula/actions) 链接。
+1. 下载安装包
 
-2. 在 **Actions** 选项卡下，单击左侧的 **package**，显示所有可用的包。
+- 方式一：通过 GitHub 获取安装包
 
-3. 单击列表顶部最新的包。
+	1）登录到 GitHub 并单击 [rpm/deb](https://github.com/vesoft-inc/nebula/actions) 链接。
 
-![action-page](https://user-images.githubusercontent.com/40747875/71390992-59d1be80-263d-11ea-9d61-1d7fbeb1d8c5.png)
+	2）在 **Actions** 选项卡下，单击左侧的 **package**，显示所有可用的包。
 
-4. 单击右上角 **Artifacts**， 选择要下载的安装包。
+	3）单击列表顶部最新的包。
+	![action-page](https://user-images.githubusercontent.com/40747875/71390992-59d1be80-263d-11ea-9d61-1d7fbeb1d8c5.png)
 
-![select-a-package](https://user-images.githubusercontent.com/40747875/71389414-415ea580-2637-11ea-8930-eaef1e8a5d17.png)
+	4）单击右上角 **Artifacts**， 选择要下载的安装包。
 
-5. 安装 **Nebula Graph**。
+
+	![select-a-package](https://user-images.githubusercontent.com/40747875/71389414-415ea580-2637-11ea-8930-eaef1e8a5d17.png)
+
+- 方式二：通过阿里云 OSS 获取安装包
+
+	1）获取 release 版本，url 格式如下：
+
+	- [Centos 6](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/package/${release_version}/nebula-${release_version}.el6-5.x86_64.rpm)
+
+	- [Centos 7](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/package/${release_version}/nebula-${release_version}.el7-5.x86_64.rpm)
+
+	- [Ubuntu 1604](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/package/${release_version}/nebula-${release_version}.ubuntu1604.amd64.deb)
+
+	- [Ubuntu 1604](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/package/${release_version}/nebula-${release_version}.ubuntu1804.amd64.deb)
+
+	* 其中 `${release_version}` 为具体的发布版本号，例如要下载 1.0.0-rc2 Centos 7 的安装包，那么可以直接通过命令下载
+
+	```bash
+	$ wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/package/1.0.0-rc2/nebula-1.0.0-rc2.el7-5.x86_64.rpm
+	```
+
+	2）获取 nightly 版本，url 格式如下：
+
+	- [Centos 6](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/package/nightly/${date}/nebula-${date}-nightly.el6-5.x86_64.rpm)
+
+	- [Centos 7](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/package/nightly/${date}/nebula-${date}-nightly.el7-5.x86_64.rpm)
+
+	- [Ubuntu 1604](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/package/nightly/${date}/nebula-${date}-nightly.ubuntu1604.amd64.deb)
+
+	- [Ubuntu 1804](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/package/nightly/${date}/nebula-${date}-nightly.ubuntu1804.amd64.deb)
+
+	* 其中 `${date}` 为具体的日期，例如要下载 2020年4月1日的 Centos 7 的安装包，那么可以直接通过命令下载
+
+	```bash
+	$ wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/package/nightly/2020.04.01/nebula-2020.04.01-nightly.el7-5.x86_64.rpm
+	```
+
+2. 安装 **Nebula Graph**。
 
 * 如果是 `rpm` 文件，使用以下命令安装 **Nebula Graph**：
 

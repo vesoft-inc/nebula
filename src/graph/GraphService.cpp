@@ -102,8 +102,16 @@ session::Role GraphService::toRole(nebula::cpp2::RoleType role) {
 }
 
 bool GraphService::auth(const std::string& username, const std::string& password) {
-    auto authenticator = std::make_unique<PasswordAuthenticator>(metaClient_.get());
-    return authenticator->auth(username, encryption::MD5Utils::md5Encode(password));
+    std::string auth_type = FLAGS_auth_type;
+    folly::toLowerAscii(auth_type);
+    if (!auth_type.compare("password")) {
+        auto authenticator = std::make_unique<PasswordAuthenticator>(metaClient_.get());
+        return authenticator->auth(username, encryption::MD5Utils::md5Encode(password));
+    } else if (!auth_type.compare("cloud")) {
+        auto authenticator = std::make_unique<CloudAuthenticator>(metaClient_.get());
+        return authenticator->auth(username, password);
+    }
+    return false;
 }
 
 void GraphService::signout(int64_t sessionId) {
