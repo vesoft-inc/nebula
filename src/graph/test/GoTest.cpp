@@ -2351,6 +2351,108 @@ TEST_P(GoTest, Contains) {
     }
 }
 
+TEST_P(GoTest, WithIntermediateData) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tony Parker"];
+        auto *fmt = "GO 1 TO 2 STEPS FROM %ld OVER like YIELD DISTINCT like._dst";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::tuple<VertexID>> expected = {
+            {players_["Tony Parker"].vid()},
+            {players_["Manu Ginobili"].vid()},
+            {players_["LaMarcus Aldridge"].vid()},
+            {players_["Tim Duncan"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // empty starts before last step
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO 1 TO 3 STEPS FROM %ld OVER serve";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::tuple<int64_t>> expected = {
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+
+    // reversely
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tony Parker"];
+        auto *fmt = "GO 1 TO 2 STEPS FROM %ld OVER like REVERSELY YIELD DISTINCT like._dst";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID>> expected = {
+            {players_["Tim Duncan"].vid()},
+            {players_["LaMarcus Aldridge"].vid()},
+            {players_["Marco Belinelli"].vid()},
+            {players_["Boris Diaw"].vid()},
+            {players_["Dejounte Murray"].vid()},
+            {players_["Tony Parker"].vid()},
+            {players_["Manu Ginobili"].vid()},
+            {players_["Danny Green"].vid()},
+            {players_["Aron Baynes"].vid()},
+            {players_["Tiago Splitter"].vid()},
+            {players_["Shaquile O'Neal"].vid()},
+            {players_["Rudy Gay"].vid()},
+            {players_["Damian Lillard"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // empty starts before last step
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO 1 TO 3 STEPS FROM %ld OVER serve REVERSELY";
+        auto query = folly::stringPrintf(fmt, teams_["Spurs"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::tuple<int64_t>> expected = {
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+
+    // Bidirectionally
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tony Parker"];
+        auto *fmt = "GO 1 TO 2 STEPS FROM %ld OVER like BIDIRECT YIELD DISTINCT like._dst";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::tuple<VertexID>> expected = {
+            players_["LaMarcus Aldridge"].vid(),
+            players_["Boris Diaw"].vid(),
+            players_["Dejounte Murray"].vid(),
+            players_["Marco Belinelli"].vid(),
+            players_["Tim Duncan"].vid(),
+            players_["Manu Ginobili"].vid(),
+            players_["Tiago Splitter"].vid(),
+            players_["Tony Parker"].vid(),
+            players_["Aron Baynes"].vid(),
+            players_["Shaquile O'Neal"].vid(),
+            players_["Danny Green"].vid(),
+            players_["Rudy Gay"].vid(),
+            players_["Damian Lillard"].vid(),
+            players_["James Harden"].vid(),
+            players_["Kevin Durant"].vid(),
+            players_["Chris Paul"].vid(),
+            players_["LeBron James"].vid(),
+            players_["Kyle Anderson"].vid(),
+            players_["Russell Westbrook"].vid(),
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
 INSTANTIATE_TEST_CASE_P(IfPushdownFilter, GoTest, ::testing::Bool());
 }   // namespace graph
 }   // namespace nebula
