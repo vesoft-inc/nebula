@@ -2451,6 +2451,46 @@ TEST_P(GoTest, WithIntermediateData) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+
+    // over *
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO 1 TO 2 STEPS FROM %ld OVER * YIELD serve._dst, like._dst";
+        const auto &player = players_["Russell Westbrook"];
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t>> expected = {
+            {teams_["Thunders"].vid(), 0},
+            {0, players_["Paul George"].vid()},
+            {0, players_["James Harden"].vid()},
+            {teams_["Pacers"].vid(), 0},
+            {teams_["Thunders"].vid(), 0},
+            {0, players_["Russell Westbrook"].vid()},
+            {teams_["Thunders"].vid(), 0},
+            {teams_["Rockets"].vid(), 0},
+            {0, players_["Russell Westbrook"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO 1 TO 2 STEPS FROM %ld OVER * REVERSELY YIELD serve._dst, like._dst";
+        const auto &player = players_["Russell Westbrook"];
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t>> expected = {
+            {0, players_["Dejounte Murray"].vid()},
+            {0, players_["James Harden"].vid()},
+            {0, players_["Paul George"].vid()},
+            {0, players_["Dejounte Murray"].vid()},
+            {0, players_["Russell Westbrook"].vid()},
+            {0, players_["Luka Doncic"].vid()},
+            {0, players_["Russell Westbrook"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
 }
 
 INSTANTIATE_TEST_CASE_P(IfPushdownFilter, GoTest, ::testing::Bool());
