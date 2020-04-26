@@ -28,9 +28,9 @@ namespace detail {
 template <>
 struct TccStructTraits<nebula::Date> {
     static void translateFieldName(
-            FOLLY_MAYBE_UNUSED folly::StringPiece _fname,
-            FOLLY_MAYBE_UNUSED int16_t& fid,
-            FOLLY_MAYBE_UNUSED apache::thrift::protocol::TType& _ftype) {
+            MAYBE_UNUSED folly::StringPiece _fname,
+            MAYBE_UNUSED int16_t& fid,
+            MAYBE_UNUSED apache::thrift::protocol::TType& _ftype) {
         if (_fname == "year") {
             fid = 1;
             _ftype = apache::thrift::protocol::T_I16;
@@ -236,9 +236,9 @@ namespace detail {
 template <>
 struct TccStructTraits<nebula::DateTime> {
     static void translateFieldName(
-            FOLLY_MAYBE_UNUSED folly::StringPiece _fname,
-            FOLLY_MAYBE_UNUSED int16_t& fid,
-            FOLLY_MAYBE_UNUSED apache::thrift::protocol::TType& _ftype) {
+            MAYBE_UNUSED folly::StringPiece _fname,
+            MAYBE_UNUSED int16_t& fid,
+            MAYBE_UNUSED apache::thrift::protocol::TType& _ftype) {
         if (_fname == "year") {
             fid = 1;
             _ftype = apache::thrift::protocol::T_I16;
@@ -603,4 +603,3 @@ uint32_t Cpp2Ops<nebula::DateTime>::serializedSizeZC(Protocol const* proto,
 }  // namespace thrift
 }  // namespace apache
 #endif  // DATATYPES_DATEOPS_H_
-

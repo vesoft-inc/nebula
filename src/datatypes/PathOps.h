@@ -28,9 +28,9 @@ namespace detail {
 template<>
 struct TccStructTraits<nebula::Step> {
     static void translateFieldName(
-            FOLLY_MAYBE_UNUSED folly::StringPiece _fname,
-            FOLLY_MAYBE_UNUSED int16_t& fid,
-            FOLLY_MAYBE_UNUSED apache::thrift::protocol::TType& _ftype) {
+            MAYBE_UNUSED folly::StringPiece _fname,
+            MAYBE_UNUSED int16_t& fid,
+            MAYBE_UNUSED apache::thrift::protocol::TType& _ftype) {
         if (_fname == "dst") {
             fid = 1;
             _ftype = apache::thrift::protocol::T_STRUCT;
@@ -309,9 +309,9 @@ namespace detail {
 template<>
 struct TccStructTraits<nebula::Path> {
     static void translateFieldName(
-            FOLLY_MAYBE_UNUSED folly::StringPiece _fname,
-            FOLLY_MAYBE_UNUSED int16_t& fid,
-            FOLLY_MAYBE_UNUSED apache::thrift::protocol::TType& _ftype) {
+            MAYBE_UNUSED folly::StringPiece _fname,
+            MAYBE_UNUSED int16_t& fid,
+            MAYBE_UNUSED apache::thrift::protocol::TType& _ftype) {
         if (_fname == "src") {
             fid = 1;
             _ftype = apache::thrift::protocol::T_STRUCT;
@@ -484,4 +484,3 @@ uint32_t Cpp2Ops<nebula::Path>::serializedSizeZC(Protocol const* proto,
 }  // namespace thrift
 }  // namespace apache
 #endif  // DATATYPES_PATHOPS_H_
-

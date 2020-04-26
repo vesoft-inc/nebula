@@ -28,9 +28,9 @@ namespace detail {
 template<>
 struct TccStructTraits<nebula::Tag> {
     static void translateFieldName(
-            FOLLY_MAYBE_UNUSED folly::StringPiece _fname,
-            FOLLY_MAYBE_UNUSED int16_t& fid,
-            FOLLY_MAYBE_UNUSED apache::thrift::protocol::TType& _ftype) {
+            MAYBE_UNUSED folly::StringPiece _fname,
+            MAYBE_UNUSED int16_t& fid,
+            MAYBE_UNUSED apache::thrift::protocol::TType& _ftype) {
         if (_fname == "name") {
             fid = 1;
             _ftype = apache::thrift::protocol::T_STRING;
@@ -211,9 +211,9 @@ namespace detail {
 template <>
 struct TccStructTraits<nebula::Vertex> {
     static void translateFieldName(
-            FOLLY_MAYBE_UNUSED folly::StringPiece _fname,
-            FOLLY_MAYBE_UNUSED int16_t& fid,
-            FOLLY_MAYBE_UNUSED apache::thrift::protocol::TType& _ftype) {
+            MAYBE_UNUSED folly::StringPiece _fname,
+            MAYBE_UNUSED int16_t& fid,
+            MAYBE_UNUSED apache::thrift::protocol::TType& _ftype) {
         if (_fname == "vid") {
             fid = 1;
             _ftype = apache::thrift::protocol::T_STRING;
@@ -378,4 +378,3 @@ uint32_t Cpp2Ops<nebula::Vertex>::serializedSizeZC(Protocol const* proto,
 }  // namespace thrift
 }  // namespace apache
 #endif  // DATATYPES_VERTEXOPS_H_
-

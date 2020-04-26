@@ -9,6 +9,7 @@
 namespace nebula {
 Value TypeCastingExpression::eval() const {
     // TODO:
+    UNUSED(vType_);
     return Value(NullType::NaN);
 }
 }  // namespace nebula

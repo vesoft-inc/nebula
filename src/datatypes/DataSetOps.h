@@ -28,9 +28,9 @@ namespace detail {
 template<>
 struct TccStructTraits<nebula::Row> {
     static void translateFieldName(
-            FOLLY_MAYBE_UNUSED folly::StringPiece _fname,
-            FOLLY_MAYBE_UNUSED int16_t& fid,
-            FOLLY_MAYBE_UNUSED apache::thrift::protocol::TType& _ftype) {
+            MAYBE_UNUSED folly::StringPiece _fname,
+            MAYBE_UNUSED int16_t& fid,
+            MAYBE_UNUSED apache::thrift::protocol::TType& _ftype) {
         if (_fname == "columns") {
             fid = 1;
             _ftype = apache::thrift::protocol::T_LIST;
@@ -181,9 +181,9 @@ namespace detail {
 template<>
 struct TccStructTraits<nebula::DataSet> {
     static void translateFieldName(
-            FOLLY_MAYBE_UNUSED folly::StringPiece _fname,
-            FOLLY_MAYBE_UNUSED int16_t& fid,
-            FOLLY_MAYBE_UNUSED apache::thrift::protocol::TType& _ftype) {
+            MAYBE_UNUSED folly::StringPiece _fname,
+            MAYBE_UNUSED int16_t& fid,
+            MAYBE_UNUSED apache::thrift::protocol::TType& _ftype) {
         if (_fname == "column_names") {
             fid = 1;
             _ftype = apache::thrift::protocol::T_LIST;
@@ -371,4 +371,3 @@ uint32_t Cpp2Ops<nebula::DataSet>::serializedSizeZC(Protocol const* proto,
 }  // namespace thrift
 }  // namespace apache
 #endif  // DATATYPES_DATASETOPS_H_
-

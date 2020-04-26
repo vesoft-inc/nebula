@@ -883,7 +883,7 @@ DataSet Value::moveDataSet() {
     CHECK_EQ(type_, Type::DATASET);
     DataSet ds = std::move(*(value_.gVal));
     clear();
-    return std::move(ds);
+    return ds;
 }
 
 void Value::clear() {
@@ -2006,5 +2006,3 @@ Value operator||(const Value& lhs, const Value& rhs) {
     }
 }
 }  // namespace nebula
-
-

@@ -14,6 +14,7 @@
 #include <thrift/lib/cpp2/protocol/ProtocolReaderStructReadState.h>
 
 #include "datatypes/Value.h"
+#include "datatypes/DataSet.h"
 #include "datatypes/DateOps.h"
 #include "datatypes/PathOps.h"
 #include "datatypes/VertexOps.h"
@@ -30,9 +31,9 @@ namespace detail {
 template<>
 struct TccStructTraits<nebula::Value> {
     static void translateFieldName(
-            FOLLY_MAYBE_UNUSED folly::StringPiece _fname,
-            FOLLY_MAYBE_UNUSED int16_t& fid,
-            FOLLY_MAYBE_UNUSED apache::thrift::protocol::TType& _ftype) {
+            MAYBE_UNUSED folly::StringPiece _fname,
+            MAYBE_UNUSED int16_t& fid,
+            MAYBE_UNUSED apache::thrift::protocol::TType& _ftype) {
         if (_fname == "nVal") {
             fid = 1;
             _ftype = apache::thrift::protocol::T_I32;
@@ -745,4 +746,3 @@ uint32_t Cpp2Ops<nebula::Value>::serializedSizeZC(Protocol const* proto,
 }  // namespace thrift
 }  // namespace apache
 #endif  // DATATYPES_VALUEOPS_H_
-
