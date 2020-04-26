@@ -11,7 +11,7 @@ namespace nebula {
 namespace http {
 
 StatusOr<std::string> HttpClient::get(const std::string& path, const std::string& options) {
-    auto command = folly::stringPrintf("/usr/bin/curl %s \"%s\"", options.c_str(), path.c_str());
+    auto command = folly::stringPrintf("/usr/bin/curl --connect-timeout=10 %s \"%s\"", options.c_str(), path.c_str());
     LOG(INFO) << "HTTP Get Command: " << command;
     auto result = nebula::ProcessUtils::runCommand(command.c_str());
     if (result.ok()) {
@@ -22,7 +22,7 @@ StatusOr<std::string> HttpClient::get(const std::string& path, const std::string
 }
 
 StatusOr<std::string> HttpClient::post(const std::string& path, const std::string& header) {
-    auto command = folly::stringPrintf("/usr/bin/curl -X POST %s \"%s\"",
+    auto command = folly::stringPrintf("/usr/bin/curl --connect-timeout=10 -X POST %s \"%s\"",
                                        header.c_str(),
                                        path.c_str());
     LOG(INFO) << "HTTP Post Command: " << command;
