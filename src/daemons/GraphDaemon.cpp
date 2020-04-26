@@ -133,7 +133,11 @@ int main(int argc, char *argv[]) {
 
     gServer->setInterface(std::move(interface));
     gServer->setAddress(localIP, FLAGS_port);
-    gServer->setReusePort(FLAGS_reuse_port);
+    // fbthrift-2018.08.20 always enables SO_REUSEPORT once `setReusePort' is called
+    // which had been fixed in later version.
+    if (FLAGS_reuse_port) {
+        gServer->setReusePort(FLAGS_reuse_port);
+    }
     gServer->setIdleTimeout(std::chrono::seconds(FLAGS_client_idle_timeout_secs));
     gServer->setNumCPUWorkerThreads(FLAGS_num_worker_threads);
     gServer->setCPUWorkerThreadName("executor");
