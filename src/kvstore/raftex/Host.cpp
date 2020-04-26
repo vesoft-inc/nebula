@@ -80,7 +80,7 @@ folly::Future<cpp2::AskForVoteResponse> Host::askForVote(
             return resp;
         }
     }
-    auto client = tcManager().client(addr_, eb, false, FLAGS_raft_rpc_timeout_ms);
+    auto client = part_->clientMan_->client(addr_, eb, false, FLAGS_raft_rpc_timeout_ms);
     return client->future_askForVote(req);
 }
 
@@ -494,7 +494,7 @@ folly::Future<cpp2::AppendLogResponse> Host::sendAppendLogRequest(
               << ", last_log_term_sent" << req->get_last_log_term_sent()
               << ", last_log_id_sent " << req->get_last_log_id_sent();
     // Get client connection
-    auto client = tcManager().client(addr_, eb, false, FLAGS_raft_rpc_timeout_ms);
+    auto client = part_->clientMan_->client(addr_, eb, false, FLAGS_raft_rpc_timeout_ms);
     return client->future_appendLog(*req);
 }
 

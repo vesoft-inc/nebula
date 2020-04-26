@@ -13,6 +13,7 @@
 #include <folly/Function.h>
 #include <gtest/gtest_prod.h>
 #include "interface/gen-cpp2/raftex_types.h"
+#include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
 #include "time/Duration.h"
 #include "thread/GenericThreadPool.h"
 #include "kvstore/raftex/SnapshotManager.h"
@@ -213,15 +214,17 @@ public:
 
 protected:
     // Protected constructor to prevent from instantiating directly
-    RaftPart(ClusterID clusterId,
-             GraphSpaceID spaceId,
-             PartitionID partId,
-             HostAddr localAddr,
-             const folly::StringPiece walRoot,
-             std::shared_ptr<folly::IOThreadPoolExecutor> pool,
-             std::shared_ptr<thread::GenericThreadPool> workers,
-             std::shared_ptr<folly::Executor> executor,
-             std::shared_ptr<SnapshotManager> snapshotMan);
+    RaftPart(
+         ClusterID clusterId,
+         GraphSpaceID spaceId,
+         PartitionID partId,
+         HostAddr localAddr,
+         const folly::StringPiece walRoot,
+         std::shared_ptr<folly::IOThreadPoolExecutor> pool,
+         std::shared_ptr<thread::GenericThreadPool> workers,
+         std::shared_ptr<folly::Executor> executor,
+         std::shared_ptr<SnapshotManager> snapshotMan,
+         std::shared_ptr<thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient>> clientMan);
 
     const char* idStr() const {
         return idStr_.c_str();
@@ -529,6 +532,7 @@ protected:
 
     std::shared_ptr<SnapshotManager> snapshot_;
 
+    std::shared_ptr<thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient>> clientMan_;
     // Used in snapshot, record the last total count and total size received from request
     int64_t lastTotalCount_ = 0;
     int64_t lastTotalSize_ = 0;

@@ -18,6 +18,7 @@
 namespace nebula {
 namespace kvstore {
 
+using RaftClient = thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncClient>;
 
 class Part : public raftex::RaftPart {
     friend class SnapshotManager;
@@ -30,7 +31,8 @@ public:
          std::shared_ptr<folly::IOThreadPoolExecutor> pool,
          std::shared_ptr<thread::GenericThreadPool> workers,
          std::shared_ptr<folly::Executor> handlers,
-         std::shared_ptr<raftex::SnapshotManager> snapshotMan);
+         std::shared_ptr<raftex::SnapshotManager> snapshotMan,
+         std::shared_ptr<RaftClient> clientMan);
 
     virtual ~Part() {
         LOG(INFO) << idStr_ << "~Part()";

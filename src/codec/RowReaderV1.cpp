@@ -315,7 +315,7 @@ Value RowReaderV1::getFloat(int64_t index) const noexcept {
             } else {
                 if (d < std::numeric_limits<float>::min() ||
                     d > std::numeric_limits<float>::max()) {
-                    v.setNull(NullType::OVERFLOW);
+                    v.setNull(NullType::ERR_OVERFLOW);
                 } else {
                     v.setFloat(d);
                 }

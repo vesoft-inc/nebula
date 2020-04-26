@@ -144,7 +144,6 @@ void waitUntilAllHasLeader(const std::vector<std::shared_ptr<test::TestShard>>& 
     }
 }
 
-
 void setupRaft(
         int32_t numCopies,
         fs::TempDir& walRoot,

@@ -16,6 +16,7 @@
 #include "kvstore/Part.h"
 #include "kvstore/KVEngine.h"
 #include "kvstore/raftex/SnapshotManager.h"
+#include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
 
 namespace nebula {
 namespace kvstore {
@@ -50,6 +51,8 @@ public:
             , raftAddr_(getRaftAddr(serviceAddr))
             , options_(std::move(options)) {
         CHECK_NOTNULL(options_.partMan_);
+        clientMan_
+          = std::make_shared<thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncClient>>();
     }
 
     ~NebulaStore();
@@ -247,6 +250,7 @@ private:
 
     std::shared_ptr<raftex::RaftexService> raftService_;
     std::shared_ptr<raftex::SnapshotManager> snapshot_;
+    std::shared_ptr<thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncClient>> clientMan_;
 };
 
 }  // namespace kvstore

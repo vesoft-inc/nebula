@@ -67,7 +67,7 @@ public:
         return Status::Error("Unimplemented");
     }
 
-    StatusOr<int32_t> getSpaceVidLen(GraphSpaceID space) override;
+    StatusOr<int32_t> getSpaceVidLen(GraphSpaceID space);
 
 protected:
     folly::RWSpinLock tagLock_;

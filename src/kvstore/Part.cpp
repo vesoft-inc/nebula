@@ -24,7 +24,8 @@ Part::Part(GraphSpaceID spaceId,
            std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
            std::shared_ptr<thread::GenericThreadPool> workers,
            std::shared_ptr<folly::Executor> handlers,
-           std::shared_ptr<raftex::SnapshotManager> snapshotMan)
+           std::shared_ptr<raftex::SnapshotManager> snapshotMan,
+           std::shared_ptr<RaftClient> clientMan)
         : RaftPart(FLAGS_cluster_id,
                    spaceId,
                    partId,
@@ -33,7 +34,8 @@ Part::Part(GraphSpaceID spaceId,
                    ioPool,
                    workers,
                    handlers,
-                   snapshotMan)
+                   snapshotMan,
+                   clientMan)
         , spaceId_(spaceId)
         , partId_(partId)
         , walPath_(walPath)

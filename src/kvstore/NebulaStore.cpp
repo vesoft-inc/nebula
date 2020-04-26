@@ -131,7 +131,8 @@ bool NebulaStore::init() {
                                                                ioPool_,
                                                                bgWorkers_,
                                                                workers_,
-                                                               snapshot_);
+                                                               snapshot_,
+                                                               clientMan_);
                             auto status = options_.partMan_->partMeta(spaceId, partId);
                             if (!status.ok()) {
                                 LOG(WARNING) << status.status().toString();
@@ -283,7 +284,8 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
                                        ioPool_,
                                        bgWorkers_,
                                        workers_,
-                                       snapshot_);
+                                       snapshot_,
+                                       clientMan_);
     auto metaStatus = options_.partMan_->partMeta(spaceId, partId);
     if (!metaStatus.ok()) {
         return nullptr;

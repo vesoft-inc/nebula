@@ -504,6 +504,8 @@ nebula::storage::cpp2::AddVerticesRequest MockData::mockAddVertices(int32_t part
     req.space_id = 1;
     req.overwritable = true;
 
+    UNUSED(parts);
+#if 0
     auto retRecs = mockVertices();
 
     int count = 0;
@@ -523,6 +525,7 @@ nebula::storage::cpp2::AddVerticesRequest MockData::mockAddVertices(int32_t part
         newVertex.set_tags(std::move(newTags));
         req.parts[(count % parts) + 1].emplace_back(std::move(newVertex));
     }
+#endif
     return req;
 }
 
@@ -530,7 +533,8 @@ nebula::storage::cpp2::AddEdgesRequest MockData::mockAddEdges(int32_t parts) {
     nebula::storage::cpp2::AddEdgesRequest req;
     req.space_id = 1;
     req.overwritable = true;
-
+    UNUSED(parts);
+#if 0
     auto retRecs = mockEdges();
     int count = 0;
     for (auto& rec : retRecs) {
@@ -549,6 +553,7 @@ nebula::storage::cpp2::AddEdgesRequest MockData::mockAddEdges(int32_t parts) {
 
         req.parts[(count % parts) + 1].emplace_back(std::move(newEdge));
     }
+#endif
     return req;
 }
 
@@ -623,7 +628,8 @@ MockData::mockAddVerticesSpecifiedOrder(int32_t parts) {
     nebula::storage::cpp2::AddVerticesRequest req;
     req.space_id = 1;
     req.overwritable = true;
-
+    UNUSED(parts);
+#if 0
     auto retRecs = mockVertices();
 
     int count = 0;
@@ -651,6 +657,7 @@ MockData::mockAddVerticesSpecifiedOrder(int32_t parts) {
         newVertex.set_tags(std::move(newTags));
         req.parts[(count % parts) + 1].emplace_back(std::move(newVertex));
     }
+#endif
     return req;
 }
 
@@ -659,7 +666,8 @@ MockData::mockAddEdgesSpecifiedOrder(int32_t parts) {
     nebula::storage::cpp2::AddEdgesRequest req;
     req.space_id = 1;
     req.overwritable = true;
-
+    UNUSED(parts);
+#if 0
     auto retRecs = mockEdges();
 
     int count = 0;
@@ -682,6 +690,7 @@ MockData::mockAddEdgesSpecifiedOrder(int32_t parts) {
         newEdge.set_names(std::move(colNames));
         req.parts[(count % parts) + 1].emplace_back(std::move(newEdge));
     }
+#endif
     return req;
 }
 

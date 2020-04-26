@@ -97,6 +97,13 @@ HostAddr decodeRemovePeer(const folly::StringPiece& log) {
     return addr;
 }
 
+std::shared_ptr<thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient>>
+getClientMan() {
+    static std::shared_ptr<thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient>>
+        clientMan(new thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient>());
+    return clientMan;
+}
+
 TestShard::TestShard(size_t idx,
                      std::shared_ptr<RaftexService> svc,
                      PartitionID partId,
@@ -118,7 +125,8 @@ TestShard::TestShard(size_t idx,
                    ioPool,
                    workers,
                    handlersPool,
-                   snapshotMan)
+                   snapshotMan,
+                   getClientMan())
         , idx_(idx)
         , service_(svc)
         , leadershipLostCB_(leadershipLostCB)

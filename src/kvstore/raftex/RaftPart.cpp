@@ -197,15 +197,17 @@ private:
  *  Implementation of RaftPart
  *
  *******************************************************/
-RaftPart::RaftPart(ClusterID clusterId,
-                   GraphSpaceID spaceId,
-                   PartitionID partId,
-                   HostAddr localAddr,
-                   const folly::StringPiece walRoot,
-                   std::shared_ptr<folly::IOThreadPoolExecutor> pool,
-                   std::shared_ptr<thread::GenericThreadPool> workers,
-                   std::shared_ptr<folly::Executor> executor,
-                   std::shared_ptr<SnapshotManager> snapshotMan)
+RaftPart::RaftPart(
+           ClusterID clusterId,
+           GraphSpaceID spaceId,
+           PartitionID partId,
+           HostAddr localAddr,
+           const folly::StringPiece walRoot,
+           std::shared_ptr<folly::IOThreadPoolExecutor> pool,
+           std::shared_ptr<thread::GenericThreadPool> workers,
+           std::shared_ptr<folly::Executor> executor,
+           std::shared_ptr<SnapshotManager> snapshotMan,
+           std::shared_ptr<thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient>> clientMan)
         : idStr_{folly::stringPrintf("[Port: %d, Space: %d, Part: %d] ",
                                      localAddr.port, spaceId, partId)}
         , clusterId_{clusterId}
@@ -219,6 +221,7 @@ RaftPart::RaftPart(ClusterID clusterId,
         , bgWorkers_{workers}
         , executor_(executor)
         , snapshot_(snapshotMan)
+        , clientMan_(clientMan)
         , weight_(1) {
     FileBasedWalPolicy policy;
     policy.ttl = FLAGS_wal_ttl;
