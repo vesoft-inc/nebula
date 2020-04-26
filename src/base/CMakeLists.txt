@@ -14,9 +14,9 @@ nebula_add_library(
     StringValue.cpp
 )
 
-IF(${PCHSupport_FOUND})
+if(${PCHSupport_FOUND})
     add_precompiled_header(base_obj Base.h)
-ENDIF(${PCHSupport_FOUND})
+endif(${PCHSupport_FOUND})
 
 add_custom_target(
     clean-pch

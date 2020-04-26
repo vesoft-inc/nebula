@@ -14,7 +14,7 @@
 #include <thrift/lib/cpp2/protocol/ProtocolReaderStructReadState.h>
 
 #include "datatypes/Value.h"
-#include "datatypes/DataSet.h"
+#include "datatypes/DataSetOps.h"
 #include "datatypes/DateOps.h"
 #include "datatypes/PathOps.h"
 #include "datatypes/VertexOps.h"
