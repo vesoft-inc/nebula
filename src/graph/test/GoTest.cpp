@@ -2350,6 +2350,17 @@ TEST_P(GoTest, Contains) {
     }
 }
 
+TEST_P(GoTest, issue2087) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER like YIELD like._src as src, like._dst as dst "
+            "| GO FROM $-.src OVER like YIELD $-.src as src, like._dst as dst";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+}
+
 INSTANTIATE_TEST_CASE_P(IfPushdownFilter, GoTest, ::testing::Bool());
 }   // namespace graph
 }   // namespace nebula
