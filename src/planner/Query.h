@@ -122,11 +122,44 @@ public:
         return space_;
     }
 
+    bool dedup() const {
+        return dedup_;
+    }
+
+    int64_t limit() const {
+        return limit_;
+    }
+
+    const std::string& filter() const {
+        return filter_;
+    }
+
+    const std::vector<storage::cpp2::OrderBy>& orderBy() const {
+        return orderBy_;
+    }
+
 protected:
-    explicit Explore(ExecutionPlan* plan) : SingleInputNode(plan) {}
+    Explore(ExecutionPlan* plan,
+            GraphSpaceID space,
+            bool dedup,
+            int64_t limit,
+            std::string filter,
+            std::vector<storage::cpp2::OrderBy> orderBy)
+        : SingleInputNode(plan),
+          space_(space),
+          dedup_(dedup),
+          limit_(limit),
+          filter_(std::move(filter)),
+          orderBy_(std::move(orderBy)) {}
+
+    Explore(ExecutionPlan* plan, GraphSpaceID space) : SingleInputNode(plan), space_(space) {}
 
 protected:
     GraphSpaceID        space_;
+    bool dedup_{false};
+    int64_t limit_{std::numeric_limits<int64_t>::max()};
+    std::string filter_;
+    std::vector<storage::cpp2::OrderBy> orderBy_;
 };
 
 /**
@@ -137,13 +170,17 @@ public:
     static GetNeighbors* make(ExecutionPlan* plan,
                               PlanNode* input,
                               GraphSpaceID space,
-                              std::vector<VertexID> vertices,
+                              std::vector<Row> vertices,
                               Expression* src,
                               std::vector<EdgeType> edgeTypes,
-                              std::vector<storage::cpp2::VertexProp> vertexProps,
-                              std::vector<storage::cpp2::EdgeProp> edgeProps,
+                              storage::cpp2::EdgeDirection edgeDirection,
+                              std::vector<std::string> vertexProps,
+                              std::vector<std::string> edgeProps,
                               std::vector<storage::cpp2::StatProp> statProps,
-                              std::string filter) {
+                              bool dedup = false,
+                              std::vector<storage::cpp2::OrderBy> orderBy = {},
+                              int64_t limit = std::numeric_limits<int64_t>::max(),
+                              std::string filter = "") {
         return new GetNeighbors(
                 plan,
                 input,
@@ -151,9 +188,13 @@ public:
                 std::move(vertices),
                 src,
                 std::move(edgeTypes),
+                edgeDirection,
                 std::move(vertexProps),
                 std::move(edgeProps),
                 std::move(statProps),
+                dedup,
+                std::move(orderBy),
+                limit,
                 std::move(filter));
     }
 
@@ -163,35 +204,39 @@ private:
     GetNeighbors(ExecutionPlan* plan,
                  PlanNode* input,
                  GraphSpaceID space,
-                 std::vector<VertexID> vertices,
+                 std::vector<Row> vertices,
                  Expression* src,
                  std::vector<EdgeType> edgeTypes,
-                 std::vector<storage::cpp2::VertexProp> vertexProps,
-                 std::vector<storage::cpp2::EdgeProp> edgeProps,
+                 storage::cpp2::EdgeDirection edgeDirection,
+                 std::vector<std::string> vertexProps,
+                 std::vector<std::string> edgeProps,
                  std::vector<storage::cpp2::StatProp> statProps,
-                 std::string filter) : Explore(plan) {
+                 bool dedup,
+                 std::vector<storage::cpp2::OrderBy> orderBy,
+                 int64_t limit,
+                 std::string filter)
+        : Explore(plan, space, dedup, limit, std::move(filter), std::move(orderBy)) {
         kind_ = PlanNode::Kind::kGetNeighbors;
         input_ = input;
-        space_ = space;
         vertices_ = std::move(vertices);
         src_ = src;
         edgeTypes_ = std::move(edgeTypes);
+        edgeDirection_ = edgeDirection;
         vertexProps_ = std::move(vertexProps);
         edgeProps_ = std::move(edgeProps);
         statProps_ = std::move(statProps);
-        filter_ = std::move(filter);
     }
 
 private:
     // vertices are parsing from query.
-    std::vector<VertexID>                        vertices_;
+    std::vector<Row>                             vertices_;
     // vertices may be parsing from runtime.
     Expression*                                  src_{nullptr};
     std::vector<EdgeType>                        edgeTypes_;
-    std::vector<storage::cpp2::VertexProp>       vertexProps_;
-    std::vector<storage::cpp2::EdgeProp>         edgeProps_;
+    storage::cpp2::EdgeDirection                 edgeDirection_;
+    std::vector<std::string>                     vertexProps_;
+    std::vector<std::string>                     edgeProps_;
     std::vector<storage::cpp2::StatProp>         statProps_;
-    std::string                                  filter_;
 };
 
 /**
@@ -202,10 +247,13 @@ public:
     static GetVertices* make(ExecutionPlan* plan,
                              PlanNode* input,
                              GraphSpaceID space,
-                             std::vector<VertexID> vertices,
+                             std::vector<Row> vertices,
                              Expression* src,
-                             std::vector<storage::cpp2::VertexProp> props,
-                             std::string filter) {
+                             std::vector<std::string> props,
+                             bool dedup = false,
+                             std::vector<storage::cpp2::OrderBy> orderBy = {},
+                             int64_t limit = std::numeric_limits<int64_t>::max(),
+                             std::string filter = "") {
         return new GetVertices(
                 plan,
                 input,
@@ -213,6 +261,9 @@ public:
                 std::move(vertices),
                 src,
                 std::move(props),
+                dedup,
+                std::move(orderBy),
+                limit,
                 std::move(filter));
     }
 
@@ -222,27 +273,28 @@ private:
     GetVertices(ExecutionPlan* plan,
                 PlanNode* input,
                 GraphSpaceID space,
-                std::vector<VertexID> vertices,
+                std::vector<Row> vertices,
                 Expression* src,
-                std::vector<storage::cpp2::VertexProp> props,
-                std::string filter) : Explore(plan) {
+                std::vector<std::string> props,
+                bool dedup,
+                std::vector<storage::cpp2::OrderBy> orderBy,
+                int64_t limit,
+                std::string filter)
+        : Explore(plan, space, dedup, limit, std::move(filter), std::move(orderBy)) {
         kind_ = PlanNode::Kind::kGetVertices;
         input_ = input;
-        space_ = space;
         vertices_ = std::move(vertices);
         src_ = src;
         props_ = std::move(props);
-        filter = std::move(filter);
     }
 
 private:
     // vertices are parsing from query.
-    std::vector<VertexID>                    vertices_;
+    std::vector<Row>                         vertices_;
     // vertices may be parsing from runtime.
     Expression*                              src_{nullptr};
     // props and filter are parsing from query.
-    std::vector<storage::cpp2::VertexProp>   props_;
-    std::string                              filter_;
+    std::vector<std::string>                 props_;
 };
 
 /**
@@ -253,12 +305,15 @@ public:
     static GetEdges* make(ExecutionPlan* plan,
                           PlanNode* input,
                           GraphSpaceID space,
-                          std::vector<storage::cpp2::EdgeKey> edges,
+                          std::vector<Row> edges,
                           Expression* src,
                           Expression* ranking,
                           Expression* dst,
-                          std::vector<storage::cpp2::EdgeProp> props,
-                          std::string filter) {
+                          std::vector<std::string> props,
+                          bool dedup = false,
+                          int64_t limit = std::numeric_limits<int64_t>::max(),
+                          std::vector<storage::cpp2::OrderBy> orderBy = {},
+                          std::string filter = "") {
         return new GetEdges(
                 plan,
                 input,
@@ -268,6 +323,9 @@ public:
                 ranking,
                 dst,
                 std::move(props),
+                dedup,
+                limit,
+                std::move(orderBy),
                 std::move(filter));
     }
 
@@ -277,33 +335,34 @@ private:
     GetEdges(ExecutionPlan* plan,
              PlanNode* input,
              GraphSpaceID space,
-             std::vector<storage::cpp2::EdgeKey> edges,
+             std::vector<Row> edges,
              Expression* src,
              Expression* ranking,
              Expression* dst,
-             std::vector<storage::cpp2::EdgeProp> props,
-             std::string filter) : Explore(plan) {
+             std::vector<std::string> props,
+             bool dedup,
+             int64_t limit,
+             std::vector<storage::cpp2::OrderBy> orderBy,
+             std::string filter)
+        : Explore(plan, space, dedup, limit, std::move(filter), std::move(orderBy)) {
         kind_ = PlanNode::Kind::kGetEdges;
         input_ = input;
-        space_ = space;
         edges_ = std::move(edges);
         src_ = std::move(src);
         ranking_ = std::move(ranking);
         dst_ = std::move(dst);
         props_ = std::move(props);
-        filter_ = std::move(filter);
     }
 
 private:
     // edges_ are parsing from the query.
-    std::vector<storage::cpp2::EdgeKey>      edges_;
+    std::vector<Row>                         edges_;
     // edges_ may be parsed from runtime.
     Expression*                              src_{nullptr};
     Expression*                              ranking_{nullptr};
     Expression*                              dst_{nullptr};
     // props and filter are parsing from query.
-    std::vector<storage::cpp2::EdgeProp>     props_;
-    std::string                              filter_;
+    std::vector<std::string>                 props_;
 };
 
 /**
@@ -311,9 +370,8 @@ private:
  */
 class ReadIndex final : public Explore {
 public:
-    ReadIndex(ExecutionPlan* plan, GraphSpaceID space) : Explore(plan) {
+    ReadIndex(ExecutionPlan* plan, GraphSpaceID space) : Explore(plan, space) {
         kind_ = PlanNode::Kind::kReadIndex;
-        space_ = space;
     }
 
     std::string explain() const override;
@@ -356,8 +414,6 @@ private:
  */
 class SetOp : public BiInputNode {
 public:
-    SetOp() = default;
-
     SetOp(ExecutionPlan* plan, PlanNode* left, PlanNode* right) : BiInputNode(plan) {
         left_ = left;
         right_ = right;
@@ -431,7 +487,7 @@ public:
 private:
     Project(ExecutionPlan* plan, PlanNode* input, YieldColumns* cols) : SingleInputNode(plan) {
         kind_ = PlanNode::Kind::kProject;
-        input = input;
+        input_ = input;
         cols_ = cols;
     }
 

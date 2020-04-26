@@ -33,7 +33,7 @@ private:
     Status validateBothInOutBound(BothInOutClause* out);
 private:
     uint32_t                                    steps_{1};
-    std::vector<VertexID>                       starts_;
+    std::vector<Row>                            starts_;
     Expression*                                 srcRef_{nullptr};
     std::vector<EdgeType>                       edgeTypes_;
 };

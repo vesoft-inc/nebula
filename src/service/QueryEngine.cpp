@@ -42,8 +42,7 @@ Status QueryEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor
         LOG(WARNING) << "Failed to synchronously wait for meta service ready";
     }
 
-    schemaManager_ = meta::SchemaManager::create();
-    schemaManager_->init(metaClient_.get());
+    schemaManager_ = meta::SchemaManager::create(metaClient_.get());
 
     // gflagsManager_ = std::make_unique<meta::ClientBasedGflagsManager>(metaClient_.get());
 
