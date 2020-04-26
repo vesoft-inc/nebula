@@ -137,7 +137,7 @@ protected:
             >
         >
     >
-    clusterIdsToHosts(GraphSpaceID spaceId, Container&& ids, GetIdFunc f) const;
+    clusterIdsToHosts(GraphSpaceID spaceId, const Container& ids, GetIdFunc f) const;
 
     virtual StatusOr<meta::PartHosts> getPartHosts(GraphSpaceID spaceId,
                                                    PartitionID partId) const {

@@ -16,18 +16,18 @@ struct Row {
     std::vector<Value> columns;
 
     Row() = default;
-    Row(const Row& r) {
+    Row(const Row& r) noexcept {
         columns = r.columns;
     }
-    Row(Row&& r) {
+    Row(Row&& r) noexcept {
         columns = std::move(r.columns);
     }
 
-    Row& operator=(const Row& r) {
+    Row& operator=(const Row& r) noexcept {
         columns = r.columns;
         return *this;
     }
-    Row& operator=(Row&& r) {
+    Row& operator=(Row&& r) noexcept {
         columns = std::move(r.columns);
         return *this;
     }
@@ -47,20 +47,20 @@ struct DataSet {
     std::vector<Row> rows;
 
     DataSet() = default;
-    DataSet(const DataSet& ds) {
+    DataSet(const DataSet& ds) noexcept {
         colNames = ds.colNames;
         rows = ds.rows;
     }
-    DataSet(DataSet&& ds) {
+    DataSet(DataSet&& ds) noexcept {
         colNames = std::move(ds.colNames);
         rows = std::move(ds.rows);
     }
-    DataSet& operator=(const DataSet& ds) {
+    DataSet& operator=(const DataSet& ds) noexcept {
         colNames = ds.colNames;
         rows = ds.rows;
         return *this;
     }
-    DataSet& operator=(DataSet&& ds) {
+    DataSet& operator=(DataSet&& ds) noexcept {
         colNames = std::move(ds.colNames);
         rows = std::move(ds.rows);
         return *this;

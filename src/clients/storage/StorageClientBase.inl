@@ -348,7 +348,7 @@ StatusOr<
     >
 >
 StorageClientBase<ClientType>::clusterIdsToHosts(GraphSpaceID spaceId,
-                                                 Container&& ids,
+                                                 const Container& ids,
                                                  GetIdFunc f) const {
     std::unordered_map<
         HostAddr,

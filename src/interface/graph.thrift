@@ -49,7 +49,8 @@ struct ExecutionResponse {
 
 struct AuthResponse {
     1: required ErrorCode   error_code;
-    2: optional i64         session_id;
+    2: optional binary      error_msg;
+    3: optional i64         session_id;
 }
 
 
