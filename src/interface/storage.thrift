@@ -56,6 +56,9 @@ enum ErrorCode {
     E_FAILED_TO_CHECKPOINT = -50,
     E_CHECKPOINT_BLOCKED = -51,
 
+    // partial result, used for kv interfaces
+    E_PARTIAL_RESULT = -61,
+
     E_UNKNOWN = -100,
 } (cpp.enum_strict)
 
@@ -527,6 +530,8 @@ struct CatchUpDataReq {
     3: common.HostAddr     target,
 }
 
+struct GetLeaderReq {
+}
 
 struct CreateCPRequest {
     1: common.GraphSpaceID  space_id,
@@ -566,12 +571,12 @@ struct CheckPeersReq {
 }
 
 
-//struct RebuildIndexRequest {
-//    1: common.GraphSpaceID          space_id,
-//    2: list<common.PartitionID>     parts,
-//    3: common.IndexID               index_id,
-//    4: bool                         is_offline,
-//}
+struct RebuildIndexRequest {
+    1: common.GraphSpaceID          space_id,
+    2: list<common.PartitionID>     parts,
+    3: common.IndexID               index_id,
+    4: bool                         is_offline,
+}
 
 
 service StorageAdminService {
@@ -589,11 +594,11 @@ service StorageAdminService {
     AdminExecResp blockingWrites(1: BlockingSignRequest req);
 
     // Interfaces for rebuild index
-//    AdminExecResp rebuildTagIndex(1: RebuildIndexRequest req);
-//    AdminExecResp rebuildEdgeIndex(1: RebuildIndexRequest req);
+    AdminExecResp rebuildTagIndex(1: RebuildIndexRequest req);
+    AdminExecResp rebuildEdgeIndex(1: RebuildIndexRequest req);
 
     // Return all leader partitions on this host
-    GetLeaderPartsResp getLeaderParts();
+    GetLeaderPartsResp getLeaderParts(1: GetLeaderReq req);
     // Return all peers
     AdminExecResp checkPeers(1: CheckPeersReq req);
 }

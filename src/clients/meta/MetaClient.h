@@ -109,23 +109,23 @@ struct SpaceDesc {
     SpaceDesc(const std::string& spaceName,
               int32_t partNum,
               int32_t replicaFactor,
-              int32_t vidSize,
               const std::string& charsetName = "",
-              const std::string& collationName = "")
+              const std::string& collationName = "",
+              int32_t vidSize = 8)
         : spaceName_(spaceName)
         , partNum_(partNum)
         , replicaFactor_(replicaFactor)
-        , vidSize_(vidSize)
         , charsetName_(charsetName)
-        , collationName_(collationName) {
+        , collationName_(collationName)
+        , vidSize_(vidSize) {
     }
 
     std::string  spaceName_;
     int32_t      partNum_{0};
     int32_t      replicaFactor_{0};
-    int32_t      vidSize_{8};
     std::string  charsetName_;
     std::string  collationName_;
+    int32_t      vidSize_{8};
 };
 
 

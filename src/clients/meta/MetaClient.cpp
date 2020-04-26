@@ -1621,51 +1621,6 @@ MetaClient::listEdgeIndexes(GraphSpaceID spaceID) {
     return future;
 }
 
-
-folly::Future<StatusOr<bool>>
-MetaClient::rebuildEdgeIndex(GraphSpaceID spaceID,
-                             std::string name,
-                             bool isOffline) {
-    cpp2::RebuildIndexReq req;
-    req.set_space_id(spaceID);
-    req.set_index_name(std::move(name));
-    req.set_is_offline(isOffline);
-
-    folly::Promise<StatusOr<bool>> promise;
-    auto future = promise.getFuture();
-    getResponse(std::move(req),
-                [] (auto client, auto request) {
-                    return client->future_rebuildEdgeIndex(request);
-                },
-                [] (cpp2::ExecResp&& resp) -> bool {
-                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
-                },
-                std::move(promise),
-                true);
-    return future;
-}
-
-
-folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>>
-MetaClient::listEdgeIndexStatus(GraphSpaceID spaceID) {
-    cpp2::ListIndexStatusReq req;
-    req.set_space_id(spaceID);
-
-    folly::Promise<StatusOr<std::vector<cpp2::IndexStatus>>> promise;
-    auto future = promise.getFuture();
-    getResponse(std::move(req),
-                [] (auto client, auto request) {
-                    return client->future_listEdgeIndexStatus(request);
-                },
-                [] (cpp2::ListIndexStatusResp&& resp) -> decltype(auto) {
-                    return std::move(resp).get_statuses();
-                },
-                std::move(promise));
-    return future;
-}
-
-
-
 StatusOr<std::shared_ptr<const SchemaProviderIf>>
 MetaClient::getTagSchemaFromCache(GraphSpaceID spaceId, TagID tagID, SchemaVer ver) {
     if (!ready_) {
@@ -1709,6 +1664,47 @@ MetaClient::getEdgeSchemaFromCache(GraphSpaceID spaceId, EdgeType edgeType, Sche
     }
 }
 
+folly::Future<StatusOr<bool>>
+MetaClient::rebuildEdgeIndex(GraphSpaceID spaceID,
+                             std::string name,
+                             bool isOffline) {
+    cpp2::RebuildIndexReq req;
+    req.set_space_id(spaceID);
+    req.set_index_name(std::move(name));
+    req.set_is_offline(isOffline);
+
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req),
+                [] (auto client, auto request) {
+                    return client->future_rebuildEdgeIndex(request);
+                },
+                [] (cpp2::ExecResp&& resp) -> bool {
+                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
+                },
+                std::move(promise),
+                true);
+    return future;
+}
+
+
+folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>>
+MetaClient::listEdgeIndexStatus(GraphSpaceID spaceID) {
+    cpp2::ListIndexStatusReq req;
+    req.set_space_id(spaceID);
+
+    folly::Promise<StatusOr<std::vector<cpp2::IndexStatus>>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req),
+                [] (auto client, auto request) {
+                    return client->future_listEdgeIndexStatus(request);
+                },
+                [] (cpp2::ListIndexStatusResp&& resp) -> decltype(auto) {
+                    return std::move(resp).get_statuses();
+                },
+                std::move(promise));
+    return future;
+}
 
 StatusOr<std::shared_ptr<cpp2::IndexItem>>
 MetaClient::getTagIndexByNameFromCache(const GraphSpaceID space, const std::string& name) {

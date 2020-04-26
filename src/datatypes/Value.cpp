@@ -1881,7 +1881,9 @@ bool operator<(const Value& lhs, const Value& rhs) {
 }
 
 bool operator==(const Value& lhs, const Value& rhs) {
-    if (lhs.isNull() || rhs.isNull()) {
+    if (lhs.isNull() && rhs.isNull()) {
+        return true;
+    } else if (lhs.isNull() || rhs.isNull()) {
         return false;
     }
 

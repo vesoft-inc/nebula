@@ -21,8 +21,7 @@ public:
     virtual folly::Future<StatusOr<bool>> setConfig(const cpp2::ConfigModule& module,
                                                     const std::string& name,
                                                     const cpp2::ConfigType& type,
-                                                    const VariantType& value,
-                                                    const bool isForce) = 0;
+                                                    const VariantType& value) = 0;
 
     virtual folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
     getConfig(const cpp2::ConfigModule& module, const std::string& name) = 0;
