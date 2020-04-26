@@ -198,6 +198,12 @@ inline std::ostream& operator<<(std::ostream &os, const Status &status) {
     return os << status.toString();
 }
 
+#define NG_RETURN_IF_ERROR(...)                                                                    \
+    do {                                                                                           \
+        ::nebula::Status _status = (__VA_ARGS__);                                                  \
+        if (UNLIKELY(!_status.ok())) return _status;                                               \
+    } while (0)
+
 }   // namespace nebula
 
 #endif  // COMMON_BASE_STATUS_H_
