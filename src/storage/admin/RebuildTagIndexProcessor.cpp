@@ -79,9 +79,16 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
                                                           std::move(val),
                                                           space,
                                                           tagID);
+                if (reader == nullptr) {
+                    iter->next();
+                    continue;
+                }
                 auto values = collectIndexValues(reader.get(), item->get_fields());
-
-                auto indexKey = NebulaKeyUtils::vertexIndexKey(part, indexID, vertex, values);
+                if (!values.ok()) {
+                    continue;
+                }
+                auto indexKey = NebulaKeyUtils::vertexIndexKey(part, indexID,
+                                                               vertex, values.value());
                 data.emplace_back(std::move(indexKey), "");
                 batchNum += 1;
                 iter->next();

@@ -65,6 +65,7 @@ nebula_add_library(
     LookupExecutor.cpp
     UserExecutor.cpp
     PrivilegeExecutor.cpp
+    CloudAuthenticator.cpp
 )
 nebula_add_subdirectory(test)
 

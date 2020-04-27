@@ -615,8 +615,6 @@ std::string columnTypeToString(ColumnType type) {
             return "string";
         case ColumnType::DOUBLE:
             return "double";
-        case ColumnType::BIGINT:
-            return "bigint";
         case ColumnType::BOOL:
             return "bool";
         case ColumnType::TIMESTAMP:
@@ -656,8 +654,6 @@ OptVariantType TypeCastingExpression::eval(Getters &getters) const {
             return Expression::toDouble(result.value());
         case ColumnType::BOOL:
             return Expression::toBool(result.value());
-        case ColumnType::BIGINT:
-            return Status::Error("Type bigint not supported yet");
     }
     LOG(FATAL) << "casting to unknown type: " << static_cast<int>(type_);
 }
@@ -668,7 +664,19 @@ Status TypeCastingExpression::prepare() {
 }
 
 
-void TypeCastingExpression::encode(Cord &) const {
+void TypeCastingExpression::encode(Cord &cord) const {
+    cord << kindToInt(kind());
+    cord << static_cast<uint8_t>(type_);
+    operand_->encode(cord);
+}
+
+
+const char* TypeCastingExpression::decode(const char *pos, const char *end) {
+    THROW_IF_NO_SPACE(pos, end, 2UL);
+    type_ = *reinterpret_cast<const ColumnType*>(pos++);
+
+    operand_ = makeExpr(*reinterpret_cast<const uint8_t*>(pos++));
+    return operand_->decode(pos, end);
 }
 
 
@@ -909,6 +917,9 @@ std::string RelationalExpression::toString() const {
         case NE:
             buf += "!=";
             break;
+        case CONTAINS:
+            buf += " CONTAINS ";
+            break;
     }
     buf.append(right_->toString());
     buf += ')';
@@ -961,6 +972,10 @@ OptVariantType RelationalExpression::eval(Getters &getters) const {
                 }
             }
             return OptVariantType(l != r);
+        case CONTAINS:
+            if (isString(l) && isString(r)) {
+                return OptVariantType(contains(asString(l), asString(r)));
+            }
     }
 
     return OptVariantType(Status::Error("Wrong operator"));
@@ -1010,7 +1025,9 @@ void RelationalExpression::encode(Cord &cord) const {
 const char* RelationalExpression::decode(const char *pos, const char *end) {
     THROW_IF_NO_SPACE(pos, end, 2UL);
     op_ = *reinterpret_cast<const Operator*>(pos++);
-    DCHECK(op_ == LT || op_ == LE || op_ == GT || op_ == GE || op_ == EQ || op_ == NE);
+    DCHECK(op_ == LT || op_ == LE || op_ == GT ||
+            op_ == GE || op_ == EQ || op_ == NE ||
+            op_ == CONTAINS);
 
     left_ = makeExpr(*reinterpret_cast<const uint8_t*>(pos++));
     pos = left_->decode(pos, end);

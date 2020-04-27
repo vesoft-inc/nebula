@@ -69,6 +69,8 @@ You can use the `If NOT EXISTS` keywords when creating tags or edges. This keywo
 
     Only a single TTL_COL field can be specified.
 
+Details about TTL refer to the [TTL Doc](TTL.md).
+
 ### Examples
 
 ```ngql
@@ -88,10 +90,9 @@ nebula> CREATE TAG woman(name string, age int,
    TTL_DURATION = 100, TTL_COL = "create_time" -- time interval is 100s, starting from the create_time filed
 
 nebula> CREATE EDGE marriage(location string, since timestamp)
-    TTL_DURATION = 0, TTL_COL = since -- negative or zero, not expire
+    TTL_DURATION = 0, TTL_COL = "since" -- negative or zero, not expire
 
 nebula> CREATE TAG icecream(made timestamp, temperature int)
-   TTL_DURATION = 100, TTL_COL = made,
+   TTL_DURATION = 100, TTL_COL = "made",
    --  Data expires after TTL_DURATION
-
 ```
