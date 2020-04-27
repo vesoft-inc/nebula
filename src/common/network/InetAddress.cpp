@@ -9,7 +9,8 @@
 namespace nebula {
 namespace network {
 std::ostream& operator<<(std::ostream& os, const InetAddress& h) {
-    os << h.getAddressStr() << ":" << h.getPort();
+    os << "InetHostName: (" << h.getHostStr() << ") InetAddress " << h.getAddressStr() << ":"
+       << h.getPort();
     return os;
 }
 
@@ -40,3 +41,8 @@ const std::string InetAddress::encode() const {
 }
 }   // namespace network
 }   // namespace nebula
+namespace std {
+size_t hash<nebula::cpp2::HostAddr>::operator()(const nebula::cpp2::HostAddr& addr) const {
+    return folly::hash::jenkins_rev_mix32(addr.get_ip());
+}
+}   // namespace std

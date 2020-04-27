@@ -526,10 +526,15 @@ void MetaClient::getResponse(Request req,
 }
 
 std::vector<network::InetAddress> MetaClient::to(
-    const std::vector<nebula::cpp2::HostAddr>& tHosts) {
+    const std::vector<nebula::cpp2::HostAddr>& tHosts,
+    const std::unordered_map<nebula::cpp2::HostAddr, std::string>& domains) {
     std::vector<network::InetAddress> hosts;
     hosts.resize(tHosts.size());
-    std::transform(tHosts.begin(), tHosts.end(), hosts.begin(), [](const auto& h) {
+    std::transform(tHosts.begin(), tHosts.end(), hosts.begin(), [&domains](const auto& h) {
+        auto it = domains.find(h);
+        if (it != domains.end()) {
+            return network::InetAddress(h.get_ip(), h.get_port(), it->second);
+        }
         return network::InetAddress(h.get_ip(), h.get_port());
     });
     return hosts;
@@ -799,8 +804,10 @@ MetaClient::getPartsAlloc(GraphSpaceID spaceId) {
                     return client->future_getPartsAlloc(request);
                 }, [this] (cpp2::GetPartsAllocResp&& resp) -> decltype(auto) {
                     std::unordered_map<PartitionID, std::vector<network::InetAddress>> parts;
+                    LOG(INFO) << "getPartsAlloc part size: " << resp.parts.size()
+                              << "domain size: " << resp.domains.size();
                     for (auto it = resp.parts.begin(); it != resp.parts.end(); it++) {
-                        parts.emplace(it->first, to(it->second));
+                        parts.emplace(it->first, to(it->second, resp.domains));
                     }
                     return parts;
                 }, std::move(promise));

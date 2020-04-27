@@ -60,7 +60,8 @@ public:
         if (srvcAddr.isZero()) {
             return srvcAddr;
         }
-        return network::InetAddress(srvcAddr.toLongHBO(), srvcAddr.getPort() + 1);
+        return network::InetAddress(
+            srvcAddr.toLongHBO(), srvcAddr.getPort() + 1, srvcAddr.getHostStr());
     }
 
     static network::InetAddress getStoreAddr(const network::InetAddress& raftAddr) {
@@ -68,7 +69,8 @@ public:
         if (raftAddr.isZero()) {
             return raftAddr;
         }
-        return network::InetAddress(raftAddr.toLongHBO(), raftAddr.getPort() - 1);
+        return network::InetAddress(
+            raftAddr.toLongHBO(), raftAddr.getPort() - 1, raftAddr.getHostStr());
     }
 
     // Pull meta information from the PartManager and initiate

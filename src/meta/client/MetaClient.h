@@ -558,7 +558,9 @@ protected:
                      int32_t retry = 0,
                      int32_t retryLimit = FLAGS_meta_client_retry_times);
 
-    std::vector<network::InetAddress> to(const std::vector<nebula::cpp2::HostAddr>& hosts);
+    std::vector<network::InetAddress> to(
+        const std::vector<nebula::cpp2::HostAddr>& hosts,
+        const std::unordered_map<nebula::cpp2::HostAddr, std::string>& domains);
 
     std::vector<SpaceIdName> toSpaceIdName(const std::vector<cpp2::IdName>& tIdNames);
 

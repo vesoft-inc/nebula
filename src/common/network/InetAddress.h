@@ -26,6 +26,11 @@ public:
         }
     }
 
+    explicit InetAddress(uint32_t ip, uint16_t port, std::string hostName)
+        : InetAddress(ip, port) {
+        hostName_ = std::move(hostName);
+    }
+
     // host byte order (Compatible with previous versions)
     InetAddress(uint32_t ip, uint16_t port = 0) : addrs_(folly::IPAddress::fromLongHBO(ip), port) {} // NOLINT
 

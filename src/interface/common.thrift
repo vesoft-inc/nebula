@@ -104,7 +104,7 @@ struct IndexItem {
 struct HostAddr {
     1: IPv4  ip,
     2: Port  port,
-}
+} (cpp.declare_hash)
 
 struct Pair {
     1: string key,
