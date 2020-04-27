@@ -256,79 +256,79 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %%
 
 name_label
-     : LABEL { $$ = $1; }
-     | unreserved_keyword { $$ = $1; }
-     ;
+    : LABEL { $$ = $1; }
+    | unreserved_keyword { $$ = $1; }
+    ;
 
 unreserved_keyword
-     : KW_SPACE              { $$ = new std::string("space"); }
-     | KW_VALUES             { $$ = new std::string("values"); }
-     | KW_HOSTS              { $$ = new std::string("hosts"); }
-     | KW_SPACES             { $$ = new std::string("spaces"); }
-     | KW_USER               { $$ = new std::string("user"); }
-     | KW_USERS              { $$ = new std::string("users"); }
-     | KW_PASSWORD           { $$ = new std::string("password"); }
-     | KW_ROLE               { $$ = new std::string("role"); }
-     | KW_ROLES              { $$ = new std::string("roles"); }
-     | KW_GOD                { $$ = new std::string("god"); }
-     | KW_ADMIN              { $$ = new std::string("admin"); }
-     | KW_DBA                { $$ = new std::string("dba"); }
-     | KW_GUEST              { $$ = new std::string("guest"); }
-     | KW_GROUP              { $$ = new std::string("group"); }
-     | KW_COUNT              { $$ = new std::string("count"); }
-     | KW_SUM                { $$ = new std::string("sum"); }
-     | KW_AVG                { $$ = new std::string("avg"); }
-     | KW_MAX                { $$ = new std::string("max"); }
-     | KW_MIN                { $$ = new std::string("min"); }
-     | KW_STD                { $$ = new std::string("std"); }
-     | KW_BIT_AND            { $$ = new std::string("bit_and"); }
-     | KW_BIT_OR             { $$ = new std::string("bit_or"); }
-     | KW_BIT_XOR            { $$ = new std::string("bit_xor"); }
-     | KW_PATH               { $$ = new std::string("path"); }
-     | KW_DATA               { $$ = new std::string("data"); }
-     | KW_LEADER             { $$ = new std::string("leader"); }
-     | KW_UUID               { $$ = new std::string("uuid"); }
-     | KW_JOB                { $$ = new std::string("job"); }
-     | KW_JOBS               { $$ = new std::string("jobs"); }
-     | KW_BIDIRECT           { $$ = new std::string("bidirect"); }
-     | KW_OFFLINE            { $$ = new std::string("offline"); }
-     | KW_FORCE              { $$ = new std::string("force"); }
-     | KW_STATUS             { $$ = new std::string("status"); }
-     | KW_PART               { $$ = new std::string("part"); }
-     | KW_PARTS              { $$ = new std::string("parts"); }
-     | KW_DEFAULT            { $$ = new std::string("default"); }
-     | KW_CONFIGS            { $$ = new std::string("configs"); }
-     | KW_ACCOUNT            { $$ = new std::string("account"); }
-     | KW_HDFS               { $$ = new std::string("hdfs"); }
-     | KW_PARTITION_NUM      { $$ = new std::string("partition_num"); }
-     | KW_REPLICA_FACTOR     { $$ = new std::string("replica_factor"); }
-     | KW_CHARSET            { $$ = new std::string("charset"); }
-     | KW_COLLATE            { $$ = new std::string("collate"); }
-     | KW_COLLATION          { $$ = new std::string("collation"); }
-     | KW_TTL_DURATION       { $$ = new std::string("ttl_duration"); }
-     | KW_TTL_COL            { $$ = new std::string("ttl_col"); }
-     | KW_SNAPSHOT           { $$ = new std::string("snapshot"); }
-     | KW_SNAPSHOTS          { $$ = new std::string("snapshots"); }
-     | KW_GRAPH              { $$ = new std::string("graph"); }
-     | KW_META               { $$ = new std::string("meta"); }
-     | KW_STORAGE            { $$ = new std::string("storage"); }
-     | KW_ALL                { $$ = new std::string("all"); }
-     | KW_SHORTEST           { $$ = new std::string("shortest"); }
-     | KW_COUNT_DISTINCT     { $$ = new std::string("count_distinct"); }
-     ;
+    : KW_SPACE              { $$ = new std::string("space"); }
+    | KW_VALUES             { $$ = new std::string("values"); }
+    | KW_HOSTS              { $$ = new std::string("hosts"); }
+    | KW_SPACES             { $$ = new std::string("spaces"); }
+    | KW_USER               { $$ = new std::string("user"); }
+    | KW_USERS              { $$ = new std::string("users"); }
+    | KW_PASSWORD           { $$ = new std::string("password"); }
+    | KW_ROLE               { $$ = new std::string("role"); }
+    | KW_ROLES              { $$ = new std::string("roles"); }
+    | KW_GOD                { $$ = new std::string("god"); }
+    | KW_ADMIN              { $$ = new std::string("admin"); }
+    | KW_DBA                { $$ = new std::string("dba"); }
+    | KW_GUEST              { $$ = new std::string("guest"); }
+    | KW_GROUP              { $$ = new std::string("group"); }
+    | KW_COUNT              { $$ = new std::string("count"); }
+    | KW_SUM                { $$ = new std::string("sum"); }
+    | KW_AVG                { $$ = new std::string("avg"); }
+    | KW_MAX                { $$ = new std::string("max"); }
+    | KW_MIN                { $$ = new std::string("min"); }
+    | KW_STD                { $$ = new std::string("std"); }
+    | KW_BIT_AND            { $$ = new std::string("bit_and"); }
+    | KW_BIT_OR             { $$ = new std::string("bit_or"); }
+    | KW_BIT_XOR            { $$ = new std::string("bit_xor"); }
+    | KW_PATH               { $$ = new std::string("path"); }
+    | KW_DATA               { $$ = new std::string("data"); }
+    | KW_LEADER             { $$ = new std::string("leader"); }
+    | KW_UUID               { $$ = new std::string("uuid"); }
+    | KW_JOB                { $$ = new std::string("job"); }
+    | KW_JOBS               { $$ = new std::string("jobs"); }
+    | KW_BIDIRECT           { $$ = new std::string("bidirect"); }
+    | KW_OFFLINE            { $$ = new std::string("offline"); }
+    | KW_FORCE              { $$ = new std::string("force"); }
+    | KW_STATUS             { $$ = new std::string("status"); }
+    | KW_PART               { $$ = new std::string("part"); }
+    | KW_PARTS              { $$ = new std::string("parts"); }
+    | KW_DEFAULT            { $$ = new std::string("default"); }
+    | KW_CONFIGS            { $$ = new std::string("configs"); }
+    | KW_ACCOUNT            { $$ = new std::string("account"); }
+    | KW_HDFS               { $$ = new std::string("hdfs"); }
+    | KW_PARTITION_NUM      { $$ = new std::string("partition_num"); }
+    | KW_REPLICA_FACTOR     { $$ = new std::string("replica_factor"); }
+    | KW_CHARSET            { $$ = new std::string("charset"); }
+    | KW_COLLATE            { $$ = new std::string("collate"); }
+    | KW_COLLATION          { $$ = new std::string("collation"); }
+    | KW_TTL_DURATION       { $$ = new std::string("ttl_duration"); }
+    | KW_TTL_COL            { $$ = new std::string("ttl_col"); }
+    | KW_SNAPSHOT           { $$ = new std::string("snapshot"); }
+    | KW_SNAPSHOTS          { $$ = new std::string("snapshots"); }
+    | KW_GRAPH              { $$ = new std::string("graph"); }
+    | KW_META               { $$ = new std::string("meta"); }
+    | KW_STORAGE            { $$ = new std::string("storage"); }
+    | KW_ALL                { $$ = new std::string("all"); }
+    | KW_SHORTEST           { $$ = new std::string("shortest"); }
+    | KW_COUNT_DISTINCT     { $$ = new std::string("count_distinct"); }
+    ;
 
 agg_function
-     : KW_COUNT              { $$ = new std::string("COUNT"); }
-     | KW_COUNT_DISTINCT     { $$ = new std::string("COUNT_DISTINCT"); }
-     | KW_SUM                { $$ = new std::string("SUM"); }
-     | KW_AVG                { $$ = new std::string("AVG"); }
-     | KW_MAX                { $$ = new std::string("MAX"); }
-     | KW_MIN                { $$ = new std::string("MIN"); }
-     | KW_STD                { $$ = new std::string("STD"); }
-     | KW_BIT_AND            { $$ = new std::string("BIT_AND"); }
-     | KW_BIT_OR             { $$ = new std::string("BIT_OR"); }
-     | KW_BIT_XOR            { $$ = new std::string("BIT_XOR"); }
-     ;
+    : KW_COUNT              { $$ = new std::string("COUNT"); }
+    | KW_COUNT_DISTINCT     { $$ = new std::string("COUNT_DISTINCT"); }
+    | KW_SUM                { $$ = new std::string("SUM"); }
+    | KW_AVG                { $$ = new std::string("AVG"); }
+    | KW_MAX                { $$ = new std::string("MAX"); }
+    | KW_MIN                { $$ = new std::string("MIN"); }
+    | KW_STD                { $$ = new std::string("STD"); }
+    | KW_BIT_AND            { $$ = new std::string("BIT_AND"); }
+    | KW_BIT_OR             { $$ = new std::string("BIT_OR"); }
+    | KW_BIT_XOR            { $$ = new std::string("BIT_XOR"); }
+    ;
 
 constant_expression
     : INTEGER {
