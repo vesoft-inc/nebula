@@ -24,6 +24,7 @@
 #include "meta/ActiveHostsMan.h"
 #include "meta/processors/jobMan/JobManager.h"
 #include "meta/RootUserMan.h"
+#include "meta/MetaServiceUtils.h"
 
 using nebula::operator<<;
 using nebula::ProcessUtils;
@@ -46,6 +47,8 @@ DEFINE_int32(num_worker_threads, 32, "Number of workers");
 DEFINE_string(pid_file, "pids/nebula-metad.pid", "File to hold the process id");
 DEFINE_bool(daemonize, true, "Whether run as a daemon process");
 DECLARE_bool(check_leader);
+DEFINE_bool(upgrade_meta_data, false, "old stored meta data may have different format "
+                                      " set to true to do meta data upgrade");
 
 static std::unique_ptr<apache::thrift::ThriftServer> gServer;
 static void signalHandler(int sig);
@@ -129,6 +132,11 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
             }
         }
     }
+
+    if (FLAGS_upgrade_meta_data) {
+        nebula::meta::MetaServiceUtils::upgradeMetaDataV1toV2(kvstore.get());
+    }
+
     LOG(INFO) << "Nebula store init succeeded, clusterId " << gClusterId;
     return kvstore;
 }
@@ -249,7 +257,7 @@ int main(int argc, char *argv[]) {
         if (nebula::value(ret) == localhost) {
             LOG(INFO) << "Check and init root user";
             if (!nebula::meta::RootUserMan::isUserExists(kvstore.get())) {
-                if(!nebula::meta::RootUserMan::initRootUser(kvstore.get())) {
+                if (!nebula::meta::RootUserMan::initRootUser(kvstore.get())) {
                     LOG(ERROR) << "Init root user failed";
                     return EXIT_FAILURE;
                 }

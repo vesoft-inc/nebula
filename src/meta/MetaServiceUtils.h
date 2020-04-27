@@ -12,6 +12,9 @@
 #include "datatypes/HostAddr.h"
 #include "interface/gen-cpp2/meta_types.h"
 
+
+#include "kvstore/NebulaStore.h"
+
 namespace nebula {
 namespace meta {
 
@@ -54,13 +57,27 @@ public:
 
     static std::string partVal(const std::vector<HostAddr>& hosts);
 
+    static std::string partValV1(const std::vector<HostAddr>& hosts);
+
+    static std::string partValV2(const std::vector<HostAddr>& hosts);
+
     static const std::string& partPrefix();
 
     static std::string partPrefix(GraphSpaceID spaceId);
 
-    static std::vector<HostAddr> parsePartVal(folly::StringPiece val);
+    static std::string encodeHostAddrV2(int ip, int port);
+
+    static HostAddr decodeHostAddrV2(folly::StringPiece val, int& offset);
+
+    static std::vector<HostAddr> parsePartVal(folly::StringPiece val, int parNum = 0);
+
+    static std::vector<HostAddr> parsePartValV1(folly::StringPiece val);
+
+    static std::vector<HostAddr> parsePartValV2(folly::StringPiece val);
 
     static std::string hostKey(IPv4 ip, Port port);
+
+    static std::string hostKeyV2(IPv4 ip, Port port);
 
     static std::string hostValOnline();
 
@@ -70,13 +87,23 @@ public:
 
     static HostAddr parseHostKey(folly::StringPiece key);
 
+    static HostAddr parseHostKeyV1(folly::StringPiece key);
+
+    static HostAddr parseHostKeyV2(folly::StringPiece key);
+
     static std::string leaderKey(IPv4 ip, Port port);
+
+    static std::string leaderKeyV2(IPv4 ip, Port port);
 
     static std::string leaderVal(const LeaderParts& leaderParts);
 
     static const std::string& leaderPrefix();
 
     static HostAddr parseLeaderKey(folly::StringPiece key);
+
+    static HostAddr parseLeaderKeyV1(folly::StringPiece key);
+
+    static HostAddr parseLeaderKeyV2(folly::StringPiece key);
 
     static LeaderParts parseLeaderVal(folly::StringPiece val);
 
@@ -201,6 +228,8 @@ public:
     static std::string parseSnapshotName(folly::StringPiece rawData);
 
     static const std::string& snapshotPrefix();
+
+    static void upgradeMetaDataV1toV2(nebula::kvstore::KVStore* kv);
 };
 
 }  // namespace meta

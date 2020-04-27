@@ -5,6 +5,7 @@
  */
 
 #include "meta/MetaServiceUtils.h"
+#include "network/NetworkUtils.h"
 #include <thrift/lib/cpp2/protocol/Serializer.h>
 #include <thrift/lib/cpp2/protocol/CompactProtocol.h>
 
@@ -29,6 +30,8 @@ const std::string kLeadersTable        = "__leaders__";          // NOLINT
 
 const std::string kHostOnline  = "Online";       // NOLINT
 const std::string kHostOffline = "Offline";      // NOLINT
+
+const int kMaxIpAddrLen = 15;   // '255.255.255.255'
 
 std::string MetaServiceUtils::lastUpdateTimeKey() {
     std::string key;
@@ -96,6 +99,10 @@ PartitionID MetaServiceUtils::parsePartKeyPartId(folly::StringPiece key) {
 }
 
 std::string MetaServiceUtils::partVal(const std::vector<HostAddr>& hosts) {
+    return partValV2(hosts);
+}
+
+std::string MetaServiceUtils::partValV1(const std::vector<HostAddr>& hosts) {
     std::string val;
     val.reserve(hosts.size() * (sizeof(IPv4) + sizeof(Port)));
     for (auto& h : hosts) {
@@ -103,6 +110,47 @@ std::string MetaServiceUtils::partVal(const std::vector<HostAddr>& hosts) {
            .append(reinterpret_cast<const char*>(&h.port), sizeof(h.port));
     }
     return val;
+}
+
+// dataVer(int) + vectorSize(size_t) + vector of (strIp(string) + port(int))
+std::string MetaServiceUtils::partValV2(const std::vector<HostAddr>& hosts) {
+    std::string val;
+    int dataVersion = 2;
+    auto size = hosts.size();
+    val.reserve(sizeof(size_t) * 2 + hosts.size() * (kMaxIpAddrLen + sizeof(Port)));
+    val.append(reinterpret_cast<const char*>(&dataVersion), sizeof(int));
+    val.append(reinterpret_cast<const char*>(&size), sizeof(size_t));
+    for (auto& h : hosts) {
+        val.append(encodeHostAddrV2(h.ip, h.port));
+    }
+    return val;
+}
+
+// strIp(string) + port(int)
+std::string MetaServiceUtils::encodeHostAddrV2(int ip, int port) {
+    std::string ret;
+    std::string strIp = nebula::network::NetworkUtils::intToIPv4(ip);
+    int len = strIp.size();
+    ret.append(reinterpret_cast<const char*>(&len), sizeof(len))
+       .append(strIp.data(), strIp.size())
+       .append(reinterpret_cast<const char*>(&port), sizeof(port));
+    return ret;
+}
+
+// strIp(string) + port(int)
+HostAddr MetaServiceUtils::decodeHostAddrV2(folly::StringPiece val, int& offset) {
+    HostAddr host;
+    int len = *reinterpret_cast<const int*>(val.data() + offset);
+    offset += sizeof(len);
+    std::string ipStr(val.data() + offset, len);
+    if (!nebula::network::NetworkUtils::ipv4ToInt(ipStr, host.ip)) {
+        LOG(ERROR) << "convert invalid ip: " << ipStr;
+        return host;
+    }
+    offset += len;
+    host.port = *reinterpret_cast<const int32_t*>(val.data() + offset);
+    offset += sizeof(host.port);
+    return host;
 }
 
 std::string MetaServiceUtils::partPrefix(GraphSpaceID spaceId) {
@@ -113,7 +161,16 @@ std::string MetaServiceUtils::partPrefix(GraphSpaceID spaceId) {
     return prefix;
 }
 
-std::vector<HostAddr> MetaServiceUtils::parsePartVal(folly::StringPiece val) {
+std::vector<HostAddr> MetaServiceUtils::parsePartVal(folly::StringPiece val, int partNum) {
+    static const size_t unitSizeV1 = sizeof(int64_t);
+    if (unitSizeV1 * partNum == val.size()) {
+        return parsePartValV1(val);
+    }
+    return parsePartValV2(val);
+}
+
+// partion val is ip(int) + port(int)
+std::vector<HostAddr> MetaServiceUtils::parsePartValV1(folly::StringPiece val) {
     std::vector<HostAddr> hosts;
     static const size_t unitSize = sizeof(int32_t) * 2;
     auto hostsNum = val.size() / unitSize;
@@ -130,12 +187,30 @@ std::vector<HostAddr> MetaServiceUtils::parsePartVal(folly::StringPiece val) {
     return hosts;
 }
 
+// dataVer(int) + vectorSize(size_t) + vector of (strIpV4(string) + port(int))
+std::vector<HostAddr> MetaServiceUtils::parsePartValV2(folly::StringPiece val) {
+    std::vector<HostAddr> hosts;
+    int dataVer = *reinterpret_cast<const int32_t*>(val.data());
+    int offset = sizeof(dataVer);
+    size_t hostsNum = *reinterpret_cast<const decltype(hostsNum)*>(val.data() + offset);
+    offset += sizeof(hostsNum);
+
+    hosts.reserve(hostsNum);
+    for (auto i = 0U; i < hostsNum; i++) {
+        HostAddr h = decodeHostAddrV2(val, offset);
+        hosts.emplace_back(std::move(h));
+    }
+    return hosts;
+}
+
 std::string MetaServiceUtils::hostKey(IPv4 ip, Port port) {
+    return hostKeyV2(ip, port);
+}
+
+std::string MetaServiceUtils::hostKeyV2(IPv4 ip, Port port) {
     std::string key;
-    key.reserve(kHostsTable.size() + sizeof(IPv4) + sizeof(Port));
     key.append(kHostsTable.data(), kHostsTable.size())
-       .append(reinterpret_cast<const char*>(&ip), sizeof(ip))
-       .append(reinterpret_cast<const char*>(&port), sizeof(port));
+       .append(encodeHostAddrV2(ip, port));
     return key;
 }
 
@@ -152,17 +227,33 @@ const std::string& MetaServiceUtils::hostPrefix() {
 }
 
 HostAddr MetaServiceUtils::parseHostKey(folly::StringPiece key) {
+    if (key.size() == kHostsTable.size() + sizeof(int64_t)) {
+        return parseHostKeyV1(key);
+    }
+    return parseHostKeyV2(key);
+}
+
+HostAddr MetaServiceUtils::parseHostKeyV1(folly::StringPiece key) {
     HostAddr host;
     memcpy(&host, key.data() + kHostsTable.size(), sizeof(host));
     return host;
 }
 
+HostAddr MetaServiceUtils::parseHostKeyV2(folly::StringPiece key) {
+    key.advance(kHostsTable.size());
+    int offset = 0;
+    return decodeHostAddrV2(key, offset);
+}
+
 std::string MetaServiceUtils::leaderKey(IPv4 ip, Port port) {
+    return leaderKeyV2(ip, port);
+}
+
+std::string MetaServiceUtils::leaderKeyV2(IPv4 ip, Port port) {
     std::string key;
-    key.reserve(kLeadersTable.size() + sizeof(IPv4) + sizeof(Port));
+    key.reserve(kLeadersTable.size() + kMaxIpAddrLen + sizeof(Port));
     key.append(kLeadersTable.data(), kLeadersTable.size());
-    key.append(reinterpret_cast<const char*>(&ip), sizeof(ip));
-    key.append(reinterpret_cast<const char*>(&port), sizeof(port));
+    key.append(encodeHostAddrV2(ip, port));
     return key;
 }
 
@@ -186,9 +277,22 @@ const std::string& MetaServiceUtils::leaderPrefix() {
 }
 
 HostAddr MetaServiceUtils::parseLeaderKey(folly::StringPiece key) {
+    if (key.size() == kLeadersTable.size() + sizeof(int64_t)) {
+        return parseLeaderKeyV1(key);
+    }
+    return parseLeaderKeyV2(key);
+}
+
+HostAddr MetaServiceUtils::parseLeaderKeyV1(folly::StringPiece key) {
     HostAddr host;
     memcpy(&host, key.data() + kLeadersTable.size(), sizeof(host));
     return host;
+}
+
+HostAddr MetaServiceUtils::parseLeaderKeyV2(folly::StringPiece key) {
+    key.advance(kLeadersTable.size());
+    int offset = 0;
+    return decodeHostAddrV2(key, offset);
 }
 
 LeaderParts MetaServiceUtils::parseLeaderVal(folly::StringPiece val) {
@@ -734,6 +838,100 @@ std::string MetaServiceUtils::parseSnapshotName(folly::StringPiece rawData) {
 
 const std::string& MetaServiceUtils::snapshotPrefix() {
     return kSnapshotsTable;
+}
+
+// when do nebula upgrade, some format data in sys table may change
+void MetaServiceUtils::upgradeMetaDataV1toV2(nebula::kvstore::KVStore* kv) {
+    const int kDefaultSpaceId = 0;
+    const int kDefaultPartId = 0;
+    auto suc = nebula::kvstore::ResultCode::SUCCEEDED;
+    using nebula::meta::MetaServiceUtils;
+    CHECK_NOTNULL(kv);
+    std::vector<std::string> removeData;
+    std::vector<nebula::kvstore::KV> data;
+    {
+        // 1. kPartsTable
+        const auto& spacePrefix = nebula::meta::MetaServiceUtils::spacePrefix();
+        std::unique_ptr<nebula::kvstore::KVIterator> itSpace;
+        if (kv->prefix(kDefaultSpaceId, kDefaultPartId, spacePrefix, &itSpace) != suc) {
+            return;
+        }
+        while (itSpace->valid()) {
+            auto spaceId = MetaServiceUtils::spaceId(itSpace->key());
+            auto partPrefix = MetaServiceUtils::partPrefix(spaceId);
+            std::unique_ptr<nebula::kvstore::KVIterator> itPart;
+            if (kv->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &itPart) != suc) {
+                return;
+            }
+            auto spaceProp = MetaServiceUtils::parseSpace(itSpace->val());
+            auto partNum = spaceProp.get_partition_num();
+            while (itPart->valid()) {
+                auto formatSizeV1 = sizeof(int64_t) * partNum;
+                if (itSpace->val().size() != formatSizeV1) {
+                    continue;   // skip data v2
+                }
+                auto hosts = MetaServiceUtils::parsePartValV1(itPart->val());
+                removeData.emplace_back(itPart->key());
+                data.emplace_back(itPart->key(), MetaServiceUtils::partValV2(hosts));
+            }
+        }
+    }
+
+    {
+        // 2. kHostsTable
+        const auto& hostPrefix = nebula::meta::MetaServiceUtils::hostPrefix();
+        std::unique_ptr<nebula::kvstore::KVIterator> iter;
+        if (kv->prefix(kDefaultSpaceId, kDefaultPartId, hostPrefix, &iter) != suc) {
+            return;
+        }
+        while (iter->valid()) {
+            auto szKeyV1 = hostPrefix.size() + sizeof(int64_t);
+            if (iter->key().size() != szKeyV1) {
+                continue;
+            }
+            auto host = nebula::meta::MetaServiceUtils::parseHostKey(iter->key());
+            removeData.emplace_back(iter->key());
+            data.emplace_back(MetaServiceUtils::hostKey(host.ip, host.port), iter->val());
+        }
+    }
+
+    {
+        // 3. kLeadersTable
+        const auto& leaderPrefix = nebula::meta::MetaServiceUtils::leaderPrefix();
+        std::unique_ptr<nebula::kvstore::KVIterator> iter;
+        auto ret = kv->prefix(kDefaultSpaceId, kDefaultPartId, leaderPrefix, &iter);
+        if (ret != nebula::kvstore::ResultCode::SUCCEEDED) {
+            return;
+        }
+        while (iter->valid()) {
+            auto szKeyV1 = leaderPrefix.size() + sizeof(int64_t);
+            if (iter->key().size() != szKeyV1) {
+                continue;
+            }
+            auto host = nebula::meta::MetaServiceUtils::parseLeaderKey(iter->key());
+            removeData.emplace_back(iter->key());
+            data.emplace_back(MetaServiceUtils::leaderKey(host.ip, host.port), iter->val());
+        }
+    }
+
+    folly::Baton<true, std::atomic> baton;
+    kv->asyncMultiRemove(
+        kDefaultSpaceId, kDefaultPartId, removeData, [&baton](nebula::kvstore::ResultCode code) {
+            UNUSED(code);
+            baton.post();
+        });
+    baton.wait();
+
+    if (!data.empty()) {
+        baton.reset();
+        kv->asyncMultiPut(
+            kDefaultSpaceId, kDefaultPartId, std::move(data),
+            [&](nebula::kvstore::ResultCode code) {
+                UNUSED(code);
+                baton.post();
+            });
+        baton.wait();
+    }
 }
 
 }  // namespace meta

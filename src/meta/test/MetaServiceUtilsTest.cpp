@@ -10,6 +10,7 @@
 #include <fstream>
 #include "fs/TempFile.h"
 #include "meta/MetaServiceUtils.h"
+#include "network/NetworkUtils.h"
 
 namespace nebula {
 namespace meta {
@@ -49,6 +50,101 @@ TEST(MetaServiceUtilsTest, PartKeyTest) {
     for (int i = 0; i < 10; i++) {
         ASSERT_EQ(i * 20 + 1, result[i].ip);
         ASSERT_EQ(i * 20 + 2, result[i].port);
+    }
+}
+
+TEST(MetaServiceUtilsTest, storeStrIpCodecTest) {
+    int N = 4;
+    std::vector<std::string> strIps(N);
+    std::vector<int> ips(N);
+    std::vector<int> ports;
+    std::vector<HostAddr> hosts;
+    for (int i = 0; i < N; ++i) {
+        strIps[i] = folly::sformat("192.168.8.{0}", i);
+        ASSERT_TRUE(nebula::network::NetworkUtils::ipv4ToInt(strIps[i], ips[i]));
+        ports.emplace_back(2000 + i);
+        hosts.emplace_back(ips[i], ports[i]);
+    }
+
+    {
+        // kPartsTable : value
+        auto partVal = MetaServiceUtils::partValV2(hosts);
+        auto result = MetaServiceUtils::parsePartValV2(partVal);
+        ASSERT_EQ(hosts.size(), result.size());
+        for (int i = 0; i < N; i++) {
+            ASSERT_EQ(ips[i], result[i].ip);
+            LOG(INFO) << folly::format("ips[{0}]={1}", i,
+                                        nebula::network::NetworkUtils::intToIPv4(ips[i]));
+            ASSERT_EQ(ports[i], result[i].port);
+        }
+    }
+
+    {
+        // kHostsTable : key
+        auto key = MetaServiceUtils::hostKey(ips[0], ports[0]);
+        auto host = MetaServiceUtils::parseHostKeyV2(key);
+        ASSERT_EQ(host.ip, ips[0]);
+        ASSERT_EQ(host.port, ports[0]);
+    }
+
+    {
+        // kLeadersTable : key
+        auto key = MetaServiceUtils::leaderKey(ips[0], ports[0]);
+        auto host = MetaServiceUtils::parseLeaderKeyV2(key);
+        ASSERT_EQ(host.ip, ips[0]);
+        ASSERT_EQ(host.port, ports[0]);
+    }
+}
+
+std::string hostKeyV1(IPv4 ip, Port port) {
+    const std::string kHostsTable          = "__hosts__";          // NOLINT
+    std::string key;
+    key.reserve(kHostsTable.size() + sizeof(IPv4) + sizeof(Port));
+    key.append(kHostsTable.data(), kHostsTable.size())
+       .append(reinterpret_cast<const char*>(&ip), sizeof(ip))
+       .append(reinterpret_cast<const char*>(&port), sizeof(port));
+    return key;
+}
+
+std::string leaderKeyV1(IPv4 ip, Port port) {
+    const std::string kLeadersTable        = "__leaders__";          // NOLINT
+    std::string key;
+    key.reserve(kLeadersTable.size() + sizeof(IPv4) + sizeof(Port));
+    key.append(kLeadersTable.data(), kLeadersTable.size());
+    key.append(reinterpret_cast<const char*>(&ip), sizeof(ip));
+    key.append(reinterpret_cast<const char*>(&port), sizeof(port));
+    return key;
+}
+
+TEST(MetaServiceUtilsTest, storeStrIpBackwardCompatibilityTest) {
+    int N = 4;
+    std::vector<std::string> strIps(N);
+    std::vector<int> ips(N);
+    std::vector<int> ports;
+    std::vector<HostAddr> hosts;
+    for (int i = 0; i < N; ++i) {
+        strIps[i] = folly::sformat("192.168.8.{0}", i);
+        ASSERT_TRUE(nebula::network::NetworkUtils::ipv4ToInt(strIps[i], ips[i]));
+        ports.emplace_back(2000 + i);
+        hosts.emplace_back(ips[i], ports[i]);
+    }
+
+    {
+        // kHostsTable : key
+        auto key = hostKeyV1(ips[0], ports[0]);
+        LOG(INFO) << "before parseHostKeyV2(key)";
+        auto host = MetaServiceUtils::parseHostKey(key);
+        LOG(INFO) << "after parseHostKeyV2(key)";
+        ASSERT_EQ(host.ip, ips[0]);
+        ASSERT_EQ(host.port, ports[0]);
+    }
+
+    {
+        // kLeadersTable : key
+        auto key = leaderKeyV1(ips[0], ports[0]);
+        auto host = MetaServiceUtils::parseLeaderKey(key);
+        ASSERT_EQ(host.ip, ips[0]);
+        ASSERT_EQ(host.port, ports[0]);
     }
 }
 
