@@ -14,6 +14,7 @@
 
 namespace nebula {
 namespace graph {
+
 using ColDef = std::pair<std::string, Value::Type>;
 using ColsDef = std::vector<ColDef>;
 
@@ -62,6 +63,10 @@ public:
         return plan_;
     }
 
+    ClientSession* session() const {
+        return session_;
+    }
+
 private:
     meta::SchemaManager*                                schemaMng_{nullptr};
     ClientSession*                                      session_{nullptr};
@@ -69,6 +74,7 @@ private:
     std::unordered_map<std::string, ColsDef>            vars_;
     ExecutionPlan*                                      plan_{nullptr};
 };
+
 }  // namespace graph
 }  // namespace nebula
 #endif

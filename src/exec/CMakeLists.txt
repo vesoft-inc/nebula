@@ -1,0 +1,27 @@
+# Copyright (c) 2020 vesoft inc. All rights reserved.
+#
+# This source code is licensed under Apache 2.0 License,
+# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+#
+
+nebula_add_library(
+    exec_obj OBJECT
+    Executor.cpp
+    query/AggregateExecutor.cpp
+    query/DedupExecutor.cpp
+    query/FilterExecutor.cpp
+    query/GetEdgesExecutor.cpp
+    query/GetNeighborsExecutor.cpp
+    query/GetVerticesExecutor.cpp
+    query/IntersectExecutor.cpp
+    query/LimitExecutor.cpp
+    query/LoopExecutor.cpp
+    query/MultiOutputsExecutor.cpp
+    query/MinusExecutor.cpp
+    query/ProjectExecutor.cpp
+    query/StartExecutor.cpp
+    query/SelectExecutor.cpp
+    query/SortExecutor.cpp
+    query/ReadIndexExecutor.cpp
+    query/UnionExecutor.cpp
+    )

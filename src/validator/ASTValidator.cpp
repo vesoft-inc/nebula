@@ -6,14 +6,16 @@
 
 #include "validator/ASTValidator.h"
 
+#include "planner/ExecutionPlan.h"
+
 namespace nebula {
 namespace graph {
-StatusOr<std::unique_ptr<ExecutionPlan>> ASTValidator::validate() {
+
+Status ASTValidator::validate(ExecutionPlan* plan) {
     // CHECK(!!session_);
     // CHECK(!!schemaMng_);
     validateContext_ = std::make_unique<ValidateContext>();
-    auto plan = std::make_unique<ExecutionPlan>();
-    validateContext_->setPlan(plan.get());
+    validateContext_->setPlan(plan);
     validateContext_->setSession(session_);
     validateContext_->setSchemaMng(schemaMng_);
 
@@ -34,7 +36,8 @@ StatusOr<std::unique_ptr<ExecutionPlan>> ASTValidator::validate() {
     }
 
     plan->setRoot(root);
-    return plan;
+    return Status::OK();
 }
+
 }  // namespace graph
 }  // namespace nebula

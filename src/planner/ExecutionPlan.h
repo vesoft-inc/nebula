@@ -7,40 +7,50 @@
 #ifndef PLANNER_EXECUTIONPLAN_H_
 #define PLANNER_EXECUTIONPLAN_H_
 
-#include "planner/PlanNode.h"
-#include "planner/IdGenerator.h"
+#include <cstdint>
+#include <memory>
 
 namespace nebula {
+
+class ObjectPool;
+
 namespace graph {
+
+class ExecutionContext;
+class Executor;
+class IdGenerator;
+class PlanNode;
+class ExecutionContext;
+
 class ExecutionPlan final {
 public:
-    ExecutionPlan() {
-        id_ = EPIdGenerator::instance().id();
-        nodeIdGen_ = std::make_unique<IdGenerator>(0);
-    }
+    explicit ExecutionPlan(ExecutionContext* ectx);
 
-    ~ExecutionPlan() {
-        for (auto* n : nodes_) {
-            delete n;
-        }
-    }
+    ~ExecutionPlan();
 
     void setRoot(PlanNode* root) {
         root_ = root;
     }
 
-    PlanNode* addPlanNode(PlanNode* node) {
-        node->setId(nodeIdGen_->id());
-        nodes_.emplace_back(node);
-        return node;
+    PlanNode* addPlanNode(PlanNode* node);
+
+    int64_t id() const {
+        return id_;
     }
 
+    const PlanNode* root() const {
+        return root_;
+    }
+
+    Executor *createExecutor();
+
 private:
-    int64_t                                 id_{IdGenerator::INVALID_ID};
+    int64_t                                 id_;
     PlanNode*                               root_{nullptr};
-    std::vector<PlanNode*>                  nodes_;
+    ExecutionContext*                       ectx_{nullptr};
     std::unique_ptr<IdGenerator>            nodeIdGen_;
 };
+
 }  // namespace graph
 }  // namespace nebula
 #endif

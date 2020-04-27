@@ -8,40 +8,81 @@
 #define SERVICE_EXECUTIONCONTEXT_H_
 
 #include "base/Base.h"
+
+#include <unordered_map>
+
 #include "cpp/helpers.h"
-#include "service/RequestContext.h"
-#include "parser/SequentialSentences.h"
 #include "meta/SchemaManager.h"
+#include "parser/SequentialSentences.h"
+#include "service/RequestContext.h"
 // #include "meta/ClientBasedGflagsManager.h"
 #include "clients/meta/MetaClient.h"
-#include "clients/storage/GraphStorageClient.h"
+#include "util/ObjectPool.h"
 
 /**
  * ExecutionContext holds context infos in the execution process, e.g. clients of storage or meta services.
  */
 
 namespace nebula {
+
 namespace storage {
-class StorageClient;
+class GraphStorageClient;
 }   // namespace storage
+
 namespace graph {
 
 class ExecutionContext final : public cpp::NonCopyable, public cpp::NonMovable {
 public:
     using RequestContextPtr = std::unique_ptr<RequestContext<cpp2::ExecutionResponse>>;
+
     ExecutionContext(RequestContextPtr rctx,
-                     meta::SchemaManager *sm,
+                     meta::SchemaManager* sm,
                      // meta::ClientBasedGflagsManager *gflagsManager,
-                     storage::GraphStorageClient *storage,
-                     meta::MetaClient *metaClient) {
-        rctx_ = std::move(rctx);
-        sm_ = sm;
-        // gflagsManager_ = gflagsManager;
-        storageClient_ = storage;
-        metaClient_ = metaClient;
+                     storage::GraphStorageClient* storage,
+                     meta::MetaClient* metaClient)
+        : rctx_(std::move(rctx)),
+          sm_(sm),
+          // gflagsManager_(gflagsManager),
+          storageClient_(storage),
+          metaClient_(metaClient),
+          objPool_(std::make_unique<ObjectPool>()) {
+        DCHECK_NOTNULL(sm_);
+        DCHECK_NOTNULL(storageClient_);
+        DCHECK_NOTNULL(metaClient_);
     }
 
+    // for test
+    ExecutionContext() : objPool_(std::make_unique<ObjectPool>()) {}
+
     ~ExecutionContext();
+
+    void addValue(const std::string& name, Value&& value) {
+        auto iter = valuesMap_.find(name);
+        if (iter != valuesMap_.end()) {
+            iter->second.emplace_back(std::move(value));
+        } else {
+            auto res = valuesMap_.emplace(name, std::list<Value>{std::move(value)});
+            DCHECK(res.second);
+        }
+    }
+
+    const Value& getValue(const std::string& name) const {
+        auto iter = valuesMap_.find(name);
+        DCHECK(iter != valuesMap_.end());
+        return iter->second.back();
+    }
+
+    size_t numVersions(const std::string& name) const {
+        auto iter = valuesMap_.find(name);
+        DCHECK(iter != valuesMap_.end());
+        return iter->second.size();
+    }
+
+    const std::list<Value>& getHistory(const std::string& name) const {
+        auto iter = valuesMap_.find(name);
+        DCHECK(iter != valuesMap_.end());
+        return iter->second;
+    }
 
     RequestContext<cpp2::ExecutionResponse>* rctx() const {
         return rctx_.get();
@@ -59,12 +100,19 @@ public:
         return metaClient_;
     }
 
+    ObjectPool* objPool() const {
+        return objPool_.get();
+    }
+
 private:
     RequestContextPtr                           rctx_;
     meta::SchemaManager                        *sm_{nullptr};
     // meta::ClientBasedGflagsManager             *gflagsManager_{nullptr};
     storage::GraphStorageClient                *storageClient_{nullptr};
     meta::MetaClient                           *metaClient_{nullptr};
+
+    std::unique_ptr<ObjectPool> objPool_;
+    std::unordered_map<std::string, std::list<Value>> valuesMap_;
 };
 
 }   // namespace graph

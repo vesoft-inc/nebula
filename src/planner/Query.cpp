@@ -6,6 +6,10 @@
 
 #include "Query.h"
 
+#include <folly/String.h>
+
+using folly::stringPrintf;
+
 namespace nebula {
 namespace graph {
 std::string GetNeighbors::explain() const {
@@ -74,6 +78,9 @@ std::string Aggregate::explain() const {
 std::string Selector::explain() const {
     return "Selector";
 }
+
+Loop::Loop(ExecutionPlan* plan, PlanNode* input, PlanNode* body, Expression* condition)
+    : BinarySelect(plan, Kind::kLoop, input, condition), body_(body) {}
 
 std::string Loop::explain() const {
     return "Loop";

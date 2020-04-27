@@ -42,11 +42,10 @@ public:
         kLoop,
         kRegisterSpaceToSession,
         kDedup,
+        kMultiOutputs
     };
 
-    PlanNode() = default;
-
-    explicit PlanNode(ExecutionPlan* plan);
+    PlanNode(ExecutionPlan* plan, Kind kind);
 
     virtual ~PlanNode() = default;
 
@@ -63,13 +62,17 @@ public:
         return id_;
     }
 
+    std::string varName() const {
+        return varGenerated_;
+    }
+
     const ExecutionPlan* plan() const {
         return plan_;
     }
 
     void setId(int64_t id) {
         id_ = id;
-        varGenerated_ = folly::stringPrintf("UNAMED_%ld", id_);
+        varGenerated_ = folly::stringPrintf("%s_%ld", toString(kind_), id_);
     }
 
     void setPlan(ExecutionPlan* plan) {
@@ -77,6 +80,8 @@ public:
     }
 
 protected:
+    static const char* toString(Kind kind);
+
     Kind                                     kind_{Kind::kUnknown};
     int64_t                                  id_{IdGenerator::INVALID_ID};
     ExecutionPlan*                           plan_{nullptr};

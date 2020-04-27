@@ -47,12 +47,11 @@ Status QueryEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor
     // gflagsManager_ = std::make_unique<meta::ClientBasedGflagsManager>(metaClient_.get());
 
     storage_ = std::make_unique<storage::GraphStorageClient>(ioExecutor,
-                                                        metaClient_.get());
+                                                             metaClient_.get());
     return Status::OK();
 }
 
 void QueryEngine::execute(RequestContextPtr rctx) {
-    // TODO: Use QueryContext.
     auto ectx = std::make_unique<ExecutionContext>(std::move(rctx),
                                                    schemaManager_.get(),
                                                    storage_.get(),

@@ -2,7 +2,8 @@ set(VALIDATOR_TEST_LIBS
     $<TARGET_OBJECTS:validator_obj>
     $<TARGET_OBJECTS:planner_obj>
     $<TARGET_OBJECTS:session_obj>
-    $<TARGET_OBJECTS:graph_gflags_obj>
+    $<TARGET_OBJECTS:query_engine_obj>
+    $<TARGET_OBJECTS:graph_flags_obj>
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:common_expression_obj>
     $<TARGET_OBJECTS:common_network_obj>

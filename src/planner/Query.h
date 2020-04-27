@@ -33,8 +33,7 @@ public:
     }
 
 private:
-    explicit StartNode(ExecutionPlan* plan) : PlanNode(plan) {
-        kind_ = PlanNode::Kind::kStart;
+    explicit StartNode(ExecutionPlan* plan) : PlanNode(plan, Kind::kStart) {
     }
 };
 
@@ -53,9 +52,11 @@ public:
     }
 
 protected:
-    explicit SingleInputNode(ExecutionPlan* plan) : PlanNode(plan) {}
+    SingleInputNode(ExecutionPlan* plan, Kind kind, PlanNode* input)
+        : PlanNode(plan, kind), input_(input) {
+        // DCHECK_NOTNULL(input_);
+    }
 
-protected:
     PlanNode* input_{nullptr};
 };
 
@@ -82,9 +83,12 @@ public:
     }
 
 protected:
-    explicit BiInputNode(ExecutionPlan* plan) : PlanNode(plan) {}
+    BiInputNode(ExecutionPlan* plan, Kind kind, PlanNode* left, PlanNode* right)
+        : PlanNode(plan, kind), left_(left), right_(right) {
+        DCHECK_NOTNULL(left_);
+        DCHECK_NOTNULL(right_);
+    }
 
-protected:
     PlanNode* left_{nullptr};
     PlanNode* right_{nullptr};
 };
@@ -99,14 +103,12 @@ public:
     }
 
     std::string explain() const override {
-        return "End";
+        return "MultiOutputsNode";
     }
 
 private:
-    explicit MultiOutputsNode(PlanNode* input, ExecutionPlan* plan) : SingleInputNode(plan) {
-        kind_ = PlanNode::Kind::kEnd;
-        input_ = input;
-    }
+    MultiOutputsNode(PlanNode* input, ExecutionPlan* plan)
+        : SingleInputNode(plan, Kind::kMultiOutputs, input) {}
 };
 
 /**
@@ -140,19 +142,22 @@ public:
 
 protected:
     Explore(ExecutionPlan* plan,
+            Kind kind,
+            PlanNode* input,
             GraphSpaceID space,
             bool dedup,
             int64_t limit,
             std::string filter,
             std::vector<storage::cpp2::OrderBy> orderBy)
-        : SingleInputNode(plan),
+        : SingleInputNode(plan, kind, input),
           space_(space),
           dedup_(dedup),
           limit_(limit),
           filter_(std::move(filter)),
           orderBy_(std::move(orderBy)) {}
 
-    Explore(ExecutionPlan* plan, GraphSpaceID space) : SingleInputNode(plan), space_(space) {}
+    Explore(ExecutionPlan* plan, Kind kind, PlanNode* input, GraphSpaceID space)
+        : SingleInputNode(plan, kind, input), space_(space) {}
 
 protected:
     GraphSpaceID        space_;
@@ -200,6 +205,34 @@ public:
 
     std::string explain() const override;
 
+    Expression* src() const {
+        return src_;
+    }
+
+    const std::vector<Row>& vertices() const {
+        return vertices_;
+    }
+
+    storage::cpp2::EdgeDirection edgeDirection() const {
+        return edgeDirection_;
+    }
+
+    const std::vector<EdgeType>& edgeTypes() const {
+        return edgeTypes_;
+    }
+
+    const std::vector<std::string>& vertexProps() const {
+        return vertexProps_;
+    }
+
+    const std::vector<std::string>& edgeProps() const {
+        return edgeProps_;
+    }
+
+    const std::vector<storage::cpp2::StatProp>& statProps() const {
+        return statProps_;
+    }
+
 private:
     GetNeighbors(ExecutionPlan* plan,
                  PlanNode* input,
@@ -215,9 +248,14 @@ private:
                  std::vector<storage::cpp2::OrderBy> orderBy,
                  int64_t limit,
                  std::string filter)
-        : Explore(plan, space, dedup, limit, std::move(filter), std::move(orderBy)) {
-        kind_ = PlanNode::Kind::kGetNeighbors;
-        input_ = input;
+        : Explore(plan,
+                  Kind::kGetNeighbors,
+                  input,
+                  space,
+                  dedup,
+                  limit,
+                  std::move(filter),
+                  std::move(orderBy)) {
         vertices_ = std::move(vertices);
         src_ = src;
         edgeTypes_ = std::move(edgeTypes);
@@ -269,6 +307,18 @@ public:
 
     std::string explain() const override;
 
+    const std::vector<Row>& vertices() const {
+        return vertices_;
+    }
+
+    Expression* src() const {
+        return src_;
+    }
+
+    const std::vector<std::string>& props() const {
+        return props_;
+    }
+
 private:
     GetVertices(ExecutionPlan* plan,
                 PlanNode* input,
@@ -280,9 +330,14 @@ private:
                 std::vector<storage::cpp2::OrderBy> orderBy,
                 int64_t limit,
                 std::string filter)
-        : Explore(plan, space, dedup, limit, std::move(filter), std::move(orderBy)) {
-        kind_ = PlanNode::Kind::kGetVertices;
-        input_ = input;
+        : Explore(plan,
+                  Kind::kGetVertices,
+                  input,
+                  space,
+                  dedup,
+                  limit,
+                  std::move(filter),
+                  std::move(orderBy)) {
         vertices_ = std::move(vertices);
         src_ = src;
         props_ = std::move(props);
@@ -331,6 +386,26 @@ public:
 
     std::string explain() const override;
 
+    const std::vector<Row>& edges() const {
+        return edges_;
+    }
+
+    Expression* src() const {
+        return src_;
+    }
+
+    Expression* ranking() const {
+        return ranking_;
+    }
+
+    Expression* dst() const {
+        return dst_;
+    }
+
+    const std::vector<std::string>& props() const {
+        return props_;
+    }
+
 private:
     GetEdges(ExecutionPlan* plan,
              PlanNode* input,
@@ -344,9 +419,14 @@ private:
              int64_t limit,
              std::vector<storage::cpp2::OrderBy> orderBy,
              std::string filter)
-        : Explore(plan, space, dedup, limit, std::move(filter), std::move(orderBy)) {
-        kind_ = PlanNode::Kind::kGetEdges;
-        input_ = input;
+        : Explore(plan,
+                  Kind::kGetEdges,
+                  input,
+                  space,
+                  dedup,
+                  limit,
+                  std::move(filter),
+                  std::move(orderBy)) {
         edges_ = std::move(edges);
         src_ = std::move(src);
         ranking_ = std::move(ranking);
@@ -370,9 +450,8 @@ private:
  */
 class ReadIndex final : public Explore {
 public:
-    ReadIndex(ExecutionPlan* plan, GraphSpaceID space) : Explore(plan, space) {
-        kind_ = PlanNode::Kind::kReadIndex;
-    }
+    ReadIndex(ExecutionPlan* plan, PlanNode* input, GraphSpaceID space)
+        : Explore(plan, Kind::kReadIndex, input, space) {}
 
     std::string explain() const override;
 };
@@ -396,9 +475,7 @@ public:
 
 private:
     Filter(ExecutionPlan* plan, PlanNode* input, Expression* condition)
-        : SingleInputNode(plan) {
-        kind_ = PlanNode::Kind::kFilter;
-        input_ = input;
+      : SingleInputNode(plan, Kind::kFilter, input) {
         condition_ = condition;
     }
 
@@ -413,10 +490,10 @@ private:
  *   MINUS
  */
 class SetOp : public BiInputNode {
-public:
-    SetOp(ExecutionPlan* plan, PlanNode* left, PlanNode* right) : BiInputNode(plan) {
-        left_ = left;
-        right_ = right;
+protected:
+    SetOp(ExecutionPlan* plan, Kind kind, PlanNode* left, PlanNode* right)
+        : BiInputNode(plan, kind, left, right) {
+        DCHECK(kind == Kind::kUnion || kind == Kind::kIntersect || kind == Kind::kMinus);
     }
 };
 
@@ -432,9 +509,8 @@ public:
     std::string explain() const override;
 
 private:
-    Union(ExecutionPlan* plan, PlanNode* left, PlanNode* right) : SetOp(plan, left, right) {
-        kind_ = PlanNode::Kind::kUnion;
-    }
+    Union(ExecutionPlan* plan, PlanNode* left, PlanNode* right)
+        : SetOp(plan, Kind::kUnion, left, right) {}
 };
 
 /**
@@ -449,9 +525,8 @@ public:
     std::string explain() const override;
 
 private:
-    Intersect(ExecutionPlan* plan, PlanNode* left, PlanNode* right) : SetOp(plan, left, right) {
-        kind_ = PlanNode::Kind::kIntersect;
-    }
+    Intersect(ExecutionPlan* plan, PlanNode* left, PlanNode* right)
+        : SetOp(plan, Kind::kIntersect, left, right) {}
 };
 
 /**
@@ -466,9 +541,8 @@ public:
     std::string explain() const override;
 
 private:
-    Minus(ExecutionPlan* plan, PlanNode* left, PlanNode* right) : SetOp(plan, left, right) {
-        kind_ = PlanNode::Kind::kMinus;
-    }
+    Minus(ExecutionPlan* plan, PlanNode* left, PlanNode* right)
+        : SetOp(plan, Kind::kMinus, left, right) {}
 };
 
 /**
@@ -484,10 +558,13 @@ public:
 
     std::string explain() const override;
 
+    const YieldColumns* columns() const {
+        return cols_;
+    }
+
 private:
-    Project(ExecutionPlan* plan, PlanNode* input, YieldColumns* cols) : SingleInputNode(plan) {
-        kind_ = PlanNode::Kind::kProject;
-        input_ = input;
+    Project(ExecutionPlan* plan, PlanNode* input, YieldColumns* cols)
+      : SingleInputNode(plan, Kind::kProject, input) {
         cols_ = cols;
     }
 
@@ -513,9 +590,8 @@ public:
     std::string explain() const override;
 
 private:
-    Sort(ExecutionPlan* plan, PlanNode* input, OrderFactors* factors) : SingleInputNode(plan) {
-        kind_ = PlanNode::Kind::kSort;
-        input_ = input;
+    Sort(ExecutionPlan* plan, PlanNode* input, OrderFactors* factors)
+      : SingleInputNode(plan, Kind::kSort, input) {
         factors_ = factors;
     }
 
@@ -547,9 +623,7 @@ public:
 
 private:
     Limit(ExecutionPlan* plan, PlanNode* input, int64_t offset, int64_t count)
-        : SingleInputNode(plan) {
-        kind_ = PlanNode::Kind::kLimit;
-        input_ = input;
+        : SingleInputNode(plan, Kind::kLimit, input) {
         offset_ = offset;
         count_ = count;
     }
@@ -578,23 +652,25 @@ public:
     std::string explain() const override;
 
 private:
-    Aggregate(ExecutionPlan* plan,
-              PlanNode* input,
-              YieldColumns* groupCols) : SingleInputNode(plan) {
-        kind_ = PlanNode::Kind::kAggregate;
-        input_ = input;
+    Aggregate(ExecutionPlan* plan, PlanNode* input, YieldColumns* groupCols)
+        : SingleInputNode(plan, Kind::kAggregate, input) {
         groupCols_ = groupCols;
     }
 
 private:
-    YieldColumns*   groupCols_{nullptr};
+    YieldColumns*   groupCols_;
 };
 
 class BinarySelect : public SingleInputNode {
-protected:
-    explicit BinarySelect(ExecutionPlan* plan) : SingleInputNode(plan) {}
+public:
+    const Expression* condition() const {
+        return condition_;
+    }
 
 protected:
+    BinarySelect(ExecutionPlan* plan, Kind kind, PlanNode* input, Expression* condition)
+        : SingleInputNode(plan, kind, input), condition_(condition) {}
+
     Expression*  condition_{nullptr};
 };
 
@@ -618,17 +694,23 @@ public:
 
     std::string explain() const override;
 
+    const PlanNode* then() const {
+        return if_;
+    }
+
+    const PlanNode* otherwise() const {
+        return else_;
+    }
+
 private:
     Selector(ExecutionPlan* plan,
              PlanNode* input,
              PlanNode* ifBranch,
              PlanNode* elseBranch,
-             Expression* condition) : BinarySelect(plan) {
-        kind_ = PlanNode::Kind::kSelector;
-        input_ = input;
+             Expression* condition)
+        : BinarySelect(plan, Kind::kSelector, input, condition) {
         if_ = ifBranch;
         else_ = elseBranch;
-        condition_ = condition;
     }
 
 private:
@@ -651,18 +733,13 @@ public:
 
     std::string explain() const override;
 
-private:
-    Loop(ExecutionPlan* plan,
-         PlanNode* input,
-         PlanNode* body,
-         Expression* condition) : BinarySelect(plan) {
-        kind_ = PlanNode::Kind::kLoop;
-        input_ = input;
-        body_ = body;
-        condition_ = condition;
+    const PlanNode* body() const {
+        return body_;
     }
 
 private:
+    Loop(ExecutionPlan* plan, PlanNode* input, PlanNode* body, Expression* condition);
+
     PlanNode*   body_{nullptr};
 };
 
@@ -681,11 +758,8 @@ public:
     std::string explain() const override;
 
 private:
-    RegisterSpaceToSession(ExecutionPlan* plan,
-                           PlanNode* input,
-                           GraphSpaceID space) : SingleInputNode(plan) {
-        kind_ = PlanNode::Kind::kRegisterSpaceToSession;
-        input_ = input;
+    RegisterSpaceToSession(ExecutionPlan* plan, PlanNode* input, GraphSpaceID space)
+        : SingleInputNode(plan, Kind::kRegisterSpaceToSession, input) {
         space_ = space;
     }
 
@@ -709,9 +783,7 @@ public:
 
 private:
     Dedup(ExecutionPlan* plan, PlanNode* input, Expression* expr)
-        : SingleInputNode(plan) {
-        kind_ = PlanNode::Kind::kDedup;
-        input_ = input;
+        : SingleInputNode(plan, Kind::kDedup, input) {
         expr_ = expr;
     }
 

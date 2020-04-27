@@ -52,7 +52,6 @@ public:
 
 private:
     std::unique_ptr<SequentialSentences>        sentences_;
-    // TODO: Will replace it with QueryContext.
     std::unique_ptr<ExecutionContext>           ectx_;
     std::unique_ptr<ASTValidator>               validator_;
 };

@@ -5,7 +5,11 @@
  */
 
 #include "base/Base.h"
+
 #include "service/QueryInstance.h"
+
+#include "exec/ExecutionError.h"
+#include "exec/Executor.h"
 
 namespace nebula {
 namespace graph {
@@ -15,6 +19,7 @@ void QueryInstance::execute() {
     FLOG_INFO("Parsing query: %s", rctx->query().c_str());
 
     Status status;
+    auto plan = std::make_unique<ExecutionPlan>(ectx());
     do {
         auto result = GQLParser().parse(rctx->query());
         if (!result.ok()) {
@@ -25,17 +30,14 @@ void QueryInstance::execute() {
 
         sentences_ = std::move(result).value();
         validator_ = std::make_unique<ASTValidator>(
-                            sentences_.get(),
-                            ectx_->rctx()->session(),
-                            ectx_->schemaManager());
-        auto validateResult = validator_->validate();
-        if (!validateResult.ok()) {
-            status = std::move(validateResult).status();
+            sentences_.get(), rctx->session(), ectx()->schemaManager());
+        status = validator_->validate(plan.get());
+        if (!status.ok()) {
             LOG(ERROR) << status;
             break;
         }
 
-        // TODO: optional optimize.
+        // TODO: optional optimize for plan.
     } while (false);
 
     if (!status.ok()) {
@@ -43,9 +45,24 @@ void QueryInstance::execute() {
         return;
     }
 
-    // TODO: execute query plan.
+    auto executor = plan->createExecutor();
+    status = executor->prepare();
+    if (!status.ok()) {
+        onError(std::move(status));
+        return;
+    }
+    executor->execute()
+        .then([this](Status s) {
+            if (s.ok()) {
+                this->onFinish();
+            } else {
+                this->onError(std::move(s));
+            }
+        })
+        .onError([this](const ExecutionError &e) { onError(e.status()); })
+        .onError([this](const std::exception &e) { onError(Status::Error("%s", e.what())); })
+        .ensure([p = std::move(plan)]() mutable { p.reset(); });
 }
-
 
 void QueryInstance::onFinish() {
     auto *rctx = ectx()->rctx();
@@ -62,7 +79,6 @@ void QueryInstance::onFinish() {
     // e.g. previously launched uncompleted async sub-tasks, EVEN on failures.
     delete this;
 }
-
 
 void QueryInstance::onError(Status status) {
     auto *rctx = ectx()->rctx();

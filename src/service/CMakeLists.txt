@@ -1,7 +1,16 @@
+
+nebula_add_library(
+    graph_flags_obj OBJECT
+    GraphFlags.cpp
+)
+
 nebula_add_library(
     service_obj OBJECT
     GraphService.cpp
-    GraphHttpHandler.cpp
+)
+
+nebula_add_library(
+    query_engine_obj OBJECT
     ExecutionContext.cpp
     QueryEngine.cpp
     QueryInstance.cpp
@@ -14,6 +23,6 @@ nebula_add_library(
 )
 
 nebula_add_library(
-    graph_gflags_obj OBJECT
-    GraphFlags.cpp
+    graph_http_obj OBJECT
+    GraphHttpHandler.cpp
 )
