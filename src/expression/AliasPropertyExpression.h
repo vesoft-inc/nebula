@@ -11,10 +11,10 @@
 
 namespace nebula {
 
-constexpr char INPUT_REF[]  = "$-";
-constexpr char VAR_REF[]    = "$";
-constexpr char SRC_REF[]    = "$^";
-constexpr char DST_REF[]    = "$$";
+constexpr char const kInputRef[]  = "$-";
+constexpr char const kVarRef[]    = "$";
+constexpr char const kSrcRef[]    = "$^";
+constexpr char const kDstRef[]    = "$$";
 
 // Alias.any_prop_name, i.e. EdgeName.any_prop_name
 class AliasPropertyExpression: public Expression {
@@ -57,7 +57,7 @@ class InputPropertyExpression final : public AliasPropertyExpression {
 public:
     explicit InputPropertyExpression(std::string* prop)
         : AliasPropertyExpression(Type::EXP_INPUT_PROPERTY,
-                                  new std::string(INPUT_REF),
+                                  new std::string(kInputRef),
                                   new std::string(""),
                                   prop) {}
 
@@ -85,7 +85,7 @@ public:
     VariablePropertyExpression(std::string* var,
                                std::string* prop)
         : AliasPropertyExpression(Type::EXP_VAR_PROPERTY,
-                                  new std::string(VAR_REF),
+                                  new std::string(kVarRef),
                                   var,
                                   prop) {}
 
@@ -113,7 +113,7 @@ public:
     SourcePropertyExpression(std::string* tag,
                              std::string* prop)
         : AliasPropertyExpression(Type::EXP_SRC_PROPERTY,
-                                  new std::string(SRC_REF),
+                                  new std::string(kSrcRef),
                                   tag,
                                   prop) {}
 
@@ -141,7 +141,7 @@ public:
     DestPropertyExpression(std::string* tag,
                            std::string* prop)
         : AliasPropertyExpression(Type::EXP_DST_PROPERTY,
-                                  new std::string(DST_REF),
+                                  new std::string(kDstRef),
                                   tag,
                                   prop) {}
 

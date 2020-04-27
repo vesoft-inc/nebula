@@ -15,11 +15,13 @@
 namespace nebula {
 namespace meta {
 
+class MetaClient;
+
 class SchemaManager {
 public:
     virtual ~SchemaManager() = default;
 
-    static std::unique_ptr<SchemaManager> create();
+    static std::unique_ptr<SchemaManager> create(MetaClient *client);
 
     virtual std::shared_ptr<const SchemaProviderIf>
     getTagSchema(GraphSpaceID space, TagID tag, SchemaVer ver = -1) = 0;
