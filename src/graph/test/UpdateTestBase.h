@@ -12,7 +12,7 @@
 #include "graph/test/TestBase.h"
 #include "meta/test/TestUtils.h"
 
-DECLARE_int32(load_data_interval_secs);
+DECLARE_int32(heartbeat_interval_secs);
 
 namespace nebula {
 namespace graph {
@@ -22,14 +22,6 @@ protected:
     void SetUp() override {
         TestBase::SetUp();
         // ...
-    }
-
-    void TearDown() override {
-        // ...
-        TestBase::TearDown();
-    }
-
-    static void SetUpTestCase() {
         client_ = gEnv->getClient();
         storagePort_ = gEnv->storageServerPort();
 
@@ -40,7 +32,10 @@ protected:
         ASSERT_TRUE(prepareData());
     }
 
-    static void TearDownTestCase() {
+    void TearDown() override {
+        // ...
+        TestBase::TearDown();
+
         ASSERT_TRUE(removeData());
         client_.reset();
     }
@@ -118,7 +113,7 @@ AssertionResult UpdateTestBase::prepareSchema() {
             return TestError() << "Do cmd:" << cmd << " failed";
         }
     }
-    sleep(FLAGS_load_data_interval_secs + 3);
+    sleep(FLAGS_heartbeat_interval_secs + 3);
     return TestOK();
 }
 

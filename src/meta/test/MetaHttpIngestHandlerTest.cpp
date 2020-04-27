@@ -9,7 +9,8 @@
 #include "http/HttpClient.h"
 #include "meta/MetaHttpIngestHandler.h"
 #include "meta/test/TestUtils.h"
-#include "storage/StorageHttpIngestHandler.h"
+#include "storage/http/StorageHttpIngestHandler.h"
+#include "webservice/Router.h"
 #include "webservice/WebService.h"
 #include "fs/TempDir.h"
 #include <rocksdb/sst_file_writer.h>
@@ -34,17 +35,20 @@ public:
         pool_ = std::make_unique<nebula::thread::GenericThreadPool>();
         pool_->start(1);
 
-        WebService::registerHandler("/ingest-dispatch", [this] {
+        webSvc_ = std::make_unique<WebService>();
+
+        auto& router = webSvc_->router();
+        router.get("/ingest-dispatch").handler([this](nebula::web::PathParams&&) {
             auto handler = new meta::MetaHttpIngestHandler();
             handler->init(kv_.get(), pool_.get());
             return handler;
         });
-        WebService::registerHandler("/ingest", [this] {
+        router.get("/ingest").handler([this](nebula::web::PathParams&&) {
             auto handler = new storage::StorageHttpIngestHandler();
             handler->init(kv_.get());
             return handler;
         });
-        auto status = WebService::start();
+        auto status = webSvc_->start();
         FLAGS_ws_storage_http_port = FLAGS_ws_http_port;
         ASSERT_TRUE(status.ok()) << status;
     }
@@ -52,12 +56,13 @@ public:
     void TearDown() override {
         kv_.reset();
         rootPath_.reset();
-        WebService::stop();
+        webSvc_.reset();
         pool_->stop();
         VLOG(1) << "Web service stopped";
     }
 
 private:
+    std::unique_ptr<WebService> webSvc_;
     std::unique_ptr<fs::TempDir> rootPath_;
     std::unique_ptr<kvstore::KVStore> kv_;
     std::unique_ptr<nebula::thread::GenericThreadPool> pool_;
@@ -114,4 +119,3 @@ int main(int argc, char** argv) {
 
     return RUN_ALL_TESTS();
 }
-

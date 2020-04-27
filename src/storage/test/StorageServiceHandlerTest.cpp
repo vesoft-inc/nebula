@@ -5,11 +5,11 @@
  */
 
 #include "base/Base.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
-#include "storage/AddVerticesProcessor.h"
+#include "storage/mutate/AddVerticesProcessor.h"
 #include "storage/StorageServiceHandler.h"
 
 namespace nebula {
@@ -22,13 +22,15 @@ TEST(StorageServiceHandlerTest, FutureAddVerticesTest) {
     req.overwritable = true;
 
     LOG(INFO) << "Build FutureAddVerticesTest...";
-    req.parts.emplace(0, TestUtils::setupVertices(0, 10, 10));
-    req.parts.emplace(1, TestUtils::setupVertices(1, 20, 30));
+    req.parts.emplace(0, TestUtils::setupVertices(0, 0, 10, 0, 10));
+    req.parts.emplace(1, TestUtils::setupVertices(1, 0, 20, 0, 30));
     LOG(INFO) << "Test FutureAddVerticesTest...";
     std::unique_ptr<kvstore::KVStore> kvstore = TestUtils::initKV(rootPath.path());
-
+    auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
     auto storageServiceHandler = std::make_unique<StorageServiceHandler>(kvstore.get(),
-                                                                         nullptr,
+                                                                         schemaMan.get(),
+                                                                         indexMan.get(),
                                                                          nullptr);
     auto resp = storageServiceHandler->future_addVertices(req).get();
     EXPECT_EQ(typeid(cpp2::ExecResponse).name() , typeid(resp).name());
@@ -42,7 +44,7 @@ TEST(StorageServiceHandlerTest, FutureAddVerticesTest) {
     ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, kvstore->prefix(0, 1, prefix, &iter));
     TagID tagId = 0;
     while (iter->valid()) {
-        ASSERT_EQ(folly::stringPrintf("%d_%d_%d", 1, 19, tagId), iter->val());
+        ASSERT_EQ(TestUtils::encodeValue(1, 19, tagId), iter->val());
         tagId++;
         iter->next();
     }

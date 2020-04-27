@@ -15,7 +15,6 @@
 #include "storage/test/TestUtils.h"
 #include "dataman/RowWriter.h"
 
-DECLARE_int32(load_data_interval_secs);
 DECLARE_int32(heartbeat_interval_secs);
 DECLARE_uint32(raft_heartbeat_interval_secs);
 DECLARE_int32(expired_threshold_sec);
@@ -24,7 +23,6 @@ namespace nebula {
 namespace meta {
 
 TEST(BalanceIntegrationTest, BalanceTest) {
-    FLAGS_load_data_interval_secs = 1;
     FLAGS_heartbeat_interval_secs = 1;
     FLAGS_raft_heartbeat_interval_secs = 1;
     FLAGS_expired_threshold_sec = 3;
@@ -47,10 +45,8 @@ TEST(BalanceIntegrationTest, BalanceTest) {
     std::vector<HostAddr> metaAddr = {HostAddr(localIp, localMetaPort)};
 
     LOG(INFO) << "Create meta client...";
-    uint32_t tempDataPort = network::NetworkUtils::getAvailablePort();
-    HostAddr tempDataAddr(localIp, tempDataPort);
-    auto mClient = std::make_unique<meta::MetaClient>(threadPool, metaAddr, tempDataAddr,
-                                                      kClusterId, false);
+    auto mClient = std::make_unique<meta::MetaClient>(threadPool,
+                                                      metaAddr);
 
     mClient->waitForMetadReady();
 
@@ -69,8 +65,13 @@ TEST(BalanceIntegrationTest, BalanceTest) {
 
         VLOG(1) << "The storage server has been added to the meta service";
 
-        auto metaClient = std::make_shared<meta::MetaClient>(threadPool, metaAddr, storageAddr,
-                                                             kClusterId, true);
+        meta::MetaClientOptions options;
+        options.localHost_ = storageAddr;
+        options.clusterId_ = kClusterId;
+        options.inStoraged_ = true;
+        auto metaClient = std::make_shared<meta::MetaClient>(threadPool,
+                                                             metaAddr,
+                                                             options);
         metaClient->waitForMetadReady();
         metaClients.emplace_back(metaClient);
     }
@@ -86,9 +87,11 @@ TEST(BalanceIntegrationTest, BalanceTest) {
     }
 
     LOG(INFO) << "Create space and schema";
-    auto ret = mClient->createSpace("storage", partition, replica).get();
+    SpaceDesc spaceDesc("storage", partition, replica);
+    auto ret = mClient->createSpace(spaceDesc).get();
     ASSERT_TRUE(ret.ok());
     auto spaceId = ret.value();
+
     std::vector<nebula::cpp2::ColumnDef> columns;
     nebula::cpp2::ValueType vt;
     vt.set_type(SupportedType::STRING);
@@ -101,7 +104,7 @@ TEST(BalanceIntegrationTest, BalanceTest) {
     auto tagRet = mClient->createTagSchema(spaceId, "tag", std::move(schema)).get();
     ASSERT_TRUE(tagRet.ok());
     auto tagId = tagRet.value();
-    sleep(FLAGS_load_data_interval_secs + FLAGS_raft_heartbeat_interval_secs + 3);
+    sleep(FLAGS_heartbeat_interval_secs + FLAGS_raft_heartbeat_interval_secs + 3);
 
     LOG(INFO) << "Let's write some data";
     auto sClient = std::make_unique<storage::StorageClient>(threadPool, mClient.get());
@@ -172,8 +175,13 @@ TEST(BalanceIntegrationTest, BalanceTest) {
     uint32_t storagePort = network::NetworkUtils::getAvailablePort();
     HostAddr storageAddr(localIp, storagePort);
     {
-        newMetaClient = std::make_unique<meta::MetaClient>(threadPool, metaAddr, storageAddr,
-                                                           kClusterId, true);
+        MetaClientOptions options;
+        options.localHost_ = storageAddr;
+        options.clusterId_ = kClusterId;
+        options.inStoraged_ = true;
+        newMetaClient = std::make_unique<meta::MetaClient>(threadPool,
+                                                           metaAddr,
+                                                           options);
         newMetaClient->waitForMetadReady();
         std::string dataPath = folly::stringPrintf("%s/%d/data", rootPath.path(), replica + 1);
         newServer = storage::TestUtils::mockStorageServer(newMetaClient.get(),
@@ -204,10 +212,11 @@ TEST(BalanceIntegrationTest, BalanceTest) {
         LOG(INFO) << "Balance Finished, check the newly added server";
         std::unique_ptr<kvstore::KVIterator> iter;
         auto prefix = NebulaKeyUtils::prefix(1);
-        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, newServer->kvStore_->prefix(spaceId,
-                                                                              1,
-                                                                              prefix,
-                                                                              &iter));
+        auto partRet = newServer->kvStore_->part(spaceId, 1);
+        CHECK(ok(partRet));
+        auto part = value(partRet);
+        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, part->engine()->prefix(prefix,
+                                                                         &iter));
         int num = 0;
         std::string lastKey = "";
         while (iter->valid()) {
@@ -245,7 +254,6 @@ TEST(BalanceIntegrationTest, BalanceTest) {
 }
 
 TEST(BalanceIntegrationTest, LeaderBalanceTest) {
-    FLAGS_load_data_interval_secs = 1;
     FLAGS_heartbeat_interval_secs = 1;
     FLAGS_raft_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/balance_integration_test.XXXXXX");
@@ -267,10 +275,8 @@ TEST(BalanceIntegrationTest, LeaderBalanceTest) {
     std::vector<HostAddr> metaAddr = {HostAddr(localIp, localMetaPort)};
 
     LOG(INFO) << "Create meta client...";
-    uint32_t tempDataPort = network::NetworkUtils::getAvailablePort();
-    HostAddr tempDataAddr(localIp, tempDataPort);
-    auto mClient = std::make_unique<meta::MetaClient>(threadPool, metaAddr, tempDataAddr,
-                                                      kClusterId, false);
+    auto mClient = std::make_unique<meta::MetaClient>(threadPool,
+                                                      metaAddr);
 
     mClient->waitForMetadReady();
 
@@ -288,9 +294,13 @@ TEST(BalanceIntegrationTest, LeaderBalanceTest) {
         peers.emplace_back(storageAddr);
 
         VLOG(1) << "The storage server has been added to the meta service";
-
-        auto metaClient = std::make_shared<meta::MetaClient>(threadPool, metaAddr, storageAddr,
-                                                             kClusterId, true);
+        MetaClientOptions options;
+        options.localHost_ = storageAddr;
+        options.clusterId_ = kClusterId;
+        options.inStoraged_ = true;
+        auto metaClient = std::make_shared<meta::MetaClient>(threadPool,
+                                                             metaAddr,
+                                                             options);
         metaClient->waitForMetadReady();
         metaClients.emplace_back(metaClient);
     }
@@ -305,9 +315,22 @@ TEST(BalanceIntegrationTest, LeaderBalanceTest) {
         serverContexts.emplace_back(std::move(sc));
     }
 
-    auto ret = mClient->createSpace("storage", partition, replica).get();
+    SpaceDesc spaceDesc("storage", partition, replica);
+    auto ret = mClient->createSpace(spaceDesc).get();
     ASSERT_TRUE(ret.ok());
-    sleep(FLAGS_load_data_interval_secs + FLAGS_raft_heartbeat_interval_secs + 3);
+    while (true) {
+        int totalLeaders = 0;
+        for (int i = 0; i < replica; i++) {
+            std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
+            totalLeaders += serverContexts[i]->kvStore_->allLeader(leaderIds);
+        }
+        if (totalLeaders == partition) {
+            break;
+        }
+        LOG(INFO) << "Waiting for leader election, current total leader number " << totalLeaders
+                  << ", expected " << partition;
+        sleep(1);
+    }
 
     auto code = balancer.leaderBalance();
     ASSERT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
@@ -316,7 +339,8 @@ TEST(BalanceIntegrationTest, LeaderBalanceTest) {
     sleep(FLAGS_raft_heartbeat_interval_secs + 1);
     for (int i = 0; i < replica; i++) {
         std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
-        EXPECT_EQ(3, serverContexts[i]->kvStore_->allLeader(leaderIds));
+        EXPECT_LE(2, serverContexts[i]->kvStore_->allLeader(leaderIds));
+        EXPECT_GE(4, serverContexts[i]->kvStore_->allLeader(leaderIds));
     }
     for (auto& c : metaClients) {
         c->stop();
@@ -334,5 +358,4 @@ int main(int argc, char** argv) {
     google::SetStderrLogging(google::INFO);
     return RUN_ALL_TESTS();
 }
-
 

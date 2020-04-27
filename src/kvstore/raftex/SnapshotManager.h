@@ -19,10 +19,17 @@
 namespace nebula {
 namespace raftex {
 
-using SnapshotCallback = folly::Function<void(std::vector<std::string>&& rows,
+
+enum SnapshotStatus {
+    IN_PROGRESS,
+    DONE,
+    FAILED,
+};
+
+using SnapshotCallback = folly::Function<bool(const std::vector<std::string>& rows,
                                               int64_t totalCount,
                                               int64_t totalSize,
-                                              bool finished)>;
+                                              SnapshotStatus status)>;
 class RaftPart;
 
 class SnapshotManager {
@@ -42,7 +49,7 @@ private:
                                                    LogID committedLogId,
                                                    TermID committedLogTerm,
                                                    const HostAddr& localhost,
-                                                   std::vector<std::string>&& data,
+                                                   const std::vector<std::string>& data,
                                                    int64_t totalSize,
                                                    int64_t totalCount,
                                                    const HostAddr& addr,

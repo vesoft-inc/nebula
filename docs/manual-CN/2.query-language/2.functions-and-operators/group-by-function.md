@@ -1,4 +1,4 @@
-# 聚合函数 (Group by)
+# 聚合函数 (Group By)
 
  `GROUP BY` 函数类似于 SQL。 只能与 `YIELD` 语句一起使用。
 
@@ -19,9 +19,25 @@
 ## 示例
 
 ```ngql
-nebula> GO FROM 1 OVER e1 YIELD $-.id AS fid | GROUP BY $-.fid YIELD COUNT(*)
--- 统计与节点 "1" 有 e1 关系的点的的数量
+nebula> GO FROM 100 OVER follow YIELD $$.player.name as Name | GROUP BY $-.Name YIELD $-.Name, COUNT(*);
+-- 从节点 100 出发，查找其关注的球员并返回球员的姓名作为 Name，按照姓名对球员分组并统计每个分组的人数。
+-- 返回以下结果：
+================================
+| $-.Name           | COUNT(*) |
+================================
+| Kyle Anderson     | 1        |
+--------------------------------
+| Tony Parker       | 1        |
+--------------------------------
+| LaMarcus Aldridge | 1        |
+--------------------------------
 
-nebula> GO FROM 1 YIELD e1._dst AS fid, e1.prop1 AS prop1 | GROUP BY $-.fid YIELD SUM($-.prop1)
--- 对与节点 "1" 有 e1 关系的点的属性 prop1 进行加法运算
+nebula> GO FROM 101 OVER follow YIELD follow._src AS player, follow.degree AS degree | GROUP BY $-.player YIELD SUM($-.degree);
+-- 从节点 101 出发找到其关注的球员，返回这些球员作为 player，边（follow）的属性值作为 degree，对这些球员分组并返回分组球员属性 degree 相加的值。
+-- 返回以下结果：
+==================
+| SUM($-.degree) |
+==================
+| 186            |
+------------------
 ```

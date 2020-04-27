@@ -15,17 +15,15 @@ namespace meta {
 
 class ListPartsProcessor : public BaseProcessor<cpp2::ListPartsResp> {
 public:
-    static ListPartsProcessor* instance(kvstore::KVStore* kvstore,
-                                        AdminClient* adminClient = nullptr) {
-        return new ListPartsProcessor(kvstore, adminClient);
+    static ListPartsProcessor* instance(kvstore::KVStore* kvstore) {
+        return new ListPartsProcessor(kvstore);
     }
 
     void process(const cpp2::ListPartsReq& req);
 
 private:
-    explicit ListPartsProcessor(kvstore::KVStore* kvstore, AdminClient* adminClient)
-            : BaseProcessor<cpp2::ListPartsResp>(kvstore)
-            , adminClient_(adminClient) {}
+    explicit ListPartsProcessor(kvstore::KVStore* kvstore)
+            : BaseProcessor<cpp2::ListPartsResp>(kvstore) {}
 
 
     // Get parts alloc information
@@ -35,8 +33,10 @@ private:
     void getLeaderDist(std::vector<cpp2::PartItem>& partItems);
 
 private:
-    AdminClient*                                        adminClient_;
     GraphSpaceID                                        spaceId_;
+    std::vector<PartitionID>                            partIds_;
+    bool                                                showAllParts_{true};
+    std::unordered_map<PartitionID, size_t>             partIdIndex_;
 };
 
 }  // namespace meta

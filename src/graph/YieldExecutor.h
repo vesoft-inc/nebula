@@ -60,12 +60,12 @@ private:
     std::unique_ptr<YieldClauseWrapper>         yieldClauseWrapper_;
     std::unique_ptr<ExpressionContext>          expCtx_;
     Expression                                 *filter_{nullptr};
-    std::unique_ptr<InterimResult>              inputs_;
     std::string                                 varname_;
     std::vector<std::string>                    resultColNames_;
     std::unique_ptr<cpp2::ExecutionResponse>    resp_;
     std::vector<nebula::cpp2::SupportedType>    colTypes_;
     std::vector<std::shared_ptr<AggFun>>        aggFuns_;
+    bool                                        hasSetResult_{false};
 };
 }   // namespace graph
 }   // namespace nebula

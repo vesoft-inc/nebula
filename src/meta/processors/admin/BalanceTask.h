@@ -24,6 +24,8 @@ class BalanceTask {
     FRIEND_TEST(BalanceTest, BalancePlanTest);
     FRIEND_TEST(BalanceTest, SpecifyHostTest);
     FRIEND_TEST(BalanceTest, SpecifyMultiHostTest);
+    FRIEND_TEST(BalanceTest, MockReplaceMachineTest);
+    FRIEND_TEST(BalanceTest, SingleReplicaTest);
     FRIEND_TEST(BalanceTest, NormalTest);
     FRIEND_TEST(BalanceTest, RecoveryTest);
     FRIEND_TEST(BalanceTest, StopBalanceDataTest);
@@ -39,6 +41,7 @@ public:
         MEMBER_CHANGE_REMOVE    = 0x07,
         UPDATE_PART_META        = 0x08,  // After this state, we can't rollback anymore.
         REMOVE_PART_ON_SRC      = 0x09,
+        CHECK                   = 0x0A,
         END                     = 0xFF,
     };
 
@@ -55,7 +58,6 @@ public:
                 PartitionID partId,
                 const HostAddr& src,
                 const HostAddr& dst,
-                bool srcLived,
                 kvstore::KVStore* kv,
                 AdminClient* client)
         : balanceId_(balanceId)
@@ -63,7 +65,6 @@ public:
         , partId_(partId)
         , src_(src)
         , dst_(dst)
-        , srcLived_(srcLived)
         , taskIdStr_(buildTaskId())
         , kv_(kv)
         , client_(client) {}
@@ -103,7 +104,7 @@ private:
     static std::tuple<BalanceID, GraphSpaceID, PartitionID, HostAddr, HostAddr>
     parseKey(const folly::StringPiece& rawKey);
 
-    static std::tuple<BalanceTask::Status, BalanceTask::Result, bool, int64_t, int64_t>
+    static std::tuple<BalanceTask::Status, BalanceTask::Result, int64_t, int64_t>
     parseVal(const folly::StringPiece& rawVal);
 
 private:
@@ -112,7 +113,6 @@ private:
     PartitionID  partId_;
     HostAddr     src_;
     HostAddr     dst_;
-    bool         srcLived_ = true;  // false means the src host have been lost.
     std::string  taskIdStr_;
     kvstore::KVStore* kv_ = nullptr;
     AdminClient* client_ = nullptr;

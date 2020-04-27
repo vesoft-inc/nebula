@@ -26,13 +26,11 @@ protected:
 };
 
 
-TEST_F(YieldTest, basic) {
-    auto client = gEnv->getClient();
-    ASSERT_NE(nullptr, client);
+TEST_F(YieldTest, Base) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "YIELD 1";
-        auto code = client->execute(query, resp);
+        auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
@@ -48,10 +46,10 @@ TEST_F(YieldTest, basic) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "YIELD 1+1, '1+1', (int)3.14, (string)(1+1), (string)true";
-        auto code = client->execute(query, resp);
+        auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::string> expectedColNames{
-            {"(1+1)"}, {"1+1"}, {"(int)3.140000"}, {"(string)(1+1)"}, {"(string)true"}
+            {"(1+1)"}, {"1+1"}, {"(int)3.140000000000000"}, {"(string)(1+1)"}, {"(string)true"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
         std::vector<std::tuple<int64_t, std::string, int64_t, std::string, std::string>> expected{
@@ -62,7 +60,7 @@ TEST_F(YieldTest, basic) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "YIELD \"Hello\", hash(\"Hello\")";
-        auto code = client->execute(query, resp);
+        auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::string> expectedColNames{
             {"Hello"}, {"hash(Hello)"}
@@ -75,13 +73,11 @@ TEST_F(YieldTest, basic) {
     }
 }
 
-TEST_F(YieldTest, hashCall) {
-    auto client = gEnv->getClient();
-    ASSERT_NE(nullptr, client);
+TEST_F(YieldTest, HashCall) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "YIELD hash(\"Boris\")";
-        auto code = client->execute(query, resp);
+        auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::string> expectedColNames{
             {"hash(Boris)"}
@@ -95,7 +91,7 @@ TEST_F(YieldTest, hashCall) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "YIELD hash(123)";
-        auto code = client->execute(query, resp);
+        auto code = client_->execute(query, resp);
         std::vector<std::string> expectedColNames{
             {"hash(123)"}
         };
@@ -109,7 +105,7 @@ TEST_F(YieldTest, hashCall) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "YIELD hash(123 + 456)";
-        auto code = client->execute(query, resp);
+        auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::string> expectedColNames{
             {"hash((123+456))"}
@@ -123,10 +119,10 @@ TEST_F(YieldTest, hashCall) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "YIELD hash(123.0)";
-        auto code = client->execute(query, resp);
+        auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::string> expectedColNames{
-            {"hash(123.000000)"}
+            {"hash(123.000000000000000)"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
         std::vector<std::tuple<int64_t>> expected{
@@ -137,7 +133,7 @@ TEST_F(YieldTest, hashCall) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "YIELD hash(!0)";
-        auto code = client->execute(query, resp);
+        auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::string> expectedColNames{
             {"hash(!(0))"}
@@ -151,12 +147,10 @@ TEST_F(YieldTest, hashCall) {
 }
 
 TEST_F(YieldTest, Logic) {
-    auto client = gEnv->getClient();
-    ASSERT_NE(nullptr, client);
     {
         cpp2::ExecutionResponse resp;
         std::string query = "YIELD NOT 0 || 0 AND 0 XOR 0";
-        auto code = client->execute(query, resp);
+        auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int64_t>> expected{
             1
@@ -166,7 +160,7 @@ TEST_F(YieldTest, Logic) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "YIELD !0 OR 0 && 0 XOR 1";
-        auto code = client->execute(query, resp);
+        auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int64_t>> expected{
             0
@@ -176,7 +170,7 @@ TEST_F(YieldTest, Logic) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "YIELD (NOT 0 || 0) AND 0 XOR 1";
-        auto code = client->execute(query, resp);
+        auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int64_t>> expected{
             1
@@ -186,7 +180,7 @@ TEST_F(YieldTest, Logic) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "YIELD 2.5 % 1.2 ^ 1.6";
-        auto code = client->execute(query, resp);
+        auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<double>> expected{
             2.5
@@ -196,7 +190,7 @@ TEST_F(YieldTest, Logic) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "YIELD (5 % 3) ^ 1";
-        auto code = client->execute(query, resp);
+        auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int64_t>> expected{
             3
@@ -205,13 +199,11 @@ TEST_F(YieldTest, Logic) {
     }
 }
 
-TEST_F(YieldTest, inCall) {
-    auto client = gEnv->getClient();
-    ASSERT_NE(nullptr, client);
+TEST_F(YieldTest, InCall) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "YIELD udf_is_in(1,0,1,2), 123";
-        auto code = client->execute(query, resp);
+        auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *resp.get_error_msg();
         std::vector<std::string> expectedColNames{
             {"udf_is_in(1,0,1,2)"}, {"123"}
@@ -224,7 +216,7 @@ TEST_F(YieldTest, inCall) {
     }
 }
 
-TEST_F(YieldTest, yieldPipe) {
+TEST_F(YieldTest, YieldPipe) {
     std::string go = "GO FROM %ld OVER serve YIELD "
                      "$^.player.name as name, serve.start_year as start, $$.team.name as team";
     {
@@ -326,7 +318,7 @@ TEST_F(YieldTest, yieldPipe) {
     }
 }
 
-TEST_F(YieldTest, yieldVar) {
+TEST_F(YieldTest, YieldVar) {
     std::string var = " $var = GO FROM %ld OVER serve YIELD "
                      "$^.player.name as name, serve.start_year as start, $$.team.name as team;";
     {
@@ -428,7 +420,7 @@ TEST_F(YieldTest, yieldVar) {
     }
 }
 
-TEST_F(YieldTest, error) {
+TEST_F(YieldTest, Error) {
     {
         cpp2::ExecutionResponse resp;
         // Reference input in a single yield sentence is meaningless.
@@ -501,6 +493,102 @@ TEST_F(YieldTest, error) {
     }
 }
 
+TEST_F(YieldTest, calculateOverflow) {
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 9223372036854775807+1";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD -9223372036854775807-2";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD -9223372036854775807+-2";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 1-(-9223372036854775807)";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 9223372036854775807*2";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD -9223372036854775807*-2";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 9223372036854775807*-2";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD -9223372036854775807*2";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 1/0";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 2%0";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 9223372036854775807";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Negation of -9223372036854775808 incurs a runtime error under UBSan
+#ifndef BUILT_WITH_SANITIZER
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD -9223372036854775808";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+#endif
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD -2*4611686018427387904";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD -9223372036854775808*1";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD -9223372036854775809";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+    }
+}
+
 TEST_F(YieldTest, AggCall) {
     {
         cpp2::ExecutionResponse resp;
@@ -546,6 +634,45 @@ TEST_F(YieldTest, AggCall) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    // Yield field has not input
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Carmelo Anthony"];
+        auto *fmt = "GO FROM %ld OVER like "
+                    "| YIELD COUNT(*)";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected = {
+                {3},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // Yield field has not input
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Carmelo Anthony"];
+        auto *fmt = "GO FROM %ld OVER like "
+                    "| YIELD 1";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected = {
+                {1}, {1}, {1}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // input is empty
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Nobody"];
+        auto *fmt = "GO FROM %ld OVER like "
+                    "| YIELD 1";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(resp.get_rows() == nullptr);
+    }
     // Test var
     {
         cpp2::ExecutionResponse resp;
@@ -585,6 +712,12 @@ TEST_F(YieldTest, EmptyInput) {
         auto query = folly::stringPrintf(fmt.c_str(), nonExistPlayerID);
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+
+        std::vector<std::string> expectedColNames{
+            {"$-.team"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string>> expected;
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -596,9 +729,45 @@ TEST_F(YieldTest, EmptyInput) {
         auto query = folly::stringPrintf(fmt.c_str(), nonExistPlayerID);
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+
+        std::vector<std::string> expectedColNames{
+            {"$var.team"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string>> expected;
         ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
+
+TEST_F(YieldTest, DuplicateColumn) {
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 1, 1";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"1"}, {"1"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t, int64_t>> expected{
+            {1, 1}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        std::string go = "GO FROM %ld OVER serve YIELD "
+                         "$^.player.name as team, serve.start_year as start, $$.team.name as team";
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto fmt = go + "| YIELD $-.team";
+        auto query = folly::stringPrintf(fmt.c_str(), player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code) << resp.get_error_msg();
+    }
+}
 }   // namespace graph
 }   // namespace nebula
+

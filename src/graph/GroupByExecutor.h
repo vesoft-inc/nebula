@@ -25,8 +25,6 @@ public:
 
     void execute() override;
 
-    void feedResult(std::unique_ptr<InterimResult> result) override;
-
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
 private:
@@ -39,6 +37,8 @@ private:
 
     std::vector<std::string> getResultColumnNames() const;
     StatusOr<std::unique_ptr<InterimResult>> setupInterimResult();
+
+    void onEmptyInputs();
 
 private:
     GroupBySentence                                           *sentence_{nullptr};

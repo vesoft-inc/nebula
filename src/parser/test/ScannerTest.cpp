@@ -118,11 +118,16 @@ TEST(Scanner, Basic) {
         lexer.setReadBuffer(input);                                         \
         nebula::GraphParser::semantic_type dumyyylval;                      \
         nebula::GraphParser::location_type dumyyyloc;                       \
-        auto token = lexer.yylex(&dumyyylval, &dumyyyloc);                  \
-        if (token != 0) {                                                   \
-            return AssertionFailure() << "Lexical error should've happened "\
-                                      << "for `" << STR << "'";             \
-        } else {                                                            \
+        try {                                                               \
+            auto token = lexer.yylex(&dumyyylval, &dumyyyloc);              \
+            if (token != 0) {                                               \
+                return AssertionFailure() << "Lexical error should've "     \
+                                          << "happened for `" << STR << "'";\
+            } else {                                                        \
+                return AssertionSuccess();                                  \
+            }                                                               \
+        } catch (const std::exception &e) {                                 \
+            LOG(INFO) << e.what() << STR;                                   \
             return AssertionSuccess();                                      \
         }                                                                   \
     })
@@ -215,10 +220,21 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("space", TokenType::KW_SPACE),
         CHECK_SEMANTIC_TYPE("SPACES", TokenType::KW_SPACES),
         CHECK_SEMANTIC_TYPE("spaces", TokenType::KW_SPACES),
+        CHECK_SEMANTIC_TYPE("INDEX", TokenType::KW_INDEX),
+        CHECK_SEMANTIC_TYPE("Index", TokenType::KW_INDEX),
+        CHECK_SEMANTIC_TYPE("index", TokenType::KW_INDEX),
+        CHECK_SEMANTIC_TYPE("INDEXES", TokenType::KW_INDEXES),
+        CHECK_SEMANTIC_TYPE("Indexes", TokenType::KW_INDEXES),
+        CHECK_SEMANTIC_TYPE("indexes", TokenType::KW_INDEXES),
+        CHECK_SEMANTIC_TYPE("REBUILD", TokenType::KW_REBUILD),
+        CHECK_SEMANTIC_TYPE("Rebuild", TokenType::KW_REBUILD),
+        CHECK_SEMANTIC_TYPE("rebuild", TokenType::KW_REBUILD),
+        CHECK_SEMANTIC_TYPE("STATUS", TokenType::KW_STATUS),
+        CHECK_SEMANTIC_TYPE("Status", TokenType::KW_STATUS),
+        CHECK_SEMANTIC_TYPE("status", TokenType::KW_STATUS),
         CHECK_SEMANTIC_TYPE("PARTS", TokenType::KW_PARTS),
         CHECK_SEMANTIC_TYPE("Parts", TokenType::KW_PARTS),
-        CHECK_SEMANTIC_TYPE("BIGINT", TokenType::KW_BIGINT),
-        CHECK_SEMANTIC_TYPE("bigint", TokenType::KW_BIGINT),
+        CHECK_SEMANTIC_TYPE("parts", TokenType::KW_PARTS),
         CHECK_SEMANTIC_TYPE("DOUBLE", TokenType::KW_DOUBLE),
         CHECK_SEMANTIC_TYPE("double", TokenType::KW_DOUBLE),
         CHECK_SEMANTIC_TYPE("STRING", TokenType::KW_STRING),
@@ -253,6 +269,9 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("FIND", TokenType::KW_FIND),
         CHECK_SEMANTIC_TYPE("find", TokenType::KW_FIND),
         CHECK_SEMANTIC_TYPE("Find", TokenType::KW_FIND),
+        CHECK_SEMANTIC_TYPE("LOOKUP", TokenType::KW_LOOKUP),
+        CHECK_SEMANTIC_TYPE("Lookup", TokenType::KW_LOOKUP),
+        CHECK_SEMANTIC_TYPE("lookup", TokenType::KW_LOOKUP),
         CHECK_SEMANTIC_TYPE("CREATE", TokenType::KW_CREATE),
         CHECK_SEMANTIC_TYPE("create", TokenType::KW_CREATE),
         CHECK_SEMANTIC_TYPE("Create", TokenType::KW_CREATE),
@@ -262,6 +281,15 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("REPLICA_FACTOR", TokenType::KW_REPLICA_FACTOR),
         CHECK_SEMANTIC_TYPE("replica_factor", TokenType::KW_REPLICA_FACTOR),
         CHECK_SEMANTIC_TYPE("Replica_factor", TokenType::KW_REPLICA_FACTOR),
+        CHECK_SEMANTIC_TYPE("CHARSET", TokenType::KW_CHARSET),
+        CHECK_SEMANTIC_TYPE("charset", TokenType::KW_CHARSET),
+        CHECK_SEMANTIC_TYPE("Charset", TokenType::KW_CHARSET),
+        CHECK_SEMANTIC_TYPE("COLLATE", TokenType::KW_COLLATE),
+        CHECK_SEMANTIC_TYPE("collate", TokenType::KW_COLLATE),
+        CHECK_SEMANTIC_TYPE("Collate", TokenType::KW_COLLATE),
+        CHECK_SEMANTIC_TYPE("COLLATION", TokenType::KW_COLLATION),
+        CHECK_SEMANTIC_TYPE("collation", TokenType::KW_COLLATION),
+        CHECK_SEMANTIC_TYPE("Collation", TokenType::KW_COLLATION),
         CHECK_SEMANTIC_TYPE("DROP", TokenType::KW_DROP),
         CHECK_SEMANTIC_TYPE("drop", TokenType::KW_DROP),
         CHECK_SEMANTIC_TYPE("Drop", TokenType::KW_DROP),
@@ -295,20 +323,6 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("WITH", TokenType::KW_WITH),
         CHECK_SEMANTIC_TYPE("With", TokenType::KW_WITH),
         CHECK_SEMANTIC_TYPE("with", TokenType::KW_WITH),
-        CHECK_SEMANTIC_TYPE("FIRSTNAME", TokenType::KW_FIRSTNAME),
-        CHECK_SEMANTIC_TYPE("Firstname", TokenType::KW_FIRSTNAME),
-        CHECK_SEMANTIC_TYPE("FirstName", TokenType::KW_FIRSTNAME),
-        CHECK_SEMANTIC_TYPE("firstname", TokenType::KW_FIRSTNAME),
-        CHECK_SEMANTIC_TYPE("LASTNAME", TokenType::KW_LASTNAME),
-        CHECK_SEMANTIC_TYPE("Lastname", TokenType::KW_LASTNAME),
-        CHECK_SEMANTIC_TYPE("LastName", TokenType::KW_LASTNAME),
-        CHECK_SEMANTIC_TYPE("lastname", TokenType::KW_LASTNAME),
-        CHECK_SEMANTIC_TYPE("EMAIL", TokenType::KW_EMAIL),
-        CHECK_SEMANTIC_TYPE("Email", TokenType::KW_EMAIL),
-        CHECK_SEMANTIC_TYPE("email", TokenType::KW_EMAIL),
-        CHECK_SEMANTIC_TYPE("PHONE", TokenType::KW_PHONE),
-        CHECK_SEMANTIC_TYPE("Phone", TokenType::KW_PHONE),
-        CHECK_SEMANTIC_TYPE("phone", TokenType::KW_PHONE),
         CHECK_SEMANTIC_TYPE("USER", TokenType::KW_USER),
         CHECK_SEMANTIC_TYPE("User", TokenType::KW_USER),
         CHECK_SEMANTIC_TYPE("user", TokenType::KW_USER),
@@ -330,6 +344,9 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("ADMIN", TokenType::KW_ADMIN),
         CHECK_SEMANTIC_TYPE("Admin", TokenType::KW_ADMIN),
         CHECK_SEMANTIC_TYPE("admin", TokenType::KW_ADMIN),
+        CHECK_SEMANTIC_TYPE("DBA", TokenType::KW_DBA),
+        CHECK_SEMANTIC_TYPE("Dba", TokenType::KW_DBA),
+        CHECK_SEMANTIC_TYPE("dba", TokenType::KW_DBA),
         CHECK_SEMANTIC_TYPE("GUEST", TokenType::KW_GUEST),
         CHECK_SEMANTIC_TYPE("Guest", TokenType::KW_GUEST),
         CHECK_SEMANTIC_TYPE("guest", TokenType::KW_GUEST),
@@ -367,6 +384,12 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("ASC", TokenType::KW_ASC),
         CHECK_SEMANTIC_TYPE("Asc", TokenType::KW_ASC),
         CHECK_SEMANTIC_TYPE("asc", TokenType::KW_ASC),
+        CHECK_SEMANTIC_TYPE("DISTINCT", TokenType::KW_DISTINCT),
+        CHECK_SEMANTIC_TYPE("Distinct", TokenType::KW_DISTINCT),
+        CHECK_SEMANTIC_TYPE("distinct", TokenType::KW_DISTINCT),
+        CHECK_SEMANTIC_TYPE("DEFAULT", TokenType::KW_DEFAULT),
+        CHECK_SEMANTIC_TYPE("Default", TokenType::KW_DEFAULT),
+        CHECK_SEMANTIC_TYPE("default", TokenType::KW_DEFAULT),
         CHECK_SEMANTIC_TYPE("INGEST", TokenType::KW_INGEST),
         CHECK_SEMANTIC_TYPE("Ingest", TokenType::KW_INGEST),
         CHECK_SEMANTIC_TYPE("ingest", TokenType::KW_INGEST),
@@ -394,6 +417,18 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("limit", TokenType::KW_LIMIT),
         CHECK_SEMANTIC_TYPE("OFFSET", TokenType::KW_OFFSET),
         CHECK_SEMANTIC_TYPE("offset", TokenType::KW_OFFSET),
+        CHECK_SEMANTIC_TYPE("SNAPSHOT", TokenType::KW_SNAPSHOT),
+        CHECK_SEMANTIC_TYPE("Snapshot", TokenType::KW_SNAPSHOT),
+        CHECK_SEMANTIC_TYPE("snapshot", TokenType::KW_SNAPSHOT),
+        CHECK_SEMANTIC_TYPE("SNAPSHOTS", TokenType::KW_SNAPSHOTS),
+        CHECK_SEMANTIC_TYPE("Snapshots", TokenType::KW_SNAPSHOTS),
+        CHECK_SEMANTIC_TYPE("snapshots", TokenType::KW_SNAPSHOTS),
+        CHECK_SEMANTIC_TYPE("OFFLINE", TokenType::KW_OFFLINE),
+        CHECK_SEMANTIC_TYPE("Offline", TokenType::KW_OFFLINE),
+        CHECK_SEMANTIC_TYPE("offline", TokenType::KW_OFFLINE),
+        CHECK_SEMANTIC_TYPE("CONTAINS", TokenType::KW_CONTAINS),
+        CHECK_SEMANTIC_TYPE("Contains", TokenType::KW_CONTAINS),
+        CHECK_SEMANTIC_TYPE("contains", TokenType::KW_CONTAINS),
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
         CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),
@@ -419,15 +454,17 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_VALUE("123.", TokenType::DOUBLE, 123.),
         CHECK_SEMANTIC_VALUE(".123", TokenType::DOUBLE, 0.123),
         CHECK_SEMANTIC_VALUE("123.456", TokenType::DOUBLE, 123.456),
+        CHECK_SEMANTIC_VALUE("123.456E1", TokenType::DOUBLE, 1234.56),
+        CHECK_SEMANTIC_VALUE("123.456E-1", TokenType::DOUBLE, 12.3456),
 
-        CHECK_SEMANTIC_VALUE("0xFFFFFFFFFFFFFFFF", TokenType::INTEGER, 0xFFFFFFFFFFFFFFFFL),
-        CHECK_SEMANTIC_VALUE("0x00FFFFFFFFFFFFFFFF", TokenType::INTEGER, 0x00FFFFFFFFFFFFFFFFL),
+        CHECK_SEMANTIC_VALUE("0x7FFFFFFFFFFFFFFF", TokenType::INTEGER, 0x7FFFFFFFFFFFFFFFL),
+        CHECK_SEMANTIC_VALUE("0x007FFFFFFFFFFFFFFF", TokenType::INTEGER, 0x007FFFFFFFFFFFFFFFL),
         CHECK_SEMANTIC_VALUE("9223372036854775807", TokenType::INTEGER, 9223372036854775807L),
-        CHECK_SEMANTIC_VALUE("001777777777777777777777", TokenType::INTEGER,
-                              001777777777777777777777),
-        CHECK_LEXICAL_ERROR("9223372036854775808"),
-        CHECK_LEXICAL_ERROR("0xFFFFFFFFFFFFFFFFF"),
-        CHECK_LEXICAL_ERROR("002777777777777777777777"),
+        CHECK_SEMANTIC_VALUE("00777777777777777777777", TokenType::INTEGER,
+                              00777777777777777777777),
+        CHECK_LEXICAL_ERROR("9223372036854775809"),
+        CHECK_LEXICAL_ERROR("0x8000000000000001"),
+        CHECK_LEXICAL_ERROR("001000000000000000000001"),
         // TODO(dutor) It's too tedious to paste an overflowed double number here,
         // thus we rely on `folly::to<double>' to cover those cases for us.
 

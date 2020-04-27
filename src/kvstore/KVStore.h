@@ -17,6 +17,7 @@
 #include "kvstore/CompactionFilter.h"
 #include "meta/SchemaManager.h"
 #include "base/ErrorOr.h"
+#include "base/Status.h"
 
 namespace nebula {
 namespace kvstore {
@@ -62,6 +63,8 @@ public:
     // Return bit-OR of StoreCapability values;
     virtual uint32_t capability() const = 0;
 
+    virtual void stop() = 0;
+
     // Retrieve the current leader for the given partition. This
     // is usually called when ERR_LEADER_CHANGED result code is
     // returned
@@ -77,11 +80,14 @@ public:
                            const std::string& key,
                            std::string* value) = 0;
 
-    // Read multiple keys
-    virtual ResultCode multiGet(GraphSpaceID spaceId,
-                                PartitionID partId,
-                                const std::vector<std::string>& keys,
-                                std::vector<std::string>* values) = 0;
+    // Read multiple keys, if error occurs a ResultCode is returned,
+    // If key[i] does not exist, the i-th value in return value would be Status::KeyNotFound
+    virtual std::pair<ResultCode, std::vector<Status>>
+    multiGet(GraphSpaceID spaceId,
+             PartitionID partId,
+             const std::vector<std::string>& keys,
+             std::vector<std::string>* values) = 0;
+
     // Get all results in range [start, end)
     virtual ResultCode range(GraphSpaceID spaceId,
                              PartitionID  partId,
@@ -110,6 +116,23 @@ public:
                               std::string&& prefix,
                               std::unique_ptr<KVIterator>* iter) = delete;
 
+    // Get all results with prefix starting from start
+    virtual ResultCode rangeWithPrefix(GraphSpaceID spaceId,
+                                       PartitionID  partId,
+                                       const std::string& start,
+                                       const std::string& prefix,
+                                       std::unique_ptr<KVIterator>* iter) = 0;
+
+    // To forbid to pass rvalue via the `rangeWithPrefix' parameter.
+    virtual ResultCode rangeWithPrefix(GraphSpaceID spaceId,
+                                       PartitionID  partId,
+                                       std::string&& start,
+                                       std::string&& prefix,
+                                       std::unique_ptr<KVIterator>* iter) = delete;
+
+    virtual ResultCode sync(GraphSpaceID spaceId,
+                            PartitionID partId) = 0;
+
     virtual void asyncMultiPut(GraphSpaceID spaceId,
                                PartitionID  partId,
                                std::vector<KV> keyValues,
@@ -132,11 +155,6 @@ public:
                                   const std::string& end,
                                   KVCallback cb) = 0;
 
-    virtual void asyncRemovePrefix(GraphSpaceID spaceId,
-                                   PartitionID partId,
-                                   const std::string& prefix,
-                                   KVCallback cb) = 0;
-
     virtual void asyncAtomicOp(GraphSpaceID spaceId,
                                PartitionID partId,
                                raftex::AtomicOp op,
@@ -153,6 +171,12 @@ public:
     virtual ResultCode compact(GraphSpaceID spaceId) = 0;
 
     virtual ResultCode flush(GraphSpaceID spaceId) = 0;
+
+    virtual ResultCode createCheckpoint(GraphSpaceID spaceId, const std::string& name) = 0;
+
+    virtual ResultCode dropCheckpoint(GraphSpaceID spaceId, const std::string& name) = 0;
+
+    virtual ResultCode setWriteBlocking(GraphSpaceID spaceId, bool sign) = 0;
 
 protected:
     KVStore() = default;

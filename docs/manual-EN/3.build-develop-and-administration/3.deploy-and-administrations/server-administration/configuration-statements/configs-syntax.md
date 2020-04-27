@@ -1,8 +1,19 @@
 # CONFIG Syntax
 
-Nebula uses `gflags` for run-time configurations.
+## Introduction to Configuration
+
+**Nebula Graph** gets configuration from meta by default. If you want to get configuration locally, please add the `--local_config=true` option in the configuration files `metad.conf`, `storaged.conf`, `graphd.conf` (directory is `/home/user/nebula/build/install/etc`) respectively.
+
+**Note:**
+
+- Configuration precedence: meta > console > environment variable > configuration files.
+- If set `--local_config` to true, the configuration files take precedence.
+- Restart the services after changing the configuration files to take effect.
+- Configuration changes in console take effect in real time.
 
 ## gflag Parameters
+
+**Nebula Graph** uses `gflags` for run-time configurations.
 
 There are four gflags related parameters, among which, `max_edge_returned_per_vertex` is used to control the max edges returned by a certain vertex, `rocksdb_db_options`, `rocksdb_column_family_options` and `rocksdb_block_based_table_options`
  are all in json format, and the key and value of them are in string format. For example, you can set as follows in the conf file of storage:
@@ -14,7 +25,7 @@ There are four gflags related parameters, among which, `max_edge_returned_per_ve
     "max_edge_returned_per_vertex":"INT_MAX"
 ```
 
-Nebula supports changing some rocksdb parameters in storage service as follows:
+**Nebula Graph** supports changing some rocksdb parameters in storage service as follows:
 
 ```text
     // rocksdb_column_family_options
@@ -48,8 +59,24 @@ Nebula supports changing some rocksdb parameters in storage service as follows:
 For example
 
 ```ngql
-UPDATE CONFIGS storage:rocksdb_column_family_options = { disable_auto_compactions = false , level0_file_num_compaction_trigger = 10 }
+nebula> UPDATE CONFIGS storage:rocksdb_column_family_options = \
+        { disable_auto_compactions = false ,         level0_file_num_compaction_trigger = 10 }
 ```
+
+### Reservoir Sampling Parameters
+
+Set the following parameters in the configuration file `storaged-conf`:
+
+```bash
+enable_reservoir_sampling = true/false # Enable reservoir sampling with true.
+max_edge_returned_per_vertex = number # Set the sampling number.
+```
+
+For super vertex with a large number of edges, currently there are two truncation strategies:
+
+1. Truncate directly. Set the `enable_reservoir_sampling` parameter to `false`. A certain number of edges specified in the `Max_edge_returned_per_vertex` parameter are truncated by default.
+
+2. Truncate with the reservoir sampling algorithm. Based on the algorithm, a certain number of edges specified in the `Max_edge_returned_per_vertex` parameter are truncated with equal probability from the total n edges. Equal probability sampling is useful in some business scenarios. However, the performance is effected compared to direct truncation due to the probability calculation.
 
 ## SHOW CONFIGS
 
@@ -81,26 +108,23 @@ GET CONFIGS [graph|meta|storage :] var
 For example
 
 ```ngql
-nebula> GET CONFIGS storage:load_data_interval_secs
-=================================================================
-| module  | name                      | type  | mode    | value |
-=================================================================
-| STORAGE | load_data_interval_secs   | INT64 | MUTABLE | 120   |
------------------------------------------------------------------
+nebula> GET CONFIGS storage:local_ip
+=======================================================
+| module  | name     | type   | mode      | value     |
+=======================================================
+| STORAGE | local_ip | STRING | IMMUTABLE | 127.0.0.1 |
+-------------------------------------------------------
 ```
 
 ```ngql
-nebula> GET CONFIGS load_data_interval_secs
+nebula> GET CONFIGS heartbeat_interval_secs
 =================================================================
 | module  | name                    | type  | mode      | value |
 =================================================================
-| GRAPH   | load_data_interval_secs | INT64 | MUTABLE   | 120   |
+| GRAPH   | heartbeat_interval_secs | INT64 | MUTABLE | 10    |
 -----------------------------------------------------------------
-| META    | load_data_interval_secs | INT64 | IMMUTABLE | 120   |
+| STORAGE | heartbeat_interval_secs | INT64 | MUTABLE | 10    |
 -----------------------------------------------------------------
-| STORAGE | load_data_interval_secs | INT64 | MUTABLE   | 120   |
------------------------------------------------------------------
-Got 3 rows (Time spent: 1449/2339 us)
 ```
 
 ## Update CONFIGS
@@ -115,13 +139,11 @@ UPDATE CONFIGS [graph|meta|storage :] var = value
 For example
 
 ```ngql
-nebula> UPDATE CONFIGS storage:load_data_interval_secs=1
-Execution succeeded (Time spent: 1750/2484 us)
-nebula> GET CONFIGS storage:load_data_interval_secs
+nebula> UPDATE CONFIGS storage:heartbeat_interval_secs=1
+nebula> GET CONFIGS storage:heartbeat_interval_secs
 ===============================================================
 | module  | name                    | type  | mode    | value |
 ===============================================================
-| STORAGE | load_data_interval_secs | INT64 | MUTABLE | 1     |
+| STORAGE | heartbeat_interval_secs | INT64 | MUTABLE | 1     |
 ---------------------------------------------------------------
-Got 1 rows (Time spent: 1678/3420 us)
 ```

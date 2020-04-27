@@ -7,7 +7,6 @@
 #ifndef META_ADHOCSCHEMAMANAGER_H_
 #define META_ADHOCSCHEMAMANAGER_H_
 
-#include "base/Base.h"
 #include <folly/RWSpinLock.h>
 #include "meta/SchemaProviderIf.h"
 #include "meta/SchemaManager.h"
@@ -23,11 +22,13 @@ public:
 
     void addTagSchema(GraphSpaceID space,
                       TagID tag,
-                      std::shared_ptr<nebula::meta::SchemaProviderIf> schema);
+                      std::shared_ptr<nebula::meta::SchemaProviderIf> schema,
+                      SchemaVer version = 0);
 
     void addEdgeSchema(GraphSpaceID space,
                        EdgeType edge,
-                       std::shared_ptr<nebula::meta::SchemaProviderIf> schema);
+                       std::shared_ptr<nebula::meta::SchemaProviderIf> schema,
+                       SchemaVer version = 0);
 
     void removeTagSchema(GraphSpaceID space, TagID tag);
 
@@ -38,7 +39,7 @@ public:
 
 
     // Returns a negative number when the schema does not exist
-    StatusOr<SchemaVer> getNewestTagSchemaVer(GraphSpaceID space, TagID tag) override;
+    StatusOr<SchemaVer> getLatestTagSchemaVersion(GraphSpaceID space, TagID tag) override;
 
     std::shared_ptr<const nebula::meta::SchemaProviderIf>
     getEdgeSchema(GraphSpaceID space,
@@ -46,20 +47,24 @@ public:
                   SchemaVer version = -1) override;
 
     // Returns a negative number when the schema does not exist
-    StatusOr<SchemaVer> getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) override;
+    StatusOr<SchemaVer> getLatestEdgeSchemaVersion(GraphSpaceID space, EdgeType edge) override;
 
     StatusOr<GraphSpaceID> toGraphSpaceID(folly::StringPiece spaceName) override;
 
     StatusOr<TagID> toTagID(GraphSpaceID space, folly::StringPiece tagName) override;
 
+    StatusOr<std::string> toTagName(GraphSpaceID, TagID) override {
+        LOG(FATAL) << "Unimplemented";
+        return Status::Error("Unimplemented");
+    }
+
     StatusOr<EdgeType> toEdgeType(GraphSpaceID space, folly::StringPiece typeName) override;
 
-    StatusOr<std::string> toEdgeName(GraphSpaceID, EdgeType) override {
-        LOG(FATAL) << "Unimplemented";
-    }
+    StatusOr<std::string> toEdgeName(GraphSpaceID space, EdgeType edgeType) override;
 
     StatusOr<std::vector<std::string>> getAllEdge(GraphSpaceID) override {
         LOG(FATAL) << "Unimplemented";
+        return Status::Error("Unimplemented");
     }
 
     void init(nebula::meta::MetaClient *) override {

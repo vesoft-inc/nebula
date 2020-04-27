@@ -1,34 +1,34 @@
 # 集合操作 (`UNION`，`INTERSECT`， `MINUS`)
 
-## `UNION`，`UNION DISTINCT`， `UNION ALL`
+## UNION，UNION DISTINCT，UNION ALL
 
 `UNION DISTINCT` (简称 `UNION`)返回数据集 A 和 B 的并集（不包含重复元素）。
 
 `UNION ALL` 返回数据集 A 和 B 的并集（包含重复元素）。`UNION` 语法为
 
 ```ngql
-<left> UNION [DISTINCT | ALL] <right>
+<left> UNION [DISTINCT | ALL] <right> [ UNION [DISTINCT | ALL] <right> ...]
 ```
 
-`<left>` 和 `<right>` 必须列数相同，且数据类型相同。
+`<left>` 和 `<right>` 必须列数相同，且数据类型相同。如果数据类型不同，将按照[类型转换](../1.data-types/type-conversion.md)进行转换。
 
 ### 示例
 
 ```ngql
-GO FROM 1 OVER e1 \
-UNION \
-GO FROM 2 OVER e1
+nebula> GO FROM 1 OVER e1 \
+        UNION \
+        GO FROM 2 OVER e1
 ```
 
 以上语句返回点 `1` 和 `2` (沿边 `e1`) 关联的唯一的点。
 
 ```ngql
-GO FROM 1 OVER e1 \
-UNION ALL\
-GO FROM 2 OVER e1
+nebula> GO FROM 1 OVER e1 \
+        UNION ALL\
+        GO FROM 2 OVER e1
 ```
 
-以上语句返回点 `1` 和 `2` 关联的点，其中存在重复点。
+以上语句返回点 `1` 和 `2` 关联的所有点，其中存在重复点。
 
 `UNION` 亦可与 `YIELD` 同时使用，例如以下语句：
 
@@ -53,9 +53,9 @@ nebula> GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.pro
 ```
 
 ```ngql
-GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
-UNION /* DISTINCT */
-GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
+nebula> GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2   \
+        UNION /* DISTINCT */     \
+        GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
 ```
 
 以上语句返回
@@ -76,9 +76,9 @@ GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS ri
 `UNION ALL` 返回结果为
 
 ```ngql
-GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
-UNION ALL
-GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
+nebula> GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2   \
+        UNION ALL   \
+        GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
 
 =========================
 | id  | left_1 | left_2 |    -- UNION ALL
@@ -105,7 +105,7 @@ GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS ri
 此外，只返回 `<left>` 右 `<right>` 相同的行。例如：
 
 ```ngql
-GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
+nebula> GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
 INTERSECT
 GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
 ```
@@ -125,7 +125,7 @@ GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS ri
 返回 A - B 数据的差集，此处请注意运算顺序。例如：
 
 ```ngql
-GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
+nebula> GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
 MINUS
 GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
 ```
@@ -143,7 +143,7 @@ GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS ri
 如果更改 `MINUS` 顺序
 
 ```ngql
-GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
+nebula> GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
 MINUS
 GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
 ```

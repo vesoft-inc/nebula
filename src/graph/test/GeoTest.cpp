@@ -228,7 +228,7 @@ AssertionResult GeoTest::removeData() {
     return TestOK();
 }
 
-TEST_F(GeoTest, near) {
+TEST_F(GeoTest, Near) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "USE geo;"
@@ -261,7 +261,7 @@ TEST_F(GeoTest, near) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"merchant.name"}, {"merchant.coordinate"}, {"merchant.rate"}
+            {"VertexID"}, {"merchant.name"}, {"merchant.coordinate"}, {"merchant.rate"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
@@ -269,7 +269,7 @@ TEST_F(GeoTest, near) {
             {merchants_[0].name(), merchants_[0].coordinate(), merchants_[0].rate()},
             {merchants_[1].name(), merchants_[1].coordinate(), merchants_[1].rate()},
         };
-        ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_TRUE(verifyResult(resp, expected, true, {0}));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -285,7 +285,7 @@ TEST_F(GeoTest, near) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"name"}, {"rate"}
+            {"VertexID"}, {"name"}, {"rate"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
@@ -293,7 +293,7 @@ TEST_F(GeoTest, near) {
             {merchants_[1].name(), merchants_[1].rate()},
             {merchants_[0].name(), merchants_[0].rate()},
         };
-        ASSERT_TRUE(verifyResult(resp, expected, false));
+        ASSERT_TRUE(verifyResult(resp, expected, false, {0}));
     }
 }
 }  // namespace graph

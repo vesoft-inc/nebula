@@ -3,7 +3,7 @@
 目前，`WHERE` 语句仅适用于 `GO` 语句。
 
 ```ngql
-WHERE (expression [ AND | OR expression ...])  
+WHERE <expression> [ AND | OR <expression> ...])  
 ```
 
 通常，筛选条件是关于节点、边的表达式的逻辑组合。
@@ -13,13 +13,40 @@ WHERE (expression [ AND | OR expression ...])
 ## 示例
 
 ```ngql
--- 边 e1 的 prop1 属性大于 17
-nebula> GO FROM 201 OVER likes WHERE e1.prop1 >= 17
--- 起点 v1 的 prop1 属性与终点 v2 的 prop2 属性值相等
-nebula> GO FROM 201 OVER likes WHERE $^.v1.prop1 == $$.v2.prop2
--- 多种逻辑组合
-nebula> GO FROM 201 OVER likes WHERE ((e3.prop3 < 0.5) \
-   OR ($^.v4.prop4 != "hello")) AND $$.v5.prop5 == "world"
---下面这个条件总是为 TRUE
-nebula> GO FROM 201 OVER likes WHERE 1 == 1 OR TRUE
+-- 边 follow 的 degree 属性大于 90。
+nebula> GO FROM 100 OVER follow WHERE follow.degree > 90;
+-- 返回以下值：
+===============
+| follow._dst |
+===============
+| 101         |
+---------------
+-- 找到与起点 player 104 的 age 值相等的点。
+nebula> GO FROM 104 OVER follow WHERE $^.player.age == $$.player.age;
+-- 返回以下值：
+===============
+| follow._dst |
+===============
+| 103         |
+---------------
+-- 多种逻辑组合。
+nebula> GO FROM 100 OVER follow WHERE follow.degree > 90 OR $$.player.age != 33 AND $$.player.name != "Tony Parker";
+-- 返回以下值：
+===============
+| follow._dst |
+===============
+| 101         |
+---------------
+| 106         |
+---------------
+--下面 WHERE 语句中的条件总是为 TRUE。
+nebula> GO FROM 101 OVER follow WHERE 1 == 1 OR TRUE;
+-- 返回以下值：
+===============
+| follow._dst |
+===============
+| 100         |
+---------------
+| 102         |
+---------------
 ```

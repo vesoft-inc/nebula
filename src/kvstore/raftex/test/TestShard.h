@@ -28,7 +28,7 @@ std::string encodeLearner(const HostAddr& addr);
 
 HostAddr decodeLearner(const folly::StringPiece& log);
 
-std::string compareAndSet(const std::string& log);
+folly::Optional<std::string> compareAndSet(const std::string& log);
 
 std::string encodeTransferLeader(const HostAddr& addr);
 
@@ -174,7 +174,7 @@ public:
                           << ", total count sended " << totalCount
                           << ", total size sended " << totalSize
                           << ", finished false";
-                cb(std::move(data), totalCount, totalSize, false);
+                cb(data, totalCount, totalSize, SnapshotStatus::IN_PROGRESS);
                 data.clear();
             }
             auto encoded = encodeSnapshotRow(row.first, row.second);
@@ -182,13 +182,11 @@ public:
             totalCount++;
             data.emplace_back(std::move(encoded));
         }
-        if (data.size() > 0) {
-            LOG(INFO) << part->idStr_ << "Send snapshot total rows " << data.size()
-                      << ", total count sended " << totalCount
-                      << ", total size sended " << totalSize
-                      << ", finished true";
-            cb(std::move(data), totalCount, totalSize, true);
-        }
+        LOG(INFO) << part->idStr_ << "Send snapshot total rows " << data.size()
+                  << ", total count sended " << totalCount
+                  << ", total size sended " << totalSize
+                  << ", finished true";
+        cb(data, totalCount, totalSize, SnapshotStatus::DONE);
     }
 
     RaftexService* service_;

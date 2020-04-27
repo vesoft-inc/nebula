@@ -1,25 +1,25 @@
 # Logical Operators
 
-|  ***Name***    |  ***Description***    |
+|  **Name**    |  **Description**    |
 |:----|:----:|
 |   &&     |   Logical AND     |
 |   !      |   Logical NOT     |
 |   \|\|   |   Logical OR   |
 |   XOR      |   Logical XOR  |
 
-In nGQL, nonzero numbers are evaluated to _true_. The precedence of the operators refer to [Operator Precedence](./operator-precedence.md).
+In nGQL, non-zero numbers are evaluated to _true_. For the precedence of the operators, refer to [Operator Precedence](./operator-precedence.md).
 
 * &&
 
 Logical AND:
 
 ```ngql
-nebula> YIELD -1 && true
-================
-| (-(1)&&true) |
-================
-|true |
-----------------
+nebula> YIELD -1 && true;
+==============
+| (-1&&true) |
+==============
+| true       |
+--------------
 ```
 
 * !
@@ -27,13 +27,12 @@ nebula> YIELD -1 && true
 Logical NOT:
 
 ```ngql
-nebula> YIELD !(-1)
-===========
-| !(-(1)) |
-===========
-|false |
------------
-
+nebula> YIELD !(-1);
+=========
+| !(-1) |
+=========
+| false |
+---------
 ```
 
 * ||
@@ -41,11 +40,12 @@ nebula> YIELD !(-1)
 Logical OR:
 
 ```ngql
-nebula> YIELD 1 || !1
+nebula> YIELD 1 || !1;
 =============
 | (1||!(1)) |
 =============
-| true |
+| true      |
+-------------
 ```
 
 * ^
@@ -53,9 +53,10 @@ nebula> YIELD 1 || !1
 Logical XOR:
 
 ```ngql
-nebula> YIELD (NOT 0 || 0) AND 0 XOR 1 AS ret
+nebula> YIELD (NOT 0 || 0) AND 0 XOR 1 AS ret;
 =========
-|  ret  |
+| ret   |
 =========
-|   1   |
+| true  |
+---------
 ```

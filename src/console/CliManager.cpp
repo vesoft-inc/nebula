@@ -8,8 +8,8 @@
 #include "base/Status.h"
 #include <termios.h>
 #include <unistd.h>
-#include <readline/readline.h>
-#include <readline/history.h>
+#include "readline/readline.h"
+#include "readline/history.h"
 #include "console/CliManager.h"
 #include "client/cpp/GraphClient.h"
 #include "fs/FileUtils.h"
@@ -171,8 +171,8 @@ bool CliManager::readLine(std::string &line, bool linebreak) {
         if (!isInteractive_) {
             break;
         }
-        auto purePrompt = folly::stringPrintf("(%s@%s) [%s]> ",
-                                              username_.c_str(), addr_.c_str(),
+        auto purePrompt = folly::stringPrintf("(%s@nebula) [%s]> ",
+                                              username_.c_str(),
                                               cmdProcessor_->getSpaceName().c_str());
         if (linebreak) {
             purePrompt.assign(purePrompt.size() - 3, ' ');
@@ -185,7 +185,7 @@ bool CliManager::readLine(std::string &line, bool linebreak) {
                    "\001"              // RL_PROMPT_START_IGNORE
                    "\033[1;%um"        // color codes start
                    "\002"              // RL_PROMPT_END_IGNORE
-                   "%s"                // prompt "(user@host) [spaceName]"
+                   "%s"                // prompt "(user@host:port) [spaceName]"
                    "\001"              // RL_PROMPT_START_IGNORE
                    "\033[0m"           // restore color code
                    "\002",             // RL_PROMPT_END_IGNORE

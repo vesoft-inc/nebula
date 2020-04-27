@@ -164,8 +164,8 @@ std::vector<folly::StringPiece> decodeMultiValues(folly::StringPiece encoded) {
     return values;
 }
 
-std::string encodeBatchValue(const std::vector<std::pair<BatchLogType,
-                             std::pair<folly::StringPiece, folly::StringPiece>>>& batch) {
+std::string
+encodeBatchValue(const std::vector<std::tuple<BatchLogType, std::string, std::string>>& batch) {
     auto type = LogType::OP_BATCH_WRITE;
     std::string encoded;
     encoded.reserve(1024);
@@ -180,17 +180,16 @@ std::string encodeBatchValue(const std::vector<std::pair<BatchLogType,
     encoded.append(reinterpret_cast<char*>(&num), sizeof(uint32_t));
     // Values
     for (auto& op : batch) {
-        auto bType = op.first;
-        auto bPair = op.second;
-        encoded.append(reinterpret_cast<char*>(&bType), 1);
-        auto v1 = bPair.first;
-        auto v2 = bPair.second;
-        auto len = v1.size();
-        encoded.append(reinterpret_cast<char*>(&len), sizeof(uint32_t));
-        encoded.append(v1.data(), len);
-        len = v2.size();
-        encoded.append(reinterpret_cast<char*>(&len), sizeof(uint32_t));
-        encoded.append(v2.data(), len);
+        auto opType = std::get<0>(op);
+        auto key = std::get<1>(op);
+        auto val = std::get<2>(op);
+        auto keySize = key.size();
+        auto valSize = val.size();
+        encoded.append(reinterpret_cast<char*>(&opType), 1)
+               .append(reinterpret_cast<char*>(&keySize), sizeof(uint32_t))
+               .append(key.data(), keySize)
+               .append(reinterpret_cast<char*>(&valSize), sizeof(uint32_t))
+               .append(val.data(), valSize);
     }
 
     return encoded;
@@ -222,12 +221,10 @@ decodeBatchValue(folly::StringPiece encoded) {
 std::string encodeHost(LogType type, const HostAddr& host) {
     std::string encoded;
     encoded.reserve(sizeof(int64_t) + 1 + sizeof(HostAddr));
-    // Timestamp (8 bytes)
     int64_t ts = time::WallClock::fastNowInMilliSec();
-    encoded.append(reinterpret_cast<char*>(&ts), sizeof(int64_t));
-    // Log type
-    encoded.append(reinterpret_cast<char*>(&type), 1);
-    encoded.append(reinterpret_cast<const char*>(&host), sizeof(HostAddr));
+    encoded.append(reinterpret_cast<char*>(&ts), sizeof(int64_t))
+           .append(reinterpret_cast<char*>(&type), 1)
+           .append(reinterpret_cast<const char*>(&host), sizeof(HostAddr));
     return encoded;
 }
 

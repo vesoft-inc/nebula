@@ -58,6 +58,7 @@ public:
     }
 
     static ClusterID getClusterIdFromFile(const std::string& filename) {
+        LOG(INFO) << "Try to open " << filename;
         int fd = ::open(filename.c_str(), O_RDONLY);
         if (fd < 0) {
             LOG(WARNING) << "Open file failed, error " << strerror(errno);

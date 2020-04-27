@@ -43,6 +43,14 @@ public:
         yy_flush_buffer(yy_buffer_stack ? yy_buffer_stack[yy_buffer_stack_top] : nullptr);
     }
 
+    void setQuery(std::string *query) {
+        query_ = query;
+    }
+
+    std::string* query() {
+        return query_;
+    }
+
 protected:
     // Called when YY_INPUT is invoked
     int LexerInput(char *buf, int maxSize) override {
@@ -61,8 +69,7 @@ protected:
             return;
         }
 
-        auto newSize = sbufSize_ * 2;
-        newSize = newSize > len ? newSize : len;
+        auto newSize = sbufSize_ * 2 + len;
         auto newBuffer = std::make_unique<char[]>(newSize);
         ::memcpy(newBuffer.get(), sbuf_.get(), sbufPos_);
         sbuf_ = std::move(newBuffer);
@@ -84,6 +91,7 @@ private:
     size_t                              sbufSize_{0};
     size_t                              sbufPos_{0};
     std::function<int(char*, int)>      readBuffer_;
+    std::string*                        query_{nullptr};
 };
 
 }   // namespace nebula

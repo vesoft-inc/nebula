@@ -1,35 +1,35 @@
 # Set Operations (`UNION`, `INTERSECT`, and `MINUS`)
 
-## `UNION`, `UNION DISTINCT`, and `UNION ALL`
+## UNION, UNION DISTINCT, and UNION ALL
 
 Operator `UNION DISTINCT` (or by short `UNION`) returns the union of two sets A and B (denoted by `A ⋃ B` in mathematics), with the distinct element belongs to set A or set B, or both.
 
-Meanwhile, operation `UNION ALL` returns the union set with duplicated elements. The `UNION`-syntax is
+Meanwhile, operation `UNION ALL` returns the union set with duplicated elements. The `UNION` syntax is
 
 ```ngql
-<left> UNION [DISTINCT | ALL] <right>
+<left> UNION [DISTINCT | ALL] <right> [ UNION [DISTINCT | ALL] <right> ...]
 ```
 
-where `<left>` and `<right>` must have the same number of columns and pair-wise data types.
+where `<left>` and `<right>` must have the same number of columns and pair-wise data types. If the data types are different, **Nebula Graph** will convert according to [Type Conversion](../1.data-types/type-conversion.md).
 
 ### Example
 
 The following statement
 
 ```ngql
-GO FROM 1 OVER e1 \
-UNION \
-GO FROM 2 OVER e1
+nebula> GO FROM 1 OVER e1 \
+        UNION \
+        GO FROM 2 OVER e1
 ```
 
-return the neighbors' id of vertex `1` and `2` (along with edge `e1`) without duplication.
+returns the neighbors' id of vertex `1` and `2` (along with edge `e1`) without duplication.
 
 While
 
 ```ngql
-GO FROM 1 OVER e1 \
-UNION ALL\
-GO FROM 2 OVER e1
+nebula> GO FROM 1 OVER e1 \
+        UNION ALL\
+        GO FROM 2 OVER e1
 ```
 
 returns all the neighbors of vertex `1` and `2`, with all possible duplications.
@@ -59,9 +59,9 @@ nebula> GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.pro
 And the following statement
 
 ```ngql
-GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
-UNION /* DISTINCT */
-GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
+nebula> GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2   \
+        UNION /* DISTINCT */   \
+        GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
 ```
 
 will return as follows:
@@ -83,9 +83,9 @@ Notice that line 1 and line 2 return the same id (104) with different column val
 You can expect the `UNION ALL` result
 
 ```ngql
-GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
-UNION ALL
-GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
+nebula> GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2   \
+        UNION ALL   \
+        GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
 
 =========================
 | id  | left_1 | left_2 |    -- UNION ALL
@@ -111,17 +111,15 @@ Operator `INTERSECT` returns the intersection of two sets A and B (denoted by A 
 Alike `UNION`, `<left>` and `<right>` must have the same number of columns and data types.
 Besides, only the same line of `<left>` and `<right>` will be returned.
 
-### Example
-
-You can imagine
+For example, the following query
 
 ```ngql
-GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
+nebula> GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
 INTERSECT
 GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
 ```
 
-will return
+returns
 
 ```ngql
 =========================
@@ -135,10 +133,10 @@ will return
 
 The set subtraction (or difference), A - B, consists of elements that are in A but not in B. So the operation order matters.
 
-### Example
+For example, the following query
 
 ```ngql
-GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
+nebula> GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
 MINUS
 GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
 ```
@@ -153,15 +151,15 @@ comes out
 --------------------------
 ```
 
-And if we reverse the `MINUS` order
+And if we reverse the `MINUS` order, the query
 
 ```ngql
-GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
+nebula> GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
 MINUS
 GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
 ```
 
-results in
+returns
 
 ```ngql
 ===========================

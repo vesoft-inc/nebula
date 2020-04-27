@@ -9,6 +9,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:storage_thrift_obj>
         $<TARGET_OBJECTS:kvstore_obj>
         $<TARGET_OBJECTS:meta_client>
+        $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:meta_thrift_obj>
         $<TARGET_OBJECTS:common_thrift_obj>
         $<TARGET_OBJECTS:raftex_obj>
@@ -25,6 +26,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:gflags_man_obj>
         $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:kvstore_storage_utils_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
@@ -37,6 +39,8 @@ install(
         storage_perf
     DESTINATION
         bin
+    COMPONENT
+        tool
 )
 
 nebula_add_executable(
@@ -50,6 +54,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:storage_thrift_obj>
         $<TARGET_OBJECTS:kvstore_obj>
         $<TARGET_OBJECTS:meta_client>
+        $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:meta_thrift_obj>
         $<TARGET_OBJECTS:common_thrift_obj>
         $<TARGET_OBJECTS:raftex_obj>
@@ -66,6 +71,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:gflags_man_obj>
         $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:kvstore_storage_utils_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
@@ -78,4 +84,6 @@ install(
         storage_integrity
     DESTINATION
         bin
+    COMPONENT
+        tool
 )

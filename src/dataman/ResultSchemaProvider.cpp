@@ -40,6 +40,16 @@ bool ResultSchemaProvider::ResultSchemaField::isValid() const {
 }
 
 
+bool ResultSchemaProvider::ResultSchemaField::hasDefault() const {
+    LOG(FATAL) << "Not Supported";
+}
+
+
+std::string ResultSchemaProvider::ResultSchemaField::getDefaultValue() const {
+    LOG(FATAL) << "Not Supported";
+}
+
+
 /***********************************
  *
  * ResultSchemaProvider
@@ -111,6 +121,12 @@ std::shared_ptr<const meta::SchemaProviderIf::Field> ResultSchemaProvider::field
         return std::shared_ptr<ResultSchemaField>();
     }
     return std::make_shared<ResultSchemaField>(&(columns_[index]));
+}
+
+nebula::cpp2::Schema ResultSchemaProvider::toSchema() const {
+    nebula::cpp2::Schema schema;
+    schema.set_columns(columns_);
+    return schema;
 }
 
 }  // namespace nebula

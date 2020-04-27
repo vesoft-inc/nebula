@@ -1,51 +1,12 @@
 {
-    "IMMUTABLE": [
-    ],
-    "REBOOT": [
-    ],
     "MUTABLE": [
-        "load_data_interval_secs",
         "max_edge_returned_per_vertex",
         "minloglevel",
         "v",
         "heartbeat_interval_secs",
         "meta_client_retry_times",
-        "slow_op_threshhold_ms"
-    ],
-    "IGNORED": [
-        "logging",
-        "flagfile",
-        "fromenv",
-        "tryfromenv",
-        "undefok",
-        "tab_completion_columns",
-        "tab_completion_word",
-        "alsologtostderr",
-        "drop_log_memory",
-        "log_backtrace_at",
-        "log_dir",
-        "log_link",
-        "log_prefix",
-        "logbuflevel",
-        "logbufsecs",
-        "logemaillevel",
-        "logfile_mode",
-        "logmailer",
-        "logtostderr",
-        "max_log_size",
-        "stderrthreshold",
-        "stop_logging_if_full_disk",
-        "symbolize_stacktrace",
-        "vmodule",
-        "help",
-        "helpon",
-        "helpxml",
-        "helpfull",
-        "helpmatch",
-        "helpshort",
-        "alsologtoemail",
-        "version",
-        "gflags_mode_json"
+        "slow_op_threshhold_ms",
+        "wal_ttl"
     ],
     "NESTED": [
         "rocksdb_db_options",

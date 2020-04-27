@@ -17,6 +17,7 @@ namespace kvstore {
 
 class Handler {
 public:
+    virtual ~Handler() = default;
     virtual void addSpace(GraphSpaceID spaceId) = 0;
     virtual void addPart(GraphSpaceID spaceId, PartitionID partId, bool asLearner) = 0;
     virtual void updateSpaceOption(GraphSpaceID spaceId,
@@ -24,6 +25,8 @@ public:
                                    bool isDbOption) = 0;
     virtual void removeSpace(GraphSpaceID spaceId) = 0;
     virtual void removePart(GraphSpaceID spaceId, PartitionID partId) = 0;
+    virtual int32_t allLeader(std::unordered_map<GraphSpaceID,
+                                                 std::vector<PartitionID>>& leaderIds) = 0;
 };
 
 
@@ -44,17 +47,17 @@ public:
     /**
      * return PartMeta for <spaceId, partId>
      * */
-    virtual PartMeta partMeta(GraphSpaceID spaceId, PartitionID partId) = 0;
+    virtual StatusOr<PartMeta> partMeta(GraphSpaceID spaceId, PartitionID partId) = 0;
 
     /**
      * Check current part exist or not on host.
      * */
-    virtual bool partExist(const HostAddr& host, GraphSpaceID spaceId, PartitionID partId) = 0;
+    virtual Status partExist(const HostAddr& host, GraphSpaceID spaceId, PartitionID partId) = 0;
 
     /**
      * Check current space exist or not.
      * */
-    virtual bool spaceExist(const HostAddr& host, GraphSpaceID spaceId) = 0;
+    virtual Status spaceExist(const HostAddr& host, GraphSpaceID spaceId) = 0;
 
     /**
      * Register Handler
@@ -76,6 +79,9 @@ class MemPartManager final : public PartManager {
     FRIEND_TEST(NebulaStoreTest, PartsTest);
     FRIEND_TEST(NebulaStoreTest, ThreeCopiesTest);
     FRIEND_TEST(NebulaStoreTest, TransLeaderTest);
+    FRIEND_TEST(NebulaStoreTest, CheckpointTest);
+    FRIEND_TEST(NebulaStoreTest, ThreeCopiesCheckpointTest);
+    FRIEND_TEST(NebulaStoreTest, AtomicOpBatchTest);
 
 public:
     MemPartManager() = default;
@@ -84,7 +90,7 @@ public:
 
     PartsMap parts(const HostAddr& host) override;
 
-    PartMeta partMeta(GraphSpaceID spaceId, PartitionID partId) override;
+    StatusOr<PartMeta> partMeta(GraphSpaceID spaceId, PartitionID partId) override;
 
     void addPart(GraphSpaceID spaceId, PartitionID partId, std::vector<HostAddr> peers = {}) {
         bool noSpace = partsMap_.find(spaceId) == partsMap_.end();
@@ -117,11 +123,14 @@ public:
         }
     }
 
-    bool partExist(const HostAddr& host, GraphSpaceID spaceId, PartitionID partId) override;
+    Status partExist(const HostAddr& host, GraphSpaceID spaceId, PartitionID partId) override;
 
-    bool spaceExist(const HostAddr& host, GraphSpaceID spaceId) override {
-        UNUSED(host);
-        return partsMap_.find(spaceId) != partsMap_.end();
+    Status spaceExist(const HostAddr&, GraphSpaceID spaceId) override {
+        if (partsMap_.find(spaceId) != partsMap_.end()) {
+            return Status::OK();
+        } else {
+            return Status::SpaceNotFound();
+        }
     }
 
     PartsMap& partsMap() {
@@ -141,11 +150,11 @@ public:
 
      PartsMap parts(const HostAddr& host) override;
 
-     PartMeta partMeta(GraphSpaceID spaceId, PartitionID partId) override;
+     StatusOr<PartMeta> partMeta(GraphSpaceID spaceId, PartitionID partId) override;
 
-     bool partExist(const HostAddr& host, GraphSpaceID spaceId, PartitionID partId) override;
+     Status partExist(const HostAddr& host, GraphSpaceID spaceId, PartitionID partId) override;
 
-     bool spaceExist(const HostAddr& host, GraphSpaceID spaceId) override;
+     Status spaceExist(const HostAddr& host, GraphSpaceID spaceId) override;
 
      /**
       * Implement the interfaces in MetaChangedListener
@@ -163,6 +172,9 @@ public:
      void onPartRemoved(GraphSpaceID spaceId, PartitionID partId) override;
 
      void onPartUpdated(const PartMeta& partMeta) override;
+
+     void fetchLeaderInfo(std::unordered_map<GraphSpaceID,
+                                             std::vector<PartitionID>>& leaderParts) override;
 
      HostAddr getLocalHost() {
         return localHost_;
