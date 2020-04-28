@@ -2350,6 +2350,23 @@ TEST_P(GoTest, Contains) {
     }
 }
 
+TEST_P(GoTest, Issue2100) {
+    // Zero step
+    {
+        // A cycle traversal
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO 0 STEPS FROM %ld OVER serve BIDIRECT";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        // Empty response
+        std::vector<std::tuple<int64_t>> expected = {
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
 INSTANTIATE_TEST_CASE_P(IfPushdownFilter, GoTest, ::testing::Bool());
 }   // namespace graph
 }   // namespace nebula
