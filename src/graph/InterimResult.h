@@ -73,6 +73,9 @@ public:
 
     StatusOr<std::vector<cpp2::RowValue>> getRows() const;
 
+    StatusOr<std::vector<cpp2::RowValue>> getTopNRows(std::vector<int64_t>& indexs,
+                                                      int64_t limit) const;
+
     class InterimResultIndex;
     StatusOr<std::unique_ptr<InterimResultIndex>>
     buildIndex(const std::string &vidColumn) const;

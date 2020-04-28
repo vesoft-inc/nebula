@@ -642,6 +642,64 @@ private:
     std::unique_ptr<YieldClause>   yieldClause_;
 };
 
+class TopNFactor final {
+public:
+    explicit TopNFactor(Expression *expr) {
+        expr_.reset(expr);
+    }
+
+    Expression* expr() {
+        return expr_.get();
+    }
+
+    std::string toString() const;
+
+private:
+    std::unique_ptr<Expression>                 expr_;
+};
+
+class TopNFactors final {
+public:
+    void addFactor(TopNFactor *factor) {
+        factors_.emplace_back(factor);
+    }
+
+    std::vector<TopNFactor*> factors() {
+        std::vector<TopNFactor*> result;
+        result.resize(factors_.size());
+        auto get = [] (auto &factor) { return factor.get(); };
+        std::transform(factors_.begin(), factors_.end(), result.begin(), get);
+        return result;
+    }
+
+    std::string toString() const;
+
+private:
+    std::vector<std::unique_ptr<TopNFactor>>   factors_;
+};
+
+class TopNSentence final : public Sentence {
+public:
+    TopNSentence(int64_t limit, TopNFactors *factors) {
+        factors_.reset(factors);
+        limit_ = limit;
+        kind_ = Kind::kTopN;
+    }
+
+    std::vector<TopNFactor*> factors() {
+        return factors_->factors();
+    }
+
+    int64_t limit() const {
+        return limit_;
+    }
+
+    std::string toString() const override;
+
+private:
+    int64_t                                    limit_;
+    std::unique_ptr<TopNFactors>               factors_;
+};
 }   // namespace nebula
 #endif  // PARSER_TRAVERSESENTENCES_H_
 

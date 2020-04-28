@@ -61,6 +61,7 @@
 #include "graph/DropSnapshotExecutor.h"
 #include "graph/UserExecutor.h"
 #include "graph/PrivilegeExecutor.h"
+#include "graph/TopNExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -230,6 +231,9 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             break;
         case Sentence::Kind::kRevoke:
             executor = std::make_unique<RevokeExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kTopN:
+            executor = std::make_unique<TopNExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kUnknown:
             LOG(ERROR) << "Sentence kind unknown";

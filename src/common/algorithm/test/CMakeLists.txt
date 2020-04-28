@@ -4,3 +4,9 @@ nebula_add_test(
     OBJECTS $<TARGET_OBJECTS:time_obj>
     LIBRARIES gtest gtest_main
 )
+
+nebula_add_test(
+    NAME topn_test
+    SOURCES TopNTest.cpp
+    LIBRARIES gtest gtest_main
+)

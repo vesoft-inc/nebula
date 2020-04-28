@@ -325,4 +325,25 @@ std::string YieldSentence::toString() const {
     }
     return buf;
 }
+
+std::string TopNFactor::toString() const {
+    return folly::stringPrintf("%s,", expr_->toString().c_str());
+}
+
+std::string TopNFactors::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    for (auto &factor : factors_) {
+        buf += factor->toString();
+    }
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
+    return buf;
+}
+
+std::string TopNSentence::toString() const {
+    return folly::stringPrintf("TOP %ld BY %s", limit_, factors_->toString().c_str());
+}
+
 }   // namespace nebula

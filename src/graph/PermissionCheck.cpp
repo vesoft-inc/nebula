@@ -111,7 +111,8 @@ bool PermissionCheck::permissionCheck(session::Session *session, Sentence* sente
         case Sentence::Kind::kFindPath :
         case Sentence::Kind::kLimit :
         case Sentence::Kind::KGroupBy :
-        case Sentence::Kind::kReturn : {
+        case Sentence::Kind::kReturn :
+        case Sentence::Kind::kTopN: {
             return permission::PermissionManager::canReadSchemaOrData(session);
         }
         case Sentence::Kind::kShow : {

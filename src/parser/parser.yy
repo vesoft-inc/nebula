@@ -83,6 +83,8 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
     nebula::SchemaPropItem                 *alter_schema_prop_item;
     nebula::OrderFactor                    *order_factor;
     nebula::OrderFactors                   *order_factors;
+    nebula::TopNFactor                     *top_n_factor;
+    nebula::TopNFactors                    *top_n_factors;
     nebula::ConfigModule                    config_module;
     nebula::ConfigRowItem                  *config_row_item;
     nebula::EdgeKey                        *edge_key;
@@ -125,6 +127,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_ROLES
 %token KW_GOD KW_ADMIN KW_DBA KW_GUEST KW_GRANT KW_REVOKE KW_ON
 %token KW_CONTAINS
+%token KW_TOP
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -185,6 +188,8 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %type <alter_schema_prop_item> alter_schema_prop_item
 %type <order_factor> order_factor
 %type <order_factors> order_factors
+%type <top_n_factor> top_n_factor
+%type <top_n_factors> top_n_factors
 %type <config_module> config_module_enum
 %type <config_row_item> show_config_item get_config_item set_config_item
 %type <edge_key> edge_key
@@ -230,7 +235,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 
 %type <sentence> traverse_sentence
 %type <sentence> go_sentence match_sentence lookup_sentence find_path_sentence
-%type <sentence> group_by_sentence order_by_sentence limit_sentence
+%type <sentence> group_by_sentence order_by_sentence top_n_sentence limit_sentence
 %type <sentence> fetch_sentence fetch_vertices_sentence fetch_edges_sentence
 %type <sentence> set_sentence piped_sentence assignment_sentence
 %type <sentence> yield_sentence use_sentence
@@ -310,6 +315,7 @@ unreserved_keyword
      | KW_SHORTEST           { $$ = new std::string("shortest"); }
      | KW_COUNT_DISTINCT     { $$ = new std::string("count_distinct"); }
      | KW_CONTAINS           { $$ = new std::string("contains"); }
+     | KW_TOP                { $$ = new std::string("top"); }
      ;
 
 agg_function
@@ -851,6 +857,31 @@ order_by_sentence
     }
     ;
 
+top_n_factor
+    : input_ref_expression {
+        $$ = new TopNFactor($1);
+    }
+    | LABEL {
+        auto inputRef = new InputPropertyExpression($1);
+        $$ = new TopNFactor(inputRef);
+    }
+
+top_n_factors
+    : top_n_factor {
+        auto factors = new TopNFactors();
+        factors->addFactor($1);
+        $$ = factors;
+    }
+    | top_n_factors COMMA top_n_factor {
+        $1->addFactor($3);
+        $$ = $1;
+    }
+
+top_n_sentence
+    : KW_TOP INTEGER KW_BY top_n_factors {
+        $$ = new TopNSentence($2, $4);
+    }
+
 fetch_vertices_sentence
     : KW_FETCH KW_PROP KW_ON name_label vid_list yield_clause {
         $$ = new FetchVerticesSentence($4, $5, $6);
@@ -1267,6 +1298,7 @@ traverse_sentence
     | lookup_sentence { $$ = $1; }
     | group_by_sentence { $$ = $1; }
     | order_by_sentence { $$ = $1; }
+    | top_n_sentence { $$ = $1; }
     | fetch_sentence { $$ = $1; }
     | find_path_sentence { $$ = $1; }
     | limit_sentence { $$ = $1; }

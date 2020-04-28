@@ -72,6 +72,7 @@ public:
         kCreateSnapshot,
         kDropSnapshot,
         kAdmin,
+        kTopN,
     };
 
     Kind kind() const {

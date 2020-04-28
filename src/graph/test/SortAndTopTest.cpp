@@ -13,7 +13,7 @@
 namespace nebula {
 namespace graph {
 
-class OrderByTest : public TraverseTestBase {
+class SortAndTopTest : public TraverseTestBase {
 protected:
     void SetUp() override {
         TraverseTestBase::SetUp();
@@ -26,7 +26,7 @@ protected:
     }
 };
 
-TEST_F(OrderByTest, SyntaxError) {
+TEST_F(SortAndTopTest, SyntaxError) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "ORDER BY ";
@@ -46,7 +46,7 @@ TEST_F(OrderByTest, SyntaxError) {
     }
 }
 
-TEST_F(OrderByTest, EmptyInput) {
+TEST_F(SortAndTopTest, EmptyInput) {
     std::string name = "NON EXIST VERTEX ID";
     int64_t nonExistPlayerID = std::hash<std::string>()(name);
     auto iter = players_.begin();
@@ -83,9 +83,25 @@ TEST_F(OrderByTest, EmptyInput) {
 
         ASSERT_EQ(nullptr, resp.get_rows());
     }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve YIELD "
+                    "$^.player.name as name, serve.start_year as start, $$.team.name as team"
+                    "| TOP 10 BY $-.name";
+        auto query = folly::stringPrintf(fmt, nonExistPlayerID);
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"name"}, {"start"}, {"team"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
 }
 
-TEST_F(OrderByTest, WrongFactor) {
+TEST_F(SortAndTopTest, WrongFactor) {
     std::string go = "GO FROM %ld OVER serve YIELD "
                      "$^.player.name as name, serve.start_year as start, $$.team.name as team";
     {
@@ -96,9 +112,17 @@ TEST_F(OrderByTest, WrongFactor) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto fmt = go + "| TOP 10 BY $-.abc";
+        auto query = folly::stringPrintf(fmt.c_str(), player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
 }
 
-TEST_F(OrderByTest, SingleFactor) {
+TEST_F(SortAndTopTest, SingleFactor) {
     std::string go = "GO FROM %ld OVER serve YIELD "
                      "$^.player.name as name, serve.start_year as start, $$.team.name as team";
     {
@@ -189,9 +213,29 @@ TEST_F(OrderByTest, SingleFactor) {
         };
         ASSERT_TRUE(verifyResult(resp, expected, false));
     }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto fmt = go + "| TOP 3 BY $-.team";
+        auto query = folly::stringPrintf(fmt.c_str(), player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"name"}, {"start"}, {"team"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<std::string, int64_t, std::string>> expected = {
+            {player.name(), 2005, "Suns"},
+            {player.name(), 2012, "Spurs"},
+            {player.name(), 2016, "Jazz"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected, false));
+    }
 }
 
-TEST_F(OrderByTest, MultiFactors) {
+TEST_F(SortAndTopTest, MultiFactors) {
     std::string go = "GO FROM %ld,%ld OVER serve WHERE serve.start_year >= 2012 YIELD "
                     "$$.team.name as team, $^.player.name as player, "
                     "$^.player.age as age, serve.start_year as start";
@@ -316,9 +360,29 @@ TEST_F(OrderByTest, MultiFactors) {
         };
         ASSERT_TRUE(verifyResult(resp, expected, false));
     }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &boris = players_["Boris Diaw"];
+        auto &aldridge = players_["LaMarcus Aldridge"];
+        auto fmt = go + "| TOP 2 BY $-.team, $-.age";
+        auto query = folly::stringPrintf(fmt.c_str(), boris.vid(), aldridge.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"team"}, {"player"}, {"age"}, {"start"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<std::string, std::string, int64_t, int64_t>> expected = {
+            {"Spurs", boris.name(), 36, 2012},
+            {"Spurs", aldridge.name(), 33, 2015},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected, false));
+    }
 }
 
-TEST_F(OrderByTest, InterimResult) {
+TEST_F(SortAndTopTest, InterimResult) {
     {
         cpp2::ExecutionResponse resp;
         auto &boris = players_["Boris Diaw"];
@@ -341,15 +405,45 @@ TEST_F(OrderByTest, InterimResult) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &boris = players_["Boris Diaw"];
+        auto *fmt =
+            "GO FROM %ld OVER like YIELD like._dst as id | TOP 3 BY $-.id | GO FROM $-.id over "
+            "serve";
+        auto query = folly::stringPrintf(fmt, boris.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            teams_["Hornets"].vid(),
+            teams_["Spurs"].vid(),
+            teams_["Spurs"].vid(),
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
 }
 
-TEST_F(OrderByTest, DuplicateColumn) {
+TEST_F(SortAndTopTest, DuplicateColumn) {
     std::string go = "GO FROM %ld OVER serve YIELD "
                      "$^.player.name as team, serve.start_year as start, $$.team.name as team";
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
         auto fmt = go + "| ORDER BY $-.team";
+        auto query = folly::stringPrintf(fmt.c_str(), player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto fmt = go + "| TOP 10 BY $-.team";
         auto query = folly::stringPrintf(fmt.c_str(), player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);

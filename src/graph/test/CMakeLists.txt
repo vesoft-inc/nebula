@@ -119,9 +119,9 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
-        order_by_test
+        sort_and_top_test
     SOURCES
-        OrderByTest.cpp
+        SortAndTopTest.cpp
     OBJECTS
         ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}

@@ -24,6 +24,7 @@
 #include "graph/YieldExecutor.h"
 #include "graph/GroupByExecutor.h"
 #include "graph/SchemaHelper.h"
+#include "graph/TopNExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -74,6 +75,9 @@ TraverseExecutor::makeTraverseExecutor(Sentence *sentence, ExecutionContext *ect
             break;
         case Sentence::Kind::KGroupBy:
             executor = std::make_unique<GroupByExecutor>(sentence, ectx);
+            break;
+        case Sentence::Kind::kTopN:
+            executor = std::make_unique<TopNExecutor>(sentence, ectx);
             break;
         case Sentence::Kind::kUnknown:
             LOG(FATAL) << "Sentence kind unknown";
