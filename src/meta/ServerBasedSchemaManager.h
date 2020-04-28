@@ -20,15 +20,17 @@ public:
     ServerBasedSchemaManager() = default;
     ~ServerBasedSchemaManager();
 
+    StatusOr<int32_t> getSpaceVidLen(GraphSpaceID space) override;
+
     // return the newest one if ver less 0
-    std::shared_ptr<const SchemaProviderIf>
+    std::shared_ptr<const NebulaSchemaProvider>
     getTagSchema(GraphSpaceID space, TagID tag, SchemaVer ver = -1) override;
 
     // Returns a negative number when the schema does not exist
     StatusOr<SchemaVer> getLatestTagSchemaVersion(GraphSpaceID space, TagID tag) override;
 
     // return the newest one if ver less 0
-    std::shared_ptr<const SchemaProviderIf>
+    std::shared_ptr<const NebulaSchemaProvider>
     getEdgeSchema(GraphSpaceID space, EdgeType edge, SchemaVer ver = -1) override;
 
     // Returns a negative number when the schema does not exist
@@ -46,6 +48,11 @@ public:
 
     StatusOr<std::vector<std::string>> getAllEdge(GraphSpaceID space) override;
 
+    std::vector<std::pair<TagID, std::shared_ptr<const NebulaSchemaProvider>>>
+    listLatestTagSchema(GraphSpaceID space) override;
+
+    virtual std::vector<std::pair<EdgeType, std::shared_ptr<const NebulaSchemaProvider>>>
+    listLatestEdgeSchema(GraphSpaceID space) override;
     void init(MetaClient *client);
 
 private:

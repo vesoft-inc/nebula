@@ -10,7 +10,7 @@
 #include "base/Base.h"
 #include "base/StatusOr.h"
 #include <folly/RWSpinLock.h>
-#include "meta/SchemaProviderIf.h"
+#include "meta/NebulaSchemaProvider.h"
 
 namespace nebula {
 namespace meta {
@@ -23,13 +23,15 @@ public:
 
     static std::unique_ptr<SchemaManager> create(MetaClient *client);
 
-    virtual std::shared_ptr<const SchemaProviderIf>
+    virtual StatusOr<int32_t> getSpaceVidLen(GraphSpaceID space) = 0;
+
+    virtual std::shared_ptr<const NebulaSchemaProvider>
     getTagSchema(GraphSpaceID space, TagID tag, SchemaVer ver = -1) = 0;
 
     // Returns a negative number when the schema does not exist
     virtual StatusOr<SchemaVer> getLatestTagSchemaVersion(GraphSpaceID space, TagID tag) = 0;
 
-    virtual std::shared_ptr<const SchemaProviderIf>
+    virtual std::shared_ptr<const NebulaSchemaProvider>
     getEdgeSchema(GraphSpaceID space, EdgeType edge, SchemaVer ver = -1) = 0;
 
     // Returns a negative number when the schema does not exist
@@ -46,6 +48,12 @@ public:
     virtual StatusOr<std::string> toEdgeName(GraphSpaceID space, EdgeType edgeType) = 0;
 
     virtual StatusOr<std::vector<std::string>> getAllEdge(GraphSpaceID space) = 0;
+
+    virtual std::vector<std::pair<TagID, std::shared_ptr<const NebulaSchemaProvider>>>
+    listLatestTagSchema(GraphSpaceID space) = 0;
+
+    virtual std::vector<std::pair<EdgeType, std::shared_ptr<const NebulaSchemaProvider>>>
+    listLatestEdgeSchema(GraphSpaceID space) = 0;
 
 protected:
     SchemaManager() = default;

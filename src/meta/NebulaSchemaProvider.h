@@ -8,6 +8,7 @@
 #define META_NEBULASCHEMAPROVIDER_H_
 
 #include "base/Base.h"
+#include "base/StatusOr.h"
 #include <folly/RWSpinLock.h>
 #include "meta/SchemaProviderIf.h"
 
@@ -109,6 +110,8 @@ public:
     void setProp(cpp2::SchemaProp schemaProp);
 
     const cpp2::SchemaProp getProp() const;
+
+    StatusOr<std::pair<std::string, int64_t>> getTTLInfo() const;
 
 protected:
     NebulaSchemaProvider() = default;

@@ -17,7 +17,7 @@
 #include "meta/Common.h"
 #include "thread/GenericWorker.h"
 #include "thrift/ThriftClientManager.h"
-#include "meta/SchemaProviderIf.h"
+#include "meta/NebulaSchemaProvider.h"
 #include "meta/GflagsManager.h"
 
 DECLARE_int32(meta_client_retry_times);
@@ -31,9 +31,9 @@ using HostStatus = std::pair<HostAddr, std::string>;
 
 // struct for in cache
 using TagSchemas = std::unordered_map<std::pair<TagID, SchemaVer>,
-                                      std::shared_ptr<const SchemaProviderIf>>;
+                                      std::shared_ptr<const NebulaSchemaProvider>>;
 using EdgeSchemas = std::unordered_map<std::pair<EdgeType, SchemaVer>,
-                                       std::shared_ptr<const SchemaProviderIf>>;
+                                       std::shared_ptr<const NebulaSchemaProvider>>;
 
 // Space and Schema Name => IndexID
 // Get IndexID via space ID and index name
@@ -51,6 +51,7 @@ struct SpaceInfoCache {
     EdgeSchemas edgeSchemas_;
     Indexes tagIndexes_;
     Indexes edgeIndexes_;
+    int32_t vertexIdLen_ = -1;
 };
 
 using LocalCache = std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceInfoCache>>;
@@ -400,6 +401,8 @@ public:
     // Opeartions for cache.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
 
+    StatusOr<int32_t> getSpaceVidLen(const GraphSpaceID& space);
+
     StatusOr<TagID> getTagIDByNameFromCache(const GraphSpaceID& space,
                                             const std::string& name);
 
@@ -418,6 +421,10 @@ public:
     StatusOr<std::string> getEdgeNameByTypeFromCache(const GraphSpaceID& space,
                                                      const EdgeType edgeType);
 
+    std::vector<std::pair<TagID, SchemaVer>> listLatestTagVersionFromCache(const GraphSpaceID& space);
+
+    std::vector<std::pair<EdgeType, SchemaVer>> listLatestEdgeVersionFromCache(const GraphSpaceID& space);
+
     // get all lastest version edge
     StatusOr<std::vector<std::string>> getAllEdgeFromCache(const GraphSpaceID& space);
 
@@ -435,10 +442,10 @@ public:
 
     StatusOr<PartitionID> partId(GraphSpaceID spaceId, VertexID id) const;
 
-    StatusOr<std::shared_ptr<const SchemaProviderIf>>
+    StatusOr<std::shared_ptr<const NebulaSchemaProvider>>
     getTagSchemaFromCache(GraphSpaceID spaceId, TagID tagID, SchemaVer ver = -1);
 
-    StatusOr<std::shared_ptr<const SchemaProviderIf>>
+    StatusOr<std::shared_ptr<const NebulaSchemaProvider>>
     getEdgeSchemaFromCache(GraphSpaceID spaceId, EdgeType edgeType, SchemaVer ver = -1);
 
     StatusOr<std::shared_ptr<cpp2::IndexItem>>

@@ -48,6 +48,7 @@ enum ErrorCode {
     E_INVALID_PEER  = -34,
     E_RETRY_EXHAUSTED = -35,
     E_TRANSFER_LEADER_FAILED = -36,
+    E_INVALID_STAT_TYPE = -37,
 
     // meta client failed
     E_LOAD_META_FAILED = -41,

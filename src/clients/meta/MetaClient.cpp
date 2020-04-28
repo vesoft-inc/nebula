@@ -226,6 +226,15 @@ bool MetaClient::loadData() {
             return false;
         }
 
+        // get space properties
+        auto resp = getSpace(spaceCache->spaceName).get();
+        if (!resp.ok()) {
+            LOG(ERROR) << "Get space properties failed for space " << spaceId;
+            return false;
+        }
+        const auto& properties = resp.value().get_properties();
+        spaceCache->vertexIdLen_ = properties.get_vid_size();
+
         cache.emplace(spaceId, spaceCache);
         spaceIndexByName.emplace(space.second, spaceId);
     }
@@ -1621,7 +1630,24 @@ MetaClient::listEdgeIndexes(GraphSpaceID spaceID) {
     return future;
 }
 
-StatusOr<std::shared_ptr<const SchemaProviderIf>>
+StatusOr<int32_t> MetaClient::getSpaceVidLen(const GraphSpaceID& spaceId) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    auto spaceIt = localCache_.find(spaceId);
+    if (spaceIt == localCache_.end()) {
+        LOG(ERROR) << "Space " << spaceId << " not found!";
+        return Status::Error(folly::stringPrintf("Space %d not found", spaceId));
+    }
+    auto vIdLen = spaceIt->second->vertexIdLen_;
+    if (vIdLen <= 0) {
+        return Status::Error(folly::stringPrintf("Space %d vertexId length invalid", spaceId));
+    }
+    return vIdLen;
+}
+
+StatusOr<std::shared_ptr<const NebulaSchemaProvider>>
 MetaClient::getTagSchemaFromCache(GraphSpaceID spaceId, TagID tagID, SchemaVer ver) {
     if (!ready_) {
         return Status::Error("Not ready!");
@@ -1630,11 +1656,11 @@ MetaClient::getTagSchemaFromCache(GraphSpaceID spaceId, TagID tagID, SchemaVer v
     auto spaceIt = localCache_.find(spaceId);
     if (spaceIt == localCache_.end()) {
         LOG(ERROR) << "Space " << spaceId << " not found!";
-        return std::shared_ptr<const SchemaProviderIf>();
+        return std::shared_ptr<const NebulaSchemaProvider>();
     } else {
         auto tagIt = spaceIt->second->tagSchemas_.find(std::make_pair(tagID, ver));
         if (tagIt == spaceIt->second->tagSchemas_.end()) {
-            return std::shared_ptr<const SchemaProviderIf>();
+            return std::shared_ptr<const NebulaSchemaProvider>();
         } else {
             return tagIt->second;
         }
@@ -1642,7 +1668,7 @@ MetaClient::getTagSchemaFromCache(GraphSpaceID spaceId, TagID tagID, SchemaVer v
 }
 
 
-StatusOr<std::shared_ptr<const SchemaProviderIf>>
+StatusOr<std::shared_ptr<const NebulaSchemaProvider>>
 MetaClient::getEdgeSchemaFromCache(GraphSpaceID spaceId, EdgeType edgeType, SchemaVer ver) {
     if (!ready_) {
         return Status::Error("Not ready!");
@@ -1651,13 +1677,13 @@ MetaClient::getEdgeSchemaFromCache(GraphSpaceID spaceId, EdgeType edgeType, Sche
     auto spaceIt = localCache_.find(spaceId);
     if (spaceIt == localCache_.end()) {
         LOG(ERROR) << "Space " << spaceId << " not found!";
-        return std::shared_ptr<const SchemaProviderIf>();
+        return std::shared_ptr<const NebulaSchemaProvider>();
     } else {
         auto edgeIt = spaceIt->second->edgeSchemas_.find(std::make_pair(edgeType, ver));
         if (edgeIt == spaceIt->second->edgeSchemas_.end()) {
             LOG(ERROR) << "Space " << spaceId << ", EdgeType " << edgeType << ", version "
                        << ver << " not found!";
-            return std::shared_ptr<const SchemaProviderIf>();
+            return std::shared_ptr<const NebulaSchemaProvider>();
         } else {
             return edgeIt->second;
         }
@@ -1923,6 +1949,33 @@ StatusOr<SchemaVer> MetaClient::getLatestEdgeVersionFromCache(const GraphSpaceID
     return it->second;
 }
 
+std::vector<std::pair<TagID, SchemaVer>> MetaClient::listLatestTagVersionFromCache(const GraphSpaceID& space) {
+    if (!ready_) {
+        return {};
+    }
+    std::vector<std::pair<TagID, SchemaVer>> schemas;
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    for (const auto& entry : spaceNewestTagVerMap_) {
+        if (entry.first.first == space) {
+            schemas.emplace_back(entry.first.second, entry.second);
+        }
+    }
+    return schemas;
+}
+
+std::vector<std::pair<EdgeType, SchemaVer>> MetaClient::listLatestEdgeVersionFromCache(const GraphSpaceID& space) {
+    if (!ready_) {
+        return {};
+    }
+    std::vector<std::pair<EdgeType, SchemaVer>> schemas;
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    for (const auto& entry : spaceNewestEdgeVerMap_) {
+        if (entry.first.first == space) {
+            schemas.emplace_back(entry.first.second, entry.second);
+        }
+    }
+    return schemas;
+}
 
 folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
     cpp2::HBReq req;
