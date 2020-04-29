@@ -8,6 +8,7 @@
 #define COMMON_BASE_THRIFTTYPES_H_
 
 #include <cstdint>
+#include <string>
 
 namespace nebula {
 

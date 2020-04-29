@@ -28,5 +28,12 @@ bool HostAddr::operator==(const HostAddr& rhs) const {
 bool HostAddr::operator!=(const HostAddr& rhs) const {
     return !(*this == rhs);
 }
+
+bool HostAddr::operator<(const HostAddr& rhs) const {
+    if (ip == rhs.ip) {
+        return port < rhs.port;
+    }
+    return ip < rhs.ip;
+}
 }  // namespace nebula
 

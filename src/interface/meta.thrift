@@ -257,13 +257,20 @@ enum AdminJobOp {
     SHOW_All    = 0x02,
     SHOW        = 0x03,
     STOP        = 0x04,
-    RECOVER     = 0x05,
-    INVALID     = 0xFF,
+    RECOVER     = 0x05
 } (cpp.enum_strict)
 
 struct AdminJobReq {
-    1: AdminJobOp   op
-    2: list<string> paras;
+    1: AdminJobOp       op
+    2: AdminCmd         cmd
+    3: list<binary>     paras;
+}
+
+enum AdminCmd {
+    COMPACT             = 0
+    FLUSH               = 1
+    REBUILD_TAG_INDEX   = 2
+    REBUILD_EDGE_INDEX  = 3
 }
 
 enum JobStatus {
@@ -276,12 +283,12 @@ enum JobStatus {
 } (cpp.enum_strict)
 
 struct JobDesc {
-    1: i32          id
-    2: string       cmd
-    3: list<string> paras
-    4: JobStatus    status
-    5: i64          start_time
-    6: i64          stop_time
+    1: i32              id
+    2: AdminCmd         cmd
+    3: list<string>     paras
+    4: JobStatus        status
+    5: i64              start_time
+    6: i64              stop_time
 }
 
 struct TaskDesc {

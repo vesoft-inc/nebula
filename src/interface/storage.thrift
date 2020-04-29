@@ -454,6 +454,24 @@ struct LookUpIndexRequest {
  * End of GetUUID section
  */
 
+struct TaskPara {
+    1: common.GraphSpaceID                  space_id,
+    2: optional list<common.PartitionID>    parts,
+    3: optional list<binary>                task_specfic_paras
+}
+
+struct AddAdminTaskRequest {
+    1: meta.AdminCmd                        cmd        // rebuild index / flush / compact
+    2: i32                                  job_id
+    3: i32                                  task_id
+    4: TaskPara                             para
+    5: optional i32                         concurrency
+}
+
+struct StopAdminTaskRequest {
+    1: i32                                  job_id
+    2: i32                                  task_id
+}
 
 service GraphStorageService {
     GetNeighborsResponse getNeighbors(1: GetNeighborsRequest req)
@@ -602,6 +620,9 @@ service StorageAdminService {
     GetLeaderPartsResp getLeaderParts(1: GetLeaderReq req);
     // Return all peers
     AdminExecResp checkPeers(1: CheckPeersReq req);
+
+    AdminExecResp addAdminTask(1: AddAdminTaskRequest req);
+    AdminExecResp stopAdminTask(1: StopAdminTaskRequest req);
 }
 
 

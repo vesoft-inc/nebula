@@ -29,6 +29,8 @@ struct HostAddr {
     bool operator==(const HostAddr& rhs) const;
 
     bool operator!=(const HostAddr& rhs) const;
+
+    bool operator<(const HostAddr& rhs) const;
 };
 
 std::ostream& operator<<(std::ostream &, const HostAddr&);
