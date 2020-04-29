@@ -32,6 +32,8 @@ private:
 
     Status prepareVids();
 
+    Status checkTagProps();
+
     Status setupVids();
 
     Status setupVidsFromRef();
@@ -45,10 +47,12 @@ private:
     using RpcResponse = storage::StorageRpcResponse<storage::cpp2::QueryResponse>;
     void processResult(RpcResponse &&result);
 
+    void processAllPropsResult(RpcResponse &&result);
+
 private:
     FetchVerticesSentence                      *sentence_{nullptr};
     std::vector<VertexID>                       vids_;
-    TagID                                       tagID_{INT_MIN};
+    TagID                                       tagId_{INT_MIN};
     std::string                                *varname_{nullptr};
     std::string                                *colname_{nullptr};
 };

@@ -10,7 +10,7 @@ namespace nebula {
 namespace graph {
 
 DropSnapshotExecutor::DropSnapshotExecutor(Sentence *sentence,
-        ExecutionContext *ectx) : Executor(ectx) {
+        ExecutionContext *ectx) : Executor(ectx, "drop_snapshot") {
     sentence_ = static_cast<DropSnapshotSentence*>(sentence);
 }
 
@@ -25,24 +25,20 @@ void DropSnapshotExecutor::execute() {
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(std::forward<decltype(resp)>(resp).status());
+            doError(std::forward<decltype(resp)>(resp).status());
             return;
         }
         auto ret = std::forward<decltype(resp)>(resp).value();
         if (!ret) {
-            DCHECK(onError_);
-            onError_(Status::Error("Balance leader failed"));
+            doError(Status::Error("Balance leader failed"));
             return;
         }
-        DCHECK(onFinish_);
-        onFinish_(Executor::ProcessControl::kNext);
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        LOG(ERROR) << "Drop snapshot exception: " << e.what();
+        doError(Status::Error("Drop snapshot exception: %s", e.what().c_str()));
         return;
     };
 

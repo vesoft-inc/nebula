@@ -26,16 +26,17 @@ StatusOr<PartMeta> MemPartManager::partMeta(GraphSpaceID spaceId, PartitionID pa
     return partIt->second;
 }
 
-bool MemPartManager::partExist(const HostAddr& host, GraphSpaceID spaceId, PartitionID partId) {
-    UNUSED(host);
+Status MemPartManager::partExist(const HostAddr&, GraphSpaceID spaceId, PartitionID partId) {
     auto it = partsMap_.find(spaceId);
     if (it != partsMap_.end()) {
         auto partIt = it->second.find(partId);
         if (partIt != it->second.end()) {
-            return true;
+            return Status::OK();
+        } else {
+            return Status::PartNotFound();
         }
     }
-    return false;
+    return Status::SpaceNotFound();
 }
 
 MetaServerBasedPartManager::MetaServerBasedPartManager(HostAddr host, meta::MetaClient *client)
@@ -61,14 +62,14 @@ StatusOr<PartMeta> MetaServerBasedPartManager::partMeta(GraphSpaceID spaceId, Pa
     return client_->getPartMetaFromCache(spaceId, partId);
 }
 
-bool MetaServerBasedPartManager::partExist(const HostAddr& host,
-                                           GraphSpaceID spaceId,
-                                           PartitionID partId) {
+Status MetaServerBasedPartManager::partExist(const HostAddr& host,
+                                             GraphSpaceID spaceId,
+                                             PartitionID partId) {
     return client_->checkPartExistInCache(host, spaceId, partId);
 }
 
-bool MetaServerBasedPartManager::spaceExist(const HostAddr& host,
-                                            GraphSpaceID spaceId) {
+Status MetaServerBasedPartManager::spaceExist(const HostAddr& host,
+                                              GraphSpaceID spaceId) {
     return client_->checkSpaceExistInCache(host, spaceId);
 }
 
@@ -94,9 +95,7 @@ void MetaServerBasedPartManager::onSpaceOptionUpdated(
     static std::unordered_set<std::string> supportedOpt = {
         "disable_auto_compactions",
         "max_write_buffer_number",
-        // TODO: write_buffer_size will cause rocksdb crash
-        // "write_buffer_size",
-        "compression",
+        "write_buffer_size",
         "level0_file_num_compaction_trigger",
         "level0_slowdown_writes_trigger",
         "level0_stop_writes_trigger",
@@ -104,16 +103,11 @@ void MetaServerBasedPartManager::onSpaceOptionUpdated(
         "target_file_size_multiplier",
         "max_bytes_for_level_base",
         "max_bytes_for_level_multiplier",
-        "ttl",
-        "block_size",
-        "block_restart_interval"
     };
     static std::unordered_set<std::string> supportedDbOpt = {
         "max_total_wal_size",
         "delete_obsolete_files_period_micros",
         "max_background_jobs",
-        "base_background_compactions",
-        "max_background_compactions",
         "stats_dump_period_sec",
         "compaction_readahead_size",
         "writable_file_max_buffer_size",
@@ -164,6 +158,15 @@ void MetaServerBasedPartManager::onPartRemoved(GraphSpaceID spaceId, PartitionID
 
 void MetaServerBasedPartManager::onPartUpdated(const PartMeta& partMeta) {
     UNUSED(partMeta);
+}
+
+void MetaServerBasedPartManager::fetchLeaderInfo(
+        std::unordered_map<GraphSpaceID, std::vector<PartitionID>>& leaderIds) {
+    if (handler_ != nullptr) {
+        handler_->allLeader(leaderIds);
+    } else {
+        VLOG(1) << "handler_ is nullptr!";
+    }
 }
 
 }  // namespace kvstore

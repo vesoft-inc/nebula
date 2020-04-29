@@ -77,7 +77,7 @@ public:
 
     private:
         explicit Iterator(const SchemaProviderIf* schema,
-                         int64_t idx = 0)
+                          int64_t idx = 0)
                 : schema_(schema)
                 , numFields_(schema_->getNumFields())
                 , index_(idx) {
@@ -100,6 +100,8 @@ public:
 
     virtual std::shared_ptr<const Field> field(int64_t index) const = 0;
     virtual std::shared_ptr<const Field> field(const folly::StringPiece name) const = 0;
+
+    virtual nebula::cpp2::Schema toSchema() const = 0;
 
     /******************************************
      *

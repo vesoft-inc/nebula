@@ -5,13 +5,13 @@
  */
 
 #include "base/Base.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include <limits>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
-#include "storage/UpdateVertexProcessor.h"
+#include "storage/mutate/UpdateVertexProcessor.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
 
@@ -21,12 +21,12 @@ namespace storage {
 void mockData(kvstore::KVStore* kv) {
     LOG(INFO) << "Prepare data...";
     std::vector<kvstore::KV> data;
-    for (auto partId = 0; partId < 3; partId++) {
-        for (auto vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
+    for (int32_t partId = 0; partId < 3; partId++) {
+        for (int32_t vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
             // NOTE: the range of tagId is [3001, 3008], excluding 3009(for insert test).
-            for (auto tagId = 3001; tagId < 3010 - 1; tagId++) {
+            for (int32_t tagId = 3001; tagId < 3010 - 1; tagId++) {
                 // Write multi versions, we should get/update the latest version
-                for (auto version = 0; version < 3; version++) {
+                for (int32_t version = 0; version < 3; version++) {
                     auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId,
                             std::numeric_limits<int32_t>::max() - version);
                     RowWriter writer;
@@ -58,6 +58,7 @@ TEST(UpdateVertexTest, Set_Filter_Yield_Test) {
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
     mockData(kv.get());
 
     LOG(INFO) << "Build UpdateVertexRequest...";
@@ -120,7 +121,10 @@ TEST(UpdateVertexTest, Set_Filter_Yield_Test) {
     req.set_insertable(false);
 
     LOG(INFO) << "Test UpdateVertexRequest...";
-    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get(), nullptr);
+    auto* processor = UpdateVertexProcessor::instance(kv.get(),
+                                                      schemaMan.get(),
+                                                      indexMan.get(),
+                                                      nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -165,8 +169,8 @@ TEST(UpdateVertexTest, Set_Filter_Yield_Test) {
         auto vertexKey = NebulaKeyUtils::vertexKey(partId, vertexId, 3001 + i * 2, lastVersion);
         keys.emplace_back(vertexKey);
     }
-    kvstore::ResultCode code = kv->multiGet(spaceId, partId, std::move(keys), &values);
-    CHECK_EQ(code, kvstore::ResultCode::SUCCEEDED);
+    auto ret = kv->multiGet(spaceId, partId, std::move(keys), &values);
+    EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret.first);
     EXPECT_EQ(3, values.size());
     for (int i = 0; i < 3; i++) {
         auto tagSchema = schemaMan->getTagSchema(spaceId, 3001 + i * 2);
@@ -203,6 +207,7 @@ TEST(UpdateVertexTest, Insertable_Test) {
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
     mockData(kv.get());
 
     LOG(INFO) << "Build UpdateVertexRequest...";
@@ -254,7 +259,10 @@ TEST(UpdateVertexTest, Insertable_Test) {
     req.set_insertable(true);
 
     LOG(INFO) << "Test UpdateVertexRequest...";
-    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get(), nullptr);
+    auto* processor = UpdateVertexProcessor::instance(kv.get(),
+                                                      schemaMan.get(),
+                                                      indexMan.get(),
+                                                      nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -304,6 +312,7 @@ TEST(UpdateVertexTest, Invalid_Set_Test) {
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
     mockData(kv.get());
 
     LOG(INFO) << "Build UpdateVertexRequest...";
@@ -330,7 +339,10 @@ TEST(UpdateVertexTest, Invalid_Set_Test) {
     req.set_insertable(false);
 
     LOG(INFO) << "Test UpdateVertexRequest...";
-    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get(), nullptr);
+    auto* processor = UpdateVertexProcessor::instance(kv.get(),
+                                                      schemaMan.get(),
+                                                      indexMan.get(),
+                                                      nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -350,6 +362,7 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
     mockData(kv.get());
 
     LOG(INFO) << "Build UpdateVertexRequest...";
@@ -378,7 +391,10 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
     req.set_insertable(false);
 
     LOG(INFO) << "Test UpdateVertexRequest...";
-    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get(), nullptr);
+    auto* processor = UpdateVertexProcessor::instance(kv.get(),
+                                                      schemaMan.get(),
+                                                      indexMan.get(),
+                                                      nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -389,6 +405,63 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
                     == resp.result.failed_codes[0].code);
     EXPECT_FALSE(nebula::storage::cpp2::ErrorCode::E_INVALID_UPDATER
                     == resp.result.failed_codes[0].code);
+}
+
+TEST(UpdateVertexTest, CorruptDataTest) {
+    fs::TempDir rootPath("/tmp/UpdateVertexTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+
+    LOG(INFO) << "Prepare meta...";
+    auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
+    LOG(INFO) << "Write a vertex with empty value!";
+
+    // partId, srcId, tagId, version
+    auto key = NebulaKeyUtils::vertexKey(0, 10, 3001, 0);
+    std::vector<kvstore::KV> data;
+    data.emplace_back(std::make_pair(key, ""));
+    folly::Baton<> baton;
+    kv->asyncMultiPut(0, 0, std::move(data),
+        [&](kvstore::ResultCode code) {
+            CHECK_EQ(code, kvstore::ResultCode::SUCCEEDED);
+            baton.post();
+        });
+    baton.wait();
+
+    LOG(INFO) << "Build UpdateVertexRequest...";
+    GraphSpaceID spaceId = 0;
+    PartitionID partId = 0;
+    VertexID vertexId = 10;
+    cpp2::UpdateVertexRequest req;
+    req.set_space_id(spaceId);
+    req.set_vertex_id(vertexId);
+    req.set_part_id(partId);
+    req.set_filter("");
+    LOG(INFO) << "Build update items...";
+    std::vector<cpp2::UpdateItem> items;
+    // int: 3001.tag_3001_col_0 = 1L
+    cpp2::UpdateItem item;
+    item.set_name("3001");
+    item.set_prop("tag_3001_col_0");
+    PrimaryExpression val(1L);
+    item.set_value(Expression::encode(&val));
+    items.emplace_back(item);
+    req.set_update_items(std::move(items));
+    req.set_insertable(false);
+
+    LOG(INFO) << "Test UpdateVertexRequest...";
+    auto* processor = UpdateVertexProcessor::instance(kv.get(),
+                                                      schemaMan.get(),
+                                                      indexMan.get(),
+                                                      nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    LOG(INFO) << "Check the results...";
+    EXPECT_EQ(1, resp.result.failed_codes.size());
+    EXPECT_TRUE(cpp2::ErrorCode::E_TAG_NOT_FOUND == resp.result.failed_codes[0].code);
+    EXPECT_EQ(0, resp.result.failed_codes[0].part_id);
 }
 
 }  // namespace storage

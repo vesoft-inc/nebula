@@ -32,7 +32,7 @@ Or you can download from OSS.
 ### Download From Cloud Storage OSS
 
 ```bash
-wget https://nebula-graph.oss-accelerate.aliyuncs.com/jar-packages/sst.generator-1.0.0-beta.jar
+wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/jar-packages/sst.generator-1.0.0-rc4.jar
 ```
 
 ## User Guide
@@ -203,72 +203,75 @@ Example of a mapping file for the input source:
   }
 
   # Processing tags
-  tags: {
+  tags: [
 
     # Loading tag from HDFS and the data type is parquet.
-    # The tag's name is tag-name-0.
-    # field-0, field-1 and field-2 from HDFS's Parquet file are written into tag-name-0
-    # and the vertex column is vertex-key-field.
-    tag-name-0: {
+    # The tag's name is tag_name_0.
+    # field_0, field_1 and field_2 from HDFS's Parquet file are written into tag_name_0
+    # and the vertex column is vertex_key_field.
+    {
+      name: tag_name_0
       type: parquet
-      path: hdfs path
+      path: hdfs_path
       fields: {
-        field-0: nebula-field-0,
-        field-1: nebula-field-1,
-        field-2: nebula-field-2
+        field_0: nebula_field_0,
+        field_1: nebula_field_1,
+        field_2: nebula_field_2
       }
-      vertex: vertex-key-field
+      vertex: vertex_key_field
       batch : 16
     }
 
     # Similar to the above.
     # Loading from Hive will execute command ${exec} as data set.
-    tag-name-1: {
+    {
+      name: tag_name_1
       type: hive
-      exec: "select hive-field-0, hive-field-1, hive-field-2 from database.table"
+      exec: "select hive_field_0, hive_field_1, hive_field_2 from database.table"
       fields: {
-        hive-field-0: nebula-field-0,
-        hive-field-1: nebula-field-1,
-        hive-field-2: nebula-field-2
+        hive_field_0: nebula_field_0,
+        hive_field_1: nebula_field_1,
+        hive_field_2: nebula_field_2
       }
-      vertex: vertex-id-field
+      vertex: vertex_id_field
     }
-  }
+  ]
 
   # Processing edges
-  edges: {
+  edges: [
     # Loading edge from HDFS and data type is JSON.
-    # The edge's name is edge-name-0.
-    # field-0, field-1 and field-2 from HDFS's JSON file are written into edge-name-0
-    # The source column is source-field, target column is target-field and ranking column is ranking-field.
-    edge-name-0: {
+    # The edge's name is edge_name_0.
+    # field_0, field_1 and field_2 from HDFS's JSON file are written into edge_name_0
+    # The source column is source_field, target column is target_field and ranking column is ranking_field.
+    {
+      name: edge_name_0
       type: json
-      path: hdfs path
+      path: hdfs_path
       fields: {
-        field-0: nebula-field-0,
-        field-1: nebula-field-1,
-        field-2: nebula-field-2
+        field_0: nebula_field_0,
+        field_1: nebula_field_1,
+        field_2: nebula_field_2
       }
-      source:  source-field
-      target:  target-field
-      ranking: ranking-field
+      source:  source_field
+      target:  target_field
+      ranking: ranking_field
     }
 
-
-   # Loading from Hive will execute command ${exec} as data set.
-   # Ranking is optional.
-   edge-name-1: {
-    type: hive
-    exec: "select hive-field-0, hive-field-1, hive-field-2 from database.table"
-    fields: {
-      hive-field-0: nebula-field-0,
-      hive-field-1: nebula-field-1,
-      hive-field-2: nebula-field-2
-     }
-    source:  source-id-field
-    target:  target-id-field
-   }
-  }
+    # Loading from Hive will execute command ${exec} as data set.
+    # Ranking is optional.
+    {
+      name: edge_name_1
+      type: hive
+      exec: "select hive_field_0, hive_field_1, hive_field_2 from database.table"
+      fields: {
+        hive_field_0: nebula_field_0,
+        hive_field_1: nebula_field_1,
+        hive_field_2: nebula_field_2
+      }
+      source:  source_id_field
+      target:  target_id_field
+    }
+  ]
 }
 ```
 

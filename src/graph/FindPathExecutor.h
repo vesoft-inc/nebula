@@ -16,7 +16,7 @@ namespace nebula {
 namespace graph {
 
 using SchemaProps = std::unordered_map<std::string, std::vector<std::string>>;
-const std::vector<std::string> kReserveProps_ = {"_dst", "_type", "_rank"};
+const std::vector<std::string> kReserveProps_ = {"_type", "_rank"};
 using Neighbor = std::tuple<VertexID, EdgeType, EdgeRanking>; /* dst, type, rank*/
 using Neighbors = std::vector<Neighbor>;
 using Frontiers =
@@ -45,10 +45,6 @@ public:
     Status MUST_USE_RESULT prepare() override;
 
     void execute() override;
-
-    void feedResult(std::unique_ptr<InterimResult> result) override {
-        inputs_ = std::move(result);
-    }
 
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
@@ -111,7 +107,6 @@ private:
     Clause::Step                                    step_;
     Clause::Where                                   where_;
     bool                                            shortest_{false};
-    std::unique_ptr<InterimResult>                  inputs_;
     using SchemaPropIndex = std::unordered_map<std::pair<std::string, std::string>, int64_t>;
     SchemaPropIndex                                 srcTagProps_;
     SchemaPropIndex                                 dstTagProps_;

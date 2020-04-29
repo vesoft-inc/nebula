@@ -330,7 +330,7 @@ bool FileUtils::makeDir(const std::string& dir, uint32_t mode) {
         return false;
     }
     FileType type = fileType(dir.c_str());
-    if (type == FileType::DIRECTORY) {
+    if (type == FileType::DIRECTORY || type == FileType::SYM_LINK) {
         // The directory already exists
         return true;
     } else if (type != FileType::NOTEXIST) {
@@ -362,6 +362,14 @@ bool FileUtils::exist(const std::string& path) {
         return false;
     }
     return access(path.c_str(), F_OK) == 0;
+}
+
+// static
+bool FileUtils::rename(const std::string& src, const std::string& dst) {
+    auto status = ::rename(src.c_str(), dst.c_str());
+    LOG_IF(WARNING, status != 0) << "Rename " << src << " to " << dst << " failed, the errno: "
+        << ::strerror(errno);
+    return status == 0;
 }
 
 std::vector<std::string> FileUtils::listAllTypedEntitiesInDir(

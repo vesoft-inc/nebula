@@ -15,11 +15,8 @@ namespace nebula {
 namespace graph {
 class FetchExecutor : public TraverseExecutor {
 public:
-    explicit FetchExecutor(ExecutionContext *ectx) : TraverseExecutor(ectx) {}
-
-    void feedResult(std::unique_ptr<InterimResult> result) override {
-        inputs_ = std::move(result);
-    }
+    explicit FetchExecutor(ExecutionContext *ectx,
+                           const std::string &statsName) : TraverseExecutor(ectx, statsName) {}
 
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
@@ -37,7 +34,7 @@ protected:
 
     void finishExecution(std::unique_ptr<RowSetWriter> rsWriter);
 
-    stats::Stats* getStats() const;
+    void doEmptyResp();
 
 protected:
     GraphSpaceID                                    spaceId_{INT_MIN};
@@ -48,8 +45,8 @@ protected:
     std::vector<YieldColumn*>                       yields_;
     std::unique_ptr<YieldColumns>                   yieldColsHolder_;
     bool                                            distinct_{false};
-    std::unique_ptr<InterimResult>                  inputs_;
     std::vector<std::string>                        resultColNames_;
+    std::vector<std::string>                        returnColNames_;
     std::unique_ptr<cpp2::ExecutionResponse>        resp_;
     std::vector<nebula::cpp2::SupportedType>        colTypes_;
 };

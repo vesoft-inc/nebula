@@ -9,7 +9,7 @@
 #include "graph/test/TestBase.h"
 #include "meta/test/TestUtils.h"
 
-DECLARE_int32(load_data_interval_secs);
+DECLARE_int32(heartbeat_interval_secs);
 
 namespace nebula {
 namespace graph {
@@ -80,11 +80,13 @@ AssertionResult DataTest::prepareSchema() {
     // create tag with default value
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "CREATE TAG personWithDefault(name string default \"\", "
-                                                       "age int default 18, "
-                                                       "isMarried bool default false, "
-                                                       "BMI double default 18.5, "
-                                                       "department string default \"engineering\")";
+        std::string cmd = "CREATE TAG personWithDefault(name string DEFAULT \"\", "
+                                                       "age int DEFAULT 18, "
+                                                       "isMarried bool DEFAULT false, "
+                                                       "BMI double DEFAULT 18.5, "
+                                                       "department string DEFAULT \"engineering\","
+                                                       "birthday timestamp DEFAULT "
+                                                       "\"2020-01-10 10:00:00\")";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
             return TestError() << "Do cmd:" << cmd
@@ -103,7 +105,7 @@ AssertionResult DataTest::prepareSchema() {
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "CREATE TAG studentWithDefault"
-                          "(grade string default \"one\", number int)";
+                          "(grade string DEFAULT \"one\", number int)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
             return TestError() << "Do cmd:" << cmd
@@ -122,14 +124,14 @@ AssertionResult DataTest::prepareSchema() {
     // create edge with default value
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "CREATE EDGE schoolmateWithDefault(likeness int default 80)";
+        std::string cmd = "CREATE EDGE schoolmateWithDefault(likeness int DEFAULT 80)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
             return TestError() << "Do cmd:" << cmd
                                << " failed, error code "<< static_cast<int32_t>(code);
         }
     }
-    // Test same propName diff tyep in diff tags
+    // Test same propName diff type in diff tags
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "CREATE TAG employee(name int)";
@@ -168,7 +170,7 @@ AssertionResult DataTest::prepareSchema() {
                                << " failed, error code "<< static_cast<int32_t>(code);
         }
     }
-    sleep(FLAGS_load_data_interval_secs + 3);
+    sleep(FLAGS_heartbeat_interval_secs + 3);
     return TestOK();
 }
 
@@ -221,8 +223,8 @@ TEST_F(DataTest, InsertTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         cmd = "FETCH PROP ON person hash(\"Conan\")";
         code = client_->execute(cmd, resp);
-        std::vector<std::tuple<std::string, int64_t>> expected = {
-                {"Conan", 10},
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
+                {std::hash<std::string>()("Conan"), "Conan", 10},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -256,14 +258,14 @@ TEST_F(DataTest, InsertTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         cmd = "FETCH PROP ON person hash(\"Bob\")";
         code = client_->execute(cmd, resp);
-        std::vector<std::tuple<std::string, int64_t>> expected = {
-                {"Bob", 9},
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
+                {std::hash<std::string>()("Bob"), "Bob", 9},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
         cmd = "FETCH PROP ON student hash(\"Bob\")";
         code = client_->execute(cmd, resp);
-        std::vector<std::tuple<std::string, int64_t>> expected2 = {
-                {"four", 20191106001},
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected2 = {
+                {std::hash<std::string>()("Bob"), "four", 20191106001},
         };
         ASSERT_TRUE(verifyResult(resp, expected2));
     }
@@ -322,8 +324,8 @@ TEST_F(DataTest, InsertTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         cmd = "FETCH PROP ON schoolmate hash(\"Tom\")->hash(\"Bob\")";
         code = client_->execute(cmd, resp);
-        std::vector<std::tuple<int64_t, std::string>> expected = {
-                {87, "Superman"},
+        std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, std::string>> expected = {
+            {std::hash<std::string>()("Tom"), std::hash<std::string>()("Bob"), 0,  87, "Superman"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -686,8 +688,8 @@ TEST_F(DataTest, InsertTest) {
         std::string cmd = "FETCH PROP ON school hash(\"sun_school\") ";;
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, int64_t>> expected = {
-                {"sun_school", 1262311200},
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
+                {std::hash<std::string>()("sun_school"), "sun_school", 1262311200},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -699,7 +701,7 @@ TEST_F(DataTest, InsertTest) {
         std::vector<std::tuple<std::string, int64_t>> expected = {
                 {"sun_school", 1262311200},
         };
-        ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_TRUE(verifyResult(resp, expected, true,  {0}));
     }
     // TODO: Test insert multi tags, and delete one of them then check other existent
 }
@@ -713,11 +715,21 @@ TEST_F(DataTest, InsertWithDefaultValueTest) {
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    // Insert lack of the column value
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "INSERT VERTEX personWithDefault"
-                          "(name, age, isMarried, BMI, department, redundant)"
-                          "VALUES hash(\"Tom\"):(\"Tom\", 18, false, 18.5, \"dev\", 0)";
+                          "(age, isMarried, BMI)"
+                          "VALUES hash(\"Tom\"):(18, false)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    // Insert column doesn't match value count
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT VERTEX studentWithDefault"
+                          "(grade, number)"
+                          "VALUES hash(\"Tom\"):(\"one\", 111, \"\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
@@ -760,6 +772,22 @@ TEST_F(DataTest, InsertWithDefaultValueTest) {
                           "hash(\"Peter\"):(\"Peter\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Insert lack of the column value
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT EDGE schoolmateWithDefault(likeness) VALUES "
+                          "hash(\"Tom\")->hash(\"Lucy\"):()";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    // Column count doesn't match value count
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT EDGE schoolmateWithDefault(likeness) VALUES "
+                          "hash(\"Tom\")->hash(\"Lucy\"):(60, \"\")";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -804,13 +832,15 @@ TEST_F(DataTest, InsertWithDefaultValueTest) {
         cpp2::ExecutionResponse resp;
         std::string cmd = "GO FROM hash(\"Lucy\") OVER schoolmateWithDefault YIELD "
                           "schoolmateWithDefault.likeness, $$.personWithDefault.name,"
+                          "$$.personWithDefault.birthday, $$.personWithDefault.department,"
                           "$$.studentWithDefault.grade, $$.studentWithDefault.number";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        using valueType = std::tuple<int64_t, std::string, std::string, int64_t>;
+        using valueType = std::tuple<int64_t, std::string, int64_t,
+                                     std::string, std::string, int64_t>;
         std::vector<valueType> expected = {
-            {80, "Laura", "one", 20190901008},
-            {80, "Amber", "one", 20180901003},
+            {80, "Laura", 1578621600, "engineering", "one", 20190901008},
+            {80, "Amber", 1578621600, "engineering", "one", 20180901003},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -940,10 +970,11 @@ TEST_F(DataTest, InsertMultiVersionWithUUIDTest) {
     }
 }
 
-TEST_F(DataTest, FindTest) {
+TEST_F(DataTest, LookupTest) {
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "FIND name FROM person";
+        std::string cmd = "LOOKUP ON person where person.name == \"Tony\" "
+                          "YIELD person.name, person.age";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
@@ -955,6 +986,96 @@ TEST_F(DataTest, MatchTest) {
         std::string cmd = "MATCH";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+}
+
+
+static inline void execute(GraphClient* client, const std::string& nGQL) {
+    cpp2::ExecutionResponse resp;
+    auto code = client->execute(nGQL, resp);
+    ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << "Do cmd:" << nGQL << " failed";
+}
+
+class FetchEmptyPropsTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        // Access the Nebula Environment
+        client_ = gEnv->getClient();
+        ASSERT_NE(client_, nullptr);
+
+        prepareSchema();
+        prepareData();
+    }
+
+    void TearDown() override {
+        execute(client_.get(), "DROP SPACE empty");
+    }
+
+    std::unique_ptr<GraphClient> client_ = nullptr;
+
+private:
+    void prepareSchema() {
+        execute(client_.get(), "CREATE SPACE empty(partition_num=1, replica_factor=1)");
+
+        const std::vector<std::string> queries = {
+            "USE empty",
+            "CREATE TAG empty_tag()",
+            "CREATE EDGE empty_edge()"
+        };
+
+        for (auto& q : queries) {
+            execute(client_.get(), q);
+        }
+
+        sleep(FLAGS_heartbeat_interval_secs + 3);
+    }
+
+    void prepareData() {
+        const std::vector<std::string> queries = {
+            "INSERT VERTEX empty_tag() values 1:(), 2:()",
+            "INSERT EDGE empty_edge() values 1->2:()",
+        };
+
+        for (auto& q : queries) {
+            execute(client_.get(), q);
+        }
+    }
+};
+
+static inline void assertEmptyResult(GraphClient* client, const std::string& stmt) {
+    cpp2::ExecutionResponse resp;
+    auto code = DCHECK_NOTNULL(client)->execute(stmt, resp);
+    ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    ASSERT_NE(resp.get_column_names(), nullptr);
+    ASSERT_TRUE(resp.get_column_names()->empty());
+    ASSERT_NE(resp.get_rows(), nullptr);
+    ASSERT_TRUE(resp.get_rows()->empty());
+}
+
+// #1478
+// Fetch property from empty tag
+TEST_F(FetchEmptyPropsTest, EmptyProps) {
+    {
+        const std::string stmt = "FETCH PROP ON empty_tag 1";
+        assertEmptyResult(client_.get(), stmt);
+    }
+    {
+        const std::string stmt = "FETCH PROP ON empty_edge 1->2";
+        assertEmptyResult(client_.get(), stmt);
+    }
+}
+
+TEST_F(FetchEmptyPropsTest, WithInput) {
+    {
+        const std::string stmt = "GO FROM 1 OVER empty_edge YIELD empty_edge._dst as id"
+                                 " | FETCH PROP ON empty_tag $-.id";
+        assertEmptyResult(client_.get(), stmt);
+    }
+    {
+        const std::string stmt =
+            "GO FROM 1 OVER empty_edge YIELD empty_edge._src as src, empty_edge._dst as dst"
+            " | FETCH PROP ON empty_edge $-.src->$-.dst";
+        assertEmptyResult(client_.get(), stmt);
     }
 }
 

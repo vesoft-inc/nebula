@@ -12,7 +12,7 @@
 namespace nebula {
 namespace graph {
 FetchVerticesExecutor::FetchVerticesExecutor(Sentence *sentence, ExecutionContext *ectx)
-        : FetchExecutor(ectx) {
+        : FetchExecutor(ectx, "fetch_vertices") {
     sentence_ = static_cast<FetchVerticesSentence*>(sentence);
 }
 
@@ -21,7 +21,6 @@ Status FetchVerticesExecutor::prepare() {
 }
 
 Status FetchVerticesExecutor::prepareClauses() {
-    DCHECK_NOTNULL(sentence_);
     Status status = Status::OK();
 
     do {
@@ -31,18 +30,22 @@ Status FetchVerticesExecutor::prepareClauses() {
         }
 
         expCtx_ = std::make_unique<ExpressionContext>();
-        expCtx_->setStorageClient(ectx()->getStorageClient());
-
         spaceId_ = ectx()->rctx()->session()->space();
-        yieldClause_ = sentence_->yieldClause();
+        expCtx_->setStorageClient(ectx()->getStorageClient());
+        if (sentence_->isAllTagProps()) {
+            break;
+        }
+
+        yieldClause_ = DCHECK_NOTNULL(sentence_)->yieldClause();
         labelName_ = sentence_->tag();
         auto result = ectx()->schemaManager()->toTagID(spaceId_, *labelName_);
         if (!result.ok()) {
+            LOG(ERROR) << "Get Tag Id failed: " << result.status();
             status = result.status();
             break;
         }
-        tagID_ = result.value();
-        labelSchema_ = ectx()->schemaManager()->getTagSchema(spaceId_, tagID_);
+        tagId_ = result.value();
+        labelSchema_ = ectx()->schemaManager()->getTagSchema(spaceId_, tagId_);
         if (labelSchema_ == nullptr) {
             LOG(ERROR) << *labelName_ << " tag schema not exist.";
             status = Status::Error("%s tag schema not exist.", labelName_->c_str());
@@ -51,10 +54,20 @@ Status FetchVerticesExecutor::prepareClauses() {
 
         status = prepareVids();
         if (!status.ok()) {
+            LOG(ERROR) << "Prepare vertex id failed: " << status;
             break;
         }
+
+        // Add VertexID before prepareYield()
+        returnColNames_.emplace_back("VertexID");
         status = prepareYield();
         if (!status.ok()) {
+            LOG(ERROR) << "Prepare yield failed: " << status;
+            break;
+        }
+        status = checkTagProps();
+        if (!status.ok()) {
+            LOG(ERROR) << "Check props failed: " << status;
             break;
         }
     } while (false);
@@ -74,7 +87,8 @@ Status FetchVerticesExecutor::prepareVids() {
         } else {
             //  should never come to here.
             //  only support input and variable yet.
-            LOG(FATAL) << "Unknown kind of expression.";
+            LOG(ERROR) << "Unknown kind of expression.";
+            return Status::Error("Unknown kind of expression.");
         }
         if (colname_ != nullptr && *colname_ == "*") {
             return Status::Error("Cant not use `*' to reference a vertex id column.");
@@ -83,20 +97,37 @@ Status FetchVerticesExecutor::prepareVids() {
     return Status::OK();
 }
 
+Status FetchVerticesExecutor::checkTagProps() {
+    auto aliasProps = expCtx_->aliasProps();
+    for (auto &pair : aliasProps) {
+        if (pair.first != *labelName_) {
+            return Status::SyntaxError(
+                "Near [%s.%s], tag should be declared in `ON' clause first.",
+                    pair.first.c_str(), pair.second.c_str());
+        }
+
+        if (labelSchema_->getFieldIndex(pair.second) == -1) {
+            return Status::Error("`%s' is not a prop of `%s'",
+                    pair.second.c_str(), pair.first.c_str());
+        }
+    }
+    return Status::OK();
+}
+
 void FetchVerticesExecutor::execute() {
-    FLOG_INFO("Executing FetchVertices: %s", sentence_->toString().c_str());
     auto status = prepareClauses();
     if (!status.ok()) {
-        doError(std::move(status), ectx()->getGraphStats()->getFetchVerticesStats());
+        doError(std::move(status));
         return;
     }
 
     status = setupVids();
     if (!status.ok()) {
-        doError(std::move(status), ectx()->getGraphStats()->getFetchVerticesStats());
+        doError(std::move(status));
         return;
     }
     if (vids_.empty()) {
+        LOG(WARNING) << "Empty vids";
         onEmptyInputs();
         return;
     }
@@ -105,11 +136,14 @@ void FetchVerticesExecutor::execute() {
 }
 
 void FetchVerticesExecutor::fetchVertices() {
-    auto props = getPropNames();
-    if (props.empty()) {
-        doError(Status::Error("No props declared."),
-                ectx()->getGraphStats()->getFetchVerticesStats());
-        return;
+    std::vector<storage::cpp2::PropDef> props;
+    if (!sentence_->isAllTagProps()) {
+        props = getPropNames();
+        if (props.empty()) {
+            LOG(WARNING) << "Empty props";
+            doEmptyResp();
+            return;
+        }
     }
 
     auto future = ectx()->getStorageClient()->getVertexProps(spaceId_, vids_, std::move(props));
@@ -117,8 +151,7 @@ void FetchVerticesExecutor::fetchVertices() {
     auto cb = [this] (RpcResponse &&result) mutable {
         auto completeness = result.completeness();
         if (completeness == 0) {
-            doError(Status::Error("Get props failed"),
-                    ectx()->getGraphStats()->getFetchVerticesStats());
+            doError(Status::Error("Get tag `%s' props failed", sentence_->tag()->c_str()));
             return;
         } else if (completeness != 100) {
             LOG(INFO) << "Get vertices partially failed: "  << completeness << "%";
@@ -127,12 +160,18 @@ void FetchVerticesExecutor::fetchVertices() {
                            << "error code: " << static_cast<int>(error.second);
             }
         }
-        processResult(std::move(result));
+        if (!sentence_->isAllTagProps()) {
+            processResult(std::move(result));
+        } else {
+            processAllPropsResult(std::move(result));
+        }
         return;
     };
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error"), ectx()->getGraphStats()->getFetchVerticesStats());
+        auto msg = folly::stringPrintf("Get tag `%s' props exception: %s.",
+                sentence_->tag()->c_str(), e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(std::move(msg)));
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
@@ -143,7 +182,7 @@ std::vector<storage::cpp2::PropDef> FetchVerticesExecutor::getPropNames() {
         storage::cpp2::PropDef pd;
         pd.owner = storage::cpp2::PropOwner::SOURCE;
         pd.name = prop.second;
-        pd.id.set_tag_id(tagID_);
+        pd.id.set_tag_id(tagId_);
         props.emplace_back(std::move(pd));
     }
 
@@ -154,7 +193,7 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
     auto all = result.responses();
     std::shared_ptr<SchemaWriter> outputSchema;
     std::unique_ptr<RowSetWriter> rsWriter;
-    auto uniqResult = std::make_unique<std::unordered_set<std::string>>();
+    Getters getters;
     for (auto &resp : all) {
         if (!resp.__isset.vertices) {
             continue;
@@ -182,18 +221,19 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
             vreader = RowReader::getRowReader(vdata.tag_data[0].data, vschema);
             if (outputSchema == nullptr) {
                 outputSchema = std::make_shared<SchemaWriter>();
+                outputSchema->appendCol("VertexID", nebula::cpp2::SupportedType::VID);
                 auto status = getOutputSchema(vschema.get(), vreader.get(), outputSchema.get());
                 if (!status.ok()) {
-                    LOG(ERROR) << "Get getOutputSchema failed: " << status;
-                    doError(Status::Error("Internal error."),
-                            ectx()->getGraphStats()->getFetchVerticesStats());
+                    LOG(ERROR) << "Get output schema failed: " << status;
+                    doError(Status::Error("Get output schema failed: %s.",
+                                status.toString().c_str()));
                     return;
                 }
                 rsWriter = std::make_unique<RowSetWriter>(outputSchema);
             }
 
             auto writer = std::make_unique<RowWriter>(outputSchema);
-            auto &getters = expCtx_->getters();
+            (*writer) << vdata.vertex_id;
             getters.getAliasProp =
                 [&vreader, &vschema] (const std::string&,
                                       const std::string &prop) -> OptVariantType {
@@ -201,29 +241,21 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
             };
             for (auto *column : yields_) {
                 auto *expr = column->expr();
-                auto value = expr->eval();
+                auto value = expr->eval(getters);
                 if (!value.ok()) {
-                    doError(std::move(value).status(),
-                            ectx()->getGraphStats()->getFetchVerticesStats());
+                    doError(std::move(value).status());
                     return;
                 }
                 auto status = Collector::collect(value.value(), writer.get());
                 if (!status.ok()) {
                     LOG(ERROR) << "Collect prop error: " << status;
-                    doError(std::move(status), ectx()->getGraphStats()->getFetchVerticesStats());
+                    doError(std::move(status));
                     return;
                 }
             }
             // TODO Consider float/double, and need to reduce mem copy.
             std::string encode = writer->encode();
-            if (distinct_) {
-                auto ret = uniqResult->emplace(encode);
-                if (ret.second) {
-                    rsWriter->addRow(std::move(encode));
-                }
-            } else {
-                rsWriter->addRow(std::move(encode));
-            }
+            rsWriter->addRow(std::move(encode));
         }  // for `vdata'
     }      // for `resp'
 
@@ -232,7 +264,7 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
 
 Status FetchVerticesExecutor::setupVids() {
     Status status = Status::OK();
-    if (sentence_->isRef()) {
+    if (sentence_->isRef() && !sentence_->isAllTagProps()) {
         status = setupVidsFromRef();
     } else {
         status = setupVidsFromExpr();
@@ -250,13 +282,14 @@ Status FetchVerticesExecutor::setupVidsFromExpr() {
 
     expCtx_->setSpace(spaceId_);
     auto vidList = sentence_->vidList();
+    Getters getters;
     for (auto *expr : vidList) {
         expr->setContext(expCtx_.get());
         status = expr->prepare();
         if (!status.ok()) {
             break;
         }
-        auto value = expr->eval();
+        auto value = expr->eval(getters);
         if (!value.ok()) {
             return value.status();
         }
@@ -295,6 +328,10 @@ Status FetchVerticesExecutor::setupVidsFromRef() {
         return Status::OK();
     }
 
+    auto status = checkIfDuplicateColumn();
+    if (!status.ok()) {
+        return status;
+    }
     StatusOr<std::vector<VertexID>> result;
     if (distinct_) {
         result = inputs->getDistinctVIDs(*colname_);
@@ -306,6 +343,80 @@ Status FetchVerticesExecutor::setupVidsFromRef() {
     }
     vids_ = std::move(result).value();
     return Status::OK();
+}
+
+void FetchVerticesExecutor::processAllPropsResult(RpcResponse &&result) {
+    auto &all = result.responses();
+    std::unique_ptr<RowSetWriter> rsWriter;
+    std::shared_ptr<SchemaWriter> outputSchema;
+    for (auto &resp : all) {
+        if (!resp.__isset.vertices) {
+            continue;
+        }
+
+        for (auto &vdata : resp.vertices) {
+            if (!vdata.__isset.tag_data || vdata.tag_data.empty()) {
+                continue;
+            }
+            RowWriter writer;
+            writer << RowWriter::ColType(nebula::cpp2::SupportedType::VID) << vdata.vertex_id;
+            for (auto &tdata : vdata.tag_data) {
+                auto ver = RowReader::getSchemaVer(tdata.data);
+                if (ver < 0) {
+                    LOG(ERROR) << "Found schema version negative " << ver;
+                    doError(Status::Error("Found schema version negative: %d", ver));
+                    return;
+                }
+                auto schema = ectx()->schemaManager()->getTagSchema(spaceId_, tdata.tag_id, ver);
+                if (schema == nullptr) {
+                    VLOG(3) << "Schema not found for tag id: " << tdata.tag_id;
+                    // Ignore the bad data.
+                    continue;
+                }
+                if (rsWriter == nullptr) {
+                    outputSchema = std::make_shared<SchemaWriter>();
+                    outputSchema->appendCol("VertexID", nebula::cpp2::SupportedType::VID);
+                    returnColNames_.emplace_back("VertexID");
+                    rsWriter = std::make_unique<RowSetWriter>(outputSchema);
+                }
+                // row.append(tdata.data);
+                auto reader = RowReader::getRowReader(tdata.data, schema);
+
+                auto tagFound = ectx()->schemaManager()->toTagName(spaceId_, tdata.tag_id);
+                if (!tagFound.ok()) {
+                    VLOG(3) << "Tag name not found for tag id: " << tdata.tag_id;
+                    // Ignore the bad data.
+                    continue;
+                }
+                auto tagName = std::move(tagFound).value();
+                auto iter = schema->begin();
+                auto index = 0;
+
+                while (iter) {
+                    auto *field = iter->getName();
+                    auto prop = RowReader::getPropByIndex(reader.get(), index);
+                    if (!ok(prop)) {
+                        LOG(ERROR) << "Read props of tag " << tagName << " failed.";
+                        doError(Status::Error("Read props of tag `%s' failed.", tagName.c_str()));
+                        return;
+                    }
+                    Collector::collectWithoutSchema(value(prop), &writer);
+                    auto colName = folly::stringPrintf("%s.%s", tagName.c_str(), field);
+                    resultColNames_.emplace_back(colName);
+                    returnColNames_.emplace_back(colName);
+                    auto fieldType = iter->getType();
+                    outputSchema->appendCol(std::move(colName), std::move(fieldType));
+                    ++index;
+                    ++iter;
+                }
+            }
+            if (writer.size() > 1 && rsWriter != nullptr) {
+                rsWriter->addRow(writer.encode());
+            }
+        }
+    }
+
+    finishExecution(std::move(rsWriter));
 }
 }  // namespace graph
 }  // namespace nebula

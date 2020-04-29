@@ -35,15 +35,14 @@ jobs:
           echo "::set-output name=tag::$tag"
           echo "::set-output name=filepath::$CPACK_OUTPUT_DIR/$filename"
           echo "::set-output name=shafilepath::$CPACK_OUTPUT_DIR/$filename.$SHA_EXT"
+        shell: bash
       - name: upload release asset
         run: |
           ./ci/scripts/upload-github-release-asset.sh github_token=${{ secrets.GITHUB_TOKEN }} repo=${{ github.repository }} tag=${{ steps.vars.outputs.tag }} filepath=${{ steps.vars.outputs.filepath }}
           ./ci/scripts/upload-github-release-asset.sh github_token=${{ secrets.GITHUB_TOKEN }} repo=${{ github.repository }} tag=${{ steps.vars.outputs.tag }} filepath=${{ steps.vars.outputs.shafilepath }}
-      - name: upload release artifacts
-        uses: actions/upload-artifact@v1
-        with:
-          name: ${{ matrix.os }}-release
-          path: build/cpack_output
+          ./ci/scripts/upload-oss.sh OSS_ENDPOINT=${{ secrets.OSS_ENDPOINT }} OSS_ID=${{ secrets.OSS_ID }} OSS_SECRET=${{ secrets.OSS_SECRET }} tag=${{ steps.vars.outputs.tag }} filepath=${{ steps.vars.outputs.filepath }}
+          ./ci/scripts/upload-oss.sh OSS_ENDPOINT=${{ secrets.OSS_ENDPOINT }} OSS_ID=${{ secrets.OSS_ID }} OSS_SECRET=${{ secrets.OSS_SECRET }} tag=${{ steps.vars.outputs.tag }} filepath=${{ steps.vars.outputs.shafilepath }}
+        shell: bash
 
   docker:
     name: build docker images

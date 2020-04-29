@@ -44,7 +44,9 @@ FileBasedWal::FileBasedWal(const folly::StringPiece dir,
         , preProcessor_(std::move(preProcessor)) {
     // Make sure WAL directory exist
     if (FileUtils::fileType(dir_.c_str()) == fs::FileType::NOTEXIST) {
-        FileUtils::makeDir(dir_);
+        if (!FileUtils::makeDir(dir_)) {
+            LOG(FATAL) << "MakeDIR " << dir_ << " failed";
+        }
     }
 
     scanAllWalFiles();
@@ -485,7 +487,7 @@ BufferPtr FileBasedWal::getLastBuffer(LogID id, size_t expectedToWrite) {
         }
         CHECK_LT(buffers_.size(), policy_.numBuffers);
     }
-    buffers_.emplace_back(std::make_shared<InMemoryLogBuffer>(id));
+    buffers_.emplace_back(std::make_shared<InMemoryLogBuffer>(id, idStr_));
     return buffers_.back();
 }
 
@@ -598,8 +600,8 @@ bool FileBasedWal::linkCurrentWAL(const char* newPath) {
     closeCurrFile();
     std::lock_guard<std::mutex> g(walFilesMutex_);
     if (walFiles_.empty()) {
-        LOG(INFO) << idStr_ << "Create link failed, there is no wal files!";
-        return false;
+        LOG(INFO) << idStr_ << "No wal files found, skip link";
+        return true;
     }
     if (!fs::FileUtils::makeDir(newPath)) {
         LOG(INFO) << idStr_ << "Link file parent dir make failed : " << newPath;

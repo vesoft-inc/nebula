@@ -10,7 +10,7 @@
 namespace nebula {
 namespace graph {
 FetchEdgesExecutor::FetchEdgesExecutor(Sentence *sentence, ExecutionContext *ectx)
-        : FetchExecutor(ectx) {
+        : FetchExecutor(ectx, "fetch_edges") {
     sentence_ = static_cast<FetchEdgesSentence*>(sentence);
 }
 
@@ -19,7 +19,6 @@ Status FetchEdgesExecutor::prepare() {
 }
 
 Status FetchEdgesExecutor::prepareClauses() {
-    DCHECK_NOTNULL(sentence_);
     Status status = Status::OK();
 
     do {
@@ -31,7 +30,7 @@ Status FetchEdgesExecutor::prepareClauses() {
         expCtx_ = std::make_unique<ExpressionContext>();
         expCtx_->setStorageClient(ectx()->getStorageClient());
         spaceId_ = ectx()->rctx()->session()->space();
-        yieldClause_ = sentence_->yieldClause();
+        yieldClause_ = DCHECK_NOTNULL(sentence_)->yieldClause();
         labelName_ = sentence_->edge();
         auto result = ectx()->schemaManager()->toEdgeType(spaceId_, *labelName_);
         if (!result.ok()) {
@@ -50,8 +49,22 @@ Status FetchEdgesExecutor::prepareClauses() {
         if (!status.ok()) {
             break;
         }
+
+        // Add SrcID, DstID, Rank before prepareYield()
+        edgeSrcName_ = *labelName_ + "._src";
+        edgeDstName_ = *labelName_ + "._dst";
+        edgeRankName_ = *labelName_ + "._rank";
+        returnColNames_.emplace_back(edgeSrcName_);
+        returnColNames_.emplace_back(edgeDstName_);
+        returnColNames_.emplace_back(edgeRankName_);
         status = prepareYield();
         if (!status.ok()) {
+            LOG(ERROR) << "Prepare yield failed: " << status;
+            break;
+        }
+        status = checkEdgeProps();
+        if (!status.ok()) {
+            LOG(ERROR) << "Check edge props failed: " << status;
             break;
         }
     } while (false);
@@ -66,14 +79,14 @@ Status FetchEdgesExecutor::prepareEdgeKeys() {
 
             srcid_ = edgeKeyRef->srcid();
             if (srcid_ == nullptr) {
-                status = Status::Error("Internal error.");
+                status = Status::Error("Src id nullptr.");
                 LOG(ERROR) << "Get src nullptr.";
                 break;
             }
 
             dstid_ = edgeKeyRef->dstid();
             if (dstid_ == nullptr) {
-                status = Status::Error("Internal error.");
+                status = Status::Error("Dst id nullptr.");
                 LOG(ERROR) << "Get dst nullptr.";
                 break;
             }
@@ -99,16 +112,36 @@ Status FetchEdgesExecutor::prepareEdgeKeys() {
     return status;
 }
 
+Status FetchEdgesExecutor::checkEdgeProps() {
+    auto aliasProps = expCtx_->aliasProps();
+    for (auto &pair : aliasProps) {
+        if (pair.first != *labelName_) {
+            return Status::SyntaxError(
+                "Near [%s.%s], edge should be declared in `ON' clause first.",
+                    pair.first.c_str(), pair.second.c_str());
+        }
+        auto propName = pair.second;
+        if (propName == _SRC || propName == _DST
+                || propName == _RANK || propName == _TYPE) {
+            continue;
+        }
+        if (labelSchema_->getFieldIndex(propName) == -1) {
+            return Status::Error("`%s' is not a prop of `%s'",
+                    propName.c_str(), pair.first.c_str());
+        }
+    }
+    return Status::OK();
+}
+
 void FetchEdgesExecutor::execute() {
-    FLOG_INFO("Executing FetchEdges: %s", sentence_->toString().c_str());
     auto status = prepareClauses();
     if (!status.ok()) {
-        doError(std::move(status), ectx()->getGraphStats()->getFetchEdgesStats());
+        doError(std::move(status));
         return;
     }
     status = setupEdgeKeys();
     if (!status.ok()) {
-        doError(std::move(status), ectx()->getGraphStats()->getFetchEdgesStats());
+        doError(std::move(status));
         return;
     }
 
@@ -154,6 +187,10 @@ Status FetchEdgesExecutor::setupEdgeKeysFromRef() {
         return Status::OK();
     }
 
+    auto status = checkIfDuplicateColumn();
+    if (!status.ok()) {
+        return status;
+    }
     auto ret = inputs->getVIDs(*srcid_);
     if (!ret.ok()) {
         return ret.status();
@@ -207,6 +244,7 @@ Status FetchEdgesExecutor::setupEdgeKeysFromExpr() {
 
     auto edgeKeyExprs = sentence_->keys()->keys();
     expCtx_->setSpace(spaceId_);
+    Getters getters;
 
     for (auto *keyExpr : edgeKeyExprs) {
         auto *srcExpr = keyExpr->srcid();
@@ -224,12 +262,12 @@ Status FetchEdgesExecutor::setupEdgeKeysFromExpr() {
         if (!status.ok()) {
             break;
         }
-        auto value = srcExpr->eval();
+        auto value = srcExpr->eval(getters);
         if (!value.ok()) {
             return value.status();
         }
         auto srcid = value.value();
-        value = dstExpr->eval();
+        value = dstExpr->eval(getters);
         if (!value.ok()) {
             return value.status();
         }
@@ -261,13 +299,13 @@ void FetchEdgesExecutor::fetchEdges() {
     std::vector<storage::cpp2::PropDef> props;
     auto status = getPropNames(props);
     if (!status.ok()) {
-        doError(std::move(status), ectx()->getGraphStats()->getFetchEdgesStats());
+        doError(std::move(status));
         return;
     }
 
     if (props.empty()) {
-        doError(Status::Error("No props declared."),
-                 ectx()->getGraphStats()->getFetchEdgesStats());
+        LOG(WARNING) << "Empty props of tag " << labelName_;
+        doEmptyResp();
         return;
     }
 
@@ -276,8 +314,7 @@ void FetchEdgesExecutor::fetchEdges() {
     auto cb = [this] (RpcResponse &&result) mutable {
         auto completeness = result.completeness();
         if (completeness == 0) {
-            doError(Status::Error("Get props failed"),
-                    ectx()->getGraphStats()->getFetchEdgesStats());
+            doError(Status::Error("Get edge `%s' props failed", sentence_->edge()->c_str()));
             return;
         } else if (completeness != 100) {
             LOG(INFO) << "Get edges partially failed: "  << completeness << "%";
@@ -290,9 +327,10 @@ void FetchEdgesExecutor::fetchEdges() {
         return;
     };
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error"),
-                ectx()->getGraphStats()->getFetchEdgesStats());
+        auto msg = folly::stringPrintf("Get edge `%s' props faield: %s.",
+                sentence_->edge()->c_str(), e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(std::move(msg)));
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
@@ -318,7 +356,7 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
     auto all = result.responses();
     std::shared_ptr<SchemaWriter> outputSchema;
     std::unique_ptr<RowSetWriter> rsWriter;
-    auto uniqResult = std::make_unique<std::unordered_set<std::string>>();
+    Getters getters;
     for (auto &resp : all) {
         if (!resp.__isset.schema || !resp.__isset.data
                 || resp.get_schema() == nullptr || resp.get_data() == nullptr
@@ -331,19 +369,35 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
         auto iter = rsReader.begin();
         if (outputSchema == nullptr) {
             outputSchema = std::make_shared<SchemaWriter>();
+            outputSchema->appendCol(edgeSrcName_, nebula::cpp2::SupportedType::VID);
+            outputSchema->appendCol(edgeDstName_, nebula::cpp2::SupportedType::VID);
+            outputSchema->appendCol(edgeRankName_, nebula::cpp2::SupportedType::INT);
             auto status = getOutputSchema(eschema.get(), &*iter, outputSchema.get());
             if (!status.ok()) {
-                LOG(ERROR) << "Get getOutputSchema failed: " << status;
-                doError(Status::Error("Internal error."),
-                        ectx()->getGraphStats()->getFetchEdgesStats());
+                LOG(ERROR) << "Get output schema failed: " << status;
+                doError(Status::Error("Get output schema failed: %s.", status.toString().c_str()));
                 return;
             }
             rsWriter = std::make_unique<RowSetWriter>(outputSchema);
         }
         while (iter) {
             auto writer = std::make_unique<RowWriter>(outputSchema);
+            auto src = Collector::getProp(eschema.get(), _SRC, &*iter);
+            auto dst = Collector::getProp(eschema.get(), _DST, &*iter);
+            auto rank = Collector::getProp(eschema.get(), _RANK, &*iter);
+            if (!src.ok() || !dst.ok() || !rank.ok()) {
+                LOG(ERROR) << "Get edge key failed";
+                doError(Status::Error("Get edge key failed"));
+                return;
+            }
+            (*writer) << boost::get<int64_t>(src.value())
+                      << boost::get<int64_t>(dst.value())
+                      << boost::get<int64_t>(rank.value());
 
-            auto &getters = expCtx_->getters();
+            getters.getEdgeDstId = [&iter,
+                                    &eschema] (const std::string&) -> OptVariantType {
+                return Collector::getProp(eschema.get(), "_dst", &*iter);
+            };
             getters.getAliasProp =
                 [&iter, &eschema] (const std::string&,
                                    const std::string &prop) -> OptVariantType {
@@ -351,30 +405,21 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
             };
             for (auto *column : yields_) {
                 auto *expr = column->expr();
-                auto value = expr->eval();
+                auto value = expr->eval(getters);
                 if (!value.ok()) {
-                    doError(std::move(value).status(),
-                             ectx()->getGraphStats()->getFetchEdgesStats());
+                    doError(std::move(value).status());
                     return;
                 }
                 auto status = Collector::collect(value.value(), writer.get());
                 if (!status.ok()) {
                     LOG(ERROR) << "Collect prop error: " << status;
-                    doError(std::move(status), ectx()->getGraphStats()->getFetchEdgesStats());
+                    doError(std::move(status));
                     return;
                 }
             }
 
-            // TODO Consider float/double, and need to reduce mem copy.
             std::string encode = writer->encode();
-            if (distinct_) {
-                auto ret = uniqResult->emplace(encode);
-                if (ret.second) {
-                    rsWriter->addRow(std::move(encode));
-                }
-            } else {
-                rsWriter->addRow(std::move(encode));
-            }
+            rsWriter->addRow(std::move(encode));
             ++iter;
         }  // while `iter'
     }  // for `resp'

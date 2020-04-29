@@ -8,6 +8,10 @@
 
 namespace nebula {
 
+Configuration::Configuration() {
+    content_ = std::make_unique<folly::dynamic>(folly::dynamic::object());
+}
+
 Configuration::Configuration(folly::dynamic content) {
     CHECK(content.isObject()) << "The content is not a valid configuration";
     content_ = std::make_unique<folly::dynamic>(std::move(content));
@@ -160,7 +164,7 @@ Status Configuration::fetchAsSubConf(const char *key, Configuration &subconf) co
 }
 
 
-Status Configuration::updateStringField(const char* key, const std::string& val) {
+Status Configuration::upsertStringField(const char* key, const std::string& val) {
     DCHECK(content_ != nullptr);
     auto iter = content_->find(key);
     if (iter == content_->items().end() || iter->second.isString()) {
@@ -187,7 +191,8 @@ Status Configuration::fetchAsIntArray(
         try {
             val.emplace_back(entry.asInt());
         } catch (const std::exception& ex) {
-            return Status::Error(ex.what());
+            // Avoid format sercure by literal
+            return Status::Error("%s", ex.what());
         }
     }
     return Status::OK();
@@ -210,7 +215,8 @@ Status Configuration::fetchAsDoubleArray(
         try {
             val.emplace_back(entry.asDouble());
         } catch (const std::exception& ex) {
-            return Status::Error(ex.what());
+            // Avoid format sercure by literal
+            return Status::Error("%s", ex.what());
         }
     }
     return Status::OK();
@@ -233,7 +239,8 @@ Status Configuration::fetchAsBoolArray(
         try {
             val.emplace_back(entry.asBool());
         } catch (const std::exception& ex) {
-            return Status::Error(ex.what());
+            // Avoid format sercure by literal
+            return Status::Error("%s", ex.what());
         }
     }
     return Status::OK();
@@ -256,7 +263,8 @@ Status Configuration::fetchAsStringArray(
         try {
             val.emplace_back(entry.asString());
         } catch (const std::exception& ex) {
-            return Status::Error(ex.what());
+            // Avoid format sercure by literal
+            return Status::Error("%s", ex.what());
         }
     }
     return Status::OK();
@@ -269,7 +277,8 @@ Status Configuration::forEachKey(std::function<void(const std::string&)> process
         try {
             processor(key.asString());
         } catch (const std::exception& ex) {
-            return Status::Error(ex.what());
+            // Avoid format sercure by literal
+            return Status::Error("%s", ex.what());
         }
     }
     return Status::OK();
@@ -283,7 +292,8 @@ Status Configuration::forEachItem(
         try {
             processor(item.first.asString(), item.second);
         } catch (const std::exception& ex) {
-            return Status::Error(ex.what());
+            // Avoid format sercure by literal
+            return Status::Error("%s", ex.what());
         }
     }
     return Status::OK();

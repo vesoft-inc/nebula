@@ -1,0 +1,190 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nebula-metad
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: nebula-metad
+spec:
+  serviceName: nebula-metad
+  replicas: {{ .Values.replication.metad.replicas }}
+  selector:
+    matchLabels:
+      app: nebula-metad
+  template:
+    metadata:
+      labels:
+        app: nebula-metad
+    spec:
+      terminationGracePeriodSeconds: 60
+      # hostname: meta.nebula.services
+      restartPolicy: Always
+{{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+{{- end }}
+      hostNetwork: true
+      containers:
+      - name: nebula-metad
+        image: "{{ .Values.image.metad.repository }}:{{ .Values.image.metad.tag }}"
+        imagePullPolicy: {{ .Values.image.metad.pullPolicy }}
+        env:
+        - name: USER
+          value: root
+        resources:
+          requests:
+            cpu: {{ .Values.resources.metad.requests.cpu | quote }}
+            memory: {{ .Values.resources.metad.requests.memory | quote }}
+          limits:
+            cpu: {{ .Values.resources.metad.limits.cpu | quote }}
+            memory: {{ .Values.resources.metad.limits.memory | quote }}
+        ports:
+        - containerPort: {{ .Values.port.metad.thriftPort }}
+          name: thrift
+        - containerPort: {{ .Values.port.metad.raftPort }}
+          name: raft
+        - containerPort: {{ .Values.port.metad.httpPort }}
+          name: http
+        - containerPort: {{ .Values.port.metad.http2Port }}
+          name: http2
+        command: 
+          - "/bin/bash"
+          - "-ecx"
+          - "exec /usr/local/nebula/bin/nebula-metad --flagfile=/usr/local/nebula/etc/nebula-metad.conf --local_ip=$(hostname -i) --v=0 --minloglevel=2 --daemonize=false"
+        {{- if .Values.livenessProbe.graphd.Enable }}   
+        livenessProbe:
+          httpGet:
+            path: /status
+            port: {{ .Values.port.metad.httpPort }}
+          initialDelaySeconds: 30
+          timeoutSeconds: 5     
+        {{- end }}     
+        volumeMounts:
+        - name: config 
+          mountPath: /usr/local/nebula/etc/
+        - name: data
+          mountPath: /usr/local/nebula/data
+        - name: timezone
+          mountPath: /etc/localtime
+        - name: log
+          mountPath: /usr/local/nebula/logs 
+      volumes:
+      - name: config 
+        configMap: 
+          name: nebula-metad
+      - name: timezone
+        hostPath:
+          path: /etc/localtime
+      - name: data
+        persistentVolumeClaim:
+          claimName: data
+      - name: log
+        hostPath:
+          path: /var/log
+  podManagementPolicy: Parallel
+  updateStrategy:
+    type: RollingUpdate
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: {{ .Values.storage.storageClass }}
+      resources:
+        requests:
+          storage: {{ .Values.storage.metad.size }}
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nebula-storaged
+  labels:
+    app: nebula-storaged
+spec:
+  serviceName: nebula-storaged
+  replicas: {{ .Values.replication.storaged.replicas }}
+  selector:
+    matchLabels:
+      app: nebula-storaged
+  template:
+    metadata:
+      labels:
+        app: nebula-storaged
+    spec:
+      terminationGracePeriodSeconds: 60
+      restartPolicy: Always
+{{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+{{- end }}
+      hostNetwork: true
+      containers:
+      - name: nebula-storaged
+        image: "{{ .Values.image.storaged.repository }}:{{ .Values.image.storaged.tag }}"
+        imagePullPolicy: {{ .Values.image.storaged.pullPolicy }}
+        env:
+        - name: USER
+          value: root
+        resources:
+          requests:
+            cpu: {{ .Values.resources.storaged.requests.cpu | quote }}
+            memory: {{ .Values.resources.storaged.requests.memory | quote }}
+          limits:
+            cpu: {{ .Values.resources.storaged.limits.cpu | quote }}
+            memory: {{ .Values.resources.storaged.limits.memory | quote }}
+        ports:
+        - containerPort: {{ .Values.port.storaged.thriftPort }}
+          name: thrift
+        - containerPort: {{ .Values.port.storaged.raftPort }}
+          name: raft
+        - containerPort: {{ .Values.port.storaged.httpPort }}
+          name: http
+        - containerPort: {{ .Values.port.storaged.http2Port }}
+          name: http2     
+        command: 
+          - "/bin/bash"
+          - "-ecx"
+          - "exec /usr/local/nebula/bin/nebula-storaged --flagfile=/usr/local/nebula/etc/nebula-storaged.conf --local_ip=$(hostname -i) --v=0 --minloglevel=2 --daemonize=false"    
+        {{- if .Values.livenessProbe.graphd.Enable }}
+        livenessProbe:
+          httpGet:
+            path: /status
+            port: {{ .Values.port.storaged.httpPort }}
+          initialDelaySeconds: 30
+          timeoutSeconds: 5     
+        {{- end}}     
+        volumeMounts:
+        - name: config
+          mountPath: /usr/local/nebula/etc/
+        - name: data
+          mountPath: /usr/local/nebula/data
+        - name: timezone 
+          mountPath: /etc/localtime
+        - name: log
+          mountPath: /usr/local/nebula/logs 
+      volumes:
+      - name: config
+        configMap: 
+          name: nebula-storaged
+      - name: timezone
+        hostPath:
+          path: /etc/localtime
+      - name: data
+        persistentVolumeClaim:
+          claimName: data
+      - name: log 
+        hostPath: 
+          path: /var/log
+  podManagementPolicy: Parallel
+  updateStrategy:
+    type: RollingUpdate
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: {{ .Values.storage.storageClass }}
+      resources:
+        requests:
+          storage: {{ .Values.storage.storaged.size }}

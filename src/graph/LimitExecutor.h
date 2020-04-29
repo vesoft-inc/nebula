@@ -25,18 +25,15 @@ public:
 
     void execute() override;
 
-    void feedResult(std::unique_ptr<InterimResult> result) override;
-
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
 private:
-    std::unique_ptr<InterimResult> setupInterimResult();
+    StatusOr<std::unique_ptr<InterimResult>> setupInterimResult();
 
     void onEmptyInputs();
 
 private:
     LimitSentence                                            *sentence_{nullptr};
-    std::unique_ptr<InterimResult>                            inputs_;
     std::vector<std::string>                                  colNames_;
     std::vector<cpp2::RowValue>                               rows_;
     int64_t                                                   offset_{-1};

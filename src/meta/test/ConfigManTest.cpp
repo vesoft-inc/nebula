@@ -13,7 +13,6 @@
 #include "meta/test/TestUtils.h"
 #include "meta/GflagsManager.h"
 #include "meta/ClientBasedGflagsManager.h"
-#include "meta/KVBasedGflagsManager.h"
 #include "meta/processors/configMan/GetConfigProcessor.h"
 #include "meta/processors/configMan/SetConfigProcessor.h"
 #include "meta/processors/configMan/ListConfigsProcessor.h"
@@ -21,7 +20,7 @@
 #include "storage/test/TestUtils.h"
 #include "rocksdb/utilities/options_util.h"
 
-DECLARE_int32(load_data_interval_secs);
+DECLARE_int32(heartbeat_interval_secs);
 DECLARE_string(rocksdb_db_options);
 DECLARE_string(rocksdb_column_family_options);
 
@@ -31,7 +30,7 @@ DEFINE_int64(int64_key, 101, "test");
 DEFINE_bool(bool_key, false, "test");
 DEFINE_double(double_key, 1.23, "test");
 DEFINE_string(string_key, "something", "test");
-DEFINE_string(nested_key, R"({"max_background_compactions":"4"})", "test");
+DEFINE_string(nested_key, R"({"max_background_jobs":"4"})", "test");
 DEFINE_string(test0, "v0", "test");
 DEFINE_string(test1, "v1", "test");
 DEFINE_string(test2, "v2", "test");
@@ -167,7 +166,7 @@ TEST(ConfigManTest, ConfigProcessorTest) {
     item3.set_mode(cpp2::ConfigMode::MUTABLE);
     // default value is a json string
     std::string defaultValue = R"({
-        "max_background_compactions":"4"
+        "max_background_jobs":"4"
     })";
     item3.set_value(defaultValue);
 
@@ -191,7 +190,7 @@ TEST(ConfigManTest, ConfigProcessorTest) {
         updated.set_type(cpp2::ConfigType::NESTED);
         updated.set_mode(cpp2::ConfigMode::MUTABLE);
         // update from consle as format of update list
-        updated.set_value("max_background_compactions=8,level0_file_num_compaction_trigger=10");
+        updated.set_value("max_background_jobs=8,level0_file_num_compaction_trigger=10");
 
         cpp2::SetConfigReq req;
         req.set_item(updated);
@@ -222,7 +221,7 @@ TEST(ConfigManTest, ConfigProcessorTest) {
         ASSERT_TRUE(confRet.ok());
 
         std::string val;
-        auto status = conf.fetchAsString("max_background_compactions", val);
+        auto status = conf.fetchAsString("max_background_jobs", val);
         ASSERT_TRUE(status.ok());
         ASSERT_EQ(val, "8");
         status = conf.fetchAsString("level0_file_num_compaction_trigger", val);
@@ -265,7 +264,7 @@ ConfigItem toConfigItem(const cpp2::ConfigItem& item) {
 }
 
 TEST(ConfigManTest, MetaConfigManTest) {
-    FLAGS_load_data_interval_secs = 1;
+    FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaConfigManTest.XXXXXX");
     uint32_t localMetaPort = 0;
     auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
@@ -313,7 +312,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
         std::string name = "not_existed";
         auto type = cpp2::ConfigType::INT64;
 
-        sleep(FLAGS_load_data_interval_secs + 1);
+        sleep(FLAGS_heartbeat_interval_secs + 1);
         // get/set without register
         auto setRet = cfgMan.setConfig(module, name, type, 101l).get();
         ASSERT_FALSE(setRet.ok());
@@ -336,7 +335,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
         auto value = boost::get<int64_t>(item.value_);
         ASSERT_EQ(value, 100);
 
-        sleep(FLAGS_load_data_interval_secs + 1);
+        sleep(FLAGS_heartbeat_interval_secs + 1);
         ASSERT_EQ(FLAGS_int64_key_immutable, 100);
     }
     // mutable config
@@ -357,7 +356,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
         ASSERT_EQ(value, 102);
 
         // get from cache
-        sleep(FLAGS_load_data_interval_secs + 1);
+        sleep(FLAGS_heartbeat_interval_secs + 1);
         ASSERT_EQ(FLAGS_int64_key, 102);
     }
     {
@@ -377,7 +376,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
         ASSERT_EQ(value, true);
 
         // get from cache
-        sleep(FLAGS_load_data_interval_secs + 1);
+        sleep(FLAGS_heartbeat_interval_secs + 1);
         ASSERT_EQ(FLAGS_bool_key, true);
     }
     {
@@ -397,7 +396,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
         ASSERT_EQ(value, 3.14);
 
         // get from cache
-        sleep(FLAGS_load_data_interval_secs + 1);
+        sleep(FLAGS_heartbeat_interval_secs + 1);
         ASSERT_EQ(FLAGS_double_key, 3.14);
     }
     {
@@ -418,16 +417,16 @@ TEST(ConfigManTest, MetaConfigManTest) {
         ASSERT_EQ(value, "abc");
 
         // get from cache
-        sleep(FLAGS_load_data_interval_secs + 1);
+        sleep(FLAGS_heartbeat_interval_secs + 1);
         ASSERT_EQ(FLAGS_string_key, "abc");
     }
     {
         std::string name = "nested_key";
         auto type = cpp2::ConfigType::NESTED;
-        ASSERT_EQ(FLAGS_nested_key, R"({"max_background_compactions":"4"})");
+        ASSERT_EQ(FLAGS_nested_key, R"({"max_background_jobs":"4"})");
 
         // update config
-        std::string newValue = "max_background_compactions=8";
+        std::string newValue = "max_background_jobs=8";
         auto setRet = cfgMan.setConfig(module, name, type, newValue).get();
         ASSERT_TRUE(setRet.ok());
 
@@ -441,15 +440,15 @@ TEST(ConfigManTest, MetaConfigManTest) {
         auto confRet = conf.parseFromString(value);
         ASSERT_TRUE(confRet.ok());
         std::string val;
-        auto status = conf.fetchAsString("max_background_compactions", val);
+        auto status = conf.fetchAsString("max_background_jobs", val);
         ASSERT_TRUE(status.ok());
         ASSERT_EQ(val, "8");
 
         // get from cache
-        sleep(FLAGS_load_data_interval_secs + 1);
+        sleep(FLAGS_heartbeat_interval_secs + 1);
         confRet = conf.parseFromString(FLAGS_nested_key);
         ASSERT_TRUE(confRet.ok());
-        status = conf.fetchAsString("max_background_compactions", val);
+        status = conf.fetchAsString("max_background_jobs", val);
         ASSERT_TRUE(status.ok());
         ASSERT_EQ(val, "8");
     }
@@ -461,7 +460,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
 }
 
 TEST(ConfigManTest, MockConfigTest) {
-    FLAGS_load_data_interval_secs = 1;
+    FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MockConfigTest.XXXXXX");
     uint32_t localMetaPort = 0;
     auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
@@ -511,7 +510,7 @@ TEST(ConfigManTest, MockConfigTest) {
     }
 
     // check values in ClientBaseGflagsManager
-    sleep(FLAGS_load_data_interval_secs + 1);
+    sleep(FLAGS_heartbeat_interval_secs + 1);
     ASSERT_EQ(FLAGS_test0, "updated0");
     ASSERT_EQ(FLAGS_test1, "updated1");
     ASSERT_EQ(FLAGS_test2, "updated2");
@@ -520,7 +519,7 @@ TEST(ConfigManTest, MockConfigTest) {
 }
 
 TEST(ConfigManTest, RocksdbOptionsTest) {
-    FLAGS_load_data_interval_secs = 1;
+    FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/RocksdbOptionsTest.XXXXXX");
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
@@ -542,8 +541,14 @@ TEST(ConfigManTest, RocksdbOptionsTest) {
     LOG(INFO) << "Create meta client...";
     uint32_t storagePort = network::NetworkUtils::getAvailablePort();
     HostAddr storageAddr(localIp, storagePort);
-    auto mClient = std::make_unique<meta::MetaClient>(threadPool, metaAddr, storageAddr,
-                                                      kClusterId, true);
+    meta::MetaClientOptions options;
+    options.localHost_ = HostAddr(localIp, storagePort);
+    options.clusterId_ = kClusterId;
+    options.inStoraged_ = true;
+    options.skipConfig_ = false;
+    auto mClient = std::make_unique<meta::MetaClient>(threadPool,
+                                                      metaAddr,
+                                                      options);
     mClient->waitForMetadReady();
     mClient->gflagsModule_ = module;
 
@@ -552,7 +557,7 @@ TEST(ConfigManTest, RocksdbOptionsTest) {
     {
         std::vector<cpp2::ConfigItem> configItems;
         FLAGS_rocksdb_db_options = R"({
-            "max_background_compactions":"4"
+            "max_background_jobs":"4"
         })";
         configItems.emplace_back(toThriftConfigItem(
             module, "rocksdb_db_options", type,
@@ -573,14 +578,15 @@ TEST(ConfigManTest, RocksdbOptionsTest) {
                                                     storagePort,
                                                     true);
 
-    auto ret = mClient->createSpace("storage", 9, 1).get();
+    SpaceDesc spaceDesc("storage", 9, 1);
+    auto ret = mClient->createSpace(spaceDesc).get();
     ASSERT_TRUE(ret.ok());
     auto spaceId = ret.value();
-    sleep(FLAGS_load_data_interval_secs + 1);
+    sleep(FLAGS_heartbeat_interval_secs + 1);
     storage::TestUtils::waitUntilAllElected(sc->kvStore_.get(), spaceId, 9);
     {
         std::string name = "rocksdb_db_options";
-        std::string updateValue = "max_background_compactions=10";
+        std::string updateValue = "max_background_jobs=10";
         // update config
         auto setRet = cfgMan.setConfig(module, name, type, updateValue).get();
         ASSERT_TRUE(setRet.ok());
@@ -591,13 +597,14 @@ TEST(ConfigManTest, RocksdbOptionsTest) {
         auto item = getRet.value().front();
         auto value = boost::get<std::string>(item.get_value());
 
-        sleep(FLAGS_load_data_interval_secs + 3);
+        sleep(FLAGS_heartbeat_interval_secs + 3);
         ASSERT_EQ(FLAGS_rocksdb_db_options, value);
     }
     {
         std::string name = "rocksdb_column_family_options";
         std::string updateValue = "disable_auto_compactions=true,"
-                                  "level0_file_num_compaction_trigger=8";
+                                  "level0_file_num_compaction_trigger=8,"
+                                  "write_buffer_size=1048576";
         // update config
         auto setRet = cfgMan.setConfig(module, name, type, updateValue).get();
         ASSERT_TRUE(setRet.ok());
@@ -608,12 +615,12 @@ TEST(ConfigManTest, RocksdbOptionsTest) {
         auto item = getRet.value().front();
         auto value = boost::get<std::string>(item.get_value());
 
-        sleep(FLAGS_load_data_interval_secs + 3);
+        sleep(FLAGS_heartbeat_interval_secs + 3);
         ASSERT_EQ(FLAGS_rocksdb_column_family_options, value);
     }
     {
         // need to sleep a bit to take effect on rocksdb
-        sleep(3);
+        sleep(FLAGS_heartbeat_interval_secs + 2);
         rocksdb::DBOptions loadedDbOpt;
         std::vector<rocksdb::ColumnFamilyDescriptor> loadedCfDescs;
         std::string rocksPath = folly::stringPrintf("%s/disk1/nebula/%d/data",
@@ -621,9 +628,10 @@ TEST(ConfigManTest, RocksdbOptionsTest) {
         rocksdb::Status status = rocksdb::LoadLatestOptions(rocksPath, rocksdb::Env::Default(),
                                                             &loadedDbOpt, &loadedCfDescs);
         ASSERT_TRUE(status.ok());
-        EXPECT_EQ(10, loadedDbOpt.max_background_compactions);
+        EXPECT_EQ(10, loadedDbOpt.max_background_jobs);
         EXPECT_EQ(true, loadedCfDescs[0].options.disable_auto_compactions);
         EXPECT_EQ(8, loadedCfDescs[0].options.level0_file_num_compaction_trigger);
+        EXPECT_EQ(1048576, loadedCfDescs[0].options.write_buffer_size);
     }
 }
 

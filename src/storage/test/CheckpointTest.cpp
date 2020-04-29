@@ -9,34 +9,32 @@
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
-#include "storage/CreateCheckpointProcessor.h"
-#include "storage/AddVerticesProcessor.h"
+#include "storage/admin/CreateCheckpointProcessor.h"
+#include "storage/mutate/AddVerticesProcessor.h"
 
 namespace nebula {
 namespace storage {
 TEST(CheckpointTest, simpleTest) {
     fs::TempDir dataPath("/tmp/Checkpoint_Test_src.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(dataPath.path()));
+    constexpr int32_t partitions = 6;
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(dataPath.path(), partitions,
+        {0, network::NetworkUtils::getAvailablePort()}));
+    // Hard code the default space 0, partitions set
+    TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
+    auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
     // Add vertices
     {
-        auto* processor = AddVerticesProcessor::instance(kv.get(), nullptr, nullptr);
+        auto* processor = AddVerticesProcessor::instance(kv.get(),
+                                                         schemaMan.get(),
+                                                         indexMan.get(),
+                                                         nullptr);
         cpp2::AddVerticesRequest req;
         req.space_id = 0;
         req.overwritable = false;
         // partId => List<Vertex>
-        for (auto partId = 0; partId < 3; partId++) {
-            std::vector<cpp2::Vertex> vertices;
-            for (auto vertexId = partId * 10; vertexId < 10 * (partId + 1); vertexId++) {
-                std::vector<cpp2::Tag> tags;
-                for (auto tagId = 0; tagId < 10; tagId++) {
-                    tags.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                      tagId,
-                                      folly::stringPrintf("%d_%d_%d", partId, vertexId, tagId));
-                }
-                vertices.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                      vertexId,
-                                      std::move(tags));
-            }
+        for (PartitionID partId = 0; partId < 3; partId++) {
+            auto vertices = TestUtils::setupVertices(partId, 10, 10, 0, partId * 10);
             req.parts.emplace(partId, std::move(vertices));
         }
 

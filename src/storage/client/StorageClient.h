@@ -38,10 +38,11 @@ public:
         return maxLatency_;
     }
 
-    void setLatency(int32_t latency) {
+    void setLatency(HostAddr host, int32_t latency, int32_t e2eLatency) {
         if (latency > maxLatency_) {
             maxLatency_ = latency;
         }
+        hostLatency_.emplace_back(std::make_tuple(host, latency, e2eLatency));
     }
 
     void markFailure() {
@@ -51,7 +52,8 @@ public:
 
     // A value between [0, 100], representing a precentage
     int32_t completeness() const {
-        return (totalReqsSent_ - failedReqs_) * 100 / totalReqsSent_;
+        DCHECK_NE(totalReqsSent_, 0);
+        return totalReqsSent_ == 0 ? 0 : (totalReqsSent_ - failedReqs_) * 100 / totalReqsSent_;
     }
 
     std::unordered_map<PartitionID, storage::cpp2::ErrorCode>& failedParts() {
@@ -62,6 +64,10 @@ public:
         return responses_;
     }
 
+    const std::vector<std::tuple<HostAddr, int32_t, int32_t>>& hostLatency() const {
+        return hostLatency_;
+    }
+
 private:
     const size_t totalReqsSent_;
     size_t failedReqs_{0};
@@ -70,6 +76,7 @@ private:
     std::unordered_map<PartitionID, storage::cpp2::ErrorCode> failedParts_;
     int32_t maxLatency_{0};
     std::vector<Response> responses_;
+    std::vector<std::tuple<HostAddr, int32_t, int32_t>> hostLatency_;
 };
 
 
@@ -84,7 +91,7 @@ class StorageClient {
 public:
     StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
                   meta::MetaClient *client,
-                  stats::Stats *stats = nullptr);
+                  const std::string &serviceName = "");
     virtual ~StorageClient();
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> put(
@@ -95,6 +102,7 @@ public:
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>> get(
       GraphSpaceID space,
       const std::vector<std::string>& keys,
+      bool returnPartly = false,
       folly::EventBase* evb = nullptr);
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> addVertices(
@@ -137,19 +145,14 @@ public:
         std::vector<storage::cpp2::PropDef> returnCols,
         folly::EventBase* evb = nullptr);
 
-    folly::Future<StatusOr<storage::cpp2::EdgeKeyResponse>> getEdgeKeys(
-        GraphSpaceID space,
-        VertexID vid,
-        folly::EventBase* evb = nullptr);
-
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> deleteEdges(
         GraphSpaceID space,
         std::vector<storage::cpp2::EdgeKey> edges,
         folly::EventBase* evb = nullptr);
 
-    folly::Future<StatusOr<storage::cpp2::ExecResponse>> deleteVertex(
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> deleteVertices(
         GraphSpaceID space,
-        VertexID vid,
+        std::vector<VertexID> vids,
         folly::EventBase* evb = nullptr);
 
     folly::Future<StatusOr<storage::cpp2::UpdateResponse>> updateVertex(
@@ -175,11 +178,20 @@ public:
         const std::string& name,
         folly::EventBase* evb = nullptr);
 
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::LookUpIndexResp>> lookUpIndex(
+        GraphSpaceID space,
+        IndexID indexId,
+        std::string filter,
+        std::vector<std::string> returnCols,
+        bool isEdge,
+        folly::EventBase *evb = nullptr);
+
 protected:
     // Calculate the partition id for the given vertex id
     StatusOr<PartitionID> partId(GraphSpaceID spaceId, int64_t id) const;
 
     const HostAddr leader(const PartMeta& partMeta) const {
+        loadLeader();
         auto part = std::make_pair(partMeta.spaceId_, partMeta.partId_);
         {
             folly::RWSpinLock::ReadHolder rh(leadersLock_);
@@ -213,6 +225,7 @@ protected:
 
     template<class Request,
              class RemoteFunc,
+             class GetPartIDFunc,
              class Response =
                 typename std::result_of<
                     RemoteFunc(storage::cpp2::StorageServiceAsyncClient*, const Request&)
@@ -221,7 +234,8 @@ protected:
     folly::SemiFuture<StorageRpcResponse<Response>> collectResponse(
         folly::EventBase* evb,
         std::unordered_map<HostAddr, Request> requests,
-        RemoteFunc&& remoteFunc);
+        RemoteFunc&& remoteFunc,
+        GetPartIDFunc getPartIDFunc);
 
     template<class Request,
              class RemoteFunc,
@@ -231,9 +245,9 @@ protected:
                 >::type::value_type
             >
     folly::Future<StatusOr<Response>> getResponse(
-            folly::EventBase* evb,
-            std::pair<HostAddr, Request> request,
-            RemoteFunc remoteFunc);
+        folly::EventBase* evb,
+        std::pair<HostAddr, Request> request,
+        RemoteFunc remoteFunc);
 
     // Cluster given ids into the host they belong to
     // The method returns a map
@@ -254,13 +268,13 @@ protected:
         for (auto& id : ids) {
             auto status = partId(spaceId, f(id));
             if (!status.ok()) {
-                return status;
+                return status.status();
             }
 
             auto part = status.value();
             auto metaStatus = getPartMeta(spaceId, part);
             if (!metaStatus.ok()) {
-                return status;
+                return status.status();
             }
 
             auto partMeta = metaStatus.value();
@@ -281,6 +295,45 @@ protected:
         return client_->getPartMetaFromCache(spaceId, partId);
     }
 
+    virtual void loadLeader() const {
+        if (loadLeaderBefore_) {
+            return;
+        }
+        bool expected = false;
+        if (isLoadingLeader_.compare_exchange_strong(expected, true)) {
+            CHECK(client_ != nullptr);
+            auto status = client_->loadLeader();
+            if (status.ok()) {
+                folly::RWSpinLock::WriteHolder wh(leadersLock_);
+                leaders_ = std::move(status).value();
+                loadLeaderBefore_ = true;
+            }
+            isLoadingLeader_ = false;
+        }
+    }
+
+    virtual StatusOr<std::unordered_map<HostAddr, std::vector<PartitionID>>>
+    getHostParts(GraphSpaceID spaceId) const {
+        std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
+        auto status = partsNum(spaceId);
+        if (!status.ok()) {
+            return Status::Error("Space not found, spaceid: %d", spaceId);
+        }
+
+        auto parts = status.value();
+        for (auto partId = 1; partId <= parts; partId++) {
+            auto metaStatus = getPartMeta(spaceId, partId);
+            if (!metaStatus.ok()) {
+                return metaStatus.status();
+            }
+            auto partMeta = std::move(metaStatus).value();
+            CHECK_GT(partMeta.peers_.size(), 0U);
+            const auto leader = this->leader(partMeta);
+            hostParts[leader].emplace_back(partId);
+        }
+        return hostParts;
+    }
+
 private:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
     meta::MetaClient *client_{nullptr};
@@ -288,9 +341,10 @@ private:
                         storage::cpp2::StorageServiceAsyncClient>> clientsMan_;
     mutable folly::RWSpinLock leadersLock_;
     mutable std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr> leaders_;
-    stats::Stats         *stats_{nullptr};
+    mutable std::atomic_bool loadLeaderBefore_{false};
+    mutable std::atomic_bool isLoadingLeader_{false};
+    std::unique_ptr<stats::Stats> stats_;
 };
-
 }   // namespace storage
 }   // namespace nebula
 

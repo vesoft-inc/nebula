@@ -16,7 +16,7 @@ void ListConfigsProcessor::process(const cpp2::ListConfigsReq& req) {
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        resp_.set_code(to(ret));
+        handleErrorCode(MetaCommon::to(ret));
         onFinished();
         return;
     }
@@ -32,7 +32,7 @@ void ListConfigsProcessor::process(const cpp2::ListConfigsReq& req) {
         items.emplace_back(std::move(item));
         iter->next();
     }
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_items(std::move(items));
     onFinished();
 }

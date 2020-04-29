@@ -1,53 +1,85 @@
 <p align="center">
   <img src="docs/logo.png"/>
   <br> English | <a href="README-CN.md">中文</a>
-  <br>A distributed, scalable, lighting-fast graph database<br>
+  <br>A distributed, scalable, lightning-fast graph database<br>
+</p>
+<p align="center">
   <a href="https://github.com/vesoft-inc/nebula/actions?workflow=build">
     <img src="https://github.com/vesoft-inc/nebula/workflows/build/badge.svg" alt="build and test workflow"/>
   </a>
-  <a href="https://github.com/vesoft-inc/nebula/actions?workflow=docker">
+  <a href="https://hub.docker.com/u/vesoft">
     <img src="https://github.com/vesoft-inc/nebula/workflows/docker/badge.svg" alt="build docker image workflow"/>
   </a>
   <a href="https://github.com/vesoft-inc/nebula/actions?workflow=package">
     <img src="https://github.com/vesoft-inc/nebula/workflows/package/badge.svg" alt="make nebula packages workflow"/>
   </a>
+  <a href="http://githubbadges.com/star.svg?user=vesoft-inc&repo=nebula&style=default">
+    <img src="http://githubbadges.com/star.svg?user=vesoft-inc&repo=nebula&style=default" alt="nebula star"/>
+  </a>
+  <a href="http://githubbadges.com/fork.svg?user=vesoft-inc&repo=nebula&style=default">
+    <img src="http://githubbadges.com/fork.svg?user=vesoft-inc&repo=nebula&style=default" alt="nebula fork"/>
+  </a>
+  <a href="https://codecov.io/gh/vesoft-inc/nebula">
+    <img src="https://codecov.io/gh/vesoft-inc/nebula/branch/master/graph/badge.svg" alt="codecov"/>
+  </a>
   <br>
 </p>
 
-# Nebula Graph
+# What is Nebula Graph?
 
-**Nebula Graph** is the only solution in the world capable of hosting graphs with dozens of billions of vertices (nodes) and trillions of edges, while still only having milliseconds of latency.
+**Nebula Graph** is an open-source graph database capable of hosting super large scale graphs with dozens of billions of vertices (nodes) and trillions of edges, with milliseconds of latency.
 
-**Nebula Graph's** goal is to provide reading, writing, and computing with high concurrency and low latency for super large scale graphs. **Nebula Graph** is an open source project and we are looking forward to working with the community to popularize and promote the graph database.
-
-As a graph database, **Nebula Graph** has these features:
+Compared with other graph database solutions, **Nebula Graph** has the following advantages:
 
 * Symmetrically distributed
-* Highly scalable
-* Fault tolerant
-* Strong data consistency
+* Storage and computing separation
+* Horizontal scalability
+* Strong data consistency by RAFT protocol
 * SQL-like query language
-* Role-based access control
-* Support multiple storage engines
+* Role-based access control for higher level security
 
-## How Can I Get Nebula Graph
+## Roadmap
 
-Apart from [installing from source code](docs/manual-EN/3.build-develop-and-administration/1.build/1.build-source-code.md), you can use the [docker image](https://hub.docker.com/r/vesoft/nebula-graph) and [develop](https://hub.docker.com/u/vesoft).
+See our [Roadmap](https://github.com/vesoft-inc/nebula/wiki/Nebula-Graph-Roadmap) for what's coming soon in **Nebula Graph**.
 
-## How to Use Nebula Graph
+## Graph Visualization
 
-See [manual](docs/README.md) or download the [pdf](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/doc/manual-en-1204.pdf).
+Visit [Graph Visualization](https://github.com/vesoft-inc/nebula-web-docker) for visual exploration of graph data on web UI.
 
-## How Can I Contribute
+## Supported Clients
+* [Go](https://github.com/vesoft-inc/nebula-go)
+* [Python](https://github.com/vesoft-inc/nebula-python)
+* [Java](https://github.com/vesoft-inc/nebula-java)
 
-As the team behind **Nebula Graph**, we fully commit to the community and all-in to the open source project. All the core features are and will be implemented in the open source repository.
+## Quick start
 
-We also encourage the community to be involved in the project. There are a few ways you can contribute:
+Read the [Getting started](https://docs.nebula-graph.io/manual-EN/1.overview/2.quick-start/1.get-started/) article for a quick start.
 
-* You can download and try **Nebula Graph**, and provide us feedbacks
-* You can submit your feature requirements and bug reports
-* You can improve documentation
-* You can fix bugs or implement features. More details on how to build the project and submit the Pull Requests click [how-to-contribute](docs/manual-EN/4.contributions/how-to-contribute.md).
+Please note that you must install **Nebula Graph** by [installing source code](https://docs.nebula-graph.io/manual-EN/3.build-develop-and-administration/1.build/1.build-source-code/), [rpm/deb packages](https://docs.nebula-graph.io/manual-EN/3.build-develop-and-administration/3.deploy-and-administrations/deployment/install-with-rpm-deb/) or [docker compose](https://github.com/vesoft-inc/nebula-docker-compose), before you can actually start using it. If you prefer a video tutorial, visit our [YouTube channel](https://www.youtube.com/channel/UC73V8q795eSEMxDX4Pvdwmw).
+
+## Getting help
+
+In case you encounter any problems playing around **Nebula Graph**, please reach out for help:
+
+* [Slack channel](https://join.slack.com/t/nebulagraph/shared_invite/enQtNjIzMjQ5MzE2OTQ2LTM0MjY0MWFlODg3ZTNjMjg3YWU5ZGY2NDM5MDhmOGU2OWI5ZWZjZDUwNTExMGIxZTk2ZmQxY2Q2MzM1OWJhMmY#)
+* [Stack Overflow](https://stackoverflow.com/search?q=%5Bnebula-graph%5D&mixed=0)
+* [Official Forum](https://discuss.nebula-graph.io)
+
+## Documentation
+
+* [English](https://docs.nebula-graph.io/)
+* [简体中文](https://docs.nebula-graph.io/manual-CN/)
+
+## Architecture
+
+![image](https://github.com/vesoft-inc/nebula-docs/raw/master/images/Nebula%20Arch.png)
+
+## Contributing
+
+Contributions are warmly welcomed and greatly appreciated. And here are a few ways you can contribute:
+
+* Start by some [good first issues](https://github.com/vesoft-inc/nebula/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+* Submit Pull Requests to us. See [how-to-contribute](https://docs.nebula-graph.io/manual-EN/4.contributions/how-to-contribute/).
 
 ## Licensing
 
@@ -57,5 +89,8 @@ In order to prevent cloud providers monetizing from the project without contribu
 
 ## Contact
 
-* Please use [GitHub issue tracker](https://github.com/vesoft-inc/nebula/issues) for filling bugs or feature requests.
-* Join [![](https://img.shields.io/badge/slack-nebula-519dd9.svg)](https://nebulagraph.slack.com/archives/DJQC9P0H5/p1557815158000200).
+* Twitter: [@NebulaGraph](https://twitter.com/NebulaGraph)
+* [Facebook page](https://www.facebook.com/NebulaGraph/)
+* [LinkedIn page](https://www.linkedin.com/company/vesoft-nebula-graph/)
+* [Slack channel](https://join.slack.com/t/nebulagraph/shared_invite/enQtNjIzMjQ5MzE2OTQ2LTM0MjY0MWFlODg3ZTNjMjg3YWU5ZGY2NDM5MDhmOGU2OWI5ZWZjZDUwNTExMGIxZTk2ZmQxY2Q2MzM1OWJhMmY#)
+* email: info@vesoft.com

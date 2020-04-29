@@ -8,6 +8,7 @@
 #define KVSTORE_PART_H_
 
 #include "base/Base.h"
+#include "utils/NebulaKeyUtils.h"
 #include "raftex/RaftPart.h"
 #include "kvstore/Common.h"
 #include "kvstore/KVEngine.h"
@@ -44,7 +45,6 @@ public:
 
     void asyncRemove(folly::StringPiece key, KVCallback cb);
     void asyncMultiRemove(const std::vector<std::string>& keys, KVCallback cb);
-    void asyncRemovePrefix(folly::StringPiece prefix, KVCallback cb);
     void asyncRemoveRange(folly::StringPiece start,
                           folly::StringPiece end,
                           KVCallback cb);
@@ -76,6 +76,11 @@ public:
     void reset() {
         LOG(INFO) << idStr_ << "Clean up all wals";
         wal()->reset();
+        ResultCode res = engine_->remove(NebulaKeyUtils::systemCommitKey(partId_));
+        if (res != ResultCode::SUCCEEDED) {
+            LOG(WARNING) << idStr_ << "Remove the committedLogId failed, error "
+                         << static_cast<int32_t>(res);
+        }
     }
 
 private:
@@ -117,6 +122,9 @@ private:
         }
         return;
     }
+
+
+    ResultCode toResultCode(raftex::AppendLogResult res);
 
 protected:
     GraphSpaceID spaceId_;

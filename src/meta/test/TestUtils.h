@@ -29,7 +29,6 @@ namespace nebula {
 namespace meta {
 
 using nebula::cpp2::SupportedType;
-using apache::thrift::FragileConstructor::FRAGILE;
 
 class TestFaultInjector : public FaultInjector {
 public:
@@ -80,11 +79,15 @@ public:
         return response(6);
     }
 
+    folly::Future<Status> checkPeers() override {
+        return response(7);
+    }
+
     folly::Future<Status> getLeaderDist(HostLeaderMap* hostLeaderMap) override {
         (*hostLeaderMap)[HostAddr(0, 0)][1] = {1, 2, 3, 4, 5};
         (*hostLeaderMap)[HostAddr(1, 1)][1] = {6, 7, 8};
         (*hostLeaderMap)[HostAddr(2, 2)][1] = {9};
-        return response(7);
+        return response(8);
     }
 
 
@@ -98,6 +101,14 @@ public:
 
     folly::Future<Status> blockingWrites() override {
         return response(10);
+    }
+
+    folly::Future<Status> rebuildTagIndex() override {
+        return response(11);
+    }
+
+    folly::Future<Status> rebuildEdgeIndex() override {
+        return response(12);
     }
 
     void reset(std::vector<Status> sts) {
@@ -147,14 +158,14 @@ public:
             auto retLeader = store->partLeader(0, 0);
             if (ok(retLeader)) {
                 auto leader = value(std::move(retLeader));
-                LOG(INFO) << leader;
+                LOG(INFO) << "Leader: " << leader;
                 if (leader == localhost) {
                     break;
                 }
             }
             usleep(100000);
         }
-        return std::move(store);
+        return store;
     }
 
     static nebula::cpp2::ColumnDef columnDef(int32_t index, nebula::cpp2::SupportedType st) {
@@ -243,7 +254,10 @@ public:
 
         std::vector<nebula::cpp2::HostAddr> allHosts;
         for (int i = 0; i < totalHost; i++) {
-            allHosts.emplace_back(apache::thrift::FragileConstructor::FRAGILE, i, i);
+            nebula::cpp2::HostAddr address;
+            address.set_ip(i);
+            address.set_port(i);
+            allHosts.emplace_back(std::move(address));
         }
 
         for (auto partId = 1; partId <= partitionNum; partId++) {
@@ -337,35 +351,108 @@ public:
         return sc;
     }
 
-    static StatusOr<UserID> createUser(kvstore::KVStore* kv,
-                                       bool missingOk,
-                                       folly::StringPiece account,
-                                       folly::StringPiece password,
-                                       bool               isLock,
-                                       int32_t            maxQueries,
-                                       int32_t            maxUpdates,
-                                       int32_t            maxConnections,
-                                       int32_t            maxConnectors) {
-        cpp2::CreateUserReq req;
-        req.set_missing_ok(missingOk);
-        req.set_encoded_pwd(password.str());
-        decltype(req.user) user;
-        user.set_account(account.str());
-        user.set_is_lock(isLock);
-        user.set_max_queries_per_hour(maxQueries);
-        user.set_max_updates_per_hour(maxUpdates);
-        user.set_max_connections_per_hour(maxConnections);
-        user.set_max_user_connections(maxConnectors);
-        req.set_user(std::move(user));
-        auto* processor = CreateUserProcessor::instance(kv);
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        if (resp.get_code() == cpp2::ErrorCode::SUCCEEDED) {
-            return resp.get_id().get_user_id();
-        } else {
-            return Status::Error("Create user fail");
+    static bool verifySchema(nebula::cpp2::Schema &result,
+                             nebula::cpp2::Schema &expected) {
+        if (result.get_columns().size() != expected.get_columns().size()) {
+            return false;
         }
+
+        std::vector<nebula::cpp2::ColumnDef> resultColumns = result.get_columns();
+        std::vector<nebula::cpp2::ColumnDef> expectedColumns = expected.get_columns();
+        std::sort(resultColumns.begin(), resultColumns.end(),
+                  [](nebula::cpp2::ColumnDef col0, nebula::cpp2::ColumnDef col1) {
+                      return col0.get_name() < col1.get_name();
+                  });
+        std::sort(expectedColumns.begin(), expectedColumns.end(),
+                  [](nebula::cpp2::ColumnDef col0, nebula::cpp2::ColumnDef col1) {
+                      return col0.get_name() < col1.get_name();
+                  });
+
+        int32_t size = resultColumns.size();
+        for (auto i = 0; i < size; i++) {
+            if (resultColumns[i].get_name() != expectedColumns[i].get_name() ||
+                resultColumns[i].get_type() != expectedColumns[i].get_type()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static bool verifyMap(std::map<std::string, std::vector<std::string>> &result,
+                          std::map<std::string, std::vector<std::string>> &expected) {
+        if (result.size() != expected.size()) {
+            return false;
+        }
+
+        for (auto resultIter = result.begin(), expectedIter = expected.begin();
+             resultIter != result.end() && expectedIter != expected.end();
+             resultIter++, expectedIter++) {
+            if (resultIter->first != expectedIter->first &&
+                !verifyResult(resultIter->second, expectedIter->second)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    static bool verifyMap(std::map<std::string, std::vector<nebula::cpp2::ColumnDef>> &result,
+                          std::map<std::string, std::vector<nebula::cpp2::ColumnDef>> &expected) {
+        if (result.size() != expected.size()) {
+            return false;
+        }
+
+        for (auto resultIter = result.begin(), expectedIter = expected.begin();
+             resultIter != result.end() && expectedIter != expected.end();
+             resultIter++, expectedIter++) {
+            if (resultIter->first != expectedIter->first &&
+                !verifyResult(resultIter->second, expectedIter->second)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static bool verifyResult(std::vector<std::string> &result,
+                             std::vector<std::string> &expected) {
+        if (result.size() != expected.size()) {
+            return false;
+        }
+
+        std::sort(result.begin(), result.end());
+        std::sort(expected.begin(), expected.end());
+        int32_t size = result.size();
+        for (int32_t i = 0; i < size; i++) {
+            if (result[i] != expected[i]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    static bool verifyResult(std::vector<nebula::cpp2::ColumnDef> &result,
+                             std::vector<nebula::cpp2::ColumnDef> &expected) {
+        if (result.size() != expected.size()) {
+            return false;
+        }
+
+        std::sort(result.begin(), result.end(),
+                  [](nebula::cpp2::ColumnDef& x, nebula::cpp2::ColumnDef& y) {
+                      return x.get_name().compare(y.get_name());
+                  });
+        std::sort(expected.begin(), expected.end(),
+                  [](nebula::cpp2::ColumnDef& x, nebula::cpp2::ColumnDef& y) {
+                      return x.get_name().compare(y.get_name());
+                  });
+        int32_t size = result.size();
+        for (int32_t i = 0; i < size; i++) {
+            if (result[i].get_name() != expected[i].get_name() ||
+                result[i].get_type() != expected[i].get_type()) {
+                return false;
+            }
+        }
+        return true;
     }
 };
 

@@ -68,7 +68,7 @@ class AppendLogsIterator;
  * otherwise it will return the new operation's encoded string whick should be applied atomically.
  * You could implement CAS, READ-MODIFY-WRITE operations though it.
  * */
-using AtomicOp = folly::Function<std::string(void)>;
+using AtomicOp = folly::Function<folly::Optional<std::string>(void)>;
 
 class RaftPart : public std::enable_shared_from_this<RaftPart> {
     friend class AppendLogsIterator;
@@ -184,6 +184,11 @@ public:
 
     bool linkCurrentWAL(const char* newPath);
 
+    /**
+     * Reset my peers if not equals the argument
+     */
+    void checkAndResetPeers(const std::vector<HostAddr>& peers);
+
     /*****************************************************
      *
      * Methods to process incoming raft requests
@@ -203,6 +208,8 @@ public:
     void processSendSnapshotRequest(
         const cpp2::SendSnapshotRequest& req,
         cpp2::SendSnapshotResponse& resp);
+
+    bool leaseValid();
 
 protected:
     // Protected constructor to prevent from instantiating directly
@@ -339,7 +346,8 @@ private:
         std::vector<std::shared_ptr<Host>>& hosts);
 
     // The method returns the partition's role after the election
-    Role processElectionResponses(const ElectionResponses& results);
+    Role processElectionResponses(const ElectionResponses& results,
+                                  std::vector<std::shared_ptr<Host>> hosts);
 
     // Check whether new logs can be appended
     // Pre-condition: The caller needs to hold the raftLock_
@@ -502,9 +510,12 @@ protected:
 
     // To record how long ago when the last leader message received
     time::Duration lastMsgRecvDur_;
-    // To record how long ago when the last log message or heartbeat
-    // was sent
+    // To record how long ago when the last log message or heartbeat was sent
     time::Duration lastMsgSentDur_;
+    // To record when the last message was accepted by majority peers
+    uint64_t lastMsgAcceptedTime_{0};
+    // How long between last message was sent and was accepted by majority peers
+    uint64_t lastMsgAcceptedCostMs_{0};
 
     // Write-ahead Log
     std::shared_ptr<wal::FileBasedWal> wal_;

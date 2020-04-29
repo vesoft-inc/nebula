@@ -27,6 +27,8 @@ cpp2::ErrorCode BaseProcessor<RESP>::to(kvstore::ResultCode code) {
         return cpp2::ErrorCode::E_FAILED_TO_CHECKPOINT;
     case kvstore::ResultCode::ERR_WRITE_BLOCK_ERROR:
         return cpp2::ErrorCode::E_CHECKPOINT_BLOCKED;
+    case kvstore::ResultCode::ERR_PARTIAL_RESULT:
+        return cpp2::ErrorCode::E_PARTIAL_RESULT;
     default:
         return cpp2::ErrorCode::E_UNKNOWN;
     }
@@ -41,13 +43,7 @@ void BaseProcessor<RESP>::handleAsync(GraphSpaceID spaceId,
     bool finished = false;
     {
         std::lock_guard<std::mutex> lg(this->lock_);
-        if (code != kvstore::ResultCode::SUCCEEDED) {
-            if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
-                handleLeaderChanged(spaceId, partId);
-            } else {
-                pushResultCode(to(code), partId);
-            }
-        }
+        handleErrorCode(code, spaceId, partId);
         this->callingNum_--;
         if (this->callingNum_ == 0) {
             finished = true;
@@ -69,6 +65,25 @@ void BaseProcessor<RESP>::doPut(GraphSpaceID spaceId,
 }
 
 template <typename RESP>
+kvstore::ResultCode BaseProcessor<RESP>::doSyncPut(GraphSpaceID spaceId,
+                                                   PartitionID partId,
+                                                   std::vector<kvstore::KV> data) {
+    folly::Baton<true, std::atomic> baton;
+    auto ret = kvstore::ResultCode::SUCCEEDED;
+    kvstore_->asyncMultiPut(spaceId,
+                            partId,
+                            std::move(data),
+                            [&ret, &baton] (kvstore::ResultCode code) {
+        if (kvstore::ResultCode::SUCCEEDED != code) {
+            ret = code;
+        }
+        baton.post();
+    });
+    baton.wait();
+    return ret;
+}
+
+template <typename RESP>
 void BaseProcessor<RESP>::doRemove(GraphSpaceID spaceId,
                                    PartitionID partId,
                                    std::vector<std::string> keys) {
@@ -78,15 +93,84 @@ void BaseProcessor<RESP>::doRemove(GraphSpaceID spaceId,
         });
 }
 
+template<typename RESP>
+kvstore::ResultCode BaseProcessor<RESP>::doRange(GraphSpaceID spaceId,
+                                                 PartitionID partId,
+                                                 const std::string& start,
+                                                 const std::string& end,
+                                                 std::unique_ptr<kvstore::KVIterator>* iter) {
+    return kvstore_->range(spaceId, partId, start, end, iter);
+}
+
+template<typename RESP>
+kvstore::ResultCode BaseProcessor<RESP>::doPrefix(GraphSpaceID spaceId,
+                                                  PartitionID partId,
+                                                  const std::string& prefix,
+                                                  std::unique_ptr<kvstore::KVIterator>* iter) {
+    return kvstore_->prefix(spaceId, partId, prefix, iter);
+}
+
+template<typename RESP>
+kvstore::ResultCode BaseProcessor<RESP>::doRangeWithPrefix(
+        GraphSpaceID spaceId, PartitionID partId, const std::string& start,
+        const std::string& prefix, std::unique_ptr<kvstore::KVIterator>* iter) {
+    return kvstore_->rangeWithPrefix(spaceId, partId, start, prefix, iter);
+}
+
 template <typename RESP>
-void BaseProcessor<RESP>::doRemoveRange(GraphSpaceID spaceId,
-                                        PartitionID partId,
-                                        std::string start,
-                                        std::string end) {
-    this->kvstore_->asyncRemoveRange(
-        spaceId, partId, start, end, [spaceId, partId, this](kvstore::ResultCode code) {
-            handleAsync(spaceId, partId, code);
-        });
+StatusOr<IndexValues>
+BaseProcessor<RESP>::collectIndexValues(RowReader* reader,
+                                        const std::vector<nebula::cpp2::ColumnDef>& cols) {
+    IndexValues values;
+    if (reader == nullptr) {
+        return Status::Error("Invalid row reader");
+    }
+    for (auto& col : cols) {
+        auto res = RowReader::getPropByName(reader, col.get_name());
+        if (ok(res)) {
+            auto val = NebulaKeyUtils::encodeVariant(value(std::move(res)));
+            values.emplace_back(col.get_type().get_type(), std::move(val));
+        } else {
+            LOG(ERROR) << "Skip bad column prop : " << col.get_name();
+            return Status::Error("Skip bad column prop : %s", col.get_name().c_str());
+        }
+    }
+    return values;
+}
+
+template <typename RESP>
+void BaseProcessor<RESP>::collectProps(RowReader* reader,
+                                       const std::vector<PropContext>& props,
+                                       Collector* collector) {
+    for (auto& prop : props) {
+        if (reader != nullptr) {
+            const auto& name = prop.prop_.get_name();
+            auto res = RowReader::getPropByName(reader, name);
+            if (!ok(res)) {
+                VLOG(1) << "Skip the bad value for prop " << name;
+                continue;
+            }
+            auto&& v = value(std::move(res));
+            if (prop.returned_) {
+                switch (v.which()) {
+                    case VAR_INT64:
+                        collector->collectInt64(boost::get<int64_t>(v), prop);
+                        break;
+                    case VAR_DOUBLE:
+                        collector->collectDouble(boost::get<double>(v), prop);
+                        break;
+                    case VAR_BOOL:
+                        collector->collectBool(boost::get<bool>(v), prop);
+                        break;
+                    case VAR_STR:
+                        collector->collectString(boost::get<std::string>(v), prop);
+                        break;
+                    default:
+                        LOG(FATAL) << "Unknown VariantType: " << v.which();
+                }
+            }
+        }
+    }
 }
 
 }  // namespace storage

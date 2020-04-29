@@ -10,12 +10,12 @@
 #include "base/Base.h"
 #include "cpp/helpers.h"
 #include "graph/RequestContext.h"
-#include "graph/GraphStats.h"
 #include "parser/SequentialSentences.h"
 #include "meta/SchemaManager.h"
 #include "meta/ClientBasedGflagsManager.h"
 #include "graph/VariableHolder.h"
 #include "meta/client/MetaClient.h"
+#include "charset/Charset.h"
 
 /**
  * ExecutionContext holds context infos in the execution process, e.g. clients of storage or meta services.
@@ -35,14 +35,14 @@ public:
                      meta::ClientBasedGflagsManager *gflagsManager,
                      storage::StorageClient *storage,
                      meta::MetaClient *metaClient,
-                     GraphStats* stats) {
+                     CharsetInfo* charsetInfo) {
         rctx_ = std::move(rctx);
         sm_ = sm;
         gflagsManager_ = gflagsManager;
         storageClient_ = storage;
         metaClient_ = metaClient;
         variableHolder_ = std::make_unique<VariableHolder>();
-        stats_ = stats;
+        charsetInfo_ = charsetInfo;
     }
 
     ~ExecutionContext();
@@ -71,8 +71,8 @@ public:
         return metaClient_;
     }
 
-    GraphStats* getGraphStats() const {
-        return stats_;
+    CharsetInfo* getCharsetInfo() const {
+        return charsetInfo_;
     }
 
 private:
@@ -82,7 +82,7 @@ private:
     storage::StorageClient                     *storageClient_{nullptr};
     meta::MetaClient                           *metaClient_{nullptr};
     std::unique_ptr<VariableHolder>             variableHolder_;
-    GraphStats                                 *stats_{nullptr};
+    CharsetInfo                                *charsetInfo_{nullptr};
 };
 
 }   // namespace graph

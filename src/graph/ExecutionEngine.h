@@ -15,7 +15,7 @@
 #include "meta/ClientBasedGflagsManager.h"
 #include "meta/client/MetaClient.h"
 #include "network/NetworkUtils.h"
-#include "graph/GraphStats.h"
+#include "charset/Charset.h"
 #include <folly/executors/IOThreadPoolExecutor.h>
 
 /**
@@ -33,7 +33,7 @@ namespace graph {
 
 class ExecutionEngine final : public cpp::NonCopyable, public cpp::NonMovable {
 public:
-    ExecutionEngine();
+    explicit ExecutionEngine(meta::MetaClient* client);
     ~ExecutionEngine();
 
     Status init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor);
@@ -45,8 +45,8 @@ private:
     std::unique_ptr<meta::SchemaManager>              schemaManager_;
     std::unique_ptr<meta::ClientBasedGflagsManager>   gflagsManager_;
     std::unique_ptr<storage::StorageClient>           storage_;
-    std::unique_ptr<meta::MetaClient>                 metaClient_;
-    std::unique_ptr<GraphStats>                       stats_;
+    meta::MetaClient*                                 metaClient_;
+    CharsetInfo*                                      charsetInfo_{nullptr};
 };
 
 }   // namespace graph

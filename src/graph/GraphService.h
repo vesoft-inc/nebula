@@ -9,7 +9,8 @@
 
 #include "base/Base.h"
 #include "gen-cpp2/GraphService.h"
-#include "graph/Authenticator.h"
+#include "graph/PasswordAuthenticator.h"
+#include "graph/CloudAuthenticator.h"
 #include "graph/ExecutionEngine.h"
 #include "graph/SessionManager.h"
 
@@ -39,9 +40,16 @@ public:
     const char* getErrorStr(cpp2::ErrorCode result);
 
 private:
+    void onHandle(RequestContext<cpp2::AuthResponse>& ctx, cpp2::ErrorCode code);
+
+    session::Role toRole(nebula::cpp2::RoleType role);
+
+    bool auth(const std::string& username, const std::string& password);
+
+private:
     std::unique_ptr<SessionManager>             sessionManager_;
     std::unique_ptr<ExecutionEngine>            executionEngine_;
-    std::unique_ptr<Authenticator>              authenticator_;
+    std::unique_ptr<meta::MetaClient>           metaClient_;
 };
 
 }   // namespace graph
