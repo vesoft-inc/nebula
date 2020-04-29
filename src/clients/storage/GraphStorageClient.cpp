@@ -82,6 +82,7 @@ GraphStorageClient::getNeighbors(GraphSpaceID space,
 folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>>
 GraphStorageClient::addVertices(GraphSpaceID space,
                                 std::vector<cpp2::NewVertex> vertices,
+                                std::unordered_map<TagID, std::vector<std::string>> propNames,
                                 bool overwritable,
                                 folly::EventBase* evb) {
     auto status = clusterIdsToHosts(space,
@@ -103,6 +104,7 @@ GraphStorageClient::addVertices(GraphSpaceID space,
         req.set_space_id(space);
         req.set_overwritable(overwritable);
         req.set_parts(std::move(c.second));
+        req.set_prop_names(std::move(propNames));
     }
 
     VLOG(3) << "requests size " << requests.size();
@@ -122,6 +124,7 @@ GraphStorageClient::addVertices(GraphSpaceID space,
 folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>>
 GraphStorageClient::addEdges(GraphSpaceID space,
                              std::vector<cpp2::NewEdge> edges,
+                             std::vector<std::string> propNames,
                              bool overwritable,
                              folly::EventBase* evb) {
     auto status = clusterIdsToHosts(space,
@@ -143,6 +146,7 @@ GraphStorageClient::addEdges(GraphSpaceID space,
         req.set_space_id(space);
         req.set_overwritable(overwritable);
         req.set_parts(std::move(c.second));
+        req.set_prop_names(std::move(propNames));
     }
 
     return collectResponse(

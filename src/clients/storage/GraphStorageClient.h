@@ -62,12 +62,14 @@ public:
     folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> addVertices(
         GraphSpaceID space,
         std::vector<cpp2::NewVertex> vertices,
+        std::unordered_map<TagID, std::vector<std::string>> propNames,
         bool overwritable,
         folly::EventBase* evb = nullptr);
 
     folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> addEdges(
         GraphSpaceID space,
         std::vector<cpp2::NewEdge> edges,
+        std::vector<std::string> propNames,
         bool overwritable,
         folly::EventBase* evb = nullptr);
 
