@@ -2370,7 +2370,7 @@ TEST_P(GoTest, ZeroStep) {
     {
         // a normal traversal
         cpp2::ExecutionResponse resp;
-        auto *fmt = "GO FROM %ld OVER serve";
+        auto *fmt = "GO 0 STEPS FROM %ld OVER serve";
         auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
