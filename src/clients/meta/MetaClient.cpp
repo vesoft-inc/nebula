@@ -289,7 +289,14 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
     for (auto& tagIt : tagItemVec) {
         auto schema = std::make_shared<NebulaSchemaProvider>(tagIt.version);
         for (auto colIt : tagIt.schema.get_columns()) {
-            schema->addField(colIt.name, std::move(colIt.type));
+            bool hasDef = colIt.__isset.default_value;
+            size_t len = colIt.__isset.type_length ? *colIt.get_type_length() : 0;
+            bool nullable = colIt.__isset.nullable ? *colIt.get_nullable() : false;
+            schema->addField(colIt.get_name(),
+                             colIt.get_type(),
+                             len,
+                             nullable,
+                             hasDef ? *colIt.get_default_value() : Value());
         }
         // handle schema property
         schema->setProp(tagIt.schema.get_schema_prop());
@@ -1949,7 +1956,8 @@ StatusOr<SchemaVer> MetaClient::getLatestEdgeVersionFromCache(const GraphSpaceID
     return it->second;
 }
 
-std::vector<std::pair<TagID, SchemaVer>> MetaClient::listLatestTagVersionFromCache(const GraphSpaceID& space) {
+std::vector<std::pair<TagID, SchemaVer>>
+MetaClient::listLatestTagVersionFromCache(const GraphSpaceID& space) {
     if (!ready_) {
         return {};
     }
@@ -1963,7 +1971,8 @@ std::vector<std::pair<TagID, SchemaVer>> MetaClient::listLatestTagVersionFromCac
     return schemas;
 }
 
-std::vector<std::pair<EdgeType, SchemaVer>> MetaClient::listLatestEdgeVersionFromCache(const GraphSpaceID& space) {
+std::vector<std::pair<EdgeType, SchemaVer>>
+MetaClient::listLatestEdgeVersionFromCache(const GraphSpaceID& space) {
     if (!ready_) {
         return {};
     }
