@@ -409,8 +409,8 @@ TEST_F(SortAndTopTest, InterimResult) {
         cpp2::ExecutionResponse resp;
         auto &boris = players_["Boris Diaw"];
         auto *fmt =
-            "GO FROM %ld OVER like YIELD like._dst as id | TOP 3 BY $-.id | GO FROM $-.id over "
-            "serve";
+            "GO FROM %ld OVER like YIELD like._dst as id | TOP 3 BY $-.id "
+            "| GO FROM $-.id over serve";
         auto query = folly::stringPrintf(fmt, boris.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);

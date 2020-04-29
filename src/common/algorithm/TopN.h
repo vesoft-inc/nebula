@@ -13,7 +13,7 @@ template <class T>
 class TopN final {
 public:
     using CMP = std::function<bool(const T& lhs, const T& rhs)>;
-    TopN(std::vector<T> v, CMP less, CMP eq) {
+    TopN(std::vector<T>&& v, CMP less, CMP eq) {
         n_ = v.size();
         less_ = less;
         eq_ = eq;
@@ -23,7 +23,7 @@ public:
         }
     }
 
-    void push(T val) {
+    void push(T&& val) {
         if (eq_(val, topN_[0])) {
             return;
         }
@@ -34,14 +34,14 @@ public:
         }
     }
 
-    std::vector<int64_t> topN() {
+    std::vector<T> topN() {
         std::sort(topN_.begin(), topN_.end(), [this] (const T& lhs, const T& rhs) {
                     if (!eq_(lhs, rhs)) {
                         return !less_(lhs, rhs);
                     }
                     return false;
                 });
-        return topN_;
+        return std::move(topN_);
     }
 
 private:

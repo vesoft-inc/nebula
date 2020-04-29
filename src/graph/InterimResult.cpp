@@ -7,6 +7,7 @@
 #include "base/Base.h"
 #include "graph/InterimResult.h"
 #include "dataman/RowReader.h"
+#include "algorithm/TopN.h"
 
 namespace nebula {
 namespace graph {
@@ -179,17 +180,33 @@ StatusOr<std::vector<cpp2::RowValue>> InterimResult::getTopNRows(std::vector<int
     if (!hasData()) {
         return Status::Error("Interim has no data.");
     }
+    std::unique_ptr<TopN<cpp2::RowValue>> topN;
     std::vector<cpp2::RowValue> rows;
     rows.reserve(limit);
-    auto comparator = [&indexes] (cpp2::RowValue& lhs, cpp2::RowValue& rhs) {
+    auto less = [&indexes] (const cpp2::RowValue& lhs, const cpp2::RowValue& rhs) {
         const auto &lhsColumns = lhs.get_columns();
         const auto &rhsColumns = rhs.get_columns();
         for (auto &index : indexes) {
-            if (lhsColumns[index] > rhsColumns[index]) {
-                return true;
+            if (lhsColumns[index] == rhsColumns[index]) {
+                continue;
+            } else {
+                return lhsColumns[index] < rhsColumns[index];
             }
         }
         return false;
+    };
+
+    auto eq = [&indexes] (const cpp2::RowValue& lhs, const cpp2::RowValue& rhs) {
+        const auto &lhsColumns = lhs.get_columns();
+        const auto &rhsColumns = rhs.get_columns();
+        for (auto &index : indexes) {
+            if (lhsColumns[index] == rhsColumns[index]) {
+                continue;
+            } else {
+                return false;
+            }
+        }
+        return true;
     };
     auto schema = rsReader_->schema();
     auto columnCnt = schema->getNumFields();
@@ -292,15 +309,25 @@ StatusOr<std::vector<cpp2::RowValue>> InterimResult::getTopNRows(std::vector<int
             continue;
         }
 
-        std::make_heap(rows.begin(), rows.end(), comparator);
-        if (!comparator(rows.front(), rowVal)) {
-            rows[0] = std::move(rowVal);
+        if (topN == nullptr) {
+            topN = std::make_unique<TopN<cpp2::RowValue>>(std::move(rows), less, eq);
         }
+        topN->push(std::move(rowVal));
         ++rowCnt;
         ++rowIter;
     }
 
-    std::sort_heap(rows.begin(), rows.end(), comparator);
+    if (topN != nullptr) {
+        rows = topN->topN();
+    } else {
+        std::sort(rows.begin(), rows.end(),
+                [&eq, &less] (const cpp2::RowValue& lhs, const cpp2::RowValue& rhs) {
+                    if (!eq(lhs, rhs)) {
+                        return !less(lhs, rhs);
+                    }
+                    return false;
+                });
+    }
     return rows;
 }
 

@@ -17,7 +17,8 @@ TEST(TopNTest, TopN) {
         auto eq = [] (const auto& lhs, const auto& rhs) { return lhs == rhs; };
         TopN<int64_t> topN(std::move(top3), less, eq);
         for (size_t i = 3; i < nums.size(); ++i) {
-            topN.push(nums[i]);
+            auto num = nums[i];
+            topN.push(std::move(num));
         }
 
         std::vector<int64_t> result = {9, 8, 7};
