@@ -110,8 +110,7 @@ void MockCluster::startStorage(HostAddr addr, const std::string& rootPath) {
         options.partMan_ = std::make_unique<kvstore::MetaServerBasedPartManager>(
                                             addr,
                                             metaClient_.get());
-        schemaMan_ = meta::SchemaManager::create();
-        static_cast<meta::ServerBasedSchemaManager*>(schemaMan_.get())->init(metaClient_.get());
+        schemaMan_ = meta::SchemaManager::create(metaClient_.get());
         indexMan_ = meta::IndexManager::create();
         indexMan_->init(metaClient_.get());
     } else {

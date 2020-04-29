@@ -10,7 +10,7 @@
 #include "base/Base.h"
 #include "interface/gen-cpp2/common_types.h"
 #include "interface/gen-cpp2/storage_types.h"
-#include "meta/SchemaProviderIf.h"
+#include "meta/NebulaSchemaProvider.h"
 
 DECLARE_bool(mock_ttl_col);
 DECLARE_int32(mock_ttl_duration);
@@ -63,11 +63,11 @@ public:
     /*
      * Mock schema
      */
-    static std::shared_ptr<meta::SchemaProviderIf> mockPlayerTagSchema();
+    static std::shared_ptr<meta::NebulaSchemaProvider> mockPlayerTagSchema();
 
-    static std::shared_ptr<meta::SchemaProviderIf> mockTeamTagSchema();
+    static std::shared_ptr<meta::NebulaSchemaProvider> mockTeamTagSchema();
 
-    static std::shared_ptr<meta::SchemaProviderIf> mockEdgeSchema();
+    static std::shared_ptr<meta::NebulaSchemaProvider> mockEdgeSchema();
 
     /*
      * Mock data

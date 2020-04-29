@@ -278,7 +278,7 @@ std::vector<Serve> MockData::serve_ = {
 };
 
 // Mock schema
-std::shared_ptr<meta::SchemaProviderIf> MockData::mockPlayerTagSchema() {
+std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockPlayerTagSchema() {
     std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(0));
     meta::cpp2::ColumnDef col1;
     col1.name = "name";
@@ -348,7 +348,7 @@ std::shared_ptr<meta::SchemaProviderIf> MockData::mockPlayerTagSchema() {
     return schema;
 }
 
-std::shared_ptr<meta::SchemaProviderIf> MockData::mockTeamTagSchema() {
+std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockTeamTagSchema() {
     std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(0));
     meta::cpp2::ColumnDef col;
     col.name = "name";
@@ -357,7 +357,7 @@ std::shared_ptr<meta::SchemaProviderIf> MockData::mockTeamTagSchema() {
     return schema;
 }
 
-std::shared_ptr<meta::SchemaProviderIf> MockData::mockEdgeSchema() {
+std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockEdgeSchema() {
     std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(0));
     meta::cpp2::ColumnDef col1;
     col1.name = "playerName";

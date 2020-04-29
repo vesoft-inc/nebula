@@ -11,12 +11,11 @@ namespace mock {
 
 void AdHocSchemaManager::addTagSchema(GraphSpaceID space,
                                       TagID tag,
-                                      std::shared_ptr<nebula::meta::SchemaProviderIf> schema,
-                                      SchemaVer version) {
+                                      std::shared_ptr<nebula::meta::NebulaSchemaProvider> schema) {
     {
         folly::RWSpinLock::WriteHolder wh(tagLock_);
         // Only version 0
-        tagSchemas_[std::make_pair(space, tag)][version] = schema;
+        tagSchemas_[std::make_pair(space, tag)][schema->getVersion()] = schema;
         auto key = folly::stringPrintf("%d_%d", space, tag);
         tagNameToId_[key] = tag;
     }
@@ -28,12 +27,11 @@ void AdHocSchemaManager::addTagSchema(GraphSpaceID space,
 
 void AdHocSchemaManager::addEdgeSchema(GraphSpaceID space,
                                        EdgeType edge,
-                                       std::shared_ptr<nebula::meta::SchemaProviderIf> schema,
-                                       SchemaVer version) {
+                                       std::shared_ptr<nebula::meta::NebulaSchemaProvider> schema) {
     {
         folly::RWSpinLock::WriteHolder wh(edgeLock_);
         // Only version 0
-        edgeSchemas_[std::make_pair(space, edge)][version] = schema;
+        edgeSchemas_[std::make_pair(space, edge)][schema->getVersion()] = schema;
     }
     {
         folly::RWSpinLock::WriteHolder wh(spaceLock_);
@@ -46,7 +44,7 @@ void AdHocSchemaManager::removeTagSchema(GraphSpaceID space, TagID tag) {
     tagSchemas_.erase(std::make_pair(space, tag));
 }
 
-std::shared_ptr<const nebula::meta::SchemaProviderIf>
+std::shared_ptr<const nebula::meta::NebulaSchemaProvider>
 AdHocSchemaManager::getTagSchema(GraphSpaceID space,
                                  TagID tag,
                                  SchemaVer ver) {
@@ -54,14 +52,14 @@ AdHocSchemaManager::getTagSchema(GraphSpaceID space,
     auto it = tagSchemas_.find(std::make_pair(space, tag));
     if (it == tagSchemas_.end()) {
         // Not found
-        return std::shared_ptr<const nebula::meta::SchemaProviderIf>();
+        return std::shared_ptr<const nebula::meta::NebulaSchemaProvider>();
     } else {
         // Now check the version
         if (ver < 0) {
             // Get the latest version
             if (it->second.empty()) {
                 // No schema
-                return std::shared_ptr<const nebula::meta::SchemaProviderIf>();
+                return std::shared_ptr<const nebula::meta::NebulaSchemaProvider>();
             } else {
                 return it->second.rbegin()->second;
             }
@@ -70,7 +68,7 @@ AdHocSchemaManager::getTagSchema(GraphSpaceID space,
             auto verIt = it->second.find(ver);
             if (verIt == it->second.end()) {
                 // Not found
-                return std::shared_ptr<const nebula::meta::SchemaProviderIf>();
+                return std::shared_ptr<const nebula::meta::NebulaSchemaProvider>();
             } else {
                 return verIt->second;
             }
@@ -90,7 +88,7 @@ StatusOr<SchemaVer> AdHocSchemaManager::getLatestTagSchemaVersion(GraphSpaceID s
     }
 }
 
-std::shared_ptr<const nebula::meta::SchemaProviderIf>
+std::shared_ptr<const nebula::meta::NebulaSchemaProvider>
 AdHocSchemaManager::getEdgeSchema(GraphSpaceID space,
                                   EdgeType edge,
                                   SchemaVer ver) {
@@ -98,14 +96,14 @@ AdHocSchemaManager::getEdgeSchema(GraphSpaceID space,
     auto it = edgeSchemas_.find(std::make_pair(space, edge));
     if (it == edgeSchemas_.end()) {
         // Not found
-        return std::shared_ptr<const nebula::meta::SchemaProviderIf>();
+        return std::shared_ptr<const nebula::meta::NebulaSchemaProvider>();
     } else {
         // Now check the version
         if (ver < 0) {
             // Get the latest version
             if (it->second.empty()) {
                 // No schema
-                return std::shared_ptr<const nebula::meta::SchemaProviderIf>();
+                return std::shared_ptr<const nebula::meta::NebulaSchemaProvider>();
             } else {
                 return it->second.rbegin()->second;
             }
@@ -114,7 +112,7 @@ AdHocSchemaManager::getEdgeSchema(GraphSpaceID space,
             auto verIt = it->second.find(ver);
             if (verIt == it->second.end()) {
                 // Not found
-                return std::shared_ptr<const nebula::meta::SchemaProviderIf>();
+                return std::shared_ptr<const nebula::meta::NebulaSchemaProvider>();
             } else {
                 return verIt->second;
             }
@@ -177,6 +175,32 @@ StatusOr<int32_t> AdHocSchemaManager::getSpaceVidLen(GraphSpaceID space) {
     UNUSED(space);
     // Here default 32
     return 32;
+}
+
+std::vector<std::pair<TagID, std::shared_ptr<const nebula::meta::NebulaSchemaProvider>>>
+AdHocSchemaManager::listLatestTagSchema(GraphSpaceID space) {
+    std::vector<std::pair<TagID, std::shared_ptr<
+                                 const nebula::meta::NebulaSchemaProvider>>> schemas;
+    folly::RWSpinLock::ReadHolder rh(tagLock_);
+    for (const auto& entry : tagSchemas_) {
+        if (entry.first.first == space) {
+            schemas.emplace_back(entry.first.second, entry.second.rbegin()->second);
+        }
+    }
+    return schemas;
+}
+
+std::vector<std::pair<EdgeType, std::shared_ptr<const nebula::meta::NebulaSchemaProvider>>>
+AdHocSchemaManager::listLatestEdgeSchema(GraphSpaceID space) {
+    std::vector<std::pair<EdgeType, std::shared_ptr<
+                                    const nebula::meta::NebulaSchemaProvider>>> schemas;
+    folly::RWSpinLock::ReadHolder rh(edgeLock_);
+    for (const auto& entry : edgeSchemas_) {
+        if (entry.first.first == space) {
+            schemas.emplace_back(entry.first.second, entry.second.rbegin()->second);
+        }
+    }
+    return schemas;
 }
 
 }  // namespace mock

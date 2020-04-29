@@ -118,8 +118,7 @@ bool StorageServer::start() {
     gFlagsMan_ = std::make_unique<meta::ClientBasedGflagsManager>(metaClient_.get());
 
     LOG(INFO) << "Init schema manager";
-    schemaMan_ = meta::SchemaManager::create();
-    static_cast<meta::ServerBasedSchemaManager*>(schemaMan_.get())->init(metaClient_.get());
+    schemaMan_ = meta::SchemaManager::create(metaClient_.get());
 
     LOG(INFO) << "Init index manager";
     indexMan_ = meta::IndexManager::create();
