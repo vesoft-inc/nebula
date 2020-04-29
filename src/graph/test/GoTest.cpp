@@ -2350,9 +2350,10 @@ TEST_P(GoTest, Contains) {
     }
 }
 
-TEST_P(GoTest, Issue2100) {
+TEST_P(GoTest, ZeroStep) {
     // Zero step
     {
+        // #2100
         // A cycle traversal
         cpp2::ExecutionResponse resp;
         auto *fmt = "GO 0 STEPS FROM %ld OVER serve BIDIRECT";
@@ -2361,6 +2362,19 @@ TEST_P(GoTest, Issue2100) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         // Empty response
+        std::vector<std::tuple<int64_t>> expected = {
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+
+    {
+        // a normal traversal
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
         std::vector<std::tuple<int64_t>> expected = {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
