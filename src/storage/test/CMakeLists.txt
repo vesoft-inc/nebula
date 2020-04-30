@@ -1,4 +1,5 @@
 set(storage_test_deps
+    $<TARGET_OBJECTS:kvstore_storage_utils_obj>
     $<TARGET_OBJECTS:storage_service_handler>
     $<TARGET_OBJECTS:filter_obj>
     $<TARGET_OBJECTS:storage_client>

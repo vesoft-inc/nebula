@@ -134,7 +134,6 @@ Status FetchEdgesExecutor::checkEdgeProps() {
 }
 
 void FetchEdgesExecutor::execute() {
-    FLOG_INFO("Executing FetchEdges: %s", sentence_->toString().c_str());
     auto status = prepareClauses();
     if (!status.ok()) {
         doError(std::move(status));

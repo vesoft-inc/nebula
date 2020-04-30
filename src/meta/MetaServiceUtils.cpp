@@ -479,7 +479,6 @@ cpp2::ErrorCode MetaServiceUtils::alterSchemaProp(std::vector<nebula::cpp2::Colu
         return cpp2::ErrorCode::E_UNSUPPORTED;
     }
     if (alterSchemaProp.__isset.ttl_duration) {
-        // Graph check  <=0 to = 0
         schemaProp.set_ttl_duration(*alterSchemaProp.get_ttl_duration());
     }
     if (alterSchemaProp.__isset.ttl_col) {

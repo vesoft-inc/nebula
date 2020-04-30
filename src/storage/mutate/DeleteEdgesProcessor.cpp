@@ -6,7 +6,7 @@
 #include "storage/mutate/DeleteEdgesProcessor.h"
 #include <algorithm>
 #include <limits>
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 
 namespace nebula {
 namespace storage {
@@ -20,12 +20,14 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
     }
 
     if (indexes_.empty()) {
-        std::for_each(req.parts.begin(), req.parts.end(), [&](auto &partEdges) {
-            callingNum_ += partEdges.second.size();
+        std::for_each(req.parts.begin(), req.parts.end(), [this](auto &partEdges) {
+            this->callingNum_ += partEdges.second.size();
         });
-        std::for_each(req.parts.begin(), req.parts.end(), [&](auto &partEdges) {
+        std::vector<std::string> keys;
+        keys.reserve(16);
+        for (auto& partEdges : req.parts) {
             auto partId = partEdges.first;
-            std::for_each(partEdges.second.begin(), partEdges.second.end(), [&](auto &edgeKey) {
+            for (auto& edgeKey : partEdges.second) {
                 auto start = NebulaKeyUtils::edgeKey(partId,
                                                      edgeKey.src,
                                                      edgeKey.edge_type,
@@ -38,15 +40,30 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
                                                    edgeKey.ranking,
                                                    edgeKey.dst,
                                                    std::numeric_limits<int64_t>::max());
-                doRemoveRange(spaceId, partId, start, end);
-            });
-        });
+                std::unique_ptr<kvstore::KVIterator> iter;
+                auto ret = this->kvstore_->range(spaceId, partId, start, end, &iter);
+                if (ret != kvstore::ResultCode::SUCCEEDED) {
+                    VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret)
+                            << ", spaceID " << spaceId;
+                    this->handleErrorCode(ret, spaceId, partId);
+                    this->onFinished();
+                    return;
+                }
+                keys.clear();
+                while (iter && iter->valid()) {
+                    auto key = iter->key();
+                    keys.emplace_back(key.data(), key.size());
+                    iter->next();
+                }
+                doRemove(spaceId, partId, keys);
+            }
+        }
     } else {
         callingNum_ = req.parts.size();
-        std::for_each(req.parts.begin(), req.parts.end(), [&](auto &partEdges) {
+        std::for_each(req.parts.begin(), req.parts.end(), [spaceId, this](auto &partEdges) {
             auto partId = partEdges.first;
             auto atomic = [spaceId, partId, edges = std::move(partEdges.second), this]()
-                          -> std::string {
+                          -> folly::Optional<std::string> {
                 return deleteEdges(spaceId, partId, edges);
             };
             auto callback = [spaceId, partId, this](kvstore::ResultCode code) {
@@ -57,9 +74,10 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
     }
 }
 
-std::string DeleteEdgesProcessor::deleteEdges(GraphSpaceID spaceId,
-                                              PartitionID partId,
-                                              const std::vector<cpp2::EdgeKey>& edges) {
+folly::Optional<std::string>
+DeleteEdgesProcessor::deleteEdges(GraphSpaceID spaceId,
+                                  PartitionID partId,
+                                  const std::vector<cpp2::EdgeKey>& edges) {
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
     for (auto& edge : edges) {
         auto type = edge.edge_type;
@@ -72,7 +90,7 @@ std::string DeleteEdgesProcessor::deleteEdges(GraphSpaceID spaceId,
         if (ret != kvstore::ResultCode::SUCCEEDED) {
             VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret)
                     << ", spaceId " << spaceId;
-            return "";
+            return folly::none;
         }
         bool isLatestVE = true;
         while (iter->valid()) {
@@ -89,15 +107,22 @@ std::string DeleteEdgesProcessor::deleteEdges(GraphSpaceID spaceId,
                                                                   iter->val(),
                                                                   spaceId,
                                                                   type);
+                            if (reader == nullptr) {
+                                LOG(WARNING) << "Bad format row!";
+                                return folly::none;
+                            }
                         }
                         auto values = collectIndexValues(reader.get(),
                                                          index->get_fields());
+                        if (!values.ok()) {
+                            continue;
+                        }
                         auto indexKey = NebulaKeyUtils::edgeIndexKey(partId,
                                                                      indexId,
                                                                      srcId,
                                                                      rank,
                                                                      dstId,
-                                                                     values);
+                                                                     values.value());
                         batchHolder->remove(std::move(indexKey));
                     }
                 }

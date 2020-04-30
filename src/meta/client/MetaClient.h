@@ -416,6 +416,7 @@ public:
     StatusOr<std::string>
     getEdgeNameByTypeFromCache(const GraphSpaceID& space, const EdgeType edgeType);
 
+    // get all lastest version edge
     StatusOr<std::vector<std::string>> getAllEdgeFromCache(const GraphSpaceID& space);
 
     PartsMap getPartsMapFromCache(const HostAddr& host);
@@ -480,6 +481,8 @@ public:
     std::vector<nebula::cpp2::RoleItem> getRolesByUserFromCache(const std::string& user);
 
     bool authCheckFromCache(const std::string& account, const std::string& password);
+
+    bool checkShadowAccountFromCache(const std::string& account);
 
     Status refreshCache();
 

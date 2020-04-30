@@ -423,5 +423,35 @@ TEST_F(DeleteVerticesTest, DeleteWithUUID) {
     }
 }
 
+TEST_F(DeleteVerticesTest, DeleteNoEdges) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "create space deletenoedges_space";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        query = "use deletenoedges_space";
+        code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        query = "CREATE TAG person(name string, age int)";
+        code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        sleep(2);
+        query = "INSERT VERTEX person(name, age) VALUES 101:(\"Tony Parker\", 36)";
+        code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        query = "DELETE VERTEX 101";
+        code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        query = "FETCH PROP ON person 101 yield person.name, person.age";
+        code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t>> expected = {};
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
 }  // namespace graph
 }  // namespace nebula
