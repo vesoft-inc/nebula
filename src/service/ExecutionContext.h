@@ -17,6 +17,7 @@
 #include "service/RequestContext.h"
 // #include "meta/ClientBasedGflagsManager.h"
 #include "clients/meta/MetaClient.h"
+#include "charset/Charset.h"
 #include "util/ObjectPool.h"
 
 /**
@@ -39,16 +40,19 @@ public:
                      meta::SchemaManager* sm,
                      // meta::ClientBasedGflagsManager *gflagsManager,
                      storage::GraphStorageClient* storage,
-                     meta::MetaClient* metaClient)
+                     meta::MetaClient* metaClient,
+                     CharsetInfo* charsetInfo)
         : rctx_(std::move(rctx)),
           sm_(sm),
           // gflagsManager_(gflagsManager),
           storageClient_(storage),
           metaClient_(metaClient),
+          charsetInfo_(charsetInfo),
           objPool_(std::make_unique<ObjectPool>()) {
         DCHECK_NOTNULL(sm_);
         DCHECK_NOTNULL(storageClient_);
         DCHECK_NOTNULL(metaClient_);
+        DCHECK_NOTNULL(charsetInfo_);
     }
 
     // for test
@@ -100,6 +104,10 @@ public:
         return metaClient_;
     }
 
+    CharsetInfo* getCharsetInfo() const {
+        return charsetInfo_;
+    }
+
     ObjectPool* objPool() const {
         return objPool_.get();
     }
@@ -110,8 +118,10 @@ private:
     // meta::ClientBasedGflagsManager             *gflagsManager_{nullptr};
     storage::GraphStorageClient                *storageClient_{nullptr};
     meta::MetaClient                           *metaClient_{nullptr};
+    CharsetInfo                                *charsetInfo_{nullptr};
 
     std::unique_ptr<ObjectPool> objPool_;
+    // It will be move to QueryContex as the result store of the execution
     std::unordered_map<std::string, std::list<Value>> valuesMap_;
 };
 

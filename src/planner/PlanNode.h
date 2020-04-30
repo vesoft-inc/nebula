@@ -40,9 +40,17 @@ public:
         kAggregate,
         kSelector,
         kLoop,
-        kRegisterSpaceToSession,
+        kSwitchSpace,
         kDedup,
-        kMultiOutputs
+        kMultiOutputs,
+        kCreateSpace,
+        kCreateTag,
+        kCreateEdge,
+        kDescSpace,
+        kDescTag,
+        kDescEdge,
+        kInsertVertices,
+        kInsertEdges,
     };
 
     PlanNode(ExecutionPlan* plan, Kind kind);

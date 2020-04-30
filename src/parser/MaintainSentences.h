@@ -19,9 +19,16 @@ std::ostream& operator<<(std::ostream& os, meta::cpp2::PropertyType type);
 
 class ColumnSpecification final {
 public:
-    ColumnSpecification(meta::cpp2::PropertyType type, std::string *name) {
-        type_ = type;
+    ColumnSpecification(std::string *name,
+                        meta::cpp2::PropertyType type,
+                        bool isNull,
+                        Expression *defaultVaule,
+                        int16_t typeLen = 0) {
         name_.reset(name);
+        type_ = type;
+        isNull_ = isNull;
+        defaultValue_.reset(defaultVaule);
+        typeLen_ = typeLen;
     }
 
     meta::cpp2::PropertyType type() const {
@@ -32,22 +39,28 @@ public:
         return name_.get();
     }
 
-    void setDefault(Expression* expr) {
-        default_.reset(DCHECK_NOTNULL(expr));
+    bool isNull() const {
+        return isNull_;
     }
 
-    bool hasDefault() {
-        return default_ != nullptr;
+    int16_t typeLen() const {
+        return typeLen_;
     }
 
-    Value getDefault() {
-        return default_->eval();
+    bool hasDefaultValue() const {
+        return defaultValue_ != nullptr;
+    }
+
+    Value getDefaultValue() const {
+        return defaultValue_->eval();
     }
 
 private:
     meta::cpp2::PropertyType                    type_;
     std::unique_ptr<std::string>                name_;
-    std::unique_ptr<Expression>                 default_{nullptr};
+    bool                                        isNull_;
+    std::unique_ptr<Expression>                 defaultValue_;
+    int16_t                                     typeLen_{0};
 };
 
 

@@ -12,6 +12,41 @@
 
 namespace nebula {
 
+TEST(Parser, TestSchemaCreation) {
+    // All type
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG person(name STRING, age INT8, count INT16, "
+                            "friends INT32, books INT64, citys INT, property DOUBLE, "
+                            "liabilities FLOAT, profession FIXED_STRING(20), "
+                            "start TIMESTAMP, study DATE, birthday DATETIME)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG person(name STRING NULL, age INT8 NOT NULL, "
+                            "count INT16 DEFAULT 10, friends INT32 NULL DEFAULT 10, "
+                            "profession FIXED_STRING(20) NOT NULL DEFAULT \"student\");";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    // Error FIXED_STRING
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG person(profession FIXED_STRING)";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG person(profession FIXED_STRING(400000))";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok()) << result.status();
+    }
+}
+
 TEST(Parser, Go) {
     {
         GQLParser parser;

@@ -10,6 +10,7 @@
 #include "meta/SchemaManager.h"
 #include "service/ClientSession.h"
 #include "datatypes/Value.h"
+#include "charset/Charset.h"
 #include "planner/ExecutionPlan.h"
 
 namespace nebula {
@@ -47,6 +48,10 @@ public:
         schemaMng_ = schemaMng;
     }
 
+    void setCharsetInfo(CharsetInfo* charsetInfo) {
+        charsetInfo_ = charsetInfo;
+    }
+
     bool spaceChosen() const {
         return !spaces_.empty();
     }
@@ -63,6 +68,10 @@ public:
         return plan_;
     }
 
+    CharsetInfo* getCharsetInfo() {
+        return charsetInfo_;
+    }
+
     ClientSession* session() const {
         return session_;
     }
@@ -73,6 +82,7 @@ private:
     std::vector<SpaceDescription>                       spaces_;
     std::unordered_map<std::string, ColsDef>            vars_;
     ExecutionPlan*                                      plan_{nullptr};
+    CharsetInfo*                                        charsetInfo_{nullptr};
 };
 
 }  // namespace graph

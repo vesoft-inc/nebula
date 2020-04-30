@@ -15,6 +15,9 @@
 #include "validator/SetValidator.h"
 #include "validator/UseValidator.h"
 #include "validator/GetSubgraphValidator.h"
+#include "validator/AdminValidator.h"
+#include "validator/MaintainValidator.h"
+#include "validator/MutateValidator.h"
 
 namespace nebula {
 namespace graph {
@@ -37,6 +40,22 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, Validate
             return std::make_unique<UseValidator>(sentence, context);
         case Sentence::Kind::kGetSubgraph:
             return std::make_unique<GetSubgraphValidator>(sentence, context);
+        case Sentence::Kind::kCreateSpace:
+            return std::make_unique<CreateSpaceValidator>(sentence, context);
+        case Sentence::Kind::kCreateTag:
+            return std::make_unique<CreateTagValidator>(sentence, context);
+        case Sentence::Kind::kCreateEdge:
+            return std::make_unique<CreateEdgeValidator>(sentence, context);
+        case Sentence::Kind::kDescribeSpace:
+            return std::make_unique<DescSpaceValidator>(sentence, context);
+        case Sentence::Kind::kDescribeTag:
+            return std::make_unique<DescTagValidator>(sentence, context);
+        case Sentence::Kind::kDescribeEdge:
+            return std::make_unique<DescEdgeValidator>(sentence, context);
+        case Sentence::Kind::kInsertVertices:
+            return std::make_unique<InsertVerticesValidator>(sentence, context);
+        case Sentence::Kind::kInsertEdges:
+            return std::make_unique<InsertEdgesValidator>(sentence, context);
         default:
             return std::make_unique<ReportError>(sentence, context);
     }
@@ -52,7 +71,7 @@ Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
         case PlanNode::Kind::kAggregate:
         case PlanNode::Kind::kSelector:
         case PlanNode::Kind::kLoop:
-        case PlanNode::Kind::kRegisterSpaceToSession: {
+        case PlanNode::Kind::kSwitchSpace: {
             static_cast<SingleInputNode*>(node)->setInput(appended);
             break;
         }
@@ -68,14 +87,17 @@ Status Validator::validate() {
     Status status;
 
     if (!validateContext_) {
+        VLOG(1) << "Validate context was not given.";
         return Status::Error("Validate context was not given.");
     }
 
     if (!sentence_) {
+        VLOG(1) << "Sentence was not given";
         return Status::Error("Sentence was not given");
     }
 
-    if (!spaceChosen()) {
+    if (!noSpaceRequired_ && !spaceChosen()) {
+        VLOG(1) << "Space was not chosen.";
         status = Status::Error("Space was not chosen.");
         return status;
     }

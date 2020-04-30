@@ -48,6 +48,10 @@ public:
         return inputs_;
     }
 
+    void setNoSpaceRequired() {
+        noSpaceRequired_ = true;
+    }
+
 protected:
     /**
      * Check if a space is chosen for this sentence.
@@ -71,6 +75,7 @@ protected:
     PlanNode*                       tail_{nullptr};
     ColsDef                         outputs_;
     ColsDef                         inputs_;
+    bool                            noSpaceRequired_{false};
 };
 }  // namespace graph
 }  // namespace nebula

@@ -743,28 +743,38 @@ private:
     PlanNode*   body_{nullptr};
 };
 
-class RegisterSpaceToSession : public SingleInputNode {
+class SwitchSpace : public SingleInputNode {
 public:
-    static RegisterSpaceToSession* make(ExecutionPlan* plan,
+    static SwitchSpace* make(ExecutionPlan* plan,
                                         PlanNode* input,
-                                        GraphSpaceID space) {
-        return new RegisterSpaceToSession(plan, input, space);
+                                        std::string spaceName,
+                                        GraphSpaceID spaceId) {
+        return new SwitchSpace(plan, input, spaceName, spaceId);
     }
 
-    void setSpace(GraphSpaceID space) {
-        space_ = space;
+    const std::string& getSpaceName() const {
+        return spaceName_;
+    }
+
+    GraphSpaceID getSpaceId() const {
+        return spaceId_;
     }
 
     std::string explain() const override;
 
 private:
-    RegisterSpaceToSession(ExecutionPlan* plan, PlanNode* input, GraphSpaceID space)
-        : SingleInputNode(plan, Kind::kRegisterSpaceToSession, input) {
-        space_ = space;
+    SwitchSpace(ExecutionPlan* plan,
+                           PlanNode* input,
+                           std::string spaceName,
+                           GraphSpaceID spaceId)
+        : SingleInputNode(plan, Kind::kSwitchSpace, input) {
+        spaceName_ = std::move(spaceName);
+        spaceId_ = spaceId;
     }
 
 private:
-    GraphSpaceID    space_{-1};
+    std::string     spaceName_;
+    GraphSpaceID    spaceId_{-1};
 };
 
 class Dedup : public SingleInputNode {

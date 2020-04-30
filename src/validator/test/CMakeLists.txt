@@ -1,4 +1,5 @@
 set(VALIDATOR_TEST_LIBS
+    $<TARGET_OBJECTS:schema_util_obj>
     $<TARGET_OBJECTS:validator_obj>
     $<TARGET_OBJECTS:planner_obj>
     $<TARGET_OBJECTS:session_obj>
@@ -16,6 +17,8 @@ set(VALIDATOR_TEST_LIBS
     $<TARGET_OBJECTS:common_thread_obj>
     $<TARGET_OBJECTS:common_datatypes_obj>
     $<TARGET_OBJECTS:common_base_obj>
+    $<TARGET_OBJECTS:common_meta_thrift_obj>
+    $<TARGET_OBJECTS:common_charset_obj>
 )
 
 nebula_add_test(

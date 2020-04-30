@@ -61,10 +61,19 @@ INDEX                       ([Ii][Nn][Dd][Ee][Xx])
 INDEXES                     ([Ii][Nn][Dd][Ee][Xx][Ee][Ss])
 REBUILD                     ([Rr][Ee][Bb][Uu][Ii][Ll][Dd])
 STATUS                      ([Ss][Tt][Aa][Tt][Uu][Ss])
+BOOL                        ([Bb][Oo][Oo][Ll])
+INT8                        ([Ii][Nn][Tt][8])
+INT16                       ([Ii][Nn][Tt][1][6])
+INT32                       ([Ii][Nn][Tt][3][2])
+INT64                       ([Ii][Nn][Tt][6][4])
 INT                         ([Ii][Nn][Tt])
+FLOAT                       ([Ff][Ll][Oo][Aa][Tt])
 DOUBLE                      ([Dd][Oo][Uu][Bb][Ll][Ee])
 STRING                      ([Ss][Tt][Rr][Ii][Nn][Gg])
-BOOL                        ([Bb][Oo][Oo][Ll])
+FIXED_STRING                ([Ff][Ii][Xx][Ee][Dd][_][Ss][Tt][Rr][Ii][Nn][Gg])
+TIMESTAMP                   ([Tt][Ii][Mm][Ee][Ss][Tt][Aa][Mm][Pp])
+DATE                        ([Dd][Aa][Tt][Ee])
+DATETIME                    ([Dd][Aa][Tt][Ee][Tt][Ii][Mm][Ee])
 TAG                         ([Tt][Aa][Gg])
 TAGS                        ([Tt][Aa][Gg][Ss])
 UNION                       ([Uu][Nn][Ii][Oo][Nn])
@@ -79,9 +88,9 @@ ADD                         ([Aa][Dd][Dd])
 HOSTS                       ([Hh][Oo][Ss][Tt][Ss])
 PART                        ([Pp][Aa][Rr][Tt])
 PARTS                       ([Pp][Aa][Rr][Tt][Ss])
-TIMESTAMP                   ([Tt][Ii][Mm][Ee][Ss][Tt][Aa][Mm][Pp])
 PARTITION_NUM               ([Pp][Aa][Rr][Tt][Ii][Tt][Ii][[Oo][Nn][_][Nn][Uu][Mm])
 REPLICA_FACTOR              ([Rr][Ee][Pp][Ll][Ii][Cc][Aa][_][Ff][Aa][Cc][Tt][Oo][Rr])
+VID_SIZE                    ([Vv][Ii][Dd][_][Ss][Ii][Zz][Ee])
 CHARSET                     ([Cc][Hh][Aa][Rr][Ss][Ee][Tt])
 COLLATE                     ([Cc][Oo][Ll][Ll][Aa][Tt][Ee])
 COLLATION                   ([Cc][Oo][Ll][Ll][Aa][Tt][Ii][Oo][Nn])
@@ -205,10 +214,19 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {INDEX}                     { return TokenType::KW_INDEX; }
 {INDEXES}                   { return TokenType::KW_INDEXES; }
 {REBUILD}                   { return TokenType::KW_REBUILD; }
+{BOOL}                      { return TokenType::KW_BOOL; }
+{INT8}                      { return TokenType::KW_INT8; }
+{INT16}                     { return TokenType::KW_INT16; }
+{INT32}                     { return TokenType::KW_INT32; }
+{INT64}                     { return TokenType::KW_INT64; }
 {INT}                       { return TokenType::KW_INT; }
+{FLOAT}                     { return TokenType::KW_FLOAT; }
 {DOUBLE}                    { return TokenType::KW_DOUBLE; }
 {STRING}                    { return TokenType::KW_STRING; }
-{BOOL}                      { return TokenType::KW_BOOL; }
+{FIXED_STRING}              { return TokenType::KW_FIXED_STRING; }
+{TIMESTAMP}                 { return TokenType::KW_TIMESTAMP; }
+{DATE}                      { return TokenType::KW_DATE; }
+{DATETIME}                  { return TokenType::KW_DATETIME; }
 {TAG}                       { return TokenType::KW_TAG; }
 {TAGS}                      { return TokenType::KW_TAGS; }
 {UNION}                     { return TokenType::KW_UNION; }
@@ -270,6 +288,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {GROUP}                     { return TokenType::KW_GROUP; }
 {PARTITION_NUM}             { return TokenType::KW_PARTITION_NUM; }
 {REPLICA_FACTOR}            { return TokenType::KW_REPLICA_FACTOR; }
+{VID_SIZE}                  { return TokenType::KW_VID_SIZE; }
 {CHARSET}                   { return TokenType::KW_CHARSET; }
 {COLLATE}                   { return TokenType::KW_COLLATE; }
 {COLLATION}                 { return TokenType::KW_COLLATION; }

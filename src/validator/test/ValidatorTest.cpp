@@ -22,6 +22,7 @@ public:
         session_->setSpace("test", 0);
         ectx_ = std::make_unique<ExecutionContext>();
         plan_ = std::make_unique<ExecutionPlan>(ectx_.get());
+        charsetInfo_ = CharsetInfo::instance();
         // TODO: Need AdHocSchemaManager here.
     }
 
@@ -30,10 +31,11 @@ public:
     }
 
 protected:
-    ClientSession*          session_;
-    meta::SchemaManager*    schemaMng_;
-    std::unique_ptr<ExecutionContext> ectx_;
-    std::unique_ptr<ExecutionPlan> plan_;
+    ClientSession                      *session_;
+    meta::SchemaManager                *schemaMng_;
+    std::unique_ptr<ExecutionContext>   ectx_;
+    std::unique_ptr<ExecutionPlan>      plan_;
+    CharsetInfo*                        charsetInfo_;
 };
 
 TEST_F(ValidatorTest, Subgraph) {
@@ -42,7 +44,7 @@ TEST_F(ValidatorTest, Subgraph) {
         auto result = GQLParser().parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
         auto sentences = std::move(result).value();
-        ASTValidator validator(sentences.get(), session_, schemaMng_);
+        ASTValidator validator(sentences.get(), session_, schemaMng_, charsetInfo_);
         auto validateResult = validator.validate(plan_.get());
         ASSERT_TRUE(validateResult.ok()) << validateResult;
         // TODO: Check the plan.

@@ -54,6 +54,7 @@ private:
     std::unique_ptr<SequentialSentences>        sentences_;
     std::unique_ptr<ExecutionContext>           ectx_;
     std::unique_ptr<ASTValidator>               validator_;
+    std::unique_ptr<ExecutionPlan>              plan_;
 };
 
 }   // namespace graph

@@ -92,6 +92,7 @@ public:
     enum OptionType : uint8_t {
         PARTITION_NUM,
         REPLICA_FACTOR,
+        VID_SIZE,
         CHARSET,
         COLLATE
     };
@@ -122,7 +123,7 @@ public:
         return optValue_.which() == 1;
     }
 
-    int64_t get_partition_num() {
+    int64_t getPartitionNum() {
         if (isInt()) {
             return asInt();
         } else {
@@ -131,7 +132,7 @@ public:
         }
     }
 
-    int64_t get_replica_factor() {
+    int64_t getReplicaFactor() {
         if (isInt()) {
             return asInt();
         } else {
@@ -140,7 +141,16 @@ public:
         }
     }
 
-    std::string get_charset() {
+    int32_t getVidSize() {
+        if (isInt()) {
+            return asInt();
+        } else {
+            LOG(ERROR) << "vid size illegal.";
+            return 0;
+        }
+    }
+
+    std::string getCharset() {
         if (isString()) {
             return asString();
         } else {
@@ -149,7 +159,7 @@ public:
         }
     }
 
-    std::string get_collate() {
+    std::string getCollate() {
         if (isString()) {
             return asString();
         } else {

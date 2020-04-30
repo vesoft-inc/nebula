@@ -16,6 +16,7 @@
 #include "clients/meta/MetaClient.h"
 #include "clients/storage/GraphStorageClient.h"
 #include "network/NetworkUtils.h"
+#include "charset/Charset.h"
 #include <folly/executors/IOThreadPoolExecutor.h>
 
 /**
@@ -42,6 +43,7 @@ private:
     // std::unique_ptr<meta::ClientBasedGflagsManager>   gflagsManager_;
     std::unique_ptr<storage::GraphStorageClient>      storage_;
     std::unique_ptr<meta::MetaClient>                 metaClient_;
+    CharsetInfo*                                      charsetInfo_{nullptr};
 };
 
 }   // namespace graph

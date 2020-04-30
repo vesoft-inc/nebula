@@ -29,3 +29,8 @@ DEFINE_bool(daemonize, true, "Whether run as a daemon process");
 DEFINE_string(meta_server_addrs, "", "list of meta server addresses,"
                                      "the format looks like ip1:port1, ip2:port2, ip3:port3");
 DEFINE_bool(local_config, false, "meta client will not retrieve latest configuration from meta");
+
+DEFINE_string(default_charset, "utf8", "The default charset when a space is created");
+DEFINE_string(default_collate, "utf8_bin", "The default collate when a space is created");
+
+DEFINE_bool(enable_authorize, false, "Enable authorization, default false");

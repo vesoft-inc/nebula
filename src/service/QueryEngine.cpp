@@ -48,6 +48,8 @@ Status QueryEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor
 
     storage_ = std::make_unique<storage::GraphStorageClient>(ioExecutor,
                                                              metaClient_.get());
+    charsetInfo_ = CharsetInfo::instance();
+
     return Status::OK();
 }
 
@@ -55,7 +57,8 @@ void QueryEngine::execute(RequestContextPtr rctx) {
     auto ectx = std::make_unique<ExecutionContext>(std::move(rctx),
                                                    schemaManager_.get(),
                                                    storage_.get(),
-                                                   metaClient_.get());
+                                                   metaClient_.get(),
+                                                   charsetInfo_);
     auto* instance = new QueryInstance(std::move(ectx));
     instance->execute();
 }

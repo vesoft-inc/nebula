@@ -157,15 +157,15 @@ private:
 };
 
 
-class InsertVertexSentence final : public Sentence {
+class InsertVerticesSentence final : public Sentence {
 public:
-    InsertVertexSentence(VertexTagList *tagList,
-                         VertexRowList *rows,
-                         bool overwritable = true) {
+    InsertVerticesSentence(VertexTagList *tagList,
+                           VertexRowList *rows,
+                           bool overwritable = true) {
         tagList_.reset(tagList);
         rows_.reset(rows);
         overwritable_ = overwritable;
-        kind_ = Kind::kInsertVertex;
+        kind_ = Kind::kInsertVertices;
     }
 
     bool overwritable() const {
@@ -251,10 +251,10 @@ private:
 };
 
 
-class InsertEdgeSentence final : public Sentence {
+class InsertEdgesSentence final : public Sentence {
 public:
-    InsertEdgeSentence() {
-        kind_ = Kind::kInsertEdge;
+    InsertEdgesSentence() {
+        kind_ = Kind::kInsertEdges;
     }
 
     void setOverwrite(bool overwritable) {

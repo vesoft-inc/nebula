@@ -10,6 +10,7 @@ nebula_add_library(
     ExecutionPlan.cpp
     Query.cpp
     IdGenerator.cpp
+    Mutate.h
 )
 
 nebula_add_subdirectory(test)

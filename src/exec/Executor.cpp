@@ -27,8 +27,20 @@
 #include "exec/query/SortExecutor.h"
 #include "exec/query/StartExecutor.h"
 #include "exec/query/UnionExecutor.h"
+#include "exec/query/SwitchSpaceExecutor.h"
+#include "exec/admin/CreateSpaceExecutor.h"
+#include "exec/admin/DescSpaceExecutor.h"
+#include "exec/maintain/CreateTagExecutor.h"
+#include "exec/maintain/DescTagExecutor.h"
+#include "exec/maintain/CreateEdgeExecutor.h"
+#include "exec/maintain/DescEdgeExecutor.h"
+#include "exec/mutate/InsertVerticesExecutor.h"
+#include "exec/mutate/InsertEdgesExecutor.h"
 #include "planner/PlanNode.h"
 #include "planner/Query.h"
+#include "planner/Admin.h"
+#include "planner/Maintain.h"
+#include "planner/Mutate.h"
 #include "service/ExecutionContext.h"
 #include "util/ObjectPool.h"
 
@@ -157,6 +169,52 @@ Executor *Executor::makeExecutor(const PlanNode *node,
             auto dedup = asNode<Dedup>(node);
             auto input = makeExecutor(dedup->input(), ectx, cache);
             exec = new DedupExecutor(dedup, ectx, input);
+            break;
+        }
+        case PlanNode::Kind::kSwitchSpace: {
+            auto switchSpace = asNode<SwitchSpace>(node);
+            auto input = makeExecutor(switchSpace->input(), ectx, cache);
+            exec = new SwitchSpaceExecutor(switchSpace, ectx, input);
+            break;
+        }
+        case PlanNode::Kind::kCreateSpace: {
+            auto createSpace = asNode<CreateSpace>(node);
+            exec = new CreateSpaceExecutor(createSpace, ectx);
+            break;
+        }
+        case PlanNode::Kind::kDescSpace: {
+            auto descSpace = asNode<DescSpace>(node);
+            exec = new DescSpaceExecutor(descSpace, ectx);
+            break;
+        }
+        case PlanNode::Kind::kCreateTag: {
+            auto createTag = asNode<CreateTag>(node);
+            exec = new CreateTagExecutor(createTag, ectx);
+            break;
+        }
+        case PlanNode::Kind::kDescTag: {
+            auto descTag = asNode<DescTag>(node);
+            exec = new DescTagExecutor(descTag, ectx);
+            break;
+        }
+        case PlanNode::Kind::kCreateEdge: {
+            auto createEdge = asNode<CreateEdge>(node);
+            exec = new CreateEdgeExecutor(createEdge, ectx);
+            break;
+        }
+        case PlanNode::Kind::kDescEdge: {
+            auto descEdge = asNode<DescEdge>(node);
+            exec = new DescEdgeExecutor(descEdge, ectx);
+            break;
+        }
+        case PlanNode::Kind::kInsertVertices: {
+            auto insertV = asNode<InsertVertices>(node);
+            exec = new InsertVerticesExecutor(insertV, ectx);
+            break;
+        }
+        case PlanNode::Kind::kInsertEdges: {
+            auto insertE = asNode<InsertEdges>(node);
+            exec = new InsertEdgesExecutor(insertE, ectx);
             break;
         }
         case PlanNode::Kind::kUnknown:

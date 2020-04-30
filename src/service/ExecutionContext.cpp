@@ -26,6 +26,10 @@ ExecutionContext::~ExecutionContext() {
     if (nullptr != metaClient_) {
         metaClient_ = nullptr;
     }
+
+    if (nullptr != charsetInfo_) {
+        charsetInfo_ = nullptr;
+    }
 }
 
 }   // namespace graph

@@ -86,8 +86,8 @@ std::string Loop::explain() const {
     return "Loop";
 }
 
-std::string RegisterSpaceToSession::explain() const {
-    return "RegisterSpaceToSession";
+std::string SwitchSpace::explain() const {
+    return "SwitchSpace";
 }
 
 std::string Dedup::explain() const {

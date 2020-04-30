@@ -4,6 +4,7 @@ nebula_add_executable(
     SOURCES
         GraphDaemon.cpp
     OBJECTS
+        $<TARGET_OBJECTS:schema_util_obj>
         $<TARGET_OBJECTS:service_obj>
         $<TARGET_OBJECTS:session_obj>
         $<TARGET_OBJECTS:query_engine_obj>
@@ -40,6 +41,8 @@ nebula_add_executable(
         $<TARGET_OBJECTS:common_datatypes_obj>
         $<TARGET_OBJECTS:common_conf_obj>
         $<TARGET_OBJECTS:common_file_based_cluster_id_man_obj>
+        $<TARGET_OBJECTS:common_meta_thrift_obj>
+        $<TARGET_OBJECTS:common_charset_obj>
     LIBRARIES
         proxygenhttpserver
         proxygenlib

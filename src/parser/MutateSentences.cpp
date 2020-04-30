@@ -93,7 +93,7 @@ std::string VertexRowList::toString() const {
 }
 
 
-std::string InsertVertexSentence::toString() const {
+std::string InsertVerticesSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "INSERT VERTEX ";
@@ -138,7 +138,7 @@ std::string EdgeRowList::toString() const {
 }
 
 
-std::string InsertEdgeSentence::toString() const {
+std::string InsertEdgesSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "INSERT EDGE ";

@@ -15,6 +15,7 @@
 #include <string>
 #include <cstddef>
 #include "parser/SequentialSentences.h"
+#include "parser/ColumnTypeDef.h"
 
 namespace nebula {
 
@@ -40,7 +41,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
     int64_t                                 intval;
     double                                  doubleval;
     std::string                            *strval;
-    nebula::meta::cpp2::PropertyType        type;
+    nebula::ColumnTypeDef                  *type;
     nebula::Expression                     *expr;
     nebula::Sentence                       *sentence;
     nebula::SequentialSentences            *sentences;
@@ -103,12 +104,14 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %destructor { delete $$; } <*>
 
 /* keywords */
+%token KW_BOOL KW_INT8 KW_INT16 KW_INT32 KW_INT64 KW_INT KW_FLOAT KW_DOUBLE
+%token KW_STRING KW_FIXED_STRING KW_TIMESTAMP KW_DATE KW_DATETIME
 %token KW_GO KW_AS KW_TO KW_OR KW_AND KW_XOR KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
 %token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_OFFLINE
 %token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND KW_REBUILD
-%token KW_INT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
-%token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_PART KW_PARTS KW_TIMESTAMP KW_ADD
-%token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_CHARSET KW_COLLATE KW_COLLATION
+%token KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
+%token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_PART KW_PARTS KW_ADD
+%token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_CHARSET KW_COLLATE KW_COLLATION KW_VID_SIZE
 %token KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_INDEX KW_INDEXES
 %token KW_IF KW_NOT KW_EXISTS KW_WITH
 %token KW_COUNT KW_COUNT_DISTINCT KW_SUM KW_AVG KW_MAX KW_MIN KW_STD KW_BIT_AND KW_BIT_OR KW_BIT_XOR
@@ -477,17 +480,30 @@ unary_expression
     }
 /*
     | L_PAREN type_spec R_PAREN unary_expression {
-        $$ = new TypeCastingExpression($2, $4);
+        $$ = new TypeCastingExpression($2->type, $4);
     }
 */
     ;
 
 type_spec
-    : KW_INT { $$ = meta::cpp2::PropertyType::INT64; }
-    | KW_DOUBLE { $$ = meta::cpp2::PropertyType::FLOAT; }
-    | KW_STRING { $$ = meta::cpp2::PropertyType::STRING; }
-    | KW_BOOL { $$ = meta::cpp2::PropertyType::BOOL; }
-/*  TODO: Support other type. int8, int16, etc.*/
+    : KW_BOOL { $$ = new ColumnTypeDef(meta::cpp2::PropertyType::BOOL); }
+    | KW_INT8 { $$ = new ColumnTypeDef(meta::cpp2::PropertyType::INT8); }
+    | KW_INT16 { $$ = new ColumnTypeDef(meta::cpp2::PropertyType::INT16); }
+    | KW_INT32 { $$ = new ColumnTypeDef(meta::cpp2::PropertyType::INT32); }
+    | KW_INT64 { $$ = new ColumnTypeDef(meta::cpp2::PropertyType::INT64); }
+    | KW_INT { $$ = new ColumnTypeDef(meta::cpp2::PropertyType::INT64); }
+    | KW_FLOAT { $$ = new ColumnTypeDef(meta::cpp2::PropertyType::FLOAT); }
+    | KW_DOUBLE { $$ = new ColumnTypeDef(meta::cpp2::PropertyType::DOUBLE); }
+    | KW_STRING { $$ = new ColumnTypeDef(meta::cpp2::PropertyType::STRING); }
+    | KW_FIXED_STRING L_PAREN INTEGER R_PAREN {
+        if ($3 > std::numeric_limits<int16_t>::max()) {
+            throw nebula::GraphParser::syntax_error(@3, "Out of range:");
+        }
+        $$ = new ColumnTypeDef(meta::cpp2::PropertyType::FIXED_STRING, $3);
+    }
+    | KW_TIMESTAMP { $$ = new ColumnTypeDef(meta::cpp2::PropertyType::TIMESTAMP); }
+    | KW_DATE { $$ = new ColumnTypeDef(meta::cpp2::PropertyType::DATE); }
+    | KW_DATETIME { $$ = new ColumnTypeDef(meta::cpp2::PropertyType::DATETIME); }
     ;
 
 multiplicative_expression
@@ -636,6 +652,10 @@ vid
     }
     | uuid_expression {
         $$ = $1;
+    }
+    | STRING {
+        $$ = new ConstantExpression(*$1);
+        delete $1;
     }
     ;
 
@@ -1171,10 +1191,29 @@ column_spec_list
     ;
 
 column_spec
-    : name_label type_spec { $$ = new ColumnSpecification($2, $1); }
+    : name_label type_spec {
+        $$ = new ColumnSpecification($1, $2->type, true, nullptr, $2->typeLen);
+        delete $2;
+    }
     | name_label type_spec KW_DEFAULT expression {
-        $$ = new ColumnSpecification($2, $1);
-        $$->setDefault($4);
+        $$ = new ColumnSpecification($1, $2->type, true, $4, $2->typeLen);
+        delete $2;
+    }
+    | name_label type_spec KW_NOT KW_NULL {
+        $$ = new ColumnSpecification($1, $2->type, false, nullptr, $2->typeLen);
+        delete $2;
+    }
+    | name_label type_spec KW_NULL {
+        $$ = new ColumnSpecification($1, $2->type, true, nullptr, $2->typeLen);
+        delete $2;
+    }
+    | name_label type_spec KW_NOT KW_NULL KW_DEFAULT expression {
+        $$ = new ColumnSpecification($1, $2->type, false, $6, $2->typeLen);
+        delete $2;
+    }
+    | name_label type_spec KW_NULL KW_DEFAULT expression {
+        $$ = new ColumnSpecification($1, $2->type, true, $5 , $2->typeLen);
+        delete $2;
     }
     ;
 
@@ -1312,10 +1351,10 @@ assignment_sentence
 
 insert_vertex_sentence
     : KW_INSERT KW_VERTEX vertex_tag_list KW_VALUES vertex_row_list {
-        $$ = new InsertVertexSentence($3, $5);
+        $$ = new InsertVerticesSentence($3, $5);
     }
     | KW_INSERT KW_VERTEX KW_NO KW_OVERWRITE vertex_tag_list KW_VALUES vertex_row_list {
-        $$ = new InsertVertexSentence($5, $7, false /* not overwritable */);
+        $$ = new InsertVerticesSentence($5, $7, false /* not overwritable */);
     }
     ;
 
@@ -1389,21 +1428,21 @@ value_list
 
 insert_edge_sentence
     : KW_INSERT KW_EDGE name_label L_PAREN R_PAREN KW_VALUES edge_row_list {
-        auto sentence = new InsertEdgeSentence();
+        auto sentence = new InsertEdgesSentence();
         sentence->setEdge($3);
         sentence->setProps(new PropertyList());
         sentence->setRows($7);
         $$ = sentence;
     }
     | KW_INSERT KW_EDGE name_label L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
-        auto sentence = new InsertEdgeSentence();
+        auto sentence = new InsertEdgesSentence();
         sentence->setEdge($3);
         sentence->setProps($5);
         sentence->setRows($8);
         $$ = sentence;
     }
     | KW_INSERT KW_EDGE KW_NO KW_OVERWRITE name_label L_PAREN R_PAREN KW_VALUES edge_row_list {
-        auto sentence = new InsertEdgeSentence();
+        auto sentence = new InsertEdgesSentence();
         sentence->setOverwrite(false);
         sentence->setEdge($5);
         sentence->setProps(new PropertyList());
@@ -1411,7 +1450,7 @@ insert_edge_sentence
         $$ = sentence;
     }
     | KW_INSERT KW_EDGE KW_NO KW_OVERWRITE name_label L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
-        auto sentence = new InsertEdgeSentence();
+        auto sentence = new InsertEdgesSentence();
         sentence->setOverwrite(false);
         sentence->setEdge($5);
         sentence->setProps($7);

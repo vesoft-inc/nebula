@@ -54,7 +54,7 @@ const char* PlanNode::toString(Kind kind) {
             return "ReadIndex";
         case Kind::kMultiOutputs:
             return "MultiOutputs";
-        case Kind::kRegisterSpaceToSession:
+        case Kind::kSwitchSpace:
             return "RegisterSpaceToSession";
         case Kind::kUnknown:
         default:
