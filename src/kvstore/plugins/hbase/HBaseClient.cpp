@@ -20,7 +20,7 @@ namespace kvstore {
 
 const char* kColumnFamilyName = "cf";
 
-HBaseClient::HBaseClient(const HostAddr& host) {
+HBaseClient::HBaseClient(const network::InetAddress& host) {
     clientsMan_ = std::make_shared<thrift::ThriftClientManager<
                                    THBaseServiceAsyncClient>>();
     auto evb = folly::EventBaseManager::get()->getEventBase();

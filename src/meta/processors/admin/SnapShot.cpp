@@ -31,10 +31,10 @@ cpp2::ErrorCode Snapshot::createSnapshot(const std::string& name) {
 }
 
 cpp2::ErrorCode Snapshot::dropSnapshot(const std::string& name,
-                                       const std::vector<HostAddr> hosts) {
+                                       const std::vector<network::InetAddress> hosts) {
     // The drop checkpoint will be skip if original host has been lost.
     auto activeHosts = ActiveHostsMan::getActiveHosts(kv_);
-    std::vector<HostAddr> realHosts;
+    std::vector<network::InetAddress> realHosts;
     for (auto& host : hosts) {
         if (std::find(activeHosts.begin(), activeHosts.end(), host) != activeHosts.end()) {
             realHosts.emplace_back(host);
@@ -94,10 +94,10 @@ cpp2::ErrorCode Snapshot::blockingWrites(storage::cpp2::EngineSignType sign) {
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
-std::unordered_map<HostAddr, std::vector<PartitionID>>
+std::unordered_map<network::InetAddress, std::vector<PartitionID>>
 Snapshot::getLeaderParts(HostLeaderMap *hostLeaderMap, GraphSpaceID spaceId) {
-    std::unordered_map<PartitionID, std::vector<HostAddr>> peersMap;
-    std::unordered_map<HostAddr, std::vector<PartitionID>> leaderHostParts;
+    std::unordered_map<PartitionID, std::vector<network::InetAddress>> peersMap;
+    std::unordered_map<network::InetAddress, std::vector<PartitionID>> leaderHostParts;
 
     auto key = MetaServiceUtils::spaceKey(spaceId);
     std::string value;
@@ -126,7 +126,7 @@ Snapshot::getLeaderParts(HostLeaderMap *hostLeaderMap, GraphSpaceID spaceId) {
             PartitionID partId;
             memcpy(&partId, k.data() + prefix.size(), sizeof(PartitionID));
             auto thriftPeers = MetaServiceUtils::parsePartVal(iter->val());
-            std::vector<HostAddr> peers;
+            std::vector<network::InetAddress> peers;
             peers.resize(thriftPeers.size());
             if (peers.size() < static_cast<size_t>(properties.replica_factor)/2) {
                 LOG(ERROR) << "Replica part must be greater than or equal to half "

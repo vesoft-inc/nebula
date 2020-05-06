@@ -16,9 +16,9 @@ namespace nebula {
 namespace meta {
 
 void HBProcessor::process(const cpp2::HBReq& req) {
-    HostAddr host(req.host.ip, req.host.port);
+    network::InetAddress host(req.host.ip, req.host.port);
     if (FLAGS_hosts_whitelist_enabled
-            && hostExist(MetaServiceUtils::hostKey(host.first, host.second))
+            && hostExist(MetaServiceUtils::hostKey(host.toLongHBO(), host.getPort()))
                 == Status::HostNotFound()) {
         LOG(INFO) << "Reject unregistered host " << host << "!";
         handleErrorCode(cpp2::ErrorCode::E_INVALID_HOST);
@@ -28,7 +28,8 @@ void HBProcessor::process(const cpp2::HBReq& req) {
 
     auto ret = kvstore::ResultCode::SUCCEEDED;
     if (req.get_in_storaged()) {
-        LOG(INFO) << "Receive heartbeat from " << host;
+        auto hostName = req.get_host_name();
+        LOG(INFO) << "Receive heartbeat from host: (" << host << "), hostName: " << hostName;
         ClusterID peerCluserId = req.get_cluster_id();
         if (peerCluserId == 0) {
             LOG(INFO) << "Set clusterId for new host " << host << "!";
@@ -40,11 +41,12 @@ void HBProcessor::process(const cpp2::HBReq& req) {
             return;
         }
         HostInfo info(time::WallClock::fastNowInMilliSec());
+
         if (req.__isset.leader_partIds) {
-            ret = ActiveHostsMan::updateHostInfo(kvstore_, host, info,
+            ret = ActiveHostsMan::updateHostInfo(kvstore_, host, hostName, info,
                                                  req.get_leader_partIds());
         } else {
-            ret = ActiveHostsMan::updateHostInfo(kvstore_, host, info);
+            ret = ActiveHostsMan::updateHostInfo(kvstore_, host, hostName, info);
         }
         if (ret == kvstore::ResultCode::ERR_LEADER_CHANGED) {
             auto leaderRet = kvstore_->partLeader(kDefaultSpaceId, kDefaultPartId);

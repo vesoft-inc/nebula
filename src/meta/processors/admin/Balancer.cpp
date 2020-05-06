@@ -20,7 +20,8 @@ DEFINE_double(leader_balance_deviation, 0.05, "after leader balance, leader coun
 namespace nebula {
 namespace meta {
 
-ErrorOr<cpp2::ErrorCode, BalanceID> Balancer::balance(std::unordered_set<HostAddr> hostDel) {
+ErrorOr<cpp2::ErrorCode, BalanceID> Balancer::balance(
+    std::unordered_set<network::InetAddress> hostDel) {
     std::lock_guard<std::mutex> lg(lock_);
     if (!running_) {
         auto retCode = recovery();
@@ -149,7 +150,7 @@ bool Balancer::getAllSpaces(std::vector<std::pair<GraphSpaceID, int32_t>>& space
     return true;
 }
 
-cpp2::ErrorCode Balancer::buildBalancePlan(std::unordered_set<HostAddr> hostDel) {
+cpp2::ErrorCode Balancer::buildBalancePlan(std::unordered_set<network::InetAddress> hostDel) {
     CHECK(!plan_) << "plan should be nullptr now";
     std::vector<std::pair<GraphSpaceID, int32_t>> spaces;
     kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
@@ -187,9 +188,9 @@ cpp2::ErrorCode Balancer::buildBalancePlan(std::unordered_set<HostAddr> hostDel)
 ErrorOr<cpp2::ErrorCode, std::vector<BalanceTask>>
 Balancer::genTasks(GraphSpaceID spaceId,
                    int32_t spaceReplica,
-                   std::unordered_set<HostAddr> hostDel) {
+                   std::unordered_set<network::InetAddress> hostDel) {
     CHECK(!!plan_) << "plan should not be nullptr";
-    std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
+    std::unordered_map<network::InetAddress, std::vector<PartitionID>> hostParts;
     int32_t totalParts = 0;
     // hostParts is current part allocation map
     getHostParts(spaceId, hostParts, totalParts);
@@ -197,7 +198,7 @@ Balancer::genTasks(GraphSpaceID spaceId,
         LOG(ERROR) << "Invalid space " << spaceId;
         return cpp2::ErrorCode::E_NOT_FOUND;
     }
-    std::vector<HostAddr> newlyAdded;
+    std::vector<network::InetAddress> newlyAdded;
     auto activeHosts = ActiveHostsMan::getActiveHosts(kv_);
     calDiff(hostParts, activeHosts, newlyAdded, hostDel);
     // newHostParts is new part allocation map after balance, it would include newlyAdded
@@ -255,7 +256,8 @@ Balancer::genTasks(GraphSpaceID spaceId,
 
 void Balancer::balanceParts(BalanceID balanceId,
                             GraphSpaceID spaceId,
-                            std::unordered_map<HostAddr, std::vector<PartitionID>>& newHostParts,
+                            std::unordered_map<network::InetAddress,
+                            std::vector<PartitionID>>& newHostParts,
                             int32_t totalParts,
                             std::vector<BalanceTask>& tasks) {
     float avgLoad = static_cast<float>(totalParts) / newHostParts.size();
@@ -325,7 +327,8 @@ void Balancer::balanceParts(BalanceID balanceId,
 }
 
 void Balancer::getHostParts(GraphSpaceID spaceId,
-                            std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
+                            std::unordered_map<network::InetAddress,
+                            std::vector<PartitionID>>& hostParts,
                             int32_t& totalParts) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
     auto prefix = MetaServiceUtils::partPrefix(spaceId);
@@ -341,7 +344,7 @@ void Balancer::getHostParts(GraphSpaceID spaceId,
         memcpy(&partId, key.data() + prefix.size(), sizeof(PartitionID));
         auto partHosts = MetaServiceUtils::parsePartVal(iter->val());
         for (auto& ph : partHosts) {
-            hostParts[HostAddr(ph.ip, ph.port)].emplace_back(partId);
+            hostParts[network::InetAddress(ph.ip, ph.port)].emplace_back(partId);
         }
         iter->next();
         totalParts++;
@@ -359,10 +362,11 @@ void Balancer::getHostParts(GraphSpaceID spaceId,
     totalParts *= properties.get_replica_factor();
 }
 
-void Balancer::calDiff(const std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
-                       const std::vector<HostAddr>& activeHosts,
-                       std::vector<HostAddr>& newlyAdded,
-                       std::unordered_set<HostAddr>& lost) {
+void Balancer::calDiff(const std::unordered_map<network::InetAddress,
+                       std::vector<PartitionID>>& hostParts,
+                       const std::vector<network::InetAddress>& activeHosts,
+                       std::vector<network::InetAddress>& newlyAdded,
+                       std::unordered_set<network::InetAddress>& lost) {
     for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
         VLOG(1) << "Original Host " << it->first << ", parts " << it->second.size();
         if (std::find(activeHosts.begin(), activeHosts.end(), it->first) == activeHosts.end() &&
@@ -378,10 +382,10 @@ void Balancer::calDiff(const std::unordered_map<HostAddr, std::vector<PartitionI
     }
 }
 
-std::vector<std::pair<HostAddr, int32_t>>
-Balancer::sortedHostsByParts(const std::unordered_map<HostAddr,
+std::vector<std::pair<network::InetAddress, int32_t>>
+Balancer::sortedHostsByParts(const std::unordered_map<network::InetAddress,
                                                       std::vector<PartitionID>>& hostParts) {
-    std::vector<std::pair<HostAddr, int32_t>> hosts;
+    std::vector<std::pair<network::InetAddress, int32_t>> hosts;
     for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
         hosts.emplace_back(it->first, it->second.size());
     }
@@ -392,8 +396,8 @@ Balancer::sortedHostsByParts(const std::unordered_map<HostAddr,
 }
 
 Status Balancer::checkReplica(
-            const std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
-            const std::vector<HostAddr>& activeHosts,
+            const std::unordered_map<network::InetAddress, std::vector<PartitionID>>& hostParts,
+            const std::vector<network::InetAddress>& activeHosts,
             int32_t replica,
             PartitionID partId) {
     // check host hold the part and alive
@@ -410,8 +414,9 @@ Status Balancer::checkReplica(
     return Status::Error("Not enough alive host hold the part %d", partId);
 }
 
-StatusOr<HostAddr> Balancer::hostWithMinimalParts(
-                        const std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
+StatusOr<network::InetAddress> Balancer::hostWithMinimalParts(
+                        const std::unordered_map<network::InetAddress,
+                        std::vector<PartitionID>>& hostParts,
                         PartitionID partId) {
     auto hosts = sortedHostsByParts(hostParts);
     for (auto& h : hosts) {
@@ -476,11 +481,11 @@ cpp2::ErrorCode Balancer::leaderBalance() {
     return cpp2::ErrorCode::E_BALANCER_RUNNING;
 }
 
-std::unordered_map<HostAddr, std::vector<PartitionID>>
+std::unordered_map<network::InetAddress, std::vector<PartitionID>>
 Balancer::buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap, GraphSpaceID spaceId,
                                  LeaderBalancePlan& plan, bool useDeviation) {
-    std::unordered_map<PartitionID, std::vector<HostAddr>> peersMap;
-    std::unordered_map<HostAddr, std::vector<PartitionID>> leaderHostParts;
+    std::unordered_map<PartitionID, std::vector<network::InetAddress>> peersMap;
+    std::unordered_map<network::InetAddress, std::vector<PartitionID>> leaderHostParts;
     size_t leaderParts = 0;
     {
         // store peers of all paritions in peerMap
@@ -497,10 +502,12 @@ Balancer::buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap, GraphSpaceID spac
             PartitionID partId;
             memcpy(&partId, key.data() + prefix.size(), sizeof(PartitionID));
             auto thriftPeers = MetaServiceUtils::parsePartVal(iter->val());
-            std::vector<HostAddr> peers;
+            std::vector<network::InetAddress> peers;
             peers.resize(thriftPeers.size());
-            std::transform(thriftPeers.begin(), thriftPeers.end(), peers.begin(),
-                           [] (const auto& h) { return HostAddr(h.get_ip(), h.get_port()); });
+            std::transform(
+                thriftPeers.begin(), thriftPeers.end(), peers.begin(), [](const auto& h) {
+                    return network::InetAddress(h.get_ip(), h.get_port());
+                });
             peersMap[partId] = std::move(peers);
             ++leaderParts;
             iter->next();
@@ -508,10 +515,10 @@ Balancer::buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap, GraphSpaceID spac
     }
 
     int32_t totalParts = 0;
-    std::unordered_map<HostAddr, std::vector<PartitionID>> allHostParts;
+    std::unordered_map<network::InetAddress, std::vector<PartitionID>> allHostParts;
     getHostParts(spaceId, allHostParts, totalParts);
 
-    std::unordered_set<HostAddr> activeHosts;
+    std::unordered_set<network::InetAddress> activeHosts;
     for (const auto& host : *hostLeaderMap) {
         // only balance leader between hosts which have valid partition
         if (!allHostParts[host.first].empty()) {
@@ -566,11 +573,11 @@ Balancer::buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap, GraphSpaceID spac
 }
 
 int32_t Balancer::acquireLeaders(
-        std::unordered_map<HostAddr, std::vector<PartitionID>>& allHostParts,
-        std::unordered_map<HostAddr, std::vector<PartitionID>>& leaderHostParts,
-        std::unordered_map<PartitionID, std::vector<HostAddr>>& peersMap,
-        std::unordered_set<HostAddr>& activeHosts,
-        HostAddr host,
+        std::unordered_map<network::InetAddress, std::vector<PartitionID>>& allHostParts,
+        std::unordered_map<network::InetAddress, std::vector<PartitionID>>& leaderHostParts,
+        std::unordered_map<PartitionID, std::vector<network::InetAddress>>& peersMap,
+        std::unordered_set<network::InetAddress>& activeHosts,
+        network::InetAddress host,
         size_t minLoad,
         LeaderBalancePlan& plan,
         GraphSpaceID spaceId) {
@@ -597,10 +604,7 @@ int32_t Balancer::acquireLeaders(
                     hostLeaders.emplace_back(partId);
                     plan.emplace_back(spaceId, partId, peer, host);
                     LOG(INFO) << "plan trans leader: " << spaceId << " " << partId << " from "
-                              << network::NetworkUtils::intToIPv4(peer.first) << ":"
-                              << peer.second << " to "
-                              << network::NetworkUtils::intToIPv4(host.first)
-                              << ":" << host.second;
+                              << peer << " to " << host;
                     ++taskCount;
                     break;
                 }
@@ -615,10 +619,10 @@ int32_t Balancer::acquireLeaders(
 }
 
 int32_t Balancer::giveupLeaders(
-        std::unordered_map<HostAddr, std::vector<PartitionID>>& leaderHostParts,
-        std::unordered_map<PartitionID, std::vector<HostAddr>>& peersMap,
-        std::unordered_set<HostAddr>& activeHosts,
-        HostAddr host,
+        std::unordered_map<network::InetAddress, std::vector<PartitionID>>& leaderHostParts,
+        std::unordered_map<PartitionID, std::vector<network::InetAddress>>& peersMap,
+        std::unordered_set<network::InetAddress>& activeHosts,
+        network::InetAddress host,
         size_t maxLoad,
         LeaderBalancePlan& plan,
         GraphSpaceID spaceId) {
@@ -640,11 +644,8 @@ int32_t Balancer::giveupLeaders(
                 it = hostLeaders.erase(it);
                 peerLeaders.emplace_back(partId);
                 plan.emplace_back(spaceId, partId, host, peer);
-                LOG(INFO) << "plan trans leader: " << spaceId << " " << partId << " host "
-                    << network::NetworkUtils::intToIPv4(host.first) << ":"
-                    << host.second << " peer "
-                    << network::NetworkUtils::intToIPv4(peer.first)
-                    << ":" << peer.second;
+                LOG(INFO) << "plan trans leader: " << spaceId << " " << partId << " host " << host
+                          << " peer " << peer;
                 ++taskCount;
                 transfered = true;
                 break;

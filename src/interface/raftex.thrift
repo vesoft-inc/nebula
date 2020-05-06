@@ -46,11 +46,12 @@ typedef i64 (cpp.type = "nebula::LogID")  LogID
 struct AskForVoteRequest {
     1: common.GraphSpaceID space;              // The graph space id
     2: common.PartitionID  part;               // The data partition
-    3: common.IPv4         candidate_ip;       // My IP
-    4: common.Port         candidate_port;     // My port
-    5: TermID              term;               // Proposed term
-    6: LogID               last_log_id;        // The last received log id
-    7: TermID              last_log_term;      // The term receiving the last log
+    3: string              candidate_hostname; // My hostname
+    4: common.IPv4         candidate_ip;       // My IP
+    5: common.Port         candidate_port;     // My port
+    6: TermID              term;               // Proposed term
+    7: LogID               last_log_id;        // The last received log id
+    8: TermID              last_log_term;      // The term receiving the last log
 }
 
 
@@ -84,10 +85,11 @@ struct AppendLogRequest {
     3: TermID              current_term;       // Current term
     4: LogID               last_log_id;        // Last received log id
     5: LogID               committed_log_id;   // Last committed Log ID
-    6: common.IPv4         leader_ip;          // The leader's IP
-    7: common.Port         leader_port;        // The leader's Port
-    8: TermID              last_log_term_sent;
-    9: LogID               last_log_id_sent;
+    6: string              leader_hostname;    // The leader's hostname
+    7: common.IPv4         leader_ip;          // The leader's IP
+    8: common.Port         leader_port;        // The leader's Port
+    9: TermID              last_log_term_sent;
+    10: LogID               last_log_id_sent;
 
     //
     // Fields 10 to 11 are used for LogAppend.
@@ -99,10 +101,10 @@ struct AppendLogRequest {
     // All logs in the log_str_list must belong to the same term,
     // which specified by log_term
     //
-    10: TermID log_term;
-    11: list<LogEntry> log_str_list;
+    11: TermID log_term;
+    12: list<LogEntry> log_str_list;
 
-    12: bool sending_snapshot;
+    13: bool sending_snapshot;
 }
 
 

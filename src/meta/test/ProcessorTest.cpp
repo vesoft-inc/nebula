@@ -53,7 +53,7 @@ TEST(ProcessorTest, ListHostsTest) {
     fs::TempDir rootPath("/tmp/ListHostsTest.XXXXXX");
     FLAGS_expired_threshold_sec = 1;
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    std::vector<HostAddr> hosts;
+    std::vector<network::InetAddress> hosts;
     for (auto i = 0; i < 10; i++) {
         hosts.emplace_back(i, i);
     }
@@ -92,7 +92,8 @@ TEST(ProcessorTest, ListHostsTest) {
 TEST(ProcessorTest, ListPartsTest) {
     fs::TempDir rootPath("/tmp/ListPartsTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}};
+    std::vector<network::InetAddress> hosts = {
+        network::InetAddress{0, 0}, network::InetAddress{1, 1}, network::InetAddress{2, 2}};
     TestUtils::createSomeHosts(kv.get(), hosts);
     // 9 partition in space 1, 3 replica, 3 hosts
     TestUtils::assembleSpace(kv.get(), 1, 9, 3, 3);
@@ -126,15 +127,18 @@ TEST(ProcessorTest, ListPartsTest) {
 
         LeaderParts leaderParts;
         leaderParts[1] = {1, 2, 3, 4, 5};
-        auto ret = ActiveHostsMan::updateHostInfo(kv.get(), {0, 0}, info, &leaderParts);
+        auto ret = ActiveHostsMan::updateHostInfo(
+            kv.get(), network::InetAddress{0, 0}, "", info, &leaderParts);
         CHECK_EQ(ret, kvstore::ResultCode::SUCCEEDED);
 
         leaderParts[1] = {6, 7, 8};
-        ret = ActiveHostsMan::updateHostInfo(kv.get(), {1, 1}, info, &leaderParts);
+        ret = ActiveHostsMan::updateHostInfo(
+            kv.get(), network::InetAddress{1, 1}, "", info, &leaderParts);
         CHECK_EQ(ret, kvstore::ResultCode::SUCCEEDED);
 
         leaderParts[1] = {9};
-        ret = ActiveHostsMan::updateHostInfo(kv.get(), {2, 2}, info, &leaderParts);
+        ret = ActiveHostsMan::updateHostInfo(
+            kv.get(), network::InetAddress{2, 2}, "", info, &leaderParts);
         CHECK_EQ(ret, kvstore::ResultCode::SUCCEEDED);
     }
 
@@ -172,7 +176,7 @@ TEST(ProcessorTest, ListPartsTest) {
             for (auto& peer : part.peers) {
                 auto it = std::find_if(hosts.begin(), hosts.end(),
                         [&] (const auto& host) {
-                            return host.first == peer.ip && host.second == peer.port;
+                            return host.toLongHBO() == peer.ip && host.getPort() == peer.port;
                     });
                 EXPECT_TRUE(it != hosts.end());
             }
@@ -237,10 +241,10 @@ TEST(ProcessorTest, SpaceTest) {
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-        std::unordered_map<HostAddr, std::set<PartitionID>> hostsParts;
+        std::unordered_map<network::InetAddress, std::set<PartitionID>> hostsParts;
         for (auto& p : resp.get_parts()) {
             for (auto& h : p.second) {
-                hostsParts[std::make_pair(h.get_ip(), h.get_port())].insert(p.first);
+                hostsParts[network::InetAddress(h.get_ip(), h.get_port())].insert(p.first);
                 ASSERT_EQ(h.get_ip(), h.get_port());
             }
         }

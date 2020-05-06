@@ -24,8 +24,8 @@ namespace storage {
 
 class StorageServer final {
 public:
-    StorageServer(HostAddr localHost,
-                  std::vector<HostAddr> metaAddrs,
+    StorageServer(network::InetAddress localHost,
+                  std::vector<network::InetAddress> metaAddrs,
                   std::vector<std::string> dataPaths);
 
     ~StorageServer();
@@ -55,8 +55,8 @@ private:
     std::unique_ptr<meta::IndexManager> indexMan_;
 
     std::atomic_bool stopped_{false};
-    HostAddr localHost_;
-    std::vector<HostAddr> metaAddrs_;
+    network::InetAddress localHost_;
+    std::vector<network::InetAddress> metaAddrs_;
     std::vector<std::string> dataPaths_;
 };
 

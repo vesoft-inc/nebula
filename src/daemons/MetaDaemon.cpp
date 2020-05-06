@@ -59,8 +59,8 @@ const std::string kClusterIdKey = "__meta_cluster_id_key__";  // NOLINT
 
 nebula::ClusterID gClusterId = 0;
 
-std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> peers,
-                                                 nebula::HostAddr localhost) {
+std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::network::InetAddress> peers,
+                                                 nebula::network::InetAddress localhost) {
     auto partMan
         = std::make_unique<nebula::kvstore::MemPartManager>();
     // The meta server has only one space (0), one part (0)
@@ -90,7 +90,7 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
     }
 
     LOG(INFO) << "Waiting for the leader elected...";
-    nebula::HostAddr leader;
+    nebula::network::InetAddress leader;
     while (true) {
         auto ret = kvstore->partLeader(nebula::meta::kDefaultSpaceId,
                                        nebula::meta::kDefaultPartId);
@@ -99,7 +99,7 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
             return nullptr;
         }
         leader = nebula::value(ret);
-        if (leader != nebula::HostAddr(0, 0)) {
+        if (!leader.isZero()) {
             break;
         }
         LOG(INFO) << "Leader has not been elected, sleep 1s";
@@ -198,7 +198,7 @@ int main(int argc, char *argv[]) {
         LOG(ERROR) << "Get local ip failed! status:" << result.status();
         return EXIT_FAILURE;
     }
-    auto hostAddrRet = nebula::network::NetworkUtils::toHostAddr(result.value(), FLAGS_port);
+    auto hostAddrRet = nebula::network::NetworkUtils::toInetAddress(result.value(), FLAGS_port);
     if (!hostAddrRet.ok()) {
         LOG(ERROR) << "Bad local host addr, status:" << hostAddrRet.status();
         return EXIT_FAILURE;
@@ -249,7 +249,7 @@ int main(int argc, char *argv[]) {
         if (nebula::value(ret) == localhost) {
             LOG(INFO) << "Check and init root user";
             if (!nebula::meta::RootUserMan::isUserExists(kvstore.get())) {
-                if(!nebula::meta::RootUserMan::initRootUser(kvstore.get())) {
+                if (!nebula::meta::RootUserMan::initRootUser(kvstore.get())) {
                     LOG(ERROR) << "Init root user failed";
                     return EXIT_FAILURE;
                 }

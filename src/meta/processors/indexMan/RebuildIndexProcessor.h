@@ -16,7 +16,7 @@ class RebuildIndexProcessor : public BaseProcessor<cpp2::ExecResp> {
 protected:
     void processInternal(const cpp2::RebuildIndexReq& req);
 
-    virtual folly::Future<Status> caller(const HostAddr& address,
+    virtual folly::Future<Status> caller(const network::InetAddress& address,
                                          GraphSpaceID spaceId,
                                          IndexID indexID,
                                          std::vector<PartitionID> parts,

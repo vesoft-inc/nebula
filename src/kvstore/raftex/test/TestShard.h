@@ -24,27 +24,27 @@ enum class CommandType : int8_t {
     ADD_PEER = 0x03,
     REMOVE_PEER = 0x04,
 };
-std::string encodeLearner(const HostAddr& addr);
+std::string encodeLearner(const network::InetAddress& addr);
 
-HostAddr decodeLearner(const folly::StringPiece& log);
+network::InetAddress decodeLearner(const folly::StringPiece& log);
 
 folly::Optional<std::string> compareAndSet(const std::string& log);
 
-std::string encodeTransferLeader(const HostAddr& addr);
+std::string encodeTransferLeader(const network::InetAddress& addr);
 
-HostAddr decodeTransferLeader(const folly::StringPiece& log);
+network::InetAddress decodeTransferLeader(const folly::StringPiece& log);
 
 std::string encodeSnapshotRow(LogID logId, const std::string& row);
 
 std::pair<LogID, std::string> decodeSnapshotRow(const std::string& rawData);
 
-std::string encodeAddPeer(const HostAddr& addr);
+std::string encodeAddPeer(const network::InetAddress& addr);
 
-HostAddr decodeAddPeer(const folly::StringPiece& log);
+network::InetAddress decodeAddPeer(const folly::StringPiece& log);
 
-std::string encodeRemovePeer(const HostAddr& addr);
+std::string encodeRemovePeer(const network::InetAddress& addr);
 
-HostAddr decodeRemovePeer(const folly::StringPiece& log);
+network::InetAddress decodeRemovePeer(const folly::StringPiece& log);
 
 class TestShard : public RaftPart {
     friend class SnapshotManagerImpl;
@@ -53,7 +53,7 @@ public:
         size_t idx,
         std::shared_ptr<RaftexService> svc,
         PartitionID partId,
-        HostAddr addr,
+        network::InetAddress addr,
         const folly::StringPiece walRoot,
         std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
         std::shared_ptr<thread::GenericThreadPool> workers,
@@ -78,7 +78,7 @@ public:
 
     void onLostLeadership(TermID term) override;
     void onElected(TermID term) override;
-    void onDiscoverNewLeader(HostAddr) override {}
+    void onDiscoverNewLeader(network::InetAddress) override {}
 
     bool commitLogs(std::unique_ptr<LogIterator> iter) override;
 

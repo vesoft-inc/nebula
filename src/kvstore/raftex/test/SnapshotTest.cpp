@@ -33,7 +33,7 @@ TEST(SnapshotTest, LearnerCatchUpDataTest) {
     FLAGS_raft_rpc_timeout_ms = 2000;
     std::shared_ptr<thread::GenericThreadPool> workers;
     std::vector<std::string> wals;
-    std::vector<HostAddr> allHosts;
+    std::vector<network::InetAddress> allHosts;
     std::vector<std::shared_ptr<RaftexService>> services;
     std::vector<std::shared_ptr<test::TestShard>> copies;
 

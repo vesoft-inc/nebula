@@ -19,7 +19,8 @@
 namespace nebula {
 namespace meta {
 
-using LeaderBalancePlan = std::vector<std::tuple<GraphSpaceID, PartitionID, HostAddr, HostAddr>>;
+using LeaderBalancePlan =
+    std::vector<std::tuple<GraphSpaceID, PartitionID, network::InetAddress, network::InetAddress>>;
 
 /**
 There are two interfaces public:
@@ -69,7 +70,8 @@ public:
     /*
      * Return Error if reject the balance request, otherwise return balance id.
      * */
-    ErrorOr<cpp2::ErrorCode, BalanceID> balance(std::unordered_set<HostAddr> hostDel = {});
+    ErrorOr<cpp2::ErrorCode, BalanceID> balance(
+        std::unordered_set<network::InetAddress> hostDel = {});
 
     /**
      * Show balance plan id status.
@@ -131,64 +133,70 @@ private:
     /**
      * Build balance plan and save it in kvstore.
      * */
-    cpp2::ErrorCode buildBalancePlan(std::unordered_set<HostAddr> hostDel);
+    cpp2::ErrorCode buildBalancePlan(std::unordered_set<network::InetAddress> hostDel);
 
-    ErrorOr<cpp2::ErrorCode, std::vector<BalanceTask>>
-    genTasks(GraphSpaceID spaceId, int32_t spaceReplica, std::unordered_set<HostAddr> hostDel);
+    ErrorOr<cpp2::ErrorCode, std::vector<BalanceTask>> genTasks(
+        GraphSpaceID spaceId,
+        int32_t spaceReplica,
+        std::unordered_set<network::InetAddress> hostDel);
 
     void getHostParts(GraphSpaceID spaceId,
-                      std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
+                      std::unordered_map<network::InetAddress, std::vector<PartitionID>>& hostParts,
                       int32_t& totalParts);
 
-    void calDiff(const std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
-                 const std::vector<HostAddr>& activeHosts,
-                 std::vector<HostAddr>& newlyAdded,
-                 std::unordered_set<HostAddr>& lost);
+    void calDiff(
+        const std::unordered_map<network::InetAddress, std::vector<PartitionID>>& hostParts,
+        const std::vector<network::InetAddress>& activeHosts,
+        std::vector<network::InetAddress>& newlyAdded,
+        std::unordered_set<network::InetAddress>& lost);
 
-    Status checkReplica(const std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
-                        const std::vector<HostAddr>& activeHosts,
-                        int32_t replica,
-                        PartitionID partId);
+    Status checkReplica(
+        const std::unordered_map<network::InetAddress, std::vector<PartitionID>>& hostParts,
+        const std::vector<network::InetAddress>& activeHosts,
+        int32_t replica,
+        PartitionID partId);
 
-    StatusOr<HostAddr> hostWithMinimalParts(
-                        const std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
-                        PartitionID partId);
+    StatusOr<network::InetAddress> hostWithMinimalParts(
+        const std::unordered_map<network::InetAddress, std::vector<PartitionID>>& hostParts,
+        PartitionID partId);
 
-    void balanceParts(BalanceID balanceId,
-                      GraphSpaceID spaceId,
-                      std::unordered_map<HostAddr, std::vector<PartitionID>>& newHostParts,
-                      int32_t totalParts,
-                      std::vector<BalanceTask>& tasks);
+    void balanceParts(
+        BalanceID balanceId,
+        GraphSpaceID spaceId,
+        std::unordered_map<network::InetAddress, std::vector<PartitionID>>& newHostParts,
+        int32_t totalParts,
+        std::vector<BalanceTask>& tasks);
 
-
-    std::vector<std::pair<HostAddr, int32_t>>
-    sortedHostsByParts(const std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts);
+    std::vector<std::pair<network::InetAddress, int32_t>> sortedHostsByParts(
+        const std::unordered_map<network::InetAddress, std::vector<PartitionID>>& hostParts);
 
     bool getAllSpaces(std::vector<std::pair<GraphSpaceID, int32_t>>& spaces,
                       kvstore::ResultCode& retCode);
 
-    std::unordered_map<HostAddr, std::vector<PartitionID>>
+    std::unordered_map<network::InetAddress, std::vector<PartitionID>>
     buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap, GraphSpaceID spaceId,
                            LeaderBalancePlan& plan, bool useDeviation = true);
 
     void simplifyLeaderBalnacePlan(GraphSpaceID spaceId, LeaderBalancePlan& plan);
 
-    int32_t acquireLeaders(std::unordered_map<HostAddr, std::vector<PartitionID>>& allHostParts,
-                           std::unordered_map<HostAddr, std::vector<PartitionID>>& leaderHostParts,
-                           std::unordered_map<PartitionID, std::vector<HostAddr>>& peersMap,
-                           std::unordered_set<HostAddr>& activeHosts,
-                           HostAddr to,
-                           size_t maxLoad,
-                           LeaderBalancePlan& plan,
-                           GraphSpaceID spaceId);
+    int32_t acquireLeaders(
+        std::unordered_map<network::InetAddress, std::vector<PartitionID>>& allHostParts,
+        std::unordered_map<network::InetAddress, std::vector<PartitionID>>& leaderHostParts,
+        std::unordered_map<PartitionID, std::vector<network::InetAddress>>& peersMap,
+        std::unordered_set<network::InetAddress>& activeHosts,
+        network::InetAddress to,
+        size_t maxLoad,
+        LeaderBalancePlan& plan,
+        GraphSpaceID spaceId);
 
-    int32_t giveupLeaders(std::unordered_map<HostAddr, std::vector<PartitionID>>& leaderHostParts,
-                          std::unordered_map<PartitionID, std::vector<HostAddr>>& peersMap,
-                          std::unordered_set<HostAddr>& activeHosts,
-                          HostAddr from,
-                          size_t maxLoad,
-                          LeaderBalancePlan& plan,
-                          GraphSpaceID spaceId);
+    int32_t giveupLeaders(
+        std::unordered_map<network::InetAddress, std::vector<PartitionID>>& leaderHostParts,
+        std::unordered_map<PartitionID, std::vector<network::InetAddress>>& peersMap,
+        std::unordered_set<network::InetAddress>& activeHosts,
+        network::InetAddress from,
+        size_t maxLoad,
+        LeaderBalancePlan& plan,
+        GraphSpaceID spaceId);
 
 private:
     std::atomic_bool running_{false};

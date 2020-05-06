@@ -50,6 +50,7 @@ Status ListHostsProcessor::allHostsWithStatus() {
     while (iter->valid()) {
         cpp2::HostItem item;
         auto host = MetaServiceUtils::parseHostKey(iter->key());
+        VLOG(1) << "HostAddr: " << host.ip;
         item.set_hostAddr(std::move(host));
         HostInfo info = HostInfo::decode(iter->val());
         if (now - info.lastHBTimeInMilliSec_ < FLAGS_removed_threshold_sec * 1000) {
@@ -78,7 +79,7 @@ Status ListHostsProcessor::allHostsWithStatus() {
     while (iter->valid()) {
         auto host = MetaServiceUtils::parseLeaderKey(iter->key());
         if (std::find(activeHosts.begin(), activeHosts.end(),
-                      HostAddr(host.ip, host.port)) != activeHosts.end()) {
+                      network::InetAddress(host.ip, host.port)) != activeHosts.end()) {
             auto hostIt = std::find_if(hostItems_.begin(), hostItems_.end(), [&](const auto& item) {
                 return item.get_hostAddr() == host;
             });
@@ -90,13 +91,13 @@ Status ListHostsProcessor::allHostsWithStatus() {
         iter->next();
     }
 
-    std::unordered_map<HostAddr,
+    std::unordered_map<network::InetAddress,
                        std::unordered_map<std::string, std::vector<PartitionID>>> allParts;
     for (const auto& spaceId : spaceIds_) {
         // get space name by space id
         const auto& spaceName = spaceIdNameMap_[spaceId];
 
-        std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
+        std::unordered_map<network::InetAddress, std::vector<PartitionID>> hostParts;
         const auto& partPrefix = MetaServiceUtils::partPrefix(spaceId);
         kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
         if (kvRet != kvstore::ResultCode::SUCCEEDED) {
@@ -108,7 +109,7 @@ Status ListHostsProcessor::allHostsWithStatus() {
             PartitionID partId = MetaServiceUtils::parsePartKeyPartId(iter->key());
             auto partHosts = MetaServiceUtils::parsePartVal(iter->val());
             for (auto& host : partHosts) {
-                hostParts[HostAddr(host.ip, host.port)].emplace_back(partId);
+                hostParts[network::InetAddress(host.ip, host.port)].emplace_back(partId);
             }
             iter->next();
         }

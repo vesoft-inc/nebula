@@ -25,7 +25,7 @@ TEST(LogAppend, SimpleAppendWithOneCopy) {
     fs::TempDir walRoot("/tmp/simple_append_with_one_copy.XXXXXX");
     std::shared_ptr<thread::GenericThreadPool> workers;
     std::vector<std::string> wals;
-    std::vector<HostAddr> allHosts;
+    std::vector<network::InetAddress> allHosts;
     std::vector<std::shared_ptr<RaftexService>> services;
     std::vector<std::shared_ptr<test::TestShard>> copies;
 
@@ -47,7 +47,7 @@ TEST(LogAppend, SimpleAppendWithThreeCopies) {
     fs::TempDir walRoot("/tmp/simple_append_with_three_copies.XXXXXX");
     std::shared_ptr<thread::GenericThreadPool> workers;
     std::vector<std::string> wals;
-    std::vector<HostAddr> allHosts;
+    std::vector<network::InetAddress> allHosts;
     std::vector<std::shared_ptr<RaftexService>> services;
     std::vector<std::shared_ptr<test::TestShard>> copies;
 
@@ -69,7 +69,7 @@ TEST(LogAppend, MultiThreadAppend) {
     fs::TempDir walRoot("/tmp/multi_thread_append.XXXXXX");
     std::shared_ptr<thread::GenericThreadPool> workers;
     std::vector<std::string> wals;
-    std::vector<HostAddr> allHosts;
+    std::vector<network::InetAddress> allHosts;
     std::vector<std::shared_ptr<RaftexService>> services;
     std::vector<std::shared_ptr<test::TestShard>> copies;
 

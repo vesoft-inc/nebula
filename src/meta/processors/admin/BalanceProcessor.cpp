@@ -68,11 +68,11 @@ void BalanceProcessor::process(const cpp2::BalanceReq& req) {
         onFinished();
         return;
     }
-    std::unordered_set<HostAddr> hostDel;
+    std::unordered_set<network::InetAddress> hostDel;
     if (req.get_host_del() != nullptr) {
         hostDel.reserve(req.get_host_del()->size());
         for (const auto& host : *req.get_host_del()) {
-            hostDel.emplace(HostAddr(host.get_ip(), host.get_port()));
+            hostDel.emplace(host.get_ip());
         }
     }
     auto hosts = ActiveHostsMan::getActiveHosts(kvstore_);

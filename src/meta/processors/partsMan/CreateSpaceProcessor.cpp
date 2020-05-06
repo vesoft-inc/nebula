@@ -106,7 +106,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
 
 std::vector<nebula::cpp2::HostAddr>
 CreateSpaceProcessor::pickHosts(PartitionID partId,
-                                const std::vector<HostAddr>& hosts,
+                                const std::vector<network::InetAddress>& hosts,
                                 int32_t replicaFactor) {
     if (hosts.empty()) {
         return std::vector<nebula::cpp2::HostAddr>();

@@ -508,6 +508,7 @@ bool FileBasedWal::appendLogInternal(LogID id,
         return false;
     }
 
+    LOG(INFO) << "appendLogInternal logID: " << id  << ", term: " << term;
     if (!preProcessor_(id, term, cluster, msg)) {
         LOG(ERROR) << idStr_ << "Pre process failed for log " << id;
         return false;

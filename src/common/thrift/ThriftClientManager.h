@@ -16,7 +16,7 @@ namespace thrift {
 template<class ClientType>
 class ThriftClientManager final {
 public:
-    std::shared_ptr<ClientType> client(const HostAddr& host,
+    std::shared_ptr<ClientType> client(const network::InetAddress& host,
                                        folly::EventBase* evb = nullptr,
                                        bool compatibility = false,
                                        uint32_t timeout = 0);
@@ -31,7 +31,7 @@ public:
 
 private:
     using ClientMap = std::unordered_map<
-        std::pair<HostAddr, folly::EventBase*>,     // <ip, port> pair
+        std::pair<network::InetAddress, folly::EventBase*>,     // <ip, port> pair
         std::shared_ptr<ClientType>                 // Async thrift client
     >;
 

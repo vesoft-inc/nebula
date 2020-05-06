@@ -64,7 +64,7 @@ public:
     // addr     -- The ip/port of the stats collector. StatsManager will periodically
     //             report the stats to the collector
     // interval -- The number of seconds between each report
-    static void setReportInfo(HostAddr addr, int32_t interval);
+    static void setReportInfo(network::InetAddress addr, int32_t interval);
 
     // Both register methods return the index to the internal data structure.
     // This index will be used by addValue() methods.
@@ -103,7 +103,7 @@ private:
 
 private:
     std::string domain_;
-    HostAddr collectorAddr_{0, 0};
+    network::InetAddress collectorAddr_{};
     int32_t interval_{0};
 
     // <counter_name> => index

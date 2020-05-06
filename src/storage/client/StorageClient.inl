@@ -35,13 +35,13 @@ public:
         }
     }
 
-    std::pair<const Request*, bool> insertRequest(HostAddr host, Request&& req) {
+    std::pair<const Request*, bool> insertRequest(network::InetAddress host, Request&& req) {
         std::lock_guard<std::mutex> g(lock_);
         auto res = ongoingRequests_.emplace(host, std::move(req));
         return std::make_pair(&res.first->second, res.second);
     }
 
-    const Request& findRequest(HostAddr host) {
+    const Request& findRequest(network::InetAddress host) {
         std::lock_guard<std::mutex> g(lock_);
         auto it = ongoingRequests_.find(host);
         DCHECK(it != ongoingRequests_.end());
@@ -49,7 +49,7 @@ public:
     }
 
     // Return true if processed all responses
-    bool removeRequest(HostAddr host) {
+    bool removeRequest(network::InetAddress host) {
         std::lock_guard<std::mutex> g(lock_);
         ongoingRequests_.erase(host);
         if (finishSending_ && !fulfilled_ && ongoingRequests_.empty()) {
@@ -67,7 +67,7 @@ public:
 
 private:
     std::mutex lock_;
-    std::unordered_map<HostAddr, Request> ongoingRequests_;
+    std::unordered_map<network::InetAddress, Request> ongoingRequests_;
     bool finishSending_{false};
     bool fulfilled_{false};
 };
@@ -78,7 +78,7 @@ private:
 template<class Request, class RemoteFunc, class GetPartIDFunc, class Response>
 folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
         folly::EventBase* evb,
-        std::unordered_map<HostAddr, Request> requests,
+        std::unordered_map<network::InetAddress, Request> requests,
         RemoteFunc&& remoteFunc,
         GetPartIDFunc getPartIDFunc) {
     auto context = std::make_shared<ResponseContext<Request, RemoteFunc, Response>>(
@@ -145,7 +145,7 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
                                     && leader->get_port() != 0) {
                                 updateLeader(spaceId,
                                              code.get_part_id(),
-                                             HostAddr(leader->get_ip(), leader->get_port()));
+                                             network::InetAddress(leader));
                             } else {
                                 invalidLeader(spaceId, code.get_part_id());
                             }
@@ -198,7 +198,7 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
 template<class Request, class RemoteFunc, class Response>
 folly::Future<StatusOr<Response>> StorageClient::getResponse(
         folly::EventBase* evb,
-        std::pair<HostAddr, Request> request,
+        std::pair<network::InetAddress, Request> request,
         RemoteFunc remoteFunc) {
     time::Duration duration;
     if (evb == nullptr) {
@@ -235,7 +235,7 @@ folly::Future<StatusOr<Response>> StorageClient::getResponse(
                     auto* leader = code.get_leader();
                     if (leader != nullptr && leader->get_ip() != 0 && leader->get_port() != 0) {
                         updateLeader(spaceId, code.get_part_id(),
-                                     HostAddr(leader->get_ip(), leader->get_port()));
+                                     network::InetAddress(leader));
                     } else {
                         invalidLeader(spaceId, code.get_part_id());
                     }

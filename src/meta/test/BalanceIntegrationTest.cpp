@@ -27,8 +27,6 @@ TEST(BalanceIntegrationTest, BalanceTest) {
     FLAGS_raft_heartbeat_interval_secs = 1;
     FLAGS_expired_threshold_sec = 3;
     fs::TempDir rootPath("/tmp/balance_integration_test.XXXXXX");
-    IPv4 localIp;
-    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     const nebula::ClusterID kClusterId = 10;
 
     uint32_t localMetaPort = network::NetworkUtils::getAvailablePort();
@@ -42,7 +40,8 @@ TEST(BalanceIntegrationTest, BalanceTest) {
     Balancer balancer(metaServerContext->kvStore_.get(), std::move(adminClient));
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(10);
-    std::vector<HostAddr> metaAddr = {HostAddr(localIp, localMetaPort)};
+    std::string localIp = "127.0.0.1";
+    std::vector<network::InetAddress> metaAddr = {network::InetAddress(localIp, localMetaPort)};
 
     LOG(INFO) << "Create meta client...";
     auto mClient = std::make_unique<meta::MetaClient>(threadPool,
@@ -53,13 +52,13 @@ TEST(BalanceIntegrationTest, BalanceTest) {
     int partition = 1;
     int replica = 3;
     LOG(INFO) << "Start " << replica << " storage services, partition number " << partition;
-    std::vector<HostAddr> peers;
+    std::vector<network::InetAddress> peers;
     std::vector<uint32_t> storagePorts;
     std::vector<std::shared_ptr<meta::MetaClient>> metaClients;
     std::vector<std::unique_ptr<test::ServerContext>> serverContexts;
     for (int i = 0; i < replica; i++) {
         uint32_t storagePort = network::NetworkUtils::getAvailablePort();
-        HostAddr storageAddr(localIp, storagePort);
+        network::InetAddress storageAddr(localIp, storagePort);
         storagePorts.emplace_back(storagePort);
         peers.emplace_back(storageAddr);
 
@@ -78,10 +77,10 @@ TEST(BalanceIntegrationTest, BalanceTest) {
 
     for (int i = 0; i < replica; i++) {
         std::string dataPath = folly::stringPrintf("%s/%d/data", rootPath.path(), i);
+        auto address = network::InetAddress(localIp, storagePorts[i]);
         auto sc = storage::TestUtils::mockStorageServer(metaClients[i].get(),
                                                         dataPath.c_str(),
-                                                        localIp,
-                                                        storagePorts[i],
+                                                        address,
                                                         true);
         serverContexts.emplace_back(std::move(sc));
     }
@@ -173,7 +172,7 @@ TEST(BalanceIntegrationTest, BalanceTest) {
     std::unique_ptr<test::ServerContext> newServer;
     std::unique_ptr<meta::MetaClient> newMetaClient;
     uint32_t storagePort = network::NetworkUtils::getAvailablePort();
-    HostAddr storageAddr(localIp, storagePort);
+    network::InetAddress storageAddr(localIp, storagePort);
     {
         MetaClientOptions options;
         options.localHost_ = storageAddr;
@@ -186,8 +185,7 @@ TEST(BalanceIntegrationTest, BalanceTest) {
         std::string dataPath = folly::stringPrintf("%s/%d/data", rootPath.path(), replica + 1);
         newServer = storage::TestUtils::mockStorageServer(newMetaClient.get(),
                                                           dataPath.c_str(),
-                                                          localIp,
-                                                          storagePort,
+                                                          storageAddr,
                                                           true);
         LOG(INFO) << "Start a new storage server on " << storageAddr;
     }
@@ -257,8 +255,7 @@ TEST(BalanceIntegrationTest, LeaderBalanceTest) {
     FLAGS_heartbeat_interval_secs = 1;
     FLAGS_raft_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/balance_integration_test.XXXXXX");
-    IPv4 localIp;
-    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    std::string localIp = "127.0.0.1";
     const nebula::ClusterID kClusterId = 10;
 
     uint32_t localMetaPort = network::NetworkUtils::getAvailablePort();
@@ -272,7 +269,7 @@ TEST(BalanceIntegrationTest, LeaderBalanceTest) {
     Balancer balancer(metaServerContext->kvStore_.get(), std::move(adminClient));
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(10);
-    std::vector<HostAddr> metaAddr = {HostAddr(localIp, localMetaPort)};
+    std::vector<network::InetAddress> metaAddr = {network::InetAddress(localIp, localMetaPort)};
 
     LOG(INFO) << "Create meta client...";
     auto mClient = std::make_unique<meta::MetaClient>(threadPool,
@@ -282,14 +279,14 @@ TEST(BalanceIntegrationTest, LeaderBalanceTest) {
 
     int partition = 9;
     int replica = 3;
-    std::vector<HostAddr> peers;
+    std::vector<network::InetAddress> peers;
     std::vector<uint32_t> storagePorts;
     std::vector<std::shared_ptr<meta::MetaClient>> metaClients;
 
     std::vector<std::unique_ptr<test::ServerContext>> serverContexts;
     for (int i = 0; i < replica; i++) {
         uint32_t storagePort = network::NetworkUtils::getAvailablePort();
-        HostAddr storageAddr(localIp, storagePort);
+        network::InetAddress storageAddr(localIp, storagePort);
         storagePorts.emplace_back(storagePort);
         peers.emplace_back(storageAddr);
 
@@ -307,11 +304,9 @@ TEST(BalanceIntegrationTest, LeaderBalanceTest) {
 
     for (int i = 0; i < replica; i++) {
         std::string dataPath = folly::stringPrintf("%s/%d/data", rootPath.path(), i);
-        auto sc = storage::TestUtils::mockStorageServer(metaClients[i].get(),
-                                                        dataPath.c_str(),
-                                                        localIp,
-                                                        storagePorts[i],
-                                                        true);
+        auto addr = network::InetAddress(localIp, storagePorts[i]);
+        auto sc = storage::TestUtils::mockStorageServer(
+            metaClients[i].get(), dataPath.c_str(), addr, true);
         serverContexts.emplace_back(std::move(sc));
     }
 

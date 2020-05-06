@@ -25,9 +25,9 @@ DECLARE_int32(meta_client_retry_times);
 namespace nebula {
 namespace meta {
 
-using PartsAlloc = std::unordered_map<PartitionID, std::vector<HostAddr>>;
+using PartsAlloc = std::unordered_map<PartitionID, std::vector<network::InetAddress>>;
 using SpaceIdName = std::pair<GraphSpaceID, std::string>;
-using HostStatus = std::pair<HostAddr, std::string>;
+using HostStatus = std::pair<network::InetAddress, std::string>;
 
 // struct for in cache
 using TagSchemas = std::unordered_map<std::pair<TagID, SchemaVer>,
@@ -47,7 +47,7 @@ using Indexes = std::unordered_map<IndexID, std::shared_ptr<nebula::cpp2::IndexI
 struct SpaceInfoCache {
     std::string spaceName;
     PartsAlloc partsAlloc_;
-    std::unordered_map<HostAddr, std::vector<PartitionID>> partsOnHost_;
+    std::unordered_map<network::InetAddress, std::vector<PartitionID>> partsOnHost_;
     TagSchemas  tagSchemas_;
     EdgeSchemas edgeSchemas_;
     Indexes tagIndexes_;
@@ -79,7 +79,7 @@ using SpaceTagIdNameMap = std::unordered_map<std::pair<GraphSpaceID, TagID>, std
 // get all edgeType edgeName via spaceId
 using SpaceAllEdgeMap = std::unordered_map<GraphSpaceID, std::vector<std::string>>;
 // get leader host via spaceId and partId
-using LeaderMap = std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>;
+using LeaderMap = std::unordered_map<std::pair<GraphSpaceID, PartitionID>, network::InetAddress>;
 
 using IndexStatus = std::tuple<std::string, std::string, std::string>;
 
@@ -158,7 +158,7 @@ struct MetaClientOptions {
         , skipConfig_(opt.skipConfig_) {}
 
     // Current host address
-    HostAddr localHost_{0, 0};
+    network::InetAddress localHost_;
     // Current cluster Id, it is requried by storaged only.
     std::atomic<ClusterID> clusterId_{0};
     // If current client being used in storaged.
@@ -181,7 +181,7 @@ class MetaClient {
 
 public:
     MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
-               std::vector<HostAddr> addrs,
+               std::vector<network::InetAddress> addrs,
                const MetaClientOptions& options = MetaClientOptions());
 
     virtual ~MetaClient();
@@ -368,7 +368,7 @@ public:
 
     // Operations for admin
     folly::Future<StatusOr<int64_t>>
-    balance(std::vector<HostAddr> hostDel, bool isStop = false);
+    balance(std::vector<network::InetAddress> hostDel, bool isStop = false);
 
     folly::Future<StatusOr<std::vector<cpp2::BalanceTask>>>
     showBalance(int64_t balanceId);
@@ -419,15 +419,15 @@ public:
     // get all lastest version edge
     StatusOr<std::vector<std::string>> getAllEdgeFromCache(const GraphSpaceID& space);
 
-    PartsMap getPartsMapFromCache(const HostAddr& host);
+    PartsMap getPartsMapFromCache(const network::InetAddress& host);
 
     StatusOr<PartMeta> getPartMetaFromCache(GraphSpaceID spaceId, PartitionID partId);
 
-    Status checkPartExistInCache(const HostAddr& host,
+    Status checkPartExistInCache(const network::InetAddress& host,
                                  GraphSpaceID spaceId,
                                  PartitionID partId);
 
-    Status checkSpaceExistInCache(const HostAddr& host,
+    Status checkSpaceExistInCache(const network::InetAddress& host,
                                   GraphSpaceID spaceId);
 
     StatusOr<int32_t> partsNum(GraphSpaceID spaceId);
@@ -468,7 +468,7 @@ public:
 
     Status checkEdgeIndexed(GraphSpaceID space, EdgeType edgeType);
 
-    const std::vector<HostAddr>& getAddresses();
+    const std::vector<network::InetAddress>& getAddresses();
 
     folly::Future<StatusOr<std::string>> getTagDefaultValue(GraphSpaceID spaceId,
                                                             TagID tagId,
@@ -493,6 +493,7 @@ protected:
     bool loadData();
     bool loadCfg();
     void heartBeatThreadFunc();
+    void dnsQUeryThreadFunc();
 
     bool registerCfg();
     void updateGflagsValue(const ConfigItem& item);
@@ -515,19 +516,23 @@ protected:
 
     folly::Future<StatusOr<bool>> heartbeat();
 
-    std::unordered_map<HostAddr, std::vector<PartitionID>> reverse(const PartsAlloc& parts);
+    std::unordered_map<network::InetAddress, std::vector<PartitionID>> reverse(
+        const PartsAlloc& parts);
 
     void updateActive() {
         folly::RWSpinLock::WriteHolder holder(hostLock_);
+        folly::SharedMutexReadPriority::ReadHolder addrsHolder(addrsLock_);
         active_ = addrs_[folly::Random::rand64(addrs_.size())];
     }
 
-    void updateLeader(HostAddr leader = {0, 0}) {
-        if (leader != HostAddr(0, 0)) {
+    void updateLeader(network::InetAddress leader = {0, 0}) {
+        if (!leader.isZero()) {
             folly::RWSpinLock::WriteHolder holder(hostLock_);
+            folly::SharedMutexReadPriority::ReadHolder addrsHolder(addrsLock_);
             leader_ = leader;
         } else {
             folly::RWSpinLock::WriteHolder holder(hostLock_);
+            folly::SharedMutexReadPriority::ReadHolder addrsHolder(addrsLock_);
             leader_ = addrs_[folly::Random::rand64(addrs_.size())];
         }
     }
@@ -555,13 +560,15 @@ protected:
                      int32_t retry = 0,
                      int32_t retryLimit = FLAGS_meta_client_retry_times);
 
-    std::vector<HostAddr> to(const std::vector<nebula::cpp2::HostAddr>& hosts);
+    std::vector<network::InetAddress> to(
+        const std::vector<nebula::cpp2::HostAddr>& hosts,
+        const std::unordered_map<nebula::cpp2::HostAddr, std::string>& domains);
 
     std::vector<SpaceIdName> toSpaceIdName(const std::vector<cpp2::IdName>& tIdNames);
 
     ConfigItem toConfigItem(const cpp2::ConfigItem& item);
 
-    PartsMap doGetPartsMap(const HostAddr& host,
+    PartsMap doGetPartsMap(const network::InetAddress& host,
                            const LocalCache& localCache);
 
 private:
@@ -574,12 +581,15 @@ private:
     int64_t               metadLastUpdateTime_{0};
 
     LocalCache localCache_;
-    std::vector<HostAddr> addrs_;
+
+    std::vector<network::InetAddress> addrs_;
+    folly::SharedMutexReadPriority addrsLock_;
     // The lock used to protect active_ and leader_.
     folly::RWSpinLock hostLock_;
-    HostAddr active_;
-    HostAddr leader_;
-    HostAddr localHost_;
+
+    network::InetAddress active_;
+    network::InetAddress leader_;
+    network::InetAddress localHost_;
 
     std::unique_ptr<thread::GenericWorker> bgThread_;
     SpaceNameIdMap        spaceIndexByName_;

@@ -90,7 +90,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
     nebula::EdgeKeyRef                     *edge_key_ref;
     nebula::GroupClause                    *group_clause;
     nebula::HostList                       *host_list;
-    nebula::HostAddr                       *host_item;
+    nebula::network::InetAddress                       *host_item;
     std::vector<int32_t>                   *integer_list;
 }
 
@@ -1873,9 +1873,7 @@ host_list
 
 host_item
     : IPV4 COLON port {
-        $$ = new nebula::HostAddr();
-        $$->first = $1;
-        $$->second = $3;
+        $$ = new nebula::network::InetAddress($1, $3);
     }
 
 port : INTEGER { $$ = $1; }

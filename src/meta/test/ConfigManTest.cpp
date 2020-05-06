@@ -271,12 +271,11 @@ TEST(ConfigManTest, MetaConfigManTest) {
     TestUtils::createSomeHosts(sc->kvStore_.get());
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-    IPv4 localIp;
-    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    std::string localIp = "127.0.0.1";
 
     auto module = cpp2::ConfigModule::STORAGE;
     auto client = std::make_shared<MetaClient>(threadPool,
-        std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
+        std::vector<network::InetAddress>{network::InetAddress(localIp, sc->port_)});
     client->waitForMetadReady();
     client->gflagsModule_ = module;
 
@@ -467,14 +466,13 @@ TEST(ConfigManTest, MockConfigTest) {
 
     // mock one ClientBaseGflagsManager, and do some update value in console, check if it works
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-    IPv4 localIp;
-    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    std::string localIp = "127.0.0.1";
     auto module = cpp2::ConfigModule::STORAGE;
     auto type = cpp2::ConfigType::STRING;
     auto mode = cpp2::ConfigMode::MUTABLE;
 
     auto client = std::make_shared<MetaClient>(threadPool,
-        std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
+        std::vector<network::InetAddress>{network::InetAddress(localIp, sc->port_)});
     client->waitForMetadReady();
     client->gflagsModule_ = module;
     ClientBasedGflagsManager clientCfgMan(client.get());
@@ -488,7 +486,7 @@ TEST(ConfigManTest, MockConfigTest) {
     clientCfgMan.registerGflags(configItems);
 
     auto consoleClient = std::make_shared<MetaClient>(threadPool,
-        std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
+        std::vector<network::InetAddress>{network::InetAddress(localIp, sc->port_)});
     consoleClient->waitForMetadReady();
     ClientBasedGflagsManager console(consoleClient.get());
     // update in console
@@ -521,8 +519,7 @@ TEST(ConfigManTest, MockConfigTest) {
 TEST(ConfigManTest, RocksdbOptionsTest) {
     FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/RocksdbOptionsTest.XXXXXX");
-    IPv4 localIp;
-    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    std::string localIp = "127.0.0.1";
     const nebula::ClusterID kClusterId = 10;
 
     uint32_t localMetaPort = network::NetworkUtils::getAvailablePort();
@@ -536,13 +533,13 @@ TEST(ConfigManTest, RocksdbOptionsTest) {
     auto type = cpp2::ConfigType::NESTED;
     auto mode = meta::cpp2::ConfigMode::MUTABLE;
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(10);
-    std::vector<HostAddr> metaAddr = {HostAddr(localIp, localMetaPort)};
+    std::vector<network::InetAddress> metaAddr = {network::InetAddress(localIp, localMetaPort)};
 
     LOG(INFO) << "Create meta client...";
     uint32_t storagePort = network::NetworkUtils::getAvailablePort();
-    HostAddr storageAddr(localIp, storagePort);
+    network::InetAddress storageAddr(localIp, storagePort);
     meta::MetaClientOptions options;
-    options.localHost_ = HostAddr(localIp, storagePort);
+    options.localHost_ = network::InetAddress(localIp, storagePort);
     options.clusterId_ = kClusterId;
     options.inStoraged_ = true;
     options.skipConfig_ = false;
@@ -574,8 +571,7 @@ TEST(ConfigManTest, RocksdbOptionsTest) {
     std::string dataPath = folly::stringPrintf("%s/storage", rootPath.path());
     auto sc = storage::TestUtils::mockStorageServer(mClient.get(),
                                                     dataPath.c_str(),
-                                                    localIp,
-                                                    storagePort,
+                                                    storageAddr,
                                                     true);
 
     SpaceDesc spaceDesc("storage", 9, 1);

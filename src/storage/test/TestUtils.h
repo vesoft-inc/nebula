@@ -35,7 +35,7 @@ public:
     static std::unique_ptr<kvstore::KVStore>
     initKV(const char* rootPath,
            int32_t partitionNumber = 6,
-           HostAddr localhost = {0, 0},
+           network::InetAddress localhost = network::InetAddress{0, 0},
            meta::MetaClient* mClient = nullptr,
            bool useMetaServer = false,
            std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder = nullptr) {
@@ -408,12 +408,16 @@ public:
     }
 
     // If kvstore should init files in dataPath, input port can't be 0
-    static std::unique_ptr<test::ServerContext>
-    mockStorageServer(meta::MetaClient* mClient, const char* dataPath, uint32_t ip,
-                      uint32_t port = 0, bool useMetaServer = false, GraphSpaceID space = 1) {
+    static std::unique_ptr<test::ServerContext> mockStorageServer(meta::MetaClient* mClient,
+                                                                  const char* dataPath,
+                                                                  network::InetAddress& addr,
+                                                                  bool useMetaServer = false,
+                                                                  GraphSpaceID space = 1) {
         auto sc = std::make_unique<test::ServerContext>();
         // Always use the Meta Service in this case
-        sc->kvStore_ = TestUtils::initKV(dataPath, 6, {ip, port}, mClient, true);
+        sc->kvStore_ = TestUtils::initKV(dataPath, 6, addr, mClient, true);
+        auto port = addr.getPort();
+        auto ip = addr.toLongHBO();
 
         if (!useMetaServer) {
             sc->schemaMan_ = TestUtils::mockSchemaMan(space);
@@ -434,7 +438,7 @@ public:
         auto ptr = dynamic_cast<kvstore::MetaServerBasedPartManager*>(
             sc->kvStore_->partManager());
         if (ptr) {
-            ptr->setLocalHost(HostAddr(ip, sc->port_));
+            ptr->setLocalHost(network::InetAddress(ip, sc->port_));
         } else {
             VLOG(1) << "Not using a MetaServerBasedPartManager";
         }
@@ -456,7 +460,7 @@ public:
                 auto retLeader = nKV->partLeader(spaceId, partId);
                 if (ok(retLeader)) {
                     auto leader = value(std::move(retLeader));
-                    if (leader != HostAddr(0, 0)) {
+                    if (!leader.isZero()) {
                         readyNum++;
                     }
                 }
@@ -481,7 +485,7 @@ public:
                 auto retLeader = nKV->partLeader(spaceId, partId);
                 if (ok(retLeader)) {
                     auto leader = value(std::move(retLeader));
-                    if (leader != HostAddr(0, 0)) {
+                    if (!leader.isZero()) {
                         readyNum++;
                     }
                 }

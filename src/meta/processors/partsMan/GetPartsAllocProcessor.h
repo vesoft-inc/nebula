@@ -23,6 +23,10 @@ public:
 private:
     explicit GetPartsAllocProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::GetPartsAllocResp>(kvstore) {}
+    boost::optional<std::unordered_map<nebula::cpp2::HostAddr, std::string>> processDomains();
+
+    boost::optional<std::unordered_map<PartitionID, std::vector<nebula::cpp2::HostAddr>>>
+    processParts(GraphSpaceID spaceId);
 };
 
 }  // namespace meta

@@ -24,7 +24,7 @@ class Part : public raftex::RaftPart {
 public:
     Part(GraphSpaceID spaceId,
          PartitionID partId,
-         HostAddr localAddr,
+         network::InetAddress localAddr,
          const std::string& walPath,
          KVEngine* engine,
          std::shared_ptr<folly::IOThreadPoolExecutor> pool,
@@ -51,13 +51,13 @@ public:
 
     void asyncAtomicOp(raftex::AtomicOp op, KVCallback cb);
 
-    void asyncAddLearner(const HostAddr& learner, KVCallback cb);
+    void asyncAddLearner(const network::InetAddress& learner, KVCallback cb);
 
-    void asyncTransferLeader(const HostAddr& target, KVCallback cb);
+    void asyncTransferLeader(const network::InetAddress& target, KVCallback cb);
 
-    void asyncAddPeer(const HostAddr& peer, KVCallback cb);
+    void asyncAddPeer(const network::InetAddress& peer, KVCallback cb);
 
-    void asyncRemovePeer(const HostAddr& peer, KVCallback cb);
+    void asyncRemovePeer(const network::InetAddress& peer, KVCallback cb);
 
     void setBlocking(bool sign);
 
@@ -93,7 +93,7 @@ private:
 
     void onElected(TermID term) override;
 
-    void onDiscoverNewLeader(HostAddr nLeader) override;
+    void onDiscoverNewLeader(network::InetAddress nLeader) override;
 
     bool commitLogs(std::unique_ptr<LogIterator> iter) override;
 

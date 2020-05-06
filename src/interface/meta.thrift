@@ -355,7 +355,8 @@ struct GetPartsAllocResp {
     1: ErrorCode code,
     // Valid if ret equals E_LEADER_CHANGED.
     2: common.HostAddr  leader,
-    3: map<common.PartitionID, list<common.HostAddr>>(cpp.template = "std::unordered_map") parts,
+    3: map<common.HostAddr, string> (cpp.template = "std::unordered_map") domains,
+    4: map<common.PartitionID, list<common.HostAddr>>(cpp.template = "std::unordered_map") parts,
 }
 
 struct MultiPutReq {
@@ -420,8 +421,9 @@ struct HBResp {
 struct HBReq {
     1: bool in_storaged,
     2: common.HostAddr host,
-    3: common.ClusterID cluster_id,
-    4: optional map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") leader_partIds;
+    3: string          host_name,
+    4: common.ClusterID cluster_id,
+    5: optional map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") leader_partIds;
 }
 
 struct CreateTagIndexReq {

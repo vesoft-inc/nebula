@@ -56,8 +56,8 @@ public:
     BalanceTask(BalanceID balanceId,
                 GraphSpaceID spaceId,
                 PartitionID partId,
-                const HostAddr& src,
-                const HostAddr& dst,
+                const network::InetAddress& src,
+                const network::InetAddress& dst,
                 kvstore::KVStore* kv,
                 AdminClient* client)
         : balanceId_(balanceId)
@@ -83,14 +83,12 @@ public:
 
 private:
     std::string buildTaskId() {
-        return folly::stringPrintf("[%ld, %d:%d, %s:%d->%s:%d] ",
+        return folly::stringPrintf("[%ld, %d:%d, %s->%s] ",
                                    balanceId_,
                                    spaceId_,
                                    partId_,
-                                   network::NetworkUtils::intToIPv4(src_.first).c_str(),
-                                   src_.second,
-                                   network::NetworkUtils::intToIPv4(dst_.first).c_str(),
-                                   dst_.second);
+                                   src_.toString().c_str(),
+                                   dst_.toString().c_str());
     }
 
     bool saveInStore();
@@ -101,8 +99,9 @@ private:
 
     static std::string prefix(BalanceID balanceId);
 
-    static std::tuple<BalanceID, GraphSpaceID, PartitionID, HostAddr, HostAddr>
-    parseKey(const folly::StringPiece& rawKey);
+    static std::
+        tuple<BalanceID, GraphSpaceID, PartitionID, network::InetAddress, network::InetAddress>
+        parseKey(const folly::StringPiece& rawKey);
 
     static std::tuple<BalanceTask::Status, BalanceTask::Result, int64_t, int64_t>
     parseVal(const folly::StringPiece& rawVal);
@@ -111,8 +110,8 @@ private:
     BalanceID    balanceId_;
     GraphSpaceID spaceId_;
     PartitionID  partId_;
-    HostAddr     src_;
-    HostAddr     dst_;
+    network::InetAddress     src_;
+    network::InetAddress     dst_;
     std::string  taskIdStr_;
     kvstore::KVStore* kv_ = nullptr;
     AdminClient* client_ = nullptr;

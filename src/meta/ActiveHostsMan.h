@@ -48,14 +48,21 @@ class ActiveHostsMan final {
 public:
     ~ActiveHostsMan() = default;
 
+    static int updateHostIPaddress(kvstore::KVStore* kv,
+                                   const network::InetAddress& hostAddr,
+                                   const std::string& oldIPAddr,
+                                   kvstore::ResultCode& ret);
+
     static kvstore::ResultCode updateHostInfo(kvstore::KVStore* kv,
-                                              const HostAddr& hostAddr,
+                                              const network::InetAddress& hostAddr,
+                                              const std::string &hostName,
                                               const HostInfo& info,
                                               const LeaderParts* leaderParts = nullptr);
 
-    static std::vector<HostAddr> getActiveHosts(kvstore::KVStore* kv, int32_t expiredTTL = 0);
+    static std::vector<network::InetAddress> getActiveHosts(kvstore::KVStore* kv,
+                                                            int32_t expiredTTL = 0);
 
-    static bool isLived(kvstore::KVStore* kv, const HostAddr& host);
+    static bool isLived(kvstore::KVStore* kv, const network::InetAddress& host);
 
 protected:
     ActiveHostsMan() = default;

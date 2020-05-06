@@ -23,7 +23,7 @@ TEST(LeaderElection, ElectionWithThreeCopies) {
     fs::TempDir walRoot("/tmp/election_with_three_copies.XXXXXX");
     std::shared_ptr<thread::GenericThreadPool> workers;
     std::vector<std::string> wals;
-    std::vector<HostAddr> allHosts;
+    std::vector<network::InetAddress> allHosts;
     std::vector<std::shared_ptr<RaftexService>> services;
     std::vector<std::shared_ptr<test::TestShard>> copies;
 
@@ -44,7 +44,7 @@ TEST(LeaderElection, ElectionWithOneCopy) {
     fs::TempDir walRoot("/tmp/election_with_one_copy.XXXXXX");
     std::shared_ptr<thread::GenericThreadPool> workers;
     std::vector<std::string> wals;
-    std::vector<HostAddr> allHosts;
+    std::vector<network::InetAddress> allHosts;
     std::vector<std::shared_ptr<RaftexService>> services;
     std::vector<std::shared_ptr<test::TestShard>> copies;
 
@@ -66,7 +66,7 @@ TEST(LeaderElection, LeaderCrash) {
     fs::TempDir walRoot("/tmp/leader_crash.XXXXXX");
     std::shared_ptr<thread::GenericThreadPool> workers;
     std::vector<std::string> wals;
-    std::vector<HostAddr> allHosts;
+    std::vector<network::InetAddress> allHosts;
     std::vector<std::shared_ptr<RaftexService>> services;
     std::vector<std::shared_ptr<test::TestShard>> copies;
 

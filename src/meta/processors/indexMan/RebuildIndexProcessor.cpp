@@ -59,7 +59,7 @@ void RebuildIndexProcessor::processInternal(const cpp2::RebuildIndexReq& req) {
         auto host = MetaServiceUtils::parseLeaderKey(leaderIter->key());
         auto ip = NetworkUtils::intToIPv4(host.get_ip());
         auto port = host.get_port();
-        auto hostAddrRet = NetworkUtils::toHostAddr(ip, port);
+        auto hostAddrRet = NetworkUtils::toInetAddress(ip, port);
         if (!hostAddrRet.ok()) {
             LOG(ERROR) << "Can't cast to host " << ip + ":" << port;
             resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
@@ -69,7 +69,7 @@ void RebuildIndexProcessor::processInternal(const cpp2::RebuildIndexReq& req) {
 
         auto hostAddr = hostAddrRet.value();
         if (std::find(activeHosts.begin(), activeHosts.end(),
-                      HostAddr(host.ip, host.port)) != activeHosts.end()) {
+                      network::InetAddress(host)) != activeHosts.end()) {
             auto leaderParts = MetaServiceUtils::parseLeaderVal(leaderIter->val());
             auto& partIds = leaderParts[space];
             auto future = caller(hostAddr, space, indexID, std::move(partIds), isOffline);

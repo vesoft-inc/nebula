@@ -25,7 +25,7 @@ TEST(MemberChangeTest, AddRemovePeerTest) {
     fs::TempDir walRoot("/tmp/member_change.XXXXXX");
     std::shared_ptr<thread::GenericThreadPool> workers;
     std::vector<std::string> wals;
-    std::vector<HostAddr> allHosts;
+    std::vector<network::InetAddress> allHosts;
     std::vector<std::shared_ptr<RaftexService>> services;
     std::vector<std::shared_ptr<test::TestShard>> copies;
 
@@ -81,7 +81,7 @@ TEST(MemberChangeTest, RemoveLeaderTest) {
     fs::TempDir walRoot("/tmp/member_change.XXXXXX");
     std::shared_ptr<thread::GenericThreadPool> workers;
     std::vector<std::string> wals;
-    std::vector<HostAddr> allHosts;
+    std::vector<network::InetAddress> allHosts;
     std::vector<std::shared_ptr<RaftexService>> services;
     std::vector<std::shared_ptr<test::TestShard>> copies;
 
