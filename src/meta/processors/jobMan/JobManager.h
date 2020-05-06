@@ -44,7 +44,7 @@ public:
     /*
      * Load job description from kvstore
      * */
-    ResultCode addJob(const JobDescription& jobDesc);
+    ResultCode addJob(const JobDescription& jobDesc, AdminClient* client);
     ErrorOr<ResultCode, std::vector<cpp2::JobDesc>> showJobs();
     ErrorOr<ResultCode, std::pair<cpp2::JobDesc, std::vector<cpp2::TaskDesc>>> showJob(int iJob);
     ResultCode stopJob(int32_t iJob);
@@ -52,7 +52,7 @@ public:
 
 private:
     JobManager() = default;
-    void runJobBackground();
+    void scheduleThread();
     bool runJobInternal(const JobDescription& jobDesc);
     int getSpaceId(const std::string& name);
     nebula::kvstore::ResultCode save(const std::string& k, const std::string& v);
@@ -65,6 +65,7 @@ private:
     bool shutDown_{false};
     nebula::kvstore::KVStore* kvStore_{nullptr};
     std::unique_ptr<nebula::thread::GenericThreadPool> pool_{nullptr};
+    AdminClient*                                    adminClient_{nullptr};
 };
 
 }  // namespace meta

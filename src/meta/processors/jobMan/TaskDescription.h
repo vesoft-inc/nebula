@@ -37,8 +37,12 @@ class TaskDescription {
     FRIEND_TEST(TaskDescriptionTest, ctor2);
     FRIEND_TEST(JobManagerTest, showJob);
 
+    using Host = std::pair<int, int>;
+
 public:
-    TaskDescription(int32_t iJob, int32_t iTask, const HostAddr& dest);
+    TaskDescription(int32_t iJob, int32_t iTask, const Host& dest);
+    TaskDescription(int32_t iJob, int32_t iTask, const HostAddr& dst);
+    TaskDescription(int32_t iJob, int32_t iTask, int32_t ip, int32_t port);
     TaskDescription(const folly::StringPiece& key, const folly::StringPiece& val);
 
     /*
@@ -62,7 +66,7 @@ public:
      * should be
      * {host, status, start time, stop time}
      * */
-    static std::tuple<HostAddr, cpp2::JobStatus, int64_t, int64_t>
+    static std::tuple<Host, cpp2::JobStatus, int64_t, int64_t>
     parseVal(const folly::StringPiece& rawVal);
 
     /*
@@ -98,7 +102,7 @@ public:
 private:
     int32_t                         iJob_;
     int32_t                         iTask_;
-    HostAddr          dest_;
+    Host                            dest_;
     cpp2::JobStatus                 status_;
     int64_t                         startTime_;
     int64_t                         stopTime_;

@@ -82,7 +82,7 @@ MetaServiceHandler::future_listSpaces(const cpp2::ListSpacesReq& req) {
 
 folly::Future<cpp2::AdminJobResp>
 MetaServiceHandler::future_runAdminJob(const cpp2::AdminJobReq& req) {
-    auto* processor = AdminJobProcessor::instance(kvstore_);
+    auto* processor = AdminJobProcessor::instance(kvstore_, adminClient_.get());
     RETURN_FUTURE(processor);
 }
 

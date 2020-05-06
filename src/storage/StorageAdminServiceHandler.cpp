@@ -9,6 +9,8 @@
 #include "storage/admin/CreateCheckpointProcessor.h"
 #include "storage/admin/DropCheckpointProcessor.h"
 #include "storage/admin/SendBlockSignProcessor.h"
+#include "storage/admin/AdminTaskProcessor.h"
+#include "storage/admin/StopAdminTaskProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -81,6 +83,18 @@ StorageAdminServiceHandler::future_dropCheckpoint(const cpp2::DropCPRequest& req
 folly::Future<cpp2::AdminExecResp>
 StorageAdminServiceHandler::future_blockingWrites(const cpp2::BlockingSignRequest& req) {
     auto* processor = SendBlockSignProcessor::instance(env_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::AdminExecResp>
+StorageAdminServiceHandler::future_addAdminTask(const cpp2::AddAdminTaskRequest& req) {
+    auto* processor = AdminTaskProcessor::instance(env_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::AdminExecResp>
+StorageAdminServiceHandler::future_stopAdminTask(const cpp2::StopAdminTaskRequest& req) {
+    auto* processor = StopAdminTaskProcessor::instance(env_);
     RETURN_FUTURE(processor);
 }
 

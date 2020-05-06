@@ -55,6 +55,12 @@ public:
     folly::Future<cpp2::AdminExecResp>
     future_blockingWrites(const cpp2::BlockingSignRequest& req) override;
 
+    folly::Future<cpp2::AdminExecResp>
+    future_addAdminTask(const cpp2::AddAdminTaskRequest& req) override;
+
+    folly::Future<cpp2::AdminExecResp>
+    future_stopAdminTask(const cpp2::StopAdminTaskRequest& req) override;
+
 private:
     StorageEnv*         env_{nullptr};
 };

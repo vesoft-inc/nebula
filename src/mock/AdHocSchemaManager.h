@@ -10,6 +10,7 @@
 #include <folly/RWSpinLock.h>
 #include "meta/SchemaProviderIf.h"
 #include "meta/SchemaManager.h"
+#include "meta/NebulaSchemaProvider.h"
 #include "clients/meta/MetaClient.h"
 
 namespace nebula {

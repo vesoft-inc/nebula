@@ -17,15 +17,19 @@ namespace nebula {
 namespace meta {
 
 using Status = cpp2::JobStatus;
+using AdminCmd = cpp2::AdminCmd;
+
+int32_t JobDescription::minDataVer_ = 1;
+int32_t JobDescription::currDataVer_ = 1;
 
 JobDescription::JobDescription(int32_t id,
-                               std::string cmd,
+                               cpp2::AdminCmd cmd,
                                std::vector<std::string> paras,
                                Status status,
                                int64_t startTime,
                                int64_t stopTime)
                                : id_(id),
-                                 cmd_(std::move(cmd)),
+                                 cmd_(cmd),
                                  paras_(std::move(paras)),
                                  status_(status),
                                  startTime_(startTime),
@@ -39,6 +43,11 @@ JobDescription::makeJobDescription(folly::StringPiece rawkey,
             return folly::none;
         }
         auto key = parseKey(rawkey);
+
+        if (!isSupportedValue(rawval)) {
+            LOG(ERROR) << "not supported data ver of job " << key;
+            return folly::none;
+        }
         auto tup = parseVal(rawval);
 
         auto cmd = std::get<0>(tup);
@@ -76,11 +85,12 @@ int32_t JobDescription::parseKey(const folly::StringPiece& rawKey) {
 
 std::string JobDescription::jobVal() const {
     std::string str;
-    auto cmdLen = cmd_.length();
-    auto paraSize = paras_.size();
     str.reserve(256);
-    str.append(reinterpret_cast<const char*>(&cmdLen), sizeof(size_t));
-    str.append(reinterpret_cast<const char*>(cmd_.data()), cmd_.length());
+    // use a big num to avoid possible conflict
+    int32_t dataVersion = INT_MAX - currDataVer_;
+    str.append(reinterpret_cast<const char*>(&dataVersion), sizeof(dataVersion));
+    str.append(reinterpret_cast<const char*>(&cmd_), sizeof(cmd_));
+    auto paraSize = paras_.size();
     str.append(reinterpret_cast<const char*>(&paraSize), sizeof(size_t));
     for (auto& para : paras_) {
         auto len = para.length();
@@ -93,16 +103,27 @@ std::string JobDescription::jobVal() const {
     return str;
 }
 
-std::tuple<std::string,
+std::tuple<AdminCmd,
            std::vector<std::string>,
            Status,
            int64_t,
            int64_t>
 JobDescription::parseVal(const folly::StringPiece& rawVal) {
-    size_t offset = 0;
+    return decodeValV1(rawVal);
+}
 
-    std::string cmd = JobUtil::parseString(rawVal, offset);
-    offset += sizeof(size_t) + cmd.length();
+// old saved data may have different format
+// which means we have different decoder for each version
+std::tuple<AdminCmd,
+           std::vector<std::string>,
+           Status,
+           int64_t,
+           int64_t>
+JobDescription::decodeValV1(const folly::StringPiece& rawVal) {
+    size_t offset = sizeof(int32_t);
+
+    auto cmd = JobUtil::parseFixedVal<AdminCmd>(rawVal, offset);
+    offset += sizeof(cmd);
 
     std::vector<std::string> paras = JobUtil::parseStrVector(rawVal, &offset);
 
@@ -164,6 +185,15 @@ JobDescription::loadJobDescription(int32_t iJob, nebula::kvstore::KVStore* kv) {
         return folly::none;
     }
     return makeJobDescription(key, val);
+}
+
+bool JobDescription::isSupportedValue(const folly::StringPiece& val) {
+    if (val.size() < sizeof(int32_t)) {
+        return false;
+    }
+
+    int32_t ver = INT_MAX - JobUtil::parseFixedVal<int32_t>(val, 0);
+    return ver >= minDataVer_ && ver <= currDataVer_;
 }
 
 }  // namespace meta

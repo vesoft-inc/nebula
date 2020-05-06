@@ -15,10 +15,12 @@
 #include "kvstore/Common.h"
 #include "kvstore/KVIterator.h"
 #include "meta/processors/Common.h"
+#include "meta/processors/admin/AdminClient.h"
 #include "meta/processors/jobMan/JobManager.h"
 #include "meta/processors/jobMan/JobUtils.h"
 #include "meta/processors/jobMan/TaskDescription.h"
 #include "meta/processors/jobMan/JobStatus.h"
+#include "meta/processors/jobMan/MetaJobExecutor.h"
 #include "meta/MetaServiceUtils.h"
 #include "webservice/Common.h"
 #include "time/WallClock.h"
@@ -49,7 +51,7 @@ bool JobManager::init(nebula::kvstore::KVStore* store) {
     queue_ = std::make_unique<folly::UMPSCQueue<int32_t, true>>();
     bgThread_ = std::make_unique<thread::GenericWorker>();
     CHECK(bgThread_->start());
-    bgThread_->addTask(&JobManager::runJobBackground, this);
+    bgThread_->addTask(&JobManager::scheduleThread, this);
     return true;
 }
 
@@ -66,7 +68,7 @@ void JobManager::shutDown() {
     LOG(INFO) << "JobManager::shutDown() end";
 }
 
-void JobManager::runJobBackground() {
+void JobManager::scheduleThread() {
     LOG(INFO) << "JobManager::runJobBackground() enter";
     while (!shutDown_) {
         int32_t iJob = 0;
@@ -99,105 +101,57 @@ void JobManager::runJobBackground() {
     LOG(INFO) << "[JobManager] exit";
 }
 
+// @return: true if succeed, false if any task failed
 bool JobManager::runJobInternal(const JobDescription& jobDesc) {
-    std::unique_ptr<kvstore::KVIterator> iter;
+    auto jobExecutor = MetaJobExecutorFactory::createMetaJobExecutor(jobDesc,
+                                                                     kvStore_,
+                                                                     adminClient_);
+    if (jobExecutor == nullptr) {
+        LOG(ERROR) << "unreconized job cmd " << static_cast<int>(jobDesc.getCmd());
+        return false;
+    }
+    if (jobDesc.getStatus() == cpp2::JobStatus::STOPPED) {
+        jobExecutor->stop();
+        return true;
+    }
+    if (jobDesc.getParas().empty()) {
+        return false;
+    }
+
     std::string spaceName = jobDesc.getParas().back();
     int spaceId = getSpaceId(spaceName);
-    if (spaceId == -1) {
-        return false;
-    }
-    auto prefix = MetaServiceUtils::partPrefix(spaceId);
-    auto ret = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Fetch Parts Failed";
+    if (spaceId < 0) {
         return false;
     }
 
-    std::string op = jobDesc.getCmd();
-
-    struct HostAddrCmp {
-        bool operator()(const HostAddr& a,
-                        const HostAddr& b) const {
-            if (a.ip == b.ip) {
-                return a.port < b.port;
-            }
-            return a.ip < b.ip;
-        }
-    };
-    std::set<HostAddr, HostAddrCmp> hosts;
-    while (iter->valid()) {
-        for (auto &host : MetaServiceUtils::parsePartVal(iter->val())) {
-            hosts.insert(host);
-        }
-        iter->next();
+    auto results = jobExecutor->execute();
+    if (!nebula::ok(results)) {
+        return false;
     }
 
-    int32_t iJob = jobDesc.getJobId();
-    std::vector<folly::SemiFuture<bool>> futures;
-    size_t iTask = 0;
-    for (auto& host : hosts) {
-        auto dispatcher = [=]() {
-            static const char *tmp = "http://%s:%d/admin?op=%s&space=%s";
-            auto strIP = network::NetworkUtils::intToIPv4(host.ip);
-            auto url = folly::stringPrintf(tmp, strIP.c_str(),
-                                           FLAGS_ws_storage_http_port,
-                                           op.c_str(),
-                                           spaceName.c_str());
-            LOG(INFO) << "make admin url: " << url << ", iTask=" << iTask;
-            TaskDescription taskDesc(iJob, iTask, host);
-            save(taskDesc.taskKey(), taskDesc.taskVal());
-
-            auto httpResult = nebula::http::HttpClient::get(url, "-GSs");
-            bool succeed = httpResult.ok() && httpResult.value() == "ok";
-
-            if (succeed) {
-                taskDesc.setStatus(cpp2::JobStatus::FINISHED);
-            } else {
-                LOG(INFO) << "task " << iTask << " failed"
-                          << ", httpResult.ok()=" << httpResult.ok()
-                          << ", httpResult.value()=" << httpResult.value();
-                taskDesc.setStatus(cpp2::JobStatus::FAILED);
-            }
-
-            save(taskDesc.taskKey(), taskDesc.taskVal());
-            return succeed;
-        };
-        ++iTask;
-        auto future = pool_->addTask(dispatcher);
-        futures.push_back(std::move(future));
+    size_t taskId = 0;
+    bool jobSuccess = true;
+    for (auto& hostAndStatus : nebula::value(results)) {
+        auto& host = hostAndStatus.first;
+        TaskDescription task(jobDesc.getJobId(), taskId, host.ip, host.port);
+        bool taskSuccess = hostAndStatus.second.ok();
+        auto taskStatus = taskSuccess ? cpp2::JobStatus::FINISHED : cpp2::JobStatus::FAILED;
+        if (!taskSuccess) {
+            jobSuccess = false;
+        }
+        task.setStatus(taskStatus);
+        save(task.taskKey(), task.taskVal());
+        ++taskId;
     }
-
-    bool successfully{true};
-    folly::collectAll(std::move(futures))
-        .thenValue([&](const std::vector<folly::Try<bool>>& tries) {
-            for (const auto& t : tries) {
-                if (t.hasException()) {
-                    LOG(ERROR) << "admin Failed: " << t.exception();
-                    successfully = false;
-                    break;
-                }
-                if (!t.value()) {
-                    successfully = false;
-                    break;
-                }
-            }
-        }).thenError([&](auto&& e) {
-            LOG(ERROR) << "admin Failed: " << e.what();
-            successfully = false;
-        }).wait();
-    LOG(INFO) << folly::stringPrintf("admin job %d %s, descrtion: %s %s",
-                                     iJob,
-                                     successfully ? "succeeded" : "failed",
-                                     op.c_str(),
-                                     folly::join(" ", jobDesc.getParas()).c_str());
-    return successfully;
+    return jobSuccess;
 }
 
-ResultCode JobManager::addJob(const JobDescription& jobDesc) {
+ResultCode JobManager::addJob(const JobDescription& jobDesc, AdminClient* client) {
     auto rc = save(jobDesc.jobKey(), jobDesc.jobVal());
     if (rc == nebula::kvstore::SUCCEEDED) {
         queue_->enqueue(jobDesc.getJobId());
     }
+    adminClient_ = client;
     return rc;
 }
 
@@ -217,6 +171,7 @@ JobManager::showJobs() {
         if (JobDescription::isJobKey(iter->key())) {
             auto optJob = JobDescription::makeJobDescription(iter->key(), iter->val());
             if (optJob == folly::none) {
+                expiredJobKeys.emplace_back(iter->key());
                 continue;
             }
             // skip expired job, default 1 week
@@ -236,6 +191,9 @@ JobManager::showJobs() {
         }
     }
     removeExpiredJobs(expiredJobKeys);
+    std::sort(ret.begin(), ret.end(), [](const auto& a, const auto& b) {
+        return a.get_id() > b.get_id();
+    });
     return ret;
 }
 

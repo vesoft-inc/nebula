@@ -36,7 +36,7 @@ class JobDescription {
 public:
     JobDescription() = default;
     JobDescription(int32_t id,
-                   std::string type,
+                   cpp2::AdminCmd cmd,
                    std::vector<std::string> paras,
                    Status status = Status::QUEUE,
                    int64_t = 0,
@@ -53,7 +53,7 @@ public:
     /*
      * return the command for this job. (e.g. compact, flush ...)
      * */
-    std::string getCmd() const { return cmd_; }
+    cpp2::AdminCmd getCmd() const { return cmd_; }
 
     /*
      * return the paras for this job. (e.g. space name for compact/flush)
@@ -63,7 +63,7 @@ public:
     /*
      * return the status (e.g. Queue, running, finished, failed, stopped);
      * */
-    Status getStatus() { return status_; }
+    Status getStatus() const { return status_; }
 
     /*
      * return the key write to kv store
@@ -123,7 +123,9 @@ public:
      * decode val from kvstore, return
      * {command, paras, status, start time, stop time}
      * */
-    static std::tuple<std::string, std::vector<std::string>, Status, int64_t, int64_t>
+    static std::tuple<cpp2::AdminCmd,
+                      std::vector<std::string>,
+                      Status, int64_t, int64_t>
     parseVal(const folly::StringPiece& rawVal);
 
     /*
@@ -132,12 +134,29 @@ public:
     static bool isJobKey(const folly::StringPiece& rawKey);
 
 private:
+    static bool isSupportedValue(const folly::StringPiece& val);
+    /*
+     * decode val if it stored in data ver.1, return
+     * {command, paras, status, start time, stop time}
+     * */
+    static std::tuple<cpp2::AdminCmd,
+                      std::vector<std::string>,
+                      Status, int64_t, int64_t>
+    decodeValV1(const folly::StringPiece& rawVal);
+
+private:
     int32_t                         id_;
-    std::string                     cmd_;  // compact, flush ...
+    cpp2::AdminCmd                  cmd_;
     std::vector<std::string>        paras_;
     Status                          status_;
     int64_t                         startTime_;
     int64_t                         stopTime_;
+
+    // old job may have different format,
+    // will ignore some job if it is too old
+    // use a hard coded int mark data ver
+    static int32_t                  minDataVer_;
+    static int32_t                  currDataVer_;
 };
 
 }  // namespace meta

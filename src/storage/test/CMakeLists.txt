@@ -1,5 +1,5 @@
 set(storage_test_deps
-    $<TARGET_OBJECTS:storage_service_handler>
+    $<TARGET_OBJECTS:storage_admin_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
     $<TARGET_OBJECTS:raftex_obj>
     $<TARGET_OBJECTS:wal_obj>
@@ -29,6 +29,7 @@ set(storage_test_deps
     $<TARGET_OBJECTS:common_base_obj>
     $<TARGET_OBJECTS:adHocSchema_obj>
     $<TARGET_OBJECTS:adHocIndex_obj>
+    $<TARGET_OBJECTS:storage_common>
 )
 
 
@@ -42,6 +43,20 @@ nebula_add_library(
     AdHocIndexManager.cpp
 )
 
+nebula_add_test(
+    NAME
+        task_manager_test
+    SOURCES
+        AdminTaskManagerTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        wangle
+        gtest
+)
 #nebula_add_test(
 #    NAME
 #        add_vertices_test

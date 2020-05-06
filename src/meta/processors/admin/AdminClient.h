@@ -122,6 +122,18 @@ public:
                                            std::vector<PartitionID> parts,
                                            bool isOffline);
 
+    folly::Future<Status> addTask(cpp2::AdminCmd cmd,
+                                  int32_t jobId,
+                                  int32_t taskId,
+                                  GraphSpaceID spaceId,
+                                  const std::vector<HostAddr>& specificHosts,
+                                  const std::vector<std::string>& taskSpecficParas,
+                                  std::vector<PartitionID> parts,
+                                  int concurrency);
+
+    folly::Future<Status>
+    stopTask(const std::vector<HostAddr>& target, int32_t jobId, int32_t taskId);
+
     FaultInjector* faultInjector() {
         return injector_.get();
     }

@@ -15,6 +15,7 @@
 #include "clients/meta/MetaClient.h"
 #include "meta/ClientBasedGflagsManager.h"
 #include "hdfs/HdfsHelper.h"
+#include "storage/admin/AdminTaskManager.h"
 
 namespace nebula {
 
@@ -58,6 +59,8 @@ private:
     HostAddr localHost_;
     std::vector<HostAddr> metaAddrs_;
     std::vector<std::string> dataPaths_;
+
+    AdminTaskManager* taskMgr_{nullptr};
 };
 
 }  // namespace storage

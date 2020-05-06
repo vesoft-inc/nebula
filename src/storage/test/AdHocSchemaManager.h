@@ -10,7 +10,7 @@
 #include <folly/RWSpinLock.h>
 #include "meta/SchemaProviderIf.h"
 #include "meta/SchemaManager.h"
-#include "clients/meta/MetaClient.h"
+#include "meta/client/MetaClient.h"
 
 namespace nebula {
 namespace storage {
@@ -67,7 +67,7 @@ public:
         return Status::Error("Unimplemented");
     }
 
-    void init(nebula::meta::MetaClient *) override {
+    void init(nebula::meta::MetaClient *) {
     }
 
 protected:
