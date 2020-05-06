@@ -30,8 +30,8 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
     }
 
     auto hosts = MetaServiceUtils::parseSnapshotHosts(val);
-    auto peers = NetworkUtils::toHosts(hosts);
-    if (!peers.ok()) {
+    auto peersRet = NetworkUtils::toHosts(hosts);
+    if (!peersRet.ok()) {
         LOG(ERROR) << "Get checkpoint hosts error";
         handleErrorCode(cpp2::ErrorCode::E_SNAPSHOT_FAILURE);
         onFinished();
@@ -39,7 +39,8 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
     }
 
     std::vector<kvstore::KV> data;
-    auto dsRet = Snapshot::instance(kvstore_)->dropSnapshot(snapshot, std::move(peers.value()));
+    auto peers = peersRet.value();
+    auto dsRet = Snapshot::instance(kvstore_, client_)->dropSnapshot(snapshot, std::move(peers));
     if (dsRet != cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Drop snapshot error on storage engine";
         // Need update the snapshot status to invalid, maybe some storage engine drop done.
@@ -73,6 +74,7 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
     }
     // Delete metadata of checkpoint
     doRemove(MetaServiceUtils::snapshotKey(snapshot));
+    LOG(INFO) << "Drop snapshot " << snapshot << " successfully";
 }
 }  // namespace meta
 }  // namespace nebula

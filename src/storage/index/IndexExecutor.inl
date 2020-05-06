@@ -15,6 +15,8 @@ namespace storage {
 template <typename RESP>
 cpp2::ErrorCode IndexExecutor<RESP>::prepareRequest(const cpp2::LookUpIndexRequest &req) {
     spaceId_ = req.get_space_id();
+    isEdgeIndex_ = req.get_is_edge();
+
     /**
      * step 1 , check index meta , and collect index variable-length type of columns.
      */
@@ -184,6 +186,9 @@ kvstore::ResultCode IndexExecutor<RESP>::getVertexRow(PartitionID partId,
         if (result.ok()) {
             auto v = std::move(result).value();
             auto reader = RowReader::getTagPropReader(schemaMan_, v, spaceId_, tagOrEdge_);
+            if (reader == nullptr) {
+                return kvstore::ResultCode::ERR_CORRUPT_DATA;
+            }
             auto row = getRowFromReader(reader.get());
             data->set_props(std::move(row));
             VLOG(3) << "Hit cache for vId " << vId << ", tagId " << tagOrEdge_;
@@ -204,6 +209,9 @@ kvstore::ResultCode IndexExecutor<RESP>::getVertexRow(PartitionID partId,
                                                   iter->val(),
                                                   spaceId_,
                                                   tagOrEdge_);
+        if (reader == nullptr) {
+            return kvstore::ResultCode::ERR_CORRUPT_DATA;
+        }
         auto row = getRowFromReader(reader.get());
         data->set_props(std::move(row));
         if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
@@ -270,11 +278,10 @@ std::string IndexExecutor<RESP>::getRowFromReader(RowReader* reader) {
 
 template<typename RESP>
 bool IndexExecutor<RESP>::conditionsCheck(const folly::StringPiece& key) {
-    UNUSED(key);
     Getters getters;
     getters.getAliasProp = [this, &key](const std::string&,
                                         const std::string &prop) -> OptVariantType {
-            return decodeValue(key, prop);
+        return decodeValue(key, prop);
     };
     return exprEval(getters);
 }

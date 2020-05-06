@@ -6,8 +6,7 @@
 
 #include "graph/ShowExecutor.h"
 #include "network/NetworkUtils.h"
-#include "common/charset/Charset.h"
-
+#include "common/permission/PermissionManager.h"
 
 namespace nebula {
 namespace graph {
@@ -243,6 +242,13 @@ void ShowExecutor::showSpaces() {
         resp_->set_column_names(std::move(header));
 
         for (auto &space : retShowSpaces) {
+            auto canShow = permission::PermissionManager::canShow(ectx()->rctx()->session(),
+                                                                  sentence_->showType(),
+                                                                  space.first);
+            if (!canShow) {
+                continue;
+            }
+
             std::vector<cpp2::ColumnValue> row;
             row.emplace_back();
             row.back().set_str(std::move(space.second));
@@ -526,7 +532,13 @@ void ShowExecutor::showCreateSpace() {
                         sentence_->getName()->c_str(), resp.status().toString().c_str()));
             return;
         }
-
+        auto canShow = permission::PermissionManager::canShow(ectx()->rctx()->session(),
+                                                              sentence_->showType(),
+                                                              resp.value().get_space_id());
+        if (!canShow) {
+            doError(Status::PermissionError());
+            return;
+        }
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         std::vector<std::string> header{"Space", "Create Space"};
         resp_->set_column_names(std::move(header));
@@ -1071,7 +1083,7 @@ void ShowExecutor::showUsers() {
         for (auto& user : value) {
             std::vector<cpp2::ColumnValue> row;
             row.resize(1);
-            row[0].set_str(user);
+            row[0].set_str(user.first);
             rows.emplace_back();
             rows.back().set_columns(std::move(row));
         }
@@ -1090,7 +1102,22 @@ void ShowExecutor::showUsers() {
 
 void ShowExecutor::showRoles() {
     auto *space = sentence_->getName();
-    auto future = ectx()->getMetaClient()->listRoles(*space);
+    auto *mc = ectx()->getMetaClient();
+
+    auto spaceRet = mc->getSpaceIdByNameFromCache(*space);
+    if (!spaceRet.ok()) {
+        doError(spaceRet.status());
+        return;
+    }
+    auto canShow = permission::PermissionManager::canShow(ectx()->rctx()->session(),
+                                                          sentence_->showType(),
+                                                          spaceRet.value());
+    if (!canShow) {
+        doError(Status::PermissionError());
+        return;
+    }
+
+    auto future = ectx()->getMetaClient()->listRoles(spaceRet.value());
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {
@@ -1104,15 +1131,30 @@ void ShowExecutor::showRoles() {
         std::vector<cpp2::RowValue> rows;
         std::vector<std::string> header{"Account", "Role Type"};
         resp_->set_column_names(std::move(header));
-        for (auto& role : value) {
+        /**
+         * Only god and admin show all roles, other roles only show themselves
+         */
+        auto account = ectx()->rctx()->session()->user();
+        auto it = std::find_if(value.begin(), value.end(), [&account] (const auto& r){
+            return r.get_user() == account;
+        });
+        if (it != value.end() && it->get_role_type() != nebula::cpp2::RoleType::ADMIN) {
             std::vector<cpp2::ColumnValue> row;
             row.resize(2);
-            row[0].set_str(role.get_user());
-            row[1].set_str(roleToStr(role.get_role_type()));
+            row[0].set_str(it->get_user());
+            row[1].set_str(roleToStr(it->get_role_type()));
             rows.emplace_back();
             rows.back().set_columns(std::move(row));
+        } else {
+            std::for_each(value.begin(), value.end(), [&](auto& role) {
+                std::vector<cpp2::ColumnValue> row;
+                row.resize(2);
+                row[0].set_str(role.get_user());
+                row[1].set_str(roleToStr(role.get_role_type()));
+                rows.emplace_back();
+                rows.back().set_columns(std::move(row));
+            });
         }
-
         resp_->set_rows(std::move(rows));
         doFinish(Executor::ProcessControl::kNext);
     };

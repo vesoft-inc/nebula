@@ -7,6 +7,11 @@
 
 # Usage: install-third-party.sh --prefix=/opt/vesoft/third-party
 
+[[ $(uname) = Linux ]] || {
+    echo "Only Linux is supported"
+    exit 1
+}
+
 # Always use bash
 shell=$(basename $(readlink /proc/$$/exe))
 if [ ! x$shell = x"bash" ]
@@ -15,12 +20,7 @@ then
     exit $?
 fi
 
-[[ $(uname) = Linux ]] || {
-    echo "Only Linux is supported"
-    exit 1
-}
-
-url_base=https://nebula-graph.oss-accelerate.aliyuncs.com/third-party
+url_base=https://oss-cdn.nebula-graph.com.cn/third-party
 this_dir=$(dirname $(readlink -f $0))
 cxx_cmd=${CXX:-g++}
 

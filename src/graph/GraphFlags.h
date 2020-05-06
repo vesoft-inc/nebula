@@ -30,4 +30,9 @@ DECLARE_string(meta_server_addrs);
 DECLARE_string(default_charset);
 DECLARE_string(default_collate);
 
+DECLARE_bool(enable_authorize);
+DECLARE_string(auth_type);
+
+DECLARE_string(cloud_http_url);
+
 #endif  // GRAPH_GRAPHFLAGS_H_

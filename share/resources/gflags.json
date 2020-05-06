@@ -6,7 +6,8 @@
         "heartbeat_interval_secs",
         "meta_client_retry_times",
         "slow_op_threshhold_ms",
-        "wal_ttl"
+        "wal_ttl",
+        "enable_reservoir_sampling"
     ],
     "NESTED": [
         "rocksdb_db_options",

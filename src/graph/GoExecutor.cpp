@@ -74,6 +74,10 @@ Status GoExecutor::prepareClauses() {
         if (!status.ok()) {
             break;
         }
+        status = checkNeededProps();
+        if (!status.ok()) {
+            break;
+        }
     } while (false);
 
     if (!status.ok()) {
@@ -86,7 +90,6 @@ Status GoExecutor::prepareClauses() {
 
 
 void GoExecutor::execute() {
-    FLOG_INFO("Executing Go: %s", sentence_->toString().c_str());
     auto status = prepareClauses();
     if (!status.ok()) {
         doError(std::move(status));
@@ -401,6 +404,55 @@ Status GoExecutor::prepareDistinct() {
         distinctPushDown_ =
             !((expCtx_->hasSrcTagProp() || expCtx_->hasEdgeProp()) && expCtx_->hasDstTagProp());
     }
+    return Status::OK();
+}
+
+
+Status GoExecutor::checkNeededProps() {
+    auto space = ectx()->rctx()->session()->space();
+    TagID tagId;
+    auto srcTagProps = expCtx_->srcTagProps();
+    auto dstTagProps = expCtx_->dstTagProps();
+    srcTagProps.insert(srcTagProps.begin(),
+                       std::make_move_iterator(dstTagProps.begin()),
+                       std::make_move_iterator(dstTagProps.end()));
+    for (auto &pair : srcTagProps) {
+        auto found = expCtx_->getTagId(pair.first, tagId);
+        if (!found) {
+            return Status::Error("Tag `%s' not found.", pair.first.c_str());
+        }
+        auto ts = ectx()->schemaManager()->getTagSchema(space, tagId);
+        if (ts == nullptr) {
+            return Status::Error("No tag schema for %s", pair.first.c_str());
+        }
+        if (ts->getFieldIndex(pair.second) == -1) {
+            return Status::Error("`%s' is not a prop of `%s'",
+                    pair.second.c_str(), pair.first.c_str());
+        }
+    }
+
+    EdgeType edgeType;
+    auto edgeProps = expCtx_->aliasProps();
+    for (auto &pair : edgeProps) {
+        auto found = expCtx_->getEdgeType(pair.first, edgeType);
+        if (!found) {
+            return Status::Error("Edge `%s' not found.", pair.first.c_str());
+        }
+        auto propName = pair.second;
+        if (propName == _SRC || propName == _DST
+                || propName == _RANK || propName == _TYPE) {
+            continue;
+        }
+        auto es = ectx()->schemaManager()->getEdgeSchema(space, std::abs(edgeType));
+        if (es == nullptr) {
+            return Status::Error("No edge schema for %s", pair.first.c_str());
+        }
+        if (es->getFieldIndex(propName) == -1) {
+            return Status::Error("`%s' is not a prop of `%s'",
+                    propName.c_str(), pair.first.c_str());
+        }
+    }
+
     return Status::OK();
 }
 

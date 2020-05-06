@@ -19,10 +19,21 @@ SequentialExecutor::SequentialExecutor(SequentialSentences *sentences,
 }
 
 
+
 Status SequentialExecutor::prepare() {
     for (auto i = 0U; i < sentences_->sentences_.size(); i++) {
         auto *sentence = sentences_->sentences_[i].get();
         auto executor = makeExecutor(sentence);
+        if (FLAGS_enable_authorize) {
+            auto *session = executor->ectx()->rctx()->session();
+            /**
+             * Skip special operations check at here. they are :
+             * kUse, kDescribeSpace, kRevoke and kGrant.
+             */
+            if (!PermissionCheck::permissionCheck(session, sentence)) {
+                return Status::PermissionError("Permission denied");
+            }
+        }
         if (executor == nullptr) {
             return Status::Error("The statement has not been implemented");
         }

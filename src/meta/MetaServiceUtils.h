@@ -145,13 +145,19 @@ public:
 
     static std::string userKey(const std::string& account);
 
+    static std::string userVal(const std::string& val);
+
     static std::string parseUser(folly::StringPiece key);
+
+    static std::string parseUserPwd(folly::StringPiece val);
 
     static std::string roleKey(GraphSpaceID spaceId, const std::string& account);
 
     static std::string roleVal(nebula::cpp2::RoleType roleType);
 
     static std::string parseRoleUser(folly::StringPiece key);
+
+    static GraphSpaceID parseRoleSpace(folly::StringPiece key);
 
     static std::string rolesPrefix();
 
