@@ -263,7 +263,7 @@ enum AdminJobOp {
 struct AdminJobReq {
     1: AdminJobOp       op
     2: AdminCmd         cmd
-    3: list<binary>     paras;
+    3: list<binary>     paras
 }
 
 enum AdminCmd {

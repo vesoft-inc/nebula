@@ -33,6 +33,8 @@ enum ErrorCode {
     E_PART_NOT_FOUND = -14,
     E_KEY_NOT_FOUND = -15,
     E_CONSENSUS_ERROR = -16,
+    E_DATA_TYPE_MISMATCH = -17,
+    E_INVALID_VID = -18,
 
     // meta failures
     E_EDGE_PROP_NOT_FOUND = -21,
@@ -40,6 +42,7 @@ enum ErrorCode {
     E_IMPROPER_DATA_TYPE = -23,
     E_EDGE_NOT_FOUND = -24,
     E_TAG_NOT_FOUND = -25,
+    E_INVALID_SPACEVIDLEN = -26,
 
     // Invalid request
     E_INVALID_FILTER = -31,
