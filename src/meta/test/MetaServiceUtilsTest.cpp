@@ -43,13 +43,24 @@ TEST(MetaServiceUtilsTest, PartKeyTest) {
     for (int i = 0; i < 10; i++) {
         hosts.emplace_back(i * 20 + 1, i * 20 + 2);
     }
-    auto partVal = MetaServiceUtils::partVal(hosts);
-    ASSERT_EQ(10 * sizeof(int32_t) * 2, partVal.size());
-    auto result = MetaServiceUtils::parsePartVal(partVal);
-    ASSERT_EQ(hosts.size(), result.size());
-    for (int i = 0; i < 10; i++) {
-        ASSERT_EQ(i * 20 + 1, result[i].ip);
-        ASSERT_EQ(i * 20 + 2, result[i].port);
+    {
+        auto partVal = MetaServiceUtils::partValV1(hosts);
+        ASSERT_EQ(10 * sizeof(int32_t) * 2, partVal.size());
+        auto result = MetaServiceUtils::parsePartValV1(partVal);
+        ASSERT_EQ(hosts.size(), result.size());
+        for (int i = 0; i < 10; i++) {
+            ASSERT_EQ(i * 20 + 1, result[i].ip);
+            ASSERT_EQ(i * 20 + 2, result[i].port);
+        }
+    }
+    {
+        auto partVal = MetaServiceUtils::partValV2(hosts);
+        auto result = MetaServiceUtils::parsePartValV2(partVal);
+        ASSERT_EQ(hosts.size(), result.size());
+        for (int i = 0; i < 10; i++) {
+            ASSERT_EQ(i * 20 + 1, result[i].ip);
+            ASSERT_EQ(i * 20 + 2, result[i].port);
+        }
     }
 }
 
@@ -151,10 +162,9 @@ TEST(MetaServiceUtilsTest, storeStrIpBackwardCompatibilityTest) {
 TEST(MetaServiceUtilsTest, HostKeyTest) {
     auto hostKey = MetaServiceUtils::hostKey(10, 11);
     const auto& prefix = MetaServiceUtils::hostPrefix();
+    const auto& ipPortStr = MetaServiceUtils::encodeHostAddrV2(10, 11);
     ASSERT_EQ("__hosts__", prefix);
-    ASSERT_EQ(prefix, hostKey.substr(0, hostKey.size() - 2 * sizeof(int32_t)));
-    ASSERT_EQ(10, *reinterpret_cast<const IPv4*>(hostKey.c_str() + prefix.size()));
-    ASSERT_EQ(11, *reinterpret_cast<const Port*>(hostKey.c_str() + prefix.size() + sizeof(IPv4)));
+    ASSERT_EQ(prefix, hostKey.substr(0, hostKey.size() - ipPortStr.size()));
 
     auto addr = MetaServiceUtils::parseHostKey(hostKey);
     ASSERT_EQ(10, addr.ip);
