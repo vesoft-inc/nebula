@@ -10,41 +10,30 @@
 #include "base/Base.h"
 #include "kvstore/LogEncoder.h"
 #include "storage/BaseProcessor.h"
+#include "storage/CommonUtils.h"
 
 namespace nebula {
 namespace storage {
 
 class DeleteVerticesProcessor : public BaseProcessor<cpp2::ExecResponse> {
 public:
-    static DeleteVerticesProcessor* instance(kvstore::KVStore* kvstore,
-                                             meta::SchemaManager* schemaMan,
-                                             meta::IndexManager* indexMan,
+    static DeleteVerticesProcessor* instance(StorageEnv* env,
                                              stats::Stats* stats,
                                              VertexCache* cache = nullptr) {
-        return new DeleteVerticesProcessor(kvstore, schemaMan, indexMan, stats, cache);
+        return new DeleteVerticesProcessor(env, stats, cache);
     }
 
     void process(const cpp2::DeleteVerticesRequest& req);
 
 private:
-    explicit DeleteVerticesProcessor(kvstore::KVStore* kvstore,
-                                     meta::SchemaManager* schemaMan,
-                                     meta::IndexManager* indexMan,
-                                     stats::Stats* stats,
-                                     VertexCache* cache)
-            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats)
-            , indexMan_(indexMan)
-            , vertexCache_(cache) {}
-
-    folly::Optional<std::string>
-    deleteVertices(GraphSpaceID spaceId,
-                   PartitionID partId,
-                   const std::vector<VertexID>& vertices);
+    DeleteVerticesProcessor(StorageEnv* env, stats::Stats* stats, VertexCache* cache)
+        : BaseProcessor<cpp2::ExecResponse>(env, stats)
+        , vertexCache_(cache) {}
 
 private:
-    meta::IndexManager*                                   indexMan_{nullptr};
-    VertexCache*                                          vertexCache_{nullptr};
-    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> indexes_;
+    GraphSpaceID                                                spaceId_;
+    VertexCache*                                                vertexCache_{nullptr};
+    std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes_;
 };
 
 

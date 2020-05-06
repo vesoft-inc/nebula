@@ -1,5 +1,9 @@
 set(storage_test_deps
+    $<TARGET_OBJECTS:mock_obj>
+    $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:storage_admin_service_handler>
+    $<TARGET_OBJECTS:graph_storage_service_handler>
+    $<TARGET_OBJECTS:storage_common_obj>
     $<TARGET_OBJECTS:kvstore_obj>
     $<TARGET_OBJECTS:raftex_obj>
     $<TARGET_OBJECTS:wal_obj>
@@ -7,6 +11,8 @@ set(storage_test_deps
     $<TARGET_OBJECTS:keyutils_obj>
     # $<TARGET_OBJECTS:filter_obj>
     # $<TARGET_OBJECTS:storage_client>
+    $<TARGET_OBJECTS:common_ws_common_obj>
+    $<TARGET_OBJECTS:common_http_client_obj>
     $<TARGET_OBJECTS:common_storage_thrift_obj>
     $<TARGET_OBJECTS:common_meta_client_obj>
     $<TARGET_OBJECTS:common_file_based_cluster_id_man_obj>
@@ -25,11 +31,10 @@ set(storage_test_deps
     $<TARGET_OBJECTS:common_stats_obj>
     $<TARGET_OBJECTS:common_process_obj>
     $<TARGET_OBJECTS:common_conf_obj>
+    $<TARGET_OBJECTS:codec_obj>
     $<TARGET_OBJECTS:common_datatypes_obj>
     $<TARGET_OBJECTS:common_base_obj>
-    $<TARGET_OBJECTS:storage_common_obj>
 )
-
 
 nebula_add_test(
     NAME
@@ -44,51 +49,63 @@ nebula_add_test(
         wangle
         gtest
 )
-#nebula_add_test(
-#    NAME
-#        add_vertices_test
-#    SOURCES
-#        AddVerticesTest.cpp
-#    OBJECTS
-#        ${storage_test_deps}
-#    LIBRARIES
-#        ${ROCKSDB_LIBRARIES}
-#        ${THRIFT_LIBRARIES}
-#        wangle
-#        gtest
-#)
-#
-#
-#nebula_add_test(
-#    NAME
-#        delete_vertices_test
-#    SOURCES
-#        DeleteVerticesTest.cpp
-#    OBJECTS
-#        ${storage_test_deps}
-#    LIBRARIES
-#        ${ROCKSDB_LIBRARIES}
-#        ${THRIFT_LIBRARIES}
-#        wangle
-#        gtest
-#)
-#
-#
-#nebula_add_test(
-#    NAME
-#        delete_edges_test
-#    SOURCES
-#        DeleteEdgesTest.cpp
-#    OBJECTS
-#        ${storage_test_deps}
-#    LIBRARIES
-#        ${ROCKSDB_LIBRARIES}
-#        ${THRIFT_LIBRARIES}
-#        wangle
-#        gtest
-#)
-#
-#
+
+nebula_add_test(
+    NAME
+        add_vertices_test
+    SOURCES
+        AddVerticesTest.cpp
+    OBJECTS
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        add_edges_test
+    SOURCES
+        AddEdgesTest.cpp
+    OBJECTS
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        delete_vertices_test
+    SOURCES
+        DeleteVerticesTest.cpp
+    OBJECTS
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        delete_edges_test
+    SOURCES
+        DeleteEdgesTest.cpp
+    OBJECTS
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        wangle
+        gtest
+)
+
 #nebula_add_test(
 #    NAME
 #        storage_service_handler_test
@@ -103,22 +120,7 @@ nebula_add_test(
 #        gtest
 #)
 #
-#
-#nebula_add_test(
-#    NAME
-#        add_edges_test
-#    SOURCES
-#        AddEdgesTest.cpp
-#    OBJECTS
-#        ${storage_test_deps}
-#    LIBRARIES
-#        ${ROCKSDB_LIBRARIES}
-#        ${THRIFT_LIBRARIES}
-#        wangle
-#        gtest
-#)
-#
-#
+##
 #nebula_add_test(
 #    NAME
 #        query_bound_test
@@ -408,9 +410,9 @@ nebula_add_test(
 #        gtest
 #)
 #
-#nebula_add_test(    
+#nebula_add_test(
 #    NAME
-#        index_scan_test    
+#        index_scan_test
 #    SOURCES
 #        IndexScanTest.cpp
 #    OBJECTS
@@ -419,7 +421,7 @@ nebula_add_test(
 #        ${ROCKSDB_LIBRARIES}
 #        ${THRIFT_LIBRARIES}
 #        wangle
-#        gtest 
+#        gtest
 #)
 #
 #nebula_add_executable(

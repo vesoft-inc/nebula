@@ -30,6 +30,11 @@ class NebulaKeyUtils final {
 public:
     ~NebulaKeyUtils() = default;
 
+    /*
+     * Check the validity of vid length
+     */
+    static bool isValidVidLen(size_t vIdLen, VertexID srcvId, VertexID dstvId = "");
+
     /**
      * Generate vertex key for kv store
      * */

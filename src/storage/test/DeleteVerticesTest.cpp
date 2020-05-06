@@ -8,85 +8,120 @@
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
-#include "storage/test/TestUtils.h"
 #include "storage/mutate/DeleteVerticesProcessor.h"
 #include "storage/mutate/AddVerticesProcessor.h"
-#include "base/NebulaKeyUtils.h"
-
+#include "common/NebulaKeyUtils.h"
+#include "mock/MockCluster.h"
+#include "mock/MockData.h"
+#include "interface/gen-cpp2/storage_types.h"
+#include "interface/gen-cpp2/common_types.h"
+#include "storage/test/TestUtils.h"
 
 namespace nebula {
 namespace storage {
 
 TEST(DeleteVerticesTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/DeleteVertexTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    auto schemaMan = TestUtils::mockSchemaMan();
-    auto indexMan = TestUtils::mockIndexMan();
+    mock::MockCluster cluster;
+    cluster.initStorageKV(rootPath.path());
+    auto* env = cluster.storageEnv_.get();
+
     // Add vertices
     {
-        auto* processor = AddVerticesProcessor::instance(kv.get(),
-                                                         schemaMan.get(),
-                                                         indexMan.get(),
-                                                         nullptr);
-        cpp2::AddVerticesRequest req;
-        req.space_id = 0;
-        req.overwritable = false;
-        // partId => List<Vertex>
-        for (PartitionID partId = 0; partId < 3; partId++) {
-            auto vertices = TestUtils::setupVertices(partId, partId * 10, 10 * (partId + 1));
-            req.parts.emplace(partId, std::move(vertices));
-        }
+        auto* processor = AddVerticesProcessor::instance(env, nullptr);
 
+        LOG(INFO) << "Build AddVerticesRequest...";
+        cpp2::AddVerticesRequest req = mock::MockData::mockAddVerticesReq();
+
+        LOG(INFO) << "Test AddVerticesProcessor...";
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        EXPECT_EQ(0, resp.result.failed_codes.size());
+        EXPECT_EQ(0, resp.result.failed_parts.size());
 
-        for (PartitionID partId = 0; partId < 3; partId++) {
-            for (VertexID vertexId = 10 * partId; vertexId < 10 * (partId + 1); vertexId++) {
-                auto prefix = NebulaKeyUtils::vertexPrefix(partId, vertexId);
-                std::unique_ptr<kvstore::KVIterator> iter;
-                EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
-                TagID tagId = 0;
-                while (iter->valid()) {
-                    EXPECT_EQ(TestUtils::encodeValue(partId, vertexId, tagId), iter->val());
-                    tagId++;
-                    iter->next();
-                }
-                EXPECT_EQ(10, tagId);
-            }
-        }
+        LOG(INFO) << "Check data in kv store...";
+        // The number of data in players and teams is 81
+        checkAddVerticesData(req, env, 81, 0);
     }
 
     // Delete vertices
     {
-        cpp2::DeleteVerticesRequest req;
-        req.set_space_id(0);
-        for (PartitionID partId = 0; partId < 3; partId++) {
-            std::vector<VertexID> vertices;
-            for (VertexID vertexId = 10 * partId; vertexId < 10 * (partId + 1); vertexId++) {
-                vertices.emplace_back(vertexId);
-            }
-            req.parts.emplace(partId, std::move(vertices));
-        }
+        auto* processor = DeleteVerticesProcessor::instance(env, nullptr);
 
-        auto* processor = DeleteVerticesProcessor::instance(kv.get(),
-                                                            schemaMan.get(),
-                                                            indexMan.get(),
-                                                            nullptr);
+        LOG(INFO) << "Build DeleteVerticesRequest...";
+        cpp2::DeleteVerticesRequest req = mock::MockData::mockDeleteVerticesReq();
+
+        LOG(INFO) << "Test DeleteVerticesProcessor...";
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        EXPECT_EQ(0, resp.result.failed_codes.size());
+        EXPECT_EQ(0, resp.result.failed_parts.size());
+
+        LOG(INFO) << "Check data in kv store...";
+        auto ret = env->schemaMan_->getSpaceVidLen(req.space_id);
+        EXPECT_TRUE(ret.ok());
+        auto spaceVidLen = ret.value();
+
+        // All the added datas are deleted, the number of vertices is 0
+        checkVerticesData(spaceVidLen, req.space_id, req.parts, env, 0);
+    }
+}
+
+TEST(DeleteVerticesTest, MultiVersionTest) {
+    fs::TempDir rootPath("/tmp/DeleteVertexTest.XXXXXX");
+    mock::MockCluster cluster;
+    cluster.initStorageKV(rootPath.path());
+    auto* env = cluster.storageEnv_.get();
+
+    // Add vertices
+    {
+        LOG(INFO) << "Build AddVerticesRequest...";
+        cpp2::AddVerticesRequest req = mock::MockData::mockAddVerticesReq();
+        cpp2::AddVerticesRequest specifiedOrderReq =
+            mock::MockData::mockAddVerticesSpecifiedOrderReq();
+
+        {
+            LOG(INFO) << "AddVerticesProcessor...";
+            auto* processor = AddVerticesProcessor::instance(env, nullptr);
+            auto fut = processor->getFuture();
+            processor->process(req);
+            auto resp = std::move(fut).get();
+            EXPECT_EQ(0, resp.result.failed_parts.size());
+        }
+        {
+            LOG(INFO) << "AddVerticesProcessor...";
+            auto* processor = AddVerticesProcessor::instance(env, nullptr);
+            auto fut = processor->getFuture();
+            processor->process(specifiedOrderReq);
+            auto resp = std::move(fut).get();
+            EXPECT_EQ(0, resp.result.failed_parts.size());
+        }
+
+        LOG(INFO) << "Check data in kv store...";
+        // The number of vertices is 162
+        checkAddVerticesData(req, env, 162, 2);
     }
 
-    for (PartitionID partId = 0; partId < 3; partId++) {
-        for (VertexID vertexId = 10 * partId; vertexId < 10 * (partId + 1); vertexId++) {
-            auto prefix = NebulaKeyUtils::vertexPrefix(partId, vertexId);
-            std::unique_ptr<kvstore::KVIterator> iter;
-            EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
-            CHECK(!iter->valid());
-        }
+    // Delete vertices
+    {
+        auto* processor = DeleteVerticesProcessor::instance(env, nullptr);
+
+        LOG(INFO) << "Build DeleteVerticesRequest...";
+        cpp2::DeleteVerticesRequest req = mock::MockData::mockDeleteVerticesReq();
+
+        LOG(INFO) << "Test DeleteVerticesProcessor...";
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+        EXPECT_EQ(0, resp.result.failed_parts.size());
+
+        LOG(INFO) << "Check data in kv store...";
+        auto ret = env->schemaMan_->getSpaceVidLen(req.space_id);
+        EXPECT_TRUE(ret.ok());
+        auto spaceVidLen = ret.value();
+
+        // All the added datas are deleted, the number of vertices is 0
+        checkVerticesData(spaceVidLen, req.space_id, req.parts, env, 0);
     }
 }
 

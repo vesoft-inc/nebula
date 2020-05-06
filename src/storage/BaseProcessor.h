@@ -81,6 +81,10 @@ protected:
 
     void handleAsync(GraphSpaceID spaceId, PartitionID partId, kvstore::ResultCode code);
 
+    StatusOr<std::string> encodeRowVal(const meta::NebulaSchemaProvider* schema,
+                                       const std::vector<std::string>& propNames,
+                                       const std::vector<Value>& props);
+
 protected:
     StorageEnv*                                     env_{nullptr};
     stats::Stats*                                   stats_{nullptr};
@@ -92,6 +96,7 @@ protected:
     std::vector<cpp2::PartitionResult>              codes_;
     std::mutex                                      lock_;
     int32_t                                         callingNum_{0};
+    int32_t                                         spaceVidLen_;
 };
 
 }  // namespace storage

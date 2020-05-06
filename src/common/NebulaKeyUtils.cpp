@@ -9,6 +9,14 @@
 namespace nebula {
 
 // static
+bool NebulaKeyUtils::isValidVidLen(size_t vIdLen, VertexID srcVId, VertexID dstVId) {
+    if (srcVId.size() > vIdLen || dstVId.size() > vIdLen) {
+        return false;
+    }
+    return true;
+}
+
+// static
 std::string NebulaKeyUtils::vertexKey(size_t vIdLen,
                                       PartitionID partId,
                                       VertexID vId,

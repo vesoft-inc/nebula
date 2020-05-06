@@ -6,6 +6,7 @@
 
 #include "base/Base.h"
 #include "storage/BaseProcessor.h"
+#include "codec/RowWriterV2.h"
 
 namespace nebula {
 namespace storage {
@@ -150,6 +151,38 @@ void BaseProcessor<RESP>::doRemove(GraphSpaceID spaceId,
         spaceId, partId, std::move(keys), [spaceId, partId, this](kvstore::ResultCode code) {
         handleAsync(spaceId, partId, code);
     });
+}
+
+template <typename RESP>
+StatusOr<std::string>
+BaseProcessor<RESP>::encodeRowVal(const meta::NebulaSchemaProvider* schema,
+                                  const std::vector<std::string>& propNames,
+                                  const std::vector<Value>& props) {
+    RowWriterV2 rowWrite(schema);
+    // If req.prop_names is not empty, use the property name in req.prop_names
+    // Otherwise, use property name in schema
+    if (!propNames.empty()) {
+        for (size_t i = 0; i < propNames.size(); i++) {
+            auto wRet = rowWrite.setValue(propNames[i], props[i]);
+            if (wRet != WriteResult::SUCCEEDED) {
+                return Status::Error("Add field faild");
+            }
+        }
+    } else {
+        for (size_t i = 0; i < props.size(); i++) {
+            auto wRet = rowWrite.setValue(i, props[i]);
+            if (wRet != WriteResult::SUCCEEDED) {
+                return Status::Error("Add field faild");
+            }
+        }
+    }
+
+    auto wRet = rowWrite.finish();
+    if (wRet != WriteResult::SUCCEEDED) {
+        return Status::Error("Add field faild");
+    }
+
+    return std::move(rowWrite).moveEncodedStr();
 }
 
 }  // namespace storage

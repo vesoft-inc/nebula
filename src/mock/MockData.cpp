@@ -5,7 +5,6 @@
  */
 
 #include "mock/MockData.h"
-#include "meta/NebulaSchemaProvider.h"
 #include "interface/gen-cpp2/common_types.h"
 #include "interface/gen-cpp2/meta_types.h"
 
@@ -38,10 +37,10 @@ std::vector<std::string> MockData::teams_ = {
     "Raptors",
     "76ers",
     "Pacers",
-    "Bulls"
-    "Hawks"
-    "Knicks"
-    "Pistons"
+    "Bulls",
+    "Hawks",
+    "Knicks",
+    "Pistons",
     "Bucks",
     "Magic",
     "Nets",
@@ -51,6 +50,7 @@ std::vector<std::string> MockData::teams_ = {
 
 // Player name, age, playing, NBA career(years), start year, end year, games,
 // career average score, served teams, country(default value America), champions(nullable)
+// 51 players
 std::vector<Player> MockData::players_ = {
     {"Tim Duncan",            44,  false,  19,  1997,  2016,  1392,  19.0,  1,  "America",   5},
     {"Tony Parker",           38,  false,  18,  2001,  2019,  1254,  15.5,  2,  "France",    4},
@@ -107,6 +107,7 @@ std::vector<Player> MockData::players_ = {
 
 // Player name, team name, start year, end year,team career(years), games, average scores
 // Starting game(default value false), champions in team(nullable)
+// serve 167
 std::vector<Serve> MockData::serve_ = {
     {"Tim Duncan",            "Spurs",         1997, 2016, 19, 1392, 19.0, true,  5},
     {"Tony Parker",           "Spurs",         2001, 2018, 17, 1198, 16.6, true,  4},
@@ -464,15 +465,33 @@ std::vector<VertexData> MockData::mockVertices() {
     return ret;
 }
 
+std::vector<VertexID> MockData::mockVerticeIds() {
+    std::vector<VertexID> ret;
+    // Multiple vertices, each vertex has two tags, player and team
+    // player tagId is 1, team tagId is 2
+    for (auto& player : players_) {
+        VertexID data;
+        data = player.name_;
+        ret.push_back(data);
+    }
+
+    for (auto& team : teams_) {
+        VertexID data;
+        data = team;
+        ret.push_back(data);
+    }
+    return ret;
+}
+
 std::vector<EdgeData> MockData::mockEdges() {
     std::vector<EdgeData> ret;
-    // Use serve data, EdgeType is 101, EdgeRanking is 102
+    // Use serve data, positive edgeType is 101, reverse edgeType is -101
     for (auto& serve : serve_) {
-        EdgeData data;
-        data.srcId_ = serve.playerName_;
-        data.type_ = 101,
-        data.rank_ = 102,
-        data.dstId_ = serve.teamName_;
+        EdgeData positiveEdge;
+        positiveEdge.srcId_ = serve.playerName_;
+        positiveEdge.type_ = 101;
+        positiveEdge.rank_ = serve.startYear_;
+        positiveEdge.dstId_ = serve.teamName_;
 
         std::vector<Value>  props;
         props.emplace_back(serve.playerName_);
@@ -485,75 +504,119 @@ std::vector<EdgeData> MockData::mockEdges() {
 
         // Use default value and nullable
         if (!serve.starting_) {
-            data.props_ = std::move(props);
-            ret.push_back(data);
+            positiveEdge.props_ = std::move(props);
         } else {
             props.emplace_back(serve.starting_);
             if (serve.champions_) {
                 props.emplace_back(serve.champions_);
             }
-            data.props_ = std::move(props);
-            ret.push_back(data);
+            positiveEdge.props_ = std::move(props);
         }
+
+        // Reverse edge
+        auto reverseEdge = positiveEdge;
+        reverseEdge.type_ = -positiveEdge.type_;
+        ret.push_back(positiveEdge);
+        ret.push_back(reverseEdge);
     }
     return ret;
 }
 
-nebula::storage::cpp2::AddVerticesRequest MockData::mockAddVertices(int32_t parts) {
+std::vector<EdgeData> MockData::mockEdgeKeys() {
+    std::vector<EdgeData> ret;
+    // Use serve data, positive edgeType is 101, reverse edgeType is -101
+    for (auto& serve : serve_) {
+        EdgeData positiveEdge;
+        positiveEdge.srcId_ = serve.playerName_;
+        positiveEdge.type_ = 101;
+        positiveEdge.rank_ = serve.startYear_;
+        positiveEdge.dstId_ = serve.teamName_;
+
+        // Reverse edge
+        auto reverseEdge = positiveEdge;
+        reverseEdge.type_ = -positiveEdge.type_;
+        ret.push_back(positiveEdge);
+        ret.push_back(reverseEdge);
+    }
+    return ret;
+}
+
+
+nebula::storage::cpp2::AddVerticesRequest MockData::mockAddVerticesReq(int32_t parts) {
     nebula::storage::cpp2::AddVerticesRequest req;
     req.space_id = 1;
     req.overwritable = true;
 
-    UNUSED(parts);
-#if 0
     auto retRecs = mockVertices();
 
-    int count = 0;
     for (auto& rec : retRecs) {
         nebula::storage::cpp2::NewVertex newVertex;
         nebula::storage::cpp2::NewTag newTag;
-        nebula::storage::cpp2::PropDataByRow  row;
+        auto partId = std::hash<std::string>()(rec.vId_) % parts + 1;
 
-        row.set_props(std::move(rec.props_));
         newTag.set_tag_id(rec.tId_);
-        newTag.set_props(std::move(row));
+        newTag.set_props(std::move(rec.props_));
 
         std::vector<nebula::storage::cpp2::NewTag> newTags;
         newTags.push_back(std::move(newTag));
 
         newVertex.id = rec.vId_;
         newVertex.set_tags(std::move(newTags));
-        req.parts[(count % parts) + 1].emplace_back(std::move(newVertex));
+        req.parts[partId].emplace_back(std::move(newVertex));
     }
-#endif
     return req;
 }
 
-nebula::storage::cpp2::AddEdgesRequest MockData::mockAddEdges(int32_t parts) {
+nebula::storage::cpp2::DeleteVerticesRequest MockData::mockDeleteVerticesReq(int32_t parts) {
+    nebula::storage::cpp2::DeleteVerticesRequest req;
+    req.space_id = 1;
+
+    auto retRecs = mockVerticeIds();
+    for (auto& rec : retRecs) {
+        auto partId = std::hash<std::string>()(rec) % parts + 1;
+        req.parts[partId].emplace_back(std::move(rec));
+    }
+    return req;
+}
+
+nebula::storage::cpp2::AddEdgesRequest MockData::mockAddEdgesReq(int32_t parts) {
     nebula::storage::cpp2::AddEdgesRequest req;
     req.space_id = 1;
     req.overwritable = true;
-    UNUSED(parts);
-#if 0
     auto retRecs = mockEdges();
-    int count = 0;
     for (auto& rec : retRecs) {
         nebula::storage::cpp2::NewEdge newEdge;
         nebula::storage::cpp2::EdgeKey edgeKey;
+        auto partId = std::hash<std::string>()(rec.srcId_) % parts + 1;
+
         edgeKey.src = rec.srcId_;
         edgeKey.edge_type = rec.type_;
         edgeKey.ranking = rec.rank_;
         edgeKey.dst = rec.dstId_;
 
-        nebula::storage::cpp2::PropDataByRow  row;
-        row.set_props(std::move(rec.props_));
-
         newEdge.set_key(std::move(edgeKey));
-        newEdge.set_props(std::move(row));
+        newEdge.set_props(std::move(rec.props_));
 
-        req.parts[(count % parts) + 1].emplace_back(std::move(newEdge));
+        req.parts[partId].emplace_back(std::move(newEdge));
     }
-#endif
+    return req;
+}
+
+nebula::storage::cpp2::DeleteEdgesRequest MockData::mockDeleteEdgesReq(int32_t parts) {
+    nebula::storage::cpp2::DeleteEdgesRequest req;
+    req.space_id = 1;
+
+    auto retRecs = mockEdgeKeys();
+    for (auto& rec : retRecs) {
+        auto partId = std::hash<std::string>()(rec.srcId_) % parts + 1;
+
+        nebula::storage::cpp2::EdgeKey edgeKey;
+        edgeKey.src = rec.srcId_;
+        edgeKey.edge_type = rec.type_;
+        edgeKey.ranking = rec.rank_;
+        edgeKey.dst = rec.dstId_;
+        req.parts[partId].emplace_back(std::move(edgeKey));
+    }
     return req;
 }
 
@@ -597,13 +660,13 @@ std::vector<VertexData> MockData::mockVerticesSpecifiedOrder() {
 
 std::vector<EdgeData> MockData::mockEdgesSpecifiedOrder() {
     std::vector<EdgeData> ret;
-    // Use serve data, EdgeType is 101, EdgeRanking is 102
+    // Use serve data, positive edgeType is 101, reverse edgeType is -101
     for (auto& serve : serve_) {
-        EdgeData data;
-        data.srcId_ = serve.playerName_;
-        data.type_ = 101,
-        data.rank_ = 102,
-        data.dstId_ = serve.teamName_;
+        EdgeData positiveEdge;
+        positiveEdge.srcId_ = serve.playerName_;
+        positiveEdge.type_ = 101;
+        positiveEdge.rank_ = serve.startYear_;
+        positiveEdge.dstId_ = serve.teamName_;
 
         std::vector<Value>  props;
         props.emplace_back(serve.teamAvgScore_);
@@ -616,62 +679,64 @@ std::vector<EdgeData> MockData::mockEdgesSpecifiedOrder() {
 
         // serve.starting_ use default value
         // serve.champions_ use null value
+        positiveEdge.props_ = std::move(props);
 
-        data.props_ = std::move(props);
-        ret.push_back(data);
+        // Reverse edge
+        auto reverseEdge = positiveEdge;
+        reverseEdge.type_ = -positiveEdge.type_;
+        ret.push_back(positiveEdge);
+        ret.push_back(reverseEdge);
     }
     return ret;
 }
 
 nebula::storage::cpp2::AddVerticesRequest
-MockData::mockAddVerticesSpecifiedOrder(int32_t parts) {
+MockData::mockAddVerticesSpecifiedOrderReq(int32_t parts) {
     nebula::storage::cpp2::AddVerticesRequest req;
     req.space_id = 1;
     req.overwritable = true;
-    UNUSED(parts);
-#if 0
-    auto retRecs = mockVertices();
+    auto retRecs = mockVerticesSpecifiedOrder();
 
-    int count = 0;
     for (auto& rec : retRecs) {
-        nebula::storage::cpp2::NewVertex newVertex;
-        nebula::storage::cpp2::NewTag newTag;
-        nebula::storage::cpp2::PropDataByRow  row;
+        auto partId = std::hash<std::string>()(rec.vId_) % parts + 1;
 
-        row.set_props(std::move(rec.props_));
-        newTag.set_tag_id(rec.tId_);
-        newTag.set_props(std::move(row));
         if (rec.tId_ == 1) {
             std::vector<std::string> colNames{"serveTeams", "avgScore", "games", "endYear",
                                               "startYear",  "career", "playing", "age",
                                               "name"};
-            newTag.set_names(std::move(colNames));
+            req.prop_names[1] = std::move(colNames);
         } else {
             std::vector<std::string> colNames{"name"};
-            newTag.set_names(std::move(colNames));
+            req.prop_names[2] = std::move(colNames);
         }
+
+        nebula::storage::cpp2::NewVertex newVertex;
+        nebula::storage::cpp2::NewTag newTag;
+
+        newTag.set_tag_id(rec.tId_);
+        newTag.set_props(std::move(rec.props_));
         std::vector<nebula::storage::cpp2::NewTag> newTags;
         newTags.push_back(std::move(newTag));
 
         newVertex.id = rec.vId_;
         newVertex.set_tags(std::move(newTags));
-        req.parts[(count % parts) + 1].emplace_back(std::move(newVertex));
+        req.parts[partId].emplace_back(std::move(newVertex));
     }
-#endif
     return req;
 }
 
 nebula::storage::cpp2::AddEdgesRequest
-MockData::mockAddEdgesSpecifiedOrder(int32_t parts) {
+MockData::mockAddEdgesSpecifiedOrderReq(int32_t parts) {
     nebula::storage::cpp2::AddEdgesRequest req;
+    // Use space id is 1 when mock
     req.space_id = 1;
     req.overwritable = true;
-    UNUSED(parts);
-#if 0
-    auto retRecs = mockEdges();
 
-    int count = 0;
+    auto retRecs = mockEdgesSpecifiedOrder();
+
     for (auto& rec : retRecs) {
+        auto partId = std::hash<std::string>()(rec.srcId_) % parts + 1;
+
         nebula::storage::cpp2::NewEdge newEdge;
         nebula::storage::cpp2::EdgeKey edgeKey;
         edgeKey.src = rec.srcId_;
@@ -679,18 +744,14 @@ MockData::mockAddEdgesSpecifiedOrder(int32_t parts) {
         edgeKey.ranking = rec.rank_;
         edgeKey.dst = rec.dstId_;
 
-        nebula::storage::cpp2::PropDataByRow  row;
-        row.set_props(std::move(rec.props_));
-
         newEdge.set_key(std::move(edgeKey));
-        newEdge.set_props(std::move(row));
+        newEdge.set_props(std::move(rec.props_));
+        req.parts[partId].emplace_back(std::move(newEdge));
 
         std::vector<std::string> colNames{"teamAvgScore", "teamGames", "teamCareer",
                                           "endYear", "startYear", "teamName", "playerName"};
-        newEdge.set_names(std::move(colNames));
-        req.parts[(count % parts) + 1].emplace_back(std::move(newEdge));
+        req.set_prop_names(std::move(colNames));
     }
-#endif
     return req;
 }
 

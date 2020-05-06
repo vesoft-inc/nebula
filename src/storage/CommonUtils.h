@@ -10,9 +10,12 @@
 #include "base/Base.h"
 #include "meta/SchemaProviderIf.h"
 #include "codec/RowReader.h"
+#include "base/ConcurrentLRUCache.h"
 
 namespace nebula {
 namespace storage {
+
+using VertexCache = ConcurrentLRUCache<std::pair<VertexID, TagID>, std::string>;
 
 bool checkDataExpiredForTTL(const meta::SchemaProviderIf* schema,
                             RowReader* reader,

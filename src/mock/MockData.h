@@ -72,26 +72,42 @@ public:
     /*
      * Mock data
      */
-    // Construct data and request in the order of schema
+    // Construct data in the order of schema
     static std::vector<VertexData> mockVertices();
 
     static std::vector<EdgeData> mockEdges();
 
-    static nebula::storage::cpp2::AddVerticesRequest mockAddVertices(int32_t parts = 6);
+    static std::vector<VertexID> mockVerticeIds();
 
-    static nebula::storage::cpp2::AddEdgesRequest mockAddEdges(int32_t parts = 6);
+    // Only has EdgeKey data, not props
+    static std::vector<EdgeData> mockEdgeKeys();
 
-    // Construct data and requests in the specified order
+    // Construct data in the specified order
     // For convenience, here is the reverse order
     static std::vector<VertexData> mockVerticesSpecifiedOrder();
 
     static std::vector<EdgeData> mockEdgesSpecifiedOrder();
 
+    /*
+     * Mock request
+     */
     static nebula::storage::cpp2::AddVerticesRequest
-    mockAddVerticesSpecifiedOrder(int32_t parts = 6);
+    mockAddVerticesReq(int32_t parts = 6);
 
     static nebula::storage::cpp2::AddEdgesRequest
-    mockAddEdgesSpecifiedOrder(int32_t parts = 6);
+    mockAddEdgesReq(int32_t parts = 6);
+
+    static nebula::storage::cpp2::DeleteVerticesRequest
+    mockDeleteVerticesReq(int32_t parts = 6);
+
+    static nebula::storage::cpp2::DeleteEdgesRequest
+    mockDeleteEdgesReq(int32_t parts = 6);
+
+    static nebula::storage::cpp2::AddVerticesRequest
+    mockAddVerticesSpecifiedOrderReq(int32_t parts = 6);
+
+    static nebula::storage::cpp2::AddEdgesRequest
+    mockAddEdgesSpecifiedOrderReq(int32_t parts = 6);
 
 private:
     static std::vector<std::string> teams_;

@@ -60,6 +60,8 @@ public:
     static std::unique_ptr<kvstore::NebulaStore>
     initMetaKV(const char* dataPath, HostAddr localHost = HostAddr(0, 0));
 
+    void initStorageKV(const char* dataPath, HostAddr localHost = HostAddr(0, 0));
+
     static IPv4 localIP();
 
 public:

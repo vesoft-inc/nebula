@@ -6,127 +6,87 @@
 #include "storage/mutate/DeleteEdgesProcessor.h"
 #include <algorithm>
 #include <limits>
-#include "base/NebulaKeyUtils.h"
+#include "common/NebulaKeyUtils.h"
 
 namespace nebula {
 namespace storage {
 
 void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
-    auto spaceId = req.get_space_id();
-    CHECK_NOTNULL(kvstore_);
-    auto iRet = indexMan_->getEdgeIndexes(spaceId);
+    spaceId_ = req.get_space_id();
+    const auto& partEdges = req.get_parts();
+
+    CHECK_NOTNULL(env_->schemaMan_);
+    auto ret = env_->schemaMan_->getSpaceVidLen(spaceId_);
+    if (!ret.ok()) {
+        LOG(ERROR) << ret.status();
+        for (auto& part : partEdges) {
+            pushResultCode(cpp2::ErrorCode::E_INVALID_SPACEVIDLEN, part.first);
+        }
+        onFinished();
+        return;
+    }
+    spaceVidLen_ = ret.value();
+    callingNum_ = partEdges.size();
+
+    CHECK_NOTNULL(env_->indexMan_);
+    auto iRet = env_->indexMan_->getEdgeIndexes(spaceId_);
     if (iRet.ok()) {
         indexes_ = std::move(iRet).value();
     }
 
+    CHECK_NOTNULL(env_->kvstore_);
     if (indexes_.empty()) {
-        std::for_each(req.parts.begin(), req.parts.end(), [this](auto &partEdges) {
-            this->callingNum_ += partEdges.second.size();
-        });
+        // Operate every part, the graph layer guarantees the unique of the edgeKey
         std::vector<std::string> keys;
-        keys.reserve(16);
-        for (auto& partEdges : req.parts) {
-            auto partId = partEdges.first;
-            for (auto& edgeKey : partEdges.second) {
-                auto start = NebulaKeyUtils::edgeKey(partId,
+        keys.reserve(32);
+        for (auto& part : partEdges) {
+            auto partId = part.first;
+            keys.clear();
+            for (auto& edgeKey : part.second) {
+                if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, edgeKey.src, edgeKey.dst)) {
+                    LOG(ERROR) << "Space " << spaceId_ << " vertex length invalid, "
+                               << "space vid len: " << spaceVidLen_ << ", edge srcVid: "
+                               << edgeKey.src << " dstVid: " << edgeKey.dst;
+                    pushResultCode(cpp2::ErrorCode::E_INVALID_VID, partId);
+                    onFinished();
+                    return;
+                }
+                auto start = NebulaKeyUtils::edgeKey(spaceVidLen_,
+                                                     partId,
                                                      edgeKey.src,
                                                      edgeKey.edge_type,
                                                      edgeKey.ranking,
                                                      edgeKey.dst,
                                                      0);
-                auto end = NebulaKeyUtils::edgeKey(partId,
+                auto end = NebulaKeyUtils::edgeKey(spaceVidLen_,
+                                                   partId,
                                                    edgeKey.src,
                                                    edgeKey.edge_type,
                                                    edgeKey.ranking,
                                                    edgeKey.dst,
                                                    std::numeric_limits<int64_t>::max());
                 std::unique_ptr<kvstore::KVIterator> iter;
-                auto ret = this->kvstore_->range(spaceId, partId, start, end, &iter);
-                if (ret != kvstore::ResultCode::SUCCEEDED) {
-                    VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret)
-                            << ", spaceID " << spaceId;
-                    this->handleErrorCode(ret, spaceId, partId);
+                auto retRes = env_->kvstore_->range(spaceId_, partId, start, end, &iter);
+                if (retRes != kvstore::ResultCode::SUCCEEDED) {
+                    VLOG(3) << "Error! ret = " << static_cast<int32_t>(retRes)
+                            << ", spaceID " << spaceId_;
+                    this->handleErrorCode(retRes, spaceId_, partId);
                     this->onFinished();
                     return;
                 }
-                keys.clear();
                 while (iter && iter->valid()) {
                     auto key = iter->key();
                     keys.emplace_back(key.data(), key.size());
                     iter->next();
                 }
-                doRemove(spaceId, partId, keys);
             }
+            doRemove(spaceId_, partId, keys);
         }
     } else {
-        callingNum_ = req.parts.size();
-        std::for_each(req.parts.begin(), req.parts.end(), [spaceId, this](auto &partEdges) {
-            auto partId = partEdges.first;
-            auto atomic = [spaceId, partId, edges = std::move(partEdges.second), this]()
-                          -> folly::Optional<std::string> {
-                return deleteEdges(spaceId, partId, edges);
-            };
-            auto callback = [spaceId, partId, this](kvstore::ResultCode code) {
-                handleAsync(spaceId, partId, code);
-            };
-            this->kvstore_->asyncAtomicOp(spaceId, partId, atomic, callback);
-        });
+        LOG(FATAL) << "Unimplement";
     }
 }
 
-folly::Optional<std::string>
-DeleteEdgesProcessor::deleteEdges(GraphSpaceID spaceId,
-                                  PartitionID partId,
-                                  const std::vector<cpp2::EdgeKey>& edges) {
-    std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
-    for (auto& edge : edges) {
-        auto type = edge.edge_type;
-        auto srcId = edge.src;
-        auto rank = edge.ranking;
-        auto dstId = edge.dst;
-        auto prefix = NebulaKeyUtils::edgePrefix(partId, srcId, type, rank, dstId);
-        std::unique_ptr<kvstore::KVIterator> iter;
-        auto ret = this->kvstore_->prefix(spaceId, partId, prefix, &iter);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
-            VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret)
-                    << ", spaceId " << spaceId;
-            return folly::none;
-        }
-        bool isLatestVE = true;
-        while (iter->valid()) {
-            /**
-             * just get the latest version edge for index.
-             */
-            if (isLatestVE) {
-                std::unique_ptr<RowReader> reader;
-                for (auto& index : indexes_) {
-                    auto indexId = index->get_index_id();
-                    if (type == index->get_schema_id().get_edge_type()) {
-                        if (reader == nullptr) {
-                            reader = RowReader::getEdgePropReader(this->schemaMan_,
-                                                                  iter->val(),
-                                                                  spaceId,
-                                                                  type);
-                        }
-                        auto values = collectIndexValues(reader.get(),
-                                                         index->get_fields());
-                        auto indexKey = NebulaKeyUtils::edgeIndexKey(partId,
-                                                                     indexId,
-                                                                     srcId,
-                                                                     rank,
-                                                                     dstId,
-                                                                     values);
-                        batchHolder->remove(std::move(indexKey));
-                    }
-                }
-                isLatestVE = false;
-            }
-            batchHolder->remove(iter->key().str());
-            iter->next();
-        }
-    }
-    return encodeBatchValue(batchHolder->getBatch());
-}
 }  // namespace storage
 }  // namespace nebula
 

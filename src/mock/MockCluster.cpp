@@ -102,7 +102,7 @@ void MockCluster::startMeta(int32_t port, const std::string& rootPath) {
     LOG(INFO) << "The Meta Daemon started on port " << metaServer_->port_;
 }
 
-void MockCluster::startStorage(HostAddr addr, const std::string& rootPath) {
+void MockCluster::initStorageKV(const char* dataPath, HostAddr addr) {
     const std::vector<PartitionID> parts{1, 2, 3, 4, 5, 6};
     kvstore::KVOptions options;
     if (metaClient_ != nullptr) {
@@ -120,8 +120,8 @@ void MockCluster::startStorage(HostAddr addr, const std::string& rootPath) {
         schemaMan_ = memSchemaMan();
     }
     std::vector<std::string> paths;
-    paths.emplace_back(folly::stringPrintf("%s/disk1", rootPath.c_str()));
-    paths.emplace_back(folly::stringPrintf("%s/disk2", rootPath.c_str()));
+    paths.emplace_back(folly::stringPrintf("%s/disk1", dataPath));
+    paths.emplace_back(folly::stringPrintf("%s/disk2", dataPath));
     // Prepare KVStore
     options.dataPaths_ = std::move(paths);
     // options.cffBuilder_ = std::move(cffBuilder);
@@ -132,7 +132,10 @@ void MockCluster::startStorage(HostAddr addr, const std::string& rootPath) {
     storageEnv_->indexMan_ = indexMan_.get();
     storageEnv_->schemaMan_ = schemaMan_.get();
     storageEnv_->kvstore_ = storageKV_.get();
+}
 
+void MockCluster::startStorage(HostAddr addr, const std::string& rootPath) {
+    initStorageKV(rootPath.c_str(), addr);
     storageAdminServer_ = std::make_unique<RpcServer>();
     auto handler1 = std::make_shared<storage::StorageAdminServiceHandler>(storageEnv_.get());
     storageAdminServer_->start("admin-storage", addr.port, handler1);

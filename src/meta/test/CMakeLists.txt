@@ -2,6 +2,7 @@ set(meta_test_deps
     $<TARGET_OBJECTS:mock_obj>
     $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:storage_admin_service_handler>
+    $<TARGET_OBJECTS:graph_storage_service_handler>
     $<TARGET_OBJECTS:storage_common_obj>
     $<TARGET_OBJECTS:kvstore_obj>
     $<TARGET_OBJECTS:raftex_obj>
@@ -24,6 +25,7 @@ set(meta_test_deps
     $<TARGET_OBJECTS:common_network_obj>
     $<TARGET_OBJECTS:common_thread_obj>
     $<TARGET_OBJECTS:common_conf_obj>
+    $<TARGET_OBJECTS:codec_obj>
     $<TARGET_OBJECTS:common_datatypes_obj>
     $<TARGET_OBJECTS:common_base_obj>
 )
