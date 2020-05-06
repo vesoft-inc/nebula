@@ -249,7 +249,7 @@ int main(int argc, char *argv[]) {
         if (nebula::value(ret) == localhost) {
             LOG(INFO) << "Check and init root user";
             if (!nebula::meta::RootUserMan::isUserExists(kvstore.get())) {
-                if(!nebula::meta::RootUserMan::initRootUser(kvstore.get())) {
+                if (!nebula::meta::RootUserMan::initRootUser(kvstore.get())) {
                     LOG(ERROR) << "Init root user failed";
                     return EXIT_FAILURE;
                 }

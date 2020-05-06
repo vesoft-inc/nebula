@@ -337,6 +337,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 "||"                        { return TokenType::OR; }
 "&&"                        { return TokenType::AND; }
 "|"                         { return TokenType::PIPE; }
+"&"                         { return TokenType::AMPERSAND; }
 
 "="                         { return TokenType::ASSIGN; }
 
