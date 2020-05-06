@@ -27,21 +27,9 @@ set(storage_test_deps
     $<TARGET_OBJECTS:common_conf_obj>
     $<TARGET_OBJECTS:common_datatypes_obj>
     $<TARGET_OBJECTS:common_base_obj>
-    $<TARGET_OBJECTS:adHocSchema_obj>
-    $<TARGET_OBJECTS:adHocIndex_obj>
-    $<TARGET_OBJECTS:storage_common>
+    $<TARGET_OBJECTS:storage_common_obj>
 )
 
-
-nebula_add_library(
-    adHocSchema_obj OBJECT
-    AdHocSchemaManager.cpp
-)
-
-nebula_add_library(
-    adHocIndex_obj OBJECT
-    AdHocIndexManager.cpp
-)
 
 nebula_add_test(
     NAME
@@ -49,7 +37,6 @@ nebula_add_test(
     SOURCES
         AdminTaskManagerTest.cpp
     OBJECTS
-        $<TARGET_OBJECTS:adHocSchema_obj>
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}

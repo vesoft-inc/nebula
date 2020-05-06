@@ -35,10 +35,11 @@ namespace storage {
  *      6.2 cancel_a_task_while_some_sub_task_running
  * */
 
-using ResultCode = nebula::kvstore::ResultCode;
-using ErrOrSubTasks = ErrorOr<nebula::kvstore::ResultCode, std::vector<AdminSubTask>>;
+// using ResultCode = nebula::kvstore::ResultCode;
+using ResultCode = cpp2::ErrorCode;
+using ErrOrSubTasks = ErrorOr<cpp2::ErrorCode, std::vector<AdminSubTask>>;
 
-auto suc = kvstore::ResultCode::SUCCEEDED;
+auto suc = cpp2::ErrorCode::SUCCEEDED;
 int gJobId = 0;
 
 struct HookableTask : public AdminTask {
@@ -52,7 +53,7 @@ struct HookableTask : public AdminTask {
         return fGenSubTasks();
     }
 
-    void addSubTask(std::function<nebula::kvstore::ResultCode()> subTask) {
+    void addSubTask(std::function<cpp2::ErrorCode()> subTask) {
         subTasks.emplace_back(subTask);
     }
 
@@ -77,7 +78,7 @@ TEST(TaskManagerTest, extract_subtasks_to_context) {
     for (size_t i = 0; i < numSubTask; ++i) {
         task->addSubTask([&subTaskCalled]() {
             ++subTaskCalled;
-            return kvstore::ResultCode::SUCCEEDED;
+            return cpp2::ErrorCode::SUCCEEDED;
         });
     }
     for (auto& subtask : task->subTasks) {
@@ -205,6 +206,10 @@ TEST(TaskManagerTest, happy_path_task1_sub1) {
     size_t numSubTask = 1;
     std::shared_ptr<AdminTask> task = std::make_shared<HookableTask>();
     HookableTask* mockTask = dynamic_cast<HookableTask*>(task.get());
+    int jobId = ++gJobId;
+
+    mockTask->setJobId(jobId);
+    mockTask->setTaskId(jobId);
     folly::Promise<ResultCode> pTaskFini;
     auto fTaskFini = pTaskFini.getFuture();
 
@@ -218,7 +223,7 @@ TEST(TaskManagerTest, happy_path_task1_sub1) {
     auto subTask = [&subTaskCalled]() {
         ++subTaskCalled;
         LOG(INFO) << "subTask invoke()";
-        return kvstore::ResultCode::SUCCEEDED;
+        return cpp2::ErrorCode::SUCCEEDED;
     };
     for (size_t i = 0; i < numSubTask; ++i) {
         mockTask->addSubTask(subTask);
@@ -255,7 +260,7 @@ TEST(TaskManagerTest, run_a_medium_task_before_a_huge_task) {
         std::atomic<int> subTaskCalled{0};
         auto subTask = [&subTaskCalled]() {
             ++subTaskCalled;
-            return kvstore::ResultCode::SUCCEEDED;
+            return cpp2::ErrorCode::SUCCEEDED;
         };
         for (size_t i = 0; i < numSubTask; ++i) {
             mockTask->addSubTask(subTask);
@@ -289,7 +294,7 @@ TEST(TaskManagerTest, happy_path) {
 
             auto subTask = [&subTaskCalled]() {
                 ++subTaskCalled;
-                return kvstore::ResultCode::SUCCEEDED;
+                return cpp2::ErrorCode::SUCCEEDED;
             };
             for (size_t i = 0; i < numSubTask; ++i) {
                 mockTask->addSubTask(subTask);
@@ -318,7 +323,7 @@ TEST(TaskManagerTest, happy_path) {
 
             auto subTask = [&subTaskCalled]() {
                 ++subTaskCalled;
-                return kvstore::ResultCode::SUCCEEDED;
+                return cpp2::ErrorCode::SUCCEEDED;
             };
             for (size_t i = 0; i < numSubTask; ++i) {
                 mockTask->addSubTask(subTask);
@@ -347,7 +352,7 @@ TEST(TaskManagerTest, happy_path) {
 
             auto subTask = [&subTaskCalled]() {
                 ++subTaskCalled;
-                return kvstore::ResultCode::SUCCEEDED;
+                return cpp2::ErrorCode::SUCCEEDED;
             };
             for (size_t i = 0; i < numSubTask; ++i) {
                 mockTask->addSubTask(subTask);
@@ -375,7 +380,7 @@ TEST(TaskManagerTest, happy_path) {
             std::atomic<int> subTaskCalled{0};
             auto subTask = [&subTaskCalled]() {
                 ++subTaskCalled;
-                return kvstore::ResultCode::SUCCEEDED;
+                return cpp2::ErrorCode::SUCCEEDED;
             };
             for (size_t i = 0; i < numSubTask; ++i) {
                 mockTask->addSubTask(subTask);
@@ -403,7 +408,7 @@ TEST(TaskManagerTest, happy_path) {
             std::atomic<int> subTaskCalled{0};
             auto subTask = [&subTaskCalled]() {
                 ++subTaskCalled;
-                return kvstore::ResultCode::SUCCEEDED;
+                return cpp2::ErrorCode::SUCCEEDED;
             };
             for (size_t i = 0; i < numSubTask; ++i) {
                 mockTask->addSubTask(subTask);
@@ -431,7 +436,7 @@ TEST(TaskManagerTest, happy_path) {
             std::atomic<int> subTaskCalled{0};
             auto subTask = [&subTaskCalled]() {
                 ++subTaskCalled;
-                return kvstore::ResultCode::SUCCEEDED;
+                return cpp2::ErrorCode::SUCCEEDED;
             };
             for (size_t i = 0; i < numSubTask; ++i) {
                 mockTask->addSubTask(subTask);
@@ -460,7 +465,7 @@ TEST(TaskManagerTest, happy_path) {
             std::atomic<int> subTaskCalled{0};
             auto subTask = [&subTaskCalled]() {
                 ++subTaskCalled;
-                return kvstore::ResultCode::SUCCEEDED;
+                return cpp2::ErrorCode::SUCCEEDED;
             };
             for (size_t i = 0; i < numSubTask; ++i) {
                 mockTask->addSubTask(subTask);
@@ -481,7 +486,7 @@ TEST(TaskManagerTest, gen_sub_task_failed) {
         std::shared_ptr<AdminTask> task = std::make_shared<HookableTask>();
         HookableTask* mockTask = dynamic_cast<HookableTask*>(task.get());
         mockTask->fGenSubTasks = [&]() {
-            return kvstore::ResultCode::ERR_UNSUPPORTED;
+            return cpp2::ErrorCode::E_INVALID_TASK_PARA;
         };
 
         folly::Promise<ResultCode> pro;
@@ -496,7 +501,7 @@ TEST(TaskManagerTest, gen_sub_task_failed) {
 
         fut.wait();
 
-        EXPECT_EQ(fut.value(), kvstore::ResultCode::ERR_UNSUPPORTED);
+        EXPECT_EQ(fut.value(), cpp2::ErrorCode::E_INVALID_TASK_PARA);
     }
 
     taskMgr->shutdown();
@@ -505,12 +510,12 @@ TEST(TaskManagerTest, gen_sub_task_failed) {
 TEST(TaskManagerTest, some_subtask_failed) {
     auto taskMgr = AdminTaskManager::instance();
     taskMgr->init();
-    std::vector<kvstore::ResultCode> errorCode {
-        kvstore::ResultCode::SUCCEEDED,
-        kvstore::ResultCode::ERR_PART_NOT_FOUND,
-        kvstore::ResultCode::ERR_LEADER_CHANGED,
-        kvstore::ResultCode::ERR_TAG_NOT_FOUND,
-        kvstore::ResultCode::ERR_UNKNOWN
+    std::vector<cpp2::ErrorCode> errorCode {
+        cpp2::ErrorCode::SUCCEEDED,
+        cpp2::ErrorCode::E_PART_NOT_FOUND,
+        cpp2::ErrorCode::E_LEADER_CHANGED,
+        cpp2::ErrorCode::E_USER_CANCEL,
+        cpp2::ErrorCode::E_UNKNOWN
     };
 
     for (auto t = ++gJobId; t < 5; ++t) {
@@ -585,7 +590,7 @@ TEST(TaskManagerTest, cancel_a_running_task_with_only_1_sub_task) {
     fFinish.wait();
 
     taskMgr->shutdown();
-    auto err = kvstore::ResultCode::ERR_USER_CANCELLED;
+    auto err = cpp2::ErrorCode::E_USER_CANCEL;
     EXPECT_EQ(fFinish.value(), err);
 }
 
@@ -593,7 +598,7 @@ TEST(TaskManagerTest, cancel_1_task_in_a_2_tasks_queue) {
     auto taskMgr = AdminTaskManager::instance();
     taskMgr->init();
 
-    auto err = kvstore::ResultCode::ERR_USER_CANCELLED;
+    auto err = cpp2::ErrorCode::E_USER_CANCEL;
 
     folly::Promise<ResultCode> pTask1;
     auto fTask1 = pTask1.getFuture();
@@ -655,7 +660,7 @@ TEST(TaskManagerTest, cancel_1_task_in_a_2_tasks_queue) {
 TEST(TaskManagerTest, cancel_a_task_before_all_sub_task_running) {
     auto taskMgr = AdminTaskManager::instance();
     taskMgr->init();
-    auto err = kvstore::ResultCode::ERR_USER_CANCELLED;
+    auto err = cpp2::ErrorCode::E_USER_CANCEL;
 
     int jobId = 1;
     folly::Promise<ResultCode> pFiniTask0;
@@ -704,7 +709,7 @@ TEST(TaskManagerTest, cancel_a_task_before_all_sub_task_running) {
 TEST(TaskManagerTest, cancel_a_task_while_some_sub_task_running) {
     auto taskMgr = AdminTaskManager::instance();
     taskMgr->init();
-    auto usr_cancel = kvstore::ResultCode::ERR_USER_CANCELLED;
+    auto usr_cancel = cpp2::ErrorCode::E_USER_CANCEL;
 
     folly::Promise<ResultCode> task1_p;
     folly::Future<ResultCode> task1_f = task1_p.getFuture();
