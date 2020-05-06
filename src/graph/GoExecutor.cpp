@@ -555,7 +555,7 @@ void GoExecutor::stepOut() {
     };
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception when handle out-bounds/in-bounds: " << e.what();
-        doError(Status::Error("Exeception when handle out-bounds/in-bounds: %s.",
+        doError(Status::Error("Exception when handle out-bounds/in-bounds: %s.",
                     e.what().c_str()));
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
@@ -563,9 +563,7 @@ void GoExecutor::stepOut() {
 
 
 void GoExecutor::onStepOutResponse(RpcResponse &&rpcResp) {
-    if (isRecord()) {
-        joinResp(std::move(rpcResp));
-    }
+    joinResp(std::move(rpcResp));
 
     if (isFinalStep()) {
         maybeFinishExecution();
@@ -757,7 +755,7 @@ StatusOr<std::vector<cpp2::RowValue>> GoExecutor::toThriftResponse() const {
 
 StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
     std::vector<storage::cpp2::PropDef> props;
-    if (!isFinalStep()) {
+    if (!isRecord()) {
         for (auto &e : edgeTypes_) {
             storage::cpp2::PropDef pd;
             pd.owner = storage::cpp2::PropOwner::EDGE;

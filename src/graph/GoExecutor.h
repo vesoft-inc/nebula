@@ -71,10 +71,10 @@ private:
     }
 
     // is record the response data
+    // Won't return the properties(only dst) if false
     // E.G 0-> 1 -> 2, two step
     bool isRecord() const {
-        // Record all for get next start even if user not require this response data
-        return true;
+        return curStep_ >= recordFrom_ && curStep_ <= steps_;
     }
 
     /**

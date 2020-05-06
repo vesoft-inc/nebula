@@ -2368,6 +2368,27 @@ TEST_P(GoTest, WithIntermediateData) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    // With properties
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tony Parker"];
+        auto *fmt = "GO 1 TO 2 STEPS FROM %ld OVER like "
+            "YIELD DISTINCT like._dst, like.likeness, $$.player.name";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::tuple<VertexID, int64_t, std::string>> expected = {
+            {players_["Manu Ginobili"].vid(), 95, "Manu Ginobili"},
+            {players_["LaMarcus Aldridge"].vid(), 90, "LaMarcus Aldridge"},
+            {players_["Tim Duncan"].vid(), 95, "Tim Duncan"},
+            {players_["Tony Parker"].vid(), 95, "Tony Parker"},
+            {players_["Tony Parker"].vid(), 75, "Tony Parker"},
+            {players_["Tim Duncan"].vid(), 75, "Tim Duncan"},
+            {players_["Tim Duncan"].vid(), 90, "Tim Duncan"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
     // empty starts before last step
     {
         cpp2::ExecutionResponse resp;
@@ -2470,6 +2491,28 @@ TEST_P(GoTest, WithIntermediateData) {
             {teams_["Thunders"].vid(), 0},
             {teams_["Rockets"].vid(), 0},
             {0, players_["Russell Westbrook"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // With properties
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO 1 TO 2 STEPS FROM %ld OVER * "
+            "YIELD serve._dst, like._dst, serve.start_year, like.likeness, $$.player.name";
+        const auto &player = players_["Russell Westbrook"];
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, std::string>> expected = {
+            {teams_["Thunders"].vid(), 0, 2008, 0, ""},
+            {0, players_["Paul George"].vid(), 0, 90, "Paul George"},
+            {0, players_["James Harden"].vid(), 0, 90, "James Harden"},
+            {teams_["Pacers"].vid(), 0, 2010, 0, ""},
+            {teams_["Thunders"].vid(), 0, 2017, 0, ""},
+            {0, players_["Russell Westbrook"].vid(), 0, 95, "Russell Westbrook"},
+            {teams_["Thunders"].vid(), 0, 2009, 0, ""},
+            {teams_["Rockets"].vid(), 0, 2012, 0, ""},
+            {0, players_["Russell Westbrook"].vid(), 0, 80, "Russell Westbrook"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
