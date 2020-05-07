@@ -58,19 +58,11 @@ TEST_F(PermissionTest, SimpleTest) {
     FLAGS_auth_type = "cloud";
     FLAGS_cloud_http_url = "http://192.168.8.51:3000/mock/12/api/account/login";
     {
-        auto adminClient = gEnv->getClient("admin", "Aadmin");
+        auto adminClient = gEnv->getClient("admin", "admin");
         ASSERT_NE(nullptr, adminClient);
     }
     {
-        auto adminClient = gEnv->getClient("admin", "Tadmin");
-        ASSERT_NE(nullptr, adminClient);
-    }
-    {
-        auto adminClient = gEnv->getClient("panda", "Aadmin");
-        ASSERT_EQ(nullptr, adminClient);
-    }
-    {
-        auto adminClient = gEnv->getClient("panda", "Tadmin");
+        auto adminClient = gEnv->getClient("panda", "admin");
         ASSERT_EQ(nullptr, adminClient);
     }
 
