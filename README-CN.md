@@ -20,9 +20,13 @@
   </a>
 </p>
 
-# Nebula Graph是什么？
+# Nebula Graph 是什么
 
 **Nebula Graph** 是一款开源的图数据库，擅长处理千亿个顶点和万亿条边的超大规模数据集。
+
+下图为 **Nebula Graph** 产品架构图：
+
+![image](https://github.com/vesoft-inc/nebula-docs/raw/master/images/Nebula%20Arch.png)
 
 与其他图数据库产品相比，**Nebula Graph** 具有如下优势：
 
@@ -33,48 +37,32 @@
 * 类 SQL 查询语言
 * 用户鉴权
 
+## 快速使用
+
+请查看[快速使用手册](https://docs.nebula-graph.com.cn/manual-CN/4.contributions/how-to-contribute/)，开始使用 **Nebula Graph**。
+
+在开始使用 **Nebula Graph** 之前，必须通过[编译源码](https://docs.nebula-graph.com.cn/manual-CN/3.build-develop-and-administration/1.build/1.build-source-code/)，[rpm/deb 包](https://docs.nebula-graph.com.cn/manual-CN/3.build-develop-and-administration/2.install/1.install-with-rpm-deb/) 或者 [docker compose](https://github.com/vesoft-inc/nebula-docker-compose/blob/master/README_zh-CN.md) 方式安装 **Nebula Graph**。您也可以观看[视频](https://space.bilibili.com/472621355)学习如何安装 **Nebula Graph**。
+
+如果您遇到任何问题，请前往 Nebula Graph [官方论坛](https://discuss.nebula-graph.com.cn) 提问。
+
+## 文档
+
+* [简体中文](https://docs.nebula-graph.com.cn/)
+* [English](https://docs.nebula-graph.io/)
+
 ## 产品路线图
 
 **Nebula Graph** 产品规划路线图请参见 [roadmap](https://github.com/vesoft-inc/nebula/wiki/Nebula-Graph-Roadmap)。
 
-## 图可视化
+## 可视化工具：Nebula Graph Studio
 
-查看[图可视化](https://github.com/vesoft-inc/nebula-web-docker)，开启图数据可视化探索之旅。
+查看图可视化工具[Nebula Graph Studio](https://github.com/vesoft-inc/nebula-web-docker)，开启图数据可视化探索之旅。
 
 ## 支持的客户端
+
 * [Go](https://github.com/vesoft-inc/nebula-go)
 * [Python](https://github.com/vesoft-inc/nebula-python)
 * [Java](https://github.com/vesoft-inc/nebula-java)
-
-## 快速使用
-
-请查看[快速使用手册](docs/manual-CN/1.overview/2.quick-start/1.get-started.md)，开始使用 **Nebula Graph**。
-
-在开始使用 **Nebula Graph** 之前，必须通过[编译源码](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/3.build-develop-and-administration/1.build/1.build-source-code.md)，[rpm/deb 包](https://github.com/vesoft-inc/nebula/tree/master/docs/manual-CN/3.build-develop-and-administration/3.deploy-and-administrations/deployment/install-with-rpm-deb.md) 或者 [docker compose](https://github.com/vesoft-inc/nebula-docker-compose) 方式安装 **Nebula Graph**。您也可以观看[视频](https://space.bilibili.com/472621355)学习如何安装 **Nebula Graph**。
-
-## 获取帮助
-
-在使用 **Nebula Graph** 过程中遇到任何问题，都可以通过下面的方式寻求帮助：
-
-* [知乎](https://www.zhihu.com/org/nebulagraph/activities)
-* [SegmentFault](https://segmentfault.com/t/nebula)
-* [官方论坛](https://discuss.nebula-graph.io)
-
-## 文档
-
-* [简体中文](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-CN/README.md)
-* [English](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/README.md)
-
-## Nebula Graph 产品架构图
-
-![image](https://github.com/vesoft-inc/nebula-docs/raw/master/images/Nebula%20Arch.png)
-
-## 如何贡献
-
-**Nebula Graph** 是一个完全开源的项目，欢迎开源爱好者通过以下方式参与到 **Nebula Graph** 社区：
-* 从标记为 [good first issues](https://github.com/vesoft-inc/nebula/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) 的问题入手
-* 贡献代码，详情请参见 [如何贡献](docs/manual-CN/4.contributions/how-to-contribute.md)
-* 直接在GitHub上提 [Issue](https://github.com/vesoft-inc/nebula/issues)
 
 ## 许可证
 
@@ -82,9 +70,24 @@
 
 为防止云供应商从项目赢利而不回馈，**Nebula Graph** 在项目中添加了 [Commons Clause 1.0](https://commonsclause.com/) 条款。如上所述，**Nebula Graph** 是一个完全开源的项目，欢迎您就许可模式提出建议，帮助 **Nebula Graph** 社区更好地发展。
 
-## 联系方式
+## 如何贡献
 
+**Nebula Graph** 是一个完全开源的项目，欢迎开源爱好者通过以下方式参与到 **Nebula Graph** 社区：
+
+* 从标记为 [good first issues](https://github.com/vesoft-inc/nebula/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) 的问题入手
+* 贡献代码，详情请参见 [如何贡献](https://docs.nebula-graph.com.cn/manual-CN/4.contributions/how-to-contribute/)
+* 直接在GitHub上提 [Issue](https://github.com/vesoft-inc/nebula/issues)
+
+## 获取帮助 & 联系方式
+
+在使用 **Nebula Graph** 过程中遇到任何问题，都可以通过下面的方式寻求帮助：
+
+* [官方论坛](https://discuss.nebula-graph.com.cn/)
 * 访问官网 [Home Page](http://nebula-graph.io/)。
 * [![WeiXin](https://img.shields.io/badge/WeChat-%E5%BE%AE%E4%BF%A1-brightgreen)](https://user-images.githubusercontent.com/38887077/67449282-4362b300-f64c-11e9-878f-7efc373e5e55.jpg)
 * [![Sina Weibo](https://img.shields.io/badge/Weibo-%E5%BE%AE%E5%8D%9A-red)](https://weibo.com/p/1006067122684542/home?from=page_100606&mod=TAB#place)
 * email: info@vesoft.com
+
+如果喜欢 **Nebula Graph**，请为我们点 star。<a href="http://githubbadges.com/star.svg?user=vesoft-inc&repo=nebula&style=default">
+    <img src="http://githubbadges.com/star.svg?user=vesoft-inc&repo=nebula&style=default" alt="nebula star"/>
+  </a>
