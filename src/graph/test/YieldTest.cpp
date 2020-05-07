@@ -768,6 +768,29 @@ TEST_F(YieldTest, DuplicateColumn) {
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code) << resp.get_error_msg();
     }
 }
+
+TEST_F(YieldTest, PipeYieldGo) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tim Duncan"];
+        std::string fmt = "GO FROM %ld OVER serve YIELD serve._src as id |"
+                          "YIELD $-.id as id | "
+                          "GO FROM $-.id OVER serve YIELD $$.team.name as name";
+        auto query = folly::stringPrintf(fmt.c_str(), player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+
+        std::vector<std::string> expectedColNames{
+            {"name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<std::string>> expected = {
+            {"Spurs"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
 }   // namespace graph
 }   // namespace nebula
 
