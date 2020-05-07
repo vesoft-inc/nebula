@@ -91,7 +91,7 @@ public:
         return getPort() == 0 && toLong() == 0;
     }
 
-    const std::string encode() const;
+    std::string encode() const;
 
     bool isInitialized() const {
         return addrs_.isInitialized();

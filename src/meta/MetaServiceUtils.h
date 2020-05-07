@@ -61,7 +61,7 @@ public:
 
     static std::string hostKey(IPv4 ip, Port port);
 
-    static std::string domainKey(const std::string& domain);
+    static std::string domainKey(const std::string& domain, Port port);
 
     static std::string hostValOnline();
 

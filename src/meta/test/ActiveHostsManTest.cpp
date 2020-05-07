@@ -30,7 +30,9 @@ TEST(ActiveHostsManTest, NormalTest) {
 
     ActiveHostsMan::updateHostInfo(
         kv.get(), network::InetAddress(0, 3), "localhost0", HostInfo(now + 2000));
-    ASSERT_EQ(3, ActiveHostsMan::getActiveHosts(kv.get()).size());
+    ActiveHostsMan::updateHostInfo(
+        kv.get(), network::InetAddress(1, 0), "localhost0", HostInfo(now + 3000));
+    ASSERT_EQ(4, ActiveHostsMan::getActiveHosts(kv.get()).size());
     {
         const auto& prefix = MetaServiceUtils::hostPrefix();
         std::unique_ptr<kvstore::KVIterator> iter;
@@ -40,20 +42,28 @@ TEST(ActiveHostsManTest, NormalTest) {
         while (iter->valid()) {
             auto host = MetaServiceUtils::parseHostKey(iter->key());
             HostInfo info = HostInfo::decode(iter->val());
-            ASSERT_EQ(network::InetAddress(0, i), network::InetAddress(host.ip, host.port));
-            if (i == 3) {
-                ASSERT_EQ(HostInfo(now + 2000), info);
-            } else {
-                ASSERT_EQ(HostInfo(now), info);
+            if (i <= 3) {
+                ASSERT_EQ(network::InetAddress(0, i), network::InetAddress(host.ip, host.port));
+                if (i == 3) {
+                    ASSERT_EQ(HostInfo(now + 2000), info);
+
+                } else {
+                    ASSERT_EQ(HostInfo(now), info);
+                }
+            }
+            if (i == 4) {
+                ASSERT_EQ(network::InetAddress(1, 0), network::InetAddress(host.ip, host.port));
+
+                ASSERT_EQ(HostInfo(now + 3000), info);
             }
             iter->next();
             i++;
         }
-        ASSERT_EQ(4, i);
+        ASSERT_EQ(5, i);
     }
 
     sleep(3);
-    ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(kv.get()).size());
+    ASSERT_EQ(2, ActiveHostsMan::getActiveHosts(kv.get()).size());
 }
 
 TEST(ActiveHostsManTest, LeaderTest) {

@@ -30,7 +30,7 @@ InetAddress InetAddress::makeInetAddress(uint32_t ip, uint16_t port, bool hbo) {
     return InetAddress(folly::SocketAddress(folly::IPAddress::fromLong(ip), port));
 }
 
-const std::string InetAddress::encode() const {
+std::string InetAddress::encode() const {
     std::string str;
     str.reserve(sizeof(uint32_t) + sizeof(int32_t));
     auto ip = toLongHBO();

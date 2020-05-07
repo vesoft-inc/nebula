@@ -121,8 +121,10 @@ kvstore::ResultCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
 
     if (!hostName.empty()) {
         std::string oldIPAddr;
-        ret = kv->get(
-            kDefaultSpaceId, kDefaultPartId, MetaServiceUtils::domainKey(hostName), &oldIPAddr);
+        ret = kv->get(kDefaultSpaceId,
+                      kDefaultPartId,
+                      MetaServiceUtils::domainKey(hostName, hostAddr.getPort()),
+                      &oldIPAddr);
         switch (ret) {
             case kvstore::SUCCEEDED: {
                 auto re = updateHostIPaddress(kv, hostAddr, oldIPAddr, ret);
@@ -134,7 +136,8 @@ kvstore::ResultCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
             }
                 // fallthrough
             case kvstore::ERR_KEY_NOT_FOUND:
-                data.emplace_back(MetaServiceUtils::domainKey(hostName), hostAddr.encode());
+                data.emplace_back(MetaServiceUtils::domainKey(hostName, hostAddr.getPort()),
+                                  hostAddr.encode() );
                 break;
             default:
                 return ret;

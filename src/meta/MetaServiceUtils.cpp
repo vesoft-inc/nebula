@@ -140,10 +140,15 @@ std::string MetaServiceUtils::hostKey(IPv4 ip, Port port) {
     return key;
 }
 
-std::string MetaServiceUtils::domainKey(const std::string& domain) {
+std::string MetaServiceUtils::domainKey(const std::string& domain, Port port) {
     std::string key;
-    key.reserve(kDomainsTable.size() + domain.size());
-    key.append(kDomainsTable.data(), kDomainsTable.size()).append(domain.data(), domain.size());
+    auto size = domain.size();
+    key.reserve(kDomainsTable.size() + sizeof(std::string::size_type) + domain.size() +
+                sizeof(Port));
+    key.append(kDomainsTable.data(), kDomainsTable.size())
+        .append(reinterpret_cast<const char*>(&size), sizeof(std::string::size_type))
+        .append(domain.data(), domain.size())
+        .append(reinterpret_cast<const char*>(&port), sizeof(port));
     return key;
 }
 
@@ -170,7 +175,8 @@ nebula::cpp2::HostAddr MetaServiceUtils::parseHostKey(folly::StringPiece key) {
 }
 
 folly::StringPiece MetaServiceUtils::parseDomainKey(folly::StringPiece key) {
-    return folly::StringPiece(key.data() + kDomainsTable.size(), key.size() - kDomainsTable.size());
+    return folly::StringPiece(key.data() + kDomainsTable.size() + sizeof(std::string::size_type),
+                              key.size() - kDomainsTable.size() - sizeof(Port));
 }
 
 nebula::cpp2::HostAddr MetaServiceUtils::parseDomainVal(folly::StringPiece key) {
