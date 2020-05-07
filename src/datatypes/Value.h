@@ -104,6 +104,7 @@ struct Value {
     Value(Set&& v);                 // NOLINT
     Value(const DataSet& v);        // NOLINT
     Value(DataSet&& v);             // NOLINT
+    ~Value() { clear(); }
 
     Type type() const noexcept {
         return type_;
