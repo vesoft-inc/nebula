@@ -25,7 +25,6 @@ int ActiveHostsMan::updateHostIPaddress(kvstore::KVStore* kv,
     LOG(INFO) << "updateHostIPaddress will update " << ipAddress << " to " << hostAddr;
 
     std::string leaderValue;
-    std::vector<kvstore::KV> data;
     auto leaderKey = MetaServiceUtils::leaderKey(ipAddress.toLongHBO(), ipAddress.getPort());
     ret = kv->get(kDefaultSpaceId, kDefaultPartId, leaderKey, &leaderValue);
     if (ret != kvstore::SUCCEEDED && ret != kvstore::ERR_KEY_NOT_FOUND) {
@@ -35,7 +34,9 @@ int ActiveHostsMan::updateHostIPaddress(kvstore::KVStore* kv,
     std::vector<std::string> removeData;
     folly::Baton<true, std::atomic> baton;
     removeData.emplace_back(MetaServiceUtils::hostKey(ipAddress.toLongHBO(), ipAddress.getPort()));
+    removeData.emplace_back(MetaServiceUtils::ipKey(ipAddress));
 
+    std::vector<kvstore::KV> data;
     if (ret != kvstore::ERR_KEY_NOT_FOUND) {
         removeData.emplace_back(
             MetaServiceUtils::leaderKey(ipAddress.toLongHBO(), ipAddress.getPort()));
@@ -137,7 +138,8 @@ kvstore::ResultCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
                 // fallthrough
             case kvstore::ERR_KEY_NOT_FOUND:
                 data.emplace_back(MetaServiceUtils::domainKey(hostName, hostAddr.getPort()),
-                                  hostAddr.encode() );
+                                  hostAddr.encode());
+                data.emplace_back(MetaServiceUtils::ipKey(hostAddr), hostName);
                 break;
             default:
                 return ret;

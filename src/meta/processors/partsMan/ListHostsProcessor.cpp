@@ -62,6 +62,15 @@ Status ListHostsProcessor::allHostsWithStatus() {
             hostItems_.emplace_back(item);
         } else {
             removeHostsKey.emplace_back(iter->key());
+            auto ipKey = network::InetAddress(host);
+            std::string value;
+            kvRet = kvstore_->get(
+                kDefaultSpaceId, kDefaultPartId, MetaServiceUtils::ipKey(ipKey), &value);
+            if (kvRet != kvstore::ResultCode::SUCCEEDED) {
+                continue;
+            }
+            removeHostsKey.emplace_back(MetaServiceUtils::domainKey(value, ipKey.getPort()));
+            removeHostsKey.emplace_back(MetaServiceUtils::ipKey(ipKey));
         }
         iter->next();
     }

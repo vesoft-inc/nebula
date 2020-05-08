@@ -63,6 +63,8 @@ public:
 
     static std::string domainKey(const std::string& domain, Port port);
 
+    static std::string ipKey(const network::InetAddress &address);
+
     static std::string hostValOnline();
 
     static std::string hostValOffline();

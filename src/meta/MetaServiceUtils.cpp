@@ -27,6 +27,7 @@ const std::string kSnapshotsTable      = "__snapshots__";      // NOLINT
 const std::string kLastUpdateTimeTable = "__last_update_time__"; // NOLINT
 const std::string kLeadersTable        = "__leaders__";          // NOLINT
 const std::string kDomainsTable        = "__domains__";          // NOLINT
+const std::string kIPTable             = "__ip__";               // NOLINT
 
 const std::string kHostOnline  = "Online";       // NOLINT
 const std::string kHostOffline = "Offline";      // NOLINT
@@ -149,6 +150,14 @@ std::string MetaServiceUtils::domainKey(const std::string& domain, Port port) {
         .append(reinterpret_cast<const char*>(&size), sizeof(std::string::size_type))
         .append(domain.data(), domain.size())
         .append(reinterpret_cast<const char*>(&port), sizeof(port));
+    return key;
+}
+
+std::string MetaServiceUtils::ipKey(const network::InetAddress& address) {
+    std::string key;
+    auto ipStr = address.encode();
+    key.reserve(kIPTable.size() + ipStr.size());
+    key.append(kIPTable).append(ipStr);
     return key;
 }
 
