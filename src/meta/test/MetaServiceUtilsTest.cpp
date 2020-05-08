@@ -10,6 +10,7 @@
 #include <fstream>
 #include "fs/TempFile.h"
 #include "meta/MetaServiceUtils.h"
+#include "network/NetworkUtils.h"
 
 namespace nebula {
 namespace meta {
@@ -99,6 +100,28 @@ TEST(MetaServiceUtilsTest, TagTest) {
     auto val = MetaServiceUtils::schemaTagVal("test_tag", schema);
     auto parsedSchema = MetaServiceUtils::parseSchema(val);
     ASSERT_EQ(parsedSchema, schema);
+}
+
+TEST(MetaServiceUtilsTest, DomainKeyTest) {
+    std::string host = "localhost";
+    auto domainKey = MetaServiceUtils::domainKey(host, 3699);
+    const auto& prefix = MetaServiceUtils::domainPrefix();
+    ASSERT_EQ(prefix, domainKey.substr(0, prefix.size()));
+
+    auto host2 = MetaServiceUtils::parseDomainKey(domainKey);
+    ASSERT_EQ(host, host2);
+}
+
+TEST(MetaServiceUtilsTest, IPKeyTest) {
+    auto hostRet = network::NetworkUtils::toHosts("nebula-graph.io:3699");
+    ASSERT_TRUE(hostRet.ok());
+    auto host = hostRet.value();
+    auto ipKey = MetaServiceUtils::ipKey(host[0]);
+    auto prefix = MetaServiceUtils::ipPrefix();
+    ASSERT_EQ(prefix, ipKey.substr(0, prefix.size()));
+
+    auto localhost2 = network::InetAddress::makeInetAddress(ipKey.substr(prefix.size()).c_str());
+    ASSERT_EQ(host[0], localhost2);
 }
 
 }  // namespace meta

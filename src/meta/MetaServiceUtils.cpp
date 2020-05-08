@@ -177,6 +177,10 @@ const std::string& MetaServiceUtils::domainPrefix() {
     return kDomainsTable;
 }
 
+const std::string& MetaServiceUtils::ipPrefix() {
+    return kIPTable;
+}
+
 nebula::cpp2::HostAddr MetaServiceUtils::parseHostKey(folly::StringPiece key) {
     nebula::cpp2::HostAddr host;
     memcpy(&host, key.data() + kHostsTable.size(), sizeof(host));
@@ -184,8 +188,9 @@ nebula::cpp2::HostAddr MetaServiceUtils::parseHostKey(folly::StringPiece key) {
 }
 
 folly::StringPiece MetaServiceUtils::parseDomainKey(folly::StringPiece key) {
-    return folly::StringPiece(key.data() + kDomainsTable.size() + sizeof(std::string::size_type),
-                              key.size() - kDomainsTable.size() - sizeof(Port));
+    return folly::StringPiece(
+        key.data() + kDomainsTable.size() + sizeof(std::string::size_type),
+        key.size() - kDomainsTable.size() - sizeof(std::string::size_type) - sizeof(Port));
 }
 
 nebula::cpp2::HostAddr MetaServiceUtils::parseDomainVal(folly::StringPiece key) {

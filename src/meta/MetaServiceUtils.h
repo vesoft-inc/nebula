@@ -73,6 +73,8 @@ public:
 
     static const std::string& domainPrefix();
 
+    static const std::string& ipPrefix();
+
     static nebula::cpp2::HostAddr parseHostKey(folly::StringPiece key);
 
     static folly::StringPiece parseDomainKey(folly::StringPiece key);
