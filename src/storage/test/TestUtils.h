@@ -35,7 +35,9 @@ public:
     static std::unique_ptr<kvstore::KVStore>
     initKV(const char* rootPath,
            int32_t partitionNumber = 6,
-           network::InetAddress localhost = network::InetAddress{0, 0},
+           network::InetAddress localhost = network::InetAddress{
+               0, network::NetworkUtils::getAvailablePort()
+               },
            meta::MetaClient* mClient = nullptr,
            bool useMetaServer = false,
            std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder = nullptr) {
@@ -74,7 +76,31 @@ public:
                                                             localhost,
                                                             workers);
         store->init();
-        sleep(1);
+
+        // When useMetaServer is true, we deal with it using waitUntilAllElected.
+        if (useMetaServer) {
+            sleep(1);
+        } else {
+            // Wait until all part leader exist, here spaceId can only be 0.
+            GraphSpaceID spaceId = 0;
+            while (true) {
+                int readyNum = 0;
+                for (auto partId = 0; partId < partitionNumber; partId++) {
+                    auto retLeader = store->partLeader(spaceId, partId);
+                    if (ok(retLeader)) {
+                        auto leader = value(std::move(retLeader));
+                        if (leader == localhost) {
+                            readyNum++;
+                        }
+                    }
+                }
+                if (readyNum == partitionNumber) {
+                    LOG(INFO) << "All leaders have been elected!";
+                    break;
+                }
+                usleep(100000);
+            }
+        }
         return store;
     }
 
@@ -457,31 +483,6 @@ public:
         while (true) {
             int readyNum = 0;
             for (auto partId = 1; partId <= partNum; partId++) {
-                auto retLeader = nKV->partLeader(spaceId, partId);
-                if (ok(retLeader)) {
-                    auto leader = value(std::move(retLeader));
-                    if (!leader.isZero()) {
-                        readyNum++;
-                    }
-                }
-            }
-            if (readyNum == partNum) {
-                LOG(INFO) << "All leaders have been elected!";
-                break;
-            }
-            usleep(100000);
-        }
-    }
-
-    // Wait the specified partition elected
-    static void waitUntilAllElected(kvstore::KVStore* kvstore, GraphSpaceID spaceId,
-        std::set<PartitionID> parts) {
-        auto* nKV = static_cast<kvstore::NebulaStore*>(kvstore);
-        const int32_t partNum = parts.size();
-        // wait until all part leader exists
-        while (true) {
-            int readyNum = 0;
-            for (const auto partId : parts) {
                 auto retLeader = nKV->partLeader(spaceId, partId);
                 if (ok(retLeader)) {
                     auto leader = value(std::move(retLeader));
