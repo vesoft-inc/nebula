@@ -27,3 +27,26 @@ nebula_add_test(
         gtest
 )
 
+nebula_add_test(
+    NAME
+        atomic_log_buffer_test
+    SOURCES
+        AtomicLogBufferTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:common_base_obj>
+    LIBRARIES
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        log_bufferr_bm
+    SOURCES
+        LogBufferBenchmark.cpp
+        ../InMemoryLogBuffer.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:common_base_obj>
+    LIBRARIES
+        follybenchmark
+        boost_regex
+)

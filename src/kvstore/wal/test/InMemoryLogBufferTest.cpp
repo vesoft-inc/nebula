@@ -8,6 +8,7 @@
 #include "base/Base.h"
 #include <gtest/gtest.h>
 #include "kvstore/wal/InMemoryLogBuffer.h"
+#include "kvstore/wal/InMemoryLogBufferList.h"
 
 namespace nebula {
 namespace wal {
@@ -69,6 +70,35 @@ TEST(InMemoryLogBuffer, Simple) {
     EXPECT_EQ(inc, b.numLogs());
     EXPECT_EQ(inc * (std::strlen(log) + sizeof(LogID) + sizeof(TermID) + sizeof(ClusterID)),
         b.size());
+}
+
+void checkIterator(std::shared_ptr<InMemoryBufferList> buffers,
+                   LogID from,
+                   LogID to,
+                   LogID expectedEnd) {
+    auto iter = buffers->iterator(from, to);
+    for (;iter->valid(); ++(*iter)) {
+        auto log = iter->logMsg();
+        ASSERT_EQ(folly::stringPrintf("str_%ld", from), log);
+        from++;
+    }
+    EXPECT_EQ(from, expectedEnd);
+}
+
+TEST(InMemoryLogBufferList, RWTest) {
+    auto buffers = InMemoryBufferList::instance();
+    for (size_t i = 0; i < 1000; i++) {
+        buffers->push(i, 0, 0, folly::stringPrintf("str_%ld", i));
+    }
+    checkIterator(buffers, 200, 1000, 1000);
+    checkIterator(buffers, 200, 1200, 1000);
+    checkIterator(buffers, 200, 800, 801);
+    {
+        LogID from = 1300;
+        auto iter = buffers->iterator(from, 1600);
+        EXPECT_FALSE(iter->valid());
+    }
+
 }
 
 }  // namespace wal
