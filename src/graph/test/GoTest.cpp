@@ -360,6 +360,21 @@ TEST_P(GoTest, VertexNotExist) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         ASSERT_EQ(nullptr, resp.get_rows());
     }
+}
+
+TEST_P(GoTest, EmptyInputs) {
+    std::string name = "NON EXIST VERTEX ID";
+    int64_t nonExistPlayerID = std::hash<std::string>()(name);
+    auto iter = players_.begin();
+    while (iter != players_.end()) {
+        if (iter->vid() == nonExistPlayerID) {
+            ++nonExistPlayerID;
+            iter = players_.begin();
+            continue;
+        }
+        ++iter;
+    }
+
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "GO FROM %ld OVER serve | GO FROM $-.serve_id OVER serve";
@@ -382,6 +397,17 @@ TEST_P(GoTest, VertexNotExist) {
         auto *fmt = "GO FROM %ld OVER like YIELD like._dst as id"
                     "| (GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve)";
         auto query = folly::stringPrintf(fmt, nonExistPlayerID);
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string fmt = "GO FROM %ld over serve "
+                          "YIELD serve._dst as id, serve.start_year as start "
+                          "| YIELD $-.id as id WHERE $-.start > 20000"
+                          "| Go FROM $-.id over serve";
+        auto query = folly::stringPrintf(fmt.c_str(), players_["Marco Belinelli"].vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         ASSERT_EQ(nullptr, resp.get_rows());
@@ -998,14 +1024,7 @@ TEST_P(GoTest, ReturnTest) {
         auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-
-        std::vector<std::string> expectedColNames{
-            {"$A.dst"}
-        };
-        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
-
-        std::vector<std::tuple<int64_t>> expected;
-        ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(nullptr, resp.get_rows());
     }
     {
         cpp2::ExecutionResponse resp;

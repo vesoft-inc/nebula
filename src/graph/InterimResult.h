@@ -53,7 +53,9 @@ public:
     void setInterim(std::unique_ptr<RowSetWriter> rsWriter);
 
     bool hasData() const {
-        return (rsWriter_ != nullptr) && (rsReader_ != nullptr);
+        return (rsWriter_ != nullptr)
+                && (!rsWriter_->data().empty())
+                && (rsReader_ != nullptr);
     }
 
     std::shared_ptr<const meta::SchemaProviderIf> schema() const {
