@@ -36,3 +36,4 @@
 
 ############## rocksdb Options ##############
 --rocksdb_disable_wal=false
+--rocksdb_wal_sync=true
