@@ -346,9 +346,7 @@ std::vector<std::string> GroupByExecutor::getResultColumnNames() const {
 
 
 Status GroupByExecutor::generateOutputSchema() {
-    if (rows_.size() == 0) {
-        return Status::Error("Empty inputs.");
-    }
+    CHECK_GE(rows_.size(), 0);
     auto& row = rows_[0];
     using nebula::cpp2::SupportedType;
     if (resultSchema_ == nullptr) {
