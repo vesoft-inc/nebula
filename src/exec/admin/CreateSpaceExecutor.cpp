@@ -21,7 +21,7 @@ folly::Future<Status> CreateSpaceExecutor::createSpace() {
     auto *csNode = asNode<CreateSpace>(node());
     return ectx()->getMetaClient()->createSpace(csNode->getSpaceDesc(), csNode->getIfNotExists())
         .via(runner())
-        .then([this](StatusOr<bool> resp) {
+        .then([](StatusOr<bool> resp) {
             if (!resp.ok()) {
                 LOG(ERROR) << resp.status();
                 return resp.status();

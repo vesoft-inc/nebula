@@ -22,7 +22,7 @@ folly::Future<Status> CreateTagExecutor::createTag() {
     return ectx()->getMetaClient()->createTagSchema(ctNode->space(),
             ctNode->getName(), ctNode->getSchema(), ctNode->getIfNotExists())
         .via(runner())
-        .then([this](StatusOr<bool> resp) {
+        .then([](StatusOr<bool> resp) {
             if (!resp.ok()) {
                 LOG(ERROR) << resp.status();
                 return resp.status();

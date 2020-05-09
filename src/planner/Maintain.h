@@ -128,9 +128,17 @@ private:
 };
 
 class AlterTag final : public PlanNode {
+public:
+    std::string explain() const override {
+        return "AlterTag";
+    }
 };
 
 class AlterEdge final : public PlanNode {
+public:
+    std::string explain() const override {
+        return "AlterEdge";
+    }
 };
 
 class DescSchema : public PlanNode {
@@ -198,33 +206,73 @@ private:
 };
 
 class DropTag final : public PlanNode {
+public:
+    std::string explain() const override {
+        return "DropTag";
+    }
 };
 
 class DropEdge final : public PlanNode {
+public:
+    std::string explain() const override {
+        return "DropEdge";
+    }
 };
 
 class CreateTagIndex final : public PlanNode {
+public:
+    std::string explain() const override {
+        return "CreateTagIndex";
+    }
 };
 
 class CreateEdgeIndex final : public PlanNode {
+public:
+    std::string explain() const override {
+        return "CreateEdgeIndex";
+    }
 };
 
 class DescribeTagIndex final : public PlanNode {
+public:
+    std::string explain() const override {
+        return "DescribeTagIndex";
+    }
 };
 
 class DescribeEdgeIndex final : public PlanNode {
+public:
+    std::string explain() const override {
+        return "DescribeEdgeIndex";
+    }
 };
 
 class DropTagIndex final : public PlanNode {
+public:
+    std::string explain() const override {
+        return "DropTagIndex";
+    }
 };
 
 class DropEdgeIndex final : public PlanNode {
+public:
+    std::string explain() const override {
+        return "DropEdgeIndex";
+    }
 };
 
 class BuildTagIndex final : public PlanNode {
+public:
+    std::string explain() const override {
+        return "BuildTagIndex";
+    }
 };
 
 class BuildEdgeIndex final : public PlanNode {
+public:
+    std::string explain() const override {
+        return "BuildEdgeIndex";
+    }
 };
 }  // namespace graph
 }  // namespace nebula

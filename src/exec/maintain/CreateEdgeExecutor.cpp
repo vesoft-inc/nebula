@@ -22,7 +22,7 @@ folly::Future<Status> CreateEdgeExecutor::createEdge() {
     return ectx()->getMetaClient()->createEdgeSchema(ceNode->space(),
             ceNode->getName(), ceNode->getSchema(), ceNode->getIfNotExists())
         .via(runner())
-        .then([this](StatusOr<bool> resp) {
+        .then([](StatusOr<bool> resp) {
             if (!resp.ok()) {
                 LOG(ERROR) << resp.status();
                 return resp.status();
