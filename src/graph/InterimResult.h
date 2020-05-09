@@ -54,7 +54,7 @@ public:
 
     bool hasData() const {
         return (rsWriter_ != nullptr)
-                && (rsWriter_->data() != "")
+                && (!rsWriter_->data().empty())
                 && (rsReader_ != nullptr);
     }
 
