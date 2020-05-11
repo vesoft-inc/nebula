@@ -46,6 +46,7 @@ void ReturnExecutor::execute() {
 
     if (varInputs == nullptr || !varInputs->hasData()) {
         doFinish(Executor::ProcessControl::kNext);
+        return;
     } else {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         auto colNames = varInputs->getColNames();
@@ -64,6 +65,7 @@ void ReturnExecutor::execute() {
         resp_->set_rows(std::move(rows));
         // Will return if variable has values.
         doFinish(Executor::ProcessControl::kReturn);
+        return;
     }
 }
 
