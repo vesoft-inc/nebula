@@ -543,7 +543,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
                             }
 "#".*                       // Skip the annotation
 "//".*                      // Skip the annotation
-"--".*                      // Skip the annotation
+"-- ".*                     // Skip the annotation
 "/*"                        { BEGIN(COMMENT); }
 <COMMENT>"*/"               { BEGIN(INITIAL); }
 <COMMENT>([^*]|\n)+|.

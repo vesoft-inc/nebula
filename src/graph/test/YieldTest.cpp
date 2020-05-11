@@ -808,6 +808,29 @@ TEST_F(YieldTest, PipeYieldGo) {
         ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
+
+TEST_F(YieldTest, WithComment) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute("YIELD 1--1", resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {2},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute("YIELD 1-- 1", resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {1},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
 }   // namespace graph
 }   // namespace nebula
 

@@ -1398,6 +1398,13 @@ TEST(Parser, Annotation) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.status().isStatementEmpty());
     }
+    // need use space after "--"
+    {
+        GQLParser parser;
+        std::string query = "--test comment....";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
     {
         GQLParser parser;
         std::string query = "-- test comment....";
