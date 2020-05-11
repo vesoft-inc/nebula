@@ -106,19 +106,11 @@ public:
         const std::string& name,
         folly::EventBase* evb = nullptr);
 
-    folly::SemiFuture<StorageRpcResponse<cpp2::LookUpIndexResp>>
-    lookUpVertexIndex(
+    folly::SemiFuture<StorageRpcResponse<cpp2::LookupIndexResp>> lookupIndex(
         GraphSpaceID space,
-        IndexID indexId,
-        std::string filter,
-        std::vector<std::string> returnCols,
-        folly::EventBase *evb = nullptr);
-
-    folly::SemiFuture<StorageRpcResponse<cpp2::LookUpIndexResp>>
-    lookUpEdgeIndex(
-        GraphSpaceID space,
-        IndexID indexId,
-        std::string filter,
+        std::vector<storage::cpp2::IndexQueryContext> contexts,
+        bool isEdge,
+        int32_t tagOrEdge,
         std::vector<std::string> returnCols,
         folly::EventBase *evb = nullptr);
 };

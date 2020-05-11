@@ -422,69 +422,36 @@ GraphStorageClient::getUUID(GraphSpaceID space,
     });
 }
 
-
-folly::SemiFuture<StorageRpcResponse<cpp2::LookUpIndexResp>>
-GraphStorageClient::lookUpVertexIndex(GraphSpaceID space,
-                                      IndexID indexId,
-                                      std::string filter,
-                                      std::vector<std::string> returnCols,
-                                      folly::EventBase *evb) {
+folly::SemiFuture<StorageRpcResponse<cpp2::LookupIndexResp>>
+GraphStorageClient::lookupIndex(GraphSpaceID space,
+                                std::vector<storage::cpp2::IndexQueryContext> contexts,
+                                bool isEdge,
+                                int32_t tagOrEdge,
+                                std::vector<std::string> returnCols,
+                                folly::EventBase *evb) {
     auto status = getHostParts(space);
     if (!status.ok()) {
-        return folly::makeFuture<StorageRpcResponse<cpp2::LookUpIndexResp>>(
+        return folly::makeFuture<StorageRpcResponse<cpp2::LookupIndexResp>>(
             std::runtime_error(status.status().toString()));
     }
 
     auto& clusters = status.value();
-    std::unordered_map<HostAddr, cpp2::LookUpIndexRequest> requests;
+    std::unordered_map<HostAddr, cpp2::LookupIndexRequest> requests;
     for (auto& c : clusters) {
         auto& host = c.first;
         auto& req = requests[host];
         req.set_space_id(space);
         req.set_parts(std::move(c.second));
-        req.set_index_id(indexId);
-        req.set_filter(filter);
+        req.set_contexts(std::move(contexts));
+        req.set_is_edge(isEdge);
+        req.set_tag_or_edge_id(tagOrEdge);
         req.set_return_columns(returnCols);
     }
     return collectResponse(evb,
                            std::move(requests),
                            [] (cpp2::GraphStorageServiceAsyncClient* client,
-                               const cpp2::LookUpIndexRequest& r) {
-                               return client->future_lookUpVertexIndex(r); },
-                           [] (const PartitionID& part) {
-                               return part;
-                           });
-}
-
-
-folly::SemiFuture<StorageRpcResponse<cpp2::LookUpIndexResp>>
-GraphStorageClient::lookUpEdgeIndex(GraphSpaceID space,
-                                    IndexID indexId,
-                                    std::string filter,
-                                    std::vector<std::string> returnCols,
-                                    folly::EventBase *evb) {
-    auto status = getHostParts(space);
-    if (!status.ok()) {
-        return folly::makeFuture<StorageRpcResponse<cpp2::LookUpIndexResp>>(
-            std::runtime_error(status.status().toString()));
-    }
-
-    auto& clusters = status.value();
-    std::unordered_map<HostAddr, cpp2::LookUpIndexRequest> requests;
-    for (auto& c : clusters) {
-        auto& host = c.first;
-        auto& req = requests[host];
-        req.set_space_id(space);
-        req.set_parts(std::move(c.second));
-        req.set_index_id(indexId);
-        req.set_filter(filter);
-        req.set_return_columns(returnCols);
-    }
-    return collectResponse(evb,
-                           std::move(requests),
-                           [] (cpp2::GraphStorageServiceAsyncClient* client,
-                               const cpp2::LookUpIndexRequest& r) {
-                               return client->future_lookUpEdgeIndex(r); },
+                               const cpp2::LookupIndexRequest& r) {
+                               return client->future_lookupIndex(r); },
                            [] (const PartitionID& part) {
                                return part;
                            });

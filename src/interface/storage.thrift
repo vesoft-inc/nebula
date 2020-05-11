@@ -421,7 +421,7 @@ struct GetUUIDResp {
 /*
  * Start of Index section
  */
-struct LookUpIndexResp {
+struct LookupIndexResp {
     1: required ResponseCommon          result,
     // The result will be returned in a dataset, which is in the following form
     //
@@ -447,18 +447,45 @@ struct LookUpIndexResp {
     2: optional common.DataSet          data,
 }
 
-struct LookUpIndexRequest {
-    1: common.GraphSpaceID      space_id,
-    2: list<common.PartitionID> parts,
-    3: common.IndexID           index_id,
-    4: binary                   filter,
+ enum ScanType {
+    PREFIX = 1,
+    RANGE  = 2,
+ } (cpp.enum_strict)
+
+struct IndexColumnHint {
+    1: binary                   column_name,
+    // If scan_type == PREFIX, using begin_value to handler prefix.
+    // Else using begin_value and end_value to handler ranger.
+    2: ScanType                 scan_type,
+    3: common.Value             begin_value,
+    4: common.Value             end_value,
+}
+
+struct IndexQueryContext {
+    1: common.IndexID           index_id,
+    // filter is an encoded expression of where clause.
+    // Used for secondary filtering from a result set
+    2: binary                   filter,
+    // There are two types of scan: 1, range scan; 2, match scan (prefix);
+    // The columns_hints are not allowed to be empty, At least one index column must be hit.
+    3: list<IndexColumnHint>    column_hints,
+ }
+
+struct LookupIndexRequest {
+    1: required common.GraphSpaceID       space_id,
+    2: required list<common.PartitionID>  parts,
+    // For merger-index , multiple index hints are allowed
+    3: required list<IndexQueryContext>   contexts,
+    4: required bool                      is_edge,
+    5: required i32                       tag_or_edge_id,
     // We only support specified fields here, not wild card "*"
     // If the list is empty, only the VertexID or the EdgeKey will
     // be returned
-    5: list<binary>             return_columns,
+    6: optional list<binary>              return_columns,
 }
+
 /*
- * End of GetUUID section
+ * End of Index section
  */
 
 struct TaskPara {
@@ -498,8 +525,7 @@ service GraphStorageService {
     GetUUIDResp getUUID(1: GetUUIDReq req);
 
     // Interfaces for edge and vertex index scan
-    LookUpIndexResp lookUpVertexIndex(1: LookUpIndexRequest req);
-    LookUpIndexResp lookUpEdgeIndex(1: LookUpIndexRequest req);
+    LookupIndexResp lookupIndex(1: LookupIndexRequest req);
 }
 
 
