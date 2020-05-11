@@ -20,6 +20,10 @@ DEFINE_bool(rocksdb_disable_wal,
             true,
             "Whether to disable the WAL in rocksdb");
 
+DEFINE_bool(rocksdb_wal_sync,
+            false,
+            "Whether WAL writes are synchronized to disk or not");
+
 // [DBOptions]
 DEFINE_string(rocksdb_db_options,
               "{}",

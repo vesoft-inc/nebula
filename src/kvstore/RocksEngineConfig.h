@@ -28,6 +28,8 @@ DECLARE_string(memtable_factory);
 // rocksdb db wal disable
 DECLARE_bool(rocksdb_disable_wal);
 
+DECLARE_bool(rocksdb_wal_sync);
+
 // BlockBasedTable block_cache
 DECLARE_int64(rocksdb_block_cache);
 
