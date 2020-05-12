@@ -48,11 +48,8 @@ public:
     folly::Future<storage::cpp2::UpdateResponse>
     future_updateEdge(const storage::cpp2::UpdateEdgeRequest& req) override;
 
-    folly::Future<storage::cpp2::LookUpIndexResp>
-    future_lookUpVertexIndex(const storage::cpp2::LookUpIndexRequest& req) override;
-
-    folly::Future<storage::cpp2::LookUpIndexResp>
-    future_lookUpEdgeIndex(const storage::cpp2::LookUpIndexRequest& req) override;
+    folly::Future<storage::cpp2::LookupIndexResp>
+    future_lookupIndex(const storage::cpp2::LookupIndexRequest& req) override;
 
 private:
     std::unique_ptr<StorageCache>       storageCache_;

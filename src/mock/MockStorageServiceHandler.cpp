@@ -95,21 +95,14 @@ MockStorageServiceHandler::future_updateEdge(const storage::cpp2::UpdateEdgeRequ
     return future;
 }
 
-folly::Future<storage::cpp2::LookUpIndexResp>
-MockStorageServiceHandler::future_lookUpVertexIndex(const storage::cpp2::LookUpIndexRequest& req) {
+folly::Future<storage::cpp2::LookupIndexResp>
+MockStorageServiceHandler::future_lookupIndex(const storage::cpp2::LookupIndexRequest& req) {
     UNUSED(req);
-    folly::Promise<storage::cpp2::LookUpIndexResp> promise;
+    folly::Promise<storage::cpp2::LookupIndexResp> promise;
     auto future = promise.getFuture();
     return future;
 }
 
-folly::Future<storage::cpp2::LookUpIndexResp>
-MockStorageServiceHandler::future_lookUpEdgeIndex(const storage::cpp2::LookUpIndexRequest& req) {
-    UNUSED(req);
-    folly::Promise<storage::cpp2::LookUpIndexResp> promise;
-    auto future = promise.getFuture();
-    return future;
-}
 }  // namespace graph
 }  // namespace nebula
 
