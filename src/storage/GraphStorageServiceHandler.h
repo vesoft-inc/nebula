@@ -8,6 +8,7 @@
 #define STORAGE_GRAPHSTORAGESERVICEHANDLER_H_
 
 #include "base/Base.h"
+#include <folly/executors/IOThreadPoolExecutor.h>
 #include "interface/gen-cpp2/GraphStorageService.h"
 #include "stats/Stats.h"
 #include "storage/CommonUtils.h"
@@ -23,10 +24,12 @@ class GraphStorageServiceHandler final : public cpp2::GraphStorageServiceSvIf {
 public:
     explicit GraphStorageServiceHandler(StorageEnv* env)
         : env_(env)
-        , vertexCache_(FLAGS_vertex_cache_num, FLAGS_vertex_cache_bucket_exp) {
+        , vertexCache_(FLAGS_vertex_cache_num, FLAGS_vertex_cache_bucket_exp)
+        , readerPool_(std::make_unique<folly::IOThreadPoolExecutor>(FLAGS_reader_handlers)) {
         addVerticesQpsStat_ = stats::Stats("storage", "add_vertices");
         addEdgesQpsStat_ = stats::Stats("storage", "add_edges");
         delVerticesQpsStat_ = stats::Stats("storage", "del_vertices");
+        delEdgesQpsStat_ = stats::Stats("storage", "del_edges");
     }
 
     // Vertice section
@@ -43,12 +46,19 @@ public:
     folly::Future<cpp2::ExecResponse>
     future_deleteEdges(const cpp2::DeleteEdgesRequest& req) override;
 
+    folly::Future<cpp2::GetNeighborsResponse>
+    future_getNeighbors(const cpp2::GetNeighborsRequest& req) override;
+
 private:
-    StorageEnv*             env_{nullptr};
-    VertexCache             vertexCache_;
-    stats::Stats            addVerticesQpsStat_;
-    stats::Stats            addEdgesQpsStat_;
-    stats::Stats            delVerticesQpsStat_;
+    StorageEnv*                                     env_{nullptr};
+    VertexCache                                     vertexCache_;
+    std::unique_ptr<folly::IOThreadPoolExecutor>    readerPool_;
+
+    stats::Stats                                    addVerticesQpsStat_;
+    stats::Stats                                    addEdgesQpsStat_;
+    stats::Stats                                    delVerticesQpsStat_;
+    stats::Stats                                    delEdgesQpsStat_;
+    stats::Stats                                    getNeighborsQpsStat_;
 };
 
 }  // namespace storage

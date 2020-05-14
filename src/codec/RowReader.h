@@ -49,7 +49,7 @@ public:
 
         bool operator==(const Iterator& rhs) const noexcept;
         bool operator!=(const Iterator& rhs) const noexcept {
-            return ! operator==(rhs);
+            return !operator==(rhs);
         }
 
     private:
@@ -70,7 +70,6 @@ public:
 
 
 public:
-
     static std::unique_ptr<RowReader> getTagPropReader(
         meta::SchemaManager* schemaMan,
         GraphSpaceID space,
@@ -87,6 +86,12 @@ public:
         meta::SchemaProviderIf const* schema,
         folly::StringPiece row);
 
+    // notice: the schemas are from oldest to newest,
+    // usually from getAllVerTagSchema or getAllVerEdgeSchema in SchemaMan
+    static std::unique_ptr<RowReader> getRowReader(
+        const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
+        folly::StringPiece row);
+
     bool resetTagPropReader(
         meta::SchemaManager* schemaMan,
         GraphSpaceID space,
@@ -100,6 +105,11 @@ public:
         folly::StringPiece row);
 
     bool reset(meta::SchemaProviderIf const* schema,
+               folly::StringPiece row) noexcept;
+
+    // notice: the schemas are from oldest to newest,
+    // usually from getAllVerTagSchema or getAllVerEdgeSchema in SchemaMan
+    bool reset(const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
                folly::StringPiece row) noexcept;
 
     virtual ~RowReader() = default;

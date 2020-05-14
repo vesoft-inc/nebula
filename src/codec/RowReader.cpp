@@ -125,6 +125,32 @@ std::unique_ptr<RowReader> RowReader::getRowReader(
     }
 }
 
+// static
+std::unique_ptr<RowReader> RowReader::getRowReader(
+        const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
+        folly::StringPiece row) {
+    auto reader = std::make_unique<RowReaderWrapper>();
+    SchemaVer schemaVer;
+    int32_t readerVer;
+    RowReaderWrapper::getVersions(row, schemaVer, readerVer);
+    if (static_cast<size_t>(schemaVer) >= schemas.size()) {
+        return std::unique_ptr<RowReader>();
+    }
+    // the schema is stored from oldest to newest, so just use version as idx
+    if (schemaVer != schemas[schemaVer]->getVersion()) {
+        return std::unique_ptr<RowReader>();
+    }
+    if (reader->reset(schemas[schemaVer].get(), row, readerVer)) {
+        return reader;
+    } else {
+        LOG(ERROR) << "Failed to initiate the reader, most likely the data"
+                      "is corrupted. The data is ["
+                   << toHexStr(row)
+                   << "]";
+        return std::unique_ptr<RowReader>();
+    }
+}
+
 bool RowReader::resetTagPropReader(
         meta::SchemaManager* schemaMan,
         GraphSpaceID space,
@@ -185,6 +211,21 @@ bool RowReader::reset(meta::SchemaProviderIf const* schema,
         return false;
     }
     return reset(schema, row, readerVer);
+}
+
+bool RowReader::reset(const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
+                      folly::StringPiece row) noexcept {
+    SchemaVer schemaVer;
+    int32_t readerVer;
+    RowReaderWrapper::getVersions(row, schemaVer, readerVer);
+    if (static_cast<size_t>(schemaVer) >= schemas.size()) {
+        return false;
+    }
+    // the schema is stored from oldest to newest, so just use version as idx
+    if (schemaVer != schemas[schemaVer]->getVersion()) {
+        return false;
+    }
+    return reset(schemas[schemaVer].get(), row, readerVer);
 }
 
 bool RowReader::resetImpl(meta::SchemaProviderIf const* schema,

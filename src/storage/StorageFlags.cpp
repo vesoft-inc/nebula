@@ -24,3 +24,9 @@ DEFINE_int32(vertex_cache_num, 16 * 1000 * 1000, "Total keys inside the cache");
 DEFINE_int32(vertex_cache_bucket_exp, 4, "Total buckets number is 1 << cache_bucket_exp");
 
 DEFINE_bool(enable_vertex_cache, true, "Enable vertex cache");
+
+DEFINE_int32(reader_handlers, 32, "Total reader handlers");
+
+DEFINE_int32(max_edge_returned_per_vertex, INT_MAX, "Max edge number returnred searching vertex");
+
+DEFINE_bool(enable_reservoir_sampling, false, "Will do reservoir sampling if set true.");

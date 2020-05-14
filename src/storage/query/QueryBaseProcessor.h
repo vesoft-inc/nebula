@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -8,146 +8,113 @@
 #define STORAGE_QUERY_QUERYBASEPROCESSOR_H_
 
 #include "base/Base.h"
-#include <folly/Optional.h>
+#include "expression/Expression.h"
 #include "storage/BaseProcessor.h"
-#include "storage/Collector.h"
-#include "filter/Expressions.h"
-#include "storage/CommonUtils.h"
-#include "stats/Stats.h"
-#include <random>
 
 namespace nebula {
 namespace storage {
 
-const std::unordered_map<std::string, PropContext::PropInKeyType> kPropsInKey_ = {
+struct ReturnProp {
+    int32_t entryId_;                       // tagId or edgeType
+    std::vector<std::string> names_;        // property names
+};
+
+// The PropContext stores the info about property to be returned or filtered
+class PropContext {
+public:
+    enum class PropInKeyType {
+        NONE = 0x00,
+        SRC = 0x01,
+        DST = 0x02,
+        TYPE = 0x03,
+        RANK = 0x04,
+    };
+
+    explicit PropContext(const char* name)
+        : name_(name) {}
+
+    // prop name
+    std::string name_;
+    // field info, e.g. nullable, default value
+    const meta::SchemaProviderIf::Field* field_;
+    bool tagFiltered_ = false;
+    bool returned_ = false;
+    // prop type in edge key, for srcId/dstId/type/rank
+    PropInKeyType propInKeyType_ = PropInKeyType::NONE;
+
+    // for edge prop stat, such as count/avg/sum
+    bool hasStat_ = false;
+    // stat prop index from request
+    size_t statIndex_;
+    cpp2::StatType statType_;
+};
+
+const std::vector<std::pair<std::string, PropContext::PropInKeyType>> kPropsInKey_ = {
     {"_src", PropContext::PropInKeyType::SRC},
-    {"_dst", PropContext::PropInKeyType::DST},
     {"_type", PropContext::PropInKeyType::TYPE},
-    {"_rank", PropContext::PropInKeyType::RANK}
+    {"_rank", PropContext::PropInKeyType::RANK},
+    {"_dst", PropContext::PropInKeyType::DST},
 };
 
-using EdgeProcessor
-    = std::function<void(RowReader* reader,
-                         folly::StringPiece key,
-                         const std::vector<PropContext>& props)>;
-struct Bucket {
-    std::vector<std::pair<PartitionID, VertexID>> vertices_;
+struct TagContext {
+    std::vector<std::pair<TagID, std::vector<PropContext>>> propContexts_;
+    std::unordered_map<TagID, size_t> indexMap_;
+    std::unordered_map<TagID,
+                    std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>> schemas_;
+    std::unordered_map<TagID, std::pair<std::string, int64_t>> ttlInfo_;
+    VertexCache* vertexCache_ = nullptr;
 };
 
-using OneVertexResp = std::tuple<PartitionID, VertexID, kvstore::ResultCode>;
+struct EdgeContext {
+    std::vector<std::pair<EdgeType, std::vector<PropContext>>> propContexts_;
+    std::unordered_map<EdgeType, size_t> indexMap_;
+    std::unordered_map<EdgeType,
+                    std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>> schemas_;
+    std::unordered_map<EdgeType, std::pair<std::string, int64_t>> ttlInfo_;
+};
 
 template<typename REQ, typename RESP>
 class QueryBaseProcessor : public BaseProcessor<RESP> {
 public:
     virtual ~QueryBaseProcessor() = default;
 
-    void process(const cpp2::GetNeighborsRequest& req);
+    virtual void process(const REQ& req) = 0;
 
 protected:
-    explicit QueryBaseProcessor(kvstore::KVStore* kvstore,
-                                meta::SchemaManager* schemaMan,
-                                stats::Stats* stats,
-                                folly::Executor* executor = nullptr,
+    explicit QueryBaseProcessor(StorageEnv* env,
+                                stats::Stats* stats = nullptr,
                                 VertexCache* cache = nullptr)
-        : BaseProcessor<RESP>(kvstore, schemaMan, stats)
-        , executor_(executor)
-        , vertexCache_(cache) {}
+        : BaseProcessor<RESP>(env, stats) {
+        this->tagContext_.vertexCache_ = cache;
+    }
 
-    /**
-     * Check whether current operation on the data is valid or not.
-     * */
-    bool validOperation(nebula::cpp2::SupportedType vType, cpp2::StatType statType);
+    virtual cpp2::ErrorCode checkAndBuildContexts(const REQ& req) = 0;
+    virtual void onProcessFinished() = 0;
 
-    void addDefaultProps(std::vector<PropContext>& p, EdgeType eType);
-    /**
-     * init edge context
-     **/
-    void initEdgeContext(const std::vector<EdgeType> &eTypes, bool need_default_props = false);
+    // build tagContexts_ according to return props
+    cpp2::ErrorCode handleVertexProps(const std::vector<ReturnProp>& vertexProps);
+    // build edgeContexts_ according to return props
+    cpp2::ErrorCode handleEdgeProps(const std::vector<ReturnProp>& edgeProps);
 
-    /**
-     * Check request meta is illegal or not and build contexts for tag and edge.
-     * */
-    cpp2::ErrorCode checkAndBuildContexts(const REQ& req);
+    cpp2::ErrorCode buildFilter(const REQ& req);
 
-    /**
-     * collect props in one row, you could define custom behavior by implement your own collector.
-     * */
-    void collectProps(RowReader* reader,
-                      folly::StringPiece key,
-                      const std::vector<PropContext>& props,
-                      FilterContext* fcontext,
-                      Collector* collector);
+    // build ttl info map
+    void buildTagTTLInfo();
+    void buildEdgeTTLInfo();
 
-    virtual kvstore::ResultCode processVertex(PartitionID partId, VertexID vId) = 0;
-
-    virtual void onProcessFinished(int32_t retNum) = 0;
-
-    /**
-     * Collect props for one vertex tag.
-     * */
-    kvstore::ResultCode collectVertexProps(
-                            PartitionID partId,
-                            VertexID vId,
-                            TagID tagId,
-                            const std::vector<PropContext>& props,
-                            FilterContext* fcontext,
-                            Collector* collector);
-    /**
-     * Collect props for one vertex with vid.
-     * */
-    kvstore::ResultCode collectVertexProps(
-                            PartitionID partId,
-                            VertexID vId,
-                            std::vector<cpp2::TagData> &tds);
-    /**
-     * Collect props for one vertex edge.
-     * */
-    kvstore::ResultCode collectEdgeProps(
-                               PartitionID partId,
-                               VertexID vId,
-                               EdgeType edgeType,
-                               const std::vector<PropContext>& props,
-                               FilterContext* fcontext,
-                               EdgeProcessor proc);
-
-    std::vector<Bucket> genBuckets(const cpp2::GetNeighborsRequest& req);
-
-    folly::Future<std::vector<OneVertexResp>> asyncProcessBucket(Bucket bucket);
-
-    int32_t getBucketsNum(int32_t verticesNum, int32_t minVerticesPerBucket, int32_t handlerNum);
-
-    bool checkExp(const Expression* exp);
-
-    void buildTTLInfoAndRespSchema();
-
-    folly::Optional<std::pair<std::string, int64_t>> getTagTTLInfo(TagID tagId);
-
-    folly::Optional<std::pair<std::string, int64_t>> getEdgeTTLInfo(EdgeType edgeType);
+    std::vector<ReturnProp> buildAllTagProps();
+    std::vector<ReturnProp> buildAllEdgeProps(const cpp2::EdgeDirection& direction);
 
 protected:
-    GraphSpaceID  spaceId_;
-    std::unique_ptr<ExpressionContext> expCtx_;
+    GraphSpaceID spaceId_;
+
+    TagContext tagContext_;
+    EdgeContext edgeContext_;
     std::unique_ptr<Expression> exp_;
-    std::vector<TagContext> tagContexts_;
-    std::unordered_map<EdgeType, std::vector<PropContext>> edgeContexts_;
 
-    std::unordered_map<TagID, nebula::cpp2::Schema> vertexSchemaResp_;
-    std::unordered_map<EdgeType, nebula::cpp2::Schema> edgeSchemaResp_;
-
-    std::unordered_map<TagID, std::shared_ptr<nebula::meta::SchemaProviderIf>> vertexSchema_;
-    std::unordered_map<EdgeType, std::shared_ptr<nebula::meta::SchemaProviderIf>> edgeSchema_;
-
-    std::unordered_map<EdgeType, bool> onlyStructures_;
-
-    folly::Executor* executor_{nullptr};
-    VertexCache* vertexCache_{nullptr};
-    std::unordered_map<std::string, EdgeType> edgeMap_;
-    bool compactDstIdProps_ = false;
-
-    std::unordered_map<EdgeType, std::pair<std::string, int64_t>> edgeTTLInfo_;
-
-    std::unordered_map<TagID, std::pair<std::string, int64_t>> tagTTLInfo_;
+    nebula::DataSet resultDataSet_;
 };
+
 
 }  // namespace storage
 }  // namespace nebula

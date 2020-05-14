@@ -11,26 +11,15 @@
 #include <folly/SpinLock.h>
 #include <folly/futures/Promise.h>
 #include <folly/futures/Future.h>
-#include "interface/gen-cpp2/storage_types.h"
-#include "kvstore/KVStore.h"
-#include "meta/SchemaManager.h"
-#include "meta/IndexManager.h"
-#include "meta/SchemaManager.h"
 #include "time/Duration.h"
 #include "stats/StatsManager.h"
 #include "stats/Stats.h"
-#include "codec/RowReader.h"
+#include "storage/CommonUtils.h"
 
 namespace nebula {
 namespace storage {
 
 using PartCode = std::pair<PartitionID, kvstore::ResultCode>;
-
-struct StorageEnv {
-    kvstore::KVStore*                               kvstore_{nullptr};
-    meta::SchemaManager*                            schemaMan_{nullptr};
-    meta::IndexManager*                             indexMan_{nullptr};
-};
 
 template<typename RESP>
 class BaseProcessor {
@@ -56,6 +45,15 @@ protected:
         this->resp_.set_result(std::move(this->result_));
         this->promise_.setValue(std::move(this->resp_));
         delete this;
+    }
+
+    cpp2::ErrorCode getSpaceVidLen(GraphSpaceID spaceId) {
+        auto len = this->env_->schemaMan_->getSpaceVidLen(spaceId);
+        if (!len.ok()) {
+            return cpp2::ErrorCode::E_SPACE_NOT_FOUND;
+        }
+        spaceVidLen_ = len.value();
+        return cpp2::ErrorCode::SUCCEEDED;
     }
 
     void doPut(GraphSpaceID spaceId, PartitionID partId, std::vector<kvstore::KV> data);

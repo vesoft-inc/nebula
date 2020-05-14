@@ -16,15 +16,16 @@ namespace storage {
 
 class DeleteEdgesProcessor : public BaseProcessor<cpp2::ExecResponse> {
 public:
-    static DeleteEdgesProcessor* instance(StorageEnv* env) {
-        return new DeleteEdgesProcessor(env);
+    static DeleteEdgesProcessor* instance(StorageEnv* env,
+                                          stats::Stats* stats) {
+        return new DeleteEdgesProcessor(env, stats);
     }
 
     void process(const cpp2::DeleteEdgesRequest& req);
 
 private:
-    explicit DeleteEdgesProcessor(StorageEnv* env)
-            : BaseProcessor<cpp2::ExecResponse>(env) {}
+    explicit DeleteEdgesProcessor(StorageEnv* env, stats::Stats* stats)
+            : BaseProcessor<cpp2::ExecResponse>(env, stats) {}
 
 private:
     GraphSpaceID                                                spaceId_;

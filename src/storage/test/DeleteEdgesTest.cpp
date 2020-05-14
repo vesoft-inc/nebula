@@ -46,7 +46,7 @@ TEST(DeleteEdgesTest, SimpleTest) {
 
     // Delete edges
     {
-        auto* processor = DeleteEdgesProcessor::instance(env);
+        auto* processor = DeleteEdgesProcessor::instance(env, nullptr);
 
         LOG(INFO) << "Build DeleteEdgesRequest...";
         cpp2::DeleteEdgesRequest req = mock::MockData::mockDeleteEdgesReq();
@@ -103,7 +103,7 @@ TEST(DeleteEdgesTest, MultiVersionTest) {
 
     // Delete edges
     {
-        auto* processor = DeleteEdgesProcessor::instance(env);
+        auto* processor = DeleteEdgesProcessor::instance(env, nullptr);
 
         LOG(INFO) << "Build DeleteEdgesRequest...";
         cpp2::DeleteEdgesRequest req = mock::MockData::mockDeleteEdgesReq();

@@ -10,19 +10,20 @@
 namespace nebula {
 namespace storage {
 
-bool checkDataExpiredForTTL(const meta::SchemaProviderIf* schema,
-                            RowReader* reader,
-                            const std::string& ttlCol,
-                            int64_t ttlDuration) {
+bool CommonUtils::checkDataExpiredForTTL(const meta::SchemaProviderIf* schema,
+                                         RowReader* reader,
+                                         const std::string& ttlCol,
+                                         int64_t ttlDuration) {
     const auto& ftype = schema->getFieldType(ttlCol);
-    if (ftype != meta::cpp2::PropertyType::VID
-            && ftype != meta::cpp2::PropertyType::TIMESTAMP
-            && ftype != meta::cpp2::PropertyType::INT64) {
+    // could not support VID type anymore
+    // todo: could support DateTime later
+    if (ftype != meta::cpp2::PropertyType::TIMESTAMP && ftype != meta::cpp2::PropertyType::INT64) {
         return false;
     }
     auto now = time::WallClock::fastNowInSec();
     auto v = reader->getValueByName(ttlCol);
     if (now > (v.getInt() + ttlDuration)) {
+        VLOG(2) << "ttl expired";
         return true;
     }
     return false;

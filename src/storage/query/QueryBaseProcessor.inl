@@ -1,17 +1,8 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-#include "storage/query/QueryBaseProcessor.h"
-#include "base/NebulaKeyUtils.h"
-#include <algorithm>
-#include "dataman/RowReader.h"
-#include "dataman/RowWriter.h"
-#include "meta/NebulaSchemaProvider.h"
-#include "filter/FunctionManager.h"
-#include "time/WallClock.h"
-#include "algorithm/ReservoirSampling.h"
 
 DECLARE_int32(max_handlers_per_req);
 DECLARE_int32(min_vertices_per_bucket);
@@ -23,841 +14,182 @@ namespace nebula {
 namespace storage {
 
 template<typename REQ, typename RESP>
-bool QueryBaseProcessor<REQ, RESP>::validOperation(nebula::cpp2::SupportedType vType,
-                                                   cpp2::StatType statType) {
-    switch (statType) {
-        case cpp2::StatType::SUM:
-        case cpp2::StatType::AVG: {
-            return vType == nebula::cpp2::SupportedType::INT
-                    || vType == nebula::cpp2::SupportedType::VID
-                    || vType == nebula::cpp2::SupportedType::TIMESTAMP
-                    || vType == nebula::cpp2::SupportedType::FLOAT
-                    || vType == nebula::cpp2::SupportedType::DOUBLE;
+cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::handleVertexProps(
+        const std::vector<ReturnProp>& vertexProps) {
+    for (size_t i = 0; i < vertexProps.size(); i++) {
+        auto tagId = vertexProps[i].entryId_;
+        auto iter = this->tagContext_.schemas_.find(tagId);
+        if (iter == this->tagContext_.schemas_.end()) {
+            VLOG(1) << "Can't find spaceId " << spaceId_ << " tagId " << tagId;
+            return cpp2::ErrorCode::E_TAG_NOT_FOUND;
         }
-        case cpp2::StatType::COUNT: {
-             break;
+        CHECK(!iter->second.empty());
+        const auto& tagSchema = iter->second.back();
+        auto tagName = this->env_->schemaMan_->toTagName(spaceId_, tagId);
+        if (!tagName.ok()) {
+            VLOG(1) << "Can't find spaceId " << spaceId_ << " tagId " << tagId;
+            return cpp2::ErrorCode::E_TAG_NOT_FOUND;
         }
-    }
-    return true;
-}
+        resultDataSet_.colNames.emplace_back(
+            folly::stringPrintf("%d:%s", tagId, tagName.value().c_str()));
 
-template <typename REQ, typename RESP>
-void QueryBaseProcessor<REQ, RESP>::addDefaultProps(std::vector<PropContext>& p, EdgeType eType) {
-    p.emplace_back("_src", eType, 0, PropContext::PropInKeyType::SRC);
-    p.emplace_back("_rank", eType, 1, PropContext::PropInKeyType::RANK);
-    p.emplace_back("_dst", eType, 2, PropContext::PropInKeyType::DST);
-    p.emplace_back("_type", eType, 3, PropContext::PropInKeyType::TYPE);
-}
-
-template <typename REQ, typename RESP>
-void QueryBaseProcessor<REQ, RESP>::initEdgeContext(const std::vector<EdgeType>& eTypes,
-                                                    bool need_default_props) {
-    std::transform(eTypes.cbegin(), eTypes.cend(),
-                   std::inserter(edgeContexts_, edgeContexts_.end()),
-                   [this, need_default_props](const auto& ec) {
-                       std::vector<PropContext> prop;
-                       if (need_default_props) {
-                           addDefaultProps(prop, ec);
-                       }
-                       return std::make_pair(ec, std::move(prop));
-                   });
-}
-
-template<typename REQ, typename RESP>
-cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& req) {
-    // Handle the case for query edges which should return some columns by default.
-    int32_t index = std::accumulate(edgeContexts_.cbegin(), edgeContexts_.cend(), 0,
-                                    [](int ac, auto& ec) { return ac + ec.second.size(); });
-    std::unordered_map<TagID, int32_t> tagIndex;
-    for (auto& col : req.get_return_columns()) {
-        PropContext prop;
-        switch (col.owner) {
-            case cpp2::PropOwner::SOURCE:
-            case cpp2::PropOwner::DEST: {
-                auto tagId = col.id.get_tag_id();
-                auto schema = this->schemaMan_->getTagSchema(spaceId_, tagId);
-                if (!schema) {
-                    VLOG(3) << "Can't find spaceId " << spaceId_ << ", tagId " << tagId;
-                    return cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
-                }
-                const auto& ftype = schema->getFieldType(col.name);
-                if (UNLIKELY(ftype == CommonConstants::kInvalidValueType())) {
-                    return cpp2::ErrorCode::E_IMPROPER_DATA_TYPE;
-                }
-                prop.type_ = ftype;
-                prop.retIndex_ = index++;
-                if (col.__isset.stat && !validOperation(ftype.type, col.stat)) {
-                    return cpp2::ErrorCode::E_IMPROPER_DATA_TYPE;
-                }
-                VLOG(3) << "tagId " << tagId << ", prop " << col.name;
-                prop.prop_ = std::move(col);
-                prop.returned_ = true;
-                auto it = tagIndex.find(tagId);
-                if (it == tagIndex.end()) {
-                    TagContext tc;
-                    tc.tagId_ = tagId;
-                    tc.props_.emplace_back(std::move(prop));
-                    tagContexts_.emplace_back(std::move(tc));
-                    tagIndex.emplace(tagId, tagContexts_.size() - 1);
-                } else {
-                    tagContexts_[it->second].props_.emplace_back(std::move(prop));
-                }
-                break;
+        std::vector<PropContext> ctxs;
+        auto& props = vertexProps[i].names_;
+        for (const auto& name : props) {
+            auto field = tagSchema->field(name);
+            if (field == nullptr) {
+                VLOG(1) << "Can't find prop " << name << " tagId " << tagId;
+                return cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
             }
-            case cpp2::PropOwner::EDGE: {
-                EdgeType edgeType = col.id.get_edge_type();
-                auto edgeName = this->schemaMan_->toEdgeName(spaceId_, std::abs(edgeType));
-                if (!edgeName.ok()) {
-                    VLOG(3) << "Can't find spaceId " << spaceId_ << ", edgeType " << edgeType;
-                    return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
-                }
-                this->edgeMap_.emplace(edgeName.value(), std::abs(edgeType));
 
-                auto it = kPropsInKey_.find(col.name);
-                if (it != kPropsInKey_.end()) {
-                    prop.pikType_ = it->second;
-                    if (prop.pikType_ == PropContext::PropInKeyType::SRC ||
-                        prop.pikType_ == PropContext::PropInKeyType::DST) {
-                        prop.type_.type = nebula::cpp2::SupportedType::VID;
-                    } else {
-                        prop.type_.type = nebula::cpp2::SupportedType::INT;
-                    }
-                } else {
-                    auto schema = this->schemaMan_->getEdgeSchema(spaceId_,
-                                                                  std::abs(edgeType));
-                    if (!schema) {
-                        return cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
-                    }
-                    const auto& ftype = schema->getFieldType(col.name);
-                    if (UNLIKELY(ftype == CommonConstants::kInvalidValueType())) {
-                        return cpp2::ErrorCode::E_IMPROPER_DATA_TYPE;
-                    }
-                    prop.type_ = ftype;
-                }
-                if (col.__isset.stat && !validOperation(prop.type_.type, col.stat)) {
-                    return cpp2::ErrorCode::E_IMPROPER_DATA_TYPE;
-                }
-                prop.retIndex_ = index++;
-                prop.prop_ = std::move(col);
-                prop.returned_ = true;
-                auto it2 = edgeContexts_.find(edgeType);
-                if (it2 == edgeContexts_.end()) {
-                    std::vector<PropContext> v{std::move(prop)};
-                    edgeContexts_.emplace(edgeType, std::move(v));
-                    break;
-                }
-                it2->second.emplace_back(std::move(prop));
-                break;
-            }
+            PropContext ctx(name.c_str());
+            ctx.returned_ = true;
+            ctx.field_ = field;
+            ctxs.emplace_back(std::move(ctx));
         }
+        this->tagContext_.propContexts_.emplace_back(tagId, std::move(ctxs));
+        this->tagContext_.indexMap_.emplace(tagId, this->tagContext_.propContexts_.size() - 1);
     }
-    const auto& filterStr = req.get_filter();
-    if (!filterStr.empty()) {
-        StatusOr<std::unique_ptr<Expression>> expRet = Expression::decode(filterStr);
-        if (!expRet.ok()) {
-            return cpp2::ErrorCode::E_INVALID_FILTER;
-        }
-        exp_ = std::move(expRet).value();
-        if (!checkExp(exp_.get())) {
-            return cpp2::ErrorCode::E_INVALID_FILTER;
-        }
-        expCtx_ = std::make_unique<ExpressionContext>();
-        exp_->setContext(expCtx_.get());
-    }
-
-    buildTTLInfoAndRespSchema();
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
 template<typename REQ, typename RESP>
-folly::Optional<std::pair<std::string, int64_t>>
-QueryBaseProcessor<REQ, RESP>::getTagTTLInfo(TagID tagId) {
-    folly::Optional<std::pair<std::string, int64_t>> ret;
-    auto tagFound = tagTTLInfo_.find(tagId);
-    if (tagFound != tagTTLInfo_.end()) {
-        ret.emplace(tagFound->second.first, tagFound->second.second);
-    }
-    return ret;
-}
+cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::handleEdgeProps(
+        const std::vector<ReturnProp>& edgeProps) {
+    for (size_t i = 0; i < edgeProps.size(); i++) {
+        auto edgeType = edgeProps[i].entryId_;
+        auto iter = this->edgeContext_.schemas_.find(std::abs(edgeType));
+        if (iter == this->edgeContext_.schemas_.end()) {
+            VLOG(1) << "Can't find spaceId " << spaceId_ << " edgeType " << edgeType;
+            return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
+        }
+        CHECK(!iter->second.empty());
+        const auto& edgeSchema = iter->second.back();
+        auto edgeName = this->env_->schemaMan_->toEdgeName(spaceId_, std::abs(edgeType));
+        if (!edgeName.ok()) {
+            VLOG(1) << "Can't find spaceId " << spaceId_ << " edgeType " << edgeType;
+            return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
+        }
+        resultDataSet_.colNames.emplace_back(
+            folly::stringPrintf("%d:%s", edgeType, edgeName.value().c_str()));
 
-template<typename REQ, typename RESP>
-folly::Optional<std::pair<std::string, int64_t>>
-QueryBaseProcessor<REQ, RESP>::getEdgeTTLInfo(EdgeType edgeType) {
-    folly::Optional<std::pair<std::string, int64_t>> ret;
-    auto edgeFound = edgeTTLInfo_.find(edgeType);
-    if (edgeFound != edgeTTLInfo_.end()) {
-       ret.emplace(edgeFound->second.first, edgeFound->second.second);
-    }
-    return ret;
-}
-
-template<typename REQ, typename RESP>
-bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
-    switch (exp->kind()) {
-        case Expression::kPrimary:
-            return true;
-        case Expression::kFunctionCall: {
-            auto* funcExp = static_cast<FunctionCallExpression*>(
-                              const_cast<Expression*>(exp));
-            auto* name = funcExp->name();
-            auto args = funcExp->args();
-            auto func = FunctionManager::get(*name, args.size());
-            if (!func.ok()) {
-                return false;
-            }
-            for (auto& arg : args) {
-                if (!checkExp(arg)) {
-                    return false;
-                }
-            }
-            funcExp->setFunc(std::move(func).value());
-            return true;
-        }
-        case Expression::kUnary: {
-            auto* unaExp = static_cast<const UnaryExpression*>(exp);
-            return checkExp(unaExp->operand());
-        }
-        case Expression::kTypeCasting: {
-            auto* typExp = static_cast<const TypeCastingExpression*>(exp);
-            return checkExp(typExp->operand());
-        }
-        case Expression::kArithmetic: {
-            auto* ariExp = static_cast<const ArithmeticExpression*>(exp);
-            return checkExp(ariExp->left()) && checkExp(ariExp->right());
-        }
-        case Expression::kRelational: {
-            auto* relExp = static_cast<const RelationalExpression*>(exp);
-            return checkExp(relExp->left()) && checkExp(relExp->right());
-        }
-        case Expression::kLogical: {
-            auto* logExp = static_cast<const LogicalExpression*>(exp);
-            return checkExp(logExp->left()) && checkExp(logExp->right());
-        }
-        case Expression::kSourceProp: {
-            auto* sourceExp = static_cast<const SourcePropertyExpression*>(exp);
-            const auto* tagName = sourceExp->alias();
-            const auto* propName = sourceExp->prop();
-            auto tagRet = this->schemaMan_->toTagID(spaceId_, *tagName);
-            if (!tagRet.ok()) {
-                VLOG(1) << "Can't find tag " << *tagName << ", in space " << spaceId_;
-                return false;
-            }
-            auto tagId = tagRet.value();
-            // TODO(heng): Now we use the latest version.
-            auto schema = this->schemaMan_->getTagSchema(spaceId_, tagId);
-            CHECK(!!schema);
-            auto field = schema->field(*propName);
-            if (field == nullptr) {
-                VLOG(1) << "Can't find related prop " << *propName << " on tag " << tagName;
-                return false;
-            }
-            // TODO(heng): Now we have to scan the whole array to find related tagId,
-            // maybe we could find a better way to solve it.
-            for (auto& tc : tagContexts_) {
-                if (tc.tagId_ == tagId) {
-                    auto* prop = tc.findProp(*propName);
-                    if (prop == nullptr) {
-                        tc.pushFilterProp(*tagName, *propName, field->getType());
-                    } else if (!prop->filtered()) {
-                        prop->setTagOrEdgeName(*tagName);
-                    }
-                    return true;
-                }
-            }
-            VLOG(1) << "There is no related tag existed in tagContexts!";
-            TagContext tc;
-            tc.tagId_ = tagId;
-            tc.pushFilterProp(*tagName, *propName, field->getType());
-            tagContexts_.emplace_back(std::move(tc));
-            return true;
-        }
-        case Expression::kEdgeRank:
-        case Expression::kEdgeDstId:
-        case Expression::kEdgeSrcId:
-        case Expression::kEdgeType: {
-            return true;
-        }
-        case Expression::kAliasProp: {
-            if (edgeContexts_.empty()) {
-                VLOG(1) << "No edge requested!";
-                return false;
-            }
-
-            auto* edgeExp = static_cast<const AliasPropertyExpression*>(exp);
-
-            // TODO(simon.liu) we need handle rename.
-            auto edgeStatus = this->schemaMan_->toEdgeType(spaceId_, *edgeExp->alias());
-            if (!edgeStatus.ok()) {
-                VLOG(1) << "Can't find edge " << *(edgeExp->alias());
-                return false;
-            }
-
-            auto edgeType = edgeStatus.value();
-            auto schema = this->schemaMan_->getEdgeSchema(spaceId_, std::abs(edgeType));
-            if (!schema) {
-                VLOG(1) << "Cant find edgeType " << edgeType;
-                return false;
-            }
-
-            const auto* propName = edgeExp->prop();
-            auto field = schema->field(*propName);
-            if (field == nullptr) {
-                VLOG(1) << "Can't find related prop " << *propName << " on edge "
-                        << *(edgeExp->alias());
-                return false;
-            }
-            return true;
-        }
-        case Expression::kVariableProp:
-        case Expression::kDestProp:
-        case Expression::kInputProp: {
-            return false;
-        }
-        default: {
-            VLOG(1) << "Unsupport expression type! kind = "
-                    << std::to_string(static_cast<uint8_t>(exp->kind()));
-            return false;
-        }
-    }
-}
-
-template<typename REQ, typename RESP>
-void QueryBaseProcessor<REQ, RESP>::collectProps(RowReader* reader,
-                                                 folly::StringPiece key,
-                                                 const std::vector<PropContext>& props,
-                                                 FilterContext* fcontext,
-                                                 Collector* collector) {
-    for (auto& prop : props) {
-        VLOG(1) << "Collect prop " << prop.prop_.name
-                << ", type " << static_cast<int32_t>(prop.type_.type);
-        if (!key.empty()) {
-            switch (prop.pikType_) {
-                case PropContext::PropInKeyType::NONE:
-                    break;
-                case PropContext::PropInKeyType::SRC:
-                    collector->collectVid(NebulaKeyUtils::getSrcId(key), prop);
-                    continue;
-                case PropContext::PropInKeyType::DST:
-                    VLOG(3) << "collect _dst, value = " << NebulaKeyUtils::getDstId(key);
-                    if (compactDstIdProps_) {
-                        collector->collectVid(NebulaKeyUtils::getDstId(key), prop);
-                    } else {
-                        collector->collectDstId(NebulaKeyUtils::getDstId(key));
-                    }
-                    continue;
-                case PropContext::PropInKeyType::TYPE:
-                    collector->collectInt64(static_cast<int64_t>(NebulaKeyUtils::getEdgeType(key)),
-                                            prop);
-                    continue;
-                case PropContext::PropInKeyType::RANK:
-                    collector->collectInt64(NebulaKeyUtils::getRank(key), prop);
-                    continue;
-            }
-        }
-        if (reader != nullptr) {
-            const auto& name = prop.prop_.get_name();
-            VariantType v;
-            auto res = RowReader::getPropByName(reader, name);
-            if (!ok(res)) {
-                VLOG(1) << "Bad value for prop: " << name;
-                // TODO: Should return NULL
-                auto defaultVal = RowReader::getDefaultProp(prop.type_.type);
-                if (!defaultVal.ok()) {
-                    // Should never reach here.
-                    LOG(ERROR) << "Get default value failed for " << name;
-                    continue;
-                } else {
-                    v = std::move(defaultVal).value();
-                }
+        std::vector<PropContext> ctxs;
+        auto& props = edgeProps[i].names_;
+        for (const auto& name : props) {
+            // because there are some reserved edge prop in key (src/dst/type/rank),
+            // we can't find those prop in schema
+            PropContext ctx(name.c_str());
+            auto propIter = std::find_if(kPropsInKey_.begin(), kPropsInKey_.end(),
+                                         [&] (const auto& entry) { return entry.first == name; });
+            if (propIter != kPropsInKey_.end()) {
+                ctx.propInKeyType_ = propIter->second;
             } else {
-                v = value(std::move(res));
+                auto field = edgeSchema->field(name);
+                if (field == nullptr) {
+                    VLOG(1) << "Can't find prop " << name << " edgeType " << edgeType;
+                    return cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
+                }
+                ctx.field_ = field;
             }
-
-            if (prop.fromTagFilter()) {
-                fcontext->tagFilters_.emplace(std::make_pair(prop.tagOrEdgeName(), name), v);
-            }
-            if (prop.returned_) {
-                switch (v.which()) {
-                    case VAR_INT64:
-                        collector->collectInt64(boost::get<int64_t>(v), prop);
-                        break;
-                    case VAR_DOUBLE:
-                        collector->collectDouble(boost::get<double>(v), prop);
-                        break;
-                    case VAR_BOOL:
-                        collector->collectBool(boost::get<bool>(v), prop);
-                        break;
-                    case VAR_STR:
-                        collector->collectString(boost::get<std::string>(v), prop);
-                        break;
-                    default:
-                        LOG(FATAL) << "Unknown VariantType: " << v.which();
-                }  // switch
-            }  // if returned
-        }  // if reader != nullptr
-    }  // for
+            ctx.returned_ = true;
+            ctxs.emplace_back(std::move(ctx));
+        }
+        this->edgeContext_.propContexts_.emplace_back(edgeType, std::move(ctxs));
+        this->edgeContext_.indexMap_.emplace(edgeType, this->edgeContext_.propContexts_.size() - 1);
+    }
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
 template<typename REQ, typename RESP>
-kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
-                            PartitionID partId,
-                            VertexID vId,
-                            TagID tagId,
-                            const std::vector<PropContext>& props,
-                            FilterContext* fcontext,
-                            Collector* collector) {
-    auto schema = this->schemaMan_->getTagSchema(spaceId_, tagId);
-    if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
-        auto result = vertexCache_->get(std::make_pair(vId, tagId), partId);
-        if (result.ok()) {
-            auto v = std::move(result).value();
-            auto reader = RowReader::getTagPropReader(this->schemaMan_, v, spaceId_, tagId);
-
-            // Check if ttl data expired
-            auto retTtlOpt = getTagTTLInfo(tagId);
-            if (retTtlOpt.hasValue()) {
-                auto ttlValue = retTtlOpt.value();
-                if (checkDataExpiredForTTL(schema.get(),
-                                           reader.get(),
-                                           ttlValue.first,
-                                           ttlValue.second)) {
-                    VLOG(3) << "Hit cache for vId " << vId << ", tagId "
-                            << tagId <<", but data expired";
-                    return kvstore::ResultCode::SUCCEEDED;
-                }
-            }
-
-            this->collectProps(reader.get(), "", props, fcontext, collector);
-            VLOG(3) << "Hit cache for vId " << vId << ", tagId " << tagId;
-            return kvstore::ResultCode::SUCCEEDED;
-        } else {
-            VLOG(3) << "Miss cache for vId " << vId << ", tagId " << tagId;
-        }
+cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::buildFilter(const REQ& req) {
+    if (!req.__isset.filter) {
+        return cpp2::ErrorCode::SUCCEEDED;
     }
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId, vId, tagId);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = this->kvstore_->prefix(spaceId_, partId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret) << ", spaceId " << spaceId_;
-        return ret;
+    const auto& filterStr = *req.get_filter();
+    if (!filterStr.empty()) {
+        // todo(doodle): wait Expression ready, check if filter valid,
+        // and add tag filter to tagContexts_
     }
-    // Will decode the properties according to the schema version
-    // stored along with the properties
-    if (iter && iter->valid()) {
-        auto reader = RowReader::getTagPropReader(this->schemaMan_, iter->val(), spaceId_, tagId);
-
-        // Check if ttl data expired
-        auto retTtlOpt = getTagTTLInfo(tagId);
-        if (retTtlOpt.hasValue()) {
-            auto ttlValue = retTtlOpt.value();
-            if (checkDataExpiredForTTL(schema.get(),
-                                       reader.get(),
-                                       ttlValue.first,
-                                       ttlValue.second)) {
-                return ret;
-            }
-        }
-        this->collectProps(reader.get(), iter->key(), props, fcontext, collector);
-        if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
-            vertexCache_->insert(std::make_pair(vId, tagId),
-                                 iter->val().str(), partId);
-            VLOG(3) << "Insert cache for vId " << vId << ", tagId " << tagId;
-        }
-    } else {
-        VLOG(3) << "Missed partId " << partId << ", vId " << vId << ", tagId " << tagId;
-        return kvstore::ResultCode::ERR_KEY_NOT_FOUND;
-    }
-    return ret;
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
 template<typename REQ, typename RESP>
-kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
-                                               PartitionID partId,
-                                               VertexID vId,
-                                               EdgeType edgeType,
-                                               const std::vector<PropContext>& props,
-                                               FilterContext* fcontext,
-                                               EdgeProcessor proc) {
-    auto prefix = NebulaKeyUtils::edgePrefix(partId, vId, edgeType);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = this->kvstore_->prefix(spaceId_, partId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED || !iter) {
-        return ret;
-    }
+void QueryBaseProcessor<REQ, RESP>::buildTagTTLInfo() {
+    for (const auto& tc : this->tagContext_.propContexts_) {
+        auto tagId = tc.first;
+        auto iter = this->tagContext_.schemas_.find(tagId);
+        CHECK(iter != this->tagContext_.schemas_.end());
+        const auto& tagSchema = iter->second.back();
 
-    EdgeRanking lastRank  = -1;
-    VertexID    lastDstId = 0;
-    bool        firstLoop = true;
-    int         cnt = 0;
-    bool onlyStructure = onlyStructures_[edgeType];
-    Getters getters;
-    std::unique_ptr<nebula::algorithm::ReservoirSampling<
-        std::pair<std::unique_ptr<RowReader>, std::string>>> sampler;
-    if (FLAGS_enable_reservoir_sampling) {
-        sampler = std::make_unique<
-            nebula::algorithm::ReservoirSampling<
-                std::pair<std::unique_ptr<RowReader>, std::string>
-            >
-        >(FLAGS_max_edge_returned_per_vertex);
-    }
-
-    auto schema = this->schemaMan_->getEdgeSchema(spaceId_, std::abs(edgeType));
-    auto retTTL = getEdgeTTLInfo(edgeType);
-    for (; iter->valid(); iter->next()) {
-        if (!FLAGS_enable_reservoir_sampling
-                && !(cnt < FLAGS_max_edge_returned_per_vertex)) {
-            break;
-        }
-        auto key = iter->key();
-        auto val = iter->val();
-        auto rank = NebulaKeyUtils::getRank(key);
-        auto dstId = NebulaKeyUtils::getDstId(key);
-        if (!firstLoop && rank == lastRank && lastDstId == dstId) {
-            VLOG(3) << "Only get the latest version for each edge.";
-            continue;
-        }
-        lastRank = rank;
-        lastDstId = dstId;
-        std::unique_ptr<RowReader> reader;
-        if (!onlyStructure
-                && !val.empty()) {
-            reader = RowReader::getEdgePropReader(this->schemaMan_,
-                                                  val,
-                                                  spaceId_,
-                                                  std::abs(edgeType));
-            // Check if ttl data expired
-            if (retTTL.has_value() && checkDataExpiredForTTL(schema.get(),
-                                                             reader.get(),
-                                                             retTTL.value().first,
-                                                             retTTL.value().second)) {
-                    VLOG(3) << "Data expired.";
-                    continue;
-            }
-
-            if (exp_ != nullptr) {
-                getters.getAliasProp = [this, edgeType, &reader, &key](const std::string& edgeName,
-                                           const std::string& prop) -> OptVariantType {
-                    auto edgeFound = this->edgeMap_.find(edgeName);
-                    if (edgeFound == edgeMap_.end()) {
-                        return Status::Error(
-                                "Edge `%s' not found when call getters.", edgeName.c_str());
-                    }
-                    if (std::abs(edgeType) != edgeFound->second) {
-                        return Status::Error("Ignore this edge");
-                    }
-
-                    if (prop == _SRC) {
-                        return NebulaKeyUtils::getSrcId(key);
-                    } else if (prop == _DST) {
-                        return NebulaKeyUtils::getDstId(key);
-                    } else if (prop == _RANK) {
-                        return NebulaKeyUtils::getRank(key);
-                    } else if (prop == _TYPE) {
-                        return static_cast<int64_t>(NebulaKeyUtils::getEdgeType(key));
-                    }
-
-                    auto res = RowReader::getPropByName(reader.get(), prop);
-                    if (!ok(res)) {
-                        return Status::Error("Invalid Prop");
-                    }
-                    return value(std::move(res));
-                };
-                getters.getEdgeRank = [&rank] () -> VariantType {
-                    return rank;
-                };
-                getters.getEdgeDstId = [this,
-                                        &edgeType,
-                                        &dstId] (const std::string& edgeName) -> OptVariantType {
-                    auto edgeFound = this->edgeMap_.find(edgeName);
-                    if (edgeFound == edgeMap_.end()) {
-                        return Status::Error(
-                                "Edge `%s' not found when call getters.", edgeName.c_str());
-                    }
-                    if (std::abs(edgeType) != edgeFound->second) {
-                        return Status::Error("Ignore this edge");
-                    }
-                    return dstId;
-                };
-                getters.getSrcTagProp = [&fcontext] (const std::string& tag,
-                                                     const std::string& prop) -> OptVariantType {
-                    auto it = fcontext->tagFilters_.find(std::make_pair(tag, prop));
-                    if (it == fcontext->tagFilters_.end()) {
-                        return Status::Error("Invalid Tag Filter");
-                    }
-                    VLOG(1) << "Hit srcProp filter for tag " << tag << ", prop "
-                            << prop << ", value " << it->second;
-                    return it->second;
-                };
-                auto value = exp_->eval(getters);
-                if (value.ok() && !Expression::asBool(value.value())) {
-                    VLOG(1) << "Filter the edge "
-                            << vId << "-> " << dstId << "@" << rank << ":" << edgeType;
-                    continue;
-                }
-            }
-        }
-
-        if (FLAGS_enable_reservoir_sampling) {
-            sampler->sampling(std::make_pair(std::move(reader), key.str()));
-        } else {
-            proc(reader.get(), key, props);
-        }
-        ++cnt;
-        if (firstLoop) {
-            firstLoop = false;
-        }
-    }
-
-    if (FLAGS_enable_reservoir_sampling) {
-        auto samples = std::move(*sampler).samples();
-        for (auto& sample : samples) {
-            proc(sample.first.get(), sample.second, props);
-        }
-    }
-
-    return ret;
-}
-
-template<typename REQ, typename RESP>
-folly::Future<std::vector<OneVertexResp>>
-QueryBaseProcessor<REQ, RESP>::asyncProcessBucket(Bucket bucket) {
-    folly::Promise<std::vector<OneVertexResp>> pro;
-    auto f = pro.getFuture();
-    executor_->add([this, p = std::move(pro), b = std::move(bucket)] () mutable {
-        std::vector<OneVertexResp> codes;
-        codes.reserve(b.vertices_.size());
-        for (auto& pv : b.vertices_) {
-            codes.emplace_back(pv.first,
-                               pv.second,
-                               processVertex(pv.first, pv.second));
-        }
-        p.setValue(std::move(codes));
-    });
-    return f;
-}
-
-template<typename REQ, typename RESP>
-int32_t QueryBaseProcessor<REQ, RESP>::getBucketsNum(int32_t verticesNum,
-                                                     int32_t minVerticesPerBucket,
-                                                     int32_t handlerNum) {
-    return std::min(std::max(1, verticesNum/minVerticesPerBucket), handlerNum);
-}
-
-template<typename REQ, typename RESP>
-std::vector<Bucket> QueryBaseProcessor<REQ, RESP>::genBuckets(
-                                                    const cpp2::GetNeighborsRequest& req) {
-    std::vector<Bucket> buckets;
-    int32_t verticesNum = 0;
-    for (auto& pv : req.get_parts()) {
-        verticesNum += pv.second.size();
-    }
-    auto bucketsNum = getBucketsNum(verticesNum,
-                                    FLAGS_min_vertices_per_bucket,
-                                    FLAGS_max_handlers_per_req);
-    buckets.resize(bucketsNum);
-    auto vNumPerBucket = verticesNum / bucketsNum;
-    auto leftVertices = verticesNum % bucketsNum;
-    int32_t bucketIndex = -1;
-    size_t thresHold = vNumPerBucket;
-    for (auto& pv : req.get_parts()) {
-        for (auto& vId : pv.second) {
-            if (bucketIndex < 0 || buckets[bucketIndex].vertices_.size() >= thresHold) {
-                ++bucketIndex;
-                thresHold = bucketIndex < leftVertices ? vNumPerBucket + 1 : vNumPerBucket;
-                buckets[bucketIndex].vertices_.reserve(thresHold);
-            }
-            CHECK_LT(bucketIndex, bucketsNum);
-            buckets[bucketIndex].vertices_.emplace_back(pv.first, vId);
-        }
-    }
-    return buckets;
-}
-
-template<typename REQ, typename RESP>
-void QueryBaseProcessor<REQ, RESP>::buildTTLInfoAndRespSchema() {
-    if (!this->tagContexts_.empty()) {
-        for (auto& tc : this->tagContexts_) {
-            nebula::cpp2::Schema respTag;
-            for (auto& prop : tc.props_) {
-                if (prop.returned_) {
-                    VLOG(3) << "Build schema with prop: " << prop.prop_.name
-                            << " , type: " << static_cast<int32_t>(prop.type_.type);
-                    respTag.columns.emplace_back(
-                        this->columnDef(prop.prop_.name, prop.type_.type));
-                }
-            }
-
-            if (!respTag.columns.empty()) {
-                auto it = vertexSchemaResp_.find(tc.tagId_);
-                if (it == vertexSchemaResp_.end()) {
-                    auto schemaProvider = std::make_shared<ResultSchemaProvider>(respTag);
-                    vertexSchema_.emplace(tc.tagId_, std::move(schemaProvider));
-                    vertexSchemaResp_.emplace(tc.tagId_, std::move(respTag));
-                }
-            }
-
-            // build ttl info
-            auto tagFound = tagTTLInfo_.find(tc.tagId_);
-            if (tagFound != tagTTLInfo_.end()) {
-                continue;
-            }
-
-            auto tagschema = this->schemaMan_->getTagSchema(spaceId_, tc.tagId_);
-            if (!tagschema) {
-                VLOG(3) << "Can't find spaceId " << spaceId_ << ", tagId " << tc.tagId_;
-                continue;
-            }
-            const meta::NebulaSchemaProvider* nschema =
-                dynamic_cast<const meta::NebulaSchemaProvider*>(tagschema.get());
-            if (nschema == NULL) {
-                VLOG(3) << "Can't find NebulaSchemaProvider in spaceId " << spaceId_;
-                continue;
-            }
-
-            const nebula::cpp2::SchemaProp schemaProp = nschema->getProp();
-
-            int64_t ttlDuration = 0;
-            if (schemaProp.get_ttl_duration()) {
-                ttlDuration = *schemaProp.get_ttl_duration();
-            }
-            std::string ttlCol;
-            if (schemaProp.get_ttl_col()) {
-                ttlCol = *schemaProp.get_ttl_col();
-            }
-
-            // Only support the specified ttl_col mode
-            // Not specifying or non-positive ttl_duration behaves like ttl_duration = infinity
-            if (ttlCol.empty() || ttlDuration <= 0) {
-                VLOG(3) << "TTL property is invalid";
-                continue;
-            }
-
-            tagTTLInfo_.emplace(tc.tagId_, std::make_pair(ttlCol, ttlDuration));
-        }
-    }
-
-    if (!edgeContexts_.empty()) {
-        for (const auto& ec : edgeContexts_) {
-            nebula::cpp2::Schema respEdge;
-            auto& props = ec.second;
-            for (auto& p : props) {
-                if (!compactDstIdProps_ && p.prop_.name == "_dst") {
-                    continue;
-                }
-                VLOG(3) << "Build schema with prop: " << p.prop_.name
-                        << " , type: " << static_cast<int32_t>(p.type_.type);
-                respEdge.columns.emplace_back(
-                        this->columnDef(p.prop_.name, p.type_.type));
-            }
-
-            VLOG(1) << "EdgeType " << ec.first << ", onlyStructure " << respEdge.columns.empty();
-            onlyStructures_.emplace(ec.first, respEdge.columns.empty());
-            if (!respEdge.columns.empty()) {
-                auto it = edgeSchemaResp_.find(ec.first);
-                if (it == edgeSchemaResp_.end()) {
-                    auto schemaProvider = std::make_shared<ResultSchemaProvider>(respEdge);
-                    edgeSchema_.emplace(ec.first, std::move(schemaProvider));
-                    VLOG(1) << "Fulfill edge response for edge " << ec.first;
-                    edgeSchemaResp_.emplace(ec.first, std::move(respEdge));
-                }
-            }
-
-            // build ttl info
-            auto edgeFound = edgeTTLInfo_.find(ec.first);
-            if (edgeFound != edgeTTLInfo_.end()) {
-                continue;
-            }
-
-            auto edgeschema = this->schemaMan_->getEdgeSchema(spaceId_, std::abs(ec.first));
-            if (!edgeschema) {
-                VLOG(3) << "Can't find spaceId " << spaceId_ << ", edgeType " << ec.first;
-                continue;
-            }
-            const meta::NebulaSchemaProvider* nschema =
-                dynamic_cast<const meta::NebulaSchemaProvider*>(edgeschema.get());
-            if (nschema == NULL) {
-                VLOG(3) << "Can't find NebulaSchemaProvider in spaceId " << spaceId_;
-                continue;
-            }
-
-            const nebula::cpp2::SchemaProp schemaProp = nschema->getProp();
-
-            int64_t ttlDuration = 0;
-            if (schemaProp.get_ttl_duration()) {
-                ttlDuration = *schemaProp.get_ttl_duration();
-            }
-            std::string ttlCol;
-            if (schemaProp.get_ttl_col()) {
-                ttlCol = *schemaProp.get_ttl_col();
-            }
-
-            // Only support the specified ttl_col mode
-            // Not specifying or non-positive ttl_duration behaves like ttl_duration = infinity
-            if (ttlCol.empty() || ttlDuration <= 0) {
-                VLOG(3) << "TTL property is invalid";
-                continue;
-            }
-
-            edgeTTLInfo_.emplace(ec.first, std::make_pair(ttlCol, ttlDuration));
+        auto ttlInfo = tagSchema->getTTLInfo();
+        if (ttlInfo.ok()) {
+            VLOG(2) << "Add ttl col " << ttlInfo.value().first << " of tag " << tagId;
+            tagContext_.ttlInfo_.emplace(tagId, std::move(ttlInfo).value());
         }
     }
 }
 
 template<typename REQ, typename RESP>
-void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req) {
-    CHECK_NOTNULL(executor_);
-    spaceId_ = req.get_space_id();
-    int32_t returnColumnsNum = req.get_return_columns().size();
-    VLOG(1) << "Total edge types " << req.edge_types.size()
-            << ", total returned columns " << returnColumnsNum
-            << ", the first column "
-            << (returnColumnsNum > 0 ? req.get_return_columns()[0].name : "");
-    VLOG(3) << "Receive request, spaceId " << spaceId_ << ", return cols " << returnColumnsNum;
-    tagContexts_.reserve(returnColumnsNum);
+void QueryBaseProcessor<REQ, RESP>::buildEdgeTTLInfo() {
+    for (const auto& ec : this->edgeContext_.propContexts_) {
+        auto edgeType = ec.first;
+        auto iter = this->edgeContext_.schemas_.find(std::abs(edgeType));
+        CHECK(iter != this->edgeContext_.schemas_.end());
+        const auto& edgeSchema = iter->second.back();
 
-    if (req.__isset.edge_types) {
-        initEdgeContext(req.edge_types);
-    }
-
-    auto retCode = checkAndBuildContexts(req);
-    if (retCode != cpp2::ErrorCode::SUCCEEDED) {
-        for (auto& p : req.get_parts()) {
-            this->pushResultCode(retCode, p.first);
+        auto ttlInfo = edgeSchema->getTTLInfo();
+        if (ttlInfo.ok()) {
+            VLOG(2) << "Add ttl col " << ttlInfo.value().first << " of edge " << edgeType;
+            edgeContext_.ttlInfo_.emplace(edgeType, std::move(ttlInfo).value());
         }
-        this->onFinished();
-        return;
     }
+}
 
-    // const auto& filter = req.get_filter();
-    auto buckets = genBuckets(req);
-    std::vector<folly::Future<std::vector<OneVertexResp>>> results;
-    for (auto& bucket : buckets) {
-        results.emplace_back(asyncProcessBucket(std::move(bucket)));
-    }
-    folly::collectAll(results).via(executor_).thenTry([
-                     this,
-                     returnColumnsNum] (auto&& t) mutable {
-        CHECK(!t.hasException());
-        std::unordered_set<PartitionID> failedParts;
-        for (auto& bucketTry : t.value()) {
-            CHECK(!bucketTry.hasException());
-            for (auto& r : bucketTry.value()) {
-                auto& partId = std::get<0>(r);
-                auto& ret = std::get<2>(r);
-                if (ret != kvstore::ResultCode::SUCCEEDED
-                      && failedParts.find(partId) == failedParts.end()) {
-                    failedParts.emplace(partId);
-                    if (ret == kvstore::ResultCode::ERR_LEADER_CHANGED) {
-                        this->handleLeaderChanged(spaceId_, partId);
-                    } else {
-                        this->pushResultCode(this->to(ret), partId);
-                    }
-                }
-            }
+template<typename REQ, typename RESP>
+std::vector<ReturnProp> QueryBaseProcessor<REQ, RESP>::buildAllTagProps() {
+    std::vector<ReturnProp> result;
+    for (const auto& entry : this->tagContext_.schemas_) {
+        ReturnProp prop;
+        prop.entryId_ = entry.first;
+        std::vector<std::string> names;
+        const auto& schema = entry.second.back();
+        auto count = schema->getNumFields();
+        for (size_t i = 0; i < count; i++) {
+            auto name = schema->getFieldName(i);
+            names.emplace_back(std::move(name));
         }
-        this->onProcessFinished(returnColumnsNum);
-        this->onFinished();
-    });
+        prop.names_ = std::move(names);
+        result.emplace_back(std::move(prop));
+    }
+    return result;
+}
+
+template<typename REQ, typename RESP>
+std::vector<ReturnProp> QueryBaseProcessor<REQ, RESP>::buildAllEdgeProps(
+        const cpp2::EdgeDirection& direction) {
+    std::vector<ReturnProp> result;
+    for (const auto& entry : this->edgeContext_.schemas_) {
+        ReturnProp prop;
+        prop.entryId_ = entry.first;
+        if (direction == cpp2::EdgeDirection::IN_EDGE) {
+            prop.entryId_ = -prop.entryId_;
+        }
+        std::vector<std::string> names;
+        const auto& schema = entry.second.back();
+        auto count = schema->getNumFields();
+        for (size_t i = 0; i < count; i++) {
+            auto name = schema->getFieldName(i);
+            names.emplace_back(std::move(name));
+        }
+        prop.names_ = std::move(names);
+        if (direction == cpp2::EdgeDirection::BOTH) {
+            ReturnProp reverse = prop;
+            reverse.entryId_ = -prop.entryId_;
+            result.emplace_back(std::move(reverse));
+        }
+        result.emplace_back(std::move(prop));
+    }
+    return result;
 }
 
 }  // namespace storage

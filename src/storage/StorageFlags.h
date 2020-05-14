@@ -27,4 +27,10 @@ DECLARE_int32(vertex_cache_bucket_exp);
 
 DECLARE_bool(enable_vertex_cache);
 
+DECLARE_int32(reader_handlers);
+
+DECLARE_int32(max_edge_returned_per_vertex);
+
+DECLARE_bool(enable_reservoir_sampling);
+
 #endif  // STORAGE_STORAGEFLAGS_H_

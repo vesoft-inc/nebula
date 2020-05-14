@@ -229,7 +229,7 @@ void checkAddEdgesData(cpp2::AddEdgesRequest req,
                     // use the default value and null
                     if (num == 0) {
                         val = reader->getValueByIndex(7);
-                        EXPECT_EQ(false, val.getBool());
+                        EXPECT_EQ("trade", val.getStr());
                     } else {
                         if (newEdgeProp.size() >= 8) {
                             val = reader->getValueByIndex(7);

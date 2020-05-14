@@ -159,7 +159,8 @@ public:
             return true;
         }
 
-        return !nebula::storage::checkDataExpiredForTTL(schema, reader, ttlCol, ttlDuration);
+        return !nebula::storage::CommonUtils::checkDataExpiredForTTL(
+                    schema, reader, ttlCol, ttlDuration);
     }
 
     bool filterVersions(const folly::StringPiece& key) const {

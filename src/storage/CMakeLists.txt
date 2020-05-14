@@ -28,6 +28,7 @@ nebula_add_library(
     mutate/DeleteVerticesProcessor.cpp
     mutate/AddEdgesProcessor.cpp
     mutate/DeleteEdgesProcessor.cpp
+    query/GetNeighborsProcessor.cpp
 )
 
 

@@ -16,6 +16,13 @@
 namespace nebula {
 namespace mock {
 
+// the different version of tag schema, from oldest to newest
+using TagSchemas =
+    std::unordered_map<TagID, std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>>;
+// the different version of edge schema, from oldest to newest
+using EdgeSchemas =
+    std::unordered_map<EdgeType, std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>>;
+
 class AdHocSchemaManager final : public nebula::meta::SchemaManager {
 public:
     AdHocSchemaManager() = default;
@@ -52,10 +59,7 @@ public:
 
     StatusOr<TagID> toTagID(GraphSpaceID space, folly::StringPiece tagName) override;
 
-    StatusOr<std::string> toTagName(GraphSpaceID, TagID) override {
-        LOG(FATAL) << "Unimplemented";
-        return Status::Error("Unimplemented");
-    }
+    StatusOr<std::string> toTagName(GraphSpaceID, TagID tagId) override;
 
     StatusOr<EdgeType> toEdgeType(GraphSpaceID space, folly::StringPiece typeName) override;
 
@@ -68,29 +72,52 @@ public:
 
     StatusOr<int32_t> getSpaceVidLen(GraphSpaceID space) override;
 
-    std::vector<std::pair<TagID, std::shared_ptr<const nebula::meta::NebulaSchemaProvider>>>
-    listLatestTagSchema(GraphSpaceID space) override;
+    // get all version of all tags
+    StatusOr<TagSchemas> getAllVerTagSchema(GraphSpaceID space) override;
 
-    std::vector<std::pair<EdgeType, std::shared_ptr<const nebula::meta::NebulaSchemaProvider>>>
-    listLatestEdgeSchema(GraphSpaceID space) override;
+    // get all version of all edges
+    StatusOr<EdgeSchemas> getAllVerEdgeSchema(GraphSpaceID space) override;
+
+    // mock previous version of get schema from cache in MetaClient, only used of benchmark
+    std::shared_ptr<const nebula::meta::NebulaSchemaProvider>
+    getTagSchemaFromMap(GraphSpaceID space,
+                        TagID tag,
+                        SchemaVer ver);
+
+    // mock previous version of get schema from cache in MetaClient, only used of benchmark
+    std::shared_ptr<const nebula::meta::NebulaSchemaProvider>
+    getEdgeSchemaFromMap(GraphSpaceID space,
+                         EdgeType edge,
+                         SchemaVer ver);
 
 protected:
     folly::RWSpinLock tagLock_;
-    std::unordered_map<std::pair<GraphSpaceID, TagID>,
-                       // version -> schema
-                       std::map<SchemaVer, std::shared_ptr<const meta::NebulaSchemaProvider>>>
-        tagSchemas_;
+
+    // all version of the same tag schema is stored in a vector
+    std::unordered_map<GraphSpaceID, TagSchemas> tagSchemasInVector_;
 
     folly::RWSpinLock edgeLock_;
-    std::unordered_map<std::pair<GraphSpaceID, EdgeType>,
-                       // version -> schema
-                       std::map<SchemaVer, std::shared_ptr<const meta::NebulaSchemaProvider>>>
-        edgeSchemas_;
+
+    // all version of the same edge schema is stored in a vector
+    std::unordered_map<GraphSpaceID, EdgeSchemas> edgeSchemasInVector_;
 
     folly::RWSpinLock spaceLock_;
     std::set<GraphSpaceID> spaces_;
     // Key: spaceId + tagName,  Val: tagId
     std::unordered_map<std::string, TagID> tagNameToId_;
+
+private:
+    // all version of the same tag schema is stored in map, same as previous MetaClient cache
+    // only used for benchmark comparison
+    std::unordered_map<GraphSpaceID,
+        std::unordered_map<std::pair<TagID, SchemaVer>,
+            std::shared_ptr<const nebula::meta::NebulaSchemaProvider>>> tagSchemasInMap_;
+
+    // all version of the same edge schema is stored in map, same as previous MetaClient cache
+    // only used for benchmark comparison
+    std::unordered_map<GraphSpaceID,
+        std::unordered_map<std::pair<EdgeType, SchemaVer>,
+            std::shared_ptr<const nebula::meta::NebulaSchemaProvider>>> edgeSchemasInMap_;
 };
 
 }  // namespace mock
