@@ -113,32 +113,14 @@ StatusOr<std::vector<std::string>> ServerBasedSchemaManager::getAllEdge(GraphSpa
     return metaClient_->getAllEdgeFromCache(space);
 }
 
-std::vector<std::pair<TagID, std::shared_ptr<const NebulaSchemaProvider>>>
-ServerBasedSchemaManager::listLatestTagSchema(GraphSpaceID space) {
+StatusOr<TagSchemas> ServerBasedSchemaManager::getAllVerTagSchema(GraphSpaceID space) {
     CHECK(metaClient_);
-    std::vector<std::pair<TagID, std::shared_ptr<const NebulaSchemaProvider>>> schemas;
-    auto versions = metaClient_->listLatestTagVersionFromCache(space);
-    for (const auto& entry : versions) {
-        auto ret = metaClient_->getTagSchemaFromCache(space, entry.first, entry.second);
-        if (ret.ok() && ret.value() != nullptr) {
-            schemas.emplace_back(entry.first, std::move(ret.value()));
-        }
-    }
-    return schemas;
+    return metaClient_->getAllVerTagSchema(space);
 }
 
-std::vector<std::pair<EdgeType, std::shared_ptr<const NebulaSchemaProvider>>>
-ServerBasedSchemaManager::listLatestEdgeSchema(GraphSpaceID space) {
+StatusOr<EdgeSchemas> ServerBasedSchemaManager::getAllVerEdgeSchema(GraphSpaceID space) {
     CHECK(metaClient_);
-    std::vector<std::pair<EdgeType, std::shared_ptr<const NebulaSchemaProvider>>> schemas;
-    auto versions = metaClient_->listLatestEdgeVersionFromCache(space);
-    for (const auto& entry : versions) {
-        auto ret = metaClient_->getEdgeSchemaFromCache(space, entry.first, entry.second);
-        if (ret.ok() && ret.value() != nullptr) {
-            schemas.emplace_back(entry.first, std::move(ret.value()));
-        }
-    }
-    return schemas;
+    return metaClient_->getAllVerEdgeSchema(space);
 }
 
 }  // namespace meta

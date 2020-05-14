@@ -17,6 +17,12 @@ namespace meta {
 
 class MetaClient;
 
+using TagSchemas =
+    std::unordered_map<TagID, std::vector<std::shared_ptr<const NebulaSchemaProvider>>>;
+
+using EdgeSchemas =
+    std::unordered_map<EdgeType, std::vector<std::shared_ptr<const NebulaSchemaProvider>>>;
+
 class SchemaManager {
 public:
     virtual ~SchemaManager() = default;
@@ -49,11 +55,12 @@ public:
 
     virtual StatusOr<std::vector<std::string>> getAllEdge(GraphSpaceID space) = 0;
 
-    virtual std::vector<std::pair<TagID, std::shared_ptr<const NebulaSchemaProvider>>>
-    listLatestTagSchema(GraphSpaceID space) = 0;
+    // get all version of all tag schema
+    virtual StatusOr<TagSchemas> getAllVerTagSchema(GraphSpaceID space) = 0;
 
-    virtual std::vector<std::pair<EdgeType, std::shared_ptr<const NebulaSchemaProvider>>>
-    listLatestEdgeSchema(GraphSpaceID space) = 0;
+    // get all version of all edge schema
+    virtual StatusOr<EdgeSchemas> getAllVerEdgeSchema(GraphSpaceID space) = 0;
+
 
 protected:
     SchemaManager() = default;
