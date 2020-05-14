@@ -218,25 +218,20 @@ decodeBatchValue(folly::StringPiece encoded) {
     return batch;
 }
 
-std::string encodeHost(LogType type, const HostAddr& host) {
+std::string encodeHost(LogType type, const network::InetAddress& host) {
     std::string encoded;
-    encoded.reserve(sizeof(int64_t) + 1 + sizeof(HostAddr));
+    encoded.reserve(sizeof(int64_t) + 1 + sizeof(network::InetAddress));
     int64_t ts = time::WallClock::fastNowInMilliSec();
     encoded.append(reinterpret_cast<char*>(&ts), sizeof(int64_t))
            .append(reinterpret_cast<char*>(&type), 1)
-           .append(reinterpret_cast<const char*>(&host), sizeof(HostAddr));
+           .append(host.encode());
     return encoded;
 }
 
-HostAddr decodeHost(LogType type, const folly::StringPiece& encoded) {
-    HostAddr addr;
-    CHECK_EQ(sizeof(int64_t) + 1 + sizeof(HostAddr), encoded.size());
+network::InetAddress decodeHost(LogType type, const folly::StringPiece& encoded) {
+    CHECK_EQ(sizeof(int64_t) + 1 + sizeof(IPv4) + sizeof(Port), encoded.size());
     CHECK(encoded[sizeof(int64_t)] == type);
-    memcpy(&addr.first, encoded.begin() + sizeof(int64_t) + 1, sizeof(addr.first));
-    memcpy(&addr.second,
-           encoded.begin() + sizeof(int64_t) + 1 + sizeof(addr.first),
-           sizeof(addr.second));
-    return addr;
+    return network::InetAddress::makeInetAddress(encoded.begin() + sizeof(int64_t) + 1);
 }
 
 int64_t getTimestamp(const folly::StringPiece& command) {

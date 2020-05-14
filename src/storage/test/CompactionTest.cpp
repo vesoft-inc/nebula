@@ -203,7 +203,7 @@ TEST(NebulaCompactionFilterTest, InvalidSchemaAndMutliVersionsFilterTest) {
                                                                               nullptr));
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path(),
                                                            6,
-                                                           {0, 0},
+                                                           network::InetAddress{0, 0},
                                                            nullptr,
                                                            false,
                                                            std::move(cffBuilder)));
@@ -284,7 +284,7 @@ TEST(NebulaCompactionFilterTest, TTLFilterDataExpiredTest) {
                                                                               nullptr));
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path(),
                                                            6,
-                                                           {0, 0},
+                                                           network::InetAddress{0, 0},
                                                            nullptr,
                                                            false,
                                                            std::move(cffBuilder)));
@@ -355,7 +355,7 @@ TEST(NebulaCompactionFilterTest, TTLFilterDataNotExpiredTest) {
                                                                               nullptr));
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path(),
                                                            6,
-                                                           {0, 0},
+                                                           network::InetAddress{0, 0},
                                                            nullptr,
                                                            false,
                                                            std::move(cffBuilder)));
@@ -428,7 +428,7 @@ TEST(NebulaCompactionFilterTest, DropIndexTest) {
                                                   indexMan.get()));
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path(),
                                                            6,
-                                                           {0, 0},
+                                                           network::InetAddress{0, 0},
                                                            nullptr,
                                                            false,
                                                            std::move(cffBuilder)));

@@ -32,7 +32,7 @@ void IngestExecutor::execute() {
     }
     auto *mc = ectx()->getMetaClient();
     auto  addresses = mc->getAddresses();
-    auto  metaHost = network::NetworkUtils::intToIPv4(addresses[0].first);
+    auto  metaHost = addresses[0].getAddressStr();
     auto  spaceId = ectx()->rctx()->session()->space();
 
     auto func = [metaHost, spaceId]() {

@@ -49,7 +49,7 @@ public:
 
 using KV = std::pair<std::string, std::string>;
 using KVCallback = folly::Function<void(ResultCode code)>;
-using NewLeaderCallback = folly::Function<void(HostAddr nLeader)>;
+using NewLeaderCallback = folly::Function<void(network::InetAddress nLeader)>;
 
 inline rocksdb::Slice toSlice(const folly::StringPiece& str) {
     return rocksdb::Slice(str.begin(), str.size());

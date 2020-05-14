@@ -24,7 +24,7 @@ namespace kvstore {
 
 struct KVOptions {
     // HBase thrift server address.
-    HostAddr hbaseServer_;
+    network::InetAddress hbaseServer_;
 
     // SchemaManager instance, help the hbasestore to encode/decode data.
     std::unique_ptr<meta::SchemaManager> schemaMan_{nullptr};
@@ -68,7 +68,8 @@ public:
     // Retrieve the current leader for the given partition. This
     // is usually called when ERR_LEADER_CHANGED result code is
     // returned
-    virtual ErrorOr<ResultCode, HostAddr> partLeader(GraphSpaceID spaceId, PartitionID partID) = 0;
+    virtual ErrorOr<ResultCode, network::InetAddress> partLeader(GraphSpaceID spaceId,
+                                                                 PartitionID partID) = 0;
 
     virtual PartManager* partManager() const {
         return nullptr;

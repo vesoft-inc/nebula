@@ -11,18 +11,6 @@
 namespace nebula {
 namespace network {
 
-TEST(NetworkUtils, getHostname) {
-    std::string hostname = NetworkUtils::getHostname();
-
-    FILE* fp = popen("LD_PRELOAD= hostname | tr -d ['\n']", "r");
-    char buffer[256];
-    auto numChars = fgets(buffer, sizeof(buffer), fp);
-    UNUSED(numChars);
-    pclose(fp);
-    EXPECT_EQ(std::string(buffer), hostname);
-}
-
-
 TEST(NetworkUtils, getIPv4FromDevice) {
     {
         auto result = NetworkUtils::getIPv4FromDevice("lo");
@@ -87,39 +75,23 @@ TEST(NetworkUtils, getAvailablePort) {
     ASSERT_GT(port, 0);
 }
 
-TEST(NetworkUtils, toHostAddr) {
-    auto s = NetworkUtils::resolveHost("localhost", 1200);
+TEST(NetworkUtils, toInetAddress) {
+    auto s = NetworkUtils::toInetAddress("127.0.0.1", 1200);
     ASSERT_TRUE(s.ok());
     auto addr = s.value();
-    IPv4 ip;
-    ASSERT_TRUE(NetworkUtils::ipv4ToInt("127.0.0.1", ip));
-    ASSERT_EQ(addr[0].first, ip);
-    ASSERT_EQ(addr[0].second, 1200);
-
-    auto s2 = NetworkUtils::toHostAddr("8.8.8.8", 1300);
-    ASSERT_TRUE(s2.ok());
-    auto addr2 = s2.value();
-
-    ASSERT_TRUE(NetworkUtils::ipv4ToInt("8.8.8.8", ip));
-    ASSERT_EQ(addr2.first, ip);
-    ASSERT_EQ(addr2.second, 1300);
-
-    s2 = NetworkUtils::toHostAddr("a.b.c.d:a23", 1200);
-    ASSERT_FALSE(s2.ok());
+    ASSERT_EQ(addr.getPort(), 1200);
+    ASSERT_EQ(addr.getAddressStr(), "127.0.0.1");
 }
 
 TEST(NetworkUtils, toHosts) {
-    auto s = NetworkUtils::toHosts("localhost:1200, 127.0.0.1:1200");
+    auto s = NetworkUtils::toHosts("localhost:1200, 127.0.0.1:1300");
     ASSERT_TRUE(s.ok());
-    auto addr = s.value();
+    auto addrs = s.value();
+    ASSERT_EQ(addrs[0].getHostStr(), "localhost");
+    ASSERT_EQ(addrs[0].getPort(), 1200);
 
-    IPv4 ip;
-    ASSERT_TRUE(NetworkUtils::ipv4ToInt("127.0.0.1", ip));
-    ASSERT_EQ(addr[0].first, ip);
-    ASSERT_EQ(addr[0].second, 1200);
-
-    ASSERT_EQ(addr[1].first, ip);
-    ASSERT_EQ(addr[1].second, 1200);
+    ASSERT_EQ(addrs[1].getAddressStr(), "127.0.0.1");
+    ASSERT_EQ(addrs[1].getPort(), 1300);
 
     s = NetworkUtils::toHosts("1.1.2.3:123, a.b.c.d:a23");
     ASSERT_FALSE(s.ok());

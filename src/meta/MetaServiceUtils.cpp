@@ -26,6 +26,8 @@ const std::string kDefaultTable        = "__default__";        // NOLINT
 const std::string kSnapshotsTable      = "__snapshots__";      // NOLINT
 const std::string kLastUpdateTimeTable = "__last_update_time__"; // NOLINT
 const std::string kLeadersTable        = "__leaders__";          // NOLINT
+const std::string kDomainsTable        = "__domains__";          // NOLINT
+const std::string kIPTable             = "__ip__";               // NOLINT
 
 const std::string kHostOnline  = "Online";       // NOLINT
 const std::string kHostOffline = "Offline";      // NOLINT
@@ -139,6 +141,26 @@ std::string MetaServiceUtils::hostKey(IPv4 ip, Port port) {
     return key;
 }
 
+std::string MetaServiceUtils::domainKey(const std::string& domain, Port port) {
+    std::string key;
+    auto size = domain.size();
+    key.reserve(kDomainsTable.size() + sizeof(std::string::size_type) + domain.size() +
+                sizeof(Port));
+    key.append(kDomainsTable.data(), kDomainsTable.size())
+        .append(reinterpret_cast<const char*>(&size), sizeof(std::string::size_type))
+        .append(domain.data(), domain.size())
+        .append(reinterpret_cast<const char*>(&port), sizeof(port));
+    return key;
+}
+
+std::string MetaServiceUtils::ipKey(const network::InetAddress& address) {
+    std::string key;
+    auto ipStr = address.encode();
+    key.reserve(kIPTable.size() + ipStr.size());
+    key.append(kIPTable).append(ipStr);
+    return key;
+}
+
 std::string MetaServiceUtils::hostValOnline() {
     return kHostOnline;
 }
@@ -151,9 +173,29 @@ const std::string& MetaServiceUtils::hostPrefix() {
     return kHostsTable;
 }
 
+const std::string& MetaServiceUtils::domainPrefix() {
+    return kDomainsTable;
+}
+
+const std::string& MetaServiceUtils::ipPrefix() {
+    return kIPTable;
+}
+
 nebula::cpp2::HostAddr MetaServiceUtils::parseHostKey(folly::StringPiece key) {
     nebula::cpp2::HostAddr host;
     memcpy(&host, key.data() + kHostsTable.size(), sizeof(host));
+    return host;
+}
+
+folly::StringPiece MetaServiceUtils::parseDomainKey(folly::StringPiece key) {
+    return folly::StringPiece(
+        key.data() + kDomainsTable.size() + sizeof(std::string::size_type),
+        key.size() - kDomainsTable.size() - sizeof(std::string::size_type) - sizeof(Port));
+}
+
+nebula::cpp2::HostAddr MetaServiceUtils::parseDomainVal(folly::StringPiece key) {
+    nebula::cpp2::HostAddr host;
+    memcpy(&host, key.data(), sizeof(host));
     return host;
 }
 

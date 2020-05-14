@@ -110,10 +110,10 @@ protected:
         return thriftID;
     }
 
-    nebula::cpp2::HostAddr toThriftHost(const HostAddr& host) {
+    nebula::cpp2::HostAddr toThriftHost(const network::InetAddress& host) {
         nebula::cpp2::HostAddr tHost;
-        tHost.set_ip(host.first);
-        tHost.set_port(host.second);
+        tHost.set_ip(host.toLongHBO());
+        tHost.set_port(host.getPort());
         return tHost;
     }
 

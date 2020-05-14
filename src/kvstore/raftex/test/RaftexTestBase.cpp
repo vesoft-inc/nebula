@@ -22,19 +22,17 @@ std::mutex leaderMutex;
 std::condition_variable leaderCV;
 
 
-std::vector<HostAddr> getPeers(const std::vector<HostAddr>& all,
-                               const HostAddr& self,
+std::vector<network::InetAddress> getPeers(const std::vector<network::InetAddress>& all,
+                               const network::InetAddress& self,
                                std::vector<bool> isLearner) {
     if (isLearner.empty()) {
         isLearner.resize(all.size(), false);
     }
-    std::vector<HostAddr> peers;
+    std::vector<network::InetAddress> peers;
     size_t index = 0;
     for (const auto& host : all) {
         if (host != self && !isLearner[index]) {
-            VLOG(2) << "Adding host "
-                    << NetworkUtils::intToIPv4(host.first)
-                    << ":" << host.second;
+            VLOG(2) << "Adding host " << host;
             peers.emplace_back(host);
         }
         index++;
@@ -104,8 +102,7 @@ void waitUntilLeaderElected(
             int32_t index = 0;
             for (auto& c : copies) {
                 // if a copy in abnormal state, its leader is (0, 0)
-                VLOG(3) << c->address() << " , leader address "
-                        << c->leader() << ", elected one "
+                VLOG(3) << c->address() << " , leader address " << c->leader() << ", elected one "
                         << leader->address();
                 if (!isLearner[index] && c != nullptr && leader != c && c->isRunning()) {
                     if (leader->address() != c->leader()) {
@@ -130,7 +127,7 @@ void waitUntilAllHasLeader(const std::vector<std::shared_ptr<test::TestShard>>& 
         bool allHaveLeader = true;
         for (auto& c : copies) {
             if (c != nullptr && c->isRunning()) {
-                if (c->leader().first == 0 && c->leader().second == 0) {
+                if (c->leader().isZero()) {
                     allHaveLeader = false;
                     break;
                 }
@@ -150,14 +147,11 @@ void setupRaft(
         fs::TempDir& walRoot,
         std::shared_ptr<thread::GenericThreadPool>& workers,
         std::vector<std::string>& wals,
-        std::vector<HostAddr>& allHosts,
+        std::vector<network::InetAddress>& allHosts,
         std::vector<std::shared_ptr<RaftexService>>& services,
         std::vector<std::shared_ptr<test::TestShard>>& copies,
         std::shared_ptr<test::TestShard>& leader,
         std::vector<bool> isLearner) {
-    IPv4 ipInt;
-    CHECK(NetworkUtils::ipv4ToInt("127.0.0.1", ipInt));
-
     workers = std::make_shared<thread::GenericThreadPool>();
     workers->start(4);
 
@@ -176,7 +170,7 @@ void setupRaft(
         if (!services.back()->start())
             return;
         uint16_t port = services.back()->getServerPort();
-        allHosts.emplace_back(ipInt, port);
+        allHosts.emplace_back("127.0.0.1", port);
     }
 
     if (isLearner.empty()) {
@@ -329,7 +323,7 @@ void killOneCopy(std::vector<std::shared_ptr<RaftexService>>& services,
 
 void rebootOneCopy(std::vector<std::shared_ptr<RaftexService>>& services,
                    std::vector<std::shared_ptr<test::TestShard>>& copies,
-                   std::vector<HostAddr> allHosts,
+                   std::vector<network::InetAddress> allHosts,
                    size_t index) {
     services[index]->addPartition(copies[index]);
     copies[index]->start(getPeers(allHosts, allHosts[index]));

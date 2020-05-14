@@ -19,7 +19,7 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
 }
 
 folly::Future<Status>
-RebuildEdgeIndexProcessor::caller(const HostAddr& address,
+RebuildEdgeIndexProcessor::caller(const network::InetAddress& address,
                                   GraphSpaceID space,
                                   IndexID indexID,
                                   std::vector<PartitionID> parts,

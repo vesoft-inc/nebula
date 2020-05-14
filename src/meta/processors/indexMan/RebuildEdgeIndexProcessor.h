@@ -23,7 +23,7 @@ public:
     void process(const cpp2::RebuildIndexReq& req);
 
 protected:
-    folly::Future<Status> caller(const HostAddr& address,
+    folly::Future<Status> caller(const network::InetAddress& address,
                                  GraphSpaceID spaceId,
                                  IndexID indexID,
                                  std::vector<PartitionID> parts,

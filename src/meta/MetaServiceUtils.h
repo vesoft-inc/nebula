@@ -61,13 +61,25 @@ public:
 
     static std::string hostKey(IPv4 ip, Port port);
 
+    static std::string domainKey(const std::string& domain, Port port);
+
+    static std::string ipKey(const network::InetAddress &address);
+
     static std::string hostValOnline();
 
     static std::string hostValOffline();
 
     static const std::string& hostPrefix();
 
+    static const std::string& domainPrefix();
+
+    static const std::string& ipPrefix();
+
     static nebula::cpp2::HostAddr parseHostKey(folly::StringPiece key);
+
+    static folly::StringPiece parseDomainKey(folly::StringPiece key);
+
+    static nebula::cpp2::HostAddr parseDomainVal(folly::StringPiece value);
 
     static std::string leaderKey(IPv4 ip, Port port);
 

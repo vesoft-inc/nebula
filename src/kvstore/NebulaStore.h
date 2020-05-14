@@ -42,7 +42,7 @@ class NebulaStore : public KVStore, public Handler {
 public:
     NebulaStore(KVOptions options,
                 std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
-                HostAddr serviceAddr,
+                network::InetAddress serviceAddr,
                 std::shared_ptr<folly::Executor> workers)
             : ioPool_(ioPool)
             , storeSvcAddr_(serviceAddr)
@@ -55,18 +55,22 @@ public:
     ~NebulaStore();
 
     // Calculate the raft service address based on the storage service address
-    static HostAddr getRaftAddr(HostAddr srvcAddr) {
-        if (srvcAddr == HostAddr(0, 0)) {
+    static network::InetAddress getRaftAddr(const network::InetAddress& srvcAddr) {
+        DCHECK(srvcAddr.isInitialized());
+        if (srvcAddr.isZero()) {
             return srvcAddr;
         }
-        return HostAddr(srvcAddr.first, srvcAddr.second + 1);
+        return network::InetAddress(
+            srvcAddr.toLongHBO(), srvcAddr.getPort() + 1, srvcAddr.getHostStr());
     }
 
-    static HostAddr getStoreAddr(HostAddr raftAddr) {
-        if (raftAddr == HostAddr(0, 0)) {
+    static network::InetAddress getStoreAddr(const network::InetAddress& raftAddr) {
+        DCHECK(raftAddr.isInitialized());
+        if (raftAddr.isZero()) {
             return raftAddr;
         }
-        return HostAddr(raftAddr.first, raftAddr.second - 1);
+        return network::InetAddress(
+            raftAddr.toLongHBO(), raftAddr.getPort() - 1, raftAddr.getHostStr());
     }
 
     // Pull meta information from the PartManager and initiate
@@ -79,7 +83,7 @@ public:
         return 0;
     }
 
-    HostAddr address() const {
+    network::InetAddress address() const {
         return storeSvcAddr_;
     }
 
@@ -92,7 +96,8 @@ public:
     }
 
     // Return the current leader
-    ErrorOr<ResultCode, HostAddr> partLeader(GraphSpaceID spaceId, PartitionID partId) override;
+    ErrorOr<ResultCode, network::InetAddress> partLeader(GraphSpaceID spaceId,
+                                                         PartitionID partId) override;
 
     PartManager* partManager() const override {
         return options_.partMan_.get();
@@ -242,9 +247,9 @@ private:
 
     std::shared_ptr<folly::IOThreadPoolExecutor> ioPool_;
     std::shared_ptr<thread::GenericThreadPool> bgWorkers_;
-    HostAddr storeSvcAddr_;
+    network::InetAddress storeSvcAddr_;
     std::shared_ptr<folly::Executor> workers_;
-    HostAddr raftAddr_;
+    network::InetAddress raftAddr_;
     KVOptions options_;
 
     std::shared_ptr<raftex::RaftexService> raftService_;

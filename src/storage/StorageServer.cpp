@@ -30,8 +30,8 @@ DEFINE_bool(local_config, false, "meta client will not retrieve latest configura
 namespace nebula {
 namespace storage {
 
-StorageServer::StorageServer(HostAddr localHost,
-                             std::vector<HostAddr> metaAddrs,
+StorageServer::StorageServer(network::InetAddress localHost,
+                             std::vector<network::InetAddress> metaAddrs,
                              std::vector<std::string> dataPaths)
     : localHost_(localHost), metaAddrs_(std::move(metaAddrs)), dataPaths_(std::move(dataPaths)) {}
 

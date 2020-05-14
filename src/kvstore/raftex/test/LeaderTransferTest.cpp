@@ -26,7 +26,7 @@ TEST(LeaderTransferTest, SimpleTest) {
     fs::TempDir walRoot("/tmp/leader_transfer_test.simple_test.XXXXXX");
     std::shared_ptr<thread::GenericThreadPool> workers;
     std::vector<std::string> wals;
-    std::vector<HostAddr> allHosts;
+    std::vector<network::InetAddress> allHosts;
     std::vector<std::shared_ptr<RaftexService>> services;
     std::vector<std::shared_ptr<test::TestShard>> copies;
 
@@ -59,7 +59,7 @@ TEST(LeaderTransferTest, ChangeLeaderServalTimesTest) {
     fs::TempDir walRoot("/tmp/leader_transfer_test.simple_test.XXXXXX");
     std::shared_ptr<thread::GenericThreadPool> workers;
     std::vector<std::string> wals;
-    std::vector<HostAddr> allHosts;
+    std::vector<network::InetAddress> allHosts;
     std::vector<std::shared_ptr<RaftexService>> services;
     std::vector<std::shared_ptr<test::TestShard>> copies;
 

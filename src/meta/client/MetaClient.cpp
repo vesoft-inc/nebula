@@ -21,6 +21,7 @@ DEFINE_int32(meta_client_retry_times, 3, "meta client retry times, 0 means no re
 DEFINE_int32(meta_client_retry_interval_secs, 1, "meta client sleep interval between retry");
 DEFINE_int32(meta_client_timeout_ms, 60 * 1000, "meta client timeout");
 DEFINE_string(cluster_id_path, "cluster.id", "file path saved clusterId");
+DEFINE_int32(meta_domain_ttl_secs, 60, "dns query interval for meta");
 DECLARE_string(gflags_mode_json);
 
 
@@ -28,7 +29,7 @@ namespace nebula {
 namespace meta {
 
 MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
-                       std::vector<HostAddr> addrs,
+                       std::vector<network::InetAddress> addrs,
                        const MetaClientOptions& options)
     : ioThreadPool_(ioThreadPool)
     , addrs_(std::move(addrs))
@@ -95,6 +96,8 @@ bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
     LOG(INFO) << "Register time task for heartbeat!";
     size_t delayMS = FLAGS_heartbeat_interval_secs * 1000 + folly::Random::rand32(900);
     bgThread_->addDelayTask(delayMS, &MetaClient::heartBeatThreadFunc, this);
+    auto ttl = FLAGS_meta_domain_ttl_secs * 1000;
+    bgThread_->addDelayTask(ttl, &MetaClient::dnsQUeryThreadFunc, this);
     return ready_;
 }
 
@@ -105,6 +108,34 @@ void MetaClient::stop() {
         bgThread_.reset();
     }
     isRunning_ = false;
+}
+
+void MetaClient::dnsQUeryThreadFunc() {
+    SCOPE_EXIT {
+        bgThread_->addDelayTask(
+            FLAGS_meta_domain_ttl_secs * 1000, &MetaClient::dnsQUeryThreadFunc, this);
+    };
+    // we need update addr from dns.
+    std::vector<network::InetAddress> addrs;
+    std::vector<int> addrsIndex;
+    for (auto it = addrs_.cbegin(); it != addrs_.cend(); ++it) {
+        auto addrOpt = network::NetworkUtils::updateHost(*it);
+        if (addrOpt == boost::none) {
+            continue;
+        }
+        addrs.emplace_back(addrOpt.value());
+        addrsIndex.emplace_back(std::distance(addrs_.cbegin(), it));
+    }
+
+    if (addrsIndex.empty()) {
+        return;
+    }
+
+    folly::SharedMutexReadPriority::WriteHolder holder(addrsLock_);
+    for (auto index : addrsIndex) {
+        LOG(INFO) << "meta will update host from " << addrs_[index] << " to: " << addrs[index];
+        addrs_[index] = std::move(addrs[index]);
+    }
 }
 
 void MetaClient::heartBeatThreadFunc() {
@@ -394,9 +425,9 @@ Status MetaClient::checkEdgeIndexed(GraphSpaceID space, EdgeType edgeType) {
     return Status::SpaceNotFound();
 }
 
-std::unordered_map<HostAddr, std::vector<PartitionID>>
+std::unordered_map<network::InetAddress, std::vector<PartitionID>>
 MetaClient::reverse(const PartsAlloc& parts) {
-    std::unordered_map<HostAddr, std::vector<PartitionID>> hosts;
+    std::unordered_map<network::InetAddress, std::vector<PartitionID>> hosts;
     for (auto& partHost : parts) {
         for (auto& h : partHost.second) {
             hosts[h].emplace_back(partHost.first);
@@ -419,7 +450,7 @@ void MetaClient::getResponse(Request req,
                              int32_t retryLimit) {
     time::Duration duration;
     auto* evb = ioThreadPool_->getEventBase();
-    HostAddr host;
+    network::InetAddress host;
     {
         folly::RWSpinLock::ReadHolder holder(&hostLock_);
         host = toLeader ? leader_ : active_;
@@ -469,7 +500,7 @@ void MetaClient::getResponse(Request req,
 
                 return;
             } else if (resp.code == cpp2::ErrorCode::E_LEADER_CHANGED) {
-                HostAddr leader(resp.get_leader().get_ip(), resp.get_leader().get_port());
+                network::InetAddress leader(resp.get_leader());
                 updateLeader(leader);
                 if (retry < retryLimit) {
                     evb->runAfterDelay([req = std::move(req), remoteFunc = std::move(remoteFunc),
@@ -494,11 +525,17 @@ void MetaClient::getResponse(Request req,
     });  // via
 }
 
-std::vector<HostAddr> MetaClient::to(const std::vector<nebula::cpp2::HostAddr>& tHosts) {
-    std::vector<HostAddr> hosts;
+std::vector<network::InetAddress> MetaClient::to(
+    const std::vector<nebula::cpp2::HostAddr>& tHosts,
+    const std::unordered_map<nebula::cpp2::HostAddr, std::string>& domains) {
+    std::vector<network::InetAddress> hosts;
     hosts.resize(tHosts.size());
-    std::transform(tHosts.begin(), tHosts.end(), hosts.begin(), [](const auto& h) {
-        return HostAddr(h.get_ip(), h.get_port());
+    std::transform(tHosts.begin(), tHosts.end(), hosts.begin(), [&domains](const auto& h) {
+        auto it = domains.find(h);
+        if (it != domains.end()) {
+            return network::InetAddress(h.get_ip(), h.get_port(), it->second);
+        }
+        return network::InetAddress(h.get_ip(), h.get_port());
     });
     return hosts;
 }
@@ -563,7 +600,7 @@ Status MetaClient::handleResponse(const RESP& resp) {
 }
 
 
-PartsMap MetaClient::doGetPartsMap(const HostAddr& host,
+PartsMap MetaClient::doGetPartsMap(const network::InetAddress& host,
                                    const LocalCache& localCache) {
     PartsMap partMap;
     for (auto it = localCache.begin(); it != localCache.end(); it++) {
@@ -756,18 +793,21 @@ MetaClient::listParts(GraphSpaceID spaceId, std::vector<PartitionID> partIds) {
     return future;
 }
 
-folly::Future<StatusOr<std::unordered_map<PartitionID, std::vector<HostAddr>>>>
+folly::Future<StatusOr<std::unordered_map<PartitionID, std::vector<network::InetAddress>>>>
 MetaClient::getPartsAlloc(GraphSpaceID spaceId) {
     cpp2::GetPartsAllocReq req;
     req.set_space_id(spaceId);
-    folly::Promise<StatusOr<std::unordered_map<PartitionID, std::vector<HostAddr>>>> promise;
+    folly::Promise<StatusOr<std::unordered_map<PartitionID, std::vector<network::InetAddress>>>>
+        promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_getPartsAlloc(request);
                 }, [this] (cpp2::GetPartsAllocResp&& resp) -> decltype(auto) {
-                    std::unordered_map<PartitionID, std::vector<HostAddr>> parts;
+                    std::unordered_map<PartitionID, std::vector<network::InetAddress>> parts;
+                    LOG(INFO) << "getPartsAlloc part size: " << resp.parts.size()
+                              << "domain size: " << resp.domains.size();
                     for (auto it = resp.parts.begin(); it != resp.parts.end(); it++) {
-                        parts.emplace(it->first, to(it->second));
+                        parts.emplace(it->first, to(it->second, resp.domains));
                     }
                     return parts;
                 }, std::move(promise));
@@ -989,7 +1029,7 @@ MetaClient::removeRange(std::string segment, std::string start, std::string end)
 }
 
 
-PartsMap MetaClient::getPartsMapFromCache(const HostAddr& host) {
+PartsMap MetaClient::getPartsMapFromCache(const network::InetAddress& host) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     return doGetPartsMap(host, localCache_);
 }
@@ -1014,7 +1054,7 @@ StatusOr<PartMeta> MetaClient::getPartMetaFromCache(GraphSpaceID spaceId, Partit
 }
 
 
-Status  MetaClient::checkPartExistInCache(const HostAddr& host,
+Status  MetaClient::checkPartExistInCache(const network::InetAddress& host,
                                           GraphSpaceID spaceId,
                                           PartitionID partId) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
@@ -1035,7 +1075,7 @@ Status  MetaClient::checkPartExistInCache(const HostAddr& host,
 }
 
 
-Status MetaClient::checkSpaceExistInCache(const HostAddr& host,
+Status MetaClient::checkSpaceExistInCache(const network::InetAddress& host,
                                           GraphSpaceID spaceId) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = localCache_.find(spaceId);
@@ -1652,7 +1692,7 @@ MetaClient::getEdgeIndexesFromCache(GraphSpaceID spaceId) {
     }
 }
 
-const std::vector<HostAddr>& MetaClient::getAddresses() {
+const std::vector<network::InetAddress>& MetaClient::getAddresses() {
     return addrs_;
 }
 
@@ -1712,13 +1752,14 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
     req.set_in_storaged(options_.inStoraged_);
     if (options_.inStoraged_) {
         nebula::cpp2::HostAddr thriftHost;
-        thriftHost.set_ip(options_.localHost_.first);
-        thriftHost.set_port(options_.localHost_.second);
+        thriftHost.set_ip(options_.localHost_.toLongHBO());
+        thriftHost.set_port(options_.localHost_.getPort());
         req.set_host(std::move(thriftHost));
         if (options_.clusterId_.load() == 0) {
             options_.clusterId_ = ClusterIdMan::getClusterIdFromFile(FLAGS_cluster_id_path);
         }
         req.set_cluster_id(options_.clusterId_.load());
+        req.set_host_name(options_.localHost_.getHostStr());
         std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
         if (listener_ != nullptr) {
             listener_->fetchLeaderInfo(leaderIds);
@@ -1890,7 +1931,7 @@ MetaClient::getUserRoles(std::string account) {
     return future;
 }
 
-folly::Future<StatusOr<int64_t>> MetaClient::balance(std::vector<HostAddr> hostDel,
+folly::Future<StatusOr<int64_t>> MetaClient::balance(std::vector<network::InetAddress> hostDel,
                                                      bool isStop) {
     cpp2::BalanceReq req;
     if (!hostDel.empty()) {
@@ -1899,8 +1940,8 @@ folly::Future<StatusOr<int64_t>> MetaClient::balance(std::vector<HostAddr> hostD
         std::transform(hostDel.begin(), hostDel.end(),
                        std::back_inserter(tHostDel), [](const auto& h) {
             nebula::cpp2::HostAddr th;
-            th.set_ip(h.first);
-            th.set_port(h.second);
+            th.set_ip(h.toLongHBO());
+            th.set_port(h.getPort());
             return th;
         });
         req.set_host_del(std::move(tHostDel));
@@ -2236,7 +2277,7 @@ StatusOr<LeaderMap> MetaClient::loadLeader() {
     LeaderMap leaderMap;
     auto hostItems = std::move(ret).value();
     for (auto& item : hostItems) {
-        auto hostAddr = HostAddr(item.hostAddr.ip, item.hostAddr.port);
+        auto hostAddr = network::InetAddress(item.hostAddr.ip, item.hostAddr.port);
         for (auto& spaceEntry : item.get_leader_parts()) {
             auto spaceName = spaceEntry.first;
             auto status = getSpaceIdByNameFromCache(spaceName);

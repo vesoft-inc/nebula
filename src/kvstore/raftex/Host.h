@@ -26,7 +26,7 @@ class RaftPart;
 class Host final : public std::enable_shared_from_this<Host> {
     friend class RaftPart;
 public:
-    Host(const HostAddr& addr, std::shared_ptr<RaftPart> part, bool isLearner = false);
+    Host(const network::InetAddress& addr, std::shared_ptr<RaftPart> part, bool isLearner = false);
 
     ~Host() {
         LOG(INFO) << idStr_ << " The host has been destroyed!";
@@ -63,6 +63,10 @@ public:
         isLearner_ = isLearner;
     }
 
+    std::string getHostStr() {
+        return addr_.getHostStr();
+    }
+
     folly::Future<cpp2::AskForVoteResponse> askForVote(
         const cpp2::AskForVoteRequest& req,
         folly::EventBase* eb);
@@ -76,8 +80,12 @@ public:
         TermID lastLogTermSent,     // The last log term being sent
         LogID lastLogIdSent);       // The last log id being sent
 
-    const HostAddr& address() const {
+    const network::InetAddress& address() const {
         return addr_;
+    }
+
+    void setAddress(const network::InetAddress &addr) {
+        addr_ = addr;
     }
 
 private:
@@ -107,7 +115,7 @@ private:
     using Request = std::tuple<TermID, LogID, LogID>;
 
     std::shared_ptr<RaftPart> part_;
-    const HostAddr addr_;
+    network::InetAddress addr_;
     bool isLearner_ = false;
     const std::string idStr_;
 

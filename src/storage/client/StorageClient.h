@@ -38,7 +38,7 @@ public:
         return maxLatency_;
     }
 
-    void setLatency(HostAddr host, int32_t latency, int32_t e2eLatency) {
+    void setLatency(network::InetAddress host, int32_t latency, int32_t e2eLatency) {
         if (latency > maxLatency_) {
             maxLatency_ = latency;
         }
@@ -64,7 +64,7 @@ public:
         return responses_;
     }
 
-    const std::vector<std::tuple<HostAddr, int32_t, int32_t>>& hostLatency() const {
+    const std::vector<std::tuple<network::InetAddress, int32_t, int32_t>>& hostLatency() const {
         return hostLatency_;
     }
 
@@ -76,7 +76,7 @@ private:
     std::unordered_map<PartitionID, storage::cpp2::ErrorCode> failedParts_;
     int32_t maxLatency_{0};
     std::vector<Response> responses_;
-    std::vector<std::tuple<HostAddr, int32_t, int32_t>> hostLatency_;
+    std::vector<std::tuple<network::InetAddress, int32_t, int32_t>> hostLatency_;
 };
 
 
@@ -190,7 +190,7 @@ protected:
     // Calculate the partition id for the given vertex id
     StatusOr<PartitionID> partId(GraphSpaceID spaceId, int64_t id) const;
 
-    const HostAddr leader(const PartMeta& partMeta) const {
+    const network::InetAddress leader(const PartMeta& partMeta) const {
         loadLeader();
         auto part = std::make_pair(partMeta.spaceId_, partMeta.partId_);
         {
@@ -209,7 +209,9 @@ protected:
         }
     }
 
-    void updateLeader(GraphSpaceID spaceId, PartitionID partId, const HostAddr& leader) {
+    void updateLeader(GraphSpaceID spaceId,
+                      PartitionID partId,
+                      const network::InetAddress& leader) {
         LOG(INFO) << "Update leader for " << spaceId << ", " << partId << " to " << leader;
         folly::RWSpinLock::WriteHolder wh(leadersLock_);
         leaders_[std::make_pair(spaceId, partId)] = leader;
@@ -233,7 +235,7 @@ protected:
             >
     folly::SemiFuture<StorageRpcResponse<Response>> collectResponse(
         folly::EventBase* evb,
-        std::unordered_map<HostAddr, Request> requests,
+        std::unordered_map<network::InetAddress, Request> requests,
         RemoteFunc&& remoteFunc,
         GetPartIDFunc getPartIDFunc);
 
@@ -246,7 +248,7 @@ protected:
             >
     folly::Future<StatusOr<Response>> getResponse(
         folly::EventBase* evb,
-        std::pair<HostAddr, Request> request,
+        std::pair<network::InetAddress, Request> request,
         RemoteFunc remoteFunc);
 
     // Cluster given ids into the host they belong to
@@ -254,13 +256,13 @@ protected:
     //  host_addr (A host, but in most case, the leader will be chosen)
     //      => (partition -> [ids that belong to the shard])
     template<class Container, class GetIdFunc>
-    StatusOr<std::unordered_map<HostAddr,
+    StatusOr<std::unordered_map<network::InetAddress,
                        std::unordered_map<PartitionID,
                                           std::vector<typename Container::value_type>
                                          >
                       >>
     clusterIdsToHosts(GraphSpaceID spaceId, Container ids, GetIdFunc f) const {
-        std::unordered_map<HostAddr,
+        std::unordered_map<network::InetAddress,
                            std::unordered_map<PartitionID,
                                               std::vector<typename Container::value_type>
                                              >
@@ -312,9 +314,9 @@ protected:
         }
     }
 
-    virtual StatusOr<std::unordered_map<HostAddr, std::vector<PartitionID>>>
+    virtual StatusOr<std::unordered_map<network::InetAddress, std::vector<PartitionID>>>
     getHostParts(GraphSpaceID spaceId) const {
-        std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
+        std::unordered_map<network::InetAddress, std::vector<PartitionID>> hostParts;
         auto status = partsNum(spaceId);
         if (!status.ok()) {
             return Status::Error("Space not found, spaceid: %d", spaceId);
@@ -340,7 +342,7 @@ private:
     std::unique_ptr<thrift::ThriftClientManager<
                         storage::cpp2::StorageServiceAsyncClient>> clientsMan_;
     mutable folly::RWSpinLock leadersLock_;
-    mutable std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr> leaders_;
+    mutable std::unordered_map<std::pair<GraphSpaceID, PartitionID>, network::InetAddress> leaders_;
     mutable std::atomic_bool loadLeaderBefore_{false};
     mutable std::atomic_bool isLoadingLeader_{false};
     std::unique_ptr<stats::Stats> stats_;

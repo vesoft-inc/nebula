@@ -37,7 +37,13 @@ TEST(BalanceTaskTest, SimpleTest) {
         std::vector<Status> sts(9, Status::OK());
         std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
         auto client = std::make_unique<AdminClient>(std::move(injector));
-        BalanceTask task(0, 0, 0, HostAddr(0, 0), HostAddr(1, 1), kv.get(), client.get());
+        BalanceTask task(0,
+                         0,
+                         0,
+                         network::InetAddress(0, 0),
+                         network::InetAddress(1, 1),
+                         kv.get(),
+                         client.get());
         folly::Baton<true, std::atomic> b;
         task.onFinished_ = [&]() {
             LOG(INFO) << "Task finished!";
@@ -63,7 +69,13 @@ TEST(BalanceTaskTest, SimpleTest) {
                                 Status::OK()};
         std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
         auto client = std::make_unique<AdminClient>(std::move(injector));
-        BalanceTask task(0, 0, 0, HostAddr(0, 0), HostAddr(1, 1), kv.get(), client.get());
+        BalanceTask task(0,
+                         0,
+                         0,
+                         network::InetAddress(0, 0),
+                         network::InetAddress(1, 1),
+                         kv.get(),
+                         client.get());
         folly::Baton<true, std::atomic> b;
         task.onFinished_ = []() {
             LOG(FATAL) << "We should not reach here!";
@@ -82,26 +94,27 @@ TEST(BalanceTaskTest, SimpleTest) {
 
 TEST(BalanceTest, BalancePartsTest) {
     std::unique_ptr<Balancer> balancer(new Balancer(nullptr, nullptr));
-    auto dump = [](const std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
-                   const std::vector<BalanceTask>& tasks) {
-        for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
-            std::stringstream ss;
-            ss << it->first << ":";
-            for (auto partId : it->second) {
-                ss << partId << ",";
+    auto dump =
+        [](const std::unordered_map<network::InetAddress, std::vector<PartitionID>>& hostParts,
+           const std::vector<BalanceTask>& tasks) {
+            for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
+                std::stringstream ss;
+                ss << it->first << ":";
+                for (auto partId : it->second) {
+                    ss << partId << ",";
+                }
+                VLOG(1) << ss.str();
             }
-            VLOG(1) << ss.str();
-        }
-        for (auto& task : tasks) {
-            VLOG(1) << task.taskIdStr();
-        }
-    };
+            for (auto& task : tasks) {
+                VLOG(1) << task.taskIdStr();
+            }
+        };
     {
-        std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
-        hostParts.emplace(HostAddr(0, 0), std::vector<PartitionID>{1, 2, 3, 4});
-        hostParts.emplace(HostAddr(1, 0), std::vector<PartitionID>{1, 2, 3, 4});
-        hostParts.emplace(HostAddr(2, 0), std::vector<PartitionID>{1, 2, 3, 4});
-        hostParts.emplace(HostAddr(3, 0), std::vector<PartitionID>{});
+        std::unordered_map<network::InetAddress, std::vector<PartitionID>> hostParts;
+        hostParts.emplace(network::InetAddress(0, 0), std::vector<PartitionID>{1, 2, 3, 4});
+        hostParts.emplace(network::InetAddress(1, 0), std::vector<PartitionID>{1, 2, 3, 4});
+        hostParts.emplace(network::InetAddress(2, 0), std::vector<PartitionID>{1, 2, 3, 4});
+        hostParts.emplace(network::InetAddress(3, 0), std::vector<PartitionID>{});
         int32_t totalParts = 12;
         std::vector<BalanceTask> tasks;
         VLOG(1) << "=== original map ====";
@@ -115,11 +128,11 @@ TEST(BalanceTest, BalancePartsTest) {
         EXPECT_EQ(3, tasks.size());
     }
     {
-        std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
-        hostParts.emplace(HostAddr(0, 0), std::vector<PartitionID>{1, 2, 3, 4, 5});
-        hostParts.emplace(HostAddr(1, 0), std::vector<PartitionID>{1, 2, 4, 5});
-        hostParts.emplace(HostAddr(2, 0), std::vector<PartitionID>{2, 3, 4, 5});
-        hostParts.emplace(HostAddr(3, 0), std::vector<PartitionID>{1, 3});
+        std::unordered_map<network::InetAddress, std::vector<PartitionID>> hostParts;
+        hostParts.emplace(network::InetAddress(0, 0), std::vector<PartitionID>{1, 2, 3, 4, 5});
+        hostParts.emplace(network::InetAddress(1, 0), std::vector<PartitionID>{1, 2, 4, 5});
+        hostParts.emplace(network::InetAddress(2, 0), std::vector<PartitionID>{2, 3, 4, 5});
+        hostParts.emplace(network::InetAddress(3, 0), std::vector<PartitionID>{1, 3});
         int32_t totalParts = 15;
         std::vector<BalanceTask> tasks;
         VLOG(1) << "=== original map ====";
@@ -127,18 +140,18 @@ TEST(BalanceTest, BalancePartsTest) {
         balancer->balanceParts(0, 0, hostParts, totalParts, tasks);
         VLOG(1) << "=== new map ====";
         dump(hostParts, tasks);
-        EXPECT_EQ(4, hostParts[HostAddr(0, 0)].size());
-        EXPECT_EQ(4, hostParts[HostAddr(1, 0)].size());
-        EXPECT_EQ(4, hostParts[HostAddr(2, 0)].size());
-        EXPECT_EQ(3, hostParts[HostAddr(3, 0)].size());
+        EXPECT_EQ(4, hostParts[network::InetAddress(0, 0)].size());
+        EXPECT_EQ(4, hostParts[network::InetAddress(1, 0)].size());
+        EXPECT_EQ(4, hostParts[network::InetAddress(2, 0)].size());
+        EXPECT_EQ(3, hostParts[network::InetAddress(3, 0)].size());
         EXPECT_EQ(1, tasks.size());
     }
     {
-        std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
-        hostParts.emplace(HostAddr(0, 0), std::vector<PartitionID>{1, 2, 3, 4});
-        hostParts.emplace(HostAddr(1, 0), std::vector<PartitionID>{1, 2, 4, 5});
-        hostParts.emplace(HostAddr(2, 0), std::vector<PartitionID>{2, 3, 4, 5});
-        hostParts.emplace(HostAddr(3, 0), std::vector<PartitionID>{1, 3, 5});
+        std::unordered_map<network::InetAddress, std::vector<PartitionID>> hostParts;
+        hostParts.emplace(network::InetAddress(0, 0), std::vector<PartitionID>{1, 2, 3, 4});
+        hostParts.emplace(network::InetAddress(1, 0), std::vector<PartitionID>{1, 2, 4, 5});
+        hostParts.emplace(network::InetAddress(2, 0), std::vector<PartitionID>{2, 3, 4, 5});
+        hostParts.emplace(network::InetAddress(3, 0), std::vector<PartitionID>{1, 3, 5});
         int32_t totalParts = 15;
         std::vector<BalanceTask> tasks;
         VLOG(1) << "=== original map ====";
@@ -146,23 +159,26 @@ TEST(BalanceTest, BalancePartsTest) {
         balancer->balanceParts(0, 0, hostParts, totalParts, tasks);
         VLOG(1) << "=== new map ====";
         dump(hostParts, tasks);
-        EXPECT_EQ(4, hostParts[HostAddr(0, 0)].size());
-        EXPECT_EQ(4, hostParts[HostAddr(1, 0)].size());
-        EXPECT_EQ(4, hostParts[HostAddr(2, 0)].size());
-        EXPECT_EQ(3, hostParts[HostAddr(3, 0)].size());
+        EXPECT_EQ(4, hostParts[network::InetAddress(0, 0)].size());
+        EXPECT_EQ(4, hostParts[network::InetAddress(1, 0)].size());
+        EXPECT_EQ(4, hostParts[network::InetAddress(2, 0)].size());
+        EXPECT_EQ(3, hostParts[network::InetAddress(3, 0)].size());
         EXPECT_EQ(0, tasks.size());
     }
     {
-        std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
-        hostParts.emplace(HostAddr(0, 0), std::vector<PartitionID>{1, 2, 3, 4, 5, 6, 7, 8, 9});
-        hostParts.emplace(HostAddr(1, 0), std::vector<PartitionID>{1, 2, 3, 4, 5, 6, 7, 8, 9});
-        hostParts.emplace(HostAddr(2, 0), std::vector<PartitionID>{1, 2, 3, 4, 5, 6, 7, 8, 9});
-        hostParts.emplace(HostAddr(3, 0), std::vector<PartitionID>{});
-        hostParts.emplace(HostAddr(4, 0), std::vector<PartitionID>{});
-        hostParts.emplace(HostAddr(5, 0), std::vector<PartitionID>{});
-        hostParts.emplace(HostAddr(6, 0), std::vector<PartitionID>{});
-        hostParts.emplace(HostAddr(7, 0), std::vector<PartitionID>{});
-        hostParts.emplace(HostAddr(8, 0), std::vector<PartitionID>{});
+        std::unordered_map<network::InetAddress, std::vector<PartitionID>> hostParts;
+        hostParts.emplace(network::InetAddress(0, 0),
+                          std::vector<PartitionID>{1, 2, 3, 4, 5, 6, 7, 8, 9});
+        hostParts.emplace(network::InetAddress(1, 0),
+                          std::vector<PartitionID>{1, 2, 3, 4, 5, 6, 7, 8, 9});
+        hostParts.emplace(network::InetAddress(2, 0),
+                          std::vector<PartitionID>{1, 2, 3, 4, 5, 6, 7, 8, 9});
+        hostParts.emplace(network::InetAddress(3, 0), std::vector<PartitionID>{});
+        hostParts.emplace(network::InetAddress(4, 0), std::vector<PartitionID>{});
+        hostParts.emplace(network::InetAddress(5, 0), std::vector<PartitionID>{});
+        hostParts.emplace(network::InetAddress(6, 0), std::vector<PartitionID>{});
+        hostParts.emplace(network::InetAddress(7, 0), std::vector<PartitionID>{});
+        hostParts.emplace(network::InetAddress(8, 0), std::vector<PartitionID>{});
         int32_t totalParts = 27;
         std::vector<BalanceTask> tasks;
         VLOG(1) << "=== original map ====";
@@ -176,15 +192,18 @@ TEST(BalanceTest, BalancePartsTest) {
         EXPECT_EQ(18, tasks.size());
     }
     {
-        std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
-        hostParts.emplace(HostAddr(0, 0), std::vector<PartitionID>{1, 2, 3, 4, 5, 6, 7, 8, 9});
-        hostParts.emplace(HostAddr(1, 0), std::vector<PartitionID>{1, 2, 3, 4, 5, 6, 7, 8, 9});
-        hostParts.emplace(HostAddr(2, 0), std::vector<PartitionID>{1, 2, 3, 4, 5, 6, 7, 8, 9});
-        hostParts.emplace(HostAddr(3, 0), std::vector<PartitionID>{});
-        hostParts.emplace(HostAddr(4, 0), std::vector<PartitionID>{});
-        hostParts.emplace(HostAddr(5, 0), std::vector<PartitionID>{});
-        hostParts.emplace(HostAddr(6, 0), std::vector<PartitionID>{});
-        hostParts.emplace(HostAddr(7, 0), std::vector<PartitionID>{});
+        std::unordered_map<network::InetAddress, std::vector<PartitionID>> hostParts;
+        hostParts.emplace(network::InetAddress(0, 0),
+                          std::vector<PartitionID>{1, 2, 3, 4, 5, 6, 7, 8, 9});
+        hostParts.emplace(network::InetAddress(1, 0),
+                          std::vector<PartitionID>{1, 2, 3, 4, 5, 6, 7, 8, 9});
+        hostParts.emplace(network::InetAddress(2, 0),
+                          std::vector<PartitionID>{1, 2, 3, 4, 5, 6, 7, 8, 9});
+        hostParts.emplace(network::InetAddress(3, 0), std::vector<PartitionID>{});
+        hostParts.emplace(network::InetAddress(4, 0), std::vector<PartitionID>{});
+        hostParts.emplace(network::InetAddress(5, 0), std::vector<PartitionID>{});
+        hostParts.emplace(network::InetAddress(6, 0), std::vector<PartitionID>{});
+        hostParts.emplace(network::InetAddress(7, 0), std::vector<PartitionID>{});
         int32_t totalParts = 27;
         std::vector<BalanceTask> tasks;
         VLOG(1) << "=== original map ====";
@@ -204,7 +223,8 @@ TEST(BalanceTest, DispatchTasksTest) {
         FLAGS_task_concurrency = 10;
         BalancePlan plan(0L, nullptr, nullptr);
         for (int i = 0; i < 20; i++) {
-            BalanceTask task(0, 0, 0, HostAddr(i, 0), HostAddr(i, 1), nullptr, nullptr);
+            BalanceTask task(
+                0, 0, 0, network::InetAddress(i, 0), network::InetAddress(i, 1), nullptr, nullptr);
             plan.addTask(std::move(task));
         }
         plan.dispatchTasks();
@@ -217,7 +237,8 @@ TEST(BalanceTest, DispatchTasksTest) {
         FLAGS_task_concurrency = 10;
         BalancePlan plan(0L, nullptr, nullptr);
         for (int i = 0; i < 5; i++) {
-            BalanceTask task(0, 0, i, HostAddr(i, 0), HostAddr(i, 1), nullptr, nullptr);
+            BalanceTask task(
+                0, 0, i, network::InetAddress(i, 0), network::InetAddress(i, 1), nullptr, nullptr);
             plan.addTask(std::move(task));
         }
         plan.dispatchTasks();
@@ -230,11 +251,13 @@ TEST(BalanceTest, DispatchTasksTest) {
         FLAGS_task_concurrency = 20;
         BalancePlan plan(0L, nullptr, nullptr);
         for (int i = 0; i < 5; i++) {
-            BalanceTask task(0, 0, i, HostAddr(i, 0), HostAddr(i, 1), nullptr, nullptr);
+            BalanceTask task(
+                0, 0, i, network::InetAddress(i, 0), network::InetAddress(i, 1), nullptr, nullptr);
             plan.addTask(std::move(task));
         }
         for (int i = 0; i < 10; i++) {
-            BalanceTask task(0, 0, i, HostAddr(i, 2), HostAddr(i, 3), nullptr, nullptr);
+            BalanceTask task(
+                0, 0, i, network::InetAddress(i, 2), network::InetAddress(i, 3), nullptr, nullptr);
             plan.addTask(std::move(task));
         }
         plan.dispatchTasks();
@@ -252,7 +275,7 @@ TEST(BalanceTest, DispatchTasksTest) {
 TEST(BalanceTest, BalancePlanTest) {
     fs::TempDir rootPath("/tmp/BalanceTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    std::vector<HostAddr> hosts;
+    std::vector<network::InetAddress> hosts;
     for (int i = 0; i < 10; i++) {
         hosts.emplace_back(i, 0);
         hosts.emplace_back(i, 1);
@@ -266,7 +289,13 @@ TEST(BalanceTest, BalancePlanTest) {
         TestUtils::registerHB(kv.get(), hosts);
 
         for (int i = 0; i < 10; i++) {
-            BalanceTask task(0, 0, 0, HostAddr(i, 0), HostAddr(i, 1), kv.get(), client.get());
+            BalanceTask task(0,
+                             0,
+                             0,
+                             network::InetAddress(i, 0),
+                             network::InetAddress(i, 1),
+                             kv.get(),
+                             client.get());
             plan.addTask(std::move(task));
         }
         folly::Baton<true, std::atomic> b;
@@ -291,7 +320,13 @@ TEST(BalanceTest, BalancePlanTest) {
         TestUtils::registerHB(kv.get(), hosts);
 
         for (int i = 0; i < 10; i++) {
-            BalanceTask task(0, 0, i, HostAddr(i, 0), HostAddr(i, 1), kv.get(), client.get());
+            BalanceTask task(0,
+                             0,
+                             i,
+                             network::InetAddress(i, 0),
+                             network::InetAddress(i, 1),
+                             kv.get(),
+                             client.get());
             plan.addTask(std::move(task));
         }
         folly::Baton<true, std::atomic> b;
@@ -318,7 +353,13 @@ TEST(BalanceTest, BalancePlanTest) {
             std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
             client1 = std::make_unique<AdminClient>(std::move(injector));
             for (int i = 0; i < 9; i++) {
-                BalanceTask task(0, 0, i, HostAddr(i, 0), HostAddr(i, 1), kv.get(), client1.get());
+                BalanceTask task(0,
+                                 0,
+                                 i,
+                                 network::InetAddress(i, 0),
+                                 network::InetAddress(i, 1),
+                                 kv.get(),
+                                 client1.get());
                 plan.addTask(std::move(task));
             }
         }
@@ -335,7 +376,13 @@ TEST(BalanceTest, BalancePlanTest) {
                                 Status::OK()};
             std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
             client2 = std::make_unique<AdminClient>(std::move(injector));
-            BalanceTask task(0, 0, 9, HostAddr(9, 0), HostAddr(9, 1), kv.get(), client2.get());
+            BalanceTask task(0,
+                             0,
+                             9,
+                             network::InetAddress(9, 0),
+                             network::InetAddress(9, 1),
+                             kv.get(),
+                             client2.get());
             plan.addTask(std::move(task));
         }
         TestUtils::registerHB(kv.get(), hosts);
@@ -377,7 +424,7 @@ TEST(BalanceTest, NormalTest) {
     ASSERT_EQ(cpp2::ErrorCode::E_BALANCED, error(ret));
 
     sleep(1);
-    LOG(INFO) << "Now, we lost host " << HostAddr(3, 3);
+    LOG(INFO) << "Now, we lost host " << network::InetAddress(3, 3);
     TestUtils::registerHB(kv.get(), {{0, 0}, {1, 1}, {2, 2}});
     ret = balancer.balance();
     CHECK(ok(ret));
@@ -415,7 +462,7 @@ TEST(BalanceTest, NormalTest) {
                 task.spaceId_ = std::get<1>(tup);
                 ASSERT_EQ(1, task.spaceId_);
                 task.src_ = std::get<3>(tup);
-                ASSERT_EQ(HostAddr(3, 3), task.src_);
+                ASSERT_EQ(network::InetAddress(3, 3), task.src_);
             }
             {
                 auto tup = BalanceTask::parseVal(iter->val());
@@ -498,7 +545,7 @@ TEST(BalanceTest, SpecifyHostTest) {
                 task.spaceId_ = std::get<1>(tup);
                 ASSERT_EQ(1, task.spaceId_);
                 task.src_ = std::get<3>(tup);
-                ASSERT_EQ(HostAddr(3, 3), task.src_);
+                ASSERT_EQ(network::InetAddress(3, 3), task.src_);
             }
             {
                 auto tup = BalanceTask::parseVal(iter->val());
@@ -537,9 +584,9 @@ TEST(BalanceTest, SpecifyMultiHostTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         ASSERT_EQ(1, resp.get_id().get_space_id());
     }
-    std::unordered_map<HostAddr, int32_t> partCount;
+    std::unordered_map<network::InetAddress, int32_t> partCount;
     for (int32_t i = 0; i < 6; i++) {
-        partCount[HostAddr(i, i)] = 6;
+        partCount[network::InetAddress(i, i)] = 6;
     }
     std::vector<Status> sts(9, Status::OK());
     std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
@@ -611,12 +658,12 @@ TEST(BalanceTest, SpecifyMultiHostTest) {
             iter->next();
         }
     }
-    ASSERT_EQ(9, partCount[HostAddr(0, 0)]);
-    ASSERT_EQ(9, partCount[HostAddr(1, 1)]);
-    ASSERT_EQ(0, partCount[HostAddr(2, 2)]);
-    ASSERT_EQ(0, partCount[HostAddr(3, 3)]);
-    ASSERT_EQ(9, partCount[HostAddr(4, 4)]);
-    ASSERT_EQ(9, partCount[HostAddr(5, 5)]);
+    ASSERT_EQ(9, partCount[network::InetAddress(0, 0)]);
+    ASSERT_EQ(9, partCount[network::InetAddress(1, 1)]);
+    ASSERT_EQ(0, partCount[network::InetAddress(2, 2)]);
+    ASSERT_EQ(0, partCount[network::InetAddress(3, 3)]);
+    ASSERT_EQ(9, partCount[network::InetAddress(4, 4)]);
+    ASSERT_EQ(9, partCount[network::InetAddress(5, 5)]);
 }
 
 TEST(BalanceTest, MockReplaceMachineTest) {
@@ -685,8 +732,8 @@ TEST(BalanceTest, MockReplaceMachineTest) {
                 ASSERT_EQ(1, task.spaceId_);
                 task.src_ = std::get<3>(tup);
                 task.dst_ = std::get<4>(tup);
-                ASSERT_EQ(HostAddr(2, 2), task.src_);
-                ASSERT_EQ(HostAddr(3, 3), task.dst_);
+                ASSERT_EQ(network::InetAddress(2, 2), task.src_);
+                ASSERT_EQ(network::InetAddress(3, 3), task.dst_);
             }
             {
                 auto tup = BalanceTask::parseVal(iter->val());
@@ -725,9 +772,9 @@ TEST(BalanceTest, SingleReplicaTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         ASSERT_EQ(1, resp.get_id().get_space_id());
     }
-    std::unordered_map<HostAddr, int32_t> partCount;
+    std::unordered_map<network::InetAddress, int32_t> partCount;
     for (int32_t i = 0; i < 6; i++) {
-        partCount[HostAddr(i, i)] = 2;
+        partCount[network::InetAddress(i, i)] = 2;
     }
     std::vector<Status> sts(9, Status::OK());
     std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
@@ -793,12 +840,12 @@ TEST(BalanceTest, SingleReplicaTest) {
         }
         ASSERT_EQ(4, num);
     }
-    ASSERT_EQ(3, partCount[HostAddr(0, 0)]);
-    ASSERT_EQ(3, partCount[HostAddr(1, 1)]);
-    ASSERT_EQ(0, partCount[HostAddr(2, 2)]);
-    ASSERT_EQ(0, partCount[HostAddr(3, 3)]);
-    ASSERT_EQ(3, partCount[HostAddr(4, 4)]);
-    ASSERT_EQ(3, partCount[HostAddr(5, 5)]);
+    ASSERT_EQ(3, partCount[network::InetAddress(0, 0)]);
+    ASSERT_EQ(3, partCount[network::InetAddress(1, 1)]);
+    ASSERT_EQ(0, partCount[network::InetAddress(2, 2)]);
+    ASSERT_EQ(0, partCount[network::InetAddress(3, 3)]);
+    ASSERT_EQ(3, partCount[network::InetAddress(4, 4)]);
+    ASSERT_EQ(3, partCount[network::InetAddress(5, 5)]);
 }
 
 TEST(BalanceTest, RecoveryTest) {
@@ -822,7 +869,7 @@ TEST(BalanceTest, RecoveryTest) {
     }
 
     sleep(1);
-    LOG(INFO) << "Now, we lost host " << HostAddr(3, 3);
+    LOG(INFO) << "Now, we lost host " << network::InetAddress(3, 3);
     TestUtils::registerHB(kv.get(), {{0, 0}, {1, 1}, {2, 2}});
     std::vector<Status> sts {
                                 Status::OK(),
@@ -873,7 +920,7 @@ TEST(BalanceTest, RecoveryTest) {
                 task.spaceId_ = std::get<1>(tup);
                 ASSERT_EQ(1, task.spaceId_);
                 task.src_ = std::get<3>(tup);
-                ASSERT_EQ(HostAddr(3, 3), task.src_);
+                ASSERT_EQ(network::InetAddress(3, 3), task.src_);
             }
             {
                 auto tup = BalanceTask::parseVal(iter->val());
@@ -929,7 +976,7 @@ TEST(BalanceTest, RecoveryTest) {
                 task.spaceId_ = std::get<1>(tup);
                 ASSERT_EQ(1, task.spaceId_);
                 task.src_ = std::get<3>(tup);
-                ASSERT_EQ(HostAddr(3, 3), task.src_);
+                ASSERT_EQ(network::InetAddress(3, 3), task.src_);
             }
             {
                 auto tup = BalanceTask::parseVal(iter->val());
@@ -1071,9 +1118,10 @@ TEST(BalanceTest, StopBalanceDataTest) {
     }
 }
 
-
-void verifyLeaderBalancePlan(std::unordered_map<HostAddr, std::vector<PartitionID>> leaderCount,
-        size_t minLoad, size_t maxLoad) {
+void verifyLeaderBalancePlan(
+    std::unordered_map<network::InetAddress, std::vector<PartitionID>> leaderCount,
+    size_t minLoad,
+    size_t maxLoad) {
     for (const auto& hostEntry : leaderCount) {
         EXPECT_GE(hostEntry.second.size(), minLoad);
         EXPECT_LE(hostEntry.second.size(), maxLoad);
@@ -1083,7 +1131,7 @@ void verifyLeaderBalancePlan(std::unordered_map<HostAddr, std::vector<PartitionI
 TEST(BalanceTest, SimpleLeaderBalancePlanTest) {
     fs::TempDir rootPath("/tmp/SimpleLeaderBalancePlanTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}};
+    std::vector<network::InetAddress> hosts = {{0, 0}, {1, 1}, {2, 2}};
     TestUtils::createSomeHosts(kv.get(), hosts);
     // 9 partition in space 1, 3 replica, 3 hosts
     TestUtils::assembleSpace(kv.get(), 1, 9, 3, 3);
@@ -1092,9 +1140,9 @@ TEST(BalanceTest, SimpleLeaderBalancePlanTest) {
     std::unique_ptr<Balancer> balancer(new Balancer(kv.get(), std::move(client)));
     {
         HostLeaderMap hostLeaderMap;
-        hostLeaderMap[HostAddr(0, 0)][1] = {1, 2, 3, 4, 5};
-        hostLeaderMap[HostAddr(1, 1)][1] = {6, 7, 8};
-        hostLeaderMap[HostAddr(2, 2)][1] = {9};
+        hostLeaderMap[network::InetAddress(0, 0)][1] = {1, 2, 3, 4, 5};
+        hostLeaderMap[network::InetAddress(1, 1)][1] = {6, 7, 8};
+        hostLeaderMap[network::InetAddress(2, 2)][1] = {9};
         auto tempMap = hostLeaderMap;
 
         LeaderBalancePlan plan;
@@ -1112,9 +1160,9 @@ TEST(BalanceTest, SimpleLeaderBalancePlanTest) {
     }
     {
         HostLeaderMap hostLeaderMap;
-        hostLeaderMap[HostAddr(0, 0)][1] = {1, 2, 3, 4};
-        hostLeaderMap[HostAddr(1, 1)][1] = {5, 6, 7, 8};
-        hostLeaderMap[HostAddr(2, 2)][1] = {9};
+        hostLeaderMap[network::InetAddress(0, 0)][1] = {1, 2, 3, 4};
+        hostLeaderMap[network::InetAddress(1, 1)][1] = {5, 6, 7, 8};
+        hostLeaderMap[network::InetAddress(2, 2)][1] = {9};
 
         LeaderBalancePlan plan;
         auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan, false);
@@ -1122,9 +1170,9 @@ TEST(BalanceTest, SimpleLeaderBalancePlanTest) {
     }
     {
         HostLeaderMap hostLeaderMap;
-        hostLeaderMap[HostAddr(0, 0)][1] = {};
-        hostLeaderMap[HostAddr(1, 1)][1] = {};
-        hostLeaderMap[HostAddr(2, 2)][1] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+        hostLeaderMap[network::InetAddress(0, 0)][1] = {};
+        hostLeaderMap[network::InetAddress(1, 1)][1] = {};
+        hostLeaderMap[network::InetAddress(2, 2)][1] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
 
         LeaderBalancePlan plan;
         auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan, false);
@@ -1132,9 +1180,9 @@ TEST(BalanceTest, SimpleLeaderBalancePlanTest) {
     }
     {
         HostLeaderMap hostLeaderMap;
-        hostLeaderMap[HostAddr(0, 0)][1] = {1, 2, 3};
-        hostLeaderMap[HostAddr(1, 1)][1] = {4, 5, 6};
-        hostLeaderMap[HostAddr(2, 2)][1] = {7, 8, 9};
+        hostLeaderMap[network::InetAddress(0, 0)][1] = {1, 2, 3};
+        hostLeaderMap[network::InetAddress(1, 1)][1] = {4, 5, 6};
+        hostLeaderMap[network::InetAddress(2, 2)][1] = {7, 8, 9};
 
         LeaderBalancePlan plan;
         auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan, false);
@@ -1145,7 +1193,7 @@ TEST(BalanceTest, SimpleLeaderBalancePlanTest) {
 TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest) {
     fs::TempDir rootPath("/tmp/IntersectHostsLeaderBalancePlanTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}, {4, 4}, {5, 5}};
+    std::vector<network::InetAddress> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}, {4, 4}, {5, 5}};
     TestUtils::createSomeHosts(kv.get(), hosts);
     // 7 partition in space 1, 3 replica, 6 hosts, so not all hosts have intersection parts
     TestUtils::assembleSpace(kv.get(), 1, 7, 3, 6);
@@ -1154,12 +1202,12 @@ TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest) {
     std::unique_ptr<Balancer> balancer(new Balancer(kv.get(), std::move(client)));
     {
         HostLeaderMap hostLeaderMap;
-        hostLeaderMap[HostAddr(0, 0)][1] = {4, 5, 6};
-        hostLeaderMap[HostAddr(1, 1)][1] = {};
-        hostLeaderMap[HostAddr(2, 2)][1] = {};
-        hostLeaderMap[HostAddr(3, 3)][1] = {1, 2, 3, 7};
-        hostLeaderMap[HostAddr(4, 4)][1] = {};
-        hostLeaderMap[HostAddr(5, 5)][1] = {};
+        hostLeaderMap[network::InetAddress(0, 0)][1] = {4, 5, 6};
+        hostLeaderMap[network::InetAddress(1, 1)][1] = {};
+        hostLeaderMap[network::InetAddress(2, 2)][1] = {};
+        hostLeaderMap[network::InetAddress(3, 3)][1] = {1, 2, 3, 7};
+        hostLeaderMap[network::InetAddress(4, 4)][1] = {};
+        hostLeaderMap[network::InetAddress(5, 5)][1] = {};
 
         LeaderBalancePlan plan;
         auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan, false);
@@ -1167,12 +1215,12 @@ TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest) {
     }
     {
         HostLeaderMap hostLeaderMap;
-        hostLeaderMap[HostAddr(0, 0)][1] = {};
-        hostLeaderMap[HostAddr(1, 1)][1] = {5, 6, 7};
-        hostLeaderMap[HostAddr(2, 2)][1] = {};
-        hostLeaderMap[HostAddr(3, 3)][1] = {1, 2};
-        hostLeaderMap[HostAddr(4, 4)][1] = {};
-        hostLeaderMap[HostAddr(5, 5)][1] = {3, 4};
+        hostLeaderMap[network::InetAddress(0, 0)][1] = {};
+        hostLeaderMap[network::InetAddress(1, 1)][1] = {5, 6, 7};
+        hostLeaderMap[network::InetAddress(2, 2)][1] = {};
+        hostLeaderMap[network::InetAddress(3, 3)][1] = {1, 2};
+        hostLeaderMap[network::InetAddress(4, 4)][1] = {};
+        hostLeaderMap[network::InetAddress(5, 5)][1] = {3, 4};
 
         LeaderBalancePlan plan;
         auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan, false);
@@ -1180,12 +1228,12 @@ TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest) {
     }
     {
         HostLeaderMap hostLeaderMap;
-        hostLeaderMap[HostAddr(0, 0)][1] = {};
-        hostLeaderMap[HostAddr(1, 1)][1] = {1, 5};
-        hostLeaderMap[HostAddr(2, 2)][1] = {2, 6};
-        hostLeaderMap[HostAddr(3, 3)][1] = {3, 7};
-        hostLeaderMap[HostAddr(4, 4)][1] = {4};
-        hostLeaderMap[HostAddr(5, 5)][1] = {};
+        hostLeaderMap[network::InetAddress(0, 0)][1] = {};
+        hostLeaderMap[network::InetAddress(1, 1)][1] = {1, 5};
+        hostLeaderMap[network::InetAddress(2, 2)][1] = {2, 6};
+        hostLeaderMap[network::InetAddress(3, 3)][1] = {3, 7};
+        hostLeaderMap[network::InetAddress(4, 4)][1] = {4};
+        hostLeaderMap[network::InetAddress(5, 5)][1] = {};
 
         LeaderBalancePlan plan;
         auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan, false);
@@ -1193,12 +1241,12 @@ TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest) {
     }
     {
         HostLeaderMap hostLeaderMap;
-        hostLeaderMap[HostAddr(0, 0)][1] = {5, 6};
-        hostLeaderMap[HostAddr(1, 1)][1] = {1, 7};
-        hostLeaderMap[HostAddr(2, 2)][1] = {};
-        hostLeaderMap[HostAddr(3, 3)][1] = {};
-        hostLeaderMap[HostAddr(4, 4)][1] = {2, 3, 4};
-        hostLeaderMap[HostAddr(5, 5)][1] = {};
+        hostLeaderMap[network::InetAddress(0, 0)][1] = {5, 6};
+        hostLeaderMap[network::InetAddress(1, 1)][1] = {1, 7};
+        hostLeaderMap[network::InetAddress(2, 2)][1] = {};
+        hostLeaderMap[network::InetAddress(3, 3)][1] = {};
+        hostLeaderMap[network::InetAddress(4, 4)][1] = {2, 3, 4};
+        hostLeaderMap[network::InetAddress(5, 5)][1] = {};
 
         LeaderBalancePlan plan;
         auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan, false);
@@ -1206,12 +1254,12 @@ TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest) {
     }
     {
         HostLeaderMap hostLeaderMap;
-        hostLeaderMap[HostAddr(0, 0)][1] = {6};
-        hostLeaderMap[HostAddr(1, 1)][1] = {1, 7};
-        hostLeaderMap[HostAddr(2, 2)][1] = {2};
-        hostLeaderMap[HostAddr(3, 3)][1] = {3};
-        hostLeaderMap[HostAddr(4, 4)][1] = {4};
-        hostLeaderMap[HostAddr(5, 5)][1] = {5};
+        hostLeaderMap[network::InetAddress(0, 0)][1] = {6};
+        hostLeaderMap[network::InetAddress(1, 1)][1] = {1, 7};
+        hostLeaderMap[network::InetAddress(2, 2)][1] = {2};
+        hostLeaderMap[network::InetAddress(3, 3)][1] = {3};
+        hostLeaderMap[network::InetAddress(4, 4)][1] = {4};
+        hostLeaderMap[network::InetAddress(5, 5)][1] = {5};
 
         LeaderBalancePlan plan;
         auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan, false);
@@ -1227,7 +1275,7 @@ TEST(BalanceTest, ManyHostsLeaderBalancePlanTest) {
     int partCount = 99999;
     int replica = 3;
     int hostCount = 100;
-    std::vector<HostAddr> hosts;
+    std::vector<network::InetAddress> hosts;
     for (int i = 0; i < hostCount; i++) {
         hosts.emplace_back(i, i);
     }
@@ -1245,7 +1293,7 @@ TEST(BalanceTest, ManyHostsLeaderBalancePlanTest) {
         HostLeaderMap hostLeaderMap;
         // all part will random choose a leader
         for (int partId = 1; partId <= partCount; partId++) {
-            std::vector<HostAddr> peers;
+            std::vector<network::InetAddress> peers;
             size_t idx = partId;
             for (int32_t i = 0; i < replica; i++, idx++) {
                 peers.emplace_back(hosts[idx % hostCount]);
@@ -1264,7 +1312,7 @@ TEST(BalanceTest, ManyHostsLeaderBalancePlanTest) {
 TEST(BalanceTest, LeaderBalanceTest) {
     fs::TempDir rootPath("/tmp/LeaderBalanceTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}};
+    std::vector<network::InetAddress> hosts = {{0, 0}, {1, 1}, {2, 2}};
     TestUtils::createSomeHosts(kv.get(), hosts);
     TestUtils::assembleSpace(kv.get(), 1, 9, 3, 3);
     {

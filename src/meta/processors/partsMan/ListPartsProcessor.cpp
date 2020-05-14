@@ -50,7 +50,7 @@ void ListPartsProcessor::process(const cpp2::ListPartsReq& req) {
         std::vector<nebula::cpp2::HostAddr> losts;
         for (auto& host : partItem.get_peers()) {
             if (std::find(activeHosts.begin(), activeHosts.end(),
-                          HostAddr(host.ip, host.port)) == activeHosts.end()) {
+                          network::InetAddress(host.ip, host.port)) == activeHosts.end()) {
                 losts.emplace_back();
                 losts.back().set_ip(host.ip);
                 losts.back().set_port(host.port);
@@ -109,7 +109,7 @@ void ListPartsProcessor::getLeaderDist(std::vector<cpp2::PartItem>& partItems) {
     while (iter->valid()) {
         auto host = MetaServiceUtils::parseLeaderKey(iter->key());
         if (std::find(activeHosts.begin(), activeHosts.end(),
-                      HostAddr(host.ip, host.port)) != activeHosts.end()) {
+                      network::InetAddress(host.ip, host.port)) != activeHosts.end()) {
             LeaderParts leaderParts = MetaServiceUtils::parseLeaderVal(iter->val());
             const auto& partIds = leaderParts[spaceId_];
             for (const auto& partId : partIds) {

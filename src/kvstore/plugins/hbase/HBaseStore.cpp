@@ -31,9 +31,7 @@ HBaseStore::HBaseStore(KVOptions options)
 
 
 void HBaseStore::init() {
-    LOG(INFO) << "Connect to the HBase thrift server "
-              << network::NetworkUtils::intToIPv4(options_.hbaseServer_.first)
-              << ":" << options_.hbaseServer_.second;
+    LOG(INFO) << "Connect to the HBase thrift server " << options_.hbaseServer_;
     client_ = std::make_unique<HBaseClient>(options_.hbaseServer_);
     CHECK_NOTNULL(client_.get());
 }

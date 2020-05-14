@@ -236,8 +236,8 @@ AdminJobExecutor::toString(nebula::meta::cpp2::JobStatus st) {
 }
 
 std::string AdminJobExecutor::toString(nebula::cpp2::HostAddr host) {
-    auto ip = network::NetworkUtils::intToIPv4(host.get_ip());
-    auto ret = folly::stringPrintf("%s:%d", ip.c_str(), host.get_port());
+    auto ret = folly::stringPrintf(
+        "%s", network::InetAddress(host.get_ip(), host.get_port()).toString().c_str());
     return ret;
 }
 

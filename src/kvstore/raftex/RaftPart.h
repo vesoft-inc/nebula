@@ -117,11 +117,11 @@ public:
         return partId_;
     }
 
-    const HostAddr& address() const {
+    const network::InetAddress& address() const {
         return addr_;
     }
 
-    HostAddr leader() const {
+    network::InetAddress leader() const {
         std::lock_guard<std::mutex> g(raftLock_);
         return leader_;
     }
@@ -130,20 +130,20 @@ public:
         return wal_;
     }
 
-    void addLearner(const HostAddr& learner);
+    void addLearner(const network::InetAddress& learner);
 
-    void commitTransLeader(const HostAddr& target);
+    void commitTransLeader(const network::InetAddress& target);
 
-    void preProcessTransLeader(const HostAddr& target);
+    void preProcessTransLeader(const network::InetAddress& target);
 
 
-    void preProcessRemovePeer(const HostAddr& peer);
+    void preProcessRemovePeer(const network::InetAddress& peer);
 
-    void commitRemovePeer(const HostAddr& peer);
+    void commitRemovePeer(const network::InetAddress& peer);
 
     // Change the partition status to RUNNING. This is called
     // by the inherited class, when it's ready to serve
-    virtual void start(std::vector<HostAddr>&& peers, bool asLearner = false);
+    virtual void start(std::vector<network::InetAddress>&& peers, bool asLearner = false);
 
     // Change the partition status to STOPPED. This is called
     // by the inherited class, when it's about to stop
@@ -180,14 +180,14 @@ public:
      * Check if the peer has catched up data from leader. If leader is sending the snapshot,
      * the method will return false.
      * */
-    AppendLogResult isCatchedUp(const HostAddr& peer);
+    AppendLogResult isCatchedUp(const network::InetAddress& peer);
 
     bool linkCurrentWAL(const char* newPath);
 
     /**
      * Reset my peers if not equals the argument
      */
-    void checkAndResetPeers(const std::vector<HostAddr>& peers);
+    void checkAndResetPeers(const std::vector<network::InetAddress>& peers);
 
     /*****************************************************
      *
@@ -216,7 +216,7 @@ protected:
     RaftPart(ClusterID clusterId,
              GraphSpaceID spaceId,
              PartitionID partId,
-             HostAddr localAddr,
+             network::InetAddress localAddr,
              const folly::StringPiece walRoot,
              std::shared_ptr<folly::IOThreadPoolExecutor> pool,
              std::shared_ptr<thread::GenericThreadPool> workers,
@@ -242,7 +242,7 @@ protected:
     // a new leader
     virtual void onElected(TermID term) = 0;
 
-    virtual void onDiscoverNewLeader(HostAddr nLeader) = 0;
+    virtual void onDiscoverNewLeader(network::InetAddress nLeader) = 0;
 
     // The inherited classes need to implement this method to commit
     // a batch of log messages
@@ -265,9 +265,9 @@ protected:
     // Reset the part, clean up all data and WALs.
     void reset();
 
-    void addPeer(const HostAddr& peer);
+    void addPeer(const network::InetAddress& peer);
 
-    void removePeer(const HostAddr& peer);
+    void removePeer(const network::InetAddress& peer);
 
 private:
     enum class Status {
@@ -386,6 +386,9 @@ private:
 
     void updateQuorum();
 
+    std::vector<std::shared_ptr<Host>>::iterator updateAndFindHost(
+        std::function<bool(std::shared_ptr<Host> &h)> f);
+
 protected:
     template<class ValueType>
     class PromiseSet final {
@@ -469,7 +472,7 @@ protected:
     const ClusterID clusterId_;
     const GraphSpaceID spaceId_;
     const PartitionID partId_;
-    const HostAddr addr_;
+    const network::InetAddress addr_;
     std::vector<std::shared_ptr<Host>> hosts_;
     size_t quorum_{0};
 
@@ -489,7 +492,8 @@ protected:
     Role role_;
 
     // When the partition is the leader, the leader_ is same as addr_
-    HostAddr leader_;
+    std::string          leaderHostname_;
+    network::InetAddress leader_;
 
     // The current term id
     //

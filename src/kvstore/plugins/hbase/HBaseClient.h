@@ -24,7 +24,7 @@ using namespace apache::hadoop::hbase::thrift2::cpp2;  // NOLINT
 
 class HBaseClient final {
 public:
-    explicit HBaseClient(const HostAddr& host);
+    explicit HBaseClient(const network::InetAddress& host);
     ~HBaseClient();
 
     ResultCode get(const std::string& tableName,
