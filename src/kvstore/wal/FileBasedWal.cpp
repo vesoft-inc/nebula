@@ -283,15 +283,13 @@ void FileBasedWal::closeCurrFile() {
         return;
     }
 
-    bool synced = false;
-    if (lastLogId_ > firstLogId_) {
+    if (!policy_.sync) {
         if (::fsync(currFd_) == -1) {
             LOG(WARNING) << "sync wal \"" << currInfo_->path()
                          << "\" failed, error: " << strerror(errno);
-        } else {
-            synced = true;
         }
     }
+
     // Close the file
     if (::close(currFd_) == -1) {
         LOG(WARNING) << "close wal \"" << currInfo_->path()
@@ -299,17 +297,13 @@ void FileBasedWal::closeCurrFile() {
     }
     currFd_ = -1;
 
-    if (!synced) {
-        auto now = time::WallClock::fastNowInSec();
-        currInfo_->setMTime(now);
-        //    DCHECK_EQ(currInfo_->size(), FileUtils::fileSize(currInfo_->path()))
-        //        << currInfo_->path() << " size does not match";
-        struct utimbuf timebuf;
-        timebuf.modtime = currInfo_->mtime();
-        timebuf.actime = currInfo_->mtime();
-        VLOG(1) << "Close cur file " << currInfo_->path() << ", mtime: " << currInfo_->mtime();
-        CHECK_EQ(utime(currInfo_->path(), &timebuf), 0);
-    }
+    auto now = time::WallClock::fastNowInSec();
+    currInfo_->setMTime(now);
+    struct utimbuf timebuf;
+    timebuf.modtime = currInfo_->mtime();
+    timebuf.actime = currInfo_->mtime();
+    VLOG(1) << "Close cur file " << currInfo_->path() << ", mtime: " << currInfo_->mtime();
+    CHECK_EQ(utime(currInfo_->path(), &timebuf), 0);
     currInfo_.reset();
 }
 
