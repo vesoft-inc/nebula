@@ -1131,15 +1131,30 @@ void ShowExecutor::showRoles() {
         std::vector<cpp2::RowValue> rows;
         std::vector<std::string> header{"Account", "Role Type"};
         resp_->set_column_names(std::move(header));
-        for (auto& role : value) {
+        /**
+         * Only god and admin show all roles, other roles only show themselves
+         */
+        auto account = ectx()->rctx()->session()->user();
+        auto it = std::find_if(value.begin(), value.end(), [&account] (const auto& r){
+            return r.get_user() == account;
+        });
+        if (it != value.end() && it->get_role_type() != nebula::cpp2::RoleType::ADMIN) {
             std::vector<cpp2::ColumnValue> row;
             row.resize(2);
-            row[0].set_str(role.get_user());
-            row[1].set_str(roleToStr(role.get_role_type()));
+            row[0].set_str(it->get_user());
+            row[1].set_str(roleToStr(it->get_role_type()));
             rows.emplace_back();
             rows.back().set_columns(std::move(row));
+        } else {
+            std::for_each(value.begin(), value.end(), [&](auto& role) {
+                std::vector<cpp2::ColumnValue> row;
+                row.resize(2);
+                row[0].set_str(role.get_user());
+                row[1].set_str(roleToStr(role.get_role_type()));
+                rows.emplace_back();
+                rows.back().set_columns(std::move(row));
+            });
         }
-
         resp_->set_rows(std::move(rows));
         doFinish(Executor::ProcessControl::kNext);
     };
