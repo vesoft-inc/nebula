@@ -5,6 +5,7 @@ on:
     types: [synchronize, reopened, labeled]
     branches:
       - master
+      - cloud
       - 'v[0-9]+.*'
 
 jobs:
