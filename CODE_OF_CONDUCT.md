@@ -42,6 +42,4 @@ Project maintainers who do not follow or enforce the Code of Conduct in good fai
 
 This Code of Conduct is adapted from the [Contributor Covenant](https://www.contributor-covenant.org/), version 1.4, available at https://www.contributor-covenant.org/version/1/4/code-of-conduct.html
 
-Currently we use clang-format to format the code. We recommend you to configure the clang-format according to the IDE / editor you use. The following link is how to configure vim / emacs / vscode to use clang-format.
-
 For answers to common questions about this code of conduct, see https://www.contributor-covenant.org/faq
