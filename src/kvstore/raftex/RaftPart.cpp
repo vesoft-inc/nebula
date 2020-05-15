@@ -1251,9 +1251,6 @@ void RaftPart::statusPolling() {
         LOG(INFO) << idStr_ << "Clean up the snapshot";
         cleanupSnapshot();
     }
-    if (needToCleanWal()) {
-        wal_->cleanWAL(FLAGS_wal_ttl);
-    }
     {
         std::lock_guard<std::mutex> g(raftLock_);
         if (status_ == Status::RUNNING || status_ == Status::WAITING_SNAPSHOT) {

@@ -240,6 +240,8 @@ private:
 
     bool checkLeader(std::shared_ptr<Part> part) const;
 
+    void cleanWAL();
+
 private:
     // The lock used to protect spaces_
     folly::RWSpinLock lock_;

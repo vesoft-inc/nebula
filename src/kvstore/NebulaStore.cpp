@@ -18,6 +18,7 @@ DEFINE_string(engine_type, "rocksdb", "rocksdb, memory...");
 DEFINE_int32(custom_filter_interval_secs, 24 * 3600, "interval to trigger custom compaction");
 DEFINE_int32(num_workers, 4, "Number of worker threads");
 DEFINE_bool(check_leader, true, "Check leader or not");
+DEFINE_int32(clean_wal_interval_secs, 600, "inerval to trigger clean expired wal");
 
 namespace nebula {
 namespace kvstore {
@@ -184,6 +185,8 @@ bool NebulaStore::init() {
             addPart(spaceId, partId, false);
         }
     }
+
+    bgWorkers_->addDelayTask(FLAGS_clean_wal_interval_secs * 1000, &NebulaStore::cleanWAL, this);
 
     LOG(INFO) << "Register handler...";
     options_.partMan_->registerHandler(this);
@@ -821,6 +824,19 @@ bool NebulaStore::checkLeader(std::shared_ptr<Part> part) const {
     return !FLAGS_check_leader || (part->isLeader() && part->leaseValid());
 }
 
+void NebulaStore::cleanWAL() {
+    for (const auto& spaceEntry : spaces_) {
+        for (const auto& engine : spaceEntry.second->engines_) {
+            engine->flush();
+        }
+        for (const auto& partEntry : spaceEntry.second->parts_) {
+            auto& part = partEntry.second;
+            if (part->needToCleanWal()) {
+                part->wal()->cleanWAL();
+            }
+        }
+    }
+}
 
 }  // namespace kvstore
 }  // namespace nebula
