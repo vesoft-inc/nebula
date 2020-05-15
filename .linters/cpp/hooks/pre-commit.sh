@@ -9,7 +9,7 @@ CPPLINT=`dirname $0`/../../.linters/cpp/cpplint.py
 CHECKKEYWORD=`dirname $0`/../../.linters/cpp/checkKeyword.py
 
 echo "Performing checkout keyword..."
-python $CHECKKEYWORD
+python3 $CHECKKEYWORD
 
 if [ $? -ne 0 ]; then
     echo "Checkout keyword failed"
@@ -36,8 +36,8 @@ else
 fi
 
 # No changes on interested files
-if [[ -z $CHECK_FILES ]]
-then
+if [[ -z $CHECK_FILES ]]; then
+    echo "There's no source files to perform C++ linters..."
     exit 0
 fi
 
@@ -46,7 +46,7 @@ echo "Performing C++ linters..."
 CPPLINT_EXTENS=cpp,h,inl
 CPPLINT_FILTER=-whitespace/indent,-build/include_what_you_use,-readability/todo,-build/include,-build/header_guard,-runtime/references,-build/c++11
 
-python $CPPLINT --quiet --extensions=$CPPLINT_EXTENS \
+python3 $CPPLINT --quiet --extensions=$CPPLINT_EXTENS \
                 --filter=$CPPLINT_FILTER --linelength=100 $CHECK_FILES 2>&1
 
 result=$?
