@@ -20,6 +20,7 @@
 DECLARE_int32(vertex_cache_num);
 DECLARE_int32(vertex_cache_bucket_exp);
 DECLARE_int32(reader_handlers);
+DECLARE_string(reader_handlers_type);
 
 namespace nebula {
 namespace storage {
@@ -37,11 +38,20 @@ public:
         , indexMan_(indexMan)
         , metaClient_(client)
         , vertexCache_(FLAGS_vertex_cache_num, FLAGS_vertex_cache_bucket_exp) {
-        using TM = apache::thrift::concurrency::PriorityThreadManager;
-        auto pool = TM::newPriorityThreadManager(FLAGS_reader_handlers, true);
-        pool->setNamePrefix("reader-pool");
-        pool->start();
-        readerPool_ = std::move(pool);
+        if (FLAGS_reader_handlers_type == "io") {
+            auto tf = std::make_shared<folly::NamedThreadFactory>("reader-pool");
+            readerPool_ = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_reader_handlers,
+                                                                        std::move(tf));
+        } else {
+            if (FLAGS_reader_handlers_type != "cpu") {
+                LOG(WARNING) << "Unknown value for --reader_handlers_type, using `cpu'";
+            }
+            using TM = apache::thrift::concurrency::PriorityThreadManager;
+            auto pool = TM::newPriorityThreadManager(FLAGS_reader_handlers, true);
+            pool->setNamePrefix("reader-pool");
+            pool->start();
+            readerPool_ = std::move(pool);
+        }
         getBoundQpsStat_ = stats::Stats("storage", "get_bound");
         boundStatsQpsStat_ = stats::Stats("storage", "bound_stats");
         vertexPropsQpsStat_ = stats::Stats("storage", "vertex_props");
