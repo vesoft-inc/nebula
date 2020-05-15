@@ -36,8 +36,12 @@ public:
         , schemaMan_(schemaMan)
         , indexMan_(indexMan)
         , metaClient_(client)
-        , vertexCache_(FLAGS_vertex_cache_num, FLAGS_vertex_cache_bucket_exp)
-        , readerPool_(std::make_unique<folly::IOThreadPoolExecutor>(FLAGS_reader_handlers)) {
+        , vertexCache_(FLAGS_vertex_cache_num, FLAGS_vertex_cache_bucket_exp) {
+        using TM = apache::thrift::concurrency::PriorityThreadManager;
+        auto pool = TM::newPriorityThreadManager(FLAGS_reader_handlers, true);
+        pool->setNamePrefix("reader-pool");
+        pool->start();
+        readerPool_ = std::move(pool);
         getBoundQpsStat_ = stats::Stats("storage", "get_bound");
         boundStatsQpsStat_ = stats::Stats("storage", "bound_stats");
         vertexPropsQpsStat_ = stats::Stats("storage", "vertex_props");
@@ -149,7 +153,7 @@ private:
     meta::IndexManager* indexMan_{nullptr};
     meta::MetaClient* metaClient_{nullptr};
     VertexCache vertexCache_;
-    std::unique_ptr<folly::IOThreadPoolExecutor> readerPool_;
+    std::shared_ptr<folly::Executor> readerPool_;
 
     stats::Stats getBoundQpsStat_;
     stats::Stats boundStatsQpsStat_;
