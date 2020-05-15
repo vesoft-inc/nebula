@@ -17,6 +17,14 @@ DEFINE_string(p, "", "Password used to authenticate");
 int main(int argc, char *argv[]) {
     google::SetVersionString(nebula::versionString());
     folly::init(&argc, &argv, true);
+    if (argc > 1/*executable name*/) {
+        std::cout << "Unrecognized arguments: ";
+        for (int i = 1; i < argc; ++i) {
+            std::cout << argv[i] << " ";
+        }
+        std::cout << std::endl;
+        return EXIT_FAILURE;
+    }
 
     using nebula::graph::CliManager;
     using nebula::fs::FileUtils;

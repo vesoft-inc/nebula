@@ -18,7 +18,7 @@ namespace nebula {
 class Cord;
 using OptVariantType = StatusOr<VariantType>;
 
-enum class ColumnType {
+enum class ColumnType : uint8_t {
     INT, STRING, DOUBLE, BOOL, TIMESTAMP,
 };
 
@@ -245,6 +245,17 @@ public:
      */
     static StatusOr<std::unique_ptr<Expression>> decode(folly::StringPiece buffer) noexcept;
 
+    template <typename T>
+    static T as(const VariantType &value) {
+        static_assert(
+            std::is_same<std::remove_cv_t<T>, int64_t>::value
+            || std::is_same<std::remove_cv_t<T>, double>::value
+            || std::is_same<std::remove_cv_t<T>, bool>::value
+            || std::is_same<std::remove_cv_t<T>, std::string>::value,
+            "Invalid value type");
+        return boost::get<std::remove_reference_t<T>>(value);
+    }
+
     // Procedures used to do type conversions only between compatible ones.
     static int64_t asInt(const VariantType &value) {
         return boost::get<int64_t>(value);
@@ -300,6 +311,10 @@ public:
     static bool almostEqual(double left, double right) {
         constexpr auto EPSILON = 1e-8;
         return std::abs(left - right) < EPSILON;
+    }
+
+    static bool contains(const std::string& left, const std::string& right) {
+        return left.find(right) != std::string::npos;
     }
 
     // Procedures used to do type casting
@@ -834,9 +849,7 @@ public:
 private:
     void encode(Cord &cord) const override;
 
-    const char* decode(const char *, const char *) override {
-        throw Status::Error("Not supported yet");
-    }
+    const char* decode(const char *, const char *) override;
 
 private:
     ColumnType                                  type_;
@@ -899,7 +912,7 @@ private:
 class RelationalExpression final : public Expression {
 public:
     enum Operator : uint8_t {
-        LT, LE, GT, GE, EQ, NE
+        LT, LE, GT, GE, EQ, NE, CONTAINS
     };
     static_assert(sizeof(Operator) == sizeof(uint8_t), "");
 
