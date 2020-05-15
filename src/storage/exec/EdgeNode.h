@@ -74,19 +74,19 @@ protected:
                     break;
                 }
                 case PropContext::PropInKeyType::SRC: {
-                    value = std::move(NebulaKeyUtils::getSrcId(vIdLen_, key));
+                    value = NebulaKeyUtils::getSrcId(vIdLen_, key);
                     break;
                 }
                 case PropContext::PropInKeyType::DST: {
-                    value = std::move(NebulaKeyUtils::getDstId(vIdLen_, key));
+                    value = NebulaKeyUtils::getDstId(vIdLen_, key);
                     break;
                 }
                 case PropContext::PropInKeyType::TYPE: {
-                    value = std::move(NebulaKeyUtils::getEdgeType(vIdLen_, key));
+                    value = NebulaKeyUtils::getEdgeType(vIdLen_, key);
                     break;
                 }
                 case PropContext::PropInKeyType::RANK: {
-                    value = std::move(NebulaKeyUtils::getRank(vIdLen_, key));
+                    value = NebulaKeyUtils::getRank(vIdLen_, key);
                     break;
                 }
             }

@@ -49,7 +49,7 @@ void GetNeighborsProcessor::process(const cpp2::GetNeighborsRequest& req) {
 
             // the first column of each row would be the vertex id
             auto dag = buildDAG(partId, vId, &filter, &resultRow);
-            auto ret = dag.go().get();
+            auto ret = dag->go().get();
             if (ret != kvstore::ResultCode::SUCCEEDED) {
                 if (failedParts.find(partId) == failedParts.end()) {
                     failedParts.emplace(partId);
@@ -64,18 +64,18 @@ void GetNeighborsProcessor::process(const cpp2::GetNeighborsRequest& req) {
     onFinished();
 }
 
-StorageDAG GetNeighborsProcessor::buildDAG(PartitionID partId,
-                                           const VertexID& vId,
-                                           FilterNode* filter,
-                                           nebula::Row* row) {
-    StorageDAG dag;
+std::unique_ptr<StorageDAG> GetNeighborsProcessor::buildDAG(PartitionID partId,
+                                                            const VertexID& vId,
+                                                            FilterNode* filter,
+                                                            nebula::Row* row) {
+    auto dag = std::make_unique<StorageDAG>();
     auto tag = std::make_unique<TagNode>(
-            &tagContext_, env_, spaceId_, partId, spaceVidLen_, vId, exp_.get(), filter, row);
-    auto tagIdx = dag.addNode(std::move(tag));
+            &tagContext_, env_, spaceId_, partId, spaceVidLen_, vId, filter, row);
+    auto tagIdx = dag->addNode(std::move(tag));
     auto edge = std::make_unique<EdgeTypePrefixScanNode>(
             &edgeContext_, env_, spaceId_, partId, spaceVidLen_, vId, exp_.get(), filter, row);
-    edge->addDependency(dag.getNode(tagIdx));
-    dag.addNode(std::move(edge));
+    edge->addDependency(dag->getNode(tagIdx));
+    dag->addNode(std::move(edge));
     return dag;
 }
 

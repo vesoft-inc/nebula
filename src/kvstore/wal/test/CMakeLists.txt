@@ -38,7 +38,7 @@ nebula_add_test(
         gtest
 )
 
-nebula_add_test(
+nebula_add_executable(
     NAME
         log_bufferr_bm
     SOURCES

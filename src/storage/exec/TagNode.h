@@ -21,7 +21,6 @@ public:
             PartitionID partId,
             size_t vIdLen,
             const VertexID& vId,
-            const Expression* exp,
             FilterNode* filter,
             nebula::Row* row)
         : tagContext_(ctx)
@@ -30,7 +29,6 @@ public:
         , partId_(partId)
         , vIdLen_(vIdLen)
         , vId_(vId)
-        , exp_(exp)
         , filter_(filter)
         , resultRow_(row) {}
 
@@ -165,7 +163,6 @@ private:
     PartitionID partId_;
     size_t vIdLen_;
     VertexID vId_;
-    const Expression* exp_;
     FilterNode* filter_;
     nebula::Row* resultRow_;
 };

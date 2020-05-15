@@ -29,6 +29,8 @@ public:
 
     RelNode() = default;
 
+    virtual ~RelNode() = default;
+
     explicit RelNode(const std::string& name): name_(name) {}
 
 protected:

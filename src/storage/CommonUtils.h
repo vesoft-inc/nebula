@@ -21,7 +21,8 @@ namespace storage {
 
 using VertexCache = ConcurrentLRUCache<std::pair<VertexID, TagID>, std::string>;
 
-struct StorageEnv {
+class StorageEnv {
+public:
     kvstore::KVStore*                               kvstore_{nullptr};
     meta::SchemaManager*                            schemaMan_{nullptr};
     meta::IndexManager*                             indexMan_{nullptr};

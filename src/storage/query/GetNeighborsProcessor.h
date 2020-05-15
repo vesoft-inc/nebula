@@ -35,10 +35,10 @@ protected:
         : QueryBaseProcessor<cpp2::GetNeighborsRequest,
                              cpp2::GetNeighborsResponse>(env, stats, cache) {}
 
-    StorageDAG buildDAG(PartitionID partId,
-                        const VertexID& vId,
-                        FilterNode* filter,
-                        nebula::Row* row);
+    std::unique_ptr<StorageDAG> buildDAG(PartitionID partId,
+                                         const VertexID& vId,
+                                         FilterNode* filter,
+                                         nebula::Row* row);
 
     void onProcessFinished() override;
 

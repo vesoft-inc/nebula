@@ -152,7 +152,7 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
 
         auto tick = time::WallClock::fastNowInMicroSec();
         auto retCode = executor.processEdgeProps(edgeType, edgeRowCount,
-            [&executor, spaceId, edgeType, &props, &dataSet, &schemas]
+            [&executor, edgeType, &props, &dataSet, &schemas]
             (std::unique_ptr<RowReader>* reader, folly::StringPiece key, folly::StringPiece val)
             -> kvstore::ResultCode {
                 if (reader->get() == nullptr) {
@@ -269,7 +269,7 @@ TEST_P(ScanEdgePropBench, ScanEdgesVsProcessEdgeProps) {
 
             auto ttl = executor.getEdgeTTLInfo(edgeType);
             auto retCode = executor.processEdgeProps(edgeType, edgeRowCount,
-                [&executor, spaceId, edgeType, &props, &dataSet, &schemas, &ttl]
+                [&executor, edgeType, &props, &dataSet, &schemas, &ttl]
                 (std::unique_ptr<RowReader>* reader, folly::StringPiece key, folly::StringPiece val)
                 -> kvstore::ResultCode {
                     if (reader->get() == nullptr) {
