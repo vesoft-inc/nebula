@@ -188,12 +188,6 @@ protected:
     StatusOr<TagID> getTagId(GraphSpaceID spaceId, const std::string& name);
 
     /**
-     * Fetch the latest version tag's fields.
-     */
-    std::unordered_map<std::string, cpp2::PropertyType>
-    getLatestTagFields(const cpp2::Schema& latestTagSchema);
-
-    /**
      * Fetch the latest version tag's schema.
      */
     StatusOr<cpp2::Schema>
@@ -208,13 +202,6 @@ protected:
      * Return the edgeType for name.
      */
     StatusOr<EdgeType> getEdgeType(GraphSpaceID spaceId, const std::string& name);
-
-    /**
-     * Fetch the latest version edge's fields.
-     */
-    std::unordered_map<std::string, cpp2::PropertyType>
-    getLatestEdgeFields(const cpp2::Schema& latestEdgeSchema);
-
 
     /**
      * Fetch the latest version edge's schema.

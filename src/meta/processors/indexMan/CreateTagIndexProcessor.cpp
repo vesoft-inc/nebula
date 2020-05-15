@@ -66,22 +66,18 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
        return;
     }
 
-    auto fields = getLatestTagFields(latestTagSchema);
+    const auto& schemaCols = latestTagSchema.get_columns();
     std::vector<cpp2::ColumnDef> columns;
     for (auto &field : fieldNames) {
-        auto iter = std::find_if(std::begin(fields), std::end(fields),
-                                 [field](const auto& pair) { return field == pair.first; });
-        if (iter == fields.end()) {
+        auto iter = std::find_if(schemaCols.begin(), schemaCols.end(),
+                                 [field](const auto& col) { return field == col.get_name(); });
+        if (iter == schemaCols.end()) {
             LOG(ERROR) << "Field " << field << " not found in Tag " << tagName;
             handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
             onFinished();
             return;
         } else {
-            auto type = fields[field];
-            cpp2::ColumnDef column;
-            column.set_name(std::move(field));
-            column.set_type(std::move(type));
-            columns.emplace_back(std::move(column));
+            columns.emplace_back(*iter);
         }
     }
 

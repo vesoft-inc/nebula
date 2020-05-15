@@ -2146,7 +2146,7 @@ TEST(ProcessorTest, TagIndexTest) {
         std::vector<cpp2::ColumnDef> columns;
         columns.emplace_back(std::move(column));
 
-        TestUtils::verifyResult(columns, fields);
+        ASSERT_TRUE(TestUtils::verifyResult(columns, fields));
     }
     {
         cpp2::DropTagIndexReq req;
@@ -2180,6 +2180,50 @@ TEST(ProcessorTest, TagIndexTest) {
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
+    }
+}
+
+TEST(ProcessorTest, TagIndexTestV2) {
+    fs::TempDir rootPath("/tmp/TagIndexTestV2.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
+    TestUtils::createSomeHosts(kv.get());
+    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1, 1));
+    TestUtils::mockTag(kv.get(), 2, 0, true);
+    {
+        cpp2::CreateTagIndexReq req;
+        req.set_space_id(1);
+        req.set_tag_name("tag_0");
+        std::vector<std::string> fields{"tag_0_col_0"};
+        req.set_fields(std::move(fields));
+        req.set_index_name("single_field_index");
+        auto* processor = CreateTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    {
+        cpp2::GetTagIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("single_field_index");
+
+        auto* processor = GetTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        auto item = resp.get_item();
+        auto fields = item.get_fields();
+        ASSERT_EQ(1, item.get_index_id());
+
+        cpp2::ColumnDef column;
+        column.set_name("tag_0_col_0");
+        column.set_type(PropertyType::INT64);
+        column.set_nullable(true);
+        std::vector<cpp2::ColumnDef> columns;
+        columns.emplace_back(std::move(column));
+
+        ASSERT_TRUE(TestUtils::verifyResult(columns, fields));
     }
 }
 
@@ -2358,6 +2402,47 @@ TEST(ProcessorTest, EdgeIndexTest) {
     }
 }
 
+TEST(ProcessorTest, EdgeIndexTestV2) {
+    fs::TempDir rootPath("/tmp/EdgeIndexTestV2.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
+    TestUtils::createSomeHosts(kv.get());
+    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1, 1));
+    TestUtils::mockEdge(kv.get(), 2, 0, true);
+    {
+        cpp2::CreateEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_edge_name("edge_0");
+        std::vector<std::string> fields{"edge_0_col_0"};
+        req.set_fields(std::move(fields));
+        req.set_index_name("single_field_index");
+        auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    {
+        cpp2::GetEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("single_field_index");
+        auto* processor = GetEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        auto item = resp.get_item();
+        auto fields = item.get_fields();
+        ASSERT_EQ(1, item.get_index_id());
+
+        cpp2::ColumnDef column;
+        column.set_name("edge_0_col_0");
+        column.set_type(PropertyType::INT64);
+        column.set_nullable(true);
+        std::vector<cpp2::ColumnDef> columns;
+        columns.emplace_back(std::move(column));
+        ASSERT_TRUE(TestUtils::verifyResult(columns, fields));
+    }
+}
 TEST(ProcessorTest, IndexCheckAlterEdgeTest) {
     fs::TempDir rootPath("/tmp/IndexCheckAlterEdgeTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));

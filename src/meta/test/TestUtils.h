@@ -220,7 +220,8 @@ public:
         return ret;
     }
 
-    static void mockTag(kvstore::KVStore* kv, int32_t tagNum, SchemaVer version = 0) {
+    static void mockTag(kvstore::KVStore* kv, int32_t tagNum,
+                        SchemaVer version = 0, bool nullable = false) {
         std::vector<nebula::kvstore::KV> tags;
         SchemaVer ver = version;
         for (auto t = 0; t < tagNum; t++) {
@@ -230,6 +231,9 @@ public:
                 cpp2::ColumnDef column;
                 column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
                 column.type = i < 1 ? PropertyType::INT64 : PropertyType::STRING;
+                if (nullable) {
+                    column.set_nullable(nullable);
+                }
                 srcsch.columns.emplace_back(std::move(column));
             }
             auto tagName = folly::stringPrintf("tag_%d", tagId);
@@ -247,7 +251,8 @@ public:
         baton.wait();
     }
 
-    static void mockEdge(kvstore::KVStore* kv, int32_t edgeNum, SchemaVer version = 0) {
+    static void mockEdge(kvstore::KVStore* kv, int32_t edgeNum,
+                         SchemaVer version = 0, bool nullable = false) {
         std::vector<nebula::kvstore::KV> edges;
         SchemaVer ver = version;
         for (auto t = 0; t < edgeNum; t++) {
@@ -257,6 +262,9 @@ public:
                 cpp2::ColumnDef column;
                 column.name = folly::stringPrintf("edge_%d_col_%d", edgeType, i);
                 column.type = i < 1 ? PropertyType::INT64 : PropertyType::STRING;
+                if (nullable) {
+                    column.set_nullable(nullable);
+                }
                 srcsch.columns.emplace_back(std::move(column));
             }
             auto edgeName = folly::stringPrintf("edge_%d", edgeType);
@@ -373,6 +381,11 @@ public:
         for (int32_t i = 0; i < size; i++) {
             if (result[i].get_name() != expected[i].get_name() ||
                 result[i].get_type() != expected[i].get_type()) {
+                return false;
+            }
+            if (result[i].__isset.nullable != expected[i].__isset.nullable ||
+                (result[i].__isset.nullable == true &&
+                *result[i].get_nullable() != *expected[i].get_nullable())) {
                 return false;
             }
         }

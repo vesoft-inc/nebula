@@ -253,18 +253,6 @@ StatusOr<EdgeType> BaseProcessor<RESP>::getEdgeType(GraphSpaceID spaceId,
 
 
 template <typename RESP>
-std::unordered_map<std::string, cpp2::PropertyType>
-BaseProcessor<RESP>::getLatestTagFields(const cpp2::Schema& latestTagSchema) {
-    std::unordered_map<std::string, cpp2::PropertyType> propertyNames;
-    for (auto &column : latestTagSchema.get_columns()) {
-        propertyNames.emplace(std::move(column.get_name()),
-                              std::move(column.get_type()));
-    }
-    return propertyNames;
-}
-
-
-template <typename RESP>
 StatusOr<cpp2::Schema>
 BaseProcessor<RESP>::getLatestTagSchema(GraphSpaceID spaceId, const TagID tagId) {
     auto key = MetaServiceUtils::schemaTagPrefix(spaceId, tagId);
@@ -276,18 +264,6 @@ BaseProcessor<RESP>::getLatestTagSchema(GraphSpaceID spaceId, const TagID tagId)
 
     auto iter = ret.value().get();
     return MetaServiceUtils::parseSchema(iter->val());
-}
-
-
-template <typename RESP>
-std::unordered_map<std::string, cpp2::PropertyType>
-BaseProcessor<RESP>::getLatestEdgeFields(const cpp2::Schema& latestEdgeSchema) {
-    std::unordered_map<std::string, cpp2::PropertyType> propertyNames;
-    for (auto &column : latestEdgeSchema.get_columns()) {
-        propertyNames.emplace(std::move(column.get_name()),
-                              std::move(column.get_type()));
-    }
-    return propertyNames;
 }
 
 
