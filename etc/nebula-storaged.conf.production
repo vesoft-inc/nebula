@@ -27,28 +27,44 @@
 --ws_http_port=12000
 # HTTP2 service port
 --ws_h2_port=12002
+# heartbeat with meta service
+--heartbeat_interval_secs=10
 
-########## storage ##########
-# Root data path, multiple paths should be splitted by comma.
-# One path per instance, if --engine_type is `rocksdb'
+######### Raft #########
+# Raft election timeout
+--raft_heartbeat_interval_secs=30
+# RPC timeout for raft client (ms)
+--raft_rpc_timeout_ms=500
+## recycle Raft WAL 
+--wal_ttl=14400
+
+########## Disk ##########
+# Root data path. split by comma. e.g. --data_path=/disk1/path1/,/disk2/path2/
+# One path per Rocksdb instance. 
 --data_path=data/storage
+
+############## Rocksdb Options ##############
 
 # The default reserved bytes for one batch operation
 --rocksdb_batch_size=4096
 
-# The default block cache size used in BlockBasedTable.
-# The unit is MB.
---rocksdb_block_cache=1024
+# The default block cache size used in BlockBasedTable. (MB)
+# recommend: 1/3 of all memory
+--rocksdb_block_cache=4096
 
-############## rocksdb Options ##############
 --rocksdb_disable_wal=true
+
 # rocksdb DBOptions in json, each name and value of option is a string, given as "option_name":"option_value" separated by comma
---rocksdb_db_options={}
+--rocksdb_db_options={"max_subcompactions":"4","max_background_jobs":"4"}
 # rocksdb ColumnFamilyOptions in json, each name and value of option is string, given as "option_name":"option_value" separated by comma
---rocksdb_column_family_options={"write_buffer_size":"67108864","max_write_buffer_number":"4","max_bytes_for_level_base":"268435456"}
+--rocksdb_column_family_options={"disable_auto_compactions":"false","write_buffer_size":"67108864","max_write_buffer_number":"4","max_bytes_for_level_base":"268435456"}
 # rocksdb BlockBasedTableOptions in json, each name and value of option is string, given as "option_name":"option_value" separated by comma
 --rocksdb_block_based_table_options={"block_size":"8192"}
 
+############### misc ####################
 --max_handlers_per_req=1
-
 --heartbeat_interval_secs=10
+
+############# edge samplings ##############
+# --enable_reservoir_sampling=false
+# --max_edge_returned_per_vertex=2147483647
