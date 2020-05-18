@@ -124,6 +124,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_USER KW_USERS KW_ACCOUNT
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_ROLES
 %token KW_GOD KW_ADMIN KW_DBA KW_GUEST KW_GRANT KW_REVOKE KW_ON
+%token KW_CONTAINS
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -308,6 +309,7 @@ unreserved_keyword
      | KW_ALL                { $$ = new std::string("all"); }
      | KW_SHORTEST           { $$ = new std::string("shortest"); }
      | KW_COUNT_DISTINCT     { $$ = new std::string("count_distinct"); }
+     | KW_CONTAINS           { $$ = new std::string("contains"); }
      ;
 
 agg_function
@@ -530,6 +532,9 @@ relational_expression
     }
     | relational_expression GE additive_expression {
         $$ = new RelationalExpression($1, RelationalExpression::GE, $3);
+    }
+    | relational_expression KW_CONTAINS additive_expression {
+        $$ = new RelationalExpression($1, RelationalExpression::CONTAINS, $3);
     }
     ;
 

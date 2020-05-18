@@ -5,7 +5,6 @@
 
 set(name rocksdb)
 set(source_dir ${CMAKE_CURRENT_BINARY_DIR}/${name}/source)
-set(ROCKSDB_CXX_FLAGS "-Wno-pessimizing-move -Wno-redundant-move -Wno-deprecated-copy -Wno-error=shadow -Wno-error=sign-compare")
 ExternalProject_Add(
     ${name}
     URL https://github.com/facebook/rocksdb/archive/v6.7.3.tar.gz
@@ -30,7 +29,7 @@ ExternalProject_Add(
         -DUSE_RTTI=ON
         -DFAIL_ON_WARNINGS=OFF
         -DCMAKE_BUILD_TYPE=Release
-#-DCMAKE_CXX_FLAGS:STRING=${ROCKSDB_CXX_FLAGS}
+        "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -D NPERF_CONTEXT"
     BUILD_IN_SOURCE 1
     BUILD_COMMAND make -s -j${BUILDING_JOBS_NUM} VERBOSE=1
     INSTALL_COMMAND make -s install -j${BUILDING_JOBS_NUM}
