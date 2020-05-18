@@ -156,8 +156,6 @@ protected:
 
     kvstore::ResultCode multiRemove(std::vector<std::string> keys);
 
-    kvstore::ResultCode multiRemoveAndUpdate(const std::vector<std::string> keys);
-
     /**
      * Get all hosts
      * */

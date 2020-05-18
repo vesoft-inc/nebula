@@ -110,29 +110,6 @@ kvstore::ResultCode BaseProcessor<RESP>::multiRemove(std::vector<std::string> ke
 }
 
 template<typename RESP>
-kvstore::ResultCode BaseProcessor<RESP>::multiRemoveAndUpdate(std::vector<std::string> keys) {
-    folly::Baton<true, std::atomic> baton;
-    kvstore::ResultCode retCode;
-    kvstore_->asyncMultiRemove(kDefaultSpaceId,
-                               kDefaultPartId,
-                               std::move(keys),
-                               [this, &baton, &retCode] (kvstore::ResultCode code) {
-        this->handleErrorCode(MetaCommon::to(code));
-        retCode = code;
-        baton.post();
-    });
-    baton.wait();
-    if (retCode != kvstore::SUCCEEDED) {
-        return retCode;
-    }
-    // There are a ambiguous condition
-    // If write ok, update failed we think it failed
-    retCode = LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
-    return retCode;
-}
-
-
-template<typename RESP>
 void BaseProcessor<RESP>::doRemoveRange(const std::string& start,
                                         const std::string& end) {
     folly::Baton<true, std::atomic> baton;
