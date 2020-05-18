@@ -217,55 +217,40 @@ Status SchemaHelper::alterSchema(const std::vector<AlterSchemaOptItem*>& schemaO
                 column.type.type = columnTypeToSupportedType(spec->type());
                 if (spec->hasDefault()) {
                     nebula::cpp2::Value v;
+                    auto optVariant = spec->getDefault(g);
+                    if (!optVariant.ok()) {
+                        return optVariant.status();
+                    }
+                    auto variant = std::move(optVariant).value();
                     switch (spec->type()) {
                     case ColumnType::TIMESTAMP: {
-                        auto valStatus = spec->getIntValue(g);
-                        if (valStatus.ok()) {
-                            v.set_timestamp(valStatus.value());
-                            column.set_default_value(v);
-                        } else {
-                            return std::move(valStatus).status();
-                        }
+                        auto val = boost::get<int64_t>(variant);
+                        v.set_timestamp(val);
+                        column.set_default_value(v);
                         break;
                     }
                     case ColumnType::INT: {
-                        auto valStatus = spec->getIntValue(g);
-                        if (valStatus.ok()) {
-                            v.set_int_value(valStatus.value());
-                            column.set_default_value(v);
-                        } else {
-                            return std::move(valStatus).status();
-                        }
+                        auto val = boost::get<int64_t>(variant);
+                        v.set_int_value(val);
+                        column.set_default_value(v);
                         break;
                     }
                     case ColumnType::BOOL: {
-                        auto valStatus = spec->getBoolValue(g);
-                        if (valStatus.ok()) {
-                            v.set_bool_value(valStatus.value());
-                            column.set_default_value(v);
-                        } else {
-                            return std::move(valStatus).status();
-                        }
+                        auto val = boost::get<bool>(variant);
+                        v.set_bool_value(val);
+                        column.set_default_value(v);
                         break;
                     }
                     case ColumnType::DOUBLE: {
-                        auto valStatus = spec->getDoubleValue(g);
-                        if (valStatus.ok()) {
-                            v.set_double_value(valStatus.value());
-                            column.set_default_value(v);
-                        } else {
-                            return std::move(valStatus).status();
-                        }
+                        auto val = boost::get<double>(variant);
+                        v.set_double_value(val);
+                        column.set_default_value(v);
                         break;
                     }
                     case ColumnType::STRING: {
-                        auto valStatus = spec->getStringValue(g);
-                        if (valStatus.ok()) {
-                            v.set_string_value(std::move(valStatus).value());
-                            column.set_default_value(std::move(v));
-                        } else {
-                            return std::move(valStatus).status();
-                        }
+                        auto val = boost::get<std::string>(variant);
+                        v.set_string_value(std::move(val));
+                        column.set_default_value(std::move(v));
                         break;
                     }
                     default:
