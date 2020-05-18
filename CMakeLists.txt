@@ -365,7 +365,6 @@ if(ENABLE_UBSAN)
         add_compile_options(-static-libubsan)
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libubsan")
     endif()
-    add_compile_options(-static-libubsan)
     add_compile_options(-fsanitize=undefined -fno-sanitize=alignment)
     add_compile_options(-fno-sanitize-recover=all)  # Exit on failure
     # TODO(dutor) Remove the following line when RTTI-enabled RocksDB is ready
