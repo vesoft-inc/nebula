@@ -43,7 +43,6 @@ typedef i32 (cpp.type = "nebula::GraphSpaceID") GraphSpaceID
 typedef i32 (cpp.type = "nebula::PartitionID") PartitionID
 typedef i64 (cpp.type = "nebula::TermID") TermID
 typedef i64 (cpp.type = "nebula::LogID") LogID
-typedef i32 (cpp.type = "nebula::IPv4") IPv4
 typedef i32 (cpp.type = "nebula::Port") Port
 
 
@@ -51,7 +50,7 @@ typedef i32 (cpp.type = "nebula::Port") Port
 struct AskForVoteRequest {
     1: GraphSpaceID space;              // The graph space id
     2: PartitionID  part;               // The data partition
-    3: IPv4         candidate_ip;       // My IP
+    3: string       candidate_addr;     // My Address
     4: Port         candidate_port;     // My port
     5: TermID       term;               // Proposed term
     6: LogID        last_log_id;        // The last received log id
@@ -89,7 +88,7 @@ struct AppendLogRequest {
     3: TermID       current_term;       // Current term
     4: LogID        last_log_id;        // Last received log id
     5: LogID        committed_log_id;   // Last committed Log ID
-    6: IPv4         leader_ip;          // The leader's IP
+    6: string       leader_addr;        // The leader's address
     7: Port         leader_port;        // The leader's Port
     8: TermID       last_log_term_sent;
     9: LogID        last_log_id_sent;
@@ -114,7 +113,7 @@ struct AppendLogRequest {
 struct AppendLogResponse {
     1: ErrorCode    error_code;
     2: TermID       current_term;
-    3: IPv4         leader_ip;
+    3: string       leader_addr;
     4: Port         leader_port;
     5: LogID        committed_log_id;
     6: LogID        last_log_id;
@@ -127,7 +126,7 @@ struct SendSnapshotRequest {
     3: TermID       term;
     4: LogID        committed_log_id;
     5: TermID       committed_log_term;
-    6: IPv4         leader_ip;
+    6: string       leader_addr;
     7: Port         leader_port;
     8: list<binary> rows;
     9: i64          total_size;

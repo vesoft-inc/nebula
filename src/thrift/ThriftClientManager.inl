@@ -18,9 +18,7 @@ namespace thrift {
 template<class ClientType>
 std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(
         const HostAddr& host, folly::EventBase* evb, bool compatibility, uint32_t timeout) {
-    VLOG(2) << "Getting a client to "
-            << network::NetworkUtils::intToIPv4(host.ip)
-            << ":" << host.port;
+    VLOG(2) << "Getting a client to " << host.host << ":" << host.port;
 
     if (evb == nullptr) {
         evb = folly::EventBaseManager::get()->getEventBase();
@@ -32,21 +30,18 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(
     }
 
     // Need to create a new client
-    auto ipAddr = network::NetworkUtils::intToIPv4(host.ip);
-    auto port = host.port;
-    VLOG(2) << "There is no existing client to "
-            << ipAddr << ":" << host.port
+    VLOG(2) << "There is no existing client to " << host.host << ":" << host.port
             << ", trying to create one";
     auto channel = apache::thrift::ReconnectingRequestChannel::newChannel(
-        *evb, [compatibility, ipAddr, port, timeout] (folly::EventBase& eb) mutable {
+        *evb, [compatibility, &host, timeout] (folly::EventBase& eb) mutable {
             static thread_local int connectionCount = 0;
-            VLOG(2) << "Connecting to " << ipAddr << ":" << port
+            VLOG(2) << "Connecting to " << host.host << ":" << host.port
                     << " for " << ++connectionCount << " times";
             std::shared_ptr<apache::thrift::async::TAsyncSocket> socket;
             eb.runImmediatelyOrRunInEventBaseThreadAndWait(
-                [&socket, &eb, ipAddr, port]() {
+                [&socket, &eb, &host]() {
                     socket = apache::thrift::async::TAsyncSocket::newSocket(
-                        &eb, ipAddr, port, FLAGS_conn_timeout_ms);
+                        &eb, host.host, host.port, FLAGS_conn_timeout_ms);
                 });
             auto headerClientChannel = apache::thrift::HeaderClientChannel::newChannel(socket);
             if (timeout > 0) {

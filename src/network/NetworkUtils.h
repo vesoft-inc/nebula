@@ -27,6 +27,7 @@ public:
     static StatusOr<std::vector<std::string>> listIPv4s();
     // List out all network devices and its cooresponding Ipv4 address.
     static StatusOr<std::unordered_map<std::string, std::string>> listDeviceAndIPv4s();
+
     // Get the local dynamic port range [low, high], only works for IPv4
     static bool getDynamicPortRange(uint16_t& low, uint16_t& high);
     // Get all ports that are currently in use
@@ -38,28 +39,21 @@ public:
     // So don't use it in production code.
     static uint16_t getAvailablePort();
 
-    static StatusOr<std::vector<HostAddr>> resolveHost(const std::string &host, int32_t port);
-    // Convert the given IP/HOST and Port to a HostAddr
-    static StatusOr<HostAddr> toHostAddr(const std::string &ip, int32_t port);
-
-    // Convert an IPv4 address (in the form of xx.xx.xx.xx) to an 32-bit
-    // integer
-    // Return true if succeeded.
-    // Return false if the given address is invalid
-    static bool ipv4ToInt(const std::string& ipStr, IPv4& ip);
-    // Convert the given 32-bit integer to an IPv4 address string
-    // (in the form of xx.xx.xx.xx)
-    static std::string intToIPv4(IPv4 ip);
-
-    // Get local IPv4 address. You could specify it by pass in default local ip, otherwise
-    // it will use the first ip exclude "127.0.0.1"
+    static StatusOr<std::vector<HostAddr>> resolveHost(const std::string &host,
+                                                       int32_t port);
+    // Get local IPv4 address. You could specify it by pass in default local ip,
+    // otherwise it will use the first ip exclude "127.0.0.1"
     static StatusOr<std::string> getLocalIP(std::string defaultIP = "");
+
+    // Convert the given 32-bit unsigned integer (in network order) to an IPv4
+    // address string (in the form of xx.xx.xx.xx)
+    static std::string intToIPv4(uint32_t ip);
 
     // Convert peers str which is a list of ipPort joined with comma into HostAddr list.
     // (Peers str format example: 192.168.1.1:10001, 192.168.1.2:10001)
     // Return Status::Error if peersStr is invalid.
     static StatusOr<std::vector<HostAddr>> toHosts(const std::string& peersStr);
-    static std::string toHosts(const std::vector<HostAddr>& hosts);
+    static std::string toHostsStr(const std::vector<HostAddr>& hosts);
 
 private:
 };

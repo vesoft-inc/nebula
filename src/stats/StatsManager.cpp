@@ -14,8 +14,8 @@ namespace stats {
 
 // static
 StatsManager& StatsManager::get() {
-    static StatsManager sm;
-    return sm;
+    static StatsManager smInst;
+    return smInst;
 }
 
 

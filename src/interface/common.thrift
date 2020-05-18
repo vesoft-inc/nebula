@@ -40,7 +40,6 @@ typedef i64 (cpp.type = "nebula::Timestamp") Timestamp
 
 typedef i32 (cpp.type = "nebula::IndexID") IndexID
 
-typedef i32 (cpp.type = "nebula::IPv4") IPv4
 typedef i32 (cpp.type = "nebula::Port") Port
 
 // !! Struct Date has a shadow data type defined in the ThriftTypes.h
@@ -163,8 +162,9 @@ struct Path {
 
 
 struct HostAddr {
-    1: IPv4  ip,
-    2: Port  port,
+    // Host could be a valid IPv4 or IPv6 address, or a valid domain name
+    1: string   host,
+    2: Port     port,
 } (cpp.type = "nebula::HostAddr")
 
 

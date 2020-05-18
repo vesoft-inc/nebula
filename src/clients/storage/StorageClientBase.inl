@@ -230,7 +230,7 @@ StorageClientBase<ClientType>::collectResponse(
                         if (code.get_code() == storage::cpp2::ErrorCode::E_LEADER_CHANGED) {
                             auto* leader = code.get_leader();
                             if (leader != nullptr &&
-                                leader->ip != 0 &&
+                                !leader->host.empty() &&
                                 leader->port != 0) {
                                 updateLeader(spaceId, code.get_part_id(), *leader);
                             } else {
@@ -318,7 +318,7 @@ folly::Future<StatusOr<Response>> StorageClientBase<ClientType>::getResponse(
                 if (code.get_code() == storage::cpp2::ErrorCode::E_LEADER_CHANGED) {
                     auto* leader = code.get_leader();
                     if (leader != nullptr &&
-                        leader->ip != 0 &&
+                        !leader->host.empty() &&
                         leader->port != 0) {
                         updateLeader(spaceId, code.get_part_id(), *leader);
                     } else {

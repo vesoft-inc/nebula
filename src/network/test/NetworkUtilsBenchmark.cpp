@@ -10,28 +10,6 @@
 
 using nebula::network::NetworkUtils;
 
-bool ipToInt(const std::string& ipStr, nebula::IPv4& ip) {
-    std::vector<std::string> parts;
-    folly::split(".", ipStr, parts, true);
-    if (parts.size() != 4) {
-        return false;
-    }
-
-    ip = 0;
-    for (auto& s : parts) {
-        ip <<= 8;
-        try {
-            ip |= folly::to<uint8_t>(s);
-        } catch (const std::exception& ex) {
-            LOG(ERROR) << "Invalid ip string: \"" << ipStr << "\"";
-            return false;
-        }
-    }
-
-    return true;
-}
-
-
 std::string intToIp(uint32_t ip) {
     std::deque<std::string> parts;
     for (int i = 0; i < 4; i++) {
@@ -46,25 +24,6 @@ std::string intToIp(uint32_t ip) {
     return folly::join(".", parts);
 }
 
-
-BENCHMARK_DRAW_LINE();
-
-BENCHMARK(shared_ipToInt, iters) {
-    std::string ipStr("10.20.30.40");
-    nebula::IPv4 ipInt;
-    for (uint32_t i = 0; i < iters; i++) {
-        ipToInt(ipStr, ipInt);
-        folly::doNotOptimizeAway(ipInt);
-    }
-}
-BENCHMARK_RELATIVE(ipv4ToInt, iters) {
-    std::string ipStr("10.20.30.40");
-    nebula::IPv4 ipInt;
-    for (uint32_t i = 0; i < iters; i++) {
-        NetworkUtils::ipv4ToInt(ipStr, ipInt);
-        folly::doNotOptimizeAway(ipInt);
-    }
-}
 
 BENCHMARK_DRAW_LINE();
 

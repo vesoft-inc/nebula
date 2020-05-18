@@ -63,18 +63,6 @@ TEST(NetworkUtils, listDeviceAndIPv4s) {
 }
 
 
-TEST(NetworkUtils, intIPv4Conversion) {
-    IPv4 ip;
-    ASSERT_TRUE(NetworkUtils::ipv4ToInt("127.0.0.1", ip));
-    EXPECT_EQ(NetworkUtils::intToIPv4(ip), "127.0.0.1");
-
-    ip = 0x11223344;
-    IPv4 converted;
-    ASSERT_TRUE(NetworkUtils::ipv4ToInt(NetworkUtils::intToIPv4(ip), converted));
-    EXPECT_EQ(converted, ip);
-}
-
-
 TEST(NetworkUtils, getDynamicPortRange) {
     uint16_t low, high;
     ASSERT_TRUE(NetworkUtils::getDynamicPortRange(low, high));
@@ -87,38 +75,16 @@ TEST(NetworkUtils, getAvailablePort) {
     ASSERT_GT(port, 0);
 }
 
-TEST(NetworkUtils, toHostAddr) {
-    auto s = NetworkUtils::resolveHost("localhost", 1200);
-    ASSERT_TRUE(s.ok());
-    auto addr = s.value();
-    IPv4 ip;
-    ASSERT_TRUE(NetworkUtils::ipv4ToInt("127.0.0.1", ip));
-    ASSERT_EQ(addr[0].ip, ip);
-    ASSERT_EQ(addr[0].port, 1200);
-
-    auto s2 = NetworkUtils::toHostAddr("8.8.8.8", 1300);
-    ASSERT_TRUE(s2.ok());
-    auto addr2 = s2.value();
-
-    ASSERT_TRUE(NetworkUtils::ipv4ToInt("8.8.8.8", ip));
-    ASSERT_EQ(addr2.ip, ip);
-    ASSERT_EQ(addr2.port, 1300);
-
-    s2 = NetworkUtils::toHostAddr("a.b.c.d:a23", 1200);
-    ASSERT_FALSE(s2.ok());
-}
 
 TEST(NetworkUtils, toHosts) {
     auto s = NetworkUtils::toHosts("localhost:1200, 127.0.0.1:1200");
     ASSERT_TRUE(s.ok());
     auto addr = s.value();
 
-    IPv4 ip;
-    ASSERT_TRUE(NetworkUtils::ipv4ToInt("127.0.0.1", ip));
-    ASSERT_EQ(addr[0].ip, ip);
+    ASSERT_EQ(addr[0].host, "localhost");
     ASSERT_EQ(addr[0].port, 1200);
 
-    ASSERT_EQ(addr[1].ip, ip);
+    ASSERT_EQ(addr[1].host, "127.0.0.1");
     ASSERT_EQ(addr[1].port, 1200);
 
     s = NetworkUtils::toHosts("1.1.2.3:123, a.b.c.d:a23");

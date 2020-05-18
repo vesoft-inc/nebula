@@ -18,7 +18,6 @@ using GraphSpaceID = int32_t;
 using PartitionID = int32_t;
 using TermID = int64_t;
 using LogID = int64_t;
-using IPv4 = int32_t;
 using Port = int32_t;
 
 // Starting from 2.0, both string and int64 vertex ids will be supported.

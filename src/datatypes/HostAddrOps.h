@@ -1,6 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
+ * obj source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
@@ -26,13 +26,13 @@ struct TccStructTraits<nebula::HostAddr> {
             MAYBE_UNUSED folly::StringPiece _fname,
             MAYBE_UNUSED int16_t& fid,
             MAYBE_UNUSED apache::thrift::protocol::TType& _ftype) {
-        if (_fname == "ip") {
-            fid = 1;
-            _ftype = apache::thrift::protocol::T_I32;
+        if (_fname == "host") {
+          fid = 1;
+          _ftype = apache::thrift::protocol::T_STRING;
         } else if (_fname == "port") {
-            fid = 2;
-            _ftype = apache::thrift::protocol::T_I32;
-        }
+          fid = 2;
+          _ftype = apache::thrift::protocol::T_I32;
+       }
     }
 };
 
@@ -57,9 +57,8 @@ uint32_t Cpp2Ops<nebula::HostAddr>::write(Protocol* proto, nebula::HostAddr cons
     uint32_t xfer = 0;
     xfer += proto->writeStructBegin("HostAddr");
 
-    xfer += proto->writeFieldBegin("ip", apache::thrift::protocol::T_I32, 1);
-    xfer += detail::pm::protocol_methods<type_class::integral, nebula::IPv4>
-        ::write(*proto, obj->ip);
+    xfer += proto->writeFieldBegin("host", apache::thrift::protocol::T_STRING, 1);
+    xfer += proto->writeString(obj->host);
     xfer += proto->writeFieldEnd();
 
     xfer += proto->writeFieldBegin("port", apache::thrift::protocol::T_I32, 2);
@@ -82,14 +81,13 @@ void Cpp2Ops<nebula::HostAddr>::read(Protocol* proto, nebula::HostAddr* obj) {
 
     using apache::thrift::TProtocolException;
 
-    if (UNLIKELY(!readState.advanceToNextField(proto, 0, 1, protocol::T_I32))) {
+    if (UNLIKELY(!readState.advanceToNextField(proto, 0, 1, protocol::T_STRING))) {
         goto _loop;
     }
 
-_readField_ip:
+_readField_host:
     {
-        detail::pm::protocol_methods<type_class::integral, nebula::IPv4>
-            ::read(*proto, obj->ip);
+        proto->readString(obj->host);
     }
 
     if (UNLIKELY(!readState.advanceToNextField(proto, 1, 2, protocol::T_I32))) {
@@ -115,16 +113,19 @@ _loop:
     if (readState.fieldType == apache::thrift::protocol::T_STOP) {
         goto _end;
     }
+
     if (proto->kUsesFieldNames()) {
         detail::TccStructTraits<nebula::HostAddr>::translateFieldName(
-            readState.fieldName(), readState.fieldId, readState.fieldType);
+            readState.fieldName(),
+            readState.fieldId,
+            readState.fieldType);
     }
 
     switch (readState.fieldId) {
         case 1:
         {
-            if (LIKELY(readState.fieldType == apache::thrift::protocol::T_I32)) {
-                goto _readField_ip;
+            if (LIKELY(readState.fieldType == apache::thrift::protocol::T_STRING)) {
+                goto _readField_host;
             } else {
                 goto _skip;
             }
@@ -156,9 +157,8 @@ uint32_t Cpp2Ops<nebula::HostAddr>::serializedSize(Protocol const* proto,
     uint32_t xfer = 0;
     xfer += proto->serializedStructSize("HostAddr");
 
-    xfer += proto->serializedFieldSize("ip", apache::thrift::protocol::T_I32, 1);
-    xfer += detail::pm::protocol_methods<type_class::integral, nebula::IPv4>
-        ::serializedSize<false>(*proto, obj->ip);
+    xfer += proto->serializedFieldSize("host", apache::thrift::protocol::T_STRING, 1);
+    xfer += proto->serializedSizeString(obj->host);
 
     xfer += proto->serializedFieldSize("port", apache::thrift::protocol::T_I32, 2);
     xfer += detail::pm::protocol_methods<type_class::integral, nebula::Port>
@@ -176,9 +176,8 @@ uint32_t Cpp2Ops<nebula::HostAddr>::serializedSizeZC(Protocol const* proto,
     uint32_t xfer = 0;
     xfer += proto->serializedStructSize("HostAddr");
 
-    xfer += proto->serializedFieldSize("ip", apache::thrift::protocol::T_I32, 1);
-    xfer += detail::pm::protocol_methods<type_class::integral, nebula::IPv4>
-        ::serializedSize<false>(*proto, obj->ip);
+    xfer += proto->serializedFieldSize("host", apache::thrift::protocol::T_STRING, 1);
+    xfer += proto->serializedSizeString(obj->host);
 
     xfer += proto->serializedFieldSize("port", apache::thrift::protocol::T_I32, 2);
     xfer += detail::pm::protocol_methods<type_class::integral, nebula::Port>

@@ -15,14 +15,15 @@ namespace nebula {
 
 // Host address type and utility functions
 struct HostAddr {
-    IPv4 ip;
-    Port port;
+    std::string host;
+    Port        port;
 
-    HostAddr() : ip(0), port(0) {}
-    HostAddr(IPv4 a, Port p) : ip(a), port(p) {}
+    HostAddr() : host(), port(0) {}
+    HostAddr(std::string&& h, Port p) : host(std::move(h)), port(p) {}
+    HostAddr(const std::string& h, Port p) : host(h), port(p) {}
 
     void clear() {
-        ip = 0;
+        host.clear();
         port = 0;
     }
 
@@ -44,7 +45,7 @@ namespace std {
 template<>
 struct hash<nebula::HostAddr> {
     std::size_t operator()(const nebula::HostAddr& h) const noexcept {
-        int64_t code = folly::hash::fnv32_buf(&(h.ip), sizeof(nebula::IPv4));
+        int64_t code = folly::hash::fnv32_buf(&(h.host.data()), h.host.size());
         code <<= 32;
         code |= folly::hash::fnv32_buf(&(h.port), sizeof(nebula::Port));
         return code;

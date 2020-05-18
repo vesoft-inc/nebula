@@ -33,7 +33,7 @@ namespace stats {
  *   <counter_name>.<statistic_type>.<time_range>
  *
  * Here are some examples:
- *   query.rate.5       -- query per second in the five seconds 
+ *   query.rate.5       -- query per second in the five seconds
  *   query.rate.60      -- query per second in the last minute
  *   latency.p99.600    -- The latency that slower than 99% of all queries
  *                           in the last ten minutes

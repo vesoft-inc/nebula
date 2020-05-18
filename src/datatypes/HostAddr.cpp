@@ -10,19 +10,13 @@
 namespace nebula {
 
 std::ostream& operator <<(std::ostream &os, const HostAddr &addr) {
-    uint32_t ip = addr.ip;
-    uint32_t port = addr.port;
-    os << folly::stringPrintf("[%u.%u.%u.%u:%u]",
-                              (ip >> 24) & 0xFF,
-                              (ip >> 16) & 0xFF,
-                              (ip >> 8) & 0xFF,
-                              ip & 0xFF, port);
+    os << folly::stringPrintf("[%s:%u]", addr.host.c_str(), addr.port);
     return os;
 }
 
 
 bool HostAddr::operator==(const HostAddr& rhs) const {
-    return ip == rhs.ip && port == rhs.port;
+    return host == rhs.host && port == rhs.port;
 }
 
 bool HostAddr::operator!=(const HostAddr& rhs) const {
@@ -30,10 +24,10 @@ bool HostAddr::operator!=(const HostAddr& rhs) const {
 }
 
 bool HostAddr::operator<(const HostAddr& rhs) const {
-    if (ip == rhs.ip) {
+    if (host == rhs.host) {
         return port < rhs.port;
     }
-    return ip < rhs.ip;
+    return host < rhs.host;
 }
 }  // namespace nebula
 
