@@ -1,6 +1,7 @@
 set(GRAPH_TEST_LIBS
     $<TARGET_OBJECTS:graph_obj>
     $<TARGET_OBJECTS:graph_thrift_obj>
+    $<TARGET_OBJECTS:kvstore_storage_utils_obj>
     $<TARGET_OBJECTS:storage_service_handler>
     $<TARGET_OBJECTS:storage_client>
     $<TARGET_OBJECTS:storage_thrift_obj>
@@ -401,6 +402,26 @@ nebula_add_test(
         TTLTest.cpp
     OBJECTS
         ${GRAPH_TEST_CLIENT_LIBS}
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        proxygenlib
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    DISABLED
+    NAME
+        cloud_account_auth_test
+    SOURCES
+        CloudAccountAuthTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:adHocIndex_obj>
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}

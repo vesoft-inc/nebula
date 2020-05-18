@@ -119,7 +119,10 @@ std::unique_ptr<RowReader> RowReader::getTagPropReader(
         folly::StringPiece row,
         GraphSpaceID space,
         TagID tag) {
-    CHECK_NOTNULL(schemaMan);
+    if (schemaMan == nullptr) {
+        LOG(ERROR) << "schemaMan should not be nullptr!";
+        return nullptr;
+    }
     int32_t ver = getSchemaVer(row);
     if (ver >= 0) {
         auto schema = schemaMan->getTagSchema(space, tag, ver);
@@ -130,9 +133,7 @@ std::unique_ptr<RowReader> RowReader::getTagPropReader(
             row,
             schema));
     } else {
-        // Invalid data
-        // TODO We need a better error handler here
-        LOG(FATAL) << "Invalid schema version in the row data!";
+        LOG(WARNING) << "Invalid schema version in the row data!";
         return nullptr;
     }
 }
@@ -144,16 +145,21 @@ std::unique_ptr<RowReader> RowReader::getEdgePropReader(
         folly::StringPiece row,
         GraphSpaceID space,
         EdgeType edge) {
-    CHECK_NOTNULL(schemaMan);
+    if (schemaMan == nullptr) {
+        LOG(ERROR) << "schemaMan should not be nullptr!";
+        return nullptr;
+    }
     int32_t ver = getSchemaVer(row);
     if (ver >= 0) {
+        auto schema = schemaMan->getEdgeSchema(space, edge, ver);
+        if (schema == nullptr) {
+            return nullptr;
+        }
         return std::unique_ptr<RowReader>(new RowReader(
             row,
-            schemaMan->getEdgeSchema(space, edge, ver)));
+            schema));
     } else {
-        // Invalid data
-        // TODO We need a better error handler here
-        LOG(FATAL) << "Invalid schema version in the row data!";
+        LOG(WARNING) << "Invalid schema version in the row data!";
         return nullptr;
     }
 }
@@ -173,7 +179,7 @@ int32_t RowReader::getSchemaVer(folly::StringPiece row) {
     const uint8_t* it = reinterpret_cast<const uint8_t*>(row.begin());
     if (reinterpret_cast<const char*>(it) == row.end()) {
         LOG(ERROR) << "Row data is empty, so there is no schema version";
-        return 0;
+        return -1;
     }
 
     // The first three bits indicate the number of bytes for the
@@ -185,7 +191,7 @@ int32_t RowReader::getSchemaVer(folly::StringPiece row) {
         if (verBytes + 1 > row.size()) {
             // Data is too short
             LOG(ERROR) << "Row data is too short";
-            return 0;
+            return -1;
         }
         // Schema Version is stored in Little Endian
         for (size_t i = 0; i < verBytes; i++) {

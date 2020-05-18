@@ -565,6 +565,40 @@ TEST_F(GroupByLimitTest, EmptyInput) {
 
         ASSERT_EQ(nullptr, resp.get_rows());
     }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "YIELD $^.player.name as name, serve.start_year as start, $$.team.name as team "
+                    "| YIELD $-.name as name WHERE $-.start > 20000 "
+                    "| GROUP BY $-.name YIELD $-.name AS name";
+        auto query = folly::stringPrintf(fmt, players_["Marco Belinelli"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "YIELD $^.player.name as name, serve.start_year as start, $$.team.name as team "
+                    "| YIELD $-.name as name WHERE $-.start > 20000 "
+                    "| Limit 1";
+        auto query = folly::stringPrintf(fmt, players_["Marco Belinelli"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
 }
 
 TEST_F(GroupByLimitTest, DuplicateColumn) {

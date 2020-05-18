@@ -170,7 +170,7 @@ private:
     3. Update the code style.
     4. Add stats
     5. Avoid some extra copies
-    6. Support right reference for insert.
+    6. Support rvalue reference for insert.
 */
 template<class Key, class Value>
 class LRU {

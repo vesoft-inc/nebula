@@ -68,7 +68,7 @@ class AppendLogsIterator;
  * otherwise it will return the new operation's encoded string whick should be applied atomically.
  * You could implement CAS, READ-MODIFY-WRITE operations though it.
  * */
-using AtomicOp = folly::Function<std::string(void)>;
+using AtomicOp = folly::Function<folly::Optional<std::string>(void)>;
 
 class RaftPart : public std::enable_shared_from_this<RaftPart> {
     friend class AppendLogsIterator;
@@ -211,6 +211,8 @@ public:
 
     bool leaseValid();
 
+    bool needToCleanWal();
+
 protected:
     // Protected constructor to prevent from instantiating directly
     RaftPart(ClusterID clusterId,
@@ -331,8 +333,6 @@ private:
     bool needToCleanupSnapshot();
 
     void cleanupSnapshot();
-
-    bool needToCleanWal();
 
     // The method sends out AskForVote request
     // It return true if a leader is elected, otherwise returns false

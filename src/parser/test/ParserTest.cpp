@@ -1398,6 +1398,13 @@ TEST(Parser, Annotation) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.status().isStatementEmpty());
     }
+    // need use space after "--"
+    {
+        GQLParser parser;
+        std::string query = "--test comment....";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
     {
         GQLParser parser;
         std::string query = "-- test comment....";
@@ -1939,6 +1946,35 @@ TEST(Parser, ErrorMsg) {
         ASSERT_FALSE(result.ok());
         auto error = "SyntaxError: Out of range: near `01000000000000000000000'";
         ASSERT_EQ(error, result.status().toString());
+    }
+}
+
+TEST(Parser, UseReservedKeyword) {
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG tag()";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+
+        query = "CREATE TAG `tag`()";
+        result = parser.parse(query);
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE EDGE edge()";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+
+        query = "CREATE EDGE `edge`()";
+        result = parser.parse(query);
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG `person`(`tag` string)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok());
     }
 }
 }   // namespace nebula

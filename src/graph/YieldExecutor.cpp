@@ -89,12 +89,7 @@ Status YieldExecutor::prepareYield() {
         }
 
         // such as YIELD 1+1, it has not type in schema, the type from the eval()
-        colTypes_.emplace_back(nebula::cpp2::SupportedType::UNKNOWN);
-        if (col->expr()->isTypeCastingExpression()) {
-            // type cast
-            auto exprPtr = static_cast<TypeCastingExpression*>(col->expr());
-            colTypes_.back() = SchemaHelper::columnTypeToSupportedType(exprPtr->getType());
-        }
+        colTypes_.emplace_back(calculateExprType(col->expr()));
     }
 
     return Status::OK();
@@ -138,7 +133,6 @@ Status YieldExecutor::syntaxCheck() {
 }
 
 void YieldExecutor::execute() {
-    FLOG_INFO("Executing YIELD: %s", sentence_->toString().c_str());
     Status status;
     do {
         status = beforeExecute();

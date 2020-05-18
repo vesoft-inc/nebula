@@ -376,13 +376,13 @@ MetaServiceHandler::future_listConfigs(const cpp2::ListConfigsReq &req) {
 
 folly::Future<cpp2::ExecResp>
 MetaServiceHandler::future_createSnapshot(const cpp2::CreateSnapshotReq& req) {
-    auto* processor = CreateSnapshotProcessor::instance(kvstore_);
+    auto* processor = CreateSnapshotProcessor::instance(kvstore_, adminClient_.get());
     RETURN_FUTURE(processor);
 }
 
 folly::Future<cpp2::ExecResp>
 MetaServiceHandler::future_dropSnapshot(const cpp2::DropSnapshotReq& req) {
-    auto* processor = DropSnapshotProcessor::instance(kvstore_);
+    auto* processor = DropSnapshotProcessor::instance(kvstore_, adminClient_.get());
     RETURN_FUTURE(processor);
 }
 
