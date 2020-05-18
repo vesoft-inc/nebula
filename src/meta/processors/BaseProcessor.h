@@ -148,7 +148,7 @@ protected:
      * Scan keys from start to end, doesn't contain end.
      * */
     StatusOr<std::vector<std::string>> doScan(const std::string& start,
-                                               const std::string& end);
+                                              const std::string& end);
     /**
      * General multi remove function.
      * */
