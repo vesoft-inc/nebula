@@ -39,7 +39,7 @@ DEFINE_string(meta_server_addrs,
               "It is a list of IPs split by comma, used in cluster deployment"
               "the ips number is equal to the replica number."
               "If empty, it means it's a single node");
-DEFINE_string(local_ip, "", "Local ip specified for NetworkUtils::getLocalIP");
+// DEFINE_string(local_ip, "", "Local ip specified for NetworkUtils::getLocalIP");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
 DEFINE_int32(meta_http_thread_num, 3, "Number of meta daemon's http thread");
 DEFINE_int32(num_worker_threads, 32, "Number of workers");
@@ -102,7 +102,7 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
             return nullptr;
         }
         leader = nebula::value(ret);
-        if (leader != nebula::HostAddr(0, 0)) {
+        if (leader != nebula::HostAddr("", 0)) {
             break;
         }
         LOG(INFO) << "Leader has not been elected, sleep 1s";
@@ -201,17 +201,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    auto result = nebula::network::NetworkUtils::getLocalIP(FLAGS_local_ip);
-    if (!result.ok()) {
-        LOG(ERROR) << "Get local ip failed! status:" << result.status();
-        return EXIT_FAILURE;
-    }
-    auto hostAddrRet = nebula::network::NetworkUtils::toHostAddr(result.value(), FLAGS_port);
-    if (!hostAddrRet.ok()) {
-        LOG(ERROR) << "Bad local host addr, status:" << hostAddrRet.status();
-        return EXIT_FAILURE;
-    }
-    auto& localhost = hostAddrRet.value();
+    nebula::HostAddr localhost{nebula::network::NetworkUtils::getHostname(), FLAGS_port};
     auto peersRet = nebula::network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
     if (!peersRet.ok()) {
         LOG(ERROR) << "Can't get peers address, status:" << peersRet.status();

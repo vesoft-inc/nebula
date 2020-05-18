@@ -216,7 +216,7 @@ RaftPart::RaftPart(
         , addr_{localAddr}
         , status_{Status::STARTING}
         , role_{Role::FOLLOWER}
-        , leader_{0, 0}
+        , leader_{"", 0}
         , ioThreadPool_{pool}
         , bgWorkers_{workers}
         , executor_(executor)
@@ -330,7 +330,7 @@ void RaftPart::stop() {
     {
         std::unique_lock<std::mutex> lck(raftLock_);
         status_ = Status::STOPPED;
-        leader_ = {0, 0};
+        leader_ = {"", 0};
         role_ = Role::FOLLOWER;
 
         hosts = std::move(hosts_);
@@ -393,7 +393,7 @@ void RaftPart::preProcessTransLeader(const HostAddr& target) {
     LOG(INFO) << idStr_ << "Pre process transfer leader to " << target;
     switch (role_) {
         case Role::FOLLOWER: {
-            if (target != addr_ && target != HostAddr(0, 0)) {
+            if (target != addr_ && target != HostAddr("", 0)) {
                 LOG(INFO) << idStr_ << "I am follower, just wait for the new leader.";
             } else {
                 LOG(INFO) << idStr_ << "I will be the new leader, trigger leader election now!";
@@ -401,7 +401,7 @@ void RaftPart::preProcessTransLeader(const HostAddr& target) {
                     {
                         std::unique_lock<std::mutex> lck(self->raftLock_);
                         self->role_ = Role::CANDIDATE;
-                        self->leader_ = HostAddr(0, 0);
+                        self->leader_ = HostAddr("", 0);
                     }
                     self->leaderElection();
                 });
@@ -428,7 +428,7 @@ void RaftPart::commitTransLeader(const HostAddr& target) {
                 if (iter != hosts_.end()) {
                     lastMsgRecvDur_.reset();
                     role_ = Role::FOLLOWER;
-                    leader_ = HostAddr(0, 0);
+                    leader_ = HostAddr("", 0);
                     LOG(INFO) << idStr_ << "Give up my leadership!";
                 }
             } else {
@@ -985,7 +985,7 @@ bool RaftPart::needToStartElection() {
                   << lastMsgRecvDur_.elapsedInMSec()
                   << ", term " << term_;
         role_ = Role::CANDIDATE;
-        leader_ = HostAddr(0, 0);
+        leader_ = HostAddr("", 0);
     }
 
     return role_ == Role::CANDIDATE;
@@ -1027,7 +1027,7 @@ bool RaftPart::prepareElectionRequest(
 
     req.set_space(spaceId_);
     req.set_part(partId_);
-    req.set_candidate_ip(addr_.ip);
+    req.set_candidate_addr(addr_.host);
     req.set_candidate_port(addr_.port);
     req.set_term(++proposedTerm_);  // Bump up the proposed term
     req.set_last_log_id(lastLogId_);
@@ -1121,7 +1121,7 @@ bool RaftPart::leaderElection() {
               << ", lastLogId = " << voteReq.get_last_log_id()
               << ", lastLogTerm = " << voteReq.get_last_log_term()
               << ", candidateIP = "
-              << NetworkUtils::intToIPv4(voteReq.get_candidate_ip())
+              << voteReq.get_candidate_addr()
               << ", candidatePort = " << voteReq.get_candidate_port()
               << ")";
 
@@ -1277,7 +1277,7 @@ void RaftPart::processAskForVoteRequest(
               << ": space = " << req.get_space()
               << ", partition = " << req.get_part()
               << ", candidateAddr = "
-              << NetworkUtils::intToIPv4(req.get_candidate_ip()) << ":"
+              << req.get_candidate_addr() << ":"
               << req.get_candidate_port()
               << ", term = " << req.get_term()
               << ", lastLogId = " << req.get_last_log_id()
@@ -1315,8 +1315,8 @@ void RaftPart::processAskForVoteRequest(
         return;
     }
 
-    auto candidate = HostAddr(req.get_candidate_ip(), req.get_candidate_port());
-    if (role_ == Role::FOLLOWER && leader_ != HostAddr(0, 0) && leader_ != candidate &&
+    auto candidate = HostAddr(req.get_candidate_addr(), req.get_candidate_port());
+    if (role_ == Role::FOLLOWER && leader_ != HostAddr("", 0) && leader_ != candidate &&
         lastMsgRecvDur_.elapsedInMSec() < FLAGS_raft_heartbeat_interval_secs * 1000) {
         LOG(INFO) << idStr_ << "I believe the leader exists. "
                   << "Refuse to vote for " << candidate;
@@ -1379,7 +1379,7 @@ void RaftPart::processAskForVoteRequest(
     TermID oldTerm = term_;
     role_ = Role::FOLLOWER;
     term_ = proposedTerm_ = req.get_term();
-    leader_ = HostAddr(req.get_candidate_ip(),
+    leader_ = HostAddr(req.get_candidate_addr(),
                        req.get_candidate_port());
 
     // Reset the last message time
@@ -1418,7 +1418,7 @@ void RaftPart::processAppendLogRequest(
                   << "Received logAppend "
                   << ": GraphSpaceId = " << req.get_space()
                   << ", partition = " << req.get_part()
-                  << ", leaderIp = " << req.get_leader_ip()
+                  << ", leaderIp = " << req.get_leader_addr()
                   << ", leaderPort = " << req.get_leader_port()
                   << ", current_term = " << req.get_current_term()
                   << ", lastLogId = " << req.get_last_log_id()
@@ -1438,7 +1438,7 @@ void RaftPart::processAppendLogRequest(
     std::lock_guard<std::mutex> g(raftLock_);
 
     resp.set_current_term(term_);
-    resp.set_leader_ip(leader_.ip);
+    resp.set_leader_addr(leader_.host);
     resp.set_leader_port(leader_.port);
     resp.set_committed_log_id(committedLogId_);
     resp.set_last_log_id(lastLogId_ < committedLogId_ ? committedLogId_ : lastLogId_);
@@ -1622,7 +1622,7 @@ void RaftPart::processAppendLogRequest(
 cpp2::ErrorCode RaftPart::verifyLeader(
         const cpp2::AppendLogRequest& req) {
     CHECK(!raftLock_.try_lock());
-    auto candidate = HostAddr(req.get_leader_ip(), req.get_leader_port());
+    auto candidate = HostAddr(req.get_leader_addr(), req.get_leader_port());
     auto hosts = followers();
     auto it = std::find_if(hosts.begin(), hosts.end(), [&candidate] (const auto& h){
                 return h->address() == candidate;
@@ -1632,7 +1632,7 @@ cpp2::ErrorCode RaftPart::verifyLeader(
         return cpp2::ErrorCode::E_WRONG_LEADER;
     }
 
-    if (role_ == Role::FOLLOWER && leader_ != HostAddr(0, 0) && leader_ != candidate &&
+    if (role_ == Role::FOLLOWER && leader_ != HostAddr("", 0) && leader_ != candidate &&
         lastMsgRecvDur_.elapsedInMSec() < FLAGS_raft_heartbeat_interval_secs * 1000) {
         LOG(INFO) << idStr_ << "I believe the leader " << leader_ << " exists. "
                   << "Refuse to append logs of " << candidate;
@@ -1644,7 +1644,7 @@ cpp2::ErrorCode RaftPart::verifyLeader(
         case Role::LEARNER:
         case Role::FOLLOWER: {
             if (req.get_current_term() == term_ &&
-                req.get_leader_ip() == leader_.ip &&
+                req.get_leader_addr() == leader_.host &&
                 req.get_leader_port() == leader_.port) {
                 VLOG(3) << idStr_ << "Same leader";
                 return cpp2::ErrorCode::SUCCEEDED;
@@ -1673,7 +1673,7 @@ cpp2::ErrorCode RaftPart::verifyLeader(
         return cpp2::ErrorCode::E_TERM_OUT_OF_DATE;
     }
     if (role_ == Role::FOLLOWER || role_ == Role::LEARNER) {
-        if (req.get_current_term() == term_ && leader_ != HostAddr(0, 0)) {
+        if (req.get_current_term() == term_ && leader_ != HostAddr("", 0)) {
             LOG(ERROR) << idStr_ << "The local term is same as remote term " << term_
                        << ". But I believe leader exists.";
             return cpp2::ErrorCode::E_TERM_OUT_OF_DATE;
@@ -1685,14 +1685,14 @@ cpp2::ErrorCode RaftPart::verifyLeader(
     // Ok, no reason to refuse, just follow the leader
     LOG(INFO) << idStr_ << "The current role is " << roleStr(role_)
               << ". Will follow the new leader "
-              << network::NetworkUtils::intToIPv4(req.get_leader_ip())
+              << req.get_leader_addr()
               << ":" << req.get_leader_port()
               << " [Term: " << req.get_current_term() << "]";
 
     if (role_ != Role::LEARNER) {
         role_ = Role::FOLLOWER;
     }
-    leader_ = HostAddr(req.get_leader_ip(),
+    leader_ = HostAddr(req.get_leader_addr(),
                        req.get_leader_port());
     term_ = proposedTerm_ = req.get_current_term();
     weight_ = 1;
@@ -1739,7 +1739,7 @@ void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
         resp.set_error_code(cpp2::ErrorCode::E_BAD_STATE);
         return;
     }
-    if (UNLIKELY(leader_ != HostAddr(req.get_leader_ip(), req.get_leader_port())
+    if (UNLIKELY(leader_ != HostAddr(req.get_leader_addr(), req.get_leader_port())
             || term_ != req.get_term())) {
         LOG(ERROR) << idStr_ << "Term out of date, current term " << term_
                    << ", received term " << req.get_term();

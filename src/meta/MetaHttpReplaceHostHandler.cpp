@@ -46,20 +46,11 @@ void MetaHttpReplaceHostHandler::onRequest(std::unique_ptr<HTTPMessage> headers)
         return;
     }
 
-    std::string sFrom = headers->getQueryParam("from");
-    if (!nebula::network::NetworkUtils::ipv4ToInt(sFrom, ipv4From_)) {
-        err_ = HttpCode::E_ILLEGAL_ARGUMENT;
-        errMsg_ = folly::stringPrintf("invalid argument from=%s", sFrom.c_str());
-    }
+    ipv4From_ = headers->getQueryParam("from");
 
-    std::string sTo = headers->getQueryParam("to");
-    if (!nebula::network::NetworkUtils::ipv4ToInt(sTo, ipv4To_)) {
-        err_ = HttpCode::E_ILLEGAL_ARGUMENT;
-        errMsg_ = folly::stringPrintf("invalid argument to=%s", sTo.c_str());
-    }
+    ipv4To_ = headers->getQueryParam("to");
 
-    LOG(INFO) << folly::stringPrintf("change host info in metadata from %s to %s",
-                                     sFrom.c_str(), sTo.c_str());
+    LOG(INFO) << folly::format("change host info from {} to {}", ipv4From_, ipv4To_);
 }
 
 void MetaHttpReplaceHostHandler::onBody(std::unique_ptr<folly::IOBuf>) noexcept {
@@ -117,7 +108,7 @@ void MetaHttpReplaceHostHandler::onError(ProxygenError error) noexcept {
                << proxygen::getErrorString(error);
 }
 
-bool MetaHttpReplaceHostHandler::replaceHost(IPv4 ipv4From, IPv4 ipv4To) {
+bool MetaHttpReplaceHostHandler::replaceHost(std::string ipv4From, std::string ipv4To) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
     const auto& spacePrefix = MetaServiceUtils::spacePrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
@@ -150,9 +141,9 @@ bool MetaHttpReplaceHostHandler::replaceHost(IPv4 ipv4From, IPv4 ipv4To) {
             bool needUpdate = false;
             auto partHosts = MetaServiceUtils::parsePartVal(iter->val());
             for (auto& host : partHosts) {
-                if (host.ip == ipv4From) {
+                if (host.host == ipv4From) {
                     needUpdate = true;
-                    host.ip = ipv4To;
+                    host.host = ipv4To;
                 }
             }
             if (needUpdate) {

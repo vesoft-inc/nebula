@@ -341,7 +341,7 @@ void Balancer::getHostParts(GraphSpaceID spaceId,
         memcpy(&partId, key.data() + prefix.size(), sizeof(PartitionID));
         auto partHosts = MetaServiceUtils::parsePartVal(iter->val());
         for (auto& ph : partHosts) {
-            hostParts[HostAddr(ph.ip, ph.port)].emplace_back(partId);
+            hostParts[ph].emplace_back(partId);
         }
         iter->next();
         totalParts++;
@@ -496,11 +496,7 @@ Balancer::buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap, GraphSpaceID spac
             auto key = iter->key();
             PartitionID partId;
             memcpy(&partId, key.data() + prefix.size(), sizeof(PartitionID));
-            auto thriftPeers = MetaServiceUtils::parsePartVal(iter->val());
-            std::vector<HostAddr> peers;
-            peers.resize(thriftPeers.size());
-            std::transform(thriftPeers.begin(), thriftPeers.end(), peers.begin(),
-                           [] (const auto& h) { return HostAddr(h.ip, h.port); });
+            auto peers = MetaServiceUtils::parsePartVal(iter->val());
             peersMap[partId] = std::move(peers);
             ++leaderParts;
             iter->next();
@@ -597,9 +593,9 @@ int32_t Balancer::acquireLeaders(
                     hostLeaders.emplace_back(partId);
                     plan.emplace_back(spaceId, partId, peer, host);
                     LOG(INFO) << "plan trans leader: " << spaceId << " " << partId << " from "
-                              << network::NetworkUtils::intToIPv4(peer.ip) << ":"
+                              << peer.host
                               << peer.port << " to "
-                              << network::NetworkUtils::intToIPv4(host.ip)
+                              << host.host
                               << ":" << host.port;
                     ++taskCount;
                     break;
@@ -641,9 +637,9 @@ int32_t Balancer::giveupLeaders(
                 peerLeaders.emplace_back(partId);
                 plan.emplace_back(spaceId, partId, host, peer);
                 LOG(INFO) << "plan trans leader: " << spaceId << " " << partId << " host "
-                    << network::NetworkUtils::intToIPv4(host.ip) << ":"
+                    << host.host << ":"
                     << host.port << " peer "
-                    << network::NetworkUtils::intToIPv4(peer.ip)
+                    << peer.host
                     << ":" << peer.port;
                 ++taskCount;
                 transfered = true;

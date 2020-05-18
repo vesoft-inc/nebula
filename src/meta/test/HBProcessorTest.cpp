@@ -25,7 +25,7 @@ TEST(HBProcessorTest, HBTest) {
         for (auto i = 0; i < 5; i++) {
             cpp2::HBReq req;
             req.set_in_storaged(true);
-            req.set_host(HostAddr(i, i));
+            req.set_host(HostAddr(std::to_string(i), i));
             req.set_cluster_id(kClusterId);
             req.set_in_storaged(true);
             auto* processor = HBProcessor::instance(kv.get(), kClusterId);
@@ -41,7 +41,7 @@ TEST(HBProcessorTest, HBTest) {
 
         LOG(INFO) << "Test for invalid host!";
         cpp2::HBReq req;
-        req.set_host(HostAddr(11, 11));
+        req.set_host(HostAddr(std::to_string(11), 11));
         req.set_cluster_id(1);
         req.set_in_storaged(true);
         auto* processor = HBProcessor::instance(kv.get());

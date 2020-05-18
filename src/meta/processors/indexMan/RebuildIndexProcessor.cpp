@@ -56,20 +56,15 @@ void RebuildIndexProcessor::processInternal(const cpp2::RebuildIndexReq& req) {
     std::vector<folly::Future<Status>> results;
     auto activeHosts = ActiveHostsMan::getActiveHosts(kvstore_, FLAGS_heartbeat_interval_secs + 1);
     while (leaderIter->valid()) {
-        auto host = MetaServiceUtils::parseLeaderKey(leaderIter->key());
-        auto ip = NetworkUtils::intToIPv4(host.ip);
-        auto port = host.port;
-        auto hostAddrRet = NetworkUtils::toHostAddr(ip, port);
-        if (!hostAddrRet.ok()) {
-            LOG(ERROR) << "Can't cast to host " << ip + ":" << port;
+        auto hostAddr = MetaServiceUtils::parseLeaderKey(leaderIter->key());
+        if (hostAddr.host == "") {
+            LOG(ERROR) << "leader key parse to empty string";
             resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
             onFinished();
             return;
         }
 
-        auto hostAddr = hostAddrRet.value();
-        if (std::find(activeHosts.begin(), activeHosts.end(),
-                      HostAddr(host.ip, host.port)) != activeHosts.end()) {
+        if (std::find(activeHosts.begin(), activeHosts.end(), hostAddr) != activeHosts.end()) {
             auto leaderParts = MetaServiceUtils::parseLeaderVal(leaderIter->val());
             auto& partIds = leaderParts[space];
             auto future = caller(hostAddr, space, indexID, std::move(partIds), isOffline);

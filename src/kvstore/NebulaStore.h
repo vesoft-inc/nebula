@@ -59,17 +59,17 @@ public:
 
     // Calculate the raft service address based on the storage service address
     static HostAddr getRaftAddr(HostAddr srvcAddr) {
-        if (srvcAddr == HostAddr(0, 0)) {
+        if (srvcAddr == HostAddr("", 0)) {
             return srvcAddr;
         }
-        return HostAddr(srvcAddr.ip, srvcAddr.port + 1);
+        return HostAddr(srvcAddr.host, srvcAddr.port + 1);
     }
 
     static HostAddr getStoreAddr(HostAddr raftAddr) {
-        if (raftAddr == HostAddr(0, 0)) {
+        if (raftAddr == HostAddr("", 0)) {
             return raftAddr;
         }
-        return HostAddr(raftAddr.ip, raftAddr.port - 1);
+        return HostAddr(raftAddr.host, raftAddr.port - 1);
     }
 
     // Pull meta information from the PartManager and initiate

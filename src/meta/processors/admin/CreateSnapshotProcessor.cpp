@@ -29,7 +29,7 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
     std::vector<kvstore::KV> data;
     data.emplace_back(MetaServiceUtils::snapshotKey(snapshot),
                       MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::INVALID,
-                                                    NetworkUtils::toHosts(hosts)));
+                                                    NetworkUtils::toHostsStr(hosts)));
 
     auto putRet = doSyncPut(std::move(data));
     if (putRet != kvstore::ResultCode::SUCCEEDED) {
@@ -80,7 +80,7 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
     // step 6 : update snapshot status from INVALID to VALID.
     data.emplace_back(MetaServiceUtils::snapshotKey(snapshot),
                       MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::VALID,
-                                                    NetworkUtils::toHosts(hosts)));
+                                                    NetworkUtils::toHostsStr(hosts)));
 
     putRet = doSyncPut(std::move(data));
     if (putRet != kvstore::ResultCode::SUCCEEDED) {

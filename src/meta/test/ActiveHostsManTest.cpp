@@ -20,12 +20,12 @@ TEST(ActiveHostsManTest, NormalTest) {
     FLAGS_expired_threshold_sec = 2;
     std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
     auto now = time::WallClock::fastNowInMilliSec();
-    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr(0, 0), HostInfo(now));
-    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr(0, 1), HostInfo(now));
-    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr(0, 2), HostInfo(now));
+    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 0), HostInfo(now));
+    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 1), HostInfo(now));
+    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 2), HostInfo(now));
     ASSERT_EQ(3, ActiveHostsMan::getActiveHosts(kv.get()).size());
 
-    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr(0, 0), HostInfo(now + 2000));
+    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 0), HostInfo(now + 2000));
     ASSERT_EQ(3, ActiveHostsMan::getActiveHosts(kv.get()).size());
     {
         const auto& prefix = MetaServiceUtils::hostPrefix();
@@ -36,7 +36,7 @@ TEST(ActiveHostsManTest, NormalTest) {
         while (iter->valid()) {
             auto host = MetaServiceUtils::parseHostKey(iter->key());
             HostInfo info = HostInfo::decode(iter->val());
-            ASSERT_EQ(HostAddr(0, i), HostAddr(host.ip, host.port));
+            ASSERT_EQ(HostAddr("0", i), HostAddr(host.host, host.port));
             if (i == 0) {
                 ASSERT_EQ(HostInfo(now + 2000), info);
             } else {
@@ -58,14 +58,14 @@ TEST(ActiveHostsManTest, LeaderTest) {
     std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
     auto now = time::WallClock::fastNowInMilliSec();
 
-    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr(0, 0), HostInfo(now));
-    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr(0, 1), HostInfo(now));
-    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr(0, 2), HostInfo(now));
+    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 0), HostInfo(now));
+    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 1), HostInfo(now));
+    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 2), HostInfo(now));
     ASSERT_EQ(3, ActiveHostsMan::getActiveHosts(kv.get()).size());
 
     std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
     leaderIds.emplace(1, std::vector<PartitionID>{1, 2, 3});
-    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr(0, 0), HostInfo(now + 2000), &leaderIds);
+    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 0), HostInfo(now + 2000), &leaderIds);
     ASSERT_EQ(3, ActiveHostsMan::getActiveHosts(kv.get()).size());
     {
         const auto& prefix = MetaServiceUtils::leaderPrefix();
@@ -76,7 +76,7 @@ TEST(ActiveHostsManTest, LeaderTest) {
         while (iter->valid()) {
             auto host = MetaServiceUtils::parseLeaderKey(iter->key());
             LeaderParts leaderParts = MetaServiceUtils::parseLeaderVal(iter->val());
-            ASSERT_EQ(HostAddr(0, i), HostAddr(host.ip, host.port));
+            ASSERT_EQ(HostAddr("0", i), HostAddr(host.host, host.port));
             if (i == 0) {
                 ASSERT_EQ(1, leaderParts.size());
                 ASSERT_TRUE(leaderParts.find(1) != leaderParts.end());

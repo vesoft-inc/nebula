@@ -50,8 +50,8 @@ void ListPartsProcessor::process(const cpp2::ListPartsReq& req) {
         std::vector<HostAddr> losts;
         for (auto& host : partItem.get_peers()) {
             if (std::find(activeHosts.begin(), activeHosts.end(),
-                          HostAddr(host.ip, host.port)) == activeHosts.end()) {
-                losts.emplace_back(host.ip, host.port);
+                          HostAddr(host.host, host.port)) == activeHosts.end()) {
+                losts.emplace_back(host.host, host.port);
             }
         }
         partItem.set_losts(std::move(losts));
@@ -106,8 +106,7 @@ void ListPartsProcessor::getLeaderDist(std::vector<cpp2::PartItem>& partItems) {
     auto activeHosts = ActiveHostsMan::getActiveHosts(kvstore_, FLAGS_heartbeat_interval_secs + 1);
     while (iter->valid()) {
         auto host = MetaServiceUtils::parseLeaderKey(iter->key());
-        if (std::find(activeHosts.begin(), activeHosts.end(),
-                      HostAddr(host.ip, host.port)) != activeHosts.end()) {
+        if (std::find(activeHosts.begin(), activeHosts.end(), host) != activeHosts.end()) {
             LeaderParts leaderParts = MetaServiceUtils::parseLeaderVal(iter->val());
             const auto& partIds = leaderParts[spaceId_];
             for (const auto& partId : partIds) {

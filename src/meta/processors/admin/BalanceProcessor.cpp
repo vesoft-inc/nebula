@@ -72,7 +72,7 @@ void BalanceProcessor::process(const cpp2::BalanceReq& req) {
     if (req.get_host_del() != nullptr) {
         hostDel.reserve(req.get_host_del()->size());
         for (const auto& host : *req.get_host_del()) {
-            hostDel.emplace(HostAddr(host.ip, host.port));
+            hostDel.emplace(host);
         }
     }
     auto hosts = ActiveHostsMan::getActiveHosts(kvstore_);

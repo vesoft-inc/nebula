@@ -75,9 +75,9 @@ public:
 
     static std::vector<HostAddr> parsePartValV2(folly::StringPiece val);
 
-    static std::string hostKey(IPv4 ip, Port port);
+    static std::string hostKey(std::string ip, Port port);
 
-    static std::string hostKeyV2(IPv4 ip, Port port);
+    static std::string hostKeyV2(std::string addr, Port port);
 
     static std::string hostValOnline();
 
@@ -91,9 +91,9 @@ public:
 
     static HostAddr parseHostKeyV2(folly::StringPiece key);
 
-    static std::string leaderKey(IPv4 ip, Port port);
+    static std::string leaderKey(std::string ip, Port port);
 
-    static std::string leaderKeyV2(IPv4 ip, Port port);
+    static std::string leaderKeyV2(std::string addr, Port port);
 
     static std::string leaderVal(const LeaderParts& leaderParts);
 
@@ -230,6 +230,10 @@ public:
     static const std::string& snapshotPrefix();
 
     static void upgradeMetaDataV1toV2(nebula::kvstore::KVStore* kv);
+
+    static std::string serializeHostAddr(const HostAddr& host);
+
+    static HostAddr deserializeHostAddr(folly::StringPiece str);
 };
 
 }  // namespace meta

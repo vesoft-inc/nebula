@@ -122,9 +122,9 @@ TEST(LogEncoderTest, KVTest) {
 }
 
 TEST(LogEncoderTest, HostTest) {
-    auto encoded = encodeHost(OP_ADD_LEARNER, HostAddr(1, 1));
+    auto encoded = encodeHost(OP_ADD_LEARNER, HostAddr("1.1.1.1", 1));
     auto decoded = decodeHost(OP_ADD_LEARNER, encoded);
-    ASSERT_EQ(HostAddr(1, 1), decoded);
+    ASSERT_EQ(HostAddr("1.1.1.1", 1), decoded);
 }
 
 TEST(LogEncoderTest, BatchTest) {

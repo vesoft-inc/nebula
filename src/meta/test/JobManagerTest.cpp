@@ -137,9 +137,7 @@ TEST_F(JobManagerTest, showJobs) {
 }
 
 HostAddr toHost(std::string strIp) {
-    int ip = 0;
-    nebula::network::NetworkUtils::ipv4ToInt(strIp, ip);
-    return HostAddr(ip, 0);
+    return HostAddr(strIp, 0);
 }
 
 TEST_F(JobManagerTest, showJob) {
@@ -185,14 +183,14 @@ TEST_F(JobManagerTest, showJob) {
 
     ASSERT_EQ(tasks[0].get_task_id(), task1);
     ASSERT_EQ(tasks[0].get_job_id(), iJob);
-    ASSERT_EQ(tasks[0].get_host().ip, host1.ip);
+    ASSERT_EQ(tasks[0].get_host().host, host1.host);
     ASSERT_EQ(tasks[0].get_status(), Status::FINISHED);
     ASSERT_EQ(tasks[0].get_start_time(), td1.startTime_);
     ASSERT_EQ(tasks[0].get_stop_time(), td1.stopTime_);
 
     ASSERT_EQ(tasks[1].get_task_id(), task2);
     ASSERT_EQ(tasks[1].get_job_id(), iJob);
-    ASSERT_EQ(tasks[1].get_host().ip, host2.ip);
+    ASSERT_EQ(tasks[1].get_host().host, host2.host);
     ASSERT_EQ(tasks[1].get_status(), Status::FAILED);
     ASSERT_EQ(tasks[1].get_start_time(), td2.startTime_);
     ASSERT_EQ(tasks[1].get_stop_time(), td2.stopTime_);
@@ -296,8 +294,8 @@ TEST(TaskDescriptionTest, ctor) {
 
     ASSERT_EQ(iJob, td.iJob_);
     ASSERT_EQ(iTask, td.iTask_);
-    ASSERT_EQ(dest.ip, td.dest_.first);
-    ASSERT_EQ(dest.port, td.dest_.second);
+    ASSERT_EQ(dest.host, td.dest_.host);
+    ASSERT_EQ(dest.port, td.dest_.port);
     ASSERT_EQ(status, td.status_);
 }
 

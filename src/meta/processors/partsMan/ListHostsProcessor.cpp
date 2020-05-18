@@ -77,8 +77,7 @@ Status ListHostsProcessor::allHostsWithStatus() {
     auto activeHosts = ActiveHostsMan::getActiveHosts(kvstore_, FLAGS_heartbeat_interval_secs * 2);
     while (iter->valid()) {
         auto host = MetaServiceUtils::parseLeaderKey(iter->key());
-        if (std::find(activeHosts.begin(), activeHosts.end(),
-                      HostAddr(host.ip, host.port)) != activeHosts.end()) {
+        if (std::find(activeHosts.begin(), activeHosts.end(), host) != activeHosts.end()) {
             auto hostIt = std::find_if(hostItems_.begin(), hostItems_.end(), [&](const auto& item) {
                 return item.get_hostAddr() == host;
             });
@@ -108,7 +107,7 @@ Status ListHostsProcessor::allHostsWithStatus() {
             PartitionID partId = MetaServiceUtils::parsePartKeyPartId(iter->key());
             auto partHosts = MetaServiceUtils::parsePartVal(iter->val());
             for (auto& host : partHosts) {
-                hostParts[HostAddr(host.ip, host.port)].emplace_back(partId);
+                hostParts[host].emplace_back(partId);
             }
             iter->next();
         }

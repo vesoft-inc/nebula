@@ -32,7 +32,7 @@ Host::Host(const HostAddr& addr, std::shared_ptr<RaftPart> part, bool isLearner)
         , idStr_(folly::stringPrintf(
             "%s[Host: %s:%d] ",
             part_->idStr_.c_str(),
-            NetworkUtils::intToIPv4(addr_.ip).c_str(),
+            addr_.host.c_str(),
             addr_.port))
         , cachingPromise_(folly::SharedPromise<cpp2::AppendLogResponse>()) {
 }
@@ -409,7 +409,7 @@ Host::prepareAppendLogRequest() {
     req->set_part(part_->partitionId());
     req->set_current_term(logTermToSend_);
     req->set_last_log_id(logIdToSend_);
-    req->set_leader_ip(part_->address().ip);
+    req->set_leader_addr(part_->address().host);
     req->set_leader_port(part_->address().port);
     req->set_committed_log_id(committedLogId_);
     req->set_last_log_term_sent(lastLogTermSent_);

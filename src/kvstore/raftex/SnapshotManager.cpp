@@ -112,7 +112,7 @@ folly::Future<raftex::cpp2::SendSnapshotResponse> SnapshotManager::send(
     req.set_term(termId);
     req.set_committed_log_id(committedLogId);
     req.set_committed_log_term(committedLogTerm);
-    req.set_leader_ip(localhost.ip);
+    req.set_leader_addr(localhost.host);
     req.set_leader_port(localhost.port);
     req.set_rows(data);
     req.set_total_size(totalSize);

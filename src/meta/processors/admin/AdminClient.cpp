@@ -388,12 +388,12 @@ void AdminClient::getResponse(
             switch (resp.get_code()) {
                 case storage::cpp2::ErrorCode::E_LEADER_CHANGED: {
                     if (retry < retryLimit) {
-                        HostAddr leader(0, 0);
+                        HostAddr leader("", 0);
                         if (resp.get_leader() != nullptr) {
-                            leader = HostAddr(resp.get_leader()->ip,
+                            leader = HostAddr(resp.get_leader()->host,
                                               resp.get_leader()->port);
                         }
-                        if (leader == HostAddr(0, 0)) {
+                        if (leader == HostAddr("", 0)) {
                             usleep(1000 * 50);
                             LOG(INFO) << "The leader is in election"
                                       << ", retry " << retry
@@ -480,7 +480,7 @@ StatusOr<std::vector<HostAddr>> AdminClient::getPeers(GraphSpaceID spaceId, Part
             std::vector<HostAddr> hosts;
             hosts.resize(partHosts.size());
             std::transform(partHosts.begin(), partHosts.end(), hosts.begin(), [](const auto& h) {
-                return HostAddr(h.ip, h.port);
+                return HostAddr(h.host, h.port);
             });
             return hosts;
         }

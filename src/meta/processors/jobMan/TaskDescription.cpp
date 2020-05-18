@@ -9,6 +9,7 @@
 #include "meta/processors/jobMan/JobStatus.h"
 #include "meta/processors/jobMan/JobUtils.h"
 #include "time/WallClock.h"
+#include "meta/MetaServiceUtils.h"
 
 namespace nebula {
 namespace meta {
@@ -16,23 +17,13 @@ namespace meta {
 using Status = cpp2::JobStatus;
 using Host = std::pair<int, int>;
 
-TaskDescription::TaskDescription(int32_t iJob,
-                                 int32_t iTask,
-                                 const Host& dest)
-                                 : iJob_(iJob),
-                                   iTask_(iTask),
-                                   dest_(dest),
-                                   status_(cpp2::JobStatus::RUNNING),
-                                   startTime_(std::time(nullptr)),
-                                   stopTime_(0) {}
-
 TaskDescription::TaskDescription(int32_t iJob, int32_t iTask, const HostAddr& dst)
-                                : TaskDescription(iJob, iTask, dst.ip, dst.port) {}
+                                : TaskDescription(iJob, iTask, dst.host, dst.port) {}
 
-TaskDescription::TaskDescription(int32_t iJob, int32_t iTask, int32_t ip, int32_t port)
+TaskDescription::TaskDescription(int32_t iJob, int32_t iTask, std::string addr, int32_t port)
                 : iJob_(iJob)
                 , iTask_(iTask)
-                , dest_(std::make_pair(ip, port))
+                , dest_(addr, port)
                 , status_(cpp2::JobStatus::RUNNING)
                 , startTime_(std::time(nullptr))
                 , stopTime_(0) {}
@@ -41,7 +32,7 @@ TaskDescription::TaskDescription(int32_t iJob, int32_t iTask, int32_t ip, int32_
 /*
  * int32_t                         iJob_;
  * int32_t                         iTask_;
- * Host                            dest_;
+ * HostAddr                        dest_;
  * cpp2::JobStatus                 status_;
  * int64_t                         startTime_;
  * int64_t                         stopTime_;
@@ -91,7 +82,7 @@ std::string TaskDescription::archiveKey() {
 std::string TaskDescription::taskVal() {
     std::string str;
     str.reserve(128);
-    str.append(reinterpret_cast<const char*>(&dest_), sizeof(dest_));
+    str.append(MetaServiceUtils::serializeHostAddr(dest_));
     str.append(reinterpret_cast<const char*>(&status_), sizeof(Status));
     str.append(reinterpret_cast<const char*>(&startTime_), sizeof(startTime_));
     str.append(reinterpret_cast<const char*>(&stopTime_), sizeof(stopTime_));
@@ -99,17 +90,21 @@ std::string TaskDescription::taskVal() {
 }
 
 /*
- * Host                        dest_;
+ * HostAddr                        dest_;
  * cpp2::JobStatus                 status_;
  * int64_t                         startTime_;
  * int64_t                         stopTime_;
  * */
-std::tuple<Host, Status, int64_t, int64_t>
+// std::tuple<Host, Status, int64_t, int64_t>
+std::tuple<HostAddr, Status, int64_t, int64_t>
 TaskDescription::parseVal(const folly::StringPiece& rawVal) {
     size_t offset = 0;
 
-    auto host = JobUtil::parseFixedVal<Host>(rawVal, offset);
-    offset += sizeof(host);
+    folly::StringPiece raw = rawVal;
+    HostAddr host = MetaServiceUtils::deserializeHostAddr(raw);
+    offset += sizeof(size_t);
+    offset += host.host.size();
+    offset += sizeof(uint32_t);
 
     auto status = JobUtil::parseFixedVal<Status>(rawVal, offset);
     offset += sizeof(Status);
@@ -133,8 +128,7 @@ cpp2::TaskDesc TaskDescription::toTaskDesc() {
     cpp2::TaskDesc ret;
     ret.set_job_id(iJob_);
     ret.set_task_id(iTask_);
-    nebula::HostAddr host(dest_.first, dest_.second);
-    ret.set_host(host);
+    ret.set_host(dest_);
     ret.set_status(status_);
     ret.set_start_time(startTime_);
     ret.set_stop_time(stopTime_);

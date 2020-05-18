@@ -87,9 +87,9 @@ private:
                                    balanceId_,
                                    spaceId_,
                                    partId_,
-                                   network::NetworkUtils::intToIPv4(src_.ip).c_str(),
+                                   src_.host.c_str(),
                                    src_.port,
-                                   network::NetworkUtils::intToIPv4(dst_.ip).c_str(),
+                                   dst_.host.c_str(),
                                    dst_.port);
     }
 

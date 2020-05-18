@@ -109,8 +109,12 @@ public:
 
 class TestStorageServiceRetry : public TestStorageService {
 public:
-    TestStorageServiceRetry(IPv4 ip, Port port) {
-        leader_ = HostAddr(ip, port);
+    TestStorageServiceRetry(int ip, Port port) {
+        leader_ = HostAddr(std::to_string(ip), port);
+    }
+
+    TestStorageServiceRetry(std::string addr, Port port) {
+        leader_ = HostAddr(addr, port);
     }
 
     folly::Future<storage::cpp2::AdminExecResp>
@@ -138,8 +142,8 @@ TEST(AdminClientTest, SimpleTest) {
     rpcServer->start("storage-admin", 0, handler);
     LOG(INFO) << "Start storage server on " << rpcServer->port_;
 
-    IPv4 localIp;
-    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    std::string localIp("127.0.0.1");
+    // network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     fs::TempDir rootPath("/tmp/AdminTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
     auto client = std::make_unique<AdminClient>(kv.get());
@@ -147,7 +151,7 @@ TEST(AdminClientTest, SimpleTest) {
     {
         LOG(INFO) << "Test transLeader...";
         folly::Baton<true, std::atomic> baton;
-        client->transLeader(0, 0, {localIp, rpcServer->port_}, HostAddr(1, 1))
+        client->transLeader(0, 0, {localIp, rpcServer->port_}, HostAddr("1", 1))
             .thenValue([&baton](auto&&) {
             baton.post();
         });
@@ -172,14 +176,13 @@ TEST(AdminClientTest, SimpleTest) {
 }
 
 TEST(AdminClientTest, RetryTest) {
-
     auto rpcServer1 = std::make_unique<mock::RpcServer>();
     auto handler1 = std::make_shared<TestStorageService>();
     rpcServer1->start("storage-admin-1", 0, handler1);
     LOG(INFO) << "Start storage server on " << rpcServer1->port_;
 
-    IPv4 localIp;
-    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    std::string localIp("127.0.0.1");
+    // network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
 
     auto rpcServer2 = std::make_unique<mock::RpcServer>();
     auto handler2 = std::make_shared<TestStorageServiceRetry>(localIp, rpcServer1->port_);
@@ -194,7 +197,7 @@ TEST(AdminClientTest, RetryTest) {
         LOG(INFO) << "Write some part information!";
         std::vector<HostAddr> thriftPeers;
         // The first peer is one broken host.
-        thriftPeers.emplace_back(0, 0);
+        thriftPeers.emplace_back("0", 0);
 
         // The second one is not leader.
         thriftPeers.emplace_back(localIp, rpcServer2->port_);
@@ -221,7 +224,7 @@ TEST(AdminClientTest, RetryTest) {
     {
         LOG(INFO) << "Test transLeader, return ok if target is not leader";
         folly::Baton<true, std::atomic> baton;
-        client->transLeader(0, 1, {localIp, rpcServer2->port_}, HostAddr(1, 1))
+        client->transLeader(0, 1, {localIp, rpcServer2->port_}, HostAddr("1", 1))
             .thenValue([&baton](auto&& st) {
             CHECK(st.ok());
             baton.post();
@@ -231,7 +234,7 @@ TEST(AdminClientTest, RetryTest) {
     {
         LOG(INFO) << "Test member change...";
         folly::Baton<true, std::atomic> baton;
-        client->memberChange(0, 1, HostAddr(0, 0), true).thenValue([&baton](auto&& st) {
+        client->memberChange(0, 1, HostAddr("0", 0), true).thenValue([&baton](auto&& st) {
             CHECK(st.ok());
             baton.post();
         });
@@ -240,7 +243,7 @@ TEST(AdminClientTest, RetryTest) {
     {
         LOG(INFO) << "Test add learner...";
         folly::Baton<true, std::atomic> baton;
-        client->addLearner(0, 1, HostAddr(0, 0)).thenValue([&baton](auto&& st) {
+        client->addLearner(0, 1, HostAddr("0", 0)).thenValue([&baton](auto&& st) {
             CHECK(st.ok());
             baton.post();
         });
@@ -249,7 +252,7 @@ TEST(AdminClientTest, RetryTest) {
     {
         LOG(INFO) << "Test waitingForCatchUpData...";
         folly::Baton<true, std::atomic> baton;
-        client->waitingForCatchUpData(0, 1, HostAddr(0, 0)).thenValue([&baton](auto&& st) {
+        client->waitingForCatchUpData(0, 1, HostAddr("0", 0)).thenValue([&baton](auto&& st) {
             CHECK(st.ok());
             baton.post();
         });
@@ -259,7 +262,7 @@ TEST(AdminClientTest, RetryTest) {
     {
         LOG(INFO) << "Test member change...";
         folly::Baton<true, std::atomic> baton;
-        client->memberChange(0, 1, HostAddr(0, 0), true).thenValue([&baton](auto&& st) {
+        client->memberChange(0, 1, HostAddr("0", 0), true).thenValue([&baton](auto&& st) {
             CHECK(!st.ok());
             CHECK_EQ("Leader changed!", st.toString());
             baton.post();
@@ -269,7 +272,7 @@ TEST(AdminClientTest, RetryTest) {
     {
         LOG(INFO) << "Test update meta...";
         folly::Baton<true, std::atomic> baton;
-        client->updateMeta(0, 1, HostAddr(0, 0), HostAddr(1, 1)).thenValue([&baton](auto&& st) {
+        client->updateMeta(0, 1, HostAddr("0", 0), HostAddr("1", 1)).thenValue([&baton](auto&& st) {
             CHECK(st.ok());
             baton.post();
         });
@@ -280,7 +283,7 @@ TEST(AdminClientTest, RetryTest) {
         ASSERT_EQ(3, hosts.size());
         ASSERT_EQ(HostAddr(localIp, rpcServer2->port_), hosts[0]);
         ASSERT_EQ(HostAddr(localIp, rpcServer1->port_), hosts[1]);
-        ASSERT_EQ(HostAddr(1, 1), hosts[2]);
+        ASSERT_EQ(HostAddr("1", 1), hosts[2]);
     }
 }
 
@@ -290,8 +293,7 @@ TEST(AdminClientTest, SnapshotTest) {
     rpcServer->start("storage-admin", 0, handler);
     LOG(INFO) << "Start storage server on " << rpcServer->port_;
 
-    IPv4 localIp;
-    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    std::string localIp("127.0.0.1");
 
     LOG(INFO) << "Now test interfaces with retry to leader!";
     fs::TempDir rootPath("/tmp/admin_snapshot_test.XXXXXX");
@@ -326,14 +328,12 @@ TEST(AdminClientTest, SnapshotTest) {
 }
 
 TEST(AdminClientTest, RebuildIndexTest) {
-
     auto rpcServer = std::make_unique<mock::RpcServer>();
     auto handler = std::make_shared<TestStorageService>();
     rpcServer->start("storage-admin", 0, handler);
     LOG(INFO) << "Start storage server on " << rpcServer->port_;
 
-    IPv4 localIp;
-    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    std::string localIp("127.0.0.1");
 
     LOG(INFO) << "Now test interfaces with retry to leader!";
     fs::TempDir rootPath("/tmp/admin_snapshot_test.XXXXXX");

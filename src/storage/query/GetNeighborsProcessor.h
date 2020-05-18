@@ -48,11 +48,11 @@ protected:
     cpp2::ErrorCode buildEdgeContext(const cpp2::GetNeighborsRequest& req);
 
     // collect tag props need to return
-    cpp2::ErrorCode prepareVertexProps(const std::vector<std::string>& vertexProps,
+    cpp2::ErrorCode prepareVertexProps(const std::vector<cpp2::PropExp>& vertexProps,
                                        std::vector<ReturnProp>& returnProps);
 
     // collect edge props need to return
-    cpp2::ErrorCode prepareEdgeProps(const std::vector<std::string>& edgeProps,
+    cpp2::ErrorCode prepareEdgeProps(const std::vector<cpp2::PropExp>& edgeProps,
                                      std::vector<ReturnProp>& returnProps);
 
     // add PropContext of stat

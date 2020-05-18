@@ -102,55 +102,13 @@ std::string MetaServiceUtils::partVal(const std::vector<HostAddr>& hosts) {
     return partValV2(hosts);
 }
 
-std::string MetaServiceUtils::partValV1(const std::vector<HostAddr>& hosts) {
-    std::string val;
-    val.reserve(hosts.size() * (sizeof(IPv4) + sizeof(Port)));
-    for (auto& h : hosts) {
-        val.append(reinterpret_cast<const char*>(&h.ip), sizeof(h.ip))
-           .append(reinterpret_cast<const char*>(&h.port), sizeof(h.port));
-    }
-    return val;
-}
-
 // dataVer(int) + vectorSize(size_t) + vector of (strIp(string) + port(int))
 std::string MetaServiceUtils::partValV2(const std::vector<HostAddr>& hosts) {
-    std::string val;
+    std::string encodedVal;
     int dataVersion = 2;
-    auto size = hosts.size();
-    val.reserve(sizeof(size_t) * 2 + hosts.size() * (kMaxIpAddrLen + sizeof(Port)));
-    val.append(reinterpret_cast<const char*>(&dataVersion), sizeof(int));
-    val.append(reinterpret_cast<const char*>(&size), sizeof(size_t));
-    for (auto& h : hosts) {
-        val.append(encodeHostAddrV2(h.ip, h.port));
-    }
-    return val;
-}
-
-// strIp(string) + port(int)
-std::string MetaServiceUtils::encodeHostAddrV2(int ip, int port) {
-    std::string ret;
-    std::string strIp = nebula::network::NetworkUtils::intToIPv4(ip);
-    int len = strIp.size();
-    ret.append(reinterpret_cast<const char*>(&len), sizeof(len))
-       .append(strIp.data(), strIp.size())
-       .append(reinterpret_cast<const char*>(&port), sizeof(port));
-    return ret;
-}
-
-// strIp(string) + port(int)
-HostAddr MetaServiceUtils::decodeHostAddrV2(folly::StringPiece val, int& offset) {
-    HostAddr host;
-    int len = *reinterpret_cast<const int*>(val.data() + offset);
-    offset += sizeof(len);
-    std::string ipStr(val.data() + offset, len);
-    if (!nebula::network::NetworkUtils::ipv4ToInt(ipStr, host.ip)) {
-        LOG(ERROR) << "convert invalid ip: " << ipStr;
-        return host;
-    }
-    offset += len;
-    host.port = *reinterpret_cast<const int32_t*>(val.data() + offset);
-    offset += sizeof(host.port);
-    return host;
+    encodedVal.append(reinterpret_cast<const char*>(&dataVersion), sizeof(int));
+    encodedVal.append(network::NetworkUtils::toHostsStr(hosts));
+    return encodedVal;
 }
 
 std::string MetaServiceUtils::partPrefix(GraphSpaceID spaceId) {
@@ -166,6 +124,9 @@ std::vector<HostAddr> MetaServiceUtils::parsePartVal(folly::StringPiece val, int
     if (unitSizeV1 * partNum == val.size()) {
         return parsePartValV1(val);
     }
+    int dataVer = *reinterpret_cast<const int32_t*>(val.data());
+    UNUSED(dataVer);  // currently if not ver1, it must be v2
+    val.advance(sizeof(int));
     return parsePartValV2(val);
 }
 
@@ -180,7 +141,8 @@ std::vector<HostAddr> MetaServiceUtils::parsePartValV1(folly::StringPiece val) {
             << ", host num:" << hostsNum;
     for (decltype(hostsNum) i = 0; i < hostsNum; i++) {
         HostAddr h;
-        h.ip = *reinterpret_cast<const int32_t*>(val.data() + i * unitSize);
+        uint32_t ip = *reinterpret_cast<const int32_t*>(val.data() + i * unitSize);
+        h.host = network::NetworkUtils::intToIPv4(ip);
         h.port = *reinterpret_cast<const int32_t*>(val.data() + i * unitSize + sizeof(int32_t));
         hosts.emplace_back(std::move(h));
     }
@@ -189,28 +151,25 @@ std::vector<HostAddr> MetaServiceUtils::parsePartValV1(folly::StringPiece val) {
 
 // dataVer(int) + vectorSize(size_t) + vector of (strIpV4(string) + port(int))
 std::vector<HostAddr> MetaServiceUtils::parsePartValV2(folly::StringPiece val) {
-    std::vector<HostAddr> hosts;
-    int dataVer = *reinterpret_cast<const int32_t*>(val.data());
-    int offset = sizeof(dataVer);
-    size_t hostsNum = *reinterpret_cast<const decltype(hostsNum)*>(val.data() + offset);
-    offset += sizeof(hostsNum);
-
-    hosts.reserve(hostsNum);
-    for (auto i = 0U; i < hostsNum; i++) {
-        HostAddr h = decodeHostAddrV2(val, offset);
-        hosts.emplace_back(std::move(h));
+    std::vector<HostAddr> ret;
+    auto hostsOrErr = network::NetworkUtils::toHosts(val.str());
+    if (hostsOrErr.ok()) {
+        ret = std::move(hostsOrErr.value());
+    } else {
+        LOG(ERROR) << "invalid input for parsePartValV2()";
     }
-    return hosts;
+    return ret;
 }
 
-std::string MetaServiceUtils::hostKey(IPv4 ip, Port port) {
-    return hostKeyV2(ip, port);
+std::string MetaServiceUtils::hostKey(std::string addr, Port port) {
+    return hostKeyV2(addr, port);
 }
 
-std::string MetaServiceUtils::hostKeyV2(IPv4 ip, Port port) {
+std::string MetaServiceUtils::hostKeyV2(std::string addr, Port port) {
     std::string key;
+    HostAddr h(addr, port);
     key.append(kHostsTable.data(), kHostsTable.size())
-       .append(encodeHostAddrV2(ip, port));
+       .append(MetaServiceUtils::serializeHostAddr(h));
     return key;
 }
 
@@ -235,25 +194,29 @@ HostAddr MetaServiceUtils::parseHostKey(folly::StringPiece key) {
 
 HostAddr MetaServiceUtils::parseHostKeyV1(folly::StringPiece key) {
     HostAddr host;
-    memcpy(&host, key.data() + kHostsTable.size(), sizeof(host));
+    key.advance(kHostsTable.size());
+    uint32_t ip = *reinterpret_cast<const uint32_t*>(key.begin());
+    host.host = network::NetworkUtils::intToIPv4(ip);
+    host.port = *reinterpret_cast<const int32_t*>(key.begin() + sizeof(uint32_t));
     return host;
 }
 
 HostAddr MetaServiceUtils::parseHostKeyV2(folly::StringPiece key) {
     key.advance(kHostsTable.size());
-    int offset = 0;
-    return decodeHostAddrV2(key, offset);
+    return MetaServiceUtils::deserializeHostAddr(key);
 }
 
-std::string MetaServiceUtils::leaderKey(IPv4 ip, Port port) {
-    return leaderKeyV2(ip, port);
+std::string MetaServiceUtils::leaderKey(std::string addr, Port port) {
+    return leaderKeyV2(addr, port);
 }
 
-std::string MetaServiceUtils::leaderKeyV2(IPv4 ip, Port port) {
+std::string MetaServiceUtils::leaderKeyV2(std::string addr, Port port) {
     std::string key;
+    HostAddr h(addr, port);
+
     key.reserve(kLeadersTable.size() + kMaxIpAddrLen + sizeof(Port));
     key.append(kLeadersTable.data(), kLeadersTable.size());
-    key.append(encodeHostAddrV2(ip, port));
+    key.append(MetaServiceUtils::serializeHostAddr(h));
     return key;
 }
 
@@ -283,16 +246,20 @@ HostAddr MetaServiceUtils::parseLeaderKey(folly::StringPiece key) {
     return parseLeaderKeyV2(key);
 }
 
+// input should be a pair of int32_t
 HostAddr MetaServiceUtils::parseLeaderKeyV1(folly::StringPiece key) {
     HostAddr host;
-    memcpy(&host, key.data() + kLeadersTable.size(), sizeof(host));
+    CHECK_EQ(key.size(), kLeadersTable.size() + sizeof(int64_t));
+    key.advance(kLeadersTable.size());
+    auto ip = *reinterpret_cast<const uint32_t*>(key.begin());
+    host.host = network::NetworkUtils::intToIPv4(ip);
+    host.port = *reinterpret_cast<const uint32_t*>(key.begin() + sizeof(ip));
     return host;
 }
 
 HostAddr MetaServiceUtils::parseLeaderKeyV2(folly::StringPiece key) {
     key.advance(kLeadersTable.size());
-    int offset = 0;
-    return decodeHostAddrV2(key, offset);
+    return MetaServiceUtils::deserializeHostAddr(key);
 }
 
 LeaderParts MetaServiceUtils::parseLeaderVal(folly::StringPiece val) {
@@ -891,7 +858,7 @@ void MetaServiceUtils::upgradeMetaDataV1toV2(nebula::kvstore::KVStore* kv) {
             }
             auto host = nebula::meta::MetaServiceUtils::parseHostKey(iter->key());
             removeData.emplace_back(iter->key());
-            data.emplace_back(MetaServiceUtils::hostKey(host.ip, host.port), iter->val());
+            data.emplace_back(MetaServiceUtils::hostKey(host.host, host.port), iter->val());
         }
     }
 
@@ -910,7 +877,7 @@ void MetaServiceUtils::upgradeMetaDataV1toV2(nebula::kvstore::KVStore* kv) {
             }
             auto host = nebula::meta::MetaServiceUtils::parseLeaderKey(iter->key());
             removeData.emplace_back(iter->key());
-            data.emplace_back(MetaServiceUtils::leaderKey(host.ip, host.port), iter->val());
+            data.emplace_back(MetaServiceUtils::leaderKey(host.host, host.port), iter->val());
         }
     }
 
@@ -932,6 +899,18 @@ void MetaServiceUtils::upgradeMetaDataV1toV2(nebula::kvstore::KVStore* kv) {
             });
         baton.wait();
     }
+}
+
+std::string MetaServiceUtils::serializeHostAddr(const HostAddr& host) {
+    std::string ret;
+    apache::thrift::CompactSerializer::serialize(host, &ret);
+    return ret;
+}
+
+HostAddr MetaServiceUtils::deserializeHostAddr(folly::StringPiece raw) {
+    HostAddr host;
+    apache::thrift::CompactSerializer::deserialize(raw, host);
+    return host;
 }
 
 }  // namespace meta

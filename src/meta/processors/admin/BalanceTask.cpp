@@ -250,8 +250,8 @@ std::string BalanceTask::taskKey() {
     str.append(reinterpret_cast<const char*>(&balanceId_), sizeof(balanceId_));
     str.append(reinterpret_cast<const char*>(&spaceId_), sizeof(spaceId_));
     str.append(reinterpret_cast<const char*>(&partId_), sizeof(partId_));
-    str.append(reinterpret_cast<const char*>(&src_), sizeof(src_));
-    str.append(reinterpret_cast<const char*>(&dst_), sizeof(dst_));
+    str.append(MetaServiceUtils::serializeHostAddr(src_));
+    str.append(MetaServiceUtils::serializeHostAddr(dst_));
     return str;
 }
 
@@ -275,16 +275,16 @@ std::string BalanceTask::prefix(BalanceID balanceId) {
 
 std::tuple<BalanceID, GraphSpaceID, PartitionID, HostAddr, HostAddr>
 BalanceTask::parseKey(const folly::StringPiece& rawKey) {
-    int32_t offset = kBalanceTaskTable.size();
+    uint32_t offset = kBalanceTaskTable.size();
     auto balanceId = *reinterpret_cast<const BalanceID*>(rawKey.begin() + offset);
     offset += sizeof(balanceId);
     auto spaceId = *reinterpret_cast<const GraphSpaceID*>(rawKey.begin() + offset);
     offset += sizeof(GraphSpaceID);
     auto partId = *reinterpret_cast<const PartitionID*>(rawKey.begin() + offset);
     offset += sizeof(PartitionID);
-    auto src = *reinterpret_cast<const HostAddr*>(rawKey.begin() + offset);
-    offset += sizeof(HostAddr);
-    auto dst = *reinterpret_cast<const HostAddr*>(rawKey.begin() + offset);
+    auto src = MetaServiceUtils::deserializeHostAddr({rawKey, offset});
+    offset += src.host.size() + sizeof(size_t) + sizeof(uint32_t);
+    auto dst = MetaServiceUtils::deserializeHostAddr({rawKey, offset});
     return std::make_tuple(balanceId, spaceId, partId, src, dst);
 }
 

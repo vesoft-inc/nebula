@@ -138,7 +138,7 @@ cpp2::ErrorCode GetNeighborsProcessor::buildTagContext(const cpp2::GetNeighborsR
 }
 
 cpp2::ErrorCode GetNeighborsProcessor::prepareVertexProps(
-        const std::vector<std::string>& vertexProps,
+        const std::vector<cpp2::PropExp>& vertexProps,
         std::vector<ReturnProp>& returnProps) {
     // todo(doodle): wait
     /*
@@ -192,7 +192,7 @@ cpp2::ErrorCode GetNeighborsProcessor::buildEdgeContext(const cpp2::GetNeighbors
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
-cpp2::ErrorCode GetNeighborsProcessor::prepareEdgeProps(const std::vector<std::string>& edgeProps,
+cpp2::ErrorCode GetNeighborsProcessor::prepareEdgeProps(const std::vector<cpp2::PropExp>& edgeProps,
                                                         std::vector<ReturnProp>& returnProps) {
     // todo(doodle): wait
     /*

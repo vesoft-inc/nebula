@@ -38,13 +38,13 @@ public:
 
     void onError(proxygen::ProxygenError error) noexcept override;
 
-    bool replaceHost(IPv4 ipv4From, IPv4 ipv4To);
+    bool replaceHost(std::string ipv4From, std::string ipv4To);
 
 private:
     HttpCode err_{HttpCode::SUCCEEDED};
     std::string errMsg_;
-    IPv4 ipv4From_;
-    IPv4 ipv4To_;
+    std::string ipv4From_;
+    std::string ipv4To_;
     nebula::kvstore::KVStore *kvstore_;
 };
 

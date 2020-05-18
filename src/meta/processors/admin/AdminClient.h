@@ -40,7 +40,7 @@ public:
     virtual folly::Future<Status> rebuildEdgeIndex() = 0;
 };
 
-static const HostAddr kRandomPeer(0, 0);
+static const HostAddr kRandomPeer("", 0);
 
 class AdminClient {
     FRIEND_TEST(AdminClientTest, RetryTest);

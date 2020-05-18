@@ -85,9 +85,9 @@ public:
     }
 
     folly::Future<Status> getLeaderDist(HostLeaderMap* hostLeaderMap) override {
-        (*hostLeaderMap)[HostAddr(0, 0)][1] = {1, 2, 3, 4, 5};
-        (*hostLeaderMap)[HostAddr(1, 1)][1] = {6, 7, 8};
-        (*hostLeaderMap)[HostAddr(2, 2)][1] = {9};
+        (*hostLeaderMap)[HostAddr("0", 0)][1] = {1, 2, 3, 4, 5};
+        (*hostLeaderMap)[HostAddr("1", 1)][1] = {6, 7, 8};
+        (*hostLeaderMap)[HostAddr("2", 2)][1] = {9};
         return response(8);
     }
 
@@ -167,7 +167,7 @@ public:
 
     static int32_t createSomeHosts(kvstore::KVStore* kv,
                                    std::vector<HostAddr> hosts
-                                       = {{0, 0}, {1, 1}, {2, 2}, {3, 3}}) {
+                                       = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}}) {
         std::vector<HostAddr> thriftHosts(hosts);
         registerHB(kv, hosts);
         {
@@ -198,7 +198,7 @@ public:
 
         std::vector<HostAddr> allHosts;
         for (int i = 0; i < totalHost; i++) {
-            allHosts.emplace_back(i, i);
+            allHosts.emplace_back(std::to_string(i), i);
         }
 
         for (auto partId = 1; partId <= partitionNum; partId++) {

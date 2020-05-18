@@ -120,6 +120,21 @@ nebula_add_test(
         gtest
 )
 
+nebula_add_test(
+    NAME
+        shuffle_ip_test
+    SOURCES
+        ShuffleIpTest.cpp
+    OBJECTS
+        ${storage_test_deps}
+        $<TARGET_OBJECTS:common_graph_storage_client_obj>
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        wangle
+        gtest
+)
+
 #nebula_add_test(
 #    NAME
 #        storage_service_handler_test

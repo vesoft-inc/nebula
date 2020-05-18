@@ -41,13 +41,13 @@ TEST(MetaClientTest, InterfacesTest) {
     GraphSpaceID spaceId = 0;
     {
         // Add hosts automatically, then testing listHosts interface.
-        std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
+        std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
         TestUtils::registerHB(kv, hosts);
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
         for (auto i = 0u; i < hosts.size(); i++) {
             auto tHost = ret.value()[i].hostAddr;
-            auto hostAddr = HostAddr(tHost.ip, tHost.port);
+            auto hostAddr = HostAddr(tHost.host, tHost.port);
             ASSERT_EQ(hosts[i], hostAddr);
         }
     }
@@ -239,7 +239,7 @@ TEST(MetaClientTest, InterfacesTest) {
     sleep(FLAGS_heartbeat_interval_secs + 1);
     {
         // Test cache interfaces
-        auto partsMap = client->getPartsMapFromCache(HostAddr(0, 0));
+        auto partsMap = client->getPartsMapFromCache(HostAddr("0", 0));
         ASSERT_EQ(1, partsMap.size());
         ASSERT_EQ(6, partsMap[spaceId].size());
     }
@@ -249,7 +249,7 @@ TEST(MetaClientTest, InterfacesTest) {
         auto partMeta = metaStatus.value();
         ASSERT_EQ(3, partMeta.hosts_.size());
         for (auto& h : partMeta.hosts_) {
-            ASSERT_EQ(h.ip, h.port);
+            ASSERT_EQ(h.host, std::to_string(h.port));
         }
     }
     {
@@ -347,7 +347,7 @@ TEST(MetaClientTest, TagTest) {
     auto client = std::make_shared<MetaClient>(threadPool, localhosts);
     client->waitForMetadReady();
 
-    std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
     TestUtils::registerHB(kv, hosts);
     SpaceDesc spaceDesc("default", 9, 3);
     auto ret = client->createSpace(spaceDesc).get();
@@ -453,7 +453,7 @@ TEST(MetaClientTest, EdgeTest) {
     auto* kv = cluster.metaKV_.get();
     auto* client = cluster.metaClient_.get();
 
-    std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
     TestUtils::registerHB(kv, hosts);
     SpaceDesc spaceDesc("default_space", 9, 3);
     auto ret = client->createSpace(spaceDesc).get();
@@ -563,7 +563,7 @@ TEST(MetaClientTest, TagIndexTest) {
     auto* kv = cluster.metaKV_.get();
     auto* client = cluster.metaClient_.get();
 
-    std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
     TestUtils::registerHB(kv, hosts);
     SpaceDesc spaceDesc("default_space", 8, 3);
     auto ret = client->createSpace(spaceDesc).get();
@@ -723,7 +723,7 @@ TEST(MetaClientTest, EdgeIndexTest) {
     auto* kv = cluster.metaKV_.get();
     auto* client = cluster.metaClient_.get();
 
-    std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
     TestUtils::registerHB(kv, hosts);
     SpaceDesc spaceDesc("default_space", 8, 3);
     auto ret = client->createSpace(spaceDesc).get();
@@ -919,7 +919,7 @@ public:
     }
 
     HostAddr getLocalHost() {
-        return HostAddr(0, 0);
+        return HostAddr("0", 0);
     }
 
     int32_t spaceNum = 0;
@@ -942,13 +942,13 @@ TEST(MetaClientTest, DiffTest) {
     client->registerListener(listener.get());
     {
         // Add hosts automatically, then testing listHosts interface.
-        std::vector<HostAddr> hosts = {{0, 0}};
+        std::vector<HostAddr> hosts = {{"", 0}};
         TestUtils::registerHB(kv, hosts);
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
         for (auto i = 0u; i < hosts.size(); i++) {
             auto tHost = ret.value()[i].hostAddr;
-            auto hostAddr = HostAddr(tHost.ip, tHost.port);
+            auto hostAddr = HostAddr(tHost.host, tHost.port);
             ASSERT_EQ(hosts[i], hostAddr);
         }
     }
@@ -1003,7 +1003,7 @@ TEST(MetaClientTest, HeartbeatTest) {
         ASSERT_TRUE(ret.ok());
         for (auto i = 0u; i < hosts.size(); i++) {
             auto tHost = ret.value()[i].hostAddr;
-            auto hostAddr = HostAddr(tHost.ip, tHost.port);
+            auto hostAddr = HostAddr(tHost.host, tHost.port);
             ASSERT_EQ(hosts[i], hostAddr);
         }
     }
@@ -1059,8 +1059,8 @@ private:
 
 TEST(MetaClientTest, SimpleTest) {
     FLAGS_heartbeat_interval_secs = 3600;
-    IPv4 localIp;
-    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    auto localIp = network::NetworkUtils::getHostname();
+
 
     auto mockMetad = std::make_unique<mock::RpcServer>();
     auto handler = std::make_shared<TestMetaService>();
@@ -1086,14 +1086,13 @@ TEST(MetaClientTest, SimpleTest) {
 
 TEST(MetaClientTest, RetryWithExceptionTest) {
     FLAGS_heartbeat_interval_secs = 3600;
-    IPv4 localIp;
-    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    auto localIp("127.0.0.1");
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     auto clientPort = network::NetworkUtils::getAvailablePort();
     HostAddr localHost{localIp, clientPort};
     auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{HostAddr(0, 0)});
+                                               std::vector<HostAddr>{HostAddr("0", 0)});
     // Retry with exception, then failed
     {
         LOG(INFO) << "Test heart beat...";
@@ -1108,8 +1107,7 @@ TEST(MetaClientTest, RetryWithExceptionTest) {
 
 TEST(MetaClientTest, RetryOnceTest) {
     FLAGS_heartbeat_interval_secs = 3600;
-    IPv4 localIp;
-    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    std::string localIp{"127.0.0.1"};
 
     std::vector<std::unique_ptr<mock::RpcServer>> metads;
     std::vector<std::shared_ptr<TestMetaServiceRetry>> handlers;
@@ -1147,8 +1145,7 @@ TEST(MetaClientTest, RetryOnceTest) {
 
 TEST(MetaClientTest, RetryUntilLimitTest) {
     FLAGS_heartbeat_interval_secs = 3600;
-    IPv4 localIp;
-    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    std::string localIp{"127.0.0.1"};
 
     std::vector<std::unique_ptr<mock::RpcServer>> metads;
     std::vector<std::shared_ptr<TestMetaServiceRetry>> handlers;
@@ -1352,7 +1349,7 @@ TEST(MetaClientTest, RocksdbOptionsTest) {
         cfgMan.registerGflags(configItems);
     }
     {
-        std::vector<HostAddr> hosts = {{0, 0}};
+        std::vector<HostAddr> hosts = {{"0", 0}};
         TestUtils::registerHB(cluster.metaKV_.get(), hosts);
         SpaceDesc spaceDesc("default_space", 9, 1);
         client->createSpace(spaceDesc).get();

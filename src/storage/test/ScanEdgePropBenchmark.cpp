@@ -24,7 +24,7 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
     EdgeRanking rankCount = param.second;
     fs::TempDir rootPath("/tmp/ScanEdgePropBench.XXXXXX");
     mock::MockCluster cluster;
-    cluster.initStorageKV(rootPath.path(), {0, 0}, schemaVerCount);
+    cluster.initStorageKV(rootPath.path(), {"0", 0}, schemaVerCount);
     auto* env = cluster.storageEnv_.get();
     auto totalParts = cluster.getTotalParts();
     ASSERT_EQ(true, QueryTestUtils::mockBenchEdgeData(env, totalParts, schemaVerCount, rankCount));
@@ -180,7 +180,7 @@ TEST_P(ScanEdgePropBench, ScanEdgesVsProcessEdgeProps) {
     EdgeRanking rankCount = param.second;
     fs::TempDir rootPath("/tmp/ScanEdgePropBench.XXXXXX");
     mock::MockCluster cluster;
-    cluster.initStorageKV(rootPath.path(), {0, 0}, schemaVerCount);
+    cluster.initStorageKV(rootPath.path(), {"", 0}, schemaVerCount);
     auto* env = cluster.storageEnv_.get();
     auto totalParts = cluster.getTotalParts();
     ASSERT_EQ(true, QueryTestUtils::mockBenchEdgeData(env, totalParts, schemaVerCount, rankCount));

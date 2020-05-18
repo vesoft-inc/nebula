@@ -133,7 +133,7 @@ bool JobManager::runJobInternal(const JobDescription& jobDesc) {
     bool jobSuccess = true;
     for (auto& hostAndStatus : nebula::value(results)) {
         auto& host = hostAndStatus.first;
-        TaskDescription task(jobDesc.getJobId(), taskId, host.ip, host.port);
+        TaskDescription task(jobDesc.getJobId(), taskId, host.host, host.port);
         bool taskSuccess = hostAndStatus.second.ok();
         auto taskStatus = taskSuccess ? cpp2::JobStatus::FINISHED : cpp2::JobStatus::FAILED;
         if (!taskSuccess) {

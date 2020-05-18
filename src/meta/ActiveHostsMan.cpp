@@ -19,10 +19,10 @@ kvstore::ResultCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
                                                    const LeaderParts* leaderParts) {
     CHECK_NOTNULL(kv);
     std::vector<kvstore::KV> data;
-    data.emplace_back(MetaServiceUtils::hostKey(hostAddr.ip, hostAddr.port),
+    data.emplace_back(MetaServiceUtils::hostKey(hostAddr.host, hostAddr.port),
                       HostInfo::encode(info));
     if (leaderParts != nullptr) {
-        data.emplace_back(MetaServiceUtils::leaderKey(hostAddr.ip, hostAddr.port),
+        data.emplace_back(MetaServiceUtils::leaderKey(hostAddr.host, hostAddr.port),
                           MetaServiceUtils::leaderVal(*leaderParts));
     }
     folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
@@ -51,7 +51,7 @@ std::vector<HostAddr> ActiveHostsMan::getActiveHosts(kvstore::KVStore* kv, int32
         auto host = MetaServiceUtils::parseHostKey(iter->key());
         HostInfo info = HostInfo::decode(iter->val());
         if (now - info.lastHBTimeInMilliSec_ < threshold) {
-            hosts.emplace_back(host.ip, host.port);
+            hosts.emplace_back(host.host, host.port);
         }
         iter->next();
     }

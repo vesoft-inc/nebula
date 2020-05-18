@@ -8,6 +8,9 @@
 #include "time/WallClock.h"
 #include "kvstore/LogEncoder.h"
 
+#include <thrift/lib/cpp2/protocol/Serializer.h>
+#include <thrift/lib/cpp2/protocol/CompactProtocol.h>
+
 namespace nebula {
 namespace kvstore {
 
@@ -220,23 +223,30 @@ decodeBatchValue(folly::StringPiece encoded) {
 
 std::string encodeHost(LogType type, const HostAddr& host) {
     std::string encoded;
-    encoded.reserve(sizeof(int64_t) + 1 + sizeof(HostAddr));
+    // 15 refers to "255.255.255.255"
+    encoded.reserve(sizeof(int64_t) + 1 + 15 + sizeof(int));
     int64_t ts = time::WallClock::fastNowInMilliSec();
+    std::string encodedHost;
+    apache::thrift::CompactSerializer::serialize(host, &encodedHost);
+
     encoded.append(reinterpret_cast<char*>(&ts), sizeof(int64_t))
            .append(reinterpret_cast<char*>(&type), 1)
-           .append(reinterpret_cast<const char*>(&host), sizeof(HostAddr));
+           .append(encodedHost);
     return encoded;
 }
 
 HostAddr decodeHost(LogType type, const folly::StringPiece& encoded) {
     HostAddr addr;
-    CHECK_EQ(sizeof(int64_t) + 1 + sizeof(HostAddr), encoded.size());
+
+    CHECK_GE(encoded.size(), sizeof(int64_t) + 1 + sizeof(size_t) + sizeof(Port));
     CHECK(encoded[sizeof(int64_t)] == type);
-    memcpy(&addr.ip, encoded.begin() + sizeof(int64_t) + 1, sizeof(addr.ip));
-    memcpy(&addr.port,
-           encoded.begin() + sizeof(int64_t) + 1 + sizeof(addr.ip),
-           sizeof(addr.port));
-    return addr;
+
+    folly::StringPiece raw = encoded;
+    raw.advance(sizeof(int64_t) + 1);
+
+    HostAddr host;
+    apache::thrift::CompactSerializer::deserialize(raw, host);
+    return host;
 }
 
 int64_t getTimestamp(const folly::StringPiece& command) {

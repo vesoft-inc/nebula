@@ -33,7 +33,7 @@ std::vector<HostAddr> getPeers(const std::vector<HostAddr>& all,
     for (const auto& host : all) {
         if (host != self && !isLearner[index]) {
             VLOG(2) << "Adding host "
-                    << NetworkUtils::intToIPv4(host.ip)
+                    << host.host
                     << ":" << host.port;
             peers.emplace_back(host);
         }
@@ -130,7 +130,7 @@ void waitUntilAllHasLeader(const std::vector<std::shared_ptr<test::TestShard>>& 
         bool allHaveLeader = true;
         for (auto& c : copies) {
             if (c != nullptr && c->isRunning()) {
-                if (c->leader().ip == 0 && c->leader().port == 0) {
+                if (c->leader().host == "" && c->leader().port == 0) {
                     allHaveLeader = false;
                     break;
                 }
@@ -154,8 +154,7 @@ void setupRaft(
         std::vector<std::shared_ptr<test::TestShard>>& copies,
         std::shared_ptr<test::TestShard>& leader,
         std::vector<bool> isLearner) {
-    IPv4 ipInt;
-    CHECK(NetworkUtils::ipv4ToInt("127.0.0.1", ipInt));
+    std::string ipStr("127.0.0.1");
 
     workers = std::make_shared<thread::GenericThreadPool>();
     workers->start(4);
@@ -175,7 +174,7 @@ void setupRaft(
         if (!services.back()->start())
             return;
         uint16_t port = services.back()->getServerPort();
-        allHosts.emplace_back(ipInt, port);
+        allHosts.emplace_back(ipStr, port);
     }
 
     if (isLearner.empty()) {
