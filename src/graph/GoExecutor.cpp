@@ -1134,7 +1134,11 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         return vertexHolder_->get(dstId, tagId, prop);
                     };
                     getters.getVariableProp = [&srcId,
-                                               this] (const std::string &prop) {
+                                               this] (const std::string &prop) -> OptVariantType {
+                        if (!uniqueStart_) {
+                            return Status::NotSupported(
+                                "Not supported duplicate start from variable");
+                        }
                         return getPropFromInterim(srcId, prop);
                     };
                     getters.getInputProp = [&srcId,
