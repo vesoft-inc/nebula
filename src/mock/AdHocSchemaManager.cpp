@@ -71,8 +71,8 @@ AdHocSchemaManager::getTagSchema(GraphSpaceID space,
             // No schema
             return std::shared_ptr<const nebula::meta::NebulaSchemaProvider>();
         } else {
-            // the newest is is at first
-            return tagIt->second.front();
+            // the newest is the last one
+            return tagIt->second.back();
         }
     } else {
         // Looking for the specified version
@@ -142,8 +142,8 @@ AdHocSchemaManager::getEdgeSchema(GraphSpaceID space,
             // No schema
             return std::shared_ptr<const nebula::meta::NebulaSchemaProvider>();
         } else {
-            // the newest is is at first
-            return edgeIt->second.front();
+            // the newest is the last one
+            return edgeIt->second.back();
         }
     } else {
         // Looking for the specified version
