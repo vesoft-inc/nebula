@@ -163,7 +163,7 @@ struct MetaClientOptions {
         , skipConfig_(opt.skipConfig_) {}
 
     // Current host address
-    HostAddr localHost_{0, 0};
+    HostAddr localHost_{"", 0};
     // Current cluster Id, it is requried by storaged only.
     std::atomic<ClusterID> clusterId_{0};
     // If current client being used in storaged.
@@ -534,9 +534,9 @@ protected:
         active_ = addrs_[folly::Random::rand64(addrs_.size())];
     }
 
-    void updateLeader(HostAddr leader = {0, 0}) {
+    void updateLeader(HostAddr leader = {"", 0}) {
         folly::RWSpinLock::WriteHolder holder(hostLock_);
-        if (leader != HostAddr(0, 0)) {
+        if (leader != HostAddr("", 0)) {
             leader_ = leader;
         } else {
             leader_ = addrs_[folly::Random::rand64(addrs_.size())];

@@ -41,9 +41,6 @@ public:
 
     static StatusOr<std::vector<HostAddr>> resolveHost(const std::string &host,
                                                        int32_t port);
-    // Get local IPv4 address. You could specify it by pass in default local ip,
-    // otherwise it will use the first ip exclude "127.0.0.1"
-    static StatusOr<std::string> getLocalIP(std::string defaultIP = "");
 
     // Convert the given 32-bit unsigned integer (in network order) to an IPv4
     // address string (in the form of xx.xx.xx.xx)

@@ -19,6 +19,12 @@ struct HostAddr {
     Port        port;
 
     HostAddr() : host(), port(0) {}
+    /*
+     * some one may ctor HostAddr this way : HostAddr host(0, 0)
+     * C++ will compile this successfully even we don't support an (int, int) ctor
+     * so, add an explicit delete ctor
+     * */
+    HostAddr(int h, int p) = delete;
     HostAddr(std::string&& h, Port p) : host(std::move(h)), port(p) {}
     HostAddr(const std::string& h, Port p) : host(h), port(p) {}
 
@@ -35,7 +41,6 @@ struct HostAddr {
 };
 
 std::ostream& operator<<(std::ostream &, const HostAddr&);
-
 }  // namespace nebula
 
 
@@ -45,7 +50,7 @@ namespace std {
 template<>
 struct hash<nebula::HostAddr> {
     std::size_t operator()(const nebula::HostAddr& h) const noexcept {
-        int64_t code = folly::hash::fnv32_buf(&(h.host.data()), h.host.size());
+        int64_t code = folly::hash::fnv32_buf(h.host.data(), h.host.size());
         code <<= 32;
         code |= folly::hash::fnv32_buf(&(h.port), sizeof(nebula::Port));
         return code;

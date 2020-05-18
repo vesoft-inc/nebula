@@ -104,7 +104,7 @@ private:
 
 private:
     std::string domain_;
-    HostAddr collectorAddr_{0, 0};
+    HostAddr collectorAddr_{"", 0};
     int32_t interval_{0};
 
     // <counter_name> => index
