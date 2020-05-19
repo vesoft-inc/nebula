@@ -903,14 +903,24 @@ void MetaServiceUtils::upgradeMetaDataV1toV2(nebula::kvstore::KVStore* kv) {
 
 std::string MetaServiceUtils::serializeHostAddr(const HostAddr& host) {
     std::string ret;
-    apache::thrift::CompactSerializer::serialize(host, &ret);
+    ret.reserve(sizeof(size_t) + 15 + sizeof(Port));    // 255.255.255.255
+    size_t len = host.host.size();
+    ret.append(reinterpret_cast<char*>(&len), sizeof(size_t))
+       .append(host.host.data(), len)
+       .append(reinterpret_cast<const char*>(&host.port), sizeof(Port));
     return ret;
 }
 
 HostAddr MetaServiceUtils::deserializeHostAddr(folly::StringPiece raw) {
-    HostAddr host;
-    apache::thrift::CompactSerializer::deserialize(raw, host);
-    return host;
+    HostAddr addr;
+    CHECK_GE(raw.size(), sizeof(size_t) + sizeof(Port));  // host may be ""
+    size_t offset = 0;
+    size_t len = *reinterpret_cast<const size_t*>(raw.begin() + offset);
+    offset += sizeof(size_t);
+    addr.host = std::string(raw.begin() + offset, len);
+    offset += len;
+    addr.port = *reinterpret_cast<const Port*>(raw.begin() + offset);
+    return addr;
 }
 
 }  // namespace meta

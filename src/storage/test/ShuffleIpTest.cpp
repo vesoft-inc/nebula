@@ -48,12 +48,12 @@ public:
     }
 };
 
-TEST(ShuffleIpTest, ResolveHostTest) {
-    std::string hostname{"cocacola"};
-    LOG(INFO) << folly::sformat("hostname = {}", hostname);
-    auto saddr = folly::SocketAddress{hostname, 0, true};
-    LOG(INFO) << folly::sformat("hostname = {}", saddr.describe());
-}
+// TEST(ShuffleIpTest, ResolveHostTest) {
+//     std::string hostname{"cocacola"};
+//     LOG(INFO) << folly::sformat("hostname = {}", hostname);
+//     auto saddr = folly::SocketAddress{hostname, 0, true};
+//     LOG(INFO) << folly::sformat("hostname = {}", saddr.describe());
+// }
 
 TEST(ShuffleIpTest, setupData) {
     // fs::TempDir rootPath("/tmp/ShuffleIpTest.XXXXXX");
@@ -120,14 +120,14 @@ TEST(ShuffleIpTest, setupData) {
  * modify /etc/hosts
  * */
 
-TEST(ShuffleIpTest, readData) {  // cleanup
-    // auto hostname = network::NetworkUtils::getHostname();
-    std::string hostname{"cocacola"};
-    LOG(INFO) << folly::sformat("hostname = {}", hostname);
-    // auto port = network::NetworkUtils::getAvailablePort();
-    auto saddr = folly::SocketAddress{hostname, 0, true};
-    LOG(INFO) << folly::sformat("hostname = {}", saddr.describe());
-}
+// TEST(ShuffleIpTest, readData) {  // cleanup
+//     // auto hostname = network::NetworkUtils::getHostname();
+//     std::string hostname{"cocacola"};
+//     LOG(INFO) << folly::sformat("hostname = {}", hostname);
+//     // auto port = network::NetworkUtils::getAvailablePort();
+//     auto saddr = folly::SocketAddress{hostname, 0, true};
+//     LOG(INFO) << folly::sformat("hostname = {}", saddr.describe());
+// }
 
 class TestListener : public meta::MetaChangedListener {
 public:

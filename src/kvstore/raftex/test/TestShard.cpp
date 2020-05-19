@@ -30,7 +30,7 @@ HostAddr deserializeHostAddr(folly::StringPiece raw) {
     size_t offset = 0;
     size_t len = *reinterpret_cast<const size_t*>(raw.begin() + offset);
     offset += sizeof(size_t);
-    addr.host = std::move(std::string(raw.begin() + offset, len));
+    addr.host = std::string(raw.begin() + offset, len);
     offset += len;
     addr.port = *reinterpret_cast<const Port*>(raw.begin() + offset);
     return addr;

@@ -106,6 +106,7 @@ void MockCluster::initStorageKV(const char* dataPath,
                                 HostAddr addr,
                                 SchemaVer schemaVerCount) {
     const std::vector<PartitionID> parts{1, 2, 3, 4, 5, 6};
+    totalParts_ = 6;  // don't not delete this...
     kvstore::KVOptions options;
     if (metaClient_ != nullptr) {
         LOG(INFO) << "Pull meta information from meta server";
