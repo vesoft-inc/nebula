@@ -1009,6 +1009,7 @@ TEST(MetaClientTest, HeartbeatTest) {
     }
     sleep(FLAGS_heartbeat_interval_secs + 1);
     ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(cluster.metaKV_.get()).size());
+    client->unRegisterListener();
 }
 
 
