@@ -15,6 +15,18 @@ namespace nebula {
 TEST(Parser, Go) {
     {
         GQLParser parser;
+        std::string query = "GO 0 STEPS FROM 1 OVER friend";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO -1 STEPS FROM 1 OVER friend";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
         std::string query = "GO FROM 1 OVER friend";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
