@@ -211,6 +211,8 @@ public:
 
     bool leaseValid();
 
+    bool needToCleanWal();
+
 protected:
     // Protected constructor to prevent from instantiating directly
     RaftPart(ClusterID clusterId,
@@ -331,8 +333,6 @@ private:
     bool needToCleanupSnapshot();
 
     void cleanupSnapshot();
-
-    bool needToCleanWal();
 
     // The method sends out AskForVote request
     // It return true if a leader is elected, otherwise returns false

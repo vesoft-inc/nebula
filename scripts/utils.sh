@@ -98,7 +98,7 @@ function wait_for_exit {
 # To read a config item's value from the config file
 # args: <config file> <config item name>
 function get_item_from_config {
-    sed -n -e "s/--${2}=\(.*\)$/\1/p" ${1} 2>/dev/null
+    sed -n -e "s/^--${2}=\(.*\)$/\1/p" ${1} 2>/dev/null | sed -n "1p"
 }
 
 
