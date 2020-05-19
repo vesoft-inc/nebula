@@ -1,3 +1,8 @@
+# Copyright (c) 2020 vesoft inc. All rights reserved.
+#
+# This source code is licensed under Apache 2.0 License,
+# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+
 set(GRAPH_TEST_LIBS
     $<TARGET_OBJECTS:graph_obj>
     $<TARGET_OBJECTS:graph_thrift_obj>
