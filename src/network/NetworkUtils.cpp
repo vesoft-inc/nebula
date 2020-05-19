@@ -17,6 +17,8 @@ namespace network {
 
 static const int32_t kMaxHostNameLen = 256;
 
+
+// TODO(liuyu) this only works in ipv4
 std::string NetworkUtils::getHostname() {
     char hn[kMaxHostNameLen];
 
