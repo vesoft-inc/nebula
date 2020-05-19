@@ -283,15 +283,22 @@ void FileBasedWal::closeCurrFile() {
         return;
     }
 
-    CHECK_EQ(fsync(currFd_), 0) << strerror(errno);
+    if (!policy_.sync) {
+        if (::fsync(currFd_) == -1) {
+            LOG(WARNING) << "sync wal \"" << currInfo_->path()
+                         << "\" failed, error: " << strerror(errno);
+        }
+    }
+
     // Close the file
-    CHECK_EQ(close(currFd_), 0) << strerror(errno);
+    if (::close(currFd_) == -1) {
+        LOG(WARNING) << "close wal \"" << currInfo_->path()
+                     << "\" failed, error: " << strerror(errno);
+    }
     currFd_ = -1;
 
     auto now = time::WallClock::fastNowInSec();
     currInfo_->setMTime(now);
-//    DCHECK_EQ(currInfo_->size(), FileUtils::fileSize(currInfo_->path()))
-//        << currInfo_->path() << " size does not match";
     struct utimbuf timebuf;
     timebuf.modtime = currInfo_->mtime();
     timebuf.actime = currInfo_->mtime();
@@ -543,6 +550,13 @@ bool FileBasedWal::appendLogInternal(LogID id,
     if (bytesWritten != (ssize_t)strBuf.size()) {
         LOG(FATAL) << idStr_ << "bytesWritten:" << bytesWritten << ", expected:" << strBuf.size()
                    << ", error:" << strerror(errno);
+    }
+
+    if (policy_.sync) {
+        if (::fsync(currFd_) == -1) {
+            LOG(WARNING) << "sync wal \"" << currInfo_->path()
+                         << "\" failed, error: " << strerror(errno);
+        }
     }
     currInfo_->setSize(currInfo_->size() + strBuf.size());
     currInfo_->setLastId(id);
