@@ -10,7 +10,6 @@
 #include "base/Base.h"
 #include "base/StatusOr.h"
 #include "base/Status.h"
-#include "filter/Expressions.h"
 #include <folly/futures/Future.h>
 
 /**
@@ -24,7 +23,7 @@ namespace nebula {
 
 class FunctionManager final {
 public:
-    using Function = std::function<VariantType(const std::vector<VariantType>&)>;
+    using Function = std::function<StatusOr<VariantType>(const std::vector<VariantType>&)>;
 
     /**
      * To obtain a function named `func', with the actual arity.
