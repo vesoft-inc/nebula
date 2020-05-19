@@ -1,3 +1,3 @@
-- [Manual](./manual-EN/README.md)
+- [Manual](https://docs.nebula-graph.io/)
 
-- [中文手册](./manual-CN/README.md)
+- [中文手册](https://docs.nebula-graph.com.cn/)

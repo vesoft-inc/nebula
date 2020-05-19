@@ -96,6 +96,13 @@ void GoExecutor::execute() {
         return;
     }
 
+    if (steps_ == 0) {
+        // #2100
+        // TODO(shylock) unify the steps checking
+        onEmptyInputs();
+        return;
+    }
+
     status = setupStarts();
     if (!status.ok()) {
         doError(std::move(status));
