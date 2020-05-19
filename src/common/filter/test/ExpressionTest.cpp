@@ -358,6 +358,20 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
     TEST_EXPR(false < 0.0, false);
     TEST_EXPR(false <= 0.0, true);
 
+    TEST_EXPR(abcd CONTAINS a, true)
+    TEST_EXPR(abcd CONTAINS bc, true)
+    TEST_EXPR(abcd CONTAINS cd, true)
+    TEST_EXPR(bcd CONTAINS a, false)
+    TEST_EXPR("abcd" CONTAINS "a", true)
+    TEST_EXPR("abcd" CONTAINS "bc", true)
+    TEST_EXPR("abcd" CONTAINS "cd", true)
+    TEST_EXPR("bcd" CONTAINS "a", false)
+    TEST_EXPR("Abcd" CONTAINS "A", true)
+    TEST_EXPR("Abcd" CONTAINS "a", false)
+    TEST_EXPR("abcd" CONTAINS "", true)
+    TEST_EXPR("" CONTAINS "abcd", false)
+    TEST_EXPR("" CONTAINS "", true)
+
     TEST_EXPR(8 % 2 + 1 == 1, true);
     TEST_EXPR(8 % 2 + 1 != 1, false);
     TEST_EXPR(8 % 3 + 1 == 3, true);
@@ -705,6 +719,10 @@ TEST_F(ExpressionTest, InvalidExpressionTest) {
     TEST_EXPR_FAILED("123" <= 123);
     TEST_EXPR_FAILED("123" == 123);
     TEST_EXPR_FAILED("123" != 123);
+    TEST_EXPR_FAILED("abc" CONTAINS 0);
+    TEST_EXPR_FAILED("abc" CONTAINS 1.0);
+    TEST_EXPR_FAILED("abc" CONTAINS true);
+    TEST_EXPR_FAILED(0 CONTAINS 0);
 }
 
 

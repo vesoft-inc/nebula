@@ -19,7 +19,7 @@ namespace nebula {
 class Cord;
 using OptVariantType = StatusOr<VariantType>;
 
-enum class ColumnType {
+enum class ColumnType : uint8_t {
     INT, STRING, DOUBLE, BOOL, TIMESTAMP,
 };
 
@@ -312,6 +312,10 @@ public:
     static bool almostEqual(double left, double right) {
         constexpr auto EPSILON = 1e-8;
         return std::abs(left - right) < EPSILON;
+    }
+
+    static bool contains(const std::string& left, const std::string& right) {
+        return left.find(right) != std::string::npos;
     }
 
     // Procedures used to do type casting
@@ -846,9 +850,7 @@ public:
 private:
     void encode(Cord &cord) const override;
 
-    const char* decode(const char *, const char *) override {
-        throw Status::Error("Not supported yet");
-    }
+    const char* decode(const char *, const char *) override;
 
 private:
     ColumnType                                  type_;
@@ -911,7 +913,7 @@ private:
 class RelationalExpression final : public Expression {
 public:
     enum Operator : uint8_t {
-        LT, LE, GT, GE, EQ, NE
+        LT, LE, GT, GE, EQ, NE, CONTAINS
     };
     static_assert(sizeof(Operator) == sizeof(uint8_t), "");
 

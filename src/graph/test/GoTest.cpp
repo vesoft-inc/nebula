@@ -360,6 +360,21 @@ TEST_P(GoTest, VertexNotExist) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         ASSERT_EQ(nullptr, resp.get_rows());
     }
+}
+
+TEST_P(GoTest, EmptyInputs) {
+    std::string name = "NON EXIST VERTEX ID";
+    int64_t nonExistPlayerID = std::hash<std::string>()(name);
+    auto iter = players_.begin();
+    while (iter != players_.end()) {
+        if (iter->vid() == nonExistPlayerID) {
+            ++nonExistPlayerID;
+            iter = players_.begin();
+            continue;
+        }
+        ++iter;
+    }
+
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "GO FROM %ld OVER serve | GO FROM $-.serve_id OVER serve";
@@ -382,6 +397,17 @@ TEST_P(GoTest, VertexNotExist) {
         auto *fmt = "GO FROM %ld OVER like YIELD like._dst as id"
                     "| (GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve)";
         auto query = folly::stringPrintf(fmt, nonExistPlayerID);
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string fmt = "GO FROM %ld over serve "
+                          "YIELD serve._dst as id, serve.start_year as start "
+                          "| YIELD $-.id as id WHERE $-.start > 20000"
+                          "| Go FROM $-.id over serve";
+        auto query = folly::stringPrintf(fmt.c_str(), players_["Marco Belinelli"].vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         ASSERT_EQ(nullptr, resp.get_rows());
@@ -998,14 +1024,7 @@ TEST_P(GoTest, ReturnTest) {
         auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-
-        std::vector<std::string> expectedColNames{
-            {"$A.dst"}
-        };
-        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
-
-        std::vector<std::tuple<int64_t>> expected;
-        ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_EQ(nullptr, resp.get_rows());
     }
     {
         cpp2::ExecutionResponse resp;
@@ -2172,7 +2191,57 @@ TEST_P(GoTest, FilterPushdown) {
         std::vector<std::tuple<int64_t>> expected;
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "WHERE $$.team.name CONTAINS Haw "
+                    "YIELD $^.player.name, serve.start_year, serve.end_year, $$.team.name";
+        auto query = folly::stringPrintf(fmt, player.vid());
 
+        TEST_FILTER_PUSHDOWN_REWRITE(
+            false,
+            "");
+
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$^.player.name"}, {"serve.start_year"}, {"serve.end_year"}, {"$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<std::string, int64_t, int64_t, std::string>> expected = {
+            {player.name(), 2003, 2005, "Hawks"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "WHERE (string)serve.start_year CONTAINS \"05\" "
+                    "&& $^.player.name CONTAINS \"Boris\""
+                    "YIELD $^.player.name, serve.start_year, serve.end_year, $$.team.name";
+        auto query = folly::stringPrintf(fmt, player.vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+            true,
+            "(((string)serve.start_year CONTAINS 05)&&($^.player.name CONTAINS Boris))");
+
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$^.player.name"}, {"serve.start_year"}, {"serve.end_year"}, {"$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<std::string, int64_t, int64_t, std::string>> expected = {
+            {player.name(), 2005, 2008, "Suns"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
 #undef TEST_FILTER_PUSHDWON_REWRITE
 }
 
@@ -2202,6 +2271,144 @@ TEST_P(GoTest, DuplicateColumnName) {
         auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+}
+
+TEST_P(GoTest, Contains) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "WHERE $$.team.name CONTAINS Haw "
+                    "YIELD $^.player.name, serve.start_year, serve.end_year, $$.team.name";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$^.player.name"}, {"serve.start_year"}, {"serve.end_year"}, {"$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<std::string, int64_t, int64_t, std::string>> expected = {
+            {player.name(), 2003, 2005, "Hawks"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "WHERE (string)serve.start_year CONTAINS \"05\" "
+                    "YIELD $^.player.name, serve.start_year, serve.end_year, $$.team.name";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$^.player.name"}, {"serve.start_year"}, {"serve.end_year"}, {"$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<std::string, int64_t, int64_t, std::string>> expected = {
+            {player.name(), 2005, 2008, "Suns"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "WHERE $^.player.name CONTAINS \"Boris\" "
+                    "YIELD $^.player.name, serve.start_year, serve.end_year, $$.team.name";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$^.player.name"}, {"serve.start_year"}, {"serve.end_year"}, {"$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<std::string, int64_t, int64_t, std::string>> expected = {
+            {player.name(), 2003, 2005, "Hawks"},
+            {player.name(), 2005, 2008, "Suns"},
+            {player.name(), 2008, 2012, "Hornets"},
+            {player.name(), 2012, 2016, "Spurs"},
+            {player.name(), 2016, 2017, "Jazz"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "WHERE !($^.player.name CONTAINS \"Boris\") "
+                    "YIELD $^.player.name, serve.start_year, serve.end_year, $$.team.name";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::tuple<std::string, int64_t, int64_t, std::string>> expected = {
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "WHERE \"Leo\" CONTAINS \"Boris\" "
+                    "YIELD $^.player.name, serve.start_year, serve.end_year, $$.team.name";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::tuple<std::string, int64_t, int64_t, std::string>> expected = {
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+TEST_P(GoTest, ZeroStep) {
+    // Zero step
+    {
+        // #2100
+        // A cycle traversal
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO 0 STEPS FROM %ld OVER serve BIDIRECT";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        // Empty response
+        std::vector<std::tuple<int64_t>> expected = {
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+
+    {
+        // a normal traversal
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO 0 STEPS FROM %ld OVER serve";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::tuple<int64_t>> expected = {
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+TEST_P(GoTest, ErrorMsg) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve YIELD $$.player.name as name";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string>> expected = {""};
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
 

@@ -155,6 +155,7 @@ OFFLINE                     ([Oo][Ff][Ff][Ll][Ii][Nn][Ee])
 BIDIRECT                    ([Bb][Ii][Dd][Ii][Rr][Ee][Cc][Tt])
 ACCOUNT                     ([Aa][Cc][Cc][Oo][Uu][Nn][Tt])
 DBA                         ([Dd][Bb][Aa])
+CONTAINS                    ([Cc][Oo][Nn][Tt][Aa][Ii][Nn][Ss])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -306,6 +307,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {META}                      { return TokenType::KW_META; }
 {STORAGE}                   { return TokenType::KW_STORAGE; }
 {SHORTEST}                  { return TokenType::KW_SHORTEST; }
+{CONTAINS}                  { return TokenType::KW_CONTAINS; }
 
 
 {TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }
@@ -541,7 +543,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
                             }
 "#".*                       // Skip the annotation
 "//".*                      // Skip the annotation
-"--".*                      // Skip the annotation
+"-- ".*                     // Skip the annotation
 "/*"                        { BEGIN(COMMENT); }
 <COMMENT>"*/"               { BEGIN(INITIAL); }
 <COMMENT>([^*]|\n)+|.
