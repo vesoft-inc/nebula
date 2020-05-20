@@ -762,24 +762,10 @@ struct KVRemoveRequest {
 }
 
 
-struct KeyRange {
-    1: binary start,
-    2: binary end,
-}
-
-
-struct KVRemoveRangeRequest {
-    1: common.GraphSpaceID space_id,
-    2: map<common.PartitionID, list<KeyRange>>(
-        cpp.template = "std::unordered_map") parts,
-}
-
-
 service GeneralStorageService {
     // Interfaces for key-value storage
     KVGetResponse   get(1: KVGetRequest req);
     ExecResponse    put(1: KVPutRequest req);
     ExecResponse    remove(1: KVRemoveRequest req);
-    ExecResponse    removeRange(1: KVRemoveRangeRequest req);
 }
 

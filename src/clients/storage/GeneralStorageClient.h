@@ -42,6 +42,11 @@ public:
         GraphSpaceID space,
         std::vector<KeyValue> kvs,
         folly::EventBase* evb = nullptr);
+
+    folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> remove(
+        GraphSpaceID space,
+        std::vector<std::string> keys,
+        folly::EventBase* evb = nullptr);
 };
 
 }  // namespace storage
