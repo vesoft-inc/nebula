@@ -1359,13 +1359,47 @@ void Value::setG(DataSet&& v) {
     new (std::addressof(value_.gVal)) std::unique_ptr<DataSet>(new DataSet(std::move(v)));
 }
 
+StatusOr<std::string> Value::toString() {
+    switch (type_) {
+        case Value::Type::__EMPTY__: {
+            return std::string("");
+        }
+        case Value::Type::NULLVALUE: {
+            if (getNull() == NullType::__NULL__) {
+                return std::string("NULL");
+            } else {
+                return Status::Error("Value is illegal");
+            }
+        }
+        case Value::Type::BOOL: {
+            return getBool() ? "true" : "false";
+        }
+        case Value::Type::INT: {
+            return folly::stringPrintf("%ld", getInt());
+        }
+        case Value::Type::FLOAT: {
+            return folly::stringPrintf("%lf", getFloat());
+        }
+        case Value::Type::STRING: {
+            return getStr();
+        }
+        case Value::Type::DATE: {
+            return getDate().toString();
+        }
+        case Value::Type::DATETIME: {
+            return getDateTime().toString();
+        }
+        default: {
+            return Status::Error("Value can not convert to string");
+        }
+    }
+}
 
 void swap(Value& a, Value& b) {
     Value temp(std::move(a));
     a = std::move(b);
     b = std::move(temp);
 }
-
 
 std::ostream& operator<<(std::ostream& os, const Value::Type& type) {
     switch (type) {

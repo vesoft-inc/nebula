@@ -10,6 +10,7 @@
 #include "base/Base.h"
 #include "thrift/ThriftTypes.h"
 #include "datatypes/Date.h"
+#include "base/StatusOr.h"
 
 namespace apache {
 namespace thrift {
@@ -227,6 +228,8 @@ struct Value {
         static const Value kNullValue(NullType::__NULL__);
         return kNullValue;
     }
+
+    StatusOr<std::string> toString();
 
 private:
     Type type_;
