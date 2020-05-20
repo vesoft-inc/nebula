@@ -6,59 +6,49 @@
 
 #include "base/Base.h"
 #include <gtest/gtest.h>
-#include <rocksdb/db.h>
 #include "fs/TempDir.h"
-#include "storage/test/TestUtils.h"
 #include "storage/admin/CreateCheckpointProcessor.h"
 #include "storage/mutate/AddVerticesProcessor.h"
+#include "mock/MockCluster.h"
+#include "mock/MockData.h"
 
 namespace nebula {
 namespace storage {
 TEST(CheckpointTest, simpleTest) {
     fs::TempDir dataPath("/tmp/Checkpoint_Test_src.XXXXXX");
-    constexpr int32_t partitions = 6;
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(dataPath.path(), partitions,
-        {0, network::NetworkUtils::getAvailablePort()}));
-    // Hard code the default space 0, partitions set
-    TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
-    auto schemaMan = TestUtils::mockSchemaMan();
-    auto indexMan = TestUtils::mockIndexMan();
+    mock::MockCluster cluster;
+    cluster.initStorageKV(dataPath.path());
+    auto* env = cluster.storageEnv_.get();
     // Add vertices
     {
-        auto* processor = AddVerticesProcessor::instance(kv.get(),
-                                                         schemaMan.get(),
-                                                         indexMan.get(),
-                                                         nullptr);
-        cpp2::AddVerticesRequest req;
-        req.space_id = 0;
-        req.overwritable = false;
-        // partId => List<Vertex>
-        for (PartitionID partId = 0; partId < 3; partId++) {
-            auto vertices = TestUtils::setupVertices(partId, 10, 10, 0, partId * 10);
-            req.parts.emplace(partId, std::move(vertices));
-        }
+        auto* processor = AddVerticesProcessor::instance(env, nullptr);
 
+        LOG(INFO) << "Build AddVerticesRequest...";
+        cpp2::AddVerticesRequest req = mock::MockData::mockAddVerticesReq();
+
+        LOG(INFO) << "Test AddVerticesProcessor...";
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        EXPECT_EQ(0, resp.result.failed_codes.size());
+        EXPECT_EQ(0, resp.result.failed_parts.size());
     }
 
     // Begin checkpoint
     {
-        auto* processor = CreateCheckpointProcessor::instance(kv.get());
+        auto* processor = CreateCheckpointProcessor::instance(env);
         cpp2::CreateCPRequest req;
+        req.space_id = 1;
         req.name = "checkpoint_test";
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        EXPECT_EQ(0, resp.result.failed_codes.size());
-        auto checkpoint1 = folly::stringPrintf("%s/disk1/nebula/0/checkpoints/checkpoint_test/data",
+        EXPECT_EQ(0, resp.result.failed_parts.size());
+        auto checkpoint1 = folly::stringPrintf("%s/disk1/nebula/1/checkpoints/checkpoint_test/data",
                                                dataPath.path());
         auto files = fs::FileUtils::listAllFilesInDir(checkpoint1.data());
         ASSERT_EQ(4, files.size());
         files.clear();
-        auto checkpoint2 = folly::stringPrintf("%s/disk2/nebula/0/checkpoints/checkpoint_test/data",
+        auto checkpoint2 = folly::stringPrintf("%s/disk2/nebula/1/checkpoints/checkpoint_test/data",
                                                dataPath.path());
         fs::FileUtils::listAllFilesInDir(checkpoint2.data());
         files = fs::FileUtils::listAllFilesInDir(checkpoint2.data());

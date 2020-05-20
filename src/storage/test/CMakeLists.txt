@@ -122,6 +122,20 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
+        checkpoint_test
+    SOURCES
+        CheckpointTest.cpp
+    OBJECTS
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
         shuffle_ip_test
     SOURCES
         ShuffleIpTest.cpp
@@ -354,20 +368,6 @@ nebula_add_executable(
 #        vertex_cache_test
 #    SOURCES
 #        VertexCacheTest.cpp
-#    OBJECTS
-#        ${storage_test_deps}
-#    LIBRARIES
-#        ${ROCKSDB_LIBRARIES}
-#        ${THRIFT_LIBRARIES}
-#        wangle
-#        gtest
-#)
-#
-#nebula_add_test(
-#    NAME
-#        checkpoint_test
-#    SOURCES
-#        CheckpointTest.cpp
 #    OBJECTS
 #        ${storage_test_deps}
 #    LIBRARIES
