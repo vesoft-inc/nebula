@@ -12,8 +12,8 @@
 #include <gtest/gtest_prod.h>
 #include "base/Cord.h"
 #include "kvstore/wal/Wal.h"
-#include "kvstore/wal/InMemoryLogBuffer.h"
 #include "kvstore/wal/WalFileInfo.h"
+#include "kvstore/wal/AtomicLogBuffer.h"
 
 namespace nebula {
 namespace wal {
@@ -44,7 +44,9 @@ class FileBasedWal final : public Wal
     FRIEND_TEST(FileBasedWal, TTLTest);
     FRIEND_TEST(FileBasedWal, CheckLastWalTest);
     FRIEND_TEST(FileBasedWal, LinkTest);
+    FRIEND_TEST(WalFileIter, MultiFilesReadTest);
     friend class FileBasedWalIterator;
+    friend class WalFileIterator;
 public:
     // A factory method to create a new WAL
     static std::shared_ptr<FileBasedWal> getWal(
@@ -119,16 +121,6 @@ public:
     // The method returns the number of wal file info being accessed
     size_t accessAllWalInfo(std::function<bool(WalFileInfoPtr info)> fn) const;
 
-    // Iterates through all log buffers in reversed order
-    // (from the latest to the earliest)
-    // The iteration finishes when the functor returns false or reaches
-    // the end
-    // The method returns the number of buffers being accessed
-    size_t accessAllBuffers(std::function<bool(BufferPtr buffer)> fn) const;
-
-    // Dump a buffer into a WAL file
-    void flushBuffer(BufferPtr buffer);
-
 
 private:
     /***************************************
@@ -198,9 +190,7 @@ private:
     // The WalFileInfo corresponding to the currFd_
     WalFileInfoPtr currInfo_;
 
-    // The purpose of the memory buffer is to provide a read cache
-    BufferList buffers_;
-    mutable std::mutex buffersMutex_;
+    std::shared_ptr<AtomicLogBuffer> logBuffer_;
 
     PreProcessor preProcessor_;
 

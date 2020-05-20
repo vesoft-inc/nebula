@@ -6,10 +6,10 @@
 
 #include "base/Base.h"
 #include <utime.h>
-#include "kvstore/wal/FileBasedWal.h"
-#include "kvstore/wal/FileBasedWalIterator.h"
 #include "fs/FileUtils.h"
 #include "time/WallClock.h"
+#include "kvstore/wal/FileBasedWal.h"
+#include "kvstore/wal/WalFileIterator.h"
 
 namespace nebula {
 namespace wal {
@@ -49,6 +49,7 @@ FileBasedWal::FileBasedWal(const folly::StringPiece dir,
         }
     }
 
+    logBuffer_ = AtomicLogBuffer::instance();
     scanAllWalFiles();
     if (!walFiles_.empty()) {
         firstLogId_ = walFiles_.begin()->second->firstId();
@@ -473,25 +474,6 @@ void FileBasedWal::scanLastWal(WalFileInfoPtr info, LogID firstId) {
     close(fd);
 }
 
-
-BufferPtr FileBasedWal::getLastBuffer(LogID id, size_t expectedToWrite) {
-    std::unique_lock<std::mutex> g(buffersMutex_);
-    if (!buffers_.empty()) {
-        if (buffers_.back()->size() + expectedToWrite <= maxBufferSize_) {
-            return buffers_.back();
-        }
-        // Need to rollover to a new buffer
-        if (buffers_.size() == policy_.numBuffers) {
-            // Need to pop the first one
-            buffers_.pop_front();
-        }
-        CHECK_LT(buffers_.size(), policy_.numBuffers);
-    }
-    buffers_.emplace_back(std::make_shared<InMemoryLogBuffer>(id, idStr_));
-    return buffers_.back();
-}
-
-
 bool FileBasedWal::appendLogInternal(LogID id,
                                      TermID term,
                                      ClusterID cluster,
@@ -554,10 +536,7 @@ bool FileBasedWal::appendLogInternal(LogID id,
         firstLogId_ = id;
     }
 
-    // Append to the in-memory buffer
-    auto buffer = getLastBuffer(id, strBuf.size());
-    DCHECK_EQ(id, static_cast<int64_t>(buffer->firstLogId() + buffer->numLogs()));
-    buffer->push(term, cluster, std::move(msg));
+    logBuffer_->push(id, term, cluster, std::move(msg));
 
     return true;
 }
@@ -593,7 +572,11 @@ bool FileBasedWal::appendLogs(LogIterator& iter) {
 
 std::unique_ptr<LogIterator> FileBasedWal::iterator(LogID firstLogId,
                                                     LogID lastLogId) {
-    return std::make_unique<FileBasedWalIterator>(shared_from_this(), firstLogId, lastLogId);
+    auto iter = logBuffer_->iterator(firstLogId, lastLogId);
+    if (iter->valid()) {
+        return iter;
+    }
+    return std::make_unique<WalFileIterator>(shared_from_this(), firstLogId, lastLogId);
 }
 
 bool FileBasedWal::linkCurrentWAL(const char* newPath) {
@@ -673,10 +656,7 @@ bool FileBasedWal::rollbackToLog(LogID id) {
     //------------------------------
     // 2. Roll back in-memory buffers
     //------------------------------
-    {
-        std::unique_lock<std::mutex> g(buffersMutex_);
-        buffers_.clear();
-    }
+    logBuffer_->reset();
 
     return true;
 }
@@ -684,10 +664,7 @@ bool FileBasedWal::rollbackToLog(LogID id) {
 
 bool FileBasedWal::reset() {
     closeCurrFile();
-    {
-        std::lock_guard<std::mutex> g(buffersMutex_);
-        buffers_.clear();
-    }
+    logBuffer_->reset();
     {
         std::lock_guard<std::mutex> g(walFilesMutex_);
         walFiles_.clear();
@@ -740,21 +717,6 @@ size_t FileBasedWal::accessAllWalInfo(std::function<bool(WalFileInfoPtr info)> f
     for (auto it = walFiles_.rbegin(); it != walFiles_.rend(); ++it) {
         ++count;
         if (!fn(it->second)) {
-            break;
-        }
-    }
-
-    return count;
-}
-
-
-size_t FileBasedWal::accessAllBuffers(std::function<bool(BufferPtr buffer)> fn) const {
-    std::lock_guard<std::mutex> g(buffersMutex_);
-
-    size_t count = 0;
-    for (auto it = buffers_.rbegin(); it != buffers_.rend(); ++it) {
-        ++count;
-        if (!fn(*it)) {
             break;
         }
     }

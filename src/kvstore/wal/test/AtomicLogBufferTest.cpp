@@ -27,7 +27,6 @@ void checkIterator(std::shared_ptr<AtomicLogBuffer> logBuffer,
 }
 
 TEST(AtomicLogBufferTest, ReadWriteTest) {
-    LOG(INFO) << "@@@ " << sizeof(Record) << ", " << sizeof(std::string);
     auto logBuffer = AtomicLogBuffer::instance();
     for (LogID logId = 0; logId < 1000L; logId++) {
         logBuffer->push(logId, Record(0, 0, folly::stringPrintf("str_%ld", logId)));
