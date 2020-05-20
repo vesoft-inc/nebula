@@ -312,8 +312,8 @@ std::string MetaServiceUtils::schemaEdgeKey(GraphSpaceID spaceId,
     return key;
 }
 
-std::string MetaServiceUtils::schemaEdgeVal(const std::string& name,
-                                            const cpp2::Schema& schema) {
+std::string MetaServiceUtils::schemaVal(const std::string& name,
+                                        const cpp2::Schema& schema) {
     auto len = name.size();
     std::string val, sval;
     apache::thrift::CompactSerializer::serialize(schema, &sval);
@@ -339,18 +339,6 @@ std::string MetaServiceUtils::schemaTagKey(GraphSpaceID spaceId, TagID tagId, Sc
        .append(reinterpret_cast<const char*>(&tagId), sizeof(TagID))
        .append(reinterpret_cast<const char*>(&storageVer), sizeof(SchemaVer));
     return key;
-}
-
-std::string MetaServiceUtils::schemaTagVal(const std::string& name,
-                                           const cpp2::Schema& schema) {
-    int32_t len = name.size();
-    std::string val, sval;
-    apache::thrift::CompactSerializer::serialize(schema, &sval);
-    val.reserve(sizeof(int32_t) + name.size() + sval.size());
-    val.append(reinterpret_cast<const char*>(&len), sizeof(int32_t))
-       .append(name)
-       .append(sval);
-    return val;
 }
 
 SchemaVer MetaServiceUtils::parseTagVersion(folly::StringPiece key) {

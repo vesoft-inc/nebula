@@ -5,6 +5,7 @@
  */
 
 #include "meta/processors/schemaMan/CreateTagProcessor.h"
+#include "SchemaUtil.h"
 
 namespace nebula {
 namespace meta {
@@ -26,6 +27,17 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
             return;
         }
     }
+
+    auto columns = req.get_schema().get_columns();
+    if (!SchemaUtil::checkType(columns)) {
+        handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
+        onFinished();
+        return;
+    }
+
+    cpp2::Schema schema;
+    schema.set_columns(std::move(columns));
+    schema.set_schema_prop(req.get_schema().get_schema_prop());
 
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
     auto ret = getTagId(req.get_space_id(), tagName);
@@ -52,80 +64,8 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
     std::vector<kvstore::KV> data;
     data.emplace_back(MetaServiceUtils::indexTagKey(req.get_space_id(), tagName),
                       std::string(reinterpret_cast<const char*>(&tagId), sizeof(TagID)));
-    LOG(INFO) << "Create Tag " << tagName << ", tagId " << tagId;
     data.emplace_back(MetaServiceUtils::schemaTagKey(req.get_space_id(), tagId, 0),
-                      MetaServiceUtils::schemaTagVal(tagName, req.get_schema()));
-
-    auto columns = req.get_schema().get_columns();
-    for (auto& column : columns) {
-        if (column.__isset.default_value) {
-            auto name = column.get_name();
-            const auto* value = column.get_default_value();
-            std::string defaultValue;
-            switch (column.get_type()) {
-                case cpp2::PropertyType::BOOL:
-                    if (value->type() != nebula::Value::Type::BOOL) {
-                        LOG(ERROR) << "Create Tag Failed: " << name
-                                   << " type mismatch";
-                        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
-                        onFinished();
-                        return;
-                    }
-                    defaultValue = folly::to<std::string>(value->getBool());
-                    break;
-                case cpp2::PropertyType::INT64:
-                    if (value->type() != nebula::Value::Type::INT) {
-                        LOG(ERROR) << "Create Tag Failed: " << name
-                                   << " type mismatch";
-                        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
-                        onFinished();
-                        return;
-                    }
-                    defaultValue = folly::to<std::string>(value->getInt());
-                    break;
-                case cpp2::PropertyType::DOUBLE:
-                    if (value->type() != nebula::Value::Type::FLOAT) {
-                        LOG(ERROR) << "Create Tag Failed: " << name
-                                   << " type mismatch";
-                        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
-                        onFinished();
-                        return;
-                    }
-                    defaultValue = folly::to<std::string>(value->getFloat());
-                    break;
-                case cpp2::PropertyType::STRING:
-                    if (value->type() != nebula::Value::Type::STRING) {
-                        LOG(ERROR) << "Create Tag Failed: " << name
-                                   << " type mismatch";
-                        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
-                        onFinished();
-                        return;
-                    }
-                    defaultValue = folly::to<std::string>(value->getStr());
-                    break;
-                case cpp2::PropertyType::TIMESTAMP:
-                    if (value->type() != nebula::Value::Type::INT) {
-                        LOG(ERROR) << "Create Tag Failed: " << name
-                                   << " type mismatch";
-                        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
-                        onFinished();
-                        return;
-                    }
-                    defaultValue = folly::to<std::string>(value->getInt());
-                    break;
-                default:
-                    LOG(ERROR) << "Unsupported type";
-                    return;
-            }
-
-            LOG(INFO) << "Get Tag Default value: Property Name " << name
-                    << ", Value " << defaultValue;
-            auto defaultKey = MetaServiceUtils::tagDefaultKey(req.get_space_id(),
-                                                              tagId,
-                                                              name);
-            data.emplace_back(std::move(defaultKey), std::move(defaultValue));
-        }
-    }
+                      MetaServiceUtils::schemaVal(tagName, schema));
 
     LOG(INFO) << "Create Tag " << tagName << ", TagID " << tagId;
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);

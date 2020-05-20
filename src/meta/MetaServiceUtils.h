@@ -107,19 +107,17 @@ public:
 
     static LeaderParts parseLeaderVal(folly::StringPiece val);
 
+    static std::string schemaVal(const std::string& name, const cpp2::Schema& schema);
+
     static std::string schemaEdgePrefix(GraphSpaceID spaceId, EdgeType edgeType);
 
     static std::string schemaEdgesPrefix(GraphSpaceID spaceId);
 
     static std::string schemaEdgeKey(GraphSpaceID spaceId, EdgeType edgeType, SchemaVer version);
 
-    static std::string schemaEdgeVal(const std::string& name, const cpp2::Schema& schema);
-
     static SchemaVer parseEdgeVersion(folly::StringPiece key);
 
     static std::string schemaTagKey(GraphSpaceID spaceId, TagID tagId, SchemaVer version);
-
-    static std::string schemaTagVal(const std::string& name, const cpp2::Schema& schema);
 
     static SchemaVer parseTagVersion(folly::StringPiece key);
 

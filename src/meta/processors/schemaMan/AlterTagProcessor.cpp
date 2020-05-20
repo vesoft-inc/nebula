@@ -92,7 +92,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     std::vector<kvstore::KV> data;
     LOG(INFO) << "Alter Tag " << req.get_tag_name() << ", tagId " << tagId;
     data.emplace_back(MetaServiceUtils::schemaTagKey(spaceId, tagId, version),
-                      MetaServiceUtils::schemaTagVal(req.get_tag_name(), schema));
+                      MetaServiceUtils::schemaVal(req.get_tag_name(), schema));
     resp_.set_id(to(tagId, EntryType::TAG));
     doSyncPutAndUpdate(std::move(data));
 }

@@ -91,7 +91,7 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     std::vector<kvstore::KV> data;
     LOG(INFO) << "Alter edge " << req.get_edge_name() << ", edgeType " << edgeType;
     data.emplace_back(MetaServiceUtils::schemaEdgeKey(spaceId, edgeType, version),
-                      MetaServiceUtils::schemaEdgeVal(req.get_edge_name(), schema));
+                      MetaServiceUtils::schemaVal(req.get_edge_name(), schema));
     resp_.set_id(to(edgeType, EntryType::EDGE));
     doSyncPutAndUpdate(std::move(data));
 }

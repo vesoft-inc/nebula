@@ -124,36 +124,18 @@ private:
 
 class TestUtils {
 public:
-    static cpp2::ColumnDef columnDef(int32_t index, cpp2::PropertyType type) {
+    static cpp2::ColumnDef columnDef(int32_t index, cpp2::PropertyType type,
+            Value defaultValue = Value(), bool isNull = true, int16_t typeLen = 0) {
         cpp2::ColumnDef column;
         column.set_name(folly::stringPrintf("col_%d", index));
         column.set_type(type);
-        return column;
-    }
-
-    static cpp2::ColumnDef columnDefWithDefault(int32_t index,
-                                                cpp2::PropertyType type) {
-        cpp2::ColumnDef column;
-        column.set_name(folly::stringPrintf("col_%d", index));
-        column.set_type(type);
-        nebula::Value defaultValue;
-        switch (type) {
-            case cpp2::PropertyType::BOOL:
-                defaultValue.setBool(true);
-                break;
-            case cpp2::PropertyType::INT64:
-                defaultValue.setInt(1);
-                break;
-            case cpp2::PropertyType::DOUBLE:
-                defaultValue.setFloat(3.14);
-                break;
-            case cpp2::PropertyType::STRING:
-                defaultValue.setStr("default value");
-                break;
-            default:
-                LOG(ERROR) << "Unsupoort type";
+        if (!defaultValue.empty()) {
+            column.set_default_value(std::move(defaultValue));
         }
-        column.set_default_value(std::move(defaultValue));
+        column.set_nullable(isNull);
+        if (type == PropertyType::FIXED_STRING) {
+            column.set_type_length(typeLen);
+        }
         return column;
     }
 
@@ -240,7 +222,7 @@ public:
             auto tagIdVal = std::string(reinterpret_cast<const char*>(&tagId), sizeof(tagId));
             tags.emplace_back(MetaServiceUtils::indexTagKey(1, tagName), tagIdVal);
             tags.emplace_back(MetaServiceUtils::schemaTagKey(1, tagId, ver++),
-                              MetaServiceUtils::schemaTagVal(tagName, srcsch));
+                              MetaServiceUtils::schemaVal(tagName, srcsch));
         }
         folly::Baton<true, std::atomic> baton;
         kv->asyncMultiPut(0, 0, std::move(tags),
@@ -272,7 +254,7 @@ public:
                                            sizeof(edgeType));
             edges.emplace_back(MetaServiceUtils::indexEdgeKey(1, edgeName), edgeTypeVal);
             edges.emplace_back(MetaServiceUtils::schemaEdgeKey(1, edgeType, ver++),
-                               MetaServiceUtils::schemaEdgeVal(edgeName, srcsch));
+                               MetaServiceUtils::schemaVal(edgeName, srcsch));
         }
 
         folly::Baton<true, std::atomic> baton;
@@ -281,6 +263,101 @@ public:
             baton.post();
         });
         baton.wait();
+    }
+
+    static cpp2::Schema mockSchemaWithAllType() {
+        cpp2::Schema schema;
+        decltype(schema.columns) cols;
+        cols.emplace_back(TestUtils::columnDef(0,
+                    PropertyType::BOOL, Value(true), false));
+        cols.emplace_back(TestUtils::columnDef(1,
+                    PropertyType::INT8, Value(NullType::__NULL__), true));
+        cols.emplace_back(TestUtils::columnDef(2,
+                    PropertyType::INT16, Value(20), false));
+        cols.emplace_back(TestUtils::columnDef(3,
+                    PropertyType::INT32, Value(200), false));
+        cols.emplace_back(TestUtils::columnDef(4,
+                    PropertyType::INT64, Value(2000), false));
+        cols.emplace_back(TestUtils::columnDef(5,
+                    PropertyType::FLOAT, Value(10.0), false));
+        cols.emplace_back(TestUtils::columnDef(6,
+                    PropertyType::DOUBLE, Value(20.0), false));
+        cols.emplace_back(TestUtils::columnDef(7,
+                    PropertyType::STRING, Value("string"), false));
+        cols.emplace_back(TestUtils::columnDef(8,
+                    PropertyType::FIXED_STRING, Value("longlongstring"), false, 10));
+        cols.emplace_back(TestUtils::columnDef(9,
+                    PropertyType::TIMESTAMP, Value(123456), true));
+        cols.emplace_back(TestUtils::columnDef(10,
+                    PropertyType::DATE, Value(Date()), true));
+        cols.emplace_back(TestUtils::columnDef(11,
+                    PropertyType::DATETIME, Value(DateTime()), true));
+        schema.set_columns(std::move(cols));
+        return schema;
+    }
+
+    static void checkSchemaWithAllType(const cpp2::Schema &schema) {
+        ASSERT_EQ(schema.columns.size(), 12);
+        ASSERT_EQ(schema.columns[0].get_name(), "col_0");
+        ASSERT_EQ(schema.columns[0].get_type(), PropertyType::BOOL);
+        ASSERT_EQ(*schema.columns[0].get_default_value(), Value(true));
+        ASSERT_EQ(*schema.columns[0].get_nullable(), false);
+
+        ASSERT_EQ(schema.columns[1].get_name(), "col_1");
+        ASSERT_EQ(schema.columns[1].get_type(), PropertyType::INT8);
+        ASSERT_EQ(*schema.columns[1].get_default_value(), Value(NullType::__NULL__));
+        ASSERT_EQ(*schema.columns[1].get_nullable(), true);
+
+        ASSERT_EQ(schema.columns[2].get_name(), "col_2");
+        ASSERT_EQ(schema.columns[2].get_type(), PropertyType::INT16);
+        ASSERT_EQ(*schema.columns[2].get_default_value(), Value(20));
+        ASSERT_EQ(*schema.columns[2].get_nullable(), false);
+
+        ASSERT_EQ(schema.columns[3].get_name(), "col_3");
+        ASSERT_EQ(schema.columns[3].get_type(), PropertyType::INT32);
+        ASSERT_EQ(*schema.columns[3].get_default_value(), Value(200));
+        ASSERT_EQ(*schema.columns[3].get_nullable(), false);
+
+        ASSERT_EQ(schema.columns[4].get_name(), "col_4");
+        ASSERT_EQ(schema.columns[4].get_type(), PropertyType::INT64);
+        ASSERT_EQ(*schema.columns[4].get_default_value(), Value(2000));
+        ASSERT_EQ(*schema.columns[4].get_nullable(), false);
+
+        ASSERT_EQ(schema.columns[5].get_name(), "col_5");
+        ASSERT_EQ(schema.columns[5].get_type(), PropertyType::FLOAT);
+        ASSERT_EQ(*schema.columns[5].get_default_value(), Value(10.0));
+        ASSERT_EQ(*schema.columns[5].get_nullable(), false);
+
+        ASSERT_EQ(schema.columns[6].get_name(), "col_6");
+        ASSERT_EQ(schema.columns[6].get_type(), PropertyType::DOUBLE);
+        ASSERT_EQ(*schema.columns[6].get_default_value(), Value(20.0));
+        ASSERT_EQ(*schema.columns[6].get_nullable(), false);
+
+        ASSERT_EQ(schema.columns[7].get_name(), "col_7");
+        ASSERT_EQ(schema.columns[7].get_type(), PropertyType::STRING);
+        ASSERT_EQ(*schema.columns[7].get_default_value(), Value("string"));
+        ASSERT_EQ(*schema.columns[7].get_nullable(), false);
+
+        ASSERT_EQ(schema.columns[8].get_name(), "col_8");
+        ASSERT_EQ(schema.columns[8].get_type(), PropertyType::FIXED_STRING);
+        ASSERT_EQ(*schema.columns[8].get_default_value(), Value("longlongst"));
+        ASSERT_EQ(*schema.columns[8].get_nullable(), false);
+        ASSERT_EQ(*schema.columns[8].get_type_length(), 10);
+
+        ASSERT_EQ(schema.columns[9].get_name(), "col_9");
+        ASSERT_EQ(schema.columns[9].get_type(), PropertyType::TIMESTAMP);
+        ASSERT_EQ(*schema.columns[9].get_default_value(), Value(123456));
+        ASSERT_EQ(*schema.columns[9].get_nullable(), true);
+
+        ASSERT_EQ(schema.columns[10].get_name(), "col_10");
+        ASSERT_EQ(schema.columns[10].get_type(), PropertyType::DATE);
+        ASSERT_EQ(*schema.columns[10].get_default_value(), Value(Date()));
+        ASSERT_EQ(*schema.columns[10].get_nullable(), true);
+
+        ASSERT_EQ(schema.columns[11].get_name(), "col_11");
+        ASSERT_EQ(schema.columns[11].get_type(), PropertyType::DATETIME);
+        ASSERT_EQ(*schema.columns[11].get_default_value(), Value(DateTime()));
+        ASSERT_EQ(*schema.columns[11].get_nullable(), true);
     }
 
     static bool verifySchema(cpp2::Schema &result,
@@ -397,3 +474,4 @@ public:
 }  // namespace nebula
 
 #endif  // META_TEST_TESTUTILS_H_
+
