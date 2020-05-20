@@ -195,6 +195,15 @@ std::string NebulaKeyUtils::prefix(PartitionID partId) {
 }
 
 // static
+std::string NebulaKeyUtils::snapshotPrefix(PartitionID partId) {
+    // snapshot of meta would be all key-value pairs
+    if (partId == 0) {
+        return "";
+    }
+    return prefix(partId);
+}
+
+// static
 std::string NebulaKeyUtils::vertexPrefix(PartitionID partId, VertexID vId) {
     PartitionID item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kData);
     std::string key;

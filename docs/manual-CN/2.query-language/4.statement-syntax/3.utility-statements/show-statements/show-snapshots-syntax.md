@@ -1,7 +1,0 @@
-# SHOW SNAPSHOTS 语法
-
-```ngql
-SHOW SNAPSHOTS
-```
-
-`SHOW SNAPSHOTS` 语句返回所有快照。

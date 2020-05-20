@@ -96,6 +96,13 @@ void GoExecutor::execute() {
         return;
     }
 
+    if (steps_ == 0) {
+        // #2100
+        // TODO(shylock) unify the steps checking
+        onEmptyInputs();
+        return;
+    }
+
     status = setupStarts();
     if (!status.ok()) {
         doError(std::move(status));
@@ -484,6 +491,14 @@ Status GoExecutor::setupStarts() {
         return std::move(result).status();
     }
     starts_ = std::move(result).value();
+    std::unordered_set<VertexID> uni;
+    uni.reserve(starts_.size());
+    uni.insert(starts_.begin(), starts_.end());
+    if (starts_.size() == uni.size()) {
+        uniqueStart_ = true;
+    } else {
+        uniqueStart_ = false;
+    }
 
     auto indexResult = inputs->buildIndex(*colname_);
     if (!indexResult.ok()) {
@@ -1107,7 +1122,8 @@ bool GoExecutor::processFinalResult(Callback cb) const {
                             return value(res);
                         };
                         // In reverse mode, it is used to get the src props.
-                        getters.getDstTagProp = [&dstId,
+                        getters.getDstTagProp = [&spaceId,
+                                                &dstId,
                                                 this] (const std::string &tag,
                                                         const std::string &prop) -> OptVariantType {
                             TagID tagId;
@@ -1116,14 +1132,30 @@ bool GoExecutor::processFinalResult(Callback cb) const {
                                 return Status::Error(
                                         "Get tag id for `%s' failed in getters.", tag.c_str());
                             }
-                            return vertexHolder_->get(dstId, tagId, prop);
+                            auto ret = vertexHolder_->get(dstId, tagId, prop);
+                            if (!ret.ok()) {
+                                auto ts = ectx()->schemaManager()->getTagSchema(spaceId, tagId);
+                                if (ts == nullptr) {
+                                    return Status::Error("No tag schema for %s", tag.c_str());
+                                }
+                                return RowReader::getDefaultProp(ts.get(), prop);
+                            }
+                            return ret.value();
                         };
                         getters.getVariableProp = [&srcId,
-                                                this] (const std::string &prop) {
+                                                this] (const std::string &prop) -> OptVariantType {
+                            if (!uniqueStart_) {
+                                return Status::NotSupported(
+                                    "Not supported duplicate start from variable");
+                            }
                             return getPropFromInterim(srcId, prop);
                         };
                         getters.getInputProp = [&srcId,
-                                                this] (const std::string &prop) {
+                                                this] (const std::string &prop) -> OptVariantType {
+                            if (!uniqueStart_) {
+                                return Status::NotSupported(
+                                    "Not supported duplicate start from input");
+                            }
                             return getPropFromInterim(srcId, prop);
                         };
 
@@ -1225,7 +1257,8 @@ OptVariantType GoExecutor::VertexHolder::getDefaultProp(TagID tid, const std::st
         }
     }
 
-    return Status::Error("Unknown Vertex");
+
+    return Status::Error("Unknown property: `%s'", prop.c_str());
 }
 
 SupportedType GoExecutor::VertexHolder::getDefaultPropType(TagID tid,
