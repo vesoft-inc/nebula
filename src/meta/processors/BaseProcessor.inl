@@ -430,5 +430,21 @@ BaseProcessor<RESP>::indexCheck(const std::vector<cpp2::IndexItem>& items,
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
+template<typename RESP>
+bool BaseProcessor<RESP>::checkIndexExist(const std::vector<std::string>& fields,
+                                          const cpp2::IndexItem& item) {
+    for (size_t i = 0; i < fields.size(); i++) {
+        if (fields[i] != item.get_fields()[i].get_name()) {
+            break;
+        }
+
+        if (i == fields.size() - 1) {
+            LOG(ERROR) << "Index " << item.get_index_name() << " have existed";
+            return true;
+        }
+    }
+    return false;
+}
+
 }  // namespace meta
 }  // namespace nebula
