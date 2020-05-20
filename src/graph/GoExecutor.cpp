@@ -1129,7 +1129,8 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         return value(res);
                     };
                     // In reverse mode, it is used to get the src props.
-                    getters.getDstTagProp = [&dstId,
+                    getters.getDstTagProp = [&spaceId,
+                                             &dstId,
                                              this] (const std::string &tag,
                                                     const std::string &prop) -> OptVariantType {
                         TagID tagId;
@@ -1138,7 +1139,15 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                             return Status::Error(
                                     "Get tag id for `%s' failed in getters.", tag.c_str());
                         }
-                        return vertexHolder_->get(dstId, tagId, prop);
+                        auto ret = vertexHolder_->get(dstId, tagId, prop);
+                        if (!ret.ok()) {
+                            auto ts = ectx()->schemaManager()->getTagSchema(spaceId, tagId);
+                            if (ts == nullptr) {
+                                return Status::Error("No tag schema for %s", tag.c_str());
+                            }
+                            return RowReader::getDefaultProp(ts.get(), prop);
+                        }
+                        return ret.value();
                     };
                     getters.getVariableProp = [&srcId,
                                                this] (const std::string &prop) -> OptVariantType {
@@ -1253,7 +1262,8 @@ OptVariantType GoExecutor::VertexHolder::getDefaultProp(TagID tid, const std::st
         }
     }
 
-    return Status::Error("Unknown Vertex");
+
+    return Status::Error("Unknown property: `%s'", prop.c_str());
 }
 
 SupportedType GoExecutor::VertexHolder::getDefaultPropType(TagID tid,

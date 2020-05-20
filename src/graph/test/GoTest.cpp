@@ -2421,6 +2421,18 @@ TEST_P(GoTest, ZeroStep) {
     }
 }
 
+TEST_P(GoTest, ErrorMsg) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve YIELD $$.player.name as name";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string>> expected = {""};
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
 INSTANTIATE_TEST_CASE_P(IfPushdownFilter, GoTest, ::testing::Bool());
 }   // namespace graph
 }   // namespace nebula
