@@ -14,7 +14,7 @@
 
 namespace nebula {
 
-using IndexValues = std::vector<std::pair<Value::Type, std::string>>;
+using PropertyType = nebula::meta::cpp2::PropertyType;
 
 /**
  * This class supply some utils for index in kvstore.
@@ -23,7 +23,71 @@ class IndexKeyUtils final {
 public:
     ~IndexKeyUtils() = default;
 
-    static std::string encodeValue(const Value& v)  {
+    static Value::Type toValueType(PropertyType type) {
+        switch (type) {
+            case PropertyType::BOOL :
+                return Value::Type::BOOL;
+            case PropertyType::INT64 :
+            case PropertyType::INT32 :
+            case PropertyType::INT16 :
+            case PropertyType::INT8 :
+            case PropertyType::TIMESTAMP :
+                return Value::Type::INT;
+            case PropertyType::VID :
+                return Value::Type::VERTEX;
+            case PropertyType::FLOAT :
+            case PropertyType::DOUBLE :
+                return Value::Type::FLOAT;
+            case PropertyType::STRING :
+            case PropertyType::FIXED_STRING :
+                return Value::Type::STRING;
+            case PropertyType::DATE :
+                return Value::Type::DATE;
+            case PropertyType::DATETIME :
+                return Value::Type::DATETIME;
+            case PropertyType::UNKNOWN :
+                return Value::Type::__EMPTY__;
+        }
+        return Value::Type::__EMPTY__;
+    }
+
+    static std::string encodeNullValue(Value::Type type) {
+        size_t len = 0;
+        switch (type) {
+            case Value::Type::INT : {
+                len = sizeof(int64_t);
+                break;
+            }
+            case Value::Type::FLOAT : {
+                len = sizeof(double);
+                break;
+            }
+            case Value::Type::BOOL: {
+                len = sizeof(bool);
+                break;
+            }
+            case Value::Type::STRING : {
+                len = 1;
+                break;
+            }
+            case Value::Type::DATE : {
+                len = sizeof(int8_t) * 2 + sizeof(int16_t);
+                break;
+            }
+            case Value::Type::DATETIME : {
+                len = sizeof(int32_t) * 2 + sizeof(int16_t) + sizeof(int8_t) * 5;
+                break;
+            }
+            default :
+                LOG(ERROR) << "Unsupported default value type";
+        }
+        std::string raw;
+        raw.reserve(len);
+        raw.append(len, '\0');
+        return raw;
+    }
+
+    static std::string encodeValue(const Value& v) {
         switch (v.type()) {
             case Value::Type::INT :
                 return encodeInt64(v.getInt());
@@ -235,22 +299,35 @@ public:
     /**
      * Generate vertex|edge index key for kv store
      **/
-    static void indexRaw(const IndexValues &values, std::string& raw);
+    static void encodeValues(const std::vector<Value>& values, std::string& raw);
 
+    static void encodeValuesWithNull(const std::vector<Value>& values,
+                                     const std::vector<Value::Type>& colsType,
+                                     std::string& raw);
+
+    /**
+     * param valueTypes ： column type of each index column. If there are no nullable columns 
+     *                     in the index, the parameter can be empty.
+     **/
     static std::string vertexIndexKey(size_t vIdLen, PartitionID partId,
                                       IndexID indexId, VertexID vId,
-                                      const IndexValues& values);
+                                      const std::vector<Value>& values,
+                                      const std::vector<Value::Type>& valueTypes = {});
 
+    /**
+     * param valueTypes ： column type of each index column. If there are no nullable columns 
+     *                     in the index, the parameter can be empty.
+     **/
     static std::string edgeIndexKey(size_t vIdLen, PartitionID partId,
                                     IndexID indexId, VertexID srcId,
                                     EdgeRanking rank, VertexID dstId,
-                                    const IndexValues& values);
+                                    const std::vector<Value>& values,
+                                    const std::vector<Value::Type>& valueTypes = {});
 
     static std::string indexPrefix(PartitionID partId, IndexID indexId);
 
 private:
     IndexKeyUtils() = delete;
-
 };
 
 }  // namespace nebula
