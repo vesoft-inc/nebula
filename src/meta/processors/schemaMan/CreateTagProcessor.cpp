@@ -122,7 +122,7 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
 
             LOG(INFO) << "Get Tag Default value: Property Name " << name
                     << ", Value " << defaultValue;
-            auto defaultKey = MetaServiceUtils::tagDefaultKey(req.get_space_id(),
+            auto defaultKey = MetaServiceUtils::defaultKey(req.get_space_id(),
                                                               tagId,
                                                               name);
             data.emplace_back(std::move(defaultKey), std::move(defaultValue));
