@@ -93,6 +93,21 @@ void BaseProcessor<RESP>::doMultiRemove(std::vector<std::string> keys) {
     this->onFinished();
 }
 
+template<typename RESP>
+kvstore::ResultCode BaseProcessor<RESP>::multiRemove(std::vector<std::string> keys) {
+    folly::Baton<true, std::atomic> baton;
+    kvstore::ResultCode retCode;
+    kvstore_->asyncMultiRemove(kDefaultSpaceId,
+                               kDefaultPartId,
+                               std::move(keys),
+                               [this, &baton, &retCode] (kvstore::ResultCode code) {
+        this->handleErrorCode(MetaCommon::to(code));
+        retCode = code;
+        baton.post();
+    });
+    baton.wait();
+    return retCode;
+}
 
 template<typename RESP>
 void BaseProcessor<RESP>::doRemoveRange(const std::string& start,
