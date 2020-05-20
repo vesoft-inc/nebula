@@ -31,7 +31,6 @@ set(storage_test_deps
     $<TARGET_OBJECTS:common_stats_obj>
     $<TARGET_OBJECTS:common_process_obj>
     $<TARGET_OBJECTS:common_conf_obj>
-    $<TARGET_OBJECTS:codec_obj>
     $<TARGET_OBJECTS:common_datatypes_obj>
     $<TARGET_OBJECTS:common_base_obj>
 )

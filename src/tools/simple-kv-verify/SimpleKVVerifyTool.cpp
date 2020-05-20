@@ -6,9 +6,10 @@
 
 #include "base/Base.h"
 #include "meta/SchemaManager.h"
-#include "meta/client/MetaClient.h"
-#include "storage/client/StorageClient.h"
+#include "clients/meta/MetaClient.h"
 #include <folly/executors/IOThreadPoolExecutor.h>
+#include "clients/storage/GeneralStorageClient.h"
+#include "datatypes/KeyValue.h"
 
 DEFINE_string(meta_server_addrs, "", "meta server address");
 DEFINE_string(space_name, "test", "Specify the space name");
@@ -49,27 +50,24 @@ public:
             LOG(ERROR) << "Get SpaceID Failed: " << spaceResult.status();
             return EXIT_FAILURE;
         }
-        space_ = spaceResult.value();
-        LOG(INFO) << "Space ID: " << space_;
+        spaceId_ = spaceResult.value();
+        LOG(INFO) << "Space ID: " << spaceId_;
 
-        storageClient_ = std::make_unique<storage::StorageClient>(ioExecutor,
-                                                                  metaClient_.get());
+        generalStorageClient_ = std::make_unique<storage::GeneralStorageClient>(ioExecutor,
+                                                                                metaClient_.get());
         return EXIT_SUCCESS;
     }
 
     void runInsert(std::unordered_map<std::string, std::string>& data) {
-        std::vector<nebula::cpp2::Pair> pairs;
+        std::vector<nebula::KeyValue> keyValues;
         for (int32_t i = 0; i < 1000; i ++) {
             auto key = std::to_string(folly::Random::rand32(1000000000));
             auto value = std::to_string(folly::Random::rand32(1000000000));
             data[key] = value;
-            nebula::cpp2::Pair pair;
-            pair.set_key(std::move(key));
-            pair.set_value(std::move(value));
-            pairs.emplace_back(std::move(pair));
+            keyValues.emplace_back(std::make_pair(key, value));
         }
 
-        auto future = storageClient_->put(space_, std::move(pairs));
+        auto future = generalStorageClient_->put(spaceId_, std::move(keyValues));
         auto resp = std::move(future).get();
         if (!resp.succeeded()) {
             LOG(ERROR) << "Put Failed";
@@ -93,7 +91,7 @@ public:
             keys.emplace_back(pair.first);
         }
 
-        auto future = storageClient_->get(space_, std::move(keys));
+        auto future = generalStorageClient_->get(spaceId_, std::move(keys));
         auto resp = std::move(future).get();
         if (!resp.succeeded()) {
             LOG(ERROR) << "Get Failed";
@@ -112,8 +110,8 @@ public:
             auto key = pair.first;
             bool found = false;
             for (const auto& result : resp.responses()) {
-                auto iter = result.values.find(key);
-                if (iter != result.values.end()) {
+                auto iter = result.key_values.find(key);
+                if (iter != result.key_values.end()) {
                     if (iter->second != pairs[key]) {
                         LOG(ERROR) << "Check Fail: key = " << key << ", values: "
                                    << iter->second << " != " << pairs[key];
@@ -132,9 +130,9 @@ public:
     }
 
 private:
-    std::unique_ptr<nebula::storage::StorageClient> storageClient_;
+    std::unique_ptr<nebula::storage::GeneralStorageClient> generalStorageClient_;
     std::unique_ptr<nebula::meta::MetaClient> metaClient_;
-    nebula::GraphSpaceID space_;
+    nebula::GraphSpaceID spaceId_;
 };
 
 }  // namespace storage

@@ -6,12 +6,11 @@
 
 #include "base/Base.h"
 #include "DbDumper.h"
-#include "base/NebulaKeyUtils.h"
+#include "common/NebulaKeyUtils.h"
 #include "fs/FileUtils.h"
-#include "kvstore/RocksEngine.h"
 #include "time/Duration.h"
 
-DEFINE_string(space, "", "The space name.");
+DEFINE_string(space_name, "", "The space name.");
 DEFINE_string(db_path, "./", "Path to rocksdb.");
 DEFINE_string(meta_server, "127.0.0.1:45500", "Meta servers' address.");
 DEFINE_string(mode, "scan", "Dump mode, scan | stat");
@@ -23,6 +22,7 @@ DEFINE_int64(limit, 1000, "Limit to output.");
 
 namespace nebula {
 namespace storage {
+
 Status DbDumper::init() {
     auto status = initMeta();
     if (!status.ok()) {
@@ -68,18 +68,24 @@ Status DbDumper::initMeta() {
 }
 
 Status DbDumper::initSpace() {
-    if (FLAGS_space.empty()) {
-        return Status::Error("Space is not given.");
+    if (FLAGS_space_name.empty()) {
+        return Status::Error("Space name is not given.");
     }
-    auto space = schemaMng_->toGraphSpaceID(FLAGS_space);
+    auto space = schemaMng_->toGraphSpaceID(FLAGS_space_name);
     if (!space.ok()) {
-        return Status::Error("Space '%s' not found in meta server.", FLAGS_space.c_str());
+        return Status::Error("Space '%s' not found in meta server.", FLAGS_space_name.c_str());
     }
     spaceId_ = space.value();
 
+    auto spaceVidLen = metaClient_->getSpaceVidLen(spaceId_);
+    if (!spaceVidLen.ok()) {
+        return spaceVidLen.status();
+    }
+    spaceVidLen_ = spaceVidLen.value();
+
     auto partNum = metaClient_->partsNum(spaceId_);
     if (!partNum.ok()) {
-        return Status::Error("Get partition number from '%s' failed.", FLAGS_space.c_str());
+        return Status::Error("Get partition number from '%s' failed.", FLAGS_space_name.c_str());
     }
     partNum_ = partNum.value();
     return Status::OK();
@@ -93,22 +99,22 @@ Status DbDumper::initParams() {
         folly::splitTo<std::string>(',', FLAGS_tags, std::inserter(tags, tags.begin()), true);
         folly::splitTo<std::string>(',', FLAGS_edges, std::inserter(edges, edges.begin()), true);
     } catch (const std::exception& e) {
-        return Status::Error("Parse parts/tags/edges error: %s", e.what());
+        return Status::Error("Parse parts/vetexIds/tags/edges error: %s", e.what());
     }
 
-    for (auto& tag : tags) {
-        auto tagId = schemaMng_->toTagID(spaceId_, tag);
+    for (auto& tagName : tags) {
+        auto tagId = schemaMng_->toTagID(spaceId_, tagName);
         if (!tagId.ok()) {
-            return Status::Error("Tag '%s' not found in meta.", tag.c_str());
+            return Status::Error("Tag '%s' not found in meta.", tagName.c_str());
         }
-        tags_.emplace(tagId.value());
+        tagIds_.emplace(tagId.value());
     }
-    for (auto& edge : edges) {
-        auto edgeType = schemaMng_->toEdgeType(spaceId_, edge);
+    for (auto& edgeName : edges) {
+        auto edgeType = schemaMng_->toEdgeType(spaceId_, edgeName);
         if (!edgeType.ok()) {
-            return Status::Error("Edge '%s' not found in meta.", edge.c_str());
+            return Status::Error("Edge '%s' not found in meta.", edgeName.c_str());
         }
-        edges_.emplace(edgeType.value());
+        edgeTypes_.emplace(edgeType.value());
     }
 
     if (FLAGS_mode.compare("scan") != 0 && FLAGS_mode.compare("stat") != 0) {
@@ -123,10 +129,10 @@ Status DbDumper::openDb() {
     }
     auto subDirs = fs::FileUtils::listAllDirsInDir(FLAGS_db_path.c_str());
     auto spaceFound = std::find(subDirs.begin(), subDirs.end(),
-                                    folly::stringPrintf("%d", spaceId_));
+                                folly::stringPrintf("%d", spaceId_));
     if (spaceFound == subDirs.end()) {
         return Status::Error("Space '%s' not found in directory '%s'.",
-                                FLAGS_space.c_str(), FLAGS_db_path.c_str());
+                             FLAGS_space_name.c_str(), FLAGS_db_path.c_str());
     }
     auto path = fs::FileUtils::joinPath(FLAGS_db_path, *spaceFound);
     path = fs::FileUtils::joinPath(path, "data");
@@ -135,10 +141,19 @@ Status DbDumper::openDb() {
     auto status = rocksdb::DB::OpenForReadOnly(options_, path, &dbPtr);
     if (!status.ok()) {
         return Status::Error("Unable to open database '%s' for reading: '%s'",
-         path.c_str(), status.ToString().c_str());
+                             path.c_str(), status.ToString().c_str());
     }
     db_.reset(dbPtr);
     return Status::OK();
+}
+
+bool DbDumper::isValidVidLen(VertexID vid) {
+    if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vid)) {
+        std::cerr << "vertex id length is illegal, expect: " << spaceVidLen_
+            << " result: " << vid << "\n";
+        return false;
+    }
+    return true;
 }
 
 void DbDumper::run() {
@@ -148,21 +163,20 @@ void DbDumper::run() {
         return false;
     };
     auto printIfTagFound = [this] (const folly::StringPiece& key) -> bool {
-        auto tag = NebulaKeyUtils::getTagId(key);
-        auto tagFound = tags_.find(tag);
-        return !(tagFound == tags_.end());
+        auto tagId = NebulaKeyUtils::getTagId(spaceVidLen_, key);
+        auto tagFound = tagIds_.find(tagId);
+        return !(tagFound == tagIds_.end());
     };
     auto printIfEdgeFound = [this] (const folly::StringPiece& key) -> bool {
-        auto edge = NebulaKeyUtils::getEdgeType(key);
-        auto edgeFound = edges_.find(edge);
-        return !(edgeFound == edges_.end());
+        auto edgeTye = NebulaKeyUtils::getEdgeType(spaceVidLen_, key);
+        auto edgeFound = edgeTypes_.find(edgeTye);
+        return !(edgeFound == edgeTypes_.end());
     };
 
-    uint32_t bitmap =
-        (parts_.empty() ? 0 : 1 << 3)
-        | (vids_.empty() ? 0 : 1 << 2)
-        | (tags_.empty() ? 0 : 1 << 1)
-        | (edges_.empty() ? 0 : 1);
+    uint32_t bitmap = (parts_.empty() ? 0 : 1 << 3)
+                      | (vids_.empty() ? 0 : 1 << 2)
+                      | (tagIds_.empty() ? 0 : 1 << 1)
+                      | (edgeTypes_.empty() ? 0 : 1);
     switch (bitmap) {
         case 0b0000: {
             // nothing specified,seek to first and print them all
@@ -193,8 +207,11 @@ void DbDumper::run() {
         case 0b0100: {
             // specified vids, seek with prefix and print.
             for (auto vid : vids_) {
-                auto part = ID_HASH(vid, partNum_);
-                auto prefix = NebulaKeyUtils::vertexPrefix(part, vid);
+                if (!isValidVidLen(vid)) {
+                    continue;
+                }
+                auto partId = std::hash<VertexID>()(vid) % partNum_  + 1;
+                auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vid);
                 seek(prefix);
             }
             break;
@@ -202,9 +219,12 @@ void DbDumper::run() {
         case 0b0101: {
             // specified vids and edges, seek with prefix and print.
             for (auto vid : vids_) {
-                auto part = ID_HASH(vid, partNum_);
-                for (auto edge : edges_) {
-                    auto prefix = NebulaKeyUtils::edgePrefix(part, vid, edge);
+                if (!isValidVidLen(vid)) {
+                    continue;
+                }
+                auto partId = std::hash<VertexID>()(vid) % partNum_  + 1;
+                for (auto edgeType : edgeTypes_) {
+                    auto prefix = NebulaKeyUtils::edgePrefix(spaceVidLen_, partId, vid, edgeType);
                     seek(prefix);
                 }
             }
@@ -213,9 +233,12 @@ void DbDumper::run() {
         case 0b0110: {
             // specified vids and tags, seek with prefix and print.
             for (auto vid : vids_) {
-                auto part = ID_HASH(vid, partNum_);
-                for (auto tag : tags_) {
-                    auto prefix = NebulaKeyUtils::vertexPrefix(part, vid, tag);
+                if (!isValidVidLen(vid)) {
+                    continue;
+                }
+                auto partId = std::hash<VertexID>()(vid) % partNum_  + 1;
+                for (auto tagId : tagIds_) {
+                    auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vid, tagId);
                     seek(prefix);
                 }
             }
@@ -224,17 +247,23 @@ void DbDumper::run() {
         case 0b0111: {
             // specified vids and edges, seek with prefix and print.
             for (auto vid : vids_) {
-                auto part = ID_HASH(vid, partNum_);
-                for (auto edge : edges_) {
-                    auto prefix = NebulaKeyUtils::edgePrefix(part, vid, edge);
+                if (!isValidVidLen(vid)) {
+                    continue;
+                }
+                auto partId = std::hash<VertexID>()(vid) % partNum_  + 1;
+                for (auto edgeType : edgeTypes_) {
+                    auto prefix = NebulaKeyUtils::edgePrefix(spaceVidLen_, partId, vid, edgeType);
                     seek(prefix);
                 }
             }
             // specified vids and tags, seek with prefix and print.
             for (auto vid : vids_) {
-                auto part = ID_HASH(vid, partNum_);
-                for (auto tag : tags_) {
-                    auto prefix = NebulaKeyUtils::vertexPrefix(part, vid, tag);
+                if (!isValidVidLen(vid)) {
+                    continue;
+                }
+                auto partId = std::hash<VertexID>()(vid) % partNum_  + 1;
+                for (auto tagId : tagIds_) {
+                    auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vid, tagId);
                     seek(prefix);
                 }
             }
@@ -242,8 +271,8 @@ void DbDumper::run() {
         }
         case 0b1000: {
             // specified part, seek with prefix and print them all
-            for (auto part : parts_) {
-                auto prefix = NebulaKeyUtils::prefix(part);
+            for (auto partId : parts_) {
+                auto prefix = NebulaKeyUtils::partPrefix(partId);
                 seek(prefix);
             }
             break;
@@ -252,8 +281,8 @@ void DbDumper::run() {
             // specified part and edge, seek with prefix and print edge if found
             beforePrintVertex_.emplace_back(noPrint);
             beforePrintEdge_.emplace_back(printIfEdgeFound);
-            for (auto part : parts_) {
-                auto prefix = NebulaKeyUtils::prefix(part);
+            for (auto partId : parts_) {
+                auto prefix = NebulaKeyUtils::partPrefix(partId);
                 seek(prefix);
             }
             break;
@@ -262,8 +291,8 @@ void DbDumper::run() {
             // specified part and tag, seek with prefix and print vertex if found
             beforePrintVertex_.emplace_back(printIfTagFound);
             beforePrintEdge_.emplace_back(noPrint);
-            for (auto part : parts_) {
-                auto prefix = NebulaKeyUtils::prefix(part);
+            for (auto partId : parts_) {
+                auto prefix = NebulaKeyUtils::partPrefix(partId);
                 seek(prefix);
             }
             break;
@@ -272,8 +301,8 @@ void DbDumper::run() {
             // specified part/tag/edge, with prefix and print
             beforePrintVertex_.emplace_back(noPrint);
             beforePrintEdge_.emplace_back(printIfEdgeFound);
-            for (auto part : parts_) {
-                auto prefix = NebulaKeyUtils::prefix(part);
+            for (auto partId : parts_) {
+                auto prefix = NebulaKeyUtils::partPrefix(partId);
                 seek(prefix);
             }
 
@@ -281,17 +310,20 @@ void DbDumper::run() {
             beforePrintEdge_.clear();
             beforePrintVertex_.emplace_back(printIfTagFound);
             beforePrintEdge_.emplace_back(noPrint);
-            for (auto part : parts_) {
-                auto prefix = NebulaKeyUtils::prefix(part);
+            for (auto partId : parts_) {
+                auto prefix = NebulaKeyUtils::partPrefix(partId);
                 seek(prefix);
             }
             break;
         }
         case 0b1100: {
             // specified part and vid
-            for (auto part : parts_) {
+            for (auto partId : parts_) {
                 for (auto vid : vids_) {
-                    auto prefix = NebulaKeyUtils::vertexPrefix(part, vid);
+                    if (!isValidVidLen(vid)) {
+                        continue;
+                    }
+                    auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vid);
                     seek(prefix);
                 }
             }
@@ -299,10 +331,14 @@ void DbDumper::run() {
         }
         case 0b1101: {
             // specified part/vid/edge
-            for (auto part : parts_) {
+            for (auto partId : parts_) {
                 for (auto vid : vids_) {
-                    for (auto edge : edges_) {
-                        auto prefix = NebulaKeyUtils::edgePrefix(part, vid, edge);
+                    if (!isValidVidLen(vid)) {
+                        continue;
+                    }
+                    for (auto edgeType : edgeTypes_) {
+                        auto prefix = NebulaKeyUtils::edgePrefix(spaceVidLen_, partId,
+                                                                 vid, edgeType);
                         seek(prefix);
                     }
                 }
@@ -311,10 +347,14 @@ void DbDumper::run() {
         }
         case 0b1110: {
             // specified part/vid/tag
-            for (auto part : parts_) {
+            for (auto partId : parts_) {
                 for (auto vid : vids_) {
-                    for (auto tag : tags_) {
-                        auto prefix = NebulaKeyUtils::vertexPrefix(part, vid, tag);
+                    if (!isValidVidLen(vid)) {
+                        continue;
+                    }
+                    for (auto tagId : tagIds_) {
+                        auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId,
+                                                                   vid, tagId);
                         seek(prefix);
                     }
                 }
@@ -323,19 +363,27 @@ void DbDumper::run() {
         }
         case 0b1111: {
             // specified part/vid/tag/edge
-            for (auto part : parts_) {
+            for (auto partId : parts_) {
                 for (auto vid : vids_) {
-                    for (auto edge : edges_) {
-                        auto prefix = NebulaKeyUtils::edgePrefix(part, vid, edge);
+                    if (!isValidVidLen(vid)) {
+                        continue;
+                    }
+                    for (auto edgeType : edgeTypes_) {
+                        auto prefix = NebulaKeyUtils::edgePrefix(spaceVidLen_, partId,
+                                                                 vid, edgeType);
                         seek(prefix);
                     }
                 }
             }
 
-            for (auto part : parts_) {
+            for (auto partId : parts_) {
                 for (auto vid : vids_) {
-                    for (auto tag : tags_) {
-                        auto prefix = NebulaKeyUtils::vertexPrefix(part, vid, tag);
+                    if (!isValidVidLen(vid)) {
+                        continue;
+                    }
+                    for (auto tagId : tagIds_) {
+                        auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId,
+                                                                   vid, tagId);
                         seek(prefix);
                     }
                 }
@@ -386,8 +434,8 @@ void DbDumper::iterates(kvstore::RocksPrefixIter* it) {
         auto key = it->key();
         auto value = it->val();
 
-        if (NebulaKeyUtils::isVertex(key)) {
-            // filts the data
+        if (NebulaKeyUtils::isVertex(spaceVidLen_, key)) {
+            // filter the data
             bool isFiltered = false;
             for (auto& cb : beforePrintVertex_) {
                 if (!cb(key)) {
@@ -399,17 +447,20 @@ void DbDumper::iterates(kvstore::RocksPrefixIter* it) {
                 continue;
             }
 
-            auto tagId = NebulaKeyUtils::getTagId(key);
+            auto tagId = NebulaKeyUtils::getTagId(spaceVidLen_, key);
             // only print to screen with scan mode
             if (FLAGS_mode == "scan") {
                 printTagKey(key);
-                auto reader =
-                    RowReader::getTagPropReader(schemaMng_.get(), value, spaceId_, tagId);
+                auto reader = RowReader::getTagPropReader(schemaMng_.get(), spaceId_, tagId, value);
+                if (!reader) {
+                    std::cerr << "Can't get tag reader of " << tagId;
+                    continue;
+                }
                 printValue(reader.get());
             }
 
             // statistics
-            auto tagStat = tagStat_.find(NebulaKeyUtils::getTagId(key));
+            auto tagStat = tagStat_.find(tagId);
             if (tagStat == tagStat_.end()) {
                 tagStat_.emplace(tagId, 1);
             } else {
@@ -417,8 +468,8 @@ void DbDumper::iterates(kvstore::RocksPrefixIter* it) {
             }
             ++vertexCount_;
             ++count_;
-        } else if (NebulaKeyUtils::isEdge(key)) {
-            // filts the data
+        } else if (NebulaKeyUtils::isEdge(spaceVidLen_, key)) {
+            // filter the data
             bool isFiltered = false;
             for (auto &cb : beforePrintEdge_) {
                 if (!cb(key)) {
@@ -430,7 +481,7 @@ void DbDumper::iterates(kvstore::RocksPrefixIter* it) {
                 continue;
             }
 
-            auto edgeType = NebulaKeyUtils::getEdgeType(key);
+            auto edgeType = NebulaKeyUtils::getEdgeType(spaceVidLen_, key);
             if (edgeType < 0) {
                 // reverse edge will be discarded
                 continue;
@@ -438,8 +489,12 @@ void DbDumper::iterates(kvstore::RocksPrefixIter* it) {
             // only print to screen with scan mode
             if (FLAGS_mode == "scan") {
                 printEdgeKey(key);
-                auto reader =
-                    RowReader::getEdgePropReader(schemaMng_.get(), value, spaceId_, edgeType);
+                auto reader = RowReader::getEdgePropReader(schemaMng_.get(), spaceId_,
+                                                           edgeType, value);
+                if (!reader) {
+                    std::cerr << "Can't get edge reader of " << edgeType;
+                    continue;
+                }
                 printValue(reader.get());
             }
 
@@ -458,26 +513,19 @@ void DbDumper::iterates(kvstore::RocksPrefixIter* it) {
 
 inline void DbDumper::printTagKey(const folly::StringPiece& key) {
     auto part = NebulaKeyUtils::getPart(key);
-    auto vid = NebulaKeyUtils::getVertexId(key);
-    auto tagId = NebulaKeyUtils::getTagId(key);
-    std::cout << "[vertex] key: "
-            << part << ", "
-            << vid << ", "
-            << getTagName(tagId);
+    auto vid = NebulaKeyUtils::getVertexId(spaceVidLen_, key);
+    auto tagId = NebulaKeyUtils::getTagId(spaceVidLen_, key);
+    std::cout << "[vertex] key: " << part << ", " << vid << ", " << getTagName(tagId);
 }
 
 inline void DbDumper::printEdgeKey(const folly::StringPiece& key) {
     auto part = NebulaKeyUtils::getPart(key);
-    auto edgeType = NebulaKeyUtils::getEdgeType(key);
-    auto src = NebulaKeyUtils::getSrcId(key);
-    auto dst = NebulaKeyUtils::getDstId(key);
-    auto rank = NebulaKeyUtils::getRank(key);
-    std::cout << "[edge] key: "
-            << part << ", "
-            << src << ", "
-            << getEdgeName(edgeType) << ", "
-            << rank << ", "
-            << dst;
+    auto edgeType = NebulaKeyUtils::getEdgeType(spaceVidLen_, key);
+    auto src = NebulaKeyUtils::getSrcId(spaceVidLen_, key);
+    auto dst = NebulaKeyUtils::getDstId(spaceVidLen_, key);
+    auto rank = NebulaKeyUtils::getRank(spaceVidLen_, key);
+    std::cout << "[edge] key: " << part << ", " << src << ", " << getEdgeName(edgeType) << ", "
+        << rank << ", " << dst;
 }
 
 void DbDumper::printValue(const RowReader* reader) {
@@ -490,11 +538,14 @@ void DbDumper::printValue(const RowReader* reader) {
     auto iter = schema->begin();
     size_t index = 0;
     while (iter) {
-        auto field = RowReader::getPropByIndex(reader, index);
-        if (!ok(field)) {
-            continue;
+        auto value = reader->getValueByIndex(index);
+        auto retVal =  value.toString();
+        if (retVal.ok()) {
+            std::cout << retVal.value() << ", ";
+        } else {
+            std::cerr << retVal.status();
+            std::cout << " " << ", ";
         }
-        std::cout << value(field) << ", ";
         ++iter;
         ++index;
     }

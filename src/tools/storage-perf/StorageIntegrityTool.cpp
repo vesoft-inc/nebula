@@ -6,9 +6,8 @@
 
 #include "base/Base.h"
 #include "time/Duration.h"
-#include "storage/client/StorageClient.h"
-#include "dataman/RowReader.h"
-#include "dataman/RowWriter.h"
+#include "clients/storage/GraphStorageClient.h"
+#include "codec/RowReader.h"
 
 DEFINE_string(meta_server_addrs, "", "meta server address");
 DEFINE_int32(io_threads, 10, "client io threads");
@@ -18,7 +17,7 @@ DEFINE_string(space_name, "test_space", "the space name");
 DEFINE_string(tag_name, "test_tag", "the tag name");
 DEFINE_string(prop_name, "test_prop", "the property name");
 
-DEFINE_int64(first_vertex_id, 1, "The smallest vertex id");
+DEFINE_string(first_vertex_id, "1", "The smallest vertex id");
 DEFINE_uint64(width, 100, "width of matrix");
 DEFINE_uint64(height, 1000, "height of matrix");
 
@@ -28,8 +27,6 @@ namespace nebula {
 namespace storage {
 
 /**
- * Integration test based on 'IntegrationTestBigLinkedList' of HBase
- *
  * We generate a big circle of data, all node is the vertex, and the vertex have only one
  * property of the next vertex, so we can validate them by traversing.
  *
@@ -103,10 +100,10 @@ private:
         if (!tagResult.ok()) {
             sleep(FLAGS_heartbeat_interval_secs + 1);
             LOG(ERROR) << "Get tagId failed, try to create one: " << tagResult.status();
-            nebula::cpp2::Schema schema;
-            nebula::cpp2::ColumnDef column;
+            nebula::meta::cpp2::Schema schema;
+            nebula::meta::cpp2::ColumnDef column;
             column.name = FLAGS_prop_name;
-            column.type.type = nebula::cpp2::SupportedType::INT;
+            column.type = meta::cpp2::PropertyType::INT64;
             schema.columns.emplace_back(std::move(column));
             auto ret = mClient_->createTagSchema(spaceId_, FLAGS_tag_name, schema).get();
             if (!ret.ok()) {
@@ -118,7 +115,7 @@ private:
             tagId_ = tagResult.value();
         }
 
-        client_ = std::make_unique<StorageClient>(threadPool_, mClient_.get());
+        client_ = std::make_unique<GraphStorageClient>(threadPool_, mClient_.get());
         return true;
     }
 
@@ -151,11 +148,11 @@ private:
 
         LOG(INFO) << "Start insert vertex";
         for (size_t i = 0; i < width_; i++) {
-            prev.emplace_back(firstVertexId_ + i);
+            prev.emplace_back(std::to_string(std::atol(firstVertexId_.c_str()) + i));
         }
         // leave alone the first line, generate other lines
         for (size_t i = 1; i < height_; i++) {
-            addVertex(prev, cur, firstVertexId_ + i * width_);
+            addVertex(prev, cur, std::to_string(std::atol(firstVertexId_.c_str() + i * width_)));
             prev = std::move(cur);
         }
         // shift the last line
@@ -167,7 +164,10 @@ private:
     }
 
     void addVertex(std::vector<VertexID>& prev, std::vector<VertexID>& cur, VertexID startId) {
-        auto future = client_->addVertices(spaceId_, genVertices(prev, cur, startId), true);
+        std::unordered_map<TagID, std::vector<std::string>> propNames;
+        propNames[tagId_].emplace_back(propName_);
+        auto future = client_->addVertices(spaceId_,
+                                           genVertices(prev, cur, startId), propNames, true);
         auto resp = std::move(future).get();
         if (!resp.succeeded()) {
             for (auto& err : resp.failedParts()) {
@@ -177,55 +177,60 @@ private:
         }
     }
 
-    std::vector<storage::cpp2::Vertex> genVertices(std::vector<VertexID>& prev,
+    std::vector<storage::cpp2::NewVertex> genVertices(std::vector<VertexID>& prev,
                                                    std::vector<VertexID>& cur,
                                                    VertexID startId) {
         // We insert add vertices of a row once a time
-        std::vector<storage::cpp2::Vertex> vertices;
+        std::vector<storage::cpp2::NewVertex> newVertices;
         for (size_t i = 0; i < width_; i++) {
             VertexID vId;
-            vId = startId + i;
+            vId = std::to_string(std::atol(startId.c_str()) + i);
             cur.emplace_back(vId);
 
-            storage::cpp2::Vertex v;
+            storage::cpp2::NewVertex v;
             v.set_id(vId);
-
             decltype(v.tags) tags;
-            storage::cpp2::Tag tag;
+
+            storage::cpp2::NewTag tag;
             tag.set_tag_id(tagId_);
-            std::string props;
-            RowWriter writer;
-            writer << prev[i];
-            tag.set_props(writer.encode());
+
+            decltype(tag.props) props;
+            Value val(prev[i]);
+            props.emplace_back(val);
+            tag.set_props(props);
             tags.emplace_back(std::move(tag));
 
             v.set_tags(std::move(tags));
-            vertices.emplace_back(std::move(v));
+            newVertices.emplace_back(std::move(v));
             VLOG(2) << "Build " << cur[i] << " -> " << prev[i];
-            PLOG_EVERY_N(INFO, 10000) << "We have inserted " << vId - firstVertexId_ - width_
-                                      << " vertices so far, total: " << width_ * height_;
+            PLOG_EVERY_N(INFO, 10000) << "We have inserted "
+                << std::atol(vId.c_str()) - std::atol(firstVertexId_.c_str()) - width_
+                << " vertices so far, total: " << width_ * height_;
         }
-        return vertices;
+        return newVertices;
     }
 
     bool validate(VertexID startId, int64_t queryTimes) {
-        std::vector<storage::cpp2::PropDef> props;
-        storage::cpp2::PropDef prop;
-        prop.set_name(propName_);
-        prop.set_owner(storage::cpp2::PropOwner::SOURCE);
-        prop.id.set_tag_id(tagId_);
-        props.emplace_back(std::move(prop));
-
         int64_t count = 0;
         VertexID nextId = startId;
         while (count < queryTimes) {
             PLOG_EVERY_N(INFO, 1000) << "We have gone " << count << " steps so far";
-            auto future = client_->getVertexProps(spaceId_, {nextId}, props);
+            // TODO support getProps
+            std::vector<std::string> colNames;
+            colNames.emplace_back("_vid");
+            std::vector<cpp2::PropExp> propExps;
+            cpp2::PropExp propExp;
+            propExp.set_prop(propName_);
+            propExps.emplace_back(propExp);
+            std::vector<Row> input;
+            auto future = client_->getProps(spaceId_, colNames, input, propExps);
             auto resp = std::move(future).get();
             if (!resp.succeeded()) {
                 LOG(ERROR) << "Failed to fetch props of vertex " << nextId;
                 return false;
             }
+            // TODO
+            #if 0
             auto& results = resp.responses();
             // get tag schema
             auto* vschema = results[0].get_vertex_schema();
@@ -247,6 +252,7 @@ private:
                 CHECK(ok(ret));
                 nextId = boost::get<int64_t>(value(ret));
             }
+            #endif
             count++;
         }
         // after go to next node for width * height times, it should go back to where it starts
@@ -257,15 +263,15 @@ private:
     }
 
 private:
-    std::unique_ptr<StorageClient> client_;
-    std::unique_ptr<meta::MetaClient> mClient_;
+    std::unique_ptr<GraphStorageClient>          client_;
+    std::unique_ptr<meta::MetaClient>            mClient_;
     std::shared_ptr<folly::IOThreadPoolExecutor> threadPool_;
-    GraphSpaceID spaceId_;
-    TagID tagId_;
-    std::string propName_;
-    size_t width_;
-    size_t height_;
-    VertexID firstVertexId_;
+    GraphSpaceID                                 spaceId_;
+    TagID                                        tagId_;
+    std::string                                  propName_;
+    size_t                                       width_;
+    size_t                                       height_;
+    VertexID                                     firstVertexId_;
 };
 
 }  // namespace storage

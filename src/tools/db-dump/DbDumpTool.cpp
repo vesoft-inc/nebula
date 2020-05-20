@@ -9,10 +9,10 @@
 
 void printHelp() {
     fprintf(stderr,
-           R"(  ./db_dump --space=<space name>
+           R"(  ./db_dump --space_name=<space name>
 
 required:
-       --space=<space name>
+       --space_name=<space name>
          A space name must be given.
 
 optional:
@@ -58,7 +58,7 @@ void printParams() {
     std::cout << "===========================PARAMS============================\n";
     std::cout << "mode: " << FLAGS_mode << "\n";
     std::cout << "meta server: " << FLAGS_meta_server << "\n";
-    std::cout << "space: " << FLAGS_space << "\n";
+    std::cout << "space name: " << FLAGS_space_name << "\n";
     std::cout << "path: " << FLAGS_db_path << "\n";
     std::cout << "parts: " << FLAGS_parts << "\n";
     std::cout << "vids: " << FLAGS_vids << "\n";
