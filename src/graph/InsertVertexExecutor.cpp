@@ -260,6 +260,7 @@ void InsertVertexExecutor::execute() {
                            << ", part " << it->first;
             }
             doError(Status::Error("Insert vertex not complete, completeness: %d", completeness));
+            return;
         }
         ::nebula::cpp2::Affect affect;
         int32_t vertex = 0;
