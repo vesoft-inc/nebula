@@ -7,99 +7,99 @@
 #include "expression/Expression.h"
 
 namespace nebula {
-std::ostream& operator<<(std::ostream& os, Expression::Type type) {
-    switch (type) {
-        case Expression::Type::EXP_CONSTANT:
+std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
+    switch (kind) {
+        case Expression::Kind::kConstant:
             os << "Constant";
             break;
-        case Expression::Type::EXP_ADD:
+        case Expression::Kind::kAdd:
             os << "Add";
             break;
-        case Expression::Type::EXP_MINUS:
+        case Expression::Kind::kMinus:
             os << "Minus";
             break;
-        case Expression::Type::EXP_MULTIPLY:
+        case Expression::Kind::kMultiply:
             os << "Multiply";
             break;
-        case Expression::Type::EXP_DIVIDE:
-            os << "Divide";
+        case Expression::Kind::kDivision:
+            os << "Division";
             break;
-        case Expression::Type::EXP_MOD:
+        case Expression::Kind::kMod:
             os << "Mod";
             break;
-        case Expression::Type::EXP_UNARY_PLUS:
+        case Expression::Kind::kUnaryPlus:
             os << "UnaryPlus";
             break;
-        case Expression::Type::EXP_UNARY_NEGATE:
+        case Expression::Kind::kUnaryNegate:
             os << "UnaryNegate";
             break;
-        case Expression::Type::EXP_UNARY_NOT:
+        case Expression::Kind::kUnaryNot:
             os << "UnaryNot";
             break;
-        case Expression::Type::EXP_REL_EQ:
+        case Expression::Kind::kRelEQ:
             os << "Equal";
             break;
-        case Expression::Type::EXP_REL_NE:
+        case Expression::Kind::kRelNE:
             os << "NotEuqal";
             break;
-        case Expression::Type::EXP_REL_LT:
+        case Expression::Kind::kRelLT:
             os << "LessThan";
             break;
-        case Expression::Type::EXP_REL_LE:
+        case Expression::Kind::kRelLE:
             os << "LessEqual";
             break;
-        case Expression::Type::EXP_REL_GT:
+        case Expression::Kind::kRelGT:
             os << "GreaterThan";
             break;
-        case Expression::Type::EXP_REL_GE:
+        case Expression::Kind::kRelGE:
             os << "GreaterEqual";
             break;
-        case Expression::Type::EXP_LOGICAL_AND:
+        case Expression::Kind::kLogicalAnd:
             os << "LogicalAnd";
             break;
-        case Expression::Type::EXP_LOGICAL_OR:
+        case Expression::Kind::kLogicalOr:
             os << "LogicalOr";
             break;
-        case Expression::Type::EXP_LOGICAL_XOR:
+        case Expression::Kind::kLogicalXor:
             os << "LogicalXor";
             break;
-        case Expression::Type::EXP_TYPE_CASTING:
+        case Expression::Kind::kTypeCasting:
             os << "TypeCasting";
             break;
-        case Expression::Type::EXP_FUNCTION_CALL:
+        case Expression::Kind::kFunctionCall:
             os << "FunctionCall";
             break;
-        case Expression::Type::EXP_ALIAS_PROPERTY:
+        case Expression::Kind::kAliasProperty:
             os << "AliasProp";
             break;
-        case Expression::Type::EXP_INPUT_PROPERTY:
+        case Expression::Kind::kInputProperty:
             os << "InputProp";
             break;
-        case Expression::Type::EXP_VAR_PROPERTY:
+        case Expression::Kind::kVarProperty:
             os << "VarProp";
             break;
-        case Expression::Type::EXP_DST_PROPERTY:
+        case Expression::Kind::kDstProperty:
             os << "DstProp";
             break;
-        case Expression::Type::EXP_SRC_PROPERTY:
+        case Expression::Kind::kSrcProperty:
             os << "SrcProp";
             break;
-        case Expression::Type::EXP_EDGE_SRC:
+        case Expression::Kind::kEdgeSrc:
             os << "EdgeSrc";
             break;
-        case Expression::Type::EXP_EDGE_TYPE:
+        case Expression::Kind::kEdgeType:
             os << "EdgeType";
             break;
-        case Expression::Type::EXP_EDGE_RANK:
+        case Expression::Kind::kEdgeRank:
             os << "EdgeRank";
             break;
-        case Expression::Type::EXP_EDGE_DST:
+        case Expression::Kind::kEdgeDst:
             os << "EdgeDst";
             break;
-        case Expression::Type::EXP_UUID:
+        case Expression::Kind::kUUID:
             os << "UUID";
             break;
     }
     return os;
 }
-}  // namespace nebula
+}   // namespace nebula

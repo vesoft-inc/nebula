@@ -11,16 +11,16 @@ Value LogicalExpression::eval() const {
     auto lhs = lhs_->eval();
     auto rhs = rhs_->eval();
 
-    switch (type_) {
-        case Type::EXP_LOGICAL_AND:
+    switch (kind_) {
+        case Kind::kLogicalAnd:
             return lhs && rhs;
-        case Type::EXP_LOGICAL_OR:
+        case Kind::kLogicalOr:
             return lhs || rhs;
-        case Type::EXP_LOGICAL_XOR:
+        case Kind::kLogicalXor:
             return (lhs && !rhs) || (!lhs && rhs);
         default:
             break;
     }
-    LOG(FATAL) << "Unknown type: " << type_;
+    LOG(FATAL) << "Unknown type: " << kind_;
 }
-}  // namespace nebula
+}   // namespace nebula

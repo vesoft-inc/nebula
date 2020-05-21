@@ -8,16 +8,16 @@
 
 namespace nebula {
 Value UnaryExpression::eval() const {
-   switch (type_) {
-       case Type::EXP_UNARY_PLUS:
-           return operand_->eval();
-       case Type::EXP_UNARY_NEGATE:
-           return -(operand_->eval());
-       case Type::EXP_UNARY_NOT:
-           return !(operand_->eval());
-       default:
-           break;
-   }
-   LOG(FATAL) << "Unknown type: " << type_;
+    switch (kind_) {
+        case Kind::kUnaryPlus:
+            return operand_->eval();
+        case Kind::kUnaryNegate:
+            return -(operand_->eval());
+        case Kind::kUnaryNot:
+            return !(operand_->eval());
+        default:
+            break;
+    }
+    LOG(FATAL) << "Unknown type: " << kind_;
 }
-}  // namespace nebula
+}   // namespace nebula

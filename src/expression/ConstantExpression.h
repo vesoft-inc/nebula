@@ -14,8 +14,7 @@ namespace nebula {
 
 class ConstantExpression : public Expression {
 public:
-    explicit ConstantExpression(Value v)
-        : Expression(Expression::Type::EXP_CONSTANT), val_(std::move(v)) {}
+    explicit ConstantExpression(Value v) : Expression(Kind::kConstant), val_(std::move(v)) {}
 
     Value eval() const override {
         return val_;
@@ -37,5 +36,5 @@ private:
     Value val_;
 };
 
-}  // namespace nebula
-#endif  // EXPRESSION_CONSTANTEXPRESSION_H_
+}   // namespace nebula
+#endif   // EXPRESSION_CONSTANTEXPRESSION_H_

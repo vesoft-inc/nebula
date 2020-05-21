@@ -13,10 +13,7 @@ namespace nebula {
 
 class ArithmeticExpression : public Expression {
 public:
-    ArithmeticExpression(Type type,
-                         Expression* lhs,
-                         Expression* rhs)
-        : Expression(type) {
+    ArithmeticExpression(Kind kind, Expression* lhs, Expression* rhs) : Expression(kind) {
         lhs_.reset(lhs);
         rhs_.reset(rhs);
     }
@@ -40,5 +37,5 @@ private:
     std::unique_ptr<Expression> rhs_;
 };
 
-}  // namespace nebula
-#endif  // EXPRESSION_EXPRESSION_H_
+}   // namespace nebula
+#endif   // EXPRESSION_EXPRESSION_H_

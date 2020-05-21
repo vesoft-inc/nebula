@@ -12,9 +12,8 @@
 namespace nebula {
 class TypeCastingExpression final : public Expression {
 public:
-    TypeCastingExpression(Value::Type vType,
-                          Expression* operand)
-        : Expression(Type::EXP_TYPE_CASTING), vType_(vType) {
+    TypeCastingExpression(Value::Type vType, Expression* operand)
+        : Expression(Kind::kTypeCasting), vType_(vType) {
         operand_.reset(operand);
     }
 
@@ -36,8 +35,8 @@ public:
     }
 
 private:
-    Value::Type                                 vType_;
-    std::unique_ptr<Expression>                 operand_;
+    Value::Type vType_;
+    std::unique_ptr<Expression> operand_;
 };
-}  // namespace nebula
+}   // namespace nebula
 #endif

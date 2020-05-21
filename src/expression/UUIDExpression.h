@@ -12,7 +12,7 @@
 namespace nebula {
 class UUIDExpression final : public Expression {
 public:
-    explicit UUIDExpression(std::string* field) : Expression(Type::EXP_UUID) {
+    explicit UUIDExpression(std::string* field) : Expression(Kind::kUUID) {
         field_.reset(field);
     }
 
@@ -33,9 +33,8 @@ public:
         return "";
     }
 
-
 private:
-    std::unique_ptr<std::string>                field_;
+    std::unique_ptr<std::string> field_;
 };
-}  // namespace nebula
+}   // namespace nebula
 #endif

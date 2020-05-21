@@ -11,22 +11,22 @@ Value RelationalExpression::eval() const {
     auto lhs = lhs_->eval();
     auto rhs = rhs_->eval();
 
-    switch (type_) {
-        case Type::EXP_REL_EQ:
+    switch (kind_) {
+        case Kind::kRelEQ:
             return lhs_ == rhs_;
-        case Type::EXP_REL_NE:
+        case Kind::kRelNE:
             return lhs_ != rhs_;
-        case Type::EXP_REL_LT:
+        case Kind::kRelLT:
             return lhs_ < rhs_;
-        case Type::EXP_REL_LE:
+        case Kind::kRelLE:
             return lhs_ <= rhs_;
-        case Type::EXP_REL_GT:
+        case Kind::kRelGT:
             return lhs_ > rhs_;
-        case Type::EXP_REL_GE:
+        case Kind::kRelGE:
             return lhs_ >= rhs_;
         default:
             break;
     }
-    LOG(FATAL) << "Unknown type: " << type_;
+    LOG(FATAL) << "Unknown type: " << kind_;
 }
-}  // namespace nebula
+}   // namespace nebula

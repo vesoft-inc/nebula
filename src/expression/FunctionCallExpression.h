@@ -12,7 +12,7 @@
 namespace nebula {
 class ArgumentList final {
 public:
-    void addArgument(Expression *arg) {
+    void addArgument(Expression* arg) {
         args_.emplace_back(arg);
     }
 
@@ -21,14 +21,13 @@ public:
     }
 
 private:
-    std::vector<std::unique_ptr<Expression>>    args_;
+    std::vector<std::unique_ptr<Expression>> args_;
 };
 
 class FunctionCallExpression final : public Expression {
 public:
-    FunctionCallExpression(std::string* name,
-                           ArgumentList* args)
-        : Expression(Type::EXP_FUNCTION_CALL) {
+    FunctionCallExpression(std::string* name, ArgumentList* args)
+        : Expression(Kind::kFunctionCall) {
         name_.reset(name);
         args_.reset(args);
     }
@@ -51,8 +50,8 @@ public:
     }
 
 private:
-    std::unique_ptr<std::string>                name_;
-    std::unique_ptr<ArgumentList>               args_;
+    std::unique_ptr<std::string> name_;
+    std::unique_ptr<ArgumentList> args_;
 };
-}  // namespace nebula
+}   // namespace nebula
 #endif

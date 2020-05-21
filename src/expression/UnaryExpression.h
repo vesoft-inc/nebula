@@ -12,8 +12,7 @@
 namespace nebula {
 class UnaryExpression final : public Expression {
 public:
-    UnaryExpression(Type type, Expression* operand)
-        : Expression(type) {
+    UnaryExpression(Kind kind, Expression* operand) : Expression(kind) {
         operand_.reset(operand);
     }
 
@@ -35,7 +34,7 @@ public:
     }
 
 private:
-    std::unique_ptr<Expression>                 operand_;
+    std::unique_ptr<Expression> operand_;
 };
-}  // namespace nebula
+}   // namespace nebula
 #endif

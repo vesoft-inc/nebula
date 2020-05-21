@@ -12,10 +12,7 @@
 namespace nebula {
 class RelationalExpression final : public Expression {
 public:
-    RelationalExpression(Type type,
-                         Expression* lhs,
-                         Expression* rhs)
-        : Expression(type) {
+    RelationalExpression(Kind kind, Expression* lhs, Expression* rhs) : Expression(kind) {
         lhs_.reset(lhs);
         rhs_.reset(rhs);
     }
@@ -38,8 +35,8 @@ public:
     }
 
 private:
-    std::unique_ptr<Expression>                 lhs_;
-    std::unique_ptr<Expression>                 rhs_;
+    std::unique_ptr<Expression> lhs_;
+    std::unique_ptr<Expression> rhs_;
 };
-}  // namespace nebula
+}   // namespace nebula
 #endif
