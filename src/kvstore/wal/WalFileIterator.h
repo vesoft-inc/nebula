@@ -50,15 +50,12 @@ private:
 
     LogID nextFirstId_;
 
-    size_t currIdx_{0};
-
     // [firstId, lastId]
     std::list<std::pair<LogID, LogID>> idRanges_;
     std::list<int> fds_;
     int64_t currPos_{0};
     int32_t currMsgLen_{0};
     mutable std::string currLog_;
-
 };
 
 }  // namespace wal

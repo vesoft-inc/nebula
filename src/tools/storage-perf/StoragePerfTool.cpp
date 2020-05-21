@@ -237,8 +237,8 @@ private:
 
         cpp2::EdgeDirection edgeDire = cpp2::EdgeDirection::BOTH;
         std::vector<cpp2::StatProp> statProps;
-        std::vector<cpp2::PropExp> vProps = std::move(vertexProps());
-        std::vector<cpp2::PropExp> eProps = std::move(edgeProps());
+        std::vector<cpp2::PropExp> vProps = vertexProps();
+        std::vector<cpp2::PropExp> eProps = edgeProps();
 
         auto tokens = tokenBucket_.consumeOrDrain(FLAGS_concurrency, FLAGS_qps, FLAGS_concurrency);
         for (auto i = 0; i < tokens; i++) {

@@ -1310,6 +1310,8 @@ TEST(MetaClientTest, Config) {
         config = std::move(resp).value();
         EXPECT_EQ(item3, config[0]);
     }
+    // Just avoid memory leak error of clang asan. to waitting asynchronous thread done.
+    sleep(FLAGS_heartbeat_interval_secs * 5);
 }
 
 
