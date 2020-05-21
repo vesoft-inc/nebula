@@ -91,7 +91,7 @@ public:
     void addField(folly::StringPiece name, nebula::cpp2::ValueType&& type);
 
     void addField(folly::StringPiece name, nebula::cpp2::ValueType&& type,
-                  nebula::cpp2::Value defaultValue);
+                  nebula::cpp2::Value&& defaultValue);
 
     void setProp(nebula::cpp2::SchemaProp schemaProp);
 

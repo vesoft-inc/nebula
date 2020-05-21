@@ -51,7 +51,8 @@ cpp2::ErrorCode checkDefaultValueType(const std::vector<nebula::cpp2::ColumnDef>
                     }
                     break;
                 default:
-                    LOG(ERROR) << "Unsupported type";
+                    LOG(ERROR) << "Unsupported type: "
+                               << static_cast<int>(column.get_type().get_type());
                     return cpp2::ErrorCode::E_CONFLICT;
             }
         }  // if

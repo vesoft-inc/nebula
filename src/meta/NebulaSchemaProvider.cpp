@@ -90,7 +90,7 @@ void NebulaSchemaProvider::addField(folly::StringPiece name,
 }
 
 void NebulaSchemaProvider::addField(folly::StringPiece name, nebula::cpp2::ValueType&& type,
-    nebula::cpp2::Value defaultValue) {
+                                    nebula::cpp2::Value&& defaultValue) {
     fields_.emplace_back(std::make_shared<SchemaField>(name.toString(),
                                                        std::move(type),
                                                        std::move(defaultValue)));
