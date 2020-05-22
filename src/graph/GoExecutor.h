@@ -70,12 +70,11 @@ private:
         return curStep_ == steps_;
     }
 
-    /**
-     * To check if `UPTO' is specified.
-     * If so, we are supposed to apply the filter in each step.
-     */
-    bool isUpto() const {
-        return upto_;
+    // is record the response data
+    // Won't return the properties(only dst) if false
+    // E.G 0-> 1 -> 2, two step
+    bool isRecord() const {
+        return curStep_ >= recordFrom_ && curStep_ <= steps_;
     }
 
     /**
@@ -108,9 +107,9 @@ private:
     StatusOr<std::vector<storage::cpp2::PropDef>> getStepOutProps();
     StatusOr<std::vector<storage::cpp2::PropDef>> getDstProps();
 
-    void fetchVertexProps(std::vector<VertexID> ids, RpcResponse &&rpcResp);
+    void fetchVertexProps(std::vector<VertexID> ids);
 
-    void maybeFinishExecution(RpcResponse &&rpcResp);
+    void maybeFinishExecution();
 
     /**
      * To retrieve or generate the column names for the execution result.
@@ -120,7 +119,8 @@ private:
     /**
      * To retrieve the dst ids from a stepping out response.
      */
-    StatusOr<std::vector<VertexID>> getDstIdsFromResp(RpcResponse &rpcResp) const;
+    std::vector<VertexID> getDstIdsFromResps(std::vector<RpcResponse>::iterator begin,
+                                             std::vector<RpcResponse>::iterator end) const;
 
     /**
      * get the edgeName when over all edges
@@ -129,13 +129,13 @@ private:
     /**
      * All required data have arrived, finish the execution.
      */
-    void finishExecution(RpcResponse &&rpcResp);
+    void finishExecution();
 
     /**
      * To setup an intermediate representation of the execution result,
      * which is about to be piped to the next executor.
      */
-    bool setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<InterimResult> &result);
+    bool setupInterimResult(std::unique_ptr<InterimResult> &result) const;
 
     /**
      * To setup the header of the execution result, i.e. the column names.
@@ -154,9 +154,9 @@ private:
     using Callback = std::function<Status(std::vector<VariantType>,
                                           const std::vector<nebula::cpp2::SupportedType>&)>;
 
-    bool processFinalResult(RpcResponse &rpcResp, Callback cb) const;
+    bool processFinalResult(Callback cb) const;
 
-    StatusOr<std::vector<cpp2::RowValue>> toThriftResponse(RpcResponse&& resp);
+    StatusOr<std::vector<cpp2::RowValue>> toThriftResponse() const;
 
     /**
      * A container to hold the mapping from vertex id to its properties, used for lookups
@@ -204,12 +204,15 @@ private:
         kPipe,
     };
 
+    // Join the RPC response to previous data
+    void joinResp(RpcResponse &&resp);
+
 private:
     GoSentence                                 *sentence_{nullptr};
     FromType                                    fromType_{kInstantExpr};
+    uint32_t                                    recordFrom_{1};
     uint32_t                                    steps_{1};
     uint32_t                                    curStep_{1};
-    bool                                        upto_{false};
     OverClause::Direction                       direction_{OverClause::Direction::kForward};
     std::vector<EdgeType>                       edgeTypes_;
     std::string                                *varname_{nullptr};
@@ -226,6 +229,8 @@ private:
     std::unique_ptr<VertexHolder>               vertexHolder_;
     std::unique_ptr<VertexBackTracker>          backTracker_;
     std::unique_ptr<cpp2::ExecutionResponse>    resp_;
+    // Record the data of response in GO step
+    std::vector<RpcResponse>                    records_;
     // TODO(shylock) Join lose the data with duplicate input(VID) map
     bool                                        uniqueStart_{false};  // #2087 Workaround
     // The name of Tag or Edge, index of prop in data

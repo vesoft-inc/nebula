@@ -64,6 +64,10 @@ public:
         return responses_;
     }
 
+    const std::vector<Response>& responses() const {
+        return responses_;
+    }
+
     const std::vector<std::tuple<HostAddr, int32_t, int32_t>>& hostLatency() const {
         return hostLatency_;
     }
