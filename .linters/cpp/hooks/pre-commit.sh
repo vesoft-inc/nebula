@@ -32,8 +32,7 @@ else
                           -name "*.[h]" -o -name "*.cpp" -o -name '*.inl' \
                           | grep -v 'GraphScanner.*' | grep -v 'GraphParser.*' \
                           | grep -v 'com_vesoft_client_NativeClient.h' \
-                          | grep -v 'com_vesoft_nebula_NebulaCodec.h' \
-                          | grep -v 'ExecutionResponse.cpp')
+                          | grep -v 'com_vesoft_nebula_NebulaCodec.h')
 fi
 
 # No changes on interested files

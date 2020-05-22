@@ -62,7 +62,7 @@ protected:
         }
     }
 
-    std::unique_ptr<GraphClient> client_{nullptr};
+    std::unique_ptr<NebulaClientImpl> client_{nullptr};
 };
 
 TEST_F(SchemaTest, TestComment) {
