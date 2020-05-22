@@ -116,11 +116,12 @@ private:
      */
     std::vector<std::string> getResultColumnNames() const;
 
+    void getDstIdsFromResp(const RpcResponse &rpcResp, std::unordered_set<VertexID> &set) const;
+    std::vector<VertexID> getDstIdsFromResp(const RpcResponse & rpcResp) const;
     /**
      * To retrieve the dst ids from a stepping out response.
      */
-    std::vector<VertexID> getDstIdsFromResps(std::vector<RpcResponse>::iterator begin,
-                                             std::vector<RpcResponse>::iterator end) const;
+    std::vector<VertexID> getDstIdsFromResps(const std::vector<RpcResponse> & resps) const;
 
     /**
      * get the edgeName when over all edges
