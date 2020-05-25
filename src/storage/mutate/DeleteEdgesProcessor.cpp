@@ -83,8 +83,82 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
             doRemove(spaceId_, partId, keys);
         }
     } else {
-        LOG(FATAL) << "Unimplement";
+        std::for_each(partEdges.begin(), partEdges.end(), [this](auto &part) {
+            auto partId = part.first;
+            auto atomic = [partId, edges = std::move(part.second), this]()
+                          -> folly::Optional<std::string> {
+                return deleteEdges(partId, edges);
+            };
+            auto callback = [partId, this](kvstore::ResultCode code) {
+                handleAsync(spaceId_, partId, code);
+            };
+            this->env_->kvstore_->asyncAtomicOp(spaceId_, partId, atomic, callback);
+        });
     }
+}
+
+
+folly::Optional<std::string>
+DeleteEdgesProcessor::deleteEdges(PartitionID partId,
+                                  const std::vector<cpp2::EdgeKey>& edges) {
+    std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
+    for (auto& edge : edges) {
+        auto type = edge.edge_type;
+        auto srcId = edge.src;
+        auto rank = edge.ranking;
+        auto dstId = edge.dst;
+        auto prefix = NebulaKeyUtils::edgePrefix(spaceVidLen_, partId, srcId, type, rank, dstId);
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto ret = this->env_->kvstore_->prefix(spaceId_, partId, prefix, &iter);
+        if (ret != kvstore::ResultCode::SUCCEEDED) {
+            VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret)
+                    << ", spaceId " << spaceId_;
+            return folly::none;
+        }
+        bool isLatestVE = true;
+        while (iter->valid()) {
+            /**
+             * just get the latest version edge for index.
+             */
+            if (isLatestVE) {
+                std::unique_ptr<RowReader> reader;
+                for (auto& index : indexes_) {
+                    auto indexId = index->get_index_id();
+                    if (type == index->get_schema_id().get_edge_type()) {
+                        if (reader == nullptr) {
+                            reader = RowReader::getEdgePropReader(this->env_->schemaMan_,
+                                                                  spaceId_,
+                                                                  type,
+                                                                  iter->val());
+                            if (reader == nullptr) {
+                                LOG(WARNING) << "Bad format row!";
+                                return folly::none;
+                            }
+                        }
+                        std::vector<Value::Type> colsType;
+                        auto values = collectIndexValues(reader.get(),
+                                                         index->get_fields(),
+                                                         colsType);
+                        if (!values.ok()) {
+                            continue;
+                        }
+                        auto indexKey = IndexKeyUtils::edgeIndexKey(spaceVidLen_, partId,
+                                                                    indexId,
+                                                                    srcId,
+                                                                    rank,
+                                                                    dstId,
+                                                                    values.value(),
+                                                                    colsType);
+                        batchHolder->remove(std::move(indexKey));
+                    }
+                }
+                isLatestVE = false;
+            }
+            batchHolder->remove(iter->key().str());
+            iter->next();
+        }
+    }
+    return encodeBatchValue(batchHolder->getBatch());
 }
 
 }  // namespace storage

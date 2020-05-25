@@ -689,8 +689,8 @@ TEST(GetNeighborsTest, GoOverAllTest) {
         auto resp = std::move(fut).get();
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
-        // 8 column: vId, stat, player, team, +/- serve, +/- teammate
-        QueryTestUtils::checkResponse(resp.vertices, vertices, 1, 8);
+        // 9 column: vId, stat, player, team, +/- serve, +/- teammate, col_date
+        QueryTestUtils::checkResponse(resp.vertices, vertices, 1, 9);
     }
     {
         LOG(INFO) << "GoFromTeamOverAll";
@@ -707,8 +707,8 @@ TEST(GetNeighborsTest, GoOverAllTest) {
         auto resp = std::move(fut).get();
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
-        // 8 column: vId, stat, player, team, +/- serve, +/- teammate
-        QueryTestUtils::checkResponse(resp.vertices, vertices, 1, 8);
+        // 9 column: vId, stat, player, team, +/- serve, +/- teammate, col_date
+        QueryTestUtils::checkResponse(resp.vertices, vertices, 1, 9);
     }
     {
         LOG(INFO) << "GoFromPlayerOverInEdge";
@@ -725,8 +725,8 @@ TEST(GetNeighborsTest, GoOverAllTest) {
         auto resp = std::move(fut).get();
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
-        // 6 column: vId, stat, player, team, -serve, -teammate
-        QueryTestUtils::checkResponse(resp.vertices, vertices, 1, 6);
+        // 7 column: vId, stat, player, team, -serve, -teammate, col_date
+        QueryTestUtils::checkResponse(resp.vertices, vertices, 1, 7);
     }
     {
         LOG(INFO) << "GoFromPlayerOverOutEdge";
@@ -743,8 +743,8 @@ TEST(GetNeighborsTest, GoOverAllTest) {
         auto resp = std::move(fut).get();
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
-        // 6 column: vId, stat, player, team, +serve, +teammate
-        QueryTestUtils::checkResponse(resp.vertices, vertices, 1, 6);
+        // 7 column: vId, stat, player, team, +serve, +teammate, col_date
+        QueryTestUtils::checkResponse(resp.vertices, vertices, 1, 7);
     }
     {
         LOG(INFO) << "GoFromMultiPlayerOverAll";
@@ -761,8 +761,8 @@ TEST(GetNeighborsTest, GoOverAllTest) {
         auto resp = std::move(fut).get();
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
-        // 8 column: vId, stat, player, team, +/- serve, +/- teammate
-        QueryTestUtils::checkResponse(resp.vertices, vertices, 3, 8);
+        // 9 column: vId, stat, player, team, +/- serve, +/- teammate, col_date
+        QueryTestUtils::checkResponse(resp.vertices, vertices, 3, 9);
     }
     {
         LOG(INFO) << "GoFromMultiTeamOverAll";
@@ -779,8 +779,8 @@ TEST(GetNeighborsTest, GoOverAllTest) {
         auto resp = std::move(fut).get();
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
-        // 8 column: vId, stat, player, team, +/- serve, +/- teammate
-        QueryTestUtils::checkResponse(resp.vertices, vertices, 3, 8);
+        // 9 column: vId, stat, player, team, +/- serve, +/- teammate, col_date
+        QueryTestUtils::checkResponse(resp.vertices, vertices, 3, 9);
     }
 }
 

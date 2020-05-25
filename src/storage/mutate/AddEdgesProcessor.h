@@ -28,6 +28,17 @@ private:
     AddEdgesProcessor(StorageEnv* env, stats::Stats* stats)
         : BaseProcessor<cpp2::ExecResponse>(env, stats) {}
 
+    folly::Optional<std::string> addEdges(PartitionID partId,
+                                          const std::vector<kvstore::KV>& edges);
+
+    folly::Optional<std::string> findObsoleteIndex(PartitionID partId,
+                                                   const folly::StringPiece& rawKey);
+
+    std::string indexKey(PartitionID partId,
+                         RowReader* reader,
+                         const folly::StringPiece& rawKey,
+                         std::shared_ptr<nebula::meta::cpp2::IndexItem> index);
+
 private:
     GraphSpaceID                                                spaceId_;
     std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes_;

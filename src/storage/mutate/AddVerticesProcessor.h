@@ -31,6 +31,14 @@ private:
         : BaseProcessor<cpp2::ExecResponse>(env, stats)
         , vertexCache_(cache) {}
 
+    folly::Optional<std::string>
+    addVertices(PartitionID partId, const std::vector<kvstore::KV>& vertices);
+
+    folly::Optional<std::string> findObsoleteIndex(PartitionID partId, VertexID vId, TagID tagId);
+
+    std::string indexKey(PartitionID partId, VertexID vId, RowReader* reader,
+                         std::shared_ptr<nebula::meta::cpp2::IndexItem> index);
+
 private:
     GraphSpaceID                                                spaceId_;
     VertexCache*                                                vertexCache_{nullptr};

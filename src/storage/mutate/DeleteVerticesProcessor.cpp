@@ -81,8 +81,98 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
             doRemove(spaceId_, partId, keys);
         }
     } else {
-        LOG(FATAL) << "Unimplement";
+        std::for_each(req.parts.begin(), req.parts.end(), [this](auto &pv) {
+            auto partId = pv.first;
+            auto atomic = [partId, v = std::move(pv.second),
+                           this]() -> folly::Optional<std::string> {
+                return deleteVertices(partId, v);
+            };
+
+            auto callback = [partId, this](kvstore::ResultCode code) {
+                VLOG(3) << "partId:" << partId << ", code:" << static_cast<int32_t>(code);
+                handleAsync(spaceId_, partId, code);
+            };
+            this->env_->kvstore_->asyncAtomicOp(spaceId_, partId, atomic, callback);
+        });
     }
+}
+
+
+folly::Optional<std::string>
+DeleteVerticesProcessor::deleteVertices(PartitionID partId,
+                                        const std::vector<VertexID>& vertices) {
+    std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
+    for (auto& vertex : vertices) {
+        auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vertex);
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto ret = this->env_->kvstore_->prefix(this->spaceId_, partId, prefix, &iter);
+        if (ret != kvstore::ResultCode::SUCCEEDED) {
+            VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret)
+                    << ", spaceId " << spaceId_;
+            return folly::none;
+        }
+        TagID latestVVId = -1;
+        while (iter->valid()) {
+            auto key = iter->key();
+            auto tagId = NebulaKeyUtils::getTagId(spaceVidLen_, key);
+            if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
+                if (NebulaKeyUtils::isVertex(spaceVidLen_, key)) {
+                    VLOG(3) << "Evict vertex cache for vertex ID " << vertex << ", tagId " << tagId;
+                    vertexCache_->evict(std::make_pair(vertex, tagId), partId);
+                }
+            }
+
+            /**
+            * example ,the prefix result as below :
+            *     V1_tag1_version3
+            *     V1_tag1_version2
+             *     V1_tag1_version1
+             *     V1_tag2_version3
+             *     V1_tag2_version2
+             *     V1_tag2_version1
+             *     V1_tag3_version3
+             *     V1_tag3_version2
+             *     V1_tag3_version1
+             * Because index depends on latest version of tag.
+             * So only V1_tag1_version3, V1_tag2_version3 and V1_tag3_version3 are needed,
+             * Using newlyVertexId to identify if it is the latest version
+             */
+            if (latestVVId != tagId) {
+                std::unique_ptr<RowReader> reader;
+                for (auto& index : indexes_) {
+                    auto indexId = index->get_index_id();
+                    if (index->get_schema_id().get_tag_id() == tagId) {
+                        if (reader == nullptr) {
+                            reader = RowReader::getTagPropReader(this->env_->schemaMan_,
+                                                                 spaceId_,
+                                                                 tagId,
+                                                                 iter->val());
+                            if (reader == nullptr) {
+                                LOG(WARNING) << "Bad format row";
+                                return folly::none;
+                            }
+                        }
+                        std::vector<Value::Type> colsType;
+                        const auto& cols = index->get_fields();
+                        auto values = collectIndexValues(reader.get(), cols, colsType);
+                        if (!values.ok()) {
+                            continue;
+                        }
+                        auto indexKey = IndexKeyUtils::vertexIndexKey(spaceVidLen_, partId,
+                                                                      indexId,
+                                                                      vertex,
+                                                                      values.value(),
+                                                                      colsType);
+                        batchHolder->remove(std::move(indexKey));
+                    }
+                }
+                latestVVId = tagId;
+            }
+            batchHolder->remove(key.str());
+            iter->next();
+        }
+    }
+    return encodeBatchValue(batchHolder->getBatch());
 }
 
 }  // namespace storage

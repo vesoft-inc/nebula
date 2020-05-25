@@ -9,6 +9,11 @@ set(CODEC_TEST_LIBS
     $<TARGET_OBJECTS:codec_test_obj>
     $<TARGET_OBJECTS:common_datatypes_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
+    $<TARGET_OBJECTS:common_meta_thrift_obj>
+    $<TARGET_OBJECTS:common_common_thrift_obj>
+    $<TARGET_OBJECTS:common_raftex_thrift_obj>
+    $<TARGET_OBJECTS:common_meta_client_obj>
+    $<TARGET_OBJECTS:common_file_based_cluster_id_man_obj>
     $<TARGET_OBJECTS:common_base_obj>
     $<TARGET_OBJECTS:common_network_obj>
     $<TARGET_OBJECTS:common_fs_obj>
@@ -16,6 +21,7 @@ set(CODEC_TEST_LIBS
     $<TARGET_OBJECTS:common_stats_obj>
     $<TARGET_OBJECTS:common_time_obj>
     $<TARGET_OBJECTS:common_conf_obj>
+    $<TARGET_OBJECTS:common_meta_obj>
 )
 
 
