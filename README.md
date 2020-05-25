@@ -37,7 +37,6 @@ Compared with other graph database solutions, **Nebula Graph** has the following
 
 * Symmetrically distributed
 * Storage and computing separation
-* Horizontal scalability
 * Strong data consistency by RAFT protocol
 * SQL-like query language
 * Role-based access control for higher level security
@@ -46,9 +45,9 @@ Compared with other graph database solutions, **Nebula Graph** has the following
 
 Read the [Getting started](https://docs.nebula-graph.io/manual-EN/1.overview/2.quick-start/1.get-started/) guide to quickly get going with **Nebula Graph**.
 
-Please note that you must install **Nebula Graph** by [installing source code](https://docs.nebula-graph.io/manual-EN/3.build-develop-and-administration/1.build/1.build-source-code/), [rpm/deb packages](https://docs.nebula-graph.io/manual-EN/3.build-develop-and-administration/2.install/1.install-with-rpm-deb/) or [docker compose](https://github.com/vesoft-inc/nebula-docker-compose), before you can actually start using it. If you prefer a video tutorial, visit our [YouTube channel](https://www.youtube.com/channel/UC73V8q795eSEMxDX4Pvdwmw).
+You can install **Nebula Graph** by [installing source code](https://docs.nebula-graph.io/manual-EN/3.build-develop-and-administration/1.build/1.build-source-code/), [rpm/deb packages](https://docs.nebula-graph.io/manual-EN/3.build-develop-and-administration/2.install/1.install-with-rpm-deb/) or [docker compose](https://github.com/vesoft-inc/nebula-docker-compose). 
 
-In case you encounter any problem, be sure to ask us on our [official forum](https://discuss.nebula-graph.io).
+If you prefer a video tutorial, visit our [YouTube channel](https://www.youtube.com/channel/UC73V8q795eSEMxDX4Pvdwmw).
 
 ## Documentation
 
@@ -59,11 +58,11 @@ In case you encounter any problem, be sure to ask us on our [official forum](htt
 
 See our [Roadmap](https://github.com/vesoft-inc/nebula/wiki/Nebula-Graph-Roadmap) for what's coming soon in **Nebula Graph**.
 
-## Visualization Tool: Nebula Graph Studio
+## Graph Visualization
 
-Visit [Nebula Graph Studio](https://github.com/vesoft-inc/nebula-web-docker) for visual exploration of graph data on a web UI.
+Visit [Nebula Graph Studio](https://github.com/vesoft-inc/nebula-web-docker) for visual exploration of graph on browser.
 
-## Supported Clients
+## Clients
 
 * [Go](https://github.com/vesoft-inc/nebula-go)
 * [Python](https://github.com/vesoft-inc/nebula-python)
