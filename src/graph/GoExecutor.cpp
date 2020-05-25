@@ -587,9 +587,9 @@ void GoExecutor::onStepOutResponse(RpcResponse &&rpcResp) {
         return;
     } else {
         if (isRecord()) {
-            starts_ = getDstIdsFromResp(records_.back());
+            starts_ = getUniqueDstIdsFromResp(records_.back());
         } else {
-            starts_ = getDstIdsFromResp(std::move(rpcResp));
+            starts_ = getUniqueDstIdsFromResp(std::move(rpcResp));
         }
         if (starts_.empty()) {
             onEmptyInputs();
@@ -612,7 +612,7 @@ void GoExecutor::maybeFinishExecution() {
         return;
     }
 
-    auto dstIds = getDstIdsFromResps(records_);
+    auto dstIds = getUniqueDstIdsFromResps(records_);
 
     // Reaching the dead end
     if (dstIds.empty()) {
@@ -631,8 +631,8 @@ void GoExecutor::onVertexProps(RpcResponse &&rpcResp) {
 }
 
 
-void GoExecutor::getDstIdsFromResp(const RpcResponse &rpcResp,
-                                   std::unordered_set<VertexID> &set) const {
+void GoExecutor::getUniqueDstIdsFromResp(const RpcResponse &rpcResp,
+                                         std::unordered_set<VertexID> &set) const {
     for (const auto &resp : rpcResp.responses()) {
         auto *vertices = resp.get_vertices();
         if (vertices == nullptr) {
@@ -653,16 +653,17 @@ void GoExecutor::getDstIdsFromResp(const RpcResponse &rpcResp,
     }
 }
 
-std::vector<VertexID> GoExecutor::getDstIdsFromResp(const RpcResponse & rpcResp) const {
+std::vector<VertexID> GoExecutor::getUniqueDstIdsFromResp(const RpcResponse & rpcResp) const {
     std::unordered_set<VertexID> set;
-    getDstIdsFromResp(rpcResp, set);
+    getUniqueDstIdsFromResp(rpcResp, set);
     return std::vector<VertexID>(set.begin(), set.end());
 }
 
-std::vector<VertexID> GoExecutor::getDstIdsFromResps(const std::vector<RpcResponse> & resps) const {
+std::vector<VertexID>
+GoExecutor::getUniqueDstIdsFromResps(const std::vector<RpcResponse> & resps) const {
     std::unordered_set<VertexID> set;
     for (const auto &resp : resps) {
-        getDstIdsFromResp(resp, set);
+        getUniqueDstIdsFromResp(resp, set);
     }
     return std::vector<VertexID>(set.begin(), set.end());
 }
