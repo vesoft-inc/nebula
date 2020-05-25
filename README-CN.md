@@ -32,7 +32,6 @@
 
 * 全对称分布式架构
 * 存储与计算分离
-* 水平可扩展性
 * RAFT 协议下的数据强一致
 * 类 SQL 查询语言
 * 用户鉴权
@@ -41,9 +40,9 @@
 
 请查看[快速使用手册](https://docs.nebula-graph.com.cn/manual-CN/4.contributions/how-to-contribute/)，开始使用 **Nebula Graph**。
 
-在开始使用 **Nebula Graph** 之前，必须通过[编译源码](https://docs.nebula-graph.com.cn/manual-CN/3.build-develop-and-administration/1.build/1.build-source-code/)，[rpm/deb 包](https://docs.nebula-graph.com.cn/manual-CN/3.build-develop-and-administration/2.install/1.install-with-rpm-deb/) 或者 [docker compose](https://github.com/vesoft-inc/nebula-docker-compose/blob/master/README_zh-CN.md) 方式安装 **Nebula Graph**。您也可以观看[视频](https://space.bilibili.com/472621355)学习如何安装 **Nebula Graph**。
+通过[编译源码](https://docs.nebula-graph.com.cn/manual-CN/3.build-develop-and-administration/1.build/1.build-source-code/)，[rpm/deb 包](https://docs.nebula-graph.com.cn/manual-CN/3.build-develop-and-administration/2.install/1.install-with-rpm-deb/) 或者 [docker compose](https://github.com/vesoft-inc/nebula-docker-compose/blob/master/README_zh-CN.md) 方式来安装 **Nebula Graph**。
 
-如果您遇到任何问题，请前往 Nebula Graph [官方论坛](https://discuss.nebula-graph.com.cn) 提问。
+您也可以观看[视频](https://space.bilibili.com/472621355)学习如何安装 **Nebula Graph**。
 
 ## 文档
 
@@ -54,11 +53,11 @@
 
 **Nebula Graph** 产品规划路线图请参见 [roadmap](https://github.com/vesoft-inc/nebula/wiki/Nebula-Graph-Roadmap)。
 
-## 可视化工具：Nebula Graph Studio
+## 图可视化工具
 
 查看图可视化工具[Nebula Graph Studio](https://github.com/vesoft-inc/nebula-web-docker)，开启图数据可视化探索之旅。
 
-## 支持的客户端
+## 客户端
 
 * [Go](https://github.com/vesoft-inc/nebula-go)
 * [Python](https://github.com/vesoft-inc/nebula-python)
