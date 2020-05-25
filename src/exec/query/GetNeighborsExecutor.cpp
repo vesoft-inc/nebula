@@ -102,7 +102,7 @@ void GetNeighborsExecutor::checkResponseResult(const storage::cpp2::ResponseComm
         std::stringstream ss;
         for (auto& part : failedParts) {
             ss << "error code: " << storage::cpp2::_ErrorCode_VALUES_TO_NAMES.at(part.get_code())
-               << ", leader: " << part.get_leader()->ip << ":" << part.get_leader()->port
+               << ", leader: " << part.get_leader()->host << ":" << part.get_leader()->port
                << ", part id: " << part.get_part_id() << "; ";
         }
         LOG(ERROR) << ss.str();

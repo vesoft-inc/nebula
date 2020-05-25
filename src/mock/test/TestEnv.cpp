@@ -33,9 +33,9 @@ void TestEnv::SetUp() {
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     HostAddr hostAddr;
     auto hostStatus = network::NetworkUtils::resolveHost("127.0.0.1", metaPort_);
-    auto storageHost = network::NetworkUtils::toHostAddr("127.0.0.1", storagePort_);
+    auto storageHost = network::NetworkUtils::resolveHost("127.0.0.1", storagePort_);
     meta::MetaClientOptions options;
-    options.localHost_ = storageHost.value();
+    options.localHost_ = storageHost.value().front();
     options.clusterId_ = 100;
     options.inStoraged_ = true;
     mClient_ = std::make_unique<meta::MetaClient>(threadPool,

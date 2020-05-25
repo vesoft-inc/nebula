@@ -179,8 +179,8 @@ public:
                               Expression* src,
                               std::vector<EdgeType> edgeTypes,
                               storage::cpp2::EdgeDirection edgeDirection,
-                              std::vector<std::string> vertexProps,
-                              std::vector<std::string> edgeProps,
+                              std::vector<storage::cpp2::PropExp> vertexProps,
+                              std::vector<storage::cpp2::PropExp> edgeProps,
                               std::vector<storage::cpp2::StatProp> statProps,
                               bool dedup = false,
                               std::vector<storage::cpp2::OrderBy> orderBy = {},
@@ -221,11 +221,11 @@ public:
         return edgeTypes_;
     }
 
-    const std::vector<std::string>& vertexProps() const {
+    const std::vector<storage::cpp2::PropExp>& vertexProps() const {
         return vertexProps_;
     }
 
-    const std::vector<std::string>& edgeProps() const {
+    const std::vector<storage::cpp2::PropExp>& edgeProps() const {
         return edgeProps_;
     }
 
@@ -241,8 +241,8 @@ private:
                  Expression* src,
                  std::vector<EdgeType> edgeTypes,
                  storage::cpp2::EdgeDirection edgeDirection,
-                 std::vector<std::string> vertexProps,
-                 std::vector<std::string> edgeProps,
+                 std::vector<storage::cpp2::PropExp> vertexProps,
+                 std::vector<storage::cpp2::PropExp> edgeProps,
                  std::vector<storage::cpp2::StatProp> statProps,
                  bool dedup,
                  std::vector<storage::cpp2::OrderBy> orderBy,
@@ -272,8 +272,8 @@ private:
     Expression*                                  src_{nullptr};
     std::vector<EdgeType>                        edgeTypes_;
     storage::cpp2::EdgeDirection                 edgeDirection_;
-    std::vector<std::string>                     vertexProps_;
-    std::vector<std::string>                     edgeProps_;
+    std::vector<storage::cpp2::PropExp>          vertexProps_;
+    std::vector<storage::cpp2::PropExp>          edgeProps_;
     std::vector<storage::cpp2::StatProp>         statProps_;
 };
 

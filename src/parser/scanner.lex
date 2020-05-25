@@ -403,11 +403,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
                                 return TokenType::LABEL;
                             }
 {IP_OCTET}(\.{IP_OCTET}){3} {
-                                uint32_t octets[4] = {0};
-                                sscanf(yytext, "%u.%u.%u.%u", &octets[3], &octets[2], &octets[1], &octets[0]);
-                                // The bytes order conforms to the one used in NetworkUtils
-                                uint32_t ipv4 = (octets[3] << 24) | (octets[2] << 16) | (octets[1] << 8) | octets[0];
-                                yylval->intval = ipv4;
+                                yylval->strval = new std::string(yytext, yyleng);
                                 return TokenType::IPV4;
                             }
 0[Xx]{HEX}+                 {

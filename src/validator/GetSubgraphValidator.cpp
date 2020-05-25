@@ -146,8 +146,8 @@ Status GetSubgraphValidator::toPlan() {
     auto* bodyStart = StartNode::make(plan);
 
     std::vector<EdgeType> edgeTypes;
-    std::vector<std::string> vertexProps;
-    std::vector<std::string> edgeProps;
+    std::vector<storage::cpp2::PropExp> vertexProps;
+    std::vector<storage::cpp2::PropExp> edgeProps;
     std::vector<storage::cpp2::StatProp> statProps;
     auto* gn1 = GetNeighbors::make(
             plan,

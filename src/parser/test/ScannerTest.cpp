@@ -433,7 +433,7 @@ TEST(Scanner, Basic) {
         // TODO(dutor) It's too tedious to paste an overflowed double number here,
         // thus we rely on `folly::to<double>' to cover those cases for us.
 
-        CHECK_SEMANTIC_VALUE("127.0.0.1", TokenType::IPV4, 0x7F000001),
+        CHECK_SEMANTIC_VALUE("127.0.0.1", TokenType::IPV4, "127.0.0.1"),
 
         CHECK_SEMANTIC_VALUE("\"Hello\"", TokenType::STRING, "Hello"),
         CHECK_SEMANTIC_VALUE("\"Hello\\\\\"", TokenType::STRING, "Hello\\"),

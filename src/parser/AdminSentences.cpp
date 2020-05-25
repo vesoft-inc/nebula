@@ -132,7 +132,7 @@ std::string HostList::toString() const {
     std::string buf;
     buf.reserve(256);
     for (auto &host : hosts_) {
-        buf += network::NetworkUtils::intToIPv4(host->ip);
+        buf += host->host;
         buf += ":";
         buf += std::to_string(host->port);
         buf += ",";

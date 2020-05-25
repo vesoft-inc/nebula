@@ -140,9 +140,9 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 
 /* token type specification */
 %token <boolval> BOOL
-%token <intval> INTEGER IPV4
+%token <intval> INTEGER
 %token <doubleval> DOUBLE
-%token <strval> STRING VARIABLE LABEL
+%token <strval> STRING VARIABLE LABEL IPV4
 
 %type <strval> name_label unreserved_keyword agg_function
 %type <strval> admin_operation admin_para
@@ -342,7 +342,7 @@ constant_expression
         $$ = new ConstantExpression(-$2);;
     }
     | MINUS base_expression {
-        $$ = new UnaryExpression(Expression::Type::EXP_UNARY_NEGATE, $2);
+        $$ = new UnaryExpression(Expression::Kind::kUnaryNegate, $2);
     }
     | base_expression {
         $$ = $1;
@@ -419,7 +419,7 @@ var_ref_expression
 alias_ref_expression
     : name_label DOT name_label {
         $$ = new AliasPropertyExpression(
-                Expression::Type::EXP_ALIAS_PROPERTY, new std::string(""), $1, $3);
+                Expression::Kind::kAliasProperty, new std::string(""), $1, $3);
     }
     | name_label DOT TYPE_PROP {
         $$ = new EdgeTypeExpression($1);
@@ -470,13 +470,13 @@ argument_list
 unary_expression
     : constant_expression { $$ = $1; }
     | PLUS unary_expression {
-        $$ = new UnaryExpression(Expression::Type::EXP_UNARY_PLUS, $2);
+        $$ = new UnaryExpression(Expression::Kind::kUnaryPlus, $2);
     }
     | NOT unary_expression {
-        $$ = new UnaryExpression(Expression::Type::EXP_UNARY_NOT, $2);
+        $$ = new UnaryExpression(Expression::Kind::kUnaryNot, $2);
     }
     | KW_NOT unary_expression {
-        $$ = new UnaryExpression(Expression::Type::EXP_UNARY_NOT, $2);
+        $$ = new UnaryExpression(Expression::Kind::kUnaryNot, $2);
     }
 /*
     | L_PAREN type_spec R_PAREN unary_expression {
@@ -509,76 +509,76 @@ type_spec
 multiplicative_expression
     : unary_expression { $$ = $1; }
     | multiplicative_expression MUL unary_expression {
-        $$ = new ArithmeticExpression(Expression::Type::EXP_MULTIPLY, $1, $3);
+        $$ = new ArithmeticExpression(Expression::Kind::kMultiply, $1, $3);
     }
     | multiplicative_expression DIV unary_expression {
-        $$ = new ArithmeticExpression(Expression::Type::EXP_DIVIDE, $1, $3);
+        $$ = new ArithmeticExpression(Expression::Kind::kDivision, $1, $3);
     }
     | multiplicative_expression MOD unary_expression {
-        $$ = new ArithmeticExpression(Expression::Type::EXP_MOD, $1, $3);
+        $$ = new ArithmeticExpression(Expression::Kind::kMod, $1, $3);
     }
     ;
 
 additive_expression
     : multiplicative_expression { $$ = $1; }
     | additive_expression PLUS multiplicative_expression {
-        $$ = new ArithmeticExpression(Expression::Type::EXP_ADD, $1, $3);
+        $$ = new ArithmeticExpression(Expression::Kind::kAdd, $1, $3);
     }
     | additive_expression MINUS multiplicative_expression {
-        $$ = new ArithmeticExpression(Expression::Type::EXP_MINUS, $1, $3);
+        $$ = new ArithmeticExpression(Expression::Kind::kMinus, $1, $3);
     }
     ;
 
 relational_expression
     : additive_expression { $$ = $1; }
     | relational_expression LT additive_expression {
-        $$ = new RelationalExpression(Expression::Type::EXP_REL_LT, $1, $3);
+        $$ = new RelationalExpression(Expression::Kind::kRelLT, $1, $3);
     }
     | relational_expression GT additive_expression {
-        $$ = new RelationalExpression(Expression::Type::EXP_REL_GT, $1, $3);
+        $$ = new RelationalExpression(Expression::Kind::kRelGT, $1, $3);
     }
     | relational_expression LE additive_expression {
-        $$ = new RelationalExpression(Expression::Type::EXP_REL_LE, $1, $3);
+        $$ = new RelationalExpression(Expression::Kind::kRelLE, $1, $3);
     }
     | relational_expression GE additive_expression {
-        $$ = new RelationalExpression(Expression::Type::EXP_REL_GE, $1, $3);
+        $$ = new RelationalExpression(Expression::Kind::kRelGE, $1, $3);
     }
     ;
 
 equality_expression
     : relational_expression { $$ = $1; }
     | equality_expression EQ relational_expression {
-        $$ = new RelationalExpression(Expression::Type::EXP_REL_EQ, $1, $3);
+        $$ = new RelationalExpression(Expression::Kind::kRelEQ, $1, $3);
     }
     | equality_expression NE relational_expression {
-        $$ = new RelationalExpression(Expression::Type::EXP_REL_NE, $1, $3);
+        $$ = new RelationalExpression(Expression::Kind::kRelNE, $1, $3);
     }
     ;
 
 logic_and_expression
     : equality_expression { $$ = $1; }
     | logic_and_expression AND equality_expression {
-        $$ = new LogicalExpression(Expression::Type::EXP_LOGICAL_AND, $1, $3);
+        $$ = new LogicalExpression(Expression::Kind::kLogicalAnd, $1, $3);
     }
     | logic_and_expression KW_AND equality_expression {
-        $$ = new LogicalExpression(Expression::Type::EXP_LOGICAL_AND, $1, $3);
+        $$ = new LogicalExpression(Expression::Kind::kLogicalAnd, $1, $3);
     }
     ;
 
 logic_or_expression
     : logic_and_expression { $$ = $1; }
     | logic_or_expression OR logic_and_expression {
-        $$ = new LogicalExpression(Expression::Type::EXP_LOGICAL_OR, $1, $3);
+        $$ = new LogicalExpression(Expression::Kind::kLogicalOr, $1, $3);
     }
     | logic_or_expression KW_OR logic_and_expression {
-        $$ = new LogicalExpression(Expression::Type::EXP_LOGICAL_OR, $1, $3);
+        $$ = new LogicalExpression(Expression::Kind::kLogicalOr, $1, $3);
     }
     ;
 
 logic_xor_expression
     : logic_or_expression { $$ = $1; }
     | logic_xor_expression KW_XOR logic_or_expression {
-        $$ = new LogicalExpression(Expression::Type::EXP_LOGICAL_XOR, $1, $3);
+        $$ = new LogicalExpression(Expression::Kind::kLogicalXor, $1, $3);
     }
     ;
 
@@ -1922,7 +1922,14 @@ host_list
 host_item
     : IPV4 COLON port {
         $$ = new nebula::HostAddr();
-        $$->ip = $1;
+        $$->host = std::move(*$1);
+        delete $1;
+        $$->port = $3;
+    }
+    | STRING COLON port {
+        $$ = new nebula::HostAddr();
+        $$->host = std::move(*$1);
+        delete $1;
         $$->port = $3;
     }
 
