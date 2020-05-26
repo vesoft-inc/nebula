@@ -4,16 +4,15 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "exec/query/DedupExecutor.h"
+#include "exec/logic/StartExecutor.h"
 
 #include "planner/PlanNode.h"
 
 namespace nebula {
 namespace graph {
 
-folly::Future<Status> DedupExecutor::execute() {
+folly::Future<Status> StartExecutor::execute() {
     dumpLog();
-    // TODO(yee):
     return start();
 }
 

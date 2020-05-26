@@ -12,17 +12,19 @@
 namespace nebula {
 namespace graph {
 
-class SelectExecutor final : public SingleInputExecutor {
+class SelectExecutor final : public Executor {
 public:
-    SelectExecutor(const PlanNode* node,
-                   ExecutionContext* ectx,
-                   Executor* input,
-                   Executor* then,
-                   Executor* els);
-
-    Status prepare() override;
+    SelectExecutor(const PlanNode* node, ExecutionContext* ectx, Executor* then, Executor* els);
 
     folly::Future<Status> execute() override;
+
+    Executor* thenBody() const {
+        return then_;
+    }
+
+    Executor* elseBody() const {
+        return else_;
+    }
 
 private:
     Executor* then_;

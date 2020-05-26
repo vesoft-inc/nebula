@@ -20,13 +20,10 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> GetVerticesExecutor::execute() {
-    return SingleInputExecutor::execute().then(cb([this](Status s) {
-        if (!s.ok()) return error(std::move(s));
-        return getVertices().ensure([this]() {
-            // TODO(yee): some cleanup or stats actions
-            UNUSED(this);
-        });
-    }));
+    return getVertices().ensure([this]() {
+        // TODO(yee): some cleanup or stats actions
+        UNUSED(this);
+    });
 }
 
 folly::Future<Status> GetVerticesExecutor::getVertices() {

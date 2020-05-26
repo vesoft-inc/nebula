@@ -18,10 +18,10 @@
 namespace nebula {
 namespace graph {
 
-class GetNeighborsExecutor final : public SingleInputExecutor {
+class GetNeighborsExecutor final : public Executor {
 public:
-    GetNeighborsExecutor(const PlanNode *node, ExecutionContext *ectx, Executor *input)
-        : SingleInputExecutor("GetNeighborsExecutor", node, ectx, input) {}
+    GetNeighborsExecutor(const PlanNode *node, ExecutionContext *ectx)
+        : Executor("GetNeighborsExecutor", node, ectx) {}
 
     folly::Future<Status> execute() override;
 

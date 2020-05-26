@@ -12,10 +12,10 @@
 namespace nebula {
 namespace graph {
 
-class GetVerticesExecutor final : public SingleInputExecutor {
+class GetVerticesExecutor final : public Executor {
 public:
-    GetVerticesExecutor(const PlanNode *node, ExecutionContext *ectx, Executor *input)
-        : SingleInputExecutor("GetVerticesExecutor", node, ectx, input) {}
+    GetVerticesExecutor(const PlanNode *node, ExecutionContext *ectx)
+        : Executor("GetVerticesExecutor", node, ectx) {}
 
     folly::Future<Status> execute() override;
 

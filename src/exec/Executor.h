@@ -7,8 +7,8 @@
 #ifndef EXEC_EXECUTOR_H_
 #define EXEC_EXECUTOR_H_
 
-#include <list>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -26,41 +26,12 @@ class ExecutionContext;
 
 class Executor : private cpp::NonCopyable, private cpp::NonMovable {
 public:
-    // For check whether a task is a Executor::Callable by std::is_base_of<>::value in thread pool
-    struct Callable {
-        int64_t planId;
-
-        explicit Callable(const Executor *e);
-    };
-
-    // Enable thread pool check the query plan id of each callback registered in future. The functor
-    // is only the proxy of the invocable function fn.
-    template <typename F>
-    struct Callback : Callable {
-        using Extract = folly::futures::detail::Extract<F>;
-        using Return = typename Extract::Return;
-        using FirstArg = typename Extract::FirstArg;
-
-        F fn;
-
-        Callback(const Executor *e, F f) : Callable(e), fn(std::move(f)) {}
-
-        Return operator()(FirstArg &&arg) {
-            return fn(std::forward<FirstArg>(arg));
-        }
-    };
-
     // Create executor according to plan node
     static Executor *makeExecutor(const PlanNode *node,
                                   ExecutionContext *ectx,
                                   std::unordered_map<int64_t, Executor *> *cache);
 
     virtual ~Executor() {}
-
-    // Preparation before executing
-    virtual Status prepare() {
-        return Status::OK();
-    }
 
     // Implementation interface of operation logic
     virtual folly::Future<Status> execute() = 0;
@@ -79,9 +50,18 @@ public:
         return node_;
     }
 
-    template <typename Fn>
-    Callback<Fn> cb(Fn &&f) const {
-        return Callback<Fn>(this, std::forward<Fn>(f));
+    const std::set<Executor *> &depends() const {
+        return depends_;
+    }
+
+    const std::set<Executor *> &successors() const {
+        return successors_;
+    }
+
+    Executor *addDependent(Executor *dep) {
+        depends_.emplace(dep);
+        dep->successors_.emplace(this);
+        return this;
     }
 
     template <typename T>
@@ -90,15 +70,15 @@ public:
         return static_cast<const T *>(node);
     }
 
+    // Throw runtime error to stop whole execution early
+    folly::Future<Status> error(Status status) const;
+
 protected:
     // Only allow derived executor to construct
     Executor(const std::string &name, const PlanNode *node, ExecutionContext *ectx);
 
     // Start a future chain and bind it to thread pool
     folly::Future<Status> start(Status status = Status::OK()) const;
-
-    // Throw runtime error to stop whole execution early
-    folly::Future<Status> error(Status status) const;
 
     folly::Executor *runner() const;
 
@@ -117,51 +97,11 @@ protected:
     // Execution context for saving some execution data
     ExecutionContext *ectx_;
 
+    // Topology
+    std::set<Executor *> depends_;
+    std::set<Executor *> successors_;
+
     // TODO: Some statistics
-};
-
-class SingleInputExecutor : public Executor {
-public:
-    Status prepare() override {
-        return input_->prepare();
-    }
-
-    folly::Future<Status> execute() override;
-
-protected:
-    SingleInputExecutor(const std::string &name,
-                        const PlanNode *node,
-                        ExecutionContext *ectx,
-                        Executor *input)
-        : Executor(name, node, ectx), input_(input) {
-        DCHECK_NOTNULL(input);
-    }
-
-    Executor *input_;
-};
-
-class MultiInputsExecutor : public Executor {
-public:
-    Status prepare() override {
-        for (auto input : inputs_) {
-            auto status = input->prepare();
-            if (!status.ok()) return status;
-        }
-        return Status::OK();
-    }
-
-    folly::Future<Status> execute() override;
-
-protected:
-    MultiInputsExecutor(const std::string &name,
-                        const PlanNode *node,
-                        ExecutionContext *ectx,
-                        std::vector<Executor *> &&inputs)
-        : Executor(name, node, ectx), inputs_(std::move(inputs)) {
-        DCHECK(!inputs_.empty());
-    }
-
-    std::vector<Executor *> inputs_;
 };
 
 }   // namespace graph

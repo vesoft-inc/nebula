@@ -12,10 +12,10 @@
 namespace nebula {
 namespace graph {
 
-class LimitExecutor final : public SingleInputExecutor {
+class LimitExecutor final : public Executor {
 public:
-    LimitExecutor(const PlanNode *node, ExecutionContext *ectx, Executor *input)
-        : SingleInputExecutor("LimitExecutor", node, ectx, input) {}
+    LimitExecutor(const PlanNode *node, ExecutionContext *ectx)
+        : Executor("LimitExecutor", node, ectx) {}
 
 private:
     folly::Future<Status> execute() override;

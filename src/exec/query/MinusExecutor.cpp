@@ -11,24 +11,11 @@
 namespace nebula {
 namespace graph {
 
-MinusExecutor::MinusExecutor(const PlanNode *node,
-                             ExecutionContext *ectx,
-                             Executor *left,
-                             Executor *right)
-    : MultiInputsExecutor("MinusExecutor", node, ectx, {left, right}) {
-    DCHECK_NOTNULL(left);
-    DCHECK_NOTNULL(right);
-}
-
 folly::Future<Status> MinusExecutor::execute() {
-    return MultiInputsExecutor::execute().then(cb([this](Status s) {
-        if (!s.ok()) return error(std::move(s));
+    dumpLog();
 
-        dumpLog();
-
-        // TODO(yee):
-        return start();
-    }));
+    // TODO(yee):
+    return start();
 }
 
 }   // namespace graph

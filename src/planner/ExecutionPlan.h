@@ -10,6 +10,10 @@
 #include <cstdint>
 #include <memory>
 
+#include <folly/futures/Future.h>
+
+#include "base/Status.h"
+
 namespace nebula {
 
 class ObjectPool;
@@ -21,6 +25,7 @@ class Executor;
 class IdGenerator;
 class PlanNode;
 class ExecutionContext;
+class Scheduler;
 
 class ExecutionPlan final {
 public:
@@ -42,15 +47,19 @@ public:
         return root_;
     }
 
-    Executor *createExecutor();
+    folly::Future<Status> execute();
 
 private:
+    Executor* createExecutor();
+
     int64_t                                 id_;
     PlanNode*                               root_{nullptr};
     ExecutionContext*                       ectx_{nullptr};
     std::unique_ptr<IdGenerator>            nodeIdGen_;
+    std::unique_ptr<Scheduler>              scheduler_;
 };
 
 }  // namespace graph
 }  // namespace nebula
+
 #endif

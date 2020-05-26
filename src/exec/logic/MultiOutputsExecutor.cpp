@@ -4,16 +4,17 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "exec/query/StartExecutor.h"
+#include "exec/logic/MultiOutputsExecutor.h"
 
-#include "planner/PlanNode.h"
+#include "planner/Query.h"
+#include "service/ExecutionContext.h"
 
 namespace nebula {
 namespace graph {
 
-folly::Future<Status> StartExecutor::execute() {
+folly::Future<Status> MultiOutputsExecutor::execute() {
     dumpLog();
-    return start();
+    return Status::OK();
 }
 
 }   // namespace graph

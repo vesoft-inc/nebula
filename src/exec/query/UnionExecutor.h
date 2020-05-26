@@ -12,9 +12,10 @@
 namespace nebula {
 namespace graph {
 
-class UnionExecutor : public MultiInputsExecutor {
+class UnionExecutor : public Executor {
 public:
-    UnionExecutor(const PlanNode *node, ExecutionContext *ectx, Executor *left, Executor *right);
+    UnionExecutor(const PlanNode *node, ExecutionContext *ectx)
+        : Executor("UnionExecutor", node, ectx) {}
 
     folly::Future<Status> execute() override;
 };

@@ -12,10 +12,10 @@
 namespace nebula {
 namespace graph {
 
-class SwitchSpaceExecutor final : public SingleInputExecutor {
+class SwitchSpaceExecutor final : public Executor {
 public:
-    SwitchSpaceExecutor(const PlanNode *node, ExecutionContext *ectx, Executor *input)
-        : SingleInputExecutor("SwitchSpaceExecutor", node, ectx, input) {}
+    SwitchSpaceExecutor(const PlanNode *node, ExecutionContext *ectx)
+        : Executor("SwitchSpaceExecutor", node, ectx) {}
 
     folly::Future<Status> execute() override;
 };

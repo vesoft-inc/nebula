@@ -12,10 +12,10 @@
 namespace nebula {
 namespace graph {
 
-class ReadIndexExecutor final : public SingleInputExecutor {
+class ReadIndexExecutor final : public Executor {
 public:
-    ReadIndexExecutor(const PlanNode *node, ExecutionContext *ectx, Executor *input)
-        : SingleInputExecutor("ReadIndexExecutor", node, ectx, input) {}
+    ReadIndexExecutor(const PlanNode *node, ExecutionContext *ectx)
+        : Executor("ReadIndexExecutor", node, ectx) {}
 
 private:
     folly::Future<Status> execute() override;

@@ -6,6 +6,10 @@
 nebula_add_library(
     exec_obj OBJECT
     Executor.cpp
+    logic/LoopExecutor.cpp
+    logic/MultiOutputsExecutor.cpp
+    logic/StartExecutor.cpp
+    logic/SelectExecutor.cpp
     query/AggregateExecutor.cpp
     query/DedupExecutor.cpp
     query/FilterExecutor.cpp
@@ -14,16 +18,12 @@ nebula_add_library(
     query/GetVerticesExecutor.cpp
     query/IntersectExecutor.cpp
     query/LimitExecutor.cpp
-    query/LoopExecutor.cpp
-    query/MultiOutputsExecutor.cpp
     query/MinusExecutor.cpp
     query/ProjectExecutor.cpp
-    query/StartExecutor.cpp
-    query/SelectExecutor.cpp
     query/SortExecutor.cpp
     query/ReadIndexExecutor.cpp
     query/UnionExecutor.cpp
-    query/SwitchSpaceExecutor.cpp
+    admin/SwitchSpaceExecutor.cpp
     admin/CreateSpaceExecutor.cpp
     admin/DescSpaceExecutor.cpp
     maintain/CreateTagExecutor.cpp

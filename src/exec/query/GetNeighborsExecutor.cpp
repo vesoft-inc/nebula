@@ -24,14 +24,10 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> GetNeighborsExecutor::execute() {
-    return SingleInputExecutor::execute().then(cb([this](Status s) {
-        if (!s.ok()) return error(std::move(s));
-
-        return getNeighbors().ensure([this]() {
-            // TODO(yee): some cleanup or stats actions
-            UNUSED(this);
-        });
-    }));
+    return getNeighbors().ensure([this]() {
+        // TODO(yee): some cleanup or stats actions
+        UNUSED(this);
+    });
 }
 
 folly::Future<Status> GetNeighborsExecutor::getNeighbors() {
@@ -51,8 +47,8 @@ folly::Future<Status> GetNeighborsExecutor::getNeighbors() {
                        gn->edgeTypes(),
                        gn->edgeDirection(),
                        &gn->statProps(),
-                       &gn->vertexProps(),
-                       &gn->edgeProps(),
+                       nullptr,   // FIXME
+                       nullptr,
                        gn->dedup(),
                        gn->orderBy(),
                        gn->limit(),

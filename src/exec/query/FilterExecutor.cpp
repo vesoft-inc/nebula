@@ -12,14 +12,11 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> FilterExecutor::execute() {
-    return SingleInputExecutor::execute().then(cb([this](Status s) {
-        if (!s.ok()) return error(std::move(s));
-        dumpLog();
-        auto* filter = asNode<Filter>(node());
-        auto* expr = filter->condition();
-        UNUSED(expr);
-        return start();
-    }));
+    dumpLog();
+    auto* filter = asNode<Filter>(node());
+    auto* expr = filter->condition();
+    UNUSED(expr);
+    return start();
 }
 
 }   // namespace graph

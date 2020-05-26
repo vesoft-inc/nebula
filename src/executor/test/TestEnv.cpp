@@ -73,11 +73,10 @@ void TestEnv::SetUp() {
 void TestEnv::TearDown() {
     // TO make sure the drop space be invoked on storage server
     sleep(FLAGS_load_data_interval_secs + 1);
+    mClient_.reset();
     graphServer_.reset();
     storageServer_.reset();
-    mClient_.reset();
     metaServer_.reset();
-    mClient_.reset();
 }
 
 uint16_t TestEnv::graphServerPort() const {

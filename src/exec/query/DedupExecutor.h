@@ -12,10 +12,10 @@
 namespace nebula {
 namespace graph {
 
-class DedupExecutor final : public SingleInputExecutor {
+class DedupExecutor final : public Executor {
 public:
-    DedupExecutor(const PlanNode *node, ExecutionContext *ectx, Executor *input)
-        : SingleInputExecutor("DedupExecutor", node, ectx, input) {}
+    DedupExecutor(const PlanNode *node, ExecutionContext *ectx)
+        : Executor("DedupExecutor", node, ectx) {}
 
     folly::Future<Status> execute() override;
 };

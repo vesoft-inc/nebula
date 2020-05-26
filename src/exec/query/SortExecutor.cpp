@@ -12,12 +12,9 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> SortExecutor::execute() {
-    return SingleInputExecutor::execute().then(cb([this](Status s) {
-        if (!s.ok()) return error(std::move(s));
-        dumpLog();
-        // TODO(yee):
-        return start();
-    }));
+    dumpLog();
+    // TODO(yee):
+    return start();
 }
 
 }   // namespace graph

@@ -12,12 +12,9 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> LimitExecutor::execute() {
-    return SingleInputExecutor::execute().then(cb([this](Status s) {
-        if (!s.ok()) return error(std::move(s));
-        dumpLog();
-        // TODO(yee): Get all neighbors by storage client
-        return start();
-    }));
+    dumpLog();
+    // TODO(yee): Get all neighbors by storage client
+    return start();
 }
 
 }   // namespace graph

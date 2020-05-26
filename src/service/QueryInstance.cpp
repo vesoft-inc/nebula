@@ -47,13 +47,7 @@ void QueryInstance::execute() {
         return;
     }
 
-    auto executor = plan_->createExecutor();
-    status = executor->prepare();
-    if (!status.ok()) {
-        onError(std::move(status));
-        return;
-    }
-    executor->execute()
+    plan_->execute()
         .then([this](Status s) {
             if (s.ok()) {
                 this->onFinish();
