@@ -15,6 +15,7 @@
 #include "clients/meta/MetaClient.h"
 #include "meta/ClientBasedGflagsManager.h"
 #include "hdfs/HdfsHelper.h"
+#include "storage/CommonUtils.h"
 #include "storage/admin/AdminTaskManager.h"
 
 namespace nebula {
@@ -36,6 +37,15 @@ public:
 
     void stop();
 
+    void waitUntilStop();
+
+private:
+    enum ServiceStatus {
+        STATUS_UNINITIALIZED = 0,
+        STATUS_RUNNING       = 1,
+        STATUS_STTOPED       = 2
+    };
+
 private:
     std::unique_ptr<kvstore::KVStore> getStoreInstance();
 
@@ -44,7 +54,13 @@ private:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
     std::shared_ptr<apache::thrift::concurrency::ThreadManager> workers_;
 
-    std::unique_ptr<apache::thrift::ThriftServer> tfServer_;
+    std::unique_ptr<std::thread> storageThread_;
+    std::unique_ptr<std::thread> adminThread_;
+    std::atomic_int storageSvcStatus_{STATUS_UNINITIALIZED};
+    std::atomic_int adminSvcStatus_{STATUS_UNINITIALIZED};
+
+    std::unique_ptr<apache::thrift::ThriftServer> storageServer_;
+    std::unique_ptr<apache::thrift::ThriftServer> adminServer_;
     std::unique_ptr<nebula::WebService> webSvc_;
     std::unique_ptr<meta::MetaClient> metaClient_;
     std::unique_ptr<kvstore::KVStore> kvstore_;
@@ -54,6 +70,7 @@ private:
     std::unique_ptr<meta::ClientBasedGflagsManager> gFlagsMan_;
     std::unique_ptr<meta::SchemaManager> schemaMan_;
     std::unique_ptr<meta::IndexManager> indexMan_;
+    std::unique_ptr<storage::StorageEnv> env_;
 
     std::atomic_bool stopped_{false};
     HostAddr localHost_;
