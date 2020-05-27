@@ -55,7 +55,7 @@ void DropSpaceExecutor::execute() {
 }
 
 void DropSpaceExecutor::setupResponse(cpp2::ExecutionResponse &resp)  {
-    resp.set_warning_msg("The data will be deleted completely after the service restart.");
+    resp.set_warning_msg("Data will be deleted completely after restarting the services.");
 }
 }   // namespace graph
 }   // namespace nebula
