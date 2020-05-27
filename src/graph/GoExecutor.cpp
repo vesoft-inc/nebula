@@ -576,30 +576,33 @@ void GoExecutor::stepOut() {
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
+#define GO_EXIT() do { \
+        if (!isRecord()) { \
+            onEmptyInputs(); \
+            return; \
+        } else { \
+            maybeFinishExecution(); \
+            return; \
+        } \
+    } while (0);
 
 void GoExecutor::onStepOutResponse(RpcResponse &&rpcResp) {
     joinResp(std::move(rpcResp));
 
     if (isFinalStep()) {
-        maybeFinishExecution();
-        return;
+        GO_EXIT();
     } else {
         auto dsts = getDstIdsFromResps(records_.end() - 1, records_.end());
         starts_ = std::move(dsts);
         if (starts_.empty()) {
-            if (curStep_ < recordFrom_) {
-                onEmptyInputs();
-                return;
-            } else {
-                maybeFinishExecution();
-                return;
-            }
+            GO_EXIT();
         }
         curStep_++;
         stepOut();
     }
 }
 
+#undef GO_EXIT
 
 void GoExecutor::maybeFinishExecution() {
     auto requireDstProps = expCtx_->hasDstTagProp();
