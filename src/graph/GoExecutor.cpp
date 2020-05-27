@@ -587,8 +587,13 @@ void GoExecutor::onStepOutResponse(RpcResponse &&rpcResp) {
         auto dsts = getDstIdsFromResps(records_.end() - 1, records_.end());
         starts_ = std::move(dsts);
         if (starts_.empty()) {
-            onEmptyInputs();
-            return;
+            if (curStep_ < recordFrom_) {
+                onEmptyInputs();
+                return;
+            } else {
+                maybeFinishExecution();
+                return;
+            }
         }
         curStep_++;
         stepOut();
