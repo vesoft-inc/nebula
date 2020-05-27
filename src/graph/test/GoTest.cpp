@@ -2458,6 +2458,29 @@ TEST_P(GoTest, WithIntermediateData) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tony Parker"];
+        auto *fmt = "GO 2 TO 2 STEPS FROM %ld OVER like REVERSELY YIELD DISTINCT like._dst";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID>> expected = {
+            {players_["LaMarcus Aldridge"].vid()},
+            {players_["Marco Belinelli"].vid()},
+            {players_["Boris Diaw"].vid()},
+            {players_["Dejounte Murray"].vid()},
+            {players_["Tony Parker"].vid()},
+            {players_["Manu Ginobili"].vid()},
+            {players_["Danny Green"].vid()},
+            {players_["Aron Baynes"].vid()},
+            {players_["Tiago Splitter"].vid()},
+            {players_["Shaquile O'Neal"].vid()},
+            {players_["Rudy Gay"].vid()},
+            {players_["Damian Lillard"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
     // empty starts before last step
     {
         cpp2::ExecutionResponse resp;
