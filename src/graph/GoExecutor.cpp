@@ -703,8 +703,8 @@ void GoExecutor::finishExecution() {
 StatusOr<std::vector<cpp2::RowValue>> GoExecutor::toThriftResponse() const {
     std::vector<cpp2::RowValue> rows;
     int64_t totalRows = 0;
-    for (const auto &rpcResp : records_) {
-        for (const auto& resp : rpcResp.responses()) {
+    for (auto rpcResp = records_.begin() + recordFrom_ - 1; rpcResp != records_.end(); ++rpcResp) {
+        for (const auto& resp : rpcResp->responses()) {
             if (resp.get_total_edges() != nullptr) {
                 totalRows += *resp.get_total_edges();
             }
