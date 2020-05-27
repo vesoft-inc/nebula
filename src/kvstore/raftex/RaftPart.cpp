@@ -1254,7 +1254,7 @@ void RaftPart::cleanupSnapshot() {
 
 bool RaftPart::needToCleanWal() {
     std::lock_guard<std::mutex> g(raftLock_);
-    if (status_ == Status::WAITING_SNAPSHOT) {
+    if (status_ == Status::STARTING || status_ == Status::WAITING_SNAPSHOT) {
         return false;
     }
     for (auto& host : hosts_) {
