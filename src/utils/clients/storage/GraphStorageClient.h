@@ -50,8 +50,7 @@ public:
 
     folly::SemiFuture<StorageRpcResponse<cpp2::GetPropResponse>> getProps(
         GraphSpaceID space,
-        std::vector<std::string> colNames,
-        const std::vector<Row>& input,
+        const DataSet& input,
         const std::vector<cpp2::PropExp>& props,
         bool dedup = false,
         const std::vector<cpp2::OrderBy>& orderBy = std::vector<cpp2::OrderBy>(),

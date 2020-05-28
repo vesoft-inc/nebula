@@ -164,8 +164,7 @@ GraphStorageClient::addEdges(GraphSpaceID space,
 
 folly::SemiFuture<StorageRpcResponse<cpp2::GetPropResponse>>
 GraphStorageClient::getProps(GraphSpaceID space,
-                             std::vector<std::string> colNames,
-                             const std::vector<Row>& input,
+                             const DataSet& input,
                              const std::vector<cpp2::PropExp>& props,
                              bool dedup,
                              const std::vector<cpp2::OrderBy>& orderBy,
@@ -173,7 +172,7 @@ GraphStorageClient::getProps(GraphSpaceID space,
                              std::string filter,
                              folly::EventBase* evb) {
     auto status = clusterIdsToHosts(space,
-                                    input,
+                                    input.rows,
                                     [](const Row& r) -> const VertexID& {
         DCHECK_EQ(Value::Type::STRING, r.columns[0].type());
         return r.columns[0].getStr();
@@ -190,7 +189,7 @@ GraphStorageClient::getProps(GraphSpaceID space,
         auto& host = c.first;
         auto& req = requests[host];
         req.set_space_id(space);
-        req.set_column_names(std::move(colNames));
+        req.set_column_names(std::move(input.colNames));
         req.set_parts(std::move(c.second));
         req.set_props(props);
         req.set_dedup(dedup);

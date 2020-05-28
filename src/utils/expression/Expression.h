@@ -71,6 +71,14 @@ public:
 
     virtual std::string decode() const = 0;
 
+    static std::unique_ptr<Expression> decode(folly::StringPiece) {
+        return nullptr;
+    }
+
+    bool isAliasPropertyExpression() const {
+        return kind_ == Kind::kAliasProperty;
+    }
+
 protected:
     Kind kind_;
 };

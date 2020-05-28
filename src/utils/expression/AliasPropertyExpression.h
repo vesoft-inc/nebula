@@ -46,6 +46,14 @@ public:
         return "";
     }
 
+    const std::string* alias() const {
+        return alias_.get();
+    }
+
+    const std::string* prop() const {
+        return prop_.get();
+    }
+
 protected:
     std::unique_ptr<std::string> ref_;
     std::unique_ptr<std::string> alias_;
