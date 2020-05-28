@@ -6,7 +6,7 @@
 #ifndef PARSER_TRAVERSESENTENCES_H_
 #define PARSER_TRAVERSESENTENCES_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include "parser/Sentence.h"
 #include "parser/Clauses.h"
 #include "parser/MutateSentences.h"
@@ -691,5 +691,3 @@ private:
 };
 }   // namespace nebula
 #endif  // PARSER_TRAVERSESENTENCES_H_
-
-

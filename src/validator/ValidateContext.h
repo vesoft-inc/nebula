@@ -7,10 +7,10 @@
 #ifndef VALIDATOR_VALIDATECONTEXT_H_
 #define VALIDATOR_VALIDATECONTEXT_H_
 
-#include "meta/SchemaManager.h"
+#include "common/meta/SchemaManager.h"
 #include "service/ClientSession.h"
-#include "datatypes/Value.h"
-#include "charset/Charset.h"
+#include "common/datatypes/Value.h"
+#include "common/charset/Charset.h"
 #include "planner/ExecutionPlan.h"
 
 namespace nebula {

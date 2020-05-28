@@ -7,7 +7,7 @@
 #include "exec/query/GetEdgesExecutor.h"
 
 // common
-#include "clients/storage/GraphStorageClient.h"
+#include "common/clients/storage/GraphStorageClient.h"
 // graph
 #include "planner/Query.h"
 #include "service/ExecutionContext.h"

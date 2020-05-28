@@ -4,7 +4,7 @@
 * attached with Common Clause Condition 1.0, found in the LICENSES directory.
 */
 
-#include "MockStorageServiceHandler.h"
+#include "mock/MockStorageServiceHandler.h"
 
 
 namespace nebula {
@@ -105,4 +105,3 @@ MockStorageServiceHandler::future_lookupIndex(const storage::cpp2::LookupIndexRe
 
 }  // namespace graph
 }  // namespace nebula
-

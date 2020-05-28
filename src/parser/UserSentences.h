@@ -7,7 +7,7 @@
 #ifndef PARSER_USERSENTENCES_H_
 #define PARSER_USERSENTENCES_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include "parser/Clauses.h"
 #include "parser/Sentence.h"
 
@@ -233,4 +233,3 @@ private:
 };
 }   // namespace nebula
 #endif  // PARSER_USERSENTENCES_H_
-

@@ -6,7 +6,7 @@
 
 #include "validator/ASTValidator.h"
 #include "planner/ExecutionPlan.h"
-#include "charset/Charset.h"
+#include "common/charset/Charset.h"
 
 namespace nebula {
 namespace graph {

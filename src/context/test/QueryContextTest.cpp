@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include <gtest/gtest.h>
 #include "context/QueryContext.h"
 
@@ -58,4 +58,3 @@ int main(int argc, char** argv) {
 
     return RUN_ALL_TESTS();
 }
-

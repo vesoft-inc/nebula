@@ -7,9 +7,9 @@
 #ifndef EXEC_MOCKSTORAGESERVICEHANDLER_H_
 #define EXEC_MOCKSTORAGESERVICEHANDLER_H_
 
-#include "base/Base.h"
-#include "interface/gen-cpp2/GraphStorageService.h"
-#include "StorageCache.h"
+#include "common/base/Base.h"
+#include "common/interface/gen-cpp2/GraphStorageService.h"
+#include "mock/StorageCache.h"
 #include <folly/futures/Promise.h>
 #include <folly/futures/Future.h>
 

@@ -7,10 +7,10 @@
 #ifndef GRAPH_REQUESTCONTEXT_H_
 #define GRAPH_REQUESTCONTEXT_H_
 
-#include "base/Base.h"
-#include "gen-cpp2/GraphService.h"
-#include "cpp/helpers.h"
-#include "time/Duration.h"
+#include "common/base/Base.h"
+#include "common/interface/gen-cpp2/GraphService.h"
+#include "common/cpp/helpers.h"
+#include "common/time/Duration.h"
 #include "service/ClientSession.h"
 
 /**

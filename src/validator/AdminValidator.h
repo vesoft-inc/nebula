@@ -7,11 +7,11 @@
 #ifndef VALIDATOR_ADMINVALIDATOR_H_
 #define VALIDATOR_ADMINVALIDATOR_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include "validator/Validator.h"
 #include "parser/MaintainSentences.h"
 #include "parser/AdminSentences.h"
-#include "clients/meta/MetaClient.h"
+#include "common/clients/meta/MetaClient.h"
 
 namespace nebula {
 namespace graph {

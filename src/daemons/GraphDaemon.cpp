@@ -4,20 +4,20 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
-#include "base/SignalHandler.h"
-#include "network/NetworkUtils.h"
+#include "common/base/Base.h"
+#include "common/base/SignalHandler.h"
+#include "common/network/NetworkUtils.h"
 #include <signal.h>
 #include <errno.h>
 #include <string.h>
-#include "base/Status.h"
-#include "fs/FileUtils.h"
-#include "process/ProcessUtils.h"
+#include "common/base/Status.h"
+#include "common/fs/FileUtils.h"
+#include "common/process/ProcessUtils.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "service/GraphService.h"
 #include "service/GraphHttpHandler.h"
 #include "service/GraphFlags.h"
-#include "webservice/WebService.h"
+#include "common/webservice/WebService.h"
 
 using nebula::Status;
 using nebula::ProcessUtils;

@@ -7,11 +7,11 @@
 #ifndef EXEC_STORAGECACHE_H_
 #define EXEC_STORAGECACHE_H_
 
-#include "base/Base.h"
-#include "base/StatusOr.h"
-#include "interface/gen-cpp2/storage_types.h"
-#include "clients/meta/MetaClient.h"
-#include "meta/ServerBasedSchemaManager.h"
+#include "common/base/Base.h"
+#include "common/base/StatusOr.h"
+#include "common/interface/gen-cpp2/storage_types.h"
+#include "common/clients/meta/MetaClient.h"
+#include "common/meta/ServerBasedSchemaManager.h"
 
 namespace nebula {
 namespace graph {

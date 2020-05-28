@@ -8,8 +8,8 @@
 #define PLANNER_ADMIN_H_
 
 #include "planner/PlanNode.h"
-#include "interface/gen-cpp2/meta_types.h"
-#include "clients/meta/MetaClient.h"
+#include "common/interface/gen-cpp2/meta_types.h"
+#include "common/clients/meta/MetaClient.h"
 
 /**
  * All admin-related nodes would be put in this file.

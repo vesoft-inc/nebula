@@ -7,7 +7,7 @@
 #ifndef SERVICE_SIMPLEAUTHENTICATOR_H_
 #define SERVICE_SIMPLEAUTHENTICATOR_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include "service/Authenticator.h"
 
 namespace nebula {

@@ -8,8 +8,8 @@
 #define PLANNER_MAINTAIN_H_
 
 #include "PlanNode.h"
-#include "interface/gen-cpp2/meta_types.h"
-#include "clients/meta/MetaClient.h"
+#include "common/interface/gen-cpp2/meta_types.h"
+#include "common/clients/meta/MetaClient.h"
 
 namespace nebula {
 namespace graph {

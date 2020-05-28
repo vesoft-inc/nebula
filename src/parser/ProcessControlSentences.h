@@ -6,7 +6,7 @@
 #ifndef PARSER_PROCESSCONTROLSENTENCES_H_
 #define PARSER_PROCESSCONTROLSENTENCES_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include "parser/Sentence.h"
 
 namespace nebula {

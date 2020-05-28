@@ -7,7 +7,7 @@
 #ifndef PLANNER_MUTATE_H_
 #define PLANNER_MUTATE_H_
 
-#include "interface/gen-cpp2/storage_types.h"
+#include "common/interface/gen-cpp2/storage_types.h"
 #include "PlanNode.h"
 
 /**

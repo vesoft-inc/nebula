@@ -7,17 +7,17 @@
 #ifndef SERVICE_EXECUTIONCONTEXT_H_
 #define SERVICE_EXECUTIONCONTEXT_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 
 #include <unordered_map>
 
-#include "cpp/helpers.h"
-#include "meta/SchemaManager.h"
+#include "common/cpp/helpers.h"
+#include "common/meta/SchemaManager.h"
 #include "parser/SequentialSentences.h"
 #include "service/RequestContext.h"
-// #include "meta/ClientBasedGflagsManager.h"
-#include "clients/meta/MetaClient.h"
-#include "charset/Charset.h"
+// #include "common/meta/ClientBasedGflagsManager.h"
+#include "common/clients/meta/MetaClient.h"
+#include "common/charset/Charset.h"
 #include "util/ObjectPool.h"
 
 /**

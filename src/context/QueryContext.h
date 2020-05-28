@@ -7,8 +7,8 @@
 #ifndef CONTEXT_QUERYCONTEXT_H_
 #define CONTEXT_QUERYCONTEXT_H_
 
-#include "base/Base.h"
-#include "datatypes/Value.h"
+#include "common/base/Base.h"
+#include "common/datatypes/Value.h"
 
 namespace nebula {
 
@@ -53,5 +53,3 @@ private:
 
 }  // namespace nebula
 #endif  // CONTEXT_QUERYCONTEXT_H_
-
-

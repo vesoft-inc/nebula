@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
-#include "PipeValidator.h"
+#include "common/base/Base.h"
+#include "validator/PipeValidator.h"
 #include "parser/TraverseSentences.h"
 
 namespace nebula {

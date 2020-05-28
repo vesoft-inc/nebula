@@ -6,8 +6,8 @@
 #ifndef PARSER_COLUMNTYPEDEF_H_
 #define PARSER_COLUMNTYPEDEF_H_
 
-#include "base/Base.h"
-#include <interface/gen-cpp2/meta_types.h>
+#include "common/base/Base.h"
+#include "common/interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
 struct ColumnTypeDef {

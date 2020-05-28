@@ -7,9 +7,9 @@
 #ifndef SERVICE_CLIENTSESSION_H_
 #define SERVICE_CLIENTSESSION_H_
 
-#include "base/Base.h"
-#include "time/Duration.h"
-#include "interface/gen-cpp2/common_types.h"
+#include "common/base/Base.h"
+#include "common/time/Duration.h"
+#include "common/interface/gen-cpp2/common_types.h"
 
 /**
  * A ClientSession holds the context informations of a session opened by a client.

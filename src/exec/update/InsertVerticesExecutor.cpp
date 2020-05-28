@@ -9,7 +9,7 @@
 #include "service/QueryContext.h"
 
 // common
-#include "clients/meta/MetaClient.h"
+#include "common/clients/meta/MetaClient.h"
 
 namespace nebula {
 namespace graph {

@@ -4,10 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include <gtest/gtest.h>
 #include "planner/IdGenerator.h"
-#include "concurrent/Barrier.h"
+#include "common/concurrent/Barrier.h"
 
 namespace nebula {
 namespace graph {

@@ -7,8 +7,8 @@
 #ifndef EXEC_MOCKMETASERVICEHANDLER_H_
 #define EXEC_MOCKMETASERVICEHANDLER_H_
 
-#include "base/Base.h"
-#include "interface/gen-cpp2/MetaService.h"
+#include "common/base/Base.h"
+#include "common/interface/gen-cpp2/MetaService.h"
 #include <folly/futures/Promise.h>
 #include <folly/futures/Future.h>
 

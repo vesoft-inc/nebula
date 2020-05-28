@@ -7,9 +7,9 @@
 #ifndef SERVICE_QUERYINSTANCE_H_
 #define SERVICE_QUERYINSTANCE_H_
 
-#include "base/Base.h"
-#include "base/Status.h"
-#include "cpp/helpers.h"
+#include "common/base/Base.h"
+#include "common/base/Status.h"
+#include "common/cpp/helpers.h"
 #include "parser/GQLParser.h"
 #include "validator/ASTValidator.h"
 #include "service/ExecutionContext.h"

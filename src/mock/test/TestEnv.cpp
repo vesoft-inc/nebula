@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include "mock/test/TestEnv.h"
 
 DECLARE_int32(heartbeat_interval_secs);

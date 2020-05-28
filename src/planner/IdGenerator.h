@@ -7,7 +7,7 @@
 #ifndef PLANNER_IDGENERATOR_H_
 #define PLANNER_IDGENERATOR_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 
 namespace nebula {
 namespace graph {

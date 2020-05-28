@@ -9,9 +9,9 @@
 #include <sstream>
 
 // common
-#include "clients/storage/GraphStorageClient.h"
-#include "datatypes/List.h"
-#include "datatypes/Vertex.h"
+#include "common/clients/storage/GraphStorageClient.h"
+#include "common/datatypes/List.h"
+#include "common/datatypes/Vertex.h"
 // graph
 #include "planner/Query.h"
 #include "service/ExecutionContext.h"

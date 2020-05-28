@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "StorageCache.h"
+#include "mock/StorageCache.h"
 
 DECLARE_int32(heartbeat_interval_secs);
 

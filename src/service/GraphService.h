@@ -7,8 +7,8 @@
 #ifndef SERVICE_GRAPHSERVICE_H_
 #define SERVICE_GRAPHSERVICE_H_
 
-#include "base/Base.h"
-#include "gen-cpp2/GraphService.h"
+#include "common/base/Base.h"
+#include "common/interface/gen-cpp2/GraphService.h"
 #include "service/Authenticator.h"
 #include "service/QueryEngine.h"
 #include "service/SessionManager.h"

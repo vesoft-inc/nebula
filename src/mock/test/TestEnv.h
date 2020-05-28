@@ -7,11 +7,11 @@
 #ifndef GRAPH_TEST_TESTENV_H_
 #define GRAPH_TEST_TESTENV_H_
 
-#include "base/Base.h"
-#include "fs/TempDir.h"
-#include "clients/graph/GraphClient.h"
-#include "clients/meta/MetaClient.h"
-#include "clients/storage/GraphStorageClient.h"
+#include "common/base/Base.h"
+#include "common/fs/TempDir.h"
+#include "common/clients/graph/GraphClient.h"
+#include "common/clients/meta/MetaClient.h"
+#include "common/clients/storage/GraphStorageClient.h"
 #include <gtest/gtest.h>
 #include "mock/MockServer.h"
 

@@ -6,10 +6,10 @@
 #ifndef PARSER_MAINTAINSENTENCES_H_
 #define PARSER_MAINTAINSENTENCES_H_
 
-#include <interface/gen-cpp2/common_types.h>
-#include <interface/gen-cpp2/meta_types.h>
-#include "base/Base.h"
-#include "base/StatusOr.h"
+#include "common/interface/gen-cpp2/common_types.h"
+#include "common/interface/gen-cpp2/meta_types.h"
+#include "common/base/Base.h"
+#include "common/base/StatusOr.h"
 #include "parser/Clauses.h"
 #include "parser/Sentence.h"
 

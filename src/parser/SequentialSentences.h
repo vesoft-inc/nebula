@@ -6,7 +6,7 @@
 #ifndef PARSER_SEQUENTIALSENTENCES_H_
 #define PARSER_SEQUENTIALSENTENCES_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include "parser/Sentence.h"
 #include "parser/MaintainSentences.h"
 #include "parser/TraverseSentences.h"

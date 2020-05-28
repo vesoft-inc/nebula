@@ -8,7 +8,7 @@
 
 #include <folly/String.h>
 
-#include "gen-cpp2/common_types.h"
+#include "common/interface/gen-cpp2/common_types.h"
 #include "planner/Query.h"
 #include "service/ExecutionContext.h"
 

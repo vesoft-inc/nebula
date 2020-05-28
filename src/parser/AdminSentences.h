@@ -9,7 +9,7 @@
 #include "parser/Clauses.h"
 #include "parser/Sentence.h"
 #include "parser/MutateSentences.h"
-#include "network/NetworkUtils.h"
+#include "common/network/NetworkUtils.h"
 
 namespace nebula {
 

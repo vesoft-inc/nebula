@@ -4,9 +4,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
-#include "GQLParser.h"
+#include "parser/GQLParser.h"
+
+#include "common/base/Base.h"
 
 namespace nebula {
 }   // namespace nebula
-

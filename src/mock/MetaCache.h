@@ -7,9 +7,9 @@
 #ifndef EXEC_METACACHE_H_
 #define EXEC_METACACHE_H_
 
-#include "base/Base.h"
-#include "base/StatusOr.h"
-#include "interface/gen-cpp2/meta_types.h"
+#include "common/base/Base.h"
+#include "common/base/StatusOr.h"
+#include "common/interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
 namespace graph {

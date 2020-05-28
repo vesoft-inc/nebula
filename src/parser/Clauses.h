@@ -6,8 +6,8 @@
 #ifndef PARSER_CLAUSES_H_
 #define PARSER_CLAUSES_H_
 
-#include "base/Base.h"
-#include "expression/Expression.h"
+#include "common/base/Base.h"
+#include "common/expression/Expression.h"
 
 namespace nebula {
 class StepClause final {
@@ -325,4 +325,3 @@ using BothInOutClause = InBoundClause;
 
 }   // namespace nebula
 #endif  // PARSER_CLAUSES_H_
-

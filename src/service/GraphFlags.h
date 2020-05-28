@@ -7,7 +7,7 @@
 #ifndef SERVICE_GRAPHFLAGS_H_
 #define SERVICE_GRAPHFLAGS_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 
 DECLARE_int32(port);
 DECLARE_int32(client_idle_timeout_secs);

@@ -4,8 +4,8 @@
 * attached with Common Clause Condition 1.0, found in the LICENSES directory.
 */
 
-#include "base/Base.h"
-#include "charset/Charset.h"
+#include "common/base/Base.h"
+#include "common/charset/Charset.h"
 
 #include "util/SchemaUtil.h"
 #include "parser/MaintainSentences.h"

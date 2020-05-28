@@ -7,9 +7,9 @@
 #ifndef MOCK_TEST_TESTBASE_H_
 #define MOCK_TEST_TESTBASE_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include <gtest/gtest.h>
-#include "gen-cpp2/GraphService.h"
+#include "common/interface/gen-cpp2/GraphService.h"
 
 namespace nebula {
 namespace graph {

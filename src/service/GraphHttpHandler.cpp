@@ -5,7 +5,7 @@
  */
 
 #include "service/GraphHttpHandler.h"
-#include "webservice/Common.h"
+#include "common/webservice/Common.h"
 #include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
 #include <proxygen/httpserver/ResponseBuilder.h>

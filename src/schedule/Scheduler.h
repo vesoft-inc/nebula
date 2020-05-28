@@ -16,8 +16,8 @@
 #include <folly/futures/Future.h>
 #include <folly/futures/SharedPromise.h>
 
-#include "base/Status.h"
-#include "cpp/helpers.h"
+#include "common/base/Status.h"
+#include "common/cpp/helpers.h"
 
 namespace nebula {
 namespace graph {

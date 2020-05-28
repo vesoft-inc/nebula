@@ -7,8 +7,8 @@
 #ifndef EXEC_MOCKSERVER_H_
 #define EXEC_MOCKSERVER_H_
 
-#include "base/Base.h"
-#include "thread/NamedThread.h"
+#include "common/base/Base.h"
+#include "common/thread/NamedThread.h"
 #include "mock/MockMetaServiceHandler.h"
 #include "mock/MockStorageServiceHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>

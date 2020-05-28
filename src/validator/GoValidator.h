@@ -7,7 +7,7 @@
 #ifndef VALIDATOR_GOVALIDATOR_H_
 #define VALIDATOR_GOVALIDATOR_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include "validator/Validator.h"
 
 namespace nebula {

@@ -3,7 +3,7 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-#include "MutateValidator.h"
+#include "validator/MutateValidator.h"
 #include "util/SchemaUtil.h"
 #include "planner/Mutate.h"
 #include "planner/Query.h"
@@ -251,4 +251,3 @@ Status InsertEdgesValidator::prepareEdges() {;
 }
 }  // namespace graph
 }  // namespace nebula
-

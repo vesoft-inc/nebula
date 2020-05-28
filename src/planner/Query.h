@@ -8,12 +8,12 @@
 #define PLANNER_QUERY_H_
 
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include "planner/PlanNode.h"
 #include "planner/ExecutionPlan.h"
 #include "parser/Clauses.h"
 #include "parser/TraverseSentences.h"
-#include "interface/gen-cpp2/storage_types.h"
+#include "common/interface/gen-cpp2/storage_types.h"
 
 /**
  * All query-related nodes would be put in this file,

@@ -7,8 +7,8 @@
 #ifndef GRAPH_GRAPHTTPHANDLER_H_
 #define GRAPH_GRAPHTTPHANDLER_H_
 
-#include "base/Base.h"
-#include "webservice/Common.h"
+#include "common/base/Base.h"
+#include "common/webservice/Common.h"
 #include "proxygen/httpserver/RequestHandler.h"
 
 namespace nebula {

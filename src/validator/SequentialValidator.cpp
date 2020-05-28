@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
-#include "SequentialValidator.h"
+#include "common/base/Base.h"
+#include "validator/SequentialValidator.h"
 
 namespace nebula {
 namespace graph {

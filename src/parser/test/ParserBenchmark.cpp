@@ -3,10 +3,10 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include <folly/Benchmark.h>
 #include "parser/GQLParser.h"
-#include "expression/Expression.h"
+#include "common/expression/Expression.h"
 
 using nebula::GQLParser;
 

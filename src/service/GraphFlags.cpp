@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include "service/GraphFlags.h"
 
 DEFINE_int32(port, 3699, "Nebula Graph daemon's listen port");

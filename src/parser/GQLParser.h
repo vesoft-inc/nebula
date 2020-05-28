@@ -6,10 +6,10 @@
 #ifndef PARSER_GQLPARSER_H_
 #define PARSER_GQLPARSER_H_
 
-#include "base/Base.h"
-#include "base/StatusOr.h"
-#include "GraphParser.hpp"
-#include "GraphScanner.h"
+#include "common/base/Base.h"
+#include "common/base/StatusOr.h"
+#include "parser/GraphParser.hpp"
+#include "parser/GraphScanner.h"
 
 namespace nebula {
 

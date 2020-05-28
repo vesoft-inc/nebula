@@ -12,7 +12,7 @@
 
 #include <folly/SpinLock.h>
 
-#include "cpp/helpers.h"
+#include "common/cpp/helpers.h"
 
 namespace nebula {
 

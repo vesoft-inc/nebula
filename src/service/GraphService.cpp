@@ -4,12 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include "service/GraphService.h"
-#include "time/Duration.h"
+#include "common/time/Duration.h"
 #include "service/RequestContext.h"
 #include "service/SimpleAuthenticator.h"
-#include "clients/storage/GraphStorageClient.h"
+#include "common/clients/storage/GraphStorageClient.h"
 
 namespace nebula {
 namespace graph {
@@ -102,4 +102,3 @@ const char* GraphService::getErrorStr(cpp2::ErrorCode result) {
 
 }  // namespace graph
 }  // namespace nebula
-

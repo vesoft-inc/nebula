@@ -7,10 +7,10 @@
 #ifndef SERVICE_SESSIONMANAGER_H_
 #define SERVICE_SESSIONMANAGER_H_
 
-#include "base/Base.h"
-#include "base/StatusOr.h"
+#include "common/base/Base.h"
+#include "common/base/StatusOr.h"
 #include "service/ClientSession.h"
-#include "thread/GenericWorker.h"
+#include "common/thread/GenericWorker.h"
 
 /**
  * SessionManager manages the client sessions, e.g. create new, find existing and drop expired.

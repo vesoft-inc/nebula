@@ -7,7 +7,7 @@
 #ifndef VALIDATOR_VALIDATOR_H_
 #define VALIDATOR_VALIDATOR_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include "planner/ExecutionPlan.h"
 #include "parser/Sentence.h"
 #include "validator/ValidateContext.h"

@@ -9,7 +9,7 @@
 
 #include <stdexcept>
 
-#include "base/Status.h"
+#include "common/base/Status.h"
 
 namespace nebula {
 namespace graph {
