@@ -5,7 +5,7 @@
  */
 
 #include "meta/processors/configMan/SetConfigProcessor.h"
-#include "conf/Configuration.h"
+#include "common/conf/Configuration.h"
 
 namespace nebula {
 namespace meta {

@@ -8,8 +8,6 @@
 #define STORAGE_MUTATE_UPDATEEDGEROCESSOR_H_
 
 #include "storage/query/QueryBaseProcessor.h"
-#include "dataman/RowReader.h"
-#include "dataman/RowUpdater.h"
 
 namespace nebula {
 namespace storage {

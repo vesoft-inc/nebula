@@ -7,14 +7,14 @@
 #ifndef RAFTEX_TEST_RAFTEXTESTBASE_H_
 #define RAFTEX_TEST_RAFTEXTESTBASE_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
+#include "common/fs/TempDir.h"
+#include "common/fs/FileUtils.h"
+#include "common/thread/GenericThreadPool.h"
+#include "common/network/NetworkUtils.h"
+#include "kvstore/raftex/SnapshotManager.h"
 #include <gtest/gtest.h>
 #include <folly/String.h>
-#include "fs/TempDir.h"
-#include "fs/FileUtils.h"
-#include "thread/GenericThreadPool.h"
-#include "network/NetworkUtils.h"
-#include "kvstore/raftex/SnapshotManager.h"
 
 namespace nebula {
 

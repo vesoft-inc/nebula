@@ -7,8 +7,8 @@
 #ifndef KVSTORE_ROCKSENGINECONFIG_H_
 #define KVSTORE_ROCKSENGINECONFIG_H_
 
-#include "base/Base.h"
-#include "rocksdb/db.h"
+#include "common/base/Base.h"
+#include <rocksdb/db.h>
 
 // [Version]
 DECLARE_string(rocksdb_options_version);

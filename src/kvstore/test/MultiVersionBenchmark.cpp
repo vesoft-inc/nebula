@@ -4,11 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
+#include "common/base/Base.h"
+#include "common/fs/TempDir.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include <folly/Benchmark.h>
-#include "fs/TempDir.h"
 
 DEFINE_bool(do_compact, false, "Do compaction after puts");
 DEFINE_int32(versions, 100, "Total versions");

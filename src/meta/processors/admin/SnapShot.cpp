@@ -9,7 +9,7 @@
 #include "meta/processors/Common.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/MetaServiceUtils.h"
-#include "network/NetworkUtils.h"
+#include "common/network/NetworkUtils.h"
 
 namespace nebula {
 namespace meta {

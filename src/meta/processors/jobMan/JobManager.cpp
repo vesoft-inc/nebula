@@ -4,14 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include "common/http/HttpClient.h"
+#include "common/webservice/Common.h"
+#include "common/time/WallClock.h"
 #include <boost/stacktrace.hpp>
 #include <gtest/gtest.h>
-#include <folly/futures/Future.h>
 #include <folly/synchronization/Baton.h>
-#include <folly/String.h>
-
-#include "base/Base.h"
-#include "http/HttpClient.h"
 #include "kvstore/Common.h"
 #include "kvstore/KVIterator.h"
 #include "meta/processors/Common.h"
@@ -22,8 +20,6 @@
 #include "meta/processors/jobMan/JobStatus.h"
 #include "meta/processors/jobMan/MetaJobExecutor.h"
 #include "meta/MetaServiceUtils.h"
-#include "webservice/Common.h"
-#include "time/WallClock.h"
 
 DEFINE_int32(dispatch_thread_num, 3, "Number of job dispatch http thread");
 DEFINE_int32(job_check_intervals, 5000, "job intervals in us");

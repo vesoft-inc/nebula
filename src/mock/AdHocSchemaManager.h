@@ -8,10 +8,10 @@
 #define MOCK_ADHOCSCHEMAMANAGER_H_
 
 #include <folly/RWSpinLock.h>
-#include "meta/SchemaProviderIf.h"
-#include "meta/SchemaManager.h"
-#include "meta/NebulaSchemaProvider.h"
-#include "clients/meta/MetaClient.h"
+#include "common/meta/SchemaProviderIf.h"
+#include "common/meta/SchemaManager.h"
+#include "common/meta/NebulaSchemaProvider.h"
+#include "common/clients/meta/MetaClient.h"
 
 namespace nebula {
 namespace mock {

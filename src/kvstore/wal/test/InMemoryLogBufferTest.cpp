@@ -3,9 +3,9 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-#include <utility>
 
-#include "base/Base.h"
+#include "common/base/Base.h"
+#include <utility>
 #include <gtest/gtest.h>
 #include "kvstore/wal/InMemoryLogBuffer.h"
 #include "kvstore/wal/InMemoryLogBufferList.h"
@@ -37,7 +37,7 @@ TEST(InMemoryLogBuffer, Empty) {
     EXPECT_EQ(0, b.size());
 }
 
-/// Check simple append operation
+// Check simple append operation
 TEST(InMemoryLogBuffer, Simple) {
     constexpr LogID i = 0;
     constexpr TermID t = 0;
@@ -77,7 +77,7 @@ void checkIterator(std::shared_ptr<InMemoryBufferList> buffers,
                    LogID to,
                    LogID expectedEnd) {
     auto iter = buffers->iterator(from, to);
-    for (;iter->valid(); ++(*iter)) {
+    for (; iter->valid(); ++(*iter)) {
         auto log = iter->logMsg();
         ASSERT_EQ(folly::stringPrintf("str_%ld", from), log);
         from++;
@@ -98,7 +98,6 @@ TEST(InMemoryLogBufferList, RWTest) {
         auto iter = buffers->iterator(from, 1600);
         EXPECT_FALSE(iter->valid());
     }
-
 }
 
 }  // namespace wal

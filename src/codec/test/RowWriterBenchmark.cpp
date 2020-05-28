@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include <folly/Benchmark.h>
 #include "codec/test/SchemaWriter.h"
 #include "codec/test/RowWriterV1.h"
@@ -20,7 +20,7 @@ SchemaWriter schemaLong;
 
 const double e = 2.71828182845904523536028747135266249775724709369995;
 const float pi = 3.14159265358979;
-const std::string str = "Hello world!";
+const std::string str = "Hello world!"; // NOLINT
 
 
 void prepareSchema(SchemaWriter* schema, size_t numRepeats) {

@@ -4,16 +4,15 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
-#include "base/NebulaKeyUtils.h"
+#include "common/base/Base.h"
+#include "common/fs/TempDir.h"
+#include "utils/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
-#include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
 #include "storage/mutate/AddVerticesProcessor.h"
 #include "storage/query/QueryVertexPropsProcessor.h"
-#include "dataman/RowSetReader.h"
-#include "dataman/RowReader.h"
+#include "codec/RowReader.h"
 
 DECLARE_int32(max_handlers_per_req);
 

@@ -7,12 +7,8 @@
 #ifndef NEBULA_GRAPH_NEBULACODEC_H
 #define NEBULA_GRAPH_NEBULACODEC_H
 
-#include "base/StatusOr.h"
-#include <string>
-#include <vector>
-#include <unordered_map>
-#include "meta/SchemaProviderIf.h"
-#include <boost/any.hpp>
+#include "common/base/StatusOr.h"
+#include "common/meta/SchemaProviderIf.h"
 
 namespace nebula {
 namespace dataman {

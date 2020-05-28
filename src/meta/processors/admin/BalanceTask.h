@@ -9,9 +9,9 @@
 
 #include <gtest/gtest_prod.h>
 #include "meta/ActiveHostsMan.h"
-#include "time/WallClock.h"
+#include "common/time/WallClock.h"
+#include "common/network/NetworkUtils.h"
 #include "kvstore/KVStore.h"
-#include "network/NetworkUtils.h"
 #include "meta/processors/admin/AdminClient.h"
 #include "meta/processors/Common.h"
 

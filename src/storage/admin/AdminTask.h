@@ -9,10 +9,10 @@
 
 #include <folly/executors/task_queue/UnboundedBlockingQueue.h>
 #include "storage/admin/TaskUtils.h"
-#include "interface/gen-cpp2/storage_types.h"
+#include "common/interface/gen-cpp2/storage_types.h"
+#include "common/thrift/ThriftTypes.h"
 #include "kvstore/Common.h"
 #include "kvstore/NebulaStore.h"
-#include "thrift/ThriftTypes.h"
 
 namespace nebula {
 namespace storage {

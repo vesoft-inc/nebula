@@ -3,10 +3,11 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-#include "base/Base.h"
+
+#include "common/base/Base.h"
+#include "common/fs/TempDir.h"
+#include "common/time/WallClock.h"
 #include <gtest/gtest.h>
-#include "fs/TempDir.h"
-#include "time/WallClock.h"
 #include "mock/AdHocSchemaManager.h"
 #include "storage/exec/FilterNode.h"
 #include "storage/exec/EdgeNode.h"

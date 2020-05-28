@@ -7,7 +7,7 @@
 #ifndef KVSTORE_SNAPSHOTMANAGERIMPL_H_
 #define KVSTORE_SNAPSHOTMANAGERIMPL_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include "kvstore/raftex/SnapshotManager.h"
 #include "kvstore/KVStore.h"
 

@@ -4,14 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 #include "storage/query/ScanEdgeProcessor.h"
-#include "base/NebulaKeyUtils.h"
+#include "common/time/WallClock.h"
+#include "common/meta/NebulaSchemaProvider.h"
+#include "utils/NebulaKeyUtils.h"
 #include <algorithm>
-#include <limits>
-#include "time/WallClock.h"
 #include "kvstore/RocksEngine.h"
-#include "dataman/RowReader.h"
-#include "dataman/RowWriter.h"
-#include "meta/NebulaSchemaProvider.h"
 
 DEFINE_int32(max_scan_block_size, 4 * 1024 * 1024, "Max size of a respsonse block");
 

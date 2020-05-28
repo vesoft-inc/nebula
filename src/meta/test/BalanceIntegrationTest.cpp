@@ -3,17 +3,17 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-#include "base/Base.h"
+
+#include "common/base/Base.h"
+#include "common/fs/TempDir.h"
 #include <gtest/gtest.h>
 #include <folly/executors/CPUThreadPoolExecutor.h>
 #include <folly/synchronization/Baton.h>
 #include "meta/processors/admin/Balancer.h"
 #include "meta/test/TestUtils.h"
 #include "storage/test/TestUtils.h"
-#include "fs/TempDir.h"
 #include "storage/client/StorageClient.h"
 #include "storage/test/TestUtils.h"
-#include "dataman/RowWriter.h"
 
 DECLARE_int32(heartbeat_interval_secs);
 DECLARE_uint32(raft_heartbeat_interval_secs);

@@ -7,14 +7,14 @@
 #ifndef STORAGE_STORAGESERVER_H_
 #define STORAGE_STORAGESERVER_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
+#include "common/meta/SchemaManager.h"
+#include "common/meta/IndexManager.h"
+#include "common/clients/meta/MetaClient.h"
+#include "common/meta/ClientBasedGflagsManager.h"
+#include "common/hdfs/HdfsHelper.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "kvstore/NebulaStore.h"
-#include "meta/SchemaManager.h"
-#include "meta/IndexManager.h"
-#include "clients/meta/MetaClient.h"
-#include "meta/ClientBasedGflagsManager.h"
-#include "hdfs/HdfsHelper.h"
 #include "storage/CommonUtils.h"
 #include "storage/admin/AdminTaskManager.h"
 

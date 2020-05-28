@@ -3,16 +3,13 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-#include "storage/query/ScanVertexProcessor.h"
-#include "base/NebulaKeyUtils.h"
-#include <algorithm>
-#include <limits>
-#include "time/WallClock.h"
-#include "kvstore/RocksEngine.h"
-#include "dataman/RowReader.h"
-#include "dataman/RowWriter.h"
-#include "meta/NebulaSchemaProvider.h"
 
+#include "storage/query/ScanVertexProcessor.h"
+#include "comon/time/WallClock.h"
+#include "common/meta/NebulaSchemaProvider.h"
+#include "utils/NebulaKeyUtils.h"
+#include <algorithm>
+#include "kvstore/RocksEngine.h"
 
 DECLARE_int32(max_scan_block_size);
 

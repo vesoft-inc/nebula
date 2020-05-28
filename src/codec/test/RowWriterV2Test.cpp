@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include <gtest/gtest.h>
 #include "codec/RowWriterV2.h"
 #include "codec/RowReaderV2.h"
@@ -16,8 +16,8 @@ using meta::cpp2::PropertyType;
 
 const double e = 2.71828182845904523536028747135266249775724709369995;
 const float pi = 3.14159265358979;
-const std::string str = "Hello world!";
-const std::string fixed = "Nebula Graph";
+const std::string str = "Hello world!";    // NOLINT
+const std::string fixed = "Nebula Graph";  // NOLINT
 const Timestamp now = 1582183355;
 const Date date = {2020, 2, 20};
 const DateTime dt = {2020, 2, 20, 10, 30, 45, -8 * 3600};

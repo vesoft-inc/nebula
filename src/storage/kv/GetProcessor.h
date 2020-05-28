@@ -7,7 +7,7 @@
 #ifndef STORAGE_KV_GETPROCESSOR_H_
 #define STORAGE_KV_GETPROCESSOR_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include "storage/BaseProcessor.h"
 
 namespace nebula {

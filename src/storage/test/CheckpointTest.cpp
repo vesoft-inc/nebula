@@ -4,9 +4,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
+#include "common/base/Base.h"
+#include "common/fs/TempDir.h"
 #include <gtest/gtest.h>
-#include "fs/TempDir.h"
 #include "storage/admin/CreateCheckpointProcessor.h"
 #include "storage/mutate/AddVerticesProcessor.h"
 #include "mock/MockCluster.h"

@@ -6,7 +6,8 @@
 
 #ifndef STORAGE_ADMIN_DROPCHECKPOINTPROCESSOR_H_
 #define STORAGE_ADMIN_DROPCHECKPOINTPROCESSOR_H_
-#include "base/Base.h"
+
+#include "common/base/Base.h"
 #include "kvstore/NebulaStore.h"
 #include "storage/BaseProcessor.h"
 #include "storage/StorageFlags.h"

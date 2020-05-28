@@ -7,9 +7,9 @@
 #ifndef RAFTEX_LOGSTRLISTITERATOR_H_
 #define RAFTEX_LOGSTRLISTITERATOR_H_
 
-#include "base/Base.h"
-#include "common/LogIterator.h"
-#include "interface/gen-cpp2/raftex_types.h"
+#include "common/base/Base.h"
+#include "common/interface/gen-cpp2/raftex_types.h"
+#include "utils/LogIterator.h"
 
 namespace nebula {
 namespace raftex {

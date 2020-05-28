@@ -7,10 +7,10 @@
 #ifndef MOCK_MOCKDATA_H_
 #define MOCK_MOCKDATA_H_
 
-#include "base/Base.h"
-#include "interface/gen-cpp2/common_types.h"
-#include "interface/gen-cpp2/storage_types.h"
-#include "meta/NebulaSchemaProvider.h"
+#include "common/base/Base.h"
+#include "common/interface/gen-cpp2/common_types.h"
+#include "common/interface/gen-cpp2/storage_types.h"
+#include "common/meta/NebulaSchemaProvider.h"
 
 DECLARE_bool(mock_ttl_col);
 DECLARE_int32(mock_ttl_duration);

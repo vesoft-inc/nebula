@@ -7,8 +7,8 @@
 #ifndef CODEC_TEST_RESULTSCHEMAPROVIDER_H_
 #define CODEC_TEST_RESULTSCHEMAPROVIDER_H_
 
-#include "base/Base.h"
-#include "meta/SchemaProviderIf.h"
+#include "common/base/Base.h"
+#include "common/meta/SchemaProviderIf.h"
 
 namespace nebula {
 

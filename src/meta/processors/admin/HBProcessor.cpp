@@ -6,7 +6,7 @@
 
 
 #include "meta/processors/admin/HBProcessor.h"
-#include "time/WallClock.h"
+#include "common/time/WallClock.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/KVBasedClusterIdMan.h"
 

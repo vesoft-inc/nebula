@@ -3,11 +3,11 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-#include <utility>
 
-#include "base/Base.h"
-#include <gtest/gtest.h>
+#include "common/base/Base.h"
 #include "kvstore/wal/AtomicLogBuffer.h"
+#include <utility>
+#include <gtest/gtest.h>
 
 namespace nebula {
 namespace wal {

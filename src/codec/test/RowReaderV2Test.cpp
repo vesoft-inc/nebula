@@ -4,9 +4,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
+#include "common/base/Base.h"
+#include "common/datatypes/Value.h"
 #include <gtest/gtest.h>
-#include "datatypes/Value.h"
 #include "codec/RowReaderWrapper.h"
 #include "codec/test/SchemaWriter.h"
 

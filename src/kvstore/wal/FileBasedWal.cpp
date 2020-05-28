@@ -4,12 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
-#include <utime.h>
-#include "fs/FileUtils.h"
-#include "time/WallClock.h"
+#include "common/base/Base.h"
+#include "common/fs/FileUtils.h"
+#include "common/time/WallClock.h"
 #include "kvstore/wal/FileBasedWal.h"
 #include "kvstore/wal/WalFileIterator.h"
+#include <utime.h>
 
 namespace nebula {
 namespace wal {

@@ -4,17 +4,15 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
-#include "base/NebulaKeyUtils.h"
+#include "common/base/Base.h"
+#include "common/fs/TempDir.h"
+#include "utils/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
-#include <limits>
-#include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
 #include "storage/index/LookUpVertexIndexProcessor.h"
 #include "storage/index/LookUpEdgeIndexProcessor.h"
-#include "dataman/RowSetReader.h"
-#include "dataman/RowReader.h"
+#include "codec/RowReader.h"
 
 DECLARE_uint32(raft_heartbeat_interval_secs);
 

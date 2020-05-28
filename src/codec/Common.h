@@ -7,7 +7,7 @@
 #ifndef CODEC_COMMON_H_
 #define CODEC_COMMON_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 
 namespace nebula {
 

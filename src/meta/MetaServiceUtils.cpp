@@ -5,7 +5,7 @@
  */
 
 #include "meta/MetaServiceUtils.h"
-#include "network/NetworkUtils.h"
+#include "common/network/NetworkUtils.h"
 #include <thrift/lib/cpp2/protocol/Serializer.h>
 #include <thrift/lib/cpp2/protocol/CompactProtocol.h>
 

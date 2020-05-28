@@ -7,7 +7,7 @@
 #ifndef STORAGE_QUERY_GETNEIGHBORSPROCESSOR_H_
 #define STORAGE_QUERY_GETNEIGHBORSPROCESSOR_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include <gtest/gtest_prod.h>
 #include "storage/query/QueryBaseProcessor.h"
 #include "storage/exec/FilterNode.h"

@@ -4,10 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
-#include "base/NebulaKeyUtils.h"
-#include "dataman/RowReader.h"
-#include "dataman/RowWriter.h"
+#include "common/base/Base.h"
+#include "utils/NebulaKeyUtils.h"
 #include "kvstore/plugins/hbase/HBaseStore.h"
 #include "kvstore/plugins/hbase/test/TestUtils.h"
 #include <gtest/gtest.h>

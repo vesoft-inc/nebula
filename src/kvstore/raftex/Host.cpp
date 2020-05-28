@@ -4,11 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
 #include "kvstore/raftex/Host.h"
 #include "kvstore/raftex/RaftPart.h"
 #include "kvstore/wal/FileBasedWal.h"
-#include "network/NetworkUtils.h"
+#include "common/network/NetworkUtils.h"
 #include <folly/io/async/EventBase.h>
 #include <folly/executors/IOThreadPoolExecutor.h>
 

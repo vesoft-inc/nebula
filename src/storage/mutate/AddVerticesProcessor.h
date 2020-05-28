@@ -7,8 +7,8 @@
 #ifndef STORAGE_MUTATE_ADDVERTICESPROCESSOR_H_
 #define STORAGE_MUTATE_ADDVERTICESPROCESSOR_H_
 
-#include "base/Base.h"
-#include "base/ConcurrentLRUCache.h"
+#include "common/base/Base.h"
+#include "common/base/ConcurrentLRUCache.h"
 #include "storage/BaseProcessor.h"
 #include "storage/CommonUtils.h"
 #include "kvstore/LogEncoder.h"

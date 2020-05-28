@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
-#include "DbDumper.h"
+#include "common/base/Base.h"
+#include "tools/dbDump/DbDumper.h"
 
 void printHelp() {
     fprintf(stderr,

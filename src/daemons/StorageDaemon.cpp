@@ -4,12 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
+#include "common/base/Base.h"
+#include "common/base/SignalHandler.h"
+#include "common/network/NetworkUtils.h"
+#include "common/process/ProcessUtils.h"
 #include "storage/StorageServer.h"
-#include "base/SignalHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
-#include "network/NetworkUtils.h"
-#include "process/ProcessUtils.h"
+
 
 DEFINE_string(data_path, "", "Root data path, multi paths should be split by comma."
                              "For rocksdb engine, one path one instance.");

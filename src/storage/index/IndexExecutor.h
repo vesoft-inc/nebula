@@ -7,7 +7,7 @@
 #ifndef STORAGE_INDEXEXECUTOR_H
 #define STORAGE_INDEXEXECUTOR_H
 
-#include "stats/Stats.h"
+#include "common/stats/Stats.h"
 #include "storage/index/IndexPolicyMaker.h"
 
 namespace nebula {

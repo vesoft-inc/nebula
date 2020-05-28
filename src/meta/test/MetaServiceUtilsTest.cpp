@@ -4,14 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
+#include "common/base/Base.h"
+#include "common/network/NetworkUtils.h"
+#include "common/fs/TempFile.h"
 #include <gtest/gtest.h>
-#include <folly/String.h>
 #include <folly/IPAddressV4.h>
-#include <fstream>
-#include "fs/TempFile.h"
 #include "meta/MetaServiceUtils.h"
-#include "network/NetworkUtils.h"
 
 namespace nebula {
 namespace meta {

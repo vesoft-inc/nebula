@@ -4,19 +4,18 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
+#include "common/base/Base.h"
+#include "common/fs/FileUtils.h"
+#include "common/clients/storage/GraphStorageClient.h"
+#include "common/meta/ServerBasedSchemaManager.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/NebulaStore.h"
-#include "fs/FileUtils.h"
-#include "storage/client/StorageClient.h"
-#include "meta/ServerBasedSchemaManager.h"
-#include "dataman/ResultSchemaProvider.h"
 #include "storage/test/AdHocSchemaManager.h"
-#include "storage/index/LookUpVertexIndexProcessor.h"
-#include "dataman/RowWriter.h"
-#include <folly/Benchmark.h>
 #include "storage/test/TestUtils.h"
 #include "storage/StorageFlags.h"
+#include "storage/index/LookUpVertexIndexProcessor.h"
+#include "codec/RowWriter.h"
+#include <folly/Benchmark.h>
 
 DEFINE_int64(total_vertices_size, 1000000, "The number of vertices");
 DEFINE_string(root_data_path, "/tmp/LookUpPref", "Engine data path");

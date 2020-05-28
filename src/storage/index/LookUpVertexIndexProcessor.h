@@ -7,9 +7,9 @@
 #ifndef STORAGE_LOOKUPVERTEXINDEXPROCESSOR_H
 #define STORAGE_LOOKUPVERTEXINDEXPROCESSOR_H
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include "kvstore/NebulaStore.h"
-#include "IndexExecutor.h"
+#include "storage/index/IndexExecutor.h"
 
 namespace nebula {
 namespace storage {

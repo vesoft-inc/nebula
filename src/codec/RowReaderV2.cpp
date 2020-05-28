@@ -4,7 +4,6 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
 #include "codec/RowReaderV2.h"
 
 namespace nebula {
@@ -134,7 +133,6 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const noexcept {
                    &data_[offset + sizeof(int16_t) + sizeof(int8_t)],
                    sizeof(int8_t));
             return std::move(dt);
-
         }
         case meta::cpp2::PropertyType::DATETIME: {
             DateTime dt;

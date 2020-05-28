@@ -7,12 +7,12 @@
 #ifndef META_PROCESSORS_ADMIN_STORAGEADMINCLIENT_H_
 #define META_PROCESSORS_ADMIN_STORAGEADMINCLIENT_H_
 
-#include "base/Base.h"
-#include <folly/executors/IOThreadPoolExecutor.h>
-#include "base/Status.h"
-#include "thrift/ThriftClientManager.h"
-#include "interface/gen-cpp2/StorageAdminServiceAsyncClient.h"
+#include "common/base/Base.h"
+#include "common/base/Status.h"
+#include "common/thrift/ThriftClientManager.h"
+#include "common/interface/gen-cpp2/StorageAdminServiceAsyncClient.h"
 #include "kvstore/KVStore.h"
+#include <folly/executors/IOThreadPoolExecutor.h>
 
 namespace nebula {
 namespace meta {

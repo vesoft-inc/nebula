@@ -4,15 +4,15 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
-#include "base/NebulaKeyUtils.h"
+#include "common/base/Base.h"
+#include "common/fs/TempDir.h"
+#include "utils/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
 #include <folly/synchronization/Baton.h>
-#include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
 #include "storage/CommonUtils.h"
 #include "storage/CompactionFilter.h"
-#include "dataman/RowWriter.h"
+#include "codec/RowWriterV2.h"
 
 namespace nebula {
 namespace storage {

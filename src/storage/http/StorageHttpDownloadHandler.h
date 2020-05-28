@@ -7,11 +7,11 @@
 #ifndef STORAGE_HTTP_STORAGEHTTPDOWNLOADHANDLER_H_
 #define STORAGE_HTTP_STORAGEHTTPDOWNLOADHANDLER_H_
 
-#include "base/Base.h"
-#include "webservice/Common.h"
-#include "hdfs/HdfsHelper.h"
+#include "common/base/Base.h"
+#include "common/webservice/Common.h"
+#include "common/hdfs/HdfsHelper.h"
+#include "common/thread/GenericThreadPool.h"
 #include "kvstore/KVStore.h"
-#include "thread/GenericThreadPool.h"
 #include <proxygen/httpserver/RequestHandler.h>
 
 namespace nebula {

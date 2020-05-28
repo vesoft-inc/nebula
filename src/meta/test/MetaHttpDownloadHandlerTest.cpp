@@ -4,16 +4,16 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
+#include "common/base/Base.h"
+#include "common/fs/TempDir.h"
+#include "common/http/HttpClient.h"
+#include "common/webservice/Router.h"
+#include "common/webservice/WebService.h"
 #include <gtest/gtest.h>
-#include "http/HttpClient.h"
-#include "webservice/Router.h"
-#include "webservice/WebService.h"
 #include "meta/MetaHttpDownloadHandler.h"
 #include "meta/test/MockHdfsHelper.h"
 #include "meta/test/TestUtils.h"
 #include "storage/http/StorageHttpDownloadHandler.h"
-#include "fs/TempDir.h"
 
 DECLARE_string(pid_file);
 DECLARE_int32(ws_storage_http_port);

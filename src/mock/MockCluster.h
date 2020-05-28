@@ -7,7 +7,8 @@
 #ifndef MOCK_MOCKCLUSTER_H_
 #define MOCK_MOCKCLUSTER_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
+#include "common/clients/storage/GraphStorageClient.h"
 #include "mock/RpcServer.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
@@ -16,12 +17,10 @@
 #include "storage/StorageAdminServiceHandler.h"
 #include "storage/BaseProcessor.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
+#include <thrift/lib/cpp/concurrency/ThreadManager.h>
 #include <folly/synchronization/Baton.h>
 #include <folly/executors/ThreadPoolExecutor.h>
 #include <folly/executors/CPUThreadPoolExecutor.h>
-#include <thrift/lib/cpp/concurrency/ThreadManager.h>
-
-#include "clients/storage/GraphStorageClient.h"
 
 namespace nebula {
 namespace mock {

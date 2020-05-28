@@ -4,13 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef COMMON_INDEXKEYUTILS_H_
-#define COMMON_INDEXKEYUTILS_H_
+#ifndef UTILS_INDEXKEYUTILS_H_
+#define UTILS_INDEXKEYUTILS_H_
 
-#include "base/Base.h"
-#include "base/StatusOr.h"
-#include "interface/gen-cpp2/meta_types.h"
-#include "common/Types.h"
+#include "common/base/Base.h"
+#include "common/base/StatusOr.h"
+#include "common/interface/gen-cpp2/meta_types.h"
+#include "utils/Types.h"
 
 namespace nebula {
 
@@ -306,7 +306,7 @@ public:
                                      std::string& raw);
 
     /**
-     * param valueTypes ： column type of each index column. If there are no nullable columns 
+     * param valueTypes ： column type of each index column. If there are no nullable columns
      *                     in the index, the parameter can be empty.
      **/
     static std::string vertexIndexKey(size_t vIdLen, PartitionID partId,
@@ -315,7 +315,7 @@ public:
                                       const std::vector<Value::Type>& valueTypes = {});
 
     /**
-     * param valueTypes ： column type of each index column. If there are no nullable columns 
+     * param valueTypes ： column type of each index column. If there are no nullable columns
      *                     in the index, the parameter can be empty.
      **/
     static std::string edgeIndexKey(size_t vIdLen, PartitionID partId,
@@ -331,5 +331,5 @@ private:
 };
 
 }  // namespace nebula
-#endif  // COMMON_INDEXKEYUTILS_H_
+#endif  // UTILS_INDEXKEYUTILS_H_
 

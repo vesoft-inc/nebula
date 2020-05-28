@@ -7,8 +7,8 @@
 #ifndef STORAGE_HTTP_STORAGEHTTPINGESTHANDLER_H_
 #define STORAGE_HTTP_STORAGEHTTPINGESTHANDLER_H_
 
-#include "base/Base.h"
-#include "webservice/Common.h"
+#include "common/base/Base.h"
+#include "common/webservice/Common.h"
 #include "kvstore/KVStore.h"
 #include <proxygen/httpserver/RequestHandler.h>
 

@@ -4,10 +4,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
-#include "time/WallClock.h"
+#include "common/base/Base.h"
+#include "common/time/WallClock.h"
 #include "kvstore/LogEncoder.h"
-
 #include <thrift/lib/cpp2/protocol/Serializer.h>
 #include <thrift/lib/cpp2/protocol/CompactProtocol.h>
 

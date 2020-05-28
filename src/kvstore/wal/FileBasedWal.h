@@ -7,10 +7,10 @@
 #ifndef WAL_FILEBASEDWAL_H_
 #define WAL_FILEBASEDWAL_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
+#include "common/base/Cord.h"
 #include <folly/Function.h>
 #include <gtest/gtest_prod.h>
-#include "base/Cord.h"
 #include "kvstore/wal/Wal.h"
 #include "kvstore/wal/WalFileInfo.h"
 #include "kvstore/wal/AtomicLogBuffer.h"

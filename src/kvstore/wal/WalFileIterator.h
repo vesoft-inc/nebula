@@ -7,8 +7,8 @@
 #ifndef WAL_WALFILEITERATOR_H_
 #define WAL_WALFILEITERATOR_H_
 
-#include "base/Base.h"
-#include "common/LogIterator.h"
+#include "common/base/Base.h"
+#include "utils/LogIterator.h"
 
 namespace nebula {
 namespace wal {

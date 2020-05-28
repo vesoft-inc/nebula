@@ -7,7 +7,7 @@
 #ifndef STORAGE_LOOKUPEDGEINDEXPROCESSOR_H
 #define STORAGE_LOOKUPEDGEINDEXPROCESSOR_H
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include "kvstore/NebulaStore.h"
 #include "storage/index/IndexExecutor.h"
 

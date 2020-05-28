@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "LookUpEdgeIndexProcessor.h"
+#include "storage/index/LookUpEdgeIndexProcessor.h"
 
 namespace nebula {
 namespace storage {

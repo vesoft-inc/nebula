@@ -4,12 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/processors/admin/AdminClient.h"
 #include "meta/processors/jobMan/MetaJobExecutor.h"
 #include "meta/processors/jobMan/SimpleConcurrentJobExecutor.h"
 #include <memory>
 #include <map>
-#include "interface/gen-cpp2/common_types.h"
+#include "common/interface/gen-cpp2/common_types.h"
 
 namespace nebula {
 namespace meta {

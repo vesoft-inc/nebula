@@ -8,8 +8,8 @@
 #include "mock/AdHocSchemaManager.h"
 #include "mock/MockData.h"
 #include "meta/MetaServiceHandler.h"
-#include "meta/ServerBasedSchemaManager.h"
-#include "clients/meta/MetaClient.h"
+#include "common/meta/ServerBasedSchemaManager.h"
+#include "common/clients/meta/MetaClient.h"
 #include "storage/StorageAdminServiceHandler.h"
 #include "storage/GraphStorageServiceHandler.h"
 

@@ -4,11 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
-#include <gtest/gtest.h>
-#include "fs/TempDir.h"
+#include "common/base/Base.h"
+#include "common/fs/TempDir.h"
 #include "kvstore/wal/FileBasedWal.h"
 #include "kvstore/wal/WalFileIterator.h"
+#include <gtest/gtest.h>
 
 namespace nebula {
 namespace wal {

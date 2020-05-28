@@ -7,9 +7,9 @@
 #ifndef KVSTORE_PLUGINS_HBASE_HBASESTORE_H_
 #define KVSTORE_PLUGINS_HBASE_HBASESTORE_H_
 
-#include "base/Base.h"
-#include "meta/SchemaProviderIf.h"
-#include "meta/SchemaManager.h"
+#include "common/base/Base.h"
+#include "common/meta/SchemaProviderIf.h"
+#include "common/meta/SchemaManager.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/KVIterator.h"
 #include "kvstore/plugins/hbase/HBaseClient.h"

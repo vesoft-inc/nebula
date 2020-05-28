@@ -4,10 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "common/NebulaKeyUtils.h"
+#include "common/clients/meta/MetaClient.h"
+#include "common/meta/ServerBasedSchemaManager.h"
+#include "utils/NebulaKeyUtils.h"
 #include <rocksdb/db.h>
-#include "clients/meta/MetaClient.h"
-#include "meta/ServerBasedSchemaManager.h"
 
 DEFINE_string(meta_server, "127.0.0.1:45500", "Meta servers' address.");
 DEFINE_string(path, "", "rocksdb instance path");

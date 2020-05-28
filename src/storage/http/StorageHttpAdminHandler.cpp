@@ -5,8 +5,8 @@
  */
 
 #include "storage/http/StorageHttpAdminHandler.h"
-#include "webservice/Common.h"
-#include "process/ProcessUtils.h"
+#include "common/webservice/Common.h"
+#include "common/process/ProcessUtils.h"
 #include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
 #include <proxygen/httpserver/ResponseBuilder.h>

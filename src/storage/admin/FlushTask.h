@@ -7,7 +7,7 @@
 #ifndef STORAGE_ADMIN_FLUSHTASK_H_
 #define STORAGE_ADMIN_FLUSHTASK_H_
 
-#include "thrift/ThriftTypes.h"
+#include "common/thrift/ThriftTypes.h"
 #include "kvstore/KVEngine.h"
 #include "kvstore/NebulaStore.h"
 #include "storage/admin/AdminTask.h"

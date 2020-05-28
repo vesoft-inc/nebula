@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "LookUpVertexIndexProcessor.h"
+#include "storage/index/LookUpVertexIndexProcessor.h"
 
 namespace nebula {
 namespace storage {

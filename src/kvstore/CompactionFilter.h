@@ -7,9 +7,9 @@
 #ifndef KVSTORE_COMPACTIONFILTER_H_
 #define KVSTORE_COMPACTIONFILTER_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
+#include "common/time/WallClock.h"
 #include <rocksdb/compaction_filter.h>
-#include "time/WallClock.h"
 #include "kvstore/Common.h"
 
 namespace nebula {

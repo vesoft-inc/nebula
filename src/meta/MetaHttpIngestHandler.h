@@ -7,10 +7,10 @@
 #ifndef META_METAHTTPINGESTHANDLER_H
 #define META_METAHTTPINGESTHANDLER_H
 
-#include "base/Base.h"
-#include "webservice/Common.h"
+#include "common/base/Base.h"
+#include "common/webservice/Common.h"
+#include "common/thread/GenericThreadPool.h"
 #include "kvstore/KVStore.h"
-#include "thread/GenericThreadPool.h"
 #include <proxygen/httpserver/RequestHandler.h>
 
 namespace nebula {

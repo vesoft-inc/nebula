@@ -4,18 +4,17 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include <stdlib.h>
 #include <sys/wait.h>
 #include <sys/types.h>
 #include "meta/MetaHttpDownloadHandler.h"
 #include "meta/MetaServiceUtils.h"
-#include "webservice/Common.h"
-#include "webservice/WebService.h"
-#include "network/NetworkUtils.h"
-#include "hdfs/HdfsHelper.h"
-#include "http/HttpClient.h"
-#include "process/ProcessUtils.h"
-#include "thread/GenericThreadPool.h"
+#include "common/webservice/Common.h"
+#include "common/webservice/WebService.h"
+#include "common/network/NetworkUtils.h"
+#include "common/hdfs/HdfsHelper.h"
+#include "common/http/HttpClient.h"
+#include "common/process/ProcessUtils.h"
+#include "common/thread/GenericThreadPool.h"
 #include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
 #include <proxygen/httpserver/ResponseBuilder.h>

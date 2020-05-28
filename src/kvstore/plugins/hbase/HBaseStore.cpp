@@ -4,10 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
-#include "base/NebulaKeyUtils.h"
-#include "network/NetworkUtils.h"
-#include "dataman/NebulaCodecImpl.h"
+#include "common/base/Base.h"
+#include "common/base/NebulaKeyUtils.h"
+#include "common/network/NetworkUtils.h"
+#include "codec/NebulaCodecImpl.h"
 #include "kvstore/plugins/hbase/HBaseStore.h"
 #include <folly/Likely.h>
 

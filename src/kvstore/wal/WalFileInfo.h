@@ -7,8 +7,8 @@
 #ifndef WAL_WALFILEINFO_H_
 #define WAL_WALFILEINFO_H_
 
-#include "base/Base.h"
-#include "base/Cord.h"
+#include "common/base/Base.h"
+#include "common/base/Cord.h"
 #include "kvstore/wal/Wal.h"
 #include "kvstore/wal/InMemoryLogBuffer.h"
 

@@ -5,7 +5,7 @@
  */
 
 #include "meta/processors/schemaMan/CreateEdgeProcessor.h"
-#include "SchemaUtil.h"
+#include "meta/processors/schemaMan/SchemaUtil.h"
 
 namespace nebula {
 namespace meta {

@@ -5,23 +5,22 @@
  */
 
 #include "storage/StorageServer.h"
-#include "network/NetworkUtils.h"
+#include "common/network/NetworkUtils.h"
+#include "common/webservice/WebService.h"
+#include "common/webservice/Router.h"
+#include "common/meta/ServerBasedSchemaManager.h"
+#include "common/hdfs/HdfsCommandHelper.h"
+#include "common/thread/GenericThreadPool.h"
+#include "storage/BaseProcessor.h"
+#include "storage/CompactionFilter.h"
 #include "storage/StorageFlags.h"
 #include "storage/StorageAdminServiceHandler.h"
 #include "storage/GraphStorageServiceHandler.h"
 #include "storage/http/StorageHttpDownloadHandler.h"
 #include "storage/http/StorageHttpIngestHandler.h"
 #include "storage/http/StorageHttpAdminHandler.h"
-#include "storage/BaseProcessor.h"
 #include "kvstore/PartManager.h"
-#include "webservice/Router.h"
-#include "webservice/WebService.h"
-#include "meta/ServerBasedSchemaManager.h"
-#include "storage/CompactionFilter.h"
-#include "hdfs/HdfsCommandHelper.h"
-#include "thread/GenericThreadPool.h"
 #include <thrift/lib/cpp/concurrency/ThreadManager.h>
-
 
 DEFINE_int32(port, 44500, "Storage daemon listening port");
 DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");

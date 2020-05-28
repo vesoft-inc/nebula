@@ -4,15 +4,15 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include "meta/processors/jobMan/JobDescription.h"
 #include <stdexcept>
 #include <string>
 #include <vector>
 #include <folly/String.h>
 #include <boost/stacktrace.hpp>
 #include "meta/processors/jobMan/JobUtils.h"
-#include "meta/processors/jobMan/JobDescription.h"
-
 #include "kvstore/KVIterator.h"
+
 namespace nebula {
 namespace meta {
 

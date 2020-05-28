@@ -7,7 +7,8 @@
 #ifndef KVSTORE_NEBULASTORE_H_
 #define KVSTORE_NEBULASTORE_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
+#include "common/interface/gen-cpp2/RaftexServiceAsyncClient.h"
 #include <gtest/gtest_prod.h>
 #include <folly/RWSpinLock.h>
 #include "kvstore/raftex/RaftexService.h"
@@ -16,7 +17,6 @@
 #include "kvstore/Part.h"
 #include "kvstore/KVEngine.h"
 #include "kvstore/raftex/SnapshotManager.h"
-#include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
 
 namespace nebula {
 namespace kvstore {

@@ -3,15 +3,16 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
+
 #ifndef STORAGE_TEST_QUERYTESTUTILS_H_
 #define STORAGE_TEST_QUERYTESTUTILS_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include "mock/MockCluster.h"
 #include "mock/MockData.h"
 #include "codec/RowWriterV2.h"
 #include "codec/RowReaderWrapper.h"
-#include "common/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 
 DECLARE_bool(mock_ttl_col);
 DECLARE_int32(mock_ttl_duration);

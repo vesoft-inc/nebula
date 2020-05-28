@@ -7,8 +7,8 @@
 #ifndef META_CLUSTERIDMAN_H_
 #define META_CLUSTERIDMAN_H_
 
-#include "base/Base.h"
-#include "fs/FileUtils.h"
+#include "common/base/Base.h"
+#include "common/fs/FileUtils.h"
 #include "kvstore/Common.h"
 #include "kvstore/KVStore.h"
 #include "meta/processors/Common.h"

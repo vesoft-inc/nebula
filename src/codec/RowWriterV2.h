@@ -7,8 +7,8 @@
 #ifndef CODEC_ROWWRITERV2_H_
 #define CODEC_ROWWRITERV2_H_
 
-#include "base/Base.h"
-#include "meta/SchemaProviderIf.h"
+#include "common/base/Base.h"
+#include "common/meta/SchemaProviderIf.h"
 #include "codec/RowReader.h"
 
 namespace nebula {

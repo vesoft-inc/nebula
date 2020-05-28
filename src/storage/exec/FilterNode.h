@@ -7,9 +7,9 @@
 #ifndef STORAGE_EXEC_FILTERNODE_H_
 #define STORAGE_EXEC_FILTERNODE_H_
 
-#include "base/Base.h"
-#include "expression/Expression.h"
-#include "context/ExpressionContext.h"
+#include "common/base/Base.h"
+#include "common/expression/Expression.h"
+#include "common/context/ExpressionContext.h"
 
 namespace nebula {
 namespace storage {

@@ -4,20 +4,18 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
+#include "common/base/Base.h"
+#include "common/fs/FileUtils.h"
+#include "common/client/storage/GraphStorageClient.h"
+#include "common/meta/ServerBasedSchemaManager.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/NebulaStore.h"
-#include "fs/FileUtils.h"
-#include "storage/client/StorageClient.h"
-#include "meta/ServerBasedSchemaManager.h"
-#include "dataman/ResultSchemaProvider.h"
 #include "storage/test/AdHocSchemaManager.h"
-#include "storage/mutate/AddVerticesProcessor.h"
-#include "dataman/RowWriter.h"
-#include <folly/Benchmark.h>
 #include "storage/test/TestUtils.h"
+#include "storage/mutate/AddVerticesProcessor.h"
 #include "storage/StorageFlags.h"
-
+#include "codec/RowWriterV2.h"
+#include <folly/Benchmark.h>
 
 DEFINE_int32(bulk_insert_size, 1000, "The number of vertices by bulk insert");
 DEFINE_int32(total_vertices_size, 1000000, "The number of vertices");

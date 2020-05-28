@@ -4,21 +4,20 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
+#include "common/base/Base.h"
+#include "common/fs/TempDir.h"
+#include "common/conf/Configuration.h"
+#include "common/meta/GflagsManager.h"
+#include "common/meta/ClientBasedGflagsManager.h"
 #include <gtest/gtest.h>
-#include <folly/String.h>
 #include <rocksdb/db.h>
-#include "conf/Configuration.h"
-#include "fs/TempDir.h"
+#include <rocksdb/utilities/options_util.h>
 #include "meta/test/TestUtils.h"
-#include "meta/GflagsManager.h"
-#include "meta/ClientBasedGflagsManager.h"
 #include "meta/processors/configMan/GetConfigProcessor.h"
 #include "meta/processors/configMan/SetConfigProcessor.h"
 #include "meta/processors/configMan/ListConfigsProcessor.h"
 #include "meta/processors/configMan/RegConfigProcessor.h"
 #include "storage/test/TestUtils.h"
-#include "rocksdb/utilities/options_util.h"
 
 DECLARE_int32(heartbeat_interval_secs);
 DECLARE_string(rocksdb_db_options);

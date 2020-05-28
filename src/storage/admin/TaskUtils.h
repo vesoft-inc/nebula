@@ -7,7 +7,7 @@
 #ifndef STORAGE_ADMIN_TASKUTILS_H_
 #define STORAGE_ADMIN_TASKUTILS_H_
 
-#include "interface/gen-cpp2/storage_types.h"
+#include "common/interface/gen-cpp2/storage_types.h"
 #include "kvstore/Common.h"
 
 namespace nebula {

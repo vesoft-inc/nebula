@@ -12,7 +12,7 @@
 #include "meta/processors/Common.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/MetaServiceUtils.h"
-#include "network/NetworkUtils.h"
+#include "common/network/NetworkUtils.h"
 
 DEFINE_double(leader_balance_deviation, 0.05, "after leader balance, leader count should in range "
                                               "[avg * (1 - deviation), avg * (1 + deviation)]");

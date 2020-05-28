@@ -3,10 +3,10 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
+
 #include "storage/mutate/DeleteEdgesProcessor.h"
 #include <algorithm>
-#include <limits>
-#include "common/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 
 namespace nebula {
 namespace storage {

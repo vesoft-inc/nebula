@@ -7,7 +7,7 @@
 #ifndef META_TEST_MOCKHDFSHELPER_H_
 #define META_TEST_MOCKHDFSHELPER_H_
 
-#include "hdfs/HdfsHelper.h"
+#include "common/hdfs/HdfsHelper.h"
 
 namespace nebula {
 namespace meta {

@@ -7,10 +7,10 @@
 #ifndef CODEC_ROWREADERV2_H_
 #define CODEC_ROWREADERV2_H_
 
-#include "base/Base.h"
-#include <gtest/gtest_prod.h>
-#include "meta/SchemaProviderIf.h"
+#include "common/base/Base.h"
+#include "common/meta/SchemaProviderIf.h"
 #include "codec/RowReader.h"
+#include <gtest/gtest_prod.h>
 
 namespace nebula {
 

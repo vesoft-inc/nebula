@@ -7,11 +7,11 @@
 #ifndef META_COMMON_H_
 #define META_COMMON_H_
 
-#include "base/Base.h"
-#include "base/Status.h"
+#include "common/base/Base.h"
+#include "common/base/Status.h"
+#include "common/interface/gen-cpp2/meta_types.h"
 #include "kvstore/KVStore.h"
 #include "meta/processors/Common.h"
-#include "interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
 namespace meta {

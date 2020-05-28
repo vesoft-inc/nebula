@@ -7,7 +7,7 @@
 #ifndef STORAGE_MUTATE_DELETEEDGESPROCESSOR_H_
 #define STORAGE_MUTATE_DELETEEDGESPROCESSOR_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include "storage/BaseProcessor.h"
 #include "kvstore/LogEncoder.h"
 

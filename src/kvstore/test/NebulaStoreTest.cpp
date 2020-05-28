@@ -4,19 +4,19 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
+#include "common/base/Base.h"
+#include "common/fs/TempDir.h"
+#include "common/fs/FileUtils.h"
+#include "common/network/NetworkUtils.h"
+#include "common/meta/Common.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include <iostream>
-#include "fs/TempDir.h"
-#include "fs/FileUtils.h"
+#include <thrift/lib/cpp/concurrency/ThreadManager.h>
 #include "kvstore/NebulaStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/RocksEngine.h"
 #include "kvstore/LogEncoder.h"
-#include "network/NetworkUtils.h"
-#include <thrift/lib/cpp/concurrency/ThreadManager.h>
-#include "meta/Common.h"
 
 DECLARE_uint32(raft_heartbeat_interval_secs);
 using nebula::meta::PartHosts;

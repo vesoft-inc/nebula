@@ -5,7 +5,7 @@
  */
 
 #include "codec/RowReaderV1.h"
-#include "interface/gen-cpp2/meta_types.h"
+#include "common/interface/gen-cpp2/meta_types.h"
 
 
 #define RR_GET_OFFSET()                                             \

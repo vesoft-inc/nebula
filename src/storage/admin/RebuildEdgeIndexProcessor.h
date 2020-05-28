@@ -9,7 +9,7 @@
 
 #include "kvstore/KVStore.h"
 #include "kvstore/KVIterator.h"
-#include "meta/SchemaManager.h"
+#include "common/meta/SchemaManager.h"
 #include "storage/BaseProcessor.h"
 
 namespace nebula {

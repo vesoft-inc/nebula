@@ -7,7 +7,7 @@
 #ifndef CODEC_ROWREADERV1_H_
 #define CODEC_ROWREADERV1_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include <gtest/gtest_prod.h>
 #include "codec/RowReader.h"
 

@@ -3,13 +3,14 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-#include "base/Base.h"
+
+#include "common/base/Base.h"
+#include "common/interface/gen-cpp2/StorageAdminService.h"
+#include "common/fs/TempDir.h"
 #include <gtest/gtest.h>
 #include <folly/executors/CPUThreadPoolExecutor.h>
 #include <folly/synchronization/Baton.h>
 #include "meta/processors/admin/Balancer.h"
-#include "interface/gen-cpp2/StorageAdminService.h"
-#include "fs/TempDir.h"
 #include "meta/test/TestUtils.h"
 
 #define RETURN_OK(req) \

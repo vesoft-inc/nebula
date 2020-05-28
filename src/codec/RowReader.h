@@ -7,11 +7,11 @@
 #ifndef CODEC_ROWREADER_H_
 #define CODEC_ROWREADER_H_
 
-#include "base/Base.h"
-#include "datatypes/Value.h"
+#include "common/base/Base.h"
+#include "common/datatypes/Value.h"
+#include "common/meta/SchemaProviderIf.h"
+#include "common/meta/SchemaManager.h"
 #include "codec/Common.h"
-#include "meta/SchemaProviderIf.h"
-#include "meta/SchemaManager.h"
 
 namespace nebula {
 

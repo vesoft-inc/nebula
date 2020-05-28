@@ -4,13 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include <map>
-#include "base/Base.h"
+#include "common/base/Base.h"
+#include "codec/RowReaderWrapper"
+#include "codec/NebulaCodecImpl.h"
+#include "codec/test/SchemaWriter.h"
 #include <gtest/gtest.h>
-
-#include "dataman/RowReader.h"
-#include "dataman/SchemaWriter.h"
-#include "dataman/NebulaCodecImpl.h"
 
 namespace nebula {
 

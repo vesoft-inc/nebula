@@ -3,16 +3,15 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
+
+#include "common/base/Base.h"
+#include "common/fs/TempDir.h"
+#include "common/webservice/WebService.h"
 #include <gtest/gtest.h>
 #include <folly/synchronization/Baton.h>
-
-#include "base/Base.h"
 #include "meta/ActiveHostsMan.h"
-#include "fs/TempDir.h"
 #include "meta/test/TestUtils.h"
 #include "kvstore/Common.h"
-#include "webservice/WebService.h"
-
 #include "meta/processors/jobMan/JobUtils.h"
 #include "meta/processors/jobMan/TaskDescription.h"
 #include "meta/processors/jobMan/JobManager.h"

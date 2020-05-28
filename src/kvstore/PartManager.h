@@ -7,10 +7,10 @@
 #ifndef KVSTORE_PARTMANAGER_H_
 #define KVSTORE_PARTMANAGER_H_
 
+#include "common/base/Base.h"
+#include "common/clients/meta/MetaClient.h"
+#include "common/meta/Common.h"
 #include <gtest/gtest_prod.h>
-#include "base/Base.h"
-#include "clients/meta/MetaClient.h"
-#include "meta/Common.h"
 
 namespace nebula {
 namespace kvstore {

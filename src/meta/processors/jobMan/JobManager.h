@@ -7,17 +7,15 @@
 #ifndef META_JOBMANAGER_H_
 #define META_JOBMANAGER_H_
 
+#include "common/base/Base.h"
+#include "common/base/ErrorOr.h"
+#include "common/interface/gen-cpp2/meta_types.h"
 #include <boost/core/noncopyable.hpp>
-#include <string>
 #include <gtest/gtest_prod.h>
 #include <folly/concurrency/UnboundedQueue.h>
-#include "base/Base.h"
-#include "base/ErrorOr.h"
 #include "kvstore/NebulaStore.h"
 #include "meta/processors/jobMan/JobStatus.h"
 #include "meta/processors/jobMan/JobDescription.h"
-
-#include "interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
 namespace meta {

@@ -5,16 +5,14 @@
  */
 
 #include "storage/http/StorageHttpDownloadHandler.h"
-#include "webservice/Common.h"
-#include "process/ProcessUtils.h"
-#include "fs/FileUtils.h"
-#include "hdfs/HdfsHelper.h"
+#include "common/webservice/Common.h"
+#include "common/process/ProcessUtils.h"
+#include "common/fs/FileUtils.h"
+#include "common/hdfs/HdfsHelper.h"
 #include "kvstore/Part.h"
-#include "thread/GenericThreadPool.h"
 #include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
 #include <proxygen/httpserver/ResponseBuilder.h>
-#include <mutex>
 
 DEFINE_int32(download_thread_num, 3, "download thread number");
 

@@ -5,7 +5,7 @@
  */
 
 #include "storage/admin/FlushTask.h"
-#include "base/Logging.h"
+#include "common/base/Logging.h"
 
 namespace nebula {
 namespace storage {

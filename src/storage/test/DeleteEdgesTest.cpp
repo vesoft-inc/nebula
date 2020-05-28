@@ -4,18 +4,18 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
+#include "common/base/Base.h"
+#include "common/fs/TempDir.h"
+#include "common/interface/gen-cpp2/storage_types.h"
+#include "common/interface/gen-cpp2/common_types.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
-#include "fs/TempDir.h"
 #include "storage/mutate/DeleteEdgesProcessor.h"
 #include "storage/mutate/AddEdgesProcessor.h"
-#include "common/NebulaKeyUtils.h"
+#include "storage/test/TestUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include "mock/MockCluster.h"
 #include "mock/MockData.h"
-#include "interface/gen-cpp2/storage_types.h"
-#include "interface/gen-cpp2/common_types.h"
-#include "storage/test/TestUtils.h"
 
 namespace nebula {
 namespace storage {

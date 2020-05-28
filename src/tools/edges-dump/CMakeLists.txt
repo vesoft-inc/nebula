@@ -1,8 +1,8 @@
 nebula_add_executable(
     NAME
-        dump_edges
+        edges_dump
     SOURCES
-        DumpEdgesTool.cpp
+        EdgesDumpTool.cpp
     OBJECTS
         $<TARGET_OBJECTS:meta_service_handler>
         $<TARGET_OBJECTS:storage_admin_service_handler>

@@ -7,7 +7,7 @@
 #ifndef KVSTORE_MERGEOPERATOR_H_
 #define KVSTORE_MERGEOPERATOR_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include <rocksdb/merge_operator.h>
 
 namespace nebula {

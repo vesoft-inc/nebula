@@ -7,7 +7,7 @@
 #ifndef CODEC_ROWREADERWRAPPER_H_
 #define CODEC_ROWREADERWRAPPER_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include <gtest/gtest_prod.h>
 #include "codec/RowReaderV1.h"
 #include "codec/RowReaderV2.h"
@@ -83,7 +83,6 @@ private:
     RowReaderV1 readerV1_;
     RowReaderV2 readerV2_;
     RowReader* currReader_;
-
 };
 
 }  // namespace nebula

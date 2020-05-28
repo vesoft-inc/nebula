@@ -7,16 +7,16 @@
 #ifndef RAFTEX_RAFTPART_H_
 #define RAFTEX_RAFTPART_H_
 
-#include "base/Base.h"
-#include "common/LogIterator.h"
+#include "common/base/Base.h"
+#include "common/interface/gen-cpp2/raftex_types.h"
+#include "common/interface/gen-cpp2/RaftexServiceAsyncClient.h"
+#include "common/time/Duration.h"
+#include "common/thread/GenericThreadPool.h"
+#include "kvstore/raftex/SnapshotManager.h"
 #include <folly/futures/SharedPromise.h>
 #include <folly/Function.h>
 #include <gtest/gtest_prod.h>
-#include "interface/gen-cpp2/raftex_types.h"
-#include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
-#include "time/Duration.h"
-#include "thread/GenericThreadPool.h"
-#include "kvstore/raftex/SnapshotManager.h"
+#include "utils/LogIterator.h"
 
 namespace folly {
 class IOThreadPoolExecutor;

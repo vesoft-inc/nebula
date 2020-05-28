@@ -4,17 +4,17 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
+#include "common/base/Base.h"
+#include "common/webservice/Router.h"
+#include "common/webservice/WebService.h"
+#include "common/fs/TempDir.h"
+#include "common/thread/GenericThreadPool.h"
+#include "common/http/HttpClient.h"
 #include <gtest/gtest.h>
-#include "http/HttpClient.h"
 #include "meta/MetaHttpIngestHandler.h"
 #include "meta/test/TestUtils.h"
 #include "storage/http/StorageHttpIngestHandler.h"
-#include "webservice/Router.h"
-#include "webservice/WebService.h"
-#include "fs/TempDir.h"
 #include <rocksdb/sst_file_writer.h>
-#include "thread/GenericThreadPool.h"
 
 DECLARE_int32(ws_storage_http_port);
 

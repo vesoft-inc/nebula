@@ -7,12 +7,11 @@
 #ifndef META_METASERVICEHANDLER_H_
 #define META_METASERVICEHANDLER_H_
 
-#include "base/Base.h"
-#include <mutex>
-#include "interface/gen-cpp2/MetaService.h"
+#include "common/base/Base.h"
+#include "common/interface/gen-cpp2/MetaService.h"
+#include "common/stats/Stats.h"
 #include "kvstore/KVStore.h"
 #include "meta/processors/admin/AdminClient.h"
-#include "stats/Stats.h"
 
 namespace nebula {
 namespace meta {

@@ -4,7 +4,6 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
 #include "codec/test/ResultSchemaProvider.h"
 
 namespace nebula {

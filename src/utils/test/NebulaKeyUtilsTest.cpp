@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
-#include "common/NebulaKeyUtils.h"
+#include "common/base/Base.h"
+#include "utils/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
 
 namespace nebula {
@@ -17,7 +17,11 @@ public:
 
     ~KeyUtilsTestBase() = default;
 
-    void verifyVertex(PartitionID partId, VertexID vId, TagID tagId, TagVersion tagVersion, size_t actualSize) {
+    void verifyVertex(PartitionID partId,
+                      VertexID vId,
+                      TagID tagId,
+                      TagVersion tagVersion,
+                      size_t actualSize) {
         auto vertexKey = NebulaKeyUtils::vertexKey(vIdLen_, partId, vId, tagId, tagVersion);
         ASSERT_EQ(vertexKey.size(), kVertexLen + vIdLen_);
         ASSERT_EQ(vertexKey.substr(0, sizeof(PartitionID) + vIdLen_ + sizeof(TagID)),
@@ -33,15 +37,22 @@ public:
         ASSERT_TRUE(NebulaKeyUtils::isDataKey(vertexKey));
     }
 
-    void verifyEdge(PartitionID partId, VertexID srcId, EdgeType type, EdgeRanking rank,
-                    VertexID dstId, EdgeVersion edgeVersion, size_t actualSize) {
-        auto edgeKey = NebulaKeyUtils::edgeKey(vIdLen_, partId, srcId, type, rank, dstId, edgeVersion);
+    void verifyEdge(PartitionID partId,
+                    VertexID srcId,
+                    EdgeType type,
+                    EdgeRanking rank,
+                    VertexID dstId,
+                    EdgeVersion edgeVersion,
+                    size_t actualSize) {
+        auto edgeKey = NebulaKeyUtils::edgeKey(vIdLen_, partId, srcId, type,
+                                               rank, dstId, edgeVersion);
         ASSERT_EQ(edgeKey.size(), kEdgeLen + (vIdLen_ << 1));
         ASSERT_EQ(edgeKey.substr(0, sizeof(PartitionID) + vIdLen_ + sizeof(EdgeType)),
                   NebulaKeyUtils::edgePrefix(vIdLen_, partId, srcId, type));
         ASSERT_EQ(edgeKey.substr(0, sizeof(PartitionID) + vIdLen_),
                   NebulaKeyUtils::edgePrefix(vIdLen_, partId, srcId));
-        ASSERT_EQ(edgeKey.substr(0, sizeof(PartitionID) + (vIdLen_ << 1) + sizeof(EdgeType) + sizeof(EdgeRanking)),
+        ASSERT_EQ(edgeKey.substr(0, sizeof(PartitionID) + (vIdLen_ << 1)
+                                 + sizeof(EdgeType) + sizeof(EdgeRanking)),
                   NebulaKeyUtils::edgePrefix(vIdLen_, partId, srcId, type, rank, dstId));
         ASSERT_TRUE(NebulaKeyUtils::isEdge(vIdLen_, edgeKey));
         ASSERT_FALSE(NebulaKeyUtils::isVertex(vIdLen_, edgeKey));

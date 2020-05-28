@@ -4,11 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef COMMON_BASE_LOGITERATOR_H_
-#define COMMON_BASE_LOGITERATOR_H_
+#ifndef UTILS_LOGITERATOR_H_
+#define UTILS_LOGITERATOR_H_
 
-#include "base/Base.h"
-#include "thrift/ThriftTypes.h"
+#include "common/base/Base.h"
+#include "common/thrift/ThriftTypes.h"
 
 namespace nebula {
 
@@ -30,5 +30,4 @@ public:
 };
 
 }  // namespace nebula
-#endif  // COMMON_BASE_LOGITERATOR_H_
-
+#endif  // UTILS_LOGITERATOR_H_

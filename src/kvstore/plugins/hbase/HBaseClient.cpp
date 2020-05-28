@@ -4,10 +4,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
-#include "network/NetworkUtils.h"
+#include "common/base/Base.h"
+#include "common/network/NetworkUtils.h"
 #include "kvstore/plugins/hbase/HBaseClient.h"
-
 #include <folly/io/async/EventBaseManager.h>
 #include <thrift/lib/cpp2/async/RequestChannel.h>
 #include <thrift/lib/cpp2/async/ReconnectingRequestChannel.h>

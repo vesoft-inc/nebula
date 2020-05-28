@@ -7,10 +7,10 @@
 #ifndef META_ROOTUSERMAN_H_
 #define META_ROOTUSERMAN_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
+#include "common/encryption/MD5Utils.h"
 #include "kvstore/KVStore.h"
 #include "meta/MetaServiceUtils.h"
-#include "encryption/MD5Utils.h"
 
 namespace nebula {
 namespace meta {

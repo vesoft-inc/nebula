@@ -7,7 +7,7 @@
 #ifndef CODEC_TEST_SCHEMAWRITER_H_
 #define CODEC_TEST_SCHEMAWRITER_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include "codec/test/ResultSchemaProvider.h"
 
 namespace nebula {

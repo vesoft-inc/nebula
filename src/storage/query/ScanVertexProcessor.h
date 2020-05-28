@@ -7,7 +7,7 @@
 #ifndef STORAGE_SCANVERTEXPROCESSOR_H_
 #define STORAGE_SCANVERTEXPROCESSOR_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include "storage/BaseProcessor.h"
 
 namespace nebula {

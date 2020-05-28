@@ -5,7 +5,6 @@
  */
 
 #include "storage/http/StorageHttpIngestHandler.h"
-#include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
 #include <proxygen/httpserver/ResponseBuilder.h>
 

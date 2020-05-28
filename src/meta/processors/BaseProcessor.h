@@ -7,21 +7,21 @@
 #ifndef META_BASEPROCESSOR_H_
 #define META_BASEPROCESSOR_H_
 
-#include "base/Base.h"
-#include "charset/Charset.h"
+#include "common/base/Base.h"
+#include "common/charset/Charset.h"
+#include "common/stats/Stats.h"
+#include "common/interface/gen-cpp2/storage_types.h"
+#include "common/base/StatusOr.h"
+#include "common/time/Duration.h"
+#include "common/network/NetworkUtils.h"
 #include <folly/futures/Promise.h>
 #include <folly/futures/Future.h>
 #include <folly/SharedMutex.h>
-#include "base/StatusOr.h"
-#include "time/Duration.h"
 #include "kvstore/KVStore.h"
 #include "meta/MetaServiceUtils.h"
 #include "meta/common/MetaCommon.h"
-#include "network/NetworkUtils.h"
 #include "meta/processors/Common.h"
 #include "meta/ActiveHostsMan.h"
-#include "stats/Stats.h"
-#include "interface/gen-cpp2/storage_types.h"
 
 namespace nebula {
 namespace meta {

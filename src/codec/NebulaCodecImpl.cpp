@@ -4,12 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include <string>
-#include "base/Base.h"
-#include "dataman/RowReader.h"
-#include "dataman/RowWriter.h"
-#include "dataman/SchemaWriter.h"
-#include "NebulaCodecImpl.h"
+#include "common/base/Base.h"
+#include "codec/RowReader.h"
+#include "codec/RowWriterV2.h"
+#include "codec/NebulaCodecImpl.h"
 
 /**
  * Report error message

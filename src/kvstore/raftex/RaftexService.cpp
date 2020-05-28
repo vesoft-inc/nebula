@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include "kvstore/raftex/RaftexService.h"
 #include <folly/ScopeGuard.h>
 #include "kvstore/raftex/RaftPart.h"

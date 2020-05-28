@@ -7,8 +7,8 @@
 #ifndef STORAGE_EXEC_RELNODE_H_
 #define STORAGE_EXEC_RELNODE_H_
 
-#include "base/Base.h"
-#include "common/NebulaKeyUtils.h"
+#include "common/base/Base.h"
+#include "utils/NebulaKeyUtils.h"
 #include "storage/query/QueryBaseProcessor.h"
 
 namespace nebula {

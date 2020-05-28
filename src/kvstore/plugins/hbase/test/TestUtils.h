@@ -4,10 +4,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
-#include "meta/SchemaProviderIf.h"
-#include "meta/SchemaManager.h"
-#include "dataman/ResultSchemaProvider.h"
+#include "common/base/Base.h"
+#include "common/meta/SchemaProviderIf.h"
+#include "common/meta/SchemaManager.h"
 #include "storage/test/AdHocSchemaManager.h"
 
 namespace nebula {

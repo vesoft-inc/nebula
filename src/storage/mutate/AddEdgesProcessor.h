@@ -7,10 +7,10 @@
 #ifndef STORAGE_MUTATE_ADDEDGESPROCESSOR_H_
 #define STORAGE_MUTATE_ADDEDGESPROCESSOR_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include "storage/BaseProcessor.h"
-#include "kvstore/LogEncoder.h"
 #include "storage/StorageFlags.h"
+#include "kvstore/LogEncoder.h"
 
 namespace nebula {
 namespace storage {

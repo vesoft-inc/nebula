@@ -7,10 +7,10 @@
 #ifndef RAFTEX_RAFTEXSERVICE_H_
 #define RAFTEX_RAFTEXSERVICE_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
+#include "common/interface/gen-cpp2/RaftexService.h"
 #include <folly/RWSpinLock.h>
 #include <thrift/lib/cpp2/server/ThriftServer.h>
-#include "interface/gen-cpp2/RaftexService.h"
 
 namespace nebula {
 namespace raftex {
@@ -82,7 +82,6 @@ private:
     folly::RWSpinLock partsLock_;
     std::unordered_map<std::pair<GraphSpaceID, PartitionID>,
                        std::shared_ptr<RaftPart>> parts_;
-
 };
 
 }  // namespace raftex

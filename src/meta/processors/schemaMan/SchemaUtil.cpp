@@ -3,7 +3,7 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-#include "SchemaUtil.h"
+#include "meta/processors/schemaMan/SchemaUtil.h"
 
 namespace nebula {
 namespace meta {

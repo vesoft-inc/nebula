@@ -4,10 +4,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include "storage/mutate/UpdateVertexProcessor.h"
-#include "base/NebulaKeyUtils.h"
-#include "dataman/RowWriter.h"
+#include "utils/NebulaKeyUtils.h"
 #include "kvstore/LogEncoder.h"
 
 namespace nebula {

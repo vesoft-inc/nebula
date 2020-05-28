@@ -4,12 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
-#include "meta/SchemaManager.h"
-#include "clients/meta/MetaClient.h"
+#include "common/base/Base.h"
+#include "common/meta/SchemaManager.h"
+#include "common/datatypes/KeyValue.h"
+#include "common/clients/meta/MetaClient.h"
+#include "common/clients/storage/GeneralStorageClient.h"
 #include <folly/executors/IOThreadPoolExecutor.h>
-#include "clients/storage/GeneralStorageClient.h"
-#include "datatypes/KeyValue.h"
 
 DEFINE_string(meta_server_addrs, "", "meta server address");
 DEFINE_string(space_name, "test", "Specify the space name");

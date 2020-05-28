@@ -8,7 +8,6 @@
 #define META_JOBUTILS_H_
 
 #include "meta/processors/jobMan/JobUtils.h"
-
 #include <stdexcept>
 #include <vector>
 #include <boost/stacktrace.hpp>

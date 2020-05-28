@@ -7,10 +7,10 @@
 #ifndef KVSTORE_KVENGINE_H_
 #define KVSTORE_KVENGINE_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
+#include "common/base/Status.h"
 #include "kvstore/Common.h"
 #include "kvstore/KVIterator.h"
-#include "base/Status.h"
 
 namespace nebula {
 namespace kvstore {

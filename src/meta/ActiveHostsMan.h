@@ -7,7 +7,7 @@
 #ifndef META_ACTIVEHOSTSMAN_H_
 #define META_ACTIVEHOSTSMAN_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include <gtest/gtest_prod.h>
 #include "kvstore/KVStore.h"
 #include "meta/MetaServiceUtils.h"

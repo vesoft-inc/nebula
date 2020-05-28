@@ -7,21 +7,21 @@
 #ifndef META_TEST_TESTUTILS_H_
 #define META_TEST_TESTUTILS_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
+#include "common/interface/gen-cpp2/common_types.h"
+#include "common/time/WallClock.h"
 #include "mock/MockCluster.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/NebulaStore.h"
 #include "meta/processors/partsMan/ListHostsProcessor.h"
 #include "meta/MetaServiceHandler.h"
+#include "meta/processors/usersMan/AuthenticationProcessor.h"
+#include "meta/ActiveHostsMan.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
+#include <thrift/lib/cpp/concurrency/ThreadManager.h>
 #include <folly/synchronization/Baton.h>
 #include <folly/executors/CPUThreadPoolExecutor.h>
-#include "meta/processors/usersMan/AuthenticationProcessor.h"
-#include "interface/gen-cpp2/common_types.h"
-#include "time/WallClock.h"
-#include "meta/ActiveHostsMan.h"
-#include <thrift/lib/cpp/concurrency/ThreadManager.h>
 
 DECLARE_string(part_man_type);
 

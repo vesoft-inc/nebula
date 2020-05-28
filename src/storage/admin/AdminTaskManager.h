@@ -7,13 +7,12 @@
 #ifndef STORAGE_ADMIN_ADMINTASKMANAGER_H_
 #define STORAGE_ADMIN_ADMINTASKMANAGER_H_
 
-#include <condition_variable>
-#include <mutex>
+#include "common/base/Base.h"
+#include "common/interface/gen-cpp2/storage_types.h"
 #include <folly/concurrency/ConcurrentHashMap.h>
 #include <folly/executors/CPUThreadPoolExecutor.h>
 #include <folly/executors/task_queue/UnboundedBlockingQueue.h>
 #include <gtest/gtest_prod.h>
-#include "interface/gen-cpp2/storage_types.h"
 #include "kvstore/NebulaStore.h"
 #include "storage/admin/AdminTask.h"
 

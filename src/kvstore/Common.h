@@ -7,9 +7,9 @@
 #ifndef KVSTORE_COMMON_H_
 #define KVSTORE_COMMON_H_
 
-#include "base/Base.h"
-#include "thrift/ThriftTypes.h"
-#include "datatypes/HostAddr.h"
+#include "common/base/Base.h"
+#include "common/thrift/ThriftTypes.h"
+#include "common/datatypes/HostAddr.h"
 #include <rocksdb/slice.h>
 #include <folly/Function.h>
 

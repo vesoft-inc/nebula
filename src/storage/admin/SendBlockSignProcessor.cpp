@@ -6,7 +6,6 @@
 
 #include "storage/admin/SendBlockSignProcessor.h"
 
-
 namespace nebula {
 namespace storage {
 

@@ -7,11 +7,11 @@
 #ifndef STORAGE_COMPACTIONFILTER_H_
 #define STORAGE_COMPACTIONFILTER_H_
 
-#include "base/Base.h"
-#include "common/NebulaKeyUtils.h"
-#include "common/IndexKeyUtils.h"
+#include "common/base/Base.h"
+#include "common/meta/NebulaSchemaProvider.h"
+#include "utils/NebulaKeyUtils.h"
+#include "utils/IndexKeyUtils.h"
 #include "codec/RowReader.h"
-#include "meta/NebulaSchemaProvider.h"
 #include "kvstore/CompactionFilter.h"
 #include "storage/CommonUtils.h"
 

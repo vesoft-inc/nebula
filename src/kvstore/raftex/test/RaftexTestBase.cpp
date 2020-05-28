@@ -4,11 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
+#include "common/base/Base.h"
+#include "common/thrift/ThriftClientManager.h"
 #include "kvstore/raftex/test/RaftexTestBase.h"
 #include "kvstore/raftex/RaftexService.h"
 #include "kvstore/raftex/test/TestShard.h"
-#include "thrift/ThriftClientManager.h"
 
 DECLARE_uint32(raft_heartbeat_interval_secs);
 

@@ -7,11 +7,11 @@
 #ifndef RAFTEX_SNAPSHOTMANAGER_H_
 #define RAFTEX_SNAPSHOTMANAGER_H_
 
-#include "base/Base.h"
-#include "base/StatusOr.h"
-#include "interface/gen-cpp2/raftex_types.h"
-#include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
-#include "thrift/ThriftClientManager.h"
+#include "common/base/Base.h"
+#include "common/base/StatusOr.h"
+#include "common/interface/gen-cpp2/raftex_types.h"
+#include "common/interface/gen-cpp2/RaftexServiceAsyncClient.h"
+#include "common/thrift/ThriftClientManager.h"
 #include <folly/futures/Future.h>
 #include <folly/Function.h>
 #include <folly/executors/IOThreadPoolExecutor.h>

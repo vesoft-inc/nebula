@@ -7,12 +7,10 @@
 #ifndef META_METAUTILS_H_
 #define META_METAUTILS_H_
 
-#include "base/Base.h"
-#include "base/Status.h"
-#include "datatypes/HostAddr.h"
-#include "interface/gen-cpp2/meta_types.h"
-
-
+#include "common/base/Base.h"
+#include "common/base/Status.h"
+#include "common/datatypes/HostAddr.h"
+#include "common/interface/gen-cpp2/meta_types.h"
 #include "kvstore/NebulaStore.h"
 
 namespace nebula {

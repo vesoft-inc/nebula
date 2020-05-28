@@ -7,7 +7,7 @@
 #ifndef STORAGE_ADMIN_ADMINPROCESSOR_H_
 #define STORAGE_ADMIN_ADMINPROCESSOR_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include "kvstore/NebulaStore.h"
 #include "kvstore/Part.h"
 #include "storage/StorageFlags.h"

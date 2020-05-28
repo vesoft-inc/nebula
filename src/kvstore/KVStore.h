@@ -7,7 +7,10 @@
 #ifndef KVSTORE_KVSTORE_H_
 #define KVSTORE_KVSTORE_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
+#include "common/base/ErrorOr.h"
+#include "common/base/Status.h"
+#include "common/meta/SchemaManager.h"
 #include <rocksdb/merge_operator.h>
 #include <rocksdb/compaction_filter.h>
 #include "kvstore/raftex/RaftPart.h"
@@ -15,9 +18,6 @@
 #include "kvstore/KVIterator.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/CompactionFilter.h"
-#include "meta/SchemaManager.h"
-#include "base/ErrorOr.h"
-#include "base/Status.h"
 
 namespace nebula {
 namespace kvstore {

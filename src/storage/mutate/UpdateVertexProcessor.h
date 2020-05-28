@@ -8,8 +8,6 @@
 #define STORAGE_MUTATE_UPDATEVERTEXROCESSOR_H_
 
 #include "storage/query/QueryBaseProcessor.h"
-#include "dataman/RowReader.h"
-#include "dataman/RowUpdater.h"
 
 namespace nebula {
 namespace storage {

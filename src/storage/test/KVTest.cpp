@@ -4,13 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
+#include "common/base/Base.h"
+#include "common/fs/TempDir.h"
+#include "common/network/NetworkUtils.h"
 #include <gtest/gtest.h>
-#include "fs/TempDir.h"
 #include "meta/test/TestUtils.h"
 #include "storage/test/TestUtils.h"
-#include "storage/client/StorageClient.h"
-#include "network/NetworkUtils.h"
+#include "common/clients/storage/GeneralStorageClient.h"
 
 DECLARE_string(meta_server_addrs);
 DECLARE_int32(heartbeat_interval_secs);

@@ -7,7 +7,7 @@
 #ifndef KVSTORE_KVITERATOR_H_
 #define KVSTORE_KVITERATOR_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 
 namespace nebula {
 namespace kvstore {

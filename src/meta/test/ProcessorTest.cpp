@@ -4,11 +4,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
+#include "common/base/Base.h"
+#include "common/fs/TempDir.h"
 #include <gtest/gtest.h>
-#include <folly/String.h>
-#include <fstream>
-#include "fs/TempDir.h"
 #include "meta/test/TestUtils.h"
 #include "meta/processors/partsMan/CreateSpaceProcessor.h"
 #include "meta/processors/partsMan/ListSpacesProcessor.h"

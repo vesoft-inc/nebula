@@ -7,7 +7,7 @@
 #ifndef STORAGE_EXEC_EDGENODE_H_
 #define STORAGE_EXEC_EDGENODE_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include "storage/exec/RelNode.h"
 
 namespace nebula {

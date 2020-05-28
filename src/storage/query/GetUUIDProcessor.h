@@ -7,11 +7,11 @@
 #ifndef STORAGE_QUERY_GETUUIDPROCESSOR_H_
 #define STORAGE_QUERY_GETUUIDPROCESSOR_H_
 
-#include "base/Base.h"
-#include "base/MurmurHash2.h"
+#include "common/base/Base.h"
+#include "common/base/MurmurHash2.h"
+#include "common/time/WallClock.h"
 #include "storage/BaseProcessor.h"
 #include "kvstore/NebulaStore.h"
-#include "time/WallClock.h"
 
 namespace nebula {
 namespace storage {

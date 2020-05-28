@@ -7,8 +7,8 @@
 #ifndef STORAGE_QUERY_QUERYBASEPROCESSOR_H_
 #define STORAGE_QUERY_QUERYBASEPROCESSOR_H_
 
-#include "base/Base.h"
-#include "expression/Expression.h"
+#include "common/base/Base.h"
+#include "common/expression/Expression.h"
 #include "storage/BaseProcessor.h"
 
 namespace nebula {

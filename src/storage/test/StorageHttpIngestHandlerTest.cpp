@@ -4,11 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
-#include "fs/TempDir.h"
-#include "http/HttpClient.h"
-#include "webservice/Router.h"
-#include "webservice/WebService.h"
+#include "common/base/Base.h"
+#include "common/fs/TempDir.h"
+#include "common/http/HttpClient.h"
+#include "common/webservice/Router.h"
+#include "common/webservice/WebService.h"
 #include "storage/test/TestUtils.h"
 #include "storage/http/StorageHttpIngestHandler.h"
 #include <gtest/gtest.h>

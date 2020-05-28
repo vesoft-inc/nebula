@@ -4,9 +4,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
-#include "time/Duration.h"
-#include "clients/storage/GraphStorageClient.h"
+#include "common/base/Base.h"
+#include "common/time/Duration.h"
+#include "common/clients/storage/GraphStorageClient.h"
 #include "codec/RowReader.h"
 
 DEFINE_string(meta_server_addrs, "", "meta server address");

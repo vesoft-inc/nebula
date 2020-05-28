@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
-#include "common/IndexKeyUtils.h"
+#include "common//base/Base.h"
+#include "utils/IndexKeyUtils.h"
 #include <gtest/gtest.h>
 
 namespace nebula {

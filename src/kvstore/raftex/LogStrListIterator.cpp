@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
-#include "thrift/ThriftTypes.h"
+#include "common/base/Base.h"
+#include "common/thrift/ThriftTypes.h"
 #include "kvstore/raftex/LogStrListIterator.h"
 
 namespace nebula {

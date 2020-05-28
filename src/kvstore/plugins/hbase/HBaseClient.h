@@ -7,10 +7,10 @@
 #ifndef KVSTORE_PLUGINS_HBASE_HBASECLIENT_H_
 #define KVSTORE_PLUGINS_HBASE_HBASECLIENT_H_
 
-#include "base/Base.h"
-#include "base/Status.h"
-#include "base/ErrorOr.h"
-#include "thrift/ThriftClientManager.h"
+#include "common/base/Base.h"
+#include "common/base/Status.h"
+#include "common/base/ErrorOr.h"
+#include "common/thrift/ThriftClientManager.h"
 #include "kvstore/Common.h"
 #include "gen-cpp2/hbase_types.h"
 #include "gen-cpp2/THBaseServiceAsyncClient.h"

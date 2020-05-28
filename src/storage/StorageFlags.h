@@ -7,7 +7,7 @@
 #ifndef STORAGE_STORAGEFLAGS_H_
 #define STORAGE_STORAGEFLAGS_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 
 DECLARE_string(store_type);
 

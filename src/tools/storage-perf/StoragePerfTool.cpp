@@ -4,14 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
-#include "thread/GenericWorker.h"
-#include "time/Duration.h"
-#include "clients/storage/GraphStorageClient.h"
+#include "common/base/Base.h"
+#include "common/thread/GenericWorker.h"
+#include "common/time/Duration.h"
+#include "common/clients/storage/GraphStorageClient.h"
 #include <folly/TokenBucket.h>
 #include <folly/stats/TimeseriesHistogram.h>
 #include <folly/stats/BucketedTimeSeries.h>
-
 
 DEFINE_int32(threads, 1, "Total threads for perf");
 DEFINE_double(qps, 1000, "Total qps for the perf tool");

@@ -7,11 +7,11 @@
 #ifndef STORAGE_TEST_TESTUTILS_H_
 #define STORAGE_TEST_TESTUTILS_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/NebulaStore.h"
-#include "common/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 
 namespace nebula {
 namespace storage {

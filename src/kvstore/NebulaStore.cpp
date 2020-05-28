@@ -4,13 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
+#include "common/base/Base.h"
+#include "common/fs/FileUtils.h"
+#include "common/network/NetworkUtils.h"
 #include "kvstore/NebulaStore.h"
 #include <folly/Likely.h>
 #include <algorithm>
 #include <cstdint>
-#include "network/NetworkUtils.h"
-#include "fs/FileUtils.h"
 #include "kvstore/RocksEngine.h"
 #include "kvstore/SnapshotManagerImpl.h"
 

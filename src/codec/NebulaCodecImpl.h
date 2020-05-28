@@ -7,8 +7,8 @@
 #ifndef NEBULA_GRAPH_NEBULACODECIMPL_H
 #define NEBULA_GRAPH_NEBULACODECIMPL_H
 
-#include "base/StatusOr.h"
-#include "dataman/include/NebulaCodec.h"
+#include "common/base/StatusOr.h"
+#include "codec/include/NebulaCodec.h"
 
 namespace nebula {
 namespace dataman {

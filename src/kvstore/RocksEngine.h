@@ -7,10 +7,10 @@
 #ifndef KVSTORE_ROCKSENGINE_H_
 #define KVSTORE_ROCKSENGINE_H_
 
+#include "common/base/Base.h"
 #include <gtest/gtest_prod.h>
 #include <rocksdb/db.h>
 #include <rocksdb/utilities/checkpoint.h>
-#include "base/Base.h"
 #include "kvstore/KVIterator.h"
 #include "kvstore/KVEngine.h"
 

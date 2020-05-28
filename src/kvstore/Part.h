@@ -7,8 +7,8 @@
 #ifndef KVSTORE_PART_H_
 #define KVSTORE_PART_H_
 
-#include "base/Base.h"
-#include "common/NebulaKeyUtils.h"
+#include "common/base/Base.h"
+#include "utils/NebulaKeyUtils.h"
 #include "raftex/RaftPart.h"
 #include "kvstore/Common.h"
 #include "kvstore/KVEngine.h"

@@ -4,7 +4,6 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/MetaServiceUtils.h"
 #include "meta/processors/BaseProcessor.h"
 
 namespace nebula {

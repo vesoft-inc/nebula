@@ -7,8 +7,8 @@
 #ifndef CODEC_TEST_ROWWRITERV1_H_
 #define CODEC_TEST_ROWWRITERV1_H_
 
-#include "base/Base.h"
-#include "base/Cord.h"
+#include "common/base/Base.h"
+#include "common/base/Cord.h"
 #include "codec/test/SchemaWriter.h"
 
 namespace nebula {

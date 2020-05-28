@@ -7,7 +7,7 @@
 #ifndef RAFTEX_TEST_TESTSHARD_H_
 #define RAFTEX_TEST_TESTSHARD_H_
 
-#include "base/Base.h"
+#include "common/base/Base.h"
 #include "kvstore/raftex/RaftPart.h"
 #include "kvstore/raftex/RaftexService.h"
 

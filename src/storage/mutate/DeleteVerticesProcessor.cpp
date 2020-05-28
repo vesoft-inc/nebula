@@ -5,7 +5,7 @@
  */
 
 #include "storage/mutate/DeleteVerticesProcessor.h"
-#include "common/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include "storage/StorageFlags.h"
 
 namespace nebula {

@@ -4,13 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
-#include "kvstore/RocksEngine.h"
+#include "common/base/Base.h"
+#include "common/fs/FileUtils.h"
 #include <folly/String.h>
-#include "fs/FileUtils.h"
+#include "kvstore/RocksEngine.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/RocksEngineConfig.h"
-#include "common/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 
 namespace nebula {
 namespace kvstore {

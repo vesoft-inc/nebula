@@ -7,14 +7,13 @@
 #ifndef STORAGE_COMMON_H_
 #define STORAGE_COMMON_H_
 
-#include "base/Base.h"
-#include "base/ConcurrentLRUCache.h"
-#include "interface/gen-cpp2/storage_types.h"
+#include "common/base/Base.h"
+#include "common/meta/SchemaManager.h"
+#include "common/meta/IndexManager.h"
+#include "common/base/ConcurrentLRUCache.h"
+#include "common/interface/gen-cpp2/storage_types.h"
 #include "codec/RowReader.h"
 #include "kvstore/KVStore.h"
-#include "meta/SchemaManager.h"
-#include "meta/IndexManager.h"
-#include "meta/SchemaManager.h"
 
 namespace nebula {
 namespace storage {

@@ -4,9 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include <string>
-#include <vector>
-#include "base/StatusOr.h"
+#include "common/base/StatusOr.h"
 #include "meta/processors/jobMan/AdminJobProcessor.h"
 #include "meta/processors/jobMan/JobManager.h"
 #include "meta/processors/jobMan/JobDescription.h"

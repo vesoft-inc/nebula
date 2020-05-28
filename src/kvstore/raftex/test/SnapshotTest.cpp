@@ -4,16 +4,16 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
-#include <gtest/gtest.h>
-#include <folly/String.h>
-#include "fs/TempDir.h"
-#include "fs/FileUtils.h"
-#include "thread/GenericThreadPool.h"
-#include "network/NetworkUtils.h"
+#include "common/base/Base.h"
+#include "common/fs/TempDir.h"
+#include "common/fs/FileUtils.h"
+#include "common/thread/GenericThreadPool.h"
+#include "common/network/NetworkUtils.h"
 #include "kvstore/raftex/RaftexService.h"
 #include "kvstore/raftex/test/RaftexTestBase.h"
 #include "kvstore/raftex/test/TestShard.h"
+#include <gtest/gtest.h>
+#include <folly/String.h>
 
 DECLARE_uint32(raft_heartbeat_interval_secs);
 DECLARE_int32(wal_ttl);
