@@ -2417,6 +2417,18 @@ TEST_P(GoTest, WithIntermediateData) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::tuple<int64_t>> expected = {
+            teams_["Spurs"].vid()
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO 2 TO 3 STEPS FROM %ld OVER serve";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::tuple<int64_t>> expected = {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -2446,6 +2458,29 @@ TEST_P(GoTest, WithIntermediateData) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tony Parker"];
+        auto *fmt = "GO 2 TO 2 STEPS FROM %ld OVER like REVERSELY YIELD DISTINCT like._dst";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID>> expected = {
+            {players_["LaMarcus Aldridge"].vid()},
+            {players_["Marco Belinelli"].vid()},
+            {players_["Boris Diaw"].vid()},
+            {players_["Dejounte Murray"].vid()},
+            {players_["Tony Parker"].vid()},
+            {players_["Manu Ginobili"].vid()},
+            {players_["Danny Green"].vid()},
+            {players_["Aron Baynes"].vid()},
+            {players_["Tiago Splitter"].vid()},
+            {players_["Shaquile O'Neal"].vid()},
+            {players_["Rudy Gay"].vid()},
+            {players_["Damian Lillard"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
     // empty starts before last step
     {
         cpp2::ExecutionResponse resp;
@@ -2454,8 +2489,24 @@ TEST_P(GoTest, WithIntermediateData) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
-        // Empty response
         std::vector<std::tuple<int64_t>> expected = {
+            players_["Tim Duncan"].vid(),
+            players_["Tony Parker"].vid(),
+            players_["Manu Ginobili"].vid(),
+            players_["LaMarcus Aldridge"].vid(),
+            players_["Rudy Gay"].vid(),
+            players_["Marco Belinelli"].vid(),
+            players_["Danny Green"].vid(),
+            players_["Kyle Anderson"].vid(),
+            players_["Aron Baynes"].vid(),
+            players_["Boris Diaw"].vid(),
+            players_["Tiago Splitter"].vid(),
+            players_["Cory Joseph"].vid(),
+            players_["David West"].vid(),
+            players_["Jonathon Simmons"].vid(),
+            players_["Dejounte Murray"].vid(),
+            players_["Tracy McGrady"].vid(),
+            players_["Paul Gasol"].vid(),
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
