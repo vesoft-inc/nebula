@@ -216,14 +216,12 @@ private:
         while (count < queryTimes) {
             PLOG_EVERY_N(INFO, 1000) << "We have gone " << count << " steps so far";
             // TODO support getProps
-            std::vector<std::string> colNames;
-            colNames.emplace_back("_vid");
             std::vector<cpp2::PropExp> propExps;
             cpp2::PropExp propExp;
             propExp.set_prop(propName_);
             propExps.emplace_back(propExp);
-            std::vector<Row> input;
-            auto future = client_->getProps(spaceId_, colNames, input, propExps);
+            DataSet dataset({"_vid"});
+            auto future = client_->getProps(spaceId_, dataset, propExps);
             auto resp = std::move(future).get();
             if (!resp.succeeded()) {
                 LOG(ERROR) << "Failed to fetch props of vertex " << nextId;
