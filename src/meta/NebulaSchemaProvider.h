@@ -51,7 +51,7 @@ public:
     private:
         std::string name_;
         nebula::cpp2::ValueType type_;
-        bool hasDefaultValue_;
+        bool hasDefaultValue_{false};
         VariantType defaultValue_;
     };
 

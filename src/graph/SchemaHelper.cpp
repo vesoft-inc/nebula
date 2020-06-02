@@ -32,7 +32,7 @@ nebula::cpp2::SupportedType SchemaHelper::columnTypeToSupportedType(nebula::Colu
 StatusOr<nebula::cpp2::Value> SchemaHelper::toDefaultValue(ColumnSpecification* spec) {
     nebula::cpp2::Value v;
     Getters getter;
-    CHECK(spec->hasDefault());
+    CHECK(spec->hasDefaultValue());
     auto s = spec->prepare();
     if (!s.ok()) {
         return s;
@@ -119,7 +119,7 @@ Status SchemaHelper::createSchema(const std::vector<ColumnSpecification*>& specs
         nebula::cpp2::ColumnDef column;
         column.name = *spec->name();
         column.type.type = columnTypeToSupportedType(spec->type());
-        if (spec->hasDefault()) {
+        if (spec->hasDefaultValue()) {
             auto statusV = toDefaultValue(spec);
             if (!statusV.ok()) {
                 return statusV.status();
@@ -223,7 +223,7 @@ Status SchemaHelper::alterSchema(const std::vector<AlterSchemaOptItem*>& schemaO
                 nebula::cpp2::ColumnDef column;
                 column.name = *spec->name();
                 column.type.type = columnTypeToSupportedType(spec->type());
-                if (spec->hasDefault()) {
+                if (spec->hasDefaultValue()) {
                     auto statusV = toDefaultValue(spec);
                     if (!statusV.ok()) {
                         return statusV.status();

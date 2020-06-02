@@ -53,17 +53,7 @@ public:
         if (!r.ok()) {
             return std::move(r).status();
         }
-        auto v = std::move(r).value();
-        if (!Value::isString(v)) {
-            return Status::Error("Wrong type");
-        }
-        return Value::toString(v);
-    }
-
-    void setContext(ExpressionContext* ctx) {
-        if (defaultExpr_ != nullptr) {
-            defaultExpr_->setContext(ctx);
-        }
+        return std::move(r).value();
     }
 
     bool hasDefaultValue() {

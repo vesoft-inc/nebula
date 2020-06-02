@@ -550,4 +550,3 @@ void checkTagData(const std::vector<cpp2::TagData>& data,
 }  // namespace nebula
 
 #endif  // STORAGE_TEST_TESTUTILS_H_
-

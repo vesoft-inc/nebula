@@ -242,8 +242,8 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
 }
 
 
-std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
-                                                    const cpp2::EdgeKey& edgeKey) {
+folly::Optional<std::string> UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
+                                                                     const cpp2::EdgeKey& edgeKey) {
     Getters getters;
     getters.getSrcTagProp = [&, this] (const std::string& tagName,
                                        const std::string& prop) -> OptVariantType {
@@ -275,14 +275,14 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
         auto exp = Expression::decode(item.get_value());
         if (!exp.ok()) {
             LOG(ERROR) << "Decode item expr failed";
-            return std::string("");
+            return folly::none;
         }
         auto vexp = std::move(exp).value();
         vexp->setContext(this->expCtx_.get());
         auto value = vexp->eval(getters);
         if (!value.ok()) {
             LOG(ERROR) << "Eval item expr failed";
-            return std::string("");
+            return folly::none;
         }
         auto expValue = value.value();
         edgeFilters_[prop] = expValue;
@@ -294,7 +294,7 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
                     LOG(ERROR) << "Field: `" << prop << "' type is "
                                << static_cast<int32_t>(schema->getFieldType(prop).type)
                                << ", not INT type";
-                    return std::string("");
+                    return folly::none;
                 }
                 auto v = boost::get<int64_t>(expValue);
                 updater_->setInt(prop, v);
@@ -305,7 +305,7 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
                     LOG(ERROR) << "Field: `" << prop << "' type is "
                                << static_cast<int32_t>(schema->getFieldType(prop).type)
                                << ", not DOUBLE type";
-                    return std::string("");
+                    return folly::none;
                 }
                 auto v = boost::get<double>(expValue);
                 updater_->setDouble(prop, v);
@@ -316,7 +316,7 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
                     LOG(ERROR) << "Field: `" << prop << "' type is "
                                << static_cast<int32_t>(schema->getFieldType(prop).type)
                                << ", not BOOL type";
-                    return std::string("");
+                    return folly::none;
                 }
                 auto v = boost::get<bool>(expValue);
                 updater_->setBool(prop, v);
@@ -327,7 +327,7 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
                     LOG(ERROR) << "Field: `" << prop << "' type is "
                                << static_cast<int32_t>(schema->getFieldType(prop).type)
                                << ", not STRING type";
-                    return std::string("");
+                    return folly::none;
                 }
                 auto v = boost::get<std::string>(expValue);
                 updater_->setString(prop, v);
@@ -335,7 +335,7 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
              }
             default: {
                 LOG(FATAL) << "Unknown VariantType: " << expValue.which();
-                return std::string("");
+                return folly::none;
             }
         }
     }
@@ -343,7 +343,7 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
     auto status = updater_->encode();
     if (!status.ok()) {
         LOG(ERROR) << status.status();
-        return std::string("");
+        return folly::none;
     }
     auto nVal = std::move(status.value());
     // TODO(heng) we don't update the index for reverse edge.
@@ -582,7 +582,11 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
                     if (filterResult_ == cpp2::ErrorCode::E_FILTER_OUT) {
                         onProcessFinished(req.get_return_columns().size());
                     }
-                    this->pushResultCode(filterResult_, partId);
+                    if (filterResult_ != cpp2::ErrorCode::SUCCEEDED) {
+                        this->pushResultCode(filterResult_, partId);
+                    } else {
+                        this->pushResultCode(to(code), partId);
+                    }
                 } else {
                     this->pushResultCode(to(code), partId);
                 }

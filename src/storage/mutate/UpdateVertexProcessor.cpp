@@ -213,10 +213,10 @@ cpp2::ErrorCode UpdateVertexProcessor::checkFilter(const PartitionID partId, con
         VLOG(3) << "partId " << partId << ", vId " << vId
                 << ", tagId " << tc.tagId_ << ", prop size " << tc.props_.size();
         auto ret = collectVertexProps(partId, vId, tc.tagId_, tc.props_);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
-            LOG(ERROR) << "partId: " << partId << ", vId: "
-                       << vId << " checkFilter failed: " << ret;
-            return FilterResult::E_ERROR;
+        if (ret == kvstore::ResultCode::ERR_CORRUPT_DATA) {
+            return cpp2::ErrorCode::E_TAG_NOT_FOUND;
+        } else if (ret != kvstore::ResultCode::SUCCEEDED) {
+            return to(ret);
         }
     }
 
@@ -253,14 +253,14 @@ cpp2::ErrorCode UpdateVertexProcessor::checkFilter(const PartitionID partId, con
 }
 
 
-std::string UpdateVertexProcessor::updateAndWriteBack(const PartitionID partId,
-                                                      const VertexID vId) {
+folly::Optional<std::string> UpdateVertexProcessor::updateAndWriteBack(const PartitionID partId,
+                                                                       const VertexID vId) {
     Getters getters;
     getters.getSrcTagProp = [this] (const std::string& tagName,
                                        const std::string& prop) -> OptVariantType {
         auto tagRet = this->schemaMan_->toTagID(this->spaceId_, tagName);
         if (!tagRet.ok()) {
-            VLOG(1) << "Can't find tag " << tagName << ", in space " << this->spaceId_;
+            LOG(ERROR) << "Can't find tag " << tagName << ", in space " << this->spaceId_;
             return Status::Error("Invalid Filter Tag: " + tagName);
         }
         auto tagId = tagRet.value();
@@ -277,20 +277,22 @@ std::string UpdateVertexProcessor::updateAndWriteBack(const PartitionID partId,
         const auto &tagName = item.get_name();
         auto tagRet = this->schemaMan_->toTagID(this->spaceId_, tagName);
         if (!tagRet.ok()) {
-            VLOG(1) << "Can't find tag " << tagName << ", in space " << this->spaceId_;
-            return std::string("");
+            LOG(ERROR) << "Can't find tag " << tagName << ", in space " << this->spaceId_;
+            return folly::none;
         }
         auto tagId = tagRet.value();
         auto prop = item.get_prop();
         auto exp = Expression::decode(item.get_value());
         if (!exp.ok()) {
-            return std::string("");
+            LOG(ERROR) << exp.status();
+            return folly::none;
         }
         auto vexp = std::move(exp).value();
         vexp->setContext(this->expCtx_.get());
         auto value = vexp->eval(getters);
         if (!value.ok()) {
-            return std::string("");
+            LOG(ERROR) << value.status();
+            return folly::none;
         }
         auto expValue = value.value();
         tagFilters_[std::make_pair(tagId, prop)] = expValue;
@@ -298,7 +300,7 @@ std::string UpdateVertexProcessor::updateAndWriteBack(const PartitionID partId,
         auto schema = tagUpdaters_[tagId]->updater->schema();
         if (schema == nullptr) {
             LOG(ERROR) << "Get schema from updater is nullptr";
-            return std::string("");
+            return folly::none;
         }
         switch (expValue.which()) {
             case VAR_INT64: {
@@ -306,7 +308,7 @@ std::string UpdateVertexProcessor::updateAndWriteBack(const PartitionID partId,
                     LOG(ERROR) << "Field: `" << prop << "' type is "
                                << static_cast<int32_t>(schema->getFieldType(prop).type)
                                << ", not INT type";
-                    return std::string("");
+                    return folly::none;
                 }
                 auto v = boost::get<int64_t>(expValue);
                 tagUpdaters_[tagId]->updater->setInt(prop, v);
@@ -317,7 +319,7 @@ std::string UpdateVertexProcessor::updateAndWriteBack(const PartitionID partId,
                     LOG(ERROR) << "Field: `" << prop << "' type is "
                                << static_cast<int32_t>(schema->getFieldType(prop).type)
                                << ", not DOUBLE type";
-                    return std::string("");
+                    return folly::none;
                 }
                 auto v = boost::get<double>(expValue);
                 tagUpdaters_[tagId]->updater->setDouble(prop, v);
@@ -328,7 +330,7 @@ std::string UpdateVertexProcessor::updateAndWriteBack(const PartitionID partId,
                     LOG(ERROR) << "Field: `" << prop << "' type is "
                                << static_cast<int32_t>(schema->getFieldType(prop).type)
                                << ", not BOOL type";
-                    return std::string("");
+                    return folly::none;
                 }
                 auto v = boost::get<bool>(expValue);
                 tagUpdaters_[tagId]->updater->setBool(prop, v);
@@ -339,7 +341,7 @@ std::string UpdateVertexProcessor::updateAndWriteBack(const PartitionID partId,
                     LOG(ERROR) << "Field: `" << prop << "' type is "
                                << static_cast<int32_t>(schema->getFieldType(prop).type)
                                << ", not STRING type";
-                    return std::string("");
+                    return folly::none;
                 }
                 auto v = boost::get<std::string>(expValue);
                 tagUpdaters_[tagId]->updater->setString(prop, v);
@@ -347,7 +349,7 @@ std::string UpdateVertexProcessor::updateAndWriteBack(const PartitionID partId,
              }
             default: {
                 LOG(FATAL) << "Unknown VariantType: " << expValue.which();
-                return std::string("");
+                return folly::none;
             }
         }
     }
@@ -543,7 +545,11 @@ void UpdateVertexProcessor::process(const cpp2::UpdateVertexRequest& req) {
                         // Only filter out so we still return the data
                         onProcessFinished(req.get_return_columns().size());
                     }
-                    this->pushResultCode(filterResult_, partId);
+                    if (filterResult_ != cpp2::ErrorCode::SUCCEEDED) {
+                        this->pushResultCode(filterResult_, partId);
+                    } else {
+                        this->pushResultCode(to(code), partId);
+                    }
                 } else {
                     this->pushResultCode(to(code), partId);
                 }
