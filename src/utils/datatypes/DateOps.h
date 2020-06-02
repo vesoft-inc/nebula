@@ -94,7 +94,7 @@ void Cpp2Ops<nebula::Date>::read(Protocol* proto, nebula::Date* obj) {
 
     readState.readStructBegin(proto);
 
-    using apache::thrift::TProtocolException;
+    using apache::thrift::protocol::TProtocolException;
 
     if (UNLIKELY(!readState.advanceToNextField(proto, 0, 1, protocol::T_I16))) {
         goto _loop;
@@ -341,7 +341,7 @@ void Cpp2Ops<nebula::DateTime>::read(Protocol* proto, nebula::DateTime* obj) {
 
     readState.readStructBegin(proto);
 
-    using apache::thrift::TProtocolException;
+    using apache::thrift::protocol::TProtocolException;
 
     if (UNLIKELY(!readState.advanceToNextField(proto, 0, 1, protocol::T_I16))) {
         goto _loop;

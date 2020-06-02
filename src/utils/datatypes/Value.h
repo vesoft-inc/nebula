@@ -46,7 +46,7 @@ enum class NullType {
 struct Value {
     friend class apache::thrift::Cpp2Ops<Value, void>;
 
-    enum class Type {
+    enum class Type : uint8_t {
         __EMPTY__ = 0,
         NULLVALUE = 1,
         BOOL = 2,

@@ -159,6 +159,8 @@ static constexpr auto is_convertible_v = std::is_constructible<U, T>::value;
 
 std::string versionString();
 
+std::string toHexStr(folly::StringPiece str);
+
 }  // namespace nebula
 
 #endif  // COMMON_BASE_BASE_H_

@@ -7,34 +7,23 @@
 #ifndef COMMON_EXPRESSION_ARITHMETICEXPRESSION_H_
 #define COMMON_EXPRESSION_ARITHMETICEXPRESSION_H_
 
-#include "common/expression/Expression.h"
+#include "common/expression/BinaryExpression.h"
 
 namespace nebula {
 
-class ArithmeticExpression : public Expression {
+class ArithmeticExpression final : public BinaryExpression {
 public:
-    ArithmeticExpression(Kind kind, Expression* lhs, Expression* rhs) : Expression(kind) {
-        lhs_.reset(lhs);
-        rhs_.reset(rhs);
-    }
+    ArithmeticExpression(Kind kind,
+                         std::unique_ptr<Expression>&& lhs = nullptr,
+                         std::unique_ptr<Expression>&& rhs = nullptr)
+        : BinaryExpression(kind, std::move(lhs), std::move(rhs)) {}
 
-    Value eval() const override;
-
-    std::string encode() const override;
-
-    std::string decode() const override {
-        // TODO
-        return "";
-    }
+    Value eval(const ExpressionContext& ctx) const override;
 
     std::string toString() const override {
         // TODO
         return "";
     }
-
-private:
-    std::unique_ptr<Expression> lhs_;
-    std::unique_ptr<Expression> rhs_;
 };
 
 }   // namespace nebula

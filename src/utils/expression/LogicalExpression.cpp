@@ -7,9 +7,12 @@
 #include "common/expression/LogicalExpression.h"
 
 namespace nebula {
-Value LogicalExpression::eval() const {
-    auto lhs = lhs_->eval();
-    auto rhs = rhs_->eval();
+
+Value LogicalExpression::eval(const ExpressionContext& ctx) const {
+    UNUSED(ctx);
+
+    auto lhs = lhs_->eval(ctx);
+    auto rhs = rhs_->eval(ctx);
 
     switch (kind_) {
         case Kind::kLogicalAnd:
@@ -23,4 +26,5 @@ Value LogicalExpression::eval() const {
     }
     LOG(FATAL) << "Unknown type: " << kind_;
 }
-}   // namespace nebula
+
+}  // namespace nebula

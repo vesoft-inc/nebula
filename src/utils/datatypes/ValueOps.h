@@ -11,6 +11,7 @@
 
 #include <thrift/lib/cpp2/GeneratedSerializationCodeHelper.h>
 #include <thrift/lib/cpp2/gen/module_types_tcc.h>
+#include <thrift/lib/cpp2/protocol/CompactProtocol.h>
 #include <thrift/lib/cpp2/protocol/ProtocolReaderStructReadState.h>
 
 #include "common/datatypes/Value.h"
@@ -265,7 +266,7 @@ void Cpp2Ops<nebula::Value>::read(Protocol* proto, nebula::Value* obj) {
 
     readState.readStructBegin(proto);
 
-    using apache::thrift::TProtocolException;
+    using apache::thrift::protocol::TProtocolException;
 
     readState.readFieldBegin(proto);
     if (readState.fieldType == apache::thrift::protocol::T_STOP) {

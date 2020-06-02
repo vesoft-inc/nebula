@@ -7,36 +7,24 @@
 #ifndef COMMON_EXPRESSION_RELATIONALEXPRESSION_H_
 #define COMMON_EXPRESSION_RELATIONALEXPRESSION_H_
 
-#include "common/expression/Expression.h"
+#include "common/expression/BinaryExpression.h"
 
 namespace nebula {
-class RelationalExpression final : public Expression {
+
+class RelationalExpression final : public BinaryExpression {
 public:
-    RelationalExpression(Kind kind, Expression* lhs, Expression* rhs) : Expression(kind) {
-        lhs_.reset(lhs);
-        rhs_.reset(rhs);
-    }
+    RelationalExpression(Kind kind,
+                         std::unique_ptr<Expression>&& lhs = nullptr,
+                         std::unique_ptr<Expression>&& rhs = nullptr)
+        : BinaryExpression(kind, std::move(lhs), std::move(rhs)) {}
 
-    Value eval() const override;
-
-    std::string encode() const override {
-        // TODO
-        return "";
-    }
-
-    std::string decode() const override {
-        // TODO
-        return "";
-    }
+    Value eval(const ExpressionContext& ctx) const override;
 
     std::string toString() const override {
         // TODO
         return "";
     }
-
-private:
-    std::unique_ptr<Expression> lhs_;
-    std::unique_ptr<Expression> rhs_;
 };
-}   // namespace nebula
-#endif
+
+}  // namespace nebula
+#endif  // COMMON_EXPRESSION_RELATIONALEXPRESSION_H_

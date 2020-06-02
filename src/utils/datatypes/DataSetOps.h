@@ -79,7 +79,7 @@ void Cpp2Ops<nebula::Row>::read(Protocol* proto, nebula::Row* obj) {
 
     readState.readStructBegin(proto);
 
-    using apache::thrift::TProtocolException;
+    using apache::thrift::protocol::TProtocolException;
 
     if (UNLIKELY(!readState.advanceToNextField(proto, 0, 1, protocol::T_LIST))) {
         goto _loop;
@@ -243,7 +243,7 @@ void Cpp2Ops<nebula::DataSet>::read(Protocol* proto, nebula::DataSet* obj) {
 
     readState.readStructBegin(proto);
 
-    using apache::thrift::TProtocolException;
+    using apache::thrift::protocol::TProtocolException;
 
     if (UNLIKELY(!readState.advanceToNextField(proto, 0, 1, protocol::T_LIST))) {
         goto _loop;

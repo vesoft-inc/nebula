@@ -10,33 +10,34 @@
 #include "common/expression/Expression.h"
 
 namespace nebula {
+
 class TypeCastingExpression final : public Expression {
+    friend class Expression;
+
 public:
-    TypeCastingExpression(Value::Type vType, Expression* operand)
-        : Expression(Kind::kTypeCasting), vType_(vType) {
-        operand_.reset(operand);
-    }
+    TypeCastingExpression(Value::Type vType = Value::Type::__EMPTY__,
+                          std::unique_ptr<Expression>&& operand = nullptr)
+        : Expression(Kind::kTypeCasting)
+        , vType_(vType)
+        , operand_(std::move(operand)) {}
 
-    Value eval() const override;
+    bool operator==(const Expression& rhs) const override;
 
-    std::string encode() const override {
-        // TODO
-        return "";
-    }
-
-    std::string decode() const override {
-        // TODO
-        return "";
-    }
+    Value eval(const ExpressionContext& ctx) const override;
 
     std::string toString() const override {
         // TODO
         return "";
     }
 
-private:
-    Value::Type vType_;
+protected:
+    Value::Type                 vType_;
     std::unique_ptr<Expression> operand_;
+
+    void writeTo(Encoder& encoder) const override;
+
+    void resetFrom(Decoder& decoder) override;
 };
-}   // namespace nebula
-#endif
+
+}  // namespace nebula
+#endif  // EXPRESSION_TYPECASTINGEXPRESSION_H_

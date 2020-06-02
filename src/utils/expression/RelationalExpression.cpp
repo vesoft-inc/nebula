@@ -7,9 +7,12 @@
 #include "common/expression/RelationalExpression.h"
 
 namespace nebula {
-Value RelationalExpression::eval() const {
-    auto lhs = lhs_->eval();
-    auto rhs = rhs_->eval();
+
+Value RelationalExpression::eval(const ExpressionContext& ctx) const {
+    UNUSED(ctx);
+
+    auto lhs = lhs_->eval(ctx);
+    auto rhs = rhs_->eval(ctx);
 
     switch (kind_) {
         case Kind::kRelEQ:
@@ -29,4 +32,5 @@ Value RelationalExpression::eval() const {
     }
     LOG(FATAL) << "Unknown type: " << kind_;
 }
-}   // namespace nebula
+
+}  // namespace nebula

@@ -74,7 +74,7 @@ void Cpp2Ops<nebula::List>::read(Protocol* proto, nebula::List* obj) {
 
     readState.readStructBegin(proto);
 
-    using apache::thrift::TProtocolException;
+    using apache::thrift::protocol::TProtocolException;
 
     if (UNLIKELY(!readState.advanceToNextField(proto, 0, 1, protocol::T_LIST))) {
         goto _loop;
