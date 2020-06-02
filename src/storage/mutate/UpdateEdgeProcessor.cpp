@@ -376,7 +376,7 @@ cpp2::ErrorCode UpdateEdgeProcessor::checkFilter(const PartitionID partId,
         return it->second;
     };
 
-    if (this->exp_ != nullptr) {
+    if (!resp_.upsert && this->exp_ != nullptr) {
         auto filterResult = this->exp_->eval(getters);
         if (!filterResult.ok()) {
             VLOG(1) << "Invalid filter expression";
