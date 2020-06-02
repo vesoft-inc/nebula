@@ -60,7 +60,7 @@ struct TagContext {
     std::vector<std::pair<TagID, std::vector<PropContext>>> propContexts_;
     std::unordered_map<TagID, size_t> indexMap_;
     std::unordered_map<TagID,
-                    std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>> schemas_;
+                       std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>> schemas_;
     std::unordered_map<TagID, std::pair<std::string, int64_t>> ttlInfo_;
     VertexCache* vertexCache_ = nullptr;
 };
@@ -69,8 +69,11 @@ struct EdgeContext {
     std::vector<std::pair<EdgeType, std::vector<PropContext>>> propContexts_;
     std::unordered_map<EdgeType, size_t> indexMap_;
     std::unordered_map<EdgeType,
-                    std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>> schemas_;
+                       std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>> schemas_;
     std::unordered_map<EdgeType, std::pair<std::string, int64_t>> ttlInfo_;
+    // offset is the start index of first edge type in a response row
+    size_t offset_;
+    size_t statCount_ = 0;
 };
 
 template<typename REQ, typename RESP>
@@ -90,6 +93,17 @@ protected:
 
     virtual cpp2::ErrorCode checkAndBuildContexts(const REQ& req) = 0;
     virtual void onProcessFinished() = 0;
+
+    cpp2::ErrorCode getSpaceVertexSchema();
+    cpp2::ErrorCode getSpaceEdgeSchema();
+
+    // collect tag props need to return
+    cpp2::ErrorCode prepareVertexProps(const std::vector<cpp2::PropExp>& vertexProps,
+                                       std::vector<ReturnProp>& returnProps);
+
+    // collect edge props need to return
+    cpp2::ErrorCode prepareEdgeProps(const std::vector<cpp2::PropExp>& edgeProps,
+                                     std::vector<ReturnProp>& returnProps);
 
     // build tagContexts_ according to return props
     cpp2::ErrorCode handleVertexProps(const std::vector<ReturnProp>& vertexProps);

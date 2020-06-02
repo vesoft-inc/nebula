@@ -676,6 +676,24 @@ TEST(GetNeighborsTest, GoOverAllTest) {
     ASSERT_EQ(true, QueryTestUtils::mockEdgeData(env, totalParts));
 
     {
+        LOG(INFO) << "NoPropertyReturned";
+        std::vector<VertexID> vertices = {"Tim Duncan"};
+        std::vector<EdgeType> over = {};
+        std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+        std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
+        auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges, false);
+        req.edge_direction = cpp2::EdgeDirection::BOTH;
+
+        auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+
+        ASSERT_EQ(0, resp.result.failed_parts.size());
+        // 2 column: vId, stat
+        QueryTestUtils::checkResponse(resp.vertices, vertices, 1, 2);
+    }
+    {
         LOG(INFO) << "GoFromPlayerOverAll";
         std::vector<VertexID> vertices = {"Tim Duncan"};
         std::vector<EdgeType> over = {};

@@ -30,6 +30,8 @@ public:
         addEdgesQpsStat_ = stats::Stats("storage", "add_edges");
         delVerticesQpsStat_ = stats::Stats("storage", "del_vertices");
         delEdgesQpsStat_ = stats::Stats("storage", "del_edges");
+        getNeighborsQpsStat_ = stats::Stats("storage", "get_neighbors");
+        getPropQpsStat_ = stats::Stats("storage", "get_prop");
     }
 
     // Vertice section
@@ -49,6 +51,9 @@ public:
     folly::Future<cpp2::GetNeighborsResponse>
     future_getNeighbors(const cpp2::GetNeighborsRequest& req) override;
 
+    folly::Future<cpp2::GetPropResponse>
+    future_getProps(const cpp2::GetPropRequest& req) override;
+
 private:
     StorageEnv*                                     env_{nullptr};
     VertexCache                                     vertexCache_;
@@ -59,6 +64,7 @@ private:
     stats::Stats                                    delVerticesQpsStat_;
     stats::Stats                                    delEdgesQpsStat_;
     stats::Stats                                    getNeighborsQpsStat_;
+    stats::Stats                                    getPropQpsStat_;
 };
 
 }  // namespace storage

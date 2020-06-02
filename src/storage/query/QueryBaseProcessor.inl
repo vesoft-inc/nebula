@@ -42,6 +42,7 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::handleVertexProps(
                 return cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
             }
 
+            // todo(doodle): perhaps need to dedup here
             PropContext ctx(name.c_str());
             ctx.returned_ = true;
             ctx.field_ = field;
@@ -92,6 +93,7 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::handleEdgeProps(
                 ctx.field_ = field;
             }
             ctx.returned_ = true;
+            // todo(doodle): perhaps need to dedup here
             ctxs.emplace_back(std::move(ctx));
         }
         this->edgeContext_.propContexts_.emplace_back(edgeType, std::move(ctxs));
@@ -161,6 +163,8 @@ std::vector<ReturnProp> QueryBaseProcessor<REQ, RESP>::buildAllTagProps() {
         prop.names_ = std::move(names);
         result.emplace_back(std::move(prop));
     }
+    std::sort(result.begin(), result.end(),
+              [&] (const auto& a, const auto& b) { return a.entryId_ < b.entryId_; });
     return result;
 }
 
@@ -189,8 +193,90 @@ std::vector<ReturnProp> QueryBaseProcessor<REQ, RESP>::buildAllEdgeProps(
         }
         result.emplace_back(std::move(prop));
     }
+    std::sort(result.begin(), result.end(),
+              [&] (const auto& a, const auto& b) { return a.entryId_ < b.entryId_; });
     return result;
 }
+
+template<typename REQ, typename RESP>
+cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::prepareVertexProps(
+        const std::vector<cpp2::PropExp>& vertexProps,
+        std::vector<ReturnProp>& returnProps) {
+    // todo(doodle): wait
+    /*
+    for (auto& vertexProp : vertexProps) {
+        // If there is no property specified, add all property of latest schema to vertexProps
+        if (vertexProp.names.empty()) {
+            auto tagId = vertexProp.tag;
+            auto tagSchema = env_->schemaMan_->getTagSchema(spaceId_, tagId);
+            if (!tagSchema) {
+                VLOG(1) << "Can't find spaceId " << spaceId_ << " tag " << tagId;
+                return cpp2::ErrorCode::E_TAG_NOT_FOUND;
+            }
+
+            auto count = tagSchema->getNumFields();
+            for (size_t i = 0; i < count; i++) {
+                auto name = tagSchema->getFieldName(i);
+                vertexProp.names.emplace_back(std::move(name));
+            }
+        }
+    }
+    */
+    UNUSED(vertexProps);
+    UNUSED(returnProps);
+    return cpp2::ErrorCode::SUCCEEDED;
+}
+
+template <typename REQ, typename RESP>
+cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::prepareEdgeProps(
+        const std::vector<cpp2::PropExp>& edgeProps,
+        std::vector<ReturnProp>& returnProps) {
+    // todo(doodle): wait
+    /*
+    for (auto& edgeProp : edgeProps) {
+        // If there is no property specified, add all property of latest schema to edgeProps
+        if (edgeProp.names.empty()) {
+            auto edgeType = edgeProp.type;
+            auto edgeSchema = env_->schemaMan_->getEdgeSchema(spaceId_, std::abs(edgeType));
+            if (!edgeSchema) {
+                VLOG(1) << "Can't find spaceId " << spaceId_ << " edgeType " << edgeType;
+                return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
+            }
+
+            auto count = edgeSchema->getNumFields();
+            for (size_t i = 0; i < count; i++) {
+                auto name = edgeSchema->getFieldName(i);
+                edgeProp.names.emplace_back(std::move(name));
+            }
+        }
+    }
+    */
+    UNUSED(edgeProps);
+    UNUSED(returnProps);
+    return cpp2::ErrorCode::SUCCEEDED;
+}
+
+template <typename REQ, typename RESP>
+cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::getSpaceVertexSchema() {
+    auto tags = this->env_->schemaMan_->getAllVerTagSchema(spaceId_);
+    if (!tags.ok()) {
+        return cpp2::ErrorCode::E_SPACE_NOT_FOUND;
+    }
+    this->tagContext_.schemas_ = std::move(tags).value();
+    return cpp2::ErrorCode::SUCCEEDED;
+}
+
+template <typename REQ, typename RESP>
+cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::getSpaceEdgeSchema() {
+    auto edges = this->env_->schemaMan_->getAllVerEdgeSchema(spaceId_);
+    if (!edges.ok()) {
+        return cpp2::ErrorCode::E_SPACE_NOT_FOUND;
+    }
+
+    this->edgeContext_.schemas_ = std::move(edges).value();
+    return cpp2::ErrorCode::SUCCEEDED;
+}
+
 
 }  // namespace storage
 }  // namespace nebula

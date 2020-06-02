@@ -23,9 +23,11 @@ namespace storage {
 class StorageCompactionFilter final : public kvstore::KVFilter {
 public:
     StorageCompactionFilter(meta::SchemaManager* schemaMan,
-                            meta::IndexManager* indexMan)
+                            meta::IndexManager* indexMan,
+                            size_t vIdLen)
         : schemaMan_(schemaMan)
-        , indexMan_(indexMan) {
+        , indexMan_(indexMan)
+        , vIdLen_(vIdLen) {
         CHECK_NOTNULL(schemaMan_);
     }
 
@@ -64,19 +66,15 @@ public:
     }
 
     bool schemaValid(GraphSpaceID spaceId, const folly::StringPiece& key) const {
-        // todo(doodle)
-        UNUSED(spaceId);
-        UNUSED(key);
-        /*
-        if (NebulaKeyUtils::isVertex(key)) {
-            auto tagId = NebulaKeyUtils::getTagId(key);
+        if (NebulaKeyUtils::isVertex(vIdLen_, key)) {
+            auto tagId = NebulaKeyUtils::getTagId(vIdLen_, key);
             auto ret = schemaMan_->getLatestTagSchemaVersion(spaceId, tagId);
             if (ret.ok() && ret.value() == -1) {
                 VLOG(3) << "Space " << spaceId << ", Tag " << tagId << " invalid";
                 return false;
             }
-        } else if (NebulaKeyUtils::isEdge(key)) {
-            auto edgeType = NebulaKeyUtils::getEdgeType(key);
+        } else if (NebulaKeyUtils::isEdge(vIdLen_, key)) {
+            auto edgeType = NebulaKeyUtils::getEdgeType(vIdLen_, key);
             if (edgeType < 0) {
                 edgeType = -edgeType;
             }
@@ -86,33 +84,22 @@ public:
                 return false;
             }
         }
-        */
         return true;
     }
 
     bool isInvalidReverseEdgeKey(const folly::StringPiece& key,
                                  const folly::StringPiece& val) const {
-        // todo(doodle)
-        UNUSED(key);
-        UNUSED(val);
-        /*
-        if (NebulaKeyUtils::isEdge(key)) {
-            auto edgeType = NebulaKeyUtils::getEdgeType(key);
+        if (NebulaKeyUtils::isEdge(vIdLen_, key)) {
+            auto edgeType = NebulaKeyUtils::getEdgeType(vIdLen_, key);
             return edgeType < 0 && val.empty();
         }
-        */
         return false;
     }
 
     bool ttlValid(GraphSpaceID spaceId, const folly::StringPiece& key,
                   const folly::StringPiece& val) const {
-        // todo(doodle)
-        UNUSED(spaceId);
-        UNUSED(key);
-        UNUSED(val);
-        /*
-        if (NebulaKeyUtils::isVertex(key)) {
-            auto tagId = NebulaKeyUtils::getTagId(key);
+        if (NebulaKeyUtils::isVertex(vIdLen_, key)) {
+            auto tagId = NebulaKeyUtils::getTagId(vIdLen_, key);
             auto schema = this->schemaMan_->getTagSchema(spaceId, tagId);
             if (!schema) {
                 VLOG(3) << "Space " << spaceId << ", Tag " << tagId << " invalid";
@@ -120,8 +107,8 @@ public:
             }
             auto reader = nebula::RowReader::getTagPropReader(schemaMan_, spaceId, tagId, val);
             return checkDataTtlValid(schema.get(), reader.get());
-        } else if (NebulaKeyUtils::isEdge(key)) {
-            auto edgeType = NebulaKeyUtils::getEdgeType(key);
+        } else if (NebulaKeyUtils::isEdge(vIdLen_, key)) {
+            auto edgeType = NebulaKeyUtils::getEdgeType(vIdLen_, key);
             auto schema = this->schemaMan_->getEdgeSchema(spaceId, std::abs(edgeType));
             if (!schema) {
                 VLOG(3) << "Space " << spaceId << ", EdgeType " << edgeType << " invalid";
@@ -133,7 +120,6 @@ public:
                                                                val);
             return checkDataTtlValid(schema.get(), reader.get());
         }
-        */
         return true;
     }
 
@@ -191,6 +177,7 @@ private:
     mutable std::string lastKeyWithNoVersion_;
     meta::SchemaManager* schemaMan_ = nullptr;
     meta::IndexManager* indexMan_ = nullptr;
+    size_t vIdLen_;
 };
 
 class StorageCompactionFilterFactory final : public kvstore::KVCompactionFilterFactory {
@@ -198,14 +185,15 @@ public:
     StorageCompactionFilterFactory(meta::SchemaManager* schemaMan,
                                    meta::IndexManager* indexMan,
                                    GraphSpaceID spaceId,
+                                   size_t vIdLen,
                                    int32_t customFilterIntervalSecs):
         KVCompactionFilterFactory(spaceId, customFilterIntervalSecs),
         schemaMan_(schemaMan),
-        indexMan_(indexMan) {}
+        indexMan_(indexMan),
+        vIdLen_(vIdLen) {}
 
     std::unique_ptr<kvstore::KVFilter> createKVFilter() override {
-        return std::make_unique<StorageCompactionFilter>(schemaMan_, indexMan_);
-    }
+        return std::make_unique<StorageCompactionFilter>(schemaMan_, indexMan_, vIdLen_); }
 
     const char* Name() const override {
         return "StorageCompactionFilterFactory";
@@ -214,6 +202,7 @@ public:
 private:
     meta::SchemaManager* schemaMan_ = nullptr;
     meta::IndexManager* indexMan_ = nullptr;
+    size_t vIdLen_;
 };
 
 class StorageCompactionFilterFactoryBuilder : public kvstore::CompactionFilterFactoryBuilder {
@@ -227,9 +216,14 @@ public:
 
     std::shared_ptr<kvstore::KVCompactionFilterFactory>
     buildCfFactory(GraphSpaceID spaceId, int32_t customFilterIntervalSecs) override {
+        auto vIdLen = schemaMan_->getSpaceVidLen(spaceId);
+        if (!vIdLen.ok()) {
+            return nullptr;
+        }
         return std::make_shared<StorageCompactionFilterFactory>(schemaMan_,
                                                                 indexMan_,
                                                                 spaceId,
+                                                                vIdLen.value(),
                                                                 customFilterIntervalSecs);
     }
 

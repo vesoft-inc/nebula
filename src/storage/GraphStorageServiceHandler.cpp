@@ -10,6 +10,7 @@
 #include "storage/mutate/DeleteVerticesProcessor.h"
 #include "storage/mutate/DeleteEdgesProcessor.h"
 #include "storage/query/GetNeighborsProcessor.h"
+#include "storage/query/GetPropProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -50,6 +51,12 @@ GraphStorageServiceHandler::future_getNeighbors(const cpp2::GetNeighborsRequest&
     auto* processor = GetNeighborsProcessor::instance(env_,
                                                       &getNeighborsQpsStat_,
                                                       &vertexCache_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::GetPropResponse>
+GraphStorageServiceHandler::future_getProps(const cpp2::GetPropRequest& req) {
+    auto* processor = GetPropProcessor::instance(env_, &getPropQpsStat_, &vertexCache_);
     RETURN_FUTURE(processor);
 }
 

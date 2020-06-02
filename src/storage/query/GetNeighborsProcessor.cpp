@@ -6,9 +6,12 @@
 
 #include "storage/query/GetNeighborsProcessor.h"
 #include "storage/StorageFlags.h"
-#include "storage/exec/FilterNode.h"
+#include "storage/exec/FilterContext.h"
 #include "storage/exec/TagNode.h"
 #include "storage/exec/EdgeNode.h"
+#include "storage/exec/FilterNode.h"
+#include "storage/exec/GetNeighborsNode.h"
+#include "storage/exec/AggregateNode.h"
 
 namespace nebula {
 namespace storage {
@@ -33,6 +36,7 @@ void GetNeighborsProcessor::process(const cpp2::GetNeighborsRequest& req) {
         return;
     }
 
+    auto plan = buildPlan(&resultDataSet_);
     std::unordered_set<PartitionID> failedParts;
     for (const auto& partEntry : req.get_parts()) {
         auto partId = partEntry.first;
@@ -40,23 +44,13 @@ void GetNeighborsProcessor::process(const cpp2::GetNeighborsRequest& req) {
             CHECK_GE(input.columns.size(), 1);
             auto vId = input.columns[0].getStr();
 
-            FilterNode filter;
-            nebula::Row resultRow;
-            // vertexId is the first column
-            resultRow.columns.emplace_back(vId);
-            // reserve second column for stat
-            resultRow.columns.emplace_back(NullType::__NULL__);
-
             // the first column of each row would be the vertex id
-            auto dag = buildDAG(partId, vId, &filter, &resultRow);
-            auto ret = dag->go().get();
+            auto ret = plan.go(partId, vId);
             if (ret != kvstore::ResultCode::SUCCEEDED) {
                 if (failedParts.find(partId) == failedParts.end()) {
                     failedParts.emplace(partId);
                     handleErrorCode(ret, spaceId_, partId);
                 }
-            } else {
-                resultDataSet_.rows.emplace_back(std::move(resultRow));
             }
         }
     }
@@ -64,26 +58,49 @@ void GetNeighborsProcessor::process(const cpp2::GetNeighborsRequest& req) {
     onFinished();
 }
 
-std::unique_ptr<StorageDAG> GetNeighborsProcessor::buildDAG(PartitionID partId,
-                                                            const VertexID& vId,
-                                                            FilterNode* filter,
-                                                            nebula::Row* row) {
-    auto dag = std::make_unique<StorageDAG>();
-    auto tag = std::make_unique<TagNode>(
-            &tagContext_, env_, spaceId_, partId, spaceVidLen_, vId, filter, row);
-    auto tagIdx = dag->addNode(std::move(tag));
-    auto edge = std::make_unique<EdgeTypePrefixScanNode>(
-            &edgeContext_, env_, spaceId_, partId, spaceVidLen_, vId, exp_.get(), filter, row);
-    edge->addDependency(dag->getNode(tagIdx));
-    dag->addNode(std::move(edge));
-    return dag;
+StoragePlan<VertexID> GetNeighborsProcessor::buildPlan(nebula::DataSet* result) {
+    StoragePlan<VertexID> plan;
+    std::vector<TagNode*> tags;
+    for (const auto& tc : tagContext_.propContexts_) {
+        auto tag = std::make_unique<TagNode>(
+                &tagContext_, env_, spaceId_, spaceVidLen_, tc.first, &tc.second);
+        tags.emplace_back(tag.get());
+        plan.addNode(std::move(tag));
+    }
+    std::vector<EdgeNode<VertexID>*> edges;
+    for (const auto& ec : edgeContext_.propContexts_) {
+        auto edge = std::make_unique<EdgeTypePrefixScanNode>(
+                &edgeContext_, env_, spaceId_, spaceVidLen_, ec.first, &ec.second);
+        edges.emplace_back(edge.get());
+        plan.addNode(std::move(edge));
+    }
+    auto filter = std::make_unique<FilterNode>(
+            tags, edges, &tagContext_, &edgeContext_, exp_.get());
+    for (auto* tag : tags) {
+        filter->addDependency(tag);
+    }
+    for (auto* edge : edges) {
+        filter->addDependency(edge);
+    }
+    auto output = std::make_unique<GetNeighborsNode>(filter.get(), &edgeContext_);
+    output->addDependency(filter.get());
+    auto aggrNode = std::make_unique<AggregateNode<VertexID>>(output.get(), result);
+    aggrNode->addDependency(output.get());
+    plan.addNode(std::move(filter));
+    plan.addNode(std::move(output));
+    plan.addNode(std::move(aggrNode));
+    return plan;
 }
 
 cpp2::ErrorCode GetNeighborsProcessor::checkAndBuildContexts(const cpp2::GetNeighborsRequest& req) {
     resultDataSet_.colNames.emplace_back("_vid");
     resultDataSet_.colNames.emplace_back("_stats");
 
-    auto code = getSpaceSchema();
+    auto code = getSpaceVertexSchema();
+    if (code != cpp2::ErrorCode::SUCCEEDED) {
+        return code;
+    }
+    code = getSpaceEdgeSchema();
     if (code != cpp2::ErrorCode::SUCCEEDED) {
         return code;
     }
@@ -102,25 +119,13 @@ cpp2::ErrorCode GetNeighborsProcessor::checkAndBuildContexts(const cpp2::GetNeig
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
-cpp2::ErrorCode GetNeighborsProcessor::getSpaceSchema() {
-    auto tags = env_->schemaMan_->getAllVerTagSchema(spaceId_);
-    if (!tags.ok()) {
-        return cpp2::ErrorCode::E_SPACE_NOT_FOUND;
-    }
-    auto edges = env_->schemaMan_->getAllVerEdgeSchema(spaceId_);
-    if (!edges.ok()) {
-        return cpp2::ErrorCode::E_SPACE_NOT_FOUND;
-    }
-
-    tagContext_.schemas_ = std::move(tags).value();
-    edgeContext_.schemas_ = std::move(edges).value();
-    return cpp2::ErrorCode::SUCCEEDED;
-}
-
 cpp2::ErrorCode GetNeighborsProcessor::buildTagContext(const cpp2::GetNeighborsRequest& req) {
     std::vector<ReturnProp> returnProps;
     if (!req.__isset.vertex_props) {
-        // If no tagId specified, get all property of all tagId in space
+        // If the list is not given, no prop will be returned.
+        return cpp2::ErrorCode::SUCCEEDED;
+    } else if (req.vertex_props.empty()) {
+        // If no prpos specified, get all property of all tagId in space
         returnProps = buildAllTagProps();
     } else {
         auto ret = prepareVertexProps(req.vertex_props, returnProps);
@@ -137,39 +142,14 @@ cpp2::ErrorCode GetNeighborsProcessor::buildTagContext(const cpp2::GetNeighborsR
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
-cpp2::ErrorCode GetNeighborsProcessor::prepareVertexProps(
-        const std::vector<cpp2::PropExp>& vertexProps,
-        std::vector<ReturnProp>& returnProps) {
-    // todo(doodle): wait
-    /*
-    for (auto& vertexProp : vertexProps) {
-        // If there is no property specified, add all property of latest schema to vertexProps
-        if (vertexProp.names.empty()) {
-            auto tagId = vertexProp.tag;
-            auto tagSchema = env_->schemaMan_->getTagSchema(spaceId_, tagId);
-            if (!tagSchema) {
-                VLOG(1) << "Can't find spaceId " << spaceId_ << " tag " << tagId;
-                return cpp2::ErrorCode::E_TAG_NOT_FOUND;
-            }
-
-            auto count = tagSchema->getNumFields();
-            for (size_t i = 0; i < count; i++) {
-                auto name = tagSchema->getFieldName(i);
-                vertexProp.names.emplace_back(std::move(name));
-            }
-        }
-    }
-    */
-    UNUSED(vertexProps);
-    UNUSED(returnProps);
-    return cpp2::ErrorCode::SUCCEEDED;
-}
-
 cpp2::ErrorCode GetNeighborsProcessor::buildEdgeContext(const cpp2::GetNeighborsRequest& req) {
+    edgeContext_.offset_ = tagContext_.propContexts_.size() + 2;
     std::vector<ReturnProp> returnProps;
-    // If no edgeType specified, get all property of all edge type in space
     if (!req.__isset.edge_props) {
-        scanAllEdges_ = true;
+        // If the list is not given, no prop will be returned.
+        return cpp2::ErrorCode::SUCCEEDED;
+    } else if (req.edge_props.empty()) {
+        // If no props specified, get all property of all edge type in space
         returnProps = buildAllEdgeProps(req.edge_direction);
     } else {
         // generate related props if no edge type or property specified
@@ -192,39 +172,12 @@ cpp2::ErrorCode GetNeighborsProcessor::buildEdgeContext(const cpp2::GetNeighbors
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
-cpp2::ErrorCode GetNeighborsProcessor::prepareEdgeProps(const std::vector<cpp2::PropExp>& edgeProps,
-                                                        std::vector<ReturnProp>& returnProps) {
-    // todo(doodle): wait
-    /*
-    for (auto& edgeProp : edgeProps) {
-        // If there is no property specified, add all property of latest schema to edgeProps
-        if (edgeProp.names.empty()) {
-            auto edgeType = edgeProp.type;
-            auto edgeSchema = env_->schemaMan_->getEdgeSchema(spaceId_, std::abs(edgeType));
-            if (!edgeSchema) {
-                VLOG(1) << "Can't find spaceId " << spaceId_ << " edgeType " << edgeType;
-                return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
-            }
-
-            auto count = edgeSchema->getNumFields();
-            for (size_t i = 0; i < count; i++) {
-                auto name = edgeSchema->getFieldName(i);
-                edgeProp.names.emplace_back(std::move(name));
-            }
-        }
-    }
-    */
-    UNUSED(edgeProps);
-    UNUSED(returnProps);
-    return cpp2::ErrorCode::SUCCEEDED;
-}
-
 cpp2::ErrorCode GetNeighborsProcessor::handleEdgeStatProps(
         const std::vector<cpp2::StatProp>& statProps) {
-    statCount_ = statProps.size();
+    edgeContext_.statCount_ = statProps.size();
     // todo(doodle): since we only keep one kind of stat in PropContext, there could be a problem
     // if we specified multiple stat of same prop
-    for (size_t idx = 0; idx < statCount_; idx++) {
+    for (size_t idx = 0; idx < statProps.size(); idx++) {
         // todo(doodle): wait
         /*
         const auto& prop = statProps[idx];

@@ -10,14 +10,15 @@
 #include "common/base/Base.h"
 #include <gtest/gtest_prod.h>
 #include "storage/query/QueryBaseProcessor.h"
-#include "storage/exec/FilterNode.h"
-#include "storage/exec/StorageDAG.h"
+#include "storage/exec/FilterContext.h"
+#include "storage/exec/StoragePlan.h"
 
 namespace nebula {
 namespace storage {
 
 class GetNeighborsProcessor
     : public QueryBaseProcessor<cpp2::GetNeighborsRequest, cpp2::GetNeighborsResponse> {
+    FRIEND_TEST(ScanEdgePropBench, EdgeTypePrefixScanVsVertexPrefixScan);
 
 public:
     static GetNeighborsProcessor* instance(StorageEnv* env,
@@ -35,25 +36,13 @@ protected:
         : QueryBaseProcessor<cpp2::GetNeighborsRequest,
                              cpp2::GetNeighborsResponse>(env, stats, cache) {}
 
-    std::unique_ptr<StorageDAG> buildDAG(PartitionID partId,
-                                         const VertexID& vId,
-                                         FilterNode* filter,
-                                         nebula::Row* row);
+    StoragePlan<VertexID> buildPlan(nebula::DataSet* result);
 
     void onProcessFinished() override;
 
     cpp2::ErrorCode checkAndBuildContexts(const cpp2::GetNeighborsRequest& req) override;
-    cpp2::ErrorCode getSpaceSchema();
     cpp2::ErrorCode buildTagContext(const cpp2::GetNeighborsRequest& req);
     cpp2::ErrorCode buildEdgeContext(const cpp2::GetNeighborsRequest& req);
-
-    // collect tag props need to return
-    cpp2::ErrorCode prepareVertexProps(const std::vector<cpp2::PropExp>& vertexProps,
-                                       std::vector<ReturnProp>& returnProps);
-
-    // collect edge props need to return
-    cpp2::ErrorCode prepareEdgeProps(const std::vector<cpp2::PropExp>& edgeProps,
-                                     std::vector<ReturnProp>& returnProps);
 
     // add PropContext of stat
     cpp2::ErrorCode handleEdgeStatProps(const std::vector<cpp2::StatProp>& statProps);
@@ -62,11 +51,6 @@ protected:
                                          size_t idx,
                                          const cpp2::StatType& statType,
                                          const meta::SchemaProviderIf::Field* field);
-
-private:
-    size_t statCount_ = 0;
-    bool scanAllEdges_ = false;
-    static constexpr size_t kStatReturnIndex_ = 1;
 };
 
 }  // namespace storage

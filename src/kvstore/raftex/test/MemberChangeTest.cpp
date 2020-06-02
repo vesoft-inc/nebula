@@ -59,6 +59,7 @@ TEST(MemberChangeTest, AddRemovePeerTest) {
         LOG(INFO) << "Add the same peer again!";
         auto f = leader->sendCommandAsync(test::encodeAddPeer(allHosts[3]));
         f.wait();
+        sleep(FLAGS_raft_heartbeat_interval_secs);
 
         for (auto& c : copies) {
             CHECK_EQ(3, c->hosts_.size());

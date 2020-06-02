@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef STORAGE_EXEC_SIMPLEDAG_H_
-#define STORAGE_EXEC_SIMPLEDAG_H_
+#ifndef STORAGE_EXEC_STORAGEPLAN_H_
+#define STORAGE_EXEC_STORAGEPLAN_H_
 
 #include "common/base/Base.h"
 #include "storage/exec/RelNode.h"
@@ -17,22 +17,22 @@ namespace storage {
 /*
 Origined from folly::FutureDAG, not thread-safe.
 
-The StorageDAG defines a simple dag, all you need to do is define a RelNode, add it to dag by
-calling addNode, which will return the index of the RelNode in this dag. The denpendencies
-between different nodes is defined by calling addDependency in RelNode.
+The StoragePlan contains a set of RelNode, all you need to do is define a RelNode, add it 
+to plan by calling addNode, which will return the index of the RelNode in this plan.
+The denpendencies between different nodes is defined by calling addDependency in RelNode.
 
-To run the dag, call the go method, you could get the final result.
+To run the plan, call the go method, you could get the final result.
 
-For simplicity, StorageDAG has not detect if has cycle in it for now, user must make sure no cycle
+For simplicity, StoragePlan has not detect if has cycle in it for now, user must make sure no cycle
 dependency in it.
 
 For this version, if there are more than one node depends on the same node, that node will be
 executed **more than once**. If you want to make sure each node would be executed exactly once,
-StorageDAG would be inappropriate. In that case, please refer to the previous implement,
+StoragePlan would be inappropriate. In that case, please refer to the previous implement,
 FutureDAG in StorageDAGBenchmark.cpp
 */
 template<typename T>
-class StorageDAG {
+class StoragePlan {
 public:
     kvstore::ResultCode go(PartitionID partId, const T& input) {
         // find all leaf nodes, and a dummy output node depends on all leaf node.
@@ -71,4 +71,4 @@ private:
 }  // namespace storage
 }  // namespace nebula
 
-#endif  // STORAGE_EXEC_SIMPLEDAG_H_
+#endif  // STORAGE_EXEC_STORAGEPLAN_H_

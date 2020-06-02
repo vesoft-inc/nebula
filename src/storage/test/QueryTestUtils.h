@@ -164,7 +164,8 @@ public:
             const std::vector<VertexID> vertices,
             const std::vector<EdgeType>& over,
             const std::vector<std::pair<TagID, std::vector<std::string>>> tags,
-            const std::vector<std::pair<TagID, std::vector<std::string>>> edges) {
+            const std::vector<std::pair<EdgeType, std::vector<std::string>>> edges,
+            bool returnAllProps = true) {
         std::hash<std::string> hash;
         cpp2::GetNeighborsRequest req;
         req.space_id = 1;
@@ -181,24 +182,14 @@ public:
 
         // todo(doodle): wait
         UNUSED(tags); UNUSED(edges);
-        /*
-        std::vector<cpp2::VertexProp> vertexProps;
-        for (const auto& tagEntry : tags) {
-            cpp2::VertexProp vertexProp;
-            vertexProp.tag = tagEntry.first;
-            vertexProp.names = tagEntry.second;
-            vertexProps.emplace_back(std::move(vertexProp));
+        std::vector<cpp2::PropExp> vertexProps;
+        if (vertexProps.empty() && returnAllProps) {
+            req.set_vertex_props(std::move(vertexProps));
         }
-        req.vertex_props = std::move(vertexProps);
-        std::vector<cpp2::EdgeProp> edgeProps;
-        for (const auto& edgeEntry : edges) {
-            cpp2::EdgeProp edgeProp;
-            edgeProp.type = edgeEntry.first;
-            edgeProp.names = edgeEntry.second;
-            edgeProps.emplace_back(std::move(edgeProp));
+        std::vector<cpp2::PropExp> edgeProps;
+        if (edgeProps.empty() && returnAllProps) {
+            req.set_edge_props(std::move(edgeProps));
         }
-        req.edge_props = std::move(edgeProps);
-        */
         return req;
     }
 
@@ -300,6 +291,7 @@ public:
             }
             return;
         }
+        ASSERT_EQ(props.size(), values.size());
         for (size_t i = 0; i < props.size(); i++) {
             if (props[i] == "name") {
                 ASSERT_EQ(player.name_, values[i].getStr());
@@ -545,9 +537,8 @@ public:
                             mock::MockData::players_.begin(), mock::MockData::players_.end(),
                             [&] (const auto& player) { return player.name_ == vId; });
                     if (iter != mock::MockData::players_.end()) {
-                        auto tagDataSet = row.columns[i].getDataSet();
-                        ASSERT_EQ(1, tagDataSet.rows.size());
-                        checkPlayer(props, *iter, tagDataSet.rows[0].columns);
+                        auto tagCell = row.columns[i].getList();
+                        checkPlayer(props, *iter, tagCell.values);
                     } else {
                         ASSERT_EQ(NullType::__NULL__, row.columns[i].getNull());
                     }
@@ -559,10 +550,9 @@ public:
                                           mock::MockData::teams_.end(),
                                           vId);
                     if (iter != mock::MockData::teams_.end()) {
-                        auto tagDataSet = row.columns[i].getDataSet();
-                        ASSERT_EQ(1, tagDataSet.rows.size());
-                        ASSERT_EQ(1, tagDataSet.rows[0].columns.size());
-                        ASSERT_EQ(*iter, tagDataSet.rows[0].columns[0].getStr());
+                        auto tagCell = row.columns[i].getList();
+                        ASSERT_EQ(1, tagCell.values.size());
+                        ASSERT_EQ(*iter, tagCell.values[0].getStr());
                     } else {
                         ASSERT_EQ(NullType::__NULL__, row.columns[i].getNull());
                     }
@@ -572,10 +562,11 @@ public:
                     // check out edge serve
                     auto iter = mock::MockData::playerServes_.find(vId);
                     if (iter != mock::MockData::playerServes_.end()) {
-                        auto edgeDataSet = row.columns[i].getDataSet();
-                        ASSERT_EQ(iter->second.size(), edgeDataSet.rows.size());
-                        for (const auto& edgeRow : edgeDataSet.rows) {
-                            checkOutServe(entryId, props, iter->second, edgeRow.columns);
+                        auto edgeCell = row.columns[i].getList();
+                        ASSERT_EQ(iter->second.size(), edgeCell.values.size());
+                        for (const auto& edgeRow : edgeCell.values) {
+                            auto& values = edgeRow.getList().values;
+                            checkOutServe(entryId, props, iter->second, values);
                         }
                     } else {
                         ASSERT_EQ(NullType::__NULL__, row.columns[i].getNull());
@@ -586,10 +577,11 @@ public:
                     // check in edge serve
                     auto iter = mock::MockData::teamServes_.find(vId);
                     if (iter != mock::MockData::teamServes_.end()) {
-                        auto edgeDataSet = row.columns[i].getDataSet();
-                        ASSERT_EQ(iter->second.size(), edgeDataSet.rows.size());
-                        for (const auto& edgeRow : edgeDataSet.rows) {
-                            checkInServe(entryId, props, iter->second, edgeRow.columns);
+                        auto edgeCell = row.columns[i].getList();
+                        ASSERT_EQ(iter->second.size(), edgeCell.values.size());
+                        for (const auto& edgeRow : edgeCell.values) {
+                            auto& values = edgeRow.getList().values;
+                            checkInServe(entryId, props, iter->second, values);
                         }
                     } else {
                         ASSERT_EQ(NullType::__NULL__, row.columns[i].getNull());
@@ -605,9 +597,10 @@ public:
                                                         teammate.player2_ == vId;
                                              });
                     if (iter != mock::MockData::teammates_.end()) {
-                        auto edgeDataSet = row.columns[i].getDataSet();
-                        for (const auto& edgeRow : edgeDataSet.rows) {
-                            checkTeammate(entryId, props, edgeRow.columns);
+                        auto edgeCell = row.columns[i].getList();
+                        for (const auto& edgeRow : edgeCell.values) {
+                            auto& values = edgeRow.getList().values;
+                            checkTeammate(entryId, props, values);
                         }
                     } else {
                         ASSERT_EQ(NullType::__NULL__, row.columns[i].getNull());

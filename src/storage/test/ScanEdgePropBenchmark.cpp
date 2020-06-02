@@ -4,13 +4,15 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include <folly/stop_watch.h>
+#include <gtest/gtest.h>
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
-#include "common/time/WallClock.h"
-#include <gtest/gtest.h>
 #include "mock/AdHocSchemaManager.h"
-#include "storage/exec/FilterNode.h"
+#include "storage/exec/AggregateNode.h"
 #include "storage/exec/EdgeNode.h"
+#include "storage/exec/GetNeighborsNode.h"
+#include "storage/query/GetNeighborsProcessor.h"
 #include "storage/test/QueryTestUtils.h"
 
 namespace nebula {
@@ -47,101 +49,124 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
         }
     }
 
+    GetNeighborsNode node;
+    auto prefix = NebulaKeyUtils::edgePrefix(vIdLen, partId, vId, edgeType);
     {
         // mock the process in 1.0, each time we get the schema from SchemaMan
         // (cache in MetaClient), and then collect values
+        nebula::Value result = nebula::List();
+        nebula::List list;
         auto* schemaMan = dynamic_cast<mock::AdHocSchemaManager*>(env->schemaMan_);
-        EdgeTypePrefixScanNode executor(
-            nullptr, env, spaceId, partId, vIdLen, vId, nullptr, nullptr, nullptr);
-        int64_t edgeRowCount = 0;
-        nebula::DataSet dataSet;
-        auto tick = time::WallClock::fastNowInMicroSec();
-        auto retCode = executor.processEdgeProps(edgeType, edgeRowCount,
-            [&executor, schemaMan, spaceId, edgeType, &props, &dataSet]
-            (std::unique_ptr<RowReader>* reader, folly::StringPiece key, folly::StringPiece val)
-            -> kvstore::ResultCode {
-                UNUSED(reader);
-                SchemaVer schemaVer;
-                int32_t readerVer;
-                RowReaderWrapper::getVersions(val, schemaVer, readerVer);
-                auto schema = schemaMan->getEdgeSchemaFromMap(spaceId, edgeType, schemaVer);
-                if (schema == nullptr) {
-                    return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
-                }
-                auto wrapper = std::make_unique<RowReaderWrapper>();
-                if (!wrapper->reset(schema.get(), val, readerVer)) {
-                    return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
-                }
+        std::unique_ptr<kvstore::KVIterator> kvIter;
+        std::unique_ptr<StorageIterator> iter;
+        auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &kvIter);
+        if (ret == kvstore::ResultCode::SUCCEEDED && kvIter && kvIter->valid()) {
+            iter.reset(new SingleEdgeIterator(std::move(kvIter), edgeType, vIdLen));
+        }
+        size_t edgeRowCount = 0;
+        folly::stop_watch<std::chrono::microseconds> watch;
+        for (; iter->valid(); iter->next(), edgeRowCount++) {
+            auto key = iter->key();
+            auto val = iter->val();
+            auto srcId = NebulaKeyUtils::getSrcId(vIdLen, key);
+            auto type = NebulaKeyUtils::getEdgeType(vIdLen, key);
+            auto edgeRank = NebulaKeyUtils::getRank(vIdLen, key);
+            auto dstId = NebulaKeyUtils::getDstId(vIdLen, key);
 
-                return executor.collectEdgeProps(edgeType, wrapper.get(), key, props,
-                                                 dataSet, nullptr);
-            });
-        EXPECT_EQ(retCode, kvstore::ResultCode::SUCCEEDED);
-        auto tock = time::WallClock::fastNowInMicroSec();
+            SchemaVer schemaVer;
+            int32_t readerVer;
+            RowReaderWrapper::getVersions(val, schemaVer, readerVer);
+            auto schema = schemaMan->getEdgeSchemaFromMap(spaceId, edgeType, schemaVer);
+            ASSERT_TRUE(schema != nullptr);
+            auto wrapper = std::make_unique<RowReaderWrapper>();
+            ASSERT_TRUE(wrapper->reset(schema.get(), val, readerVer));
+            auto code = node.collectEdgeProps(srcId, type, edgeRank, dstId,
+                                              wrapper.get(), &props, list);
+            ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
+            result.mutableList().values.emplace_back(std::move(list));
+        }
         LOG(WARNING) << "ProcessEdgeProps with schema from map: process " << edgeRowCount
-                     << " edges takes " << tock - tick << " us.";
+                     << " edges takes " << watch.elapsed().count() << " us.";
     }
     {
         // new edge reader each time
-        EdgeTypePrefixScanNode executor(
-            nullptr, env, spaceId, partId, vIdLen, vId, nullptr, nullptr, nullptr);
-        int64_t edgeRowCount = 0;
-        nebula::DataSet dataSet;
-        auto tick = time::WallClock::fastNowInMicroSec();
-        auto retCode = executor.processEdgeProps(edgeType, edgeRowCount,
-            [&executor, spaceId, edgeType, env, &props, &dataSet]
-            (std::unique_ptr<RowReader>* reader, folly::StringPiece key, folly::StringPiece val)
-            -> kvstore::ResultCode {
-                *reader = RowReader::getEdgePropReader(env->schemaMan_, spaceId,
-                                                       std::abs(edgeType), val);
-                if (!reader) {
-                    return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
-                }
-
-                return executor.collectEdgeProps(edgeType, reader->get(), key, props,
-                                                 dataSet, nullptr);
-            });
-        EXPECT_EQ(retCode, kvstore::ResultCode::SUCCEEDED);
-        auto tock = time::WallClock::fastNowInMicroSec();
+        nebula::Value result = nebula::List();
+        nebula::List list;
+        std::unique_ptr<kvstore::KVIterator> kvIter;
+        std::unique_ptr<StorageIterator> iter;
+        auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &kvIter);
+        if (ret == kvstore::ResultCode::SUCCEEDED && kvIter && kvIter->valid()) {
+            iter.reset(new SingleEdgeIterator(std::move(kvIter), edgeType, vIdLen));
+        }
+        size_t edgeRowCount = 0;
+        std::unique_ptr<RowReader> reader;
+        folly::stop_watch<std::chrono::microseconds> watch;
+        for (; iter->valid(); iter->next(), edgeRowCount++) {
+            auto key = iter->key();
+            auto val = iter->val();
+            auto srcId = NebulaKeyUtils::getSrcId(vIdLen, key);
+            auto type = NebulaKeyUtils::getEdgeType(vIdLen, key);
+            auto edgeRank = NebulaKeyUtils::getRank(vIdLen, key);
+            auto dstId = NebulaKeyUtils::getDstId(vIdLen, key);
+            reader = RowReader::getEdgePropReader(env->schemaMan_, spaceId,
+                                                  std::abs(edgeType), val);
+            ASSERT_TRUE(reader.get() != nullptr);
+            auto code = node.collectEdgeProps(srcId, type, edgeRank, dstId,
+                                              reader.get(), &props, list);
+            ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
+            result.mutableList().values.emplace_back(std::move(list));
+        }
         LOG(WARNING) << "ProcessEdgeProps without reader reset: process " << edgeRowCount
-                     << " edges takes " << tock - tick << " us.";
+                     << " edges takes " << watch.elapsed().count() << " us.";
     }
     {
         // reset edge reader each time instead of new one
-        EdgeTypePrefixScanNode executor(
-            nullptr, env, spaceId, partId, vIdLen, vId, nullptr, nullptr, nullptr);
-        int64_t edgeRowCount = 0;
-        nebula::DataSet dataSet;
-        auto tick = time::WallClock::fastNowInMicroSec();
-        auto retCode = executor.processEdgeProps(edgeType, edgeRowCount,
-            [&executor, spaceId, edgeType, env, &props, &dataSet]
-            (std::unique_ptr<RowReader>* reader, folly::StringPiece key, folly::StringPiece val)
-            -> kvstore::ResultCode {
-                if (reader->get() == nullptr) {
-                    *reader = RowReader::getEdgePropReader(env->schemaMan_, spaceId,
-                                                           std::abs(edgeType), val);
-                    if (!reader) {
-                        return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
-                    }
-                } else if (!(*reader)->resetEdgePropReader(env->schemaMan_, spaceId,
-                                                           std::abs(edgeType), val)) {
-                    return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
-                }
-
-                return executor.collectEdgeProps(edgeType, reader->get(), key, props,
-                                                 dataSet, nullptr);
-            });
-        EXPECT_EQ(retCode, kvstore::ResultCode::SUCCEEDED);
-        auto tock = time::WallClock::fastNowInMicroSec();
+        nebula::Value result = nebula::List();
+        nebula::List list;
+        std::unique_ptr<kvstore::KVIterator> kvIter;
+        std::unique_ptr<StorageIterator> iter;
+        auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &kvIter);
+        if (ret == kvstore::ResultCode::SUCCEEDED && kvIter && kvIter->valid()) {
+            iter.reset(new SingleEdgeIterator(std::move(kvIter), edgeType, vIdLen));
+        }
+        size_t edgeRowCount = 0;
+        std::unique_ptr<RowReader> reader;
+        folly::stop_watch<std::chrono::microseconds> watch;
+        for (; iter->valid(); iter->next(), edgeRowCount++) {
+            auto key = iter->key();
+            auto val = iter->val();
+            auto srcId = NebulaKeyUtils::getSrcId(vIdLen, key);
+            auto type = NebulaKeyUtils::getEdgeType(vIdLen, key);
+            auto edgeRank = NebulaKeyUtils::getRank(vIdLen, key);
+            auto dstId = NebulaKeyUtils::getDstId(vIdLen, key);
+            if (reader.get() == nullptr) {
+                reader = RowReader::getEdgePropReader(env->schemaMan_, spaceId,
+                                                      std::abs(edgeType), val);
+                ASSERT_TRUE(reader.get() != nullptr);
+            } else {
+                ASSERT_TRUE(reader->resetEdgePropReader(env->schemaMan_, spaceId,
+                                                        std::abs(edgeType), val));
+            }
+            auto code = node.collectEdgeProps(srcId, type, edgeRank, dstId,
+                                              reader.get(), &props, list);
+            ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
+            result.mutableList().values.emplace_back(std::move(list));
+        }
         LOG(WARNING) << "ProcessEdgeProps with reader reset: process " << edgeRowCount
-                     << " edges takes " << tock - tick << " us.";
+                     << " edges takes " << watch.elapsed().count() << " us.";
     }
     {
         // use the schema saved in processor
-        EdgeTypePrefixScanNode executor(
-            nullptr, env, spaceId, partId, vIdLen, vId, nullptr, nullptr, nullptr);
-        int64_t edgeRowCount = 0;
-        nebula::DataSet dataSet;
+        nebula::Value result = nebula::List();
+        nebula::List list;
+        std::unique_ptr<kvstore::KVIterator> kvIter;
+        std::unique_ptr<StorageIterator> iter;
+        auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &kvIter);
+        if (ret == kvstore::ResultCode::SUCCEEDED && kvIter && kvIter->valid()) {
+            iter.reset(new SingleEdgeIterator(std::move(kvIter), edgeType, vIdLen));
+        }
+        size_t edgeRowCount = 0;
+        std::unique_ptr<RowReader> reader;
 
         // find all version of edge schema
         auto edges = env->schemaMan_->getAllVerEdgeSchema(spaceId);
@@ -151,31 +176,31 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
         ASSERT_TRUE(edgeIter != edgeSchemas.end());
         const auto& schemas = edgeIter->second;
 
-        auto tick = time::WallClock::fastNowInMicroSec();
-        auto retCode = executor.processEdgeProps(edgeType, edgeRowCount,
-            [&executor, edgeType, &props, &dataSet, &schemas]
-            (std::unique_ptr<RowReader>* reader, folly::StringPiece key, folly::StringPiece val)
-            -> kvstore::ResultCode {
-                if (reader->get() == nullptr) {
-                    *reader = RowReader::getRowReader(schemas, val);
-                    if (!reader) {
-                        return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
-                    }
-                } else if (!(*reader)->reset(schemas, val)) {
-                    return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
-                }
-
-                return executor.collectEdgeProps(edgeType, reader->get(), key, props,
-                                                 dataSet, nullptr);
-            });
-        EXPECT_EQ(retCode, kvstore::ResultCode::SUCCEEDED);
-        auto tock = time::WallClock::fastNowInMicroSec();
+        folly::stop_watch<std::chrono::microseconds> watch;
+        for (; iter->valid(); iter->next(), edgeRowCount++) {
+            auto key = iter->key();
+            auto val = iter->val();
+            auto srcId = NebulaKeyUtils::getSrcId(vIdLen, key);
+            auto type = NebulaKeyUtils::getEdgeType(vIdLen, key);
+            auto edgeRank = NebulaKeyUtils::getRank(vIdLen, key);
+            auto dstId = NebulaKeyUtils::getDstId(vIdLen, key);
+            if (reader.get() == nullptr) {
+                reader = RowReader::getRowReader(schemas, val);
+                ASSERT_TRUE(reader.get() != nullptr);
+            } else {
+                ASSERT_TRUE(reader->reset(schemas, val));
+            }
+            auto code = node.collectEdgeProps(srcId, type, edgeRank, dstId,
+                                              reader.get(), &props, list);
+            ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
+            result.mutableList().values.emplace_back(std::move(list));
+        }
         LOG(WARNING) << "ProcessEdgeProps using local schmeas: process " << edgeRowCount
-                     << " edges takes " << tock - tick << " us.";
+                     << " edges takes " << watch.elapsed().count() << " us.";
     }
 }
 
-TEST_P(ScanEdgePropBench, ScanEdgesVsProcessEdgeProps) {
+TEST_P(ScanEdgePropBench, EdgeTypePrefixScanVsVertexPrefixScan) {
     auto param = GetParam();
     SchemaVer schemaVerCount = param.first;
     EdgeRanking rankCount = param.second;
@@ -217,89 +242,58 @@ TEST_P(ScanEdgePropBench, ScanEdgesVsProcessEdgeProps) {
     }
 
     // find all version of edge schema
-    auto edges = env->schemaMan_->getAllVerEdgeSchema(spaceId);
-    ASSERT_TRUE(edges.ok());
-    EdgeContext ctx;
-    ctx.schemas_ = std::move(edges).value();
-    ctx.propContexts_.emplace_back(serve, serveProps);
-    ctx.propContexts_.emplace_back(teammate, teammateProps);
-    ctx.indexMap_.emplace(serve, 0);
-    ctx.indexMap_.emplace(teammate, 1);
+    auto edgeSchemas = env->schemaMan_->getAllVerEdgeSchema(spaceId);
+    ASSERT_TRUE(edgeSchemas.ok());
+    EdgeContext edgeContext;
+    edgeContext.schemas_ = std::move(edgeSchemas).value();
+    edgeContext.propContexts_.emplace_back(serve, serveProps);
+    edgeContext.propContexts_.emplace_back(teammate, teammateProps);
+    edgeContext.indexMap_.emplace(serve, 0);
+    edgeContext.indexMap_.emplace(teammate, 1);
+    edgeContext.offset_ = 2;
 
     {
-        // scan with vertex prefix
-        FilterNode filter;
-        nebula::Row row;
-        row.columns.emplace_back(vId);
-        row.columns.emplace_back(NullType::__NULL__);
+        // build dag with several EdgeTypePrefixScanNode
+        GetNeighborsProcessor processor(env, nullptr, nullptr);
+        processor.edgeContext_ = edgeContext;
+        processor.spaceId_ = spaceId;
+        processor.spaceVidLen_ = vIdLen;
+        nebula::DataSet result;
+        auto plan = processor.buildPlan(&result);
 
-        VertexPrefixScanNode executor(
-            &ctx, env, spaceId, partId, vIdLen, vId, nullptr, &filter, &row);
-        {
-            auto tick = time::WallClock::fastNowInMicroSec();
-            auto retCode = executor.execute().get();
-            EXPECT_EQ(retCode, kvstore::ResultCode::SUCCEEDED);
-            auto tock = time::WallClock::fastNowInMicroSec();
-            LOG(WARNING) << "ScanEdges using local schmeas: process"
-                         << " edges takes " << tock - tick << " us.";
-        }
+        folly::stop_watch<std::chrono::microseconds> watch;
+        auto code = plan.go(partId, vId);
+        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
+        LOG(WARNING) << "GetNeighbors with EdgeTypePrefixScanNode takes "
+                     << watch.elapsed().count() << " us.";
     }
     {
-        // scan with vertex and edgeType prefix
-        FilterNode filter;
-        nebula::Row row;
-        row.columns.emplace_back(vId);
-        row.columns.emplace_back(NullType::__NULL__);
+        // build dag with one VertexPrefixScanNode
+        nebula::DataSet result;
 
-        EdgeTypePrefixScanNode executor(
-            &ctx, env, spaceId, partId, vIdLen, vId, nullptr, &filter, &row);
-        // find all version of edge schema
-        auto status = env->schemaMan_->getAllVerEdgeSchema(spaceId);
-        ASSERT_TRUE(status.ok());
-        auto edgeSchemas = std::move(status).value();
-        int64_t edgeRowCount = 0;
-
-        auto tick = time::WallClock::fastNowInMicroSec();
-        for (size_t i = 0; i < edgeTypes.size(); i++) {
-            nebula::DataSet dataSet;
-            EdgeType edgeType = edgeTypes[i];
-            auto edgeIter = edgeSchemas.find(std::abs(edgeType));
-            ASSERT_TRUE(edgeIter != edgeSchemas.end());
-            const auto& schemas = edgeIter->second;
-            const auto& props = ctxs[i];
-
-            auto ttl = executor.getEdgeTTLInfo(edgeType);
-            auto retCode = executor.processEdgeProps(edgeType, edgeRowCount,
-                [&executor, edgeType, &props, &dataSet, &schemas, &ttl]
-                (std::unique_ptr<RowReader>* reader, folly::StringPiece key, folly::StringPiece val)
-                -> kvstore::ResultCode {
-                    if (reader->get() == nullptr) {
-                        *reader = RowReader::getRowReader(schemas, val);
-                        if (!reader) {
-                            return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
-                        }
-                    } else if (!(*reader)->reset(schemas, val)) {
-                        return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
-                    }
-
-                    const auto& latestSchema = schemas.back();
-                    if (ttl.has_value() &&
-                        CommonUtils::checkDataExpiredForTTL(latestSchema.get(),
-                                                            reader->get(),
-                                                            ttl.value().first,
-                                                            ttl.value().second)) {
-                        return kvstore::ResultCode::ERR_RESULT_EXPIRED;
-                    }
-
-                    return executor.collectEdgeProps(edgeType, reader->get(), key, props,
-                                                     dataSet, nullptr);
-                });
-            EXPECT_EQ(retCode, kvstore::ResultCode::SUCCEEDED);
-            row.columns.emplace_back(std::move(dataSet));
+        StoragePlan<VertexID> plan;
+        std::vector<TagNode*> tags;
+        std::vector<EdgeNode<VertexID>*> edges;
+        auto edgeNode = std::make_unique<VertexPrefixScanNode>(&edgeContext, env, spaceId, vIdLen);
+        edges.emplace_back(edgeNode.get());
+        plan.addNode(std::move(edgeNode));
+        auto filter = std::make_unique<FilterNode>(tags, edges, nullptr, &edgeContext, nullptr);
+        for (auto* edge : edges) {
+            filter->addDependency(edge);
         }
-        auto tock = time::WallClock::fastNowInMicroSec();
-        LOG(WARNING) << "ProcessEdgeProps using local schmeas: process " << edgeRowCount
-                     << " edges takes " << tock - tick << " us.";
+        auto output = std::make_unique<GetNeighborsNode>(filter.get(), &edgeContext);
+        output->addDependency(filter.get());
+        auto aggrNode = std::make_unique<AggregateNode<VertexID>>(output.get(), &result);
+        aggrNode->addDependency(output.get());
+        plan.addNode(std::move(filter));
+        plan.addNode(std::move(output));
+        plan.addNode(std::move(aggrNode));
+
+        folly::stop_watch<std::chrono::microseconds> watch;
+        auto code = plan.go(partId, vId);
+        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
+        LOG(WARNING) << "GetNeighbors with VertexPrefixScanNode takes "
+                     << watch.elapsed().count() << " us.";
     }
 }
 

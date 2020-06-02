@@ -29,6 +29,5 @@ bool CommonUtils::checkDataExpiredForTTL(const meta::SchemaProviderIf* schema,
     return false;
 }
 
-
 }  // namespace storage
 }  // namespace nebula
