@@ -218,7 +218,7 @@ TEST_F(SchemaTest, TestSpace) {
         std::string query = "SHOW CREATE SPACE default_space";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        createSpaceStr = "CREATE SPACE default_space ("
+        createSpaceStr = "CREATE SPACE `default_space` ("
                          "partition_num = 9, "
                          "replica_factor = 1, "
                          "charset = utf8, "
@@ -588,12 +588,12 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         std::string query = "SHOW CREATE TAG person";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        createTagStr = "CREATE TAG person (\n"
-                       "  name string,\n"
-                       "  email string,\n"
-                       "  age int,\n"
-                       "  gender string,\n"
-                       "  row_timestamp timestamp\n"
+        createTagStr = "CREATE TAG `person` (\n"
+                       "  `name` string,\n"
+                       "  `email` string,\n"
+                       "  `age` int,\n"
+                       "  `gender` string,\n"
+                       "  `row_timestamp` timestamp\n"
                        ") ttl_duration = 0, ttl_col = \"\"";
         std::vector<uniform_tuple_t<std::string, 2>> expected{
             {"person", createTagStr},
@@ -692,13 +692,13 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         std::string query = "SHOW CREATE TAG person";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        createTagStr = "CREATE TAG person (\n"
-                       "  name string,\n"
-                       "  email string,\n"
-                       "  age string,\n"
-                       "  row_timestamp timestamp,\n"
-                       "  col1 int,\n"
-                       "  col2 string\n"
+        createTagStr = "CREATE TAG `person` (\n"
+                       "  `name` string,\n"
+                       "  `email` string,\n"
+                       "  `age` string,\n"
+                       "  `row_timestamp` timestamp,\n"
+                       "  `col1` int,\n"
+                       "  `col2` string\n"
                        ") ttl_duration = 0, ttl_col = \"\"";
         std::vector<uniform_tuple_t<std::string, 2>> expected{
             {"person", createTagStr},
@@ -827,9 +827,9 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         std::string query = "SHOW CREATE EDGE buy";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::string createEdgeStr = "CREATE EDGE buy (\n"
-                                   "  id int,\n"
-                                   "  time string\n"
+        std::string createEdgeStr = "CREATE EDGE `buy` (\n"
+                                   "  `id` int,\n"
+                                   "  `time` string\n"
                                    ") ttl_duration = 0, ttl_col = \"\"";
         std::vector<uniform_tuple_t<std::string, 2>> expected{
             {"buy", createEdgeStr},
@@ -991,10 +991,10 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         std::string query = "SHOW CREATE EDGE education";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        createEdgeStr = "CREATE EDGE education (\n"
-                        "  school int,\n"
-                        "  col1 int,\n"
-                        "  col2 string\n"
+        createEdgeStr = "CREATE EDGE `education` (\n"
+                        "  `school` int,\n"
+                        "  `col1` int,\n"
+                        "  `col2` string\n"
                         ") ttl_duration = 0, ttl_col = \"\"";
         std::vector<uniform_tuple_t<std::string, 2>> expected{
             {"education", createEdgeStr},

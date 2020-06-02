@@ -551,7 +551,7 @@ void ShowExecutor::showCreateSpace() {
 
         std::string buf;
         buf.reserve(256);
-        buf += folly::stringPrintf("CREATE SPACE %s (", properties.get_space_name().c_str());
+        buf += folly::stringPrintf("CREATE SPACE `%s` (", properties.get_space_name().c_str());
         buf += "partition_num = ";
         buf += folly::to<std::string>(properties.get_partition_num());
         buf += ", replica_factor = ";
@@ -609,12 +609,12 @@ void ShowExecutor::showCreateTag() {
 
         std::string buf;
         buf.reserve(256);
-        buf += folly::stringPrintf("CREATE TAG %s (\n", tagName->c_str());
+        buf += folly::stringPrintf("CREATE TAG `%s` (\n", tagName->c_str());
 
         auto schema = resp.value();
         for (auto& column : schema.columns) {
             buf += "  ";
-            buf += column.name;
+            buf += "`" + column.name + "`";
             buf += " ";
             buf += valueTypeToString(column.type);
             if (column.__isset.default_value) {
@@ -707,12 +707,12 @@ void ShowExecutor::showCreateEdge() {
 
         std::string buf;
         buf.reserve(256);
-        buf += folly::stringPrintf("CREATE EDGE %s (\n",  edgeName->c_str());
+        buf += folly::stringPrintf("CREATE EDGE `%s` (\n",  edgeName->c_str());
 
         auto schema = resp.value();
         for (auto& column : schema.columns) {
             buf += "  ";
-            buf += column.name;
+            buf += "`" + column.name + "`";
             buf += " ";
             buf += valueTypeToString(column.type);
             if (column.__isset.default_value) {
