@@ -9,7 +9,7 @@ namespace nebula {
 namespace graph {
 
 TruncateSpaceExecutor::TruncateSpaceExecutor(Sentence *sentence,
-                                         ExecutionContext *ectx)
+                                             ExecutionContext *ectx)
         : Executor(ectx) {
     sentence_ = static_cast<TruncateSpaceSentence*>(sentence);
 }
@@ -86,11 +86,15 @@ void TruncateSpaceExecutor::copySpace() {
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            onError_(Status::Error("Copy space `%s' failed: %s.",
-                                  spaceName_->c_str(), resp.status().toString().c_str()));
+            dropSpace(tempSpaceName_,
+                      true,
+                      Status::Error("Copy space `%s' failed: %s.",
+                                     spaceName_->c_str(), resp.status().toString().c_str()));
             return;
         }
-        dropSpace(*spaceName_, false);
+        dropSpace(*spaceName_,
+                  false,
+                  Status::Error("Drop space `%s' failed.", spaceName_->c_str()));
     };
 
     auto error = [this] (auto &&e) {
@@ -145,42 +149,42 @@ void TruncateSpaceExecutor::renameSpace() {
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
-void TruncateSpaceExecutor::dropSpace(const std::string &spaceName, bool isIfExists) {
-    auto future = ectx()->getMetaClient()->dropSpace(spaceName, isIfExists);
+void TruncateSpaceExecutor::dropSpace(const std::string &spaceName,
+                                      bool isTempSpace,
+                                      Status status) {
+    auto future = ectx()->getMetaClient()->dropSpace(spaceName, isTempSpace);
     auto *runner = ectx()->rctx()->runner();
 
-    auto cb = [spaceName, isIfExists, this] (auto &&resp) {
+    auto cb = [spaceName, isTempSpace, status, this] (auto &&resp) {
         // If drop from_space failed, need to drop the temp_space
         if (!resp.ok()) {
-            if (!isIfExists) {
-                dropSpace(tempSpaceName_, true);
+            if (!isTempSpace) {
+                dropSpace(tempSpaceName_,
+                          true,
+                          Status::Error("Drop space `%s' failed.", spaceName.c_str()));
+            } else {
+                onError_(std::move(resp).status());
             }
-            onError_(std::move(resp).status());
-            return;
-        }
-        auto ret = std::move(resp).value();
-        if (!ret) {
-            if (!isIfExists) {
-                dropSpace(tempSpaceName_, true);
-            }
-            onError_(Status::Error("Drop space `%s' failed.", spaceName.c_str()));
             return;
         }
 
-        if (!isIfExists) {
+        if (!isTempSpace) {
             renameSpace();
         } else {
-            onError_(Status::Error("Drop space `%s' failed.", spaceName.c_str()));
+            onError_(std::move(status));
         }
         return;
     };
 
-    auto error = [spaceName, this] (auto &&e) {
+    auto error = [spaceName, isTempSpace, status, this] (auto &&e) {
         auto msg = folly::stringPrintf("Drop space `%s' exception: %s",
-                                       spaceName.c_str(), e.what().c_str());
+                                        spaceName.c_str(), e.what().c_str());
         LOG(ERROR) << msg;
-        dropSpace(tempSpaceName_, true);
-        onError_(Status::Error(std::move(msg)));
+        if (!isTempSpace) {
+            dropSpace(tempSpaceName_, true, Status::Error(msg));
+        } else {
+            onError_(std::move(status));
+        }
         return;
     };
 

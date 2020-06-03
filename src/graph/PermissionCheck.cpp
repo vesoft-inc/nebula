@@ -48,6 +48,8 @@ bool PermissionCheck::permissionCheck(session::Session *session, Sentence* sente
         }
         case Sentence::Kind::kCreateSpace :
         case Sentence::Kind::kDropSpace :
+        case Sentence::Kind::kRenameSpace :
+        case Sentence::Kind::kTruncateSpace :
         case Sentence::Kind::kCreateSnapshot :
         case Sentence::Kind::kDropSnapshot :
         case Sentence::Kind::kBalance :
@@ -66,7 +68,8 @@ bool PermissionCheck::permissionCheck(session::Session *session, Sentence* sente
         case Sentence::Kind::kCreateTagIndex :
         case Sentence::Kind::kCreateEdgeIndex :
         case Sentence::Kind::kDropTagIndex :
-        case Sentence::Kind::kDropEdgeIndex : {
+        case Sentence::Kind::kDropEdgeIndex :
+        case Sentence::Kind::kCopySchemaFromSpace : {
             return permission::PermissionManager::canWriteSchema(session);
         }
         case Sentence::Kind::kCreateUser :

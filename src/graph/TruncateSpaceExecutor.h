@@ -30,7 +30,7 @@ private:
     void createSpace(const meta::SpaceDesc &spaceDesc);
     void copySpace();
     void renameSpace();
-    void dropSpace(const std::string &spaceName, bool isIfExists);
+    void dropSpace(const std::string &spaceName, bool isTempSpace, Status status);
 
 private:
     TruncateSpaceSentence            *sentence_{nullptr};

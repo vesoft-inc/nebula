@@ -17,9 +17,6 @@ CopySchemaFromSpaceExecutor::CopySchemaFromSpaceExecutor(Sentence *sentence,
 
 Status CopySchemaFromSpaceExecutor::prepare() {
     spaceName_ = sentence_->spaceName();
-    if (spaceName_ == nullptr) {
-        return Status::Error("Empty space name");
-    }
     return Status::OK();
 }
 

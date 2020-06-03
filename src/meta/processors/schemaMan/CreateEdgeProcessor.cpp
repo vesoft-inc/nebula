@@ -13,7 +13,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
     CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
     auto edgeName = req.get_edge_name();
     {
-        // if there is an edge of the same name
+        // if there is an tag of the same name
         // TODO: there exists race condition, we should address it in the future
         folly::SharedMutex::ReadHolder rHolder(LockUtils::tagLock());
         auto conflictRet = getTagId(req.get_space_id(), edgeName);
