@@ -188,7 +188,7 @@ cpp2::ErrorCode UpdateVertexProcessor::checkFilter(const PartitionID partId, con
         return it->second;
     };
 
-    if (this->exp_ != nullptr) {
+    if (!resp_.upsert && this->exp_ != nullptr) {
         auto filterResult = this->exp_->eval(getters);
         if (!filterResult.ok()) {
             return cpp2::ErrorCode::E_INVALID_FILTER;
@@ -396,6 +396,10 @@ cpp2::ErrorCode UpdateVertexProcessor::checkAndBuildContexts(
     if (this->expCtx_->hasDstTagProp() || this->expCtx_->hasEdgeProp()
         || this->expCtx_->hasVariableProp() || this->expCtx_->hasInputProp()) {
         LOG(ERROR) << "should only contain SrcTagProp expression!";
+        return cpp2::ErrorCode::E_INVALID_UPDATER;
+    }
+    if (tagContexts_.size() != 1) {
+        LOG(ERROR) << "should only contain one tag!";
         return cpp2::ErrorCode::E_INVALID_UPDATER;
     }
     return cpp2::ErrorCode::SUCCEEDED;
