@@ -68,6 +68,8 @@ void StatusHandler::onError(ProxygenError error) noexcept {
 folly::dynamic StatusHandler::getStatus() {
     folly::dynamic json = folly::dynamic::object();
     json["status"] = "running";
+    json["version"] = folly::stringPrintf("%s", NEBULA_STRINGIFY(NEBULA_BUILD_VERSION));
+    json["build_time"] folly::stringPrintf("Build Time: %s %s", __DATE__, __TIME__);
     json["git_info_sha"] = NEBULA_STRINGIFY(GIT_INFO_SHA);
     return json;
 }
