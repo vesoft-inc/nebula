@@ -48,7 +48,11 @@ void mockData(kvstore::KVStore* kv) {
                                                     std::numeric_limits<int>::max() - version);
                         RowWriter writer(nullptr);
                         for (uint64_t numInt = 0; numInt < 10; numInt++) {
-                            writer << (dstId + numInt);
+                            if (version == 1) {
+                                writer << std::numeric_limits<int>::max();
+                            } else {
+                                writer << (dstId + numInt);
+                            }
                         }
                         for (int32_t numString = 10; numString < 20; numString++) {
                             writer << folly::stringPrintf("string_col_%d_%ld", numString, version);
@@ -344,31 +348,64 @@ TEST(QueryBoundTest, FilterTest_OnlyEdgeFilter) {
     auto schemaMan = TestUtils::mockSchemaMan();
     mockData(kv.get());
 
-    LOG(INFO) << "Build filter...";
-    auto* edgeProp = new std::string("col_0");
-    auto* alias = new std::string("101");
-    auto* edgeExp = new AliasPropertyExpression(new std::string(""), alias, edgeProp);
-    auto* priExp = new PrimaryExpression(10007L);
-    auto relExp = std::make_unique<RelationalExpression>(edgeExp,
-                                                         RelationalExpression::Operator::GE,
-                                                         priExp);
-    cpp2::GetNeighborsRequest req;
-    std::vector<EdgeType> et = {101};
-    buildRequest(req, et);
-    req.set_filter(Expression::encode(relExp.get()));
-
-    LOG(INFO) << "Test QueryOutBoundRequest...";
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
-    auto* processor = QueryBoundProcessor::instance(kv.get(),
-                                                    schemaMan.get(),
-                                                    nullptr,
-                                                    executor.get());
-    auto f = processor->getFuture();
-    processor->process(req);
-    auto resp = std::move(f).get();
+    {
+        LOG(INFO) << "Build filter...";
+        auto* edgeProp = new std::string("col_0");
+        auto* alias = new std::string("101");
+        auto* edgeExp = new AliasPropertyExpression(new std::string(""), alias, edgeProp);
+        auto* priExp = new PrimaryExpression(10007L);
+        // 101.col_0 > 10007
+        auto relExp = std::make_unique<RelationalExpression>(edgeExp,
+                                                            RelationalExpression::Operator::GE,
+                                                            priExp);
+        cpp2::GetNeighborsRequest req;
+        std::vector<EdgeType> et = {101};
+        buildRequest(req, et);
+        req.set_filter(Expression::encode(relExp.get()));
 
-    LOG(INFO) << "Check the results...";
-    checkResponse(resp, 30, 12, 10007, 1);
+        LOG(INFO) << "Test QueryOutBoundRequest...";
+        auto* processor = QueryBoundProcessor::instance(kv.get(),
+                                                        schemaMan.get(),
+                                                        nullptr,
+                                                        executor.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+
+        LOG(INFO) << "Check the results...";
+        checkResponse(resp, 30, 12, 10007, 1);
+    }
+    {
+        LOG(INFO) << "Build filter...";
+        auto* edgeProp = new std::string("col_10");
+        auto* alias = new std::string("101");
+        auto* edgeExp = new AliasPropertyExpression(new std::string(""), alias, edgeProp);
+        auto* priExp = new PrimaryExpression(std::string("string_col_10_1"));
+        // 101.col_10 == string_col_
+        auto relExp = std::make_unique<RelationalExpression>(edgeExp,
+                                                            RelationalExpression::Operator::EQ,
+                                                            priExp);
+        cpp2::GetNeighborsRequest req;
+        std::vector<EdgeType> et = {101};
+        buildRequest(req, et);
+        req.return_columns.clear();
+        req.return_columns.emplace_back(TestUtils::edgePropDef("col_10", 101));
+        req.set_filter(Expression::encode(relExp.get()));
+
+        LOG(INFO) << "Test QueryOutBoundRequest...";
+        auto* processor = QueryBoundProcessor::instance(kv.get(),
+                                                        schemaMan.get(),
+                                                        nullptr,
+                                                        executor.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+
+        LOG(INFO) << "Check the results...";
+        EXPECT_EQ(0, resp.result.failed_codes.size());
+        EXPECT_EQ(0, resp.vertices.size());
+    }
 }
 
 TEST(QueryBoundTest, FilterTest_OnlyTagFilter) {
@@ -654,6 +691,34 @@ TEST(QueryBoundTest, SamplingTest) {
     FLAGS_max_edge_returned_per_vertex = old_max_edge_returned;
     FLAGS_enable_reservoir_sampling = false;
 }
+
+TEST(QueryBoundTest, TTLTest) {
+    fs::TempDir rootPath("/tmp/QueryEdgePropsTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+
+    LOG(INFO) << "Prepare meta...";
+    auto SchemaMan = TestUtils::mockSchemaWithTTLMan();
+    LOG(INFO) << "Prepare data...";
+    mockData(kv.get());
+    cpp2::GetNeighborsRequest req;
+    std::vector<EdgeType> et = {101};
+    buildRequest(req, et);
+    req.return_columns.clear();
+    req.return_columns.emplace_back(TestUtils::edgePropDef("col_10", 101));
+
+    LOG(INFO) << "Test QueryBoundRequest...";
+    auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
+    auto* processor = QueryBoundProcessor::instance(kv.get(), SchemaMan.get(),
+                                                    nullptr, executor.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    LOG(INFO) << "Check the results...";
+    EXPECT_EQ(0, resp.result.failed_codes.size());
+    EXPECT_EQ(0, resp.vertices.size());
+}
+
 }  // namespace storage
 }  // namespace nebula
 

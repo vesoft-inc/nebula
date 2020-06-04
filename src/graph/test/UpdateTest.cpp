@@ -69,14 +69,14 @@ TEST_P(UpdateUpsertTest, UpdateUpsertVertex) {
     {   // OnlySet
         cpp2::ExecutionResponse resp;
         auto query = GetParam() + " VERTEX 101 "
-                    + "SET course.credits = $^.course.credits + 1, building.name = \"No6\" ";
+                    + "SET course.credits = $^.course.credits + 1";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
         cpp2::ExecutionResponse resp;
         auto query = GetParam() + " VERTEX uuid(\"Math\") "
-                    + "SET course.credits = $^.course.credits + 1, building.name = \"No6\" ";
+                    + "SET course.credits = $^.course.credits + 1";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -85,7 +85,7 @@ TEST_P(UpdateUpsertTest, UpdateUpsertVertex) {
         // https://github.com/vesoft-inc/nebula/issues/1888
         cpp2::ExecutionResponse resp;
         auto query = GetParam() + " VERTEX 101 "
-                    + "SET course.credits = $^.course.credits + 1, building.name = \"No7\" "
+                    + "SET course.credits = $^.course.credits + 1 "
                     + "WHEN $^.course.name == \"English\" && $^.course.credits > 2";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -93,7 +93,7 @@ TEST_P(UpdateUpsertTest, UpdateUpsertVertex) {
     {   // SetFilter
         cpp2::ExecutionResponse resp;
         auto query = GetParam() + " VERTEX 101 "
-                    + "SET course.credits = $^.course.credits + 1, building.name = \"No7\" "
+                    + "SET course.credits = $^.course.credits + 1 "
                     + "WHEN $^.course.name == \"Math\" && $^.course.credits > 2";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -101,7 +101,7 @@ TEST_P(UpdateUpsertTest, UpdateUpsertVertex) {
     {
         cpp2::ExecutionResponse resp;
         auto query = GetParam() + " VERTEX uuid(\"Math\") "
-                    + "SET course.credits = $^.course.credits + 1, building.name = \"No7\" "
+                    + "SET course.credits = $^.course.credits + 1 "
                     + "WHEN $^.course.name == \"Math\" && $^.course.credits > 2";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -109,76 +109,76 @@ TEST_P(UpdateUpsertTest, UpdateUpsertVertex) {
     {   // SetYield
         cpp2::ExecutionResponse resp;
         auto query = GetParam() + " VERTEX 101 "
-                + "SET course.credits = $^.course.credits + 1, building.name = \"No8\" "
-                + "YIELD $^.course.name AS Name, $^.course.credits AS Credits, $^.building.name";
+                + "SET course.credits = $^.course.credits + 1 "
+                + "YIELD $^.course.name AS Name, $^.course.credits AS Credits";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, int64_t, std::string>> expected = {
-            {"Math", 6, "No8"},
+        std::vector<std::tuple<std::string, int64_t>> expected = {
+            {"Math", 6},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     {
         cpp2::ExecutionResponse resp;
         auto query = GetParam() + " VERTEX uuid(\"Math\") "
-                + "SET course.credits = $^.course.credits + 1, building.name = \"No8\" "
-                + "YIELD $^.course.name AS Name, $^.course.credits AS Credits, $^.building.name";
+                + "SET course.credits = $^.course.credits + 1 "
+                + "YIELD $^.course.name AS Name, $^.course.credits AS Credits";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, int64_t, std::string>> expected = {
-            {"Math", 6, "No8"},
+        std::vector<std::tuple<std::string, int64_t>> expected = {
+            {"Math", 6},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     {   // SetFilterYield
         cpp2::ExecutionResponse resp;
         auto query = GetParam() + " VERTEX 101 "
-                + "SET course.credits = $^.course.credits + 1, building.name = \"No9\" "
+                + "SET course.credits = $^.course.credits + 1 "
                 + "WHEN $^.course.name == \"Math\" && $^.course.credits > 2 "
-                + "YIELD $^.course.name AS Name, $^.course.credits AS Credits, $^.building.name";
+                + "YIELD $^.course.name AS Name, $^.course.credits AS Credits";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, int64_t, std::string>> expected = {
-            {"Math", 7, "No9"},
+        std::vector<std::tuple<std::string, int64_t>> expected = {
+            {"Math", 7},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     {
         cpp2::ExecutionResponse resp;
         auto query = GetParam() + " VERTEX uuid(\"Math\") "
-                + "SET course.credits = $^.course.credits + 1, building.name = \"No9\" "
+                + "SET course.credits = $^.course.credits + 1 "
                 + "WHEN $^.course.name == \"Math\" && $^.course.credits > 2 "
-                + "YIELD $^.course.name AS Name, $^.course.credits AS Credits, $^.building.name";
+                + "YIELD $^.course.name AS Name, $^.course.credits AS Credits";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, int64_t, std::string>> expected = {
-            {"Math", 7, "No9"},
+        std::vector<std::tuple<std::string, int64_t>> expected = {
+            {"Math", 7},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     {   // Filter out with Yield
         cpp2::ExecutionResponse resp;
         auto query = GetParam() + " VERTEX 101 "
-                + "SET course.credits = $^.course.credits + 1, building.name = \"No9\" "
+                + "SET course.credits = $^.course.credits + 1 "
                 + "WHEN $^.course.name == \"notexist\" && $^.course.credits > 2 "
-                + "YIELD $^.course.name AS Name, $^.course.credits AS Credits, $^.building.name";
+                + "YIELD $^.course.name AS Name, $^.course.credits AS Credits";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, int64_t, std::string>> expected = {
-            {"Math", 7, "No9"},
+        std::vector<std::tuple<std::string, int64_t>> expected = {
+            {"Math", 7},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     {   // Filter out with Yield
         cpp2::ExecutionResponse resp;
         auto query = GetParam() + " VERTEX uuid(\"Math\") "
-                + "SET course.credits = $^.course.credits + 1, building.name = \"No9\" "
+                + "SET course.credits = $^.course.credits + 1 "
                 + "WHEN $^.course.name == \"notexist\" && $^.course.credits > 2 "
-                + "YIELD $^.course.name AS Name, $^.course.credits AS Credits, $^.building.name";
+                + "YIELD $^.course.name AS Name, $^.course.credits AS Credits";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, int64_t, std::string>> expected = {
-            {"Math", 7, "No9"},
+        std::vector<std::tuple<std::string, int64_t>> expected = {
+            {"Math", 7},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -209,8 +209,8 @@ TEST_P(UpdateUpsertTest, UpdateUpsertEdge) {
         }
         {
             cpp2::ExecutionResponse resp;
-            auto query = "FETCH PROP ON select 200->101@0"
-                        " YIELD select.grade, select.year";
+            auto query = "FETCH PROP ON select 200->101@0 "
+                         "YIELD select.grade, select.year";
             auto code = client_->execute(query, resp);
             ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
             std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
@@ -220,8 +220,8 @@ TEST_P(UpdateUpsertTest, UpdateUpsertEdge) {
         }
         {
             cpp2::ExecutionResponse resp;
-            auto query = "GO FROM 101 OVER select REVERSELY"
-                        " YIELD select.grade, select.year";
+            auto query = "GO FROM 101 OVER select REVERSELY "
+                         "YIELD select.grade, select.year";
             auto code = client_->execute(query, resp);
             ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
             std::vector<std::tuple<int64_t, int64_t>> expected = {
@@ -398,34 +398,77 @@ INSTANTIATE_TEST_CASE_P(updateUpsert, UpdateUpsertTest, ::testing::Values("UPDAT
 
 
 TEST_F(UpsertTest, NotExists) {
-    {   // Insertable: vertex 103 ("CS", 5) --> ("CS", 6, "No10")
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "FETCH PROP ON course 103 YIELD course.name, course.credits";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
+            {103, "CS", 5},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        // note: not allow to handle multi tagid when update
         cpp2::ExecutionResponse resp;
         auto query = "UPSERT VERTEX 103 "
                      "SET course.credits = $^.course.credits + 1, building.name = \"No10\" "
                      "WHEN $^.course.name == \"CS\" && $^.course.credits > 2 "
                      "YIELD $^.course.name AS Name, $^.course.credits AS Credits, $^.building.name";
         auto code = client_->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {   // Insertable: vertex 103 ("CS", 5) --> ("CS", 6)
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT VERTEX 103 "
+                     "SET course.credits = $^.course.credits + 1 "
+                     "WHEN $^.course.name == \"CS\" && $^.course.credits > 2 "
+                     "YIELD $^.course.name AS Name, $^.course.credits AS Credits";
+        auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, int64_t, std::string>> expected = {
-            {"CS", 6, "No10"},
+        std::vector<std::tuple<std::string, int64_t>> expected = {
+            {"CS", 6},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     {
+        // when tag on vertex not exists, update failed
         cpp2::ExecutionResponse resp;
-        auto query = "UPSERT VERTEX uuid(\"CS\") "
-                     "SET course.credits = $^.course.credits + 1, building.name = \"No10\" "
+        auto query = "UPDATE VERTEX 104 "
+                     "SET course.credits = $^.course.credits + 1 "
                      "WHEN $^.course.name == \"CS\" && $^.course.credits > 2 "
-                     "YIELD $^.course.name AS Name, $^.course.credits AS Credits, $^.building.name";
+                     "YIELD $^.course.name AS Name, $^.course.credits AS Credits";
+        auto code = client_->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        // when insert in upsert, filter condition is always true
+        // Insertable: vertex 104 ("", 6)
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT VERTEX 104 "
+                     "SET course.credits = $^.course.credits + 1 "
+                     "WHEN $^.course.name == \"CS\" && $^.course.credits > 2 "
+                     "YIELD $^.course.name AS Name, $^.course.credits AS Credits";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, int64_t, std::string>> expected = {
-            {"CS", 6, "No10"},
+        std::vector<std::tuple<std::string, int64_t>> expected = {
+            {"", 1},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
-
-    {  // Insertable
+    // handle edges
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "FETCH PROP ON select 200->101@0 "
+                     "YIELD select.grade, select.year";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
+            {200, 101, 0, 5, 2018},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {   // Insertable, upsert when edge exists
         cpp2::ExecutionResponse resp;
         auto query = "UPSERT EDGE 201 -> 101@0 OF select "
                      "SET grade = 3, year = 2019 "
@@ -438,16 +481,37 @@ TEST_F(UpsertTest, NotExists) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
-    {
+    {   // update when edge not exists, failed
         cpp2::ExecutionResponse resp;
-        auto query = "UPSERT EDGE uuid(\"Mike\") -> uuid(\"Math\")@0 OF select "
-                     "SET grade = 3, year = 2019 "
-                     "WHEN $^.student.age > 15 && $^.student.gender == \"male\" "
+        auto query = "UPDATE EDGE 601 -> 101@0 OF select "
+                     "SET year = 2019 "
+                     "WHEN select.grade >10 "
+                     "YIELD select.grade AS Grade, select.year AS Year";
+        auto code = client_->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {   // upsert when edge not exists,success
+        // filter condition is always true, insert default value or update value
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT EDGE 601 -> 101@0 OF select "
+                     "SET year = 2019 "
+                     "WHEN select.grade >10 "
                      "YIELD select.grade AS Grade, select.year AS Year";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {3, 2019},
+            {0, 2019},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "FETCH PROP ON select 601->101@0 "
+                     "YIELD select.grade, select.year";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
+            {601, 101, 0, 0, 2019},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
