@@ -101,7 +101,7 @@ AssertionResult UpdateTestBase::prepareSchema() {
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "CREATE TAG student_default(name string, age int, "
-                          "gender string DEFAULT \"one\")";
+                          "gender string DEFAULT \"one\", birthday int DEFAULT 2010)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
             return TestError() << "Do cmd:" << cmd << " failed";
@@ -126,7 +126,8 @@ AssertionResult UpdateTestBase::prepareSchema() {
     // create edge with default value
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "CREATE EDGE select_default(grade int, year int DEFAULT 2020)";
+        std::string cmd = "CREATE EDGE select_default(grade int, "
+                          "year TIMESTAMP DEFAULT 1546308000)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
             return TestError() << "Do cmd:" << cmd << " failed";

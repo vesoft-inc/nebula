@@ -37,8 +37,6 @@ public:
 
     static nebula::cpp2::SupportedType columnTypeToSupportedType(nebula::ColumnType type);
 
-    static StatusOr<int64_t> toTimestamp(const VariantType &value);
-
 private:
     static StatusOr<nebula::cpp2::Value> toDefaultValue(ColumnSpecification* spec);
 };

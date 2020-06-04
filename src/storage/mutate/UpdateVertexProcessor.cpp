@@ -7,6 +7,7 @@
 #include "base/Base.h"
 #include "storage/mutate/UpdateVertexProcessor.h"
 #include "utils/NebulaKeyUtils.h"
+#include "utils/ConvertTimeType.h"
 #include "dataman/RowWriter.h"
 #include "kvstore/LogEncoder.h"
 #include "meta/NebulaSchemaProvider.h"
@@ -159,6 +160,13 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
                 // When the schema field is not in update field
                 // need to get default value from schema. If nonexistent return error.
                 value = schema->getDefaultValue(index);
+                if (!value.ok()) {
+                    LOG(ERROR) << "TagId: " << tagId << ", prop: " << propName
+                               << " without default value";
+                    return kvstore::ResultCode::ERR_UNKNOWN;
+                }
+                auto v = std::move(value.value());
+                tagFilters_.emplace(std::make_pair(tagId, propName), v);
             } else {
                 // When the update item has src item,
                 // need to get default value from schema. If nonexistent return error.
@@ -177,21 +185,23 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
                     return kvstore::ResultCode::ERR_UNKNOWN;
                 }
                 if (expCtx.hasSrcTagProp()) {
-                    value = schema->getDefaultValue(index);
-                    VLOG(2) << "UpdateItem on tagName: " << tagName
-                            << ", propName: " << propName << " has src prop";
+                    auto srcTagProps = expCtx.srcTagProps();
+                    for (auto& tag : srcTagProps) {
+                        value = schema->getDefaultValue(tag.second);
+                        if (!value.ok()) {
+                            LOG(ERROR) << "TagId: " << tagId << ", prop: " << tag.second
+                                       << " without default value";
+                            return kvstore::ResultCode::ERR_UNKNOWN;
+                        }
+                        VLOG(2) << "UpdateItem on tagName: " << tagName
+                                << ", propName: " << tag.second << " has src prop";
+                        auto v = std::move(value.value());
+                        tagFilters_.emplace(std::make_pair(tagId, tag.second), v);
+                    }
                 } else {
                     VLOG(2) << "Nothing set on tagName: " << tagName << ", propName: " << propName;
-                    continue;
                 }
             }
-            if (!value.ok()) {
-                LOG(ERROR) << "TagId: " << tagId << ", prop: " << propName
-                           << " without default value";
-                return kvstore::ResultCode::ERR_UNKNOWN;
-            }
-            auto v = std::move(value.value());
-            tagFilters_.emplace(std::make_pair(tagId, propName), v);
         }
         tagUpdaters_[tagId] = std::make_unique<KeyUpdaterPair>();
         auto& tagUpdater = tagUpdaters_[tagId];
@@ -304,10 +314,11 @@ folly::Optional<std::string> UpdateVertexProcessor::updateAndWriteBack(const Par
         }
         switch (expValue.which()) {
             case VAR_INT64: {
-                if (schema->getFieldType(prop).type != nebula::cpp2::SupportedType::INT) {
+                if (schema->getFieldType(prop).type != nebula::cpp2::SupportedType::INT &&
+                    schema->getFieldType(prop).type != nebula::cpp2::SupportedType::TIMESTAMP) {
                     LOG(ERROR) << "Field: `" << prop << "' type is "
                                << static_cast<int32_t>(schema->getFieldType(prop).type)
-                               << ", not INT type";
+                               << ", not INT type or TIMESTAMP";
                     return folly::none;
                 }
                 auto v = boost::get<int64_t>(expValue);
@@ -337,14 +348,25 @@ folly::Optional<std::string> UpdateVertexProcessor::updateAndWriteBack(const Par
                 break;
             }
             case VAR_STR: {
-                if (schema->getFieldType(prop).type != nebula::cpp2::SupportedType::STRING) {
-                    LOG(ERROR) << "Field: `" << prop << "' type is "
-                               << static_cast<int32_t>(schema->getFieldType(prop).type)
-                               << ", not STRING type";
-                    return folly::none;
-                }
                 auto v = boost::get<std::string>(expValue);
-                tagUpdaters_[tagId]->updater->setString(prop, v);
+                if (schema->getFieldType(prop).type == nebula::cpp2::SupportedType::TIMESTAMP) {
+                    auto timestamp = ConvertTimeType::toTimestamp(v);
+                    if (!timestamp.ok()) {
+                        LOG(ERROR) << "Field: `" << prop
+                                   << " with wrong type: " << timestamp.status();
+                        return folly::none;
+                    }
+                    tagUpdaters_[tagId]->updater->setInt(prop, timestamp.value());
+                    tagFilters_[std::make_pair(tagId, prop)] = timestamp.value();
+                } else {
+                    if (schema->getFieldType(prop).type != nebula::cpp2::SupportedType::STRING) {
+                        LOG(ERROR) << "Field: `" << prop << "' type is "
+                                   << static_cast<int32_t>(schema->getFieldType(prop).type)
+                                   << ", not STRING type";
+                        return folly::none;
+                    }
+                    tagUpdaters_[tagId]->updater->setString(prop, v);
+                }
                 break;
              }
             default: {
@@ -434,7 +456,7 @@ cpp2::ErrorCode UpdateVertexProcessor::checkAndBuildContexts(
     if (!filterStr.empty()) {
         StatusOr<std::unique_ptr<Expression>> expRet = Expression::decode(filterStr);
         if (!expRet.ok()) {
-            VLOG(1) << "Can't decode the filter " << filterStr;
+            LOG(ERROR) << "Can't decode the filter " << filterStr;
             return cpp2::ErrorCode::E_INVALID_FILTER;
         }
         this->exp_ = std::move(expRet).value();
@@ -458,7 +480,7 @@ cpp2::ErrorCode UpdateVertexProcessor::checkAndBuildContexts(
         }
         auto tagRet = this->schemaMan_->toTagID(this->spaceId_, name);
         if (!tagRet.ok()) {
-            VLOG(1) << "Can't find tag " << name << ", in space " << this->spaceId_;
+            LOG(ERROR) << "Can't find tag " << name << ", in space " << this->spaceId_;
             return cpp2::ErrorCode::E_INVALID_UPDATER;
         }
         auto tagId = tagRet.value();
@@ -469,7 +491,7 @@ cpp2::ErrorCode UpdateVertexProcessor::checkAndBuildContexts(
         updateTagIds_.emplace(tagId);
         auto exp = Expression::decode(item.get_value());
         if (!exp.ok()) {
-            VLOG(1) << "Can't decode the item's value " << item.get_value();
+            LOG(ERROR) << "Can't decode the item's value " << item.get_value();
             return cpp2::ErrorCode::E_INVALID_UPDATER;
         }
         auto vexp = std::move(exp).value();

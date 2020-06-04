@@ -6,6 +6,7 @@
 
 #include "storage/mutate/UpdateEdgeProcessor.h"
 #include "utils/NebulaKeyUtils.h"
+#include "utils/ConvertTimeType.h"
 #include "dataman/RowWriter.h"
 #include "kvstore/LogEncoder.h"
 #include "meta/NebulaSchemaProvider.h"
@@ -199,6 +200,13 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
                 // When the schema field is not in update field
                 // need to get default value from schema. If nonexistent return error.
                 value = constSchema->getDefaultValue(index);
+                if (!value.ok()) {
+                    LOG(ERROR) << "EdgeType: " << edgeKey.edge_type
+                               << ", prop: " << propName << " without default value";
+                    return kvstore::ResultCode::ERR_UNKNOWN;
+                }
+                auto v = std::move(value.value());
+                edgeFilters_.emplace(propName, v);
             } else {
                 // When the update item has src item,
                 // need to get default value from schema. If nonexistent return error.
@@ -216,20 +224,22 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
                     return kvstore::ResultCode::ERR_UNKNOWN;
                 }
                 if (expCtx.hasEdgeProp()) {
-                    value = constSchema->getDefaultValue(index);
-                    VLOG(2) << "UpdateItem on propName: " << propName << " has edge prop";
+                    auto aliasProps = expCtx.aliasProps();
+                    for (auto& prop : aliasProps) {
+                        value = constSchema->getDefaultValue(prop.second);
+                        if (!value.ok()) {
+                            LOG(ERROR) << "EdgeType: " << edgeKey.edge_type
+                                       << ", prop: " << prop.second << " without default value";
+                            return kvstore::ResultCode::ERR_UNKNOWN;
+                        }
+                        VLOG(2) << "UpdateItem on propName: " << prop.second << " has edge prop";
+                        auto v = std::move(value.value());
+                        edgeFilters_.emplace(prop.second, v);
+                    }
                 } else {
                     VLOG(2) << "Nothing set on propName: " << propName;
-                    continue;
                 }
             }
-            if (!value.ok()) {
-                LOG(ERROR) << "EdgeType: " << edgeKey.edge_type
-                           << ", prop: " << propName << " without default value";
-                return kvstore::ResultCode::ERR_UNKNOWN;
-            }
-            auto v = std::move(value.value());
-            edgeFilters_.emplace(propName, v);
         }
         updater_ = std::unique_ptr<RowUpdater>(std::move(updater));
     } else {
@@ -290,10 +300,11 @@ folly::Optional<std::string> UpdateEdgeProcessor::updateAndWriteBack(PartitionID
         auto schema = updater_->schema();
         switch (expValue.which()) {
             case VAR_INT64: {
-                if (schema->getFieldType(prop).type != nebula::cpp2::SupportedType::INT) {
+                if (schema->getFieldType(prop).type != nebula::cpp2::SupportedType::INT &&
+                    schema->getFieldType(prop).type != nebula::cpp2::SupportedType::TIMESTAMP) {
                     LOG(ERROR) << "Field: `" << prop << "' type is "
                                << static_cast<int32_t>(schema->getFieldType(prop).type)
-                               << ", not INT type";
+                               << ", not INT type or TIMESTAMP";
                     return folly::none;
                 }
                 auto v = boost::get<int64_t>(expValue);
@@ -323,14 +334,26 @@ folly::Optional<std::string> UpdateEdgeProcessor::updateAndWriteBack(PartitionID
                 break;
             }
             case VAR_STR: {
-                if (schema->getFieldType(prop).type != nebula::cpp2::SupportedType::STRING) {
-                    LOG(ERROR) << "Field: `" << prop << "' type is "
-                               << static_cast<int32_t>(schema->getFieldType(prop).type)
-                               << ", not STRING type";
-                    return folly::none;
-                }
                 auto v = boost::get<std::string>(expValue);
-                updater_->setString(prop, v);
+                if (schema->getFieldType(prop).type == nebula::cpp2::SupportedType::TIMESTAMP) {
+                    auto timestamp = ConvertTimeType::toTimestamp(v);
+                    if (!timestamp.ok()) {
+                        LOG(ERROR) << "Field: `" << prop
+                                   << " with wrong type: " << timestamp.status();
+                        return folly::none;
+                    }
+
+                    updater_->setInt(prop, timestamp.value());
+                    edgeFilters_[prop] = timestamp.value();
+                } else {
+                    if (schema->getFieldType(prop).type != nebula::cpp2::SupportedType::STRING) {
+                        LOG(ERROR) << "Field: `" << prop << "' type is "
+                                   << static_cast<int32_t>(schema->getFieldType(prop).type)
+                                   << ", not STRING type";
+                        return folly::none;
+                    }
+                    updater_->setString(prop, v);
+                }
                 break;
              }
             default: {

@@ -5,6 +5,7 @@
  */
 
 #include "base/Base.h"
+#include "utils/ConvertTimeType.h"
 #include "graph/InsertVertexExecutor.h"
 #include "storage/client/StorageClient.h"
 #include "meta/NebulaSchemaProvider.h"
@@ -189,7 +190,7 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
                 }
 
                 if (schemaType.type == nebula::cpp2::SupportedType::TIMESTAMP) {
-                    auto timestamp = SchemaHelper::toTimestamp(value);
+                    auto timestamp = ConvertTimeType::toTimestamp(value);
                     if (!timestamp.ok()) {
                         return timestamp.status();
                     }

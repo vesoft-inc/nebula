@@ -41,7 +41,7 @@ bool ResultSchemaProvider::ResultSchemaField::isValid() const {
 
 
 bool ResultSchemaProvider::ResultSchemaField::hasDefaultValue() const {
-    if (!isValid() || column_->default_value.getType() == cpp2::Value::Type::__EMPTY__) {
+    if (!isValid() || !column_->__isset.default_value) {
         return false;
     }
     return true;
