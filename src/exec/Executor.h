@@ -11,7 +11,6 @@
 #include <set>
 #include <string>
 #include <vector>
-
 #include <folly/futures/Future.h>
 
 #include "common/base/Status.h"
@@ -22,13 +21,14 @@ namespace nebula {
 namespace graph {
 
 class PlanNode;
+class QueryContext;
 class ExecutionContext;
 
 class Executor : private cpp::NonCopyable, private cpp::NonMovable {
 public:
     // Create executor according to plan node
     static Executor *makeExecutor(const PlanNode *node,
-                                  ExecutionContext *ectx,
+                                  QueryContext *qctx,
                                   std::unordered_map<int64_t, Executor *> *cache);
 
     virtual ~Executor() {}
@@ -36,8 +36,8 @@ public:
     // Implementation interface of operation logic
     virtual folly::Future<Status> execute() = 0;
 
-    ExecutionContext *ectx() const {
-        return ectx_;
+    QueryContext *qctx() const {
+        return qctx_;
     }
 
     int64_t id() const;
@@ -75,7 +75,7 @@ public:
 
 protected:
     // Only allow derived executor to construct
-    Executor(const std::string &name, const PlanNode *node, ExecutionContext *ectx);
+    Executor(const std::string &name, const PlanNode *node, QueryContext *qctx);
 
     // Start a future chain and bind it to thread pool
     folly::Future<Status> start(Status status = Status::OK()) const;
@@ -94,6 +94,7 @@ protected:
     // Relative Plan Node
     const PlanNode *node_;
 
+    QueryContext *qctx_;
     // Execution context for saving some execution data
     ExecutionContext *ectx_;
 

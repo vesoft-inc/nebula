@@ -12,6 +12,7 @@
 #include "common/base/StatusOr.h"
 #include "parser/Clauses.h"
 #include "parser/Sentence.h"
+#include "context/ExpressionContextImpl.h"
 
 namespace nebula {
 
@@ -52,7 +53,8 @@ public:
     }
 
     Value getDefaultValue() const {
-        return defaultValue_->eval();
+        graph::ExpressionContextImpl ctx(nullptr, nullptr);
+        return defaultValue_->eval(ctx);
     }
 
 private:

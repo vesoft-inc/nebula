@@ -19,7 +19,7 @@ Status SequentialValidator::validateImpl() {
     auto seqSentence = static_cast<SequentialSentences*>(sentence_);
     auto sentences = seqSentence->sentences();
     for (auto* sentence : sentences) {
-        auto validator = makeValidator(sentence, validateContext_);
+        auto validator = makeValidator(sentence, qctx_);
         status = validator->validate();
         if (!status.ok()) {
             return status;

@@ -7,7 +7,7 @@
 #include "common/base/Base.h"
 #include "service/QueryEngine.h"
 #include "service/QueryInstance.h"
-#include "service/ExecutionContext.h"
+#include "context/QueryContext.h"
 
 DECLARE_bool(local_config);
 DECLARE_string(meta_server_addrs);
@@ -54,11 +54,11 @@ Status QueryEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor
 }
 
 void QueryEngine::execute(RequestContextPtr rctx) {
-    auto ectx = std::make_unique<ExecutionContext>(std::move(rctx),
-                                                   schemaManager_.get(),
-                                                   storage_.get(),
-                                                   metaClient_.get(),
-                                                   charsetInfo_);
+    auto ectx = std::make_unique<QueryContext>(std::move(rctx),
+                                               schemaManager_.get(),
+                                               storage_.get(),
+                                               metaClient_.get(),
+                                               charsetInfo_);
     auto* instance = new QueryInstance(std::move(ectx));
     instance->execute();
 }

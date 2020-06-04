@@ -4,15 +4,15 @@
 * attached with Common Clause Condition 1.0, found in the LICENSES directory.
 */
 
+#include "validator/AdminValidator.h"
+
 #include "common/base/Base.h"
 #include "common/charset/Charset.h"
-
 #include "util/SchemaUtil.h"
 #include "parser/MaintainSentences.h"
 #include "service/GraphFlags.h"
 #include "planner/Admin.h"
 #include "planner/Query.h"
-#include "validator/AdminValidator.h"
 
 namespace nebula {
 namespace graph {
@@ -22,7 +22,7 @@ Status CreateSpaceValidator::validateImpl() {
     spaceDesc_.spaceName_ = std::move(*(sentence_->spaceName()));
     StatusOr<std::string> retStatusOr;
     std::string result;
-    auto* charsetInfo = validateContext_->getCharsetInfo();
+    auto* charsetInfo = qctx_->getCharsetInfo();
     for (auto &item : sentence_->getOpts()) {
         switch (item->getOptType()) {
             case SpaceOptItem::PARTITION_NUM: {
@@ -103,7 +103,7 @@ Status CreateSpaceValidator::validateImpl() {
 }
 
 Status CreateSpaceValidator::toPlan() {
-    auto* plan = validateContext_->plan();
+    auto* plan = qctx_->plan();
     auto *doNode = CreateSpace::make(plan, spaceDesc_, ifNotExist_);
     root_ = doNode;
     tail_ = root_;
@@ -116,7 +116,7 @@ Status DescSpaceValidator::validateImpl() {
 }
 
 Status DescSpaceValidator::toPlan() {
-    auto* plan = validateContext_->plan();
+    auto* plan = qctx_->plan();
     auto *doNode = DescSpace::make(plan, spaceName_);
     root_ = doNode;
     tail_ = root_;

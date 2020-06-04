@@ -56,5 +56,4 @@ public:
 
 }  // namespace graph
 }  // namespace nebula
-
 #endif  // UTIL_SCHEMAUTIL_H_

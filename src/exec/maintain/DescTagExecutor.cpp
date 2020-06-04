@@ -6,7 +6,7 @@
 
 #include "exec/maintain/DescTagExecutor.h"
 #include "planner/Maintain.h"
-#include "service/ExecutionContext.h"
+#include "context/QueryContext.h"
 #include "util/SchemaUtil.h"
 
 namespace nebula {
@@ -20,7 +20,7 @@ folly::Future<Status> DescTagExecutor::descTag() {
     dumpLog();
 
     auto *dtNode = asNode<DescTag>(node());
-    return ectx()->getMetaClient()->getTagSchema(dtNode->getSpaceId(), dtNode->getName())
+    return qctx()->getMetaClient()->getTagSchema(dtNode->getSpaceId(), dtNode->getName())
             .via(runner())
             .then([this](StatusOr<meta::cpp2::Schema> resp) {
                 if (!resp.ok()) {

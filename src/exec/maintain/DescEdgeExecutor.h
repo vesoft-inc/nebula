@@ -14,8 +14,8 @@ namespace graph {
 
 class DescEdgeExecutor final : public Executor {
 public:
-    DescEdgeExecutor(const PlanNode *node, ExecutionContext *ectx)
-        : Executor("DescEdgeExecutor", node, ectx) {}
+    DescEdgeExecutor(const PlanNode *node, QueryContext *qctx)
+        : Executor("DescEdgeExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 

@@ -10,7 +10,8 @@
 #include "common/base/Base.h"
 #include "validator/Validator.h"
 #include "parser/SequentialSentences.h"
-#include "common/meta/SchemaManager.h"
+#include "service/ClientSession.h"
+#include "context/QueryContext.h"
 
 namespace nebula {
 
@@ -23,26 +24,14 @@ class ExecutionPlan;
 class ASTValidator final {
 public:
     ASTValidator(SequentialSentences* sentences,
-                 ClientSession* session,
-                 meta::SchemaManager* schemaMng,
-                 CharsetInfo* charsetInfo)
-        : sentences_(sentences)
-        , session_(session)
-        , schemaMng_(schemaMng)
-        , charsetInfo_(charsetInfo) {}
+                 QueryContext* qctx)
+        : sentences_(sentences), qctx_(qctx) {}
 
-    Status validate(ExecutionPlan* plan);
-
-    const ValidateContext* context() const {
-        return validateContext_.get();
-    }
+    Status validate();
 
 private:
     SequentialSentences*                sentences_{nullptr};
-    ClientSession*                      session_{nullptr};
-    meta::SchemaManager*                schemaMng_{nullptr};
-    std::unique_ptr<ValidateContext>    validateContext_;
-    CharsetInfo                        *charsetInfo_{nullptr};
+    QueryContext*                       qctx_;
 };
 }  // namespace graph
 }  // namespace nebula

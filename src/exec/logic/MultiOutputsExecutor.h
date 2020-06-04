@@ -19,8 +19,8 @@ namespace graph {
 
 class MultiOutputsExecutor final : public Executor {
 public:
-    MultiOutputsExecutor(const PlanNode *node, ExecutionContext *ectx)
-        : Executor("MultiOutputsExecutor", node, ectx) {}
+    MultiOutputsExecutor(const PlanNode *node, QueryContext* qctx)
+        : Executor("MultiOutputsExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 };

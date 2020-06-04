@@ -12,10 +12,10 @@ namespace nebula {
 namespace graph {
 
 SelectExecutor::SelectExecutor(const PlanNode* node,
-                               ExecutionContext* ectx,
+                               QueryContext* qctx,
                                Executor* then,
                                Executor* els)
-    : Executor("SelectExecutor", node, ectx),
+    : Executor("SelectExecutor", node, qctx),
       then_(DCHECK_NOTNULL(then)),
       else_(DCHECK_NOTNULL(els)) {}
 

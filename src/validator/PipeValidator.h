@@ -15,7 +15,7 @@ namespace graph {
 
 class PipeValidator final : public Validator {
 public:
-    PipeValidator(Sentence* sentence, ValidateContext* context)
+    PipeValidator(Sentence* sentence, QueryContext* context)
         : Validator(sentence, context) {}
 
 private:

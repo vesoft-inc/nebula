@@ -4,14 +4,15 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef VALIDATOR_VALIDATECONTEXT_H_
-#define VALIDATOR_VALIDATECONTEXT_H_
+#ifndef CONTEXT_VALIDATECONTEXT_H_
+#define CONTEXT_VALIDATECONTEXT_H_
 
 #include "common/meta/SchemaManager.h"
-#include "service/ClientSession.h"
 #include "common/datatypes/Value.h"
 #include "common/charset/Charset.h"
+#include "service/ClientSession.h"
 #include "planner/ExecutionPlan.h"
+#include "util/AnnoVarGenerator.h"
 
 namespace nebula {
 namespace graph {
@@ -23,8 +24,13 @@ struct SpaceDescription {
     std::string name;
     GraphSpaceID id;
 };
+
 class ValidateContext final {
 public:
+    ValidateContext() {
+        varGen_ = std::make_unique<AnnoVarGenerator>();
+    }
+
     void switchToSpace(std::string spaceName, GraphSpaceID spaceId) {
         SpaceDescription space;
         space.name = std::move(spaceName);
@@ -36,22 +42,6 @@ public:
         vars_.emplace(std::move(var), std::move(cols));
     }
 
-    void setPlan(ExecutionPlan* plan) {
-        plan_ = plan;
-    }
-
-    void setSession(ClientSession* session) {
-        session_ = session;
-    }
-
-    void setSchemaMng(meta::SchemaManager* schemaMng) {
-        schemaMng_ = schemaMng;
-    }
-
-    void setCharsetInfo(CharsetInfo* charsetInfo) {
-        charsetInfo_ = charsetInfo;
-    }
-
     bool spaceChosen() const {
         return !spaces_.empty();
     }
@@ -60,31 +50,17 @@ public:
         return spaces_.back();
     }
 
-    meta::SchemaManager* schemaMng() const {
-        return schemaMng_;
-    }
-
-    ExecutionPlan* plan() const {
-        return plan_;
-    }
-
-    CharsetInfo* getCharsetInfo() {
-        return charsetInfo_;
-    }
-
-    ClientSession* session() const {
-        return session_;
+    AnnoVarGenerator* varGen() const {
+        return varGen_.get();
     }
 
 private:
-    meta::SchemaManager*                                schemaMng_{nullptr};
-    ClientSession*                                      session_{nullptr};
+    // spaces_ is the trace of space switch
     std::vector<SpaceDescription>                       spaces_;
+    // vars_ saves all named variable
     std::unordered_map<std::string, ColsDef>            vars_;
-    ExecutionPlan*                                      plan_{nullptr};
-    CharsetInfo*                                        charsetInfo_{nullptr};
+    std::unique_ptr<AnnoVarGenerator>                   varGen_;
 };
-
 }  // namespace graph
 }  // namespace nebula
-#endif
+#endif  // CONTEXT_VALIDATECONTEXT_H_

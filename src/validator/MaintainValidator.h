@@ -17,7 +17,7 @@ namespace nebula {
 namespace graph {
 class CreateTagValidator final : public Validator {
 public:
-    CreateTagValidator(Sentence* sentence, ValidateContext* context)
+    CreateTagValidator(Sentence* sentence, QueryContext* context)
     : Validator(sentence, context) {
         sentence_ = static_cast<CreateTagSentence*>(sentence);
     }
@@ -35,7 +35,7 @@ private:
 
 class CreateEdgeValidator final : public Validator {
 public:
-    CreateEdgeValidator(Sentence* sentence, ValidateContext* context)
+    CreateEdgeValidator(Sentence* sentence, QueryContext* context)
     : Validator(sentence, context) {
         sentence_ = static_cast<CreateEdgeSentence*>(sentence);
     }
@@ -53,7 +53,7 @@ private:
 
 class DescTagValidator final : public Validator {
 public:
-    DescTagValidator(Sentence* sentence, ValidateContext* context)
+    DescTagValidator(Sentence* sentence, QueryContext* context)
             : Validator(sentence, context) {
         sentence_ = static_cast<DescribeTagSentence*>(sentence);
     }
@@ -70,7 +70,7 @@ private:
 
 class DescEdgeValidator final : public Validator {
 public:
-    DescEdgeValidator(Sentence* sentence, ValidateContext* context)
+    DescEdgeValidator(Sentence* sentence, QueryContext* context)
             : Validator(sentence, context) {
         sentence_ = static_cast<DescribeEdgeSentence*>(sentence);
     }

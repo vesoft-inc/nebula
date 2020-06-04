@@ -14,8 +14,8 @@ namespace graph {
 
 class CreateEdgeExecutor final : public Executor {
 public:
-    CreateEdgeExecutor(const PlanNode *node, ExecutionContext *ectx)
-        : Executor("CreateEdgeExecutor", node, ectx) {}
+    CreateEdgeExecutor(const PlanNode *node, QueryContext *qctx)
+        : Executor("CreateEdgeExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 

@@ -6,7 +6,7 @@
 
 #include "exec/maintain/CreateEdgeExecutor.h"
 #include "planner/Maintain.h"
-#include "service/ExecutionContext.h"
+#include "context/QueryContext.h"
 
 namespace nebula {
 namespace graph {
@@ -19,7 +19,7 @@ folly::Future<Status> CreateEdgeExecutor::createEdge() {
     dumpLog();
 
     auto *ceNode = asNode<CreateEdge>(node());
-    return ectx()->getMetaClient()->createEdgeSchema(ceNode->space(),
+    return qctx()->getMetaClient()->createEdgeSchema(ceNode->space(),
             ceNode->getName(), ceNode->getSchema(), ceNode->getIfNotExists())
         .via(runner())
         .then([](StatusOr<bool> resp) {

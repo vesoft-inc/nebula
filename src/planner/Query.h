@@ -47,6 +47,14 @@ public:
         input_ = input;
     }
 
+    void setInputVar(std::string inputVar) {
+        inputVar_ = std::move(inputVar);
+    }
+
+    const std::string& inputVar() const {
+        return inputVar_;
+    }
+
     std::string explain() const override {
         return "";
     }
@@ -58,6 +66,8 @@ protected:
     }
 
     PlanNode* input_{nullptr};
+    // Datasource for this node.
+    std::string inputVar_;
 };
 
 class BiInputNode : public PlanNode {
@@ -70,12 +80,28 @@ public:
         right_ = right;
     }
 
+    void setLeftVar(std::string leftVar) {
+        leftVar_ = std::move(leftVar);
+    }
+
+    void setRightVar(std::string rightVar) {
+        rightVar_ = std::move(rightVar);
+    }
+
     PlanNode* left() const {
         return left_;
     }
 
     PlanNode* right() const {
         return right_;
+    }
+
+    const std::string& leftInputVar() const {
+        return leftVar_;
+    }
+
+    const std::string& rightInputVar() const {
+        return rightVar_;
     }
 
     std::string explain() const override {
@@ -91,6 +117,9 @@ protected:
 
     PlanNode* left_{nullptr};
     PlanNode* right_{nullptr};
+    // Datasource for this node.
+    std::string leftVar_;
+    std::string rightVar_;
 };
 
 /**
@@ -175,7 +204,6 @@ public:
     static GetNeighbors* make(ExecutionPlan* plan,
                               PlanNode* input,
                               GraphSpaceID space,
-                              std::vector<Row> vertices,
                               Expression* src,
                               std::vector<EdgeType> edgeTypes,
                               storage::cpp2::EdgeDirection edgeDirection,
@@ -190,7 +218,6 @@ public:
                 plan,
                 input,
                 space,
-                std::move(vertices),
                 src,
                 std::move(edgeTypes),
                 edgeDirection,
@@ -207,10 +234,6 @@ public:
 
     Expression* src() const {
         return src_;
-    }
-
-    const std::vector<Row>& vertices() const {
-        return vertices_;
     }
 
     storage::cpp2::EdgeDirection edgeDirection() const {
@@ -237,7 +260,6 @@ private:
     GetNeighbors(ExecutionPlan* plan,
                  PlanNode* input,
                  GraphSpaceID space,
-                 std::vector<Row> vertices,
                  Expression* src,
                  std::vector<EdgeType> edgeTypes,
                  storage::cpp2::EdgeDirection edgeDirection,
@@ -256,7 +278,6 @@ private:
                   limit,
                   std::move(filter),
                   std::move(orderBy)) {
-        vertices_ = std::move(vertices);
         src_ = src;
         edgeTypes_ = std::move(edgeTypes);
         edgeDirection_ = edgeDirection;
@@ -266,9 +287,6 @@ private:
     }
 
 private:
-    // vertices are parsing from query.
-    std::vector<Row>                             vertices_;
-    // vertices may be parsing from runtime.
     Expression*                                  src_{nullptr};
     std::vector<EdgeType>                        edgeTypes_;
     storage::cpp2::EdgeDirection                 edgeDirection_;

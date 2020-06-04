@@ -10,19 +10,20 @@
 #include "common/base/Base.h"
 #include "planner/ExecutionPlan.h"
 #include "parser/Sentence.h"
-#include "validator/ValidateContext.h"
+#include "context/ValidateContext.h"
+#include "context/QueryContext.h"
 
 namespace nebula {
 namespace graph {
 class Validator {
 public:
-    Validator(Sentence* sentence, ValidateContext* context)
-        : sentence_(sentence), validateContext_(context) {}
+    Validator(Sentence* sentence, QueryContext* qctx)
+        : sentence_(sentence), qctx_(qctx), vctx_(qctx->vctx()) {}
 
     virtual ~Validator() = default;
 
     static std::unique_ptr<Validator> makeValidator(Sentence* sentence,
-                                                    ValidateContext* context);
+                                                    QueryContext* context);
 
     static Status appendPlan(PlanNode* plan, PlanNode* appended);
 
@@ -70,7 +71,8 @@ protected:
 
 protected:
     Sentence*                       sentence_{nullptr};
-    ValidateContext*                validateContext_{nullptr};
+    QueryContext*                   qctx_{nullptr};
+    ValidateContext*                vctx_{nullptr};
     PlanNode*                       root_{nullptr};
     PlanNode*                       tail_{nullptr};
     ColsDef                         outputs_;

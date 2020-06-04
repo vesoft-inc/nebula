@@ -20,8 +20,8 @@ namespace graph {
 
 class GetNeighborsExecutor final : public Executor {
 public:
-    GetNeighborsExecutor(const PlanNode *node, ExecutionContext *ectx)
-        : Executor("GetNeighborsExecutor", node, ectx) {}
+    GetNeighborsExecutor(const PlanNode *node, QueryContext *qctx)
+        : Executor("GetNeighborsExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 

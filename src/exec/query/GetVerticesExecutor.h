@@ -14,8 +14,8 @@ namespace graph {
 
 class GetVerticesExecutor final : public Executor {
 public:
-    GetVerticesExecutor(const PlanNode *node, ExecutionContext *ectx)
-        : Executor("GetVerticesExecutor", node, ectx) {}
+    GetVerticesExecutor(const PlanNode *node, QueryContext *qctx)
+        : Executor("GetVerticesExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 

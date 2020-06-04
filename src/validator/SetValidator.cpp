@@ -11,12 +11,12 @@ namespace nebula {
 namespace graph {
 Status SetValidator::validateImpl() {
     auto setSentence = static_cast<SetSentence*>(sentence_);
-    lValidator_ = makeValidator(setSentence->left(), validateContext_);
+    lValidator_ = makeValidator(setSentence->left(), qctx_);
     auto status = lValidator_->validate();
     if (!status.ok()) {
         return status;
     }
-    rValidator_ = makeValidator(setSentence->right(), validateContext_);
+    rValidator_ = makeValidator(setSentence->right(), qctx_);
     status = rValidator_->validate();
     if (!status.ok()) {
         return status;
@@ -33,7 +33,7 @@ Status SetValidator::validateImpl() {
 }
 
 Status SetValidator::toPlan() {
-    auto* plan = validateContext_->plan();
+    auto* plan = qctx_->plan();
     switch (op_) {
         case SetSentence::Operator::UNION: {
             auto unionOp = Union::make(

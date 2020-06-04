@@ -10,15 +10,14 @@
 
 #include "common/interface/gen-cpp2/common_types.h"
 #include "planner/Query.h"
-#include "service/ExecutionContext.h"
 
 using folly::stringPrintf;
 
 namespace nebula {
 namespace graph {
 
-LoopExecutor::LoopExecutor(const PlanNode *node, ExecutionContext *ectx, Executor *body)
-    : Executor("LoopExecutor", node, ectx), body_(DCHECK_NOTNULL(body)) {}
+LoopExecutor::LoopExecutor(const PlanNode *node, QueryContext* qctx, Executor *body)
+    : Executor("LoopExecutor", node, qctx), body_(DCHECK_NOTNULL(body)) {}
 
 folly::Future<Status> LoopExecutor::execute() {
     dumpLog();

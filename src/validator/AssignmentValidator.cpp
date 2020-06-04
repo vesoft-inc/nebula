@@ -5,6 +5,7 @@
  */
 
 #include "validator/AssignmentValidator.h"
+
 #include "parser/TraverseSentences.h"
 #include "planner/Query.h"
 
@@ -12,7 +13,7 @@ namespace nebula {
 namespace graph {
 Status AssignmentValidator::validateImpl() {
     auto* assignSentence = static_cast<AssignmentSentence*>(sentence_);
-    validator_ = makeValidator(assignSentence->sentence(), validateContext_);
+    validator_ = makeValidator(assignSentence->sentence(), qctx_);
     auto status = validator_->validate();
     if (!status.ok()) {
         return status;
@@ -20,7 +21,7 @@ Status AssignmentValidator::validateImpl() {
 
     auto outputs = validator_->outputs();
     var_ = *assignSentence->var();
-    validateContext_->registerVariable(var_, std::move(outputs));
+    vctx_->registerVariable(var_, std::move(outputs));
     return Status::OK();
 }
 

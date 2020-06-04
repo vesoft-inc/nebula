@@ -5,10 +5,11 @@
  */
 
 #include "exec/mutate/InsertVerticesExecutor.h"
-#include "planner/Mutate.h"
-#include "service/ExecutionContext.h"
+
 #include "common/clients/storage/GraphStorageClient.h"
 
+#include "planner/Mutate.h"
+#include "context/QueryContext.h"
 
 namespace nebula {
 namespace graph {
@@ -21,7 +22,7 @@ folly::Future<Status> InsertVerticesExecutor::insertVertices() {
     dumpLog();
 
     auto *ivNode = asNode<InsertVertices>(node());
-    return ectx()->getStorageClient()->addVertices(ivNode->space(),
+    return qctx()->getStorageClient()->addVertices(ivNode->space(),
             ivNode->getVertices(), ivNode->getPropNames(), ivNode->getOverwritable())
         .via(runner())
         .then([this](storage::StorageRpcResponse<storage::cpp2::ExecResponse> resp) {

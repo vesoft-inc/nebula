@@ -15,7 +15,7 @@ namespace nebula {
 namespace graph {
 class InsertVerticesValidator final : public Validator {
 public:
-    InsertVerticesValidator(Sentence* sentence, ValidateContext* context)
+    InsertVerticesValidator(Sentence* sentence, QueryContext* context)
     : Validator(sentence, context) {
         sentence_ = static_cast<InsertVerticesSentence*>(sentence);
     }
@@ -42,7 +42,7 @@ private:
 
 class InsertEdgesValidator final : public Validator {
 public:
-    InsertEdgesValidator(Sentence* sentence, ValidateContext* context)
+    InsertEdgesValidator(Sentence* sentence, QueryContext* context)
             : Validator(sentence, context) {
         sentence_ = static_cast<InsertEdgesSentence*>(sentence);
     }

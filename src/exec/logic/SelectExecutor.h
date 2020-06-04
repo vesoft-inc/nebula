@@ -14,7 +14,7 @@ namespace graph {
 
 class SelectExecutor final : public Executor {
 public:
-    SelectExecutor(const PlanNode* node, ExecutionContext* ectx, Executor* then, Executor* els);
+    SelectExecutor(const PlanNode* node, QueryContext* qctx, Executor* then, Executor* els);
 
     folly::Future<Status> execute() override;
 

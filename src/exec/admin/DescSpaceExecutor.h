@@ -14,8 +14,8 @@ namespace graph {
 
 class DescSpaceExecutor final : public Executor {
 public:
-    DescSpaceExecutor(const PlanNode *node, ExecutionContext *ectx)
-        : Executor("DescSpaceExecutor", node, ectx) {}
+    DescSpaceExecutor(const PlanNode *node, QueryContext *qctx)
+        : Executor("DescSpaceExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 

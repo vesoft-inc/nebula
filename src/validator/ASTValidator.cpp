@@ -11,21 +11,14 @@
 namespace nebula {
 namespace graph {
 
-Status ASTValidator::validate(ExecutionPlan* plan) {
-    // CHECK(!!session_);
-    // CHECK(!!schemaMng_);
-    validateContext_ = std::make_unique<ValidateContext>();
-    validateContext_->setPlan(plan);
-    validateContext_->setSession(session_);
-    validateContext_->setSchemaMng(schemaMng_);
-    validateContext_->setCharsetInfo(charsetInfo_);
-
+Status ASTValidator::validate() {
     // Check if space chosen from session. if chosen, add it to context.
-    if (session_->space() > -1) {
-        validateContext_->switchToSpace(session_->spaceName(), session_->space());
+    auto session = qctx_->rctx()->session();
+    if (session->space() > -1) {
+        qctx_->vctx()->switchToSpace(session->spaceName(), session->space());
     }
 
-    auto validator = Validator::makeValidator(sentences_, validateContext_.get());
+    auto validator = Validator::makeValidator(sentences_, qctx_);
     auto status = validator->validate();
     if (!status.ok()) {
         return status;
@@ -36,7 +29,7 @@ Status ASTValidator::validate(ExecutionPlan* plan) {
         return Status::Error("Get null plan from sequantial validator.");
     }
 
-    plan->setRoot(root);
+    qctx_->plan()->setRoot(root);
     return Status::OK();
 }
 

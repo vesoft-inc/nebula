@@ -6,7 +6,7 @@
 
 #include "exec/maintain/CreateTagExecutor.h"
 #include "planner/Maintain.h"
-#include "service/ExecutionContext.h"
+#include "context/QueryContext.h"
 
 namespace nebula {
 namespace graph {
@@ -19,7 +19,7 @@ folly::Future<Status> CreateTagExecutor::createTag() {
     dumpLog();
 
     auto *ctNode = asNode<CreateTag>(node());
-    return ectx()->getMetaClient()->createTagSchema(ctNode->space(),
+    return qctx()->getMetaClient()->createTagSchema(ctNode->space(),
             ctNode->getName(), ctNode->getSchema(), ctNode->getIfNotExists())
         .via(runner())
         .then([](StatusOr<bool> resp) {

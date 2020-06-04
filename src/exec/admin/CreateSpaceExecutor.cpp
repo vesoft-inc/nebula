@@ -6,7 +6,7 @@
 
 #include "exec/admin/CreateSpaceExecutor.h"
 #include "planner/Admin.h"
-#include "service/ExecutionContext.h"
+#include "context/QueryContext.h"
 
 namespace nebula {
 namespace graph {
@@ -19,7 +19,7 @@ folly::Future<Status> CreateSpaceExecutor::createSpace() {
     dumpLog();
 
     auto *csNode = asNode<CreateSpace>(node());
-    return ectx()->getMetaClient()->createSpace(csNode->getSpaceDesc(), csNode->getIfNotExists())
+    return qctx()->getMetaClient()->createSpace(csNode->getSpaceDesc(), csNode->getIfNotExists())
         .via(runner())
         .then([](StatusOr<bool> resp) {
             if (!resp.ok()) {

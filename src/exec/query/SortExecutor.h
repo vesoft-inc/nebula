@@ -14,8 +14,8 @@ namespace graph {
 
 class SortExecutor final : public Executor {
 public:
-    SortExecutor(const PlanNode *node, ExecutionContext *ectx)
-        : Executor("SortExecutor", node, ectx) {}
+    SortExecutor(const PlanNode *node, QueryContext *qctx)
+        : Executor("SortExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 };

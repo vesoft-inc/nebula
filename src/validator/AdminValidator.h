@@ -17,7 +17,7 @@ namespace nebula {
 namespace graph {
 class CreateSpaceValidator final : public Validator {
 public:
-    CreateSpaceValidator(Sentence* sentence, ValidateContext* context)
+    CreateSpaceValidator(Sentence* sentence, QueryContext* context)
             : Validator(sentence, context) {
         sentence_ = static_cast<CreateSpaceSentence*>(sentence);
         setNoSpaceRequired();
@@ -36,7 +36,7 @@ private:
 
 class DescSpaceValidator final : public Validator {
 public:
-    DescSpaceValidator(Sentence* sentence, ValidateContext* context)
+    DescSpaceValidator(Sentence* sentence, QueryContext* context)
             : Validator(sentence, context) {
         sentence_ = static_cast<DescribeSpaceSentence*>(sentence);
         setNoSpaceRequired();

@@ -14,8 +14,8 @@ namespace graph {
 
 class InsertVerticesExecutor final : public Executor {
 public:
-    InsertVerticesExecutor(const PlanNode *node, ExecutionContext *ectx)
-        : Executor("InsertVerticesExecutor", node, ectx) {}
+    InsertVerticesExecutor(const PlanNode *node, QueryContext *qctx)
+        : Executor("InsertVerticesExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 

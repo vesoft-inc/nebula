@@ -6,11 +6,10 @@
 
 #include "exec/query/GetVerticesExecutor.h"
 
-// common
 #include "common/clients/storage/GraphStorageClient.h"
-// graph
+
 #include "planner/Query.h"
-#include "service/ExecutionContext.h"
+#include "context/QueryContext.h"
 
 using nebula::storage::GraphStorageClient;
 using nebula::storage::StorageRpcResponse;
@@ -36,7 +35,7 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
     // std::vector<VertexID> vertices;
     // // TODO(yee): compute vertices by evaluate expression
 
-    // GraphStorageClient *storageClient_ = ectx()->getStorageClient();
+    // GraphStorageClient *storageClient_ = ectx_->getStorageClient();
 
     // return storageClient_->getVertexProps(gv->space(), vertices, gv->props(), gv->filter())
     //     .via(runner())

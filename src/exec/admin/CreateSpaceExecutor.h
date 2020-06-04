@@ -14,8 +14,8 @@ namespace graph {
 
 class CreateSpaceExecutor final : public Executor {
 public:
-    CreateSpaceExecutor(const PlanNode *node, ExecutionContext *ectx)
-        : Executor("CreateSpaceExecutor", node, ectx) {}
+    CreateSpaceExecutor(const PlanNode *node, QueryContext *qctx)
+        : Executor("CreateSpaceExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 

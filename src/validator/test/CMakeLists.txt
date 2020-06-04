@@ -4,7 +4,7 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
 set(VALIDATOR_TEST_LIBS
-    $<TARGET_OBJECTS:util_obj>
+    $<TARGET_OBJECTS:schema_util_obj>
     $<TARGET_OBJECTS:validator_obj>
     $<TARGET_OBJECTS:planner_obj>
     $<TARGET_OBJECTS:session_obj>
@@ -12,6 +12,8 @@ set(VALIDATOR_TEST_LIBS
     $<TARGET_OBJECTS:graph_flags_obj>
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:schedule_obj>
+    $<TARGET_OBJECTS:idgenerator_obj>
+    $<TARGET_OBJECTS:context_obj>
     $<TARGET_OBJECTS:common_expression_obj>
     $<TARGET_OBJECTS:common_network_obj>
     $<TARGET_OBJECTS:common_fs_obj>

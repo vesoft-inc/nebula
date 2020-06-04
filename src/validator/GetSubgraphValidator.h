@@ -10,11 +10,12 @@
 #include "common/base/Base.h"
 #include "validator/Validator.h"
 #include "parser/Clauses.h"
+
 namespace nebula {
 namespace graph {
 class GetSubgraphValidator final : public Validator {
 public:
-    GetSubgraphValidator(Sentence* sentence, ValidateContext* context)
+    GetSubgraphValidator(Sentence* sentence, QueryContext* context)
         : Validator(sentence, context) {}
 
 private:
@@ -31,9 +32,10 @@ private:
     Status validateOutBound(OutBoundClause* out);
 
     Status validateBothInOutBound(BothInOutClause* out);
+
 private:
     uint32_t                                    steps_{1};
-    std::vector<Row>                            starts_;
+    std::vector<Value>                          starts_;
     Expression*                                 srcRef_{nullptr};
     std::vector<EdgeType>                       edgeTypes_;
 };

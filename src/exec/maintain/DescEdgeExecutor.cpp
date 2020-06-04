@@ -6,7 +6,7 @@
 
 #include "exec/maintain/DescEdgeExecutor.h"
 #include "planner/Maintain.h"
-#include "service/ExecutionContext.h"
+#include "context/QueryContext.h"
 #include "util/SchemaUtil.h"
 
 namespace nebula {
@@ -20,7 +20,7 @@ folly::Future<Status> DescEdgeExecutor::descEdge() {
     dumpLog();
 
     auto *deNode = asNode<DescEdge>(node());
-    return ectx()->getMetaClient()->getEdgeSchema(deNode->getSpaceId(), deNode->getName())
+    return qctx()->getMetaClient()->getEdgeSchema(deNode->getSpaceId(), deNode->getName())
             .via(runner())
             .then([this](StatusOr<meta::cpp2::Schema> resp) {
                 if (!resp.ok()) {

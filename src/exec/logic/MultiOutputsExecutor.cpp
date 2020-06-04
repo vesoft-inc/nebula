@@ -7,7 +7,6 @@
 #include "exec/logic/MultiOutputsExecutor.h"
 
 #include "planner/Query.h"
-#include "service/ExecutionContext.h"
 
 namespace nebula {
 namespace graph {

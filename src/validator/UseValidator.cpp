@@ -13,20 +13,20 @@ namespace graph {
 Status UseValidator::validateImpl() {
     auto useSentence = static_cast<UseSentence*>(sentence_);
     auto* spaceName = useSentence->space();
-    auto ret = validateContext_->schemaMng()->toGraphSpaceID(*spaceName);
+    auto ret = qctx_->schemaMng()->toGraphSpaceID(*spaceName);
     if (!ret.ok()) {
         LOG(ERROR) << "Unkown space: " << *spaceName;
         return ret.status();
     }
 
-    validateContext_->switchToSpace(*spaceName, ret.value());
+    vctx_->switchToSpace(*spaceName, ret.value());
     return Status::OK();
 }
 
 Status UseValidator::toPlan() {
-    auto space = validateContext_->whichSpace();
+    auto space = vctx_->whichSpace();
     // The input will be set by father validator later.
-    auto plan = validateContext_->plan();
+    auto plan = qctx_->plan();
     auto *start = StartNode::make(plan);
     auto reg = SwitchSpace::make(plan, start, space.name, space.id);
     root_ = reg;

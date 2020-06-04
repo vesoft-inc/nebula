@@ -31,9 +31,9 @@ Status InsertVerticesValidator::validateImpl() {
 }
 
 Status InsertVerticesValidator::toPlan() {
-    auto* plan = validateContext_->plan();
+    auto* plan = qctx_->plan();
     auto *doNode = InsertVertices::make(plan,
-                                        validateContext_->whichSpace().id,
+                                        vctx_->whichSpace().id,
                                         vertices_,
                                         tagPropNames_,
                                         overwritable_);
@@ -43,7 +43,7 @@ Status InsertVerticesValidator::toPlan() {
 }
 
 Status InsertVerticesValidator::check() {
-    auto spaceId = validateContext_->whichSpace().id;
+    auto spaceId = vctx_->whichSpace().id;
     rows_ = sentence_->rows();
     if (rows_.empty()) {
         return Status::Error("VALUES cannot be empty");
@@ -56,14 +56,14 @@ Status InsertVerticesValidator::check() {
 
     for (auto& item : tagItems) {
         auto *tagName = item->tagName();
-        auto tagStatus = validateContext_->schemaMng()->toTagID(spaceId, *tagName);
+        auto tagStatus = qctx_->schemaMng()->toTagID(spaceId, *tagName);
         if (!tagStatus.ok()) {
             LOG(ERROR) << "No schema found for " << *tagName;
             return Status::Error("No schema found for `%s'", tagName->c_str());
         }
 
         auto tagId = tagStatus.value();
-        auto schema = validateContext_->schemaMng()->getTagSchema(spaceId, tagId);
+        auto schema = qctx_->schemaMng()->getTagSchema(spaceId, tagId);
         if (schema == nullptr) {
             LOG(ERROR) << "No schema found for " << *tagName;
             return Status::Error("No schema found for `%s'", tagName->c_str());
@@ -156,9 +156,9 @@ Status InsertEdgesValidator::validateImpl() {
 }
 
 Status InsertEdgesValidator::toPlan() {
-    auto* plan = validateContext_->plan();
+    auto* plan = qctx_->plan();
     auto *doNode = InsertEdges::make(plan,
-                                     validateContext_->whichSpace().id,
+                                     vctx_->whichSpace().id,
                                      edges_,
                                      propNames_,
                                      overwritable_);
@@ -168,9 +168,9 @@ Status InsertEdgesValidator::toPlan() {
 }
 
 Status InsertEdgesValidator::check() {
-    auto spaceId = validateContext_->whichSpace().id;
+    auto spaceId = vctx_->whichSpace().id;
     overwritable_ = sentence_->overwritable();
-    auto edgeStatus = validateContext_->schemaMng()->toEdgeType(spaceId, *sentence_->edge());
+    auto edgeStatus = qctx_->schemaMng()->toEdgeType(spaceId, *sentence_->edge());
     if (!edgeStatus.ok()) {
         return edgeStatus.status();
     }
@@ -178,7 +178,7 @@ Status InsertEdgesValidator::check() {
     auto props = sentence_->properties();
     rows_ = sentence_->rows();
 
-    schema_ = validateContext_->schemaMng()->getEdgeSchema(spaceId, edgeType_);
+    schema_ = qctx_->schemaMng()->getEdgeSchema(spaceId, edgeType_);
     if (schema_ == nullptr) {
         LOG(ERROR) << "No schema found for " << sentence_->edge();
         return Status::Error("No schema found for `%s'", sentence_->edge()->c_str());

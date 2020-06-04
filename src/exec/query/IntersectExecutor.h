@@ -14,8 +14,8 @@ namespace graph {
 
 class IntersectExecutor : public Executor {
 public:
-    IntersectExecutor(const PlanNode *node, ExecutionContext *ectx)
-        : Executor("IntersectExecutor", node, ectx) {}
+    IntersectExecutor(const PlanNode *node, QueryContext *qctx)
+        : Executor("IntersectExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 };

@@ -9,13 +9,12 @@
 
 #include "common/base/Base.h"
 #include "validator/Validator.h"
-#include "validator/ValidateContext.h"
 
 namespace nebula {
 namespace graph {
 class AssignmentValidator final : public Validator {
 public:
-    AssignmentValidator(Sentence* sentence, ValidateContext* context)
+    AssignmentValidator(Sentence* sentence, QueryContext* context)
         : Validator(sentence, context) {}
 
 private:
