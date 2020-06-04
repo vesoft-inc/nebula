@@ -25,8 +25,12 @@ class ExpressionContext {
 public:
     virtual ~ExpressionContext() = default;
 
-    // Get the value for the given variable name, such as $a, $b
+    // Get the latest version value for the given variable name, such as $a, $b
     virtual const Value& getVar(const std::string& var) const = 0;
+
+    // Get the given version value for the given variable name, such as $a, $b
+    virtual const Value& getVersionedVar(const std::string& var,
+                                         int64_t version) const = 0;
 
     // Get the specified property from a variable, such as $a.prop_name
     virtual const Value& getVarProp(const std::string& var,
@@ -36,14 +40,18 @@ public:
     virtual const Value& getEdgeProp(const std::string& edgeType,
                                      const std::string& prop) const = 0;
 
-    // Get the specified property from the source vertex, such as $^.prop_name
-    virtual const Value& getSrcProp(const std::string& prop) const = 0;
+    // Get the specified property from the source vertex, such as $^.tag_name.prop_name
+    virtual const Value& getSrcProp(const std::string& tag,
+                                    const std::string& prop) const = 0;
 
-    // Get the specified property from the destination vertex, such as $$.prop_name
-    virtual const Value& getDstProp(const std::string& prop) const = 0;
+    // Get the specified property from the destination vertex, such as $$.tag_name.prop_name
+    virtual const Value& getDstProp(const std::string& tag,
+                                    const std::string& prop) const = 0;
 
     // Get the specified property from the input, such as $-.prop_name
     virtual const Value& getInputProp(const std::string& prop) const = 0;
+
+    virtual void setVar(const std::string& var, Value val) = 0;
 };
 
 }  // namespace nebula

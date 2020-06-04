@@ -16,25 +16,26 @@ class UnaryExpression final : public Expression {
 
 public:
     UnaryExpression(Kind kind,
-                    std::unique_ptr<Expression>&& operand = nullptr)
+                    Expression* operand = nullptr)
         : Expression(kind)
         , operand_(std::move(operand)) {}
 
     bool operator==(const Expression& rhs) const override;
 
-    Value eval(const ExpressionContext& ctx) const override;
+    const Value& eval(ExpressionContext& ctx) override;
 
     std::string toString() const override {
         // TODO
         return "";
     }
 
-protected:
-    std::unique_ptr<Expression> operand_;
-
+private:
     void writeTo(Encoder& encoder) const override;
 
     void resetFrom(Decoder& decoder) override;
+
+    std::unique_ptr<Expression> operand_;
+    Value                       result_;
 };
 
 }  // namespace nebula

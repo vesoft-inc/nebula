@@ -27,6 +27,8 @@ public:
         kUnaryPlus,
         kUnaryNegate,
         kUnaryNot,
+        kUnaryIncr,
+        kUnaryDecr,
 
         kRelEQ,
         kRelNE,
@@ -34,6 +36,7 @@ public:
         kRelLE,
         kRelGT,
         kRelGE,
+        kRelIn,
 
         kLogicalAnd,
         kLogicalOr,
@@ -43,7 +46,8 @@ public:
 
         kFunctionCall,
 
-        kAliasProperty,
+        kSymProperty,
+        kEdgeProperty,
         kInputProperty,
         kVarProperty,
         kDstProperty,
@@ -54,6 +58,9 @@ public:
         kEdgeDst,
 
         kUUID,
+
+        kVar,
+        kVersionedVar,
     };
 
     explicit Expression(Kind kind) : kind_(kind) {}
@@ -64,12 +71,16 @@ public:
         return kind_;
     }
 
+    static Value eval(Expression* expr, ExpressionContext& ctx) {
+        return expr->eval(ctx);
+    }
+
+    virtual const Value& eval(ExpressionContext& ctx) = 0;
+
     virtual bool operator==(const Expression& rhs) const = 0;
     virtual bool operator!=(const Expression& rhs) const {
         return !operator==(rhs);
     }
-
-    virtual Value eval(const ExpressionContext& ctx) const = 0;
 
     virtual std::string toString() const = 0;
 
@@ -94,7 +105,6 @@ protected:
         std::string buf_;
     };
 
-
     class Decoder final {
     public:
         explicit Decoder(folly::StringPiece encoded);
@@ -117,8 +127,6 @@ protected:
     };
 
 protected:
-    Kind kind_;
-
     static std::unique_ptr<Expression> decode(Decoder& decoder);
 
     // Serialize the content of the expression to the given encoder
@@ -126,6 +134,8 @@ protected:
 
     // Reset the content of the expression from the given decoder
     virtual void resetFrom(Decoder& decoder) = 0;
+
+    Kind kind_;
 };
 
 std::ostream& operator<<(std::ostream& os, Expression::Kind kind);

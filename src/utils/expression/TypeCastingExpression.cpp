@@ -7,6 +7,11 @@
 #include "common/expression/TypeCastingExpression.h"
 
 namespace nebula {
+const Value& TypeCastingExpression::eval(ExpressionContext& ctx) {
+    UNUSED(ctx);
+    return result_;
+}
+
 
 bool TypeCastingExpression::operator==(const Expression& rhs) const {
     if (kind_ != rhs.kind()) {
@@ -16,7 +21,6 @@ bool TypeCastingExpression::operator==(const Expression& rhs) const {
     const auto& r = dynamic_cast<const TypeCastingExpression&>(rhs);
     return vType_ == r.vType_ && *operand_ == *(r.operand_);
 }
-
 
 
 void TypeCastingExpression::writeTo(Encoder& encoder) const {
@@ -40,12 +44,4 @@ void TypeCastingExpression::resetFrom(Decoder& decoder) {
     operand_ = decoder.readExpression();
     CHECK(!!operand_);
 }
-
-
-Value TypeCastingExpression::eval(const ExpressionContext& ctx) const {
-    // TODO:
-    UNUSED(ctx);
-    return Value(NullType::NaN);
-}
-
 }  // namespace nebula

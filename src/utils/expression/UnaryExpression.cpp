@@ -5,6 +5,7 @@
  */
 
 #include "common/expression/UnaryExpression.h"
+#include "common/expression/VariableExpression.h"
 
 namespace nebula {
 
@@ -36,19 +37,45 @@ void UnaryExpression::resetFrom(Decoder& decoder) {
 }
 
 
-Value UnaryExpression::eval(const ExpressionContext& ctx) const {
-    UNUSED(ctx);
-    switch (kind_) {
-        case Kind::kUnaryPlus:
-            return operand_->eval(ctx);
-        case Kind::kUnaryNegate:
-            return -(operand_->eval(ctx));
-        case Kind::kUnaryNot:
-            return !(operand_->eval(ctx));
-        default:
+const Value& UnaryExpression::eval(ExpressionContext& ctx) {
+   switch (kind_) {
+        case Kind::kUnaryPlus: {
+            Value val(operand_->eval(ctx));
+            result_ = std::move(val);
             break;
-    }
-    LOG(FATAL) << "Unknown type: " << kind_;
+        }
+        case Kind::kUnaryNegate: {
+            result_ = -(operand_->eval(ctx));
+            break;
+        }
+        case Kind::kUnaryNot: {
+            result_ = !(operand_->eval(ctx));
+            break;
+        }
+        case Kind::kUnaryIncr: {
+            if (UNLIKELY(operand_->kind() != Kind::kVar)) {
+                result_ = Value(NullType::BAD_TYPE);
+                break;
+            }
+            result_ = operand_->eval(ctx) + 1;
+            auto* varExpr = static_cast<VariableExpression*>(operand_.get());
+            ctx.setVar(varExpr->var(), result_);
+            break;
+        }
+        case Kind::kUnaryDecr: {
+            if (UNLIKELY(operand_->kind() != Kind::kVar)) {
+                result_ = Value(NullType::BAD_TYPE);
+                break;
+            }
+            result_ = operand_->eval(ctx) - 1;
+            auto* varExpr = static_cast<VariableExpression*>(operand_.get());
+            ctx.setVar(varExpr->var(), result_);
+            break;
+        }
+       default:
+           LOG(FATAL) << "Unknown type: " << kind_;
+   }
+   return result_;
 }
 
 }  // namespace nebula

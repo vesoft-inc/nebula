@@ -7,24 +7,24 @@
 #include "common/expression/LogicalExpression.h"
 
 namespace nebula {
-
-Value LogicalExpression::eval(const ExpressionContext& ctx) const {
-    UNUSED(ctx);
-
-    auto lhs = lhs_->eval(ctx);
-    auto rhs = rhs_->eval(ctx);
+const Value& LogicalExpression::eval(ExpressionContext& ctx) {
+    auto& lhs = lhs_->eval(ctx);
+    auto& rhs = rhs_->eval(ctx);
 
     switch (kind_) {
         case Kind::kLogicalAnd:
-            return lhs && rhs;
-        case Kind::kLogicalOr:
-            return lhs || rhs;
-        case Kind::kLogicalXor:
-            return (lhs && !rhs) || (!lhs && rhs);
-        default:
+            result_ = lhs && rhs;
             break;
+        case Kind::kLogicalOr:
+            result_ = lhs || rhs;
+            break;
+        case Kind::kLogicalXor:
+            result_ = (lhs && !rhs) || (!lhs && rhs);
+            break;
+        default:
+            LOG(FATAL) << "Unknown type: " << kind_;
     }
-    LOG(FATAL) << "Unknown type: " << kind_;
+    return result_;
 }
 
 }  // namespace nebula

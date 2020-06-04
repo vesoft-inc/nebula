@@ -19,21 +19,19 @@ class BinaryExpression : public Expression {
 
 public:
     BinaryExpression(Kind kind,
-                     std::unique_ptr<Expression>&& lhs,
-                     std::unique_ptr<Expression>&& rhs)
-        : Expression(kind)
-        , lhs_(std::move(lhs))
-        , rhs_(std::move(rhs)) {}
+                     Expression* lhs,
+                     Expression* rhs)
+        : Expression(kind), lhs_(lhs), rhs_(rhs) {}
 
     bool operator==(const Expression& rhs) const override;
 
 protected:
-    std::unique_ptr<Expression>                 lhs_;
-    std::unique_ptr<Expression>                 rhs_;
-
     void writeTo(Encoder& encoder) const override;
 
     void resetFrom(Decoder& decoder) override;
+
+    std::unique_ptr<Expression>                 lhs_;
+    std::unique_ptr<Expression>                 rhs_;
 };
 
 }  // namespace nebula

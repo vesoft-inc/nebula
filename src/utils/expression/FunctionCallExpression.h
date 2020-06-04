@@ -13,7 +13,7 @@ namespace nebula {
 
 class ArgumentList final {
 public:
-    void addArgument(std::unique_ptr<Expression>&& arg) {
+    void addArgument(std::unique_ptr<Expression> arg) {
         CHECK(!!arg);
         args_.emplace_back(std::move(arg));
     }
@@ -47,22 +47,23 @@ public:
         , name_(name)
         , args_(args) {}
 
-    bool operator==(const Expression& rhs) const override;
+    const Value& eval(ExpressionContext& ctx) override;
 
-    Value eval(const ExpressionContext& ctx) const override;
+    bool operator==(const Expression& rhs) const override;
 
     std::string toString() const override {
         // TODO
         return "";
     }
 
-protected:
-    std::unique_ptr<std::string>    name_;
-    std::unique_ptr<ArgumentList>   args_;
-
+private:
     void writeTo(Encoder& encoder) const override;
 
     void resetFrom(Decoder& decoder) override;
+
+    std::unique_ptr<std::string>    name_;
+    std::unique_ptr<ArgumentList>   args_;
+    Value                           result_;
 };
 
 }  // namespace nebula

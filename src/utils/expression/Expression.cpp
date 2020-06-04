@@ -7,7 +7,7 @@
 #include "common/expression/Expression.h"
 #include <thrift/lib/cpp2/protocol/Serializer.h>
 #include "common/datatypes/ValueOps.h"
-#include "common/expression/AliasPropertyExpression.h"
+#include "common/expression/SymbolPropertyExpression.h"
 #include "common/expression/ArithmeticExpression.h"
 #include "common/expression/ConstantExpression.h"
 #include "common/expression/FunctionCallExpression.h"
@@ -283,7 +283,7 @@ std::unique_ptr<Expression> Expression::decode(Expression::Decoder& decoder) {
             exp->resetFrom(decoder);
             return exp;
         }
-        case Expression::Kind::kAliasProperty: {
+        case Expression::Kind::kSymProperty: {
             return nullptr;
         }
         case Expression::Kind::kInputProperty: {
@@ -369,6 +369,12 @@ std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
         case Expression::Kind::kUnaryNot:
             os << "UnaryNot";
             break;
+        case Expression::Kind::kUnaryIncr:
+            os << "AutoIncrement";
+            break;
+        case Expression::Kind::kUnaryDecr:
+            os << "AutoDecrement";
+            break;
         case Expression::Kind::kRelEQ:
             os << "Equal";
             break;
@@ -387,6 +393,9 @@ std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
         case Expression::Kind::kRelGE:
             os << "GreaterEqual";
             break;
+        case Expression::Kind::kRelIn:
+            os << "In";
+            break;
         case Expression::Kind::kLogicalAnd:
             os << "LogicalAnd";
             break;
@@ -402,8 +411,11 @@ std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
         case Expression::Kind::kFunctionCall:
             os << "FunctionCall";
             break;
-        case Expression::Kind::kAliasProperty:
-            os << "AliasProp";
+        case Expression::Kind::kSymProperty:
+            os << "SymbolProp";
+            break;
+        case Expression::Kind::kEdgeProperty:
+            os << "EdgeProp";
             break;
         case Expression::Kind::kInputProperty:
             os << "InputProp";
@@ -431,6 +443,12 @@ std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
             break;
         case Expression::Kind::kUUID:
             os << "UUID";
+            break;
+        case Expression::Kind::kVar:
+            os << "Variable";
+            break;
+        case Expression::Kind::kVersionedVar:
+            os << "VersionedVariable";
             break;
     }
     return os;

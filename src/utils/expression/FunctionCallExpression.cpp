@@ -68,9 +68,9 @@ void FunctionCallExpression::resetFrom(Decoder& decoder) {
 }
 
 
-Value FunctionCallExpression::eval(const ExpressionContext& ctx) const {
+const Value& FunctionCallExpression::eval(ExpressionContext& ctx) {
     UNUSED(ctx);
-    return Value(NullType::NaN);
+    return result_;
 }
 
 }  // namespace nebula

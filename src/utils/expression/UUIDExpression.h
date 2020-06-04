@@ -21,20 +21,20 @@ public:
 
     bool operator==(const Expression& rhs) const override;
 
-    Value eval(const ExpressionContext& ctx) const override;
+    const Value& eval(ExpressionContext& ctx) override;
 
     std::string toString() const override {
         // TODO
         return "";
     }
 
-
-protected:
-    std::unique_ptr<std::string> field_;
-
+private:
     void writeTo(Encoder& encoder) const override;
 
     void resetFrom(Decoder& decoder) override;
+
+    std::unique_ptr<std::string>                field_;
+    Value                                       result_;
 };
 
 }   // namespace nebula

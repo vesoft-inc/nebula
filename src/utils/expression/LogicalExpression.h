@@ -10,20 +10,22 @@
 #include "common/expression/BinaryExpression.h"
 
 namespace nebula {
-
 class LogicalExpression final : public BinaryExpression {
 public:
     LogicalExpression(Kind kind,
-                      std::unique_ptr<Expression>&& lhs = nullptr,
-                      std::unique_ptr<Expression>&& rhs = nullptr)
-        : BinaryExpression(kind, std::move(lhs), std::move(rhs)) {}
+                      Expression* lhs = nullptr,
+                      Expression* rhs = nullptr)
+        : BinaryExpression(kind, lhs, rhs) {}
 
-    Value eval(const ExpressionContext& ctx) const override;
+    const Value& eval(ExpressionContext& ctx) override;
 
     std::string toString() const override {
         // TODO
         return "";
     }
+
+private:
+    Value                                       result_;
 };
 
 }   // namespace nebula

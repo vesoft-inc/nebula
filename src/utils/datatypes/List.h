@@ -18,6 +18,9 @@ struct List {
     List() = default;
     List(const List&) = default;
     List(List&&) = default;
+    explicit List(std::vector<Value>&& vals) {
+        values = std::move(vals);
+    }
 
     void clear() {
         values.clear();
@@ -36,6 +39,14 @@ struct List {
 
     bool operator==(const List& rhs) const {
         return values == rhs.values;
+    }
+
+    const Value& operator[](size_t i) const {
+        return values[i];
+    }
+
+    size_t size() const {
+        return values.size();
     }
 };
 

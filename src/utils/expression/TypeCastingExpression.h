@@ -16,27 +16,28 @@ class TypeCastingExpression final : public Expression {
 
 public:
     TypeCastingExpression(Value::Type vType = Value::Type::__EMPTY__,
-                          std::unique_ptr<Expression>&& operand = nullptr)
+                          Expression* operand = nullptr)
         : Expression(Kind::kTypeCasting)
         , vType_(vType)
         , operand_(std::move(operand)) {}
 
     bool operator==(const Expression& rhs) const override;
 
-    Value eval(const ExpressionContext& ctx) const override;
+    const Value& eval(ExpressionContext& ctx) override;
 
     std::string toString() const override {
         // TODO
         return "";
     }
 
-protected:
-    Value::Type                 vType_;
-    std::unique_ptr<Expression> operand_;
-
+private:
     void writeTo(Encoder& encoder) const override;
 
     void resetFrom(Decoder& decoder) override;
+
+    Value::Type                 vType_{Value::Type::__EMPTY__};
+    std::unique_ptr<Expression> operand_;
+    Value                       result_;
 };
 
 }  // namespace nebula

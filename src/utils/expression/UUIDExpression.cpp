@@ -35,10 +35,10 @@ void UUIDExpression::resetFrom(Decoder& decoder) {
 }
 
 
-Value UUIDExpression::eval(const ExpressionContext& ctx) const {
+const Value& UUIDExpression::eval(ExpressionContext& ctx) {
     // TODO
     UNUSED(ctx);
-    return Value(NullType::NaN);
+    return result_;
 }
 
 }  // namespace nebula

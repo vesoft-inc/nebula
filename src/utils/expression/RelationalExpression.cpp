@@ -5,32 +5,50 @@
  */
 
 #include "common/expression/RelationalExpression.h"
+#include "common/datatypes/List.h"
 
 namespace nebula {
-
-Value RelationalExpression::eval(const ExpressionContext& ctx) const {
-    UNUSED(ctx);
-
-    auto lhs = lhs_->eval(ctx);
-    auto rhs = rhs_->eval(ctx);
+const Value& RelationalExpression::eval(ExpressionContext& ctx) {
+    auto& lhs = lhs_->eval(ctx);
+    auto& rhs = rhs_->eval(ctx);
 
     switch (kind_) {
         case Kind::kRelEQ:
-            return lhs_ == rhs_;
-        case Kind::kRelNE:
-            return lhs_ != rhs_;
-        case Kind::kRelLT:
-            return lhs_ < rhs_;
-        case Kind::kRelLE:
-            return lhs_ <= rhs_;
-        case Kind::kRelGT:
-            return lhs_ > rhs_;
-        case Kind::kRelGE:
-            return lhs_ >= rhs_;
-        default:
+            result_ = lhs == rhs;
             break;
+        case Kind::kRelNE:
+            result_ = lhs != rhs;
+            break;
+        case Kind::kRelLT:
+            result_ = lhs < rhs;
+            break;
+        case Kind::kRelLE:
+            result_ = lhs <= rhs;
+            break;
+        case Kind::kRelGT:
+            result_ = lhs > rhs;
+            break;
+        case Kind::kRelGE:
+            result_ = lhs >= rhs;
+            break;
+        case Kind::kRelIn: {
+            if (UNLIKELY(rhs.type() != Value::Type::LIST)) {
+                result_ = Value(NullType::BAD_TYPE);
+                break;
+            }
+            auto& list = rhs.getList().values;
+            auto found = std::find(list.begin(), list.end(), lhs);
+            if (found == list.end()) {
+                result_ = false;
+            } else {
+                result_ = true;
+            }
+            break;
+        }
+        default:
+            LOG(FATAL) << "Unknown type: " << kind_;
     }
-    LOG(FATAL) << "Unknown type: " << kind_;
+    return result_;
 }
 
 }  // namespace nebula

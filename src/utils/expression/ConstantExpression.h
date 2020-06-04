@@ -22,7 +22,7 @@ public:
 
     bool operator==(const Expression& rhs) const override;
 
-    Value eval(const ExpressionContext& ctx) const override {
+    const Value& eval(ExpressionContext& ctx) override {
         UNUSED(ctx);
         return val_;
     }
@@ -32,12 +32,12 @@ public:
         return "";
     }
 
-protected:
-    Value val_;
-
+private:
     void writeTo(Encoder& encoder) const override;
 
     void resetFrom(Decoder& decoder) override;
+
+    Value val_;
 };
 
 }   // namespace nebula
