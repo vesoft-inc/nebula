@@ -207,6 +207,10 @@ maybe_add_dependencies(fbthrift folly krb5 bison flex mstch zlib zstd wangle fat
 maybe_add_dependencies(proxygen wangle libunwind gperf)
 maybe_add_dependencies(rocksdb snappy zlib zstd bzip2 lz4 lzma libunwind)
 
+# RocksDB has its own copy of gtest, which may conflict with ours
+# Here we build gtest after rocksdb intentionally
+maybe_add_dependencies(googletest rocksdb gflags)
+
 add_custom_command(
     TARGET zstd POST_BUILD
     COMMAND
