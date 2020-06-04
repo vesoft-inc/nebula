@@ -366,7 +366,7 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
             outputSchema->appendCol(edgeSrcName_, nebula::cpp2::SupportedType::VID);
             outputSchema->appendCol(edgeDstName_, nebula::cpp2::SupportedType::VID);
             outputSchema->appendCol(edgeRankName_, nebula::cpp2::SupportedType::INT);
-            if (!(eschema == nullptr || resultColNames_.empty())) {
+            if ((eschema != nullptr) && !resultColNames_.empty()) {
                 auto status = getOutputSchema(eschema.get(), &*iter, outputSchema.get());
                 if (!status.ok()) {
                     LOG(ERROR) << "Get output schema failed: " << status;
