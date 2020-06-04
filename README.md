@@ -45,7 +45,7 @@ Compared with other graph database solutions, **Nebula Graph** has the following
 
 Read the [Getting started](https://docs.nebula-graph.io/manual-EN/1.overview/2.quick-start/1.get-started/) guide to quickly get going with **Nebula Graph**.
 
-You can install **Nebula Graph** by [installing source code](https://docs.nebula-graph.io/manual-EN/3.build-develop-and-administration/1.build/1.build-source-code/), [rpm/deb packages](https://docs.nebula-graph.io/manual-EN/3.build-develop-and-administration/2.install/1.install-with-rpm-deb/) or [docker compose](https://github.com/vesoft-inc/nebula-docker-compose). 
+You can install **Nebula Graph** by [installing source code](https://docs.nebula-graph.io/manual-EN/3.build-develop-and-administration/1.build/1.build-source-code/), [rpm/deb packages](https://docs.nebula-graph.io/manual-EN/3.build-develop-and-administration/2.install/1.install-with-rpm-deb/) or [docker compose](https://github.com/vesoft-inc/nebula-docker-compose).
 
 If you prefer a video tutorial, visit our [YouTube channel](https://www.youtube.com/channel/UC73V8q795eSEMxDX4Pvdwmw).
 
