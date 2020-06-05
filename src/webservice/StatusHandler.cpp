@@ -72,7 +72,9 @@ folly::dynamic StatusHandler::getStatus() {
     json["version"] = folly::stringPrintf("%s", NEBULA_STRINGIFY(NEBULA_BUILD_VERSION));
 #endif
     json["build_time"] = folly::stringPrintf("Build Time: %s %s", __DATE__, __TIME__);
+#if defined(GIT_INFO_SHA)
     json["git_info_sha"] = NEBULA_STRINGIFY(GIT_INFO_SHA);
+#endif
     return json;
 }
 
