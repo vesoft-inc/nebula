@@ -376,12 +376,6 @@ TEST_F(SchemaTest, TestSpace) {
         client->execute(query, resp);
         ASSERT_EQ(0, (*(resp.get_rows())).size());
     }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "CREATE SPACE space_partitions (partition_num=100)";
-        auto code = client->execute(query, resp);
-        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
-    }
 }
 
 TEST_F(SchemaTest, TestTagAndEdge) {

@@ -87,6 +87,22 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
+        partiton_test
+    SOURCES
+        PartitionTest.cpp
+    OBJECTS
+        ${GRAPH_TEST_CLIENT_LIBS}
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        proxygenlib
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
         go_test
     SOURCES
         GoTest.cpp
