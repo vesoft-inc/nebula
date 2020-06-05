@@ -119,7 +119,6 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogs(
 
         if (requestOnGoing_ && res == cpp2::ErrorCode::SUCCEEDED) {
             if (cachingPromise_.size() <= FLAGS_max_outstanding_requests) {
-                logIdToSend_ = logId;
                 pendingReq_ = std::make_tuple(term,
                                               logId,
                                               committedLogId);
