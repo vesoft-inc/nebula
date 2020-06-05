@@ -145,22 +145,8 @@ int32_t CreateSpaceProcessor::GetPartsNumbers() {
     }
 
     while (iter->valid()) {
-        auto spaceId = MetaServiceUtils::spaceId(iter->key());
-        auto partPrefix = MetaServiceUtils::partPrefix(spaceId);
-        auto spaceName = MetaServiceUtils::spaceName(iter->val());
-        std::unique_ptr<kvstore::KVIterator> partIter;
-        auto kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &partIter);
-        if ( kvRet != kvstore::ResultCode::SUCCEEDED ) {
-            LOG(ERROR) << "List Partitions From " << spaceName
-                       << ", Space id " << spaceId << " Failed";
-            return -1;
-        }
-
-        while (partIter->valid()) {
-            count++;
-            partIter->next();
-        }
-
+        auto properties = MetaServiceUtils::parseSpace(iter->val());
+        count += properties.get_partition_num();
         iter->next();
     }
 
