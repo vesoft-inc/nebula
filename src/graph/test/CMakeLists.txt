@@ -36,6 +36,7 @@ set(GRAPH_TEST_LIBS
     $<TARGET_OBJECTS:encryption_obj>
     $<TARGET_OBJECTS:session_obj>
     $<TARGET_OBJECTS:permission_obj>
+    $<TARGET_OBJECTS:convert_time_type_utils_obj>
 )
 
 set(GRAPH_TEST_CLIENT_LIBS

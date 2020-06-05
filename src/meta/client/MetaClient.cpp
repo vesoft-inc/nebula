@@ -271,7 +271,12 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
     for (auto& tagIt : tagItemVec) {
         std::shared_ptr<NebulaSchemaProvider> schema(new NebulaSchemaProvider(tagIt.version));
         for (auto colIt : tagIt.schema.get_columns()) {
+            VLOG(3) << "Load TagId: " << tagIt.tag_id
+                    << ", prop: " << colIt.name
+                    << ", type: " << static_cast<int32_t>(colIt.type.type)
+                    << ", default_type: " << colIt.default_value.getType();
             schema->addField(colIt.name, std::move(colIt.type));
+            schema->addDefaultValue(colIt.name, std::move(colIt.default_value));
         }
         // handle schema property
         schema->setProp(tagIt.schema.get_schema_prop());
@@ -295,7 +300,12 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
     for (auto& edgeIt : edgeItemVec) {
         std::shared_ptr<NebulaSchemaProvider> schema(new NebulaSchemaProvider(edgeIt.version));
         for (auto colIt : edgeIt.schema.get_columns()) {
+            VLOG(3) << "Load EdgeType: " << edgeIt.edge_type
+                    << ", prop: " << colIt.name
+                    << ", type: " << static_cast<int32_t>(colIt.type.type)
+                    << ", default_type: " << colIt.default_value.getType();
             schema->addField(colIt.name, std::move(colIt.type));
+            schema->addDefaultValue(colIt.name, std::move(colIt.default_value));
         }
         // handle shcem property
         schema->setProp(edgeIt.schema.get_schema_prop());

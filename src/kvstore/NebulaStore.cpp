@@ -13,6 +13,7 @@
 #include "fs/FileUtils.h"
 #include "kvstore/RocksEngine.h"
 #include "kvstore/SnapshotManagerImpl.h"
+#include <folly/ScopeGuard.h>
 
 DEFINE_string(engine_type, "rocksdb", "rocksdb, memory...");
 DEFINE_int32(custom_filter_interval_secs, 24 * 3600, "interval to trigger custom compaction");
@@ -824,6 +825,11 @@ bool NebulaStore::checkLeader(std::shared_ptr<Part> part) const {
 }
 
 void NebulaStore::cleanWAL() {
+    SCOPE_EXIT {
+        bgWorkers_->addDelayTask(FLAGS_clean_wal_interval_secs * 1000,
+                                 &NebulaStore::cleanWAL,
+                                 this);
+    };
     for (const auto& spaceEntry : spaces_) {
         for (const auto& engine : spaceEntry.second->engines_) {
             engine->flush();

@@ -59,7 +59,7 @@ private:
 
     cpp2::ErrorCode checkFilter(const PartitionID partId, const VertexID vId);
 
-    std::string updateAndWriteBack(const PartitionID partId, const VertexID vId);
+    folly::Optional<std::string> updateAndWriteBack(const PartitionID partId, const VertexID vId);
 
 private:
     bool                                                            insertable_{false};

@@ -36,7 +36,7 @@ public:
     }
 
     Status MUST_USE_RESULT prepare() {
-        if (hasDefault()) {
+        if (hasDefaultValue()) {
             return defaultExpr_->prepare();
         }
         return Status::Error();
@@ -48,16 +48,16 @@ public:
         }
     }
 
-    bool hasDefault() {
-        return defaultExpr_ != nullptr;
-    }
-
     OptVariantType getDefault(Getters& getter) {
         auto r = defaultExpr_->eval(getter);
         if (!r.ok()) {
             return std::move(r).status();
         }
         return std::move(r).value();
+    }
+
+    bool hasDefaultValue() {
+        return defaultExpr_ != nullptr;
     }
 
 private:
