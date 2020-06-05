@@ -163,8 +163,12 @@ std::unique_ptr<Expression> Expression::Decoder::readExpression() noexcept {
  ***************************************/
 // static
 std::string Expression::encode(const Expression& exp) {
+    return exp.encode();
+}
+
+std::string Expression::encode() const {
     Encoder encoder;
-    exp.writeTo(encoder);
+    writeTo(encoder);
     return encoder.moveStr();
 }
 

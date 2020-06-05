@@ -40,6 +40,18 @@ public:
 
     bool operator==(const Expression& rhs) const override;
 
+    const std::string *ref() const {
+        return ref_.get();
+    }
+
+    const std::string *sym() const {
+        return sym_.get();
+    }
+
+    const std::string *prop() const {
+        return prop_.get();
+    }
+
 protected:
     void writeTo(Encoder& encoder) const override;
 

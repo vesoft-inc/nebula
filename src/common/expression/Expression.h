@@ -86,6 +86,8 @@ public:
 
     static std::string encode(const Expression& exp);
 
+    std::string encode() const;
+
     static std::unique_ptr<Expression> decode(folly::StringPiece encoded);
 
 protected:
