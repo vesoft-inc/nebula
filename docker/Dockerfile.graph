@@ -1,9 +1,8 @@
 FROM vesoft/nebula-dev:centos7 as builder
 
 COPY . /home/nebula/BUILD
-
 RUN cd /home/nebula/BUILD/package \
-  && ./package.sh -v $(git rev-parse --short HEAD)
+  && ./package.sh -v v1.0.0
 
 FROM centos:7
 
