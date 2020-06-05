@@ -13,6 +13,7 @@
 #include "dataman/DataCommon.h"
 #include "meta/SchemaProviderIf.h"
 #include "dataman/RowReader.h"
+#include "dataman/RowWriter.h"
 
 namespace nebula {
 
@@ -27,15 +28,15 @@ public:
     // schema is the writer schema, which means the updated data will be encoded
     //   using this schema
     RowUpdater(std::unique_ptr<RowReader> reader,
-               std::shared_ptr<meta::SchemaProviderIf> schema);
-    explicit RowUpdater(std::shared_ptr<meta::SchemaProviderIf> schema);
+               std::shared_ptr<const meta::SchemaProviderIf> schema);
+    explicit RowUpdater(std::shared_ptr<const meta::SchemaProviderIf> schema);
 
     // Encode into a binary array
-    std::string encode() const noexcept;
+    StatusOr<std::string> encode() const noexcept;
     // Encode and append to the given string
     // For the sake of performance, the caller needs to make sure the string
     // is large enough, so that resize will not happen
-    void encodeTo(std::string& encoded) const noexcept;
+    Status encodeTo(std::string& encoded) const noexcept;
 
     /**
      * Accessors
@@ -65,6 +66,11 @@ public:
     ResultType setVid(const folly::StringPiece name, int64_t v) noexcept;
     ResultType getVid(const folly::StringPiece name, int64_t& v) const noexcept;
 
+    Status writeDefaultValue(const folly::StringPiece name, RowWriter &writer) const noexcept;
+
+    std::shared_ptr<const meta::SchemaProviderIf> schema() const {
+        return schema_;
+    }
 
     // TODO getPath(const std::string& name) const noexcept;
     // TODO getList(const std::string& name) const noexcept;
@@ -72,7 +78,7 @@ public:
     // TODO getMap(const std::string& name) const noexcept;
 
 private:
-    std::shared_ptr<meta::SchemaProviderIf> schema_;
+    std::shared_ptr<const meta::SchemaProviderIf> schema_;
     std::unique_ptr<RowReader> reader_;
     // Hash64(field_name) => value
     std::unordered_map<uint64_t, FieldValue> updatedFields_;
@@ -102,19 +108,20 @@ private:
         } \
     }
 
-#define RU_OUTPUT_VALUE(VT, FN, DV) \
+#define RU_OUTPUT_VALUE(VT, FN) \
     VT val; \
     auto res = get ## FN(it->getName(), val); \
     if (res != ResultType::SUCCEEDED) { \
         if (res == ResultType::E_NAME_NOT_FOUND) { \
             /* Use a default value */ \
-            writer << DV; \
+            ret = writeDefaultValue(it->getName(), writer); \
         } else { \
             LOG(ERROR) << "Failed to encode updated data"; \
-            return; \
+            return Status::Error("Failed to encode updated data"); \
         } \
     } else { \
         writer << val; \
+        ret = Status::OK(); \
     }
 
 #include "dataman/RowUpdater.inl"

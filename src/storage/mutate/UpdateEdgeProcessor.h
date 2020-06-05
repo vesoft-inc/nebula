@@ -55,7 +55,8 @@ private:
 
     cpp2::ErrorCode checkFilter(const PartitionID partId, const cpp2::EdgeKey& edgeKey);
 
-    std::string updateAndWriteBack(PartitionID partId, const cpp2::EdgeKey& edgeKey);
+    folly::Optional<std::string> updateAndWriteBack(PartitionID partId,
+                                                    const cpp2::EdgeKey& edgeKey);
 
 private:
     bool                                                            insertable_{false};

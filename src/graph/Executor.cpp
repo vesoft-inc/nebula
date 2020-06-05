@@ -373,51 +373,6 @@ OptVariantType Executor::toVariantType(const cpp2::ColumnValue& value) const {
     return Status::Error("Unknown ColumnType: %d", static_cast<int32_t>(value.getType()));
 }
 
-StatusOr<VariantType> Executor::transformDefaultValue(nebula::cpp2::SupportedType type,
-                                                      std::string& originalValue) {
-    switch (type) {
-        case nebula::cpp2::SupportedType::BOOL:
-            try {
-                return folly::to<bool>(originalValue);
-            } catch (const std::exception& ex) {
-                LOG(ERROR) << "Conversion to bool failed: " << originalValue;
-                return Status::Error("Type Conversion Failed");
-            }
-            break;
-        case nebula::cpp2::SupportedType::INT:
-            try {
-                return folly::to<int64_t>(originalValue);
-            } catch (const std::exception& ex) {
-                LOG(ERROR) << "Conversion to int64_t failed: " << originalValue;
-                return Status::Error("Type Conversion Failed");
-            }
-            break;
-        case nebula::cpp2::SupportedType::DOUBLE:
-            try {
-                return folly::to<double>(originalValue);
-            } catch (const std::exception& ex) {
-                LOG(ERROR) << "Conversion to double failed: " << originalValue;
-                return Status::Error("Type Conversion Failed");
-            }
-            break;
-        case nebula::cpp2::SupportedType::STRING:
-            return originalValue;
-            break;
-        case nebula::cpp2::SupportedType::TIMESTAMP:
-            try {
-                return folly::to<int64_t>(originalValue);
-            } catch (const std::exception& ex) {
-                LOG(ERROR) << "Conversion to int64_t failed: " << originalValue;
-                return Status::Error("Type Conversion Failed");
-            }
-            break;
-        default:
-            LOG(ERROR) << "Unknow type";
-            return Status::Error("Unknow type");
-    }
-    return Status::OK();
-}
-
 void Executor::doError(Status status, uint32_t count) const {
     stats::Stats::addStatsValue(stats_.get(), false, duration().elapsedInUSec(), count);
     DCHECK(onError_);

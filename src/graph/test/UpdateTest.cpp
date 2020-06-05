@@ -397,7 +397,7 @@ INSTANTIATE_TEST_CASE_P(updateUpsert, UpdateUpsertTest, ::testing::Values("UPDAT
 // Above cases keep same with UPDATE for the UPSERT behavior as UPDATE when vertex/edge exists
 
 
-TEST_F(UpsertTest, NotExists) {
+TEST_F(UpsertTest, VertexNotExists) {
     {
         cpp2::ExecutionResponse resp;
         auto query = "FETCH PROP ON course 103 YIELD course.name, course.credits";
@@ -441,21 +441,110 @@ TEST_F(UpsertTest, NotExists) {
         auto code = client_->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    {
-        // when insert in upsert, filter condition is always true
-        // Insertable: vertex 104 ("", 6)
+    // has default value test
+    {   // Insertable: vertex 110 ("Ann") --> ("Ann", "one"),
+        // 110 is nonexistent, gender with default value
         cpp2::ExecutionResponse resp;
-        auto query = "UPSERT VERTEX 104 "
-                     "SET course.credits = $^.course.credits + 1 "
-                     "WHEN $^.course.name == \"CS\" && $^.course.credits > 2 "
-                     "YIELD $^.course.name AS Name, $^.course.credits AS Credits";
+        auto query = "UPSERT VERTEX 110 "
+                     "SET student_default.name = \"Ann\", student_default.age = 10 "
+                     "YIELD $^.student_default.name AS Name, $^.student_default.gender AS Gender";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, int64_t>> expected = {
-            {"", 1},
+        std::vector<std::tuple<std::string, std::string>> expected = {
+                {"Ann", "one"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    {   // Insertable success, 111 is nonexistent, name and age without default value
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT VERTEX 111 "
+                     "SET student_default.name = \"Tom\", "
+                     "student_default.age = $^.student_default.age + 8 "
+                     "YIELD $^.student_default.name AS Name, $^.student_default.age AS Age";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {   // Insertable error, 111 is nonexistent, name without default value
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT VERTEX 111 "
+                     "SET student_default.gender = \"two\", student_default.age = 10 "
+                     "YIELD $^.student_default.name AS Name, $^.student_default.gender AS Gender";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {   // Insertable: vertex 112 ("Lily") --> ("Lily", "one"),
+        // 112 is nonexistent, gender with default value,
+        // update student_default.age with string value
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT VERTEX 112 "
+                     "SET student_default.name = \"Lily\", student_default.age = \"10\" "
+                     "YIELD $^.student_default.name AS Name, $^.student_default.gender AS Gender";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {   // Insertable: vertex 113 ("Jack") --> ("Jack", "Three"),
+        // 113 is nonexistent, gender with default value,
+        // update student_default.age with string value
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT VERTEX 112 "
+                     "SET student_default.name = \"Ann\", student_default.age = \"10\" "
+                     "YIELD $^.student_default.name AS Name, $^.student_default.gender AS Gender";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {   // Insertable success, 115 is nonexistent, name and age without default value,
+        // the filter is always true.
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT VERTEX 115 "
+                     "SET student_default.name = \"Kate\", "
+                     "student_default.age = 12 "
+                     "WHEN $^.student_default.gender == \"two\""
+                     "YIELD $^.student_default.name AS Name, $^.student_default.age AS Age, "
+                     "$^.student_default.gender AS gender";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t, std::string>> expected = {
+                {"Kate", 12, "one"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // Order problem
+    {   // Insertable success, 116 is nonexistent, name and age without default value,
+        // the filter is always true.
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT VERTEX 116 "
+                     "SET student_default.name = \"Kate\", "
+                     "student_default.age = $^.student_default.birthday + 1, "
+                     "student_default.birthday = $^.student_default.birthday + 1 "
+                     "YIELD $^.student_default.name AS Name, $^.student_default.age AS Age, "
+                     "$^.student_default.gender AS gender, $^.student_default.birthday AS birthday";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t, std::string, int64_t>> expected = {
+                {"Kate", 2011, "one", 2011},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // Order problem
+    {   // Insertable success, 117 is nonexistent, name and age without default value,
+        // the filter is always true.
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT VERTEX 117 "
+                     "SET student_default.birthday = $^.student_default.birthday + 1, "
+                     "student_default.name = \"Kate\", "
+                     "student_default.age = $^.student_default.birthday + 1 "
+                     "YIELD $^.student_default.name AS Name, $^.student_default.age AS Age, "
+                     "$^.student_default.gender AS gender, $^.student_default.birthday AS birthday";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t, std::string, int64_t>> expected = {
+                {"Kate", 2012, "one", 2011},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+TEST_F(UpsertTest, EdgeNotExists) {
     // handle edges
     {
         cpp2::ExecutionResponse resp;
@@ -494,13 +583,13 @@ TEST_F(UpsertTest, NotExists) {
         // filter condition is always true, insert default value or update value
         cpp2::ExecutionResponse resp;
         auto query = "UPSERT EDGE 601 -> 101@0 OF select "
-                     "SET year = 2019 "
+                     "SET year = 2019, grade = 3 "
                      "WHEN select.grade >10 "
                      "YIELD select.grade AS Grade, select.year AS Year";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {0, 2019},
+            {3, 2019},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -511,7 +600,74 @@ TEST_F(UpsertTest, NotExists) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
-            {601, 101, 0, 0, 2019},
+            {601, 101, 0, 3, 2019},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // select_default's year with default value
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT EDGE 111 -> 222@0 OF select_default "
+                     "SET grade = 3 "
+                     "YIELD select_default.grade AS Grade, select_default.year AS Year";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector <std::tuple<int64_t, int64_t>> expected = {
+            {3, 1546308000},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // select_default's year is timestamp type, set str type
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT EDGE 222 -> 333@0 OF select_default "
+                     "SET grade = 3, year = \"2020-01-10 10:00:00\" "
+                     "YIELD select_default.grade AS Grade, select_default.year AS Year";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector <std::tuple<int64_t, int64_t>> expected = {
+            {3, 1578621600},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // select_default's grade without default value
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT EDGE 444 -> 555@0 OF select "
+                     "SET year = 1546279201 "
+                     "YIELD select.grade AS Grade, select.year AS Year";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    // update select_default's grade with string value
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT EDGE 222 -> 333@0 OF select_default "
+                     "SET grade = \"3\" "
+                     "YIELD select_default.grade AS Grade, select_default.year AS Year";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    // update select_default's grade with edge prop value
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT EDGE 333 -> 444@0 OF select_default "
+                     "SET grade = 3 + select_default.grade "
+                     "YIELD select_default.grade AS Grade, select_default.year AS Year";
+        auto code = client_->execute(query, resp);
+        LOG(INFO) << "code is " << static_cast<int32_t>(code);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    // update select_default's year with edge prop value
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT EDGE 222 -> 444@0 OF select_default "
+                     "SET grade = 3, year = select_default.year + 10 "
+                     "YIELD select_default.grade AS Grade, select_default.year AS Year";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector <std::tuple<int64_t, int64_t>> expected = {
+            {3, 1546308010},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
