@@ -140,7 +140,7 @@ int32_t CreateSpaceProcessor::GetPartsNumbers() {
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "List Spaces " << spaceName << " Failed";
+        LOG(ERROR) << "List Spaces Failed";
         return -1;
     }
 
