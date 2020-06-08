@@ -587,13 +587,18 @@ void GoExecutor::stepOut() {
     } while (0);
 
 void GoExecutor::onStepOutResponse(RpcResponse &&rpcResp) {
-    joinResp(std::move(rpcResp));
+    if (isRecord()) {
+        joinResp(std::move(rpcResp));
+    }
 
     if (isFinalStep()) {
         GO_EXIT();
     } else {
-        auto dsts = getDstIdsFromResps(records_.end() - 1, records_.end());
-        starts_ = std::move(dsts);
+        if (isRecord()) {
+            starts_ = getUniqueDstIdsFromResp(records_.back());
+        } else {
+            starts_ = getUniqueDstIdsFromResp(std::move(rpcResp));
+        }
         if (starts_.empty()) {
             GO_EXIT();
         }
@@ -615,7 +620,7 @@ void GoExecutor::maybeFinishExecution() {
         return;
     }
 
-    auto dstIds = getDstIdsFromResps(records_.begin() + recordFrom_ - 1, records_.end());
+    auto dstIds = getUniqueDstIdsFromResps(records_);
 
     // Reaching the dead end
     if (dstIds.empty()) {
@@ -633,28 +638,40 @@ void GoExecutor::onVertexProps(RpcResponse &&rpcResp) {
     UNUSED(rpcResp);
 }
 
-std::vector<VertexID> GoExecutor::getDstIdsFromResps(std::vector<RpcResponse>::iterator begin,
-                                                     std::vector<RpcResponse>::iterator end) const {
-    std::unordered_set<VertexID> set;
-    for (auto it = begin; it != end; ++it) {
-        for (const auto &resp : it->responses()) {
-            auto *vertices = resp.get_vertices();
-            if (vertices == nullptr) {
-                continue;
-            }
 
-            for (const auto &vdata : *vertices) {
-                for (const auto &edata : vdata.edge_data) {
-                    for (const auto& edge : edata.get_edges()) {
-                        auto dst = edge.get_dst();
-                        if (!isFinalStep() && backTracker_ != nullptr) {
-                            backTracker_->add(vdata.get_vertex_id(), dst);
-                        }
-                        set.emplace(dst);
+void GoExecutor::getUniqueDstIdsFromResp(const RpcResponse &rpcResp,
+                                         std::unordered_set<VertexID> &set) const {
+    for (const auto &resp : rpcResp.responses()) {
+        auto *vertices = resp.get_vertices();
+        if (vertices == nullptr) {
+            continue;
+        }
+
+        for (const auto &vdata : *vertices) {
+            for (const auto &edata : vdata.edge_data) {
+                for (const auto& edge : edata.get_edges()) {
+                    auto dst = edge.get_dst();
+                    if (!isFinalStep() && backTracker_ != nullptr) {
+                        backTracker_->add(vdata.get_vertex_id(), dst);
                     }
+                    set.emplace(dst);
                 }
             }
         }
+    }
+}
+
+std::vector<VertexID> GoExecutor::getUniqueDstIdsFromResp(const RpcResponse & rpcResp) const {
+    std::unordered_set<VertexID> set;
+    getUniqueDstIdsFromResp(rpcResp, set);
+    return std::vector<VertexID>(set.begin(), set.end());
+}
+
+std::vector<VertexID>
+GoExecutor::getUniqueDstIdsFromResps(const std::vector<RpcResponse> & resps) const {
+    std::unordered_set<VertexID> set;
+    for (const auto &resp : resps) {
+        getUniqueDstIdsFromResp(resp, set);
     }
     return std::vector<VertexID>(set.begin(), set.end());
 }
@@ -1026,8 +1043,8 @@ bool GoExecutor::processFinalResult(Callback cb) const {
     for (auto *column : yields_) {
         colTypes.emplace_back(calculateExprType(column->expr()));
     }
-    for (auto rpcResp = records_.begin() + recordFrom_ - 1; rpcResp != records_.end(); ++rpcResp) {
-        const auto& all = rpcResp->responses();
+    for (const auto &rpcResp : records_) {
+        const auto& all = rpcResp.responses();
 
         std::vector<VariantType> record;
         record.reserve(yields_.size());
