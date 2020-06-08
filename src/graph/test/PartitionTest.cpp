@@ -10,8 +10,6 @@
 #include "meta/test/TestUtils.h"
 #include "storage/test/TestUtils.h"
 
-DECLARE_int32(heartbeat_interval_secs);
-
 namespace nebula {
 namespace graph {
 
