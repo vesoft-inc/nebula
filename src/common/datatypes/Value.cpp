@@ -56,7 +56,7 @@ std::size_t hash<nebula::Value>::operator()(const nebula::Value& v) const noexce
             return hash<nebula::Path>()(v.getPath());
         }
         case nebula::Value::Type::LIST: {
-            LOG(FATAL) << "Hash for LIST has not been implemented";
+            return hash<nebula::List>()(v.getList());
         }
         case nebula::Value::Type::MAP: {
             LOG(FATAL) << "Hash for MAP has not been implemented";

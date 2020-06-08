@@ -18,7 +18,7 @@ nebula_add_test(
         ${THRIFT_LIBRARIES}
 )
 
-nebula_add_test(
+nebula_add_executable(
     NAME
         expression_bm
     SOURCES
