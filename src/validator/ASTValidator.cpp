@@ -5,8 +5,10 @@
  */
 
 #include "validator/ASTValidator.h"
+
+#include "parser/Sentence.h"
 #include "planner/ExecutionPlan.h"
-#include "common/charset/Charset.h"
+#include "validator/Validator.h"
 
 namespace nebula {
 namespace graph {

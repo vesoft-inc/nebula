@@ -22,6 +22,7 @@
 
 namespace nebula {
 namespace graph {
+
 /***************************************************************************
  *
  * The context for each query request
@@ -45,14 +46,10 @@ public:
                  meta::MetaClient* metaClient,
                  CharsetInfo* charsetInfo)
         : rctx_(std::move(rctx)),
-          sm_(sm),
-          storageClient_(storage),
-          metaClient_(metaClient),
-          charsetInfo_(charsetInfo) {
-        DCHECK_NOTNULL(sm_);
-        DCHECK_NOTNULL(storageClient_);
-        DCHECK_NOTNULL(metaClient_);
-        DCHECK_NOTNULL(charsetInfo_);
+          sm_(DCHECK_NOTNULL(sm)),
+          storageClient_(DCHECK_NOTNULL(storage)),
+          metaClient_(DCHECK_NOTNULL(metaClient)),
+          charsetInfo_(DCHECK_NOTNULL(charsetInfo)) {
         objPool_ = std::make_unique<ObjectPool>();
         ep_ = std::make_unique<ExecutionPlan>(objPool_.get());
         vctx_ = std::make_unique<ValidateContext>();
@@ -130,14 +127,15 @@ private:
     std::unique_ptr<ExecutionContext>                       ectx_;
     std::unique_ptr<ExecutionPlan>                          ep_;
     meta::SchemaManager*                                    sm_{nullptr};
-    // meta::ClientBasedGflagsManager             *gflagsManager_{nullptr};
     storage::GraphStorageClient*                            storageClient_{nullptr};
     meta::MetaClient*                                       metaClient_{nullptr};
     CharsetInfo*                                            charsetInfo_{nullptr};
+
     // The Object Pool holds all internal generated objects.
     // e.g. expressions, plan nodes, executors
     std::unique_ptr<ObjectPool>                             objPool_;
 };
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // CONTEXT_QUERYCONTEXT_H_

@@ -23,8 +23,8 @@
 namespace nebula {
 namespace graph {
 std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryContext* context) {
-    CHECK(!!sentence);
-    CHECK(!!context);
+    CHECK_NOTNULL(sentence);
+    CHECK_NOTNULL(context);
     auto kind = sentence->kind();
     switch (kind) {
         case Sentence::Kind::kSequential:
@@ -77,8 +77,8 @@ Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
             break;
         }
         default: {
-            return Status::Error(
-                    "%ld not support to append an input.", static_cast<int64_t>(node->kind()));
+            return Status::Error("%s not support to append an input.",
+                                 PlanNode::toString(node->kind()));
         }
     }
     return Status::OK();
@@ -119,5 +119,6 @@ Status Validator::validate() {
 bool Validator::spaceChosen() {
     return vctx_->spaceChosen();
 }
+
 }  // namespace graph
 }  // namespace nebula

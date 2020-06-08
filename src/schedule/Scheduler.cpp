@@ -6,20 +6,27 @@
 
 #include "schedule/Scheduler.h"
 
+#include "context/QueryContext.h"
 #include "exec/ExecutionError.h"
 #include "exec/Executor.h"
 #include "exec/logic/LoopExecutor.h"
 #include "exec/logic/MultiOutputsExecutor.h"
 #include "exec/logic/SelectExecutor.h"
 #include "planner/PlanNode.h"
-#include "context/ExecutionContext.h"
 
 namespace nebula {
 namespace graph {
 
 Scheduler::Task::Task(const Executor *e) : planId(DCHECK_NOTNULL(e)->node()->id()) {}
 
-Scheduler::Scheduler(ExecutionContext *ectx) : ectx_(DCHECK_NOTNULL(ectx)) {}
+Scheduler::Scheduler(QueryContext *qctx) : qctx_(DCHECK_NOTNULL(qctx)) {}
+
+folly::Future<Status> Scheduler::schedule() {
+    std::unordered_map<int64_t, Executor *> cache;
+    auto executor = Executor::makeExecutor(qctx_->plan()->root(), qctx_, &cache);
+    analyze(executor);
+    return schedule(executor);
+}
 
 void Scheduler::analyze(Executor *executor) {
     switch (executor->node()->kind()) {
@@ -65,7 +72,7 @@ folly::Future<Status> Scheduler::schedule(Executor *executor) {
                 .then(task(sel, [sel, this](Status status) {
                     if (!status.ok()) return sel->error(std::move(status));
 
-                    auto val = ectx_->getValue(sel->node()->varName());
+                    auto val = qctx_->ectx()->getValue(sel->node()->varName());
                     auto cond = val.moveBool();
                     return schedule(cond ? sel->thenBody() : sel->elseBody());
                 }));
@@ -136,7 +143,7 @@ folly::Future<Status> Scheduler::iterate(LoopExecutor *loop) {
     return loop->execute().then(task(loop, [loop, this](Status status) {
         if (!status.ok()) return loop->error(std::move(status));
 
-        auto val = ectx_->getValue(loop->node()->varName());
+        auto val = qctx_->ectx()->getValue(loop->node()->varName());
         auto cond = val.moveBool();
         if (!cond) return folly::makeFuture(Status::OK());
         return schedule(loop->loopBody()).then(task(loop, [loop, this](Status s) {

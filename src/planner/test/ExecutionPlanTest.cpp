@@ -10,10 +10,10 @@
 #include <folly/stop_watch.h>
 #include <gtest/gtest.h>
 
+#include "context/QueryContext.h"
 #include "exec/ExecutionError.h"
 #include "exec/Executor.h"
 #include "planner/Query.h"
-#include "context/QueryContext.h"
 #include "schedule/Scheduler.h"
 
 using std::chrono::duration_cast;
@@ -26,39 +26,29 @@ class ExecutionPlanTest : public ::testing::Test {
 public:
     void SetUp() override {
         qctx_ = std::make_unique<QueryContext>();
+        scheduler_ = std::make_unique<Scheduler>(qctx_.get());
         plan_ = qctx_->plan();
-        scheduler_ = std::make_unique<Scheduler>(qctx_->ectx());
-    }
-
-    void cleanup() {
     }
 
     void run() {
         ASSERT_NE(plan_->root(), nullptr);
 
-        std::unordered_map<int64_t, Executor*> cache;
-        auto executor = Executor::makeExecutor(
-            qctx_->plan()->root(), qctx_.get(), &cache);
-        ASSERT_NE(executor, nullptr);
-
         watch_.reset();
-        scheduler_->analyze(executor);
-        scheduler_->schedule(executor)
-                .then([](Status s) { ASSERT_TRUE(s.ok()) << s.toString(); })
-                .onError([](const ExecutionError& e) { LOG(INFO) << e.what(); })
-                .onError([](const std::exception& e) { LOG(INFO) << "exception: " << e.what(); })
-                .ensure([this]() {
-                    auto us = duration_cast<microseconds>(watch_.elapsed());
-                    LOG(INFO) << "elapsed time: " << us.count() << "us";
-                    cleanup();
-                });
+        scheduler_->schedule()
+            .then([](Status s) { ASSERT_TRUE(s.ok()) << s.toString(); })
+            .onError([](const ExecutionError& e) { LOG(ERROR) << e.what(); })
+            .onError([](const std::exception& e) { LOG(ERROR) << "exception: " << e.what(); })
+            .ensure([this]() {
+                auto us = duration_cast<microseconds>(watch_.elapsed());
+                LOG(INFO) << "elapsed time: " << us.count() << "us";
+            });
     }
 
 protected:
     folly::stop_watch<> watch_;
     ExecutionPlan* plan_;
-    std::unique_ptr<QueryContext>  qctx_;
-    std::unique_ptr<Scheduler>  scheduler_;
+    std::unique_ptr<QueryContext> qctx_;
+    std::unique_ptr<Scheduler> scheduler_;
 };
 
 TEST_F(ExecutionPlanTest, TestSimplePlan) {
@@ -99,7 +89,7 @@ TEST_F(ExecutionPlanTest, TestLoopPlan) {
     run();
 }
 
-TEST_F(ExecutionPlanTest, TestMutiOutputs) {
+TEST_F(ExecutionPlanTest, TestMultiOutputs) {
     auto start = StartNode::make(plan_);
     auto mout = MultiOutputsNode::make(plan_, start);
     auto filter = Filter::make(plan_, mout, nullptr);
@@ -112,7 +102,7 @@ TEST_F(ExecutionPlanTest, TestMutiOutputs) {
     run();
 }
 
-TEST_F(ExecutionPlanTest, TestMutiOutputsInLoop) {
+TEST_F(ExecutionPlanTest, TestMultiOutputsInLoop) {
     auto loopStart = StartNode::make(plan_);
     auto mout = MultiOutputsNode::make(plan_, loopStart);
     auto filter = Filter::make(plan_, mout, nullptr);

@@ -44,7 +44,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:planner_obj>
         $<TARGET_OBJECTS:exec_obj>
         $<TARGET_OBJECTS:schedule_obj>
-        $<TARGET_OBJECTS:schema_util_obj>
+        $<TARGET_OBJECTS:util_obj>
         $<TARGET_OBJECTS:idgenerator_obj>
         $<TARGET_OBJECTS:context_obj>
     LIBRARIES

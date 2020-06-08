@@ -12,6 +12,7 @@
 #include "exec/Executor.h"
 #include "planner/ExecutionPlan.h"
 #include "planner/PlanNode.h"
+#include "schedule/Scheduler.h"
 
 namespace nebula {
 namespace graph {
@@ -25,16 +26,13 @@ void QueryInstance::execute() {
         auto result = GQLParser().parse(rctx->query());
         if (!result.ok()) {
             status = std::move(result).status();
-            LOG(ERROR) << status;
             break;
         }
 
         sentences_ = std::move(result).value();
-        validator_ = std::make_unique<ASTValidator>(
-            sentences_.get(), qctx());
+        validator_ = std::make_unique<ASTValidator>(sentences_.get(), qctx());
         status = validator_->validate();
         if (!status.ok()) {
-            LOG(ERROR) << status;
             break;
         }
 
@@ -42,16 +40,12 @@ void QueryInstance::execute() {
     } while (false);
 
     if (!status.ok()) {
+        LOG(ERROR) << status;
         onError(std::move(status));
         return;
     }
 
-    std::unordered_map<int64_t, Executor*> cache;
-    auto executor = Executor::makeExecutor(
-            qctx_->plan()->root(), qctx_.get(), &cache);
-    scheduler_ = std::make_unique<Scheduler>(qctx_->ectx());
-    scheduler_->analyze(executor);
-    scheduler_->schedule(executor)
+    scheduler_->schedule()
         .then([this](Status s) {
             if (s.ok()) {
                 this->onFinish();

@@ -6,7 +6,7 @@
 
 set(GRAPH_TEST_LIB
     $<TARGET_OBJECTS:mock_obj>
-    $<TARGET_OBJECTS:schema_util_obj>
+    $<TARGET_OBJECTS:util_obj>
     $<TARGET_OBJECTS:service_obj>
     $<TARGET_OBJECTS:session_obj>
     $<TARGET_OBJECTS:query_engine_obj>

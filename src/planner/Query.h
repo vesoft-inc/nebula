@@ -39,12 +39,12 @@ private:
 
 class SingleInputNode : public PlanNode {
 public:
-    PlanNode* input() const {
-        return input_;
+    const PlanNode* input() const {
+        return PlanNode::input(0);
     }
 
     void setInput(PlanNode* input) {
-        input_ = input;
+        addInput(input);
     }
 
     void setInputVar(std::string inputVar) {
@@ -55,17 +55,11 @@ public:
         return inputVar_;
     }
 
-    std::string explain() const override {
-        return "";
-    }
-
 protected:
-    SingleInputNode(ExecutionPlan* plan, Kind kind, PlanNode* input)
-        : PlanNode(plan, kind), input_(input) {
-        // DCHECK_NOTNULL(input_);
+    SingleInputNode(ExecutionPlan* plan, Kind kind, PlanNode* input) : PlanNode(plan, kind) {
+        setInput(input);
     }
 
-    PlanNode* input_{nullptr};
     // Datasource for this node.
     std::string inputVar_;
 };
@@ -73,11 +67,13 @@ protected:
 class BiInputNode : public PlanNode {
 public:
     void setLeft(PlanNode* left) {
-        left_ = left;
+        addInput(left);
+        leftIdx_ = inputs_.size() - 1;
     }
 
     void setRight(PlanNode* right) {
-        right_ = right;
+        addInput(right);
+        rightIdx_ = inputs_.size() - 1;
     }
 
     void setLeftVar(std::string leftVar) {
@@ -88,12 +84,12 @@ public:
         rightVar_ = std::move(rightVar);
     }
 
-    PlanNode* left() const {
-        return left_;
+    const PlanNode* left() const {
+        return input(leftIdx_);
     }
 
-    PlanNode* right() const {
-        return right_;
+    const PlanNode* right() const {
+        return input(rightIdx_);
     }
 
     const std::string& leftInputVar() const {
@@ -110,13 +106,13 @@ public:
 
 protected:
     BiInputNode(ExecutionPlan* plan, Kind kind, PlanNode* left, PlanNode* right)
-        : PlanNode(plan, kind), left_(left), right_(right) {
-        DCHECK_NOTNULL(left_);
-        DCHECK_NOTNULL(right_);
+        : PlanNode(plan, kind) {
+        setLeft(left);
+        setRight(right);
     }
 
-    PlanNode* left_{nullptr};
-    PlanNode* right_{nullptr};
+    size_t leftIdx_;
+    size_t rightIdx_;
     // Datasource for this node.
     std::string leftVar_;
     std::string rightVar_;

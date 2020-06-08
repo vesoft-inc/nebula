@@ -15,10 +15,13 @@
 
 namespace nebula {
 namespace graph {
+
 class Validator {
 public:
     Validator(Sentence* sentence, QueryContext* qctx)
-        : sentence_(sentence), qctx_(qctx), vctx_(qctx->vctx()) {}
+        : sentence_(DCHECK_NOTNULL(sentence)),
+          qctx_(DCHECK_NOTNULL(qctx)),
+          vctx_(DCHECK_NOTNULL(qctx->vctx())) {}
 
     virtual ~Validator() = default;
 

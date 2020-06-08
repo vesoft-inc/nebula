@@ -28,6 +28,7 @@ class QueryInstance final : public cpp::NonCopyable, public cpp::NonMovable {
 public:
     explicit QueryInstance(std::unique_ptr<QueryContext> qctx) {
         qctx_ = std::move(qctx);
+        scheduler_ = std::make_unique<Scheduler>(qctx_.get());
     }
 
     ~QueryInstance() = default;

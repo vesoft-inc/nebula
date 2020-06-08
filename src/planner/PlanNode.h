@@ -91,15 +91,31 @@ public:
         plan_ = plan;
     }
 
-protected:
+    PlanNode* addInput(const PlanNode* input) {
+        // FIXME:
+        // inputs_.emplace_back(DCHECK_NOTNULL(input));
+        inputs_.emplace_back(input);
+        return this;
+    }
+
+    const PlanNode* input(size_t i) const {
+        return i < inputs_.size() ? inputs_[i] : nullptr;
+    }
+
+    const std::vector<const PlanNode*>& inputs() const {
+        return inputs_;
+    }
+
     static const char* toString(Kind kind);
 
+protected:
     Kind                                     kind_{Kind::kUnknown};
     int64_t                                  id_{IdGenerator::INVALID_ID};
     ExecutionPlan*                           plan_{nullptr};
     using VariableName = std::string;
     std::unordered_set<VariableName>         availableVars_;
     VariableName                             outputVar_;
+    std::vector<const PlanNode*>             inputs_;
 };
 
 }  // namespace graph

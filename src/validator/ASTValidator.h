@@ -8,14 +8,12 @@
 #define VALIDATOR_ASTVALIDATOR_H_
 
 #include "common/base/Base.h"
-#include "validator/Validator.h"
-#include "parser/SequentialSentences.h"
-#include "service/ClientSession.h"
+#include "parser/Sentence.h"
 #include "context/QueryContext.h"
 
 namespace nebula {
 
-class CharsetInfo;
+class Sentence;
 
 namespace graph {
 
@@ -23,15 +21,14 @@ class ExecutionPlan;
 
 class ASTValidator final {
 public:
-    ASTValidator(SequentialSentences* sentences,
-                 QueryContext* qctx)
-        : sentences_(sentences), qctx_(qctx) {}
+    ASTValidator(Sentence* sentences, QueryContext* qctx)
+        : sentences_(DCHECK_NOTNULL(sentences)), qctx_(DCHECK_NOTNULL(qctx)) {}
 
     Status validate();
 
 private:
-    SequentialSentences*                sentences_{nullptr};
-    QueryContext*                       qctx_;
+    Sentence*                           sentences_{nullptr};
+    QueryContext*                       qctx_{nullptr};
 };
 }  // namespace graph
 }  // namespace nebula

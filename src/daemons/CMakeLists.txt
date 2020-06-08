@@ -9,7 +9,7 @@ nebula_add_executable(
     SOURCES
         GraphDaemon.cpp
     OBJECTS
-        $<TARGET_OBJECTS:schema_util_obj>
+        $<TARGET_OBJECTS:util_obj>
         $<TARGET_OBJECTS:service_obj>
         $<TARGET_OBJECTS:session_obj>
         $<TARGET_OBJECTS:query_engine_obj>

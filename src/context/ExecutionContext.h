@@ -127,7 +127,7 @@ public:
     // Get the latest version of the value
     const Value& getValue(const std::string& name) const;
 
-    Value&& moveValue(const std::string& name);
+    Value moveValue(const std::string& name);
 
     const ExecResult& getResult(const std::string& name) const;
 
@@ -153,5 +153,3 @@ private:
 }  // namespace graph
 }  // namespace nebula
 #endif  // CONTEXT_EXECUTIONCONTEXT_H_
-
-

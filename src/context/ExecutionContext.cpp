@@ -60,12 +60,12 @@ const Value& ExecutionContext::getValue(const std::string& name) const {
 }
 
 
-Value&& ExecutionContext::moveValue(const std::string& name) {
+Value ExecutionContext::moveValue(const std::string& name) {
     auto it = valueMap_.find(name);
     if (it != valueMap_.end()) {
         return it->second.back().moveValue();
     } else {
-        return std::move(Value());
+        return Value();
     }
 }
 

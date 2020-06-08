@@ -23,7 +23,7 @@ namespace nebula {
 namespace graph {
 
 class Executor;
-class ExecutionContext;
+class QueryContext;
 class LoopExecutor;
 
 class Scheduler final : private cpp::NonCopyable, private cpp::NonMovable {
@@ -34,12 +34,10 @@ public:
         explicit Task(const Executor *e);
     };
 
-    explicit Scheduler(ExecutionContext *ectx);
+    explicit Scheduler(QueryContext *qctx);
     ~Scheduler() = default;
 
-    void analyze(Executor *executor);
-
-    folly::Future<Status> schedule(Executor *executor);
+    folly::Future<Status> schedule();
 
 private:
     // Enable thread pool check the query plan id of each callback registered in future. The functor
@@ -64,11 +62,15 @@ private:
         return ExecTask<Fn>(e, std::forward<Fn>(f));
     }
 
+    void analyze(Executor *executor);
+
+    folly::Future<Status> schedule(Executor *executor);
+
     folly::Future<Status> schedule(const std::set<Executor *> &dependents);
 
     folly::Future<Status> iterate(LoopExecutor *loop);
 
-    ExecutionContext *ectx_;
+    QueryContext *qctx_;
 
     struct MultiOutputsData {
         folly::SpinLock lock;
