@@ -50,6 +50,7 @@ WHEN                        ([Ww][Hh][Ee][Nn])
 DELETE                      ([Dd][Ee][Ll][Ee][Tt][Ee])
 FIND                        ([Ff][Ii][Nn][Dd])
 LOOKUP                      ([Ll][Oo][Oo][Kk][Uu][Pp])
+SCAN                        ([Ss][Cc][Aa][Nn])
 ALTER                       ([Aa][Ll][Tt][Ee][Rr])
 STEPS                       ([Ss][Tt][Ee][Pp][Ss]?)
 OVER                        ([Oo][Vv][Ee][Rr])
@@ -107,6 +108,7 @@ BY                          ([Bb][Yy])
 IN                          ([Ii][Nn])
 TTL_DURATION                ([Tt][Tt][Ll][_][Dd][Uu][Rr][Aa][Tt][Ii][Oo][Nn])
 TTL_COL                     ([Tt][Tt][Ll][_][Cc][Oo][Ll])
+LATEST_SECONDS              ([Ll][Aa][Tt][Ee][Ss][Tt][_][Ss][Ee][Cc][Oo][Nn][Dd][Ss])
 DOWNLOAD                    ([Dd][Oo][Ww][Nn][Ll][Oo][Aa][Dd])
 HDFS                        ([Hh][Dd][Ff][Ss])
 ORDER                       ([Oo][Rr][Dd][Ee][Rr])
@@ -196,6 +198,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {DELETE}                    { return TokenType::KW_DELETE; }
 {FIND}                      { return TokenType::KW_FIND; }
 {LOOKUP}                    { return TokenType::KW_LOOKUP; }
+{SCAN}                      { return TokenType::KW_SCAN; }
 {ALTER}                     { return TokenType::KW_ALTER; }
 {STEPS}                     { return TokenType::KW_STEPS; }
 {OVER}                      { return TokenType::KW_OVER; }
@@ -303,6 +306,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {CONFIGS}                   { return TokenType::KW_CONFIGS; }
 {TTL_DURATION}              { return TokenType::KW_TTL_DURATION; }
 {TTL_COL}                   { return TokenType::KW_TTL_COL; }
+{LATEST_SECONDS}            { return TokenType::KW_LATEST_SECONDS; }
 {GRAPH}                     { return TokenType::KW_GRAPH; }
 {META}                      { return TokenType::KW_META; }
 {STORAGE}                   { return TokenType::KW_STORAGE; }

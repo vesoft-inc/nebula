@@ -24,6 +24,7 @@
 #include "graph/YieldExecutor.h"
 #include "graph/GroupByExecutor.h"
 #include "graph/SchemaHelper.h"
+#include "graph/ScanExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -41,6 +42,9 @@ TraverseExecutor::makeTraverseExecutor(Sentence *sentence, ExecutionContext *ect
     switch (kind) {
         case Sentence::Kind::kGo:
             executor = std::make_unique<GoExecutor>(sentence, ectx);
+            break;
+        case Sentence::Kind::kScan:
+            executor = std::make_unique<ScanExecutor>(sentence, ectx);
             break;
         case Sentence::Kind::kPipe:
             executor = std::make_unique<PipeExecutor>(sentence, ectx);

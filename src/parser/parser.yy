@@ -119,6 +119,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_SHORTEST KW_PATH
 %token KW_IS KW_NULL KW_DEFAULT
 %token KW_SNAPSHOT KW_SNAPSHOTS KW_LOOKUP
+%token KW_SCAN KW_LATEST_SECONDS
 %token KW_JOBS KW_JOB KW_RECOVER KW_FLUSH KW_COMPACT KW_SUBMIT
 %token KW_BIDIRECT
 %token KW_USER KW_USERS KW_ACCOUNT
@@ -230,6 +231,8 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 
 %type <sentence> traverse_sentence
 %type <sentence> go_sentence match_sentence lookup_sentence find_path_sentence
+%type <sentence> scan_sentence
+%type <expr> scan_part_clause scan_from_clause scan_latest_seconds_clause scan_limit_clause
 %type <sentence> group_by_sentence order_by_sentence limit_sentence
 %type <sentence> fetch_sentence fetch_vertices_sentence fetch_edges_sentence
 %type <sentence> set_sentence piped_sentence assignment_sentence
@@ -813,6 +816,31 @@ lookup_sentence
     }
     ;
 
+scan_part_clause
+    : KW_PART expression { $$ = $2; }
+    ;
+
+scan_from_clause
+    : %empty { $$ = nullptr; }
+    | KW_FROM expression { $$ = $2; }
+    ;
+
+scan_latest_seconds_clause
+    : %empty { $$ = nullptr; }
+    | KW_LATEST_SECONDS expression { $$ = $2; }
+    ;
+
+scan_limit_clause
+    : %empty { $$ = nullptr; }
+    | KW_LIMIT expression { $$ = $2; }
+    ;
+
+scan_sentence
+    : KW_SCAN KW_VERTEX name_label scan_part_clause scan_from_clause scan_latest_seconds_clause scan_limit_clause {
+        $$ = new ScanSentence($3, $4, $5, $6, $7);
+    }
+    ;
+
 order_factor
     : input_ref_expression {
         $$ = new OrderFactor($1, OrderFactor::ASCEND);
@@ -1269,6 +1297,7 @@ traverse_sentence
     | go_sentence { $$ = $1; }
     | match_sentence { $$ = $1; }
     | lookup_sentence { $$ = $1; }
+    | scan_sentence { $$ = $1; }
     | group_by_sentence { $$ = $1; }
     | order_by_sentence { $$ = $1; }
     | fetch_sentence { $$ = $1; }

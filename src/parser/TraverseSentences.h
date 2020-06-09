@@ -116,6 +116,49 @@ private:
     std::unique_ptr<YieldClause>                yieldClause_;
 };
 
+class ScanSentence final : public Sentence {
+public:
+    ScanSentence(std::string* tag,
+                 Expression* partition, Expression* from,
+                 Expression* latestSeconds, Expression* limit) {
+        tag_.reset(tag);
+        partition_.reset(partition);
+        from_.reset(from);
+        latestSeconds_.reset(latestSeconds);
+        limit_.reset(limit);
+        kind_ = Kind::kScan;
+    }
+
+    const std::string& tag() const {
+        return *tag_;
+    }
+
+    Expression* partition() const {
+        return partition_.get();
+    }
+
+    Expression* from() const {
+        return from_.get();
+    }
+
+    Expression* latestSeconds() const {
+        return latestSeconds_.get();
+    }
+
+    Expression* limit() const {
+        return limit_.get();
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<std::string> tag_;
+    std::unique_ptr<Expression> partition_;
+    std::unique_ptr<Expression> from_;
+    std::unique_ptr<Expression> latestSeconds_;
+    std::unique_ptr<Expression> limit_;
+};
+
 
 class UseSentence final : public Sentence {
 public:

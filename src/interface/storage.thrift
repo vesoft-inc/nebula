@@ -363,6 +363,7 @@ struct ScanVertex {
     1: common.VertexID  vertexId,
     2: common.TagID     tagId,
     3: binary           value,                  // decode according to vertex_schema.
+    4: i64              version,
 }
 
 struct ScanVertexResponse {

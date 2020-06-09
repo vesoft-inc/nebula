@@ -136,6 +136,22 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
+        scan_vertices_test
+    SOURCES
+        ScanVerticesTest.cpp
+    OBJECTS
+        ${GRAPH_TEST_CLIENT_LIBS}
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        proxygenlib
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
         fetch_vertices_test
     SOURCES
         FetchVerticesTest.cpp

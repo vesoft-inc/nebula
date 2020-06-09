@@ -1104,6 +1104,33 @@ TEST(Parser, Lookup) {
     }
 }
 
+TEST(Parser, Scan) {
+    {
+        GQLParser parser;
+        std::string query = "SCAN VERTEX person PART 1 FROM 0 LATEST_SECONDS 100 LIMIT 100";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SCAN VERTEX person PART 1 LATEST_SECONDS 100 LIMIT 100";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SCAN VERTEX person PART 1 LIMIT 100";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SCAN VERTEX person PART 1";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
 TEST(Parser, AdminOperation) {
     {
         GQLParser parser;

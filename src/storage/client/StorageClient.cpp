@@ -547,5 +547,44 @@ StorageClient::lookUpIndex(GraphSpaceID space,
                            });
 }
 
+folly::SemiFuture<StatusOr<storage::cpp2::ScanVertexResponse>>
+StorageClient::ScanVertex(GraphSpaceID space,
+                          PartitionID partId,
+                          std::string cursor,
+                          std::unordered_map<TagID, std::vector<storage::cpp2::PropDef>> return_columns,
+                          bool all_columns,
+                          int32_t limit,
+                          int64_t start_time,
+                          int64_t end_time,
+                          folly::EventBase *evb) {
+    std::pair<HostAddr, cpp2::ScanVertexRequest> request;
+    auto metaStatus = getPartMeta(space, partId);
+    if (!metaStatus.ok()) {
+        return folly::makeFuture<StatusOr<storage::cpp2::ScanVertexResponse>>(metaStatus.status());
+    }
+    auto partMeta = metaStatus.value();
+    CHECK_GT(partMeta.peers_.size(), 0U);
+    const auto& host = this->leader(partMeta);
+    VLOG(1) << "ScanVertex partId " << partId << " @" << host;
+    request.first = std::move(host);
+    cpp2::ScanVertexRequest req;
+    req.set_space_id(space);
+    req.set_part_id(partId);
+    req.set_cursor(std::move(cursor));
+    req.set_return_columns(std::move(return_columns));
+    req.set_all_columns(all_columns);
+    req.set_limit(limit);
+    req.set_start_time(start_time);
+    req.set_end_time(end_time);
+    request.second = std::move(req);
+
+    return getResponse(
+        evb, std::move(request),
+        [] (cpp2::StorageServiceAsyncClient* client,
+            const cpp2::ScanVertexRequest& r) {
+            return client->future_scanVertex(r);
+        });
+}
+
 }   // namespace storage
 }   // namespace nebula

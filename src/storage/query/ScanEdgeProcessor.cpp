@@ -13,7 +13,7 @@
 #include "dataman/RowWriter.h"
 #include "meta/NebulaSchemaProvider.h"
 
-DEFINE_int32(max_scan_block_size, 4 * 1024 * 1024, "Max size of a respsonse block");
+DEFINE_int64(max_scan_block_size, 4 * 1024 * 1024, "Max size of a respsonse block");
 
 namespace nebula {
 namespace storage {

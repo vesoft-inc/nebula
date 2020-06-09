@@ -61,6 +61,7 @@
 #include "graph/DropSnapshotExecutor.h"
 #include "graph/UserExecutor.h"
 #include "graph/PrivilegeExecutor.h"
+#include "graph/ScanExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -71,6 +72,9 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
     switch (kind) {
         case Sentence::Kind::kGo:
             executor = std::make_unique<GoExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kScan:
+            executor = std::make_unique<ScanExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kUse:
             executor = std::make_unique<UseExecutor>(sentence, ectx());
