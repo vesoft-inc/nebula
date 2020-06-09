@@ -1,4 +1,4 @@
-/* Copyright (c) 2019 vesoft inc. All rights reserved.
+/* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -13,21 +13,17 @@
 namespace nebula {
 namespace storage {
 
-class GetProcessor : public BaseProcessor<cpp2::GeneralResponse> {
+class GetProcessor : public BaseProcessor<cpp2::KVGetResponse> {
 public:
-    static GetProcessor* instance(kvstore::KVStore* kvstore,
-                                  meta::SchemaManager* schemaMan,
-                                  stats::Stats* stats) {
-        return new GetProcessor(kvstore, schemaMan, stats);
+    static GetProcessor* instance(StorageEnv* env, stats::Stats* stats) {
+        return new GetProcessor(env, stats);
     }
 
-    void process(const cpp2::GetRequest& req);
+    void process(const cpp2::KVGetRequest& req);
 
 protected:
-    explicit GetProcessor(kvstore::KVStore* kvstore,
-                          meta::SchemaManager* schemaMan,
-                          stats::Stats* stats):
-        BaseProcessor<cpp2::GeneralResponse>(kvstore, schemaMan, stats) {}
+    explicit GetProcessor(StorageEnv* env, stats::Stats* stats):
+        BaseProcessor<cpp2::KVGetResponse>(env, stats) {}
 };
 
 }  // namespace storage

@@ -4,13 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "storage/kv/PutProcessor.h"
+#include "storage/kv/RemoveProcessor.h"
 #include "utils/NebulaKeyUtils.h"
 
 namespace nebula {
 namespace storage {
 
-void PutProcessor::process(const cpp2::KVPutRequest& req) {
+void RemoveProcessor::process(const cpp2::KVRemoveRequest& req) {
     CHECK_NOTNULL(env_->kvstore_);
     const auto& pairs = req.get_parts();
     auto space = req.get_space_id();
@@ -18,12 +18,11 @@ void PutProcessor::process(const cpp2::KVPutRequest& req) {
 
     std::for_each(pairs.begin(), pairs.end(), [&](auto& value) {
         auto part = value.first;
-        std::vector<kvstore::KV> data;
-        for (auto& pair : value.second) {
-            data.emplace_back(std::move(NebulaKeyUtils::kvKey(part, pair.key)),
-                              std::move(pair.value));
+        std::vector<std::string> keys;
+        for (auto& key : value.second) {
+            keys.emplace_back(std::move(NebulaKeyUtils::kvKey(part, key)));
         }
-        doPut(space, part, std::move(data));
+        doRemove(space, part, std::move(keys));
     });
 }
 

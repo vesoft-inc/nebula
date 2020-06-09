@@ -12,6 +12,7 @@
 #include "common/clients/meta/MetaClient.h"
 #include "storage/StorageAdminServiceHandler.h"
 #include "storage/GraphStorageServiceHandler.h"
+#include "storage/GeneralStorageServiceHandler.h"
 
 namespace nebula {
 namespace mock {
@@ -146,18 +147,27 @@ void MockCluster::initStorageKV(const char* dataPath,
 
 void MockCluster::startStorage(HostAddr addr,
                                const std::string& rootPath,
+                               bool isGeneralService,
                                SchemaVer schemaVerCount) {
     initStorageKV(rootPath.c_str(), addr, schemaVerCount);
+
+    auto *env = storageEnv_.get();
     storageAdminServer_ = std::make_unique<RpcServer>();
-    auto handler1 = std::make_shared<storage::StorageAdminServiceHandler>(storageEnv_.get());
-    storageAdminServer_->start("admin-storage", addr.port, handler1);
+    auto adminHandler = std::make_shared<storage::StorageAdminServiceHandler>(env);
+    storageAdminServer_->start("admin-storage", addr.port - 1, adminHandler);
     LOG(INFO) << "The admin storage daemon started on port " << storageAdminServer_->port_;
 
-    graphStorageServer_ = std::make_unique<RpcServer>();
-    auto handler2 = std::make_shared<storage::GraphStorageServiceHandler>(storageEnv_.get());
-    auto port = addr.port == 0 ? addr.port : addr.port + 10;
-    graphStorageServer_->start("graph-storage", port, handler2);
-    LOG(INFO) << "The graph storage daemon started on port " << graphStorageServer_->port_;
+    if (!isGeneralService) {
+        graphStorageServer_ = std::make_unique<RpcServer>();
+        auto graphHandler = std::make_shared<storage::GraphStorageServiceHandler>(env);
+        graphStorageServer_->start("graph-storage", addr.port, graphHandler);
+        LOG(INFO) << "The graph storage daemon started on port " << graphStorageServer_->port_;
+    } else {
+        generalStorageServer_ = std::make_unique<RpcServer>();
+        auto generalHandler = std::make_shared<storage::GeneralStorageServiceHandler>(env);
+        generalStorageServer_->start("general-storage", addr.port, generalHandler);
+        LOG(INFO) << "The general storage daemon started on port " << generalStorageServer_->port_;
+    }
 }
 
 std::unique_ptr<meta::SchemaManager>
@@ -202,10 +212,16 @@ void MockCluster::initMetaClient(meta::MetaClientOptions options) {
     LOG(INFO) << "Meta client has been ready!";
 }
 
-storage::GraphStorageClient* MockCluster::initStorageClient() {
+storage::GraphStorageClient* MockCluster::initGraphStorageClient() {
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     storageClient_ = std::make_unique<storage::GraphStorageClient>(threadPool, metaClient_.get());
     return storageClient_.get();
+}
+
+storage::GeneralStorageClient* MockCluster::initGeneralStorageClient() {
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    generalClient_ = std::make_unique<storage::GeneralStorageClient>(threadPool, metaClient_.get());
+    return generalClient_.get();
 }
 
 }  // namespace mock

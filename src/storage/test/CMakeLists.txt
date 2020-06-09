@@ -4,13 +4,12 @@ set(storage_test_deps
     $<TARGET_OBJECTS:storage_admin_service_handler>
     $<TARGET_OBJECTS:graph_storage_service_handler>
     $<TARGET_OBJECTS:storage_common_obj>
+    $<TARGET_OBJECTS:general_storage_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
     $<TARGET_OBJECTS:raftex_obj>
     $<TARGET_OBJECTS:wal_obj>
-    $<TARGET_OBJECTS:codec_obj>
     $<TARGET_OBJECTS:keyutils_obj>
-    # $<TARGET_OBJECTS:filter_obj>
-    # $<TARGET_OBJECTS:storage_client>
+    $<TARGET_OBJECTS:codec_obj>
     $<TARGET_OBJECTS:common_ws_common_obj>
     $<TARGET_OBJECTS:common_http_client_obj>
     $<TARGET_OBJECTS:common_storage_thrift_obj>
@@ -21,7 +20,6 @@ set(storage_test_deps
     $<TARGET_OBJECTS:common_common_thrift_obj>
     $<TARGET_OBJECTS:common_raftex_thrift_obj>
     $<TARGET_OBJECTS:common_meta_obj>
-    # $<TARGET_OBJECTS:index_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:common_thread_obj>
     $<TARGET_OBJECTS:common_time_obj>
@@ -273,9 +271,9 @@ nebula_add_test(
 #        StorageClientTest.cpp
 #    OBJECTS
 #        $<TARGET_OBJECTS:meta_service_handler>
-#        $<TARGET_OBJECTS:ws_common_obj>
-#        $<TARGET_OBJECTS:http_client_obj>
-#        $<TARGET_OBJECTS:process_obj>
+#        $<TARGET_OBJECTS:common_ws_obj>
+#        $<TARGET_OBJECTS:common_http_client_obj>
+#        $<TARGET_OBJECTS:common_process_obj>
 #        ${storage_test_deps}
 #    LIBRARIES
 #        ${ROCKSDB_LIBRARIES}
@@ -478,23 +476,51 @@ nebula_add_test(
 #        wangle
 #        gtest
 #)
-#
-#nebula_add_test(
-#    NAME
-#        kv_test
-#    SOURCES
-#        KVTest.cpp
-#    OBJECTS
-#        $<TARGET_OBJECTS:meta_service_handler>
-#        $<TARGET_OBJECTS:adHocSchema_obj>
-#        $<TARGET_OBJECTS:ws_common_obj>
-#        $<TARGET_OBJECTS:http_client_obj>
-#        $<TARGET_OBJECTS:process_obj>
-#        ${storage_test_deps}
-#    LIBRARIES
-#        ${ROCKSDB_LIBRARIES}
-#        ${THRIFT_LIBRARIES}
-#        wangle
-#        gtest
-#)
 
+nebula_add_test(
+    NAME
+        kv_test
+    SOURCES
+        KVTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:storage_admin_service_handler>
+        $<TARGET_OBJECTS:storage_common_obj>
+        $<TARGET_OBJECTS:meta_service_handler>
+        $<TARGET_OBJECTS:mock_obj>
+        $<TARGET_OBJECTS:common_ws_common_obj>
+        $<TARGET_OBJECTS:common_ws_obj>
+        $<TARGET_OBJECTS:common_http_client_obj>
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        proxygenhttpserver
+        proxygenlib
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        kv_client_test
+    SOURCES
+        KVClientTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:storage_admin_service_handler>
+        $<TARGET_OBJECTS:storage_common_obj>
+        $<TARGET_OBJECTS:meta_service_handler>
+        $<TARGET_OBJECTS:mock_obj>
+        $<TARGET_OBJECTS:common_general_storage_client_obj>
+        $<TARGET_OBJECTS:common_storage_client_base_obj>
+        $<TARGET_OBJECTS:common_ws_common_obj>
+        $<TARGET_OBJECTS:common_ws_obj>
+        $<TARGET_OBJECTS:common_http_client_obj>
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        proxygenhttpserver
+        proxygenlib
+        wangle
+        gtest
+)

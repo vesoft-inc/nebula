@@ -1,4 +1,4 @@
-/* Copyright (c) 2019 vesoft inc. All rights reserved.
+/* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -10,7 +10,8 @@
 namespace nebula {
 namespace storage {
 
-void GetProcessor::process(const cpp2::GetRequest& req) {
+void GetProcessor::process(const cpp2::KVGetRequest& req) {
+    CHECK_NOTNULL(env_->kvstore_);
     GraphSpaceID spaceId = req.get_space_id();
     bool returnPartly = req.get_return_partly();
 
@@ -29,7 +30,7 @@ void GetProcessor::process(const cpp2::GetRequest& req) {
         std::transform(keys.begin(), keys.end(), std::back_inserter(kvKeys),
                        [partId] (const auto& key) { return NebulaKeyUtils::kvKey(partId, key); });
         std::vector<std::string> values;
-        auto ret = this->kvstore_->multiGet(spaceId, partId, kvKeys, &values);
+        auto ret = env_->kvstore_->multiGet(spaceId, partId, kvKeys, &values);
         if ((ret.first == kvstore::ResultCode::SUCCEEDED) ||
             (ret.first == kvstore::ResultCode::ERR_PARTIAL_RESULT && returnPartly)) {
             auto& status = ret.second;
@@ -43,7 +44,7 @@ void GetProcessor::process(const cpp2::GetRequest& req) {
         }
     }
 
-    resp_.set_values(std::move(pairs));
+    resp_.set_key_values(std::move(pairs));
     this->onFinished();
 }
 

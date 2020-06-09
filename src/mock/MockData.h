@@ -162,6 +162,16 @@ public:
     static nebula::storage::cpp2::AddEdgesRequest
     mockAddEdgesSpecifiedOrderReq(int32_t parts = 6);
 
+    /*
+     * Mock KV data
+     */
+    static nebula::storage::cpp2::KVPutRequest mockKVPut();
+
+    static nebula::storage::cpp2::KVGetRequest mockKVGet();
+
+    static nebula::storage::cpp2::KVRemoveRequest mockKVRemove();
+
+public:
     static std::vector<std::string> teams_;
 
     static std::vector<Player> players_;

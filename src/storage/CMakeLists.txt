@@ -32,6 +32,13 @@ nebula_add_library(
     query/GetPropProcessor.cpp
 )
 
+nebula_add_library(
+    general_storage_service_handler OBJECT
+    GeneralStorageServiceHandler.cpp
+    kv/PutProcessor.cpp
+    kv/GetProcessor.cpp
+    kv/RemoveProcessor.cpp
+)
 
 nebula_add_library(
     storage_http_handler OBJECT

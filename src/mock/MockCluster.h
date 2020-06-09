@@ -9,6 +9,7 @@
 
 #include "common/base/Base.h"
 #include "common/clients/storage/GraphStorageClient.h"
+#include "common/clients/storage/GeneralStorageClient.h"
 #include "mock/RpcServer.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
@@ -21,6 +22,7 @@
 #include <folly/synchronization/Baton.h>
 #include <folly/executors/ThreadPoolExecutor.h>
 #include <folly/executors/CPUThreadPoolExecutor.h>
+#include <thrift/lib/cpp/concurrency/ThreadManager.h>
 
 namespace nebula {
 namespace mock {
@@ -31,7 +33,10 @@ public:
 
     void startMeta(int32_t port, const std::string& rootPath, std::string hostname = "");
 
-    void startStorage(HostAddr addr, const std::string& rootPath, SchemaVer schemaVerCount = 1);
+    void startStorage(HostAddr addr,
+                      const std::string& rootPath,
+                      bool isGeneralService = false,
+                      SchemaVer schemaVerCount = 1);
 
     /**
      * Init a meta client connect to current meta server.
@@ -43,8 +48,9 @@ public:
      * Init a storage client connect to graphStorageServer
      * The meta server, and meta client must started first
      * */
-    storage::GraphStorageClient* initStorageClient();
+    storage::GraphStorageClient* initGraphStorageClient();
 
+    storage::GeneralStorageClient* initGeneralStorageClient();
 
     std::unique_ptr<meta::SchemaManager> memSchemaMan(SchemaVer schemaVerCount = 1);
 
@@ -77,10 +83,12 @@ public:
     std::unique_ptr<RpcServer>                      metaServer_{nullptr};
     std::unique_ptr<meta::MetaClient>               metaClient_{nullptr};
     std::unique_ptr<storage::GraphStorageClient>    storageClient_{nullptr};
+    std::unique_ptr<storage::GeneralStorageClient>  generalClient_{nullptr};
     std::unique_ptr<kvstore::NebulaStore>           metaKV_{nullptr};
 
     std::unique_ptr<RpcServer>                      storageAdminServer_{nullptr};
     std::unique_ptr<RpcServer>                      graphStorageServer_{nullptr};
+    std::unique_ptr<RpcServer>                      generalStorageServer_{nullptr};
     std::unique_ptr<kvstore::NebulaStore>           storageKV_{nullptr};
     std::unique_ptr<storage::StorageEnv>            storageEnv_{nullptr};
 

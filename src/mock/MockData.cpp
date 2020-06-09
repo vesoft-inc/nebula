@@ -1189,5 +1189,56 @@ EdgeData MockData::getReverseEdge(const EdgeData& edge) {
     return reverse;
 }
 
+nebula::storage::cpp2::KVPutRequest
+MockData::mockKVPut() {
+    nebula::storage::cpp2::KVPutRequest req;
+    req.set_space_id(1);
+
+    const int32_t totalParts = 6;
+    std::unordered_map<PartitionID, std::vector<nebula::KeyValue>> data;
+    for (size_t part = 1; part <= totalParts; part++) {
+        nebula::KeyValue pair;
+        pair.key = folly::stringPrintf("key_%ld", part);
+        pair.value = folly::stringPrintf("value_%ld", part);
+        std::vector<nebula::KeyValue> pairs;
+        pairs.emplace_back(std::move(pair));
+        data.emplace(part, std::move(pairs));
+    }
+    req.set_parts(std::move(data));
+    return req;
+}
+
+nebula::storage::cpp2::KVGetRequest
+MockData::mockKVGet() {
+    nebula::storage::cpp2::KVGetRequest req;
+    req.set_space_id(1);
+
+    const int32_t totalParts = 6;
+    std::unordered_map<PartitionID, std::vector<std::string>> data;
+    for (size_t part = 1; part <= totalParts; part++) {
+        std::vector<std::string> keys;
+        keys.emplace_back(folly::stringPrintf("key_%ld", part));
+        data.insert(std::make_pair(part, std::move(keys)));
+    }
+    req.set_parts(std::move(data));
+    return req;
+}
+
+nebula::storage::cpp2::KVRemoveRequest
+MockData::mockKVRemove() {
+    nebula::storage::cpp2::KVRemoveRequest req;
+    req.set_space_id(1);
+
+    const int32_t totalParts = 6;
+    std::unordered_map<PartitionID, std::vector<std::string>> data;
+    for (size_t part = 1; part <= totalParts; part++) {
+        std::vector<std::string> keys;
+        keys.emplace_back(folly::stringPrintf("key_%ld", part));
+        data.insert(std::make_pair(part, std::move(keys)));
+    }
+    req.set_parts(std::move(data));
+    return req;
+}
+
 }  // namespace mock
 }  // namespace nebula
