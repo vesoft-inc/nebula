@@ -2618,27 +2618,6 @@ TEST_P(GoTest, ErrorMsg) {
     }
 }
 
-TEST_P(GoTest, issue2087) {
-    // from input
-    {
-        cpp2::ExecutionResponse resp;
-        auto *fmt = "GO FROM %ld OVER like YIELD like._src as src, like._dst as dst "
-            "| GO FROM $-.src OVER like YIELD $-.src as src, like._dst as dst";
-        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
-        auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
-    }
-    // from variable
-    {
-        cpp2::ExecutionResponse resp;
-        auto *fmt = "$a = GO FROM %ld OVER like YIELD like._src as src, like._dst as dst; "
-            "GO FROM $a.src OVER like YIELD $-.src as src, like._dst as dst";
-        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
-        auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
-    }
-}
-
 TEST_P(GoTest, ZeroStep) {
     // Zero step
     {
