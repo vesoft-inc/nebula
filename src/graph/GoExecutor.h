@@ -231,8 +231,6 @@ private:
     std::unique_ptr<cpp2::ExecutionResponse>    resp_;
     // Record the data of response in GO step
     std::vector<RpcResponse>                    records_;
-    // TODO(shylock) Join lose the data with duplicate input(VID) map
-    bool                                        uniqueStart_{false};  // #2087 Workaround
     // The name of Tag or Edge, index of prop in data
     using SchemaPropIndex = std::unordered_map<std::pair<std::string, std::string>, int64_t>;
 };
