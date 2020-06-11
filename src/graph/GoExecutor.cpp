@@ -1070,12 +1070,11 @@ bool GoExecutor::processFinalResult(Callback cb) const {
                 auto srcId = vdata.get_vertex_id();
                 const auto rootId = getRoot(srcId, recordIn);
                 auto inputRows = index_->rowsOfVid(rootId);
-                const bool notJoinInput = !joinInput;
                 bool notJoinOnce = false;
                 for (auto inputRow = inputRows.first;
-                     notJoinInput || inputRow != inputRows.second;
-                     !notJoinInput ? ++inputRow : inputRow) {
-                    if (notJoinInput) {
+                     !joinInput || inputRow != inputRows.second;
+                     joinInput ? ++inputRow : inputRow) {
+                    if (!joinInput) {
                         if (notJoinOnce) {
                             break;
                         }
