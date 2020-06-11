@@ -491,14 +491,6 @@ Status GoExecutor::setupStarts() {
         return std::move(result).status();
     }
     starts_ = std::move(result).value();
-    std::unordered_set<VertexID> uni;
-    uni.reserve(starts_.size());
-    uni.insert(starts_.begin(), starts_.end());
-    if (starts_.size() == uni.size()) {
-        uniqueStart_ = true;
-    } else {
-        uniqueStart_ = false;
-    }
 
     auto indexResult = inputs->buildIndex(*colname_);
     if (!indexResult.ok()) {
@@ -1151,19 +1143,11 @@ bool GoExecutor::processFinalResult(Callback cb) const {
                             return ret.value();
                         };
                         getters.getVariableProp = [&srcId,
-                                                this] (const std::string &prop) -> OptVariantType {
-                            if (!uniqueStart_) {
-                                return Status::NotSupported(
-                                    "Not supported duplicate start from variable");
-                            }
+                                                    this] (const std::string &prop) {
                             return getPropFromInterim(srcId, prop);
                         };
                         getters.getInputProp = [&srcId,
-                                                this] (const std::string &prop) -> OptVariantType {
-                            if (!uniqueStart_) {
-                                return Status::NotSupported(
-                                    "Not supported duplicate start from input");
-                            }
+                                                 this] (const std::string &prop) {
                             return getPropFromInterim(srcId, prop);
                         };
 
