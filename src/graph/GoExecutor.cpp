@@ -1163,12 +1163,10 @@ bool GoExecutor::processFinalResult(Callback cb) const {
                                 return ret.value();
                             };
                             getters.getVariableProp = [inputRow, this] (const std::string &prop) {
-//                                return getPropFromInterim(srcId, prop);
                                 return index_->getColumnWithRow(inputRow->second, prop);
                             };
 
                             getters.getInputProp = [inputRow, this] (const std::string &prop) {
-//                                return getPropFromInterim(srcId, prop);
                                 return index_->getColumnWithRow(inputRow->second, prop);
                             };
 
