@@ -92,9 +92,14 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options &baseOpts) {
         return s;
     }
 
-    static std::shared_ptr<rocksdb::Cache> blockCache
-        = rocksdb::NewLRUCache(FLAGS_rocksdb_block_cache * 1024 * 1024);
-    bbtOpts.block_cache = blockCache;
+    if (FLAGS_rocksdb_block_cache <= 0) {
+        bbOpts.no_block_cache = true;
+    } else {
+        static std::shared_ptr<rocksdb::Cache> blockCache
+            = rocksdb::NewLRUCache(FLAGS_rocksdb_block_cache * 1024 * 1024, 8/*shard bits*/);
+        bbtOpts.block_cache = blockCache;
+    }
+
     bbtOpts.filter_policy.reset(rocksdb::NewBloomFilterPolicy(10, false));
     if (FLAGS_enable_partitioned_index_filter) {
         bbtOpts.index_type = rocksdb::BlockBasedTableOptions::IndexType::kTwoLevelIndexSearch;
