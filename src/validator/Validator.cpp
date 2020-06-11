@@ -120,5 +120,27 @@ bool Validator::spaceChosen() {
     return vctx_->spaceChosen();
 }
 
+std::vector<std::string> Validator::evalResultColNames(const YieldColumns* cols) const {
+    std::vector<std::string> colNames;
+    for (auto& col : cols->columns()) {
+        if (col->alias() != nullptr) {
+            colNames.emplace_back(*col->alias());
+        } else {
+            switch (col->expr()->kind()) {
+                case Expression::Kind::kInputProperty: {
+                    auto expr = static_cast<InputPropertyExpression*>(col->expr());
+                    colNames.emplace_back(*expr->sym());
+                    break;
+                }
+                default: {
+                    colNames.emplace_back(col->expr()->toString());
+                    break;
+                }
+            }
+        }
+    }
+
+    return colNames;
+}
 }  // namespace graph
 }  // namespace nebula

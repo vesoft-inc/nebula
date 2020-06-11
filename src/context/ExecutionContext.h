@@ -90,8 +90,8 @@ public:
         return state_;
     }
 
-    Iterator* iter() const {
-        return iter_.get();
+    std::unique_ptr<Iterator> iter() const {
+        return iter_->copy();
     }
 
 private:

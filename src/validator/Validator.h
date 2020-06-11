@@ -72,14 +72,19 @@ protected:
      */
     virtual Status toPlan() = 0;
 
+    std::vector<std::string> evalResultColNames(const YieldColumns* cols) const;
+
 protected:
     Sentence*                       sentence_{nullptr};
     QueryContext*                   qctx_{nullptr};
     ValidateContext*                vctx_{nullptr};
+    // root and tail of a subplan.
     PlanNode*                       root_{nullptr};
     PlanNode*                       tail_{nullptr};
+    // The input columns and output columns of a sentence.
     ColsDef                         outputs_;
     ColsDef                         inputs_;
+    // Admin sentences do not requires a space to be chosen.
     bool                            noSpaceRequired_{false};
 };
 }  // namespace graph

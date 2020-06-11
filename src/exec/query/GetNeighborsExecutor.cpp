@@ -83,7 +83,7 @@ Status GetNeighborsExecutor::handleResponse(const std::vector<GetNeighborsRespon
         }
 
         // Store response results to QueryContext
-        return finish({*dataset});
+        // return finish({*dataset});
     }
     return Status::Error("Invalid result of neighbors");
 }

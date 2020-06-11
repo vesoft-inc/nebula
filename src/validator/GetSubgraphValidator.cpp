@@ -185,6 +185,7 @@ Status GetSubgraphValidator::toPlan() {
     columns->addColumn(column);
     auto* project = Project::make(plan, gn1, plan->saveObject(columns));
     project->setOutputVar(vidsToSave);
+    project->setColNames(evalResultColNames(columns));
 
     // ++counter{0} <= steps
     auto counter = vctx_->varGen()->getVar();

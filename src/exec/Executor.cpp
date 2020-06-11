@@ -41,7 +41,6 @@
 #include "planner/Mutate.h"
 #include "planner/PlanNode.h"
 #include "planner/Query.h"
-#include "context/ExecutionContext.h"
 #include "util/ObjectPool.h"
 #include "context/QueryContext.h"
 
@@ -268,6 +267,11 @@ folly::Future<Status> Executor::error(Status status) const {
 
 Status Executor::finish(nebula::Value &&value) {
     ectx_->setValue(node()->varName(), std::move(value));
+    return Status::OK();
+}
+
+Status Executor::finish(ExecResult &&result) {
+    ectx_->setResult(node()->varName(), std::move(result));
     return Status::OK();
 }
 

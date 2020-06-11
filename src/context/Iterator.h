@@ -19,6 +19,8 @@ public:
 
     virtual ~Iterator() = default;
 
+    virtual std::unique_ptr<Iterator> copy() const = 0;
+
     virtual bool valid() const = 0;
 
     virtual void next() = 0;
@@ -59,6 +61,10 @@ class DefaultIter final : public Iterator {
 public:
     explicit DefaultIter(const Value& value) : Iterator(value) {}
 
+    std::unique_ptr<Iterator> copy() const override {
+        return std::make_unique<DefaultIter>(*this);
+    }
+
     bool valid() const override {
         return !(counter_ > 0);
     }
@@ -82,6 +88,10 @@ private:
 class GetNeighborsIter final : public Iterator {
 public:
     explicit GetNeighborsIter(const Value& value);
+
+    std::unique_ptr<Iterator> copy() const override {
+        return std::make_unique<GetNeighborsIter>(*this);
+    }
 
     bool valid() const override {
         return iter_ < edges_.end();
@@ -140,6 +150,10 @@ public:
         for (size_t i = 0; i < ds.colNames.size(); ++i) {
             colIndex_.emplace(ds.colNames[i], i);
         }
+    }
+
+    std::unique_ptr<Iterator> copy() const override {
+        return std::make_unique<SequentialIter>(*this);
     }
 
     bool valid() const override {

@@ -82,6 +82,10 @@ public:
         return plan_;
     }
 
+    std::vector<std::string> colNames() const {
+        return colNames_;
+    }
+
     void setId(int64_t id) {
         id_ = id;
         outputVar_ = folly::stringPrintf("%s_%ld", toString(kind_), id_);
@@ -106,6 +110,10 @@ public:
         return inputs_;
     }
 
+    void setColNames(std::vector<std::string>&& cols) {
+        colNames_ = std::move(cols);
+    }
+
     static const char* toString(Kind kind);
 
 protected:
@@ -116,6 +124,7 @@ protected:
     std::unordered_set<VariableName>         availableVars_;
     VariableName                             outputVar_;
     std::vector<const PlanNode*>             inputs_;
+    std::vector<std::string>                 colNames_;
 };
 
 }  // namespace graph
