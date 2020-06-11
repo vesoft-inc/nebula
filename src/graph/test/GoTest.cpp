@@ -4,7 +4,6 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include <bits/stdint-intn.h>
 #include "base/Base.h"
 #include "graph/test/TestEnv.h"
 #include "graph/test/TestBase.h"
