@@ -371,7 +371,7 @@ FunctionManager::FunctionManager() {
             auto value = Expression::asString(args[0]);
             size_t size  = Expression::asInt(args[1]);
 
-            if (size < 0) {
+            if (size == 0) {
                 return std::string("");
             } else if (size < value.size()) {
                 return value.substr(0, static_cast<int32_t>(size));
@@ -396,7 +396,7 @@ FunctionManager::FunctionManager() {
         attr.body_ = [] (const auto &args) {
             auto value = Expression::asString(args[0]);
             size_t size  = Expression::asInt(args[1]);
-            if (size < 0) {
+            if (size == 0) {
                 return std::string("");
             } else if (size < value.size()) {
                 return value.substr(0, static_cast<int32_t>(size));
