@@ -102,7 +102,9 @@ public:
     explicit GetNeighborsIter(const Value& value);
 
     std::unique_ptr<Iterator> copy() const override {
-        return std::make_unique<GetNeighborsIter>(*this);
+        auto copy = std::make_unique<GetNeighborsIter>(*this);
+        copy->reset();
+        return copy;
     }
 
     bool valid() const override {
@@ -178,7 +180,9 @@ public:
     }
 
     std::unique_ptr<Iterator> copy() const override {
-        return std::make_unique<SequentialIter>(*this);
+        auto copy = std::make_unique<SequentialIter>(*this);
+        copy->reset();
+        return copy;
     }
 
     bool valid() const override {

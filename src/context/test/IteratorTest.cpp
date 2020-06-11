@@ -38,6 +38,19 @@ TEST(IteratorTest, Sequential) {
             ++i;
         }
     }
+    {
+        Value val(ds);
+        SequentialIter iter(val);
+        auto copyIter1 = iter.copy();
+        auto copyIter2 = copyIter1->copy();
+        EXPECT_EQ(copyIter2->size(), 10);
+        auto i = 0;
+        for (; copyIter2->valid(); copyIter2->next()) {
+            EXPECT_EQ(copyIter2->getColumn("col1"), i);
+            EXPECT_EQ(copyIter2->getColumn("col2"), folly::to<std::string>(i));
+            ++i;
+        }
+    }
     // erase
     {
         Value val(std::move(ds));
@@ -173,6 +186,20 @@ TEST(IteratorTest, GetNeighbor) {
         std::vector<Value> result;
         for (; iter.valid(); iter.next()) {
             result.emplace_back(iter.getEdgeProp("edge2", "prop1"));
+        }
+        EXPECT_EQ(result.size(), 40);
+        EXPECT_EQ(expected, result);
+    }
+    {
+        GetNeighborsIter iter(val);
+        auto copyIter1 = iter.copy();
+        auto copyIter2 = copyIter1->copy();
+        std::vector<Value> expected;
+        expected.insert(expected.end(), 20, Value(NullType::__NULL__));
+        expected.insert(expected.end(), 20, 0);
+        std::vector<Value> result;
+        for (; copyIter2->valid(); copyIter2->next()) {
+            result.emplace_back(copyIter2->getEdgeProp("edge2", "prop1"));
         }
         EXPECT_EQ(result.size(), 40);
         EXPECT_EQ(expected, result);
