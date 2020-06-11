@@ -27,15 +27,33 @@ TEST(IteratorTest, Sequential) {
         row.columns.emplace_back(folly::to<std::string>(i));
         ds.rows.emplace_back(std::move(row));
     }
-
-    Value val(std::move(ds));
-    SequentialIter iter(val);
-    EXPECT_EQ(iter.size(), 10);
-    auto i = 0;
-    for (; iter.valid(); iter.next()) {
-        EXPECT_EQ(iter.getColumn("col1"), i);
-        EXPECT_EQ(iter.getColumn("col2"), folly::to<std::string>(i));
-        ++i;
+    {
+        Value val(ds);
+        SequentialIter iter(val);
+        EXPECT_EQ(iter.size(), 10);
+        auto i = 0;
+        for (; iter.valid(); iter.next()) {
+            EXPECT_EQ(iter.getColumn("col1"), i);
+            EXPECT_EQ(iter.getColumn("col2"), folly::to<std::string>(i));
+            ++i;
+        }
+    }
+    // erase
+    {
+        Value val(std::move(ds));
+        SequentialIter iter(val);
+        EXPECT_EQ(iter.size(), 10);
+        while (iter.valid()) {
+            if (iter.getColumn("col1").getInt() % 2 == 0) {
+                iter.erase();
+            } else {
+                iter.next();
+            }
+        }
+        iter.reset();
+        for (; iter.valid(); iter.next()) {
+            EXPECT_NE(iter.getColumn("col1").getInt() % 2, 0);
+        }
     }
 }
 
@@ -157,6 +175,27 @@ TEST(IteratorTest, GetNeighbor) {
             result.emplace_back(iter.getEdgeProp("edge2", "prop1"));
         }
         EXPECT_EQ(result.size(), 40);
+        EXPECT_EQ(expected, result);
+    }
+    // erase
+    {
+        GetNeighborsIter iter(val);
+        while (iter.valid()) {
+            if (iter.getColumn("_vid").getInt() % 2 == 0) {
+                iter.erase();
+            } else {
+                iter.next();
+            }
+        }
+        std::vector<Value> expected =
+                {1, 1, 3, 3, 5, 5, 7, 7, 9, 9,
+                 1, 1, 3, 3, 5, 5, 7, 7, 9, 9};
+        std::vector<Value> result;
+        iter.reset();
+        for (; iter.valid(); iter.next()) {
+            result.emplace_back(iter.getColumn("_vid"));
+        }
+        EXPECT_EQ(result.size(), 20);
         EXPECT_EQ(expected, result);
     }
 }

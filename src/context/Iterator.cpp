@@ -20,11 +20,11 @@ GetNeighborsIter::GetNeighborsIter(const Value& value) : Iterator(value) {
         for (auto& row : ds.rows) {
             auto& cols = row.columns;
             for (size_t column = edgeStartIndex; column < cols.size(); ++column) {
-                if (cols[column].type() != Value::Type::LIST) {
+                if (!cols[column].isList()) {
                     continue;
                 }
                 for (auto& edge : cols[column].getList().values) {
-                    DCHECK(edge.type() == Value::Type::LIST);
+                    DCHECK(edge.isList());
                     edges_.emplace_back(std::make_tuple(segment, &row, column, &edge.getList()));
                 }
             }
@@ -44,6 +44,7 @@ int64_t GetNeighborsIter::buildIndex(const std::vector<std::string>& colNames) {
         if (colNames[i].find("_tag") == 0) {
             auto ret = buildPropIndex(colNames[i]);
             tagPropIndex_.back().emplace(std::move(ret));
+            continue;
         }
         if (colNames[i].find("_edge") == 0) {
             auto ret = buildPropIndex(colNames[i]);
@@ -70,6 +71,9 @@ GetNeighborsIter::buildPropIndex(const std::string& props) {
 }
 
 const Value& GetNeighborsIter::getColumn(const std::string& col) const {
+    if (!valid()) {
+        return kNullValue;
+    }
     auto& current = *iter_;
     auto segment = std::get<0>(current);
     auto& index = colIndex_[segment];
@@ -83,6 +87,9 @@ const Value& GetNeighborsIter::getColumn(const std::string& col) const {
 
 const Value& GetNeighborsIter::getTagProp(const std::string& tag,
                                           const std::string& prop) const {
+    if (!valid()) {
+        return kNullValue;
+    }
     auto& current = *iter_;
     auto segment = std::get<0>(current);
     auto index = tagPropIndex_[segment].find(tag);
@@ -99,6 +106,9 @@ const Value& GetNeighborsIter::getTagProp(const std::string& tag,
 
 const Value& GetNeighborsIter::getEdgeProp(const std::string& edge,
                                            const std::string& prop) const {
+    if (!valid()) {
+        return kNullValue;
+    }
     auto& current = *iter_;
     auto segment = std::get<0>(current);
     auto index = edgePropIndex_[segment].find(edge);
