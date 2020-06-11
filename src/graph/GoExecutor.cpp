@@ -1136,8 +1136,9 @@ bool GoExecutor::processFinalResult(Callback cb) const {
                                 auto vreader = RowReader::getRowReader(it2->data, tagSchema[tagId]);
                                 auto res = RowReader::getPropByName(vreader.get(), prop);
                                 if (!ok(res)) {
-                                    return Status::Error(
-                                        folly::sformat("get prop({}.{}) failed", tag, prop));
+                                    return Status::Error("get prop(%s.%s) failed",
+                                                         tag.c_str(),
+                                                         prop.c_str());
                                 }
                                 return value(res);
                             };
