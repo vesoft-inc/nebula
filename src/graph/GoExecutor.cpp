@@ -4,6 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include <folly/ScopeGuard.h>
+
 #include "base/Base.h"
 #include "graph/GoExecutor.h"
 #include "graph/SchemaHelper.h"
@@ -464,6 +466,11 @@ Status GoExecutor::checkNeededProps() {
 
 
 Status GoExecutor::setupStarts() {
+    SCOPE_EXIT {
+        // unique the start vid
+        std::unordered_set<VertexID> uni(starts_.begin(), starts_.end());
+        starts_.assign(uni.begin(), uni.end());
+    };
     // Literal vertex ids
     if (!starts_.empty()) {
         return Status::OK();
