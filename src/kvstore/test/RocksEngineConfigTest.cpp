@@ -88,6 +88,63 @@ TEST(RocksEngineConfigTest, createOptionsTest) {
     FLAGS_rocksdb_db_options = "{}";
 }
 
+
+TEST(RocksEngineConfigTest, CompressionConfigTest) {
+    {
+        FLAGS_rocksdb_compression = "lz4";
+        FLAGS_rocksdb_compression_per_level = "no:no::mp3::zstd";
+        rocksdb::Options options;
+        auto status = initRocksdbOptions(options);
+        ASSERT_EQ(rocksdb::Status::kInvalidArgument, status.code());
+    }
+
+    {
+        FLAGS_rocksdb_compression = "lz4";
+        FLAGS_rocksdb_compression_per_level = "no:no::snappy::zstd";
+        rocksdb::Options options;
+        auto status = initRocksdbOptions(options);
+        ASSERT_TRUE(status.ok()) << status.ToString();
+        ASSERT_EQ(rocksdb::kLZ4Compression, options.compression);
+        ASSERT_EQ(rocksdb::kNoCompression, options.compression_per_level[0]);
+        ASSERT_EQ(rocksdb::kNoCompression, options.compression_per_level[1]);
+        ASSERT_EQ(rocksdb::kLZ4Compression, options.compression_per_level[2]);
+        ASSERT_EQ(rocksdb::kSnappyCompression, options.compression_per_level[3]);
+        ASSERT_EQ(rocksdb::kLZ4Compression, options.compression_per_level[4]);
+        ASSERT_EQ(rocksdb::kZSTD, options.compression_per_level[5]);
+        ASSERT_EQ(rocksdb::kLZ4Compression, options.compression_per_level[6]);
+
+        rocksdb::DB* db = nullptr;
+        SCOPE_EXIT { delete db; };
+        options.create_if_missing = true;
+        fs::TempDir rootPath("/tmp/RocksDBCompressionConfigTest.XXXXXX");
+        status = rocksdb::DB::Open(options, rootPath.path(), &db);
+        ASSERT_TRUE(status.ok()) << status.ToString();
+    }
+
+    {
+        FLAGS_rocksdb_compression = "snappy";
+        FLAGS_rocksdb_compression_per_level = "no:snappy:lz4:lz4hc:zstd:zlib:bzip2";
+        rocksdb::Options options;
+        auto status = initRocksdbOptions(options);
+        ASSERT_TRUE(status.ok()) << status.ToString();
+        ASSERT_EQ(rocksdb::kSnappyCompression, options.compression);
+        ASSERT_EQ(rocksdb::kNoCompression, options.compression_per_level[0]);
+        ASSERT_EQ(rocksdb::kSnappyCompression, options.compression_per_level[1]);
+        ASSERT_EQ(rocksdb::kLZ4Compression, options.compression_per_level[2]);
+        ASSERT_EQ(rocksdb::kLZ4HCCompression, options.compression_per_level[3]);
+        ASSERT_EQ(rocksdb::kZSTD, options.compression_per_level[4]);
+        ASSERT_EQ(rocksdb::kZlibCompression, options.compression_per_level[5]);
+        ASSERT_EQ(rocksdb::kBZip2Compression, options.compression_per_level[6]);
+
+        rocksdb::DB* db = nullptr;
+        SCOPE_EXIT { delete db; };
+        options.create_if_missing = true;
+        fs::TempDir rootPath("/tmp/RocksDBCompressionConfigTest.XXXXXX");
+        status = rocksdb::DB::Open(options, rootPath.path(), &db);
+        ASSERT_TRUE(status.ok()) << status.ToString();
+    }
+}
+
 }  // namespace kvstore
 }  // namespace nebula
 

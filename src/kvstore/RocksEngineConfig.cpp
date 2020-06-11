@@ -99,7 +99,7 @@ static rocksdb::Status initRocksdbCompression(rocksdb::Options &baseOpts) {
         }
         auto it = m.find(compressions[i]);
         if (it == m.end()) {
-            LOG(ERROR) << "Unsupported compression type: " << FLAGS_rocksdb_compression;
+            LOG(ERROR) << "Unsupported compression type: " << compressions[i];
             return rocksdb::Status::InvalidArgument();
         }
         baseOpts.compression_per_level[i] = it->second;
