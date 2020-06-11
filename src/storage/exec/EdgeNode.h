@@ -49,7 +49,7 @@ public:
         if (exp_ != nullptr) {
             // todo(doodle): eval the expression which can be applied to the edge node,
             // which means we can only apply to FetchEdgeNode or EdgeTypePrefixScanNode.
-            exp_->eval();
+            // exp_->eval();
         }
         return valueHandler(edgeType_, key, reader_.get(), props_);
     }
