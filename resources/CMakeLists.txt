@@ -1,6 +1,6 @@
 install(
     FILES
-        resources/completion.json
+        completion.json
     PERMISSIONS
         OWNER_WRITE OWNER_READ
         GROUP_READ
@@ -11,7 +11,7 @@ install(
 
 install(
     FILES
-        resources/gflags.json
+        gflags.json
     PERMISSIONS
         OWNER_WRITE OWNER_READ
         GROUP_READ
