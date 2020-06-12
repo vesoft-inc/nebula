@@ -1063,6 +1063,9 @@ bool GoExecutor::processFinalResult(Callback cb) const {
                 auto srcId = vdata.get_vertex_id();
                 const auto rootId = getRoot(srcId, recordIn);
                 auto inputRows = index_->rowsOfVid(rootId);
+                // Here if join the input we extend the input rows coresponding to current vertex;
+                // Or just loop once as previous that not join anything,
+                // in fact result what in responses.
                 bool notJoinOnce = false;
                 for (auto inputRow = inputRows.first;
                      !joinInput || inputRow != inputRows.second;
