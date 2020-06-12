@@ -55,13 +55,13 @@
 # For the sake of binary compatibility, the default value is snappy.
 # Recommend to use:
 #   * lz4 to gain more CPU performance, with the same compression ratio with snappy
-#   * zstd to ocuppy less disk space
+#   * zstd to occupy less disk space
 #   * lz4hc for the read-heavy write-light scenario
 --rocksdb_compression=snappy
 
 # Set different compressions for different levels
 # For example, if --rocksdb_compression is snappy,
-# "no:no:lz4:lz4::zstd" is identical to "no:no:lz4:lz4:lz4:snappy:zstd:snappy"
+# "no:no:lz4:lz4::zstd" is identical to "no:no:lz4:lz4:snappy:zstd:snappy"
 # In order to disable compression for level 0/1, set it to "no:no"
 --rocksdb_compression_per_level=
 
