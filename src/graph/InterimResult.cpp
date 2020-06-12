@@ -217,7 +217,7 @@ InterimResult::buildIndex(const std::string &vidColumn) const {
                         return Status::Error("Get vid from interim failed.");
                     }
                     if (i == vidIndex) {
-                        index->vidToRowIndex_[v] = rowIndex++;
+                        index->vidToRowIndex_.emplace(v, rowIndex++);
                     }
                     row.emplace_back(v);
                     break;
@@ -273,14 +273,10 @@ InterimResult::buildIndex(const std::string &vidColumn) const {
     return index;
 }
 
-
-OptVariantType InterimResult::InterimResultIndex::getColumnWithVID(VertexID id,
-    const std::string &col) const {
-    uint32_t rowIndex = 0;
-    {
-        auto iter = vidToRowIndex_.find(id);
-        DCHECK(iter != vidToRowIndex_.end());
-        rowIndex = iter->second;
+OptVariantType
+InterimResult::InterimResultIndex::getColumnWithRow(std::size_t row, const std::string &col) const {
+    if (row >= rows_.size()) {
+        return Status::Error("Out of range");
     }
     uint32_t columnIndex = 0;
     {
@@ -291,9 +287,8 @@ OptVariantType InterimResult::InterimResultIndex::getColumnWithVID(VertexID id,
         }
         columnIndex = iter->second;
     }
-    return rows_[rowIndex][columnIndex];
+    return rows_[row][columnIndex];
 }
-
 
 nebula::cpp2::SupportedType InterimResult::getColumnType(
     const std::string &col) const {
