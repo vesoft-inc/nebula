@@ -86,8 +86,11 @@ public:
 
     class InterimResultIndex final {
     public:
-        OptVariantType getColumnWithVID(VertexID id, const std::string &col) const;
+        OptVariantType getColumnWithRow(std::size_t row, const std::string &col) const;
         nebula::cpp2::SupportedType getColumnType(const std::string &col) const;
+        auto rowsOfVid(VertexID id) {
+            return vidToRowIndex_.equal_range(id);
+        }
 
     private:
         friend class InterimResult;
@@ -96,7 +99,7 @@ public:
         using SchemaPtr = std::shared_ptr<const meta::SchemaProviderIf>;
         SchemaPtr                                   schema_{nullptr};
         std::unordered_map<std::string, uint32_t>   columnToIndex_;
-        std::unordered_map<VertexID, uint32_t>      vidToRowIndex_;
+        std::multimap<VertexID, uint32_t>           vidToRowIndex_;
     };
 
 private:
