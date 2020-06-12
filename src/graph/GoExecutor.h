@@ -77,6 +77,25 @@ private:
         return curStep_ >= recordFrom_ && curStep_ <= steps_;
     }
 
+    bool yieldInput() const {
+        for (const auto col : yields_) {
+            if (col->expr()->fromVarInput()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    VertexID getRoot(VertexID srcId, std::size_t record) const {
+        CHECK_GT(record, 0);
+        VertexID rootId = srcId;
+        if (record == 1) {
+            return rootId;
+        }
+        rootId = DCHECK_NOTNULL(backTracker_)->get(srcId);
+        return rootId;
+    }
+
     /**
      * To obtain the source ids from various places,
      * such as the literal id list, inputs from the pipeline or results of variable.
@@ -195,8 +214,6 @@ private:
     private:
          std::unordered_map<VertexID, VertexID>     mapping_;
     };
-
-    OptVariantType getPropFromInterim(VertexID id, const std::string &prop) const;
 
     enum FromType {
         kInstantExpr,
