@@ -167,7 +167,6 @@ nebula_add_test(
         ShuffleIpTest.cpp
     OBJECTS
         ${storage_test_deps}
-        $<TARGET_OBJECTS:common_graph_storage_client_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}

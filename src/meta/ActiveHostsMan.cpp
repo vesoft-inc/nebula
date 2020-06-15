@@ -20,7 +20,7 @@ kvstore::ResultCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
     CHECK_NOTNULL(kv);
     std::vector<kvstore::KV> data;
     data.emplace_back(MetaServiceUtils::hostKey(hostAddr.host, hostAddr.port),
-                      HostInfo::encode(info));
+                      HostInfo::encodeV2(info));
     if (leaderParts != nullptr) {
         data.emplace_back(MetaServiceUtils::leaderKey(hostAddr.host, hostAddr.port),
                           MetaServiceUtils::leaderVal(*leaderParts));
@@ -37,19 +37,26 @@ kvstore::ResultCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
     return ret;
 }
 
-std::vector<HostAddr> ActiveHostsMan::getActiveHosts(kvstore::KVStore* kv, int32_t expiredTTL) {
+std::vector<HostAddr> ActiveHostsMan::getActiveHosts(kvstore::KVStore* kv,
+                                                     int32_t expiredTTL,
+                                                     cpp2::HostRole role) {
     std::vector<HostAddr> hosts;
     const auto& prefix = MetaServiceUtils::hostPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
+        FLOG_ERROR("getActiveHosts failed(%d)", static_cast<int>(ret));
         return hosts;
     }
     int64_t threshold = (expiredTTL == 0 ? FLAGS_expired_threshold_sec : expiredTTL) * 1000;
     auto now = time::WallClock::fastNowInMilliSec();
     while (iter->valid()) {
         auto host = MetaServiceUtils::parseHostKey(iter->key());
-        HostInfo info = HostInfo::decode(iter->val());
+        HostInfo info = HostInfo::decodeV2(iter->val());
+        if (info.role_ != role) {
+            iter->next();
+            continue;
+        }
         if (now - info.lastHBTimeInMilliSec_ < threshold) {
             hosts.emplace_back(host.host, host.port);
         }

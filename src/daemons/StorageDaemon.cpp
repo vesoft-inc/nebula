@@ -12,6 +12,7 @@
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
 
+DEFINE_string(local_ip, "", "IP address which is used to identify this server");
 DEFINE_string(data_path, "", "Root data path, multi paths should be split by comma."
                              "For rocksdb engine, one path one instance.");
 DEFINE_bool(daemonize, true, "Whether to run the process as a daemon");
@@ -68,8 +69,10 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    auto hostName = nebula::network::NetworkUtils::getHostname();
-    HostAddr host{hostName, FLAGS_port};
+    auto hostName = FLAGS_local_ip != "" ? FLAGS_local_ip
+                                         : nebula::network::NetworkUtils::getHostname();
+    HostAddr host(hostName, FLAGS_port);
+    LOG(INFO) << "host = " << host;
     auto metaAddrsRet = nebula::network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
     if (!metaAddrsRet.ok() || metaAddrsRet.value().empty()) {
         LOG(ERROR) << "Can't get metaServer address, status:" << metaAddrsRet.status()

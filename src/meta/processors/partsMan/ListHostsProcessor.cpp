@@ -17,7 +17,7 @@ namespace nebula {
 namespace meta {
 
 void ListHostsProcessor::process(const cpp2::ListHostsReq& req) {
-    UNUSED(req);
+    Status status;
     {
         folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
         auto spaceRet = getSpaceIdNameMap();
@@ -25,17 +25,45 @@ void ListHostsProcessor::process(const cpp2::ListHostsReq& req) {
             onFinished();
             return;
         }
-        auto status = allHostsWithStatus();
-        if (!status.ok()) {
-            onFinished();
-            return;
-        }
+
+        status = req.__isset.role ? allHostsWithStatus(*req.get_role())
+                                  : fillLeaderAndPartInfoPerHost();
     }
-    resp_.set_hosts(std::move(hostItems_));
+    if (status.ok()) {
+        resp_.set_hosts(std::move(hostItems_));
+    }
     onFinished();
 }
 
-Status ListHostsProcessor::allHostsWithStatus() {
+/*
+ * now(2020-04-29), assume all metad have same gitInfoSHA
+ * this will change if some day
+ * meta.thrift support interface like getHostStatus()
+ * which return a bunch of host infomation
+ * it's not necessary add this interface only for gitInfoSHA
+ * */
+Status ListHostsProcessor::allMetaHostsStatus() {
+    auto* partManager = kvstore_->partManager();
+    auto status = partManager->partMeta(kDefaultSpaceId, kDefaultPartId);
+    if (!status.ok()) {
+        return status.status();
+    }
+    auto partMeta = status.value();
+    for (auto& host : partMeta.hosts_) {
+        cpp2::HostItem item;
+        item.set_hostAddr(std::move(host));
+        item.set_role(cpp2::HostRole::META);
+        item.set_git_info_sha(NEBULA_STRINGIFY(GIT_INFO_SHA));
+        item.set_status(cpp2::HostStatus::ONLINE);
+        hostItems_.emplace_back(item);
+    }
+    return Status::OK();
+}
+
+Status ListHostsProcessor::allHostsWithStatus(cpp2::HostRole role) {
+    if (role == cpp2::HostRole::META) {
+        return allMetaHostsStatus();
+    }
     const auto& hostPrefix = MetaServiceUtils::hostPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
     auto kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, hostPrefix, &iter);
@@ -52,6 +80,12 @@ Status ListHostsProcessor::allHostsWithStatus() {
         auto host = MetaServiceUtils::parseHostKey(iter->key());
         item.set_hostAddr(std::move(host));
         HostInfo info = HostInfo::decode(iter->val());
+        if (info.role_ != role) {
+            iter->next();
+            continue;
+        }
+        item.set_role(info.role_);
+        item.set_git_info_sha(info.gitInfoSha_);
         if (now - info.lastHBTimeInMilliSec_ < FLAGS_removed_threshold_sec * 1000) {
             if (now - info.lastHBTimeInMilliSec_ < FLAGS_expired_threshold_sec * 1000) {
                 item.set_status(cpp2::HostStatus::ONLINE);
@@ -65,8 +99,19 @@ Status ListHostsProcessor::allHostsWithStatus() {
         iter->next();
     }
 
+    removeExpiredHosts(std::move(removeHostsKey));
+    return Status::OK();
+}
+
+Status ListHostsProcessor::fillLeaderAndPartInfoPerHost() {
+    auto status = allHostsWithStatus(cpp2::HostRole::STORAGE);
+    if (!status.ok()) {
+        return status;
+    }
+
+    std::unique_ptr<kvstore::KVIterator> iter;
     const auto& leaderPrefix = MetaServiceUtils::leaderPrefix();
-    kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, leaderPrefix, &iter);
+    auto kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, leaderPrefix, &iter);
     if (kvRet != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "List Hosts Failed: No leaders";
         handleErrorCode(cpp2::ErrorCode::E_NO_HOSTS);
@@ -88,7 +133,6 @@ Status ListHostsProcessor::allHostsWithStatus() {
         }
         iter->next();
     }
-
     std::unordered_map<HostAddr,
                        std::unordered_map<std::string, std::vector<PartitionID>>> allParts;
     for (const auto& spaceId : spaceIds_) {
@@ -127,18 +171,22 @@ Status ListHostsProcessor::allHostsWithStatus() {
         }
     }
 
-    // Remove hosts that long time at OFFLINE status
-    if (!removeHostsKey.empty()) {
-        kvstore_->asyncMultiRemove(kDefaultSpaceId,
-                                   kDefaultPartId,
-                                   std::move(removeHostsKey),
-                                   [] (kvstore::ResultCode code) {
-                if (code != kvstore::ResultCode::SUCCEEDED) {
-                    LOG(ERROR) << "Async remove long time offline hosts failed: " << code;
-                }
-            });
-    }
     return Status::OK();
+}
+
+// Remove hosts that long time at OFFLINE status
+void ListHostsProcessor::removeExpiredHosts(std::vector<std::string>&& removeHostsKey) {
+    if (removeHostsKey.empty()) {
+        return;
+    }
+    kvstore_->asyncMultiRemove(kDefaultSpaceId,
+                               kDefaultPartId,
+                               std::move(removeHostsKey),
+                               [] (kvstore::ResultCode code) {
+            if (code != kvstore::ResultCode::SUCCEEDED) {
+                LOG(ERROR) << "Async remove long time offline hosts failed: " << code;
+            }
+        });
 }
 
 Status ListHostsProcessor::getSpaceIdNameMap() {

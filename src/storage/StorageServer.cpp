@@ -107,6 +107,9 @@ bool StorageServer::start() {
     options.inStoraged_ = true;
     options.serviceName_ = "";
     options.skipConfig_ = FLAGS_local_config;
+    options.role_ = nebula::meta::cpp2::HostRole::STORAGE;
+    options.gitInfoSHA_ = NEBULA_STRINGIFY(GIT_INFO_SHA);
+
     metaClient_ = std::make_unique<meta::MetaClient>(ioThreadPool_,
                                                      metaAddrs_,
                                                      options);

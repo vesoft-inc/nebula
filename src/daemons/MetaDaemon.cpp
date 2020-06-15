@@ -31,6 +31,7 @@ using nebula::ProcessUtils;
 using nebula::Status;
 using nebula::web::PathParams;
 
+DEFINE_string(local_ip, "", "Local ip specified for NetworkUtils::getLocalIP");
 DEFINE_int32(port, 45500, "Meta daemon listening port");
 DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
 DEFINE_string(data_path, "", "Root data path");
@@ -201,7 +202,10 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    nebula::HostAddr localhost{nebula::network::NetworkUtils::getHostname(), FLAGS_port};
+    auto hostIdentity = FLAGS_local_ip == "" ? nebula::network::NetworkUtils::getHostname()
+                                             : FLAGS_local_ip;
+    nebula::HostAddr localhost{hostIdentity, FLAGS_port};
+    LOG(INFO) << "identify myself as " << localhost;
     auto peersRet = nebula::network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
     if (!peersRet.ok()) {
         LOG(ERROR) << "Can't get peers address, status:" << peersRet.status();

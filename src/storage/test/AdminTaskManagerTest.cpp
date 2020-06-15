@@ -595,6 +595,8 @@ TEST(TaskManagerTest, cancel_a_running_task_with_only_1_sub_task) {
 TEST(TaskManagerTest, cancel_1_task_in_a_2_tasks_queue) {
     auto taskMgr = AdminTaskManager::instance();
     taskMgr->init();
+    int jobId1 = ++gJobId;
+    int jobId2 = ++gJobId;
 
     auto err = cpp2::ErrorCode::E_USER_CANCEL;
 
@@ -612,7 +614,7 @@ TEST(TaskManagerTest, cancel_1_task_in_a_2_tasks_queue) {
 
     std::shared_ptr<AdminTask> vtask1 = std::make_shared<HookableTask>();
     HookableTask* task1 = static_cast<HookableTask*>(vtask1.get());
-    task1->setJobId(1);
+    task1->setJobId(jobId1);
 
     task1->fGenSubTasks = [&]() {
         pRunTask1.setValue(0);
@@ -630,7 +632,7 @@ TEST(TaskManagerTest, cancel_1_task_in_a_2_tasks_queue) {
 
     std::shared_ptr<AdminTask> vtask2 = std::make_shared<HookableTask>();
     HookableTask* task2 = static_cast<HookableTask*>(vtask2.get());
-    task2->setJobId(2);
+    task2->setJobId(jobId2);
 
     task2->addSubTask([&]() {
         return suc;
@@ -643,7 +645,7 @@ TEST(TaskManagerTest, cancel_1_task_in_a_2_tasks_queue) {
     taskMgr->addAsyncTask(vtask2);
 
     fRunTask1.wait();
-    taskMgr->cancelTask(2);
+    taskMgr->cancelTask(jobId2);
     pCancelTask2.setValue(0);
 
     fTask1.wait();
@@ -660,7 +662,7 @@ TEST(TaskManagerTest, cancel_a_task_before_all_sub_task_running) {
     taskMgr->init();
     auto err = cpp2::ErrorCode::E_USER_CANCEL;
 
-    int jobId = 1;
+    int jobId = ++gJobId;
     folly::Promise<ResultCode> pFiniTask0;
     auto fFiniTask0 = pFiniTask0.getFuture();
 
@@ -708,6 +710,7 @@ TEST(TaskManagerTest, cancel_a_task_while_some_sub_task_running) {
     auto taskMgr = AdminTaskManager::instance();
     taskMgr->init();
     auto usr_cancel = cpp2::ErrorCode::E_USER_CANCEL;
+    int jobId = ++gJobId;
 
     folly::Promise<ResultCode> task1_p;
     folly::Future<ResultCode> task1_f = task1_p.getFuture();
@@ -720,7 +723,7 @@ TEST(TaskManagerTest, cancel_a_task_while_some_sub_task_running) {
 
     std::shared_ptr<AdminTask> vtask0 = std::make_shared<HookableTask>();
     HookableTask* task1 = static_cast<HookableTask*>(vtask0.get());
-    task1->setJobId(1);
+    task1->setJobId(jobId);
 
     task1->addSubTask([&]() {
         LOG(INFO) << "wait for cancel()";
@@ -743,7 +746,7 @@ TEST(TaskManagerTest, cancel_a_task_while_some_sub_task_running) {
 
     subtask_run_f.wait();
     LOG(INFO) << "before taskMgr->cancelTask(1);";
-    taskMgr->cancelTask(1);
+    taskMgr->cancelTask(jobId);
     LOG(INFO) << "after taskMgr->cancelTask(1);";
     cancle_p.setValue(0);
 
