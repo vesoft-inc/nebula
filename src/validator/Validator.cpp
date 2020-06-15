@@ -64,7 +64,6 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
 
 Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
     switch (node->kind()) {
-        case PlanNode::Kind::kEnd:
         case PlanNode::Kind::kFilter:
         case PlanNode::Kind::kProject:
         case PlanNode::Kind::kSort:

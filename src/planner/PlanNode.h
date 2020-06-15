@@ -25,7 +25,6 @@ public:
     enum class Kind : uint8_t {
         kUnknown = 0,
         kStart,
-        kEnd,
         kGetNeighbors,
         kGetVertices,
         kGetEdges,
@@ -95,21 +94,6 @@ public:
         plan_ = plan;
     }
 
-    PlanNode* addInput(const PlanNode* input) {
-        // FIXME:
-        // inputs_.emplace_back(DCHECK_NOTNULL(input));
-        inputs_.emplace_back(input);
-        return this;
-    }
-
-    const PlanNode* input(size_t i) const {
-        return i < inputs_.size() ? inputs_[i] : nullptr;
-    }
-
-    const std::vector<const PlanNode*>& inputs() const {
-        return inputs_;
-    }
-
     void setColNames(std::vector<std::string>&& cols) {
         colNames_ = std::move(cols);
     }
@@ -121,12 +105,11 @@ protected:
     int64_t                                  id_{IdGenerator::INVALID_ID};
     ExecutionPlan*                           plan_{nullptr};
     using VariableName = std::string;
-    std::unordered_set<VariableName>         availableVars_;
     VariableName                             outputVar_;
-    std::vector<const PlanNode*>             inputs_;
     std::vector<std::string>                 colNames_;
 };
 
+std::ostream& operator<<(std::ostream& os, PlanNode::Kind kind);
 }  // namespace graph
 }  // namespace nebula
 #endif  // PLANNER_PLANNODE_H_

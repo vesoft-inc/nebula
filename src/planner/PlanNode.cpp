@@ -18,49 +18,68 @@ PlanNode::PlanNode(ExecutionPlan* plan, Kind kind) : kind_(kind), plan_(plan) {
 // static
 const char* PlanNode::toString(Kind kind) {
     switch (kind) {
-        case Kind::kStart:
+        case PlanNode::Kind::kUnknown:
+            return "Unkonwn";
+        case PlanNode::Kind::kStart:
             return "Start";
-        case Kind::kEnd:
-            return "End";
-        case Kind::kUnion:
-            return "Union";
-        case Kind::kLoop:
-            return "Loop";
-        case Kind::kSort:
-            return "Sort";
-        case Kind::kDedup:
-            return "Dedup";
-        case Kind::kMinus:
-            return "Minus";
-        case Kind::kIntersect:
-            return "Intersect";
-        case Kind::kAggregate:
-            return "Aggregate";
-        case Kind::kFilter:
-            return "Filter";
-        case Kind::kGetEdges:
-            return "GetEdges";
-        case Kind::kGetVertices:
-            return "GetVertices";
-        case Kind::kGetNeighbors:
+        case PlanNode::Kind::kGetNeighbors:
             return "GetNeighbors";
-        case Kind::kLimit:
-            return "Limit";
-        case Kind::kProject:
-            return "Project";
-        case Kind::kSelector:
-            return "Selector";
-        case Kind::kReadIndex:
+        case PlanNode::Kind::kGetVertices:
+            return "GetVertices";
+        case PlanNode::Kind::kGetEdges:
+            return "GetEdges";
+        case PlanNode::Kind::kReadIndex:
             return "ReadIndex";
-        case Kind::kMultiOutputs:
+        case PlanNode::Kind::kFilter:
+            return "Filter";
+        case PlanNode::Kind::kUnion:
+            return "Union";
+        case PlanNode::Kind::kIntersect:
+            return "Intersect";
+        case PlanNode::Kind::kMinus:
+            return "Minus";
+        case PlanNode::Kind::kProject:
+            return "Project";
+        case PlanNode::Kind::kSort:
+            return "Sort";
+        case PlanNode::Kind::kLimit:
+            return "Limit";
+        case PlanNode::Kind::kAggregate:
+            return "Aggregate";
+        case PlanNode::Kind::kSelector:
+            return "Selector";
+        case PlanNode::Kind::kLoop:
+            return "Loop";
+        case PlanNode::Kind::kSwitchSpace:
+            return "SwitchSpace";
+        case PlanNode::Kind::kDedup:
+            return "Dedup";
+        case PlanNode::Kind::kMultiOutputs:
             return "MultiOutputs";
-        case Kind::kSwitchSpace:
-            return "RegisterSpaceToSession";
-        case Kind::kUnknown:
+        case PlanNode::Kind::kCreateSpace:
+            return "CreateSpace";
+        case PlanNode::Kind::kCreateTag:
+            return "CreateTag";
+        case PlanNode::Kind::kCreateEdge:
+            return "CreateEdge";
+        case PlanNode::Kind::kDescSpace:
+            return "DescSpace";
+        case PlanNode::Kind::kDescTag:
+            return "DescTag";
+        case PlanNode::Kind::kDescEdge:
+            return "DescEdge";
+        case PlanNode::Kind::kInsertVertices:
+            return "InsertVertices";
+        case PlanNode::Kind::kInsertEdges:
+            return "InsertEdges";
         default:
-            return "kUnknown";
+            LOG(FATAL) << "Unkown PlanNode: " << static_cast<int64_t>(kind);
     }
 }
 
+std::ostream& operator<<(std::ostream& os, PlanNode::Kind kind) {
+    os << PlanNode::toString(kind);
+    return os;
+}
 }   // namespace graph
 }   // namespace nebula

@@ -40,11 +40,11 @@ private:
 class SingleInputNode : public PlanNode {
 public:
     const PlanNode* input() const {
-        return PlanNode::input(0);
+        return input_;
     }
 
     void setInput(PlanNode* input) {
-        addInput(input);
+        input_ = input;
     }
 
     void setInputVar(std::string inputVar) {
@@ -56,10 +56,11 @@ public:
     }
 
 protected:
-    SingleInputNode(ExecutionPlan* plan, Kind kind, PlanNode* input) : PlanNode(plan, kind) {
-        setInput(input);
+    SingleInputNode(ExecutionPlan* plan, Kind kind, PlanNode* input)
+        : PlanNode(plan, kind), input_(input) {
     }
 
+    PlanNode* input_{nullptr};
     // Datasource for this node.
     std::string inputVar_;
 };
@@ -67,13 +68,11 @@ protected:
 class BiInputNode : public PlanNode {
 public:
     void setLeft(PlanNode* left) {
-        addInput(left);
-        leftIdx_ = inputs_.size() - 1;
+        left_ = left;
     }
 
     void setRight(PlanNode* right) {
-        addInput(right);
-        rightIdx_ = inputs_.size() - 1;
+        right_ = right;
     }
 
     void setLeftVar(std::string leftVar) {
@@ -85,11 +84,11 @@ public:
     }
 
     const PlanNode* left() const {
-        return input(leftIdx_);
+        return left_;
     }
 
     const PlanNode* right() const {
-        return input(rightIdx_);
+        return right_;
     }
 
     const std::string& leftInputVar() const {
@@ -106,13 +105,11 @@ public:
 
 protected:
     BiInputNode(ExecutionPlan* plan, Kind kind, PlanNode* left, PlanNode* right)
-        : PlanNode(plan, kind) {
-        setLeft(left);
-        setRight(right);
+        : PlanNode(plan, kind), left_(left), right_(right) {
     }
 
-    size_t leftIdx_;
-    size_t rightIdx_;
+    PlanNode* left_{nullptr};
+    PlanNode* right_{nullptr};
     // Datasource for this node.
     std::string leftVar_;
     std::string rightVar_;
