@@ -37,7 +37,7 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
         , options_(options) {
     CHECK(ioThreadPool_ != nullptr) << "IOThreadPool is required";
     CHECK(!addrs_.empty())
-        << "No meta server address is specified. Meta server is required";
+        << "No meta server address is specified or can be solved. Meta server is required";
     clientsMan_ = std::make_shared<
         thrift::ThriftClientManager<cpp2::MetaServiceAsyncClient>
     >();
@@ -72,7 +72,6 @@ bool MetaClient::isMetadReady() {
     }
     return ready_;
 }
-
 
 bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
     if (!options_.skipConfig_) {
@@ -845,8 +844,11 @@ folly::Future<StatusOr<bool>> MetaClient::dropSpace(std::string name,
 }
 
 
-folly::Future<StatusOr<std::vector<cpp2::HostItem>>> MetaClient::listHosts() {
+folly::Future<StatusOr<std::vector<cpp2::HostItem>>>
+MetaClient::listHosts(cpp2::ListHostType tp) {
     cpp2::ListHostsReq req;
+    req.set_type(tp);
+
     folly::Promise<StatusOr<std::vector<cpp2::HostItem>>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req),
@@ -2002,14 +2004,15 @@ StatusOr<SchemaVer> MetaClient::getLatestEdgeVersionFromCache(const GraphSpaceID
 
 folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
     cpp2::HBReq req;
-    req.set_in_storaged(options_.inStoraged_);
-    if (options_.inStoraged_) {
-        req.set_host(options_.localHost_);
-        if (options_.clusterId_.load() == 0) {
-            options_.clusterId_ =
-                FileBasedClusterIdMan::getClusterIdFromFile(FLAGS_cluster_id_path);
-        }
-        req.set_cluster_id(options_.clusterId_.load());
+    req.set_host(options_.localHost_);
+    req.set_role(options_.role_);
+    req.set_git_info_sha(options_.gitInfoSHA_);
+    if (options_.clusterId_.load() == 0) {
+        options_.clusterId_ =
+            FileBasedClusterIdMan::getClusterIdFromFile(FLAGS_cluster_id_path);
+    }
+    req.set_cluster_id(options_.clusterId_.load());
+    if (options_.role_ == cpp2::HostRole::STORAGE) {
         std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
         if (listener_ != nullptr) {
             listener_->fetchLeaderInfo(leaderIds);
@@ -2034,7 +2037,8 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
                     return client->future_heartBeat(request);
                 },
                 [this] (cpp2::HBResp&& resp) -> bool {
-                    if (options_.inStoraged_ && options_.clusterId_.load() == 0) {
+                    if (options_.role_ == cpp2::HostRole::STORAGE
+                        && options_.clusterId_.load() == 0) {
                         LOG(INFO) << "Persisit the cluster Id from metad "
                                   << resp.get_cluster_id();
                         if (FileBasedClusterIdMan::persistInFile(resp.get_cluster_id(),

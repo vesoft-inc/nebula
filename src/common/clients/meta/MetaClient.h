@@ -160,7 +160,9 @@ struct MetaClientOptions {
         , clusterId_(opt.clusterId_.load())
         , inStoraged_(opt.inStoraged_)
         , serviceName_(opt.serviceName_)
-        , skipConfig_(opt.skipConfig_) {}
+        , skipConfig_(opt.skipConfig_)
+        , role_(opt.role_)
+        , gitInfoSHA_(opt.gitInfoSHA_) {}
 
     // Current host address
     HostAddr localHost_{"", 0};
@@ -172,6 +174,10 @@ struct MetaClientOptions {
     std::string serviceName_ = "";
     // Whether to skip the config manager
     bool skipConfig_ = false;
+    // host role(graph/meta/storage) using this client
+    cpp2::HostRole role_ = cpp2::HostRole::UNKNOWN;
+    // gitInfoSHA of Host using this client
+    std::string gitInfoSHA_{""};
 };
 
 
@@ -226,7 +232,7 @@ public:
     dropSpace(std::string name, bool ifExists = false);
 
     folly::Future<StatusOr<std::vector<cpp2::HostItem>>>
-    listHosts();
+    listHosts(cpp2::ListHostType type = cpp2::ListHostType::ALLOC);
 
     folly::Future<StatusOr<std::vector<cpp2::PartItem>>>
     listParts(GraphSpaceID spaceId, std::vector<PartitionID> partIds);

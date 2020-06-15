@@ -32,25 +32,32 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(
     // Need to create a new client
     VLOG(2) << "There is no existing client to " << host << ", trying to create one";
     auto channel = apache::thrift::ReconnectingRequestChannel::newChannel(
-        *evb, [compatibility, host, timeout] (folly::EventBase& eb) mutable {
+        *evb, [compatibility, host = host, timeout] (folly::EventBase& eb) mutable {
             static thread_local int connectionCount = 0;
 
             /*
              * TODO(liuyu): folly said 'resolve' may take second to finish
              *              if this really happen, we will add a cache here.
              * */
-            bool needResolveHost = !folly::IPAddress::validate(host.host);
-            folly::SocketAddress socketAddr(host.host, host.port, needResolveHost);
+            if (!folly::IPAddress::validate(host.host)) {
+                try {
+                    folly::SocketAddress socketAddr(host.host, host.port, true);
+                    std::ostringstream oss;
+                    oss << "resolve " << host << " as ";
+                    host.host = socketAddr.getAddressStr();
+                    oss << host;
+                    LOG(INFO) << oss.str();
+                } catch(const std::exception& e) {
+                    LOG(ERROR) << e.what();
+                }
+            }
 
-            VLOG(2) << folly::sformat("Connecting to {0}({2}):{1} for {3} times",
-                                      host.host, host.port,
-                                      socketAddr.getAddressStr(),
-                                      ++connectionCount);
+            VLOG(2) << "Connecting to " << host << " for " << ++connectionCount << " times";
             std::shared_ptr<apache::thrift::async::TAsyncSocket> socket;
             eb.runImmediatelyOrRunInEventBaseThreadAndWait(
-                [&socket, &eb, &socketAddr]() {
+                [&socket, &eb, host]() {
                     socket = apache::thrift::async::TAsyncSocket::newSocket(
-                        &eb, socketAddr, FLAGS_conn_timeout_ms);
+                        &eb, host.host, host.port, FLAGS_conn_timeout_ms);
                 });
             auto headerClientChannel = apache::thrift::HeaderClientChannel::newChannel(socket);
             if (timeout > 0) {
