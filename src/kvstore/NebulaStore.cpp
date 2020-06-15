@@ -297,6 +297,9 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
                                        snapshot_);
     auto metaStatus = options_.partMan_->partMeta(spaceId, partId);
     if (!metaStatus.ok()) {
+        LOG(ERROR) << "options_.partMan_->partMeta(spaceId, partId); error: "
+                   << metaStatus.status().toString()
+                   << " spaceId: " << spaceId << ", partId: " << partId;
         return nullptr;
     }
 
