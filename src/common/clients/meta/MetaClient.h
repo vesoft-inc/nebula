@@ -240,7 +240,7 @@ public:
                                                    cpp2::Schema schema,
                                                    bool ifNotExists = false);
 
-    folly::Future<StatusOr<TagID>>
+    folly::Future<StatusOr<bool>>
     alterTagSchema(GraphSpaceID spaceId,
                    std::string name,
                    std::vector<cpp2::AlterSchemaItem> items,

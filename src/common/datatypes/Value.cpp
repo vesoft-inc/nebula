@@ -1359,7 +1359,7 @@ void Value::setG(DataSet&& v) {
     new (std::addressof(value_.gVal)) std::unique_ptr<DataSet>(new DataSet(std::move(v)));
 }
 
-StatusOr<std::string> Value::toString() {
+StatusOr<std::string> Value::toString() const {
     switch (type_) {
         case Value::Type::__EMPTY__: {
             return std::string("");
@@ -1472,6 +1472,49 @@ std::ostream& operator<<(std::ostream& os, const Value::Type& type) {
     return os;
 }
 
+std::ostream& operator<<(std::ostream& os, const Value& value) {
+    switch (value.type()) {
+        case Value::Type::__EMPTY__: {
+            os << "__EMPTY__";
+            break;
+        }
+        case Value::Type::NULLVALUE: {
+            os << "NULL";
+            break;
+        }
+        case Value::Type::BOOL: {
+            os << value.getBool();
+            break;
+        }
+        case Value::Type::INT: {
+            os << value.getInt();
+            break;
+        }
+        case Value::Type::FLOAT: {
+            os << value.getFloat();
+            break;
+        }
+        case Value::Type::STRING: {
+            os << value.getStr();
+            break;
+        }
+        case Value::Type::DATE:
+        case Value::Type::DATETIME:
+        case Value::Type::VERTEX:
+        case Value::Type::EDGE:
+        case Value::Type::PATH:
+        case Value::Type::LIST:
+        case Value::Type::MAP:
+        case Value::Type::SET:
+        case Value::Type::DATASET:
+        default: {
+            os << "__UNKNOWN__";
+            break;
+        }
+    }
+
+    return os;
+}
 
 Value operator+(const Value& lhs, const Value& rhs) {
     if (lhs.isNull()) {
@@ -1856,6 +1899,10 @@ bool operator<(const Value& lhs, const Value& rhs) {
         return false;
     }
 
+    if (lhs.empty() || rhs.empty()) {
+        return false;
+    }
+
     if (!(lhs.isNumeric() && rhs.isNumeric())
             && (lhs.type() != rhs.type())) {
         return false;
@@ -1918,6 +1965,12 @@ bool operator==(const Value& lhs, const Value& rhs) {
     if (lhs.isNull() && rhs.isNull()) {
         return true;
     } else if (lhs.isNull() || rhs.isNull()) {
+        return false;
+    }
+
+    if (lhs.empty() && rhs.empty()) {
+        return true;
+    } else if (lhs.empty() || rhs.empty()) {
         return false;
     }
 

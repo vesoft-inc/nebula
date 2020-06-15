@@ -42,8 +42,9 @@ enum ErrorCode {
 struct ExecutionResponse {
     1: required ErrorCode               error_code;
     2: required i32                     latency_in_us;  // Execution time on server
-    3: optional list<common.DataSet>    data;           // Can return multiple dataset
+    3: optional common.DataSet          data;           // Can return multiple dataset
     4: optional binary                  space_name;
+    5: optional binary                  error_msg;
 }
 
 

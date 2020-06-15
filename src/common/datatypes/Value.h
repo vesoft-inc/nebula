@@ -266,7 +266,7 @@ struct Value {
         return kNullValue;
     }
 
-    StatusOr<std::string> toString();
+    StatusOr<std::string> toString() const;
 
 private:
     Type type_;
@@ -359,6 +359,7 @@ private:
 void swap(Value& a, Value& b);
 
 std::ostream& operator<<(std::ostream& os, const Value::Type& type);
+std::ostream& operator<<(std::ostream& os, const Value& value);
 
 static const Value kEmpty;
 static const Value kNullValue(NullType::__NULL__);

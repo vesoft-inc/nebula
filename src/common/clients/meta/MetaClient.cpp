@@ -1239,7 +1239,7 @@ folly::Future<StatusOr<TagID>> MetaClient::createTagSchema(GraphSpaceID spaceId,
 }
 
 
-folly::Future<StatusOr<TagID>>
+folly::Future<StatusOr<bool>>
 MetaClient::alterTagSchema(GraphSpaceID spaceId,
                            std::string name,
                            std::vector<cpp2::AlterSchemaItem> items,
@@ -1249,14 +1249,14 @@ MetaClient::alterTagSchema(GraphSpaceID spaceId,
     req.set_tag_name(std::move(name));
     req.set_tag_items(std::move(items));
     req.set_schema_prop(std::move(schemaProp));
-    folly::Promise<StatusOr<TagID>> promise;
+    folly::Promise<StatusOr<bool>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req),
                 [] (auto client, auto request) {
                     return client->future_alterTag(request);
                 },
-                [] (cpp2::ExecResp&& resp) -> TagID {
-                    return resp.get_id().get_tag_id();
+                [] (cpp2::ExecResp&& resp) -> bool {
+                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
                 },
                 std::move(promise),
                 true);
