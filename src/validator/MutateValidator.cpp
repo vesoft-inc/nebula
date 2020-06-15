@@ -243,6 +243,8 @@ Status InsertEdgesValidator::prepareEdges() {;
         edges_.emplace_back(edge);
 
         // inbound
+        edge.key.set_src(dstId);
+        edge.key.set_dst(srcId);
         edge.key.set_edge_type(-edgeType_);
         edges_.emplace_back(std::move(edge));
     }

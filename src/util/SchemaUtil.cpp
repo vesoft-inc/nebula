@@ -215,8 +215,8 @@ SchemaUtil::toValueVec(std::vector<Expression*> exprs) {
     ExpressionContextImpl ctx(nullptr, nullptr);
     for (auto *expr : exprs) {
         auto value = expr->eval(ctx);
-         if (value.isNull()) {
-            LOG(ERROR) << "Wrong value type";
+         if (value.isNull() && value.getNull() != NullType::__NULL__) {
+            LOG(ERROR) << "Wrong value type: " << value.type();;
             return Status::Error("Wrong value type");
         }
         values.emplace_back(std::move(value));
@@ -234,7 +234,8 @@ StatusOr<DataSet> SchemaUtil::toDescSchema(const meta::cpp2::Schema &schema) {
         columns.emplace_back(typeToString(col));
         auto nullable = col.__isset.nullable ? *col.get_nullable() : false;
         columns.emplace_back(nullable ? "YES" : "NO");
-        columns.emplace_back(col.get_default_value());
+        auto defaultValue = col.__isset.default_value ? *col.get_default_value() : Value();
+        columns.emplace_back(std::move(defaultValue));
         Row row;
         row.columns = std::move(columns);
         rows.emplace_back(row);

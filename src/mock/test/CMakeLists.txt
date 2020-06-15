@@ -19,26 +19,25 @@ set(GRAPH_TEST_LIB
     $<TARGET_OBJECTS:schedule_obj>
     $<TARGET_OBJECTS:idgenerator_obj>
     $<TARGET_OBJECTS:context_obj>
-    $<TARGET_OBJECTS:common_graph_client_obj>
     $<TARGET_OBJECTS:common_expression_obj>
     $<TARGET_OBJECTS:common_http_client_obj>
     $<TARGET_OBJECTS:common_network_obj>
     $<TARGET_OBJECTS:common_process_obj>
-    $<TARGET_OBJECTS:common_graph_thrift_obj>
+    $<TARGET_OBJECTS:common_graph_client_obj>
     $<TARGET_OBJECTS:common_storage_client_base_obj>
     $<TARGET_OBJECTS:common_graph_storage_client_obj>
     $<TARGET_OBJECTS:common_storage_client_base_obj>
-    $<TARGET_OBJECTS:common_storage_thrift_obj>
     $<TARGET_OBJECTS:common_meta_client_obj>
     $<TARGET_OBJECTS:common_stats_obj>
     $<TARGET_OBJECTS:common_time_obj>
     $<TARGET_OBJECTS:common_meta_thrift_obj>
+    $<TARGET_OBJECTS:common_graph_thrift_obj>
     $<TARGET_OBJECTS:common_common_thrift_obj>
+    $<TARGET_OBJECTS:common_storage_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:common_meta_obj>
     $<TARGET_OBJECTS:common_ws_obj>
     $<TARGET_OBJECTS:common_ws_common_obj>
-    # $<TARGET_OBJECTS:meta_gflags_man_obj>
     $<TARGET_OBJECTS:common_thread_obj>
     $<TARGET_OBJECTS:common_time_obj>
     $<TARGET_OBJECTS:common_fs_obj>
@@ -47,7 +46,6 @@ set(GRAPH_TEST_LIB
     $<TARGET_OBJECTS:common_datatypes_obj>
     $<TARGET_OBJECTS:common_conf_obj>
     $<TARGET_OBJECTS:common_file_based_cluster_id_man_obj>
-    $<TARGET_OBJECTS:common_meta_thrift_obj>
     $<TARGET_OBJECTS:common_charset_obj>
 )
 

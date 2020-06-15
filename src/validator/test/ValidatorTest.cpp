@@ -52,7 +52,7 @@ std::unique_ptr<QueryContext> ValidatorTest::buildContext() {
 
 TEST_F(ValidatorTest, Subgraph) {
     {
-        std::string query = "GET SUBGRAPH 3 STEPS FROM 1";
+        std::string query = "GET SUBGRAPH 3 STEPS FROM \"1\"";
         auto result = GQLParser().parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
         auto sentences = std::move(result).value();
