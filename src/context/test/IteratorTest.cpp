@@ -63,10 +63,16 @@ TEST(IteratorTest, Sequential) {
                 iter.next();
             }
         }
-        iter.reset();
-        for (; iter.valid(); iter.next()) {
+        int32_t count = 0;
+        for (iter.reset(); iter.valid(); iter.next()) {
             EXPECT_NE(iter.getColumn("col1").getInt() % 2, 0);
+            count++;
         }
+
+        for (iter.reset(1); iter.valid(); iter.next()) {
+            count--;
+        }
+        EXPECT_EQ(count, 1);
     }
 }
 
@@ -218,13 +224,21 @@ TEST(IteratorTest, GetNeighbor) {
                 {1, 1, 3, 3, 5, 5, 7, 7, 9, 9,
                  1, 1, 3, 3, 5, 5, 7, 7, 9, 9};
         std::vector<Value> result;
-        iter.reset();
-        for (; iter.valid(); iter.next()) {
+
+        int count = 0;
+        for (iter.reset(); iter.valid(); iter.next()) {
             result.emplace_back(iter.getColumn("_vid"));
+            count++;
         }
         EXPECT_EQ(result.size(), 20);
         EXPECT_EQ(expected, result);
+
+        for (iter.reset(10); iter.valid(); iter.next()) {
+            count--;
+        }
+        EXPECT_EQ(count, 10);
     }
 }
+
 }  // namespace graph
 }  // namespace nebula

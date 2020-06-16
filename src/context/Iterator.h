@@ -13,6 +13,7 @@
 
 namespace nebula {
 namespace graph {
+
 class Iterator {
 public:
     explicit Iterator(const Value& value) : value_(value) {}
@@ -27,7 +28,12 @@ public:
 
     virtual void erase() = 0;
 
-    virtual void reset() = 0;
+    // Reset iterator position to `pos' from begin. Must be sure that the `pos' position
+    // is lower than `size()' before resetting
+    void reset(size_t pos = 0) {
+        DCHECK((pos == 0 && size() == 0) || (pos < size()));
+        doReset(pos);
+    }
 
     void operator++() {
         next();
@@ -58,6 +64,8 @@ public:
     }
 
 protected:
+    virtual void doReset(size_t pos) = 0;
+
     const Value& value_;
 };
 
@@ -81,10 +89,6 @@ public:
         counter_--;
     }
 
-    void reset() override {
-        counter_ = 0;
-    }
-
     const Value& operator*() override {
         return value_;
     }
@@ -94,6 +98,10 @@ public:
     }
 
 private:
+    void doReset(size_t pos) override {
+        counter_ = pos;
+    }
+
     int64_t counter_{0};
 };
 
@@ -122,10 +130,6 @@ public:
         iter_ = edges_.erase(iter_);
     }
 
-    void reset() override {
-        iter_ = edges_.begin();
-    }
-
     const Value& operator*() override {
         return value_;
     }
@@ -143,6 +147,10 @@ public:
                              const std::string& prop) const override;
 
 private:
+    void doReset(size_t pos) override {
+        iter_ = edges_.begin() + pos;
+    }
+
     int64_t buildIndex(const std::vector<std::string>& colNames);
 
     std::pair<std::string, std::unordered_map<std::string, int64_t>>
@@ -153,11 +161,8 @@ private:
     using PropIdxMap = std::unordered_map<std::string, int64_t>;
     using TagEdgePropMap = std::unordered_map<std::string, PropIdxMap>;
     using PropIndex = std::vector<TagEdgePropMap>;
-    using Edge = std::tuple<int64_t, /* segment id */
-                           const Row*,
-                           int64_t, /* column id */
-                           const List* /* edge props */
-                          >;
+    // Edge: <segment_id, row, column_id, edge_props>
+    using Edge = std::tuple<int64_t, const Row*, int64_t, const List*>;
     PropIndex                      tagPropIndex_;
     PropIndex                      edgePropIndex_;
     std::vector<const DataSet*>    segments_;
@@ -200,10 +205,6 @@ public:
         iter_ = rows_.erase(iter_);
     }
 
-    void reset() override {
-        iter_ = rows_.begin();
-    }
-
     const Value& operator*() override {
         return value_;
     }
@@ -227,12 +228,15 @@ public:
     }
 
 private:
+    void doReset(size_t pos) override {
+        iter_ = rows_.begin() + pos;
+    }
+
     std::vector<const Row*>                      rows_;
     std::vector<const Row*>::iterator            iter_;
     std::unordered_map<std::string, int64_t>     colIndex_;
 };
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // CONTEXT_ITERATOR_H_
-
-
