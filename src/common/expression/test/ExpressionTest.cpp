@@ -189,6 +189,17 @@ TEST_F(ExpressionTest, UnaryINCR) {
         EXPECT_EQ(eval.type(), Value::Type::INT);
         EXPECT_EQ(eval, 2);
     }
+    {
+        // ++versioned_var{0}
+        UnaryExpression expr(
+                Expression::Kind::kUnaryIncr,
+                new VersionedVariableExpression(
+                    new std::string("versioned_var"),
+                    new ConstantExpression(0)));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::INT);
+        EXPECT_EQ(eval, 2);
+    }
 }
 
 TEST_F(ExpressionTest, UnaryDECR) {

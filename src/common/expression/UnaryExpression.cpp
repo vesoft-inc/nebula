@@ -53,7 +53,8 @@ const Value& UnaryExpression::eval(ExpressionContext& ctx) {
             break;
         }
         case Kind::kUnaryIncr: {
-            if (UNLIKELY(operand_->kind() != Kind::kVar)) {
+            if (UNLIKELY(operand_->kind() != Kind::kVar
+                        && operand_->kind() != Kind::kVersionedVar)) {
                 result_ = Value(NullType::BAD_TYPE);
                 break;
             }
@@ -63,7 +64,8 @@ const Value& UnaryExpression::eval(ExpressionContext& ctx) {
             break;
         }
         case Kind::kUnaryDecr: {
-            if (UNLIKELY(operand_->kind() != Kind::kVar)) {
+            if (UNLIKELY(operand_->kind() != Kind::kVar
+                        && operand_->kind() != Kind::kVersionedVar)) {
                 result_ = Value(NullType::BAD_TYPE);
                 break;
             }
