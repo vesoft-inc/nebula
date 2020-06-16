@@ -300,7 +300,8 @@ TEST(AdminClientTest, SnapshotTest) {
     fs::TempDir rootPath("/tmp/admin_snapshot_test.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
     auto now = time::WallClock::fastNowInMilliSec();
-    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr(localIp, rpcServer->port_), HostInfo(now));
+    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr(localIp, rpcServer->port_),
+                                   HostInfo(now, meta::cpp2::HostRole::STORAGE, ""));
     ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(kv.get()).size());
 
     std::vector<HostAddr> addresses;
@@ -340,7 +341,8 @@ TEST(AdminClientTest, RebuildIndexTest) {
     fs::TempDir rootPath("/tmp/admin_snapshot_test.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
     auto now = time::WallClock::fastNowInMilliSec();
-    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr(localIp, rpcServer->port_), HostInfo(now));
+    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr(localIp, rpcServer->port_),
+                                   HostInfo(now, meta::cpp2::HostRole::STORAGE, ""));
     ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(kv.get()).size());
     auto address = HostAddr(localIp, rpcServer->port_);
     auto client = std::make_unique<AdminClient>(kv.get());

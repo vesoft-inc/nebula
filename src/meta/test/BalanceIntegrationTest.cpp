@@ -68,7 +68,7 @@ TEST(BalanceIntegrationTest, BalanceTest) {
         meta::MetaClientOptions options;
         options.localHost_ = storageAddr;
         options.clusterId_ = kClusterId;
-        options.inStoraged_ = true;
+        options.role_ = meta::cpp2::HostRole::STORAGE;
         auto metaClient = std::make_shared<meta::MetaClient>(threadPool,
                                                              metaAddr,
                                                              options);
@@ -178,7 +178,7 @@ TEST(BalanceIntegrationTest, BalanceTest) {
         MetaClientOptions options;
         options.localHost_ = storageAddr;
         options.clusterId_ = kClusterId;
-        options.inStoraged_ = true;
+        options.role_ = meta::cpp2::HostRole::STORAGE;
         newMetaClient = std::make_unique<meta::MetaClient>(threadPool,
                                                            metaAddr,
                                                            options);
@@ -297,7 +297,7 @@ TEST(BalanceIntegrationTest, LeaderBalanceTest) {
         MetaClientOptions options;
         options.localHost_ = storageAddr;
         options.clusterId_ = kClusterId;
-        options.inStoraged_ = true;
+        options.role_ = meta::cpp2::HostRole::STORAGE;
         auto metaClient = std::make_shared<meta::MetaClient>(threadPool,
                                                              metaAddr,
                                                              options);

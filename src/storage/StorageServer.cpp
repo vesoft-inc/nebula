@@ -104,7 +104,6 @@ bool StorageServer::start() {
     // Meta client
     meta::MetaClientOptions options;
     options.localHost_ = localHost_;
-    options.inStoraged_ = true;
     options.serviceName_ = "";
     options.skipConfig_ = FLAGS_local_config;
     options.role_ = nebula::meta::cpp2::HostRole::STORAGE;

@@ -44,7 +44,8 @@ TEST(KVClientTest, SimpleTest) {
     cluster.startMeta(metaPort, metaPath.path(), metaName);
     meta::MetaClientOptions options;
     options.localHost_ = storageAddr;
-    options.inStoraged_ = true;
+    // options.inStoraged_ = true;
+    options.role_ = meta::cpp2::HostRole::STORAGE;
     cluster.initMetaClient(options);
     cluster.startStorage(storageAddr, stoagePath.path(), true);
 

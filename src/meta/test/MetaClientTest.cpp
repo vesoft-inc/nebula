@@ -933,7 +933,9 @@ TEST(MetaClientTest, DiffTest) {
 
     mock::MockCluster cluster;
     cluster.startMeta(0, rootPath.path());
-    cluster.initMetaClient();
+    meta::MetaClientOptions options;
+    options.role_ = meta::cpp2::HostRole::STORAGE;
+    cluster.initMetaClient(options);
     auto* kv = cluster.metaKV_.get();
     auto* client = cluster.metaClient_.get();
 
@@ -989,7 +991,7 @@ TEST(MetaClientTest, HeartbeatTest) {
     HostAddr localHost(cluster.localIP(), network::NetworkUtils::getAvailablePort());
     options.localHost_ = localHost;
     options.clusterId_ = kClusterId;
-    options.inStoraged_ = true;
+    options.role_ = meta::cpp2::HostRole::STORAGE;
     cluster.initMetaClient(std::move(options));
     auto* client = cluster.metaClient_.get();
 
