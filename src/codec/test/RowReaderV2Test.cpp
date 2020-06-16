@@ -53,6 +53,13 @@ TEST(RowReaderV2, headerInfo) {
     ASSERT_TRUE(reader->reset(&schema4, folly::StringPiece(data4, sizeof(data4))));
     EXPECT_EQ(0, reader->schemaVer());
     EXPECT_EQ(sizeof(data4), reader->headerLen());
+
+    // Empty row, return illegal schema version
+    SchemaWriter schema5;
+    auto reader2 = RowReader::getRowReader(&schema5,
+                                           folly::StringPiece(""));
+    ASSERT_FALSE(!!reader2);
+    ASSERT_FALSE(reader2->reset(&schema5, folly::StringPiece("")));
 }
 
 

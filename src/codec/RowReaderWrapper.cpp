@@ -35,7 +35,7 @@ void RowReaderWrapper::getVersions(const folly::StringPiece& row,
     size_t index = 0;
     if (row.empty()) {
         LOG(WARNING) << "Row data is empty, so there is no version info";
-        schemaVer = 0;
+        schemaVer = -1;
         readerVer = 2;
         return;
     }
@@ -55,7 +55,8 @@ void RowReaderWrapper::getVersions(const folly::StringPiece& row,
         verBytes = row[index++] & 0x07;
     } else {
         LOG(ERROR) << "Invalid reader version: " << readerVer;
-        schemaVer = 0;
+        schemaVer = -1;
+        return;
     }
 
     schemaVer = 0;
