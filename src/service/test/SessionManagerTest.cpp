@@ -4,11 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
 #include <gtest/gtest.h>
-#include "graph/SessionManager.h"
-#include "graph/GraphFlags.h"
-#include "thread/GenericWorker.h"
+
+#include "common/base/Base.h"
+#include "common/thread/GenericWorker.h"
+
+#include "service/SessionManager.h"
+#include "service/GraphFlags.h"
 
 using nebula::thread::GenericWorker;
 
