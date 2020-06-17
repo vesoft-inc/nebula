@@ -8,10 +8,11 @@
 
 namespace nebula {
 namespace graph {
-GetNeighborsIter::GetNeighborsIter(const Value& value) : Iterator(value) {
-    DCHECK(value.type() == Value::Type::LIST);
+
+GetNeighborsIter::GetNeighborsIter(std::shared_ptr<Value> value) : Iterator(value) {
+    DCHECK(value->isList());
     int64_t segment = 0;
-    for (auto& val : value_.getList().values) {
+    for (auto& val : value_->getList().values) {
         DCHECK(val.type() == Value::Type::DATASET);
         auto& ds = val.getDataSet();
         auto& colNames = ds.colNames;

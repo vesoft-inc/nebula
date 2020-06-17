@@ -4,12 +4,14 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "common/base/Base.h"
-#include <gtest/gtest.h>
 #include "context/ExecutionContext.h"
+
+#include <gtest/gtest.h>
+#include "common/base/Base.h"
 
 namespace nebula {
 namespace graph {
+
 TEST(ExecutionContext, ReadWriteTest) {
     ExecutionContext ctx;
     ctx.setValue("v1", 10);
@@ -17,7 +19,6 @@ TEST(ExecutionContext, ReadWriteTest) {
     EXPECT_EQ(Value(10), ctx.getValue("v1"));
     EXPECT_EQ(Value("Hello world"), ctx.getValue("v2"));
 }
-
 
 TEST(ExecutionContext, HistoryTest) {
     ExecutionContext ctx;
@@ -47,5 +48,16 @@ TEST(ExecutionContext, HistoryTest) {
     EXPECT_EQ(Value(true), (it2++)->value());
     EXPECT_TRUE(it2 == hist2.end());
 }
-}  // namespace graph
-}  // namespace nebula
+
+TEST(ExecutionContextTest, TestExecResult) {
+    DataSet ds;
+    auto expected = ExecResult::buildDefault(Value(ds));
+    ExecutionContext ctx;
+    ctx.setResult("ds", std::move(expected));
+    auto& result = ctx.getResult("ds");
+    EXPECT_TRUE(result.value().isDataSet());
+    EXPECT_TRUE(result.iter()->value().isDataSet());
+}
+
+}   // namespace graph
+}   // namespace nebula

@@ -62,14 +62,14 @@ public:
 
     static ExecResult buildGetNeighbors(Value&& val, State&& stat) {
         ExecResult result(std::move(val), std::move(stat));
-        auto iter = std::make_unique<GetNeighborsIter>(result.value());
+        auto iter = std::make_unique<GetNeighborsIter>(result.valuePtr());
         result.setIter(std::move(iter));
         return result;
     }
 
     static ExecResult buildSequential(Value&& val, State&& stat) {
         ExecResult result(std::move(val), std::move(stat));
-        auto iter = std::make_unique<SequentialIter>(result.value());
+        auto iter = std::make_unique<SequentialIter>(result.valuePtr());
         result.setIter(std::move(iter));
         return result;
     }
@@ -78,12 +78,16 @@ public:
         iter_ = std::move(iter);
     }
 
-    const Value& value() const {
+    std::shared_ptr<Value> valuePtr() const {
         return value_;
     }
 
+    const Value& value() const {
+        return *value_;
+    }
+
     Value&& moveValue() {
-        return std::move(value_);
+        return std::move(*value_);
     }
 
     const State& state() const {
@@ -95,25 +99,21 @@ public:
     }
 
 private:
-    ExecResult() {
-        value_ = Value();
-        state_ = State(State::Stat::kUnExecuted, "");
-        iter_ = std::make_unique<DefaultIter>(value_);
-    }
+    ExecResult()
+        : value_(std::make_shared<Value>()),
+          state_(State::Stat::kUnExecuted, ""),
+          iter_(std::make_unique<DefaultIter>(value_)) {}
 
-    explicit ExecResult(Value&& val) {
-        value_ = std::move(val);
-        state_ = State(State::Stat::kSuccess, "");
-        iter_ = std::make_unique<DefaultIter>(value_);
-    }
+    explicit ExecResult(Value&& val)
+        : value_(std::make_shared<Value>(std::move(val))),
+          state_(State::Stat::kSuccess, ""),
+          iter_(std::make_unique<DefaultIter>(value_)) {}
 
-    ExecResult(Value&& val, State stat) {
-        value_ = std::move(val);
-        state_ = stat;
-    }
+    ExecResult(Value&& val, State stat)
+        : value_(std::make_shared<Value>(std::move(val))), state_(stat) {}
 
 private:
-    Value                           value_;
+    std::shared_ptr<Value>          value_;
     State                           state_;
     std::unique_ptr<Iterator>       iter_;
 };

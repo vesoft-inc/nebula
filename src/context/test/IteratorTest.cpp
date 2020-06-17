@@ -10,11 +10,11 @@
 namespace nebula {
 namespace graph {
 TEST(IteratorTest, Default) {
-    Value constant(1);
+    auto constant = std::make_shared<Value>(1);
     DefaultIter iter(constant);
     EXPECT_EQ(iter.size(), 1);
     for (; iter.valid(); iter.next()) {
-        EXPECT_EQ(*iter, constant);
+        EXPECT_EQ(*iter, *constant);
     }
 }
 
@@ -28,7 +28,7 @@ TEST(IteratorTest, Sequential) {
         ds.rows.emplace_back(std::move(row));
     }
     {
-        Value val(ds);
+        auto val = std::make_shared<Value>(ds);
         SequentialIter iter(val);
         EXPECT_EQ(iter.size(), 10);
         auto i = 0;
@@ -39,7 +39,7 @@ TEST(IteratorTest, Sequential) {
         }
     }
     {
-        Value val(ds);
+        auto val = std::make_shared<Value>(ds);
         SequentialIter iter(val);
         auto copyIter1 = iter.copy();
         auto copyIter2 = copyIter1->copy();
@@ -53,7 +53,7 @@ TEST(IteratorTest, Sequential) {
     }
     // erase
     {
-        Value val(std::move(ds));
+        auto val = std::make_shared<Value>(std::move(ds));
         SequentialIter iter(val);
         EXPECT_EQ(iter.size(), 10);
         while (iter.valid()) {
@@ -132,7 +132,7 @@ TEST(IteratorTest, GetNeighbor) {
     List datasets;
     datasets.values.emplace_back(std::move(ds1));
     datasets.values.emplace_back(std::move(ds2));
-    Value val(std::move(datasets));
+    auto val = std::make_shared<Value>(std::move(datasets));
 
     {
         GetNeighborsIter iter(val);
