@@ -197,7 +197,7 @@ public:
         return val;
     }
 
-    static StatusOr<Value> decodeValue(const folly::StringPiece& raw, Value::Type type) {
+    static Value decodeValue(const folly::StringPiece& raw, Value::Type type) {
         Value v;
         switch (type) {
             case Value::Type::INT : {
@@ -256,9 +256,87 @@ public:
                 break;
             }
             default:
-                return Status::Error("Unknown value type");
+                return Value(NullType::BAD_DATA);
         }
         return v;
+    }
+
+    static Value getValueFromIndexKey(size_t vIdLen,
+                                      int32_t vColNum,
+                                      const folly::StringPiece& key,
+                                      const folly::StringPiece& prop,
+                                      std::vector<std::pair<std::string, Value::Type>>& cols,
+                                      bool isEdgeIndex = false,
+                                      bool hasNullableCol = false) {
+        size_t len = 0;
+        int32_t vCount = vColNum;
+        std::bitset<16> nullableBit;
+        int8_t nullableColPosit = 15;
+        size_t offset = sizeof(PartitionID) + sizeof(IndexID);
+        auto tailLen = (!isEdgeIndex) ? vIdLen : vIdLen * 2 + sizeof(EdgeRanking);
+
+        auto it = std::find_if(cols.begin(), cols.end(),
+                               [&prop] (const auto& col) {
+                                   return prop.str() == col.first;
+                               });
+        if (it == cols.end()) {
+            return Value(NullType::BAD_DATA);
+        }
+        auto type = it->second;
+
+        if (hasNullableCol) {
+            auto bitOffset = key.size() - tailLen - sizeof(u_short) - vCount * sizeof(int32_t);
+            auto v = *reinterpret_cast<const u_short*>(key.begin() + bitOffset);
+            nullableBit = v;
+        }
+
+        for (const auto& col : cols) {
+            if (hasNullableCol && col.first == prop.str() && nullableBit.test(nullableColPosit)) {
+                    return Value(NullType::__NULL__);
+            }
+            switch (col.second) {
+                case Value::Type::BOOL: {
+                    len = sizeof(bool);
+                    break;
+                }
+                case Value::Type::INT: {
+                    len = sizeof(int64_t);
+                    break;
+                }
+                case Value::Type::FLOAT: {
+                    len = sizeof(double);
+                    break;
+                }
+                case Value::Type::STRING: {
+                    auto off = key.size() - vCount * sizeof(int32_t) - tailLen;
+                    len = *reinterpret_cast<const int32_t*>(key.data() + off);
+                    --vCount;
+                    break;
+                }
+                case Value::Type::DATE : {
+                    len = sizeof(int8_t) * 2 + sizeof(int16_t);
+                    break;
+                }
+                case Value::Type::DATETIME : {
+                    len = sizeof(int32_t) * 2 + sizeof(int16_t) + sizeof(int8_t) * 5;
+                    break;
+                }
+                default:
+                    len = 0;
+            }
+            if (hasNullableCol) {
+                nullableColPosit -= 1;
+            }
+            if (col.first == prop.str()) {
+                break;
+            }
+            offset += len;
+        }
+        /*
+         * here need a string copy.
+         */
+        auto propVal = key.subpiece(offset, len);
+        return decodeValue(propVal, type);
     }
 
     static VertexIDSlice getIndexVertexID(size_t vIdLen, const folly::StringPiece& rawKey) {

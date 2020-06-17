@@ -34,73 +34,55 @@ bool evalInt64(int64_t val) {
     Value v(val);
     auto str = IndexKeyUtils::encodeValue(v);
     auto res = IndexKeyUtils::decodeValue(str, Value::Type::INT);
-    if (!res.ok()) {
-        return false;
-    }
 
-    EXPECT_EQ(Value::Type::INT, res.value().type());
-    EXPECT_EQ(v, res.value());
-    return val == res.value().getInt();
+    EXPECT_EQ(Value::Type::INT, res.type());
+    EXPECT_EQ(v, res);
+    return val == res.getInt();
 }
 
 bool evalDouble(double val) {
     Value v(val);
     auto str = IndexKeyUtils::encodeValue(v);
     auto res = IndexKeyUtils::decodeValue(str, Value::Type::FLOAT);
-    if (!res.ok()) {
-        return false;
-    }
-    EXPECT_EQ(Value::Type::FLOAT, res.value().type());
-    EXPECT_EQ(v, res.value());
-    return val == res.value().getFloat();
+    EXPECT_EQ(Value::Type::FLOAT, res.type());
+    EXPECT_EQ(v, res);
+    return val == res.getFloat();
 }
 
 bool evalBool(bool val) {
     Value v(val);
     auto str = IndexKeyUtils::encodeValue(v);
     auto res = IndexKeyUtils::decodeValue(str, Value::Type::BOOL);
-    if (!res.ok()) {
-        return false;
-    }
-    EXPECT_EQ(Value::Type::BOOL, res.value().type());
-    EXPECT_EQ(v, res.value());
-    return val == res.value().getBool();
+    EXPECT_EQ(Value::Type::BOOL, res.type());
+    EXPECT_EQ(v, res);
+    return val == res.getBool();
 }
 
 bool evalString(std::string val) {
     Value v(val);
     auto str = IndexKeyUtils::encodeValue(v);
     auto res = IndexKeyUtils::decodeValue(str, Value::Type::STRING);
-    if (!res.ok()) {
-        return false;
-    }
-    EXPECT_EQ(Value::Type::STRING, res.value().type());
-    EXPECT_EQ(v, res.value());
-    return val == res.value().getStr();
+    EXPECT_EQ(Value::Type::STRING, res.type());
+    EXPECT_EQ(v, res);
+    return val == res.getStr();
 }
 
 bool evalDate(nebula::Date val) {
     Value v(val);
     auto str = IndexKeyUtils::encodeValue(v);
     auto res = IndexKeyUtils::decodeValue(str, Value::Type::DATE);
-    if (!res.ok()) {
-        return false;
-    }
-    EXPECT_EQ(Value::Type::DATE, res.value().type());
-    EXPECT_EQ(v, res.value());
-    return val == res.value().getDate();
+    EXPECT_EQ(Value::Type::DATE, res.type());
+    EXPECT_EQ(v, res);
+    return val == res.getDate();
 }
 
 bool evalDateTime(nebula::DateTime val) {
     Value v(val);
     auto str = IndexKeyUtils::encodeValue(v);
     auto res = IndexKeyUtils::decodeValue(str, Value::Type::DATETIME);
-    if (!res.ok()) {
-        return false;
-    }
-    EXPECT_EQ(Value::Type::DATETIME, res.value().type());
-    EXPECT_EQ(v, res.value());
-    return val == res.value().getDateTime();
+    EXPECT_EQ(Value::Type::DATETIME, res.type());
+    EXPECT_EQ(v, res);
+    return val == res.getDateTime();
 }
 
 TEST(IndexKeyUtilsTest, encodeValue) {
@@ -295,6 +277,134 @@ TEST(IndexKeyUtilsTest, nullableValue) {
         expected.append(reinterpret_cast<const char*>(&s), sizeof(u_short));
         auto result = raw.substr(raw.size() - sizeof(u_short), sizeof(u_short));
         ASSERT_EQ(expected, result);
+    }
+}
+
+void verifyDecodeIndexKey(bool isEdge,
+                          bool nullable,
+                          size_t vIdLen,
+                          const std::vector<std::pair<VertexID, std::vector<Value>>>& data,
+                          const std::vector<std::string>& indexKeys,
+                          std::vector<std::pair<std::string, Value::Type>> cols) {
+    for (size_t j = 0; j < data.size(); j++) {
+        std::vector<Value> actual;
+        actual.emplace_back(IndexKeyUtils::getValueFromIndexKey(
+            vIdLen, 1, indexKeys[j], "col_bool", cols, isEdge, nullable));
+        actual.emplace_back(IndexKeyUtils::getValueFromIndexKey(
+            vIdLen, 1, indexKeys[j], "col_int", cols, isEdge, nullable));
+        actual.emplace_back(IndexKeyUtils::getValueFromIndexKey(
+            vIdLen, 1, indexKeys[j], "col_float", cols, isEdge, nullable));
+        actual.emplace_back(IndexKeyUtils::getValueFromIndexKey(
+            vIdLen, 1, indexKeys[j], "col_string", cols, isEdge, nullable));
+        actual.emplace_back(IndexKeyUtils::getValueFromIndexKey(
+            vIdLen, 1, indexKeys[j], "col_date", cols, isEdge, nullable));
+        actual.emplace_back(IndexKeyUtils::getValueFromIndexKey(
+            vIdLen, 1, indexKeys[j], "col_datetime", cols, isEdge, nullable));
+
+        ASSERT_EQ(data[j].second, actual);
+    }
+}
+
+TEST(IndexKeyUtilsTest, getValueFromIndexKeyTest) {
+    size_t vIdLen = 8;
+    PartitionID partId = 1;
+    IndexID indexId = 1;
+    Date d = {2020, 1, 20};
+    DateTime dt = {2020, 4, 11, 12, 30, 22, 1111, 2222};
+    auto null = Value(NullType::__NULL__);
+    std::vector<Value::Type> valueTypes = {
+        Value::Type::BOOL,
+        Value::Type::INT,
+        Value::Type::FLOAT,
+        Value::Type::STRING,
+        Value::Type::DATE,
+        Value::Type::DATETIME
+    };
+
+    std::vector<std::pair<std::string, Value::Type>> cols = {
+        {"col_bool", Value::Type::BOOL},
+        {"col_int", Value::Type::INT},
+        {"col_float", Value::Type::FLOAT},
+        {"col_string", Value::Type::STRING},
+        {"col_date", Value::Type::DATE},
+        {"col_datetime", Value::Type::DATETIME}
+    };
+
+    // vertices test with nullable
+    {
+        std::vector<std::pair<VertexID, std::vector<Value>>> vertices = {
+            {"1", {Value(false), Value(1L), Value(1.1f), Value("row1"), Value(d), Value(dt)}},
+            {"2", {Value(true), Value(2L), Value(2.1f), Value("row2"), Value(d), Value(dt)}},
+            {"3", {null, Value(3L), Value(3.1f), Value("row3"), Value(d), Value(dt)}},
+            {"4", {Value(true), null, Value(4.1f), Value("row4"), Value(d), Value(dt)}},
+            {"5", {Value(false), Value(5L), null, Value("row5"), Value(d), Value(dt)}},
+            {"6", {Value(true), Value(6L), Value(6.1f), null, Value(d), Value(dt)}},
+            {"7", {Value(false), Value(7L), Value(7.1f), Value("row7"), null, Value(dt)}},
+            {"8", {Value(true), Value(8L), Value(8.1f), Value("row8"), Value(d), null}},
+            {"9", {null, null, null, null, null, null}}
+        };
+        std::vector<std::string> indexKeys;
+
+        for (const auto& row : vertices) {
+            indexKeys.emplace_back(IndexKeyUtils::vertexIndexKey(
+                vIdLen, partId, indexId, row.first, row.second, valueTypes));
+        }
+        verifyDecodeIndexKey(false, true, vIdLen, vertices, indexKeys, cols);
+    }
+
+    // vertices test without nullable column
+    {
+        std::vector<std::pair<VertexID, std::vector<Value>>> vertices = {
+            {"1", {Value(false), Value(1L), Value(1.1f), Value("row1"), Value(d), Value(dt)}},
+            {"2", {Value(true), Value(2L), Value(2.1f), Value("row2"), Value(d), Value(dt)}},
+        };
+
+        std::vector<std::string> indexKeys;
+        for (const auto& row : vertices) {
+            indexKeys.emplace_back(IndexKeyUtils::vertexIndexKey(
+                vIdLen, partId, indexId, row.first, row.second, valueTypes));
+        }
+
+        verifyDecodeIndexKey(false, false, vIdLen, vertices, indexKeys, cols);
+    }
+
+    // edges test with nullable
+    {
+        std::vector<std::pair<VertexID, std::vector<Value>>> edges = {
+            {"1", {Value(false), Value(1L), Value(1.1f), Value("row1"), Value(d), Value(dt)}},
+            {"2", {Value(true), Value(2L), Value(2.1f), Value("row2"), Value(d), Value(dt)}},
+            {"3", {null, Value(3L), Value(3.1f), Value("row3"), Value(d), Value(dt)}},
+            {"4", {Value(true), null, Value(4.1f), Value("row4"), Value(d), Value(dt)}},
+            {"5", {Value(false), Value(5L), null, Value("row5"), Value(d), Value(dt)}},
+            {"6", {Value(true), Value(6L), Value(6.1f), null, Value(d), Value(dt)}},
+            {"7", {Value(false), Value(7L), Value(7.1f), Value("row7"), null, Value(dt)}},
+            {"8", {Value(true), Value(8L), Value(8.1f), Value("row8"), Value(d), null}},
+            {"9", {null, null, null, null, null, null}}
+        };
+        std::vector<std::string> indexKeys;
+
+        for (const auto& row : edges) {
+            indexKeys.emplace_back(IndexKeyUtils::edgeIndexKey(
+                vIdLen, partId, indexId, row.first, 0, row.first, row.second, valueTypes));
+        }
+
+        verifyDecodeIndexKey(true, true, vIdLen, edges, indexKeys, cols);
+    }
+
+    // edges test without nullable column
+    {
+        std::vector<std::pair<VertexID, std::vector<Value>>> edges = {
+            {"1", {Value(false), Value(1L), Value(1.1f), Value("row1"), Value(d), Value(dt)}},
+            {"2", {Value(true), Value(2L), Value(2.1f), Value("row2"), Value(d), Value(dt)}},
+        };
+        std::vector<std::string> indexKeys;
+
+        for (const auto& row : edges) {
+            indexKeys.emplace_back(IndexKeyUtils::edgeIndexKey(
+                vIdLen, partId, indexId, row.first, 0, row.first, row.second, valueTypes));
+        }
+
+        verifyDecodeIndexKey(true, false, vIdLen, edges, indexKeys, cols);
     }
 }
 }  // namespace nebula
