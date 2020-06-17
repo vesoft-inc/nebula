@@ -12,7 +12,7 @@ namespace nebula {
 namespace graph {
 const Value& ExpressionContextImpl::getVar(const std::string& var) const {
     if (ectx_ == nullptr) {
-        return kEmpty;
+        return Value::kEmpty;
     }
     return ectx_->getValue(var);
 }
@@ -20,7 +20,7 @@ const Value& ExpressionContextImpl::getVar(const std::string& var) const {
 const Value& ExpressionContextImpl::getVersionedVar(const std::string& var,
                                                     int64_t version) const {
     if (ectx_ == nullptr) {
-        return kEmpty;
+        return Value::kEmpty;
     }
     auto& result = ectx_->getHistory(var);
     auto size = result.size();
@@ -29,7 +29,7 @@ const Value& ExpressionContextImpl::getVersionedVar(const std::string& var,
     } else if (version > 0 && static_cast<size_t>(version) <= size) {
         return result[version - 1].value();
     } else {
-        return kEmpty;
+        return Value::kEmpty;
     }
 }
 
@@ -39,7 +39,7 @@ const Value& ExpressionContextImpl::getVarProp(const std::string& var,
     if (iter_ != nullptr) {
         return iter_->getColumn(prop);
     } else {
-        return kEmpty;
+        return Value::kEmpty;
     }
 }
 
@@ -48,7 +48,7 @@ const Value& ExpressionContextImpl::getEdgeProp(const std::string& edge,
     if (iter_ != nullptr) {
         return iter_->getEdgeProp(edge, prop);
     } else {
-        return kEmpty;
+        return Value::kEmpty;
     }
 }
 
@@ -57,7 +57,7 @@ const Value& ExpressionContextImpl::getSrcProp(const std::string& tag,
     if (iter_ != nullptr) {
         return iter_->getTagProp(tag, prop);
     } else {
-        return kEmpty;
+        return Value::kEmpty;
     }
 }
 
@@ -66,7 +66,7 @@ const Value& ExpressionContextImpl::getDstProp(const std::string& tag,
     if (iter_ != nullptr) {
         return iter_->getTagProp(tag, prop);
     } else {
-        return kEmpty;
+        return Value::kEmpty;
     }
 }
 
@@ -74,7 +74,7 @@ const Value& ExpressionContextImpl::getInputProp(const std::string& prop) const 
     if (iter_ != nullptr) {
         return iter_->getColumn(prop);
     } else {
-        return kEmpty;
+        return Value::kEmpty;
     }
 }
 

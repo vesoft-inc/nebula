@@ -55,7 +55,7 @@ const Value& ExecutionContext::getValue(const std::string& name) const {
     if (it != valueMap_.end()) {
         return it->second.back().value();
     } else {
-        return kEmpty;
+        return Value::kEmpty;
     }
 }
 

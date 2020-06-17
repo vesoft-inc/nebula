@@ -54,21 +54,21 @@ public:
     // The derived class should rewrite get prop if the Value is kind of dataset.
     virtual const Value& getColumn(const std::string& col) const {
         UNUSED(col);
-        return kEmpty;
+        return Value::kEmpty;
     }
 
     virtual const Value& getTagProp(const std::string& tag,
                                     const std::string& prop) const {
         UNUSED(tag);
         UNUSED(prop);
-        return kEmpty;
+        return Value::kEmpty;
     }
 
     virtual const Value& getEdgeProp(const std::string& edge,
                                      const std::string& prop) const {
         UNUSED(edge);
         UNUSED(prop);
-        return kEmpty;
+        return Value::kEmpty;
     }
 
 protected:
@@ -211,12 +211,12 @@ public:
 
     const Value& getColumn(const std::string& col) const override {
         if (!valid()) {
-            return kNullValue;
+            return Value::kNullValue;
         }
         auto row = *iter_;
         auto index = colIndex_.find(col);
         if (index == colIndex_.end()) {
-            return kNullValue;
+            return Value::kNullValue;
         } else {
             DCHECK_LT(index->second, row->columns.size());
             return row->columns[index->second];
