@@ -44,6 +44,15 @@ enum class NullType {
 
 
 struct Value {
+    static const Value kEmpty;
+    static const Value kNullValue;
+    static const Value kNullNaN;
+    static const Value kNullBadData;
+    static const Value kNullBadType;
+    static const Value kNullOverflow;
+    static const Value kNullUnknownProp;
+    static const Value kNullDivByZero;
+
     friend class apache::thrift::Cpp2Ops<Value, void>;
 
     enum class Type : uint8_t {
@@ -262,7 +271,6 @@ struct Value {
     DataSet& mutableDataSet();
 
     static const Value& null() noexcept {
-        static const Value kNullValue(NullType::__NULL__);
         return kNullValue;
     }
 
@@ -360,15 +368,6 @@ void swap(Value& a, Value& b);
 
 std::ostream& operator<<(std::ostream& os, const Value::Type& type);
 std::ostream& operator<<(std::ostream& os, const Value& value);
-
-static const Value kEmpty;
-static const Value kNullValue(NullType::__NULL__);
-static const Value kNullNan(NullType::NaN);
-static const Value kNullBadData(NullType::BAD_DATA);
-static const Value kNullBadType(NullType::BAD_TYPE);
-static const Value kNullOverflow(NullType::ERR_OVERFLOW);
-static const Value kNullUnknownProp(NullType::UNKNOWN_PROP);
-static const Value kNullDivByZero(NullType::DIV_BY_ZERO);
 
 // Arithmetic operations
 Value operator+(const Value& lhs, const Value& rhs);

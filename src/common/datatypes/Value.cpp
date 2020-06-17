@@ -80,6 +80,15 @@ namespace nebula {
 
 constexpr auto EPSILON = 1e-8;
 
+const Value Value::kEmpty;
+const Value Value::kNullValue(NullType::__NULL__);
+const Value Value::kNullNaN(NullType::NaN);
+const Value Value::kNullBadData(NullType::BAD_DATA);
+const Value Value::kNullBadType(NullType::BAD_TYPE);
+const Value Value::kNullOverflow(NullType::ERR_OVERFLOW);
+const Value Value::kNullUnknownProp(NullType::UNKNOWN_PROP);
+const Value Value::kNullDivByZero(NullType::DIV_BY_ZERO);
+
 Value::Value(Value&& rhs) : type_(Value::Type::__EMPTY__) {
     if (this == &rhs) { return; }
     if (rhs.type_ == Type::__EMPTY__) { return; }
