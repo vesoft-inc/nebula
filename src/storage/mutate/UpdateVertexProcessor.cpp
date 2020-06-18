@@ -113,15 +113,25 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
             // load it. To protect the data, we just return failed to graphd.
             return kvstore::ResultCode::ERR_CORRUPT_DATA;
         }
-        const auto schema = reader->getSchema();
+        const auto schema = this->schemaMan_->getTagSchema(this->spaceId_, tagId);
+        if (schema == nullptr) {
+            LOG(ERROR) << "Can't find the schema for tagId " << tagId;
+            return kvstore::ResultCode::ERR_TAG_NOT_FOUND;
+        }
         for (auto& prop : props) {
+            VariantType v;
             auto res = RowReader::getPropByName(reader.get(), prop.prop_.name);
             if (!ok(res)) {
-                VLOG(1) << "Skip the bad value for tag: " << tagId
-                        << ", prop " << prop.prop_.name;
-                return kvstore::ResultCode::ERR_UNKNOWN;
+                auto defaultVal = schema->getDefaultValue(prop.prop_.name);
+                if (!defaultVal.ok()) {
+                    VLOG(1) << "No default value of "
+                            << tagId << ", prop " << prop.prop_.name;
+                    return kvstore::ResultCode::ERR_TAG_NOT_FOUND;
+                }
+                v = std::move(defaultVal).value();
+            } else {
+                v = value(std::move(res));
             }
-            auto&& v = value(std::move(res));
             tagFilters_.emplace(std::make_pair(tagId, prop.prop_.name), v);
         }
         if (updateTagIds_.find(tagId) != updateTagIds_.end()) {
