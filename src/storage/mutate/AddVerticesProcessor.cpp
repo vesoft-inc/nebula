@@ -17,8 +17,7 @@ namespace storage {
 
 void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
     auto version = FLAGS_enable_multi_versions ?
-        std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec() :
-        std::numeric_limits<int64_t>::max();
+        std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec() : 0L;
     // Switch version to big-endian, make sure the key is in ordered.
     version = folly::Endian::big(version);
 
