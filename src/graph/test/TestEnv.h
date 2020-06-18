@@ -14,6 +14,7 @@
 #include <gtest/gtest.h>
 #include "TestUtils.h"
 #include "graph/GraphFlags.h"
+#include "storage/StorageFlags.h"
 
 namespace nebula {
 namespace graph {
