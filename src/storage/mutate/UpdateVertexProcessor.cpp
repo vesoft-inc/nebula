@@ -205,9 +205,11 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
         }
         tagUpdaters_[tagId] = std::make_unique<KeyUpdaterPair>();
         auto& tagUpdater = tagUpdaters_[tagId];
-        int64_t ms = time::WallClock::fastNowInMicroSec();
-        auto now = std::numeric_limits<int64_t>::max() - ms;
-        auto key = NebulaKeyUtils::vertexKey(partId, vId, tagId, now);
+        auto version = FLAGS_enable_multi_versions ?
+            std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec() : 0L;
+        // Switch version to big-endian, make sure the key is in ordered.
+        version = folly::Endian::big(version);
+        auto key = NebulaKeyUtils::vertexKey(partId, vId, tagId, version);
         tagUpdater->kv = std::make_pair(std::move(key), "");
         tagUpdater->updater = std::move(updater);
     } else {
