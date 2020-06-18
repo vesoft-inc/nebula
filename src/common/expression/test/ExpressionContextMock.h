@@ -106,5 +106,4 @@ public:
 private:
     static std::unordered_map<std::string, Value>      vals_;
 };
-
 }  // namespace nebula

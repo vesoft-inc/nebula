@@ -27,6 +27,12 @@ std::unordered_map<std::string, Value> ExpressionContextMock::vals_ = {
     {"var_int", Value(1)},
     {"versioned_var", Value(List(std::vector<Value>{1, 2, 3, 4, 5, 6, 7, 8}))},
     {"cnt", Value(1)},
+    {"_src", Value(1)},
+    {"_dst", Value(1)},
+    {"_type", Value(1)},
+    {"_rank", Value(1)},
+    {"srcProperty", Value(13)},
+    {"dstProperty", Value(3)}
 };
 
 }   // namespace nebula
