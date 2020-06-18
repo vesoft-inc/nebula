@@ -10,6 +10,7 @@
 #include "storage/query/QueryBaseProcessor.h"
 #include "dataman/RowReader.h"
 #include "dataman/RowUpdater.h"
+#include "storage/StorageFlags.h"
 
 namespace nebula {
 namespace storage {
