@@ -7,6 +7,7 @@
 #include "exec/logic/SelectExecutor.h"
 
 #include "planner/Query.h"
+#include "context/ExpressionContextImpl.h"
 
 namespace nebula {
 namespace graph {
@@ -22,13 +23,12 @@ SelectExecutor::SelectExecutor(const PlanNode* node,
 folly::Future<Status> SelectExecutor::execute() {
     dumpLog();
 
-    auto* select = asNode<Selector>(node());
+    auto* select = asNode<Select>(node());
     auto* expr = select->condition();
-    UNUSED(expr);
-
-    finish(nebula::Value(true));
-
-    // FIXME: store expression value to execution context
+    ExpressionContextImpl ctx(ectx_, nullptr);
+    auto value = expr->eval(ctx);
+    DCHECK(value.isBool());
+    finish(std::move(value));
     return Status::OK();
 }
 

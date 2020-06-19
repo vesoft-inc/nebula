@@ -111,8 +111,8 @@ protected:
                 bfsTraverse(current->right(), result);
                 break;
             }
-            case PlanNode::Kind::kSelector: {
-                auto* current = static_cast<const Selector*>(root);
+            case PlanNode::Kind::kSelect: {
+                auto* current = static_cast<const Select*>(root);
                 result.emplace_back(current->input()->kind());
                 result.emplace_back(current->then()->kind());
                 if (current->otherwise() != nullptr) {

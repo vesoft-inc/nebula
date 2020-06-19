@@ -35,3 +35,4 @@ nebula_add_library(
 )
 
 nebula_add_subdirectory(query/test)
+nebula_add_subdirectory(logic/test)

@@ -167,8 +167,8 @@ Executor *Executor::makeExecutor(const PlanNode *node,
             exec->addDependent(input);
             break;
         }
-        case PlanNode::Kind::kSelector: {
-            auto select = asNode<Selector>(node);
+        case PlanNode::Kind::kSelect: {
+            auto select = asNode<Select>(node);
             auto input = makeExecutor(select->input(), qctx, cache);
             auto then = makeExecutor(select->then(), qctx, cache);
             auto els = makeExecutor(select->otherwise(), qctx, cache);

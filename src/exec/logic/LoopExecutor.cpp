@@ -10,6 +10,7 @@
 
 #include "common/interface/gen-cpp2/common_types.h"
 #include "planner/Query.h"
+#include "context/ExpressionContextImpl.h"
 
 using folly::stringPrintf;
 
@@ -22,12 +23,10 @@ LoopExecutor::LoopExecutor(const PlanNode *node, QueryContext* qctx, Executor *b
 folly::Future<Status> LoopExecutor::execute() {
     dumpLog();
     auto *loopNode = asNode<Loop>(node());
-    const Expression *expr = loopNode->condition();
-    // TODO(yee): eval expression result
-    UNUSED(expr);
-
-    // Update iterate variable value in execution context before loop body running
-    nebula::Value value(++iterCount_ < 2);
+    Expression *expr = loopNode->condition();
+    ExpressionContextImpl ctx(ectx_, nullptr);
+    auto value = expr->eval(ctx);
+    DCHECK(value.isBool());
     finish(std::move(value));
     return Status::OK();
 }

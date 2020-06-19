@@ -69,7 +69,7 @@ Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
         case PlanNode::Kind::kSort:
         case PlanNode::Kind::kLimit:
         case PlanNode::Kind::kAggregate:
-        case PlanNode::Kind::kSelector:
+        case PlanNode::Kind::kSelect:
         case PlanNode::Kind::kLoop:
         case PlanNode::Kind::kSwitchSpace: {
             static_cast<SingleInputNode*>(node)->setInput(appended);

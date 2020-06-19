@@ -37,7 +37,7 @@ public:
         kSort,
         kLimit,
         kAggregate,
-        kSelector,
+        kSelect,
         kLoop,
         kSwitchSpace,
         kDedup,

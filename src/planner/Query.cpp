@@ -75,7 +75,7 @@ std::string Aggregate::explain() const {
     return "Aggregate";
 }
 
-std::string Selector::explain() const {
+std::string Select::explain() const {
     return "Selector";
 }
 

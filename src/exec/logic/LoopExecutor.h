@@ -25,11 +25,6 @@ public:
 private:
     // Hold the last executor node of loop body executors chain
     Executor *body_{nullptr};
-
-    // Represent loop index. It will be updated and stored in QueryContext before starting loop
-    // body. The mainly usage is that MultiOutputsExecutor could check whether current execution is
-    // called multiple times.
-    int64_t iterCount_{-1};
 };
 
 }   // namespace graph
