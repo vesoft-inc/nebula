@@ -128,8 +128,8 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
             if (!ok(res)) {
                 auto defaultVal = schema->getDefaultValue(prop.prop_.name);
                 if (!defaultVal.ok()) {
-                    VLOG(1) << "No default value of "
-                            << tagId << ", prop " << prop.prop_.name;
+                    LOG(WARNING) << "No default value of "
+                                 << tagId << ", prop " << prop.prop_.name;
                     return kvstore::ResultCode::ERR_TAG_NOT_FOUND;
                 }
                 v = std::move(defaultVal).value();

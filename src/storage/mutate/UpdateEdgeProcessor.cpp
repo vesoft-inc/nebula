@@ -132,8 +132,8 @@ kvstore::ResultCode UpdateEdgeProcessor::collectVertexProps(
             if (!ok(res)) {
                 auto defaultVal = schema->getDefaultValue(prop.prop_.name);
                 if (!defaultVal.ok()) {
-                    VLOG(1) << "No default value of "
-                            << tagId << ", prop " << prop.prop_.name;
+                    LOG(WARNING) << "No default value of "
+                                 << tagId << ", prop " << prop.prop_.name;
                     return kvstore::ResultCode::ERR_TAG_NOT_FOUND;
                 }
                 v = std::move(defaultVal).value();
@@ -192,15 +192,15 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
             if (!ok(res)) {
                 auto defaultVal = constSchema->getDefaultValue(propName);
                 if (!defaultVal.ok()) {
-                    VLOG(1) << "No default value of "
-                            << edgeKey.edge_type << ", prop " << propName;
+                    LOG(WARNING) << "No default value of "
+                                 << edgeKey.edge_type << ", prop " << propName;
                     return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
                 }
                 v = std::move(defaultVal).value();
             } else {
                 v = value(std::move(res));
             }
-            edgeFilters_.emplace(propName, v);
+            edgeFilters_.emplace(propName, std::move(v));
         }
         updater_ = std::unique_ptr<RowUpdater>(new RowUpdater(std::move(reader), constSchema));
     } else if (insertable_) {
