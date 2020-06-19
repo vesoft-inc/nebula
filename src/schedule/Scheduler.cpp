@@ -22,8 +22,7 @@ Scheduler::Task::Task(const Executor *e) : planId(DCHECK_NOTNULL(e)->node()->id(
 Scheduler::Scheduler(QueryContext *qctx) : qctx_(DCHECK_NOTNULL(qctx)) {}
 
 folly::Future<Status> Scheduler::schedule() {
-    std::unordered_map<int64_t, Executor *> cache;
-    auto executor = Executor::makeExecutor(qctx_->plan()->root(), qctx_, &cache);
+    auto executor = Executor::makeExecutor(qctx_->plan()->root(), qctx_);
     analyze(executor);
     return schedule(executor);
 }
