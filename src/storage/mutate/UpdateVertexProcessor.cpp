@@ -39,6 +39,10 @@ void UpdateVertexProcessor::onProcessFinished(int32_t retNum) {
         };
         for (auto& exp : returnColumnsExp_) {
             auto value = exp->eval(getters);
+            if (!exp->prepare().ok()) {
+                LOG(ERROR) << "Expression::prepare failed";
+                return;
+            }
             if (!value.ok()) {
                 LOG(ERROR) << value.status();
                 return;
@@ -263,6 +267,10 @@ cpp2::ErrorCode UpdateVertexProcessor::checkFilter(const PartitionID partId, con
 
     if (!resp_.upsert && this->exp_ != nullptr) {
         auto filterResult = this->exp_->eval(getters);
+        if (!this->exp_->prepare().ok()) {
+            LOG(ERROR) << "Expression::prepare failed";
+            return cpp2::ErrorCode::E_INVALID_FILTER;
+        }
         if (!filterResult.ok()) {
             return cpp2::ErrorCode::E_INVALID_FILTER;
         }
@@ -311,6 +319,10 @@ folly::Optional<std::string> UpdateVertexProcessor::updateAndWriteBack(const Par
         }
         auto vexp = std::move(exp).value();
         vexp->setContext(this->expCtx_.get());
+        if (!vexp->prepare().ok()) {
+            LOG(ERROR) << "Expression::prepare failed";
+            return folly::none;
+        }
         auto value = vexp->eval(getters);
         if (!value.ok()) {
             LOG(ERROR) << value.status();

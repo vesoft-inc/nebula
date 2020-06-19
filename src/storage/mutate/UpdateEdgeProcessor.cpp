@@ -47,6 +47,10 @@ void UpdateEdgeProcessor::onProcessFinished(int32_t retNum) {
             return it->second;
         };
         for (auto& exp : returnColumnsExp_) {
+            if (!exp->prepare().ok()) {
+                LOG(ERROR) << "Expression::prepare failed";
+                return;
+            }
             auto value = exp->eval(getters);
             if (!value.ok()) {
                 LOG(ERROR) << value.status();
@@ -313,6 +317,10 @@ folly::Optional<std::string> UpdateEdgeProcessor::updateAndWriteBack(PartitionID
         }
         auto vexp = std::move(exp).value();
         vexp->setContext(this->expCtx_.get());
+        if (!vexp->prepare().ok()) {
+            LOG(ERROR) << "Expression::prepare failed";
+            return folly::none;
+        }
         auto value = vexp->eval(getters);
         if (!value.ok()) {
             LOG(ERROR) << "Eval item expr failed";
@@ -489,6 +497,10 @@ cpp2::ErrorCode UpdateEdgeProcessor::checkFilter(const PartitionID partId,
     };
 
     if (!resp_.upsert && this->exp_ != nullptr) {
+        if (!this->exp_->prepare().ok()) {
+            LOG(ERROR) << "Expression::prepare failed";
+            return cpp2::ErrorCode::E_INVALID_FILTER;
+        }
         auto filterResult = this->exp_->eval(getters);
         if (!filterResult.ok()) {
             VLOG(1) << "Invalid filter expression";
