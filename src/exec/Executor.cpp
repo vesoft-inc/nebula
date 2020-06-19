@@ -242,7 +242,7 @@ Executor *Executor::makeExecutor(const PlanNode *node,
             break;
     }
 
-    DCHECK_NOTNULL(exec);
+    DCHECK(!!exec);
 
     visited->insert({node->id(), exec});
     return qctx->objPool()->add(exec);

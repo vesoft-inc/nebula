@@ -18,7 +18,14 @@ namespace graph {
 
 class Iterator {
 public:
-    explicit Iterator(std::shared_ptr<Value> value) : value_(value) {}
+    enum class Kind : uint8_t {
+        kDefault,
+        kGetNeighbors,
+        kSequential,
+    };
+
+    explicit Iterator(std::shared_ptr<Value> value, Kind kind)
+        : value_(value), kind_(kind) {}
 
     virtual ~Iterator() = default;
 
@@ -71,15 +78,26 @@ public:
         return Value::kEmpty;
     }
 
+    virtual Value getVertex() const {
+        return Value();
+    }
+
+    virtual Value getEdge() const {
+        return Value();
+    }
+
 protected:
     virtual void doReset(size_t pos) = 0;
 
     std::shared_ptr<Value> value_;
+
+    Kind                   kind_;
 };
 
 class DefaultIter final : public Iterator {
 public:
-    explicit DefaultIter(std::shared_ptr<Value> value) : Iterator(value) {}
+    explicit DefaultIter(std::shared_ptr<Value> value)
+        : Iterator(value, Kind::kDefault) {}
 
     std::unique_ptr<Iterator> copy() const override {
         return std::make_unique<DefaultIter>(*this);
@@ -120,22 +138,23 @@ public:
     }
 
     bool valid() const override {
-        return iter_ < edges_.end();
+        return valid_ && iter_ < logicalRows_.end();
     }
 
     void next() override {
-        if (!valid()) {
-            return;
+        if (valid()) {
+            ++iter_;
         }
-        ++iter_;
     }
 
     void erase() override {
-        iter_ = edges_.erase(iter_);
+        if (valid()) {
+            iter_ = logicalRows_.erase(iter_);
+        }
     }
 
     size_t size() const override {
-        return edges_.size();
+        return logicalRows_.size();
     }
 
     const Value& getColumn(const std::string& col) const override;
@@ -146,33 +165,133 @@ public:
     const Value& getEdgeProp(const std::string& edge,
                              const std::string& prop) const override;
 
-private:
-    void doReset(size_t pos) override {
-        iter_ = edges_.begin() + pos;
+    Value getVertex() const override;
+
+    Value getEdge() const override;
+
+    // getVertices and getEdges arg batch interface use for subgraph
+    List getVertices() {
+        DCHECK(iter_ == logicalRows_.begin());
+        List vertices;
+        std::unordered_set<Value> vids;
+        for (; valid(); next()) {
+            auto vid = getColumn("_vid");
+            if (vid.isNull()) {
+                continue;
+            }
+            auto found = vids.find(vid);
+            if (found == vids.end()) {
+                vertices.values.emplace_back(getVertex());
+                vids.emplace(std::move(vid));
+            }
+        }
+        reset();
+        return vertices;
     }
 
-    int64_t buildIndex(const std::vector<std::string>& colNames);
-
-    std::pair<std::string, std::unordered_map<std::string, int64_t>>
-    buildPropIndex(const std::string& props);
+    List getEdges() {
+        DCHECK(iter_ == logicalRows_.begin());
+        List edges;
+        for (; valid(); next()) {
+            edges.values.emplace_back(getEdge());
+        }
+        reset();
+        return edges;
+    }
 
 private:
-    std::vector<std::unordered_map<std::string, int64_t>> colIndex_;
-    using PropIdxMap = std::unordered_map<std::string, int64_t>;
-    using TagEdgePropMap = std::unordered_map<std::string, PropIdxMap>;
-    using PropIndex = std::vector<TagEdgePropMap>;
-    // Edge: <segment_id, row, column_id, edge_props>
-    using Edge = std::tuple<int64_t, const Row*, int64_t, const List*>;
-    PropIndex                      tagPropIndex_;
-    PropIndex                      edgePropIndex_;
-    std::vector<const DataSet*>    segments_;
-    std::vector<Edge>              edges_;
-    std::vector<Edge>::iterator    iter_;
+    void doReset(size_t pos) override {
+        iter_ = logicalRows_.begin() + pos;
+    }
+
+    void clear() {
+        valid_ = false;
+        colIndices_.clear();
+        tagEdgeNameIndices_.clear();
+        tagPropIndices_.clear();
+        edgePropIndices_.clear();
+        tagPropMaps_.clear();
+        edgePropMaps_.clear();
+        segments_.clear();
+        logicalRows_.clear();
+    }
+
+    // Maps the origin column names with its column index, each response
+    // has a segment.
+    // | _vid | _stats | _tag:t1:p1:p2 | _edge:e1:p1:p2 |
+    // -> {_vid : 0, _stats : 1, _tag:t1:p1:p2 : 2, _edge:d1:p1:p2 : 3}
+    using ColumnIndex = std::vector<std::unordered_map<std::string, size_t>>;
+    // | _vid | _stats | _tag:t1:p1:p2 | _edge:e1:p1:p2 |
+    // -> {t1 : 2, e1 : 3}
+    using TagEdgeNameIdxMap = std::unordered_map<size_t, std::string>;
+    using TagEdgeNameIndex = std::vector<TagEdgeNameIdxMap>;
+
+    // _tag:t1:p1:p2  ->  {t1 : {p1 : 0, p2 : 1}}
+    // _edge:e1:p1:p2  ->  {e1 : {p1 : 0, p2 : 1}}
+    using PropIdxMap = std::unordered_map<std::string, size_t>;
+    // {tag/edge name : [column_idx, PropIdxMap]}
+    using TagEdgePropIdxMap = std::unordered_map<std::string, std::pair<size_t, PropIdxMap>>;
+    // Maps the property name with its index, each response has a segment
+    // in PropIndex.
+    using PropIndex = std::vector<TagEdgePropIdxMap>;
+
+    // LogicalRow: <segment_id, row, edge_name, edge_props>
+    using LogicalRow = std::tuple<size_t, const Row*, std::string, const List*>;
+
+    using PropList = std::vector<std::string>;
+    // _tag:t1:p1:p2  ->  {t1 : [column_idx, {p1, p2}]}
+    // _edge:e1:p1:p2  ->  {e1 : [columns_idx, {p1, p2}]}
+    using TagEdgePropMap = std::unordered_map<std::string, std::pair<size_t, PropList>>;
+    // Maps the tag/edge with its properties, each response has a segment
+    // in PropMaps
+    using PropMaps = std::vector<TagEdgePropMap>;
+
+    inline size_t currentSeg() const {
+        auto& current = *iter_;
+        return std::get<0>(current);
+    }
+
+    inline const Row* currentRow() const {
+        auto& current = *iter_;
+        return std::get<1>(current);
+    }
+
+    inline const std::string& currentEdgeName() const {
+        auto& current = *iter_;
+        return std::get<2>(current);
+    }
+
+    inline const List* currentEdgeProps() const {
+        auto& current = *iter_;
+        return std::get<3>(current);
+    }
+
+    StatusOr<int64_t> buildIndex(const std::vector<std::string>& colNames);
+
+    Status buildPropIndex(const std::string& props,
+                          size_t columnId,
+                          bool isEdge,
+                          TagEdgeNameIdxMap& tagEdgeNameIndex,
+                          TagEdgePropIdxMap& tagEdgePropIdxMap,
+                          TagEdgePropMap& tagEdgePropMap);
+
+    friend class IteratorTest_TestHead_Test;
+    bool                                    valid_{false};
+    ColumnIndex                             colIndices_;
+    TagEdgeNameIndex                        tagEdgeNameIndices_;
+    PropIndex                               tagPropIndices_;
+    PropIndex                               edgePropIndices_;
+    PropMaps                                tagPropMaps_;
+    PropMaps                                edgePropMaps_;
+    std::vector<const DataSet*>             segments_;
+    std::vector<LogicalRow>                 logicalRows_;
+    std::vector<LogicalRow>::iterator       iter_;
 };
 
 class SequentialIter final : public Iterator {
 public:
-    explicit SequentialIter(std::shared_ptr<Value> value) : Iterator(value) {
+    explicit SequentialIter(std::shared_ptr<Value> value)
+        : Iterator(value, Kind::kSequential) {
         DCHECK(value->isDataSet());
         auto& ds = value->getDataSet();
         for (auto& row : ds.rows) {
