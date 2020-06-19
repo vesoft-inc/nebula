@@ -55,6 +55,7 @@ const char* __lsan_default_suppressions() {
     // NOTE  Don't add extra spaces around the suppression patterns, unless you intend to.
     return ""
            "leak:folly::SingletonVault::destroyInstances\n"
+           "leak:__cxa_thread_atexit\n"
            "";
 }
 
