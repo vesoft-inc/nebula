@@ -152,9 +152,10 @@ Status GetSubgraphValidator::toPlan() {
     auto* bodyStart = StartNode::make(plan);
 
     std::vector<EdgeType> edgeTypes;
-    std::vector<storage::cpp2::PropExp> vertexProps;
-    std::vector<storage::cpp2::PropExp> edgeProps;
+    std::vector<storage::cpp2::VertexProp> vertexProps;
+    std::vector<storage::cpp2::EdgeProp> edgeProps;
     std::vector<storage::cpp2::StatProp> statProps;
+    std::vector<storage::cpp2::Expr> exprs;
     auto vidsToSave = vctx_->varGen()->getVar();
     DataSet ds;
     ds.colNames.emplace_back("_vid");
@@ -174,7 +175,8 @@ Status GetSubgraphValidator::toPlan() {
             storage::cpp2::EdgeDirection::BOTH,  // FIXME: make direction right
             std::move(vertexProps),
             std::move(edgeProps),
-            std::move(statProps));
+            std::move(statProps),
+            std::move(exprs));
 
     auto* columns = new YieldColumns();
     auto* column = new YieldColumn(

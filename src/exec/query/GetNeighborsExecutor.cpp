@@ -45,7 +45,9 @@ folly::Future<Status> GetNeighborsExecutor::getNeighbors() {
                        &gn->statProps(),
                        nullptr,   // FIXME
                        nullptr,
+                       nullptr,
                        gn->dedup(),
+                       gn->random(),
                        gn->orderBy(),
                        gn->limit(),
                        gn->filter())
