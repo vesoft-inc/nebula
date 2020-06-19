@@ -89,7 +89,7 @@ TEST(InstallUninstallPluginTest, Test) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
     {
-        // Get plugin, succeed
+        // Get plugin, failed
         cpp2::GetPluginReq req;
         req.set_plugin_name("ldap");
         auto* processor = GetPluginProcessor::instance(kv.get());

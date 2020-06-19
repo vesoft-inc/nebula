@@ -398,7 +398,6 @@ bool MetaClient::loadIndexes(GraphSpaceID spaceId,
     return true;
 }
 
-<<<<<<< HEAD
 const MetaClient::ThreadLocalInfo& MetaClient::getThreadLocalInfo() {
     ThreadLocalInfo& threadLocalInfo = folly::SingletonThreadLocal<ThreadLocalInfo>::get();
 

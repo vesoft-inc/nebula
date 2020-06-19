@@ -28,9 +28,9 @@ void UninstallPluginProcessor::process(const cpp2::UninstallPluginReq& req) {
     keys.emplace_back(MetaServiceUtils::pluginKey(pluginId));
 
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
-    resp_.set_id(to(pluginId, EntryType::PLUGIN));
     LOG(INFO) << "Uninstall plugin succeed : " << pluginName;
-    doMultiRemove(std::move(keys));
+    resp_.set_id(to(pluginId, EntryType::PLUGIN));
+    doSyncMultiRemoveAndUpdate(std::move(keys));
 }
 
 }  // namespace meta

@@ -22,7 +22,7 @@ enum class EntryType : int8_t {
     EDGE        = 0x03,
     INDEX       = 0x04,
     CONFIG      = 0x05,
-    PLUGIN      = 0x08,
+    PLUGIN      = 0x06,
 };
 
 using ConfigName = std::pair<cpp2::ConfigModule, std::string>;

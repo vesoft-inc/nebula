@@ -48,8 +48,9 @@ void InstallPluginProcessor::process(const cpp2::InstallPluginReq& req) {
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_id(to(pluginId, EntryType::PLUGIN));
     LOG(INFO) << "Install plugin succeed : " << pluginName;
-    doPut(std::move(data));
+    doSyncPutAndUpdate(std::move(data));
 }
+
 }  // namespace meta
 }  // namespace nebula
 
