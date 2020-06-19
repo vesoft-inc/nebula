@@ -105,7 +105,7 @@ enum StatType {
 } (cpp.enum_strict)
 
 
-// Define a statistic properties
+// Define a statistic calculator for each source vertex
 struct StatProp {
     // Alias of the stats property
     1: binary           alias,
@@ -116,18 +116,32 @@ struct StatProp {
 }
 
 
-// Define a properties
-struct PropExp {
-    // Alias of the property
+// Define an expression
+struct Expr {
+    // Alias of the expression
     1: binary           alias,
-    // An eperssion. In most of cases, it is a reference to a specific property.
-    //   But it could be any valid expression, or a wild card formation which is
-    //   in the form of
-    //
-    //   "<tag_name>.*" or "<edge_type>.*"
-    //
-    // In that case, all properties for the given tag/edge type will be returned.
-    2: binary           prop,
+    // An eperssion. It could be any valid expression,
+    2: binary           expr,
+}
+
+
+// Define an edge property
+struct EdgeProp {
+    // A valid edge type
+    1: common.EdgeType  type,
+    // The list of property names. If it is empty, then all properties on
+    // the given edge type will be returned
+    2: list<binary>     props,
+}
+
+
+// Define a vertex property
+struct VertexProp {
+    // A valid tag id
+    1: common.TagID tag,
+    // The list of property names. If it is empty, then all properties on
+    // the given tag will be returned
+    2: list<binary> props,
 }
 
 
@@ -181,21 +195,24 @@ struct GetNeighborsRequest {
     6: bool                                     dedup = false,
 
     7: optional list<StatProp>                  stat_props,
-    // A list of expressions which can only refer to the vertex proerties. If the list
-    //   is not given, no prop will be returned. If an empty prop list is given, all
-    //   properties will be returned. The expression could be in the form of
-    //
-    //   "<tag_name>.*" or "<edge_type>.*"
-    //
-    // In that case, all properties for the given tag/edge type will be returned.
-    8: optional list<PropExp>                   vertex_props,
-    9: optional list<PropExp>                   edge_props,
+    // A list of source vertex properties to be returned. If the list is not given,
+    //   no prop will be returned. If an empty prop list is given, all properties
+    //   will be returned.
+    8: optional list<VertexProp>                vertex_props,
+    // A list of edge properties to be returned. If the list is not given,
+    //   no prop will be returned. If an empty prop list is given, all edge properties
+    //   will be returned.
+    9: optional list<EdgeProp>                  edge_props,
+    // A list of expressions which are evaluated on each edge
+    10: optional list<Expr>                     expressions,
     // A list of expressions used to sort the result
-    10: optional list<OrderBy>                  order_by,
+    11: optional list<OrderBy>                  order_by,
+    // Combined with "limit", the random flag makes the result of each query different
+    12: optional bool                           random,
     // Return the top/bottom N rows for each given vertex
-    11: optional i64                            limit,
+    13: optional i64                            limit,
     // If provided, only the rows satified the given expression will be returned
-    12: optional binary                         filter,
+    14: optional binary                         filter,
 }
 
 
@@ -206,13 +223,13 @@ struct GetNeighborsResponse {
     // Each row represents one source vertex and its neighbors
     //
     // Here is the layout of the dataset
-    //   =======================================================================
-    //   |  _vid  | stats_column | tag_column  | ... |    edge_column    | ... |
-    //   |=====================================================================|
-    //   | string |  list<Value> | list<Value> | ... | list<list<Value>> | ... |
-    //   |---------------------------------------------------------------------|
-    //   | .....                                                               |
-    //   =======================================================================
+    // ===========================================================================================
+    // |  _vid  | stats_column | tag_column  | ... |    edge_column    | ... |    expr_column    |
+    // |=========================================================================================|
+    // | string |  list<Value> | list<Value> | ... | list<list<Value>> | ... | list<list<Value>> |
+    // |-----------------------------------------------------------------------------------------|
+    // | .....                                                                                   |
+    // ===========================================================================================
     //
     // The first column in the dataset stores the source vertex id. The column name
     //   is "_vid". The value should be type of string
@@ -220,17 +237,17 @@ struct GetNeighborsResponse {
     // The second column contains the statistic result for the vertex if stat_props
     //   in the request is not empty. The column name is in the following format
     //
-    //   "_stats:<prop_alias1>:<prop_alias2>:..."
+    //   "_stats:<alias1>:<alias2>:..."
     //
-    // Basically the column name contains the statistic property names, separated by
+    // Basically the column name contains the statistic alias names, separated by
     //   the ":". The value in this column is a list of Values, which are corresponding
     //   to the properties specified in the column name.
     //
-    // Starting from the third column, vertex properties will be returned if the
+    // Starting from the third column, source vertex properties will be returned if the
     //   GetNeighborsRequest::vertex_props is not empty. Each column contains properties
     //   from one tag. The column name will be in the following format
     //
-    //   "_tag:<tag_name>:<prop_alias1>:<prop_alias2>:..."
+    //   "_tag:<tag_name>:<alias1>:<alias2>:..."
     //
     // The value of each tag column is a list of Values, which follows the order of the
     //   property names specified in the above column name. If a vertex does not have
@@ -239,12 +256,18 @@ struct GetNeighborsResponse {
     // Columns after the tag columns are edge columns. One column per edge type. The
     //   column name is in the following format
     //
-    //   "_edge:<edge_name>:<prop_alias1>:<prop_alias2>:..."
+    //   "_edge:<edge_name>:<alias1>:<alias2>:..."
     //
     // The value of each edge column is list<list<Value>>, which represents multiple
     //   edges. For each edge, the list of Values will follow the order of the property
     //   names specified in the column name. If a vertex does not have any edge for a
     //   specific edge type, the value for that column will be NULL
+    //
+    // The last column is the expression column, if the GetNeighborsRequest::expressions
+    //   is not empty. The column name is in the format of this
+    //
+    //   "_expr:<alias1>:<alias2>:..."
+    //
     2: optional common.DataSet vertices,
 }
 /*
@@ -271,22 +294,21 @@ struct GetPropRequest {
     2: list<binary>                             column_names,
     3: map<common.PartitionID, list<common.Row>>
         (cpp.template = "std::unordered_map")   parts,
-    // A list of expressions with alias. In most of cases, they refer to the
-    //   properties. If the list is empty, return all properties. The expression
-    //   could be in the form of
-    //
-    //   "<tag_name>.*" or "<edge_type>.*"
-    //
-    // In that case, all properties for the given tag/edge type will be returned
-    4: list<PropExp>                            props,
-    // Whether to do the dedup based on the entire row
-    5: bool                                     dedup = false,
+    // Based on whether to get the vertex ptroperties or to get the edge properties,
+    //   One of the following can be set. If an empty list is given then all properties
+    //   of the vertex or the edge will be returned
+    4: optional list<VertexProp>                vertex_props,
+    5: optional list<EdgeProp>                  edge_props,
+    // A list of expressions with alias
+    6: optional list<Expr>                      expressions,
+    // Whether to do the dedup based on the entire result row
+    7: bool                                     dedup = false,
     // List of expressions used by the order-by clause
-    6: optional list<OrderBy>                   order_by,
-    7: optional i64                             limit,
+    8: optional list<OrderBy>                   order_by,
+    9: optional i64                             limit,
     // If a filter is provided, only vertices that are satisfied the filter
     // will be returned
-    8: optional binary                          filter,
+    10: optional binary                          filter,
 }
 
 
@@ -297,13 +319,13 @@ struct GetPropResponse {
     // Each row represents properties for one vertex or one edge
     //
     // Here is the layout of the dataset
-    //   ===================================================
-    //   |  prop_alias1 | prop_alias2 | prop_alias3  | ... |
-    //   |=================================================|
-    //   |     Value    |    Value    |     Value    | ... |
-    //   |-------------------------------------------------|
-    //   | .....                                           |
-    //   ===================================================
+    //   ====================================
+    //   |  alias1 | alias2 | alias3  | ... |
+    //   |==================================|
+    //   |  Value  | Value  | Value   | ... |
+    //   |----------------------------------|
+    //   | .....                            |
+    //   ====================================
     //
     // Each column represents one peoperty. When all properties are returned, the
     //   column name is in the form of

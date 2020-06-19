@@ -17,9 +17,11 @@ GraphStorageClient::getNeighbors(GraphSpaceID space,
                                  const std::vector<EdgeType>& edgeTypes,
                                  cpp2::EdgeDirection edgeDirection,
                                  const std::vector<cpp2::StatProp>* statProps,
-                                 const std::vector<cpp2::PropExp>* vertexProps,
-                                 const std::vector<cpp2::PropExp>* edgeProps,
+                                 const std::vector<cpp2::VertexProp>* vertexProps,
+                                 const std::vector<cpp2::EdgeProp>* edgeProps,
+                                 const std::vector<cpp2::Expr>* expressions,
                                  bool dedup,
+                                 bool random,
                                  const std::vector<cpp2::OrderBy>& orderBy,
                                  int64_t limit,
                                  std::string filter,
@@ -47,6 +49,7 @@ GraphStorageClient::getNeighbors(GraphSpaceID space,
         req.set_edge_types(edgeTypes);
         req.set_edge_direction(edgeDirection);
         req.set_dedup(dedup);
+        req.set_random(random);
         if (statProps != nullptr) {
             req.set_stat_props(*statProps);
         }
@@ -55,6 +58,9 @@ GraphStorageClient::getNeighbors(GraphSpaceID space,
         }
         if (edgeProps != nullptr) {
             req.set_edge_props(*edgeProps);
+        }
+        if (expressions != nullptr) {
+            req.set_expressions(*expressions);
         }
         if (!orderBy.empty()) {
             req.set_order_by(orderBy);
@@ -165,7 +171,9 @@ GraphStorageClient::addEdges(GraphSpaceID space,
 folly::SemiFuture<StorageRpcResponse<cpp2::GetPropResponse>>
 GraphStorageClient::getProps(GraphSpaceID space,
                              const DataSet& input,
-                             const std::vector<cpp2::PropExp>& props,
+                             const std::vector<cpp2::VertexProp>* vertexProps,
+                             const std::vector<cpp2::EdgeProp>* edgeProps,
+                             const std::vector<cpp2::Expr>* expressions,
                              bool dedup,
                              const std::vector<cpp2::OrderBy>& orderBy,
                              int64_t limit,
@@ -191,8 +199,16 @@ GraphStorageClient::getProps(GraphSpaceID space,
         req.set_space_id(space);
         req.set_column_names(std::move(input.colNames));
         req.set_parts(std::move(c.second));
-        req.set_props(props);
         req.set_dedup(dedup);
+        if (vertexProps != nullptr) {
+            req.set_vertex_props(*vertexProps);
+        }
+        if (edgeProps != nullptr) {
+            req.set_edge_props(*edgeProps);
+        }
+        if (expressions != nullptr) {
+            req.set_expressions(*expressions);
+        }
         if (!orderBy.empty()) {
             req.set_order_by(orderBy);
         }
