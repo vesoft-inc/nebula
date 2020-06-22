@@ -34,10 +34,24 @@ struct Map {
         kvs.clear();
     }
 
+    std::string toString() const {
+        std::stringstream os;
+        os << "{";
+        for (const auto &v : kvs) {
+            os << "\"" << v.first << "\"" << ":" << v.second << ",";
+        }
+        os << "}";
+        return os.str();
+    }
+
     bool operator==(const Map& rhs) const {
         return kvs == rhs.kvs;
     }
 };
+
+inline std::ostream &operator<<(std::ostream& os, const Map& m) {
+    return os << m.toString();
+}
 
 }  // namespace nebula
 #endif  // COMMON_DATATYPES_MAP_H_

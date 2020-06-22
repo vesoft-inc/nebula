@@ -751,9 +751,10 @@ StatusOr<PartitionID> MetaClient::partId(GraphSpaceID spaceId, const VertexID id
 
 
 folly::Future<StatusOr<cpp2::AdminJobResult>>
-MetaClient::submitJob(cpp2::AdminJobOp op, std::vector<std::string> paras) {
+MetaClient::submitJob(cpp2::AdminJobOp op, cpp2::AdminCmd cmd, std::vector<std::string> paras) {
     cpp2::AdminJobReq req;
     req.set_op(op);
+    req.set_cmd(cmd);
     req.set_paras(std::move(paras));
     folly::Promise<StatusOr<cpp2::AdminJobResult>> promise;
     auto future = promise.getFuture();

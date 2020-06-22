@@ -33,6 +33,15 @@ struct Tag {
         props.clear();
     }
 
+    std::string toString() const {
+        std::stringstream os;
+        os << "Tag: " << name << ", ";
+        for (const auto& prop : props) {
+            os << prop.first << ":" << prop.second << ",";
+        }
+        return os.str();
+    }
+
     Tag& operator=(Tag&& rhs) {
         name = std::move(rhs.name);
         props = std::move(rhs.props);
@@ -69,6 +78,18 @@ struct Vertex {
         tags.clear();
     }
 
+    std::string toString() const {
+        std::stringstream os;
+        os << "(" << vid << ")";
+        if (!tags.empty()) {
+            os << " ";
+            for (const auto& tag : tags) {
+                os << tag.toString();
+            }
+        }
+        return os.str();
+    }
+
     Vertex& operator=(Vertex&& rhs) {
         vid = std::move(rhs.vid);
         tags = std::move(rhs.tags);
@@ -91,6 +112,10 @@ inline void swap(Vertex& a, Vertex& b) {
     auto temp = std::move(a);
     a = std::move(b);
     b = std::move(temp);
+}
+
+inline std::ostream &operator<<(std::ostream& os, const Vertex& v) {
+    return os << v.toString();
 }
 
 }  // namespace nebula

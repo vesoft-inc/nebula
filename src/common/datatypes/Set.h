@@ -23,6 +23,16 @@ struct Set {
         values.clear();
     }
 
+    std::string toString() const {
+        std::stringstream os;
+        os << "{";
+        for (const auto &v : values) {
+            os << v << ",";
+        }
+        os << "}";
+        return os.str();
+    }
+
     Set& operator=(const Set& rhs) {
         if (this == &rhs) { return *this; }
         values = rhs.values;
@@ -38,6 +48,10 @@ struct Set {
         return values == rhs.values;
     }
 };
+
+inline std::ostream &operator<<(std::ostream& os, const Set& s) {
+    return os << s.toString();
+}
 
 }  // namespace nebula
 #endif  // COMMON_DATATYPES_SET_H_

@@ -41,6 +41,18 @@ struct Step {
         props.clear();
     }
 
+    std::string toString() const {
+        std::stringstream os;
+        os << "-" << "[" << name << "]" << "->"
+            << "(" << dst << ")"
+            << "@" << ranking;
+        os << " ";
+        for (const auto& prop : props) {
+            os << prop.first << ":" << prop.second << ",";
+        }
+        return os.str();
+    }
+
     bool operator==(const Step& rhs) const {
         return dst == rhs.dst &&
                type == rhs.type &&
@@ -63,11 +75,26 @@ struct Path {
         steps.clear();
     }
 
+    std::string toString() const {
+        std::stringstream os;
+        os << "(" << src << ")";
+        os << " ";
+        for (const auto &s : steps) {
+            os << s.toString();
+            os << " ";
+        }
+        return os.str();
+    }
+
     bool operator==(const Path& rhs) const {
         return src == rhs.src &&
                steps == rhs.steps;
     }
 };
+
+inline std::ostream &operator<<(std::ostream& os, const Path& p) {
+    return os << p.toString();
+}
 
 }  // namespace nebula
 

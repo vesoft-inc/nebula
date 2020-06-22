@@ -274,7 +274,7 @@ struct Value {
         return kNullValue;
     }
 
-    StatusOr<std::string> toString() const;
+    std::string toString() const;
 
 private:
     Type type_;
@@ -388,6 +388,12 @@ bool operator>=(const Value& lhs, const Value& rhs);
 // Logical operations
 Value operator&&(const Value& lhs, const Value& rhs);
 Value operator||(const Value& lhs, const Value& rhs);
+// Visualize
+std::ostream& operator<<(std::ostream& os, const Value::Type& type);
+inline std::ostream& operator<<(std::ostream& os, const Value& value) {
+    return os << value.toString();
+}
+
 }  // namespace nebula
 
 

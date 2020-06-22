@@ -9,12 +9,6 @@
 
 namespace nebula {
 
-std::ostream& operator <<(std::ostream &os, const HostAddr &addr) {
-    os << folly::stringPrintf("[%s:%u]", addr.host.c_str(), addr.port);
-    return os;
-}
-
-
 bool HostAddr::operator==(const HostAddr& rhs) const {
     return host == rhs.host && port == rhs.port;
 }

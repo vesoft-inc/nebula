@@ -33,6 +33,12 @@ struct HostAddr {
         port = 0;
     }
 
+    std::string toString() const {
+        std::stringstream os;
+        os << "[" << host << ":" << port << "]";
+        return os.str();
+    }
+
     bool operator==(const HostAddr& rhs) const;
 
     bool operator!=(const HostAddr& rhs) const;
@@ -40,7 +46,10 @@ struct HostAddr {
     bool operator<(const HostAddr& rhs) const;
 };
 
-std::ostream& operator<<(std::ostream &, const HostAddr&);
+inline std::ostream& operator <<(std::ostream& os, const HostAddr& addr) {
+    return os << addr.toString();
+}
+
 }  // namespace nebula
 
 

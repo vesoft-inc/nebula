@@ -67,6 +67,10 @@ struct Date {
     void fromInt(int64_t days);
 };
 
+inline std::ostream &operator<<(std::ostream& os, const Date& d) {
+    os << d.toString();
+    return os;
+}
 
 struct DateTime {
     int16_t year;
@@ -102,6 +106,12 @@ struct DateTime {
 
     std::string toString() const;
 };
+
+
+inline std::ostream &operator<<(std::ostream& os, const DateTime& d) {
+    os << d.toString();
+    return os;
+}
 
 }  // namespace nebula
 

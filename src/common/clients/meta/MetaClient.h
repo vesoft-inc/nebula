@@ -216,7 +216,7 @@ public:
     }
 
     folly::Future<StatusOr<cpp2::AdminJobResult>>
-    submitJob(cpp2::AdminJobOp op, std::vector<std::string> paras);
+    submitJob(cpp2::AdminJobOp op, cpp2::AdminCmd cmd, std::vector<std::string> paras);
 
     // Operations for parts
     folly::Future<StatusOr<GraphSpaceID>> createSpace(SpaceDesc spaceDesc,
