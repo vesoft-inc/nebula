@@ -423,6 +423,7 @@ const MetaClient::ThreadLocalInfo& MetaClient::getThreadLocalInfo() {
         threadLocalInfo.spaceEdgeIndexByType_ = spaceEdgeIndexByType_;
         threadLocalInfo.spaceTagIndexById_ = spaceTagIndexById_;
         threadLocalInfo.spaceAllEdgeMap_ = spaceAllEdgeMap_;
+        threadLocalInfo.pluginItems_ = pluginItems_;
     }
 
     return threadLocalInfo;

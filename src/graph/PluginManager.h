@@ -53,7 +53,7 @@ public:
     /**
      * Execute function, return result
      */
-    bool execAuthLdapSimple(std::string ldap_server,
+    bool execSimpleLdapAuth(std::string ldap_server,
                             int32_t     ldap_port,
                             std::string ldap_scheme,
                             bool        ldap_tls,
@@ -62,7 +62,7 @@ public:
                             std::string userName,
                             std::string passwd);
 
-    bool execAuthLdapSearchBind(std::string ldap_server,
+    bool execSearchBindLdapAuth(std::string ldap_server,
                                 int32_t     ldap_port,
                                 std::string ldap_scheme,
                                 bool        ldap_tls,

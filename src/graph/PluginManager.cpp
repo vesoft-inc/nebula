@@ -85,18 +85,18 @@ Status PluginManager::openPluginNoLock(PluginID pluginId, const std::string& plu
     }
 
     if (!pluginName.compare("auth_ldap")) {
-        authLdapSimple_ = reinterpret_cast<auth_ldap_simple>(dlsym(dlHandle, "authLdapSimple"));
+        authLdapSimple_ = reinterpret_cast<auth_ldap_simple>(dlsym(dlHandle, "simpleBindAuth"));
         if (!authLdapSimple_) {
-            LOG(ERROR) << "Function authLdapSimple not found in so file";
+            LOG(ERROR) << "Function simpleBindAuth not found in so file";
             dlclose(dlHandle);
-            return Status::Error("Function authLdap_Simple not found in so file");
+            return Status::Error("Function simpleBindAuth not found in so file");
         }
         authLdapSearchBind_ =
-            reinterpret_cast<auth_ldap_search_bind>(dlsym(dlHandle, "authLdapSearchBind"));
+            reinterpret_cast<auth_ldap_search_bind>(dlsym(dlHandle, "searchBindAuth"));
         if (!authLdapSearchBind_) {
-            LOG(ERROR) << "Function authLdapSearchBind not found in so file";
+            LOG(ERROR) << "Function searchBindAuth not found in so file";
             dlclose(dlHandle);
-            return Status::Error("Function authLdapSearchBind not found in so file");
+            return Status::Error("Function searchBindAuth not found in so file");
         }
 
         auto pluginInfo = std::make_shared<PluginInfo>();
@@ -132,18 +132,18 @@ Status PluginManager::tryOpen(const std::string& pluginName, const std::string& 
 
     if (!pluginName.compare("auth_ldap")) {
         auth_ldap_simple authLdapSimple =
-            reinterpret_cast<auth_ldap_simple>(dlsym(dlHandle, "authLdapSimple"));
+            reinterpret_cast<auth_ldap_simple>(dlsym(dlHandle, "simpleBindAuth"));
         if (!authLdapSimple) {
-            LOG(ERROR) << "Function authLdapSimple not found in so file";
+            LOG(ERROR) << "Function simpleBindAuth not found in so file";
             dlclose(dlHandle);
-            return Status::Error("Function authLdap_Simple not found in so file");
+            return Status::Error("Function simpleBindAuth not found in so file");
         }
         auth_ldap_search_bind authLdapSearchBind =
-            reinterpret_cast<auth_ldap_search_bind>(dlsym(dlHandle, "authLdapSearchBind"));
+            reinterpret_cast<auth_ldap_search_bind>(dlsym(dlHandle, "searchBindAuth"));
         if (!authLdapSearchBind) {
-            LOG(ERROR) << "Function authLdapSearchBind not found in so file";
+            LOG(ERROR) << "Function searchBindAuth not found in so file";
             dlclose(dlHandle);
-            return Status::Error("Function authLdapSearchBind not found in so file");
+            return Status::Error("Function searchBindAuth not found in so file");
         }
 
     } else {
@@ -156,7 +156,7 @@ Status PluginManager::tryOpen(const std::string& pluginName, const std::string& 
 }
 
 
-bool PluginManager::execAuthLdapSimple(std::string ldap_server,
+bool PluginManager::execSimpleLdapAuth(std::string ldap_server,
                                        int32_t     ldap_port,
                                        std::string ldap_scheme,
                                        bool        ldap_tls,
@@ -176,7 +176,7 @@ bool PluginManager::execAuthLdapSimple(std::string ldap_server,
 }
 
 
-bool PluginManager::execAuthLdapSearchBind(std::string ldap_server,
+bool PluginManager::execSearchBindLdapAuth(std::string ldap_server,
                                            int32_t     ldap_port,
                                            std::string ldap_scheme,
                                            bool        ldap_tls,

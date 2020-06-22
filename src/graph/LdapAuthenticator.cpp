@@ -92,7 +92,7 @@ bool LdapAuthenticator::auth(const std::string &user,
     // Search bind mode
     bool retAuth = false;
     if (!FLAGS_ldap_basedn.empty()) {
-        retAuth = pluginManager_->execAuthLdapSearchBind(FLAGS_ldap_server,
+        retAuth = pluginManager_->execSearchBindLdapAuth(FLAGS_ldap_server,
                                                          FLAGS_ldap_port,
                                                          FLAGS_ldap_scheme,
                                                          FLAGS_ldap_tls,
@@ -104,7 +104,7 @@ bool LdapAuthenticator::auth(const std::string &user,
                                                          user,
                                                          password);
     } else {
-        retAuth = pluginManager_->execAuthLdapSimple(FLAGS_ldap_server,
+        retAuth = pluginManager_->execSimpleLdapAuth(FLAGS_ldap_server,
                                                      FLAGS_ldap_port,
                                                      FLAGS_ldap_scheme,
                                                      FLAGS_ldap_tls,
