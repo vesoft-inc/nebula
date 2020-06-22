@@ -25,6 +25,14 @@ public:
 
     bool operator==(const Expression& rhs) const override;
 
+    const Expression* left() const {
+        return lhs_.get();
+    }
+
+    const Expression* right() const {
+        return rhs_.get();
+    }
+
 protected:
     void writeTo(Encoder& encoder) const override;
 

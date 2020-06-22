@@ -82,6 +82,11 @@ TEST(ExpressionEncodeDecode, SymbolPropertyExpression) {
     encoded = Expression::encode(dstIdEx);
     decoded = Expression::decode(folly::StringPiece(encoded.data(), encoded.size()));
     EXPECT_EQ(dstIdEx, *decoded);
+
+    EdgePropertyExpression edgeEx(new std::string("edge"), new std::string("prop"));
+    encoded = Expression::encode(edgeEx);
+    decoded = Expression::decode(folly::StringPiece(encoded.data(), encoded.size()));
+    EXPECT_EQ(edgeEx, *decoded);
 }
 
 

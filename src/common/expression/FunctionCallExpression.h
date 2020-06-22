@@ -56,6 +56,14 @@ public:
         return "";
     }
 
+    const std::string* name() const {
+        return name_.get();
+    }
+
+    const ArgumentList* args() const {
+        return args_.get();
+    }
+
 private:
     void writeTo(Encoder& encoder) const override;
 
