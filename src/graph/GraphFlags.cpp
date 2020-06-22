@@ -39,3 +39,26 @@ DEFINE_string(auth_type, "password", "User login authentication type,"
                                      "cloud for cloud authentication");
 
 DEFINE_string(cloud_http_url, "", "cloud http url including ip, port, url path");
+
+// LDAP authentication common parameters
+DEFINE_string(ldap_server, "", "list of ldap server addresses, "
+                               "separate multiple addresses with comma");
+DEFINE_int32(ldap_port, 0, "Ldap server port, if no port is specified, use the default port");
+DEFINE_string(ldap_scheme, "ldap", "Only support ldap");
+DEFINE_bool(ldap_tls, false, "Whether the connection between graphd and the LDAP server uses "
+                             "TLS encryption");
+
+// LDAP authentication simple bind mode parameters
+DEFINE_string(ldap_prefix, "", "Prepend the string to the user name "
+                               "to form the distinguished name");
+DEFINE_string(ldap_suffix, "", "Append the string to the user name "
+                               "to form the distinguished name");
+
+// LDAP authentication search bind mode parameters
+DEFINE_string(ldap_basedn, "", "Root distinguished name to search the user");
+DEFINE_string(ldap_binddn, "", "User distinguished name binding to the "
+                               "directory to perform the search");
+DEFINE_string(ldap_bindpasswd, "", "User password binding to the directory "
+                                   "to perform the search");
+DEFINE_string(ldap_searchattribute, "", "Attribute to match the user name in the search");
+DEFINE_string(ldap_searchfilter, "", "Use search filter, more flexible than searchattribut");

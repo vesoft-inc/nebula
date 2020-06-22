@@ -201,7 +201,9 @@ bool PluginManager::execAuthLdapSearchBind(std::string ldap_server,
                                passwd);
 }
 
-
+// TODO There will be a more effective method.
+// Graphd obtains plugin information from metad periodically, and PluginManager
+// closes outdated open so files.
 void PluginManager::close() {
     folly::RWSpinLock::WriteHolder holder(rwlock_);
     for (auto& pluginToInfo : pluginToInfo_) {

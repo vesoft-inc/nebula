@@ -11,6 +11,7 @@
 #include "gen-cpp2/GraphService.h"
 #include "graph/PasswordAuthenticator.h"
 #include "graph/CloudAuthenticator.h"
+#include "graph/LdapAuthenticator.h"
 #include "graph/ExecutionEngine.h"
 #include "graph/SessionManager.h"
 #include "graph/PluginManager.h"

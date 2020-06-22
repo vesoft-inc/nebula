@@ -69,6 +69,7 @@ nebula_add_library(
     CloudAuthenticator.cpp
     InstallPluginExecutor.cpp
     UninstallPluginExecutor.cpp
+    LdapAuthenticator.cpp
 )
 nebula_add_subdirectory(test)
 

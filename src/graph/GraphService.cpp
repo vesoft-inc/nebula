@@ -113,6 +113,10 @@ bool GraphService::auth(const std::string& username, const std::string& password
     } else if (!auth_type.compare("cloud")) {
         auto authenticator = std::make_unique<CloudAuthenticator>(metaClient_.get());
         return authenticator->auth(username, password);
+    } else if (!auth_type.compare("ldap")) {
+        auto authenticator = std::make_unique<LdapAuthenticator>(metaClient_.get(),
+                                                                 pluginManager_.get());
+        return authenticator->auth(username, password);
     }
     return false;
 }

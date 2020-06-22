@@ -21,6 +21,7 @@
 #   ENABLE_NATIVE                   -- Build native client
 #   ENABLE_TESTING                  -- Build unit test
 #   ENABLE_PACK_ONE                 -- Package to one or multi packages
+#   ENABLE_LDAP                     -- Link openLDAP
 #
 # CMake version check
 cmake_minimum_required(VERSION 3.5.0)
@@ -59,6 +60,7 @@ option(ENABLE_STATIC_ASAN "Whether directs the GCC driver to link libasan static
 option(ENABLE_STATIC_UBSAN "Whether directs the GCC driver to link libubsan statically" OFF)
 option(ENABLE_PACK_ONE "Whether to package into one" ON)
 option(ENABLE_PCH "Whether to enable use of precompiled header" OFF)
+option(ENABLE_LDAP "Whether to link openLDAP to use LDAP authentication" ON)
 
 message(STATUS "ENABLE_ASAN: ${ENABLE_ASAN}")
 message(STATUS "ENABLE_TESTING: ${ENABLE_TESTING}")
@@ -70,6 +72,7 @@ message(STATUS "ENABLE_STATIC_UBSAN : ${ENABLE_STATIC_UBSAN}")
 message(STATUS "ENABLE_WERROR: ${ENABLE_WERROR}")
 message(STATUS "ENABLE_STRICT_ALIASING: ${ENABLE_STRICT_ALIASING}")
 message(STATUS "ENABLE_PCH: ${ENABLE_PCH}")
+message(STATUS "ENABLE_LDAP: ${ENABLE_LDAP}")
 
 if (ENABLE_NATIVE)
     message(STATUS "ENABLE_NATIVE is ${ENABLE_NATIVE}")
@@ -384,6 +387,10 @@ if(ENABLE_FUZZ_TEST)
     if (NOT ENABLE_FUZZ_OK)
         MESSAGE(FATAL_ERROR "The compiler does not support fuzz testing")
     endif()
+endif()
+
+if(ENABLE_LDAP)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lldap")
 endif()
 
 macro(nebula_add_executable)
