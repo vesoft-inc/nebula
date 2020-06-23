@@ -6,3 +6,7 @@ nebula_add_subdirectory(db-dump)
 if (ENABLE_NATIVE)
     add_subdirectory(native-client)
 endif()
+
+if (ENABLE_STORAGE_CLIENT)
+    nebula_add_subdirectory(storage-client)
+endif()

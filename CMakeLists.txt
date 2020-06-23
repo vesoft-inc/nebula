@@ -19,6 +19,7 @@
 #
 #   ENABLE_JEMALLOC                 -- Link jemalloc into all executables
 #   ENABLE_NATIVE                   -- Build native client
+#   ENABLE_STORAGE_CLIENT           -- Build c++ storage client
 #   ENABLE_TESTING                  -- Build unit test
 #   ENABLE_PACK_ONE                 -- Package to one or multi packages
 #
@@ -46,6 +47,7 @@ set(CMAKE_SKIP_RPATH TRUE)
 
 option(ENABLE_JEMALLOC "Whether to link jemalloc to all executables" ON)
 option(ENABLE_NATIVE "Whether to build native client" OFF)
+option(ENABLE_STORAGE_CLIENT "Whether to build lib of c++ storage client" ON)
 option(ENABLE_CCACHE "Whether to use ccache to speed up compiling" ON)
 option(ENABLE_ASAN "Whether to turn AddressSanitizer ON or OFF" OFF)
 option(ENABLE_TESTING "Whether to turn unit test ON or OFF" ON)
@@ -73,6 +75,11 @@ message(STATUS "ENABLE_PCH: ${ENABLE_PCH}")
 
 if (ENABLE_NATIVE)
     message(STATUS "ENABLE_NATIVE is ${ENABLE_NATIVE}")
+    add_compile_options(-fPIC)
+endif()
+
+if (ENABLE_STORAGE_CLIENT)
+    message(STATUS "ENABLE_STORAGE_CLIENT is ${ENABLE_STORAGE_CLIENT}")
     add_compile_options(-fPIC)
 endif()
 

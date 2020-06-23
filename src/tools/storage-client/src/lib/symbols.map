@@ -1,0 +1,17 @@
+{
+global:
+    extern "C++" {
+        nebula::NebulaStorageClient::*;
+        nebula::DataType::*;
+        nebula::PropOwner::*;
+        nebula::ColumnDef::*;
+        nebula::PropDef::*;
+        nebula::ResultSet::*;
+        nebula::NeighborsContext::*;
+        nebula::LookupContext::*;
+        nebula::VertexPropsContext::*;
+        nebula::ResultCode::*;
+    };
+local:
+    *;
+};
