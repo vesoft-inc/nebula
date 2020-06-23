@@ -703,6 +703,75 @@ TEST_F(UpdateTest, NotExists) {
     }
 }
 
+TEST_F(UpdateTest, UpsertThenInsert) {
+    FLAGS_enable_multi_versions = true;
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT VERTEX 100 SET building.name = \"No1\"";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "FETCH PROP on building 100";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, std::string>> expected = {
+            {100, "No1"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "INSERT VERTEX building(name) VALUES 100: (\"No2\")";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "FETCH PROP on building 100";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, std::string>> expected = {
+            {100, "No2"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    FLAGS_enable_multi_versions = false;
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT VERTEX 101 SET building.name = \"No1\"";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "FETCH PROP on building 101";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, std::string>> expected = {
+            {101, "No1"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "INSERT VERTEX building(name) VALUES 101: (\"No2\")";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "FETCH PROP on building 101";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, std::string>> expected = {
+            {101, "No2"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
 // Above cases behavior different with UPDATE for UPSERT insert data when not exists
 
 }   // namespace graph
