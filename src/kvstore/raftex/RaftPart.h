@@ -347,7 +347,8 @@ private:
 
     // The method returns the partition's role after the election
     Role processElectionResponses(const ElectionResponses& results,
-                                  std::vector<std::shared_ptr<Host>> hosts);
+                                  std::vector<std::shared_ptr<Host>> hosts,
+                                  TermID proposedTerm);
 
     // Check whether new logs can be appended
     // Pre-condition: The caller needs to hold the raftLock_
