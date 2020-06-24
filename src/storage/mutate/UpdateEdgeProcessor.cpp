@@ -179,10 +179,12 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
         updater_ = std::unique_ptr<RowUpdater>(new RowUpdater(std::move(reader), constSchema));
     } else if (insertable_) {
         resp_.set_upsert(true);
-        int64_t ms = time::WallClock::fastNowInMicroSec();
-        auto now = std::numeric_limits<int64_t>::max() - ms;
+        auto version = FLAGS_enable_multi_versions ?
+            std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec() : 0L;
+        // Switch version to big-endian, make sure the key is in ordered.
+        version = folly::Endian::big(version);
         key_ = NebulaKeyUtils::edgeKey(partId, edgeKey.src, edgeKey.edge_type,
-                                       edgeKey.ranking, edgeKey.dst, now);
+                                       edgeKey.ranking, edgeKey.dst, version);
         const auto constSchema = this->schemaMan_->getEdgeSchema(this->spaceId_,
                                                                  std::abs(edgeKey.edge_type));
         if (constSchema == nullptr) {
