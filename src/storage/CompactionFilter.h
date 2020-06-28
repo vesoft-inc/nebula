@@ -185,9 +185,8 @@ class StorageCompactionFilterFactory final : public kvstore::KVCompactionFilterF
 public:
     StorageCompactionFilterFactory(meta::SchemaManager* schemaMan,
                                    meta::IndexManager* indexMan,
-                                   GraphSpaceID spaceId,
-                                   int32_t customFilterIntervalSecs):
-        KVCompactionFilterFactory(spaceId, customFilterIntervalSecs),
+                                   GraphSpaceID spaceId):
+        KVCompactionFilterFactory(spaceId),
         schemaMan_(schemaMan),
         indexMan_(indexMan) {}
 
@@ -214,11 +213,10 @@ public:
     virtual ~StorageCompactionFilterFactoryBuilder() = default;
 
     std::shared_ptr<kvstore::KVCompactionFilterFactory>
-    buildCfFactory(GraphSpaceID spaceId, int32_t customFilterIntervalSecs) override {
+    buildCfFactory(GraphSpaceID spaceId) override {
         return std::make_shared<StorageCompactionFilterFactory>(schemaMan_,
                                                                 indexMan_,
-                                                                spaceId,
-                                                                customFilterIntervalSecs);
+                                                                spaceId);
     }
 
 private:

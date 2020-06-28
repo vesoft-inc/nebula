@@ -120,7 +120,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
             }
             VLOG(3) << "Get Edge Default value: Property Name " << name
                     << ", Value " << defaultValue;
-            auto defaultKey = MetaServiceUtils::edgeDefaultKey(req.get_space_id(),
+            auto defaultKey = MetaServiceUtils::defaultKey(req.get_space_id(),
                                                                edgeType,
                                                                name);
             data.emplace_back(std::move(defaultKey), std::move(defaultValue));

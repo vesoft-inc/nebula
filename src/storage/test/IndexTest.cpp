@@ -322,9 +322,9 @@ TEST(IndexTest, UpdateVertexTest) {
         auto* left = new RelationalExpression(srcExp1,
                                               RelationalExpression::Operator::GE,
                                               priExp1);
-        // right string: $^.3003.tag_3003_col_3 == tag_string_col_3_2;
-        auto* tag2 = new std::string("3003");
-        auto* prop2 = new std::string("tag_3003_col_3");
+        // right string: $^.3001.tag_3001_col_3 == tag_string_col_3_2;
+        auto* tag2 = new std::string("3001");
+        auto* prop2 = new std::string("tag_3001_col_3");
         auto* srcExp2 = new SourcePropertyExpression(tag2, prop2);
         std::string col3("tag_string_col_3");
         auto* priExp2 = new PrimaryExpression(col3);
@@ -343,22 +343,22 @@ TEST(IndexTest, UpdateVertexTest) {
         PrimaryExpression val1(1L);
         item1.set_value(Expression::encode(&val1));
         items.emplace_back(item1);
-        // string: 3005.tag_3005_col_4 = tag_string_col_4_2_new
+        // string: 3001.tag_3001_col_4 = tag_string_col_4_2_new
         cpp2::UpdateItem item2;
-        item2.set_name("3005");
-        item2.set_prop("tag_3005_col_4");
+        item2.set_name("3001");
+        item2.set_prop("tag_3001_col_4");
         std::string col4new("tag_string_col_4_2_new");
         PrimaryExpression val2(col4new);
         item2.set_value(Expression::encode(&val2));
         items.emplace_back(item2);
         req.set_update_items(std::move(items));
         LOG(INFO) << "Build yield...";
-        // Return tag props: 3001.tag_3001_col_0, 3003.tag_3003_col_2, 3005.tag_3005_col_4
+        // Return tag props: 3001.tag_3001_col_0, 3001.tag_3001_col_2, 3001.tag_3001_col_4
         decltype(req.return_columns) tmpColumns;
         for (int i = 0; i < 3; i++) {
             SourcePropertyExpression sourcePropExp(
-                    new std::string(folly::to<std::string>(3001 + i * 2)),
-                    new std::string(folly::stringPrintf("tag_%d_col_%d", 3001 + i * 2, i * 2)));
+                    new std::string(folly::to<std::string>(3001)),
+                    new std::string(folly::stringPrintf("tag_%d_col_%d", 3001, i * 2)));
             tmpColumns.emplace_back(Expression::encode(&sourcePropExp));
         }
         req.set_return_columns(std::move(tmpColumns));
@@ -372,6 +372,7 @@ TEST(IndexTest, UpdateVertexTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
+        EXPECT_EQ(0, resp.result.failed_codes.size());
 
         LOG(INFO) << "Verify index ...";
         std::vector<std::string> keys;

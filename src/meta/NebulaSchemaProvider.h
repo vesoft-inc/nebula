@@ -35,19 +35,24 @@ public:
             return true;
         }
 
-        bool hasDefault() const override {
-            return hasDefault_;
+        bool hasDefaultValue() const override {
+            return hasDefaultValue_;
         }
 
-        std::string getDefaultValue() const override {
+        VariantType getDefaultValue() const override {
             return defaultValue_;
+        }
+
+        void setDefaultValue(VariantType value) {
+            hasDefaultValue_ = true;
+            defaultValue_ = std::move(value);
         }
 
     private:
         std::string name_;
         nebula::cpp2::ValueType type_;
-        bool hasDefault_;
-        std::string defaultValue_;
+        bool hasDefaultValue_{false};
+        VariantType defaultValue_;
     };
 
 public:
@@ -70,9 +75,13 @@ public:
 
     void addField(folly::StringPiece name, nebula::cpp2::ValueType&& type);
 
+    void addDefaultValue(folly::StringPiece name, const nebula::cpp2::Value &value);
+
     void setProp(nebula::cpp2::SchemaProp schemaProp);
 
     const nebula::cpp2::SchemaProp getProp() const;
+    const StatusOr<VariantType> getDefaultValue(const folly::StringPiece name) const override;
+    const StatusOr<VariantType> getDefaultValue(int64_t index) const override;
 
 protected:
     NebulaSchemaProvider() = default;
