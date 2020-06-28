@@ -61,6 +61,8 @@
 #include "graph/DropSnapshotExecutor.h"
 #include "graph/UserExecutor.h"
 #include "graph/PrivilegeExecutor.h"
+#include "graph/InstallPluginExecutor.h"
+#include "graph/UninstallPluginExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -230,6 +232,12 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             break;
         case Sentence::Kind::kRevoke:
             executor = std::make_unique<RevokeExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kInstallPlugin:
+            executor = std::make_unique<InstallPluginExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kUninstallPlugin:
+            executor = std::make_unique<UninstallPluginExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kUnknown:
             LOG(ERROR) << "Sentence kind unknown";

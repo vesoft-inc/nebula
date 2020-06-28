@@ -291,3 +291,24 @@ nebula_add_test(
         gtest
 )
 
+nebula_add_test(
+    NAME
+        plugin_test
+    SOURCES
+        PluginTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:meta_http_handler>
+        $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
+        $<TARGET_OBJECTS:http_client_obj>
+        $<TARGET_OBJECTS:charset_obj>
+        $<TARGET_OBJECTS:gflags_man_obj>
+        ${meta_test_deps}
+    LIBRARIES
+        proxygenhttpserver
+        proxygenlib
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        wangle
+        gtest
+)

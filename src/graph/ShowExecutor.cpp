@@ -93,6 +93,9 @@ void ShowExecutor::execute() {
         case ShowSentence::ShowType::kShowCollation:
             showCollation();
             break;
+        case ShowSentence::ShowType::kShowPlugins:
+            showPlugins();
+            break;
         case ShowSentence::ShowType::kUnknown:
             doError(Status::Error("Type unknown"));
             break;
@@ -1193,6 +1196,46 @@ std::string ShowExecutor::roleToStr(nebula::cpp2::RoleType type) {
         }
     }
     return role;
+}
+
+void ShowExecutor::showPlugins() {
+    auto future = ectx()->getMetaClient()->listPlugins();
+    auto *runner = ectx()->rctx()->runner();
+
+    auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            doError(std::move(resp).status());
+            return;
+        }
+
+        auto retShowPlugins = std::move(resp).value();
+        std::vector<cpp2::RowValue> rows;
+        std::vector<std::string> header{"ID", "Name", "Soname"};
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        resp_->set_column_names(std::move(header));
+
+        for (auto &plugin : retShowPlugins) {
+            std::vector<cpp2::ColumnValue> row;
+            row.resize(3);
+            row[0].set_integer(plugin.plugin_id);
+            row[1].set_str(plugin.plugin_name);
+            row[2].set_str(plugin.so_name);
+
+            rows.emplace_back();
+            rows.back().set_columns(std::move(row));
+        }
+        resp_->set_rows(std::move(rows));
+
+        doFinish(Executor::ProcessControl::kNext);
+    };
+
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        doError(Status::Error(folly::stringPrintf("Show plugins exception: %s",
+                                                   e.what().c_str())));
+        return;
+    };
+    std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
 void ShowExecutor::setupResponse(cpp2::ExecutionResponse &resp) {

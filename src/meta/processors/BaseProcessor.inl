@@ -350,6 +350,17 @@ bool BaseProcessor<RESP>::checkPassword(const std::string& account, const std::s
 }
 
 template<typename RESP>
+StatusOr<PluginID>
+BaseProcessor<RESP>::getPluginId(const std::string& pluginName) {
+    auto indexKey = MetaServiceUtils::indexPluginKey(pluginName);
+    auto ret = doGet(indexKey);
+    if (ret.ok()) {
+        return *reinterpret_cast<const PluginID*>(ret.value().c_str());
+    }
+    return Status::PluginNotFound(folly::stringPrintf("plugin %s not found", pluginName.c_str()));
+}
+
+template<typename RESP>
 kvstore::ResultCode BaseProcessor<RESP>::doSyncPut(std::vector<kvstore::KV> data) {
     folly::Baton<true, std::atomic> baton;
     auto ret = kvstore::ResultCode::SUCCEEDED;

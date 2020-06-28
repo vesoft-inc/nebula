@@ -125,6 +125,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_ROLES
 %token KW_GOD KW_ADMIN KW_DBA KW_GUEST KW_GRANT KW_REVOKE KW_ON
 %token KW_CONTAINS
+%token KW_INSTALL KW_UNINSTALL KW_PLUGIN KW_SONAME KW_PLUGINS
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -238,6 +239,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %type <sentence> grant_sentence revoke_sentence
 %type <sentence> set_config_sentence get_config_sentence balance_sentence
 %type <sentence> process_control_sentence return_sentence
+%type <sentence> install_plugin_sentence uninstall_plugin_sentence
 %type <sentence> sentence
 %type <sentences> sentences
 
@@ -795,8 +797,8 @@ group_clause
 yield_sentence
     : KW_YIELD yield_columns where_clause {
         auto *s = new YieldSentence($2);
-		s->setWhereClause($3);
-		$$ = s;
+        s->setWhereClause($3);
+        $$ = s;
     }
     ;
 
@@ -1673,6 +1675,9 @@ show_sentence
     | KW_SHOW KW_COLLATION {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowCollation);
     }
+    | KW_SHOW KW_PLUGINS {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowPlugins);
+    }
     ;
 
 config_module_enum
@@ -1929,6 +1934,18 @@ drop_snapshot_sentence
     }
     ;
 
+install_plugin_sentence
+    : KW_INSTALL KW_PLUGIN name_label KW_SONAME STRING {
+        $$ = new InstallPluginSentence($3, $5);
+    }
+    ;
+
+uninstall_plugin_sentence
+    : KW_UNINSTALL KW_PLUGIN name_label {
+        $$ = new UninstallPluginSentence($3);
+    }
+    ;
+
 mutate_sentence
     : insert_vertex_sentence { $$ = $1; }
     | insert_edge_sentence { $$ = $1; }
@@ -1962,7 +1979,6 @@ maintain_sentence
     | rebuild_tag_index_sentence { $$ = $1; }
     | rebuild_edge_index_sentence { $$ = $1; }
     | show_sentence { $$ = $1; }
-    ;
     | create_user_sentence { $$ = $1; }
     | alter_user_sentence { $$ = $1; }
     | drop_user_sentence { $$ = $1; }
@@ -1972,8 +1988,10 @@ maintain_sentence
     | get_config_sentence { $$ = $1; }
     | set_config_sentence { $$ = $1; }
     | balance_sentence { $$ = $1; }
-    | create_snapshot_sentence { $$ = $1; };
-    | drop_snapshot_sentence { $$ = $1; };
+    | create_snapshot_sentence { $$ = $1; }
+    | drop_snapshot_sentence { $$ = $1; }
+    | install_plugin_sentence { $$ = $1; }
+    | uninstall_plugin_sentence { $$ = $1; }
     ;
 
 return_sentence

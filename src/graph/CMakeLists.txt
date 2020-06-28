@@ -4,6 +4,7 @@ nebula_add_library(
     GraphService.cpp
     SessionManager.cpp
     PasswordAuthenticator.cpp
+    PluginManager.cpp
     ExecutionEngine.cpp
     ExecutionContext.cpp
     PermissionCheck.cpp
@@ -66,6 +67,9 @@ nebula_add_library(
     UserExecutor.cpp
     PrivilegeExecutor.cpp
     CloudAuthenticator.cpp
+    InstallPluginExecutor.cpp
+    UninstallPluginExecutor.cpp
+    LdapAuthenticator.cpp
 )
 nebula_add_subdirectory(test)
 

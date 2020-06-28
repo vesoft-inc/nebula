@@ -172,6 +172,7 @@ bool MetaClient::loadData() {
     decltype(spaceEdgeIndexByType_)  spaceEdgeIndexByType;
     decltype(spaceTagIndexById_)     spaceTagIndexById;
     decltype(spaceAllEdgeMap_)       spaceAllEdgeMap;
+    decltype(pluginItems_)           pluginItems;
 
     for (auto space : ret.value()) {
         auto spaceId = space.first;
@@ -212,6 +213,12 @@ bool MetaClient::loadData() {
         cache.emplace(spaceId, spaceCache);
         spaceIndexByName.emplace(space.second, spaceId);
     }
+
+    if (!loadPlugins(pluginItems)) {
+        LOG(ERROR) << "Load Plugins Failed";
+        return false;
+    }
+
     decltype(localCache_) oldCache;
     {
         folly::RWSpinLock::WriteHolder holder(localCacheLock_);
@@ -225,6 +232,7 @@ bool MetaClient::loadData() {
         spaceEdgeIndexByType_  = std::move(spaceEdgeIndexByType);
         spaceTagIndexById_     = std::move(spaceTagIndexById);
         spaceAllEdgeMap_       = std::move(spaceAllEdgeMap);
+        pluginItems_           = std::move(pluginItems);
     }
     localDataLastUpdateTime_.store(metadLastUpdateTime_.load());
     diff(oldCache, localCache_);
@@ -415,9 +423,20 @@ const MetaClient::ThreadLocalInfo& MetaClient::getThreadLocalInfo() {
         threadLocalInfo.spaceEdgeIndexByType_ = spaceEdgeIndexByType_;
         threadLocalInfo.spaceTagIndexById_ = spaceTagIndexById_;
         threadLocalInfo.spaceAllEdgeMap_ = spaceAllEdgeMap_;
+        threadLocalInfo.pluginItems_ = pluginItems_;
     }
 
     return threadLocalInfo;
+}
+
+bool MetaClient::loadPlugins(std::vector<cpp2::PluginItem> &pluginItems) {
+    auto pluginItemsRet = listPlugins().get();
+    if (!pluginItemsRet.ok()) {
+        LOG(ERROR) << "Get plugins failed, " << pluginItemsRet.status();
+        return false;
+    }
+    pluginItems = std::move(pluginItemsRet.value());
+    return true;
 }
 
 Status MetaClient::checkTagIndexed(GraphSpaceID space, TagID tagID) {
@@ -1725,6 +1744,35 @@ MetaClient::getEdgeIndexesFromCache(GraphSpaceID spaceId) {
     }
 }
 
+StatusOr<std::vector<cpp2::PluginItem>>
+MetaClient::listPluginsFromCache() {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+
+    // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+    return threadLocalInfo.pluginItems_;
+}
+
+StatusOr<cpp2::PluginItem>
+MetaClient::getPluginFromCache(const std::string& pluginName) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+
+    // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+    for (auto &item : threadLocalInfo.pluginItems_) {
+        if (!item.plugin_name.compare(pluginName)) {
+            return item;
+        }
+    }
+
+    VLOG(3) << "Plugin:" << pluginName << " not found!";
+    return Status::PluginNotFound();
+}
+
 const std::vector<HostAddr>& MetaClient::getAddresses() {
     return addrs_;
 }
@@ -2163,6 +2211,62 @@ folly::Future<StatusOr<std::vector<cpp2::Snapshot>>> MetaClient::listSnapshots()
         return client->future_listSnapshots(request);
     }, [] (cpp2::ListSnapshotsResp&& resp) -> decltype(auto){
         return std::move(resp).get_snapshots();
+    }, std::move(promise));
+    return future;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::installPlugin(const std::string& pluginName, const std::string& soName) {
+    cpp2::InstallPluginReq req;
+    req.set_plugin_name(std::move(pluginName));
+    req.set_so_name(std::move(soName));
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_installPlugin(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::uninstallPlugin(const std::string& pluginName) {
+    cpp2::UninstallPluginReq req;
+    req.set_plugin_name(std::move(pluginName));
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_uninstallPlugin(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<std::vector<cpp2::PluginItem>>>
+MetaClient::listPlugins() {
+    cpp2::ListPluginsReq req;
+    folly::Promise<StatusOr<std::vector<cpp2::PluginItem>>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_listPlugins(request);
+    }, [] (cpp2::ListPluginsResp&& resp) -> decltype(auto){
+        return std::move(resp).get_items();
+    }, std::move(promise));
+    return future;
+}
+
+folly::Future<StatusOr<cpp2::PluginItem>>
+MetaClient::getPlugin(std::string pluginName) {
+    cpp2::GetPluginReq req;
+    req.set_plugin_name(std::move(pluginName));
+    folly::Promise<StatusOr<cpp2::PluginItem>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_getPlugin(request);
+    }, [] (cpp2::GetPluginResp&& resp) -> decltype(auto) {
+        return std::move(resp).get_item();
     }, std::move(promise));
     return future;
 }

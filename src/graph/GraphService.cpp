@@ -37,7 +37,10 @@ Status GraphService::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecuto
     }
 
     sessionManager_ = std::make_unique<SessionManager>();
-    executionEngine_ = std::make_unique<ExecutionEngine>(metaClient_.get());
+    pluginManager_ = std::make_unique<PluginManager>(metaClient_.get());
+    pluginManager_->init();
+
+    executionEngine_ = std::make_unique<ExecutionEngine>(pluginManager_.get(), metaClient_.get());
 
     return executionEngine_->init(std::move(ioExecutor));
 }
@@ -109,6 +112,10 @@ bool GraphService::auth(const std::string& username, const std::string& password
         return authenticator->auth(username, encryption::MD5Utils::md5Encode(password));
     } else if (!auth_type.compare("cloud")) {
         auto authenticator = std::make_unique<CloudAuthenticator>(metaClient_.get());
+        return authenticator->auth(username, password);
+    } else if (!auth_type.compare("ldap")) {
+        auto authenticator = std::make_unique<LdapAuthenticator>(metaClient_.get(),
+                                                                 pluginManager_.get());
         return authenticator->auth(username, password);
     }
     return false;

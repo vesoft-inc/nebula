@@ -48,6 +48,10 @@
 #include "meta/processors/admin/CreateSnapshotProcessor.h"
 #include "meta/processors/admin/DropSnapshotProcessor.h"
 #include "meta/processors/admin/ListSnapshotsProcessor.h"
+#include "meta/processors/admin/InstallPluginProcessor.h"
+#include "meta/processors/admin/UninstallPluginProcessor.h"
+#include "meta/processors/admin/ListPluginsProcessor.h"
+#include "meta/processors/admin/GetPluginProcessor.h"
 #include "meta/processors/configMan/RegConfigProcessor.h"
 #include "meta/processors/configMan/GetConfigProcessor.h"
 #include "meta/processors/configMan/SetConfigProcessor.h"
@@ -389,6 +393,30 @@ MetaServiceHandler::future_dropSnapshot(const cpp2::DropSnapshotReq& req) {
 folly::Future<cpp2::ListSnapshotsResp>
 MetaServiceHandler::future_listSnapshots(const cpp2::ListSnapshotsReq& req) {
     auto* processor = ListSnapshotsProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_installPlugin(const cpp2::InstallPluginReq& req) {
+    auto* processor = InstallPluginProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_uninstallPlugin(const cpp2::UninstallPluginReq& req) {
+    auto* processor = UninstallPluginProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ListPluginsResp>
+MetaServiceHandler::future_listPlugins(const cpp2::ListPluginsReq& req) {
+    auto* processor = ListPluginsProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::GetPluginResp>
+MetaServiceHandler::future_getPlugin(const cpp2::GetPluginReq& req) {
+    auto* processor = GetPluginProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

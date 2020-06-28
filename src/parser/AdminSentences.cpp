@@ -36,6 +36,8 @@ std::string ShowSentence::toString() const {
             return folly::stringPrintf("SHOW CHARSET");
         case ShowType::kShowCollation:
             return folly::stringPrintf("SHOW COLLATION");
+        case ShowType::kShowPlugins:
+            return folly::stringPrintf("SHOW PLUGINS");
         case ShowType::kUnknown:
         default:
             FLOG_FATAL("Type illegal");
@@ -163,6 +165,16 @@ std::string CreateSnapshotSentence::toString() const {
 
 std::string DropSnapshotSentence::toString() const {
     return folly::stringPrintf("DROP SNAPSHOT %s", name_.get()->c_str());
+}
+
+std::string InstallPluginSentence::toString() const {
+    return folly::stringPrintf("INSTALL PLUGIN %s SONAME \"%s\"",
+                                pluginName_.get()->c_str(),
+                                soName_.get()->c_str());
+}
+
+std::string UninstallPluginSentence::toString() const {
+    return folly::stringPrintf("UNINSTALL PLUGIN %s", pluginName_.get()->c_str());
 }
 
 }   // namespace nebula

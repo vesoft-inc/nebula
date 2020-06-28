@@ -198,6 +198,7 @@ bool PermissionManager::canShow(session::Session *session,
         }
         case ShowSentence::ShowType::kShowCharset:
         case ShowSentence::ShowType::kShowCollation:
+        case ShowSentence::ShowType::kShowPlugins:
         case ShowSentence::ShowType::kShowHosts: {
             /**
              * all roles can be show for above operations.

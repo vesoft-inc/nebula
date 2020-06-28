@@ -72,6 +72,7 @@ union ID {
     3: common.EdgeType      edge_type,
     4: common.IndexID       index_id,
     5: common.ClusterID     cluster_id,
+    7: common.PluginID      plugin_id,
 }
 
 struct IdName {
@@ -687,6 +688,42 @@ struct ListIndexStatusResp {
     3: list<IndexStatus>    statuses,
 }
 
+struct PluginItem {
+    1: common.PluginID      plugin_id,
+    2: string               plugin_name,
+    3: string               so_name,
+}
+
+struct InstallPluginReq {
+    1: string               plugin_name,
+    2: string               so_name,
+}
+
+struct UninstallPluginReq {
+    1: string               plugin_name,
+}
+
+struct ListPluginsReq {
+}
+
+struct ListPluginsResp {
+    1: ErrorCode            code,
+    // Valid if code equals E_LEADER_CHANGED.
+    2: common.HostAddr      leader,
+    3: list<PluginItem>     items,
+}
+
+struct GetPluginReq {
+    1: string               plugin_name,
+}
+
+struct GetPluginResp {
+    1: ErrorCode            code,
+    // Valid if code equals E_LEADER_CHANGED.
+    2: common.HostAddr      leader,
+    3: PluginItem           item,
+}
+
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp dropSpace(1: DropSpaceReq req);
@@ -753,5 +790,10 @@ service MetaService {
     ExecResp dropSnapshot(1: DropSnapshotReq req);
     ListSnapshotsResp listSnapshots(1: ListSnapshotsReq req);
     AdminJobResp runAdminJob(1: AdminJobReq req);
+
+    ExecResp             installPlugin(1: InstallPluginReq req);
+    ExecResp             uninstallPlugin(1: UninstallPluginReq req);
+    ListPluginsResp      listPlugins(1: ListPluginsReq req);
+    GetPluginResp        getPlugin(1: GetPluginReq req);
 }
 

@@ -2001,4 +2001,20 @@ TEST(Parser, UseReservedKeyword) {
         ASSERT_TRUE(result.ok());
     }
 }
+
+TEST(Parser, InstallOrUninstallPlugin) {
+    {
+        GQLParser parser;
+        std::string query = "INSTALL PLUGIN authentication SONAME \"authentication_ldap.so\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "UNINSTALL PLUGIN authentication";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
 }   // namespace nebula

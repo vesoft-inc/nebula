@@ -419,10 +419,24 @@ nebula_add_test(
     SOURCES
         CloudAccountAuthTest.cpp
     OBJECTS
-        $<TARGET_OBJECTS:graph_test_common_obj>
-        $<TARGET_OBJECTS:client_cpp_obj>
-        $<TARGET_OBJECTS:adHocSchema_obj>
-        $<TARGET_OBJECTS:adHocIndex_obj>
+        ${GRAPH_TEST_CLIENT_LIBS}
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        proxygenlib
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    DISABLED
+    NAME
+        ldap_auth_test
+    SOURCES
+        LdapAuthTest.cpp
+    OBJECTS
+        ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}

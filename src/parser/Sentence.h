@@ -72,6 +72,8 @@ public:
         kCreateSnapshot,
         kDropSnapshot,
         kAdmin,
+        kInstallPlugin,
+        kUninstallPlugin,
     };
 
     Kind kind() const {

@@ -10,11 +10,11 @@
 #include "graph/ExecutionPlan.h"
 #include "storage/client/StorageClient.h"
 
-
 namespace nebula {
 namespace graph {
 
-ExecutionEngine::ExecutionEngine(meta::MetaClient* client) {
+ExecutionEngine::ExecutionEngine(PluginManager* pluginManager, meta::MetaClient* client) {
+    pluginManager_ = pluginManager;
     metaClient_ = client;
 }
 
@@ -43,7 +43,8 @@ void ExecutionEngine::execute(RequestContextPtr rctx) {
                                                    gflagsManager_.get(),
                                                    storage_.get(),
                                                    metaClient_,
-                                                   charsetInfo_);
+                                                   charsetInfo_,
+                                                   pluginManager_);
     // TODO(dutor) add support to plan cache
     auto plan = new ExecutionPlan(std::move(ectx));
 

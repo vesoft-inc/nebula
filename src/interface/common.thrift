@@ -25,6 +25,7 @@ typedef i32 (cpp.type = "nebula::Port") Port
 typedef i64 (cpp.type = "nebula::SchemaVer") SchemaVer
 
 typedef i64 (cpp.type = "nebula::ClusterID") ClusterID
+typedef i32 (cpp.type = "nebula::PluginID") PluginID
 
 // These are all data types supported in the graph properties
 enum SupportedType {
