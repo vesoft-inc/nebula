@@ -158,7 +158,7 @@ const StatusOr<VariantType>
 ResultSchemaProvider::getDefaultValue(const folly::StringPiece name) const {
     auto index = getFieldIndex(name);
     if (index < 0 || index >= static_cast<int64_t>(columns_.size())) {
-        LOG(ERROR) << "Unknown field \"" << name.toString() << "\"";
+        VLOG(2) << "Unknown field \"" << name.toString() << "\"";
         return Status::Error("Unknown field \"%s\"", name.toString().c_str());
     }
     return getDefaultValue(index);
