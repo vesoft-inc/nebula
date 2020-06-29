@@ -111,7 +111,7 @@ struct Set {
 
 
 struct Row {
-    1: list<Value> columns;
+    1: list<Value> values;
 } (cpp.type = "nebula::Row")
 
 

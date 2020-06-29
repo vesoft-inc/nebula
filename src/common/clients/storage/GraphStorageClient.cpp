@@ -29,8 +29,8 @@ GraphStorageClient::getNeighbors(GraphSpaceID space,
     auto status = clusterIdsToHosts(
         space, vertices, [](const Row& r) -> const VertexID& {
             // The first column has to be the vid
-            DCHECK_EQ(Value::Type::STRING, r.columns[0].type());
-            return r.columns[0].getStr();
+            DCHECK_EQ(Value::Type::STRING, r.values[0].type());
+            return r.values[0].getStr();
         });
 
     if (!status.ok()) {
@@ -182,8 +182,8 @@ GraphStorageClient::getProps(GraphSpaceID space,
     auto status = clusterIdsToHosts(space,
                                     input.rows,
                                     [](const Row& r) -> const VertexID& {
-        DCHECK_EQ(Value::Type::STRING, r.columns[0].type());
-        return r.columns[0].getStr();
+        DCHECK_EQ(Value::Type::STRING, r.values[0].type());
+        return r.values[0].getStr();
     });
 
     if (!status.ok()) {
