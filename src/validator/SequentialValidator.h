@@ -37,6 +37,8 @@ private:
      */
     Status toPlan() override;
 
+    const Sentence* getFirstSentence(const Sentence* sentence) const;
+
 private:
     std::vector<std::unique_ptr<Validator>>     validators_;
 };

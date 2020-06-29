@@ -19,6 +19,19 @@ Status SequentialValidator::validateImpl() {
     }
     auto seqSentence = static_cast<SequentialSentences*>(sentence_);
     auto sentences = seqSentence->sentences();
+
+    DCHECK(!sentences.empty());
+    auto firstSentence = getFirstSentence(sentences.front());
+    switch (firstSentence->kind()) {
+        case Sentence::Kind::kLimit:
+        case Sentence::Kind::kOrderBy:
+        case Sentence::Kind::KGroupBy:
+            return Status::SyntaxError("Could not start with the statement: %s",
+                                       firstSentence->toString().c_str());
+        default:
+            break;
+    }
+
     for (auto* sentence : sentences) {
         auto validator = makeValidator(sentence, qctx_);
         status = validator->validate();
@@ -44,5 +57,14 @@ Status SequentialValidator::toPlan() {
     Validator::appendPlan(validators_[0]->tail(), tail_);
     return Status::OK();
 }
+
+const Sentence* SequentialValidator::getFirstSentence(const Sentence* sentence) const {
+    if (sentence->kind() != Sentence::Kind::kPipe) {
+        return sentence;
+    }
+    auto pipe = static_cast<const PipedSentence *>(sentence);
+    return getFirstSentence(pipe->left());
+}
+
 }  // namespace graph
 }  // namespace nebula
