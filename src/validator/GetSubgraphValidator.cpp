@@ -161,7 +161,7 @@ Status GetSubgraphValidator::toPlan() {
     ds.colNames.emplace_back("_vid");
     for (auto& vid : starts_) {
         Row row;
-        row.columns.emplace_back(vid);
+        row.values.emplace_back(vid);
         ds.rows.emplace_back(std::move(row));
     }
     qctx_->ectx()->setValue(vidsToSave, std::move(ds));

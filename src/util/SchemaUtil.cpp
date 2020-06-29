@@ -237,7 +237,7 @@ StatusOr<DataSet> SchemaUtil::toDescSchema(const meta::cpp2::Schema &schema) {
         auto defaultValue = col.__isset.default_value ? *col.get_default_value() : Value();
         columns.emplace_back(std::move(defaultValue));
         Row row;
-        row.columns = std::move(columns);
+        row.values = std::move(columns);
         rows.emplace_back(row);
     }
     dataSet.rows = std::move(rows);

@@ -21,8 +21,8 @@ protected:
             ds.colNames = {"id", "col2"};
             for (auto i = 0; i < 10; ++i) {
                 Row row;
-                row.columns.emplace_back(folly::to<std::string>(i));
-                row.columns.emplace_back(i + 1);
+                row.values.emplace_back(folly::to<std::string>(i));
+                row.values.emplace_back(i + 1);
                 ds.rows.emplace_back(std::move(row));
             }
             qctx_->ectx()->setResult("input_gn",
@@ -65,7 +65,7 @@ TEST_F(GetNeighborsTest, BuildRequestDataSet) {
     expected.colNames = {"_vid"};
     for (auto i = 0; i < 10; ++i) {
         Row row;
-        row.columns.emplace_back(folly::to<std::string>(i));
+        row.values.emplace_back(folly::to<std::string>(i));
         expected.rows.emplace_back(std::move(row));
     }
     auto& reqDs = gnExe->reqDs_;

@@ -22,8 +22,8 @@ protected:
             ds.colNames = {"_vid", "col2"};
             for (auto i = 0; i < 10; ++i) {
                 Row row;
-                row.columns.emplace_back(i);
-                row.columns.emplace_back(i + 1);
+                row.values.emplace_back(i);
+                row.values.emplace_back(i + 1);
                 ds.rows.emplace_back(std::move(row));
             }
             qctx_->ectx()->setResult("input_project",
@@ -67,7 +67,7 @@ TEST_F(ProjectTest, Project1Col) {
     expected.colNames = {"_vid"};
     for (auto i = 0; i < 10; ++i) {
         Row row;
-        row.columns.emplace_back(i);
+        row.values.emplace_back(i);
         expected.rows.emplace_back(std::move(row));
     }
     EXPECT_EQ(result.value().getDataSet(), expected);
@@ -104,8 +104,8 @@ TEST_F(ProjectTest, Project2Col) {
     expected.colNames = {"_vid", "num"};
     for (auto i = 0; i < 10; ++i) {
         Row row;
-        row.columns.emplace_back(i);
-        row.columns.emplace_back(i + 1);
+        row.values.emplace_back(i);
+        row.values.emplace_back(i + 1);
         expected.rows.emplace_back(std::move(row));
     }
     EXPECT_EQ(result.value().getDataSet(), expected);

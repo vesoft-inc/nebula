@@ -51,7 +51,7 @@ Status GetNeighborsExecutor::buildRequestDataSet() {
             continue;
         }
         Row row;
-        row.emplace_back(std::move(val));
+        row.values.emplace_back(std::move(val));
         reqDs_.rows.emplace_back(std::move(row));
     }
 

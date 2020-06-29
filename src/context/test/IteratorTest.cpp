@@ -25,8 +25,8 @@ TEST(IteratorTest, Sequential) {
     ds.colNames = {"col1", "col2"};
     for (auto i = 0; i < 10; ++i) {
         Row row;
-        row.columns.emplace_back(i);
-        row.columns.emplace_back(folly::to<std::string>(i));
+        row.values.emplace_back(i);
+        row.values.emplace_back(folly::to<std::string>(i));
         ds.rows.emplace_back(std::move(row));
     }
     {
@@ -88,14 +88,14 @@ TEST(IteratorTest, GetNeighbor) {
     for (auto i = 0; i < 10; ++i) {
         Row row;
         // _vid
-        row.columns.emplace_back(folly::to<std::string>(i));
+        row.values.emplace_back(folly::to<std::string>(i));
         // _stats = empty
-        row.columns.emplace_back(Value());
+        row.values.emplace_back(Value());
         // tag
         List tag;
         tag.values.emplace_back(0);
         tag.values.emplace_back(1);
-        row.columns.emplace_back(Value(tag));
+        row.values.emplace_back(Value(tag));
         // edges
         List edges;
         for (auto j = 0; j < 2; ++j) {
@@ -107,9 +107,9 @@ TEST(IteratorTest, GetNeighbor) {
             edge.values.emplace_back(j);
             edges.values.emplace_back(std::move(edge));
         }
-        row.columns.emplace_back(edges);
+        row.values.emplace_back(edges);
         // _expr = empty
-        row.columns.emplace_back(Value());
+        row.values.emplace_back(Value());
         ds1.rows.emplace_back(std::move(row));
     }
 
@@ -122,14 +122,14 @@ TEST(IteratorTest, GetNeighbor) {
     for (auto i = 10; i < 20; ++i) {
         Row row;
         // _vid
-        row.columns.emplace_back(folly::to<std::string>(i));
+        row.values.emplace_back(folly::to<std::string>(i));
         // _stats = empty
-        row.columns.emplace_back(Value());
+        row.values.emplace_back(Value());
         // tag
         List tag;
         tag.values.emplace_back(0);
         tag.values.emplace_back(1);
-        row.columns.emplace_back(Value(tag));
+        row.values.emplace_back(Value(tag));
         // edges
         List edges;
         for (auto j = 0; j < 2; ++j) {
@@ -141,9 +141,9 @@ TEST(IteratorTest, GetNeighbor) {
             edge.values.emplace_back(j);
             edges.values.emplace_back(std::move(edge));
         }
-        row.columns.emplace_back(edges);
+        row.values.emplace_back(edges);
         // _expr = empty
-        row.columns.emplace_back(Value());
+        row.values.emplace_back(Value());
         ds2.rows.emplace_back(std::move(row));
     }
 

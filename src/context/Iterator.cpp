@@ -36,7 +36,7 @@ GetNeighborsIter::GetNeighborsIter(std::shared_ptr<Value> value)
         size_t edgeStartIndex = buildResult.value();
         segments_.emplace_back(&ds);
         for (auto& row : ds.rows) {
-            auto& cols = row.columns;
+            auto& cols = row.values;
             for (size_t column = edgeStartIndex; column < cols.size() - 1; ++column) {
                 if (!cols[column].isList()) {
                     // Ignore the bad value.
@@ -158,7 +158,7 @@ const Value& GetNeighborsIter::getColumn(const std::string& col) const {
         return Value::kNullValue;
     }
     auto row = currentRow();
-    return row->columns[found->second];
+    return row->values[found->second];
 }
 
 const Value& GetNeighborsIter::getTagProp(const std::string& tag,
@@ -178,9 +178,9 @@ const Value& GetNeighborsIter::getTagProp(const std::string& tag,
     }
     auto colId = index->second.first;
     auto* row = currentRow();
-    DCHECK_GT(row->columns.size(), colId);
-    DCHECK(row->columns[colId].isList());
-    auto& list = row->columns[colId].getList();
+    DCHECK_GT(row->values.size(), colId);
+    DCHECK(row->values[colId].isList());
+    auto& list = row->values[colId].getList();
     return list.values[propIndex->second];
 }
 
@@ -226,9 +226,9 @@ Value GetNeighborsIter::getVertex() const {
         auto* row = currentRow();
         auto& tagPropNameList = tagProp.second.second;
         auto tagColId = tagProp.second.first;
-        DCHECK_GE(row->columns.size(), tagColId);
-        DCHECK(row->columns[tagColId].isList());
-        auto& propList = row->columns[tagColId].getList();
+        DCHECK_GE(row->values.size(), tagColId);
+        DCHECK(row->values[tagColId].isList());
+        auto& propList = row->values[tagColId].getList();
         DCHECK_EQ(tagPropNameList.size(), propList.values.size());
         Tag tag;
         tag.name = tagProp.first;

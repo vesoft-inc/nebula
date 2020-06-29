@@ -46,7 +46,7 @@ folly::Future<Status> DescSpaceExecutor::descSpace() {
             columns.emplace_back(properties.get_vid_size());
             columns.emplace_back(properties.get_charset_name());
             columns.emplace_back(properties.get_collate_name());
-            row.columns = std::move(columns);
+            row.values = std::move(columns);
             rows.emplace_back(row);
             dataSet.rows = rows;
             finish(Value(std::move(dataSet)));

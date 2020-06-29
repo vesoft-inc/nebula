@@ -337,8 +337,8 @@ public:
         if (index == colIndex_.end()) {
             return Value::kNullValue;
         } else {
-            DCHECK_LT(index->second, row->columns.size());
-            return row->columns[index->second];
+            DCHECK_LT(index->second, row->values.size());
+            return row->values[index->second];
         }
     }
 
