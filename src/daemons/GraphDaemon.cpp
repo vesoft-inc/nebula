@@ -15,7 +15,6 @@
 #include "common/process/ProcessUtils.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "service/GraphService.h"
-#include "service/GraphHttpHandler.h"
 #include "service/GraphFlags.h"
 #include "common/webservice/WebService.h"
 

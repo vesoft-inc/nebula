@@ -11,7 +11,6 @@ set(GRAPH_TEST_LIB
     $<TARGET_OBJECTS:session_obj>
     $<TARGET_OBJECTS:query_engine_obj>
     $<TARGET_OBJECTS:graph_flags_obj>
-    $<TARGET_OBJECTS:graph_http_obj>
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:validator_obj>
     $<TARGET_OBJECTS:planner_obj>
