@@ -52,7 +52,7 @@ const ValueType& NebulaSchemaProvider::getFieldType(int64_t index) const {
 const ValueType& NebulaSchemaProvider::getFieldType(const Slice& name) const {
     auto it = fieldNameIndex_.find(name.toString());
     if (fieldNameIndex_.end() == it) {
-        LOG(ERROR) << "Unknown field \"" << name.toString() << "\"";
+        VLOG(2) << "Unknown field \"" << name.toString() << "\"";
         return kUnknown;
     }
 
