@@ -18,6 +18,8 @@ nebula_add_test(
         $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:expr_ctx_mock_obj>
+        $<TARGET_OBJECTS:function_manager_obj>
+        $<TARGET_OBJECTS:time_obj>
     LIBRARIES
         gtest
         gtest_main
@@ -34,6 +36,8 @@ nebula_add_executable(
         $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:expr_ctx_mock_obj>
+        $<TARGET_OBJECTS:function_manager_obj>
+        $<TARGET_OBJECTS:time_obj>
     LIBRARIES
         follybenchmark
         boost_regex
@@ -47,6 +51,8 @@ nebula_add_test(
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:expression_obj>
         $<TARGET_OBJECTS:datatypes_obj>
+        $<TARGET_OBJECTS:function_manager_obj>
+        $<TARGET_OBJECTS:time_obj>
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}

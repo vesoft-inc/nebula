@@ -3,7 +3,7 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-
+#include "common/function/FunctionManager.h"
 #include "common/expression/FunctionCallExpression.h"
 
 namespace nebula {
@@ -67,9 +67,17 @@ void FunctionCallExpression::resetFrom(Decoder& decoder) {
     }
 }
 
-
 const Value& FunctionCallExpression::eval(ExpressionContext& ctx) {
-    UNUSED(ctx);
+    auto function = FunctionManager::get(*name_, args_->numArgs());
+    if (!function.ok()) {
+        result_ = Value::kNullBadData;
+    } else {
+        std::vector<Value> parameter;
+        for (const auto& arg : args_->args()) {
+            parameter.emplace_back(std::move(arg->eval(ctx)));
+        }
+        result_ = function.value()(parameter);
+    }
     return result_;
 }
 

@@ -25,7 +25,7 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.body_ = [](const auto &args) -> Value {
             if (args[0].isNumeric()) {
-                return abs(args[0].isInt() ? args[0].getInt() : args[0].getFloat());
+                return std::abs(args[0].isInt() ? args[0].getInt() : args[0].getFloat());
             }
             return Value::kNullBadType;
         };
