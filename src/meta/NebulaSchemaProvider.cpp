@@ -49,7 +49,7 @@ const cpp2::ValueType& NebulaSchemaProvider::getFieldType(int64_t index) const {
 const cpp2::ValueType& NebulaSchemaProvider::getFieldType(const folly::StringPiece name) const {
     auto it = fieldNameIndex_.find(name.toString());
     if (UNLIKELY(fieldNameIndex_.end() == it)) {
-        LOG(ERROR) << "Unknown field \"" << name.toString() << "\"";
+        VLOG(2) << "Unknown field \"" << name.toString() << "\"";
         return CommonConstants::kInvalidValueType();
     }
 
@@ -132,7 +132,7 @@ const StatusOr<VariantType>
 NebulaSchemaProvider::getDefaultValue(const folly::StringPiece name) const {
     auto it = fieldNameIndex_.find(name.toString());
     if (UNLIKELY(fieldNameIndex_.end() == it)) {
-        LOG(ERROR) << "Unknown field \"" << name.toString() << "\"";
+        VLOG(2) << "Unknown field \"" << name.toString() << "\"";
         return Status::Error("Unknown field \"%s\"", name.toString().c_str());
     }
     return getDefaultValue(it->second);
