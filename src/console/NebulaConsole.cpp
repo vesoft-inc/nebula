@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
     }
 
     CliManager cli;
-    if (!cli.connect(FLAGS_addr, FLAGS_port, FLAGS_u, FLAGS_p)) {
+    if (!cli.connect()) {
         return EXIT_FAILURE;
     }
 
