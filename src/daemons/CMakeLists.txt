@@ -51,6 +51,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:common_file_based_cluster_id_man_obj>
         $<TARGET_OBJECTS:common_meta_thrift_obj>
         $<TARGET_OBJECTS:common_charset_obj>
+        $<TARGET_OBJECTS:common_function_manager_obj>
     LIBRARIES
         proxygenhttpserver
         proxygenlib

@@ -16,6 +16,7 @@ set(PARSER_TEST_LIBS
     $<TARGET_OBJECTS:common_thread_obj>
     $<TARGET_OBJECTS:common_datatypes_obj>
     $<TARGET_OBJECTS:common_base_obj>
+    $<TARGET_OBJECTS:common_function_manager_obj>
 )
 
 nebula_add_test(

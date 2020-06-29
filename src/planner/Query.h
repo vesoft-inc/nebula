@@ -194,16 +194,20 @@ protected:
  */
 class GetNeighbors final : public Explore {
 public:
+    using VertexProps = std::unique_ptr<std::vector<storage::cpp2::VertexProp>>;
+    using EdgeProps = std::unique_ptr<std::vector<storage::cpp2::EdgeProp>>;
+    using StatProps = std::unique_ptr<std::vector<storage::cpp2::StatProp>>;
+    using Exprs = std::unique_ptr<std::vector<storage::cpp2::Expr>>;
     static GetNeighbors* make(ExecutionPlan* plan,
                               PlanNode* input,
                               GraphSpaceID space,
                               Expression* src,
                               std::vector<EdgeType> edgeTypes,
                               storage::cpp2::EdgeDirection edgeDirection,
-                              std::vector<storage::cpp2::VertexProp> vertexProps,
-                              std::vector<storage::cpp2::EdgeProp> edgeProps,
-                              std::vector<storage::cpp2::StatProp> statProps,
-                              std::vector<storage::cpp2::Expr> exprs,
+                              VertexProps&& vertexProps,
+                              EdgeProps&& edgeProps,
+                              StatProps&& statProps,
+                              Exprs&& exprs,
                               bool dedup = false,
                               bool random = false,
                               std::vector<storage::cpp2::OrderBy> orderBy = {},
@@ -241,20 +245,20 @@ public:
         return edgeTypes_;
     }
 
-    const std::vector<storage::cpp2::VertexProp>& vertexProps() const {
-        return vertexProps_;
+    const std::vector<storage::cpp2::VertexProp>* vertexProps() const {
+        return vertexProps_.get();
     }
 
-    const std::vector<storage::cpp2::EdgeProp>& edgeProps() const {
-        return edgeProps_;
+    const std::vector<storage::cpp2::EdgeProp>* edgeProps() const {
+        return edgeProps_.get();
     }
 
-    const std::vector<storage::cpp2::StatProp>& statProps() const {
-        return statProps_;
+    const std::vector<storage::cpp2::StatProp>* statProps() const {
+        return statProps_.get();
     }
 
-    const std::vector<storage::cpp2::Expr>& exprs() const {
-        return exprs_;
+    const std::vector<storage::cpp2::Expr>* exprs() const {
+        return exprs_.get();
     }
 
     bool random() const {
@@ -268,10 +272,10 @@ private:
                  Expression* src,
                  std::vector<EdgeType> edgeTypes,
                  storage::cpp2::EdgeDirection edgeDirection,
-                 std::vector<storage::cpp2::VertexProp> vertexProps,
-                 std::vector<storage::cpp2::EdgeProp> edgeProps,
-                 std::vector<storage::cpp2::StatProp> statProps,
-                 std::vector<storage::cpp2::Expr>  exprs,
+                 VertexProps&& vertexProps,
+                 EdgeProps&& edgeProps,
+                 StatProps&& statProps,
+                 Exprs&&  exprs,
                  bool dedup,
                  bool random,
                  std::vector<storage::cpp2::OrderBy> orderBy,
@@ -299,10 +303,10 @@ private:
     Expression*                                  src_{nullptr};
     std::vector<EdgeType>                        edgeTypes_;
     storage::cpp2::EdgeDirection                 edgeDirection_;
-    std::vector<storage::cpp2::VertexProp>       vertexProps_;
-    std::vector<storage::cpp2::EdgeProp>         edgeProps_;
-    std::vector<storage::cpp2::StatProp>         statProps_;
-    std::vector<storage::cpp2::Expr>             exprs_;
+    VertexProps                                  vertexProps_;
+    EdgeProps                                    edgeProps_;
+    StatProps                                    statProps_;
+    Exprs                                        exprs_;
     bool                                         random_;
 };
 

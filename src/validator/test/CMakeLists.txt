@@ -32,6 +32,7 @@ set(VALIDATOR_TEST_LIBS
     $<TARGET_OBJECTS:common_charset_obj>
     $<TARGET_OBJECTS:common_meta_client_obj>
     $<TARGET_OBJECTS:common_file_based_cluster_id_man_obj>
+    $<TARGET_OBJECTS:common_function_manager_obj>
 )
 
 nebula_add_library(
