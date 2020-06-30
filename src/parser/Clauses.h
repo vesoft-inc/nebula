@@ -8,6 +8,7 @@
 
 #include "common/base/Base.h"
 #include "common/expression/Expression.h"
+#include "common/interface/gen-cpp2/storage_types.h"
 
 namespace nebula {
 class StepClause final {
@@ -162,15 +163,15 @@ private:
 
 class OverClause final {
 public:
-    enum class Direction : uint8_t {
-        kForward,
-        kBackward,
-        kBidirect
-    };
-
     OverClause(OverEdges *edges,
-               Direction direction = Direction::kForward) {
+               storage::cpp2::EdgeDirection direction = storage::cpp2::EdgeDirection::OUT_EDGE) {
         overEdges_.reset(edges);
+        direction_ = direction;
+    }
+
+    OverClause(bool isOverAll,
+               storage::cpp2::EdgeDirection direction = storage::cpp2::EdgeDirection::OUT_EDGE) {
+        isOverAll_ = isOverAll;
         direction_ = direction;
     }
 
@@ -178,13 +179,18 @@ public:
 
     std::string toString() const;
 
-    Direction direction() const {
+    storage::cpp2::EdgeDirection direction() const {
         return direction_;
     }
 
+    bool isOverAll() const {
+        return isOverAll_;
+    }
+
 private:
-    Direction                  direction_;
-    std::unique_ptr<OverEdges> overEdges_;
+    storage::cpp2::EdgeDirection                  direction_;
+    std::unique_ptr<OverEdges>                    overEdges_;
+    bool                                          isOverAll_{false};
 };
 
 class WhereClause final {
@@ -266,13 +272,17 @@ private:
 
 class YieldClause final {
 public:
-    explicit YieldClause(YieldColumns *fields, bool distinct = false) {
-        yieldColumns_.reset(fields);
+    explicit YieldClause(YieldColumns *yields, bool distinct = false) {
+        yieldColumns_.reset(yields);
         distinct_ = distinct;
     }
 
     std::vector<YieldColumn*> columns() const {
         return yieldColumns_->columns();
+    }
+
+    YieldColumns* yields() const {
+        return yieldColumns_.get();
     }
 
     bool isDistinct() const {
@@ -284,9 +294,6 @@ public:
 private:
     std::unique_ptr<YieldColumns>               yieldColumns_;
     bool                                        distinct_;
-    // this member will hold the reference
-    // which is expand by *
-    std::unique_ptr<YieldColumns>               yieldColHolder_;
 };
 
 class GroupClause final {

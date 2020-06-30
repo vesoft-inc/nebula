@@ -709,34 +709,22 @@ over_edges
 
 over_clause
     : KW_OVER MUL {
-        auto edges = new OverEdges();
-        auto s = new std::string("*");
-        auto edge = new OverEdge(s, nullptr);
-        edges->addEdge(edge);
-        $$ = new OverClause(edges);
+        $$ = new OverClause(true);
     }
     | KW_OVER MUL KW_REVERSELY {
-        auto edges = new OverEdges();
-        auto s = new std::string("*");
-        auto edge = new OverEdge(s, nullptr);
-        edges->addEdge(edge);
-        $$ = new OverClause(edges, OverClause::Direction::kBackward);
+        $$ = new OverClause(true, storage::cpp2::EdgeDirection::IN_EDGE);
     }
     | KW_OVER MUL KW_BIDIRECT {
-        auto edges = new OverEdges();
-        auto s = new std::string("*");
-        auto edge = new OverEdge(s, nullptr);
-        edges->addEdge(edge);
-        $$ = new OverClause(edges, OverClause::Direction::kBidirect);
+        $$ = new OverClause(true, storage::cpp2::EdgeDirection::BOTH);
     }
     | KW_OVER over_edges {
         $$ = new OverClause($2);
     }
     | KW_OVER over_edges KW_REVERSELY {
-        $$ = new OverClause($2, OverClause::Direction::kBackward);
+        $$ = new OverClause($2, storage::cpp2::EdgeDirection::IN_EDGE);
     }
     | KW_OVER over_edges KW_BIDIRECT {
-        $$ = new OverClause($2, OverClause::Direction::kBidirect);
+        $$ = new OverClause($2, storage::cpp2::EdgeDirection::BOTH);
     }
     ;
 

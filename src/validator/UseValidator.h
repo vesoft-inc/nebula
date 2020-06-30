@@ -15,7 +15,9 @@ namespace graph {
 class UseValidator final : public Validator {
 public:
     UseValidator(Sentence* sentence, QueryContext* context)
-        : Validator(sentence, context) {}
+        : Validator(sentence, context) {
+        setNoSpaceRequired();
+    }
 
 private:
     /**

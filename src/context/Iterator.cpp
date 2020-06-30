@@ -33,25 +33,32 @@ GetNeighborsIter::GetNeighborsIter(std::shared_ptr<Value> value)
             clear();
             return;
         }
-        size_t edgeStartIndex = buildResult.value();
+        int64_t edgeStartIndex = buildResult.value();
         segments_.emplace_back(&ds);
-        for (auto& row : ds.rows) {
-            auto& cols = row.values;
-            for (size_t column = edgeStartIndex; column < cols.size() - 1; ++column) {
-                if (!cols[column].isList()) {
-                    // Ignore the bad value.
-                    continue;
-                }
-                for (auto& edge : cols[column].getList().values) {
-                    if (!edge.isList()) {
+        if (edgeStartIndex < 0) {
+            for (auto& row : ds.rows) {
+                logicalRows_.emplace_back(
+                        std::make_tuple(segment, &row, "", nullptr));
+            }
+        } else {
+            for (auto& row : ds.rows) {
+                auto& cols = row.values;
+                for (size_t column = edgeStartIndex; column < cols.size() - 1; ++column) {
+                    if (!cols[column].isList()) {
                         // Ignore the bad value.
                         continue;
                     }
-                    auto& tagEdgeNameIndex = tagEdgeNameIndices_[segment];
-                    auto edgeName = tagEdgeNameIndex.find(column);
-                    DCHECK(edgeName != tagEdgeNameIndex.end());
-                    logicalRows_.emplace_back(
-                            std::make_tuple(segment, &row, edgeName->second, &edge.getList()));
+                    for (auto& edge : cols[column].getList().values) {
+                        if (!edge.isList()) {
+                            // Ignore the bad value.
+                            continue;
+                        }
+                        auto& tagEdgeNameIndex = tagEdgeNameIndices_[segment];
+                        auto edgeName = tagEdgeNameIndex.find(column);
+                        DCHECK(edgeName != tagEdgeNameIndex.end());
+                        logicalRows_.emplace_back(
+                                std::make_tuple(segment, &row, edgeName->second, &edge.getList()));
+                    }
                 }
             }
         }
@@ -254,19 +261,19 @@ Value GetNeighborsIter::getEdge() const {
     Edge edge;
     auto& edgeName = currentEdgeName();
     edge.name = edgeName;
-    auto& src = getColumn("_vid");
+    auto& src = getColumn(kVid);
     if (!src.isStr()) {
         return Value::kNullBadType;
     }
     edge.src = src.getStr();
 
-    auto& dst = getEdgeProp(edgeName, _DST);
+    auto& dst = getEdgeProp(edgeName, kDst);
     if (!dst.isStr()) {
         return Value::kNullBadType;
     }
     edge.dst = dst.getStr();
 
-    auto& rank = getEdgeProp(edgeName, _RANK);
+    auto& rank = getEdgeProp(edgeName, kRank);
     if (!rank.isInt()) {
         return Value::kNullBadType;
     }
@@ -283,8 +290,8 @@ Value GetNeighborsIter::getEdge() const {
     DCHECK_EQ(edgeNamePropList.size(), propList.size());
     for (size_t i = 0; i < propList.size(); ++i) {
         auto propName = edgeNamePropList[i];
-        if (propName == _SRC || propName == _DST
-                || propName == _RANK || propName == _TYPE) {
+        if (propName == kSrc || propName == kDst
+                || propName == kRank || propName == kType) {
             continue;
         }
         edge.props.emplace(edgeNamePropList[i], propList[i]);

@@ -279,5 +279,33 @@ std::string SchemaUtil::typeToString(const meta::cpp2::ColumnDef &col) {
     }
     return "";
 }
+
+Value::Type SchemaUtil::propTypeToValueType(meta::cpp2::PropertyType propType) {
+    switch (propType) {
+        case meta::cpp2::PropertyType::BOOL:
+            return Value::Type::BOOL;
+        case meta::cpp2::PropertyType::INT8:
+        case meta::cpp2::PropertyType::INT16:
+        case meta::cpp2::PropertyType::INT32:
+        case meta::cpp2::PropertyType::INT64:
+        case meta::cpp2::PropertyType::TIMESTAMP:
+            return Value::Type::INT;
+        case meta::cpp2::PropertyType::VID:
+            return Value::Type::STRING;
+        case meta::cpp2::PropertyType::FLOAT:
+        case meta::cpp2::PropertyType::DOUBLE:
+            return Value::Type::FLOAT;
+        case meta::cpp2::PropertyType::STRING:
+        case meta::cpp2::PropertyType::FIXED_STRING:
+            return Value::Type::STRING;
+        case meta::cpp2::PropertyType::DATE:
+            return Value::Type::DATE;
+        case meta::cpp2::PropertyType::DATETIME:
+            return Value::Type::DATETIME;
+        case meta::cpp2::PropertyType::UNKNOWN:
+            return Value::Type::__EMPTY__;
+    }
+    return Value::Type::__EMPTY__;
+}
 }  // namespace graph
 }  // namespace nebula

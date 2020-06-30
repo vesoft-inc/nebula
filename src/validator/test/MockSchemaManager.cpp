@@ -16,6 +16,7 @@ void MockSchemaManager::init() {
     edgeNameIds_.emplace("like", 3);
     edgeIdNames_.emplace(3, "like");
 
+    // person {name : string, age : int8}
     std::shared_ptr<meta::NebulaSchemaProvider> personSchema(new meta::NebulaSchemaProvider(0));
     personSchema->addField("name", meta::cpp2::PropertyType::STRING);
     personSchema->addField("age", meta::cpp2::PropertyType::INT8);
@@ -23,9 +24,11 @@ void MockSchemaManager::init() {
     tagSchemas.emplace(2, personSchema);
     tagSchemas_.emplace(1, std::move(tagSchemas));
 
+    // like {start : timestamp, end : datetime}
     std::shared_ptr<meta::NebulaSchemaProvider> likeSchema(new meta::NebulaSchemaProvider(0));
     likeSchema->addField("start", meta::cpp2::PropertyType::TIMESTAMP);
     likeSchema->addField("end", meta::cpp2::PropertyType::DATETIME);
+    likeSchema->addField("likeness", meta::cpp2::PropertyType::INT64);
     Edges edgeSchemas;
     edgeSchemas.emplace(3, likeSchema);
     edgeSchemas_.emplace(1, std::move(edgeSchemas));

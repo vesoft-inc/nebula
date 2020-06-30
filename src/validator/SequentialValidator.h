@@ -19,7 +19,9 @@ namespace graph {
 class SequentialValidator final : public Validator {
 public:
     SequentialValidator(Sentence* sentence, QueryContext* context)
-        : Validator(sentence, context) {}
+        : Validator(sentence, context) {
+        setNoSpaceRequired();
+    }
 
 private:
     /**

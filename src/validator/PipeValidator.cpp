@@ -7,6 +7,8 @@
 #include "common/base/Base.h"
 #include "validator/PipeValidator.h"
 #include "parser/TraverseSentences.h"
+#include "planner/PlanNode.h"
+#include "planner/Query.h"
 
 namespace nebula {
 namespace graph {
@@ -36,6 +38,8 @@ Status PipeValidator::toPlan() {
     if (!status.ok()) {
         return status;
     }
+    static_cast<SingleInputNode*>(rValidator_->tail())
+        ->setInputVar(lValidator_->root()->varName());
     tail_ = lValidator_->tail();
     return Status::OK();
 }

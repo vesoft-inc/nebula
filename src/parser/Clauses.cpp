@@ -105,9 +105,9 @@ std::string OverClause::toString() const {
     buf += "OVER ";
     buf += overEdges_->toString();
 
-    if (direction_ == OverClause::Direction::kBackward) {
+    if (direction_ == storage::cpp2::EdgeDirection::IN_EDGE) {
         buf += " REVERSELY";
-    } else if (direction_ == OverClause::Direction::kBidirect) {
+    } else if (direction_ == storage::cpp2::EdgeDirection::BOTH) {
         buf += " BIDIRECT";
     }
 

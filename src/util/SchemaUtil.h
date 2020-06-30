@@ -52,6 +52,8 @@ public:
     static StatusOr<DataSet> toDescSchema(const meta::cpp2::Schema &schema);
 
     static std::string typeToString(const meta::cpp2::ColumnDef &col);
+
+    static Value::Type propTypeToValueType(meta::cpp2::PropertyType propType);
 };
 
 }  // namespace graph

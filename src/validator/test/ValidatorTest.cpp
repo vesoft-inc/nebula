@@ -7,6 +7,7 @@
 #include "common/base/Base.h"
 
 #include "validator/test/ValidatorTestBase.h"
+#include "validator/test/MockSchemaManager.h"
 #include "parser/GQLParser.h"
 #include "validator/ASTValidator.h"
 #include "context/QueryContext.h"
@@ -21,13 +22,20 @@
 namespace nebula {
 namespace graph {
 
+using PK = nebula::graph::PlanNode::Kind;
+
 class ValidatorTest : public ValidatorTestBase {
 public:
     static void SetUpTestCase() {
-        auto session = new ClientSession(0);
-        session->setSpace("test", 0);
+        auto sessionId = 0;
+        auto session = new ClientSession(sessionId);
+        auto spaceName = "test_space";
+        auto spaceId = 1;
+        session->setSpace(spaceName, spaceId);
         session_.reset(session);
-        // TODO: Need AdHocSchemaManager here.
+        auto* sm = new MockSchemaManager();
+        sm->init();
+        schemaMng_.reset(sm);
     }
 
     void SetUp() override {
@@ -50,20 +58,20 @@ public:
     }
 
 protected:
-    static std::shared_ptr<ClientSession>      session_;
-    static meta::SchemaManager*                schemaMng_;
-    std::unique_ptr<QueryContext>              qctx_;
+    static std::shared_ptr<ClientSession>           session_;
+    static std::unique_ptr<meta::SchemaManager>     schemaMng_;
+    std::unique_ptr<QueryContext>                   qctx_;
 };
 
 std::shared_ptr<ClientSession> ValidatorTest::session_;
-meta::SchemaManager* ValidatorTest::schemaMng_;
+std::unique_ptr<meta::SchemaManager> ValidatorTest::schemaMng_;
 
 std::unique_ptr<QueryContext> ValidatorTest::buildContext() {
     auto rctx = std::make_unique<RequestContext<cpp2::ExecutionResponse>>();
     rctx->setSession(session_);
     auto qctx = std::make_unique<QueryContext>();
     qctx->setRctx(std::move(rctx));
-    qctx->setSchemaManager(schemaMng_);
+    qctx->setSchemaManager(schemaMng_.get());
     qctx->setCharsetInfo(CharsetInfo::instance());
     return qctx;
 }
@@ -75,7 +83,6 @@ TEST_F(ValidatorTest, Subgraph) {
         ASSERT_TRUE(status.ok());
         auto plan = std::move(status).value();
         ASSERT_NE(plan, nullptr);
-        using PK = nebula::graph::PlanNode::Kind;
         std::vector<PlanNode::Kind> expected = {
             PK::kDataCollect,
             PK::kLoop,
@@ -130,7 +137,6 @@ TEST_F(ValidatorTest, TestSpace) {
         ASSERT_TRUE(validateResult.ok()) << validateResult;
         auto plan = context->plan();
         ASSERT_NE(plan, nullptr);
-        using PK = nebula::graph::PlanNode::Kind;
         std::vector<PlanNode::Kind> expected = {
             PK::kCreateSpace,
             PK::kStart,
@@ -139,5 +145,159 @@ TEST_F(ValidatorTest, TestSpace) {
     }
 }
 
+TEST_F(ValidatorTest, Go) {
+    {
+        std::string query = "GO FROM \"1\" OVER like";
+        auto status = validate(query);
+        EXPECT_TRUE(status.ok()) << status.status();
+        auto plan = std::move(status).value();
+        ASSERT_NE(plan, nullptr);
+        std::vector<PlanNode::Kind> expected = {
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kStart,
+        };
+        ASSERT_TRUE(verifyPlan(plan->root(), expected));
+    }
+    {
+        std::string query = "GO 3 STEPS FROM \"1\" OVER like";
+        auto status = validate(query);
+        // TODO: implement n steps and test plan.
+        EXPECT_FALSE(status.ok()) << status.status();
+    }
+    {
+        std::string query = "GO FROM \"1\" OVER like REVERSELY";
+        auto status = validate(query);
+        EXPECT_TRUE(status.ok()) << status.status();
+        auto plan = std::move(status).value();
+        ASSERT_NE(plan, nullptr);
+        std::vector<PlanNode::Kind> expected = {
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kStart,
+        };
+        ASSERT_TRUE(verifyPlan(plan->root(), expected));
+    }
+    {
+        std::string query = "GO FROM \"1\" OVER like YIELD like.start";
+        auto status = validate(query);
+        EXPECT_TRUE(status.ok()) << status.status();
+        auto plan = std::move(status).value();
+        ASSERT_NE(plan, nullptr);
+        std::vector<PlanNode::Kind> expected = {
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kStart,
+        };
+        ASSERT_TRUE(verifyPlan(plan->root(), expected));
+    }
+    {
+        std::string query = "GO FROM \"1\" OVER like "
+                            "YIELD $^.person.name,$^.person.age";
+        auto status = validate(query);
+        EXPECT_TRUE(status.ok()) << status.status();
+        auto plan = std::move(status).value();
+        ASSERT_NE(plan, nullptr);
+        std::vector<PlanNode::Kind> expected = {
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kStart,
+        };
+        ASSERT_TRUE(verifyPlan(plan->root(), expected));
+    }
+    {
+        std::string query = "GO FROM \"1\" OVER like "
+                            "YIELD $$.person.name,$$.person.age";
+        auto status = validate(query);
+        // TODO: implement get dst props and test plan.
+        EXPECT_FALSE(status.ok()) << status.status();
+    }
+    {
+        std::string query = "GO FROM \"1\",\"2\",\"3\" OVER like";
+        auto status = validate(query);
+        EXPECT_TRUE(status.ok()) << status.status();
+        auto plan = std::move(status).value();
+        ASSERT_NE(plan, nullptr);
+        std::vector<PlanNode::Kind> expected = {
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kStart,
+        };
+        ASSERT_TRUE(verifyPlan(plan->root(), expected));
+    }
+    {
+        std::string query = "GO FROM \"1\",\"2\",\"3\" OVER like WHERE like.likeness > 90";
+        auto status = validate(query);
+        EXPECT_TRUE(status.ok()) << status.status();
+        // TODO
+    }
+    {
+        std::string query = "GO FROM \"1\",\"2\",\"3\" OVER like WHERE $^.person.name == \"me\"";
+        auto status = validate(query);
+        EXPECT_TRUE(status.ok()) << status.status();
+        // TODO
+    }
+    {
+        std::string query = "GO FROM \"1\" OVER like YIELD like._dst AS id"
+                            "| GO FROM $-.id OVER like";
+        auto status = validate(query);
+        EXPECT_TRUE(status.ok()) << status.status();
+        auto plan = std::move(status).value();
+        ASSERT_NE(plan, nullptr);
+        std::vector<PlanNode::Kind> expected = {
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kStart,
+        };
+        ASSERT_TRUE(verifyPlan(plan->root(), expected));
+    }
+}
+
+TEST_F(ValidatorTest, GoInvalid) {
+    {
+        // friend not exist.
+        std::string query = "GO FROM \"1\" OVER friend";
+        auto status = validate(query);
+        EXPECT_FALSE(status.ok()) << status.status();
+    }
+    {
+        // manager not exist
+        std::string query = "GO FROM \"1\" OVER like "
+                            "YIELD $^.manager.name,$^.person.age";
+        auto status = validate(query);
+        EXPECT_FALSE(status.ok()) << status.status();
+    }
+    {
+        // manager not exist
+        std::string query = "GO FROM \"1\" OVER like "
+                            "YIELD $$.manager.name,$$.person.age";
+        auto status = validate(query);
+        EXPECT_FALSE(status.ok()) << status.status();
+    }
+    {
+        // column not exist
+        std::string query = "GO FROM \"1\" OVER like YIELD like._dst AS id"
+                            "| GO FROM $-.col OVER like";
+        auto status = validate(query);
+        EXPECT_FALSE(status.ok()) << status.status();
+    }
+    {
+        // invalid id type
+        std::string query = "GO FROM \"1\" OVER like YIELD like.likeness AS id"
+                            "| GO FROM $-.id OVER like";
+        auto status = validate(query);
+        EXPECT_FALSE(status.ok()) << status.status();
+    }
+    {
+        // multi inputs
+        std::string query = "$var = GO FROM \"2\" OVER like;"
+                            "GO FROM \"1\" OVER like YIELD like._dst AS id"
+                            "| GO FROM $-.id OVER like WHERE $var.id == \"\"";
+        auto status = validate(query);
+        EXPECT_FALSE(status.ok()) << status.status();
+    }
+}
 }  // namespace graph
 }  // namespace nebula
