@@ -77,6 +77,7 @@ TEST_F(ValidatorTest, Subgraph) {
         ASSERT_NE(plan, nullptr);
         using PK = nebula::graph::PlanNode::Kind;
         std::vector<PlanNode::Kind> expected = {
+            PK::kDataCollect,
             PK::kLoop,
             PK::kStart,
             PK::kProject,

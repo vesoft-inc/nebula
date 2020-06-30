@@ -58,6 +58,10 @@ public:
 
     virtual size_t size() const = 0;
 
+    bool isGetNeighborsIter() const {
+        return kind_ == Kind::kGetNeighbors;
+    }
+
     // The derived class should rewrite get prop if the Value is kind of dataset.
     virtual const Value& getColumn(const std::string& col) const {
         UNUSED(col);

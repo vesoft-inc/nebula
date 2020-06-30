@@ -72,6 +72,8 @@ const char* PlanNode::toString(Kind kind) {
             return "InsertVertices";
         case PlanNode::Kind::kInsertEdges:
             return "InsertEdges";
+        case PlanNode::Kind::kDataCollect:
+            return "DataCollect";
         default:
             LOG(FATAL) << "Unknown PlanNode: " << static_cast<int64_t>(kind);
     }

@@ -352,6 +352,10 @@ TEST(IteratorTest, GetNeighbor) {
         List result = iter.getVertices();
         EXPECT_EQ(result.values.size(), 20);
         EXPECT_EQ(result.values, expected);
+
+        result = iter.getVertices();
+        EXPECT_EQ(result.values.size(), 20);
+        EXPECT_EQ(result.values, expected);
     }
     {
         GetNeighborsIter iter(val);
@@ -383,6 +387,10 @@ TEST(IteratorTest, GetNeighbor) {
             }
         }
         List result = iter.getEdges();
+        EXPECT_EQ(result.values.size(), 40);
+        EXPECT_EQ(result.values, expected);
+
+        result = iter.getEdges();
         EXPECT_EQ(result.values.size(), 40);
         EXPECT_EQ(result.values, expected);
     }

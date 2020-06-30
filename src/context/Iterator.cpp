@@ -177,10 +177,12 @@ const Value& GetNeighborsIter::getTagProp(const std::string& tag,
         return Value::kNullValue;
     }
     auto colId = index->second.first;
-    auto* row = currentRow();
-    DCHECK_GT(row->values.size(), colId);
-    DCHECK(row->values[colId].isList());
-    auto& list = row->values[colId].getList();
+    auto& row = *currentRow();
+    DCHECK_GT(row.size(), colId);
+    if (!row[colId].isList()) {
+        return Value::kNullBadType;
+    }
+    auto& list = row[colId].getList();
     return list.values[propIndex->second];
 }
 
@@ -190,12 +192,13 @@ const Value& GetNeighborsIter::getEdgeProp(const std::string& edge,
         return Value::kNullValue;
     }
 
-    if (currentEdgeName() != edge) {
+    auto currentEdge = currentEdgeName();
+    if (edge != "*" && currentEdge != edge) {
         VLOG(1) << "Current edge: " << currentEdgeName() << " Wanted: " << edge;
         return Value::kNullValue;
     }
     auto segment = currentSeg();
-    auto index = edgePropIndices_[segment].find(edge);
+    auto index = edgePropIndices_[segment].find(currentEdge);
     if (index == edgePropIndices_[segment].end()) {
         VLOG(1) << "No edge found: " << edge;
         return Value::kNullValue;
@@ -217,18 +220,21 @@ Value GetNeighborsIter::getVertex() const {
     auto segment = currentSeg();
     auto vidVal = getColumn("_vid");
     if (!vidVal.isStr()) {
-        return Value::kNullValue;
+        return Value::kNullBadType;
     }
     Vertex vertex;
     vertex.vid = vidVal.getStr();
     auto& tagPropMap = tagPropMaps_[segment];
     for (auto& tagProp : tagPropMap) {
-        auto* row = currentRow();
+        auto& row = *currentRow();
         auto& tagPropNameList = tagProp.second.second;
         auto tagColId = tagProp.second.first;
-        DCHECK_GE(row->values.size(), tagColId);
-        DCHECK(row->values[tagColId].isList());
-        auto& propList = row->values[tagColId].getList();
+        if (!row[tagColId].isList()) {
+            // Ignore the bad value.
+            continue;
+        }
+        DCHECK_GE(row.size(), tagColId);
+        auto& propList = row[tagColId].getList();
         DCHECK_EQ(tagPropNameList.size(), propList.values.size());
         Tag tag;
         tag.name = tagProp.first;

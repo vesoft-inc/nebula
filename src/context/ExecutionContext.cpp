@@ -62,7 +62,7 @@ const Value& ExecutionContext::getValue(const std::string& name) const {
 
 Value ExecutionContext::moveValue(const std::string& name) {
     auto it = valueMap_.find(name);
-    if (it != valueMap_.end()) {
+    if (it != valueMap_.end() && !it->second.empty()) {
         return it->second.back().moveValue();
     } else {
         return Value();

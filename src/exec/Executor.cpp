@@ -37,6 +37,7 @@
 #include "exec/query/ReadIndexExecutor.h"
 #include "exec/query/SortExecutor.h"
 #include "exec/query/UnionExecutor.h"
+#include "exec/query/DataCollectExecutor.h"
 #include "planner/Admin.h"
 #include "planner/Maintain.h"
 #include "planner/Mutate.h"
@@ -236,6 +237,13 @@ Executor *Executor::makeExecutor(const PlanNode *node,
             exec = new InsertEdgesExecutor(insertE, qctx);
             break;
         }
+        case PlanNode::Kind::kDataCollect: {
+            auto dc = asNode<DataCollect>(node);
+            auto input = makeExecutor(dc->input(), qctx, visited);
+            exec = new DataCollectExecutor(dc, qctx);
+            exec->addDependent(input);
+            break;
+        }
         case PlanNode::Kind::kUnknown:
         default:
             LOG(FATAL) << "Unknown plan node kind.";
@@ -257,10 +265,12 @@ Executor::Executor(const std::string &name, const PlanNode *node, QueryContext *
     DCHECK(!!node_);
     DCHECK(!!qctx_);
 
-    ectx_ = qctx->ectx();
+    ectx_ = qctx_->ectx();
     // Initialize the position in ExecutionContext for each executor before execution plan
     // starting to run. This will avoid lock something for thread safety in real execution
-    ectx_->setValue(node->varName(), nebula::Value());
+    if (!ectx_->exist(node->varName())) {
+        ectx_->initVar(node->varName());
+    }
 }
 
 folly::Future<Status> Executor::start(Status status) const {
