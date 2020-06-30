@@ -127,12 +127,12 @@ using VariantType = boost::variant<int64_t, double, bool, std::string>;
 #endif
 
 // reserved property names
-constexpr char _ID[]    = "_id";
-constexpr char _VID[]   = "_vid";
-constexpr char _SRC[]   = "_src";
-constexpr char _TYPE[]  = "_type";
-constexpr char _RANK[]  = "_rank";
-constexpr char _DST[]   = "_dst";
+constexpr char kId[]    = "_id";
+constexpr char kVid[]   = "_vid";
+constexpr char kSrc[]   = "_src";
+constexpr char kType[]  = "_type";
+constexpr char kRank[]  = "_rank";
+constexpr char kDst[]   = "_dst";
 
 // Useful type traits
 
