@@ -33,6 +33,7 @@ Status InsertVerticesValidator::validateImpl() {
 Status InsertVerticesValidator::toPlan() {
     auto* plan = qctx_->plan();
     auto *doNode = InsertVertices::make(plan,
+                                        nullptr,
                                         vctx_->whichSpace().id,
                                         vertices_,
                                         tagPropNames_,
@@ -158,6 +159,7 @@ Status InsertEdgesValidator::validateImpl() {
 Status InsertEdgesValidator::toPlan() {
     auto* plan = qctx_->plan();
     auto *doNode = InsertEdges::make(plan,
+                                     nullptr,
                                      vctx_->whichSpace().id,
                                      edges_,
                                      propNames_,

@@ -104,7 +104,7 @@ Status CreateSpaceValidator::validateImpl() {
 
 Status CreateSpaceValidator::toPlan() {
     auto* plan = qctx_->plan();
-    auto *doNode = CreateSpace::make(plan, spaceDesc_, ifNotExist_);
+    auto *doNode = CreateSpace::make(plan, nullptr, spaceDesc_, ifNotExist_);
     root_ = doNode;
     tail_ = root_;
     return Status::OK();
@@ -117,7 +117,7 @@ Status DescSpaceValidator::validateImpl() {
 
 Status DescSpaceValidator::toPlan() {
     auto* plan = qctx_->plan();
-    auto *doNode = DescSpace::make(plan, spaceName_);
+    auto *doNode = DescSpace::make(plan, nullptr, spaceName_);
     root_ = doNode;
     tail_ = root_;
     return Status::OK();

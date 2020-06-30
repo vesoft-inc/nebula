@@ -7,7 +7,7 @@
 #ifndef PLANNER_MAINTAIN_H_
 #define PLANNER_MAINTAIN_H_
 
-#include "PlanNode.h"
+#include "Query.h"
 #include "common/interface/gen-cpp2/meta_types.h"
 #include "common/clients/meta/MetaClient.h"
 
@@ -15,15 +15,15 @@ namespace nebula {
 namespace graph {
 // TODO: All DDLs, DMLs and DQLs could be used in a single query
 // which would make them in a single and big execution plan
-class SchemaNode : public PlanNode {
+class SchemaNode : public SingleInputNode {
 public:
     GraphSpaceID space() const {
         return space_;
     }
 
 protected:
-    SchemaNode(ExecutionPlan* plan, Kind kind, const GraphSpaceID space)
-        : PlanNode(plan, kind), space_(space) {}
+    SchemaNode(ExecutionPlan* plan, Kind kind, PlanNode* input, const GraphSpaceID space)
+        : SingleInputNode(plan, kind, input), space_(space) {}
 
 protected:
     GraphSpaceID        space_;
@@ -33,11 +33,12 @@ class CreateSchemaNode : public SchemaNode {
 protected:
     CreateSchemaNode(ExecutionPlan* plan,
                      Kind kind,
+                     PlanNode* input,
                      GraphSpaceID space,
                      std::string name,
                      meta::cpp2::Schema schema,
                      bool ifNotExists)
-        : SchemaNode(plan, kind, space)
+        : SchemaNode(plan, kind, input, space)
         , name_(std::move(name))
         , schema_(std::move(schema))
         , ifNotExists_(ifNotExists) {}
@@ -64,11 +65,13 @@ protected:
 class CreateTag final : public CreateSchemaNode {
 public:
     static CreateTag* make(ExecutionPlan* plan,
+                           PlanNode* input,
                            GraphSpaceID space,
                            std::string tagName,
                            meta::cpp2::Schema schema,
                            bool ifNotExists) {
     return new CreateTag(plan,
+                         input,
                          space,
                          std::move(tagName),
                          std::move(schema),
@@ -81,27 +84,31 @@ public:
 
 private:
     CreateTag(ExecutionPlan* plan,
+              PlanNode* input,
               GraphSpaceID space,
               std::string tagName,
               meta::cpp2::Schema schema,
               bool ifNotExists)
-        : CreateSchemaNode(plan,
-                           Kind::kCreateTag,
-                           space,
-                           std::move(tagName),
-                           std::move(schema),
-                           ifNotExists) {
-        }
+    : CreateSchemaNode(plan,
+                       Kind::kCreateTag,
+                       input,
+                       space,
+                       std::move(tagName),
+                       std::move(schema),
+                       ifNotExists) {
+    }
 };
 
 class CreateEdge final : public CreateSchemaNode {
 public:
     static CreateEdge* make(ExecutionPlan* plan,
+                            PlanNode* input,
                             GraphSpaceID space,
                             std::string edgeName,
                             meta::cpp2::Schema schema,
                             bool ifNotExists) {
     return new CreateEdge(plan,
+                          input,
                           space,
                           std::move(edgeName),
                           std::move(schema),
@@ -114,12 +121,14 @@ public:
 
 private:
     CreateEdge(ExecutionPlan* plan,
+               PlanNode* input,
                GraphSpaceID space,
                std::string edgeName,
                meta::cpp2::Schema schema,
                bool ifNotExists)
         : CreateSchemaNode(plan,
                            Kind::kCreateEdge,
+                           input,
                            space,
                            std::move(edgeName),
                            std::move(schema),
@@ -141,13 +150,14 @@ public:
     }
 };
 
-class DescSchema : public PlanNode {
+class DescSchema : public SingleInputNode {
 protected:
     DescSchema(ExecutionPlan* plan,
                Kind kind,
+               PlanNode* input,
                GraphSpaceID space,
                std::string name)
-        : PlanNode(plan, kind)
+        : SingleInputNode(plan, kind, input)
         , space_(space)
         , name_(std::move(name)) {}
 
@@ -168,9 +178,10 @@ protected:
 class DescTag final : public DescSchema {
 public:
     static DescTag* make(ExecutionPlan* plan,
+                         PlanNode* input,
                          GraphSpaceID space,
                          std::string tagName) {
-    return new DescTag(plan, space, std::move(tagName));
+        return new DescTag(plan, input, space, std::move(tagName));
     }
 
     std::string explain() const override {
@@ -179,18 +190,20 @@ public:
 
 private:
     DescTag(ExecutionPlan* plan,
+            PlanNode* input,
             GraphSpaceID space,
             std::string tagName)
-        : DescSchema(plan, Kind::kDescTag, space, std::move(tagName)) {
-        }
+    : DescSchema(plan, Kind::kDescTag, input, space, std::move(tagName)) {
+    }
 };
 
 class DescEdge final : public DescSchema {
 public:
     static DescEdge* make(ExecutionPlan* plan,
+                          PlanNode* input,
                           GraphSpaceID space,
                           std::string edgeName) {
-    return new DescEdge(plan, space, std::move(edgeName));
+        return new DescEdge(plan, input, space, std::move(edgeName));
     }
 
     std::string explain() const override {
@@ -199,10 +212,11 @@ public:
 
 private:
     DescEdge(ExecutionPlan* plan,
-            GraphSpaceID space,
-            std::string edgeName)
-        : DescSchema(plan, Kind::kDescEdge, space, std::move(edgeName)) {
-        }
+             PlanNode* input,
+             GraphSpaceID space,
+             std::string edgeName)
+    : DescSchema(plan, Kind::kDescEdge, input, space, std::move(edgeName)) {
+    }
 };
 
 class DropTag final : public PlanNode {

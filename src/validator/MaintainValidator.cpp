@@ -38,6 +38,7 @@ Status CreateTagValidator::validateImpl() {
 Status CreateTagValidator::toPlan() {
     auto* plan = qctx_->plan();
     auto *doNode = CreateTag::make(plan,
+                                   nullptr,
                                    vctx_->whichSpace().id,
                                    tagName_,
                                    schema_,
@@ -69,6 +70,7 @@ Status CreateEdgeValidator::validateImpl() {
 Status CreateEdgeValidator::toPlan() {
     auto* plan = qctx_->plan();
     auto *doNode = CreateEdge::make(plan,
+                                    nullptr,
                                     vctx_->whichSpace().id,
                                     edgeName_,
                                     schema_,
@@ -86,6 +88,7 @@ Status DescTagValidator::validateImpl() {
 Status DescTagValidator::toPlan() {
     auto* plan = qctx_->plan();
     auto *doNode = DescTag::make(plan,
+                                 nullptr,
                                  vctx_->whichSpace().id,
                                  tagName_);
     root_ = doNode;
@@ -101,6 +104,7 @@ Status DescEdgeValidator::validateImpl() {
 Status DescEdgeValidator::toPlan() {
     auto* plan = qctx_->plan();
     auto *doNode = DescEdge::make(plan,
+                                  nullptr,
                                   vctx_->whichSpace().id,
                                   edgeName_);
     root_ = doNode;

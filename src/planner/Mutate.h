@@ -8,7 +8,7 @@
 #define PLANNER_MUTATE_H_
 
 #include "common/interface/gen-cpp2/storage_types.h"
-#include "PlanNode.h"
+#include "Query.h"
 
 /**
  * All mutate-related nodes would put in this file.
@@ -17,14 +17,16 @@ namespace nebula {
 namespace graph {
 // TODO: All DDLs, DMLs and DQLs could be used in a single query
 // which would make them in a single and big execution plan
-class InsertVertices final : public PlanNode {
+class InsertVertices final : public SingleInputNode {
 public:
     static InsertVertices* make(ExecutionPlan* plan,
+                                PlanNode* input,
                                 GraphSpaceID spaceId,
                                 std::vector<storage::cpp2::NewVertex> vertices,
                                 std::unordered_map<TagID, std::vector<std::string>> tagPropNames,
                                 bool overwritable) {
         return new InsertVertices(plan,
+                                  input,
                                   spaceId,
                                   std::move(vertices),
                                   std::move(tagPropNames),
@@ -53,11 +55,12 @@ public:
 
 private:
     InsertVertices(ExecutionPlan* plan,
+                   PlanNode* input,
                    GraphSpaceID spaceId,
                    std::vector<storage::cpp2::NewVertex> vertices,
                    std::unordered_map<TagID, std::vector<std::string>> tagPropNames,
                    bool overwritable)
-    : PlanNode(plan, Kind::kInsertVertices)
+    : SingleInputNode(plan, Kind::kInsertVertices, input)
     , space_(spaceId)
     , vertices_(std::move(vertices))
     , tagPropNames_(std::move(tagPropNames))
@@ -70,14 +73,16 @@ private:
     bool                                                       overwritable_;
 };
 
-class InsertEdges final : public PlanNode {
+class InsertEdges final : public SingleInputNode {
 public:
     static InsertEdges* make(ExecutionPlan* plan,
+                             PlanNode* input,
                              GraphSpaceID spaceId,
                              std::vector<storage::cpp2::NewEdge> edges,
                              std::vector<std::string> propNames,
                              bool overwritable) {
         return new InsertEdges(plan,
+                               input,
                                spaceId,
                                std::move(edges),
                                std::move(propNames),
@@ -106,11 +111,12 @@ public:
 
 private:
     InsertEdges(ExecutionPlan* plan,
+                PlanNode* input,
                 GraphSpaceID spaceId,
                 std::vector<storage::cpp2::NewEdge> edges,
                 std::vector<std::string> propNames,
                 bool overwritable)
-    : PlanNode(plan, Kind::kInsertEdges)
+    : SingleInputNode(plan, Kind::kInsertEdges, input)
     , space_(spaceId)
     , edges_(std::move(edges))
     , propNames_(std::move(propNames))

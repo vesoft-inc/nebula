@@ -52,7 +52,7 @@ public:
         return id_;
     }
 
-    const PlanNode* root() const {
+    PlanNode* root() const {
         return root_;
     }
 

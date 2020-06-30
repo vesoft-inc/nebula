@@ -71,7 +71,15 @@ Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
         case PlanNode::Kind::kAggregate:
         case PlanNode::Kind::kSelect:
         case PlanNode::Kind::kLoop:
-        case PlanNode::Kind::kSwitchSpace: {
+        case PlanNode::Kind::kSwitchSpace:
+        case PlanNode::Kind::kCreateSpace:
+        case PlanNode::Kind::kCreateTag:
+        case PlanNode::Kind::kCreateEdge:
+        case PlanNode::Kind::kDescSpace:
+        case PlanNode::Kind::kDescTag:
+        case PlanNode::Kind::kDescEdge:
+        case PlanNode::Kind::kInsertVertices:
+        case PlanNode::Kind::kInsertEdges: {
             static_cast<SingleInputNode*>(node)->setInput(appended);
             break;
         }

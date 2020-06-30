@@ -161,6 +161,15 @@ TEST_F(SchemaTest, TestInsert) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "INSERT VERTEX student(name, age, grade) "
+                            "VALUES \"Tom\":(\"Tom\", 18, \"three\");"
+                            "INSERT VERTEX student(name, age, grade) "
+                            "VALUES \"Tom\":(\"Tom\", 18, \"three\");";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "INSERT VERTEX student(name, age, grade) "
                             "VALUES 100:(\"100\", 17, \"three\");";
         auto code = client_->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
@@ -175,6 +184,15 @@ TEST_F(SchemaTest, TestInsert) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "INSERT EDGE schoolmate(start, end) "
+                            "VALUES \"Tom\"->\"Lily\":(2009, 2011)";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "INSERT EDGE schoolmate(start, end) "
+                            "VALUES \"Tom\"->\"Lily\":(2009, 2011);"
+                            "INSERT EDGE schoolmate(start, end) "
                             "VALUES \"Tom\"->\"Lily\":(2009, 2011)";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);

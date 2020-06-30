@@ -60,6 +60,14 @@ protected:
                 case PlanNode::Kind::kStart: {
                     break;
                 }
+                case PlanNode::Kind::kCreateSpace:
+                case PlanNode::Kind::kCreateTag:
+                case PlanNode::Kind::kCreateEdge:
+                case PlanNode::Kind::kDescSpace:
+                case PlanNode::Kind::kDescTag:
+                case PlanNode::Kind::kDescEdge:
+                case PlanNode::Kind::kInsertVertices:
+                case PlanNode::Kind::kInsertEdges:
                 case PlanNode::Kind::kGetNeighbors:
                 case PlanNode::Kind::kGetVertices:
                 case PlanNode::Kind::kGetEdges:
@@ -76,16 +84,6 @@ protected:
                     auto* current = static_cast<const SingleInputNode*>(node);
                     queue.emplace(current->input());
                     break;
-                }
-                case PlanNode::Kind::kCreateSpace:
-                case PlanNode::Kind::kCreateTag:
-                case PlanNode::Kind::kCreateEdge:
-                case PlanNode::Kind::kDescSpace:
-                case PlanNode::Kind::kDescTag:
-                case PlanNode::Kind::kDescEdge:
-                case PlanNode::Kind::kInsertVertices:
-                case PlanNode::Kind::kInsertEdges: {
-                    // TODO: DDLs and DMLs are kind of single input node.
                 }
                 case PlanNode::Kind::kUnion:
                 case PlanNode::Kind::kIntersect:

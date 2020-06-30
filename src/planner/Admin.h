@@ -7,7 +7,7 @@
 #ifndef PLANNER_ADMIN_H_
 #define PLANNER_ADMIN_H_
 
-#include "planner/PlanNode.h"
+#include "planner/Query.h"
 #include "common/interface/gen-cpp2/meta_types.h"
 #include "common/clients/meta/MetaClient.h"
 
@@ -28,12 +28,14 @@ class Show final : public PlanNode {
     }
 };
 
-class CreateSpace final : public PlanNode {
+class CreateSpace final : public SingleInputNode {
 public:
     static CreateSpace* make(ExecutionPlan* plan,
+                             PlanNode* input,
                              meta::SpaceDesc props,
                              bool ifNotExists) {
     return new CreateSpace(plan,
+                           input,
                            std::move(props),
                            ifNotExists);
     }
@@ -53,12 +55,13 @@ public:
 
 private:
     CreateSpace(ExecutionPlan* plan,
+                PlanNode* input,
                 meta::SpaceDesc props,
                 bool ifNotExists)
-        : PlanNode(plan, Kind::kCreateSpace) {
-            props_ = std::move(props);
-            ifNotExists_ = ifNotExists;
-        }
+    : SingleInputNode(plan, Kind::kCreateSpace, input) {
+        props_ = std::move(props);
+        ifNotExists_ = ifNotExists;
+    }
 
 
 private:
@@ -73,11 +76,12 @@ public:
     }
 };
 
-class DescSpace final : public PlanNode {
+class DescSpace final : public SingleInputNode {
 public:
     static DescSpace* make(ExecutionPlan* plan,
+                           PlanNode* input,
                            std::string spaceName) {
-    return new DescSpace(plan, std::move(spaceName));
+    return new DescSpace(plan, input, std::move(spaceName));
     }
 
     std::string explain() const override {
@@ -90,10 +94,11 @@ public:
 
 private:
     DescSpace(ExecutionPlan* plan,
+              PlanNode* input,
               std::string spaceName)
-        : PlanNode(plan, Kind::kDescSpace) {
-            spaceName_ = std::move(spaceName);
-        }
+    : SingleInputNode(plan, Kind::kDescSpace, input) {
+        spaceName_ = std::move(spaceName);
+    }
 
 private:
     std::string           spaceName_;

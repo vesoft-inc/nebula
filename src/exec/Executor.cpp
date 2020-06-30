@@ -200,42 +200,58 @@ Executor *Executor::makeExecutor(const PlanNode *node,
         }
         case PlanNode::Kind::kCreateSpace: {
             auto createSpace = asNode<CreateSpace>(node);
+            auto input = makeExecutor(createSpace->input(), qctx, visited);
             exec = new CreateSpaceExecutor(createSpace, qctx);
+            exec->addDependent(input);
             break;
         }
         case PlanNode::Kind::kDescSpace: {
             auto descSpace = asNode<DescSpace>(node);
+            auto input = makeExecutor(descSpace->input(), qctx, visited);
             exec = new DescSpaceExecutor(descSpace, qctx);
+            exec->addDependent(input);
             break;
         }
         case PlanNode::Kind::kCreateTag: {
             auto createTag = asNode<CreateTag>(node);
+            auto input = makeExecutor(createTag->input(), qctx, visited);
             exec = new CreateTagExecutor(createTag, qctx);
+            exec->addDependent(input);
             break;
         }
         case PlanNode::Kind::kDescTag: {
             auto descTag = asNode<DescTag>(node);
+            auto input = makeExecutor(descTag->input(), qctx, visited);
             exec = new DescTagExecutor(descTag, qctx);
+            exec->addDependent(input);
             break;
         }
         case PlanNode::Kind::kCreateEdge: {
             auto createEdge = asNode<CreateEdge>(node);
+            auto input = makeExecutor(createEdge->input(), qctx, visited);
             exec = new CreateEdgeExecutor(createEdge, qctx);
+            exec->addDependent(input);
             break;
         }
         case PlanNode::Kind::kDescEdge: {
             auto descEdge = asNode<DescEdge>(node);
+            auto input = makeExecutor(descEdge->input(), qctx, visited);
             exec = new DescEdgeExecutor(descEdge, qctx);
+            exec->addDependent(input);
             break;
         }
         case PlanNode::Kind::kInsertVertices: {
             auto insertV = asNode<InsertVertices>(node);
+            auto input = makeExecutor(insertV->input(), qctx, visited);
             exec = new InsertVerticesExecutor(insertV, qctx);
+            exec->addDependent(input);
             break;
         }
         case PlanNode::Kind::kInsertEdges: {
             auto insertE = asNode<InsertEdges>(node);
+            auto input = makeExecutor(insertE->input(), qctx, visited);
             exec = new InsertEdgesExecutor(insertE, qctx);
+            exec->addDependent(input);
             break;
         }
         case PlanNode::Kind::kDataCollect: {

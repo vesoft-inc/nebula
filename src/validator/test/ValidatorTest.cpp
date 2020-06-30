@@ -118,5 +118,26 @@ TEST_F(ValidatorTest, TestFirstSentence) {
     }
 }
 
+TEST_F(ValidatorTest, TestSpace) {
+    {
+        std::string query = "CREATE SPACE TEST";
+        auto result = GQLParser().parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+        auto sentences = std::move(result).value();
+        auto context = buildContext();
+        ASTValidator validator(sentences.get(), context.get());
+        auto validateResult = validator.validate();
+        ASSERT_TRUE(validateResult.ok()) << validateResult;
+        auto plan = context->plan();
+        ASSERT_NE(plan, nullptr);
+        using PK = nebula::graph::PlanNode::Kind;
+        std::vector<PlanNode::Kind> expected = {
+            PK::kCreateSpace,
+            PK::kStart,
+        };
+        ASSERT_TRUE(verifyPlan(plan->root(), expected));
+    }
+}
+
 }  // namespace graph
 }  // namespace nebula
