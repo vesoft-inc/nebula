@@ -56,19 +56,23 @@ public:
     static const ExecResult kEmptyResult;
     static const std::vector<ExecResult> kEmptyResultList;
 
+    static ExecResult buildDefault(std::shared_ptr<Value> val) {
+        return ExecResult(val);
+    }
+
     static ExecResult buildDefault(Value&& val) {
-        return ExecResult(std::move(val));
+        return ExecResult(std::make_shared<Value>(std::move(val)));
     }
 
     static ExecResult buildGetNeighbors(Value&& val, State&& stat) {
-        ExecResult result(std::move(val), std::move(stat));
+        ExecResult result(std::make_shared<Value>(std::move(val)), std::move(stat));
         auto iter = std::make_unique<GetNeighborsIter>(result.valuePtr());
         result.setIter(std::move(iter));
         return result;
     }
 
     static ExecResult buildSequential(Value&& val, State&& stat) {
-        ExecResult result(std::move(val), std::move(stat));
+        ExecResult result(std::make_shared<Value>(std::move(val)), std::move(stat));
         auto iter = std::make_unique<SequentialIter>(result.valuePtr());
         result.setIter(std::move(iter));
         return result;
@@ -104,13 +108,12 @@ private:
           state_(State::Stat::kUnExecuted, ""),
           iter_(std::make_unique<DefaultIter>(value_)) {}
 
-    explicit ExecResult(Value&& val)
-        : value_(std::make_shared<Value>(std::move(val))),
+    explicit ExecResult(std::shared_ptr<Value> val)
+        : value_(val),
           state_(State::Stat::kSuccess, ""),
           iter_(std::make_unique<DefaultIter>(value_)) {}
 
-    ExecResult(Value&& val, State stat)
-        : value_(std::make_shared<Value>(std::move(val))), state_(stat) {}
+    ExecResult(std::shared_ptr<Value> val, State stat) : value_(val), state_(stat) {}
 
 private:
     std::shared_ptr<Value>          value_;

@@ -46,6 +46,7 @@ nebula_add_test(
         ProjectTest.cpp
         GetNeighborsTest.cpp
         DataCollectTest.cpp
+        SetExecutorTest.cpp
     OBJECTS
         ${EXEC_QUERY_TEST_LIBS}
     LIBRARIES

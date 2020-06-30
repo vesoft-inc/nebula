@@ -22,12 +22,17 @@ public:
         kDefault,
         kGetNeighbors,
         kSequential,
+        kUnion,
     };
 
     explicit Iterator(std::shared_ptr<Value> value, Kind kind)
         : value_(value), kind_(kind) {}
 
     virtual ~Iterator() = default;
+
+    Kind kind() const {
+        return kind_;
+    }
 
     virtual std::unique_ptr<Iterator> copy() const = 0;
 
@@ -36,6 +41,8 @@ public:
     virtual void next() = 0;
 
     virtual void erase() = 0;
+
+    virtual const Row* row() const = 0;
 
     // Reset iterator position to `pos' from begin. Must be sure that the `pos' position
     // is lower than `size()' before resetting
@@ -46,6 +53,10 @@ public:
 
     void operator++() {
         next();
+    }
+
+    virtual std::shared_ptr<Value> valuePtr() const {
+        return value_;
     }
 
     virtual const Value& value() const {
@@ -63,10 +74,7 @@ public:
     }
 
     // The derived class should rewrite get prop if the Value is kind of dataset.
-    virtual const Value& getColumn(const std::string& col) const {
-        UNUSED(col);
-        return Value::kEmpty;
-    }
+    virtual const Value& getColumn(const std::string& col) const = 0;
 
     virtual const Value& getTagProp(const std::string& tag,
                                     const std::string& prop) const {
@@ -94,7 +102,6 @@ protected:
     virtual void doReset(size_t pos) = 0;
 
     std::shared_ptr<Value> value_;
-
     Kind                   kind_;
 };
 
@@ -121,6 +128,14 @@ public:
 
     size_t size() const override {
         return 1;
+    }
+
+    const Value& getColumn(const std::string& /* col */) const override {
+        return Value::kEmpty;
+    }
+
+    const Row* row() const override {
+        return nullptr;
     }
 
 private:
@@ -203,6 +218,11 @@ public:
         return edges;
     }
 
+    const Row* row() const override {
+        auto& current = *iter_;
+        return std::get<1>(current);
+    }
+
 private:
     void doReset(size_t pos) override {
         iter_ = logicalRows_.begin() + pos;
@@ -253,11 +273,6 @@ private:
     inline size_t currentSeg() const {
         auto& current = *iter_;
         return std::get<0>(current);
-    }
-
-    inline const Row* currentRow() const {
-        auto& current = *iter_;
-        return std::get<1>(current);
     }
 
     inline const std::string& currentEdgeName() const {
@@ -318,10 +333,9 @@ public:
     }
 
     void next() override {
-        if (!valid()) {
-            return;
+        if (valid()) {
+            ++iter_;
         }
-        ++iter_;
     }
 
     void erase() override {
@@ -346,6 +360,10 @@ public:
         }
     }
 
+    const Row* row() const override {
+        return *iter_;
+    }
+
 private:
     void doReset(size_t pos) override {
         iter_ = rows_.begin() + pos;
@@ -356,6 +374,96 @@ private:
     std::unordered_map<std::string, int64_t>     colIndex_;
 };
 
+class UnionIterator final : public Iterator {
+public:
+    UnionIterator(std::unique_ptr<Iterator> left, std::unique_ptr<Iterator> right)
+        : Iterator(left->valuePtr(), Kind::kUnion),
+          left_(std::move(left)),
+          right_(std::move(right)) {}
+
+    std::unique_ptr<Iterator> copy() const override {
+        auto iter = std::make_unique<UnionIterator>(left_->copy(), right_->copy());
+        iter->reset();
+        return iter;
+    }
+
+    bool valid() const override {
+        return left_->valid() || right_->valid();
+    }
+
+    void next() override {
+        if (left_->valid()) {
+            left_->next();
+        } else {
+            if (right_->valid()) {
+                right_->next();
+            }
+        }
+    }
+
+    size_t size() const override {
+        return left_->size() + right_->size();
+    }
+
+    void erase() override {
+        if (left_->valid()) {
+            left_->erase();
+        } else {
+            if (right_->valid()) {
+                right_->erase();
+            }
+        }
+    }
+
+    const Value& getColumn(const std::string& col) const override {
+        if (left_->valid()) {
+            return left_->getColumn(col);
+        }
+        if (right_->valid()) {
+            return right_->getColumn(col);
+        }
+        return Value::kEmpty;
+    }
+
+    const Row* row() const override {
+        if (left_->valid()) return left_->row();
+        if (right_->valid()) return right_->row();
+        return nullptr;
+    }
+
+private:
+    void doReset(size_t poc) override {
+        if (poc < left_->size()) {
+            left_->reset(poc);
+            right_->reset();
+        } else {
+            right_->reset(poc - left_->size());
+        }
+    }
+
+    std::unique_ptr<Iterator> left_;
+    std::unique_ptr<Iterator> right_;
+};
+
 }  // namespace graph
 }  // namespace nebula
+
+namespace std {
+
+template <>
+struct equal_to<const nebula::Row*> {
+    bool operator()(const nebula::Row* lhs, const nebula::Row* rhs) const {
+        return *lhs == *rhs;
+    }
+};
+
+template <>
+struct hash<const nebula::Row*> {
+    size_t operator()(const nebula::Row* row) const {
+        return hash<nebula::Row>()(*row);
+    }
+};
+
+}   // namespace std
+
 #endif  // CONTEXT_ITERATOR_H_

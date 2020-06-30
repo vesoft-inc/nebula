@@ -17,9 +17,8 @@ namespace nebula {
 namespace graph {
 
 std::ostream& operator<<(std::ostream& os, const std::vector<PlanNode::Kind>& plan) {
-    std::vector<const char*> kinds;
-    kinds.reserve(plan.size());
-    std::transform(plan.cbegin(), plan.cend(), std::back_inserter(kinds), PlanNode::toString);
+    std::vector<const char*> kinds(plan.size());
+    std::transform(plan.cbegin(), plan.cend(), kinds.begin(), PlanNode::toString);
     os << "[" << folly::join(", ", kinds) << "]";
     return os;
 }

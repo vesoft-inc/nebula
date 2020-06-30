@@ -7,15 +7,15 @@
 #ifndef EXEC_QUERY_UNIONEXECUTOR_H_
 #define EXEC_QUERY_UNIONEXECUTOR_H_
 
-#include "exec/Executor.h"
+#include "exec/query/SetExecutor.h"
 
 namespace nebula {
 namespace graph {
 
-class UnionExecutor : public Executor {
+class UnionExecutor : public SetExecutor {
 public:
     UnionExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("UnionExecutor", node, qctx) {}
+        : SetExecutor("UnionExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 };

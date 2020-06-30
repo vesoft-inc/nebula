@@ -157,8 +157,7 @@ const Value& GetNeighborsIter::getColumn(const std::string& col) const {
     if (found == index.end()) {
         return Value::kNullValue;
     }
-    auto row = currentRow();
-    return row->values[found->second];
+    return row()->values[found->second];
 }
 
 const Value& GetNeighborsIter::getTagProp(const std::string& tag,
@@ -177,7 +176,7 @@ const Value& GetNeighborsIter::getTagProp(const std::string& tag,
         return Value::kNullValue;
     }
     auto colId = index->second.first;
-    auto& row = *currentRow();
+    auto& row = *this->row();
     DCHECK_GT(row.size(), colId);
     if (!row[colId].isList()) {
         return Value::kNullBadType;
@@ -226,7 +225,7 @@ Value GetNeighborsIter::getVertex() const {
     vertex.vid = vidVal.getStr();
     auto& tagPropMap = tagPropMaps_[segment];
     for (auto& tagProp : tagPropMap) {
-        auto& row = *currentRow();
+        auto& row = *this->row();
         auto& tagPropNameList = tagProp.second.second;
         auto tagColId = tagProp.second.first;
         if (!row[tagColId].isList()) {
