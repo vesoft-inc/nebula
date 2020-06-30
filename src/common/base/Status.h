@@ -19,6 +19,9 @@
 
 namespace nebula {
 
+template <typename T>
+class StatusOr;
+
 class Status final {
 public:
     Status() = default;
@@ -49,6 +52,20 @@ public:
             state_ = std::move(rhs.state_);
         }
         return *this;
+    }
+
+    static Status from(Status s) {
+        return s;
+    }
+
+    template <typename T>
+    static Status from(StatusOr<T> &&s) {
+        return std::move(s).status();
+    }
+
+    template <typename T>
+    static Status from(const StatusOr<T> &s) {
+        return s.status();
     }
 
     bool operator==(const Status &rhs) const {
@@ -198,12 +215,24 @@ inline std::ostream& operator<<(std::ostream &os, const Status &status) {
     return os << status.toString();
 }
 
+}   // namespace nebula
+
 #define NG_RETURN_IF_ERROR(...)                                                                    \
     do {                                                                                           \
-        ::nebula::Status _status = (__VA_ARGS__);                                                  \
-        if (UNLIKELY(!_status.ok())) return _status;                                               \
+        auto s = (__VA_ARGS__);                                                                    \
+        if (UNLIKELY(!s.ok())) {                                                                   \
+            return ::nebula::Status::from(std::move(s));                                           \
+        }                                                                                          \
     } while (0)
 
-}   // namespace nebula
+#define NG_LOG_AND_RETURN_IF_ERROR(...)                                                            \
+    do {                                                                                           \
+        auto s = (__VA_ARGS__);                                                                    \
+        if (UNLIKELY(!s.ok())) {                                                                   \
+            ::nebula::Status status = ::nebula::Status::from(std::move(s));                        \
+            LOG(ERROR) << status;                                                                  \
+            return status;                                                                         \
+        }                                                                                          \
+    } while (0)
 
 #endif  // COMMON_BASE_STATUS_H_
