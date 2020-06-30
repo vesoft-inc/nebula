@@ -126,6 +126,18 @@ struct Value {
     bool isNull() const {
         return type_ == Type::NULLVALUE;
     }
+    bool isBadNull() const {
+        if (!isNull()) {
+            return false;
+        }
+        auto& null = value_.nVal;
+        return null == NullType::NaN
+            || null == NullType::BAD_DATA
+            || null == NullType::BAD_TYPE
+            || null == NullType::ERR_OVERFLOW
+            || null == NullType::UNKNOWN_PROP
+            || null == NullType::DIV_BY_ZERO;
+    }
     bool isNumeric() const {
         return type_ == Type::INT || type_ == Type::FLOAT;
     }
