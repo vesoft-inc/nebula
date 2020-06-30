@@ -497,9 +497,11 @@ public:
                                                              EdgeType edgeType,
                                                              const std::string& field);
 
-    std::vector<cpp2::RoleItem> getRolesByUserFromCache(const std::string& user);
+    std::vector<cpp2::RoleItem> getRolesByUserFromCache(const std::string& user) const;
 
-    bool authCheckFromCache(const std::string& account, const std::string& password);
+    bool authCheckFromCache(const std::string& account, const std::string& password) const;
+
+    bool checkShadowAccountFromCache(const std::string& account) const;
 
     Status refreshCache();
 
