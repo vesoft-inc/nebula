@@ -38,9 +38,8 @@ public:
         } else if (!reader_->reset(*schemas_, val)) {
             return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
         }
-        auto ttl = this->getEdgeTTLInfo(edgeContext_, edgeType_);
-        if (ttl.hasValue()) {
-            auto ttlValue = ttl.value();
+        if (ttl_.hasValue()) {
+            auto ttlValue = ttl_.value();
             if (CommonUtils::checkDataExpiredForTTL(schemas_->back().get(), reader_.get(),
                                                     ttlValue.first, ttlValue.second)) {
                 return nullHandler(props_);
@@ -48,66 +47,68 @@ public:
         }
         if (exp_ != nullptr) {
             // todo(doodle): eval the expression which can be applied to the edge node,
-            // which means we can only apply to FetchEdgeNode or EdgeTypePrefixScanNode.
-            // exp_->eval();
+            // which means we can only apply to FetchEdgeNode or SingleEdgeNode.
+            exp_->eval(*expCtx_);
         }
         return valueHandler(edgeType_, key, reader_.get(), props_);
     }
 
+    const std::string& getEdgeName() {
+        return edgeName_;
+    }
+
 protected:
-    EdgeNode(EdgeContext* ctx,
-             StorageEnv* env,
-             GraphSpaceID spaceId,
-             size_t vIdLen,
+    EdgeNode(PlanContext* planCtx,
+             EdgeContext* ctx,
              EdgeType edgeType,
              const std::vector<PropContext>* props,
-             const Expression* exp = nullptr)
-        : edgeContext_(ctx)
-        , env_(env)
-        , spaceId_(spaceId)
-        , vIdLen_(vIdLen)
+             ExpressionContext* expCtx,
+             Expression* exp)
+        : planContext_(planCtx)
+        , edgeContext_(ctx)
         , edgeType_(edgeType)
         , props_(props)
+        , expCtx_(expCtx)
         , exp_(exp) {
         auto schemaIter = edgeContext_->schemas_.find(std::abs(edgeType_));
         CHECK(schemaIter != edgeContext_->schemas_.end());
         CHECK(!schemaIter->second.empty());
         schemas_ = &(schemaIter->second);
+        ttl_ = QueryUtils::getEdgeTTLInfo(edgeContext_, edgeType_);
+        edgeName_ = edgeContext_->edgeNames_[edgeType_];
     }
 
-    EdgeNode(EdgeContext* ctx,
-             StorageEnv* env,
-             GraphSpaceID spaceId,
-             size_t vIdLen)
-        : edgeContext_(ctx)
-        , env_(env)
-        , spaceId_(spaceId)
-        , vIdLen_(vIdLen) {}
+    EdgeNode(PlanContext* planCtx,
+             EdgeContext* ctx)
+        : planContext_(planCtx)
+        , edgeContext_(ctx) {}
 
+    PlanContext* planContext_;
     EdgeContext* edgeContext_;
-    StorageEnv* env_;
-    GraphSpaceID spaceId_;
-    size_t vIdLen_;
     EdgeType edgeType_;
     const std::vector<PropContext>* props_;
-    const Expression* exp_;
+    ExpressionContext* expCtx_;
+    Expression* exp_;
+
     const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>* schemas_ = nullptr;
+    folly::Optional<std::pair<std::string, int64_t>> ttl_;
+    std::string edgeName_;
 
     std::unique_ptr<RowReader> reader_;
     std::unique_ptr<EdgeIterator> iter_;
     std::string prefix_;
 };
 
+// FetchEdgeNode is used to fetch a single edge
 class FetchEdgeNode final : public EdgeNode<cpp2::EdgeKey> {
 public:
-    FetchEdgeNode(EdgeContext* ctx,
-                  StorageEnv* env,
-                  GraphSpaceID spaceId,
-                  size_t vIdLen,
+    FetchEdgeNode(PlanContext* planCtx,
+                  EdgeContext* ctx,
                   EdgeType edgeType,
                   const std::vector<PropContext>* props,
-                  const Expression* exp = nullptr)
-        : EdgeNode(ctx, env, spaceId, vIdLen, edgeType, props, exp) {}
+                  ExpressionContext* expCtx = nullptr,
+                  Expression* exp = nullptr)
+        : EdgeNode(planCtx, ctx, edgeType, props, expCtx, exp) {}
 
     kvstore::ResultCode execute(PartitionID partId, const cpp2::EdgeKey& edgeKey) override {
         auto ret = RelNode::execute(partId, edgeKey);
@@ -118,16 +119,18 @@ public:
         VLOG(1) << "partId " << partId << ", edgeType " << edgeType_
                 << ", prop size " << props_->size();
         if (edgeKey.edge_type == edgeType_) {
-            prefix_ = NebulaKeyUtils::edgePrefix(vIdLen_,
+            prefix_ = NebulaKeyUtils::edgePrefix(planContext_->vIdLen_,
                                                  partId,
                                                  edgeKey.src,
                                                  edgeKey.edge_type,
                                                  edgeKey.ranking,
                                                  edgeKey.dst);
             std::unique_ptr<kvstore::KVIterator> iter;
-            auto code = env_->kvstore_->prefix(spaceId_, partId, prefix_, &iter);
+            auto code = planContext_->env_->kvstore_->prefix(
+                planContext_->spaceId_, partId, prefix_, &iter);
             if (code == kvstore::ResultCode::SUCCEEDED && iter && iter->valid()) {
-                iter_.reset(new SingleEdgeIterator(std::move(iter), edgeType_, vIdLen_));
+                iter_.reset(new SingleEdgeIterator(
+                    std::move(iter), edgeType_, planContext_->vIdLen_, schemas_, &ttl_));
             }
         } else {
             iter_.reset();
@@ -136,16 +139,16 @@ public:
     }
 };
 
-class EdgeTypePrefixScanNode final : public EdgeNode<VertexID> {
+// SingleEdgeNode is used to scan all edges of a specified edgeType of the same srcId
+class SingleEdgeNode final : public EdgeNode<VertexID> {
 public:
-    EdgeTypePrefixScanNode(EdgeContext* ctx,
-                           StorageEnv* env,
-                           GraphSpaceID spaceId,
-                           size_t vIdLen,
-                           EdgeType edgeType,
-                           const std::vector<PropContext>* props,
-                           const Expression* exp = nullptr)
-        : EdgeNode(ctx, env, spaceId, vIdLen, edgeType, props, exp) {}
+    SingleEdgeNode(PlanContext* planCtx,
+                   EdgeContext* ctx,
+                   EdgeType edgeType,
+                   const std::vector<PropContext>* props,
+                   ExpressionContext* expCtx = nullptr,
+                   Expression* exp = nullptr)
+        : EdgeNode(planCtx, ctx, edgeType, props, expCtx, exp) {}
 
     kvstore::ResultCode execute(PartitionID partId, const VertexID& vId) override {
         auto ret = RelNode::execute(partId, vId);
@@ -156,10 +159,11 @@ public:
         VLOG(1) << "partId " << partId << ", vId " << vId << ", edgeType " << edgeType_
                 << ", prop size " << props_->size();
         std::unique_ptr<kvstore::KVIterator> iter;
-        prefix_ = NebulaKeyUtils::edgePrefix(vIdLen_, partId, vId, edgeType_);
-        ret = env_->kvstore_->prefix(spaceId_, partId, prefix_, &iter);
+        prefix_ = NebulaKeyUtils::edgePrefix(planContext_->vIdLen_, partId, vId, edgeType_);
+        ret = planContext_->env_->kvstore_->prefix(planContext_->spaceId_, partId, prefix_, &iter);
         if (ret == kvstore::ResultCode::SUCCEEDED && iter && iter->valid()) {
-            iter_.reset(new SingleEdgeIterator(std::move(iter), edgeType_, vIdLen_));
+            iter_.reset(new SingleEdgeIterator(std::move(iter), edgeType_, planContext_->vIdLen_,
+                                               schemas_, &ttl_));
         } else {
             iter_.reset();
         }
@@ -167,13 +171,14 @@ public:
     }
 };
 
-class VertexPrefixScanNode final : public EdgeNode<VertexID> {
+// AllEdgeNode is used to scan all edges of a srcId, also can specified all out-edges or in-edges
+class AllEdgeNode final : public EdgeNode<VertexID> {
 public:
-    VertexPrefixScanNode(EdgeContext* ctx,
-                         StorageEnv* env,
-                         GraphSpaceID spaceId,
-                         size_t vIdLen)
-        : EdgeNode(ctx, env, spaceId, vIdLen) {}
+    AllEdgeNode(PlanContext* planCtx,
+                EdgeContext* ctx,
+                const cpp2::EdgeDirection& dir = cpp2::EdgeDirection::BOTH)
+        : EdgeNode(planCtx, ctx)
+        , dir_(dir) {}
 
     kvstore::ResultCode execute(PartitionID partId, const VertexID& vId) override {
         auto ret = RelNode::execute(partId, vId);
@@ -183,15 +188,19 @@ public:
 
         VLOG(1) << "partId " << partId << ", vId " << vId << ", scan all edges";
         std::unique_ptr<kvstore::KVIterator> iter;
-        prefix_ = NebulaKeyUtils::edgePrefix(vIdLen_, partId, vId);
-        ret = env_->kvstore_->prefix(spaceId_, partId, prefix_, &iter);
+        prefix_ = NebulaKeyUtils::edgePrefix(planContext_->vIdLen_, partId, vId);
+        ret = planContext_->env_->kvstore_->prefix(planContext_->spaceId_, partId, prefix_, &iter);
         if (ret == kvstore::ResultCode::SUCCEEDED && iter && iter->valid()) {
-            iter_.reset(new AllEdgeIterator(edgeContext_, std::move(iter), vIdLen_));
+            iter_.reset(
+                new AllEdgeIterator(edgeContext_, std::move(iter), planContext_->vIdLen_, dir_));
         } else {
             iter_.reset();
         }
         return kvstore::ResultCode::SUCCEEDED;
     }
+
+private:
+    cpp2::EdgeDirection dir_;
 };
 
 }  // namespace storage

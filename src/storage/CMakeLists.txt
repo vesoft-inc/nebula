@@ -24,6 +24,7 @@ nebula_add_library(
 nebula_add_library(
     graph_storage_service_handler OBJECT
     GraphStorageServiceHandler.cpp
+    context/StorageExpressionContext.cpp
     mutate/AddVerticesProcessor.cpp
     mutate/DeleteVerticesProcessor.cpp
     mutate/AddEdgesProcessor.cpp

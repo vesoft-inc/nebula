@@ -17,24 +17,24 @@ namespace storage {
 // TagNode will return a DataSet of specified props of tagId
 class TagNode final : public RelNode<VertexID> {
 public:
-    TagNode(TagContext* ctx,
-            StorageEnv* env,
-            GraphSpaceID spaceId,
-            size_t vIdLen,
+    TagNode(PlanContext* planCtx,
+            TagContext* ctx,
             TagID tagId,
             const std::vector<PropContext>* props,
-            const Expression* exp = nullptr)
-        : tagContext_(ctx)
-        , env_(env)
-        , spaceId_(spaceId)
-        , vIdLen_(vIdLen)
+            ExpressionContext* expCtx = nullptr,
+            Expression* exp = nullptr)
+        : planContext_(planCtx)
+        , tagContext_(ctx)
         , tagId_(tagId)
         , props_(props)
+        , expCtx_(expCtx)
         , exp_(exp) {
         auto schemaIter = tagContext_->schemas_.find(tagId_);
         CHECK(schemaIter != tagContext_->schemas_.end());
         CHECK(!schemaIter->second.empty());
         schemas_ = &(schemaIter->second);
+        ttl_ = QueryUtils::getTagTTLInfo(tagContext_, tagId_);
+        tagName_ = tagContext_->tagNames_[tagId_];
     }
 
     kvstore::ResultCode execute(PartitionID partId, const VertexID& vId) override {
@@ -58,10 +58,10 @@ public:
         }
 
         std::unique_ptr<kvstore::KVIterator> iter;
-        prefix_ = NebulaKeyUtils::vertexPrefix(vIdLen_, partId, vId, tagId_);
-        ret = env_->kvstore_->prefix(spaceId_, partId, prefix_, &iter);
+        prefix_ = NebulaKeyUtils::vertexPrefix(planContext_->vIdLen_, partId, vId, tagId_);
+        ret = planContext_->env_->kvstore_->prefix(planContext_->spaceId_, partId, prefix_, &iter);
         if (ret == kvstore::ResultCode::SUCCEEDED && iter && iter->valid()) {
-            iter_.reset(new SingleTagIterator(std::move(iter), tagId_, vIdLen_));
+            iter_.reset(new SingleTagIterator(std::move(iter), tagId_, planContext_->vIdLen_));
         } else {
             iter_.reset();
         }
@@ -79,36 +79,45 @@ public:
             return nullHandler(props_);
         }
 
-        auto reader = RowReader::getRowReader(*schemas_, value);
-        if (!reader) {
-            VLOG(1) << "Can't get tag reader of " << tagId_;
+        if (!reader_) {
+            reader_ = RowReader::getRowReader(*schemas_, value);
+            if (!reader_) {
+                VLOG(1) << "Can't get tag reader of " << tagId_;
+                return kvstore::ResultCode::ERR_TAG_NOT_FOUND;
+            }
+        } else if (!reader_->reset(*schemas_, value)) {
             return kvstore::ResultCode::ERR_TAG_NOT_FOUND;
         }
-        auto ttl = getTagTTLInfo(tagContext_, tagId_);
-        if (ttl.hasValue()) {
-            auto ttlValue = ttl.value();
-            if (CommonUtils::checkDataExpiredForTTL(schemas_->back().get(), reader.get(),
+        if (ttl_.hasValue()) {
+            auto ttlValue = ttl_.value();
+            if (CommonUtils::checkDataExpiredForTTL(schemas_->back().get(), reader_.get(),
                                                     ttlValue.first, ttlValue.second)) {
                 return nullHandler(props_);
             }
         }
         if (exp_ != nullptr) {
             // todo(doodle): eval the expression which can be applied to the tag node
-            // exp_->eval();
+            exp_->eval(*expCtx_);
         }
-        return valueHandler(tagId_, reader.get(), props_);
+        return valueHandler(tagId_, reader_.get(), props_);
+    }
+
+    const std::string& getTagName() {
+        return tagName_;
     }
 
 private:
+    PlanContext* planContext_;
     TagContext* tagContext_;
-    StorageEnv* env_;
-    GraphSpaceID spaceId_;
-    size_t vIdLen_;
     TagID tagId_;
     const std::vector<PropContext>* props_;
-    const Expression* exp_;
+    ExpressionContext* expCtx_;
+    Expression* exp_;
     const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>* schemas_ = nullptr;
+    folly::Optional<std::pair<std::string, int64_t>> ttl_;
+    std::string tagName_;
 
+    std::unique_ptr<RowReader> reader_;
     std::unique_ptr<StorageIterator> iter_;
     std::string prefix_;
     std::string cacheResult_;

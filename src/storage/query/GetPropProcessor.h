@@ -47,10 +47,13 @@ protected:
 
     cpp2::ErrorCode buildEdgeContext(const cpp2::GetPropRequest& req);
 
-    kvstore::ResultCode processOneVertex(PartitionID partId, const std::string& prefix);
+    void buildTagColName(const std::vector<cpp2::VertexProp>& tagProps);
+    void buildEdgeColName(const std::vector<cpp2::EdgeProp>& edgeProps);
 
 private:
     bool isEdge_ = false;                   // true for edge, false for tag
+    std::unique_ptr<StorageExpressionContext> expCtx_;
+    std::vector<std::unique_ptr<Expression>> yields_;
 };
 
 }  // namespace storage

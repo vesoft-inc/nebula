@@ -41,6 +41,7 @@ TEST(MemberChangeTest, AddRemovePeerTest) {
     {
         auto f = leader->sendCommandAsync(test::encodeAddPeer(allHosts[3]));
         f.wait();
+        sleep(FLAGS_raft_heartbeat_interval_secs);
 
         for (auto& c : copies) {
             CHECK_EQ(3, c->hosts_.size());
@@ -69,6 +70,7 @@ TEST(MemberChangeTest, AddRemovePeerTest) {
         LOG(INFO) << "Remove the peer added!";
         auto f = leader->sendCommandAsync(test::encodeRemovePeer(allHosts[3]));
         f.wait();
+        sleep(FLAGS_raft_heartbeat_interval_secs);
 
         for (size_t i = 0; i < copies.size() - 1; i++) {
             CHECK_EQ(2, copies[i]->hosts_.size());

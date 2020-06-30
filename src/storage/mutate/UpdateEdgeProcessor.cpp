@@ -428,7 +428,7 @@ cpp2::ErrorCode UpdateEdgeProcessor::checkAndBuildContexts(
     }
     if (this->expCtx_->hasDstTagProp() || this->expCtx_->hasVariableProp()
         || this->expCtx_->hasInputProp()) {
-        LOG(ERROR) << "should only contain SrcTagProp or EdgeProp expression!";
+        LOG(ERROR) << "should only contain SrcTagProp or EntryProp expression!";
         return cpp2::ErrorCode::E_INVALID_UPDATER;
     }
     return cpp2::ErrorCode::SUCCEEDED;

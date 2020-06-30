@@ -6,12 +6,12 @@
 
 #include "storage/query/GetNeighborsProcessor.h"
 #include "storage/StorageFlags.h"
-#include "storage/exec/FilterContext.h"
 #include "storage/exec/TagNode.h"
 #include "storage/exec/EdgeNode.h"
+#include "storage/exec/HashJoinNode.h"
 #include "storage/exec/FilterNode.h"
-#include "storage/exec/GetNeighborsNode.h"
 #include "storage/exec/AggregateNode.h"
+#include "storage/exec/GetNeighborsNode.h"
 
 namespace nebula {
 namespace storage {
@@ -26,6 +26,8 @@ void GetNeighborsProcessor::process(const cpp2::GetNeighborsRequest& req) {
         onFinished();
         return;
     }
+    planContext_ = std::make_unique<PlanContext>(env_, spaceId_, spaceVidLen_);
+    expCtx_ = std::make_unique<StorageExpressionContext>(spaceVidLen_);
 
     retCode = checkAndBuildContexts(req);
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
@@ -40,9 +42,9 @@ void GetNeighborsProcessor::process(const cpp2::GetNeighborsRequest& req) {
     std::unordered_set<PartitionID> failedParts;
     for (const auto& partEntry : req.get_parts()) {
         auto partId = partEntry.first;
-        for (const auto& input : partEntry.second) {
-            CHECK_GE(input.columns.size(), 1);
-            auto vId = input.columns[0].getStr();
+        for (const auto& row : partEntry.second) {
+            CHECK_GE(row.values.size(), 1);
+            auto vId = row.values[0].getStr();
 
             // the first column of each row would be the vertex id
             auto ret = plan.go(partId, vId);
@@ -59,41 +61,69 @@ void GetNeighborsProcessor::process(const cpp2::GetNeighborsRequest& req) {
 }
 
 StoragePlan<VertexID> GetNeighborsProcessor::buildPlan(nebula::DataSet* result) {
+    /*
+    The StoragePlan looks like this:
+                 +--------+---------+
+                 | GetNeighborsNode |
+                 +--------+---------+
+                          |
+                 +--------+---------+
+                 |   AggregateNode  |
+                 +--------+---------+
+                          |
+                 +--------+---------+
+                 |    FilterNode    |
+                 +--------+---------+
+                          |
+                 +--------+---------+
+             +-->+   HashJoinNode   +<----+
+             |   +------------------+     |
+    +--------+---------+        +---------+--------+
+    |     TagNodes     |        |     EdgeNodes    |
+    +------------------+        +------------------+
+    */
     StoragePlan<VertexID> plan;
     std::vector<TagNode*> tags;
     for (const auto& tc : tagContext_.propContexts_) {
         auto tag = std::make_unique<TagNode>(
-                &tagContext_, env_, spaceId_, spaceVidLen_, tc.first, &tc.second);
+                planContext_.get(), &tagContext_, tc.first, &tc.second);
         tags.emplace_back(tag.get());
         plan.addNode(std::move(tag));
     }
     std::vector<EdgeNode<VertexID>*> edges;
     for (const auto& ec : edgeContext_.propContexts_) {
-        auto edge = std::make_unique<EdgeTypePrefixScanNode>(
-                &edgeContext_, env_, spaceId_, spaceVidLen_, ec.first, &ec.second);
+        auto edge = std::make_unique<SingleEdgeNode>(
+                planContext_.get(), &edgeContext_, ec.first, &ec.second);
         edges.emplace_back(edge.get());
         plan.addNode(std::move(edge));
     }
-    auto filter = std::make_unique<FilterNode>(
-            tags, edges, &tagContext_, &edgeContext_, exp_.get());
+
+    auto hashJoin = std::make_unique<HashJoinNode>(
+            tags, edges, &tagContext_, &edgeContext_, expCtx_.get());
     for (auto* tag : tags) {
-        filter->addDependency(tag);
+        hashJoin->addDependency(tag);
     }
     for (auto* edge : edges) {
-        filter->addDependency(edge);
+        hashJoin->addDependency(edge);
     }
-    auto output = std::make_unique<GetNeighborsNode>(filter.get(), &edgeContext_);
-    output->addDependency(filter.get());
-    auto aggrNode = std::make_unique<AggregateNode<VertexID>>(output.get(), result);
-    aggrNode->addDependency(output.get());
+    auto filter = std::make_unique<FilterNode>(hashJoin.get(), expCtx_.get(), filter_.get());
+    filter->addDependency(hashJoin.get());
+    auto agg = std::make_unique<AggregateNode>(filter.get(), &edgeContext_);
+    agg->addDependency(filter.get());
+    auto output = std::make_unique<GetNeighborsNode>(
+            planContext_.get(), hashJoin.get(), agg.get(), &edgeContext_, result);
+    output->addDependency(agg.get());
+
+    plan.addNode(std::move(hashJoin));
     plan.addNode(std::move(filter));
+    plan.addNode(std::move(agg));
     plan.addNode(std::move(output));
-    plan.addNode(std::move(aggrNode));
     return plan;
 }
 
 cpp2::ErrorCode GetNeighborsProcessor::checkAndBuildContexts(const cpp2::GetNeighborsRequest& req) {
     resultDataSet_.colNames.emplace_back("_vid");
+    // reserve second colname for stat
     resultDataSet_.colNames.emplace_back("_stats");
 
     auto code = getSpaceVertexSchema();
@@ -112,6 +142,10 @@ cpp2::ErrorCode GetNeighborsProcessor::checkAndBuildContexts(const cpp2::GetNeig
     if (code != cpp2::ErrorCode::SUCCEEDED) {
         return code;
     }
+    code = buildYields(req);
+    if (code != cpp2::ErrorCode::SUCCEEDED) {
+        return code;
+    }
     code = buildFilter(req);
     if (code != cpp2::ErrorCode::SUCCEEDED) {
         return code;
@@ -120,21 +154,24 @@ cpp2::ErrorCode GetNeighborsProcessor::checkAndBuildContexts(const cpp2::GetNeig
 }
 
 cpp2::ErrorCode GetNeighborsProcessor::buildTagContext(const cpp2::GetNeighborsRequest& req) {
-    std::vector<ReturnProp> returnProps;
+    cpp2::ErrorCode ret = cpp2::ErrorCode::SUCCEEDED;
     if (!req.__isset.vertex_props) {
         // If the list is not given, no prop will be returned.
         return cpp2::ErrorCode::SUCCEEDED;
     } else if (req.vertex_props.empty()) {
-        // If no prpos specified, get all property of all tagId in space
-        returnProps = buildAllTagProps();
+        // If no props specified, get all property of all tagId in space
+        auto returnProps = buildAllTagProps();
+        // generate tag prop context
+        ret = handleVertexProps(returnProps);
+        buildTagColName(returnProps);
     } else {
-        auto ret = prepareVertexProps(req.vertex_props, returnProps);
-        if (ret != cpp2::ErrorCode::SUCCEEDED) {
-            return ret;
-        }
+        // Generate related props according to property specified.
+        // not use const reference because we need to modify it when all property need to return
+        auto returnProps = std::move(req.vertex_props);
+        ret = handleVertexProps(returnProps);
+        buildTagColName(returnProps);
     }
-    // generate tag prop context
-    auto ret = handleVertexProps(returnProps);
+
     if (ret != cpp2::ErrorCode::SUCCEEDED) {
         return ret;
     }
@@ -144,23 +181,24 @@ cpp2::ErrorCode GetNeighborsProcessor::buildTagContext(const cpp2::GetNeighborsR
 
 cpp2::ErrorCode GetNeighborsProcessor::buildEdgeContext(const cpp2::GetNeighborsRequest& req) {
     edgeContext_.offset_ = tagContext_.propContexts_.size() + 2;
-    std::vector<ReturnProp> returnProps;
+    cpp2::ErrorCode ret = cpp2::ErrorCode::SUCCEEDED;
     if (!req.__isset.edge_props) {
         // If the list is not given, no prop will be returned.
         return cpp2::ErrorCode::SUCCEEDED;
     } else if (req.edge_props.empty()) {
         // If no props specified, get all property of all edge type in space
-        returnProps = buildAllEdgeProps(req.edge_direction);
+        auto returnProps = buildAllEdgeProps(req.edge_direction);
+        // generate edge prop context
+        ret = handleEdgeProps(returnProps);
+        buildEdgeColName(returnProps);
     } else {
-        // generate related props if no edge type or property specified
-        auto ret = prepareEdgeProps(req.edge_props, returnProps);
-        if (ret != cpp2::ErrorCode::SUCCEEDED) {
-            return ret;
-        }
+        // Generate related props according to property specified.
+        // not use const reference because we need to modify it when all property need to return
+        auto returnProps = std::move(req.edge_props);
+        ret = handleEdgeProps(returnProps);
+        buildEdgeColName(returnProps);
     }
 
-    // generate edge prop context
-    auto ret = handleEdgeProps(returnProps);
     if (ret != cpp2::ErrorCode::SUCCEEDED) {
         return ret;
     }
@@ -172,86 +210,110 @@ cpp2::ErrorCode GetNeighborsProcessor::buildEdgeContext(const cpp2::GetNeighbors
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
+void GetNeighborsProcessor::buildTagColName(const std::vector<cpp2::VertexProp>& tagProps) {
+    for (const auto& tagProp : tagProps) {
+        auto tagId = tagProp.tag;
+        auto tagName = tagContext_.tagNames_[tagId];
+        std::string colName = "_tag:" + tagName;
+        for (const auto& prop : tagProp.props) {
+            colName += ":" + std::move(prop);
+        }
+        DVLOG(1) << "append col name: " << colName;
+        resultDataSet_.colNames.emplace_back(std::move(colName));
+    }
+}
+
+void GetNeighborsProcessor::buildEdgeColName(const std::vector<cpp2::EdgeProp>& edgeProps) {
+    for (const auto& edgeProp : edgeProps) {
+        auto edgeType = edgeProp.type;
+        auto edgeName = edgeContext_.edgeNames_[edgeType];
+        std::string colName = "_edge:";
+        colName.append(edgeType > 0 ? "+" : "-")
+               .append(edgeName);
+        for (const auto& prop : edgeProp.props) {
+            colName += ":" + std::move(prop);
+        }
+        DVLOG(1) << "append col name: " << colName;
+        resultDataSet_.colNames.emplace_back(std::move(colName));
+    }
+}
+
 cpp2::ErrorCode GetNeighborsProcessor::handleEdgeStatProps(
         const std::vector<cpp2::StatProp>& statProps) {
     edgeContext_.statCount_ = statProps.size();
-    // todo(doodle): since we only keep one kind of stat in PropContext, there could be a problem
-    // if we specified multiple stat of same prop
-    for (size_t idx = 0; idx < statProps.size(); idx++) {
-        // todo(doodle): wait
-        /*
-        const auto& prop = statProps[idx];
-        const auto edgeType = prop.type;
-        const auto& name = prop.name;
-
-        auto schema = env_->schemaMan_->getEdgeSchema(spaceId_, std::abs(edgeType));
-        if (!schema) {
-            VLOG(1) << "Can't find spaceId " << spaceId_ << " edgeType " << edgeType;
-            return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
-        }
-        const meta::SchemaProviderIf::Field* field = nullptr;
-        if (name != "_rank") {
-            field = schema->field(name);
-            if (field == nullptr) {
-                VLOG(1) << "Can't find prop " << name << " edgeType " << edgeType;
-                return cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
-            }
-            auto ret = checkStatType(field->type(), prop.stat);
-            if (ret != cpp2::ErrorCode::SUCCEEDED) {
-                return ret;
-            }
+    std::string colName = "_stats";
+    for (size_t statIdx = 0; statIdx < statProps.size(); statIdx++) {
+        const auto& statProp = statProps[statIdx];
+        auto exp = Expression::decode(statProp.prop);
+        if (exp == nullptr) {
+            return cpp2::ErrorCode::E_INVALID_STAT_TYPE;
         }
 
-        // find if corresponding edgeType contexts exists
-        auto edgeIter = edgeContext_.indexMap_.find(edgeType);
-        if (edgeIter != edgeContext_.indexMap_.end()) {
-            // find if corresponding PropContext exists
-            auto& ctxs = edgeContext_.propContexts_[edgeIter->second].second;
-            auto propIter = std::find_if(ctxs.begin(), ctxs.end(),
-                [&] (const auto& propContext) {
-                    return propContext.name_ == name;
-                });
-            if (propIter != ctxs.end()) {
-                propIter->hasStat_ = true;
-                propIter->statIndex_ = idx;
-                propIter->statType_ = prop.stat;
-                continue;
-            } else {
-                auto ctx = buildPropContextWithStat(name, idx, prop.stat, field);
-                ctxs.emplace_back(std::move(ctx));
+        // we only support edge property/rank expression for now
+        switch (exp->kind()) {
+            case Expression::Kind::kEdgeRank:
+            case Expression::Kind::kEdgeProperty: {
+                auto* edgeExp = static_cast<const SymbolPropertyExpression*>(exp.get());
+                const auto* edgeName = edgeExp->sym();
+                const auto* propName = edgeExp->prop();
+                auto edgeRet = this->env_->schemaMan_->toEdgeType(spaceId_, *edgeName);
+                if (!edgeRet.ok()) {
+                    VLOG(1) << "Can't find edge " << *edgeName << ", in space " << spaceId_;
+                    return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
+                }
+
+                auto edgeType = edgeRet.value();
+                auto iter = edgeContext_.schemas_.find(std::abs(edgeType));
+                if (iter == edgeContext_.schemas_.end()) {
+                    VLOG(1) << "Can't find spaceId " << spaceId_ << " edgeType "
+                            << std::abs(edgeType);
+                    return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
+                }
+                CHECK(!iter->second.empty());
+                const auto& edgeSchema = iter->second.back();
+
+                const meta::SchemaProviderIf::Field* field = nullptr;
+                if (exp->kind() == Expression::Kind::kEdgeProperty) {
+                    field = edgeSchema->field(*propName);
+                    if (field == nullptr) {
+                        VLOG(1) << "Can't find related prop " << *propName
+                                << " on edge " << *edgeName;
+                        return cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
+                    }
+                    auto ret = checkStatType(field, statProp.stat);
+                    if (ret != cpp2::ErrorCode::SUCCEEDED) {
+                        return ret;
+                    }
+                }
+                auto statInfo = std::make_pair(statIdx, statProp.stat);
+                addPropContextIfNotExists(edgeContext_.propContexts_,
+                                          edgeContext_.indexMap_,
+                                          edgeContext_.edgeNames_,
+                                          edgeType,
+                                          edgeName,
+                                          propName,
+                                          field,
+                                          false,
+                                          false,
+                                          &statInfo);
+                break;
             }
-        } else {
-            std::vector<PropContext> ctxs;
-            auto ctx = buildPropContextWithStat(name, idx, prop.stat, field);
-            ctxs.emplace_back(std::move(ctx));
-            edgeContext_.propContexts_.emplace_back(edgeType, std::move(ctxs));
-            edgeContext_.indexMap_.emplace(edgeType, edgeContext_.propContexts_.size() - 1);
+            default: {
+                return cpp2::ErrorCode::E_INVALID_STAT_TYPE;
+            }
         }
-        */
+        colName += ":" + std::move(statProp.alias);
     }
+    resultDataSet_.colNames[1] = std::move(colName);
 
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
-PropContext GetNeighborsProcessor::buildPropContextWithStat(
-        const std::string& name,
-        size_t idx,
-        const cpp2::StatType& statType,
-        const meta::SchemaProviderIf::Field* field) {
-    PropContext ctx(name.c_str());
-    ctx.hasStat_ = true;
-    ctx.statIndex_ = idx;
-    ctx.statType_ = statType;
-    ctx.field_ = field;
-    // for rank stat
-    if (name == "_rank") {
-        ctx.propInKeyType_ = PropContext::PropInKeyType::RANK;
-    }
-    return ctx;
-}
-
-cpp2::ErrorCode GetNeighborsProcessor::checkStatType(const meta::cpp2::PropertyType& fType,
+cpp2::ErrorCode GetNeighborsProcessor::checkStatType(const meta::SchemaProviderIf::Field* field,
                                                      cpp2::StatType statType) {
+    // todo(doodle): how to deal with nullable fields? For now, null add anything is null,
+    // if there is even one null, the result will be invalid
+    auto fType = field->type();
     switch (statType) {
         case cpp2::StatType::SUM:
         case cpp2::StatType::AVG:
@@ -268,7 +330,7 @@ cpp2::ErrorCode GetNeighborsProcessor::checkStatType(const meta::cpp2::PropertyT
             return cpp2::ErrorCode::E_INVALID_STAT_TYPE;
         }
         case cpp2::StatType::COUNT: {
-             break;
+            break;
         }
     }
     return cpp2::ErrorCode::SUCCEEDED;
@@ -277,7 +339,6 @@ cpp2::ErrorCode GetNeighborsProcessor::checkStatType(const meta::cpp2::PropertyT
 void GetNeighborsProcessor::onProcessFinished() {
     resp_.set_vertices(std::move(resultDataSet_));
 }
-
 
 }  // namespace storage
 }  // namespace nebula

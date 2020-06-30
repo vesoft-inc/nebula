@@ -142,20 +142,14 @@ private:
                               + folly::Random::rand32(FLAGS_max_vertex_id - FLAGS_min_vertex_id))};
     }
 
-    std::vector<cpp2::PropExp> vertexProps() {
-        std::vector<cpp2::PropExp> propExps;
-        cpp2::PropExp propExp;
-        propExp.set_prop(folly::stringPrintf("tag_%d_col_1", tagId_));
-        propExps.emplace_back(propExp);
-        return propExps;
+    std::vector<cpp2::VertexProp> vertexProps() {
+        std::vector<cpp2::VertexProp> vertexProps;
+        return vertexProps;
     }
 
-    std::vector<cpp2::PropExp> edgeProps() {
-        std::vector<cpp2::PropExp> propExps;
-        cpp2::PropExp propExp;
-        propExp.set_prop("col_1");
-        propExps.emplace_back(propExp);
-        return propExps;
+    std::vector<cpp2::EdgeProp> edgeProps() {
+        std::vector<cpp2::EdgeProp> edgeProps;
+        return edgeProps;
     }
 
     std::vector<Value> genData(int32_t size) {
@@ -229,15 +223,15 @@ private:
         colNames.emplace_back("_vid");
         std::vector<Row> vertices;
         for (auto& vertex : randomVertices()) {
-            nebula::Row  row;
-            row.columns.emplace_back(vertex);
+            nebula::Row row;
+            row.values.emplace_back(vertex);
             vertices.emplace_back(row);
         }
 
         cpp2::EdgeDirection edgeDire = cpp2::EdgeDirection::BOTH;
         std::vector<cpp2::StatProp> statProps;
-        std::vector<cpp2::PropExp> vProps = vertexProps();
-        std::vector<cpp2::PropExp> eProps = edgeProps();
+        auto vProps = vertexProps();
+        auto eProps = edgeProps();
 
         auto tokens = tokenBucket_.consumeOrDrain(FLAGS_concurrency, FLAGS_qps, FLAGS_concurrency);
         for (auto i = 0; i < tokens; i++) {
@@ -245,7 +239,7 @@ private:
 
             graphStorageClient_->getNeighbors(spaceId_, colNames, vertices,
                                               {edgeType_}, edgeDire,  &statProps,
-                                              &vProps, &eProps)
+                                              &vProps, &eProps, nullptr)
                 .via(evb)
                 .thenValue([this, start](auto&& resps) {
                     if (!resps.succeeded()) {

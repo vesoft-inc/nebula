@@ -8,20 +8,29 @@
 #define STORAGE_EXEC_GETNEIGHBORSNODE_H_
 
 #include "common/base/Base.h"
-#include "storage/exec/FilterNode.h"
-#include "storage/exec/StatCollector.h"
+#include "storage/exec/AggregateNode.h"
+#include "storage/exec/HashJoinNode.h"
 
 namespace nebula {
 namespace storage {
 
+// GetNeighborsNode will generate a row in response of GetNeighbors, so it need to get the tag
+// result from HashJoinNode, and the stat info and edge iterator from AggregateNode. Then collect
+// some edge props, and put them into the target cell of a row.
 class GetNeighborsNode : public QueryNode<VertexID> {
     FRIEND_TEST(ScanEdgePropBench, ProcessEdgeProps);
 
 public:
-    GetNeighborsNode(FilterNode* filterNode,
-                     EdgeContext* edgeContext)
-        : filterNode_(filterNode)
-        , edgeContext_(edgeContext) {}
+    GetNeighborsNode(PlanContext* planCtx,
+                     HashJoinNode* hashJoinNode,
+                     AggregateNode* AggregateNode,
+                     EdgeContext* edgeContext,
+                     nebula::DataSet* resultDataSet)
+        : planContext_(planCtx)
+        , hashJoinNode_(hashJoinNode)
+        , aggregateNode_(AggregateNode)
+        , edgeContext_(edgeContext)
+        , resultDataSet_(resultDataSet) {}
 
     kvstore::ResultCode execute(PartitionID partId, const VertexID& vId) override {
         auto ret = RelNode::execute(partId, vId);
@@ -29,71 +38,69 @@ public:
             return ret;
         }
 
-        result_.setList(nebula::List());
-        auto& result = result_.mutableList();
+        std::vector<Value> row;
         // vertexId is the first column
-        result.values.emplace_back(vId);
-        // reserve second column for stat
-        result.values.emplace_back(NullType::__NULL__);
-        if (edgeContext_->statCount_ > 0) {
-            stats_ = statProcessor_.initStatValue(edgeContext_);
-        }
+        row.emplace_back(vId);
+        // second column is reserved for stat
+        row.emplace_back(NullType::__NULL__);
 
-        auto tagResult = filterNode_->result().getList();
+        auto tagResult = hashJoinNode_->result().getList();
         for (auto& value : tagResult.values) {
-            result.values.emplace_back(std::move(value));
+            row.emplace_back(std::move(value));
         }
 
-        // add default null for each edge node
-        result.values.resize(result.values.size() + edgeContext_->propContexts_.size(),
-                               NullType::__NULL__);
+        // add default null for each edge node and the last column of yield expression
+        row.resize(row.size() + edgeContext_->propContexts_.size() + 1,
+                   NullType::__NULL__);
         int64_t edgeRowCount = 0;
         nebula::List list;
-        for (; filterNode_->valid(); filterNode_->next(), ++edgeRowCount) {
-            auto srcId = filterNode_->srcId();
-            auto edgeType = filterNode_->edgeType();
-            auto edgeRank = filterNode_->edgeRank();
-            auto dstId = filterNode_->dstId();
-            auto reader = filterNode_->reader();
-            auto props = filterNode_->props();
-            auto columnIdx = filterNode_->idx();
+        for (; aggregateNode_->valid(); aggregateNode_->next(), ++edgeRowCount) {
+            auto edgeType = aggregateNode_->edgeType();
+            auto key = aggregateNode_->key();
+            auto reader = aggregateNode_->reader();
+            auto props = aggregateNode_->props();
+            auto columnIdx = aggregateNode_->idx();
+            const auto& edgeName = aggregateNode_->edgeName();
 
             // collect props need to return
-            ret = collectEdgeProps(srcId, edgeType, edgeRank, dstId, reader, props, list);
+            ret = collectEdgeProps(edgeType,
+                                   edgeName,
+                                   reader,
+                                   key,
+                                   planContext_->vIdLen_,
+                                   props,
+                                   list);
             if (ret != kvstore::ResultCode::SUCCEEDED) {
                 return ret;
             }
 
             // add edge prop value to the target column
-            if (result.values[columnIdx].type() == Value::Type::NULLVALUE) {
-                result.values[columnIdx].setList(nebula::List());
+            if (row[columnIdx].type() == Value::Type::NULLVALUE) {
+                row[columnIdx].setList(nebula::List());
             }
-            auto& cell = result.values[columnIdx].mutableList();
+            auto& cell = row[columnIdx].mutableList();
             cell.values.emplace_back(std::move(list));
-
-            // collect edge stat if has stat to return
-            if (edgeContext_->statCount_ > 0) {
-                statProcessor_.collectEdgeStats(srcId, edgeType, edgeRank, dstId,
-                                                reader, props, stats_);
-            }
         }
 
-        if (edgeContext_->statCount_ > 0) {
-            auto stats = statProcessor_.calculateStat(stats_);
-            result.values[1].setList(std::move(stats));
+        aggregateNode_->calculateStat();
+        if (aggregateNode_->result().type() == Value::Type::LIST) {
+            // set stat list to second columns
+            row[1].setList(aggregateNode_->mutableResult().moveList());
         }
 
         DVLOG(1) << vId << " process " << edgeRowCount << " edges in total.";
+        resultDataSet_->rows.emplace_back(std::move(row));
         return kvstore::ResultCode::SUCCEEDED;
     }
 
 private:
     GetNeighborsNode() = default;
 
-    FilterNode* filterNode_;
+    PlanContext* planContext_;
+    HashJoinNode* hashJoinNode_;
+    AggregateNode* aggregateNode_;
     EdgeContext* edgeContext_;
-    StatCollector statProcessor_;
-    std::vector<PropStat> stats_;
+    nebula::DataSet* resultDataSet_;
 };
 
 }  // namespace storage

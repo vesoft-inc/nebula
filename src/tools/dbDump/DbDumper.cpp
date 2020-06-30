@@ -538,13 +538,8 @@ void DbDumper::printValue(const RowReader* reader) {
     size_t index = 0;
     while (iter) {
         auto value = reader->getValueByIndex(index);
-        auto retVal =  value.toString();
-        if (retVal.ok()) {
-            std::cout << retVal.value() << ", ";
-        } else {
-            std::cerr << retVal.status();
-            std::cout << " " << ", ";
-        }
+        auto retVal = value.toString();
+        std::cout << retVal << ", ";
         ++iter;
         ++index;
     }
