@@ -33,8 +33,8 @@ SET(EXEC_QUERY_TEST_LIBS
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:validator_obj>
     $<TARGET_OBJECTS:planner_obj>
-    $<TARGET_OBJECTS:exec_obj>
     $<TARGET_OBJECTS:schedule_obj>
+    $<TARGET_OBJECTS:exec_obj>
     $<TARGET_OBJECTS:util_obj>
     $<TARGET_OBJECTS:idgenerator_obj>
     $<TARGET_OBJECTS:context_obj>
