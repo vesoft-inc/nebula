@@ -58,8 +58,12 @@ public:
         return totalReqsSent_ == 0 ? 0 : (totalReqsSent_ - failedReqs_) * 100 / totalReqsSent_;
     }
 
-    std::unordered_map<PartitionID, storage::cpp2::ErrorCode>& failedParts() {
+    const std::unordered_map<PartitionID, storage::cpp2::ErrorCode>& failedParts() const {
         return failedParts_;
+    }
+
+    void emplaceFailedPart(PartitionID partId, storage::cpp2::ErrorCode errorCode) {
+        failedParts_.emplace(partId, errorCode);
     }
 
     std::vector<Response>& responses() {

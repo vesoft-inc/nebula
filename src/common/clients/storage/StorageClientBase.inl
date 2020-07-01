@@ -213,9 +213,8 @@ StorageClientBase<ClientType>::collectResponse(
                     for (auto& part : r.parts) {
                         auto partId = getPartIDFunc(part);
                         VLOG(3) << "Exception! Failed part " << partId;
-                        context->resp.failedParts().emplace(
-                            partId,
-                            storage::cpp2::ErrorCode::E_RPC_FAILURE);
+                        context->resp.emplaceFailedPart(partId,
+                                                        storage::cpp2::ErrorCode::E_RPC_FAILURE);
                         invalidLeader(spaceId, partId);
                     }
                     context->resp.markFailure();
@@ -241,8 +240,7 @@ StorageClientBase<ClientType>::collectResponse(
                             invalidLeader(spaceId, code.get_part_id());
                         } else {
                             // Simply keep the result
-                            context->resp.failedParts().emplace(code.get_part_id(),
-                                                                code.get_code());
+                            context->resp.emplaceFailedPart(code.get_part_id(), code.get_code());
                         }
                     }
                     if (hasFailure) {
