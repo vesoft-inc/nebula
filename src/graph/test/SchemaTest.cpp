@@ -597,7 +597,8 @@ TEST_F(SchemaTest, TestTagAndEdge) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG upper(name string, ACCOUNT string, "
-                            "age int, gender string, row_timestamp timestamp)";
+                            "age int, gender string, row_timestamp timestamp, "
+                            "value int, values string)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -613,6 +614,8 @@ TEST_F(SchemaTest, TestTagAndEdge) {
             {"age", "int"},
             {"gender", "string"},
             {"row_timestamp", "timestamp"},
+            {"value", "int"},
+            {"values", "string"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
