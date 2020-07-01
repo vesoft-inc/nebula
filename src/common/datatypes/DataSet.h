@@ -102,7 +102,7 @@ struct DataSet {
 
         // body
         for (const auto &row : rows) {
-            for (const auto col : row.values) {
+            for (const auto &col : row.values) {
                 os << col << "|";
             }
             os << std::endl;
