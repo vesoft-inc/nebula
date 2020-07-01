@@ -58,7 +58,7 @@ private:
                 PlanNode* input,
                 meta::SpaceDesc props,
                 bool ifNotExists)
-    : SingleInputNode(plan, Kind::kCreateSpace, input) {
+        : SingleInputNode(plan, Kind::kCreateSpace, input) {
         props_ = std::move(props);
         ifNotExists_ = ifNotExists;
     }
@@ -96,7 +96,7 @@ private:
     DescSpace(ExecutionPlan* plan,
               PlanNode* input,
               std::string spaceName)
-    : SingleInputNode(plan, Kind::kDescSpace, input) {
+        : SingleInputNode(plan, Kind::kDescSpace, input) {
         spaceName_ = std::move(spaceName);
     }
 

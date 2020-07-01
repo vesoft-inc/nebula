@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "Query.h"
+#include "planner/Query.h"
 
 #include <folly/String.h>
 

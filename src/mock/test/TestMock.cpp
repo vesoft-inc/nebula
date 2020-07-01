@@ -167,7 +167,7 @@ TEST_F(MockServerTest, TestMeta) {
     sleep(FLAGS_heartbeat_interval_secs + 1);
 }
 
-TEST_F(MockServerTest, TestStorage) {
+TEST_F(MockServerTest, DISABLED_TestStorage) {
     auto storageClient = gEnv->getStorageClient();
     GraphSpaceID space = 1;
     std::vector<Value> props;
@@ -192,3 +192,4 @@ TEST_F(MockServerTest, TestStorage) {
 
 }   // namespace graph
 }   // namespace nebula
+

@@ -8,23 +8,22 @@
 #define PLANNER_MUTATE_H_
 
 #include "common/interface/gen-cpp2/storage_types.h"
-#include "Query.h"
+#include "planner/Query.h"
 
 /**
  * All mutate-related nodes would put in this file.
  */
 namespace nebula {
 namespace graph {
-// TODO: All DDLs, DMLs and DQLs could be used in a single query
-// which would make them in a single and big execution plan
 class InsertVertices final : public SingleInputNode {
 public:
-    static InsertVertices* make(ExecutionPlan* plan,
-                                PlanNode* input,
-                                GraphSpaceID spaceId,
-                                std::vector<storage::cpp2::NewVertex> vertices,
-                                std::unordered_map<TagID, std::vector<std::string>> tagPropNames,
-                                bool overwritable) {
+    static InsertVertices* make(
+            ExecutionPlan* plan,
+            PlanNode* input,
+            GraphSpaceID spaceId,
+            std::vector<storage::cpp2::NewVertex> vertices,
+            std::unordered_map<TagID, std::vector<std::string>> tagPropNames,
+            bool overwritable) {
         return new InsertVertices(plan,
                                   input,
                                   spaceId,
@@ -35,10 +34,6 @@ public:
 
     std::string explain() const override {
         return "InsertVertices";
-    }
-
-    GraphSpaceID space() const {
-        return space_;
     }
 
     const std::vector<storage::cpp2::NewVertex>& getVertices() const {
@@ -53,6 +48,10 @@ public:
         return overwritable_;
     }
 
+    GraphSpaceID getSpace() const {
+        return spaceId_;
+    }
+
 private:
     InsertVertices(ExecutionPlan* plan,
                    PlanNode* input,
@@ -60,14 +59,15 @@ private:
                    std::vector<storage::cpp2::NewVertex> vertices,
                    std::unordered_map<TagID, std::vector<std::string>> tagPropNames,
                    bool overwritable)
-    : SingleInputNode(plan, Kind::kInsertVertices, input)
-    , space_(spaceId)
-    , vertices_(std::move(vertices))
-    , tagPropNames_(std::move(tagPropNames))
-    , overwritable_(overwritable) {}
+        : SingleInputNode(plan, Kind::kInsertVertices, input)
+        , spaceId_(spaceId)
+        , vertices_(std::move(vertices))
+        , tagPropNames_(std::move(tagPropNames))
+        , overwritable_(overwritable) {
+    }
 
 private:
-    GraphSpaceID                                               space_;
+    GraphSpaceID                                               spaceId_{-1};
     std::vector<storage::cpp2::NewVertex>                      vertices_;
     std::unordered_map<TagID, std::vector<std::string>>        tagPropNames_;
     bool                                                       overwritable_;
@@ -93,10 +93,6 @@ public:
         return "InsertEdges";
     }
 
-    GraphSpaceID space() const {
-        return space_;
-    }
-
     const std::vector<std::string>& getPropNames() const {
         return propNames_;
     }
@@ -109,6 +105,10 @@ public:
         return overwritable_;
     }
 
+    GraphSpaceID getSpace() const {
+        return spaceId_;
+    }
+
 private:
     InsertEdges(ExecutionPlan* plan,
                 PlanNode* input,
@@ -116,41 +116,42 @@ private:
                 std::vector<storage::cpp2::NewEdge> edges,
                 std::vector<std::string> propNames,
                 bool overwritable)
-    : SingleInputNode(plan, Kind::kInsertEdges, input)
-    , space_(spaceId)
-    , edges_(std::move(edges))
-    , propNames_(std::move(propNames))
-    , overwritable_(overwritable) {}
+        : SingleInputNode(plan, Kind::kInsertEdges, input)
+        , spaceId_(spaceId)
+        , edges_(std::move(edges))
+        , propNames_(std::move(propNames))
+        , overwritable_(overwritable) {
+    }
 
 private:
-    GraphSpaceID                               space_;
+    GraphSpaceID                               spaceId_{-1};
     std::vector<storage::cpp2::NewEdge>        edges_;
     std::vector<std::string>                   propNames_;
     bool                                       overwritable_;
 };
 
-class UpdateVertex final : public PlanNode {
+class UpdateVertex final : public SingleInputNode {
 public:
     std::string explain() const override {
         return "UpdateVertex";
     }
 };
 
-class UpdateEdge final : public PlanNode {
+class UpdateEdge final : public SingleInputNode {
 public:
     std::string explain() const override {
         return "UpdateEdge";
     }
 };
 
-class DeleteVertex final : public PlanNode {
+class DeleteVertex final : public SingleInputNode {
 public:
     std::string explain() const override {
         return "DeleteVertex";
     }
 };
 
-class DeleteEdge final : public PlanNode {
+class DeleteEdge final : public SingleInputNode {
 public:
     std::string explain() const override {
         return "DeleteEdge";

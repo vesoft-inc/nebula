@@ -17,9 +17,9 @@ folly::Future<Status> CreateEdgeExecutor::execute() {
 
 folly::Future<Status> CreateEdgeExecutor::createEdge() {
     dumpLog();
-
+    auto space = qctx_->rctx()->session()->space();
     auto *ceNode = asNode<CreateEdge>(node());
-    return qctx()->getMetaClient()->createEdgeSchema(ceNode->space(),
+    return qctx()->getMetaClient()->createEdgeSchema(space,
             ceNode->getName(), ceNode->getSchema(), ceNode->getIfNotExists())
         .via(runner())
         .then([](StatusOr<bool> resp) {

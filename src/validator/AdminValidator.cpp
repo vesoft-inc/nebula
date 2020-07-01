@@ -17,13 +17,15 @@
 namespace nebula {
 namespace graph {
 Status CreateSpaceValidator::validateImpl() {
+    auto sentence = static_cast<CreateSpaceSentence*>(sentence_);
+    ifNotExist_ = sentence->isIfNotExist();
     auto status = Status::OK();
     spaceDesc_ = meta::SpaceDesc();
-    spaceDesc_.spaceName_ = std::move(*(sentence_->spaceName()));
+    spaceDesc_.spaceName_ = std::move(*(sentence->spaceName()));
     StatusOr<std::string> retStatusOr;
     std::string result;
     auto* charsetInfo = qctx_->getCharsetInfo();
-    for (auto &item : sentence_->getOpts()) {
+    for (auto &item : sentence->getOpts()) {
         switch (item->getOptType()) {
             case SpaceOptItem::PARTITION_NUM: {
                 spaceDesc_.partNum_ = item->getPartitionNum();
@@ -98,26 +100,27 @@ Status CreateSpaceValidator::validateImpl() {
                     spaceDesc_.collationName_));
     }
 
-    ifNotExist_ = sentence_->isIfNotExist();
+    // add to validate context
+    vctx_->addSpace(spaceDesc_.spaceName_);
     return status;
 }
 
 Status CreateSpaceValidator::toPlan() {
-    auto* plan = qctx_->plan();
-    auto *doNode = CreateSpace::make(plan, nullptr, spaceDesc_, ifNotExist_);
+    auto *plan = qctx_->plan();
+    auto doNode = CreateSpace::make(plan, nullptr, std::move(spaceDesc_), ifNotExist_);
     root_ = doNode;
     tail_ = root_;
     return Status::OK();
 }
 
 Status DescSpaceValidator::validateImpl() {
-    spaceName_ = *sentence_->spaceName();
     return Status::OK();
 }
 
 Status DescSpaceValidator::toPlan() {
-    auto* plan = qctx_->plan();
-    auto *doNode = DescSpace::make(plan, nullptr, spaceName_);
+    auto sentence = static_cast<DescribeSpaceSentence*>(sentence_);
+    auto *plan = qctx_->plan();
+    auto doNode = DescSpace::make(plan, nullptr, *sentence->spaceName());
     root_ = doNode;
     tail_ = root_;
     return Status::OK();

@@ -39,6 +39,10 @@ public:
         return obj;
     }
 
+    bool empty() const {
+        return objects_.empty();
+    }
+
 private:
     struct Element {
         void *obj;

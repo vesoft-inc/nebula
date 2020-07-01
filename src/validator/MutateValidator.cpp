@@ -11,6 +11,7 @@
 namespace nebula {
 namespace graph {
 Status InsertVerticesValidator::validateImpl() {
+    spaceId_ = vctx_->whichSpace().id;
     auto status = Status::OK();
     do {
         if (!spaceChosen()) {
@@ -31,40 +32,40 @@ Status InsertVerticesValidator::validateImpl() {
 }
 
 Status InsertVerticesValidator::toPlan() {
-    auto* plan = qctx_->plan();
-    auto *doNode = InsertVertices::make(plan,
-                                        nullptr,
-                                        vctx_->whichSpace().id,
-                                        vertices_,
-                                        tagPropNames_,
-                                        overwritable_);
+    auto *plan = qctx_->plan();
+    auto doNode = InsertVertices::make(plan,
+                                       nullptr,
+                                       spaceId_,
+                                       std::move(vertices_),
+                                       std::move(tagPropNames_),
+                                       overwritable_);
     root_ = doNode;
     tail_ = root_;
     return Status::OK();
 }
 
 Status InsertVerticesValidator::check() {
-    auto spaceId = vctx_->whichSpace().id;
-    rows_ = sentence_->rows();
+    auto sentence = static_cast<InsertVerticesSentence*>(sentence_);
+    rows_ = sentence->rows();
     if (rows_.empty()) {
         return Status::Error("VALUES cannot be empty");
     }
 
-    auto tagItems = sentence_->tagItems();
-    overwritable_ = sentence_->overwritable();
+    auto tagItems = sentence->tagItems();
+    overwritable_ = sentence->overwritable();
 
     schemas_.reserve(tagItems.size());
 
     for (auto& item : tagItems) {
         auto *tagName = item->tagName();
-        auto tagStatus = qctx_->schemaMng()->toTagID(spaceId, *tagName);
+        auto tagStatus = qctx_->schemaMng()->toTagID(spaceId_, *tagName);
         if (!tagStatus.ok()) {
             LOG(ERROR) << "No schema found for " << *tagName;
             return Status::Error("No schema found for `%s'", tagName->c_str());
         }
 
         auto tagId = tagStatus.value();
-        auto schema = qctx_->schemaMng()->getTagSchema(spaceId, tagId);
+        auto schema = qctx_->schemaMng()->getTagSchema(spaceId_, tagId);
         if (schema == nullptr) {
             LOG(ERROR) << "No schema found for " << *tagName;
             return Status::Error("No schema found for `%s'", tagName->c_str());
@@ -136,13 +137,9 @@ Status InsertVerticesValidator::prepareVertices() {
 }
 
 Status InsertEdgesValidator::validateImpl() {
+    spaceId_ = vctx_->whichSpace().id;
     auto status = Status::OK();
     do {
-        if (!spaceChosen()) {
-            status = Status::Error("Please choose a graph space with `USE spaceName' firstly");
-            break;
-        }
-
         status = check();
         if (!status.ok()) {
             break;
@@ -157,33 +154,33 @@ Status InsertEdgesValidator::validateImpl() {
 }
 
 Status InsertEdgesValidator::toPlan() {
-    auto* plan = qctx_->plan();
-    auto *doNode = InsertEdges::make(plan,
-                                     nullptr,
-                                     vctx_->whichSpace().id,
-                                     edges_,
-                                     propNames_,
-                                     overwritable_);
+    auto *plan = qctx_->plan();
+    auto doNode = InsertEdges::make(plan,
+                                    nullptr,
+                                    spaceId_,
+                                    std::move(edges_),
+                                    std::move(propNames_),
+                                    overwritable_);
     root_ = doNode;
     tail_ = root_;
     return Status::OK();
 }
 
 Status InsertEdgesValidator::check() {
-    auto spaceId = vctx_->whichSpace().id;
-    overwritable_ = sentence_->overwritable();
-    auto edgeStatus = qctx_->schemaMng()->toEdgeType(spaceId, *sentence_->edge());
+    auto sentence = static_cast<InsertEdgesSentence*>(sentence_);
+    overwritable_ = sentence->overwritable();
+    auto edgeStatus = qctx_->schemaMng()->toEdgeType(spaceId_, *sentence->edge());
     if (!edgeStatus.ok()) {
         return edgeStatus.status();
     }
     edgeType_ = edgeStatus.value();
-    auto props = sentence_->properties();
-    rows_ = sentence_->rows();
+    auto props = sentence->properties();
+    rows_ = sentence->rows();
 
-    schema_ = qctx_->schemaMng()->getEdgeSchema(spaceId, edgeType_);
+    schema_ = qctx_->schemaMng()->getEdgeSchema(spaceId_, edgeType_);
     if (schema_ == nullptr) {
-        LOG(ERROR) << "No schema found for " << sentence_->edge();
-        return Status::Error("No schema found for `%s'", sentence_->edge()->c_str());
+        LOG(ERROR) << "No schema found for " << sentence->edge();
+        return Status::Error("No schema found for `%s'", sentence->edge()->c_str());
     }
 
     // Check prop name is in schema
@@ -245,8 +242,6 @@ Status InsertEdgesValidator::prepareEdges() {;
         edges_.emplace_back(edge);
 
         // inbound
-        edge.key.set_src(dstId);
-        edge.key.set_dst(srcId);
         edge.key.set_edge_type(-edgeType_);
         edges_.emplace_back(std::move(edge));
     }

@@ -13,6 +13,7 @@
 #include "common/datatypes/DataSet.h"
 #include "common/interface/gen-cpp2/common_types.h"
 #include "common/interface/gen-cpp2/meta_types.h"
+#include "common/meta/NebulaSchemaProvider.h"
 #include "parser/MaintainSentences.h"
 
 namespace nebula {
@@ -28,6 +29,9 @@ public:
 
     static Status validateProps(const std::vector<SchemaPropItem*> &schemaProps,
                                 meta::cpp2::Schema &schema);
+
+    static std::shared_ptr<const meta::NebulaSchemaProvider>
+    generateSchemaProvider(const SchemaVer ver, const meta::cpp2::Schema &schema);
 
     static StatusOr<nebula::Value> toSchemaValue(const meta::cpp2::PropertyType type,
                                                  const Value &v);

@@ -21,6 +21,14 @@ Status CreateTagValidator::validateImpl() {
     tagName_ = *sentence_->name();
     ifNotExist_ = sentence_->isIfNotExist();
     do {
+        // Check the validateContext has the same name schema
+        auto pro = vctx_->getSchema(tagName_);
+        if (pro != nullptr) {
+            status = Status::Error("Has the same name `%s' in the SequentialSentences",
+                                    tagName_.c_str());
+            break;
+        }
+
         status = SchemaUtil::validateColumns(sentence_->columnSpecs(), schema_);
         if (!status.ok()) {
             VLOG(1) << status;
@@ -32,17 +40,18 @@ Status CreateTagValidator::validateImpl() {
             break;
         }
     } while (false);
+    // Save the schema in validateContext
+    if (status.ok()) {
+        auto schemaPro = SchemaUtil::generateSchemaProvider(0, schema_);
+        vctx_->addSchema(tagName_, schemaPro);
+    }
     return status;
 }
 
 Status CreateTagValidator::toPlan() {
-    auto* plan = qctx_->plan();
-    auto *doNode = CreateTag::make(plan,
-                                   nullptr,
-                                   vctx_->whichSpace().id,
-                                   tagName_,
-                                   schema_,
-                                   ifNotExist_);
+    auto *plan = qctx_->plan();
+    auto doNode = CreateTag::make(plan,
+            plan->root(), std::move(tagName_), std::move(schema_), ifNotExist_);
     root_ = doNode;
     tail_ = root_;
     return Status::OK();
@@ -53,6 +62,14 @@ Status CreateEdgeValidator::validateImpl() {
     edgeName_ = *sentence_->name();
     ifNotExist_ = sentence_->isIfNotExist();
     do {
+        // Check the validateContext has the same name schema
+        auto pro = vctx_->getSchema(edgeName_);
+        if (pro != nullptr) {
+            status = Status::Error("Has the same name `%s' in the SequentialSentences",
+                                    edgeName_.c_str());
+            break;
+        }
+
         status = SchemaUtil::validateColumns(sentence_->columnSpecs(), schema_);
         if (!status.ok()) {
             VLOG(1) << status;
@@ -64,49 +81,47 @@ Status CreateEdgeValidator::validateImpl() {
             break;
         }
     } while (false);
+
+    // Save the schema in validateContext
+    if (status.ok()) {
+        auto schemaPro = SchemaUtil::generateSchemaProvider(0, schema_);
+        vctx_->addSchema(edgeName_, schemaPro);
+    }
     return status;
 }
 
 Status CreateEdgeValidator::toPlan() {
-    auto* plan = qctx_->plan();
-    auto *doNode = CreateEdge::make(plan,
-                                    nullptr,
-                                    vctx_->whichSpace().id,
-                                    edgeName_,
-                                    schema_,
-                                    ifNotExist_);
+    auto *plan = qctx_->plan();
+    auto doNode = CreateEdge::make(plan,
+            plan->root(), std::move(edgeName_), std::move(schema_), ifNotExist_);
     root_ = doNode;
     tail_ = root_;
     return Status::OK();
 }
 
 Status DescTagValidator::validateImpl() {
-    tagName_ = *sentence_->name();
     return Status::OK();
 }
 
 Status DescTagValidator::toPlan() {
-    auto* plan = qctx_->plan();
-    auto *doNode = DescTag::make(plan,
-                                 nullptr,
-                                 vctx_->whichSpace().id,
-                                 tagName_);
+    auto sentence = static_cast<DescribeTagSentence*>(sentence_);
+    auto name = *sentence->name();
+    auto *plan = qctx_->plan();
+    auto doNode = DescTag::make(plan, nullptr, std::move(name));
     root_ = doNode;
     tail_ = root_;
     return Status::OK();
 }
 
 Status DescEdgeValidator::validateImpl() {
-    edgeName_ = *sentence_->name();
     return Status::OK();
 }
 
 Status DescEdgeValidator::toPlan() {
-    auto* plan = qctx_->plan();
-    auto *doNode = DescEdge::make(plan,
-                                  nullptr,
-                                  vctx_->whichSpace().id,
-                                  edgeName_);
+    auto sentence = static_cast<DescribeEdgeSentence*>(sentence_);
+    auto name = *sentence->name();
+    auto *plan = qctx_->plan();
+    auto doNode = DescEdge::make(plan, nullptr, std::move(name));
     root_ = doNode;
     tail_ = root_;
     return Status::OK();

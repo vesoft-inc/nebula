@@ -21,6 +21,7 @@ set(VALIDATOR_TEST_LIBS
     $<TARGET_OBJECTS:common_time_obj>
     $<TARGET_OBJECTS:common_common_thrift_obj>
     $<TARGET_OBJECTS:common_graph_thrift_obj>
+    $<TARGET_OBJECTS:common_storage_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:common_thread_obj>
     $<TARGET_OBJECTS:common_datatypes_obj>
@@ -41,7 +42,11 @@ nebula_add_library(
 
 nebula_add_test(
     NAME validator_test
-    SOURCES ValidatorTest.cpp
+    SOURCES
+        QueryValidatorTest.cpp
+        AdminValidatorTest.cpp
+        MaintainValidatorTest.cpp
+        MutateValidatorTest.cpp
     OBJECTS ${VALIDATOR_TEST_LIBS}
     LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} wangle
 )
@@ -52,3 +57,4 @@ nebula_add_test(
     OBJECTS ${VALIDATOR_TEST_LIBS}
     LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} wangle
 )
+

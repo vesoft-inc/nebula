@@ -18,7 +18,7 @@ StorageCache::StorageCache(uint16_t metaPort) {
     meta::MetaClientOptions options;
     options.serviceName_ = "StorageCache";
     metaClient_ = std::make_unique<meta::MetaClient>(threadPool,
-            std::move(hostStatus).value(), options);
+                                                     std::move(hostStatus).value(), options);
     metaClient_->waitForMetadReady();
 
     mgr_ = std::make_unique<meta::ServerBasedSchemaManager>();
@@ -37,13 +37,18 @@ Status StorageCache::addVertices(const storage::cpp2::AddVerticesRequest& req) {
         spaceDataInfo = &cache_[spaceId];
     }
 
-    std::unordered_map<TagID, std::vector<std::string>> propNames = req.get_prop_names();
+    std::unordered_map<TagID, std::vector<std::string>> propNames;
+    for (auto &prop : req.get_prop_names()) {
+        propNames[prop.first] = prop.second;
+    }
+
     auto &parts = req.get_parts();
     for (auto &part : parts) {
         for (auto &vertex : part.second) {
             auto vId = vertex.get_id();
             auto findV = spaceDataInfo->vertices.find(vId);
-            std::unordered_map<TagID, PropertyInfo> *vertexInfo = nullptr;
+            std::unordered_map<TagID,
+                               std::unordered_map<std::string, Value>> *vertexInfo = nullptr;
             if (findV != spaceDataInfo->vertices.end()) {
                 vertexInfo = &findV->second;
             } else {
@@ -57,15 +62,12 @@ Status StorageCache::addVertices(const storage::cpp2::AddVerticesRequest& req) {
                 if (propValues.size() != propNames[tagId].size()) {
                     return Status::Error("Wrong size");
                 }
-
-                std::unordered_map<std::string, int32_t> propIndexes;
-                for (auto i = 0u; i < propValues.size(); i++) {
-                    propIndexes[propNames[tagId][i]] = i;
+                auto ret = getTagWholeValue(spaceId, tagId, propValues, propNames[tagId]);
+                if (!ret.ok()) {
+                    LOG(ERROR) << ret.status();
+                    return ret.status();
                 }
-
-                (*vertexInfo)[tagId].propNames = propNames[tagId];
-                (*vertexInfo)[tagId].propValues = std::move(propValues);
-                (*vertexInfo)[tagId].propIndexes = std::move(propIndexes);
+                (*vertexInfo)[tagId] = std::move(ret).value();
             }
         }
     }
@@ -88,57 +90,103 @@ Status StorageCache::addEdges(const storage::cpp2::AddEdgesRequest& req) {
     auto &parts = req.get_parts();
     for (auto &part : parts) {
         for (auto &edge : part.second) {
-            auto key = edge.get_key();
-            auto edgeKey = getEdgeKey(key.get_src(),
-                    key.get_edge_type(), key.get_ranking(), key.get_dst());
-            PropertyInfo propertyInfo;
-            propertyInfo.propNames = propNames;
-            for (auto i = 0u; i < propertyInfo.propNames.size(); i++) {
-                propertyInfo.propIndexes[propertyInfo.propNames[i]] = i;
-            }
-            propertyInfo.propValues = edge.get_props();
-            if (propertyInfo.propValues.size() != propertyInfo.propNames.size()) {
-                LOG(ERROR) << "Wrong size, propValues.size : " << propertyInfo.propValues.size()
-                           << ", propNames.size : " << propertyInfo.propNames.size();
+            storage::cpp2::EdgeKey edgeKey;
+            edgeKey.set_src(edge.key.get_src());
+            auto edgeType = edge.key.get_edge_type();
+            edgeKey.set_edge_type(edgeType);
+            edgeKey.set_ranking(edge.key.get_ranking());
+            edgeKey.set_dst(edge.key.get_dst());
+            auto propValues = edge.get_props();
+            if (propValues.size() != propNames.size()) {
+                LOG(ERROR) << "Wrong size, propValues.size : " << propValues.size()
+                           << ", propNames.size : " << propNames.size();
                 return Status::Error("Wrong size");
             }
-            spaceDataInfo->edges[edgeKey] = std::move(propertyInfo);
+            auto ret = getEdgeWholeValue(spaceId, edgeType, propValues, propNames);
+            if (!ret.ok()) {
+                LOG(ERROR) << ret.status();
+                return ret.status();
+            }
+            spaceDataInfo->edges[edgeKey] = std::move(ret).value();
         }
     }
     return Status::OK();
 }
 
-StatusOr<std::vector<DataSet>>
-StorageCache::getProps(const storage::cpp2::GetPropRequest&) {
-    return {};
-#if 0
-    folly::RWSpinLock::ReadHolder holder(lock_);
-    std::vector<storage::cpp2::VertexPropData> data;
-    auto spaceId = req.get_space_id();
-    auto findIt = cache_.find(spaceId);
-    if (findIt == cache_.end()) {
-        return Status::Error("SpaceID `%d' not found", spaceId);
+StatusOr<std::unordered_map<std::string, Value>>
+StorageCache::getTagWholeValue(const GraphSpaceID spaceId,
+                               const TagID tagId,
+                               const std::vector<Value>& props,
+                               const std::vector<std::string> &names) {
+    if (props.size() != names.size()) {
+        return Status::Error("Wrong size between props and names");
     }
-    auto vertices = findIt->second.vertices;
-    auto parts = req.get_parts();
-    std::vector<storage::cpp2::VertexProp> props;
-    if (req.__isset.vertex_props) {
-        props = req.get_vertex_props();
+    auto schema = mgr_->getTagSchema(spaceId, tagId);
+    if (schema == nullptr) {
+        return Status::Error("TagId `%d' not exist", tagId);
+    }
+    return getPropertyInfo(schema, props, names);
+}
+
+StatusOr<std::unordered_map<std::string, Value>>
+StorageCache::getEdgeWholeValue(const GraphSpaceID spaceId,
+                                const EdgeType edgeType,
+                                const std::vector<Value>& props,
+                                const std::vector<std::string> &names) {
+    if (props.size() != names.size()) {
+        return Status::Error("Wrong size between props and names");
+    }
+    auto schema = mgr_->getEdgeSchema(spaceId, std::abs(edgeType));
+    if (schema == nullptr) {
+        return Status::Error("EdgeType `%d' not exist", edgeType);
+    }
+    return getPropertyInfo(schema, props, names);
+}
+
+StatusOr<std::unordered_map<std::string, Value>>
+StorageCache::getPropertyInfo(std::shared_ptr<const meta::NebulaSchemaProvider> schema,
+                              const std::vector<Value>& props,
+                              const std::vector<std::string> &names) {
+    auto number = schema->getNumFields();
+    if (number == 0 && props.size() == 0) {
+        return {};
+    }
+    if (number == 0 && props.size() != 0) {
+        return Status::Error("Wrong value about empty schema");
     }
 
-    for (auto &part : parts) {
-        for (auto &vId : part.second) {
-            auto vFindIt = vertices.find(vId);
-            if (vFindIt == vertices.end()) {
-                return Status::Error("VertexId `%s' not found", vId.c_str());
+    std::bitset<32> indexBitSet;
+    std::unordered_map<std::string, Value> propertyInfo;
+    auto index = 0u;
+    for (auto &item : names) {
+        auto filed = schema->field(item);
+        if (filed != nullptr) {
+            indexBitSet.set(index);
+            if (!filed->nullable() && props[index].isNull()) {
+                return Status::Error("Wrong null type `%s'", item.c_str());
             }
-            storage::cpp2::VertexPropData vertex;
-            vertex.set_id(vId);
-            vertex.set_props(vFindIt.second);
-            vertex.set_names();
+            propertyInfo.emplace(item, props[index]);
+        } else {
+            return Status::Error("Wrong prop name `%s'", item.c_str());
+        }
+        index++;
+    }
+
+    if (schema->getNumFields() != indexBitSet.count()) {
+        for (auto i = 0u; i < schema->getNumFields(); i++) {
+            if (indexBitSet[i] != 1) {
+                auto field = schema->field(i);
+                if (field != nullptr && !field->hasDefault()) {
+                    return Status::Error("Prop name `%s' without default value",
+                                         field->name());
+                }
+                VLOG(1) << "Add default value, filed name: " << field->name();
+                propertyInfo.emplace(field->name(), field->defaultValue());
+            }
         }
     }
-#endif
+
+    return propertyInfo;
 }
 }  // namespace graph
 }  // namespace nebula

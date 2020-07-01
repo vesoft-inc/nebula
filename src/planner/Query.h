@@ -797,35 +797,27 @@ private:
 class SwitchSpace final : public SingleInputNode {
 public:
     static SwitchSpace* make(ExecutionPlan* plan,
-                                        PlanNode* input,
-                                        std::string spaceName,
-                                        GraphSpaceID spaceId) {
-        return new SwitchSpace(plan, input, spaceName, spaceId);
+                             PlanNode* input,
+                             std::string spaceName) {
+        return new SwitchSpace(plan, input, spaceName);
     }
 
     const std::string& getSpaceName() const {
         return spaceName_;
     }
 
-    GraphSpaceID getSpaceId() const {
-        return spaceId_;
-    }
-
     std::string explain() const override;
 
 private:
     SwitchSpace(ExecutionPlan* plan,
-                           PlanNode* input,
-                           std::string spaceName,
-                           GraphSpaceID spaceId)
+                PlanNode* input,
+                std::string spaceName)
         : SingleInputNode(plan, Kind::kSwitchSpace, input) {
         spaceName_ = std::move(spaceName);
-        spaceId_ = spaceId;
     }
 
 private:
     std::string     spaceName_;
-    GraphSpaceID    spaceId_{-1};
 };
 
 class Dedup final : public SingleInputNode {

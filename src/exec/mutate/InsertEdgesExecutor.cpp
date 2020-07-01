@@ -22,8 +22,7 @@ folly::Future<Status> InsertEdgesExecutor::execute() {
 folly::Future<Status> InsertEdgesExecutor::insertEdges() {
     dumpLog();
     auto *ieNode = asNode<InsertEdges>(node());
-
-    return qctx()->getStorageClient()->addEdges(ieNode->space(),
+    return qctx()->getStorageClient()->addEdges(ieNode->getSpace(),
             ieNode->getEdges(), ieNode->getPropNames(), ieNode->getOverwritable())
         .via(runner())
         .then([this](storage::StorageRpcResponse<storage::cpp2::ExecResponse> resp) {

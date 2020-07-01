@@ -15,7 +15,7 @@ namespace graph {
 class UseValidator final : public Validator {
 public:
     UseValidator(Sentence* sentence, QueryContext* context)
-        : Validator(sentence, context) {
+    : Validator(sentence, context) {
         setNoSpaceRequired();
     }
 
@@ -30,6 +30,9 @@ private:
     Status validateImpl() override;
 
     Status toPlan() override;
+
+private:
+    const std::string         *spaceName_{nullptr};
 };
 }  // namespace graph
 }  // namespace nebula

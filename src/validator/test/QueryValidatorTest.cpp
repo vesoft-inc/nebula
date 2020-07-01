@@ -7,46 +7,21 @@
 #include "common/base/Base.h"
 
 #include "validator/test/ValidatorTestBase.h"
-#include "validator/test/MockSchemaManager.h"
-#include "parser/GQLParser.h"
-#include "validator/ASTValidator.h"
-#include "context/QueryContext.h"
-#include "planner/ExecutionPlan.h"
-#include "context/ValidateContext.h"
-#include "planner/PlanNode.h"
-#include "planner/Admin.h"
-#include "planner/Maintain.h"
-#include "planner/Mutate.h"
-#include "planner/Query.h"
 
 namespace nebula {
 namespace graph {
 
-using PK = nebula::graph::PlanNode::Kind;
-
-class ValidatorTest : public ValidatorTestBase {
+class QueryValidatorTest : public ValidatorTestBase {
 public:
-    static void SetUpTestCase() {
-        auto sessionId = 0;
-        auto session = new ClientSession(sessionId);
-        auto spaceName = "test_space";
-        auto spaceId = 1;
-        session->setSpace(spaceName, spaceId);
-        session_.reset(session);
-        auto* sm = new MockSchemaManager();
-        sm->init();
-        schemaMng_.reset(sm);
-    }
-
     void SetUp() override {
+        ValidatorTestBase::SetUp();
         qctx_ = buildContext();
     }
 
     void TearDown() override {
+        ValidatorTestBase::TearDown();
         qctx_.reset();
     }
-
-    std::unique_ptr<QueryContext> buildContext();
 
     StatusOr<ExecutionPlan*> validate(const std::string& query) {
         auto result = GQLParser().parse(query);
@@ -58,44 +33,32 @@ public:
     }
 
 protected:
-    static std::shared_ptr<ClientSession>           session_;
-    static std::unique_ptr<meta::SchemaManager>     schemaMng_;
-    std::unique_ptr<QueryContext>                   qctx_;
+    std::unique_ptr<QueryContext>              qctx_;
 };
 
-std::shared_ptr<ClientSession> ValidatorTest::session_;
-std::unique_ptr<meta::SchemaManager> ValidatorTest::schemaMng_;
-
-std::unique_ptr<QueryContext> ValidatorTest::buildContext() {
-    auto rctx = std::make_unique<RequestContext<cpp2::ExecutionResponse>>();
-    rctx->setSession(session_);
-    auto qctx = std::make_unique<QueryContext>();
-    qctx->setRctx(std::move(rctx));
-    qctx->setSchemaManager(schemaMng_.get());
-    qctx->setCharsetInfo(CharsetInfo::instance());
-    return qctx;
+std::ostream& operator<<(std::ostream& os, const std::vector<PlanNode::Kind>& plan) {
+    std::vector<const char*> kinds;
+    kinds.reserve(plan.size());
+    std::transform(plan.cbegin(), plan.cend(), std::back_inserter(kinds), PlanNode::toString);
+    os << "[" << folly::join(", ", kinds) << "]";
+    return os;
 }
 
+using PK = nebula::graph::PlanNode::Kind;
 
-TEST_F(ValidatorTest, Subgraph) {
-    {
-        auto status = validate("GET SUBGRAPH 3 STEPS FROM \"1\"");
-        ASSERT_TRUE(status.ok());
-        auto plan = std::move(status).value();
-        ASSERT_NE(plan, nullptr);
-        std::vector<PlanNode::Kind> expected = {
+TEST_F(QueryValidatorTest, Subgraph) {
+    std::vector<PlanNode::Kind> expected = {
             PK::kDataCollect,
             PK::kLoop,
             PK::kStart,
             PK::kProject,
             PK::kGetNeighbors,
             PK::kStart,
-        };
-        ASSERT_TRUE(verifyPlan(plan->root(), expected));
-    }
+    };
+    ASSERT_TRUE(checkResult("GET SUBGRAPH 3 STEPS FROM \"1\"", expected));
 }
 
-TEST_F(ValidatorTest, TestFirstSentence) {
+TEST_F(QueryValidatorTest, TestFirstSentence) {
     auto testFirstSentence = [](StatusOr<ExecutionPlan*> so) -> bool {
         if (so.ok()) return false;
         auto status = std::move(so).status();
@@ -125,27 +88,7 @@ TEST_F(ValidatorTest, TestFirstSentence) {
     }
 }
 
-TEST_F(ValidatorTest, TestSpace) {
-    {
-        std::string query = "CREATE SPACE TEST";
-        auto result = GQLParser().parse(query);
-        ASSERT_TRUE(result.ok()) << result.status();
-        auto sentences = std::move(result).value();
-        auto context = buildContext();
-        ASTValidator validator(sentences.get(), context.get());
-        auto validateResult = validator.validate();
-        ASSERT_TRUE(validateResult.ok()) << validateResult;
-        auto plan = context->plan();
-        ASSERT_NE(plan, nullptr);
-        std::vector<PlanNode::Kind> expected = {
-            PK::kCreateSpace,
-            PK::kStart,
-        };
-        ASSERT_TRUE(verifyPlan(plan->root(), expected));
-    }
-}
-
-TEST_F(ValidatorTest, Go) {
+TEST_F(QueryValidatorTest, Go) {
     {
         std::string query = "GO FROM \"1\" OVER like";
         auto status = validate(query);
@@ -255,7 +198,7 @@ TEST_F(ValidatorTest, Go) {
     }
 }
 
-TEST_F(ValidatorTest, GoInvalid) {
+TEST_F(QueryValidatorTest, GoInvalid) {
     {
         // friend not exist.
         std::string query = "GO FROM \"1\" OVER friend";

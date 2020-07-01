@@ -24,7 +24,6 @@ public:
     std::shared_ptr<const nebula::meta::NebulaSchemaProvider>
     getTagSchema(GraphSpaceID space, TagID tag, SchemaVer version = -1) override;
 
-
     // Returns a negative number when the schema does not exist
     StatusOr<SchemaVer> getLatestTagSchemaVersion(GraphSpaceID space, TagID tag) override {
         UNUSED(space);

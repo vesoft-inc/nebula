@@ -62,10 +62,6 @@ private:
     Status validateImpl() override;
 
     Status toPlan() override;
-
-private:
-    DescribeTagSentence                   *sentence_{nullptr};
-    std::string                            tagName_;
 };
 
 class DescEdgeValidator final : public Validator {
@@ -79,10 +75,6 @@ private:
     Status validateImpl() override;
 
     Status toPlan() override;
-
-private:
-    DescribeEdgeSentence               *sentence_{nullptr};
-    std::string                         edgeName_;
 };
 
 }  // namespace graph

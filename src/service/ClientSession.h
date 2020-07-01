@@ -56,7 +56,7 @@ public:
 private:
     // ClientSession could only be created via SessionManager
     friend class SessionManager;
-    friend class ValidatorTest;
+    friend class ValidatorTestBase;
     ClientSession() = default;
     explicit ClientSession(int64_t id);
 

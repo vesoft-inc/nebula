@@ -18,8 +18,7 @@ namespace graph {
 class CreateSpaceValidator final : public Validator {
 public:
     CreateSpaceValidator(Sentence* sentence, QueryContext* context)
-            : Validator(sentence, context) {
-        sentence_ = static_cast<CreateSpaceSentence*>(sentence);
+        : Validator(sentence, context) {
         setNoSpaceRequired();
     }
 
@@ -29,7 +28,6 @@ private:
     Status toPlan() override;
 
 private:
-    CreateSpaceSentence               *sentence_{nullptr};
     meta::SpaceDesc                    spaceDesc_;
     bool                               ifNotExist_;
 };
@@ -37,8 +35,7 @@ private:
 class DescSpaceValidator final : public Validator {
 public:
     DescSpaceValidator(Sentence* sentence, QueryContext* context)
-            : Validator(sentence, context) {
-        sentence_ = static_cast<DescribeSpaceSentence*>(sentence);
+        : Validator(sentence, context) {
         setNoSpaceRequired();
     }
 
@@ -46,10 +43,6 @@ private:
     Status validateImpl() override;
 
     Status toPlan() override;
-
-private:
-    DescribeSpaceSentence                   *sentence_{nullptr};
-    std::string                              spaceName_;
 };
 
 }  // namespace graph

@@ -19,8 +19,9 @@ folly::Future<Status> DescEdgeExecutor::execute() {
 folly::Future<Status> DescEdgeExecutor::descEdge() {
     dumpLog();
 
+    auto space = qctx_->rctx()->session()->space();
     auto *deNode = asNode<DescEdge>(node());
-    return qctx()->getMetaClient()->getEdgeSchema(deNode->getSpaceId(), deNode->getName())
+    return qctx()->getMetaClient()->getEdgeSchema(space, deNode->getName())
             .via(runner())
             .then([this](StatusOr<meta::cpp2::Schema> resp) {
                 if (!resp.ok()) {

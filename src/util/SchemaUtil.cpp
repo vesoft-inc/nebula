@@ -80,6 +80,21 @@ Status SchemaUtil::validateProps(const std::vector<SchemaPropItem*> &schemaProps
 }
 
 // static
+std::shared_ptr<const meta::NebulaSchemaProvider>
+SchemaUtil::generateSchemaProvider(const SchemaVer ver, const meta::cpp2::Schema &schema) {
+    auto schemaPtr = std::make_shared<meta::NebulaSchemaProvider>(ver);
+    for (auto col : schema.get_columns()) {
+        bool hasDef = col.__isset.default_value;
+        schemaPtr->addField(col.get_name(),
+                            col.get_type(),
+                            col.__isset.type_length ? *col.get_type_length() : 0,
+                            col.__isset.nullable ? *col.get_nullable() : false,
+                            hasDef ? *col.get_default_value() : Value());
+    }
+    return schemaPtr;
+}
+
+// static
 StatusOr<nebula::Value> SchemaUtil::toSchemaValue(const meta::cpp2::PropertyType type,
                                                   const Value &v) {
     switch (type) {
