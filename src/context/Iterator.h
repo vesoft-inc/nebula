@@ -9,6 +9,8 @@
 
 #include <memory>
 
+#include <gtest/gtest_prod.h>
+
 #include "common/datatypes/Value.h"
 #include "common/datatypes/List.h"
 #include "common/datatypes/DataSet.h"
@@ -219,8 +221,7 @@ public:
     }
 
     const Row* row() const override {
-        auto& current = *iter_;
-        return std::get<1>(current);
+        return iter_->row;
     }
 
 private:
@@ -230,81 +231,64 @@ private:
 
     void clear() {
         valid_ = false;
-        colIndices_.clear();
-        tagEdgeNameIndices_.clear();
-        tagPropIndices_.clear();
-        edgePropIndices_.clear();
-        tagPropMaps_.clear();
-        edgePropMaps_.clear();
-        segments_.clear();
+        dsIndices_.clear();
         logicalRows_.clear();
     }
 
-    // Maps the origin column names with its column index, each response
-    // has a segment.
-    // | _vid | _stats | _tag:t1:p1:p2 | _edge:e1:p1:p2 |
-    // -> {_vid : 0, _stats : 1, _tag:t1:p1:p2 : 2, _edge:d1:p1:p2 : 3}
-    using ColumnIndex = std::vector<std::unordered_map<std::string, size_t>>;
-    // | _vid | _stats | _tag:t1:p1:p2 | _edge:e1:p1:p2 |
-    // -> {t1 : 2, e1 : 3}
-    using TagEdgeNameIdxMap = std::unordered_map<size_t, std::string>;
-    using TagEdgeNameIndex = std::vector<TagEdgeNameIdxMap>;
-
-    // _tag:t1:p1:p2  ->  {t1 : {p1 : 0, p2 : 1}}
-    // _edge:e1:p1:p2  ->  {e1 : {p1 : 0, p2 : 1}}
-    using PropIdxMap = std::unordered_map<std::string, size_t>;
-    // {tag/edge name : [column_idx, PropIdxMap]}
-    using TagEdgePropIdxMap = std::unordered_map<std::string, std::pair<size_t, PropIdxMap>>;
-    // Maps the property name with its index, each response has a segment
-    // in PropIndex.
-    using PropIndex = std::vector<TagEdgePropIdxMap>;
-
-    // LogicalRow: <segment_id, row, edge_name, edge_props>
-    using LogicalRow = std::tuple<size_t, const Row*, std::string, const List*>;
-
-    using PropList = std::vector<std::string>;
-    // _tag:t1:p1:p2  ->  {t1 : [column_idx, {p1, p2}]}
-    // _edge:e1:p1:p2  ->  {e1 : [columns_idx, {p1, p2}]}
-    using TagEdgePropMap = std::unordered_map<std::string, std::pair<size_t, PropList>>;
-    // Maps the tag/edge with its properties, each response has a segment
-    // in PropMaps
-    using PropMaps = std::vector<TagEdgePropMap>;
-
     inline size_t currentSeg() const {
-        auto& current = *iter_;
-        return std::get<0>(current);
+        return iter_->dsIdx;
     }
 
     inline const std::string& currentEdgeName() const {
-        auto& current = *iter_;
-        return std::get<2>(current);
+        return iter_->edgeName;
     }
 
     inline const List* currentEdgeProps() const {
-        auto& current = *iter_;
-        return std::get<3>(current);
+        return iter_->edgeProps;
     }
 
-    StatusOr<int64_t> buildIndex(const std::vector<std::string>& colNames);
+    struct PropIndex {
+        size_t colIdx;
+        std::vector<std::string> propList;
+        std::unordered_map<std::string, size_t> propIndices;
+    };
 
+    struct DataSetIndex {
+        const DataSet* ds;
+        // | _vid | _stats | _tag:t1:p1:p2 | _edge:e1:p1:p2 |
+        // -> {_vid : 0, _stats : 1, _tag:t1:p1:p2 : 2, _edge:d1:p1:p2 : 3}
+        std::unordered_map<std::string, size_t> colIndices;
+        // | _vid | _stats | _tag:t1:p1:p2 | _edge:e1:p1:p2 |
+        // -> {2 : t1, 3 : e1}
+        std::unordered_map<size_t, std::string> tagEdgeNameIndices;
+        // _tag:t1:p1:p2  ->  {t1 : [column_idx, [p1, p2], {p1 : 0, p2 : 1}]}
+        std::unordered_map<std::string, PropIndex> tagPropsMap;
+        // _edge:e1:p1:p2  ->  {e1 : [column_idx, [p1, p2], {p1 : 0, p2 : 1}]}
+        std::unordered_map<std::string, PropIndex> edgePropsMap;
+    };
+
+    struct LogicalRow {
+        size_t dsIdx;
+        const Row* row;
+        std::string edgeName;
+        const List* edgeProps;
+    };
+
+    StatusOr<int64_t> buildIndex(DataSetIndex* dsIndex);
     Status buildPropIndex(const std::string& props,
                           size_t columnId,
                           bool isEdge,
-                          TagEdgeNameIdxMap& tagEdgeNameIndex,
-                          TagEdgePropIdxMap& tagEdgePropIdxMap,
-                          TagEdgePropMap& tagEdgePropMap);
+                          DataSetIndex* dsIndex);
+    Status processList(std::shared_ptr<Value> value);
+    StatusOr<DataSetIndex> makeDataSetIndex(const DataSet& ds, size_t idx);
+    void makeLogicalRowByEdge(int64_t edgeStartIndex, size_t idx, const DataSetIndex& dsIndex);
 
-    friend class IteratorTest_TestHead_Test;
-    bool                                    valid_{false};
-    ColumnIndex                             colIndices_;
-    TagEdgeNameIndex                        tagEdgeNameIndices_;
-    PropIndex                               tagPropIndices_;
-    PropIndex                               edgePropIndices_;
-    PropMaps                                tagPropMaps_;
-    PropMaps                                edgePropMaps_;
-    std::vector<const DataSet*>             segments_;
-    std::vector<LogicalRow>                 logicalRows_;
-    std::vector<LogicalRow>::iterator       iter_;
+    FRIEND_TEST(IteratorTest, TestHead);
+
+    bool valid_{false};
+    std::vector<LogicalRow> logicalRows_;
+    std::vector<LogicalRow>::iterator iter_;
+    std::vector<DataSetIndex> dsIndices_;
 };
 
 class SequentialIter final : public Iterator {
