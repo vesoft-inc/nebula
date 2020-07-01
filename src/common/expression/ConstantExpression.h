@@ -27,10 +27,7 @@ public:
         return val_;
     }
 
-    std::string toString() const override {
-        // TODO
-        return "";
-    }
+    std::string toString() const override;
 
 private:
     void writeTo(Encoder& encoder) const override;

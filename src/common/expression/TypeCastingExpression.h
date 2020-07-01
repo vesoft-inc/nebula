@@ -25,10 +25,7 @@ public:
 
     const Value& eval(ExpressionContext& ctx) override;
 
-    std::string toString() const override {
-        // TODO
-        return "";
-    }
+    std::string toString() const override;
 
     const Expression* operand() const {
         return operand_.get();

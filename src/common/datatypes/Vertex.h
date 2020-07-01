@@ -34,11 +34,16 @@ struct Tag {
     }
 
     std::string toString() const {
+        std::vector<std::string> value(props.size());
+        std::transform(
+            props.begin(), props.end(), value.begin(), [](const auto& iter) -> std::string {
+                std::stringstream out;
+                out << iter.first << ":" << iter.second;
+                return out.str();
+            });
+
         std::stringstream os;
-        os << "Tag: " << name << ", ";
-        for (const auto& prop : props) {
-            os << prop.first << ":" << prop.second << ",";
-        }
+        os << "Tag: " << name << ", " << folly::join(",", value);
         return os.str();
     }
 

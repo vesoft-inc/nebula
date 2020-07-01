@@ -51,10 +51,7 @@ public:
 
     bool operator==(const Expression& rhs) const override;
 
-    std::string toString() const override {
-        // TODO
-        return "";
-    }
+    std::string toString() const override;
 
     const std::string* name() const {
         return name_.get();

@@ -33,4 +33,10 @@ void ConstantExpression::resetFrom(Decoder& decoder) {
     val_ = decoder.readValue();
 }
 
+std::string ConstantExpression::toString() const {
+    std::stringstream out;
+    out << val_;
+    return out.str();
+}
+
 }  // namespace nebula

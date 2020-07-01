@@ -127,7 +127,7 @@ TEST(GenericThreadPool, addRepeatTask) {
     }
 }
 
-TEST(GenericThreadPool, purgeRepeatTask) {
+TEST(GenericThreadPool, DISABLED_purgeRepeatTask) {
     GenericThreadPool pool;
     ASSERT_TRUE(pool.start(4));
     for (auto i = 0; i < 8; i++) {

@@ -81,4 +81,15 @@ const Value& FunctionCallExpression::eval(ExpressionContext& ctx) {
     return result_;
 }
 
+std::string FunctionCallExpression::toString() const {
+    std::vector<std::string> args(args_->numArgs());
+    std::transform(args_->args().begin(),
+                   args_->args().end(),
+                   args.begin(),
+                   [](const auto& arg) -> std::string { return arg->toString(); });
+    std::stringstream out;
+    out << *name_ << "(" << folly::join(",", args) << ")";
+    return out.str();
+}
+
 }  // namespace nebula

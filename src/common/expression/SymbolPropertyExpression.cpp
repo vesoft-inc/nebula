@@ -90,4 +90,151 @@ const Value& EdgeRankExpression::eval(ExpressionContext& ctx) {
 const Value& EdgeDstIdExpression::eval(ExpressionContext& ctx) {
     return ctx.getEdgeProp(*sym_, *prop_);
 }
+
+std::string EdgePropertyExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+
+    if (sym_ != nullptr && !sym_->empty()) {
+        buf += *sym_;
+        buf += ".";
+    }
+    if (prop_ != nullptr) {
+        buf += *prop_;
+    }
+
+    return buf;
+}
+
+std::string InputPropertyExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+
+    if (ref_ != nullptr && !ref_->empty()) {
+        buf += *ref_;
+        buf += ".";
+    }
+    if (prop_ != nullptr) {
+        buf += *prop_;
+    }
+
+    return buf;
+}
+
+std::string VariablePropertyExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+
+    if (ref_ != nullptr) {
+        buf += *ref_;
+    }
+    if (sym_ != nullptr && !sym_->empty()) {
+        buf += *sym_;
+        buf += ".";
+    }
+    if (prop_ != nullptr) {
+        buf += *prop_;
+    }
+
+    return buf;
+}
+
+std::string SourcePropertyExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+
+    if (ref_ != nullptr && !ref_->empty()) {
+        buf += *ref_;
+        buf += ".";
+    }
+    if (sym_ != nullptr && !sym_->empty()) {
+        buf += *sym_;
+        buf += ".";
+    }
+    if (prop_ != nullptr) {
+        buf += *prop_;
+    }
+
+    return buf;
+}
+
+std::string DestPropertyExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+
+    if (ref_ != nullptr && !ref_->empty()) {
+        buf += *ref_;
+        buf += ".";
+    }
+    if (sym_ != nullptr && !sym_->empty()) {
+        buf += *sym_;
+        buf += ".";
+    }
+    if (prop_ != nullptr) {
+        buf += *prop_;
+    }
+
+    return buf;
+}
+
+std::string EdgeSrcIdExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+
+    if (sym_ != nullptr && !sym_->empty()) {
+        buf += *sym_;
+        buf += ".";
+    }
+    if (prop_ != nullptr) {
+        buf += *prop_;
+    }
+
+    return buf;
+}
+
+std::string EdgeTypeExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+
+    if (sym_ != nullptr && !sym_->empty()) {
+        buf += *sym_;
+        buf += ".";
+    }
+    if (prop_ != nullptr) {
+        buf += *prop_;
+    }
+
+    return buf;
+}
+
+std::string EdgeRankExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+
+    if (sym_ != nullptr && !sym_->empty()) {
+        buf += *sym_;
+        buf += ".";
+    }
+    if (prop_ != nullptr) {
+        buf += *prop_;
+    }
+
+    return buf;
+}
+
+std::string EdgeDstIdExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+
+    if (sym_ != nullptr && !sym_->empty()) {
+        buf += *sym_;
+        buf += ".";
+    }
+    if (prop_ != nullptr) {
+        buf += *prop_;
+    }
+
+    return buf;
+}
+
 }  // namespace nebula

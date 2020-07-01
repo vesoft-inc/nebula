@@ -27,4 +27,24 @@ const Value& LogicalExpression::eval(ExpressionContext& ctx) {
     return result_;
 }
 
+std::string LogicalExpression::toString() const {
+    std::string op;
+    switch (kind_) {
+        case Kind::kLogicalAnd:
+            op = "&&";
+            break;
+        case Kind::kLogicalOr:
+            op = "||";
+            break;
+        case Kind::kLogicalXor:
+            op = "^";
+            break;
+        default:
+            op = "illegal symbol ";
+    }
+    std::stringstream out;
+    out << "(" << lhs_->toString() << op << rhs_->toString() << ")";
+    return out.str();
+}
+
 }  // namespace nebula

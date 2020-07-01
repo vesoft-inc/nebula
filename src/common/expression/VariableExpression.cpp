@@ -24,4 +24,28 @@ const Value& VersionedVariableExpression::eval(ExpressionContext& ctx) {
         return ctx.getVar(*var_);
     }
 }
+
+std::string VariableExpression::toString() const {
+    if (var_ == nullptr) {
+        return "";
+    }
+
+    std::stringstream out;
+    out << "$" << *var_;
+    return out.str();
+}
+
+std::string VersionedVariableExpression::toString() const {
+    if (var_ == nullptr) {
+        return "";
+    }
+
+    std::stringstream out;
+    out << "$" << *var_;
+    if (version_ != nullptr) {
+        out << "{" << version_->toString() << "}";
+    }
+    return out.str();
+}
+
 }  // namespace nebula

@@ -74,10 +74,7 @@ public:
 
     const Value& eval(ExpressionContext& ctx) override;
 
-    std::string toString() const override {
-        // TODO
-        return "";
-    }
+    std::string toString() const override;
 };
 
 // $-.any_prop_name
@@ -91,10 +88,7 @@ public:
 
     const Value& eval(ExpressionContext& ctx) override;
 
-    std::string toString() const override {
-        // TODO
-        return "";
-    }
+    std::string toString() const override;
 };
 
 // $VarName.any_prop_name
@@ -109,10 +103,7 @@ public:
 
     const Value& eval(ExpressionContext& ctx) override;
 
-    std::string toString() const override {
-        // TODO
-        return "";
-    }
+    std::string toString() const override;
 };
 
 // $^.TagName.any_prop_name
@@ -127,10 +118,7 @@ public:
 
     const Value& eval(ExpressionContext& ctx) override;
 
-    std::string toString() const override {
-        // TODO
-        return "";
-    }
+    std::string toString() const override;
 };
 
 // $$.TagName.any_prop_name
@@ -145,10 +133,7 @@ public:
 
     const Value& eval(ExpressionContext& ctx) override;
 
-    std::string toString() const override {
-        // TODO
-        return "";
-    }
+    std::string toString() const override;
 };
 
 // EdgeName._src
@@ -162,10 +147,7 @@ public:
 
     const Value& eval(ExpressionContext& ctx) override;
 
-    std::string toString() const override {
-        // TODO
-        return "";
-    }
+    std::string toString() const override;
 };
 
 // EdgeName._type
@@ -179,10 +161,7 @@ public:
 
     const Value& eval(ExpressionContext& ctx) override;
 
-    std::string toString() const override {
-        // TODO
-        return "";
-    }
+    std::string toString() const override;
 };
 
 // EdgeName._rank
@@ -196,10 +175,7 @@ public:
 
     const Value& eval(ExpressionContext& ctx) override;
 
-    std::string toString() const override {
-        // TODO
-        return "";
-    }
+    std::string toString() const override;
 };
 
 // EdgeName._dst
@@ -213,10 +189,7 @@ public:
 
     const Value& eval(ExpressionContext& ctx) override;
 
-    std::string toString() const override {
-        // TODO
-        return "";
-    }
+    std::string toString() const override;
 };
 }   // namespace nebula
 #endif

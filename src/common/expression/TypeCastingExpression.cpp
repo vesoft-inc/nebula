@@ -44,4 +44,11 @@ void TypeCastingExpression::resetFrom(Decoder& decoder) {
     operand_ = decoder.readExpression();
     CHECK(!!operand_);
 }
+
+std::string TypeCastingExpression::toString() const {
+    std::stringstream out;
+    out << "(" << vType_ << ")" << operand_->toString();
+    return out.str();
+}
+
 }  // namespace nebula

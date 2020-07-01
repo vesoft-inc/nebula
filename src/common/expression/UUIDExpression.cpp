@@ -41,4 +41,8 @@ const Value& UUIDExpression::eval(ExpressionContext& ctx) {
     return result_;
 }
 
+std::string UUIDExpression::toString() const {
+    return folly::stringPrintf("uuid(%s)", field_->c_str());
+}
+
 }  // namespace nebula

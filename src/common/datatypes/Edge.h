@@ -66,10 +66,14 @@ struct Edge {
             << "(" << dst << ")"
             << "@" << ranking;
         if (!props.empty()) {
-            os << " ";
-            for (const auto& prop : props) {
-                os << prop.first << ":" << prop.second.toString() << ",";
-            }
+            std::vector<std::string> value(props.size());
+            std::transform(
+                props.begin(), props.end(), value.begin(), [](const auto& iter) -> std::string {
+                    std::stringstream out;
+                    out << iter.first << ":" << iter.second;
+                    return out.str();
+                });
+            os << " " << folly::join(",", value);
         }
         return os.str();
     }
