@@ -135,7 +135,6 @@ Status GoExecutor::prepareStep() {
     auto *clause = sentence_->stepClause();
     if (clause != nullptr) {
         recordFrom_ = clause->recordFrom();
-        CHECK_GT(recordFrom_, 0);
         steps_ = clause->recordTo();
     }
 
@@ -593,6 +592,7 @@ void GoExecutor::onStepOutResponse(RpcResponse &&rpcResp) {
     if (isFinalStep()) {
         GO_EXIT();
     } else {
+        CHECK_GT(records_.size(), 0);
         auto dsts = getDstIdsFromResps(records_.end() - 1, records_.end());
         starts_ = std::move(dsts);
         if (starts_.empty()) {
@@ -617,6 +617,7 @@ void GoExecutor::maybeFinishExecution() {
     }
 
     CHECK_GT(recordFrom_, 0);
+    CHECK_GE(records_.size(), recordFrom_ - 1);
     auto dstIds = getDstIdsFromResps(records_.begin() + recordFrom_ - 1, records_.end());
 
     // Reaching the dead end
