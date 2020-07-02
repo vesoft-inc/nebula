@@ -520,8 +520,8 @@ TEST_F(SchemaTest, TestTagAndEdge) {
     // Test create tag succeeded
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE TAG person(name string, email string, "
-                            "age int, gender string, row_timestamp timestamp)";
+        std::string query = "CREATE TAG person(name string, email string DEFAULT \"NULL\", "
+                            "age int, gender string, row_timestamp timestamp DEFAULT 2020)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -590,10 +590,10 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         createTagStr = "CREATE TAG `person` (\n"
                        "  `name` string,\n"
-                       "  `email` string,\n"
+                       "  `email` string default \"NULL\",\n"
                        "  `age` int,\n"
                        "  `gender` string,\n"
-                       "  `row_timestamp` timestamp\n"
+                       "  `row_timestamp` timestamp default 2020\n"
                        ") ttl_duration = 0, ttl_col = \"\"";
         std::vector<uniform_tuple_t<std::string, 2>> expected{
             {"person", createTagStr},
@@ -621,7 +621,7 @@ TEST_F(SchemaTest, TestTagAndEdge) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG upper(name string, ACCOUNT string, "
-                            "age int, gender string, row_timestamp timestamp, "
+                            "age int, gender string, row_timestamp timestamp DEFAULT 100, "
                             "value int, values string)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -694,9 +694,9 @@ TEST_F(SchemaTest, TestTagAndEdge) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         createTagStr = "CREATE TAG `person` (\n"
                        "  `name` string,\n"
-                       "  `email` string,\n"
+                       "  `email` string default \"NULL\",\n"
                        "  `age` string,\n"
-                       "  `row_timestamp` timestamp,\n"
+                       "  `row_timestamp` timestamp default 2020,\n"
                        "  `col1` int,\n"
                        "  `col2` string\n"
                        ") ttl_duration = 0, ttl_col = \"\"";
@@ -775,7 +775,8 @@ TEST_F(SchemaTest, TestTagAndEdge) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE EDGE buy_with_default(id int, time string default \"\")";
+        std::string query = "CREATE EDGE buy_with_default(id int, name string DEFAULT \"NULL\","
+                            "time timestamp DEFAULT 2020)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -824,15 +825,16 @@ TEST_F(SchemaTest, TestTagAndEdge) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "SHOW CREATE EDGE buy";
+        std::string query = "SHOW CREATE EDGE buy_with_default";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::string createEdgeStr = "CREATE EDGE `buy` (\n"
+        std::string createEdgeStr = "CREATE EDGE `buy_with_default` (\n"
                                    "  `id` int,\n"
-                                   "  `time` string\n"
+                                   "  `name` string default \"NULL\",\n"
+                                   "  `time` timestamp default 2020\n"
                                    ") ttl_duration = 0, ttl_col = \"\"";
         std::vector<uniform_tuple_t<std::string, 2>> expected{
-            {"buy", createEdgeStr},
+            {"buy_with_default", createEdgeStr},
         };
         EXPECT_TRUE(verifyResult(resp, expected));
     }
