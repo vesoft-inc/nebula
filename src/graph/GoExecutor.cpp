@@ -102,6 +102,11 @@ void GoExecutor::execute() {
         onEmptyInputs();
         return;
     }
+    // record means the reponse index [1, steps]
+    if (recordFrom_ == 0) {
+        recordFrom_ = 1;
+        CHECK_GE(steps_, recordFrom_);
+    }
 
     status = setupStarts();
     if (!status.ok()) {
