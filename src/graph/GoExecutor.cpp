@@ -130,6 +130,7 @@ Status GoExecutor::prepareStep() {
     auto *clause = sentence_->stepClause();
     if (clause != nullptr) {
         recordFrom_ = clause->recordFrom();
+        CHECK_GT(recordFrom_, 0);
         steps_ = clause->recordTo();
     }
 
@@ -610,6 +611,7 @@ void GoExecutor::maybeFinishExecution() {
         return;
     }
 
+    CHECK_GT(recordFrom_, 0);
     auto dstIds = getDstIdsFromResps(records_.begin() + recordFrom_ - 1, records_.end());
 
     // Reaching the dead end
@@ -698,6 +700,7 @@ void GoExecutor::finishExecution() {
 StatusOr<std::vector<cpp2::RowValue>> GoExecutor::toThriftResponse() const {
     std::vector<cpp2::RowValue> rows;
     int64_t totalRows = 0;
+    CHECK_GT(recordFrom_, 0);
     for (auto rpcResp = records_.begin() + recordFrom_ - 1; rpcResp != records_.end(); ++rpcResp) {
         for (const auto& resp : rpcResp->responses()) {
             if (resp.get_total_edges() != nullptr) {
@@ -1023,6 +1026,7 @@ bool GoExecutor::processFinalResult(Callback cb) const {
         colTypes.emplace_back(calculateExprType(column->expr()));
     }
     std::size_t recordIn = recordFrom_;
+    CHECK_GT(recordFrom_, 0);
     for (auto rpcResp = records_.begin() + recordFrom_ - 1;
          rpcResp != records_.end();
          ++rpcResp, ++recordIn) {
@@ -1348,7 +1352,7 @@ void GoExecutor::VertexHolder::add(const storage::cpp2::QueryResponse &resp) {
 }
 
 void GoExecutor::joinResp(RpcResponse &&resp) {
-    records_.emplace_back(resp);
+    records_.emplace_back(std::move(resp));
 }
 
 }   // namespace graph

@@ -614,6 +614,9 @@ step_clause
     | INTEGER KW_TO INTEGER KW_STEPS {
         ifOutOfRange($1, @2);
         ifOutOfRange($3, @2);
+        if ($1 == 0) {
+            throw nebula::GraphParser::syntax_error(@1, "Invalid step range");
+        }
         if ($1 > $3) {
             throw nebula::GraphParser::syntax_error(@1, "Invalid step range");
         }
