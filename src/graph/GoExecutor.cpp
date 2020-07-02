@@ -617,7 +617,7 @@ void GoExecutor::maybeFinishExecution() {
     }
 
     CHECK_GT(recordFrom_, 0);
-    CHECK_GE(records_.size(), recordFrom_ - 1);
+    CHECK_GE(records_.size(), recordFrom_ - 1) << "Current step " << curStep_;
     auto dstIds = getDstIdsFromResps(records_.begin() + recordFrom_ - 1, records_.end());
 
     // Reaching the dead end
