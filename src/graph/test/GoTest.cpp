@@ -2371,6 +2371,20 @@ TEST_P(GoTest, Contains) {
 }
 
 TEST_P(GoTest, WithIntermediateData) {
+    // zero to zero
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tony Parker"];
+        auto *fmt = "GO 0 TO 0 STEPS FROM %ld OVER like YIELD DISTINCT like._dst";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::tuple<VertexID>> expected = {
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // simple
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Tony Parker"];
