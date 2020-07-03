@@ -584,10 +584,11 @@ void GoExecutor::stepOut() {
 void GoExecutor::onStepOutResponse(RpcResponse &&rpcResp) {
     joinResp(std::move(rpcResp));
 
+    // back trace each step
+    auto dsts = getDstIdsFromRespWithBackTrack(records_.back());
     if (isFinalStep()) {
         GO_EXIT();
     } else {
-        auto dsts = getDstIdsFromResps(records_.end() - 1, records_.end());
         starts_ = std::move(dsts);
         if (starts_.empty()) {
             GO_EXIT();
@@ -642,14 +643,52 @@ std::vector<VertexID> GoExecutor::getDstIdsFromResps(std::vector<RpcResponse>::i
                 for (const auto &edata : vdata.edge_data) {
                     for (const auto& edge : edata.get_edges()) {
                         auto dst = edge.get_dst();
-                        if (!isFinalStep() && backTracker_ != nullptr) {
-                            backTracker_->add(vdata.get_vertex_id(), dst);
-                        }
                         set.emplace(dst);
                     }
                 }
             }
         }
+    }
+    return std::vector<VertexID>(set.begin(), set.end());
+}
+
+std::vector<VertexID> GoExecutor::getDstIdsFromRespWithBackTrack(const RpcResponse &rpcResp) const {
+    // back trance in current step
+    // To avoid overlap in on step edges
+    // For example
+    // Dst , Src
+    // 6  ,  1
+    // 7  ,  6
+    // Will mistake lead to 7->6 if insert one by one
+    // So read all roots of current step first , then insert them
+    std::multimap<VertexID, VertexID> backTrace;
+    std::unordered_set<VertexID> set;
+    for (const auto &resp : rpcResp.responses()) {
+        auto *vertices = resp.get_vertices();
+        if (vertices == nullptr) {
+            continue;
+        }
+
+        for (const auto &vdata : *vertices) {
+            for (const auto &edata : vdata.edge_data) {
+                for (const auto& edge : edata.get_edges()) {
+                    auto dst = edge.get_dst();
+                    if (!isFinalStep() && backTracker_ != nullptr) {
+                        auto range = backTracker_->get(vdata.get_vertex_id());
+                        if (range.first == range.second) {  // not found root
+                            backTrace.emplace(dst, vdata.get_vertex_id());
+                        }
+                        for (auto trace = range.first; trace != range.second; ++trace) {
+                            backTrace.emplace(dst, trace->second);
+                        }
+                    }
+                    set.emplace(dst);
+                }
+            }
+        }
+    }
+    if (!isFinalStep() && backTracker_ != nullptr) {
+        backTracker_->inject(backTrace);
     }
     return std::vector<VertexID>(set.begin(), set.end());
 }
@@ -1061,15 +1100,15 @@ bool GoExecutor::processFinalResult(Callback cb) const {
                 VLOG(1) << "Total vdata.edge_data size " << vdata.edge_data.size();
                 auto tagData = vdata.get_tag_data();
                 auto srcId = vdata.get_vertex_id();
-                const auto rootId = getRoot(srcId, recordIn);
-                auto inputRows = index_->rowsOfVid(rootId);
+                const auto roots = getRoots(srcId, recordIn);
+                auto inputRows = index_->rowsOfVids(roots);
                 // Here if join the input we extend the input rows coresponding to current vertex;
                 // Or just loop once as previous that not join anything,
                 // in fact result what in responses.
                 bool notJoinOnce = false;
-                for (auto inputRow = inputRows.first;
-                     !joinInput || inputRow != inputRows.second;
-                     joinInput ? ++inputRow : inputRow) {
+                for (auto inputRow = inputRows.begin();
+                    !joinInput || inputRow != inputRows.end();
+                    joinInput ? ++inputRow : inputRow) {
                     if (!joinInput) {
                         if (notJoinOnce) {
                             break;
@@ -1166,11 +1205,11 @@ bool GoExecutor::processFinalResult(Callback cb) const {
                                 return ret.value();
                             };
                             getters.getVariableProp = [inputRow, this] (const std::string &prop) {
-                                return index_->getColumnWithRow(inputRow->second, prop);
+                                return index_->getColumnWithRow(*inputRow, prop);
                             };
 
                             getters.getInputProp = [inputRow, this] (const std::string &prop) {
-                                return index_->getColumnWithRow(inputRow->second, prop);
+                                return index_->getColumnWithRow(*inputRow, prop);
                             };
 
                             std::unique_ptr<RowReader> reader;
@@ -1259,8 +1298,8 @@ bool GoExecutor::processFinalResult(Callback cb) const {
                             }
                         }  // for edges
                     }  // for edata
-                }   // for `vdata'
-            }  // extend input rows
+                }   // for input rows
+            }  // for vdata
         }   // for `resp'
     }
     return true;
@@ -1348,7 +1387,7 @@ void GoExecutor::VertexHolder::add(const storage::cpp2::QueryResponse &resp) {
 }
 
 void GoExecutor::joinResp(RpcResponse &&resp) {
-    records_.emplace_back(resp);
+    records_.emplace_back(std::move(resp));
 }
 
 }   // namespace graph
