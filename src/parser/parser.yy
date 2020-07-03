@@ -101,7 +101,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 
 /* keywords */
 %token KW_GO KW_AS KW_TO KW_OR KW_AND KW_XOR KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
-%token KW_MATCH KW_INSERT KW_VALUE KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_OFFLINE
+%token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_OFFLINE
 %token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND KW_REBUILD
 %token KW_INT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_PART KW_PARTS KW_TIMESTAMP KW_ADD
@@ -256,7 +256,6 @@ name_label
 
 unreserved_keyword
      : KW_SPACE              { $$ = new std::string("space"); }
-     | KW_VALUE              { $$ = new std::string("value"); }
      | KW_VALUES             { $$ = new std::string("values"); }
      | KW_HOSTS              { $$ = new std::string("hosts"); }
      | KW_SPACES             { $$ = new std::string("spaces"); }
@@ -1306,16 +1305,11 @@ assignment_sentence
     }
     ;
 
-kw_values
-    : KW_VALUE { }
-    | KW_VALUES { }
-    ;
-
 insert_vertex_sentence
-    : KW_INSERT KW_VERTEX vertex_tag_list kw_values vertex_row_list {
+    : KW_INSERT KW_VERTEX vertex_tag_list KW_VALUES vertex_row_list {
         $$ = new InsertVertexSentence($3, $5);
     }
-    | KW_INSERT KW_VERTEX KW_NO KW_OVERWRITE vertex_tag_list kw_values vertex_row_list {
+    | KW_INSERT KW_VERTEX KW_NO KW_OVERWRITE vertex_tag_list KW_VALUES vertex_row_list {
         $$ = new InsertVertexSentence($5, $7, false /* not overwritable */);
     }
     ;
@@ -1389,21 +1383,21 @@ value_list
     ;
 
 insert_edge_sentence
-    : KW_INSERT KW_EDGE name_label L_PAREN R_PAREN kw_values edge_row_list {
+    : KW_INSERT KW_EDGE name_label L_PAREN R_PAREN KW_VALUES edge_row_list {
         auto sentence = new InsertEdgeSentence();
         sentence->setEdge($3);
         sentence->setProps(new PropertyList());
         sentence->setRows($7);
         $$ = sentence;
     }
-    | KW_INSERT KW_EDGE name_label L_PAREN prop_list R_PAREN kw_values edge_row_list {
+    | KW_INSERT KW_EDGE name_label L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
         auto sentence = new InsertEdgeSentence();
         sentence->setEdge($3);
         sentence->setProps($5);
         sentence->setRows($8);
         $$ = sentence;
     }
-    | KW_INSERT KW_EDGE KW_NO KW_OVERWRITE name_label L_PAREN R_PAREN kw_values edge_row_list {
+    | KW_INSERT KW_EDGE KW_NO KW_OVERWRITE name_label L_PAREN R_PAREN KW_VALUES edge_row_list {
         auto sentence = new InsertEdgeSentence();
         sentence->setOverwrite(false);
         sentence->setEdge($5);
@@ -1411,7 +1405,7 @@ insert_edge_sentence
         sentence->setRows($9);
         $$ = sentence;
     }
-    | KW_INSERT KW_EDGE KW_NO KW_OVERWRITE name_label L_PAREN prop_list R_PAREN kw_values edge_row_list {
+    | KW_INSERT KW_EDGE KW_NO KW_OVERWRITE name_label L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
         auto sentence = new InsertEdgeSentence();
         sentence->setOverwrite(false);
         sentence->setEdge($5);
