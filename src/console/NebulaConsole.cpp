@@ -10,7 +10,7 @@
 
 DEFINE_string(addr, "127.0.0.1", "Nebula daemon IP address");
 DEFINE_int32(port, 0, "Nebula daemon listening port");
-DEFINE_string(u, "", "Username used to authenticate");
+DEFINE_string(u, "root", "Username used to authenticate");
 DEFINE_string(p, "", "Password used to authenticate");
 
 
@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
     }
 
     CliManager cli;
-    if (!cli.connect(FLAGS_addr, FLAGS_port, FLAGS_u, FLAGS_p)) {
+    if (!cli.connect()) {
         return EXIT_FAILURE;
     }
 
