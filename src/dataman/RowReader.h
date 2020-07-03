@@ -178,7 +178,7 @@ public:
                 return v.toString();
             }
             default:
-                LOG(ERROR) << "Unknown type: " << static_cast<int32_t>(vType.type);
+                VLOG(2) << "Unknown type: " << static_cast<int32_t>(vType.type);
                 return ResultType::E_DATA_INVALID;
         }
     }
@@ -238,7 +238,7 @@ public:
                 return v.toString();
             }
             default:
-                LOG(ERROR) << "Unknown type: " << static_cast<int32_t>(vType.get_type());
+                VLOG(2) << "Unknown type: " << static_cast<int32_t>(vType.get_type());
                 return ResultType::E_DATA_INVALID;
         }
     }
