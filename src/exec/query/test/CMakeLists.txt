@@ -3,7 +3,7 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-SET(EXEC_QUERY_TEST_LIBS
+SET(EXEC_QUERY_TEST_OBJS
     $<TARGET_OBJECTS:common_expression_obj>
     $<TARGET_OBJECTS:common_network_obj>
     $<TARGET_OBJECTS:common_process_obj>
@@ -40,18 +40,26 @@ SET(EXEC_QUERY_TEST_LIBS
     $<TARGET_OBJECTS:context_obj>
 )
 
+SET(EXEC_QUERY_TEST_LIBS
+    ${THRIFT_LIBRARIES}
+    gtest
+    gtest_main
+    wangle
+)
+
 nebula_add_test(
-    NAME query_executors_test
+    NAME
+        query_executors_test
     SOURCES
         ProjectTest.cpp
         GetNeighborsTest.cpp
         DataCollectTest.cpp
         SetExecutorTest.cpp
+        FilterTest.cpp
+        DedupTest.cpp
     OBJECTS
-        ${EXEC_QUERY_TEST_LIBS}
+        ${EXEC_QUERY_TEST_OBJS}
     LIBRARIES
-        ${THRIFT_LIBRARIES}
-        gtest
-        gtest_main
-        wangle
+        ${EXEC_QUERY_TEST_LIBS}
 )
+

@@ -8,15 +8,39 @@
 
 #include "planner/Query.h"
 
+#include "context/ExpressionContextImpl.h"
+
 namespace nebula {
 namespace graph {
 
 folly::Future<Status> FilterExecutor::execute() {
     dumpLog();
     auto* filter = asNode<Filter>(node());
-    auto* expr = filter->condition();
-    UNUSED(expr);
-    return start();
+    auto iter = ectx_->getResult(filter->inputVar()).iter();
+
+    if (iter == nullptr) {
+        LOG(ERROR) << "Internal Error: iterator is nullptr";
+        return Status::Error("Internal Error: iterator is nullptr");
+    }
+    auto result = ExecResult::buildDefault(iter->valuePtr());
+    ExpressionContextImpl ctx(ectx_, iter.get());
+    auto condition = filter->condition();
+    while (iter->valid()) {
+        auto val = condition->eval(ctx);
+        if (!val.isBool() && !val.isNull()) {
+            return Status::Error("Internal Error: Wrong type result, "
+                                 "should be NULL type or BOOL type");
+        }
+        if (val.isNull() || !val.getBool()) {
+            iter->erase();
+        } else {
+            iter->next();
+        }
+    }
+
+    iter->reset();
+    result.setIter(std::move(iter));
+    return finish(std::move(result));
 }
 
 }   // namespace graph

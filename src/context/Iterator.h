@@ -428,12 +428,10 @@ private:
     std::unique_ptr<Iterator> left_;
     std::unique_ptr<Iterator> right_;
 };
-
 }  // namespace graph
 }  // namespace nebula
 
 namespace std {
-
 template <>
 struct equal_to<const nebula::Row*> {
     bool operator()(const nebula::Row* lhs, const nebula::Row* rhs) const {
@@ -449,5 +447,4 @@ struct hash<const nebula::Row*> {
 };
 
 }   // namespace std
-
 #endif  // CONTEXT_ITERATOR_H_

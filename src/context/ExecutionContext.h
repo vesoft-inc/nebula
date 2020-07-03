@@ -64,6 +64,11 @@ public:
         return ExecResult(std::make_shared<Value>(std::move(val)));
     }
 
+    static ExecResult buildGetNeighbors(Value&& val) {
+        State state(State::Stat::kSuccess, "");
+        return buildGetNeighbors(std::move(val), std::move(state));
+    }
+
     static ExecResult buildGetNeighbors(Value&& val, State&& stat) {
         ExecResult result(std::make_shared<Value>(std::move(val)), std::move(stat));
         auto iter = std::make_unique<GetNeighborsIter>(result.valuePtr());
@@ -76,6 +81,11 @@ public:
         auto iter = std::make_unique<SequentialIter>(result.valuePtr());
         result.setIter(std::move(iter));
         return result;
+    }
+
+    static ExecResult buildSequential(Value&& val) {
+        State state(State::Stat::kSuccess, "");
+        return buildSequential(std::move(val), std::move(state));
     }
 
     void setIter(std::unique_ptr<Iterator> iter) {

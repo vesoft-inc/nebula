@@ -599,7 +599,6 @@ TEST(IteratorTest, TestUnionIterator) {
         }
     }
 }
-
 }  // namespace graph
 }  // namespace nebula
 
@@ -610,3 +609,4 @@ int main(int argc, char** argv) {
 
     return RUN_ALL_TESTS();
 }
+

@@ -41,8 +41,7 @@ Status SetValidator::toPlan() {
             if (distinct_) {
                 auto dedup = Dedup::make(
                         plan,
-                        lValidator_->root(),
-                        nullptr/* TODO: build condition*/);
+                        lValidator_->root());
                 root_ = dedup;
             } else {
                 root_ = unionOp;
