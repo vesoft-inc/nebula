@@ -18,10 +18,7 @@ public:
     CliManager();
     ~CliManager() = default;
 
-    bool connect(const std::string& addr,
-                 uint16_t port,
-                 const std::string& username,
-                 const std::string& password);
+    bool connect();
 
     void batch(const std::string& filename);
 
