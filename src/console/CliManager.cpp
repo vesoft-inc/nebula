@@ -24,9 +24,6 @@ DEFINE_bool(enable_history, false, "Whether to force saving the command history"
 namespace nebula {
 namespace graph {
 
-const int32_t kMaxUsernameLen = 16;
-const int32_t kMaxPasswordLen = 24;
-
 CliManager::CliManager() {
     if (!fs::FileUtils::isStdinTTY()) {
         enableHistroy_ = false;
@@ -50,15 +47,8 @@ CliManager::CliManager() {
 bool CliManager::connect() {
     addr_ = FLAGS_addr;
     port_ = FLAGS_port;
-    username_ = FLAGS_u.empty() ? "root" : FLAGS_u;
+    username_ = FLAGS_u;
     std::string passwd = FLAGS_p;
-    if (username_.size() > kMaxUsernameLen) {
-        username_.erase(username_.begin() + kMaxUsernameLen, username_.end());
-    }
-
-    if (passwd.size() > kMaxPasswordLen) {
-        passwd.erase(passwd.begin() + kMaxPasswordLen, passwd.end());
-    }
 
     IPv4 temp;
     if (!network::NetworkUtils::ipv4ToInt(addr_, temp)) {
