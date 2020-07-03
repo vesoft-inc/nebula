@@ -20,8 +20,18 @@ Status SetExecutor::checkInputDataSets() {
     auto& lResult = ectx_->getResult(setNode->leftInputVar());
     auto& rResult = ectx_->getResult(setNode->rightInputVar());
 
-    auto& leftData = lResult.iter()->value();
-    auto& rightData = rResult.iter()->value();
+    auto lIter = lResult.iter();
+    auto rIter = rResult.iter();
+
+    if (UNLIKELY(lIter->kind() == Iterator::Kind::kGetNeighbors ||
+                 rIter->kind() == Iterator::Kind::kGetNeighbors)) {
+        return Status::Error("Invalid iterator kind, %d vs. %d",
+                             static_cast<uint8_t>(lIter->kind()),
+                             static_cast<uint8_t>(rIter->kind()));
+    }
+
+    auto& leftData = lIter->value();
+    auto& rightData = rIter->value();
 
     if (UNLIKELY(!leftData.isDataSet() || !rightData.isDataSet())) {
         std::stringstream ss;
@@ -30,8 +40,8 @@ Status SetExecutor::checkInputDataSets() {
         return Status::Error(ss.str());
     }
 
-    auto lds = leftData.getDataSet();
-    auto rds = rightData.getDataSet();
+    auto& lds = leftData.getDataSet();
+    auto& rds = rightData.getDataSet();
 
     if (LIKELY(lds.colNames == rds.colNames)) {
         return Status::OK();

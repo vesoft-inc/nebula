@@ -167,6 +167,34 @@ TEST_F(SetExecutorTest, TestUnionAll) {
     }
 }
 
+TEST_F(SetExecutorTest, TestGetNeighobrsIterator) {
+    auto left = StartNode::make(plan_);
+    auto right = StartNode::make(plan_);
+    auto unionNode = Union::make(plan_, left, right);
+    unionNode->setLeftVar(left->varName());
+    unionNode->setRightVar(right->varName());
+
+    auto unionExecutor = Executor::makeExecutor(unionNode, qctx_.get());
+
+    DataSet lds;
+    lds.colNames = {"col1"};
+    DataSet rds;
+    rds.colNames = {"col1", "col2"};
+
+    // Must save the values after constructing executors
+    auto lRes = ExecResult::buildGetNeighbors(Value(std::move(lds)), State());
+    auto rRes = ExecResult::buildSequential(Value(std::move(rds)), State());
+    qctx_->ectx()->setResult(left->varName(), std::move(lRes));
+    qctx_->ectx()->setResult(right->varName(), std::move(rRes));
+    auto future = unionExecutor->execute();
+    auto status = std::move(future).get();
+
+    EXPECT_FALSE(status.ok());
+
+    auto expected = "Invalid iterator kind, 1 vs. 2";
+    EXPECT_EQ(status.toString(), expected);
+}
+
 TEST_F(SetExecutorTest, TestUnionDifferentColumns) {
     auto left = StartNode::make(plan_);
     auto right = StartNode::make(plan_);
