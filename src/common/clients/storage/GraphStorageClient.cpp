@@ -310,7 +310,8 @@ GraphStorageClient::deleteVertices(GraphSpaceID space,
 folly::Future<StatusOr<storage::cpp2::UpdateResponse>>
 GraphStorageClient::updateVertex(GraphSpaceID space,
                                  VertexID vertexId,
-                                 std::vector<cpp2::UpdatedVertexProp> updatedProps,
+                                 TagID tagId,
+                                 std::vector<cpp2::UpdatedProp> updatedProps,
                                  bool insertable,
                                  std::vector<std::string> returnProps,
                                  std::string condition,
@@ -336,6 +337,7 @@ GraphStorageClient::updateVertex(GraphSpaceID space,
     cpp2::UpdateVertexRequest req;
     req.set_space_id(space);
     req.set_vertex_id(vertexId);
+    req.set_tag_id(tagId);
     req.set_part_id(part);
     req.set_updated_props(std::move(updatedProps));
     req.set_return_props(std::move(returnProps));
@@ -357,7 +359,7 @@ GraphStorageClient::updateVertex(GraphSpaceID space,
 folly::Future<StatusOr<storage::cpp2::UpdateResponse>>
 GraphStorageClient::updateEdge(GraphSpaceID space,
                                storage::cpp2::EdgeKey edgeKey,
-                               std::vector<cpp2::UpdatedEdgeProp> updatedProps,
+                               std::vector<cpp2::UpdatedProp> updatedProps,
                                bool insertable,
                                std::vector<std::string> returnProps,
                                std::string condition,

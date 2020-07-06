@@ -89,7 +89,8 @@ public:
     folly::Future<StatusOr<storage::cpp2::UpdateResponse>> updateVertex(
         GraphSpaceID space,
         VertexID vertexId,
-        std::vector<cpp2::UpdatedVertexProp> updatedProps,
+        TagID tagId,
+        std::vector<cpp2::UpdatedProp> updatedProps,
         bool insertable,
         std::vector<std::string> returnProps,
         std::string condition,
@@ -98,7 +99,7 @@ public:
     folly::Future<StatusOr<storage::cpp2::UpdateResponse>> updateEdge(
         GraphSpaceID space,
         storage::cpp2::EdgeKey edgeKey,
-        std::vector<cpp2::UpdatedEdgeProp> updatedProps,
+        std::vector<cpp2::UpdatedProp> updatedProps,
         bool insertable,
         std::vector<std::string> returnProps,
         std::string condition,

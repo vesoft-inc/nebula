@@ -436,26 +436,25 @@ struct UpdateResponse {
 }
 
 
+struct UpdatedProp {
+    1: required binary          name,       // property name
+    2: required binary          value,      // new value (encoded expression)
+}
+
 /*
  * Start of UpdateVertex section
  */
-struct UpdatedVertexProp {
-    1: required common.TagID    tag_id,     // the Tag ID
-    2: required binary          name,       // property name
-    3: required binary          value,      // new value (encoded expression)
-}
-
-
 struct UpdateVertexRequest {
     1: common.GraphSpaceID          space_id,
     2: common.PartitionID           part_id,
     3: common.VertexID              vertex_id,
-    4: list<UpdatedVertexProp>      updated_props,
-    5: optional bool                insertable = false,
+    4: required common.TagID        tag_id
+    5: list<UpdatedProp>            updated_props,
+    6: optional bool                insertable = false,
     // A list of expressions
-    6: optional list<binary>        return_props,
+    7: optional list<binary>        return_props,
     // If provided, the update happens only when the condition evaluates true
-    7: optional binary              condition,
+    8: optional binary              condition,
 }
 /*
  * End of UpdateVertex section
@@ -465,17 +464,11 @@ struct UpdateVertexRequest {
 /*
  * Start of UpdateEdge section
  */
-struct UpdatedEdgeProp {
-    1: required binary          name,       // property name
-    2: required binary          value,      // new value (encoded expression)
-}
-
-
 struct UpdateEdgeRequest {
     1: common.GraphSpaceID      space_id,
     2: common.PartitionID       part_id,
     3: EdgeKey                  edge_key,
-    4: list<UpdatedEdgeProp>    updated_props,
+    4: list<UpdatedProp>        updated_props,
     5: optional bool            insertable = false,
     // A list of expressions
     6: optional list<binary>    return_props,
