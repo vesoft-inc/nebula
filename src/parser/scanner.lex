@@ -35,7 +35,8 @@ FROM                        ([Ff][Rr][Oo][Mm])
 WHERE                       ([Ww][Hh][Ee][Rr][Ee])
 MATCH                       ([Mm][Aa][Tt][Cc][Hh])
 INSERT                      ([Ii][Nn][Ss][Ee][Rr][Tt])
-VALUES                      ([Vv][Aa][Ll][Uu][Ee][Ss]?)
+VALUE                       ([Vv][Aa][Ll][Uu][Ee])
+VALUES                      ([Vv][Aa][Ll][Uu][Ee][Ss])
 YIELD                       ([Yy][Ii][Ee][Ll][Dd])
 RETURN                      ([Rr][Ee][Tt][Uu][Rr][Nn])
 CREATE                      ([Cc][Rr][Ee][Aa][Tt][Ee])
@@ -257,6 +258,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {SPACE}                     { return TokenType::KW_SPACE; }
 {SPACES}                    { return TokenType::KW_SPACES; }
 {VALUES}                    { return TokenType::KW_VALUES; }
+{VALUE}                     { return TokenType::KW_VALUE; }
 {USER}                      { return TokenType::KW_USER; }
 {USERS}                     { return TokenType::KW_USERS; }
 {PASSWORD}                  { return TokenType::KW_PASSWORD; }

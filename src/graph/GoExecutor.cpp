@@ -102,6 +102,11 @@ void GoExecutor::execute() {
         onEmptyInputs();
         return;
     }
+    // record means the reponse index [1, steps]
+    if (recordFrom_ == 0) {
+        recordFrom_ = 1;
+        CHECK_GE(steps_, recordFrom_);
+    }
 
     status = setupStarts();
     if (!status.ok()) {
@@ -587,6 +592,7 @@ void GoExecutor::onStepOutResponse(RpcResponse &&rpcResp) {
     if (isFinalStep()) {
         GO_EXIT();
     } else {
+        CHECK_GT(records_.size(), 0);
         auto dsts = getDstIdsFromResps(records_.end() - 1, records_.end());
         starts_ = std::move(dsts);
         if (starts_.empty()) {
@@ -610,6 +616,8 @@ void GoExecutor::maybeFinishExecution() {
         return;
     }
 
+    CHECK_GT(recordFrom_, 0);
+    CHECK_GE(records_.size(), recordFrom_ - 1) << "Current step " << curStep_;
     auto dstIds = getDstIdsFromResps(records_.begin() + recordFrom_ - 1, records_.end());
 
     // Reaching the dead end
@@ -698,6 +706,7 @@ void GoExecutor::finishExecution() {
 StatusOr<std::vector<cpp2::RowValue>> GoExecutor::toThriftResponse() const {
     std::vector<cpp2::RowValue> rows;
     int64_t totalRows = 0;
+    CHECK_GT(recordFrom_, 0);
     for (auto rpcResp = records_.begin() + recordFrom_ - 1; rpcResp != records_.end(); ++rpcResp) {
         for (const auto& resp : rpcResp->responses()) {
             if (resp.get_total_edges() != nullptr) {
@@ -1023,6 +1032,7 @@ bool GoExecutor::processFinalResult(Callback cb) const {
         colTypes.emplace_back(calculateExprType(column->expr()));
     }
     std::size_t recordIn = recordFrom_;
+    CHECK_GT(recordFrom_, 0);
     for (auto rpcResp = records_.begin() + recordFrom_ - 1;
          rpcResp != records_.end();
          ++rpcResp, ++recordIn) {
@@ -1348,7 +1358,7 @@ void GoExecutor::VertexHolder::add(const storage::cpp2::QueryResponse &resp) {
 }
 
 void GoExecutor::joinResp(RpcResponse &&resp) {
-    records_.emplace_back(resp);
+    records_.emplace_back(std::move(resp));
 }
 
 }   // namespace graph
