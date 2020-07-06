@@ -47,6 +47,10 @@ void UpdateEdgeProcessor::onProcessFinished(int32_t retNum) {
             return it->second;
         };
         for (auto& exp : returnColumnsExp_) {
+            if (!exp->prepare().ok()) {
+                LOG(ERROR) << "Expression::prepare failed";
+                return;
+            }
             auto value = exp->eval(getters);
             if (!value.ok()) {
                 LOG(ERROR) << value.status();
@@ -117,15 +121,25 @@ kvstore::ResultCode UpdateEdgeProcessor::collectVertexProps(
             // load it. To protect the data, we just return failed to graphd.
             return kvstore::ResultCode::ERR_UNKNOWN;
         }
-        const auto constSchema = reader->getSchema();
+        const auto schema = this->schemaMan_->getTagSchema(this->spaceId_, tagId);
+        if (schema == nullptr) {
+            LOG(WARNING) << "Can't find the schema for tagId " << tagId;
+            return kvstore::ResultCode::ERR_TAG_NOT_FOUND;
+        }
         for (auto& prop : props) {
+            VariantType v;
             auto res = RowReader::getPropByName(reader.get(), prop.prop_.name);
             if (!ok(res)) {
-                VLOG(1) << "Skip the bad value for tag: "
-                        << tagId << ", prop " << prop.prop_.name;
-                return kvstore::ResultCode::ERR_UNKNOWN;
+                auto defaultVal = schema->getDefaultValue(prop.prop_.name);
+                if (!defaultVal.ok()) {
+                    LOG(WARNING) << "No default value of "
+                                 << tagId << ", prop " << prop.prop_.name;
+                    return kvstore::ResultCode::ERR_TAG_NOT_FOUND;
+                }
+                v = std::move(defaultVal).value();
+            } else {
+                v = value(std::move(res));
             }
-            auto&& v = value(std::move(res));
             tagFilters_.emplace(std::make_pair(tagId, prop.prop_.name), v);
         }
     } else {
@@ -165,24 +179,38 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
             // So we leave the issue here. Now we just return failed to graphd.
             return kvstore::ResultCode::ERR_CORRUPT_DATA;
         }
-        const auto constSchema = reader->getSchema();
+        const auto constSchema = this->schemaMan_->getEdgeSchema(this->spaceId_,
+                                                                 std::abs(edgeKey.edge_type));
+        if (constSchema == nullptr) {
+            LOG(ERROR) << "Can't find the schema for edge " << edgeKey.edge_type;
+            return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
+        }
         for (auto index = 0UL; index < constSchema->getNumFields(); index++) {
             auto propName = std::string(constSchema->getFieldName(index));
             auto res = RowReader::getPropByName(reader.get(), propName);
+            VariantType v;
             if (!ok(res)) {
-                VLOG(1) << "Skip the bad edge value for prop " << propName;
-                return kvstore::ResultCode::ERR_UNKNOWN;
+                auto defaultVal = constSchema->getDefaultValue(propName);
+                if (!defaultVal.ok()) {
+                    LOG(WARNING) << "No default value of "
+                                 << edgeKey.edge_type << ", prop " << propName;
+                    return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
+                }
+                v = std::move(defaultVal).value();
+            } else {
+                v = value(std::move(res));
             }
-            auto&& v = value(std::move(res));
-            edgeFilters_.emplace(propName, v);
+            edgeFilters_.emplace(propName, std::move(v));
         }
         updater_ = std::unique_ptr<RowUpdater>(new RowUpdater(std::move(reader), constSchema));
     } else if (insertable_) {
         resp_.set_upsert(true);
-        int64_t ms = time::WallClock::fastNowInMicroSec();
-        auto now = std::numeric_limits<int64_t>::max() - ms;
+        auto version = FLAGS_enable_multi_versions ?
+            std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec() : 0L;
+        // Switch version to big-endian, make sure the key is in ordered.
+        version = folly::Endian::big(version);
         key_ = NebulaKeyUtils::edgeKey(partId, edgeKey.src, edgeKey.edge_type,
-                                       edgeKey.ranking, edgeKey.dst, now);
+                                       edgeKey.ranking, edgeKey.dst, version);
         const auto constSchema = this->schemaMan_->getEdgeSchema(this->spaceId_,
                                                                  std::abs(edgeKey.edge_type));
         if (constSchema == nullptr) {
@@ -289,6 +317,10 @@ folly::Optional<std::string> UpdateEdgeProcessor::updateAndWriteBack(PartitionID
         }
         auto vexp = std::move(exp).value();
         vexp->setContext(this->expCtx_.get());
+        if (!vexp->prepare().ok()) {
+            LOG(ERROR) << "Expression::prepare failed";
+            return folly::none;
+        }
         auto value = vexp->eval(getters);
         if (!value.ok()) {
             LOG(ERROR) << "Eval item expr failed";
@@ -465,6 +497,10 @@ cpp2::ErrorCode UpdateEdgeProcessor::checkFilter(const PartitionID partId,
     };
 
     if (!resp_.upsert && this->exp_ != nullptr) {
+        if (!this->exp_->prepare().ok()) {
+            LOG(ERROR) << "Expression::prepare failed";
+            return cpp2::ErrorCode::E_INVALID_FILTER;
+        }
         auto filterResult = this->exp_->eval(getters);
         if (!filterResult.ok()) {
             VLOG(1) << "Invalid filter expression";

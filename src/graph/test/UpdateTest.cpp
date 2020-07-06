@@ -703,6 +703,202 @@ TEST_F(UpdateTest, NotExists) {
     }
 }
 
+TEST_F(UpdateTest, UpsertThenInsert) {
+    FLAGS_enable_multi_versions = true;
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT VERTEX 100 SET building.name = \"No1\"";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "FETCH PROP on building 100";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, std::string>> expected = {
+            {100, "No1"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "INSERT VERTEX building(name) VALUES 100: (\"No2\")";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "FETCH PROP on building 100";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, std::string>> expected = {
+            {100, "No2"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    FLAGS_enable_multi_versions = false;
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT VERTEX 101 SET building.name = \"No1\"";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "FETCH PROP on building 101";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, std::string>> expected = {
+            {101, "No1"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "INSERT VERTEX building(name) VALUES 101: (\"No2\")";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "FETCH PROP on building 101";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, std::string>> expected = {
+            {101, "No2"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+TEST_F(UpdateTest, UpsertAfterAlterSchema) {
+    // Test upsert tag after alter schema
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "INSERT VERTEX building(name) VALUES 100: (\"No1\")";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "ALTER TAG building ADD (new_field string default \"123\")";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT VERTEX 100 SET building.name = \"No2\"";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "FETCH PROP on building 100";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, std::string, std::string>> expected = {
+            {100, "No2", "123"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT VERTEX 100 SET building.name = \"No3\", building.new_field = \"321\"";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "FETCH PROP on building 100";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, std::string, std::string>> expected = {
+            {100, "No3", "321"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT VERTEX 101 SET building.name = \"No1\", building.new_field = \"No2\"";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "FETCH PROP on building 101";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, std::string, std::string>> expected = {
+            {101, "No1", "No2"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // Test upsert edge after alter schema
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "INSERT EDGE like(likeness) VALUES 1 -> 100:(1.0)";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "ALTER EDGE like ADD (new_field string default \"123\")";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT EDGE 1->100 of like SET likeness = 2.0";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "FETCH PROP on like 1->100@0";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t, int64_t, double, std::string>> expected = {
+            {1, 100, 0, 2.0, "123"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT EDGE 1->100 of like SET likeness = 3.0, new_field = \"321\"";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "FETCH PROP on like 1->100@0";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t, int64_t, double, std::string>> expected = {
+            {1, 100, 0, 3.0, "321"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT EDGE 1->101 of like SET likeness = 1.0, new_field = \"111\"";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "FETCH PROP on like 1->101@0";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t, int64_t, double, std::string>> expected = {
+            {1, 101, 0, 1.0, "111"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
 // Above cases behavior different with UPDATE for UPSERT insert data when not exists
 
 }   // namespace graph

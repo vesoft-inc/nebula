@@ -16,7 +16,8 @@
 #include <folly/ScopeGuard.h>
 
 DEFINE_string(engine_type, "rocksdb", "rocksdb, memory...");
-DEFINE_int32(custom_filter_interval_secs, 24 * 3600, "interval to trigger custom compaction");
+DEFINE_int32(custom_filter_interval_secs, 24 * 3600,
+             "interval to trigger custom compaction, < 0 means always do default minor compaction");
 DEFINE_int32(num_workers, 4, "Number of worker threads");
 DEFINE_bool(check_leader, true, "Check leader or not");
 DEFINE_int32(clean_wal_interval_secs, 600, "inerval to trigger clean expired wal");
@@ -207,8 +208,7 @@ std::unique_ptr<KVEngine> NebulaStore::newEngine(GraphSpaceID spaceId,
     if (FLAGS_engine_type == "rocksdb") {
         std::shared_ptr<KVCompactionFilterFactory> cfFactory = nullptr;
         if (options_.cffBuilder_ != nullptr) {
-            cfFactory = options_.cffBuilder_->buildCfFactory(spaceId,
-                                                             FLAGS_custom_filter_interval_secs);
+            cfFactory = options_.cffBuilder_->buildCfFactory(spaceId);
         }
         return std::make_unique<RocksEngine>(spaceId,
                                              path,

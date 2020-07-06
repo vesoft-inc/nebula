@@ -39,6 +39,10 @@ void UpdateVertexProcessor::onProcessFinished(int32_t retNum) {
         };
         for (auto& exp : returnColumnsExp_) {
             auto value = exp->eval(getters);
+            if (!exp->prepare().ok()) {
+                LOG(ERROR) << "Expression::prepare failed";
+                return;
+            }
             if (!value.ok()) {
                 LOG(ERROR) << value.status();
                 return;
@@ -113,15 +117,25 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
             // load it. To protect the data, we just return failed to graphd.
             return kvstore::ResultCode::ERR_CORRUPT_DATA;
         }
-        const auto schema = reader->getSchema();
+        const auto schema = this->schemaMan_->getTagSchema(this->spaceId_, tagId);
+        if (schema == nullptr) {
+            LOG(ERROR) << "Can't find the schema for tagId " << tagId;
+            return kvstore::ResultCode::ERR_TAG_NOT_FOUND;
+        }
         for (auto& prop : props) {
+            VariantType v;
             auto res = RowReader::getPropByName(reader.get(), prop.prop_.name);
             if (!ok(res)) {
-                VLOG(1) << "Skip the bad value for tag: " << tagId
-                        << ", prop " << prop.prop_.name;
-                return kvstore::ResultCode::ERR_UNKNOWN;
+                auto defaultVal = schema->getDefaultValue(prop.prop_.name);
+                if (!defaultVal.ok()) {
+                    LOG(WARNING) << "No default value of "
+                                 << tagId << ", prop " << prop.prop_.name;
+                    return kvstore::ResultCode::ERR_TAG_NOT_FOUND;
+                }
+                v = std::move(defaultVal).value();
+            } else {
+                v = value(std::move(res));
             }
-            auto&& v = value(std::move(res));
             tagFilters_.emplace(std::make_pair(tagId, prop.prop_.name), v);
         }
         if (updateTagIds_.find(tagId) != updateTagIds_.end()) {
@@ -205,9 +219,11 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
         }
         tagUpdaters_[tagId] = std::make_unique<KeyUpdaterPair>();
         auto& tagUpdater = tagUpdaters_[tagId];
-        int64_t ms = time::WallClock::fastNowInMicroSec();
-        auto now = std::numeric_limits<int64_t>::max() - ms;
-        auto key = NebulaKeyUtils::vertexKey(partId, vId, tagId, now);
+        auto version = FLAGS_enable_multi_versions ?
+            std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec() : 0L;
+        // Switch version to big-endian, make sure the key is in ordered.
+        version = folly::Endian::big(version);
+        auto key = NebulaKeyUtils::vertexKey(partId, vId, tagId, version);
         tagUpdater->kv = std::make_pair(std::move(key), "");
         tagUpdater->updater = std::move(updater);
     } else {
@@ -251,6 +267,10 @@ cpp2::ErrorCode UpdateVertexProcessor::checkFilter(const PartitionID partId, con
 
     if (!resp_.upsert && this->exp_ != nullptr) {
         auto filterResult = this->exp_->eval(getters);
+        if (!this->exp_->prepare().ok()) {
+            LOG(ERROR) << "Expression::prepare failed";
+            return cpp2::ErrorCode::E_INVALID_FILTER;
+        }
         if (!filterResult.ok()) {
             return cpp2::ErrorCode::E_INVALID_FILTER;
         }
@@ -299,6 +319,10 @@ folly::Optional<std::string> UpdateVertexProcessor::updateAndWriteBack(const Par
         }
         auto vexp = std::move(exp).value();
         vexp->setContext(this->expCtx_.get());
+        if (!vexp->prepare().ok()) {
+            LOG(ERROR) << "Expression::prepare failed";
+            return folly::none;
+        }
         auto value = vexp->eval(getters);
         if (!value.ok()) {
             LOG(ERROR) << value.status();
