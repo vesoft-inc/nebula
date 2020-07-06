@@ -77,6 +77,25 @@ private:
         return curStep_ >= recordFrom_ && curStep_ <= steps_;
     }
 
+    bool yieldInput() const {
+        for (const auto col : yields_) {
+            if (col->expr()->fromVarInput()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    VertexID getRoot(VertexID srcId, std::size_t record) const {
+        CHECK_GT(record, 0);
+        VertexID rootId = srcId;
+        if (record == 1) {
+            return rootId;
+        }
+        rootId = DCHECK_NOTNULL(backTracker_)->get(srcId);
+        return rootId;
+    }
+
     /**
      * To obtain the source ids from various places,
      * such as the literal id list, inputs from the pipeline or results of variable.
@@ -196,8 +215,6 @@ private:
          std::unordered_map<VertexID, VertexID>     mapping_;
     };
 
-    OptVariantType getPropFromInterim(VertexID id, const std::string &prop) const;
-
     enum FromType {
         kInstantExpr,
         kVariable,
@@ -231,8 +248,6 @@ private:
     std::unique_ptr<cpp2::ExecutionResponse>    resp_;
     // Record the data of response in GO step
     std::vector<RpcResponse>                    records_;
-    // TODO(shylock) Join lose the data with duplicate input(VID) map
-    bool                                        uniqueStart_{false};  // #2087 Workaround
     // The name of Tag or Edge, index of prop in data
     using SchemaPropIndex = std::unordered_map<std::pair<std::string, std::string>, int64_t>;
 };

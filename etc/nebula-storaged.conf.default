@@ -35,12 +35,12 @@
 --raft_heartbeat_interval_secs=30
 # RPC timeout for raft client (ms)
 --raft_rpc_timeout_ms=500
-## recycle Raft WAL 
+## recycle Raft WAL
 --wal_ttl=3600
 
 ########## Disk ##########
 # Root data path. Split by comma. e.g. --data_path=/disk1/path1/,/disk2/path2/
-# One path per Rocksdb instance. 
+# One path per Rocksdb instance.
 --data_path=data/storage
 
 ############## Rocksdb Options ##############
@@ -50,6 +50,20 @@
 # The default block cache size used in BlockBasedTable. (MB)
 # recommend: 1/3 of all memory
 --rocksdb_block_cache=4
+
+# Compression algorithm, options: no,snappy,lz4,lz4hc,zlib,bzip2,zstd
+# For the sake of binary compatibility, the default value is snappy.
+# Recommend to use:
+#   * lz4 to gain more CPU performance, with the same compression ratio with snappy
+#   * zstd to occupy less disk space
+#   * lz4hc for the read-heavy write-light scenario
+--rocksdb_compression=snappy
+
+# Set different compressions for different levels
+# For example, if --rocksdb_compression is snappy,
+# "no:no:lz4:lz4::zstd" is identical to "no:no:lz4:lz4:snappy:zstd:snappy"
+# In order to disable compression for level 0/1, set it to "no:no"
+--rocksdb_compression_per_level=
 
 --rocksdb_disable_wal=true
 

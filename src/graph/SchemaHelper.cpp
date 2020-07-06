@@ -5,6 +5,7 @@
  */
 
 #include "base/Base.h"
+#include "utils/ConvertTimeType.h"
 #include "graph/SchemaHelper.h"
 #include "graph/Executor.h"
 
@@ -32,7 +33,7 @@ nebula::cpp2::SupportedType SchemaHelper::columnTypeToSupportedType(nebula::Colu
 StatusOr<nebula::cpp2::Value> SchemaHelper::toDefaultValue(ColumnSpecification* spec) {
     nebula::cpp2::Value v;
     Getters getter;
-    CHECK(spec->hasDefault());
+    CHECK(spec->hasDefaultValue());
     auto s = spec->prepare();
     if (!s.ok()) {
         return s;
@@ -91,7 +92,7 @@ StatusOr<nebula::cpp2::Value> SchemaHelper::toDefaultValue(ColumnSpecification* 
                             << ", value type " <<  value.which();
                 return Status::Error("Wrong type");
             }
-            auto timestamp = toTimestamp(value);
+            auto timestamp = ConvertTimeType::toTimestamp(value);
             if (!timestamp.ok()) {
                 return timestamp.status();
             }
@@ -119,7 +120,7 @@ Status SchemaHelper::createSchema(const std::vector<ColumnSpecification*>& specs
         nebula::cpp2::ColumnDef column;
         column.name = *spec->name();
         column.type.type = columnTypeToSupportedType(spec->type());
-        if (spec->hasDefault()) {
+        if (spec->hasDefaultValue()) {
             auto statusV = toDefaultValue(spec);
             if (!statusV.ok()) {
                 return statusV.status();
@@ -182,6 +183,10 @@ Status SchemaHelper::setTTLCol(SchemaPropItem* schemaProp, nebula::cpp2::Schema&
     }
 
     auto  ttlColName = ret.value();
+    if (ttlColName.empty()) {
+        schema.schema_prop.set_ttl_col("");
+        return Status::OK();
+    }
     // Check the legality of the ttl column name
     for (auto& col : schema.columns) {
         if (col.name == ttlColName) {
@@ -223,7 +228,7 @@ Status SchemaHelper::alterSchema(const std::vector<AlterSchemaOptItem*>& schemaO
                 nebula::cpp2::ColumnDef column;
                 column.name = *spec->name();
                 column.type.type = columnTypeToSupportedType(spec->type());
-                if (spec->hasDefault()) {
+                if (spec->hasDefaultValue()) {
                     auto statusV = toDefaultValue(spec);
                     if (!statusV.ok()) {
                         return statusV.status();
@@ -265,44 +270,6 @@ Status SchemaHelper::alterSchema(const std::vector<AlterSchemaOptItem*>& schemaO
         }
     }
     return Status::OK();
-}
-
-StatusOr<int64_t> SchemaHelper::toTimestamp(const VariantType &value) {
-    if (value.which() != VAR_INT64 && value.which() != VAR_STR) {
-        return Status::Error("Invalid value type");
-    }
-
-    int64_t timestamp;
-    if (value.which() == VAR_STR) {
-        static const std::regex reg("^([1-9]\\d{3})-"
-                                    "(0[1-9]|1[0-2]|\\d)-"
-                                    "(0[1-9]|[1-2][0-9]|3[0-1]|\\d)\\s+"
-                                    "(20|21|22|23|[0-1]\\d|\\d):"
-                                    "([0-5]\\d|\\d):"
-                                    "([0-5]\\d|\\d)$");
-        std::smatch result;
-        if (!std::regex_match(boost::get<std::string>(value), result, reg)) {
-            return Status::Error("Invalid timestamp type");
-        }
-        struct tm time;
-        memset(&time, 0, sizeof(time));
-        time.tm_year = atoi(result[1].str().c_str()) - 1900;
-        time.tm_mon = atoi(result[2].str().c_str()) - 1;
-        time.tm_mday = atoi(result[3].str().c_str());
-        time.tm_hour = atoi(result[4].str().c_str());
-        time.tm_min = atoi(result[5].str().c_str());
-        time.tm_sec = atoi(result[6].str().c_str());
-        timestamp = mktime(&time);
-    } else {
-        timestamp = boost::get<int64_t>(value);
-    }
-
-    // The mainstream Linux kernel's implementation constrains this
-    static const int64_t maxTimestamp = std::numeric_limits<int64_t>::max() / 1000000000;
-    if (timestamp < 0 || (timestamp > maxTimestamp)) {
-        return Status::Error("Invalid timestamp type");
-    }
-    return timestamp;
 }
 }   // namespace graph
 }   // namespace nebula

@@ -24,8 +24,8 @@ public:
         const char* getName() const override;
         const cpp2::ValueType& getType() const override;
         bool isValid() const override;
-        bool hasDefault() const override;
-        std::string getDefaultValue() const override;
+        bool hasDefaultValue() const override;
+        VariantType getDefaultValue() const override;
 
     private:
         const cpp2::ColumnDef* column_;
@@ -53,6 +53,9 @@ public:
         const folly::StringPiece name) const override;
 
     nebula::cpp2::Schema toSchema() const override;
+
+    const StatusOr<VariantType> getDefaultValue(const folly::StringPiece name) const override;
+    const StatusOr<VariantType> getDefaultValue(int64_t index) const override;
 
 protected:
     SchemaVer schemaVer_{0};
