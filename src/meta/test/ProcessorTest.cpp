@@ -2661,6 +2661,37 @@ TEST(ProcessorTest, EdgeIndexTest) {
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
     }
+    // Test the maximum limit for index columns
+    std::vector<std::string> bigFields;
+    {
+        for (auto i = 1; i < 18; i++) {
+            bigFields.emplace_back(folly::stringPrintf("col-%d", i));
+        }
+    }
+    {
+        cpp2::CreateTagIndexReq req;
+        req.set_space_id(1);
+        req.set_tag_name("tag_0");
+        req.set_fields(bigFields);
+        req.set_index_name("index_0");
+        auto* processor = CreateTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
+    }
+    {
+        cpp2::CreateEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_edge_name("edge_0");
+        req.set_fields(std::move(bigFields));
+        req.set_index_name("index_0");
+        auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
+    }
 }
 
 TEST(ProcessorTest, EdgeIndexTestV2) {

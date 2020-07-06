@@ -29,6 +29,14 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
         return;
     }
 
+    // A maximum of 16 columns are allowed in the index.
+    if (columnSet.size() > 16) {
+        LOG(ERROR) << "The number of index columns exceeds maximum limit 16";
+        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
+        onFinished();
+        return;
+    }
+
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagIndexLock());
     auto ret = getIndexID(space, indexName);
     if (ret.ok()) {

@@ -30,6 +30,14 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
         return;
     }
 
+    // A maximum of 16 columns are allowed in the index
+    if (columnSet.size() > 16) {
+        LOG(ERROR) << "The number of index columns exceeds maximum limit 16";
+        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
+        onFinished();
+        return;
+    }
+
     folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeIndexLock());
     auto ret = getIndexID(space, indexName);
     if (ret.ok()) {
@@ -43,7 +51,6 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
         return;
     }
 
-    std::map<std::string, std::vector<cpp2::ColumnDef>> edgeColumns;
     auto edgeTypeRet = getEdgeType(space, edgeName);
     if (!edgeTypeRet.ok()) {
         LOG(ERROR) << "Create Edge Index Failed: " << edgeName << " not exist";
