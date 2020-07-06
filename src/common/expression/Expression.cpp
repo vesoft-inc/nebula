@@ -66,7 +66,7 @@ Expression::Encoder& Expression::Encoder::operator<<(size_t size) noexcept {
 
 
 Expression::Encoder& Expression::Encoder::operator<<(Value::Type vType) noexcept {
-    buf_.append(reinterpret_cast<char*>(&vType), sizeof(uint8_t));
+    buf_.append(reinterpret_cast<char*>(&vType), sizeof(Value::Type));
     return *this;
 }
 
@@ -146,8 +146,8 @@ size_t Expression::Decoder::readSize() noexcept {
 
 Value::Type Expression::Decoder::readValueType() noexcept {
     Value::Type type;
-    memcpy(reinterpret_cast<void*>(&type), ptr_, sizeof(uint8_t));
-    ptr_ += sizeof(uint8_t);
+    memcpy(reinterpret_cast<void*>(&type), ptr_, sizeof(Value::Type));
+    ptr_ += sizeof(Value::Type);
     return type;
 }
 

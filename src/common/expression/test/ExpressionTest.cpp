@@ -484,16 +484,16 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
         TEST_EXPR(true != 1.0, true);
         TEST_EXPR(true != 2.0, true);
         TEST_EXPR(true > 1.0, false);
-        TEST_EXPR(true >= 1.0, true);
-        TEST_EXPR(true < 1.0, false);
+        TEST_EXPR(true >= 1.0, false);
+        TEST_EXPR(true < 1.0, true);
         TEST_EXPR(true <= 1.0, true);
         TEST_EXPR(false == 0.0, false);
         TEST_EXPR(false == 1.0, false);
         TEST_EXPR(false != 0.0, true);
         TEST_EXPR(false != 1.0, true);
         TEST_EXPR(false > 0.0, false);
-        TEST_EXPR(false >= 0.0, true);
-        TEST_EXPR(false < 0.0, false);
+        TEST_EXPR(false >= 0.0, false);
+        TEST_EXPR(false < 0.0, true);
         TEST_EXPR(false <= 0.0, true);
 
         TEST_EXPR(true == 1, false);
@@ -501,16 +501,16 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
         TEST_EXPR(true != 1, true);
         TEST_EXPR(true != 2, true);
         TEST_EXPR(true > 1, false);
-        TEST_EXPR(true >= 1, true);
-        TEST_EXPR(true < 1, false);
+        TEST_EXPR(true >= 1, false);
+        TEST_EXPR(true < 1, true);
         TEST_EXPR(true <= 1, true);
         TEST_EXPR(false == 0, false);
         TEST_EXPR(false == 1, false);
         TEST_EXPR(false != 0, true);
         TEST_EXPR(false != 1, true);
         TEST_EXPR(false > 0, false);
-        TEST_EXPR(false >= 0, true);
-        TEST_EXPR(false < 0, false);
+        TEST_EXPR(false >= 0, false);
+        TEST_EXPR(false < 0, true);
         TEST_EXPR(false <= 0, true);
     }
     {
