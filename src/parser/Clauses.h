@@ -182,11 +182,16 @@ public:
         return ref_.get();
     }
 
+    void setContext(ExpressionContext *context) {
+        expCtx_ = context;
+    }
+
     Status prepare(Vertices &vertices) const;
 
 protected:
     std::unique_ptr<VertexIDList>               vidList_;
     std::unique_ptr<Expression>                 ref_;
+    ExpressionContext                          *expCtx_{nullptr};
 };
 
 class FromClause final : public VerticesClause {
