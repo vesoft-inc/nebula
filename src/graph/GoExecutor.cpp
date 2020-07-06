@@ -661,7 +661,7 @@ std::vector<VertexID> GoExecutor::getDstIdsFromResps(std::vector<RpcResponse>::i
 }
 
 std::vector<VertexID> GoExecutor::getDstIdsFromRespWithBackTrack(const RpcResponse &rpcResp) const {
-    // back trance in current step
+    // back trace in current step
     // To avoid overlap in on step edges
     // For example
     // Dst , Src
