@@ -1040,7 +1040,8 @@ bool RaftPart::prepareElectionRequest(
 
 typename RaftPart::Role RaftPart::processElectionResponses(
         const RaftPart::ElectionResponses& results,
-        std::vector<std::shared_ptr<Host>> hosts) {
+        std::vector<std::shared_ptr<Host>> hosts,
+        TermID proposedTerm) {
     std::lock_guard<std::mutex> g(raftLock_);
 
     if (UNLIKELY(status_ == Status::STOPPED)) {
@@ -1083,8 +1084,8 @@ typename RaftPart::Role RaftPart::processElectionResponses(
     if (numSucceeded >= quorum_) {
         LOG(INFO) << idStr_
                   << "Partition is elected as the new leader for term "
-                  << proposedTerm_;
-        term_ = proposedTerm_;
+                  << proposedTerm;
+        term_ = proposedTerm;
         role_ = Role::LEADER;
     }
 
@@ -1124,6 +1125,7 @@ bool RaftPart::leaderElection() {
               << ", candidatePort = " << voteReq.get_candidate_port()
               << ")";
 
+    auto proposedTerm = voteReq.get_term();
     auto resps = ElectionResponses();
     if (hosts.empty()) {
         VLOG(2) << idStr_ << "No peer found, I will be the leader";
@@ -1164,7 +1166,7 @@ bool RaftPart::leaderElection() {
     }
 
     // Process the responses
-    switch (processElectionResponses(resps, std::move(hosts))) {
+    switch (processElectionResponses(resps, std::move(hosts), proposedTerm)) {
         case Role::LEADER: {
             // Elected
             LOG(INFO) << idStr_
