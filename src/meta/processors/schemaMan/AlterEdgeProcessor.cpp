@@ -61,10 +61,13 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
         }
     }
 
+    std::vector<kvstore::KV> data;
+    std::vector<std::string> removeDefaultKeys;
     for (auto& edgeItem : edgeItems) {
         auto& cols = edgeItem.get_schema().get_columns();
         for (auto& col : cols) {
-            auto retCode = MetaServiceUtils::alterColumnDefs(columns, prop, col, edgeItem.op);
+            auto retCode = MetaServiceUtils::alterColumnDefs(columns, prop, data, removeDefaultKeys,
+                spaceId, edgeType, col, edgeItem.op);
             if (retCode != cpp2::ErrorCode::SUCCEEDED) {
                 LOG(ERROR) << "Alter edge column error " << static_cast<int32_t>(retCode);
                 handleErrorCode(retCode);
@@ -88,11 +91,20 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     }
     schema.set_columns(std::move(columns));
 
-    std::vector<kvstore::KV> data;
     LOG(INFO) << "Alter edge " << req.get_edge_name() << ", edgeType " << edgeType;
     data.emplace_back(MetaServiceUtils::schemaEdgeKey(spaceId, edgeType, version),
                       MetaServiceUtils::schemaEdgeVal(req.get_edge_name(), schema));
     resp_.set_id(to(edgeType, EntryType::EDGE));
+    // Now we get default value from meta instead of cache
+    // so don't update
+    if (!removeDefaultKeys.empty()) {
+        auto retRemove = multiRemove(removeDefaultKeys);
+        if (retRemove != kvstore::ResultCode::SUCCEEDED) {
+            handleErrorCode(MetaCommon::to(retRemove));
+            onFinished();
+            return;
+        }
+    }
     doSyncPutAndUpdate(std::move(data));
 }
 

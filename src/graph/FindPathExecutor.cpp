@@ -148,7 +148,7 @@ void FindPathExecutor::execute() {
         return;
     }
 
-    steps_ = step_.steps_ / 2 + step_.steps_ % 2;
+    steps_ = step_.recordTo_ / 2 + step_.recordTo_ % 2;
     fromVids_ = from_.vids_;
     toVids_ = to_.vids_;
     visitedFrom_.insert(fromVids_.begin(), fromVids_.end());
@@ -291,7 +291,7 @@ inline void FindPathExecutor::meetOddPath(VertexID src, VertexID dst, Neighbor &
     for (auto i = rangeF.first; i != rangeF.second; ++i) {
         auto rangeT = pathTo_.equal_range(dst);
         for (auto j = rangeT.first; j != rangeT.second; ++j) {
-            if (j->second.size() + i->second.size() > step_.steps_) {
+            if (j->second.size() + i->second.size() > step_.recordTo_) {
                 continue;
             }
             // Build path:
@@ -336,7 +336,7 @@ inline void FindPathExecutor::meetEvenPath(VertexID intersectId) {
     auto rangeT = pathTo_.equal_range(intersectId);
     for (auto i = rangeF.first; i != rangeF.second; ++i) {
         for (auto j = rangeT.first; j != rangeT.second; ++j) {
-            if (j->second.size() + i->second.size() > step_.steps_) {
+            if (j->second.size() + i->second.size() > step_.recordTo_) {
                 continue;
             }
             // Build path:

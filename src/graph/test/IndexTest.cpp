@@ -160,11 +160,15 @@ TEST_F(IndexTest, TagIndex) {
         std::string query = "SHOW CREATE TAG INDEX multi_person_index";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::string createTagIndex = "CREATE TAG INDEX multi_person_index ON person(name, email)";
+        std::string createTagIndex = "CREATE TAG INDEX `multi_person_index` "
+                                     "ON `person`(`name`, `email`)";
         std::vector<std::tuple<std::string, std::string>> expected{
             {"multi_person_index", createTagIndex},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        query = "DROP TAG INDEX multi_person_index;" + createTagIndex;
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     // List Tag Indexes
     {
@@ -172,11 +176,11 @@ TEST_F(IndexTest, TagIndex) {
         std::string query = "Show TAG INDEXES";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<int32_t, std::string>> expected{
-            {4, "single_person_index"},
-            {5, "multi_person_index"},
+        std::vector<std::tuple<std::string>> expected{
+            {"single_person_index"},
+            {"multi_person_index"},
         };
-        ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_TRUE(verifyResult(resp, expected, true, {0}));
     }
     // Drop Tag Index
     {
@@ -342,13 +346,16 @@ TEST_F(IndexTest, EdgeIndex) {
         cpp2::ExecutionResponse resp;
         std::string query = "SHOW CREATE EDGE INDEX multi_friend_index";
         auto code = client->execute(query, resp);
-        std::string createTagIndex = "CREATE EDGE INDEX multi_friend_index ON "
-                                     "friend(degree, start_time)";
+        std::string createEdgeIndex = "CREATE EDGE INDEX `multi_friend_index` ON "
+                                      "`friend`(`degree`, `start_time`)";
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<std::string, std::string>> expected{
-            {"multi_friend_index", createTagIndex},
+            {"multi_friend_index", createEdgeIndex},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        query = "DROP EDGE INDEX multi_friend_index;" + createEdgeIndex;
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     // List Edge Indexes
     {
@@ -356,11 +363,11 @@ TEST_F(IndexTest, EdgeIndex) {
         std::string query = "SHOW EDGE INDEXES";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<int32_t, std::string>> expected{
-            {9, "single_friend_index"},
-            {10, "multi_friend_index"},
+        std::vector<std::tuple<std::string>> expected{
+            {"single_friend_index"},
+            {"multi_friend_index"},
         };
-        ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_TRUE(verifyResult(resp, expected, true, {0}));
     }
     // Drop Edge Index
     {

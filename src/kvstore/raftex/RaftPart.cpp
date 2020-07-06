@@ -32,6 +32,7 @@ DEFINE_int32(wal_ttl, 14400, "Default wal ttl");
 DEFINE_int64(wal_file_size, 16 * 1024 * 1024, "Default wal file size");
 DEFINE_int32(wal_buffer_size, 8 * 1024 * 1024, "Default wal buffer size");
 DEFINE_int32(wal_buffer_num, 2, "Default wal buffer number");
+DEFINE_bool(wal_sync, false, "Whether fsync needs to be called every write");
 DEFINE_bool(trace_raft, false, "Enable trace one raft request");
 
 namespace nebula {
@@ -225,6 +226,7 @@ RaftPart::RaftPart(ClusterID clusterId,
     policy.fileSize = FLAGS_wal_file_size;
     policy.bufferSize = FLAGS_wal_buffer_size;
     policy.numBuffers = FLAGS_wal_buffer_num;
+    policy.sync = FLAGS_wal_sync;
     wal_ = FileBasedWal::getWal(walRoot,
                                 idStr_,
                                 policy,
@@ -1223,9 +1225,6 @@ void RaftPart::statusPolling() {
         LOG(INFO) << idStr_ << "Clean up the snapshot";
         cleanupSnapshot();
     }
-    if (needToCleanWal()) {
-        wal_->cleanWAL(FLAGS_wal_ttl);
-    }
     {
         std::lock_guard<std::mutex> g(raftLock_);
         if (status_ == Status::RUNNING || status_ == Status::WAITING_SNAPSHOT) {
@@ -1255,7 +1254,7 @@ void RaftPart::cleanupSnapshot() {
 
 bool RaftPart::needToCleanWal() {
     std::lock_guard<std::mutex> g(raftLock_);
-    if (status_ == Status::WAITING_SNAPSHOT) {
+    if (status_ == Status::STARTING || status_ == Status::WAITING_SNAPSHOT) {
         return false;
     }
     for (auto& host : hosts_) {

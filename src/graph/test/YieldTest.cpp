@@ -738,6 +738,23 @@ TEST_F(YieldTest, EmptyInput) {
         std::vector<std::tuple<std::string>> expected;
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "YIELD $^.player.name as name, serve.start_year as start, $$.team.name as team "
+                    "| YIELD $-.name as name WHERE $-.start > 20000 "
+                    "| YIELD $-.name AS name";
+        auto query = folly::stringPrintf(fmt, players_["Marco Belinelli"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
 }
 
 TEST_F(YieldTest, DuplicateColumn) {
@@ -787,6 +804,69 @@ TEST_F(YieldTest, PipeYieldGo) {
 
         std::vector<std::tuple<std::string>> expected = {
             {"Spurs"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tim Duncan"];
+        std::string fmt = "$var = GO FROM %ld OVER serve YIELD serve._src as id |"
+                          "YIELD $-.id as id; "
+                          "GO FROM $var.id OVER serve YIELD $$.team.name as name";
+        auto query = folly::stringPrintf(fmt.c_str(), player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+
+        std::vector<std::string> expectedColNames{
+            {"name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<std::string>> expected = {
+            {"Spurs"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tim Duncan"];
+        std::string fmt = "$var = GO FROM %ld OVER serve YIELD serve._src as id;"
+                          "$var2 = YIELD $var.id as id; "
+                          "GO FROM $var2.id OVER serve YIELD $$.team.name as name";
+        auto query = folly::stringPrintf(fmt.c_str(), player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+
+        std::vector<std::string> expectedColNames{
+            {"name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<std::string>> expected = {
+            {"Spurs"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+TEST_F(YieldTest, WithComment) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute("YIELD 1--1", resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {2},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute("YIELD 1-- 1", resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {1},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }

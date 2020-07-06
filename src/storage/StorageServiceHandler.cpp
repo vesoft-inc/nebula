@@ -37,6 +37,7 @@
 DEFINE_int32(vertex_cache_num, 16 * 1000 * 1000, "Total keys inside the cache");
 DEFINE_int32(vertex_cache_bucket_exp, 4, "Total buckets number is 1 << cache_bucket_exp");
 DEFINE_int32(reader_handlers, 32, "Total reader handlers");
+DEFINE_string(reader_handlers_type, "cpu", "Type of reader handlers, options: cpu,io");
 
 namespace nebula {
 namespace storage {
