@@ -538,7 +538,6 @@ void FileUtils::Iterator::openFileOrDirectory() {
     status_ = Status::OK();
 }
 
-
 CHECK_TYPE(Reg, REGULAR, REG)
 CHECK_TYPE(Dir, DIRECTORY, DIR)
 CHECK_TYPE(Link, SYM_LINK, LNK)
