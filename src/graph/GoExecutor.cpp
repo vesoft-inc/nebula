@@ -662,12 +662,12 @@ std::vector<VertexID> GoExecutor::getDstIdsFromResps(std::vector<RpcResponse>::i
 
 std::vector<VertexID> GoExecutor::getDstIdsFromRespWithBackTrack(const RpcResponse &rpcResp) const {
     // back trace in current step
-    // To avoid overlap in on step edges
+    // To avoid overlap in current step edges
     // For example
     // Dst , Src
     // 6  ,  1
     // 7  ,  6
-    // Will mistake lead to 7->6 if insert one by one
+    // Will mistake lead to 7->6 if insert edge(dst, src) one by one
     // So read all roots of current step first , then insert them
     std::multimap<VertexID, VertexID> backTrace;
     std::unordered_set<VertexID> set;
