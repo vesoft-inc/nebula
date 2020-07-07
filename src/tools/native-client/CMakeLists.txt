@@ -12,25 +12,33 @@ nebula_add_library(nebula_native_client SHARED
             $<TARGET_OBJECTS:common_thrift_obj>
             $<TARGET_OBJECTS:thrift_obj>
             $<TARGET_OBJECTS:meta_client>
+            $<TARGET_OBJECTS:gflags_man_obj>
             $<TARGET_OBJECTS:stats_obj>
             $<TARGET_OBJECTS:time_obj>
             $<TARGET_OBJECTS:meta_thrift_obj>
+            $<TARGET_OBJECTS:thread_obj>
             src/main/cpp/com_vesoft_client_NativeClient.cpp)
 
 
 target_link_libraries(nebula_native_client
-                      ${OPENSSL_SSL_LIBRARY}
-                      ${OPENSSL_CRYPTO_LIBRARY}
+                      -Wl,--no-undefined
                       ${THRIFT_LIBRARIES}
+                      -lwangle
                       -lfolly
                       -lboost_context
+                      -lboost_system
                       -lglog
                       -lgflags
                       -lsnappy
                       -lz
                       -lzstd
+                      -lbz2
+                      -llzma
+                      -llz4
                       -levent
                       -ldouble-conversion
+                      ${OPENSSL_SSL_LIBRARY}
+                      ${OPENSSL_CRYPTO_LIBRARY}
                       -static-libgcc
                       -static-libstdc++
                       -lpthread
