@@ -29,7 +29,7 @@ SessionManager::~SessionManager() {
 }
 
 
-StatusOr<std::shared_ptr<ClientSession>>
+StatusOr<std::shared_ptr<Session>>
 SessionManager::findSession(int64_t id) {
     folly::RWSpinLock::ReadHolder holder(rwlock_);
     auto iter = activeSessions_.find(id);
@@ -40,7 +40,7 @@ SessionManager::findSession(int64_t id) {
 }
 
 
-std::shared_ptr<ClientSession> SessionManager::createSession() {
+std::shared_ptr<Session> SessionManager::createSession() {
     folly::RWSpinLock::WriteHolder holder(rwlock_);
     auto sid = newSessionId();
     while (true) {
@@ -51,14 +51,14 @@ std::shared_ptr<ClientSession> SessionManager::createSession() {
         sid = newSessionId();
     }
     DCHECK_NE(sid, 0L);
-    auto session = ClientSession::create(sid);
+    auto session = Session::create(sid);
     activeSessions_[sid] = session;
     session->charge();
     return session;
 }
 
 
-std::shared_ptr<ClientSession> SessionManager::removeSession(int64_t id) {
+std::shared_ptr<Session> SessionManager::removeSession(int64_t id) {
     folly::RWSpinLock::WriteHolder holder(rwlock_);
     auto iter = activeSessions_.find(id);
     if (iter == activeSessions_.end()) {

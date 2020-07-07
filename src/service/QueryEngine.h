@@ -38,6 +38,10 @@ public:
     using RequestContextPtr = std::unique_ptr<RequestContext<cpp2::ExecutionResponse>>;
     void execute(RequestContextPtr rctx);
 
+    const meta::MetaClient* metaClient() const {
+        return metaClient_.get();
+    }
+
 private:
     std::unique_ptr<meta::SchemaManager>              schemaManager_;
     // std::unique_ptr<meta::ClientBasedGflagsManager>   gflagsManager_;

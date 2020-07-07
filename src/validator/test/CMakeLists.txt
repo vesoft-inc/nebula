@@ -13,6 +13,7 @@ set(VALIDATOR_TEST_LIBS
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:idgenerator_obj>
     $<TARGET_OBJECTS:context_obj>
+    $<TARGET_OBJECTS:graph_auth_obj>
     $<TARGET_OBJECTS:common_expression_obj>
     $<TARGET_OBJECTS:common_network_obj>
     $<TARGET_OBJECTS:common_fs_obj>
@@ -33,6 +34,9 @@ set(VALIDATOR_TEST_LIBS
     $<TARGET_OBJECTS:common_file_based_cluster_id_man_obj>
     $<TARGET_OBJECTS:common_function_manager_obj>
     $<TARGET_OBJECTS:common_conf_obj>
+    $<TARGET_OBJECTS:common_encryption_obj>
+    $<TARGET_OBJECTS:common_http_client_obj>
+    $<TARGET_OBJECTS:common_process_obj>
 )
 
 nebula_add_library(
@@ -47,14 +51,15 @@ nebula_add_test(
         AdminValidatorTest.cpp
         MaintainValidatorTest.cpp
         MutateValidatorTest.cpp
+        GetSubgraphValidatorTest.cpp
     OBJECTS ${VALIDATOR_TEST_LIBS}
-    LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} wangle
+    LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} wangle proxygenhttpserver proxygenlib
 )
 
 nebula_add_test(
     NAME mock_schema_test
     SOURCES MockSchemaManagerTest.cpp
     OBJECTS ${VALIDATOR_TEST_LIBS}
-    LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} wangle
+    LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} wangle proxygenhttpserver proxygenlib
 )
 

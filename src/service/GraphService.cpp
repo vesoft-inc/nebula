@@ -5,11 +5,15 @@
  */
 
 #include "common/base/Base.h"
-#include "service/GraphService.h"
 #include "common/time/Duration.h"
+#include "common/encryption/MD5Utils.h"
+#include "common/clients/storage/GraphStorageClient.h"
+#include "service/GraphService.h"
 #include "service/RequestContext.h"
 #include "service/SimpleAuthenticator.h"
-#include "common/clients/storage/GraphStorageClient.h"
+#include "service/GraphFlags.h"
+#include "service/PasswordAuthenticator.h"
+#include "service/CloudAuthenticator.h"
 
 namespace nebula {
 namespace graph {
@@ -17,7 +21,6 @@ namespace graph {
 Status GraphService::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor) {
     sessionManager_ = std::make_unique<SessionManager>();
     queryEngine_ = std::make_unique<QueryEngine>();
-    authenticator_ = std::make_unique<SimpleAuthenticator>();
 
     return queryEngine_->init(std::move(ioExecutor));
 }
@@ -31,16 +34,19 @@ folly::Future<cpp2::AuthResponse> GraphService::future_authenticate(
 
     RequestContext<cpp2::AuthResponse> ctx;
     auto session = sessionManager_->createSession();
-    session->setUser(username);
+    session->setAccount(username);
     ctx.setSession(std::move(session));
 
-    if (authenticator_->auth(username, password)) {
-        ctx.resp().set_error_code(cpp2::ErrorCode::SUCCEEDED);
-        ctx.resp().set_session_id(ctx.session()->id());
+    if (!FLAGS_enable_authorize) {
+        onHandle(ctx, cpp2::ErrorCode::SUCCEEDED);
+    } else if (auth(username, password)) {
+        auto roles = queryEngine_->metaClient()->getRolesByUserFromCache(username);
+        for (const auto& role : roles) {
+            ctx.session()->setRole(role.get_space_id(), role.get_role_type());
+        }
+        onHandle(ctx, cpp2::ErrorCode::SUCCEEDED);
     } else {
-        sessionManager_->removeSession(ctx.session()->id());
-        ctx.resp().set_error_code(cpp2::ErrorCode::E_BAD_USERNAME_PASSWORD);
-        // ctx.resp().set_error_msg(getErrorStr(cpp2::ErrorCode::E_BAD_USERNAME_PASSWORD));
+        onHandle(ctx, cpp2::ErrorCode::E_BAD_USERNAME_PASSWORD);
     }
 
     ctx.finish();
@@ -98,6 +104,30 @@ const char* GraphService::getErrorStr(cpp2::ErrorCode result) {
     default:
         return "Unknown error";
     }
+}
+
+void GraphService::onHandle(RequestContext<cpp2::AuthResponse>& ctx, cpp2::ErrorCode code) {
+    ctx.resp().set_error_code(code);
+    if (code != cpp2::ErrorCode::SUCCEEDED) {
+        sessionManager_->removeSession(ctx.session()->id());
+        ctx.resp().set_error_msg(getErrorStr(code));
+    } else {
+        ctx.resp().set_session_id(ctx.session()->id());
+    }
+}
+
+bool GraphService::auth(const std::string& username, const std::string& password) {
+    std::string authType = FLAGS_auth_type;
+    folly::toLowerAscii(authType);
+    if (!authType.compare("password")) {
+        auto authenticator = std::make_unique<PasswordAuthenticator>(queryEngine_->metaClient());
+        return authenticator->auth(username, encryption::MD5Utils::md5Encode(password));
+    } else if (!authType.compare("cloud")) {
+        auto authenticator = std::make_unique<CloudAuthenticator>(queryEngine_->metaClient());
+        return authenticator->auth(username, password);
+    }
+    LOG(WARNING) << "Unknown auth type: " << authType;
+    return false;
 }
 
 }  // namespace graph

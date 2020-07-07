@@ -39,9 +39,12 @@ public:
     const char* getErrorStr(cpp2::ErrorCode result);
 
 private:
+    void onHandle(RequestContext<cpp2::AuthResponse>& ctx, cpp2::ErrorCode code);
+
+    bool auth(const std::string& username, const std::string& password);
+
     std::unique_ptr<SessionManager>             sessionManager_;
     std::unique_ptr<QueryEngine>                queryEngine_;
-    std::unique_ptr<Authenticator>              authenticator_;
 };
 
 }   // namespace graph

@@ -18,6 +18,8 @@ set(GRAPH_TEST_LIB
     $<TARGET_OBJECTS:schedule_obj>
     $<TARGET_OBJECTS:idgenerator_obj>
     $<TARGET_OBJECTS:context_obj>
+    $<TARGET_OBJECTS:graph_auth_obj>
+    $<TARGET_OBJECTS:common_graph_client_obj>
     $<TARGET_OBJECTS:common_expression_obj>
     $<TARGET_OBJECTS:common_http_client_obj>
     $<TARGET_OBJECTS:common_network_obj>
@@ -47,6 +49,9 @@ set(GRAPH_TEST_LIB
     $<TARGET_OBJECTS:common_file_based_cluster_id_man_obj>
     $<TARGET_OBJECTS:common_charset_obj>
     $<TARGET_OBJECTS:common_function_manager_obj>
+    $<TARGET_OBJECTS:graph_auth_obj>
+    $<TARGET_OBJECTS:common_http_client_obj>
+    $<TARGET_OBJECTS:common_encryption_obj>
 )
 
 nebula_add_test(

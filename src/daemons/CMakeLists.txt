@@ -21,6 +21,8 @@ nebula_add_executable(
         $<TARGET_OBJECTS:schedule_obj>
         $<TARGET_OBJECTS:idgenerator_obj>
         $<TARGET_OBJECTS:context_obj>
+        $<TARGET_OBJECTS:graph_flags_obj>
+        $<TARGET_OBJECTS:graph_auth_obj>
         $<TARGET_OBJECTS:common_expression_obj>
         $<TARGET_OBJECTS:common_http_client_obj>
         $<TARGET_OBJECTS:common_network_obj>
@@ -50,6 +52,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:common_file_based_cluster_id_man_obj>
         $<TARGET_OBJECTS:common_meta_thrift_obj>
         $<TARGET_OBJECTS:common_charset_obj>
+        $<TARGET_OBJECTS:common_encryption_obj>
         $<TARGET_OBJECTS:common_function_manager_obj>
     LIBRARIES
         proxygenhttpserver

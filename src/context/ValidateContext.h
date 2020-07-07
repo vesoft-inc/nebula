@@ -10,7 +10,6 @@
 #include "common/meta/SchemaManager.h"
 #include "common/datatypes/Value.h"
 #include "common/charset/Charset.h"
-#include "service/ClientSession.h"
 #include "planner/ExecutionPlan.h"
 #include "util/AnnoVarGenerator.h"
 

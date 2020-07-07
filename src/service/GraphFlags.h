@@ -20,6 +20,7 @@ DECLARE_bool(reuse_port);
 DECLARE_int32(listen_backlog);
 DECLARE_string(listen_netdev);
 DECLARE_string(pid_file);
+DECLARE_bool(local_config);
 
 DECLARE_bool(redirect_stdout);
 DECLARE_string(stdout_log_file);
@@ -30,5 +31,7 @@ DECLARE_string(meta_server_addrs);
 DECLARE_string(default_charset);
 DECLARE_string(default_collate);
 DECLARE_bool(enable_authorize);
+DECLARE_string(auth_type);
+DECLARE_string(cloud_http_url);
 
 #endif  // GRAPH_GRAPHFLAGS_H_
