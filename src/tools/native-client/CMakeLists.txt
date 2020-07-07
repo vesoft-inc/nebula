@@ -46,6 +46,6 @@ target_link_libraries(nebula_native_client
 
 add_custom_target(
     nebula_native_java_client ALL
-    COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/build.sh" ${CMAKE_CURRENT_SOURCE_DIR} ">" "./_build.log" "2>&1"
+    COMMAND "NEBULA_BUILD_ROOT=${CMAKE_BINARY_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/build.sh" ${CMAKE_CURRENT_SOURCE_DIR} ">" "./_build.log" "2>&1"
     DEPENDS nebula_native_client
 )
