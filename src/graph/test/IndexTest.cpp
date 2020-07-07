@@ -771,6 +771,152 @@ TEST_F(IndexTest, AlterTag) {
     }
 }
 
+bool verifyIndexStatus(GraphClient* client , bool isEdge) {
+    for (auto retry = 1; retry <= 3; retry++) {
+        cpp2::ExecutionResponse resp;
+        std::string query = isEdge ? "SHOW EDGE INDEX STATUS" : "SHOW TAG INDEX STATUS";
+        auto code = client->execute(query, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return false;
+        }
+        auto rows = *resp.get_rows();
+        const auto &columns = rows[0].get_columns();
+        if ("RUNNING" != columns[1].get_str()) {
+            return true;
+        }
+        sleep(1);
+    }
+    return false;
+}
+
+TEST_F(IndexTest, RebuildTagIndexStatusInfo) {
+    auto client = gEnv->getClient();
+    ASSERT_NE(nullptr, client);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE SPACE tag_status_space(partition_num=1, replica_factor=1)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        query = "USE tag_status_space";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        query = "CREATE TAG tag_status(name string)";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG INDEX tag_index_status ON tag_status(name)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW TAG INDEX STATUS";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(0, resp.get_rows()->size());
+    }
+    // Rebuild Tag Index
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "REBUILD TAG INDEX tag_index_status OFFLINE";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        ASSERT_TRUE(verifyIndexStatus(client.get(), false));
+    }
+    // Drop Tag Index
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DROP TAG INDEX tag_index_status";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        query = "DESCRIBE TAG INDEX tag_index_status";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    // rebuild index status deleted.
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW TAG INDEX STATUS";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(0, resp.get_rows()->size());
+    }
+}
+
+TEST_F(IndexTest, RebuildEdgeIndexStatusInfo) {
+    auto client = gEnv->getClient();
+    ASSERT_NE(nullptr, client);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE SPACE edge_status_space(partition_num=1, replica_factor=1)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        query = "USE edge_status_space";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        query = "CREATE EDGE edge_status(name string)";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE EDGE INDEX edge_index_status ON edge_status(name)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW EDGE INDEX STATUS";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(0, resp.get_rows()->size());
+    }
+    // Rebuild Edge Index
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "REBUILD EDGE INDEX edge_index_status OFFLINE";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        ASSERT_TRUE(verifyIndexStatus(client.get(), true));
+    }
+    // Drop Edge Index
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DROP EDGE INDEX edge_index_status";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        query = "DESCRIBE EDGE INDEX edge_index_status";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    // rebuild index status deleted.
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW EDGE INDEX STATUS";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(0, resp.get_rows()->size());
+    }
+}
+
 }   // namespace graph
 }   // namespace nebula
 
