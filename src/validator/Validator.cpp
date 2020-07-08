@@ -20,6 +20,8 @@
 #include "validator/AdminValidator.h"
 #include "validator/MaintainValidator.h"
 #include "validator/MutateValidator.h"
+#include "validator/LimitValidator.h"
+#include "validator/OrderByValidator.h"
 
 namespace nebula {
 namespace graph {
@@ -42,6 +44,10 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
             return std::make_unique<UseValidator>(sentence, context);
         case Sentence::Kind::kGetSubgraph:
             return std::make_unique<GetSubgraphValidator>(sentence, context);
+        case Sentence::Kind::kLimit:
+            return std::make_unique<LimitValidator>(sentence, context);
+        case Sentence::Kind::kOrderBy:
+            return std::make_unique<OrderByValidator>(sentence, context);
         case Sentence::Kind::kCreateSpace:
             return std::make_unique<CreateSpaceValidator>(sentence, context);
         case Sentence::Kind::kCreateTag:

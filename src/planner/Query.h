@@ -630,24 +630,26 @@ class Sort final : public SingleInputNode {
 public:
     static Sort* make(ExecutionPlan* plan,
                       PlanNode* input,
-                      OrderFactors* factors) {
-        return new Sort(plan, input, factors);
+                      std::vector<std::pair<std::string, OrderFactor::OrderType>> factors) {
+        return new Sort(plan, input, std::move(factors));
     }
 
-    const OrderFactors* factors() {
+    const std::vector<std::pair<std::string, OrderFactor::OrderType>>& factors() const {
         return factors_;
     }
 
     std::string explain() const override;
 
 private:
-    Sort(ExecutionPlan* plan, PlanNode* input, OrderFactors* factors)
-      : SingleInputNode(plan, Kind::kSort, input) {
-        factors_ = factors;
+    Sort(ExecutionPlan* plan,
+         PlanNode* input,
+         std::vector<std::pair<std::string, OrderFactor::OrderType>> factors)
+        : SingleInputNode(plan, Kind::kSort, input) {
+        factors_ = std::move(factors);
     }
 
 private:
-    OrderFactors*   factors_{nullptr};
+    std::vector<std::pair<std::string, OrderFactor::OrderType>>   factors_;
 };
 
 /**

@@ -14,6 +14,7 @@
 #include "common/datatypes/Value.h"
 #include "common/datatypes/List.h"
 #include "common/datatypes/DataSet.h"
+#include "parser/TraverseSentences.h"
 
 namespace nebula {
 namespace graph {
@@ -24,7 +25,6 @@ public:
         kDefault,
         kGetNeighbors,
         kSequential,
-        kUnion,
     };
 
     explicit Iterator(std::shared_ptr<Value> value, Kind kind)
@@ -42,9 +42,13 @@ public:
 
     virtual void next() = 0;
 
+    // erase current iter
     virtual void erase() = 0;
 
     virtual const Row* row() const = 0;
+
+    // erase range, no include last position, if last > size(), erase to the end position
+    virtual void eraseRange(size_t first, size_t last) = 0;
 
     // Reset iterator position to `pos' from begin. Must be sure that the `pos' position
     // is lower than `size()' before resetting
@@ -52,6 +56,8 @@ public:
         DCHECK((pos == 0 && size() == 0) || (pos < size()));
         doReset(pos);
     }
+
+    virtual void clear() = 0;
 
     void operator++() {
         next();
@@ -70,6 +76,10 @@ public:
     }
 
     virtual size_t size() const = 0;
+
+    bool isDefaultIter() const {
+        return kind_ == Kind::kDefault;
+    }
 
     bool isGetNeighborsIter() const {
         return kind_ == Kind::kGetNeighbors;
@@ -132,6 +142,14 @@ public:
         counter_--;
     }
 
+    void eraseRange(size_t, size_t) override {
+        return;
+    }
+
+    void clear() override {
+        reset();
+    }
+
     size_t size() const override {
         return 1;
     }
@@ -172,10 +190,28 @@ public:
         }
     }
 
+    void clear() override {
+        valid_ = false;
+        dsIndices_.clear();
+        logicalRows_.clear();
+    }
+
     void erase() override {
         if (valid()) {
             iter_ = logicalRows_.erase(iter_);
         }
+    }
+
+    void eraseRange(size_t first, size_t last) override {
+        if (first >= last || first >= size()) {
+            return;
+        }
+        if (last > size()) {
+            logicalRows_.erase(logicalRows_.begin() + first, logicalRows_.end());
+        } else {
+            logicalRows_.erase(logicalRows_.begin() + first, logicalRows_.begin() + last);
+        }
+        reset();
     }
 
     size_t size() const override {
@@ -231,12 +267,6 @@ public:
 private:
     void doReset(size_t pos) override {
         iter_ = logicalRows_.begin() + pos;
-    }
-
-    void clear() {
-        valid_ = false;
-        dsIndices_.clear();
-        logicalRows_.clear();
     }
 
     inline size_t currentSeg() const {
@@ -306,8 +336,25 @@ public:
         }
         iter_ = rows_.begin();
         for (size_t i = 0; i < ds.colNames.size(); ++i) {
-            colIndex_.emplace(ds.colNames[i], i);
+            colIndexes_.emplace(ds.colNames[i], i);
         }
+    }
+
+    SequentialIter(std::unique_ptr<Iterator> left, std::unique_ptr<Iterator> right)
+        : Iterator(nullptr, Kind::kSequential) {
+        DCHECK(left->isSequentialIter());
+        DCHECK(right->isSequentialIter());
+        auto lIter = static_cast<SequentialIter*>(left.get());
+        auto rIter = static_cast<SequentialIter*>(right.get());
+        rows_.insert(rows_.end(),
+                     std::make_move_iterator(lIter->begin()),
+                     std::make_move_iterator(lIter->end()));
+
+        rows_.insert(rows_.end(),
+                     std::make_move_iterator(rIter->begin()),
+                     std::make_move_iterator(rIter->end()));
+        iter_ = rows_.begin();
+        colIndexes_ = lIter->getColIndexes();
     }
 
     std::unique_ptr<Iterator> copy() const override {
@@ -330,6 +377,35 @@ public:
         iter_ = rows_.erase(iter_);
     }
 
+    void eraseRange(size_t first, size_t last) override {
+        if (first >= last || first >= size()) {
+            return;
+        }
+        if (last > size()) {
+            rows_.erase(rows_.begin() + first, rows_.end());
+        } else {
+            rows_.erase(rows_.begin() + first, rows_.begin() + last);
+        }
+        reset();
+    }
+
+    void clear() override {
+        rows_.clear();
+        reset();
+    }
+
+    std::vector<const Row*>::iterator begin() {
+        return rows_.begin();
+    }
+
+    std::vector<const Row*>::iterator end() {
+        return rows_.end();
+    }
+
+    const std::unordered_map<std::string, int64_t>& getColIndexes() const {
+        return colIndexes_;
+    }
+
     size_t size() const override {
         return rows_.size();
     }
@@ -339,8 +415,8 @@ public:
             return Value::kNullValue;
         }
         auto row = *iter_;
-        auto index = colIndex_.find(col);
-        if (index == colIndex_.end()) {
+        auto index = colIndexes_.find(col);
+        if (index == colIndexes_.end()) {
             return Value::kNullValue;
         } else {
             DCHECK_LT(index->second, row->values.size());
@@ -349,6 +425,9 @@ public:
     }
 
     const Row* row() const override {
+        if (!valid()) {
+            return nullptr;
+        }
         return *iter_;
     }
 
@@ -364,84 +443,13 @@ private:
         iter_ = rows_.begin() + pos;
     }
 
+private:
     std::vector<const Row*>                      rows_;
     std::vector<const Row*>::iterator            iter_;
-    std::unordered_map<std::string, int64_t>     colIndex_;
-};
-
-class UnionIterator final : public Iterator {
-public:
-    UnionIterator(std::unique_ptr<Iterator> left, std::unique_ptr<Iterator> right)
-        : Iterator(left->valuePtr(), Kind::kUnion),
-          left_(std::move(left)),
-          right_(std::move(right)) {}
-
-    std::unique_ptr<Iterator> copy() const override {
-        auto iter = std::make_unique<UnionIterator>(left_->copy(), right_->copy());
-        iter->reset();
-        return iter;
-    }
-
-    bool valid() const override {
-        return left_->valid() || right_->valid();
-    }
-
-    void next() override {
-        if (left_->valid()) {
-            left_->next();
-        } else {
-            if (right_->valid()) {
-                right_->next();
-            }
-        }
-    }
-
-    size_t size() const override {
-        return left_->size() + right_->size();
-    }
-
-    void erase() override {
-        if (left_->valid()) {
-            left_->erase();
-        } else {
-            if (right_->valid()) {
-                right_->erase();
-            }
-        }
-    }
-
-    const Value& getColumn(const std::string& col) const override {
-        if (left_->valid()) {
-            return left_->getColumn(col);
-        }
-        if (right_->valid()) {
-            return right_->getColumn(col);
-        }
-        return Value::kEmpty;
-    }
-
-    const Row* row() const override {
-        if (left_->valid()) return left_->row();
-        if (right_->valid()) return right_->row();
-        return nullptr;
-    }
-
-private:
-    void doReset(size_t poc) override {
-        if (poc < left_->size()) {
-            left_->reset(poc);
-            right_->reset();
-        } else {
-            right_->reset(poc - left_->size());
-        }
-    }
-
-    std::unique_ptr<Iterator> left_;
-    std::unique_ptr<Iterator> right_;
+    std::unordered_map<std::string, int64_t>     colIndexes_;
 };
 }  // namespace graph
 }  // namespace nebula
-
 namespace std {
 template <>
 struct equal_to<const nebula::Row*> {

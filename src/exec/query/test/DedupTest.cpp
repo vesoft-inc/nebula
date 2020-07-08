@@ -43,7 +43,8 @@ public:
         auto* project =                                                        \
             Project::make(plan, nullptr, yieldSentence->yieldColumns());       \
         project->setInputVar(dedupNode->varName());                            \
-        project->setColNames(std::vector<std::string>{"name"});                \
+        auto colNames = expected.colNames;                                     \
+        project->setColNames(std::move(colNames));                             \
                                                                                \
         auto proExe = std::make_unique<ProjectExecutor>(project, qctx_.get()); \
         EXPECT_TRUE(proExe->execute().get().ok());                             \
@@ -54,14 +55,18 @@ public:
     } while (false)
 
 TEST_F(DedupTest, TestSequential) {
-    DataSet expected({"name"});
-    expected.emplace_back(Row({Value("School1")}));
-    expected.emplace_back(Row({Value("School1")}));
-    expected.emplace_back(Row({Value("School2")}));
+    DataSet expected({"vid", "name", "age", "dst", "start", "end"});
+    expected.emplace_back(Row({"Ann", "Ann", 18, "School1", 2010, 2014}));
+    expected.emplace_back(Row({"Joy", "Joy", Value::kNullValue, "School2", 2009, 2012}));
+    expected.emplace_back(Row({"Tom", "Tom", 20, "School2", 2008, 2012}));
+    expected.emplace_back(Row({"Kate", "Kate", 19, "School2", 2009, 2013}));
+    expected.emplace_back(Row({"Lily", "Lily", 20, "School2", 2009, 2012}));
 
+    auto sentence = "YIELD DISTINCT $-.vid as vid, $-.v_name as name, $-.v_age as age, "
+                    "$-.v_dst as dst, $-.e_start_year as start, $-.e_end_year as end";
     DEDUP_RESUTL_CHECK("input_sequential",
                        "dedup_sequential",
-                       "YIELD DISTINCT $-.v_dst as name",
+                       sentence,
                        expected);
 }
 

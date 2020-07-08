@@ -168,3 +168,4 @@ std::ostream& operator<<(std::ostream& os, const std::vector<PlanNode::Kind>& pl
 }   // namespace nebula
 
 #endif   // VALIDATOR_TEST_VALIDATORTESTBASE_H_
+

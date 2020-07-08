@@ -17,7 +17,6 @@ public:
     LimitExecutor(const PlanNode *node, QueryContext *qctx)
         : Executor("LimitExecutor", node, qctx) {}
 
-private:
     folly::Future<Status> execute() override;
 };
 

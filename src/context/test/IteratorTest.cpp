@@ -546,56 +546,45 @@ TEST(IteratorTest, TestHead) {
     }
 }
 
-TEST(IteratorTest, TestUnionIterator) {
-    std::vector<std::string> colNames = {"col1", "col2"};
-    DataSet lds;
-    lds.colNames = colNames;
-    lds.rows = {
-        Row({Value(1), Value("row1")}),
-        Row({Value(2), Value("row2")}),
-    };
-    auto lIter = std::make_unique<SequentialIter>(std::make_shared<Value>(lds));
-
-    DataSet rds;
-    rds.colNames = colNames;
-    rds.rows = {
-        Row({Value(3), Value("row3")}),
-    };
-    auto rIter = std::make_unique<SequentialIter>(std::make_shared<Value>(rds));
-
-    // next and valid
+TEST(IteratorTest, EraseRange) {
+    // Sequential iterator
     {
-        auto uIter = std::make_unique<UnionIterator>(lIter->copy(), rIter->copy());
-        for (; lIter->valid(); lIter->next()) {
-            EXPECT_TRUE(uIter->valid());
-            for (auto &col : colNames) {
-                EXPECT_EQ(lIter->getColumn(col), uIter->getColumn(col));
-            }
-            uIter->next();
+        DataSet ds({"col1", "col2"});
+        for (auto i = 0; i < 10; ++i) {
+            ds.rows.emplace_back(Row({i, folly::to<std::string>(i)}));
         }
-
-        for (; rIter->valid(); rIter->next()) {
-            EXPECT_TRUE(uIter->valid());
-            for (auto &col : colNames) {
-                EXPECT_EQ(rIter->getColumn(col), uIter->getColumn(col));
+        // erase out of range pos
+        {
+            auto val = std::make_shared<Value>(ds);
+            SequentialIter iter(val);
+            iter.eraseRange(5, 11);
+            ASSERT_EQ(iter.size(), 5);
+            auto i = 0;
+            for (; iter.valid(); iter.next()) {
+                ASSERT_EQ(iter.getColumn("col1"), i);
+                ASSERT_EQ(iter.getColumn("col2"), folly::to<std::string>(i));
+                ++i;
             }
-            uIter->next();
         }
-    }
-
-    // erase
-    {
-        auto uIter = std::make_unique<UnionIterator>(lIter->copy(), rIter->copy());
-        for (; lIter->valid(); lIter->next()) {
-            uIter->erase();
+        // erase in range
+        {
+            auto val = std::make_shared<Value>(ds);
+            SequentialIter iter(val);
+            iter.eraseRange(0, 10);
+            ASSERT_EQ(iter.size(), 0);
         }
-
-        for (; rIter->valid(); rIter->next()) {
-            EXPECT_TRUE(uIter->valid());
-            for (auto &col : colNames) {
-                EXPECT_EQ(rIter->getColumn(col), uIter->getColumn(col));
+        // erase part
+        {
+            auto val = std::make_shared<Value>(ds);
+            SequentialIter iter(val);
+            iter.eraseRange(0, 5);
+            EXPECT_EQ(iter.size(), 5);
+            auto i = 5;
+            for (; iter.valid(); iter.next()) {
+                ASSERT_EQ(iter.getColumn("col1"), i);
+                ASSERT_EQ(iter.getColumn("col2"), folly::to<std::string>(i));
+                ++i;
             }
-            uIter->next();
         }
     }
 }

@@ -62,6 +62,8 @@ nebula_add_test(
         SetExecutorTest.cpp
         FilterTest.cpp
         DedupTest.cpp
+        LimitTest.cpp
+        SortTest.cpp
     OBJECTS
         ${EXEC_QUERY_TEST_OBJS}
     LIBRARIES

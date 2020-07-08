@@ -44,13 +44,13 @@ Status GoValidator::validateImpl() {
 
         if (!inputProps_.empty() && fromType_ != kPipe) {
             status = Status::Error("$- must be referred in FROM "
-                                    "before used in WHERE or YIELD");
+                                   "before used in WHERE or YIELD");
             break;
         }
 
         if (!varProps_.empty() && fromType_ != kVariable) {
             status = Status::Error("A variable must be referred in FROM "
-                                    "before used in WHERE or YIELD");
+                                   "before used in WHERE or YIELD");
             break;
         }
 
@@ -121,7 +121,7 @@ Status GoValidator::validateFrom(const FromClause* from) {
             if (type.value() != Value::Type::STRING) {
                 std::stringstream ss;
                 ss << "`" << src->toString() << "', the srcs should be type of string, "
-                    << "but was`" << type.value() << "'";
+                   << "but was`" << type.value() << "'";
                 return Status::Error(ss.str());
             }
             src_ = src;
@@ -184,7 +184,7 @@ Status GoValidator::validateWhere(const WhereClause* where) {
     if (type != Value::Type::BOOL && type != Value::Type::NULLVALUE) {
         std::stringstream ss;
         ss << "`" << filter_->toString() << "', Filter only accpet bool/null value, "
-            << "but was `" << type << "'";
+           << "but was `" << type << "'";
         return Status::Error(ss.str());
     }
 
@@ -465,3 +465,4 @@ GetNeighbors::EdgeProps GoValidator::buildEdgeProps() {
 }
 }  // namespace graph
 }  // namespace nebula
+

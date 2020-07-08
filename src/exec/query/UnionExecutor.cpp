@@ -17,7 +17,7 @@ folly::Future<Status> UnionExecutor::execute() {
     auto left = getLeftInputDataIter();
     auto right = getRightInputDataIter();
     auto result = ExecResult::buildDefault(left->valuePtr());
-    auto iter = std::make_unique<UnionIterator>(std::move(left), std::move(right));
+    auto iter = std::make_unique<SequentialIter>(std::move(left), std::move(right));
     result.setIter(std::move(iter));
     return finish(std::move(result));
 }

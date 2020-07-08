@@ -242,5 +242,52 @@ TEST_F(QueryValidatorTest, GoInvalid) {
         EXPECT_FALSE(status.ok()) << status.status();
     }
 }
+
+TEST_F(QueryValidatorTest, Limit) {
+    // Syntax error
+    {
+        std::string query = "GO FROM \"Ann\" OVER like YIELD like._dst AS like | LIMIT -1, 3";
+        auto status = validate(query);
+        ASSERT_FALSE(status.ok()) << status.status();
+    }
+    {
+        std::string query = "GO FROM \"Ann\" OVER like YIELD like._dst AS like | LIMIT 1, 3";
+        std::vector<PlanNode::Kind> expected = {
+                PK::kDataCollect, PK::kLimit, PK::kProject, PK::kGetNeighbors, PK::kStart
+        };
+        ASSERT_TRUE(checkResult(query, expected));
+    }
+}
+
+TEST_F(QueryValidatorTest, OrderBy) {
+    {
+        std::string query = "GO FROM \"Ann\" OVER like YIELD $^.person.age AS age"
+                            " | ORDER BY $-.age";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kDataCollect, PK::kSort, PK::kProject, PK::kGetNeighbors, PK::kStart
+        };
+        ASSERT_TRUE(checkResult(query, expected));
+    }
+    // not exist factor
+    {
+        std::string query = "GO FROM \"Ann\" OVER like YIELD $^.person.age AS age"
+                            " | ORDER BY $-.name";
+        auto status = validate(query);
+        ASSERT_FALSE(status.ok()) << status.status();
+    }
+}
+
+TEST_F(QueryValidatorTest, OrderByAndLimt) {
+    {
+        std::string query = "GO FROM \"Ann\" OVER like YIELD $^.person.age AS age"
+                            " | ORDER BY $-.age | LIMIT 1";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kDataCollect, PK::kLimit, PK::kSort, PK::kProject, PK::kGetNeighbors, PK::kStart
+        };
+        ASSERT_TRUE(checkResult(query, expected));
+    }
+}
+
 }  // namespace graph
 }  // namespace nebula
+
