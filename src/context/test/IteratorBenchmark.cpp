@@ -18,7 +18,7 @@ namespace nebula {
 namespace graph {
 std::shared_ptr<nebula::Value> setUpIter(int64_t totalEdgeNum) {
     DataSet ds1;
-    ds1.colNames = {"_vid",
+    ds1.colNames = {kVid,
                     "_stats",
                     "_tag:tag1:prop1:prop2",
                     "_edge:+edge1:prop1:prop2:_dst:_rank",
@@ -52,7 +52,7 @@ std::shared_ptr<nebula::Value> setUpIter(int64_t totalEdgeNum) {
     }
 
     DataSet ds2;
-    ds2.colNames = {"_vid",
+    ds2.colNames = {kVid,
                     "_stats",
                     "_tag:tag2:prop1:prop2",
                     "_edge:-edge2:prop1:prop2:_dst:_rank",
@@ -103,7 +103,7 @@ size_t getNeighborsIterCtor(size_t iters, std::shared_ptr<nebula::Value> val) {
 size_t getColumnForGetNeighborsIter(size_t iters) {
     constexpr size_t ops = 100000UL;
     for (size_t i = 0; i < iters * ops; ++i) {
-        auto& val = gGNIter->getColumn("_vid");
+        auto& val = gGNIter->getColumn(kVid);
         folly::doNotOptimizeAway(val);
     }
     return iters * ops;

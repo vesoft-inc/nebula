@@ -548,13 +548,13 @@ void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
                 while (iter) {
                     VertexID dst;
                     EdgeRanking rank;
-                    auto rc = iter->getVid(_DST, dst);
+                    auto rc = iter->getVid(kDst, dst);
                     if (rc != ResultType::SUCCEEDED) {
                         doError(Status::Error("Get dst error when go reversely."),
                                 ectx()->getGraphStats()->getGoStats());
                         return;
                     }
-                    rc = iter->getVid(_RANK, rank);
+                    rc = iter->getVid(kRank, rank);
                     if (rc != ResultType::SUCCEEDED) {
                         doError(Status::Error("Get rank error when go reversely."),
                                 ectx()->getGraphStats()->getGoStats());
@@ -694,7 +694,7 @@ std::vector<VertexID> GoExecutor::getDstIdsFromResp(RpcResponse &rpcResp) const 
                 auto iter = rsReader.begin();
                 while (iter) {
                     VertexID dst;
-                    auto rc = iter->getVid(_DST, dst);
+                    auto rc = iter->getVid(kDst, dst);
                     CHECK(rc == ResultType::SUCCEEDED);
                     if (!isFinalStep() && backTracker_ != nullptr) {
                         backTracker_->add(vdata.get_vertex_id(), dst);
@@ -755,7 +755,7 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
     for (auto &e : edgeTypes_) {
         storage::cpp2::PropDef pd;
         pd.owner = storage::cpp2::PropOwner::EDGE;
-        pd.name = _DST;
+        pd.name = kDst;
         pd.id.set_edge_type(e);
         props.emplace_back(std::move(pd));
         // We need ranking when go reverly in final step,
@@ -763,7 +763,7 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
         if (isReversely() && isFinalStep()) {
             storage::cpp2::PropDef rankPd;
             rankPd.owner = storage::cpp2::PropOwner::EDGE;
-            rankPd.name = _RANK;
+            rankPd.name = kRank;
             rankPd.id.set_edge_type(e);
             props.emplace_back(std::move(rankPd));
         }
@@ -1042,7 +1042,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         }
 
                         if (isReversely()) {
-                            auto dst = RowReader::getPropByName(&*iter, _DST);
+                            auto dst = RowReader::getPropByName(&*iter, kDst);
                             if (saveTypeFlag) {
                                 colTypes.back() = edgeHolder_->getType(
                                                     boost::get<VertexID>(value(dst)),
@@ -1282,9 +1282,9 @@ Status GoExecutor::EdgeHolder::add(const storage::cpp2::EdgePropResponse &resp) 
     auto collector = std::make_unique<Collector>();
     auto iter = rsReader.begin();
     while (iter) {
-        auto src = collector->getProp(eschema.get(), _SRC, &*iter);
-        auto dst = collector->getProp(eschema.get(), _DST, &*iter);
-        auto type = collector->getProp(eschema.get(), _TYPE, &*iter);
+        auto src = collector->getProp(eschema.get(), kSrc, &*iter);
+        auto dst = collector->getProp(eschema.get(), kDst, &*iter);
+        auto type = collector->getProp(eschema.get(), kType, &*iter);
         if (!src.ok() || !dst.ok() || !type.ok()) {
             ++iter;
             continue;

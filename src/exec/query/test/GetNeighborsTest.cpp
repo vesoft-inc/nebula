@@ -63,7 +63,7 @@ TEST_F(GetNeighborsTest, BuildRequestDataSet) {
     EXPECT_TRUE(status.ok());
 
     DataSet expected;
-    expected.colNames = {"_vid"};
+    expected.colNames = {kVid};
     for (auto i = 0; i < 10; ++i) {
         Row row;
         row.values.emplace_back(folly::to<std::string>(i));

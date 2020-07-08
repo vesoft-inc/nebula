@@ -42,7 +42,7 @@ Status GetNeighborsExecutor::buildRequestDataSet() {
     auto iter = inputResult.iter();
     ExpressionContextImpl ctx(ectx_, iter.get());
     DataSet input;
-    reqDs_.colNames = {"_vid"};
+    reqDs_.colNames = {kVid};
     reqDs_.rows.reserve(iter->size());
     auto* src = gn_->src();
     for (; iter->valid(); iter->next()) {

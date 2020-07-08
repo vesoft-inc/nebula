@@ -384,7 +384,7 @@ Status GoValidator::buildOneStepPlan() {
 std::string GoValidator::buildInput() {
     auto input = vctx_->varGen()->getVar();
     DataSet ds;
-    ds.colNames.emplace_back("_vid");
+    ds.colNames.emplace_back(kVid);
     for (auto& vid : starts_) {
         Row row;
         row.values.emplace_back(vid);
@@ -394,7 +394,7 @@ std::string GoValidator::buildInput() {
 
     auto* vids = new VariablePropertyExpression(
                     new std::string(input),
-                    new std::string("_vid"));
+                    new std::string(kVid));
     qctx_->plan()->saveObject(vids);
     src_ = vids;
     return input;

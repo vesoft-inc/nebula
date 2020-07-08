@@ -18,7 +18,7 @@ protected:
         qctx_ = std::make_unique<QueryContext>();
         {
             DataSet ds1;
-            ds1.colNames = {"_vid",
+            ds1.colNames = {kVid,
                             "_stats",
                             "_tag:tag1:prop1:prop2",
                             "_edge:+edge1:prop1:prop2:_dst:_rank",
@@ -52,7 +52,7 @@ protected:
             }
 
             DataSet ds2;
-            ds2.colNames = {"_vid",
+            ds2.colNames = {kVid,
                             "_stats",
                             "_tag:tag2:prop1:prop2",
                             "_edge:-edge2:prop1:prop2:_dst:_rank",
@@ -107,7 +107,7 @@ protected:
         }
         {
             DataSet ds;
-            ds.colNames = {"_vid",
+            ds.colNames = {kVid,
                             "_stats",
                             "_tag:tag1:prop1:prop2",
                             "_edge:+edge1:prop1:prop2:_dst:_rank",
