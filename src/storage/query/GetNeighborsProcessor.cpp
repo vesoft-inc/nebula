@@ -134,11 +134,11 @@ cpp2::ErrorCode GetNeighborsProcessor::checkAndBuildContexts(const cpp2::GetNeig
     if (code != cpp2::ErrorCode::SUCCEEDED) {
         return code;
     }
-    code = buildTagContext(req);
+    code = buildTagContext(req.get_traverse_spec());
     if (code != cpp2::ErrorCode::SUCCEEDED) {
         return code;
     }
-    code = buildEdgeContext(req);
+    code = buildEdgeContext(req.get_traverse_spec());
     if (code != cpp2::ErrorCode::SUCCEEDED) {
         return code;
     }
@@ -153,7 +153,7 @@ cpp2::ErrorCode GetNeighborsProcessor::checkAndBuildContexts(const cpp2::GetNeig
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
-cpp2::ErrorCode GetNeighborsProcessor::buildTagContext(const cpp2::GetNeighborsRequest& req) {
+cpp2::ErrorCode GetNeighborsProcessor::buildTagContext(const cpp2::TraverseSpec& req) {
     cpp2::ErrorCode ret = cpp2::ErrorCode::SUCCEEDED;
     if (!req.__isset.vertex_props) {
         // If the list is not given, no prop will be returned.
@@ -179,7 +179,7 @@ cpp2::ErrorCode GetNeighborsProcessor::buildTagContext(const cpp2::GetNeighborsR
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
-cpp2::ErrorCode GetNeighborsProcessor::buildEdgeContext(const cpp2::GetNeighborsRequest& req) {
+cpp2::ErrorCode GetNeighborsProcessor::buildEdgeContext(const cpp2::TraverseSpec& req) {
     edgeContext_.offset_ = tagContext_.propContexts_.size() + 2;
     cpp2::ErrorCode ret = cpp2::ErrorCode::SUCCEEDED;
     if (!req.__isset.edge_props) {
@@ -202,6 +202,7 @@ cpp2::ErrorCode GetNeighborsProcessor::buildEdgeContext(const cpp2::GetNeighbors
     if (ret != cpp2::ErrorCode::SUCCEEDED) {
         return ret;
     }
+    // TODO : verify req.__isset.stat_props
     ret = handleEdgeStatProps(req.stat_props);
     if (ret != cpp2::ErrorCode::SUCCEEDED) {
         return ret;

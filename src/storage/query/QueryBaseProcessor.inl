@@ -130,8 +130,9 @@ void QueryBaseProcessor<REQ, RESP>::addReturnPropContext(
 
 template<typename REQ, typename RESP>
 cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::buildYields(const REQ& req) {
+    const auto& traverseSpec = req.get_traverse_spec();
     resultDataSet_.colNames.emplace_back("_expr");
-    if (!req.__isset.expressions) {
+    if (!traverseSpec.__isset.expressions) {
         return cpp2::ErrorCode::SUCCEEDED;
     }
     // todo(doodle): support expression yields later
@@ -140,10 +141,11 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::buildYields(const REQ& req) {
 
 template<typename REQ, typename RESP>
 cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::buildFilter(const REQ& req) {
-    if (!req.__isset.filter) {
+    const auto& traverseSpec = req.get_traverse_spec();
+    if (!traverseSpec.__isset.filter) {
         return cpp2::ErrorCode::SUCCEEDED;
     }
-    const auto& filterStr = *req.get_filter();
+    const auto& filterStr = *traverseSpec.get_filter();
     if (!filterStr.empty()) {
         // the filter expression **must** return a bool
         filter_ = std::move(Expression::decode(filterStr));

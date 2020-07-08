@@ -174,6 +174,7 @@ public:
             bool returnNoneProps = false) {
         std::hash<std::string> hash;
         cpp2::GetNeighborsRequest req;
+        decltype(req.traverse_spec) traverseSpec;
         req.space_id = 1;
         req.column_names.emplace_back("_vid");
         for (const auto& vertex : vertices) {
@@ -183,12 +184,12 @@ public:
             req.parts[partId].emplace_back(std::move(row));
         }
         for (const auto& edge : over) {
-            req.edge_types.emplace_back(edge);
+            traverseSpec.edge_types.emplace_back(edge);
         }
 
         std::vector<cpp2::VertexProp> vertexProps;
         if (tags.empty() && !returnNoneProps) {
-            req.set_vertex_props(std::move(vertexProps));
+            traverseSpec.set_vertex_props(std::move(vertexProps));
         } else if (!returnNoneProps) {
             for (const auto& tag : tags) {
                 TagID tagId = tag.first;
@@ -199,12 +200,12 @@ public:
                 }
                 vertexProps.emplace_back(std::move(tagProp));
             }
-            req.set_vertex_props(std::move(vertexProps));
+            traverseSpec.set_vertex_props(std::move(vertexProps));
         }
 
         std::vector<cpp2::EdgeProp> edgeProps;
         if (edges.empty() && !returnNoneProps) {
-            req.set_edge_props(std::move(edgeProps));
+            traverseSpec.set_edge_props(std::move(edgeProps));
         } else if (!returnNoneProps) {
             for (const auto& edge : edges) {
                 EdgeType edgeType = edge.first;
@@ -215,8 +216,9 @@ public:
                 }
                 edgeProps.emplace_back(std::move(edgeProp));
             }
-            req.set_edge_props(std::move(edgeProps));
+            traverseSpec.set_edge_props(std::move(edgeProps));
         }
+        req.set_traverse_spec(std::move(traverseSpec));
         return req;
     }
 
