@@ -114,7 +114,7 @@ Status GetNeighborsExecutor::handleResponse(RpcResponse& resps) {
         list.values.emplace_back(std::move(*dataset));
     }
     builder.value(Value(std::move(list)));
-    return finish(builder.finish());
+    return finish(builder.iter(Iterator::Kind::kGetNeighbors).finish());
 }
 
 void GetNeighborsExecutor::checkResponseResult(const storage::cpp2::ResponseCommon& result) const {
