@@ -104,6 +104,8 @@ public:
 
     static std::string prefix(PartitionID partId);
 
+    static std::string snapshotPrefix(PartitionID partId);
+
     static PartitionID getPart(const folly::StringPiece& rawKey) {
         return readInt<PartitionID>(rawKey.data(), sizeof(PartitionID)) >> 8;
     }

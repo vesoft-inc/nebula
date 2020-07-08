@@ -10,6 +10,7 @@
 #include "base/StatusOr.h"
 #include "base/Status.h"
 #include "storage/client/StorageClient.h"
+#include "filter/FunctionManager.h"
 #include <boost/variant.hpp>
 #include <folly/futures/Future.h>
 
@@ -18,7 +19,7 @@ namespace nebula {
 class Cord;
 using OptVariantType = StatusOr<VariantType>;
 
-enum class ColumnType {
+enum class ColumnType : uint8_t {
     INT, STRING, DOUBLE, BOOL, TIMESTAMP,
 };
 
@@ -205,6 +206,8 @@ public:
 
     virtual OptVariantType eval(Getters &getters) const = 0;
 
+    virtual Status traversal(std::function<void(const Expression*)> visitor) const = 0;
+
     virtual bool isInputExpression() const {
         return kind_ == kInputProp;
     }
@@ -233,6 +236,16 @@ public:
         return kind_ == kEdgeDstId;
     }
 
+    bool fromVarInput() const {
+        bool isFromVar = false;
+        traversal([&isFromVar](const Expression *expr) {
+            if (expr->kind() == Kind::kVariableProp || expr->kind() == Kind::kInputProp) {
+                isFromVar = true;
+            }
+        });
+        return isFromVar;
+    }
+
     /**
      * To encode an expression into a byte buffer.
      *
@@ -244,6 +257,17 @@ public:
      * To decode an expression from a byte buffer.
      */
     static StatusOr<std::unique_ptr<Expression>> decode(folly::StringPiece buffer) noexcept;
+
+    template <typename T>
+    static T as(const VariantType &value) {
+        static_assert(
+            std::is_same<std::remove_cv_t<T>, int64_t>::value
+            || std::is_same<std::remove_cv_t<T>, double>::value
+            || std::is_same<std::remove_cv_t<T>, bool>::value
+            || std::is_same<std::remove_cv_t<T>, std::string>::value,
+            "Invalid value type");
+        return boost::get<std::remove_reference_t<T>>(value);
+    }
 
     // Procedures used to do type conversions only between compatible ones.
     static int64_t asInt(const VariantType &value) {
@@ -300,6 +324,10 @@ public:
     static bool almostEqual(double left, double right) {
         constexpr auto EPSILON = 1e-8;
         return std::abs(left - right) < EPSILON;
+    }
+
+    static bool contains(const std::string& left, const std::string& right) {
+        return left.find(right) != std::string::npos;
     }
 
     // Procedures used to do type casting
@@ -448,6 +476,8 @@ public:
 
     OptVariantType eval(Getters &getters) const override;
 
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
+
     Status MUST_USE_RESULT prepare() override;
 
     std::string* alias() const {
@@ -479,6 +509,8 @@ public:
 
     OptVariantType eval(Getters &getters) const override;
 
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
+
     Status MUST_USE_RESULT prepare() override;
 };
 
@@ -494,6 +526,8 @@ public:
 
     OptVariantType eval(Getters &getters) const override;
 
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
+
     Status MUST_USE_RESULT prepare() override;
 };
 
@@ -508,6 +542,8 @@ public:
     VariablePropertyExpression(std::string *var, std::string *prop);
 
     OptVariantType eval(Getters &getters) const override;
+
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
 
     Status MUST_USE_RESULT prepare() override;
 };
@@ -529,6 +565,8 @@ public:
 
     OptVariantType eval(Getters &getters) const override;
 
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
+
     Status MUST_USE_RESULT prepare() override;
 };
 
@@ -548,6 +586,8 @@ public:
     }
 
     OptVariantType eval(Getters &getters) const override;
+
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
 
     Status MUST_USE_RESULT prepare() override;
 };
@@ -569,6 +609,8 @@ public:
 
     OptVariantType eval(Getters &getters) const override;
 
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
+
     Status MUST_USE_RESULT prepare() override;
 };
 
@@ -589,6 +631,8 @@ public:
 
     OptVariantType eval(Getters &getters) const override;
 
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
+
     Status MUST_USE_RESULT prepare() override;
 };
 
@@ -603,6 +647,8 @@ public:
     SourcePropertyExpression(std::string *tag, std::string *prop);
 
     OptVariantType eval(Getters &getters) const override;
+
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
 
     Status MUST_USE_RESULT prepare() override;
 };
@@ -638,6 +684,8 @@ public:
     std::string toString() const override;
 
     OptVariantType eval(Getters &getters) const override;
+
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -696,6 +744,8 @@ public:
 
     OptVariantType eval(Getters &getters) const override;
 
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
+
     Status MUST_USE_RESULT prepare() override;
 
     void setContext(ExpressionContext *ctx) override {
@@ -705,7 +755,7 @@ public:
         }
     }
 
-    void setFunc(std::function<VariantType(const std::vector<VariantType>&)> func) {
+    void setFunc(FunctionManager::Function func) {
         function_ = func;
     }
 
@@ -717,7 +767,7 @@ private:
 private:
     std::unique_ptr<std::string>                name_;
     std::vector<std::unique_ptr<Expression>>    args_;
-    std::function<VariantType(const std::vector<VariantType>&)> function_;
+    FunctionManager::Function                   function_;
 };
 
 // (uuid)expr
@@ -735,6 +785,8 @@ public:
     std::string toString() const override;
 
     OptVariantType eval(Getters &getters) const override;
+
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -777,6 +829,8 @@ public:
 
     OptVariantType eval(Getters &getters) const override;
 
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
+
     Status MUST_USE_RESULT prepare() override;
 
     void setContext(ExpressionContext *context) override {
@@ -816,6 +870,8 @@ public:
 
     OptVariantType eval(Getters &getters) const override;
 
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
+
     Status MUST_USE_RESULT prepare() override;
 
     void setContext(ExpressionContext *context) override {
@@ -834,9 +890,7 @@ public:
 private:
     void encode(Cord &cord) const override;
 
-    const char* decode(const char *, const char *) override {
-        throw Status::Error("Not supported yet");
-    }
+    const char* decode(const char *, const char *) override;
 
 private:
     ColumnType                                  type_;
@@ -866,6 +920,8 @@ public:
     std::string toString() const override;
 
     OptVariantType eval(Getters &getters) const override;
+
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -899,7 +955,7 @@ private:
 class RelationalExpression final : public Expression {
 public:
     enum Operator : uint8_t {
-        LT, LE, GT, GE, EQ, NE
+        LT, LE, GT, GE, EQ, NE, CONTAINS
     };
     static_assert(sizeof(Operator) == sizeof(uint8_t), "");
 
@@ -917,6 +973,8 @@ public:
     std::string toString() const override;
 
     OptVariantType eval(Getters &getters) const override;
+
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -974,6 +1032,8 @@ public:
     std::string toString() const override;
 
     OptVariantType eval(Getters &getters) const override;
+
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
 
     Status MUST_USE_RESULT prepare() override;
 
