@@ -28,13 +28,13 @@ protected:
                 ds.rows.emplace_back(std::move(row));
             }
             qctx_->ectx()->setResult("input_project",
-                        ExecResult::buildSequential(Value(std::move(ds)), State()));
+                        ExecResult::buildSequential(Value(std::move(ds))));
         }
         {
             DataSet ds;
             ds.colNames = {"vid", "col2"};
             qctx_->ectx()->setResult("empty",
-                        ExecResult::buildSequential(Value(std::move(ds)), State()));
+                        ExecResult::buildSequential(Value(std::move(ds))));
         }
     }
 
@@ -67,7 +67,7 @@ TEST_F(ProjectTest, Project1Col) {
         expected.rows.emplace_back(std::move(row));
     }
     EXPECT_EQ(result.value().getDataSet(), expected);
-    EXPECT_EQ(result.state().stat(), State::Stat::kSuccess);
+    EXPECT_EQ(result.state().state(), StateDesc::State::kSuccess);
 }
 
 TEST_F(ProjectTest, Project2Col) {
@@ -94,7 +94,7 @@ TEST_F(ProjectTest, Project2Col) {
         expected.rows.emplace_back(std::move(row));
     }
     EXPECT_EQ(result.value().getDataSet(), expected);
-    EXPECT_EQ(result.state().stat(), State::Stat::kSuccess);
+    EXPECT_EQ(result.state().state(), StateDesc::State::kSuccess);
 }
 
 TEST_F(ProjectTest, EmptyInput) {
@@ -114,7 +114,7 @@ TEST_F(ProjectTest, EmptyInput) {
     DataSet expected;
     expected.colNames.emplace_back("vid");
     EXPECT_EQ(result.value().getDataSet(), expected);
-    EXPECT_EQ(result.state().stat(), State::Stat::kSuccess);
+    EXPECT_EQ(result.state().state(), StateDesc::State::kSuccess);
 }
 
 }  // namespace graph

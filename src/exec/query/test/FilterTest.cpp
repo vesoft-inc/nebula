@@ -21,29 +21,32 @@ public:
     }
 };
 
-#define FILTER_RESUTL_CHECK(inputName, outputName, sentence, expected)                         \
-    do {                                                                                       \
-        auto* plan = qctx_->plan();                                                            \
-        auto yieldSentence = getYieldSentence(sentence);                                       \
-        auto* filterNode = Filter::make(plan, nullptr,  yieldSentence->where()->filter());     \
-        filterNode->setInputVar(inputName);                                                    \
-        filterNode->setOutputVar(outputName);                                                  \
-        auto filterExec = std::make_unique<FilterExecutor>(filterNode, qctx_.get());           \
-        EXPECT_TRUE(filterExec->execute().get().ok());                                         \
-        auto& filterResult = qctx_->ectx()->getResult(filterNode->varName());                  \
-        EXPECT_EQ(filterResult.state().stat(), State::Stat::kSuccess);                         \
-                                                                                               \
-        filterNode->setInputVar(outputName);                                                   \
-        auto* project = Project::make(plan, nullptr, yieldSentence->yieldColumns());           \
-        project->setInputVar(filterNode->varName());                                           \
-        project->setColNames(std::vector<std::string>{"name"});                                \
-                                                                                               \
-        auto proExe = std::make_unique<ProjectExecutor>(project, qctx_.get());                 \
-        EXPECT_TRUE(proExe->execute().get().ok());                                             \
-        auto& proSesult = qctx_->ectx()->getResult(project->varName());                        \
-                                                                                               \
-        EXPECT_EQ(proSesult.value().getDataSet(), expected);                                   \
-        EXPECT_EQ(proSesult.state().stat(), State::Stat::kSuccess);                            \
+#define FILTER_RESUTL_CHECK(inputName, outputName, sentence, expected)         \
+    do {                                                                       \
+        auto* plan = qctx_->plan();                                            \
+        auto yieldSentence = getYieldSentence(sentence);                       \
+        auto* filterNode =                                                     \
+            Filter::make(plan, nullptr, yieldSentence->where()->filter());     \
+        filterNode->setInputVar(inputName);                                    \
+        filterNode->setOutputVar(outputName);                                  \
+        auto filterExec =                                                      \
+            std::make_unique<FilterExecutor>(filterNode, qctx_.get());         \
+        EXPECT_TRUE(filterExec->execute().get().ok());                         \
+        auto& filterResult = qctx_->ectx()->getResult(filterNode->varName());  \
+        EXPECT_EQ(filterResult.state().state(), StateDesc::State::kSuccess);   \
+                                                                               \
+        filterNode->setInputVar(outputName);                                   \
+        auto* project =                                                        \
+            Project::make(plan, nullptr, yieldSentence->yieldColumns());       \
+        project->setInputVar(filterNode->varName());                           \
+        project->setColNames(std::vector<std::string>{"name"});                \
+                                                                               \
+        auto proExe = std::make_unique<ProjectExecutor>(project, qctx_.get()); \
+        EXPECT_TRUE(proExe->execute().get().ok());                             \
+        auto& proSesult = qctx_->ectx()->getResult(project->varName());        \
+                                                                               \
+        EXPECT_EQ(proSesult.value().getDataSet(), expected);                   \
+        EXPECT_EQ(proSesult.state().state(), StateDesc::State::kSuccess);      \
     } while (false)
 
 TEST_F(FilterTest, TestGetNeighbors_src_dst) {

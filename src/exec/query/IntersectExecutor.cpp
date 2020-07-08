@@ -34,7 +34,7 @@ folly::Future<Status> IntersectExecutor::execute() {
         auto value = lIter->valuePtr();
         DataSet ds;
         ds.colNames = value->getDataSet().colNames;
-        return finish(ExecResult::buildSequential(Value(std::move(ds)), State()));
+        return finish(ExecResult::buildSequential(Value(std::move(ds))));
     }
 
     while (lIter->valid()) {

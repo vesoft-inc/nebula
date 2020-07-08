@@ -23,6 +23,8 @@ private:
 
     Status collectSubgraph(const std::vector<std::string>& vars);
 
+    Status rowBasedMove(const std::vector<std::string>& vars);
+
     std::vector<std::string>    colNames_;
     Value                       result_;
 };

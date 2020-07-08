@@ -41,6 +41,8 @@ private:
 
     const Sentence* getFirstSentence(const Sentence* sentence) const;
 
+    void ifBuildDataCollectForRoot(PlanNode* root);
+
 private:
     std::vector<std::unique_ptr<Validator>>     validators_;
 };

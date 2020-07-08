@@ -165,8 +165,7 @@ Status GetSubgraphValidator::toPlan() {
         row.values.emplace_back(vid);
         ds.rows.emplace_back(std::move(row));
     }
-    qctx_->ectx()->setResult(vidsToSave, ExecResult::buildSequential(
-        Value(std::move(ds)), State(State::Stat::kSuccess, "")));
+    qctx_->ectx()->setResult(vidsToSave, ExecResult::buildSequential(Value(std::move(ds))));
     auto* vids = new VariablePropertyExpression(
                      new std::string(vidsToSave),
                      new std::string(kVid));

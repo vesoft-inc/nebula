@@ -840,6 +840,7 @@ class DataCollect final : public SingleInputNode {
 public:
     enum class CollectKind : uint8_t {
         kSubgraph,
+        kRowBasedMove,
     };
 
     static DataCollect* make(ExecutionPlan* plan,

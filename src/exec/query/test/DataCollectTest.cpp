@@ -90,13 +90,29 @@ protected:
             datasets.values.emplace_back(std::move(ds2));
 
             qctx_->ectx()->setResult("input_datasets",
-                        ExecResult::buildGetNeighbors(Value(std::move(datasets)), State()));
+                        ExecResult::buildGetNeighbors(Value(std::move(datasets))));
         }
         {
             DataSet ds;
-            ds.colNames = {"_vid", "col2"};
-            qctx_->ectx()->setResult("empty",
-                        ExecResult::buildSequential(Value(std::move(ds)), State()));
+            ds.colNames = {"col1", "col2"};
+            for (auto i = 0; i < 9; ++i) {
+                Row row;
+                row.values.emplace_back(i);
+                row.values.emplace_back(i);
+                ds.rows.emplace_back(std::move(row));
+            }
+            qctx_->ectx()->setResult("input_sequential",
+                        ExecResult::buildSequential(Value(std::move(ds))));
+        }
+        {
+            DataSet ds;
+            ds.colNames = {"_vid",
+                            "_stats",
+                            "_tag:tag1:prop1:prop2",
+                            "_edge:+edge1:prop1:prop2:_dst:_rank",
+                            "_expr"};
+            qctx_->ectx()->setResult("empty_get_neighbors",
+                        ExecResult::buildGetNeighbors(Value(std::move(ds))));
         }
     }
 
@@ -129,13 +145,33 @@ TEST_F(DataCollectTest, CollectSubgraph) {
     expected.rows.emplace_back(std::move(row));
 
     EXPECT_EQ(result.value().getDataSet(), expected);
-    EXPECT_EQ(result.state().stat(), State::Stat::kSuccess);
+    EXPECT_EQ(result.state().state(), StateDesc::State::kSuccess);
+}
+
+TEST_F(DataCollectTest, RowBasedMove) {
+    auto* plan = qctx_->plan();
+    auto* dc = DataCollect::make(plan, nullptr,
+            DataCollect::CollectKind::kRowBasedMove, {"input_sequential"});
+    dc->setColNames(std::vector<std::string>{"col1", "col2"});
+
+    DataSet expected;
+    auto& input = qctx_->ectx()->getResult("input_sequential");
+    expected = input.value().getDataSet();
+
+    auto dcExe = std::make_unique<DataCollectExecutor>(dc, qctx_.get());
+    auto future = dcExe->execute();
+    auto status = std::move(future).get();
+    EXPECT_TRUE(status.ok());
+    auto& result = qctx_->ectx()->getResult(dc->varName());
+
+    EXPECT_EQ(result.value().getDataSet(), expected);
+    EXPECT_EQ(result.state().state(), StateDesc::State::kSuccess);
 }
 
 TEST_F(DataCollectTest, EmptyResult) {
     auto* plan = qctx_->plan();
     auto* dc = DataCollect::make(plan, nullptr,
-            DataCollect::CollectKind::kSubgraph, {"empty"});
+            DataCollect::CollectKind::kSubgraph, {"empty_get_neighbors"});
     dc->setColNames(std::vector<std::string>{"_vertices", "_edges"});
 
     auto dcExe = std::make_unique<DataCollectExecutor>(dc, qctx_.get());
@@ -146,8 +182,12 @@ TEST_F(DataCollectTest, EmptyResult) {
 
     DataSet expected;
     expected.colNames = {"_vertices", "_edges"};
+    Row row;
+    row.values.emplace_back(Value(List()));
+    row.values.emplace_back(Value(List()));
+    expected.rows.emplace_back(std::move(row));
     EXPECT_EQ(result.value().getDataSet(), expected);
-    EXPECT_EQ(result.state().stat(), State::Stat::kSuccess);
+    EXPECT_EQ(result.state().state(), StateDesc::State::kSuccess);
 }
 }  // namespace graph
 }  // namespace nebula

@@ -59,14 +59,15 @@ Status SequentialValidator::validateImpl() {
 Status SequentialValidator::toPlan() {
     auto* plan = qctx_->plan();
     root_ = validators_.back()->root();
-    for (decltype(validators_.size()) i = 0; i < (validators_.size() - 1); ++i) {
-        auto status = Validator::appendPlan(validators_[i + 1]->tail(), validators_[i]->root());
+    ifBuildDataCollectForRoot(root_);
+    for (auto iter = validators_.begin(); iter < validators_.end() - 1; ++iter) {
+        auto status = Validator::appendPlan((iter + 1)->get()->tail(), iter->get()->root());
         if (!status.ok()) {
             return status;
         }
     }
     tail_ = StartNode::make(plan);
-    Validator::appendPlan(validators_[0]->tail(), tail_);
+    Validator::appendPlan(validators_.front()->tail(), tail_);
     return Status::OK();
 }
 
@@ -78,5 +79,23 @@ const Sentence* SequentialValidator::getFirstSentence(const Sentence* sentence) 
     return getFirstSentence(pipe->left());
 }
 
+void SequentialValidator::ifBuildDataCollectForRoot(PlanNode* root) {
+    switch (root->kind()) {
+        case PlanNode::Kind::kSort:
+        case PlanNode::Kind::kLimit:
+        case PlanNode::Kind::kDedup:
+        case PlanNode::Kind::kUnion:
+        case PlanNode::Kind::kIntersect:
+        case PlanNode::Kind::kMinus: {
+            auto* dc = DataCollect::make(qctx_->plan(), root,
+                DataCollect::CollectKind::kRowBasedMove, {root->varName()});
+            dc->setColNames(root->colNames());
+            root_ = dc;
+            break;
+        }
+        default:
+            break;
+    }
+}
 }  // namespace graph
 }  // namespace nebula

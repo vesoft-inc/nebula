@@ -75,6 +75,10 @@ public:
         return kind_ == Kind::kGetNeighbors;
     }
 
+    bool isSequentialIter() const {
+        return kind_ == Kind::kSequential;
+    }
+
     // The derived class should rewrite get prop if the Value is kind of dataset.
     virtual const Value& getColumn(const std::string& col) const = 0;
 
@@ -346,6 +350,13 @@ public:
 
     const Row* row() const override {
         return *iter_;
+    }
+
+protected:
+    // Notice: We only use this interface when return results to client.
+    friend class DataCollectExecutor;
+    Row&& moveRow() {
+        return std::move(*const_cast<Row*>(*iter_));
     }
 
 private:

@@ -390,8 +390,8 @@ std::string GoValidator::buildInput() {
         row.values.emplace_back(vid);
         ds.rows.emplace_back(std::move(row));
     }
-    qctx_->ectx()->setResult(input, ExecResult::buildSequential(
-        Value(std::move(ds)), State(State::Stat::kSuccess, "")));
+    qctx_->ectx()->setResult(input,
+            ExecResult::buildSequential(Value(std::move(ds))));
 
     auto* vids = new VariablePropertyExpression(
                     new std::string(input),

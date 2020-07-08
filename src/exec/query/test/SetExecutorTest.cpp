@@ -61,9 +61,9 @@ TEST_F(SetExecutorTest, TestUnionAll) {
 
         auto unionExecutor = Executor::makeExecutor(unionNode, qctx_.get());
         // Must save the values after constructing executors
-        qctx_->ectx()->setResult(left->varName(), ExecResult::buildSequential(Value(lds), State()));
+        qctx_->ectx()->setResult(left->varName(), ExecResult::buildSequential(Value(lds)));
         qctx_->ectx()->setResult(right->varName(),
-                                 ExecResult::buildSequential(Value(rds), State()));
+                                 ExecResult::buildSequential(Value(rds)));
         auto future = unionExecutor->execute();
         EXPECT_TRUE(std::move(future).get().ok());
 
@@ -182,8 +182,8 @@ TEST_F(SetExecutorTest, TestGetNeighobrsIterator) {
     rds.colNames = {"col1", "col2"};
 
     // Must save the values after constructing executors
-    auto lRes = ExecResult::buildGetNeighbors(Value(std::move(lds)), State());
-    auto rRes = ExecResult::buildSequential(Value(std::move(rds)), State());
+    auto lRes = ExecResult::buildGetNeighbors(Value(std::move(lds)));
+    auto rRes = ExecResult::buildSequential(Value(std::move(rds)));
     qctx_->ectx()->setResult(left->varName(), std::move(lRes));
     qctx_->ectx()->setResult(right->varName(), std::move(rRes));
     auto future = unionExecutor->execute();
@@ -256,9 +256,9 @@ TEST_F(SetExecutorTest, TestIntersect) {
         intersect->setRightVar(right->varName());
 
         auto executor = Executor::makeExecutor(intersect, qctx_.get());
-        qctx_->ectx()->setResult(left->varName(), ExecResult::buildSequential(Value(lds), State()));
+        qctx_->ectx()->setResult(left->varName(), ExecResult::buildSequential(Value(lds)));
         qctx_->ectx()->setResult(right->varName(),
-                                 ExecResult::buildSequential(Value(rds), State()));
+                                 ExecResult::buildSequential(Value(rds)));
 
         auto fut = executor->execute();
         auto status = std::move(fut).get();
@@ -361,9 +361,9 @@ TEST_F(SetExecutorTest, TestMinus) {
         minus->setRightVar(right->varName());
 
         auto executor = Executor::makeExecutor(minus, qctx_.get());
-        qctx_->ectx()->setResult(left->varName(), ExecResult::buildSequential(Value(lds), State()));
+        qctx_->ectx()->setResult(left->varName(), ExecResult::buildSequential(Value(lds)));
         qctx_->ectx()->setResult(right->varName(),
-                                 ExecResult::buildSequential(Value(rds), State()));
+                                 ExecResult::buildSequential(Value(rds)));
 
         auto fut = executor->execute();
         auto status = std::move(fut).get();
