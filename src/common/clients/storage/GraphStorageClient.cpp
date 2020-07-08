@@ -46,31 +46,34 @@ GraphStorageClient::getNeighbors(GraphSpaceID space,
         req.set_space_id(space);
         req.set_column_names(std::move(colNames));
         req.set_parts(std::move(c.second));
-        req.set_edge_types(edgeTypes);
-        req.set_edge_direction(edgeDirection);
-        req.set_dedup(dedup);
-        req.set_random(random);
+
+        cpp2::TraverseSpec spec;
+        spec.set_edge_types(edgeTypes);
+        spec.set_edge_direction(edgeDirection);
+        spec.set_dedup(dedup);
+        spec.set_random(random);
         if (statProps != nullptr) {
-            req.set_stat_props(*statProps);
+            spec.set_stat_props(*statProps);
         }
         if (vertexProps != nullptr) {
-            req.set_vertex_props(*vertexProps);
+            spec.set_vertex_props(*vertexProps);
         }
         if (edgeProps != nullptr) {
-            req.set_edge_props(*edgeProps);
+            spec.set_edge_props(*edgeProps);
         }
         if (expressions != nullptr) {
-            req.set_expressions(*expressions);
+            spec.set_expressions(*expressions);
         }
         if (!orderBy.empty()) {
-            req.set_order_by(orderBy);
+            spec.set_order_by(orderBy);
         }
         if (limit < std::numeric_limits<int64_t>::max()) {
-            req.set_limit(limit);
+            spec.set_limit(limit);
         }
         if (filter.size() > 0) {
-            req.set_filter(std::move(filter));
+            spec.set_filter(std::move(filter));
         }
+        req.set_traverse_spec(std::move(spec));
     }
 
     return collectResponse(
@@ -459,16 +462,54 @@ GraphStorageClient::lookupIndex(GraphSpaceID space,
         auto& req = requests[host];
         req.set_space_id(space);
         req.set_parts(std::move(c.second));
-        req.set_contexts(std::move(contexts));
-        req.set_is_edge(isEdge);
-        req.set_tag_or_edge_id(tagOrEdge);
         req.set_return_columns(returnCols);
+
+        cpp2::IndexSpec spec;
+        spec.set_contexts(std::move(contexts));
+        spec.set_is_edge(isEdge);
+        spec.set_tag_or_edge_id(tagOrEdge);
+
+        req.set_indices(spec);
     }
+
     return collectResponse(evb,
                            std::move(requests),
                            [] (cpp2::GraphStorageServiceAsyncClient* client,
                                const cpp2::LookupIndexRequest& r) {
                                return client->future_lookupIndex(r); },
+                           [] (const PartitionID& part) {
+                               return part;
+                           });
+}
+
+
+folly::SemiFuture<StorageRpcResponse<cpp2::GetNeighborsResponse>>
+GraphStorageClient::lookupAndTraverse(GraphSpaceID space,
+                                      cpp2::IndexSpec indexSpec,
+                                      cpp2::TraverseSpec traverseSpec,
+                                      folly::EventBase* evb) {
+    auto status = getHostParts(space);
+    if (!status.ok()) {
+        return folly::makeFuture<StorageRpcResponse<cpp2::GetNeighborsResponse>>(
+            std::runtime_error(status.status().toString()));
+    }
+
+    auto& clusters = status.value();
+    std::unordered_map<HostAddr, cpp2::LookupAndTraverseRequest> requests;
+    for (auto& c : clusters) {
+        auto& host = c.first;
+        auto& req = requests[host];
+        req.set_space_id(space);
+        req.set_parts(std::move(c.second));
+        req.set_indices(indexSpec);
+        req.set_traverse_spec(traverseSpec);
+    }
+
+    return collectResponse(evb,
+                           std::move(requests),
+                           [] (cpp2::GraphStorageServiceAsyncClient* client,
+                               const cpp2::LookupAndTraverseRequest& r) {
+                               return client->future_lookupAndTraverse(r); },
                            [] (const PartitionID& part) {
                                return part;
                            });

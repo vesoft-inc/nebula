@@ -171,6 +171,42 @@ enum EdgeDirection {
 //
 ///////////////////////////////////////////////////////////
 
+struct TraverseSpec {
+    // When edge_type > 0, going along the out-edge, otherwise, along the in-edge
+    // If the edge type list is empty, all edges will be scaned
+    1: list<common.EdgeType>                    edge_types,
+    // When above edge_types is not empty, edge_direction should be ignored
+    // When edge_types is empty, edge_direction decided which edge types will be
+    //   followed. The default value is BOTH, which means both in-edges and out-edges
+    //   will be traversed. If the edge_direction is IN_EDGE, then only the in-edges
+    //   will be traversed. OUT_EDGE indicates only the out-edges will be traversed
+    2: EdgeDirection                            edge_direction = EdgeDirection.BOTH,
+    // Whether to do the dedup based on the entire row. The dedup will be done on the
+    //   neighbors of each vertex
+    3: bool                                     dedup = false,
+
+    4: optional list<StatProp>                  stat_props,
+    // A list of source vertex properties to be returned. If the list is not given,
+    //   no prop will be returned. If an empty prop list is given, all properties
+    //   will be returned.
+    5: optional list<VertexProp>                vertex_props,
+    // A list of edge properties to be returned. If the list is not given,
+    //   no prop will be returned. If an empty prop list is given, all edge properties
+    //   will be returned.
+    6: optional list<EdgeProp>                  edge_props,
+    // A list of expressions which are evaluated on each edge
+    7: optional list<Expr>                      expressions,
+    // A list of expressions used to sort the result
+    8: optional list<OrderBy>                   order_by,
+    // Combined with "limit", the random flag makes the result of each query different
+    9: optional bool                            random,
+    // Return the top/bottom N rows for each given vertex
+    10: optional i64                            limit,
+    // If provided, only the rows satified the given expression will be returned
+    11: optional binary                         filter,
+}
+
+
 /*
  * Start of GetNeighbors section
  */
@@ -181,38 +217,7 @@ struct GetNeighborsRequest {
     // partId => rows
     3: map<common.PartitionID, list<common.Row>>
         (cpp.template = "std::unordered_map")   parts,
-    // When edge_type > 0, going along the out-edge, otherwise, along the in-edge
-    // If the edge type list is empty, all edges will be scaned
-    4: list<common.EdgeType>                    edge_types,
-    // When above edge_types is not empty, edge_direction should be ignored
-    // When edge_types is empty, edge_direction decided which edge types will be
-    //   followed. The default value is BOTH, which means both in-edges and out-edges
-    //   will be traversed. If the edge_direction is IN_EDGE, then only the in-edges
-    //   will be traversed. OUT_EDGE indicates only the out-edges will be traversed
-    5: EdgeDirection                            edge_direction = EdgeDirection.BOTH,
-    // Whether to do the dedup based on the entire row. The dedup will be done on the
-    //   neighbors of each vertex
-    6: bool                                     dedup = false,
-
-    7: optional list<StatProp>                  stat_props,
-    // A list of source vertex properties to be returned. If the list is not given,
-    //   no prop will be returned. If an empty prop list is given, all properties
-    //   will be returned.
-    8: optional list<VertexProp>                vertex_props,
-    // A list of edge properties to be returned. If the list is not given,
-    //   no prop will be returned. If an empty prop list is given, all edge properties
-    //   will be returned.
-    9: optional list<EdgeProp>                  edge_props,
-    // A list of expressions which are evaluated on each edge
-    10: optional list<Expr>                     expressions,
-    // A list of expressions used to sort the result
-    11: optional list<OrderBy>                  order_by,
-    // Combined with "limit", the random flag makes the result of each query different
-    12: optional bool                           random,
-    // Return the top/bottom N rows for each given vertex
-    13: optional i64                            limit,
-    // If provided, only the rows satified the given expression will be returned
-    14: optional binary                         filter,
+    4: TraverseSpec                             traverse_spec;
 }
 
 
@@ -550,19 +555,36 @@ struct IndexQueryContext {
     // There are two types of scan: 1, range scan; 2, match scan (prefix);
     // The columns_hints are not allowed to be empty, At least one index column must be hit.
     3: list<IndexColumnHint>    column_hints,
- }
+}
+
+
+struct IndexSpec {
+    // In order to union multiple indices, multiple index hints are allowed
+    1: required list<IndexQueryContext>   contexts,
+    2: required bool                      is_edge,
+    3: required i32                       tag_or_edge_id,
+}
+
 
 struct LookupIndexRequest {
-    1: required common.GraphSpaceID       space_id,
-    2: required list<common.PartitionID>  parts,
-    // For merger-index , multiple index hints are allowed
-    3: required list<IndexQueryContext>   contexts,
-    4: required bool                      is_edge,
-    5: required i32                       tag_or_edge_id,
+    1: required common.GraphSpaceID         space_id,
+    2: required list<common.PartitionID>    parts,
+    3: IndexSpec                            indices,
     // We only support specified fields here, not wild card "*"
     // If the list is empty, only the VertexID or the EdgeKey will
     // be returned
-    6: optional list<binary>              return_columns,
+    4: optional list<binary>                return_columns,
+}
+
+
+// This request will make the storage lookup the index first, then traverse
+//   to the neighbor nodes from the index results. So it is the combination
+//   of lookupIndex() and getNeighbors()
+struct LookupAndTraverseRequest {
+    1: required common.GraphSpaceID         space_id,
+    2: required list<common.PartitionID>    parts,
+    3: IndexSpec                            indices,
+    4: TraverseSpec                         traverse_spec,
 }
 
 /*
@@ -607,6 +629,8 @@ service GraphStorageService {
 
     // Interfaces for edge and vertex index scan
     LookupIndexResp lookupIndex(1: LookupIndexRequest req);
+
+    GetNeighborsResponse lookupAndTraverse(1: LookupAndTraverseRequest req);
 }
 
 

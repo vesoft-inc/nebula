@@ -117,6 +117,12 @@ public:
         int32_t tagOrEdge,
         std::vector<std::string> returnCols,
         folly::EventBase *evb = nullptr);
+
+    folly::SemiFuture<StorageRpcResponse<cpp2::GetNeighborsResponse>> lookupAndTraverse(
+        GraphSpaceID space,
+        cpp2::IndexSpec indexSpec,
+        cpp2::TraverseSpec traverseSpec,
+        folly::EventBase* evb = nullptr);
 };
 
 }   // namespace storage
