@@ -32,6 +32,7 @@ nebula_add_library(
     maintain/CreateEdgeExecutor.cpp
     maintain/DescTagExecutor.cpp
     maintain/DescEdgeExecutor.cpp
+    maintain/AlterSchemaExecutor.cpp
     mutate/InsertVerticesExecutor.cpp
     mutate/InsertEdgesExecutor.cpp
 )

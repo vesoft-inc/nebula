@@ -54,6 +54,10 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
             return std::make_unique<DescTagValidator>(sentence, context);
         case Sentence::Kind::kDescribeEdge:
             return std::make_unique<DescEdgeValidator>(sentence, context);
+        case Sentence::Kind::kAlterTag:
+            return std::make_unique<AlterTagValidator>(sentence, context);
+        case Sentence::Kind::kAlterEdge:
+            return std::make_unique<AlterEdgeValidator>(sentence, context);
         case Sentence::Kind::kInsertVertices:
             return std::make_unique<InsertVerticesValidator>(sentence, context);
         case Sentence::Kind::kInsertEdges:
@@ -81,7 +85,9 @@ Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
         case PlanNode::Kind::kDescEdge:
         case PlanNode::Kind::kInsertVertices:
         case PlanNode::Kind::kInsertEdges:
-        case PlanNode::Kind::kGetNeighbors: {
+        case PlanNode::Kind::kGetNeighbors:
+        case PlanNode::Kind::kAlterTag:
+        case PlanNode::Kind::kAlterEdge: {
             static_cast<SingleInputNode*>(node)->setInput(appended);
             break;
         }

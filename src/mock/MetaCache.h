@@ -45,6 +45,10 @@ public:
 
     Status dropEdge(const meta::cpp2::DropEdgeReq &req);
 
+    Status AlterTag(const meta::cpp2::AlterTagReq &req);
+
+    Status AlterEdge(const meta::cpp2::AlterEdgeReq &req);
+
     Status createTagIndex(const meta::cpp2::CreateTagIndexReq &req);
 
     Status createEdgeIndex(const meta::cpp2::CreateEdgeIndexReq &req);
@@ -68,6 +72,14 @@ public:
 private:
     MetaCache() = default;
 
+    Status alterColumnDefs(meta::cpp2::Schema &schema,
+                           const std::vector<meta::cpp2::AlterSchemaItem> &items);
+
+    Status alterSchemaProp(meta::cpp2::Schema &schema,
+                           const meta::cpp2::SchemaProp &alterSchemaProp);
+
+
+private:
     enum class EntryType : int8_t {
         SPACE       = 0x01,
         TAG         = 0x02,

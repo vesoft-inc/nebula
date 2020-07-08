@@ -48,6 +48,8 @@ public:
         kDescSpace,
         kDescTag,
         kDescEdge,
+        kAlterTag,
+        kAlterEdge,
         kInsertVertices,
         kInsertEdges,
         kDataCollect,

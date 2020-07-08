@@ -213,6 +213,46 @@ Status MetaCache::dropEdge(const meta::cpp2::DropEdgeReq& req) {
     return Status::OK();
 }
 
+Status MetaCache::AlterTag(const meta::cpp2::AlterTagReq &req) {
+    folly::RWSpinLock::WriteHolder holder(lock_);
+    CHECK_SPACE_ID(req.get_space_id());
+    auto tagName = req.get_tag_name();
+    auto &tagSchemas = spaceIter->second.tagSchemas_;
+    auto findIter = tagSchemas.find(tagName);
+    if (findIter == tagSchemas.end()) {
+        return Status::Error("Tag `%s' not existed", req.get_tag_name().c_str());
+    }
+
+    auto &schema = findIter->second.schema;
+    auto items = req.get_tag_items();
+    auto prop = req.get_schema_prop();
+    auto status = alterColumnDefs(schema, items);
+    if (!status.ok()) {
+        return status;
+    }
+    return alterSchemaProp(schema, prop);
+}
+
+Status MetaCache::AlterEdge(const meta::cpp2::AlterEdgeReq &req) {
+    folly::RWSpinLock::WriteHolder holder(lock_);
+    CHECK_SPACE_ID(req.get_space_id());
+    auto edgeName = req.get_edge_name();
+    auto &edgeSchemas = spaceIter->second.edgeSchemas_;
+    auto findIter = edgeSchemas.find(edgeName);
+    if (findIter == edgeSchemas.end()) {
+        return Status::Error("Edge `%s' not existed", req.get_edge_name().c_str());
+    }
+
+    auto &schema = findIter->second.schema;
+    auto items = req.get_edge_items();
+    auto prop = req.get_schema_prop();
+    auto status = alterColumnDefs(schema, items);
+    if (!status.ok()) {
+        return status;
+    }
+    return alterSchemaProp(schema, prop);
+}
+
 Status MetaCache::createTagIndex(const meta::cpp2::CreateTagIndexReq&) {
     return Status::OK();
 }
@@ -278,6 +318,119 @@ std::unordered_map<PartitionID, std::vector<HostAddr>> MetaCache::getParts() {
         parts[1].emplace_back(h);
     }
     return parts;
+}
+
+Status MetaCache::alterColumnDefs(meta::cpp2::Schema &schema,
+                                  const std::vector<meta::cpp2::AlterSchemaItem> &items) {
+    std::vector<meta::cpp2::ColumnDef> columns = schema.columns;
+    for (auto& item : items) {
+        auto& cols = item.get_schema().get_columns();
+        auto op = item.op;
+        for (auto& col : cols) {
+            switch (op) {
+                case meta::cpp2::AlterSchemaOp::ADD:
+                    for (auto it = schema.columns.begin(); it != schema.columns.end(); ++it) {
+                        if (it->get_name() == col.get_name()) {
+                            return Status::Error("Column existing: `%s'", col.get_name().c_str());
+                        }
+                    }
+                    columns.emplace_back(col);
+                    break;
+                case meta::cpp2::AlterSchemaOp::CHANGE: {
+                    bool isOk = false;
+                    for (auto it = columns.begin(); it != columns.end(); ++it) {
+                        auto colName = col.get_name();
+                        if (colName == it->get_name()) {
+                            // If this col is ttl_col, change not allowed
+                            if (schema.schema_prop.__isset.ttl_col &&
+                                (*schema.schema_prop.get_ttl_col() == colName)) {
+                                return Status::Error("Column: `%s' as ttl_col, change not allowed",
+                                                     colName.c_str());
+                            }
+                            *it = col;
+                            isOk = true;
+                            break;
+                        }
+                    }
+                    if (!isOk) {
+                        return Status::Error("Column not found: `%s'", col.get_name().c_str());
+                    }
+                    break;
+                }
+                case meta::cpp2::AlterSchemaOp::DROP: {
+                    bool isOk = false;
+                    for (auto it = columns.begin(); it != columns.end(); ++it) {
+                        auto colName = col.get_name();
+                        if (colName == it->get_name()) {
+                            if (schema.schema_prop.__isset.ttl_col &&
+                                (*schema.schema_prop.get_ttl_col() == colName)) {
+                                schema.schema_prop.set_ttl_duration(0);
+                                schema.schema_prop.set_ttl_col("");
+                            }
+                            columns.erase(it);
+                            isOk = true;
+                            break;
+                        }
+                    }
+                    if (!isOk) {
+                        return Status::Error("Column not found: `%s'", col.get_name().c_str());
+                    }
+                    break;
+                }
+                default:
+                    return Status::Error("Alter schema operator not supported");
+            }
+        }
+    }
+    schema.columns = std::move(columns);
+    return Status::OK();
+}
+
+Status MetaCache::alterSchemaProp(meta::cpp2::Schema &schema,
+                                  const meta::cpp2::SchemaProp &alterSchemaProp) {
+    meta::cpp2::SchemaProp schemaProp = schema.get_schema_prop();
+    if (alterSchemaProp.__isset.ttl_duration) {
+        // Graph check  <=0 to = 0
+        schemaProp.set_ttl_duration(*alterSchemaProp.get_ttl_duration());
+    }
+    if (alterSchemaProp.__isset.ttl_col) {
+        auto ttlCol = *alterSchemaProp.get_ttl_col();
+        // Disable ttl, ttl_col is empty, ttl_duration is 0
+        if (ttlCol.empty()) {
+            schemaProp.set_ttl_duration(0);
+            schemaProp.set_ttl_col(ttlCol);
+            return Status::OK();
+        }
+
+        auto existed = false;
+        for (auto& col : schema.columns) {
+            if (col.get_name() == ttlCol) {
+                // Only integer and timestamp columns can be used as ttl_col
+                if (col.type != meta::cpp2::PropertyType::INT32 &&
+                    col.type != meta::cpp2::PropertyType::INT64 &&
+                    col.type != meta::cpp2::PropertyType::TIMESTAMP) {
+                    return Status::Error("TTL column type illegal");
+                }
+                existed = true;
+                schemaProp.set_ttl_col(ttlCol);
+                break;
+            }
+        }
+
+        if (!existed) {
+            return Status::Error("TTL column not found: `%s'", ttlCol.c_str());
+        }
+    }
+
+    // Disable implicit TTL mode
+    if ((schemaProp.get_ttl_duration() && (*schemaProp.get_ttl_duration() != 0)) &&
+        (!schemaProp.get_ttl_col() || (schemaProp.get_ttl_col() &&
+                                       schemaProp.get_ttl_col()->empty()))) {
+        return Status::Error("Implicit ttl_col not support");
+    }
+
+    schema.set_schema_prop(std::move(schemaProp));
+    return Status::OK();
 }
 }  // namespace graph
 }  // namespace nebula

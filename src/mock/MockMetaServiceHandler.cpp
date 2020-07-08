@@ -188,8 +188,20 @@ MockMetaServiceHandler::future_createTag(const meta::cpp2::CreateTagReq& req) {
 }
 
 folly::Future<meta::cpp2::ExecResp>
-MockMetaServiceHandler::future_alterTag(const meta::cpp2::AlterTagReq&) {
-    RETURN_SUCCESSED();
+MockMetaServiceHandler::future_alterTag(const meta::cpp2::AlterTagReq &req) {
+    folly::Promise<meta::cpp2::ExecResp> promise;
+    auto future = promise.getFuture();
+    meta::cpp2::ExecResp resp;
+    auto status = MetaCache::instance().AlterTag(req);
+    if (!status.ok()) {
+        LOG(ERROR) << status;
+        resp.set_code(meta::cpp2::ErrorCode::E_UNKNOWN);
+        promise.setValue(std::move(resp));
+        return future;
+    }
+    resp.set_code(meta::cpp2::ErrorCode::SUCCEEDED);
+    promise.setValue(std::move(resp));
+    return future;
 }
 
 folly::Future<meta::cpp2::ExecResp>
@@ -264,8 +276,19 @@ MockMetaServiceHandler::future_createEdge(const meta::cpp2::CreateEdgeReq& req) 
 }
 
 folly::Future<meta::cpp2::ExecResp>
-MockMetaServiceHandler::future_alterEdge(const meta::cpp2::AlterEdgeReq&) {
-    RETURN_SUCCESSED();
+MockMetaServiceHandler::future_alterEdge(const meta::cpp2::AlterEdgeReq &req) {
+    folly::Promise<meta::cpp2::ExecResp> promise;
+    auto future = promise.getFuture();
+    meta::cpp2::ExecResp resp;
+    auto status = MetaCache::instance().AlterEdge(req);
+    if (!status.ok()) {
+        resp.set_code(meta::cpp2::ErrorCode::E_UNKNOWN);
+        promise.setValue(std::move(resp));
+        return future;
+    }
+    resp.set_code(meta::cpp2::ErrorCode::SUCCEEDED);
+    promise.setValue(std::move(resp));
+    return future;
 }
 
 folly::Future<meta::cpp2::ExecResp>
