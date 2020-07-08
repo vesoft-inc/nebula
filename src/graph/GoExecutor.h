@@ -86,16 +86,6 @@ private:
         return false;
     }
 
-    VertexID getRoot(VertexID srcId, std::size_t record) const {
-        CHECK_GT(record, 0);
-        VertexID rootId = srcId;
-        if (record == 1) {
-            return rootId;
-        }
-        rootId = DCHECK_NOTNULL(backTracker_)->get(srcId);
-        return rootId;
-    }
-
     /**
      * To obtain the source ids from various places,
      * such as the literal id list, inputs from the pipeline or results of variable.
@@ -140,6 +130,8 @@ private:
      */
     std::vector<VertexID> getDstIdsFromResps(std::vector<RpcResponse>::iterator begin,
                                              std::vector<RpcResponse>::iterator end) const;
+
+    std::vector<VertexID> getDstIdsFromRespWithBackTrack(const RpcResponse &rpcResp) const;
 
     /**
      * get the edgeName when over all edges
@@ -196,23 +188,20 @@ private:
 
     class VertexBackTracker final {
     public:
-        void add(VertexID src, VertexID dst) {
-            VertexID value = src;
-            auto iter = mapping_.find(src);
-            if (iter != mapping_.end()) {
-                value = iter->second;
+        void inject(const std::multimap<VertexID, VertexID> &backTrace) {
+            // TODO(shylock) c++17 merge directly
+            for (const auto iter : backTrace) {
+                mapping_.emplace(iter.first, iter.second);
             }
-            mapping_[dst] = value;
         }
 
-        VertexID get(VertexID id) {
-            auto iter = mapping_.find(id);
-            DCHECK(iter != mapping_.end());
-            return iter->second;
+        auto get(VertexID id) const {
+            auto range = mapping_.equal_range(id);
+            return range;
         }
 
     private:
-         std::unordered_map<VertexID, VertexID>     mapping_;
+       std::multimap<VertexID, VertexID> mapping_;
     };
 
     enum FromType {
@@ -223,6 +212,21 @@ private:
 
     // Join the RPC response to previous data
     void joinResp(RpcResponse &&resp);
+
+    std::vector<VertexID> getRoots(VertexID srcId, std::size_t record) const {
+        CHECK_GT(record, 0);
+        std::vector<VertexID> ids;
+        if (record == 1) {
+            ids.emplace_back(srcId);
+            return ids;
+        }
+        const auto range = DCHECK_NOTNULL(backTracker_)->get(srcId);
+        for (auto i = range.first; i != range.second; ++i) {
+            ids.emplace_back(i->second);
+        }
+        return ids;
+    }
+
 
 private:
     GoSentence                                 *sentence_{nullptr};
