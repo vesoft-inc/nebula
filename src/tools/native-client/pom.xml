@@ -102,7 +102,7 @@
                             </outputDirectory>
                             <resources>
                                 <resource>
-                                    <directory>${basedir}/_build</directory>
+                                    <directory>${env.NEBULA_BUILD_ROOT}/lib</directory>
                                     <includes>
                                         <include>libnebula_native_client.so
                                         </include>
@@ -153,7 +153,7 @@
                 <version>2.10</version>
                 <configuration>
                     <!-- put nebula_native_client.so in java.library.path env before run test-->
-                    <argLine>-Djava.library.path=_build/</argLine>
+                    <argLine>-Djava.library.path=${env.NEBULA_BUILD_ROOT}/lib</argLine>
                 </configuration>
             </plugin>
         </plugins>
