@@ -74,7 +74,7 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
 }
 
 Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
-    switch (node->kind()) {
+    switch (DCHECK_NOTNULL(node)->kind()) {
         case PlanNode::Kind::kFilter:
         case PlanNode::Kind::kProject:
         case PlanNode::Kind::kSort:
@@ -82,6 +82,7 @@ Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
         case PlanNode::Kind::kAggregate:
         case PlanNode::Kind::kSelect:
         case PlanNode::Kind::kLoop:
+        case PlanNode::Kind::kMultiOutputs:
         case PlanNode::Kind::kSwitchSpace:
         case PlanNode::Kind::kCreateSpace:
         case PlanNode::Kind::kCreateTag:
@@ -105,9 +106,11 @@ Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
     return Status::OK();
 }
 
-Status Validator::validate() {
-    Status status;
+Status Validator::appendPlan(PlanNode* tail) {
+    return appendPlan(tail_, DCHECK_NOTNULL(tail));
+}
 
+Status Validator::validate() {
     if (!vctx_) {
         VLOG(1) << "Validate context was not given.";
         return Status::Error("Validate context was not given.");
@@ -120,23 +123,15 @@ Status Validator::validate() {
 
     if (!noSpaceRequired_ && !spaceChosen()) {
         VLOG(1) << "Space was not chosen.";
-        status = Status::Error("Space was not chosen.");
-        return status;
+        return Status::Error("Space was not chosen.");
     }
 
     if (!noSpaceRequired_) {
         space_ = vctx_->whichSpace();
     }
 
-    status = validateImpl();
-    if (!status.ok()) {
-        return status;
-    }
-
-    status = toPlan();
-    if (!status.ok()) {
-        return status;
-    }
+    NG_RETURN_IF_ERROR(validateImpl());
+    NG_RETURN_IF_ERROR(toPlan());
 
     return Status::OK();
 }
@@ -511,4 +506,3 @@ bool Validator::evaluableExpr(const Expression* expr) const {
 
 }  // namespace graph
 }  // namespace nebula
-

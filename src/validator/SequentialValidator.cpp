@@ -46,10 +46,7 @@ Status SequentialValidator::validateImpl() {
             }
         }
         auto validator = makeValidator(sentence, qctx_);
-        status = validator->validate();
-        if (!status.ok()) {
-            return status;
-        }
+        NG_RETURN_IF_ERROR(validator->validate());
         validators_.emplace_back(std::move(validator));
     }
 
@@ -61,13 +58,10 @@ Status SequentialValidator::toPlan() {
     root_ = validators_.back()->root();
     ifBuildDataCollectForRoot(root_);
     for (auto iter = validators_.begin(); iter < validators_.end() - 1; ++iter) {
-        auto status = Validator::appendPlan((iter + 1)->get()->tail(), iter->get()->root());
-        if (!status.ok()) {
-            return status;
-        }
+        NG_RETURN_IF_ERROR((iter + 1)->get()->appendPlan(iter->get()->root()));
     }
     tail_ = StartNode::make(plan);
-    Validator::appendPlan(validators_.front()->tail(), tail_);
+    NG_RETURN_IF_ERROR(validators_.front()->appendPlan(tail_));
     return Status::OK();
 }
 

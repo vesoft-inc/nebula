@@ -5,27 +5,24 @@
  */
 
 #include "validator/SetValidator.h"
+
 #include "planner/Query.h"
 
 namespace nebula {
 namespace graph {
+
 Status SetValidator::validateImpl() {
-    auto setSentence = static_cast<SetSentence*>(sentence_);
+    auto setSentence = static_cast<SetSentence *>(sentence_);
     lValidator_ = makeValidator(setSentence->left(), qctx_);
-    auto status = lValidator_->validate();
-    if (!status.ok()) {
-        return status;
-    }
+    NG_RETURN_IF_ERROR(lValidator_->validate());
     rValidator_ = makeValidator(setSentence->right(), qctx_);
-    status = rValidator_->validate();
-    if (!status.ok()) {
-        return status;
-    }
+    NG_RETURN_IF_ERROR(rValidator_->validate());
 
     auto lCols = lValidator_->outputs();
     auto rCols = rValidator_->outputs();
-    if (lCols.size() != rCols.size()) {
-        return Status::Error("The used statements have a diffrent number of columns.");
+
+    if (UNLIKELY(lCols != rCols)) {
+        return Status::Error("Different columns to UNION/INTERSECT/MINUS");
     }
 
     outputs_ = std::move(lCols);
@@ -33,43 +30,48 @@ Status SetValidator::validateImpl() {
 }
 
 Status SetValidator::toPlan() {
-    auto* plan = qctx_->plan();
-    switch (op_) {
+    auto plan = qctx_->plan();
+    auto setSentence = static_cast<const SetSentence *>(sentence_);
+    auto lRoot = DCHECK_NOTNULL(lValidator_->root());
+    auto rRoot = DCHECK_NOTNULL(rValidator_->root());
+    auto colNames = lRoot->colNames();
+    BiInputNode *bNode = nullptr;
+    switch (setSentence->op()) {
         case SetSentence::Operator::UNION: {
-            auto unionOp = Union::make(
-                    plan, lValidator_->root(), rValidator_->root());
-            if (distinct_) {
-                auto dedup = Dedup::make(
-                        plan,
-                        lValidator_->root());
+            bNode = Union::make(plan, lRoot, rRoot);
+            if (setSentence->distinct()) {
+                auto dedup = Dedup::make(plan, bNode);
+                dedup->setInputVar(bNode->varName());
+                dedup->setColNames(colNames);
                 root_ = dedup;
             } else {
-                root_ = unionOp;
+                root_ = bNode;
             }
             break;
         }
         case SetSentence::Operator::INTERSECT: {
-            root_ = Intersect::make(
-                    plan,
-                    lValidator_->root(),
-                    rValidator_->root());
+            bNode = Intersect::make(plan, lRoot, rRoot);
+            root_ = bNode;
             break;
         }
         case SetSentence::Operator::MINUS: {
-            root_ = Minus::make(
-                    plan,
-                    lValidator_->root(),
-                    rValidator_->root());
+            bNode = Minus::make(plan, lRoot, rRoot);
+            root_ = bNode;
             break;
         }
         default:
-            return Status::Error("Unkown operator: %ld", static_cast<int64_t>(op_));
+            return Status::Error("Unknown operator: %ld", static_cast<int64_t>(setSentence->op()));
     }
 
+    bNode->setColNames(colNames);
+    bNode->setLeftVar(lRoot->varName());
+    bNode->setRightVar(rRoot->varName());
+
     tail_ = MultiOutputsNode::make(plan, nullptr);
-    Validator::appendPlan(lValidator_->tail(), tail_);
-    Validator::appendPlan(rValidator_->tail(), tail_);
+    NG_RETURN_IF_ERROR(lValidator_->appendPlan(tail_));
+    NG_RETURN_IF_ERROR(rValidator_->appendPlan(tail_));
     return Status::OK();
 }
-}  // namespace graph
-}  // namespace nebula
+
+}   // namespace graph
+}   // namespace nebula

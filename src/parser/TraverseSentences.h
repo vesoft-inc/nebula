@@ -158,7 +158,7 @@ public:
         return right_.get();
     }
 
-    auto op() {
+    Operator op() const {
         return op_;
     }
 
@@ -166,7 +166,7 @@ public:
         distinct_ = true;
     }
 
-    auto distinct() {
+    bool distinct() const {
         return distinct_;
     }
 

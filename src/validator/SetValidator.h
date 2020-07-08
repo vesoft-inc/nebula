@@ -12,6 +12,7 @@
 
 namespace nebula {
 namespace graph {
+
 class SetValidator final : public Validator {
 public:
     SetValidator(Sentence* sentence, QueryContext* context)
@@ -37,9 +38,8 @@ private:
 private:
     std::unique_ptr<Validator>  lValidator_;
     std::unique_ptr<Validator>  rValidator_;
-    SetSentence::Operator       op_;
-    bool                        distinct_;
 };
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // VALIDATOR_SETVALIDATOR_H_
