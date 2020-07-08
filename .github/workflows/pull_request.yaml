@@ -107,8 +107,9 @@ jobs:
         if: success() && matrix.compiler == 'gcc-9.2' && matrix.os == 'centos7' && steps.ignore_docs.outputs.num_source_files != 0
         run: |
           set -e
-          fastcov -o coverage.info -l --exclude=/opt/vesoft/ --exclude=scanner.lex
-          bash <(curl -s https://codecov.io/bash) -Z -t $(cat /etc/action/secrets/codecov) -f coverage.info
+          fastcov -o coverage.info -l --exclude=scanner.lex
+          lcov --remove coverage.info '*/opt/vesoft/*' -o clean.info
+          bash <(curl -s https://codecov.io/bash) -Z -t $(cat /etc/action/secrets/codecov) -f clean.info
         shell: bash
       - name: Cleanup
         if: always()
