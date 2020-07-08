@@ -26,7 +26,7 @@ class LimitTest : public QueryTestBase {
         auto limitExec = std::make_unique<LimitExecutor>(limitNode, qctx_.get());     \
         EXPECT_TRUE(limitExec->execute().get().ok());                                 \
         auto& limitResult = qctx_->ectx()->getResult(limitNode->varName());           \
-        EXPECT_EQ(limitResult.state().state(), StateDesc::State::kSuccess);           \
+        EXPECT_EQ(limitResult.state(), Result::State::kSuccess);                      \
         auto yieldSentence = getYieldSentence(                                        \
                 "YIELD study._dst AS name, study.start_year AS start");               \
         auto* project = Project::make(plan, nullptr, yieldSentence->yieldColumns());  \
@@ -36,7 +36,7 @@ class LimitTest : public QueryTestBase {
         EXPECT_TRUE(proExe->execute().get().ok());                                    \
         auto& proResult = qctx_->ectx()->getResult(project->varName());               \
         EXPECT_EQ(proResult.value().getDataSet(), expected);                          \
-        EXPECT_EQ(proResult.state().state(), StateDesc::State::kSuccess);             \
+        EXPECT_EQ(proResult.state(), Result::State::kSuccess);                        \
     } while (false)
 
 

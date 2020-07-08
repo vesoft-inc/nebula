@@ -26,7 +26,7 @@ class SortTest : public QueryTestBase {
         auto sortExec = std::make_unique<SortExecutor>(sortNode, qctx_.get());        \
         EXPECT_TRUE(sortExec->execute().get().ok());                                  \
         auto& sortResult = qctx_->ectx()->getResult(sortNode->varName());             \
-        EXPECT_EQ(sortResult.state().state(), StateDesc::State::kSuccess);            \
+        EXPECT_EQ(sortResult.state(), Result::State::kSuccess);                       \
         std::string sentence;                                                         \
         std::vector<std::string> colNames;                                            \
         if (multi) {                                                                  \
@@ -45,7 +45,7 @@ class SortTest : public QueryTestBase {
         EXPECT_TRUE(proExe->execute().get().ok());                                    \
         auto& proResult = qctx_->ectx()->getResult(project->varName());               \
         EXPECT_EQ(proResult.value().getDataSet(), expected);                          \
-        EXPECT_EQ(proResult.state().state(), StateDesc::State::kSuccess);             \
+        EXPECT_EQ(proResult.state(), Result::State::kSuccess);                        \
     } while (false)
 
 

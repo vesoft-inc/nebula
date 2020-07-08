@@ -390,8 +390,7 @@ std::string GoValidator::buildInput() {
         row.values.emplace_back(vid);
         ds.rows.emplace_back(std::move(row));
     }
-    qctx_->ectx()->setResult(input,
-            ExecResult::buildSequential(Value(std::move(ds))));
+    qctx_->ectx()->setResult(input, ResultBuilder().value(Value(std::move(ds))).finish());
 
     auto* vids = new VariablePropertyExpression(
                     new std::string(input),
@@ -465,4 +464,3 @@ GetNeighbors::EdgeProps GoValidator::buildEdgeProps() {
 }
 }  // namespace graph
 }  // namespace nebula
-

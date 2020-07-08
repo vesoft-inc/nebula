@@ -22,7 +22,8 @@ folly::Future<Status> FilterExecutor::execute() {
         LOG(ERROR) << "Internal Error: iterator is nullptr";
         return Status::Error("Internal Error: iterator is nullptr");
     }
-    auto result = ExecResult::buildDefault(iter->valuePtr());
+    ResultBuilder builder;
+    builder.value(iter->valuePtr());
     ExpressionContextImpl ctx(ectx_, iter.get());
     auto condition = filter->condition();
     while (iter->valid()) {
@@ -39,8 +40,8 @@ folly::Future<Status> FilterExecutor::execute() {
     }
 
     iter->reset();
-    result.setIter(std::move(iter));
-    return finish(std::move(result));
+    builder.iter(std::move(iter));
+    return finish(builder.finish());
 }
 
 }   // namespace graph

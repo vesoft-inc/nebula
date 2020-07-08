@@ -73,8 +73,11 @@ protected:
             }
             List datasetList;
             datasetList.values.emplace_back(std::move(dataset));
-            qctx_->ectx()->setResult("input_neighbor",
-                                     ExecResult::buildGetNeighbors(Value(datasetList)));
+            auto result = ResultBuilder()
+                              .value(Value(datasetList))
+                              .iter(Iterator::Kind::kGetNeighbors)
+                              .finish();
+            qctx_->ectx()->setResult("input_neighbor", std::move(result));
         }
         // sequential
         {
@@ -86,7 +89,7 @@ protected:
             dataset.emplace_back(Row({"Ann", "Ann", 18, "School1", 2010, 2014}));
             dataset.emplace_back(Row({"Lily", "Lily", 20, "School2", 2009, 2012}));
             qctx_->ectx()->setResult("input_sequential",
-                                     ExecResult::buildSequential(Value(dataset)));
+                                     ResultBuilder().value(Value(dataset)).finish());
         }
         // sequential init by two sequentialIters
         {
@@ -96,27 +99,27 @@ protected:
             lds.emplace_back(Row({"Tom", "Tom", 20, "School2", 2008, 2012}));
             lds.emplace_back(Row({"Kate", "Kate", 19, "School2", 2009, 2013}));
             qctx_->ectx()->setResult("left_sequential",
-                                     ExecResult::buildSequential(Value(lds)));
+                                     ResultBuilder().value(Value(lds)).finish());
 
             DataSet rds({"vid", "v_name", "v_age", "v_dst", "e_start_year", "e_end_year"});
             rds.emplace_back(Row({"Ann", "Ann", 18, "School1", 2010, 2014}));
             rds.emplace_back(Row({"Lily", "Lily", 20, "School2", 2009, 2012}));
             qctx_->ectx()->setResult("right_sequential",
-                                     ExecResult::buildSequential(Value(rds)));
+                                     ResultBuilder().value(Value(rds)).finish());
 
             auto lIter = qctx_->ectx()->getResult("left_sequential").iter();
             auto rIter = qctx_->ectx()->getResult("right_sequential").iter();
-            auto result = ExecResult::buildDefault(lIter->valuePtr());
-            auto iter = std::make_unique<SequentialIter>(std::move(lIter), std::move(rIter));
-            result.setIter(std::move(iter));
-            qctx_->ectx()->setResult("union_sequential", std::move(result));
+            ResultBuilder builder;
+            builder.value(lIter->valuePtr())
+                .iter(std::make_unique<SequentialIter>(std::move(lIter), std::move(rIter)));
+            qctx_->ectx()->setResult("union_sequential", builder.finish());
         }
         // empty
         {
             DataSet dataset({"_vid", "_stats", "_tag:person:name:age",
                              "_edge:+study:_dst:start_year:end_year", "_expr"});
             qctx_->ectx()->setResult("empty",
-                                     ExecResult::buildSequential(Value(dataset)));
+                                     ResultBuilder().value(Value(dataset)).finish());
         }
     }
 
@@ -152,4 +155,3 @@ protected:
 }  // namespace graph
 }  // namespace nebula
 #endif  // EXEC_QUERY_TESTQUERYBASE_H
-

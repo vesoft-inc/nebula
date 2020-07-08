@@ -37,7 +37,7 @@ public:
             return;                                                            \
         }                                                                      \
         auto& dedupResult = qctx_->ectx()->getResult(dedupNode->varName());    \
-        EXPECT_EQ(dedupResult.state().state(), StateDesc::State::kSuccess);    \
+        EXPECT_EQ(dedupResult.state(), Result::State::kSuccess);               \
                                                                                \
         dedupNode->setInputVar(outputName);                                    \
         auto* project =                                                        \
@@ -51,7 +51,7 @@ public:
         auto& proSesult = qctx_->ectx()->getResult(project->varName());        \
                                                                                \
         EXPECT_EQ(proSesult.value().getDataSet(), expected);                   \
-        EXPECT_EQ(proSesult.state().state(), StateDesc::State::kSuccess);      \
+        EXPECT_EQ(proSesult.state(), Result::State::kSuccess);                 \
     } while (false)
 
 TEST_F(DedupTest, TestSequential) {

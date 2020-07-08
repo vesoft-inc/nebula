@@ -9,6 +9,7 @@ nebula_add_library(
     ExpressionContextImpl.cpp
     ExecutionContext.cpp
     Iterator.cpp
+    Result.cpp
 )
 
 nebula_add_subdirectory(test)

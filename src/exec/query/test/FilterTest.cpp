@@ -33,7 +33,7 @@ public:
             std::make_unique<FilterExecutor>(filterNode, qctx_.get());         \
         EXPECT_TRUE(filterExec->execute().get().ok());                         \
         auto& filterResult = qctx_->ectx()->getResult(filterNode->varName());  \
-        EXPECT_EQ(filterResult.state().state(), StateDesc::State::kSuccess);   \
+        EXPECT_EQ(filterResult.state(), Result::State::kSuccess);              \
                                                                                \
         filterNode->setInputVar(outputName);                                   \
         auto* project =                                                        \
@@ -46,7 +46,7 @@ public:
         auto& proSesult = qctx_->ectx()->getResult(project->varName());        \
                                                                                \
         EXPECT_EQ(proSesult.value().getDataSet(), expected);                   \
-        EXPECT_EQ(proSesult.state().state(), StateDesc::State::kSuccess);      \
+        EXPECT_EQ(proSesult.state(), Result::State::kSuccess);                 \
     } while (false)
 
 TEST_F(FilterTest, TestGetNeighbors_src_dst) {

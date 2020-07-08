@@ -30,11 +30,13 @@ folly::Future<Status> IntersectExecutor::execute() {
         }
     }
 
+    ResultBuilder builder;
     if (hashSet.empty()) {
         auto value = lIter->valuePtr();
         DataSet ds;
         ds.colNames = value->getDataSet().colNames;
-        return finish(ExecResult::buildSequential(Value(std::move(ds))));
+        builder.value(Value(std::move(ds))).iter(Iterator::Kind::kSequential);
+        return finish(builder.finish());
     }
 
     while (lIter->valid()) {
@@ -46,10 +48,8 @@ folly::Future<Status> IntersectExecutor::execute() {
         }
     }
 
-    auto result = ExecResult::buildDefault(lIter->valuePtr());
-    result.setIter(std::move(lIter));
-
-    return finish(std::move(result));
+    builder.value(lIter->valuePtr()).iter(std::move(lIter));
+    return finish(builder.finish());
 }
 
 }   // namespace graph

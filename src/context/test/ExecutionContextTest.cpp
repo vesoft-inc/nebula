@@ -49,9 +49,10 @@ TEST(ExecutionContext, HistoryTest) {
     EXPECT_TRUE(it2 == hist2.end());
 }
 
-TEST(ExecutionContextTest, TestExecResult) {
+TEST(ExecutionContextTest, TestResult) {
     DataSet ds;
-    auto expected = ExecResult::buildDefault(Value(ds));
+    auto expected =
+        ResultBuilder().value(Value(std::move(ds))).iter(Iterator::Kind::kDefault).finish();
     ExecutionContext ctx;
     ctx.setResult("ds", std::move(expected));
     auto& result = ctx.getResult("ds");

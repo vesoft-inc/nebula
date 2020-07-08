@@ -22,27 +22,21 @@ folly::Future<Status> DataCollectExecutor::doCollect() {
     auto* dc = asNode<DataCollect>(node());
     colNames_ = dc->colNames();
     auto vars = dc->vars();
-    Status status;
     switch (dc->collectKind()) {
         case DataCollect::CollectKind::kSubgraph: {
-            status = collectSubgraph(vars);
-            if (!status.ok()) {
-                return error(std::move(status));
-            }
+            NG_RETURN_IF_ERROR(collectSubgraph(vars));
             break;
         }
         case DataCollect::CollectKind::kRowBasedMove: {
-            status = rowBasedMove(vars);
-            if (!status.ok()) {
-                return error(std::move(status));
-            }
+            NG_RETURN_IF_ERROR(rowBasedMove(vars));
             break;
         }
         default:
-            LOG(FATAL) << "Unkown data collect type: " << static_cast<int64_t>(dc->collectKind());
+            LOG(FATAL) << "Unknown data collect type: " << static_cast<int64_t>(dc->collectKind());
     }
-
-    return finish(ExecResult::buildSequential(Value(std::move(result_))));
+    ResultBuilder builder;
+    builder.value(Value(std::move(result_))).iter(Iterator::Kind::kSequential);
+    return finish(builder.finish());
 }
 
 Status DataCollectExecutor::collectSubgraph(const std::vector<std::string>& vars) {

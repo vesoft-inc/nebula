@@ -92,7 +92,7 @@ protected:
 
     // Store the result of this executor to execution context
     Status finish(nebula::Value &&value);
-    Status finish(ExecResult &&result);
+    Status finish(Result &&result);
 
     // Dump some execution logging messages, only for debugging
     // TODO(yee): Remove it after implementing profile function

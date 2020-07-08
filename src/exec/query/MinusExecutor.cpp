@@ -41,10 +41,9 @@ folly::Future<Status> MinusExecutor::execute() {
         }
     }
 
-    auto result = ExecResult::buildDefault(lIter->valuePtr());
-    result.setIter(std::move(lIter));
-
-    return finish(std::move(result));
+    ResultBuilder builder;
+    builder.value(lIter->valuePtr()).iter(std::move(lIter));
+    return finish(builder.finish());
 }
 
 }   // namespace graph

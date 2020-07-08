@@ -88,14 +88,14 @@ folly::Future<Status> GetNeighborsExecutor::getNeighbors() {
 
 Status GetNeighborsExecutor::handleResponse(RpcResponse& resps) {
     auto completeness = resps.completeness();
-    if (completeness == 0) {
+    if (UNLIKELY(completeness == 0)) {
         return Status::Error("Get neighbors failed");
     }
 
-    StateDesc state(StateDesc::State::kSuccess, "");
-    if (completeness != 100) {
-        state = StateDesc(StateDesc::State::kPartialSuccess,
-                    folly::stringPrintf("Get neighbors partially failed: %d %%", completeness));
+    ResultBuilder builder;
+    if (UNLIKELY(completeness != 100)) {
+        builder.state(Result::State::kPartialSuccess)
+            .msg(folly::stringPrintf("Get neighbors partially failed: %d %%", completeness));
     }
 
     auto& responses = resps.responses();
@@ -110,12 +110,11 @@ Status GetNeighborsExecutor::handleResponse(RpcResponse& resps) {
             continue;
         }
 
-        VLOG(1) << "Resp row size: " << dataset->rows.size();
-        VLOG(1) << "Resp : " << *dataset;
+        VLOG(1) << "Resp row size: " << dataset->rows.size() << "Resp : " << *dataset;
         list.values.emplace_back(std::move(*dataset));
     }
-    auto result = Value(std::move(list));
-    return finish(ExecResult::buildGetNeighbors(std::move(result), std::move(state)));
+    builder.value(Value(std::move(list)));
+    return finish(builder.finish());
 }
 
 void GetNeighborsExecutor::checkResponseResult(const storage::cpp2::ResponseCommon& result) const {

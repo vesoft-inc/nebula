@@ -165,7 +165,10 @@ Status GetSubgraphValidator::toPlan() {
         row.values.emplace_back(vid);
         ds.rows.emplace_back(std::move(row));
     }
-    qctx_->ectx()->setResult(vidsToSave, ExecResult::buildSequential(Value(std::move(ds))));
+
+    ResultBuilder builder;
+    builder.value(Value(std::move(ds))).iter(Iterator::Kind::kSequential);
+    qctx_->ectx()->setResult(vidsToSave, builder.finish());
     auto* vids = new VariablePropertyExpression(
                      new std::string(vidsToSave),
                      new std::string(kVid));
@@ -260,4 +263,3 @@ Status GetSubgraphValidator::toPlan() {
 }
 }  // namespace graph
 }  // namespace nebula
-

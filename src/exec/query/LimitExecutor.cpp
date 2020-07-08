@@ -15,7 +15,8 @@ folly::Future<Status> LimitExecutor::execute() {
     dumpLog();
     auto* limit = asNode<Limit>(node());
     auto iter = ectx_->getResult(limit->inputVar()).iter();
-    auto result = ExecResult::buildDefault(iter->valuePtr());
+    ResultBuilder builder;
+    builder.value(iter->valuePtr());
     ExpressionContextImpl ctx(ectx_, iter.get());
     auto offset = limit->offset();
     auto count = limit->count();
@@ -29,8 +30,8 @@ folly::Future<Status> LimitExecutor::execute() {
                size <= static_cast<size_t>(offset + count)) {
         iter->eraseRange(0, offset);
     }
-    result.setIter(std::move(iter));
-    return finish(std::move(result));
+    builder.iter(std::move(iter));
+    return finish(builder.finish());
 }
 
 }   // namespace graph

@@ -25,7 +25,9 @@ protected:
                 row.values.emplace_back(i + 1);
                 ds.rows.emplace_back(std::move(row));
             }
-            qctx_->ectx()->setResult("input_gn", ExecResult::buildSequential(Value(std::move(ds))));
+            ResultBuilder builder;
+            builder.value(Value(std::move(ds)));
+            qctx_->ectx()->setResult("input_gn", builder.finish());
         }
     }
 

@@ -32,8 +32,8 @@ folly::Future<Status> ProjectExecutor::execute() {
         }
         ds.rows.emplace_back(std::move(row));
     }
-    return finish(ExecResult::buildSequential(Value(std::move(ds))));
+    return finish(ResultBuilder().value(Value(std::move(ds))).finish());
 }
 
-}  // namespace graph
-}  // namespace nebula
+}   // namespace graph
+}   // namespace nebula
