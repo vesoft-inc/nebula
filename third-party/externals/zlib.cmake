@@ -18,7 +18,7 @@ ExternalProject_Add(
     CONFIGURE_COMMAND
         "env"
         "CC=${CMAKE_C_COMPILER}"
-        "CFLAGS=${CMAKE_C_FLAGS} -fPIC -O2"
+        "CFLAGS=${CMAKE_C_FLAGS} -fno-omit-frame-pointer -fPIC -O2"
         "CPPFLAGS=-isystem ${CMAKE_INSTALL_PREFIX}/include"
         "PATH=${BUILDING_PATH}"
         ./configure --prefix=${CMAKE_INSTALL_PREFIX} --static

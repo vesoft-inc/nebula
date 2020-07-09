@@ -31,7 +31,7 @@ ExternalProject_Add(
         -DUSE_RTTI=ON
         -DFAIL_ON_WARNINGS=OFF
         -DCMAKE_BUILD_TYPE=Release
-        "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -D NPERF_CONTEXT"
+        "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -D NPERF_CONTEXT"
     BUILD_IN_SOURCE 1
     BUILD_COMMAND make -s -j${BUILDING_JOBS_NUM} VERBOSE=1
     INSTALL_COMMAND make -s install -j${BUILDING_JOBS_NUM}

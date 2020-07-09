@@ -20,7 +20,7 @@ ExternalProject_Add(
     BUILD_IN_SOURCE 1
     INSTALL_COMMAND
         make install -s
-             MOREFLAGS=-fPIC
+             "MOREFLAGS=-fPIC -fno-omit-frame-pointer"
              "LN_S=ln -sf"
              BUILD_SHARED=no
              -j${BUILDING_JOBS_NUM}

@@ -30,7 +30,7 @@ ExternalProject_Add(
             --disable-icu
             include=${CMAKE_INSTALL_PREFIX}/include
             linkflags=-L${CMAKE_INSTALL_PREFIX}/lib
-            "cxxflags=-fPIC ${extra_cpp_flags}"
+            "cxxflags=-fPIC -fno-omit-frame-pointer ${extra_cpp_flags}"
             runtime-link=static
             link=static
             variant=release
