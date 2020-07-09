@@ -359,10 +359,6 @@ base_expression
     | BOOL {
         $$ = new ConstantExpression($1);
     }
-    | name_label {
-        $$ = new ConstantExpression(*$1);
-        delete $1;
-    }
     | KW_NULL {
         $$ = new ConstantExpression(NullType::__NULL__);
     }

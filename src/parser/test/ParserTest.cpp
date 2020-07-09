@@ -1624,7 +1624,7 @@ TEST(Parser, ConfigOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "UPDATE CONFIGS storage:name=value";
+        std::string query = "UPDATE CONFIGS storage:name=\"value\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -2020,4 +2020,21 @@ TEST(Parser, UseReservedKeyword) {
         ASSERT_TRUE(result.ok());
     }
 }
+
+TEST(Parser, IssueLabelAsExpression) {
+    // name label is not a valid expression, it's not value
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(name) VALUES \"1\":(name_label)";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(name) VALUES \"1\":(`name_label`)";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+}
+
 }   // namespace nebula
