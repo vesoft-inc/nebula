@@ -37,16 +37,30 @@ private:
     }
 };
 
-class SingleInputNode : public PlanNode {
+// Dependencies will cover the inputs, For example bi input require bi dependencies as least,
+// but single dependencies may don't need any inputs (I.E admin plan node)
+
+// Single dependecy without input
+// It's useful for addmin plan node
+class SingleDependencyNode : public PlanNode {
 public:
-    const PlanNode* input() const {
-        return input_;
+    const PlanNode* dep() const {
+        return dependency_;
     }
 
-    void setInput(PlanNode* input) {
-        input_ = input;
+    void setDep(PlanNode *dep) {
+        dependency_ = DCHECK_NOTNULL(dep);
     }
 
+protected:
+    SingleDependencyNode(ExecutionPlan *plan, Kind kind, const PlanNode *dep)
+        : PlanNode(plan, kind), dependency_(dep) {}
+
+    const PlanNode *dependency_;
+};
+
+class SingleInputNode : public SingleDependencyNode {
+public:
     void setInputVar(std::string inputVar) {
         inputVar_ = std::move(inputVar);
     }
@@ -56,11 +70,10 @@ public:
     }
 
 protected:
-    SingleInputNode(ExecutionPlan* plan, Kind kind, PlanNode* input)
-        : PlanNode(plan, kind), input_(input) {
+    SingleInputNode(ExecutionPlan* plan, Kind kind, const PlanNode* dep)
+        : SingleDependencyNode(plan, kind, dep) {
     }
 
-    PlanNode* input_{nullptr};
     // Datasource for this node.
     std::string inputVar_;
 };

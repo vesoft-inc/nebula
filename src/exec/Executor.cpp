@@ -72,72 +72,72 @@ Executor *Executor::makeExecutor(const PlanNode *node,
     switch (node->kind()) {
         case PlanNode::Kind::kMultiOutputs: {
             auto mout = asNode<MultiOutputsNode>(node);
-            auto input = makeExecutor(mout->input(), qctx, visited);
+            auto dep = makeExecutor(mout->dep(), qctx, visited);
             exec = new MultiOutputsExecutor(mout, qctx);
-            exec->addDependent(input);
+            exec->addDependent(dep);
             break;
         }
         case PlanNode::Kind::kAggregate: {
             auto agg = asNode<Aggregate>(node);
-            auto input = makeExecutor(agg->input(), qctx, visited);
+            auto dep = makeExecutor(agg->dep(), qctx, visited);
             exec = new AggregateExecutor(agg, qctx);
-            exec->addDependent(input);
+            exec->addDependent(dep);
             break;
         }
         case PlanNode::Kind::kSort: {
             auto sort = asNode<Sort>(node);
-            auto input = makeExecutor(sort->input(), qctx, visited);
+            auto dep = makeExecutor(sort->dep(), qctx, visited);
             exec = new SortExecutor(sort, qctx);
-            exec->addDependent(input);
+            exec->addDependent(dep);
             break;
         }
         case PlanNode::Kind::kFilter: {
             auto filter = asNode<Filter>(node);
-            auto input = makeExecutor(filter->input(), qctx, visited);
+            auto dep = makeExecutor(filter->dep(), qctx, visited);
             exec = new FilterExecutor(filter, qctx);
-            exec->addDependent(input);
+            exec->addDependent(dep);
             break;
         }
         case PlanNode::Kind::kGetEdges: {
             auto ge = asNode<GetEdges>(node);
-            auto input = makeExecutor(ge->input(), qctx, visited);
+            auto dep = makeExecutor(ge->dep(), qctx, visited);
             exec = new GetEdgesExecutor(ge, qctx);
-            exec->addDependent(input);
+            exec->addDependent(dep);
             break;
         }
         case PlanNode::Kind::kGetVertices: {
             auto gv = asNode<GetVertices>(node);
-            auto input = makeExecutor(gv->input(), qctx, visited);
+            auto dep = makeExecutor(gv->dep(), qctx, visited);
             exec = new GetVerticesExecutor(gv, qctx);
-            exec->addDependent(input);
+            exec->addDependent(dep);
             break;
         }
         case PlanNode::Kind::kGetNeighbors: {
             auto gn = asNode<GetNeighbors>(node);
-            auto input = makeExecutor(gn->input(), qctx, visited);
+            auto dep = makeExecutor(gn->dep(), qctx, visited);
             exec = new GetNeighborsExecutor(gn, qctx);
-            exec->addDependent(input);
+            exec->addDependent(dep);
             break;
         }
         case PlanNode::Kind::kLimit: {
             auto limit = asNode<Limit>(node);
-            auto input = makeExecutor(limit->input(), qctx, visited);
+            auto dep = makeExecutor(limit->dep(), qctx, visited);
             exec = new LimitExecutor(limit, qctx);
-            exec->addDependent(input);
+            exec->addDependent(dep);
             break;
         }
         case PlanNode::Kind::kProject: {
             auto project = asNode<Project>(node);
-            auto input = makeExecutor(project->input(), qctx, visited);
+            auto dep = makeExecutor(project->dep(), qctx, visited);
             exec = new ProjectExecutor(project, qctx);
-            exec->addDependent(input);
+            exec->addDependent(dep);
             break;
         }
         case PlanNode::Kind::kReadIndex: {
             auto readIndex = asNode<ReadIndex>(node);
-            auto input = makeExecutor(readIndex->input(), qctx, visited);
+            auto dep = makeExecutor(readIndex->dep(), qctx, visited);
             exec = new ReadIndexExecutor(readIndex, qctx);
-            exec->addDependent(input);
+            exec->addDependent(dep);
             break;
         }
         case PlanNode::Kind::kStart: {
@@ -170,110 +170,110 @@ Executor *Executor::makeExecutor(const PlanNode *node,
         }
         case PlanNode::Kind::kLoop: {
             auto loop = asNode<Loop>(node);
-            auto input = makeExecutor(loop->input(), qctx, visited);
+            auto dep = makeExecutor(loop->dep(), qctx, visited);
             auto body = makeExecutor(loop->body(), qctx, visited);
             exec = new LoopExecutor(loop, qctx, body);
-            exec->addDependent(input);
+            exec->addDependent(dep);
             break;
         }
         case PlanNode::Kind::kSelect: {
             auto select = asNode<Select>(node);
-            auto input = makeExecutor(select->input(), qctx, visited);
+            auto dep = makeExecutor(select->dep(), qctx, visited);
             auto then = makeExecutor(select->then(), qctx, visited);
             auto els = makeExecutor(select->otherwise(), qctx, visited);
             exec = new SelectExecutor(select, qctx, then, els);
-            exec->addDependent(input);
+            exec->addDependent(dep);
             break;
         }
         case PlanNode::Kind::kDedup: {
             auto dedup = asNode<Dedup>(node);
-            auto input = makeExecutor(dedup->input(), qctx, visited);
+            auto dep = makeExecutor(dedup->dep(), qctx, visited);
             exec = new DedupExecutor(dedup, qctx);
-            exec->addDependent(input);
+            exec->addDependent(dep);
             break;
         }
         case PlanNode::Kind::kSwitchSpace: {
             auto switchSpace = asNode<SwitchSpace>(node);
-            auto input = makeExecutor(switchSpace->input(), qctx, visited);
+            auto dep = makeExecutor(switchSpace->dep(), qctx, visited);
             exec = new SwitchSpaceExecutor(switchSpace, qctx);
-            exec->addDependent(input);
+            exec->addDependent(dep);
             break;
         }
         case PlanNode::Kind::kCreateSpace: {
             auto createSpace = asNode<CreateSpace>(node);
-            auto input = makeExecutor(createSpace->input(), qctx, visited);
+            auto dep = makeExecutor(createSpace->dep(), qctx, visited);
             exec = new CreateSpaceExecutor(createSpace, qctx);
-            exec->addDependent(input);
+            exec->addDependent(dep);
             break;
         }
         case PlanNode::Kind::kDescSpace: {
             auto descSpace = asNode<DescSpace>(node);
-            auto input = makeExecutor(descSpace->input(), qctx, visited);
+            auto dep = makeExecutor(descSpace->dep(), qctx, visited);
             exec = new DescSpaceExecutor(descSpace, qctx);
-            exec->addDependent(input);
+            exec->addDependent(dep);
             break;
         }
         case PlanNode::Kind::kCreateTag: {
             auto createTag = asNode<CreateTag>(node);
-            auto input = makeExecutor(createTag->input(), qctx, visited);
+            auto dep = makeExecutor(createTag->dep(), qctx, visited);
             exec = new CreateTagExecutor(createTag, qctx);
-            exec->addDependent(input);
+            exec->addDependent(dep);
             break;
         }
         case PlanNode::Kind::kDescTag: {
             auto descTag = asNode<DescTag>(node);
-            auto input = makeExecutor(descTag->input(), qctx, visited);
+            auto dep = makeExecutor(descTag->dep(), qctx, visited);
             exec = new DescTagExecutor(descTag, qctx);
-            exec->addDependent(input);
+            exec->addDependent(dep);
             break;
         }
         case PlanNode::Kind::kAlterTag: {
             auto alterTag = asNode<AlterTag>(node);
-            auto input = makeExecutor(alterTag->input(), qctx, visited);
+            auto dep = makeExecutor(alterTag->dep(), qctx, visited);
             exec = new AlterTagExecutor(alterTag, qctx);
-            exec->addDependent(input);
+            exec->addDependent(dep);
             break;
         }
         case PlanNode::Kind::kCreateEdge: {
             auto createEdge = asNode<CreateEdge>(node);
-            auto input = makeExecutor(createEdge->input(), qctx, visited);
+            auto dep = makeExecutor(createEdge->dep(), qctx, visited);
             exec = new CreateEdgeExecutor(createEdge, qctx);
-            exec->addDependent(input);
+            exec->addDependent(dep);
             break;
         }
         case PlanNode::Kind::kDescEdge: {
             auto descEdge = asNode<DescEdge>(node);
-            auto input = makeExecutor(descEdge->input(), qctx, visited);
+            auto dep = makeExecutor(descEdge->dep(), qctx, visited);
             exec = new DescEdgeExecutor(descEdge, qctx);
-            exec->addDependent(input);
+            exec->addDependent(dep);
             break;
         }
         case PlanNode::Kind::kAlterEdge: {
             auto alterEdge = asNode<AlterEdge>(node);
-            auto input = makeExecutor(alterEdge->input(), qctx, visited);
+            auto dep = makeExecutor(alterEdge->dep(), qctx, visited);
             exec = new AlterEdgeExecutor(alterEdge, qctx);
-            exec->addDependent(input);
+            exec->addDependent(dep);
             break;
         }
         case PlanNode::Kind::kInsertVertices: {
             auto insertV = asNode<InsertVertices>(node);
-            auto input = makeExecutor(insertV->input(), qctx, visited);
+            auto dep = makeExecutor(insertV->dep(), qctx, visited);
             exec = new InsertVerticesExecutor(insertV, qctx);
-            exec->addDependent(input);
+            exec->addDependent(dep);
             break;
         }
         case PlanNode::Kind::kInsertEdges: {
             auto insertE = asNode<InsertEdges>(node);
-            auto input = makeExecutor(insertE->input(), qctx, visited);
+            auto dep = makeExecutor(insertE->dep(), qctx, visited);
             exec = new InsertEdgesExecutor(insertE, qctx);
-            exec->addDependent(input);
+            exec->addDependent(dep);
             break;
         }
         case PlanNode::Kind::kDataCollect: {
             auto dc = asNode<DataCollect>(node);
-            auto input = makeExecutor(dc->input(), qctx, visited);
+            auto dep = makeExecutor(dc->dep(), qctx, visited);
             exec = new DataCollectExecutor(dc, qctx);
-            exec->addDependent(input);
+            exec->addDependent(dep);
             break;
         }
         case PlanNode::Kind::kUnknown:

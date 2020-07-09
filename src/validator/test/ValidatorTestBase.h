@@ -126,7 +126,7 @@ protected:
                 case PlanNode::Kind::kInsertVertices:
                 case PlanNode::Kind::kInsertEdges: {
                     auto* current = static_cast<const SingleInputNode*>(node);
-                    queue.emplace(current->input());
+                    queue.emplace(current->dep());
                     break;
                 }
                 case PlanNode::Kind::kUnion:
@@ -139,7 +139,7 @@ protected:
                 }
                 case PlanNode::Kind::kSelect: {
                     auto* current = static_cast<const Select*>(node);
-                    queue.emplace(current->input());
+                    queue.emplace(current->dep());
                     queue.emplace(current->then());
                     if (current->otherwise() != nullptr) {
                         queue.emplace(current->otherwise());
@@ -148,7 +148,7 @@ protected:
                 }
                 case PlanNode::Kind::kLoop: {
                     auto* current = static_cast<const Loop*>(node);
-                    queue.emplace(current->input());
+                    queue.emplace(current->dep());
                     queue.emplace(current->body());
                     break;
                 }
