@@ -15,13 +15,14 @@ folly::Future<Status> DedupExecutor::execute() {
     auto* dedup = asNode<Dedup>(node());
     auto iter = ectx_->getResult(dedup->inputVar()).iter();
 
-    if (iter == nullptr) {
+    if (UNLIKELY(iter == nullptr)) {
         return Status::Error("Internal Error: iterator is nullptr");
     }
 
-    if (iter->isGetNeighborsIter()) {
-        LOG(INFO) << "Invalid iterator kind: " << static_cast<uint16_t>(iter->kind());
-        return Status::Error("Invalid iterator kind, %d", static_cast<uint16_t>(iter->kind()));
+    if (UNLIKELY(iter->isGetNeighborsIter())) {
+        auto e = Status::Error("Invalid iterator kind, %d", static_cast<uint16_t>(iter->kind()));
+        LOG(ERROR) << e;
+        return e;
     }
     ResultBuilder builder;
     builder.value(iter->valuePtr());

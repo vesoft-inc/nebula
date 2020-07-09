@@ -12,36 +12,30 @@
 
 namespace nebula {
 namespace graph {
+
 Status PipeValidator::validateImpl() {
     auto pipeSentence = static_cast<PipedSentence*>(sentence_);
     auto left = pipeSentence->left();
     lValidator_ = makeValidator(left, qctx_);
-    auto status = lValidator_->validate();
-    if (!status.ok()) {
-        return status;
-    }
+    NG_RETURN_IF_ERROR(lValidator_->validate());
 
     auto right = pipeSentence->right();
     rValidator_ = makeValidator(right, qctx_);
     rValidator_->setInputs(lValidator_->outputs());
-    status = rValidator_->validate();
-    if (!status.ok()) {
-        return status;
-    }
+    NG_RETURN_IF_ERROR(rValidator_->validate());
 
+    outputs_ = rValidator_->outputs();
     return Status::OK();
 }
 
 Status PipeValidator::toPlan() {
     root_ = rValidator_->root();
-    auto status = Validator::appendPlan(rValidator_->tail(), lValidator_->root());
-    if (!status.ok()) {
-        return status;
-    }
-    static_cast<SingleInputNode*>(rValidator_->tail())
-        ->setInputVar(lValidator_->root()->varName());
     tail_ = lValidator_->tail();
+    NG_RETURN_IF_ERROR(rValidator_->appendPlan(lValidator_->root()));
+    auto node = static_cast<SingleInputNode*>(rValidator_->tail());
+    node->setInputVar(lValidator_->root()->varName());
     return Status::OK();
 }
+
 }  // namespace graph
 }  // namespace nebula

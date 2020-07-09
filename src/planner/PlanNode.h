@@ -109,8 +109,8 @@ public:
         plan_ = plan;
     }
 
-    void setColNames(const std::vector<std::string>& cols) {
-        colNames_ = cols;
+    void setColNames(std::vector<std::string>&& cols) {
+        colNames_ = std::move(cols);
     }
 
     static const char* toString(Kind kind);

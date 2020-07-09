@@ -56,6 +56,10 @@ public:
         return root_;
     }
 
+    ObjectPool* objPool() const {
+        return objPool_;
+    }
+
     folly::Future<Status> execute();
 
 private:

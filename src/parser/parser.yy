@@ -756,13 +756,13 @@ yield_column
     : expression {
         $$ = new YieldColumn($1);
     }
+    | expression KW_AS name_label {
+        $$ = new YieldColumn($1, $3);
+    }
     | agg_function L_PAREN expression R_PAREN {
         auto yield = new YieldColumn($3);
         yield->setFunction($1);
         $$ = yield;
-    }
-    | expression KW_AS name_label {
-        $$ = new YieldColumn($1, $3);
     }
     | agg_function L_PAREN expression R_PAREN KW_AS name_label {
         auto yield = new YieldColumn($3, $6);

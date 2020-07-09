@@ -39,10 +39,11 @@ Status SetValidator::toPlan() {
     switch (setSentence->op()) {
         case SetSentence::Operator::UNION: {
             bNode = Union::make(plan, lRoot, rRoot);
+            bNode->setColNames(std::move(colNames));
             if (setSentence->distinct()) {
                 auto dedup = Dedup::make(plan, bNode);
                 dedup->setInputVar(bNode->varName());
-                dedup->setColNames(colNames);
+                dedup->setColNames(bNode->colNames());
                 root_ = dedup;
             } else {
                 root_ = bNode;
@@ -51,11 +52,13 @@ Status SetValidator::toPlan() {
         }
         case SetSentence::Operator::INTERSECT: {
             bNode = Intersect::make(plan, lRoot, rRoot);
+            bNode->setColNames(std::move(colNames));
             root_ = bNode;
             break;
         }
         case SetSentence::Operator::MINUS: {
             bNode = Minus::make(plan, lRoot, rRoot);
+            bNode->setColNames(std::move(colNames));
             root_ = bNode;
             break;
         }
@@ -63,7 +66,6 @@ Status SetValidator::toPlan() {
             return Status::Error("Unknown operator: %ld", static_cast<int64_t>(setSentence->op()));
     }
 
-    bNode->setColNames(colNames);
     bNode->setLeftVar(lRoot->varName());
     bNode->setRightVar(rRoot->varName());
 

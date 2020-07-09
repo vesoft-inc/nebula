@@ -233,7 +233,7 @@ public:
         funName_.reset(fun);
     }
 
-    std::string getFunName() {
+    std::string getFunName() const {
         if (funName_ == nullptr) {
             return "";
         }

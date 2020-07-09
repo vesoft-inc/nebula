@@ -207,16 +207,11 @@ Status GoValidator::validateYield(const YieldClause* yield) {
         colNames_.emplace_back(colName);
 
         auto typeStatus = deduceExprType(col->expr());
-        if (!typeStatus.ok()) {
-            return typeStatus.status();
-        }
+        NG_RETURN_IF_ERROR(typeStatus);
         auto type = typeStatus.value();
         outputs_.emplace_back(colName, type);
 
-        auto status = deduceProps(col->expr());
-        if (!status.ok()) {
-            return status;
-        }
+        NG_RETURN_IF_ERROR(deduceProps(col->expr()));
     }
     for (auto& e : edgeProps_) {
         auto found = std::find(edgeTypes_.begin(), edgeTypes_.end(), e.first);
@@ -225,109 +220,6 @@ Status GoValidator::validateYield(const YieldClause* yield) {
         }
     }
     yields_ = yield->yields();
-    return Status::OK();
-}
-
-Status GoValidator::deduceProps(const Expression* expr) {
-    switch (expr->kind()) {
-        case Expression::Kind::kConstant: {
-            break;
-        }
-        case Expression::Kind::kAdd:
-        case Expression::Kind::kMinus:
-        case Expression::Kind::kMultiply:
-        case Expression::Kind::kDivision:
-        case Expression::Kind::kMod:
-        case Expression::Kind::kRelEQ:
-        case Expression::Kind::kRelNE:
-        case Expression::Kind::kRelLT:
-        case Expression::Kind::kRelLE:
-        case Expression::Kind::kRelGT:
-        case Expression::Kind::kRelGE:
-        case Expression::Kind::kLogicalAnd:
-        case Expression::Kind::kLogicalOr:
-        case Expression::Kind::kLogicalXor: {
-            auto biExpr = static_cast<const BinaryExpression*>(expr);
-            NG_RETURN_IF_ERROR(deduceProps(biExpr->left()));
-            NG_RETURN_IF_ERROR(deduceProps(biExpr->right()));
-            break;
-        }
-        case Expression::Kind::kUnaryPlus:
-        case Expression::Kind::kUnaryNegate:
-        case Expression::Kind::kUnaryNot: {
-            auto unaryExpr = static_cast<const UnaryExpression*>(expr);
-            NG_RETURN_IF_ERROR(deduceProps(unaryExpr->operand()));
-            break;
-        }
-        case Expression::Kind::kFunctionCall: {
-            auto funcExpr = static_cast<const FunctionCallExpression*>(expr);
-            for (auto& arg : funcExpr->args()->args()) {
-                NG_RETURN_IF_ERROR(deduceProps(arg.get()));
-            }
-            break;
-        }
-        case Expression::Kind::kDstProperty: {
-            auto* tagPropExpr = static_cast<const SymbolPropertyExpression*>(expr);
-            auto status = qctx_->schemaMng()->toTagID(space_.id, *tagPropExpr->sym());
-            if (!status.ok()) {
-                return status.status();
-            }
-            auto& props = dstTagProps_[status.value()];
-            props.emplace_back(*tagPropExpr->prop());
-            break;
-        }
-        case Expression::Kind::kSrcProperty: {
-            auto* tagPropExpr = static_cast<const SymbolPropertyExpression*>(expr);
-            auto status = qctx_->schemaMng()->toTagID(space_.id, *tagPropExpr->sym());
-            if (!status.ok()) {
-                return status.status();
-            }
-            auto& props = srcTagProps_[status.value()];
-            props.emplace_back(*tagPropExpr->prop());
-            break;
-        }
-        case Expression::Kind::kEdgeProperty:
-        case Expression::Kind::kEdgeSrc:
-        case Expression::Kind::kEdgeType:
-        case Expression::Kind::kEdgeRank:
-        case Expression::Kind::kEdgeDst: {
-            auto* edgePropExpr = static_cast<const SymbolPropertyExpression*>(expr);
-            auto status = qctx_->schemaMng()->toEdgeType(space_.id, *edgePropExpr->sym());
-            if (!status.ok()) {
-                return status.status();
-            }
-            auto& props = edgeProps_[status.value()];
-            props.emplace_back(*edgePropExpr->prop());
-            break;
-        }
-        case Expression::Kind::kInputProperty: {
-            auto* inputPropExpr = static_cast<const SymbolPropertyExpression*>(expr);
-            auto* prop = inputPropExpr->prop();
-            inputProps_.emplace_back(*prop);
-            break;
-        }
-        case Expression::Kind::kVarProperty: {
-            auto* varPropExpr = static_cast<const SymbolPropertyExpression*>(expr);
-            auto* var = varPropExpr->sym();
-            auto* prop = varPropExpr->prop();
-            auto& props = varProps_[*var];
-            props.emplace_back(*prop);
-            break;
-        }
-        case Expression::Kind::kUUID:
-        case Expression::Kind::kVar:
-        case Expression::Kind::kVersionedVar:
-        case Expression::Kind::kSymProperty:
-        case Expression::Kind::kTypeCasting:
-        case Expression::Kind::kUnaryIncr:
-        case Expression::Kind::kUnaryDecr:
-        case Expression::Kind::kRelIn: {
-            // TODO:
-            std::stringstream ss;
-            ss << "Not support " << expr->kind();
-            return Status::Error(ss.str());
-        }
-    }
     return Status::OK();
 }
 

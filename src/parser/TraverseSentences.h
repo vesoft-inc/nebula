@@ -602,11 +602,11 @@ public:
         whereClause_.reset(clause);
     }
 
-    WhereClause* where() {
+    WhereClause* where() const {
         return whereClause_.get();
     }
 
-    YieldClause* yield() {
+    YieldClause* yield() const {
         return yieldClause_.get();
     }
 

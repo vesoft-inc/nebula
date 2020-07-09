@@ -12,7 +12,6 @@
 #include <gtest/gtest.h>
 
 #include "common/base/Base.h"
-
 #include "planner/Query.h"
 #include "parser/GQLParser.h"
 #include "validator/ASTValidator.h"
@@ -24,6 +23,7 @@
 
 namespace nebula {
 namespace graph {
+
 class ValidatorTestBase : public ::testing::Test {
 protected:
     void SetUp() override {
@@ -48,8 +48,9 @@ protected:
         return qctx;
     }
 
-    ::testing::AssertionResult checkResult(
-            const std::string& query, const std::vector<PlanNode::Kind>& expected) {
+    ::testing::AssertionResult checkResult(const std::string& query,
+                                           const std::vector<PlanNode::Kind>& expected = {},
+                                           const std::vector<std::string> &rootColumns = {}) {
         auto result = GQLParser().parse(query);
         if (!result.ok()) {
             return ::testing::AssertionFailure() << result.status();
@@ -62,11 +63,27 @@ protected:
         if (!validateResult.ok()) {
             return ::testing::AssertionFailure() << validateResult;
         }
+        if (expected.empty()) {
+            return ::testing::AssertionSuccess();
+        }
         auto plan = context->plan();
         if (plan == nullptr) {
             return ::testing::AssertionFailure() << "plan is nullptr";
         }
-        return verifyPlan(plan->root(), expected);
+        auto assertResult = verifyPlan(plan->root(), expected);
+        if (!assertResult) {
+            return assertResult;
+        }
+        if (rootColumns.empty()) {
+            return ::testing::AssertionSuccess();
+        }
+        auto outputColumns = plan->root()->colNames();
+        if (outputColumns == rootColumns) {
+            return ::testing::AssertionSuccess();
+        }
+        return ::testing::AssertionFailure()
+               << "Columns of root plan node are different: " << folly::join(",", outputColumns)
+               << " vs. " << folly::join(",", rootColumns);
     }
 
     static ::testing::AssertionResult verifyPlan(const PlanNode* root,
@@ -176,6 +193,7 @@ protected:
 };
 
 std::ostream& operator<<(std::ostream& os, const std::vector<PlanNode::Kind>& plan);
+
 }   // namespace graph
 }   // namespace nebula
 
