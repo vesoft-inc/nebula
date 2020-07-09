@@ -598,7 +598,6 @@ FunctionManager::FunctionManager() {
                     return Value::kNullBadType;
                 }
             }
-            double kEpsilon = 1e-8;
             if (std::abs(s2) <= kEpsilon || std::abs(s3) <= kEpsilon) {
                 return static_cast<double>(-2);
             } else {

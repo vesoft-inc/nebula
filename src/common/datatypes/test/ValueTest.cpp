@@ -443,6 +443,77 @@ TEST(Value, Logical) {
         EXPECT_EQ(true, v.getBool());
     }
 }
+
+TEST(Value, Bit) {
+    Value vZero(0);
+    Value vInt1(1);
+    Value vInt2(2);
+    Value vFloat1(3.14);
+    Value vFloat2(2.67);
+    Value vStr1("Hello ");
+    Value vStr2("World");
+    Value vBool1(false);
+    Value vBool2(true);
+    Value vDate1(Date(2020, 1, 1));
+    Value vDate2(Date(2019, 12, 1));
+
+    {
+        Value v = vInt1 & vInt2;
+        EXPECT_EQ(Value::Type::INT, v.type());
+        EXPECT_EQ(0, v.getInt());
+
+        v = vBool1 & vBool2;
+        EXPECT_EQ(Value::Type::INT, v.type());
+        EXPECT_EQ(0, v.getInt());
+
+        v = vStr1 & vStr2;
+        EXPECT_TRUE(v.isNull());
+
+        v = vFloat1 & vFloat2;
+        EXPECT_TRUE(v.isNull());
+
+        v = vDate1 & vDate2;
+        EXPECT_TRUE(v.isNull());
+    }
+
+    {
+        Value v = vInt1 | vInt2;
+        EXPECT_EQ(Value::Type::INT, v.type());
+        EXPECT_EQ(3, v.getInt());
+
+        v = vBool1 | vBool2;
+        EXPECT_EQ(Value::Type::INT, v.type());
+        EXPECT_EQ(1, v.getInt());
+
+        v = vStr1 & vStr2;
+        EXPECT_TRUE(v.isNull());
+
+        v = vFloat1 & vFloat2;
+        EXPECT_TRUE(v.isNull());
+
+        v = vDate1 & vDate2;
+        EXPECT_TRUE(v.isNull());
+    }
+
+    {
+        Value v = vInt1 ^ vInt2;
+        EXPECT_EQ(Value::Type::INT, v.type());
+        EXPECT_EQ(3, v.getInt());
+
+        v = vBool1 ^ vBool2;
+        EXPECT_EQ(Value::Type::INT, v.type());
+        EXPECT_EQ(1, v.getInt());
+
+        v = vStr1 & vStr2;
+        EXPECT_TRUE(v.isNull());
+
+        v = vFloat1 & vFloat2;
+        EXPECT_TRUE(v.isNull());
+
+        v = vDate1 & vDate2;
+        EXPECT_TRUE(v.isNull());
+    }
+}
 }  // namespace nebula
 
 

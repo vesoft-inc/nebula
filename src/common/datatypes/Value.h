@@ -378,8 +378,7 @@ private:
 
 void swap(Value& a, Value& b);
 
-std::ostream& operator<<(std::ostream& os, const Value::Type& type);
-std::ostream& operator<<(std::ostream& os, const Value& value);
+constexpr auto kEpsilon = 1e-8;
 
 // Arithmetic operations
 Value operator+(const Value& lhs, const Value& rhs);
@@ -404,6 +403,10 @@ bool operator>=(const Value& lhs, const Value& rhs);
 // Logical operations
 Value operator&&(const Value& lhs, const Value& rhs);
 Value operator||(const Value& lhs, const Value& rhs);
+// Bit operations
+Value operator&(const Value& lhs, const Value& rhs);
+Value operator|(const Value& lhs, const Value& rhs);
+Value operator^(const Value& lhs, const Value& rhs);
 // Visualize
 std::ostream& operator<<(std::ostream& os, const Value::Type& type);
 inline std::ostream& operator<<(std::ostream& os, const Value& value) {
