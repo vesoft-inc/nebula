@@ -8,41 +8,41 @@
 
 namespace nebula {
 
-std::string ShowSentence::toString() const {
-    switch (showType_) {
-        case ShowType::kShowHosts:
-            return std::string("SHOW HOSTS");
-        case ShowType::kShowSpaces:
-            return std::string("SHOW SPACES");
-        case ShowType::kShowParts:
-            return std::string("SHOW PARTS");
-        case ShowType::kShowTags:
-            return std::string("SHOW TAGS");
-        case ShowType::kShowEdges:
-            return std::string("SHOW EDGES");
-        case ShowType::kShowUsers:
-            return std::string("SHOW USERS");
-        case ShowType::kShowRoles:
-            return folly::stringPrintf("SHOW ROLES IN %s", name_.get()->c_str());
-        case ShowType::kShowCreateSpace:
-            return folly::stringPrintf("SHOW CREATE SPACE %s", name_.get()->c_str());
-        case ShowType::kShowCreateTag:
-            return folly::stringPrintf("SHOW CREATE TAG %s", name_.get()->c_str());
-        case ShowType::kShowCreateEdge:
-            return folly::stringPrintf("SHOW CREATE EDGE %s", name_.get()->c_str());
-        case ShowType::kShowSnapshots:
-            return folly::stringPrintf("SHOW SNAPSHOTS");
-        case ShowType::kShowCharset:
-            return folly::stringPrintf("SHOW CHARSET");
-        case ShowType::kShowCollation:
-            return folly::stringPrintf("SHOW COLLATION");
-        case ShowType::kUnknown:
-        default:
-            FLOG_FATAL("Type illegal");
-    }
-    return "Unknown";
+std::string ShowHostsSentence::toString() const {
+    return std::string("SHOW HOSTS");
 }
 
+std::string ShowSpacesSentence::toString() const {
+    return std::string("SHOW SPACES");
+}
+
+std::string ShowCreateSpaceSentence::toString() const {
+    return folly::stringPrintf("SHOW CREATE SPACE %s", name_.get()->c_str());
+}
+
+std::string ShowPartsSentence::toString() const {
+    return std::string("SHOW PARTS");
+}
+
+std::string ShowUsersSentence::toString() const {
+    return std::string("SHOW USERS");
+}
+
+std::string ShowRolesSentence::toString() const {
+    return folly::stringPrintf("SHOW ROLES IN %s", name_.get()->c_str());
+}
+
+std::string ShowSnapshotsSentence::toString() const {
+    return std::string("SHOW SNAPSHOTS");
+}
+
+std::string ShowCharsetSentence::toString() const {
+    return std::string("SHOW CHARSET");
+}
+
+std::string ShowCollationSentence::toString() const {
+    return std::string("SHOW COLLATION");
+}
 
 std::string SpaceOptItem::toString() const {
     switch (optType_) {

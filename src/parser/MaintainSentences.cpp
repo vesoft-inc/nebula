@@ -291,4 +291,43 @@ std::string RebuildEdgeIndexSentence::toString() const {
     return folly::stringPrintf("BUILD EDGE INDEX %s", indexName_.get()->c_str());
 }
 
+std::string ShowTagsSentence::toString() const {
+    return folly::stringPrintf("SHOW TAGS");
+}
+
+std::string ShowEdgesSentence::toString() const {
+    return folly::stringPrintf("SHOW EDGES");
+}
+
+std::string ShowCreateTagSentence::toString() const {
+    return folly::stringPrintf("SHOW CREATE TAG %s", name_.get()->c_str());
+}
+
+std::string ShowCreateEdgeSentence::toString() const {
+    return folly::stringPrintf("SHOW CREATE EDGE %s", name_.get()->c_str());
+}
+
+std::string ShowTagIndexesSentence::toString() const {
+    return folly::stringPrintf("SHOW TAG INDEXES");
+}
+
+std::string ShowEdgeIndexesSentence::toString() const {
+    return folly::stringPrintf("SHOW EDGE INDEXES");
+}
+
+std::string ShowCreateTagIndexSentence::toString() const {
+    return folly::stringPrintf("SHOW CREATE TAG INDEX %s", name_.get()->c_str());
+}
+
+std::string ShowCreateEdgeIndexSentence::toString() const {
+    return folly::stringPrintf("SHOW CREATE EDGE INDEX %s", name_.get()->c_str());
+}
+
+std::string ShowTagIndexStatusSentence::toString() const {
+    return folly::stringPrintf("SHOW TAG INDEX STATUS");
+}
+
+std::string ShowEdgeIndexStatusSentence::toString() const {
+    return folly::stringPrintf("SHOW EDGE INDEX STATUS");
+}
 }   // namespace nebula

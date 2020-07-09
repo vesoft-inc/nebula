@@ -31,7 +31,12 @@ namespace graph {
  */
 
 // static
-bool PermissionCheck::permissionCheck(Session *session, Sentence* sentence) {
+bool PermissionCheck::permissionCheck(Session *session,
+                                      Sentence* sentence,
+                                      GraphSpaceID targetSpace) {
+    if (!FLAGS_enable_authorize) {
+        return true;
+    }
     auto kind = sentence->kind();
     switch (kind) {
         case Sentence::Kind::kUnknown : {
@@ -52,8 +57,8 @@ bool PermissionCheck::permissionCheck(Session *session, Sentence* sentence) {
         case Sentence::Kind::kDropSnapshot :
         case Sentence::Kind::kBalance :
         case Sentence::Kind::kAdmin :
-        case Sentence::Kind::kConfig :
         case Sentence::Kind::kIngest :
+        case Sentence::Kind::kConfig :
         case Sentence::Kind::kDownload : {
             return PermissionManager::canWriteSpace(session);
         }
@@ -115,20 +120,48 @@ bool PermissionCheck::permissionCheck(Session *session, Sentence* sentence) {
         case Sentence::Kind::kReturn : {
             return PermissionManager::canReadSchemaOrData(session);
         }
-        case Sentence::Kind::kShow : {
-            auto *stc = static_cast<ShowSentence*>(sentence);
-            if (stc->showType() == ShowSentence::ShowType::kShowSpaces ||
-                stc->showType() == ShowSentence::ShowType::kShowCreateSpace ||
-                stc->showType() == ShowSentence::ShowType::kShowRoles) {
-                /*
-                 * Above operations are special operation.
-                 * can not get the space id via session,
-                 * Permission checking needs to be done in their executor.
-                 * here skip the permission check.
-                 */
-                return true;
-            }
-            return PermissionManager::canShow(session, stc->showType());
+        case Sentence::Kind::kShowParts:
+        case Sentence::Kind::kShowTags:
+        case Sentence::Kind::kShowEdges:
+        case Sentence::Kind::kShowTagIndexes:
+        case Sentence::Kind::kShowEdgeIndexes:
+        case Sentence::Kind::kShowCreateTag:
+        case Sentence::Kind::kShowCreateEdge:
+        case Sentence::Kind::kShowCreateTagIndex:
+        case Sentence::Kind::kShowCreateEdgeIndex:
+        case Sentence::Kind::kShowTagIndexStatus:
+        case Sentence::Kind::kShowEdgeIndexStatus: {
+            /**
+             * Above operations can get the space id via session,
+             * so the permission same with canReadSchemaOrData.
+             * They've been checked by "USE SPACE", so here skip the check.
+             */
+            return true;
+        }
+        case Sentence::Kind::kShowCharset:
+        case Sentence::Kind::kShowCollation:
+        case Sentence::Kind::kShowHosts: {
+            /**
+             * all roles can be show for above operations.
+             */
+            return true;
+        }
+        case Sentence::Kind::kShowSpaces:
+        case Sentence::Kind::kShowCreateSpace:
+        case Sentence::Kind::kShowRoles: {
+            /*
+             * Above operations are special operation.
+             * can not get the space id via session,
+             * Permission checking needs to be done in their executor.
+             */
+            return PermissionManager::canReadSpace(session, targetSpace);
+        }
+        case Sentence::Kind::kShowUsers:
+        case Sentence::Kind::kShowSnapshots: {
+            /**
+             * Only GOD role can be show.
+             */
+            return session->isGod();
         }
         case Sentence::Kind::kChangePassword : {
             return true;
@@ -140,3 +173,4 @@ bool PermissionCheck::permissionCheck(Session *session, Sentence* sentence) {
 }
 }  // namespace graph
 }  // namespace nebula
+

@@ -26,6 +26,7 @@ void QueryInstance::execute() {
         auto result = GQLParser().parse(rctx->query());
         if (!result.ok()) {
             status = std::move(result).status();
+            LOG(ERROR) << "Parser: `" << rctx->query() << "' error: " << status;
             break;
         }
 

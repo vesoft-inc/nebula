@@ -107,7 +107,7 @@ Status CreateSpaceValidator::validateImpl() {
 
 Status CreateSpaceValidator::toPlan() {
     auto *plan = qctx_->plan();
-    auto doNode = CreateSpace::make(plan, nullptr, std::move(spaceDesc_), ifNotExist_);
+    auto *doNode = CreateSpace::make(plan, nullptr, std::move(spaceDesc_), ifNotExist_);
     root_ = doNode;
     tail_ = root_;
     return Status::OK();
@@ -120,7 +120,83 @@ Status DescSpaceValidator::validateImpl() {
 Status DescSpaceValidator::toPlan() {
     auto sentence = static_cast<DescribeSpaceSentence*>(sentence_);
     auto *plan = qctx_->plan();
-    auto doNode = DescSpace::make(plan, nullptr, *sentence->spaceName());
+    auto *doNode = DescSpace::make(plan, nullptr, *sentence->spaceName());
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status ShowSpacesValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status ShowSpacesValidator::toPlan() {
+    auto *plan = qctx_->plan();
+    auto *doNode = ShowSpaces::make(plan, nullptr);
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status DropSpaceValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status DropSpaceValidator::toPlan() {
+    auto *plan = qctx_->plan();
+    auto sentence = static_cast<DropSpaceSentence*>(sentence_);
+    auto *doNode = DropSpace::make(plan, nullptr, *sentence->spaceName(), sentence->isIfExists());
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status ShowCreateSpaceValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status ShowCreateSpaceValidator::toPlan() {
+    auto* plan = qctx_->plan();
+    auto sentence = static_cast<ShowCreateSpaceSentence*>(sentence_);
+    auto spaceName = *sentence->spaceName();
+    auto *doNode = ShowCreateSpace::make(plan, nullptr, std::move(spaceName));
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status CreateSnapshotValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status CreateSnapshotValidator::toPlan() {
+    auto* plan = qctx_->plan();
+    auto *doNode = CreateSnapshot::make(plan, nullptr);
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status DropSnapshotValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status DropSnapshotValidator::toPlan() {
+    auto* plan = qctx_->plan();
+    auto sentence = static_cast<DropSnapshotSentence*>(sentence_);
+    auto *doNode = DropSnapshot::make(plan, nullptr, *sentence->name());
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status ShowSnapshotsValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status ShowSnapshotsValidator::toPlan() {
+    auto* plan = qctx_->plan();
+    auto *doNode = ShowSnapshots::make(plan, nullptr);
     root_ = doNode;
     tail_ = root_;
     return Status::OK();

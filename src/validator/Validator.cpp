@@ -64,10 +64,34 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
             return std::make_unique<AlterTagValidator>(sentence, context);
         case Sentence::Kind::kAlterEdge:
             return std::make_unique<AlterEdgeValidator>(sentence, context);
+        case Sentence::Kind::kShowSpaces:
+            return std::make_unique<ShowSpacesValidator>(sentence, context);
+        case Sentence::Kind::kShowTags:
+            return std::make_unique<ShowTagsValidator>(sentence, context);
+        case Sentence::Kind::kShowEdges:
+            return std::make_unique<ShowEdgesValidator>(sentence, context);
+        case Sentence::Kind::kDropSpace:
+            return std::make_unique<DropSpaceValidator>(sentence, context);
+        case Sentence::Kind::kDropTag:
+            return std::make_unique<DropTagValidator>(sentence, context);
+        case Sentence::Kind::kDropEdge:
+            return std::make_unique<DropEdgeValidator>(sentence, context);
+        case Sentence::Kind::kShowCreateSpace:
+            return std::make_unique<ShowCreateSpaceValidator>(sentence, context);
+        case Sentence::Kind::kShowCreateTag:
+            return std::make_unique<ShowCreateTagValidator>(sentence, context);
+        case Sentence::Kind::kShowCreateEdge:
+            return std::make_unique<ShowCreateEdgeValidator>(sentence, context);
         case Sentence::Kind::kInsertVertices:
             return std::make_unique<InsertVerticesValidator>(sentence, context);
         case Sentence::Kind::kInsertEdges:
             return std::make_unique<InsertEdgesValidator>(sentence, context);
+        case Sentence::Kind::kCreateSnapshot:
+            return std::make_unique<CreateSnapshotValidator>(sentence, context);
+        case Sentence::Kind::kDropSnapshot:
+            return std::make_unique<DropSnapshotValidator>(sentence, context);
+        case Sentence::Kind::kShowSnapshots:
+            return std::make_unique<ShowSnapshotsValidator>(sentence, context);
         default:
             return std::make_unique<ReportError>(sentence, context);
     }
@@ -94,7 +118,19 @@ Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
         case PlanNode::Kind::kInsertEdges:
         case PlanNode::Kind::kGetNeighbors:
         case PlanNode::Kind::kAlterTag:
-        case PlanNode::Kind::kAlterEdge: {
+        case PlanNode::Kind::kAlterEdge:
+        case PlanNode::Kind::kShowCreateSpace:
+        case PlanNode::Kind::kShowCreateTag:
+        case PlanNode::Kind::kShowCreateEdge:
+        case PlanNode::Kind::kDropSpace:
+        case PlanNode::Kind::kDropTag:
+        case PlanNode::Kind::kDropEdge:
+        case PlanNode::Kind::kShowSpaces:
+        case PlanNode::Kind::kShowTags:
+        case PlanNode::Kind::kShowEdges:
+        case PlanNode::Kind::kCreateSnapshot:
+        case PlanNode::Kind::kDropSnapshot:
+        case PlanNode::Kind::kShowSnapshots: {
             static_cast<SingleDependencyNode*>(node)->setDep(appended);
             break;
         }

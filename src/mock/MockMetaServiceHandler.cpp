@@ -41,8 +41,19 @@ MockMetaServiceHandler::future_createSpace(const meta::cpp2::CreateSpaceReq& req
 }
 
 folly::Future<meta::cpp2::ExecResp>
-MockMetaServiceHandler::future_dropSpace(const meta::cpp2::DropSpaceReq&) {
-    RETURN_SUCCESSED();
+MockMetaServiceHandler::future_dropSpace(const meta::cpp2::DropSpaceReq &req) {
+    folly::Promise<meta::cpp2::ExecResp> promise;
+    auto future = promise.getFuture();
+    meta::cpp2::ExecResp resp;
+    auto status = MetaCache::instance().dropSpace(req);
+    if (!status.ok()) {
+        resp.set_code(meta::cpp2::ErrorCode::E_UNKNOWN);
+        promise.setValue(std::move(resp));
+        return future;
+    }
+    resp.set_code(meta::cpp2::ErrorCode::SUCCEEDED);
+    promise.setValue(std::move(resp));
+    return future;
 }
 
 folly::Future<meta::cpp2::ListSpacesResp>
@@ -558,12 +569,34 @@ MockMetaServiceHandler::future_listConfigs(const meta::cpp2::ListConfigsReq&) {
 
 folly::Future<meta::cpp2::ExecResp>
 MockMetaServiceHandler::future_createSnapshot(const meta::cpp2::CreateSnapshotReq&) {
-    RETURN_SUCCESSED();
+    folly::Promise<meta::cpp2::ExecResp> promise;
+    auto future = promise.getFuture();
+    meta::cpp2::ExecResp resp;
+    auto status = MetaCache::instance().createSnapshot();
+    if (!status.ok()) {
+        resp.set_code(meta::cpp2::ErrorCode::E_UNKNOWN);
+        promise.setValue(std::move(resp));
+        return future;
+    }
+    resp.set_code(meta::cpp2::ErrorCode::SUCCEEDED);
+    promise.setValue(std::move(resp));
+    return future;
 }
 
 folly::Future<meta::cpp2::ExecResp>
-MockMetaServiceHandler::future_dropSnapshot(const meta::cpp2::DropSnapshotReq&) {
-    RETURN_SUCCESSED();
+MockMetaServiceHandler::future_dropSnapshot(const meta::cpp2::DropSnapshotReq& req) {
+    folly::Promise<meta::cpp2::ExecResp> promise;
+    auto future = promise.getFuture();
+    meta::cpp2::ExecResp resp;
+    auto status = MetaCache::instance().dropSnapshot(req);
+    if (!status.ok()) {
+        resp.set_code(meta::cpp2::ErrorCode::E_UNKNOWN);
+        promise.setValue(std::move(resp));
+        return future;
+    }
+    resp.set_code(meta::cpp2::ErrorCode::SUCCEEDED);
+    promise.setValue(std::move(resp));
+    return future;
 }
 
 folly::Future<meta::cpp2::ListSnapshotsResp>
@@ -571,7 +604,14 @@ MockMetaServiceHandler::future_listSnapshots(const meta::cpp2::ListSnapshotsReq&
     folly::Promise<meta::cpp2::ListSnapshotsResp> promise;
     auto future = promise.getFuture();
     meta::cpp2::ListSnapshotsResp resp;
+    auto status = MetaCache::instance().listSnapshots();
+    if (!status.ok()) {
+        resp.set_code(meta::cpp2::ErrorCode::E_UNKNOWN);
+        promise.setValue(std::move(resp));
+        return future;
+    }
     resp.set_code(meta::cpp2::ErrorCode::SUCCEEDED);
+    resp.set_snapshots(std::move(status).value());
     promise.setValue(std::move(resp));
     return future;
 }

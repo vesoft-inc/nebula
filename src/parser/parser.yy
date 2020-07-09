@@ -1645,70 +1645,70 @@ admin_para
 
 show_sentence
     : KW_SHOW KW_HOSTS {
-        $$ = new ShowSentence(ShowSentence::ShowType::kShowHosts);
+        $$ = new ShowHostsSentence();
     }
     | KW_SHOW KW_SPACES {
-        $$ = new ShowSentence(ShowSentence::ShowType::kShowSpaces);
+        $$ = new ShowSpacesSentence();
     }
     | KW_SHOW KW_PARTS {
-        $$ = new ShowSentence(ShowSentence::ShowType::kShowParts);
+        $$ = new ShowPartsSentence();
     }
     | KW_SHOW KW_PART integer_list {
-        $$ = new ShowSentence(ShowSentence::ShowType::kShowParts, $3);
+        $$ = new ShowPartsSentence($3);
     }
     | KW_SHOW KW_PARTS integer_list {
-        $$ = new ShowSentence(ShowSentence::ShowType::kShowParts, $3);
+        $$ = new ShowPartsSentence($3);
     }
     | KW_SHOW KW_TAGS {
-        $$ = new ShowSentence(ShowSentence::ShowType::kShowTags);
+        $$ = new ShowTagsSentence();
     }
     | KW_SHOW KW_EDGES {
-         $$ = new ShowSentence(ShowSentence::ShowType::kShowEdges);
+         $$ = new ShowEdgesSentence();
     }
     | KW_SHOW KW_TAG KW_INDEXES {
-         $$ = new ShowSentence(ShowSentence::ShowType::kShowTagIndexes);
+         $$ = new ShowTagIndexesSentence();
     }
     | KW_SHOW KW_EDGE KW_INDEXES {
-         $$ = new ShowSentence(ShowSentence::ShowType::kShowEdgeIndexes);
+         $$ = new ShowEdgeIndexesSentence();
     }
     | KW_SHOW KW_USERS {
-        $$ = new ShowSentence(ShowSentence::ShowType::kShowUsers);
+        $$ = new ShowUsersSentence();
     }
     | KW_SHOW KW_ROLES KW_IN name_label {
-        $$ = new ShowSentence(ShowSentence::ShowType::kShowRoles, $4);
+        $$ = new ShowRolesSentence($4);
     }
     | KW_SHOW KW_CONFIGS show_config_item {
         $$ = new ConfigSentence(ConfigSentence::SubType::kShow, $3);
     }
     | KW_SHOW KW_CREATE KW_SPACE name_label {
-        $$ = new ShowSentence(ShowSentence::ShowType::kShowCreateSpace, $4);
+        $$ = new ShowCreateSpaceSentence($4);
     }
     | KW_SHOW KW_CREATE KW_TAG name_label {
-        $$ = new ShowSentence(ShowSentence::ShowType::kShowCreateTag, $4);
+        $$ = new ShowCreateTagSentence($4);
     }
     | KW_SHOW KW_CREATE KW_TAG KW_INDEX name_label {
-        $$ = new ShowSentence(ShowSentence::ShowType::kShowCreateTagIndex, $5);
+        $$ = new ShowCreateTagIndexSentence($5);
     }
     | KW_SHOW KW_CREATE KW_EDGE name_label {
-        $$ = new ShowSentence(ShowSentence::ShowType::kShowCreateEdge, $4);
+        $$ = new ShowCreateEdgeSentence($4);
     }
     | KW_SHOW KW_CREATE KW_EDGE KW_INDEX name_label {
-        $$ = new ShowSentence(ShowSentence::ShowType::kShowCreateEdgeIndex, $5);
+        $$ = new ShowCreateEdgeIndexSentence($5);
     }
     | KW_SHOW KW_TAG KW_INDEX KW_STATUS {
-        $$ = new ShowSentence(ShowSentence::ShowType::kShowTagIndexStatus);
+        $$ = new ShowTagIndexStatusSentence();
     }
     | KW_SHOW KW_EDGE KW_INDEX KW_STATUS {
-        $$ = new ShowSentence(ShowSentence::ShowType::kShowEdgeIndexStatus);
+        $$ = new ShowEdgeIndexStatusSentence();
     }
     | KW_SHOW KW_SNAPSHOTS {
-        $$ = new ShowSentence(ShowSentence::ShowType::kShowSnapshots);
+        $$ = new ShowSnapshotsSentence();
     }
     | KW_SHOW KW_CHARSET {
-        $$ = new ShowSentence(ShowSentence::ShowType::kShowCharset);
+        $$ = new ShowCharsetSentence();
     }
     | KW_SHOW KW_COLLATION {
-        $$ = new ShowSentence(ShowSentence::ShowType::kShowCollation);
+        $$ = new ShowCollationSentence();
     }
     ;
 

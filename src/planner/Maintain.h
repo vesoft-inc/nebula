@@ -284,17 +284,148 @@ private:
     }
 };
 
-class DropTag final : public SingleInputNode {
+class ShowCreateTag final : public DescSchema {
 public:
+    static ShowCreateTag* make(ExecutionPlan* plan,
+                               PlanNode* input,
+                               std::string name) {
+        return new ShowCreateTag(plan, input, std::move(name));
+    }
+
     std::string explain() const override {
-        return "DropTag";
+        return "ShowCreateTag";
+    }
+
+private:
+    ShowCreateTag(ExecutionPlan* plan,
+                  PlanNode* input,
+                  std::string name)
+        : DescSchema(plan, input, Kind::kShowCreateTag, std::move(name)) {
     }
 };
 
-class DropEdge final : public SingleInputNode {
+class ShowCreateEdge final : public DescSchema {
 public:
+    static ShowCreateEdge* make(ExecutionPlan* plan,
+                                PlanNode* input,
+                                std::string name) {
+        return new ShowCreateEdge(plan, input, std::move(name));
+    }
+
+    std::string explain() const override {
+        return "ShowCreateEdge";
+    }
+
+private:
+    ShowCreateEdge(ExecutionPlan* plan,
+                   PlanNode* input,
+                   std::string name)
+        : DescSchema(plan, input, Kind::kShowCreateEdge, std::move(name)) {
+    }
+};
+
+class ShowTags final : public SingleInputNode {
+public:
+    static ShowTags* make(ExecutionPlan* plan,
+                          PlanNode* input) {
+        return new ShowTags(plan, input);
+    }
+
+    std::string explain() const override {
+        return "ShowTags";
+    }
+
+private:
+    ShowTags(ExecutionPlan* plan,
+             PlanNode* input)
+        : SingleInputNode(plan, Kind::kShowTags, input) {
+    }
+};
+
+class ShowEdges final : public SingleInputNode {
+public:
+    static ShowEdges* make(ExecutionPlan* plan,
+                           PlanNode* input) {
+        return new ShowEdges(plan, input);
+    }
+
+    std::string explain() const override {
+        return "ShowEdges";
+    }
+
+private:
+    ShowEdges(ExecutionPlan* plan,
+              PlanNode* input)
+        : SingleInputNode(plan, Kind::kShowEdges, input) {
+    }
+};
+
+class DropSchema : public SingleInputNode {
+protected:
+    DropSchema(ExecutionPlan* plan,
+               Kind kind,
+               PlanNode* input,
+               std::string name,
+               bool ifExists)
+        : SingleInputNode(plan, kind, input)
+        , name_(std::move(name))
+        , ifExists_(ifExists) {}
+
+public:
+    const std::string& getName() const {
+        return name_;
+    }
+
+    GraphSpaceID getIfExists() const {
+        return ifExists_;
+    }
+
+protected:
+    std::string            name_;
+    bool                   ifExists_;
+};
+
+class DropTag final : public DropSchema {
+public:
+    static DropTag* make(ExecutionPlan* plan,
+                         PlanNode* input,
+                         std::string name,
+                         bool ifExists) {
+        return new DropTag(plan, input, std::move(name), ifExists);
+    }
+
+    std::string explain() const override {
+        return "DropTag";
+    }
+
+private:
+    DropTag(ExecutionPlan* plan,
+            PlanNode* input,
+            std::string name,
+            bool ifExists)
+        : DropSchema(plan, Kind::kDropTag, input, std::move(name), ifExists) {
+    }
+};
+
+class DropEdge final : public DropSchema {
+public:
+    static DropEdge* make(ExecutionPlan* plan,
+                          PlanNode* input,
+                          std::string name,
+                          bool ifExists) {
+        return new DropEdge(plan, input, std::move(name), ifExists);
+    }
+
     std::string explain() const override {
         return "DropEdge";
+    }
+
+private:
+    DropEdge(ExecutionPlan* plan,
+             PlanNode* input,
+             std::string name,
+             bool ifExists)
+        : DropSchema(plan, Kind::kDropEdge, input, std::move(name), ifExists) {
     }
 };
 

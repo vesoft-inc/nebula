@@ -20,7 +20,7 @@ Status DescribeSpaceExecutor::prepare() {
 }
 
 void DescribeSpaceExecutor::execute() {
-    auto *name = sentence_->spaceName();
+    auto *name = sentence_->name();
     auto future = ectx()->getMetaClient()->getSpace(*name);
     auto *runner = ectx()->rctx()->runner();
 

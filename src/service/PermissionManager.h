@@ -29,9 +29,6 @@ public:
                              GraphSpaceID spaceId,
                              const std::string& targetUser);
     static bool canWriteData(Session *session);
-    static bool canShow(Session *session,
-                        ShowSentence::ShowType type,
-                        GraphSpaceID targetSpace = -1);
 };
 }  // namespace graph
 }  // namespace nebula

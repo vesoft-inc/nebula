@@ -69,6 +69,12 @@ public:
 
     std::unordered_map<PartitionID, std::vector<HostAddr>> getParts();
 
+    Status createSnapshot();
+
+    Status dropSnapshot(const meta::cpp2::DropSnapshotReq& req);
+
+    StatusOr<std::vector<meta::cpp2::Snapshot>> listSnapshots();
+
 private:
     MetaCache() = default;
 
@@ -128,6 +134,7 @@ private:
     std::unordered_map<GraphSpaceID, SpaceInfoCache>         cache_;
     std::unordered_map<std::string, meta::cpp2::SpaceItem>   spaces_;
     int64_t                                                  id_{0};
+    std::unordered_map<std::string, meta::cpp2::Snapshot>    snapshots_;
     mutable folly::RWSpinLock                                lock_;
 };
 

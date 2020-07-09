@@ -16,7 +16,7 @@ CreateSpaceExecutor::CreateSpaceExecutor(Sentence *sentence,
 
 
 Status CreateSpaceExecutor::prepare() {
-    spaceName_ = sentence_->spaceName();
+    spaceName_ = sentence_->name();
     for (auto &item : sentence_->getOpts()) {
         switch (item->getOptType()) {
             case SpaceOptItem::PARTITION_NUM:

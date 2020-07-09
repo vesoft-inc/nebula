@@ -29,6 +29,7 @@ set(VALIDATOR_TEST_LIBS
     $<TARGET_OBJECTS:common_base_obj>
     $<TARGET_OBJECTS:common_meta_thrift_obj>
     $<TARGET_OBJECTS:common_meta_obj>
+    $<TARGET_OBJECTS:common_graph_thrift_obj>
     $<TARGET_OBJECTS:common_charset_obj>
     $<TARGET_OBJECTS:common_meta_client_obj>
     $<TARGET_OBJECTS:common_file_based_cluster_id_man_obj>

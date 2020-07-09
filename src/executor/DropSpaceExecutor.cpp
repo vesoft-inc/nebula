@@ -16,7 +16,7 @@ DropSpaceExecutor::DropSpaceExecutor(Sentence *sentence,
 
 
 Status DropSpaceExecutor::prepare() {
-    spaceName_ = sentence_->spaceName();
+    spaceName_ = sentence_->name();
     return Status::OK();
 }
 
