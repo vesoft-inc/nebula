@@ -125,8 +125,8 @@ std::string WhereClause::toString() const {
 std::string YieldColumn::toString() const {
     std::string buf;
     buf.reserve(256);
-    if (funName_ != nullptr) {
-        buf += *funName_;
+    if (aggFunName_ != nullptr) {
+        buf += *aggFunName_;
         buf += "(";
         buf += expr_->toString();
         buf += ")";

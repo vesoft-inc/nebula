@@ -226,18 +226,18 @@ public:
         return alias_.get();
     }
 
-    void setFunction(std::string* fun = nullptr) {
+    void setAggFunction(std::string* fun = nullptr) {
         if (fun == nullptr) {
             return;
         }
-        funName_.reset(fun);
+        aggFunName_.reset(fun);
     }
 
-    std::string getFunName() const {
-        if (funName_ == nullptr) {
+    std::string getAggFunName() const {
+        if (aggFunName_ == nullptr) {
             return "";
         }
-        return *funName_;
+        return *aggFunName_;
     }
 
     std::string toString() const;
@@ -245,7 +245,7 @@ public:
 private:
     std::unique_ptr<Expression>                 expr_;
     std::unique_ptr<std::string>                alias_;
-    std::unique_ptr<std::string>                funName_{nullptr};
+    std::unique_ptr<std::string>                aggFunName_{nullptr};
 };
 
 

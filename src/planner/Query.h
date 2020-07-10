@@ -7,13 +7,14 @@
 #ifndef PLANNER_QUERY_H_
 #define PLANNER_QUERY_H_
 
-
 #include "common/base/Base.h"
+#include "common/interface/gen-cpp2/storage_types.h"
+#include "common/function/AggregateFunction.h"
+
 #include "planner/PlanNode.h"
 #include "planner/ExecutionPlan.h"
 #include "parser/Clauses.h"
 #include "parser/TraverseSentences.h"
-#include "common/interface/gen-cpp2/storage_types.h"
 
 /**
  * All query-related nodes would be put in this file,
@@ -705,26 +706,43 @@ private:
  */
 class Aggregate final : public SingleInputNode {
 public:
+    struct GroupItem {
+        GroupItem(Expression* e, AggFun::Function f, bool d)
+            : expr(e), func(f), distinct(d) {}
+        Expression* expr;
+        AggFun::Function func;
+        bool distinct = false;
+    };
     static Aggregate* make(ExecutionPlan* plan,
                            PlanNode* input,
-                           YieldColumns* groupCols) {
-        return new Aggregate(plan, input, groupCols);
+                           std::vector<Expression*>&& groupKeys,
+                           std::vector<GroupItem>&& groupItems) {
+        return new Aggregate(plan, input, std::move(groupKeys), std::move(groupItems));
     }
 
-    const YieldColumns* groups() const {
-        return groupCols_;
+    const std::vector<Expression*>& groupKeys() const {
+        return groupKeys_;
+    }
+
+    const std::vector<GroupItem>& groupItems() const {
+        return groupItems_;
     }
 
     std::string explain() const override;
 
 private:
-    Aggregate(ExecutionPlan* plan, PlanNode* input, YieldColumns* groupCols)
+    Aggregate(ExecutionPlan* plan,
+              PlanNode* input,
+              std::vector<Expression*>&& groupKeys,
+              std::vector<GroupItem>&& groupItems)
         : SingleInputNode(plan, Kind::kAggregate, input) {
-        groupCols_ = groupCols;
+        groupKeys_ = std::move(groupKeys);
+        groupItems_ = std::move(groupItems);
     }
 
 private:
-    YieldColumns*   groupCols_;
+    std::vector<Expression*>    groupKeys_;
+    std::vector<GroupItem>      groupItems_;
 };
 
 class BinarySelect : public SingleInputNode {

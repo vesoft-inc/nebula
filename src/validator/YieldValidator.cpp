@@ -49,7 +49,7 @@ Status YieldValidator::checkColumnRefAggFun(const YieldClause *clause) const {
     auto yield = clause->yields();
     for (auto column : yield->columns()) {
         auto expr = column->expr();
-        auto fun = column->getFunName();
+        auto fun = column->getAggFunName();
         if (!evaluableExpr(expr) && fun.empty()) {
             return Status::SyntaxError(
                 "Input columns without aggregation are not supported in YIELD statement "
@@ -107,7 +107,7 @@ Status YieldValidator::validateYieldAndBuildOutputs(const YieldClause *clause) {
                     outputs_.emplace_back(colDef);
                     inputProps_.emplace_back(colDef.first);
                 }
-                if (!column->getFunName().empty()) {
+                if (!column->getAggFunName().empty()) {
                     return Status::SyntaxError("could not apply aggregation function on `$-.*'");
                 }
                 continue;
@@ -126,7 +126,7 @@ Status YieldValidator::validateYieldAndBuildOutputs(const YieldClause *clause) {
                     outputs_.emplace_back(colDef);
                     propsVec.emplace_back(colDef.first);
                 }
-                if (!column->getFunName().empty()) {
+                if (!column->getAggFunName().empty()) {
                     return Status::SyntaxError("could not apply aggregation function on `$%s.*'",
                                                var->c_str());
                 }
@@ -141,8 +141,12 @@ Status YieldValidator::validateYieldAndBuildOutputs(const YieldClause *clause) {
         outputs_.emplace_back(name, type);
         NG_RETURN_IF_ERROR(deduceProps(expr));
 
-        auto fun = column->getFunName();
+        auto fun = column->getAggFunName();
         if (!fun.empty()) {
+            auto foundAgg = AggFun::nameIdMap_.find(fun);
+            if (foundAgg == AggFun::nameIdMap_.end()) {
+                return Status::Error("Unkown aggregate function: `%s'", fun.c_str());
+            }
             hasAggFun_ = true;
         }
     }
@@ -225,7 +229,12 @@ Status YieldValidator::toPlan() {
             getYieldColumns(yield->yieldColumns(), plan->objPool(), outputs_.size());
         dedupDep = Project::make(plan, filter, yieldColumns);
     } else {
-        dedupDep = Aggregate::make(plan, filter, yield->yieldColumns());
+        std::vector<Aggregate::GroupItem> items;
+        for (auto& col : yield->yieldColumns()->columns()) {
+            Aggregate::GroupItem item(col->expr(), AggFun::nameIdMap_[col->getAggFunName()], false);
+            items.emplace_back(std::move(item));
+        }
+        dedupDep = Aggregate::make(plan, filter, {}, std::move(items));
     }
 
     std::vector<std::string> outputColumns(outputs_.size());

@@ -761,24 +761,24 @@ yield_column
     }
     | agg_function L_PAREN expression R_PAREN {
         auto yield = new YieldColumn($3);
-        yield->setFunction($1);
+        yield->setAggFunction($1);
         $$ = yield;
     }
     | agg_function L_PAREN expression R_PAREN KW_AS name_label {
         auto yield = new YieldColumn($3, $6);
-        yield->setFunction($1);
+        yield->setAggFunction($1);
         $$ = yield;
     }
     | agg_function L_PAREN MUL R_PAREN {
         auto expr = new ConstantExpression(std::string("*"));
         auto yield = new YieldColumn(expr);
-        yield->setFunction($1);
+        yield->setAggFunction($1);
         $$ = yield;
     }
     | agg_function L_PAREN MUL R_PAREN KW_AS name_label {
         auto expr = new ConstantExpression(std::string("*"));
         auto yield = new YieldColumn(expr, $6);
-        yield->setFunction($1);
+        yield->setAggFunction($1);
         $$ = yield;
     }
     ;

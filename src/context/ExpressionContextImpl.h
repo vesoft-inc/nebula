@@ -49,6 +49,10 @@ public:
 
     void setVar(const std::string&, Value val) override;
 
+    void setIter(Iterator* iter) {
+        iter_ = iter;
+    }
+
 private:
     ExecutionContext*                 ectx_;
     Iterator*                         iter_;
