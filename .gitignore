@@ -39,3 +39,9 @@ modules/
 cmake-build-debug/
 cmake-build-release/
 .vscode/
+
+#py
+*.egg-info
+*.pot
+*.py[co]
+__pycache__

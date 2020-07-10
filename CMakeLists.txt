@@ -16,6 +16,9 @@
 #   NEBULA_COMMON_REPO_URL         -- Git URL for the nebula-common repo
 #   NEBULA_COMMON_REPO_TAG         -- Tag/branch of the nebula-common repo
 #
+#   NEBULA_STORAGE_REPO_URL         -- Git URL for the nebula-storage repo
+#   NEBULA_STORAGE_REPO_TAG         -- Tag/branch of the nebula-storage repo
+#
 #   ENABLE_JEMALLOC                -- Link jemalloc into all executables
 #   ENABLE_NATIVE                  -- Build native client
 #   ENABLE_TESTING                 -- Build unit test
@@ -72,6 +75,32 @@ add_dependent_project(
 find_package(${NEBULA_COMMON_PACKAGE} REQUIRED)
 message(STATUS ">>>>> The nebula-common repo has been configured successfully <<<<<")
 message(STATUS "")
+
+if("${NEBULA_STORAGE_REPO_URL}" STREQUAL "")
+    SET(NEBULA_STORAGE_REPO_URL "git@github.com:vesoft-inc-private/nebula-storage.git")
+endif()
+
+if("${NEBULA_STORAGE_REPO_TAG}" STREQUAL "")
+    SET(NEBULA_STORAGE_REPO_TAG "master")
+endif()
+
+SET(NEBULA_COMMON_PACKAGE "nebula-storage")
+SET(nebula-storage_DIR ${CMAKE_CURRENT_SOURCE_DIR}/modules/storage)
+
+# Configure the dependent projects
+message(STATUS "")
+message(STATUS ">>>>> Configuring the nebula-storage repo <<<<<")
+add_dependent_project(
+    ${NEBULA_HOME}/modules
+    storage
+    ${NEBULA_STORAGE_REPO_URL}
+    ${NEBULA_STORAGE_REPO_TAG}
+)
+find_package(${NEBULA_STORAGE_PACKAGE} REQUIRED)
+message(STATUS ">>>>> The nebula-storage repo has been configured successfully <<<<<")
+message(STATUS "")
+
+add_subdirectory(tests)
 
 include(LinkerConfig)
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++")
