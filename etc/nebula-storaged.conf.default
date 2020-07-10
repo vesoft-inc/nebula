@@ -1,15 +1,15 @@
 ########## basics ##########
-# Whether to run as a daemon process
+# Enabling/Disabling daemon process
 --daemonize=true
-# The file to host the process id
+# Specify the file to which to write the process ID
 --pid_file=pids/nebula-storaged.pid
 
 ########## logging ##########
-# The directory to host logging files, which must already exists
+# Specify the path where log is written. The path must exist
 --log_dir=logs
-# Log level, 0, 1, 2, 3 for INFO, WARNING, ERROR, FATAL respectively
+# Specify the log severity levels. 0, 1, 2, 3 for INFO, WARNING, ERROR, FATAL respectively
 --minloglevel=0
-# Verbose log level, 1, 2, 3, 4, the higher of the level, the more verbose of the logging
+# Specify the verbose log severity levels. Available levels are 1, 2, 3, 4. The higher the level, the more verbose of the log
 --v=0
 # Maximum seconds to buffer the log messages
 --logbufsecs=0
@@ -39,7 +39,7 @@
 --wal_ttl=3600
 
 ########## Disk ##########
-# Root data path. Split by comma. e.g. --data_path=/disk1/path1/,/disk2/path2/
+# Root data path. Split by comma. E.g. --data_path=/disk1/path1/,/disk2/path2/
 # One path per Rocksdb instance.
 --data_path=data/storage
 

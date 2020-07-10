@@ -1,24 +1,24 @@
 ########## basics ##########
-# Whether to run as a daemon process
+# Enabling/Disabling daemon process
 --daemonize=true
-# The file to host the process id
+# Specify the file to which to write the process ID
 --pid_file=pids/nebula-graphd.pid
 
 ########## logging ##########
-# The directory to host logging files, which must already exists
+# Specify the path where log is written. The path must exist
 --log_dir=logs
-# Log level, 0, 1, 2, 3 for INFO, WARNING, ERROR, FATAL respectively
+# Specify the log severity levels. 0, 1, 2, 3 for INFO, WARNING, ERROR, FATAL respectively
 --minloglevel=0
-# Verbose log level, 1, 2, 3, 4, the higher of the level, the more verbose of the logging
+# Specify the verbose log severity levels. Available levels are 1, 2, 3, 4. The higher the level, the more verbose of the log
 --v=0
 # Maximum seconds to buffer the log messages
 --logbufsecs=0
 # Whether to redirect stdout and stderr to separate output files
 --redirect_stdout=true
-# Destination filename of stdout and stderr, which will also reside in log_dir.
+# Destination filename of stdout and stderr, which will also locate in log_dir
 --stdout_log_file=stdout.log
 --stderr_log_file=stderr.log
-# Copy log messages at or above this level to stderr in addition to logfiles. The numbers of severity levels INFO, WARNING, ERROR, and FATAL are 0, 1, 2, and 3, respectively.
+# Copy log messages at or above this level to stderr in addition to logfiles. 0, 1, 2, 3 for INFO, WARNING, ERROR, FATAL respectively
 --stderrthreshold=2
 
 ########## networking ##########
@@ -30,11 +30,11 @@
 --listen_netdev=any
 # Port to listen on
 --port=3699
-# To turn on SO_REUSEPORT or not
+# Enabling/Disabling SO_REUSEPORT
 --reuse_port=false
 # Backlog of the listen socket, adjust this together with net.core.somaxconn
 --listen_backlog=1024
-# Seconds before the idle connections are closed, 0 for never closed
+# The number of seconds Nebula waits before closing the idle connections. 0 for never close
 --client_idle_timeout_secs=0
 # Seconds before the idle sessions are expired, 0 for no expiration
 --session_idle_timeout_secs=0
@@ -52,11 +52,11 @@
 --ws_h2_port=13002
 # The default charset when a space is created
 --default_charset=utf8
-# The defaule collate when a space is created
+# The default collate when a space is created
 --default_collate=utf8_bin
 
 ########## authorization ##########
-# Enable authorization
+# Enabling/Disabling authorization
 --enable_authorize=false
 
 ########## Authentication ##########
