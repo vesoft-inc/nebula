@@ -64,8 +64,8 @@ set(common_cmake_args
     -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
     "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
     "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
-    "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -fPIC ${extra_cpp_flags}"
-    "-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS} -fPIC"
+    "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -fPIC ${extra_cpp_flags}"
+    "-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS} -fno-omit-frame-pointer -fPIC"
     "-DCMAKE_EXE_LINKER_FLAGS=${extra_link_libs}"
     "-DCMAKE_SHARED_LINKER_FLAGS=${extra_link_libs}"
     -DCMAKE_INCLUDE_PATH=${CMAKE_INSTALL_PREFIX}/include
@@ -80,8 +80,8 @@ set(common_configure_envs
     "env"
     "CC=${CMAKE_C_COMPILER}"
     "CXX=${CMAKE_CXX_COMPILER}"
-    "CFLAGS=${CMAKE_C_FLAGS} -fPIC -O2 -D_DEFAULT_SOURCE -D_GNU_SOURCE ${extra_cpp_flags}"
-    "CXXFLAGS=${CMAKE_CXX_FLAGS} -fPIC -O2 -D_DEFAULT_SOURCE -D_GNU_SOURCE ${extra_cpp_flags}"
+    "CFLAGS=${CMAKE_C_FLAGS} -fno-omit-frame-pointer -fPIC -O2 -D_DEFAULT_SOURCE -D_GNU_SOURCE ${extra_cpp_flags}"
+    "CXXFLAGS=${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -fPIC -O2 -D_DEFAULT_SOURCE -D_GNU_SOURCE ${extra_cpp_flags}"
     "CPPFLAGS=-isystem ${CMAKE_INSTALL_PREFIX}/include ${extra_cpp_flags}"
     "LDFLAGS=-L${CMAKE_INSTALL_PREFIX}/lib -L${CMAKE_INSTALL_PREFIX}/lib64 ${extra_link_libs}"
     "PATH=${BUILDING_PATH}"

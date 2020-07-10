@@ -548,5 +548,17 @@ TEST_F(FindPathTest, EmptyInput) {
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code) << *(resp.get_error_msg());
     }
 }
+
+TEST_F(FindPathTest, UseUUID) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "FIND SHORTEST PATH FROM UUID(\"Tim Duncan\") TO UUID(\"Tony Parker\") "
+                     "OVER like UPTO 5 STEPS";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        ASSERT_TRUE(resp.get_rows() != nullptr);
+        ASSERT_EQ(resp.get_rows()->size(), 1);
+    }
+}
 }  // namespace graph
 }  // namespace nebula

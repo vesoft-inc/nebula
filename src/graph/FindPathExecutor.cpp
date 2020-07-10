@@ -16,16 +16,21 @@ FindPathExecutor::FindPathExecutor(Sentence *sentence, ExecutionContext *exct)
 }
 
 Status FindPathExecutor::prepare() {
+    spaceId_ = ectx()->rctx()->session()->space();
     Status status;
     expCtx_ = std::make_unique<ExpressionContext>();
+    expCtx_->setStorageClient(ectx()->getStorageClient());
+    expCtx_->setSpace(spaceId_);
     do {
         if (sentence_->from() != nullptr) {
+            sentence_->from()->setContext(expCtx_.get());
             status = sentence_->from()->prepare(from_);
             if (!status.ok()) {
                 break;
             }
         }
         if (sentence_->to() != nullptr) {
+            sentence_->to()->setContext(expCtx_.get());
             status = sentence_->to()->prepare(to_);
             if (!status.ok()) {
                 break;
@@ -65,7 +70,6 @@ Status FindPathExecutor::beforeExecute() {
         if (!status.ok()) {
             break;;
         }
-        spaceId_ = ectx()->rctx()->session()->space();
 
         status = prepareOver();
         if (!status.ok()) {
