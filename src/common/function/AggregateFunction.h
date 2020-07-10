@@ -35,6 +35,7 @@ public:
     virtual Value getResult() = 0;
 
     static std::unordered_map<Function, std::function<std::unique_ptr<AggFun>(bool)>> aggFunMap_;
+    static std::unordered_map<std::string, AggFun::Function> nameIdMap_;
 
 protected:
     const bool                  distinct_{false};

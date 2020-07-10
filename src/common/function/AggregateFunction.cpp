@@ -35,4 +35,17 @@ std::unordered_map<AggFun::Function,
         [](bool distinct) -> auto { return std::make_unique<Collect>(distinct);} },
 };
 
+std::unordered_map<std::string, AggFun::Function> AggFun::nameIdMap_ = {
+    {"", AggFun::Function::kNone},
+    {"COUNT", AggFun::Function::kCount},
+    {"SUM", AggFun::Function::kSum},
+    {"AVG", AggFun::Function::kAvg},
+    {"MAX", AggFun::Function::kMax},
+    {"MIN", AggFun::Function::kMin},
+    {"STDEV", AggFun::Function::kStdev},
+    {"BIT_AND", AggFun::Function::kBitAnd},
+    {"BIT_OR", AggFun::Function::kBitOr},
+    {"BIT_XOR", AggFun::Function::kBitXor},
+    {"COLLECT", AggFun::Function::kCollect},
+};
 }  // namespace nebula
