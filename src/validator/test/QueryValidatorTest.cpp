@@ -117,13 +117,36 @@ TEST_F(QueryValidatorTest, Go) {
     }
     {
         std::string query = "GO FROM \"1\",\"2\",\"3\" OVER like WHERE like.likeness > 90";
-        EXPECT_TRUE(checkResult(query));
-        // TODO
+        std::vector<PlanNode::Kind> expected = {
+            PK::kProject,
+            PK::kFilter,
+            PK::kGetNeighbors,
+            PK::kStart,
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+    {
+        std::string query = "GO FROM \"1\",\"2\",\"3\" OVER like WHERE $^.person.age > 20"
+                            "YIELD distinct $^.person.name ";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kDataCollect,
+            PK::kDedup,
+            PK::kProject,
+            PK::kFilter,
+            PK::kGetNeighbors,
+            PK::kStart,
+        };
+        EXPECT_TRUE(checkResult(query, expected));
     }
     {
         std::string query = "GO FROM \"1\",\"2\",\"3\" OVER like WHERE $^.person.name == \"me\"";
-        EXPECT_TRUE(checkResult(query));
-        // TODO
+        std::vector<PlanNode::Kind> expected = {
+            PK::kProject,
+            PK::kFilter,
+            PK::kGetNeighbors,
+            PK::kStart,
+        };
+        EXPECT_TRUE(checkResult(query, expected));
     }
     {
         std::string query = "GO FROM \"1\" OVER like YIELD like._dst AS id"
