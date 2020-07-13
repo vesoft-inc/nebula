@@ -46,7 +46,6 @@ TEST(StatsManager, StatsTest) {
     EXPECT_FALSE(StatsManager::readValue("stat01.Avg1.3600").ok());
 }
 
-
 TEST(StatsManager, HistogramTest) {
     auto statId = StatsManager::registerHisto("stat02", 1, 1, 100);
     std::vector<std::thread> threads;
@@ -90,6 +89,24 @@ TEST(StatsManager, HistogramTest) {
     EXPECT_FALSE(StatsManager::readValue("stat02.t9599.60").ok());
 }
 
+TEST(StatsManager, ReadAllTest) {
+    auto statId1 = StatsManager::registerStats("stat01");
+    auto statId2 = StatsManager::registerHisto("stat02", 1, 1, 100);
+    StatsManager::addValue(statId1, 1);
+    StatsManager::addValue(statId2, 1);
+
+    auto stats = folly::dynamic::array();
+    StatsManager::readAllValue(stats);
+    EXPECT_EQ(36, stats.size());
+    EXPECT_EQ(stats[0]["name"], "stat02.sum.5");
+    EXPECT_EQ(stats[0]["value"], 1);
+    EXPECT_EQ(stats[16]["name"], "stat02.p99.5");
+    EXPECT_EQ(stats[16]["value"], 1);
+    EXPECT_EQ(stats[19]["name"], "stat02.p99.3600");
+    EXPECT_EQ(stats[19]["value"], 1);
+    EXPECT_EQ(stats[35]["name"], "stat01.rate.3600");
+    EXPECT_EQ(stats[35]["value"], 1);
+}
 
 }   // namespace stats
 }   // namespace nebula
