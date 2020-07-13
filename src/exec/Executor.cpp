@@ -390,11 +390,6 @@ folly::Future<Status> Executor::error(Status status) const {
     return folly::makeFuture<Status>(ExecutionError(std::move(status))).via(runner());
 }
 
-Status Executor::finish(nebula::Value &&value) {
-    ectx_->setValue(node()->varName(), std::move(value));
-    return Status::OK();
-}
-
 Status Executor::finish(Result &&result) {
     ectx_->setResult(node()->varName(), std::move(result));
     return Status::OK();

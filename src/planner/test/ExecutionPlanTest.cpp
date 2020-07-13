@@ -14,7 +14,7 @@
 #include "exec/ExecutionError.h"
 #include "exec/Executor.h"
 #include "planner/Query.h"
-#include "schedule/Scheduler.h"
+#include "scheduler/Scheduler.h"
 
 using std::chrono::duration_cast;
 using std::chrono::microseconds;

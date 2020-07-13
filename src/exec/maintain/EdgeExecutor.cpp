@@ -47,8 +47,10 @@ folly::Future<Status> DescEdgeExecutor::execute() {
                     LOG(ERROR) << ret.status();
                     return ret.status();
                 }
-                finish(Value(std::move(ret).value()));
-                return Status::OK();
+                return finish(ResultBuilder()
+                                  .value(Value(std::move(ret).value()))
+                                  .iter(Iterator::Kind::kDefault)
+                                  .finish());
             });
 }
 
@@ -75,29 +77,30 @@ folly::Future<Status> ShowEdgesExecutor::execute() {
     dumpLog();
 
     auto spaceId = qctx()->rctx()->session()->space();
-    return qctx()->getMetaClient()->listEdgeSchemas(spaceId)
-            .via(runner())
-            .then([this](StatusOr<std::vector<meta::cpp2::EdgeItem>> resp) {
-                if (!resp.ok()) {
-                    LOG(ERROR) << resp.status();
-                    return resp.status();
-                }
-                auto edgeItems = std::move(resp).value();
+    return qctx()->getMetaClient()->listEdgeSchemas(spaceId).via(runner()).then(
+        [this](StatusOr<std::vector<meta::cpp2::EdgeItem>> resp) {
+            if (!resp.ok()) {
+                LOG(ERROR) << resp.status();
+                return resp.status();
+            }
+            auto edgeItems = std::move(resp).value();
 
-                DataSet dataSet;
-                dataSet.colNames = {"Name"};
-                std::set<std::string> orderEdgeNames;
-                for (auto &edge : edgeItems) {
-                    orderEdgeNames.emplace(edge.get_edge_name());
-                }
-                for (auto &name : orderEdgeNames) {
-                    Row row;
-                    row.values.emplace_back(name);
-                    dataSet.rows.emplace_back(std::move(row));
-                }
-                finish(dataSet);
-                return Status::OK();
-            });
+            DataSet dataSet;
+            dataSet.colNames = {"Name"};
+            std::set<std::string> orderEdgeNames;
+            for (auto &edge : edgeItems) {
+                orderEdgeNames.emplace(edge.get_edge_name());
+            }
+            for (auto &name : orderEdgeNames) {
+                Row row;
+                row.values.emplace_back(name);
+                dataSet.rows.emplace_back(std::move(row));
+            }
+            return finish(ResultBuilder()
+                              .value(Value(std::move(dataSet)))
+                              .iter(Iterator::Kind::kDefault)
+                              .finish());
+        });
 }
 
 folly::Future<Status> ShowCreateEdgeExecutor::execute() {
@@ -105,21 +108,25 @@ folly::Future<Status> ShowCreateEdgeExecutor::execute() {
 
     auto *sceNode = asNode<ShowCreateEdge>(node());
     auto spaceId = qctx()->rctx()->session()->space();
-    return qctx()->getMetaClient()->getEdgeSchema(spaceId, sceNode->getName())
-            .via(runner())
-            .then([this, sceNode](StatusOr<meta::cpp2::Schema> resp) {
-                if (!resp.ok()) {
-                    LOG(ERROR) << resp.status();
-                    return resp.status();
-                }
-                auto ret = SchemaUtil::toShowCreateSchema(false, sceNode->getName(), resp.value());
-                if (!ret.ok()) {
-                    LOG(ERROR) << ret.status();
-                    return ret.status();
-                }
-                finish(Value(std::move(ret).value()));
-                return Status::OK();
-            });
+    return qctx()
+        ->getMetaClient()
+        ->getEdgeSchema(spaceId, sceNode->getName())
+        .via(runner())
+        .then([this, sceNode](StatusOr<meta::cpp2::Schema> resp) {
+            if (!resp.ok()) {
+                LOG(ERROR) << resp.status();
+                return resp.status();
+            }
+            auto ret = SchemaUtil::toShowCreateSchema(false, sceNode->getName(), resp.value());
+            if (!ret.ok()) {
+                LOG(ERROR) << ret.status();
+                return ret.status();
+            }
+            return finish(ResultBuilder()
+                              .value(std::move(ret).value())
+                              .iter(Iterator::Kind::kDefault)
+                              .finish());
+        });
 }
 
 folly::Future<Status> AlterEdgeExecutor::execute() {
@@ -131,12 +138,13 @@ folly::Future<Status> AlterEdgeExecutor::execute() {
                                                     aeNode->getSchemaItems(),
                                                     aeNode->getSchemaProp())
             .via(runner())
-            .then([](StatusOr<EdgeType> resp) {
+            .then([this](StatusOr<EdgeType> resp) {
                 if (!resp.ok()) {
                     LOG(ERROR) << resp.status();
                     return resp.status();
                 }
-                return Status::OK();
+                return finish(
+                    ResultBuilder().value(Value()).iter(Iterator::Kind::kDefault).finish());
             });
 }
 }   // namespace graph

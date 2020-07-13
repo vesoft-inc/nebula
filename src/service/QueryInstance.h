@@ -13,7 +13,7 @@
 #include "parser/GQLParser.h"
 #include "validator/ASTValidator.h"
 #include "context/QueryContext.h"
-#include "schedule/Scheduler.h"
+#include "scheduler/Scheduler.h"
 
 /**
  * QueryInstance coordinates the execution process,

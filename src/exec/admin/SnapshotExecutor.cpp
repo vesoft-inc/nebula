@@ -62,8 +62,10 @@ folly::Future<Status> ShowSnapshotsExecutor::execute() {
                     row.values.emplace_back(snapshot.hosts);
                     dataSet.rows.emplace_back(std::move(row));
                 }
-                finish(std::move(dataSet));
-                return Status::OK();
+                return finish(ResultBuilder()
+                                  .value(Value(std::move(dataSet)))
+                                  .iter(Iterator::Kind::kDefault)
+                                  .finish());
             });
 }
 }   // namespace graph

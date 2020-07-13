@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef SCHEDULE_SCHEDULER_H_
-#define SCHEDULE_SCHEDULER_H_
+#ifndef SCHEDULER_SCHEDULER_H_
+#define SCHEDULER_SCHEDULER_H_
 
 #include <memory>
 #include <set>
@@ -87,4 +87,4 @@ private:
 }   // namespace graph
 }   // namespace nebula
 
-#endif   // SCHEDULE_SCHEDULER_H_
+#endif   // SCHEDULER_SCHEDULER_H_

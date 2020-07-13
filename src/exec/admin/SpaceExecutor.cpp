@@ -56,8 +56,10 @@ folly::Future<Status> DescSpaceExecutor::execute() {
                 row.values.emplace_back(properties.get_charset_name());
                 row.values.emplace_back(properties.get_collate_name());
                 dataSet.rows.emplace_back(std::move(row));
-                finish(Value(std::move(dataSet)));
-                return Status::OK();
+                return finish(ResultBuilder()
+                                  .value(Value(std::move(dataSet)))
+                                  .iter(Iterator::Kind::kDefault)
+                                  .finish());
             });
 }
 
@@ -80,28 +82,29 @@ folly::Future<Status> DropSpaceExecutor::execute() {
 folly::Future<Status> ShowSpacesExecutor::execute() {
     dumpLog();
 
-    return qctx()->getMetaClient()->listSpaces()
-            .via(runner())
-            .then([this](StatusOr<std::vector<meta::SpaceIdName>> resp) {
-                if (!resp.ok()) {
-                    LOG(ERROR) << resp.status();
-                    return resp.status();
-                }
-                auto spaceItems = std::move(resp).value();
+    return qctx()->getMetaClient()->listSpaces().via(runner()).then(
+        [this](StatusOr<std::vector<meta::SpaceIdName>> resp) {
+            if (!resp.ok()) {
+                LOG(ERROR) << resp.status();
+                return resp.status();
+            }
+            auto spaceItems = std::move(resp).value();
 
-                DataSet dataSet({"Name"});
-                std::set<std::string> orderSpaceNames;
-                for (auto &space : spaceItems) {
-                    orderSpaceNames.emplace(space.second);
-                }
-                for (auto &name : orderSpaceNames) {
-                    Row row;
-                    row.values.emplace_back(name);
-                    dataSet.rows.emplace_back(std::move(row));
-                }
-                finish(std::move(dataSet));
-                return Status::OK();
-            });
+            DataSet dataSet({"Name"});
+            std::set<std::string> orderSpaceNames;
+            for (auto &space : spaceItems) {
+                orderSpaceNames.emplace(space.second);
+            }
+            for (auto &name : orderSpaceNames) {
+                Row row;
+                row.values.emplace_back(name);
+                dataSet.rows.emplace_back(std::move(row));
+            }
+            return finish(ResultBuilder()
+                              .value(Value(std::move(dataSet)))
+                              .iter(Iterator::Kind::kDefault)
+                              .finish());
+        });
 }
 
 folly::Future<Status> ShowCreateSpaceExecutor::execute() {
@@ -130,8 +133,10 @@ folly::Future<Status> ShowCreateSpaceExecutor::execute() {
                                             properties.get_charset_name().c_str(),
                                             properties.get_collate_name().c_str()));
                 dataSet.rows.emplace_back(std::move(row));
-                finish(std::move(dataSet));
-                return Status::OK();
+                return finish(ResultBuilder()
+                                  .value(Value(std::move(dataSet)))
+                                  .iter(Iterator::Kind::kDefault)
+                                  .finish());
             });
 }
 }   // namespace graph

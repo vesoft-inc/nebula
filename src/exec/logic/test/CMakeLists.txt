@@ -35,7 +35,7 @@ SET(EXEC_LOGIC_TEST_LIBS
     $<TARGET_OBJECTS:validator_obj>
     $<TARGET_OBJECTS:planner_obj>
     $<TARGET_OBJECTS:exec_obj>
-    $<TARGET_OBJECTS:schedule_obj>
+    $<TARGET_OBJECTS:scheduler_obj>
     $<TARGET_OBJECTS:util_obj>
     $<TARGET_OBJECTS:idgenerator_obj>
     $<TARGET_OBJECTS:context_obj>

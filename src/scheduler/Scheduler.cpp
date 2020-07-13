@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "schedule/Scheduler.h"
+#include "scheduler/Scheduler.h"
 
 #include "context/QueryContext.h"
 #include "exec/ExecutionError.h"

@@ -34,21 +34,25 @@ folly::Future<Status> DescTagExecutor::execute() {
 
     auto *dtNode = asNode<DescTag>(node());
     auto spaceId = qctx()->rctx()->session()->space();
-    return qctx()->getMetaClient()->getTagSchema(spaceId, dtNode->getName())
-            .via(runner())
-            .then([this](StatusOr<meta::cpp2::Schema> resp) {
-                if (!resp.ok()) {
-                    LOG(ERROR) << resp.status();
-                    return resp.status();
-                }
-                auto ret = SchemaUtil::toDescSchema(resp.value());
-                if (!ret.ok()) {
-                    LOG(ERROR) << ret.status();
-                    return ret.status();
-                }
-                finish(Value(std::move(ret).value()));
-                return Status::OK();
-            });
+    return qctx()
+        ->getMetaClient()
+        ->getTagSchema(spaceId, dtNode->getName())
+        .via(runner())
+        .then([this](StatusOr<meta::cpp2::Schema> resp) {
+            if (!resp.ok()) {
+                LOG(ERROR) << resp.status();
+                return resp.status();
+            }
+            auto ret = SchemaUtil::toDescSchema(resp.value());
+            if (!ret.ok()) {
+                LOG(ERROR) << ret.status();
+                return ret.status();
+            }
+            return finish(ResultBuilder()
+                              .value(std::move(ret).value())
+                              .iter(Iterator::Kind::kDefault)
+                              .finish());
+        });
 }
 
 folly::Future<Status> DropTagExecutor::execute() {
@@ -73,29 +77,30 @@ folly::Future<Status> ShowTagsExecutor::execute() {
     dumpLog();
 
     auto spaceId = qctx()->rctx()->session()->space();
-    return qctx()->getMetaClient()->listTagSchemas(spaceId)
-            .via(runner())
-            .then([this](StatusOr<std::vector<meta::cpp2::TagItem>> resp) {
-                if (!resp.ok()) {
-                    LOG(ERROR) << resp.status();
-                    return resp.status();
-                }
-                auto tagItems = std::move(resp).value();
+    return qctx()->getMetaClient()->listTagSchemas(spaceId).via(runner()).then(
+        [this](StatusOr<std::vector<meta::cpp2::TagItem>> resp) {
+            if (!resp.ok()) {
+                LOG(ERROR) << resp.status();
+                return resp.status();
+            }
+            auto tagItems = std::move(resp).value();
 
-                DataSet dataSet;
-                dataSet.colNames = {"Name"};
-                std::set<std::string> orderTagNames;
-                for (auto &tag : tagItems) {
-                    orderTagNames.emplace(tag.get_tag_name());
-                }
-                for (auto &name : orderTagNames) {
-                    Row row;
-                    row.values.emplace_back(name);
-                    dataSet.rows.emplace_back(std::move(row));
-                }
-                finish(dataSet);
-                return Status::OK();
-            });
+            DataSet dataSet;
+            dataSet.colNames = {"Name"};
+            std::set<std::string> orderTagNames;
+            for (auto &tag : tagItems) {
+                orderTagNames.emplace(tag.get_tag_name());
+            }
+            for (auto &name : orderTagNames) {
+                Row row;
+                row.values.emplace_back(name);
+                dataSet.rows.emplace_back(std::move(row));
+            }
+            return finish(ResultBuilder()
+                              .value(Value(std::move(dataSet)))
+                              .iter(Iterator::Kind::kDefault)
+                              .finish());
+        });
 }
 
 folly::Future<Status> ShowCreateTagExecutor::execute() {
@@ -115,8 +120,10 @@ folly::Future<Status> ShowCreateTagExecutor::execute() {
                     LOG(ERROR) << ret.status();
                     return ret.status();
                 }
-                finish(Value(std::move(ret).value()));
-                return Status::OK();
+                return finish(ResultBuilder()
+                                  .value(std::move(ret).value())
+                                  .iter(Iterator::Kind::kDefault)
+                                  .finish());
             });
 }
 

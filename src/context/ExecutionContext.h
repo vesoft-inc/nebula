@@ -14,6 +14,8 @@
 namespace nebula {
 namespace graph {
 
+class QueryInstance;
+
 /***************************************************************************
  *
  * The context for each query request
@@ -40,8 +42,6 @@ public:
     // Get the latest version of the value
     const Value& getValue(const std::string& name) const;
 
-    Value moveValue(const std::string& name);
-
     const Result& getResult(const std::string& name) const;
 
     size_t numVersions(const std::string& name) const;
@@ -64,6 +64,9 @@ public:
     }
 
 private:
+    friend class QueryInstance;
+    Value moveValue(const std::string& name);
+
     // name -> Value with multiple versions
     std::unordered_map<std::string, std::vector<Result>>     valueMap_;
 };

@@ -91,7 +91,6 @@ protected:
     folly::Executor *runner() const;
 
     // Store the result of this executor to execution context
-    Status finish(nebula::Value &&value);
     Status finish(Result &&result);
 
     // Dump some execution logging messages, only for debugging

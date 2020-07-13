@@ -37,8 +37,7 @@ folly::Future<Status> InsertEdgesExecutor::insertEdges() {
                 return Status::Error("Insert edges not complete, completeness: %d",
                                       completeness);
             }
-            finish(Value());
-            return Status::OK();
+            return finish(ResultBuilder().value(Value()).iter(Iterator::Kind::kDefault).finish());
         });
 }
 

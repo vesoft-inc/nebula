@@ -4,7 +4,7 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
 nebula_add_library(
-  schedule_obj
+  scheduler_obj
   OBJECT
   Scheduler.cpp
   )

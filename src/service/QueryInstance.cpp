@@ -12,7 +12,7 @@
 #include "exec/Executor.h"
 #include "planner/ExecutionPlan.h"
 #include "planner/PlanNode.h"
-#include "schedule/Scheduler.h"
+#include "scheduler/Scheduler.h"
 
 namespace nebula {
 namespace graph {

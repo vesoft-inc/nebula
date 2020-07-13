@@ -6,8 +6,8 @@
 
 #include "exec/logic/SelectExecutor.h"
 
-#include "planner/Query.h"
 #include "context/ExpressionContextImpl.h"
+#include "planner/Query.h"
 
 namespace nebula {
 namespace graph {
@@ -28,8 +28,7 @@ folly::Future<Status> SelectExecutor::execute() {
     ExpressionContextImpl ctx(ectx_, nullptr);
     auto value = expr->eval(ctx);
     DCHECK(value.isBool());
-    finish(std::move(value));
-    return Status::OK();
+    return finish(ResultBuilder().value(std::move(value)).iter(Iterator::Kind::kDefault).finish());
 }
 
 }   // namespace graph
