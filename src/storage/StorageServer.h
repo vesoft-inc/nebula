@@ -24,6 +24,12 @@ namespace storage {
 
 class StorageServer final {
 public:
+    enum class Status {
+        INIT,
+        RUNNING,
+        STOPPED,
+    };
+
     StorageServer(HostAddr localHost,
                   std::vector<HostAddr> metaAddrs,
                   std::vector<std::string> dataPaths);
@@ -40,6 +46,19 @@ private:
 
     bool initWebService();
 
+    std::string statusStr(Status status) {
+        switch (status) {
+            case Status::INIT:
+                return "init";
+            case Status::RUNNING:
+                return "running";
+            case Status::STOPPED:
+                return "stoppped";
+        }
+        LOG(FATAL) << "Unreached";
+        return "";
+    }
+
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
     std::shared_ptr<apache::thrift::concurrency::ThreadManager> workers_;
 
@@ -54,10 +73,11 @@ private:
     std::unique_ptr<meta::SchemaManager> schemaMan_;
     std::unique_ptr<meta::IndexManager> indexMan_;
 
-    std::atomic_bool stopped_{false};
     HostAddr localHost_;
     std::vector<HostAddr> metaAddrs_;
     std::vector<std::string> dataPaths_;
+
+    std::atomic<Status> status_{Status::INIT};
 };
 
 }  // namespace storage
