@@ -740,7 +740,7 @@ TEST_F(ExpressionTest, Arithmetics) {
     }
 }
 
-TEST_F(ExpressionTest, RelationEQ) {
+TEST_F(ExpressionTest, Relation) {
     {
         // e1.list == NULL
         RelationalExpression expr(
@@ -780,6 +780,66 @@ TEST_F(ExpressionTest, RelationEQ) {
         auto eval = Expression::eval(&expr, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::BOOL);
         EXPECT_EQ(eval, true);
+    }
+    {
+        // 1 == NULL
+        RelationalExpression expr(
+                Expression::Kind::kRelEQ,
+                new ConstantExpression(Value(1)),
+                new ConstantExpression(Value(NullType::NaN)));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::BOOL);
+        EXPECT_EQ(eval, false);
+    }
+    {
+        // NULL == NULL
+        RelationalExpression expr(
+                Expression::Kind::kRelEQ,
+                new ConstantExpression(Value(NullType::NaN)),
+                new ConstantExpression(Value(NullType::NaN)));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::BOOL);
+        EXPECT_EQ(eval, true);
+    }
+    {
+        // 1 != NULL
+        RelationalExpression expr(
+                Expression::Kind::kRelNE,
+                new ConstantExpression(Value(1)),
+                new ConstantExpression(Value(NullType::NaN)));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::BOOL);
+        EXPECT_EQ(eval, true);
+    }
+    {
+        // NULL != NULL
+        RelationalExpression expr(
+                Expression::Kind::kRelNE,
+                new ConstantExpression(Value(NullType::NaN)),
+                new ConstantExpression(Value(NullType::NaN)));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::BOOL);
+        EXPECT_EQ(eval, false);
+    }
+    {
+        // 1 < NULL
+        RelationalExpression expr(
+                Expression::Kind::kRelLT,
+                new ConstantExpression(Value(1)),
+                new ConstantExpression(Value(NullType::NaN)));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval, Value::kNullValue);
+    }
+    {
+        // NULL < NULL
+        RelationalExpression expr(
+                Expression::Kind::kRelLT,
+                new ConstantExpression(Value(NullType::NaN)),
+                new ConstantExpression(Value(NullType::NaN)));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval, Value::kNullValue);
     }
 }
 
@@ -1030,3 +1090,11 @@ TEST_F(ExpressionTest, PropertyToStringTest) {
 }
 
 }  // namespace nebula
+
+int main(int argc, char** argv) {
+    testing::InitGoogleTest(&argc, argv);
+    folly::init(&argc, &argv, true);
+    google::SetStderrLogging(google::INFO);
+
+    return RUN_ALL_TESTS();
+}

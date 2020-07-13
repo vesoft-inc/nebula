@@ -88,8 +88,8 @@ const Value Value::kNullOverflow(NullType::ERR_OVERFLOW);
 const Value Value::kNullUnknownProp(NullType::UNKNOWN_PROP);
 const Value Value::kNullDivByZero(NullType::DIV_BY_ZERO);
 
-const uint64_t kEmptyNullType = Value::Type::__EMPTY__ | Value::Type::NULLVALUE;
-const uint64_t kNumericType   = Value::Type::INT | Value::Type::FLOAT;
+const uint64_t Value::kEmptyNullType = Value::Type::__EMPTY__ | Value::Type::NULLVALUE;
+const uint64_t Value::kNumericType   = Value::Type::INT | Value::Type::FLOAT;
 
 Value::Value(Value&& rhs) : type_(Value::Type::__EMPTY__) {
     if (this == &rhs) { return; }
@@ -1897,9 +1897,9 @@ Value operator!(const Value& rhs) {
 bool operator<(const Value& lhs, const Value& rhs) {
     auto lType = lhs.type();
     auto rType = rhs.type();
-    auto hasNullOrEmpty = (lType | rType) & kEmptyNullType;
+    auto hasNullOrEmpty = (lType | rType) & Value::kEmptyNullType;
     auto notSameType = lType != rType;
-    auto notBothNumeric = ((lType | rType) & kNumericType) != kNumericType;
+    auto notBothNumeric = ((lType | rType) & Value::kNumericType) != Value::kNumericType;
     if (hasNullOrEmpty || (notSameType && notBothNumeric)) {
         return lType < rType;
     }
@@ -1960,9 +1960,9 @@ bool operator<(const Value& lhs, const Value& rhs) {
 bool operator==(const Value& lhs, const Value& rhs) {
     auto lType = lhs.type();
     auto rType = rhs.type();
-    auto hasNullOrEmpty = (lType | rType) & kEmptyNullType;
+    auto hasNullOrEmpty = (lType | rType) & Value::kEmptyNullType;
     auto notSameType = lType != rType;
-    auto notBothNumeric = ((lType | rType) & kNumericType) != kNumericType;
+    auto notBothNumeric = ((lType | rType) & Value::kNumericType) != Value::kNumericType;
     if (hasNullOrEmpty || (notSameType && notBothNumeric)) {
         return lhs.type() == rhs.type();
     }

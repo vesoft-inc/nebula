@@ -53,6 +53,9 @@ struct Value {
     static const Value kNullUnknownProp;
     static const Value kNullDivByZero;
 
+    static const uint64_t kEmptyNullType;
+    static const uint64_t kNumericType;
+
     friend class apache::thrift::Cpp2Ops<Value, void>;
 
     enum class Type : uint64_t {
@@ -416,8 +419,20 @@ inline std::ostream& operator<<(std::ostream& os, const Value& value) {
 inline uint64_t operator|(const Value::Type& lhs, const Value::Type& rhs) {
     return static_cast<uint64_t>(lhs) | static_cast<uint64_t>(rhs);
 }
+inline uint64_t operator|(const uint64_t lhs, const Value::Type& rhs) {
+    return lhs | static_cast<uint64_t>(rhs);
+}
+inline uint64_t operator|(const Value::Type& lhs, const uint64_t rhs) {
+    return static_cast<uint64_t>(lhs) | rhs;
+}
 inline uint64_t operator&(const Value::Type& lhs, const Value::Type& rhs) {
     return static_cast<uint64_t>(lhs) & static_cast<uint64_t>(rhs);
+}
+inline uint64_t operator&(const uint64_t lhs, const Value::Type& rhs) {
+    return lhs & static_cast<uint64_t>(rhs);
+}
+inline uint64_t operator&(const Value::Type& lhs, const uint64_t rhs) {
+    return static_cast<uint64_t>(lhs) & rhs;
 }
 
 }  // namespace nebula

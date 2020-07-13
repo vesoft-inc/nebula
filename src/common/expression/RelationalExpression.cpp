@@ -12,6 +12,13 @@ const Value& RelationalExpression::eval(ExpressionContext& ctx) {
     auto& lhs = lhs_->eval(ctx);
     auto& rhs = rhs_->eval(ctx);
 
+    if (kind_ != Kind::kRelEQ && kind_ != Kind::kRelNE) {
+        auto lhsEmptyOrNull = lhs.type() & Value::kEmptyNullType;
+        auto rhsEmptyOrNull = rhs.type() & Value::kEmptyNullType;
+        if (lhsEmptyOrNull || rhsEmptyOrNull) {
+            return lhsEmptyOrNull ? lhs : rhs;
+        }
+    }
     switch (kind_) {
         case Kind::kRelEQ:
             result_ = lhs == rhs;
