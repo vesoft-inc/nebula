@@ -14,25 +14,40 @@
 namespace nebula {
 namespace storage {
 
-// FilterNode will receive the result from a HashJoinNode, check whether tag data and edge data
-// could pass the expression filter
-class FilterNode : public IterateEdgeNode<VertexID> {
+/*
+FilterNode will receive the result from upstream, check whether tag data or edge data
+could pass the expression filter. FilterNode can only accept one upstream node, user
+must make sure that the upstream only output only tag data or edge data, but not both.
+
+As for GetNeighbors, it will have filter that involves both tag and edge expression. In
+that case, FilterNode has a upstream of HashJoinNode, which will keeps poping out edge
+data. All tage data has been put into ExpressionContext before FilterNode is executed. 
+By that means, it can check the filter of tag + edge.
+*/
+template<typename T>
+class FilterNode : public IterateNode<T> {
 public:
-    FilterNode(IterateEdgeNode* hashJoinNode,
+    FilterNode(PlanContext* planCtx,
+               IterateNode<T>* upstream,
+               bool isEdge,
                StorageExpressionContext* expCtx = nullptr,
                Expression* exp = nullptr)
-        : IterateEdgeNode(hashJoinNode)
+        : IterateNode<T>(upstream)
+        , planContext_(planCtx)
+        , isEdge_(isEdge)
         , expCtx_(expCtx)
-        , exp_(exp) {}
+        , exp_(exp) {
+        UNUSED(planContext_);
+    }
 
-    kvstore::ResultCode execute(PartitionID partId, const VertexID& vId) override {
-        auto ret = RelNode::execute(partId, vId);
+    kvstore::ResultCode execute(PartitionID partId, const T& vId) override {
+        auto ret = RelNode<T>::execute(partId, vId);
         if (ret != kvstore::ResultCode::SUCCEEDED) {
             return ret;
         }
 
-        while (upstream_->valid() && !check()) {
-            upstream_->next();
+        while (this->valid() && !check()) {
+            this->next();
         }
         return kvstore::ResultCode::SUCCEEDED;
     }
@@ -41,7 +56,11 @@ private:
     // return true when the value iter points to a value which can filter
     bool check() override {
         if (exp_ != nullptr) {
-            expCtx_->reset(upstream_->reader(), upstream_->key(), upstream_->edgeName());
+            if (isEdge_) {
+                expCtx_->reset(this->reader(), this->key(), planContext_->edgeName_, isEdge_);
+            } else {
+                expCtx_->reset(this->reader(), this->key(), planContext_->tagName_, isEdge_);
+            }
             auto result = exp_->eval(*expCtx_);
             if (result.type() == Value::Type::BOOL) {
                 return result.getBool();
@@ -53,6 +72,8 @@ private:
     }
 
 private:
+    PlanContext* planContext_;
+    bool isEdge_;
     StorageExpressionContext* expCtx_;
     Expression* exp_;
 };

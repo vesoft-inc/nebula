@@ -192,6 +192,22 @@ nebula_add_test(
 
 nebula_add_executable(
     NAME
+        get_neighbors_bm
+    SOURCES
+        GetNeighborsBenchmark.cpp
+    OBJECTS
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        wangle
+        gtest
+        follybenchmark
+        boost_regex
+)
+
+nebula_add_executable(
+    NAME
         scan_edge_prop_bm
     SOURCES
         ScanEdgePropBenchmark.cpp

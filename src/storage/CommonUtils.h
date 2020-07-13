@@ -27,6 +27,9 @@ public:
     meta::IndexManager*                             indexMan_{nullptr};
 };
 
+struct PropContext;
+
+// PlanContext stores some information during the process
 class PlanContext {
 public:
     PlanContext(StorageEnv* env, GraphSpaceID spaceId, size_t vIdLen)
@@ -37,6 +40,14 @@ public:
     StorageEnv*         env_;
     GraphSpaceID        spaceId_;
     size_t              vIdLen_;
+
+    TagID                               tagId_ = 0;
+    std::string                         tagName_ = "";
+    EdgeType                            edgeType_ = 0;
+    std::string                         edgeName_ = "";
+    // used for GetNeighbors
+    size_t                              columnIdx_ = 0;
+    const std::vector<PropContext>*     props_ = nullptr;
 };
 
 class CommonUtils final {

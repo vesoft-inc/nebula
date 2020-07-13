@@ -35,7 +35,9 @@ protected:
         : QueryBaseProcessor<cpp2::GetNeighborsRequest,
                              cpp2::GetNeighborsResponse>(env, stats, cache) {}
 
-    StoragePlan<VertexID> buildPlan(nebula::DataSet* result);
+    StoragePlan<VertexID> buildPlan(nebula::DataSet* result,
+                                    int64_t limit = 0,
+                                    bool random = false);
 
     void onProcessFinished() override;
 

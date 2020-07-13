@@ -20,14 +20,16 @@ namespace storage {
 class ScanEdgePropBench : public ::testing::TestWithParam<std::pair<int, int>> {
 };
 
-class TestSingleEdgeIterator : public EdgeIterator {
+class TestSingleEdgeIterator : public StorageIterator {
 public:
     TestSingleEdgeIterator(std::unique_ptr<kvstore::KVIterator> iter,
                            EdgeType edgeType,
                            size_t vIdLen)
         : iter_(std::move(iter))
         , edgeType_(edgeType)
-        , vIdLen_(vIdLen) {}
+        , vIdLen_(vIdLen) {
+        UNUSED(edgeType_);
+    }
 
     bool valid() const override {
         return iter_->valid();
@@ -49,22 +51,6 @@ public:
 
     RowReader* reader() const override {
         return reader_.get();
-    }
-
-    VertexIDSlice srcId() const override {
-        return NebulaKeyUtils::getSrcId(vIdLen_, iter_->key());
-    }
-
-    EdgeType edgeType() const override {
-        return edgeType_;
-    }
-
-    EdgeRanking edgeRank() const override {
-        return NebulaKeyUtils::getRank(vIdLen_, iter_->key());
-    }
-
-    VertexIDSlice dstId() const override {
-        return NebulaKeyUtils::getDstId(vIdLen_, iter_->key());
     }
 
 private:
@@ -150,7 +136,7 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
             ASSERT_TRUE(schema != nullptr);
             auto wrapper = std::make_unique<RowReaderWrapper>();
             ASSERT_TRUE(wrapper->reset(schema.get(), val, readerVer));
-            auto code = node.collectEdgeProps(edgeType, "serve", wrapper.get(),
+            auto code = node.collectEdgeProps(edgeType, wrapper.get(),
                                               key, vIdLen, &props, list);
             ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
             result.mutableList().values.emplace_back(std::move(list));
@@ -177,7 +163,7 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
             reader = RowReader::getEdgePropReader(env->schemaMan_, spaceId,
                                                   std::abs(edgeType), val);
             ASSERT_TRUE(reader.get() != nullptr);
-            auto code = node.collectEdgeProps(edgeType, "serve", reader.get(),
+            auto code = node.collectEdgeProps(edgeType, reader.get(),
                                               key, vIdLen, &props, list);
             ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
             result.mutableList().values.emplace_back(std::move(list));
@@ -209,7 +195,7 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
                 ASSERT_TRUE(reader->resetEdgePropReader(env->schemaMan_, spaceId,
                                                         std::abs(edgeType), val));
             }
-            auto code = node.collectEdgeProps(edgeType, "serve", reader.get(),
+            auto code = node.collectEdgeProps(edgeType, reader.get(),
                                               key, vIdLen, &props, list);
             ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
             result.mutableList().values.emplace_back(std::move(list));
@@ -248,129 +234,13 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
             } else {
                 ASSERT_TRUE(reader->reset(schemas, val));
             }
-            auto code = node.collectEdgeProps(edgeType, "serve", reader.get(),
+            auto code = node.collectEdgeProps(edgeType, reader.get(),
                                               key, vIdLen, &props, list);
             ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
             result.mutableList().values.emplace_back(std::move(list));
         }
         LOG(WARNING) << "ProcessEdgeProps using local schmeas: process " << edgeRowCount
                      << " edges takes " << watch.elapsed().count() << " us.";
-    }
-}
-
-TEST_P(ScanEdgePropBench, EdgeTypePrefixScanVsVertexPrefixScan) {
-    auto param = GetParam();
-    SchemaVer schemaVerCount = param.first;
-    EdgeRanking rankCount = param.second;
-    fs::TempDir rootPath("/tmp/ScanEdgePropBench.XXXXXX");
-    mock::MockCluster cluster;
-    cluster.initStorageKV(rootPath.path(), {"", 0}, schemaVerCount);
-    auto* env = cluster.storageEnv_.get();
-    auto totalParts = cluster.getTotalParts();
-    ASSERT_EQ(true, QueryTestUtils::mockBenchEdgeData(env, totalParts, schemaVerCount, rankCount));
-
-    std::hash<std::string> hash;
-    VertexID vId = "Tim Duncan";
-    GraphSpaceID spaceId = 1;
-    PartitionID partId = (hash(vId) % totalParts) + 1;
-    EdgeType serve = 101, teammate = 102;
-    auto vIdLen = env->schemaMan_->getSpaceVidLen(spaceId).value();
-
-    std::vector<EdgeType> edgeTypes = {serve, teammate};
-    std::vector<std::vector<PropContext>> ctxs;
-    std::vector<PropContext> serveProps;
-    {
-        std::vector<std::string> names = {"playerName", "teamName", "startYear", "endYear"};
-        for (const auto& name : names) {
-            PropContext ctx(name.c_str());
-            ctx.returned_ = true;
-            serveProps.emplace_back(std::move(ctx));
-        }
-        ctxs.emplace_back(serveProps);
-    }
-    std::vector<PropContext> teammateProps;
-    {
-        std::vector<std::string> names = {"teamName", "startYear", "endYear"};
-        for (const auto& name : names) {
-            PropContext ctx(name.c_str());
-            ctx.returned_ = true;
-            teammateProps.emplace_back(std::move(ctx));
-        }
-        ctxs.emplace_back(teammateProps);
-    }
-
-    {
-        // find all version of edge schema
-        auto edgeSchemas = env->schemaMan_->getAllVerEdgeSchema(spaceId);
-        ASSERT_TRUE(edgeSchemas.ok());
-        EdgeContext edgeContext;
-        edgeContext.schemas_ = std::move(edgeSchemas).value();
-        edgeContext.propContexts_.emplace_back(serve, serveProps);
-        edgeContext.propContexts_.emplace_back(teammate, teammateProps);
-        edgeContext.indexMap_.emplace(serve, 0);
-        edgeContext.indexMap_.emplace(teammate, 1);
-        edgeContext.offset_ = 2;
-
-        // build dag with several SingleEdgeNode
-        GetNeighborsProcessor processor(env, nullptr, nullptr);
-        processor.edgeContext_ = std::move(edgeContext);
-        processor.spaceId_ = spaceId;
-        processor.spaceVidLen_ = vIdLen;
-        processor.planContext_ = std::make_unique<PlanContext>(env, spaceId, vIdLen);
-        nebula::DataSet result;
-        auto plan = processor.buildPlan(&result);
-
-        folly::stop_watch<std::chrono::microseconds> watch;
-        auto code = plan.go(partId, vId);
-        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
-        LOG(WARNING) << "GetNeighbors with SingleEdgeNode takes "
-                     << watch.elapsed().count() << " us.";
-    }
-    {
-        // find all version of edge schema
-        auto edgeSchemas = env->schemaMan_->getAllVerEdgeSchema(spaceId);
-        ASSERT_TRUE(edgeSchemas.ok());
-        EdgeContext edgeContext;
-        edgeContext.schemas_ = std::move(edgeSchemas).value();
-        edgeContext.propContexts_.emplace_back(serve, serveProps);
-        edgeContext.propContexts_.emplace_back(teammate, teammateProps);
-        edgeContext.indexMap_.emplace(serve, 0);
-        edgeContext.indexMap_.emplace(teammate, 1);
-        edgeContext.offset_ = 2;
-
-        // build dag with one AllEdgeNode
-        nebula::DataSet result;
-        auto planCtx = std::make_unique<PlanContext>(env, spaceId, vIdLen);
-        auto expCtx = std::make_unique<StorageExpressionContext>(vIdLen);
-
-        StoragePlan<VertexID> plan;
-        std::vector<TagNode*> tags;
-        std::vector<EdgeNode<VertexID>*> edges;
-        auto edgeNode = std::make_unique<AllEdgeNode>(planCtx.get(), &edgeContext);
-        edges.emplace_back(edgeNode.get());
-        plan.addNode(std::move(edgeNode));
-
-        auto hashJoin = std::make_unique<HashJoinNode>(tags, edges, nullptr, &edgeContext, nullptr);
-        for (auto* edge : edges) {
-            hashJoin->addDependency(edge);
-        }
-        auto filter = std::make_unique<FilterNode>(hashJoin.get());
-        filter->addDependency(hashJoin.get());
-        auto agg = std::make_unique<AggregateNode>(filter.get(), &edgeContext);
-        agg->addDependency(filter.get());
-        auto output = std::make_unique<GetNeighborsNode>(
-            planCtx.get(), hashJoin.get(), agg.get(), &edgeContext, &result);
-        output->addDependency(agg.get());
-        plan.addNode(std::move(hashJoin));
-        plan.addNode(std::move(filter));
-        plan.addNode(std::move(agg));
-        plan.addNode(std::move(output));
-
-        folly::stop_watch<std::chrono::microseconds> watch;
-        auto code = plan.go(partId, vId);
-        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
-        LOG(WARNING) << "GetNeighbors with AllEdgeNode takes "
-                     << watch.elapsed().count() << " us.";
     }
 }
 

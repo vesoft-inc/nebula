@@ -914,7 +914,7 @@ std::unordered_map<VertexID, std::vector<EdgeData>> MockData::mockmMultiRankServ
         EdgeRanking rankCount) {
     std::unordered_map<VertexID, std::vector<EdgeData>> ret;
     // add multiple serve edge for benchmark
-    // Use serve data, EdgeType is 101
+    // Use serve data, EdgeType is 101, also use the rank as startYear and endYear
     for (EdgeRanking rank = 0; rank < rankCount; rank++) {
         for (const auto& serve : serves_) {
             EdgeData data;
@@ -926,8 +926,8 @@ std::unordered_map<VertexID, std::vector<EdgeData>> MockData::mockmMultiRankServ
             std::vector<Value> props;
             props.emplace_back(serve.playerName_);
             props.emplace_back(serve.teamName_);
-            props.emplace_back(serve.startYear_);
-            props.emplace_back(serve.endYear_);
+            props.emplace_back(rank);
+            props.emplace_back(rank);
             props.emplace_back(serve.teamCareer_);
             props.emplace_back(serve.teamGames_);
             props.emplace_back(serve.teamAvgScore_);
@@ -943,23 +943,6 @@ std::unordered_map<VertexID, std::vector<EdgeData>> MockData::mockmMultiRankServ
                     props.emplace_back(serve.champions_);
                 }
             }
-            data.props_ = std::move(props);
-            ret[data.srcId_].emplace_back(std::move(data));
-        }
-
-        for (const auto& teammate : teammates_) {
-            EdgeData data;
-            data.srcId_ = teammate.player1_;
-            data.type_ = 102,
-            data.rank_ = rank;
-            data.dstId_ = teammate.player2_;
-
-            std::vector<Value> props;
-            props.emplace_back(teammate.player1_);
-            props.emplace_back(teammate.player2_);
-            props.emplace_back(teammate.teamName_);
-            props.emplace_back(teammate.startYear_);
-            props.emplace_back(teammate.endYear_);
             data.props_ = std::move(props);
             ret[data.srcId_].emplace_back(std::move(data));
         }

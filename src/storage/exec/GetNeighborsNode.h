@@ -8,6 +8,7 @@
 #define STORAGE_EXEC_GETNEIGHBORSNODE_H_
 
 #include "common/base/Base.h"
+#include "common/algorithm/ReservoirSampling.h"
 #include "storage/exec/AggregateNode.h"
 #include "storage/exec/HashJoinNode.h"
 
@@ -23,14 +24,16 @@ class GetNeighborsNode : public QueryNode<VertexID> {
 public:
     GetNeighborsNode(PlanContext* planCtx,
                      HashJoinNode* hashJoinNode,
-                     AggregateNode* AggregateNode,
+                     AggregateNode<VertexID>* aggregateNode,
                      EdgeContext* edgeContext,
-                     nebula::DataSet* resultDataSet)
+                     nebula::DataSet* resultDataSet,
+                     int64_t limit = 0)
         : planContext_(planCtx)
         , hashJoinNode_(hashJoinNode)
-        , aggregateNode_(AggregateNode)
+        , aggregateNode_(aggregateNode)
         , edgeContext_(edgeContext)
-        , resultDataSet_(resultDataSet) {}
+        , resultDataSet_(resultDataSet)
+        , limit_(limit) {}
 
     kvstore::ResultCode execute(PartitionID partId, const VertexID& vId) override {
         auto ret = RelNode::execute(partId, vId);
@@ -52,24 +55,45 @@ public:
         // add default null for each edge node and the last column of yield expression
         row.resize(row.size() + edgeContext_->propContexts_.size() + 1,
                    NullType::__NULL__);
+
+        ret = iterateEdges(row);
+        if (ret != kvstore::ResultCode::SUCCEEDED) {
+            return ret;
+        }
+
+        aggregateNode_->calculateStat();
+        if (aggregateNode_->result().type() == Value::Type::LIST) {
+            // set stat list to second columns
+            row[1].setList(aggregateNode_->mutableResult().moveList());
+        }
+
+        resultDataSet_->rows.emplace_back(std::move(row));
+        return kvstore::ResultCode::SUCCEEDED;
+    }
+
+protected:
+    GetNeighborsNode() = default;
+
+    virtual kvstore::ResultCode iterateEdges(std::vector<Value>& row) {
         int64_t edgeRowCount = 0;
         nebula::List list;
         for (; aggregateNode_->valid(); aggregateNode_->next(), ++edgeRowCount) {
-            auto edgeType = aggregateNode_->edgeType();
+            if (limit_ > 0 && edgeRowCount >= limit_) {
+                return kvstore::ResultCode::SUCCEEDED;
+            }
             auto key = aggregateNode_->key();
             auto reader = aggregateNode_->reader();
-            auto props = aggregateNode_->props();
-            auto columnIdx = aggregateNode_->idx();
-            const auto& edgeName = aggregateNode_->edgeName();
+            auto edgeType = planContext_->edgeType_;
+            auto props = planContext_->props_;
+            auto columnIdx = planContext_->columnIdx_;
 
             // collect props need to return
-            ret = collectEdgeProps(edgeType,
-                                   edgeName,
-                                   reader,
-                                   key,
-                                   planContext_->vIdLen_,
-                                   props,
-                                   list);
+            auto ret = collectEdgeProps(edgeType,
+                                        reader,
+                                        key,
+                                        planContext_->vIdLen_,
+                                        props,
+                                        list);
             if (ret != kvstore::ResultCode::SUCCEEDED) {
                 return ret;
             }
@@ -81,26 +105,90 @@ public:
             auto& cell = row[columnIdx].mutableList();
             cell.values.emplace_back(std::move(list));
         }
-
-        aggregateNode_->calculateStat();
-        if (aggregateNode_->result().type() == Value::Type::LIST) {
-            // set stat list to second columns
-            row[1].setList(aggregateNode_->mutableResult().moveList());
-        }
-
-        DVLOG(1) << vId << " process " << edgeRowCount << " edges in total.";
-        resultDataSet_->rows.emplace_back(std::move(row));
         return kvstore::ResultCode::SUCCEEDED;
     }
 
-private:
-    GetNeighborsNode() = default;
-
     PlanContext* planContext_;
     HashJoinNode* hashJoinNode_;
-    AggregateNode* aggregateNode_;
+    AggregateNode<VertexID>* aggregateNode_;
     EdgeContext* edgeContext_;
     nebula::DataSet* resultDataSet_;
+    int64_t limit_;
+};
+
+class GetNeighborsSampleNode : public GetNeighborsNode {
+public:
+    GetNeighborsSampleNode(PlanContext* planCtx,
+                           HashJoinNode* hashJoinNode,
+                           AggregateNode<VertexID>* aggregateNode,
+                           EdgeContext* edgeContext,
+                           nebula::DataSet* resultDataSet,
+                           int64_t limit)
+        : GetNeighborsNode(planCtx, hashJoinNode, aggregateNode, edgeContext, resultDataSet, limit)
+        , sampler_(std::make_unique<nebula::algorithm::ReservoirSampling<Sample>>(limit_)) {}
+
+private:
+    using Sample = std::tuple<EdgeType,
+                              std::string,
+                              std::string,
+                              const std::vector<PropContext>*,
+                              size_t>;
+
+    kvstore::ResultCode iterateEdges(std::vector<Value>& row) override {
+        int64_t edgeRowCount = 0;
+        nebula::List list;
+        for (; aggregateNode_->valid(); aggregateNode_->next(), ++edgeRowCount) {
+            auto val = aggregateNode_->val();
+            auto key = aggregateNode_->key();
+            auto edgeType = planContext_->edgeType_;
+            auto props = planContext_->props_;
+            auto columnIdx = planContext_->columnIdx_;
+            sampler_->sampling(std::make_tuple(edgeType, val.str(), key.str(), props, columnIdx));
+        }
+
+        std::unique_ptr<RowReader> reader;
+        auto samples = std::move(*sampler_).samples();
+        for (auto& sample : samples) {
+            auto columnIdx = std::get<4>(sample);
+            // add edge prop value to the target column
+            if (row[columnIdx].type() == Value::Type::NULLVALUE) {
+                row[columnIdx].setList(nebula::List());
+            }
+
+            auto edgeType = std::get<0>(sample);
+            auto val = std::get<1>(sample);
+            if (!reader) {
+                reader = RowReader::getEdgePropReader(planContext_->env_->schemaMan_,
+                                                      planContext_->spaceId_,
+                                                      std::abs(edgeType),
+                                                      val);
+                if (!reader) {
+                    continue;
+                }
+            } else if (!reader->resetEdgePropReader(planContext_->env_->schemaMan_,
+                                                    planContext_->spaceId_,
+                                                    std::abs(edgeType),
+                                                    val)) {
+                continue;
+            }
+
+            auto ret = collectEdgeProps(edgeType,
+                                        reader.get(),
+                                        std::get<2>(sample),
+                                        planContext_->vIdLen_,
+                                        std::get<3>(sample),
+                                        list);
+            if (ret != kvstore::ResultCode::SUCCEEDED) {
+                continue;
+            }
+            auto& cell = row[columnIdx].mutableList();
+            cell.values.emplace_back(std::move(list));
+        }
+
+        return kvstore::ResultCode::SUCCEEDED;
+    }
+
+    std::unique_ptr<nebula::algorithm::ReservoirSampling<Sample>> sampler_;
 };
 
 }  // namespace storage

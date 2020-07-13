@@ -87,7 +87,6 @@ public:
 
         std::vector<Value> row;
         for (auto* edgeNode : edgeNodes_) {
-            const auto& edgeName = edgeNode->getEdgeName();
             ret = edgeNode->collectEdgePropsIfValid(
                 [&row] (const std::vector<PropContext>* props) -> kvstore::ResultCode {
                     for (const auto& prop : *props) {
@@ -97,14 +96,13 @@ public:
                     }
                     return kvstore::ResultCode::SUCCEEDED;
                 },
-                [this, &row, &edgeName] (EdgeType edgeType,
-                                         folly::StringPiece key,
-                                         RowReader* reader,
-                                         const std::vector<PropContext>* props)
+                [this, &row] (EdgeType edgeType,
+                              folly::StringPiece key,
+                              RowReader* reader,
+                              const std::vector<PropContext>* props)
                 -> kvstore::ResultCode {
                     nebula::List list;
                     auto code = collectEdgeProps(edgeType,
-                                                 edgeName,
                                                  reader,
                                                  key,
                                                  vIdLen_,

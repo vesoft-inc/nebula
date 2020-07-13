@@ -389,15 +389,34 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp,
                     return cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
                 }
             }
-            addPropContextIfNotExists(edgeContext_.propContexts_,
-                                      edgeContext_.indexMap_,
-                                      edgeContext_.edgeNames_,
-                                      edgeType,
-                                      edgeName,
-                                      propName,
-                                      field,
-                                      returned,
-                                      filtered);
+            /*
+            Because we can't distinguish the edgeType should be positive or negative by edge
+            name, as for expression of edge properties, we need extra information to decide.
+            So when checkExp is called, user need to make sure that related contexts have been
+            set correctly, which are propContexts_, indexMap_, edgeNames_ in EdgeContext.
+            */
+            if (edgeContext_.indexMap_.count(edgeType)) {
+                addPropContextIfNotExists(edgeContext_.propContexts_,
+                                          edgeContext_.indexMap_,
+                                          edgeContext_.edgeNames_,
+                                          edgeType,
+                                          edgeName,
+                                          propName,
+                                          field,
+                                          returned,
+                                          filtered);
+            }
+            if (edgeContext_.indexMap_.count(-edgeType)) {
+                addPropContextIfNotExists(edgeContext_.propContexts_,
+                                          edgeContext_.indexMap_,
+                                          edgeContext_.edgeNames_,
+                                          -edgeType,
+                                          edgeName,
+                                          propName,
+                                          field,
+                                          returned,
+                                          filtered);
+            }
             return cpp2::ErrorCode::SUCCEEDED;
         }
         case Expression::Kind::kInputProperty:

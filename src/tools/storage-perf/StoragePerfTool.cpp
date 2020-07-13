@@ -17,17 +17,22 @@ DEFINE_double(qps, 1000, "Total qps for the perf tool");
 DEFINE_int32(totalReqs, 10000, "Total requests during this perf test");
 DEFINE_int32(io_threads, 10, "Client io threads");
 DEFINE_string(method, "getNeighbors", "method type being tested,"
-                                      "such as getNeighbors, addVertices, addEdges, getVertices");
+                                      "such as getNeighbors, addVertices, addEdges, "
+                                      "getVertices, getEdges");
 DEFINE_string(meta_server_addrs, "", "meta server address");
 DEFINE_int32(min_vertex_id, 1, "The smallest vertex Id, need convert to string");
 DEFINE_int32(max_vertex_id, 10000, "The biggest vertex Id, need convert to string");
-DEFINE_int32(size, 1000, "The data's size per request");
 DEFINE_string(space_name, "test", "Specify the space name");
-DEFINE_string(tag_name, "test_tag", "Specify the tag name");
-DEFINE_string(edge_name, "test_edge", "Specify the edge name");
-DEFINE_bool(random_message, false, "Whether to write random message to storage service");
+DEFINE_string(tag_name, "test_tag", "Specify the tag name, "
+                                    "all property of the tag must be string");
+DEFINE_string(edge_name, "test_edge", "Specify the edge name, "
+                                      "all property of the edge must be string");
+DEFINE_int32(property_size, 1000, "The property size of per property");
+DEFINE_bool(random_message, true, "Whether to write random message to storage service");
 DEFINE_int32(concurrency, 50, "concurrent requests");
 DEFINE_int32(batch_num, 1, "batch vertices for one request");
+
+DECLARE_int32(heartbeat_interval_secs);
 
 namespace nebula {
 namespace storage {
@@ -64,11 +69,22 @@ public:
 
         auto tagResult = mClient_->getTagIDByNameFromCache(spaceId_, FLAGS_tag_name);
         if (!tagResult.ok()) {
-            LOG(ERROR) << "TagID not exist: " << tagResult.status();
-            return EXIT_FAILURE;
+            LOG(ERROR) << "Get tag failed, try to create one: " << tagResult.status();
+            nebula::meta::cpp2::Schema schema;
+            nebula::meta::cpp2::ColumnDef column;
+            column.name = "col_1";
+            column.type = meta::cpp2::PropertyType::STRING;
+            schema.columns.emplace_back(std::move(column));
+            auto ret = mClient_->createTagSchema(spaceId_, FLAGS_tag_name, schema).get();
+            if (!ret.ok()) {
+                LOG(ERROR) << "Create tag failed: " << ret.status();
+                return false;
+            }
+            tagId_ = ret.value();
+            sleep(FLAGS_heartbeat_interval_secs + 1);
+        } else {
+            tagId_ = tagResult.value();
         }
-        tagId_ = tagResult.value();
-
         auto tagSchemaRes = mClient_->getTagSchemaFromCache(spaceId_, tagId_);
         if (!tagSchemaRes.ok()) {
             LOG(ERROR) << "TagID not exist: " << tagSchemaRes.status();
@@ -81,10 +97,22 @@ public:
 
         auto edgeResult = mClient_->getEdgeTypeByNameFromCache(spaceId_, FLAGS_edge_name);
         if (!edgeResult.ok()) {
-            LOG(ERROR) << "EdgeType not exist: " << edgeResult.status();
-            return EXIT_FAILURE;
+            LOG(ERROR) << "Get edge failed, try to create one: " << edgeResult.status();
+            nebula::meta::cpp2::Schema schema;
+            nebula::meta::cpp2::ColumnDef column;
+            column.name = "col_1";
+            column.type = meta::cpp2::PropertyType::STRING;
+            schema.columns.emplace_back(std::move(column));
+            auto ret = mClient_->createEdgeSchema(spaceId_, FLAGS_edge_name, schema).get();
+            if (!ret.ok()) {
+                LOG(ERROR) << "Create tag failed: " << ret.status();
+                return false;
+            }
+            edgeType_ = ret.value();
+            sleep(FLAGS_heartbeat_interval_secs + 1);
+        } else {
+            edgeType_ = edgeResult.value();
         }
-        edgeType_ = edgeResult.value();
         auto edgeSchemaRes = mClient_->getEdgeSchemaFromCache(spaceId_, std::abs(edgeType_));
         if (!edgeSchemaRes.ok()) {
             LOG(ERROR) << "Edge not exist: " << edgeSchemaRes.status();
@@ -107,6 +135,7 @@ public:
             t.join();
         }
 
+        mClient_->stop();
         threadPool_->stop();
         LOG(INFO) << "Total time cost " << duration.elapsedInMSec() << "ms, "
                   << "total requests " << finishedRequests_;
@@ -122,8 +151,12 @@ public:
                 addVerticesTask();
             } else if (FLAGS_method == "addEdges") {
                 addEdgesTask();
-            } else {
+            } else if (FLAGS_method == "getVertices") {
                 getVerticesTask();
+            } else if (FLAGS_method == "getEdges") {
+                getEdgesTask();
+            } else {
+                LOG(FATAL) << "Should not reach here.";
             }
             PLOG_EVERY_N(INFO, 2000)
                 << "Progress "
@@ -142,18 +175,40 @@ private:
                               + folly::Random::rand32(FLAGS_max_vertex_id - FLAGS_min_vertex_id))};
     }
 
+    std::vector<Value> randomEdges() {
+        std::vector<Value> values;
+        auto src = folly::Random::rand32(FLAGS_max_vertex_id - FLAGS_min_vertex_id)
+                   + FLAGS_min_vertex_id;
+        values.emplace_back(std::to_string(src));
+        values.emplace_back(edgeType_);
+        values.emplace_back(0);
+        values.emplace_back(std::to_string(src + 1));
+        return values;
+    }
+
     std::vector<cpp2::VertexProp> vertexProps() {
         std::vector<cpp2::VertexProp> vertexProps;
+        cpp2::VertexProp vertexProp;
+        vertexProp.tag = tagId_;
+        vertexProp.props = tagProps_[tagId_];
+        vertexProps.emplace_back(std::move(vertexProp));
         return vertexProps;
     }
 
     std::vector<cpp2::EdgeProp> edgeProps() {
         std::vector<cpp2::EdgeProp> edgeProps;
+        cpp2::EdgeProp edgeProp;
+        edgeProp.type = edgeType_;
+        edgeProp.props = edgeProps_;
+        edgeProps.emplace_back(std::move(edgeProp));
         return edgeProps;
     }
 
+    // generate `size` properties, if random_message is set, each property will be filled
+    // with random char
     std::vector<Value> genData(int32_t size) {
         std::vector<Value> values;
+        std::string value;
         if (FLAGS_random_message) {
             auto randchar = []() -> char {
                 const char charset[] =
@@ -164,19 +219,14 @@ private:
                 return charset[folly::Random::rand32(maxIndex)];
             };
 
-            for (int32_t index = 0; index < size;) {
-                std::string sval;
-                sval += randchar();
-                Value val(sval);
-                values.emplace_back(val);
-                index++;
+            value.reserve(FLAGS_property_size);
+            // generate random string of length property_size
+            for (int32_t i = 0; i < FLAGS_property_size; i++) {
+                value += randchar();
             }
-        } else {
-            for (int32_t index = 0; index < size;) {
-                Value val("");
-                values.emplace_back(val);
-                index++;
-            }
+        }
+        for (int32_t i = 0; i < size; i++) {
+            values.emplace_back(value);
         }
         return values;
     }
@@ -192,7 +242,7 @@ private:
             decltype(v.tags) newTags;
             storage::cpp2::NewTag newTag;
             newTag.set_tag_id(tagId_);
-            auto props = genData(FLAGS_size);
+            auto props = genData(tagProps_[tagId_].size());
             newTag.set_props(std::move(props));
             newTags.emplace_back(std::move(newTag));
             v.set_tags(std::move(newTags));
@@ -204,16 +254,20 @@ private:
     std::vector<cpp2::NewEdge> genEdges() {
         std::vector<cpp2::NewEdge> edges;
         static int vintId = FLAGS_min_vertex_id;
-        cpp2::NewEdge edge;
-        cpp2::EdgeKey eKey;
-        eKey.set_src(std::to_string(vintId));
-        eKey.set_edge_type(edgeType_);
-        eKey.set_dst(std::to_string(vintId + 1));
-        eKey.set_ranking(0);
-        edge.set_key(std::move(eKey));
-        auto props = genData(FLAGS_size);
-        edge.set_props(std::move(props));
-        edges.emplace_back(std::move(edge));
+
+        for (int32_t i = 0; i < FLAGS_batch_num; i++) {
+            cpp2::NewEdge edge;
+            cpp2::EdgeKey eKey;
+            eKey.set_src(std::to_string(vintId));
+            eKey.set_edge_type(edgeType_);
+            eKey.set_dst(std::to_string(vintId + 1));
+            eKey.set_ranking(0);
+            edge.set_key(std::move(eKey));
+            auto props = genData(edgeProps_.size());
+            edge.set_props(std::move(props));
+            edges.emplace_back(std::move(edge));
+            vintId++;
+        }
         return edges;
     }
 
@@ -313,22 +367,61 @@ private:
     }
 
     void getVerticesTask() {
-        return;
-        /*
         auto* evb = threadPool_->getEventBase();
-        auto f = graphStorageClient_->getVertexProps(spaceId_, randomVertices(), randomCols())
-                    .via(evb).thenValue([this](auto&& resps) {
-                        if (!resps.succeeded()) {
-                            LOG(ERROR) << "Request failed!";
-                        } else {
-                            VLOG(3) << "request successed!";
-                        }
-                        this->finishedRequests_++;
-                        VLOG(3) << "request successed!";
-                     }).thenError([](auto&&) {
-                        LOG(ERROR) << "Request failed!";
-                     });
-        */
+        nebula::DataSet input;
+        input.colNames = {"_vid"};
+        nebula::Row row;
+        auto vertices = randomVertices();
+        for (const auto& vertex : vertices) {
+            row.values.emplace_back(std::move(vertex));
+        }
+        input.emplace_back(std::move(row));
+        auto vProps = vertexProps();
+        auto start = time::WallClock::fastNowInMicroSec();
+        auto f = graphStorageClient_->getProps(spaceId_, std::move(input), &vProps,
+                                               nullptr, nullptr)
+            .via(evb)
+            .thenValue([this, start](auto&& resps) {
+                if (!resps.succeeded()) {
+                    LOG(ERROR) << "Request failed!";
+                } else {
+                    VLOG(3) << "request successed!";
+                }
+                this->finishedRequests_++;
+                auto now = time::WallClock::fastNowInMicroSec();
+                latencies_.addValue(std::chrono::seconds(time::WallClock::fastNowInSec()),
+                                    now - start);
+                qps_.addValue(std::chrono::seconds(time::WallClock::fastNowInSec()), 1);
+            }).thenError([](auto&&) {
+                LOG(ERROR) << "Request failed!";
+            });
+    }
+
+    void getEdgesTask() {
+        auto* evb = threadPool_->getEventBase();
+        nebula::DataSet input;
+        input.colNames = {kSrc, kType, kRank, kDst};
+        nebula::Row row(randomEdges());
+        input.emplace_back(std::move(row));
+        auto eProps = edgeProps();
+        auto start = time::WallClock::fastNowInMicroSec();
+        auto f = graphStorageClient_->getProps(spaceId_, std::move(input), nullptr,
+                                               &eProps, nullptr)
+            .via(evb)
+            .thenValue([this, start](auto&& resps) {
+                if (!resps.succeeded()) {
+                    LOG(ERROR) << "Request failed!";
+                } else {
+                    VLOG(3) << "request successed!";
+                }
+                this->finishedRequests_++;
+                auto now = time::WallClock::fastNowInMicroSec();
+                latencies_.addValue(std::chrono::seconds(time::WallClock::fastNowInSec()),
+                                    now - start);
+                qps_.addValue(std::chrono::seconds(time::WallClock::fastNowInSec()), 1);
+            }).thenError([](auto&&) {
+                LOG(ERROR) << "Request failed!";
+            });
     }
 
 private:

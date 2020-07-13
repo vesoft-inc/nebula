@@ -113,6 +113,10 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const noexcept {
             memcpy(reinterpret_cast<void*>(&strLen),
                    &data_[offset + sizeof(int32_t)],
                    sizeof(int32_t));
+            if (static_cast<size_t>(strOffset) == data_.size() && strLen == 0) {
+                return std::string();
+            }
+            CHECK_LT(strOffset, data_.size());
             return std::string(&data_[strOffset], strLen);
         }
         case meta::cpp2::PropertyType::FIXED_STRING: {

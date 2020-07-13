@@ -41,8 +41,8 @@ TEST(RowWriterV2, NoDefaultValue) {
     schema.appendCol("Col13", PropertyType::INT64, 0, true);
     schema.appendCol("Col14", PropertyType::INT32, 0, true);
 
-ASSERT_EQ(Value::Type::STRING, sVal.type());
-ASSERT_EQ(Value::Type::INT, iVal.type());
+    ASSERT_EQ(Value::Type::STRING, sVal.type());
+    ASSERT_EQ(Value::Type::INT, iVal.type());
 
     RowWriterV2 writer1(&schema);
     EXPECT_EQ(WriteResult::SUCCEEDED, writer1.set(0, true));
@@ -359,6 +359,24 @@ TEST(RowWriterV2, Update) {
     EXPECT_EQ(Value::Type::STRING, v1.type());
     EXPECT_EQ(str, v1.getStr());
     EXPECT_EQ(v1, v2);
+}
+
+TEST(RowWriterV2, EmptyString) {
+    SchemaWriter schema(0 /*Schema version*/);
+    schema.appendCol("Col01", PropertyType::STRING);
+
+    RowWriterV2 writer(&schema);
+    EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col01", ""));
+    ASSERT_EQ(WriteResult::SUCCEEDED, writer.finish());
+
+    std::string encoded = std::move(writer).moveEncodedStr();
+    auto reader = RowReader::getRowReader(&schema, encoded);
+
+    // Col01
+    Value v1 = reader->getValueByName("Col01");
+    Value v2 = reader->getValueByIndex(0);
+    EXPECT_EQ("", v1.getStr());
+    EXPECT_EQ("", v2.getStr());
 }
 
 }  // namespace nebula

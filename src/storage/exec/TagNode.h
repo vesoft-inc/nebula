@@ -15,7 +15,7 @@ namespace nebula {
 namespace storage {
 
 // TagNode will return a DataSet of specified props of tagId
-class TagNode final : public RelNode<VertexID> {
+class TagNode final : public IterateNode<VertexID> {
 public:
     TagNode(PlanContext* planCtx,
             TagContext* ctx,
@@ -29,6 +29,7 @@ public:
         , props_(props)
         , expCtx_(expCtx)
         , exp_(exp) {
+        UNUSED(expCtx_); UNUSED(exp_);
         auto schemaIter = tagContext_->schemas_.find(tagId_);
         CHECK(schemaIter != tagContext_->schemas_.end());
         CHECK(!schemaIter->second.empty());
@@ -49,11 +50,8 @@ public:
             auto result = tagContext_->vertexCache_->get(std::make_pair(vId, tagId_), partId);
             if (result.ok()) {
                 cacheResult_ = std::move(result).value();
-                hitCache_ = true;
+                iter_.reset(new SingleTagIterator(cacheResult_, schemas_, &ttl_));
                 return kvstore::ResultCode::SUCCEEDED;
-            } else {
-                hitCache_ = false;
-                VLOG(1) << "Miss cache for vId " << vId << ", tagId " << tagId_;
             }
         }
 
@@ -61,7 +59,8 @@ public:
         prefix_ = NebulaKeyUtils::vertexPrefix(planContext_->vIdLen_, partId, vId, tagId_);
         ret = planContext_->env_->kvstore_->prefix(planContext_->spaceId_, partId, prefix_, &iter);
         if (ret == kvstore::ResultCode::SUCCEEDED && iter && iter->valid()) {
-            iter_.reset(new SingleTagIterator(std::move(iter), tagId_, planContext_->vIdLen_));
+            iter_.reset(new SingleTagIterator(std::move(iter), tagId_, planContext_->vIdLen_,
+                                              schemas_, &ttl_));
         } else {
             iter_.reset();
         }
@@ -70,36 +69,30 @@ public:
 
     kvstore::ResultCode collectTagPropsIfValid(NullHandler nullHandler,
                                                TagPropHandler valueHandler) {
-        folly::StringPiece value;
-        if (hitCache_) {
-            value = cacheResult_;
-        } else if (iter_ && iter_->valid()) {
-            value = iter_->val();
-        } else {
+        if (!iter_ || !iter_->valid()) {
             return nullHandler(props_);
         }
+        return valueHandler(tagId_, iter_->reader(), props_);
+    }
 
-        if (!reader_) {
-            reader_ = RowReader::getRowReader(*schemas_, value);
-            if (!reader_) {
-                VLOG(1) << "Can't get tag reader of " << tagId_;
-                return kvstore::ResultCode::ERR_TAG_NOT_FOUND;
-            }
-        } else if (!reader_->reset(*schemas_, value)) {
-            return kvstore::ResultCode::ERR_TAG_NOT_FOUND;
-        }
-        if (ttl_.hasValue()) {
-            auto ttlValue = ttl_.value();
-            if (CommonUtils::checkDataExpiredForTTL(schemas_->back().get(), reader_.get(),
-                                                    ttlValue.first, ttlValue.second)) {
-                return nullHandler(props_);
-            }
-        }
-        if (exp_ != nullptr) {
-            // todo(doodle): eval the expression which can be applied to the tag node
-            exp_->eval(*expCtx_);
-        }
-        return valueHandler(tagId_, reader_.get(), props_);
+    bool valid() const override {
+        return iter_->valid();
+    }
+
+    void next() override {
+        iter_->next();
+    }
+
+    folly::StringPiece key() const override {
+        return iter_->key();
+    }
+
+    folly::StringPiece val() const override {
+        return iter_->val();
+    }
+
+    RowReader* reader() const override {
+        return iter_->reader();
     }
 
     const std::string& getTagName() {
@@ -117,11 +110,9 @@ private:
     folly::Optional<std::pair<std::string, int64_t>> ttl_;
     std::string tagName_;
 
-    std::unique_ptr<RowReader> reader_;
     std::unique_ptr<StorageIterator> iter_;
     std::string prefix_;
     std::string cacheResult_;
-    bool hitCache_ = false;
 };
 
 }  // namespace storage

@@ -521,8 +521,7 @@ TEST(GetNeighborsTest, StatTest) {
     }
 }
 
-/*
-TEST(GetNeighborsTest, SampleTest) {
+TEST(GetNeighborsTest, LimitSampleTest) {
     fs::TempDir rootPath("/tmp/GetNeighborsTest.XXXXXX");
     mock::MockCluster cluster;
     cluster.initStorageKV(rootPath.path());
@@ -537,8 +536,7 @@ TEST(GetNeighborsTest, SampleTest) {
     EdgeType teammate = 102;
 
     {
-        FLAGS_max_edge_returned_per_vertex = 10;
-        LOG(INFO) << "SingleEdgeTypeCutOff";
+        LOG(INFO) << "SingleEdgeTypeLimit";
         std::vector<VertexID> vertices = {"Spurs"};
         std::vector<EdgeType> over = {-serve};
         std::vector<std::pair<TagID, std::vector<std::string>>> tags;
@@ -547,6 +545,7 @@ TEST(GetNeighborsTest, SampleTest) {
         edges.emplace_back(-serve, std::vector<std::string>{
                            "playerName", "startYear", "teamCareer"});
         auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
+        req.traverse_spec.set_limit(10);
 
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
         auto fut = processor->getFuture();
@@ -554,13 +553,12 @@ TEST(GetNeighborsTest, SampleTest) {
         auto resp = std::move(fut).get();
         ASSERT_EQ(0, resp.result.failed_parts.size());
         ASSERT_EQ(1, resp.vertices.rows.size());
-        // 4 column, vId, stat, team, -serve
-        ASSERT_EQ(4, resp.vertices.rows[0].columns.size());
-        ASSERT_EQ(10, resp.vertices.rows[0].columns[3].getDataSet().rows.size());
+        // vId, stat, team, -serve, expr
+        ASSERT_EQ(5, resp.vertices.rows[0].values.size());
+        ASSERT_EQ(10, resp.vertices.rows[0].values[3].getList().values.size());
     }
     {
-        FLAGS_max_edge_returned_per_vertex = 4;
-        LOG(INFO) << "MultiEdgeTypeCutOff";
+        LOG(INFO) << "MultiEdgeTypeLimit";
         std::vector<VertexID> vertices = {"Dwyane Wade"};
         std::vector<EdgeType> over = {serve, teammate};
         std::vector<std::pair<TagID, std::vector<std::string>>> tags;
@@ -570,32 +568,90 @@ TEST(GetNeighborsTest, SampleTest) {
         edges.emplace_back(teammate, std::vector<std::string>{"player1", "player2", "teamName"});
 
         auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
+        req.traverse_spec.set_limit(4);
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        // 5 column, vId, stat, player, serve, teammate
+        // vId, stat, player, serve, teammate, expr
         // Dwyane Wad has 4 serve edge, 2 teammate edge
-        // with cut off = 4, only serve edges will be returned
+        // with limit = 4, return all serve edges, none of the teammate edges will be returned
         ASSERT_EQ(0, resp.result.failed_parts.size());
         ASSERT_EQ(1, resp.vertices.rows.size());
-        ASSERT_EQ(5, resp.vertices.rows[0].columns.size());
-        ASSERT_EQ(4, resp.vertices.rows[0].columns[3].getDataSet().rows.size());
-        ASSERT_EQ(NullType::__NULL__, resp.vertices.rows[0].columns[4].getNull());
+        ASSERT_EQ(6, resp.vertices.rows[0].values.size());
+        ASSERT_EQ(4, resp.vertices.rows[0].values[3].getList().values.size());
+        ASSERT_EQ(NullType::__NULL__, resp.vertices.rows[0].values[4].getNull());
     }
     {
-        FLAGS_max_edge_returned_per_vertex = 5;
-        LOG(INFO) << "MultiEdgeTypeCutOff";
+        LOG(INFO) << "SingleEdgeTypeSample";
+        std::vector<VertexID> vertices = {"Spurs"};
+        std::vector<EdgeType> over = {-serve};
+        std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+        std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
+        tags.emplace_back(team, std::vector<std::string>{"name"});
+        edges.emplace_back(-serve, std::vector<std::string>{
+                           "playerName", "startYear", "teamCareer"});
+        auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
+        req.traverse_spec.set_limit(10);
+        req.traverse_spec.set_random(true);
+
+        auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(1, resp.vertices.rows.size());
+        // vId, stat, team, -serve, expr
+        ASSERT_EQ(5, resp.vertices.rows[0].values.size());
+        ASSERT_EQ(10, resp.vertices.rows[0].values[3].getList().values.size());
+    }
+    {
+        LOG(INFO) << "MultiEdgeTypeSample";
         std::vector<VertexID> vertices = {"Dwyane Wade"};
         std::vector<EdgeType> over = {serve, teammate};
         std::vector<std::pair<TagID, std::vector<std::string>>> tags;
         std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
         tags.emplace_back(player, std::vector<std::string>{"name", "age", "avgScore"});
         edges.emplace_back(serve, std::vector<std::string>{"teamName", "startYear", "endYear"});
-        edges.emplace_back(teammate, std::vector<std::string>{"playe1", "player2", "teamName"});
+        edges.emplace_back(teammate, std::vector<std::string>{"player1", "player2", "teamName"});
 
         auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
+        req.traverse_spec.set_limit(4);
+        req.traverse_spec.set_random(true);
+        auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+
+        // vId, stat, player, serve, teammate, expr
+        // Dwyane Wad has 4 serve edge, 2 teammate edge
+        // with sample = 4
+        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(1, resp.vertices.rows.size());
+        ASSERT_EQ(6, resp.vertices.rows[0].values.size());
+        size_t actual = 0;
+        if (resp.vertices.rows[0].values[3].type() == Value::Type::LIST) {
+            actual += resp.vertices.rows[0].values[3].getList().values.size();
+        }
+        if (resp.vertices.rows[0].values[4].type() == Value::Type::LIST) {
+            actual += resp.vertices.rows[0].values[4].getList().values.size();
+        }
+        ASSERT_EQ(4, actual);
+    }
+    {
+        LOG(INFO) << "MultiEdgeTypeSample";
+        std::vector<VertexID> vertices = {"Dwyane Wade"};
+        std::vector<EdgeType> over = {serve, teammate};
+        std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+        std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
+        tags.emplace_back(player, std::vector<std::string>{"name", "age", "avgScore"});
+        edges.emplace_back(serve, std::vector<std::string>{"teamName", "startYear", "endYear"});
+        edges.emplace_back(teammate, std::vector<std::string>{"player1", "player2", "teamName"});
+
+        auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
+        req.traverse_spec.set_limit(5);
+        req.traverse_spec.set_random(true);
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
         auto fut = processor->getFuture();
         processor->process(req);
@@ -603,16 +659,14 @@ TEST(GetNeighborsTest, SampleTest) {
 
         // 5 column, vId, stat, player, serve, teammate
         // Dwyane Wad has 4 serve edge, 2 teammate edge
-        // with cut off = 5, 4 serve edges and 1 teammate edge will be returned
+        // with sample = 5
         ASSERT_EQ(0, resp.result.failed_parts.size());
         ASSERT_EQ(1, resp.vertices.rows.size());
-        ASSERT_EQ(5, resp.vertices.rows[0].columns.size());
-        ASSERT_EQ(4, resp.vertices.rows[0].columns[3].getDataSet().rows.size());
-        ASSERT_EQ(1, resp.vertices.rows[0].columns[4].getDataSet().rows.size());
+        ASSERT_EQ(6, resp.vertices.rows[0].values.size());
+        ASSERT_EQ(5, resp.vertices.rows[0].values[3].getList().values.size() +
+                     resp.vertices.rows[0].values[4].getList().values.size());
     }
-    FLAGS_max_edge_returned_per_vertex = INT_MAX;
 }
-*/
 
 TEST(GetNeighborsTest, VertexCacheTest) {
     fs::TempDir rootPath("/tmp/GetNeighborsTest.XXXXXX");
@@ -1090,6 +1144,7 @@ TEST(GetNeighborsTest, FilterTest) {
     ASSERT_EQ(true, QueryTestUtils::mockEdgeData(env, totalParts));
 
     TagID player = 1;
+    TagID team = 2;
     EdgeType serve = 101;
     EdgeType teammate = 102;
 
@@ -1119,7 +1174,7 @@ TEST(GetNeighborsTest, FilterTest) {
         auto resp = std::move(fut).get();
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
-        // vId, stat, player, serve
+        // vId, stat, player, serve, expr
         nebula::DataSet expected;
         expected.colNames = {"_vid",
                              "_stats",
@@ -1217,7 +1272,7 @@ TEST(GetNeighborsTest, FilterTest) {
         auto resp = std::move(fut).get();
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
-        // vId, stat, player, serve
+        // vId, stat, player, serve, expr
         nebula::DataSet expected;
         expected.colNames = {"_vid",
                              "_stats",
@@ -1268,7 +1323,7 @@ TEST(GetNeighborsTest, FilterTest) {
         auto resp = std::move(fut).get();
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
-        // vId, stat, player, serve
+        // vId, stat, player, serve, expr
         nebula::DataSet expected;
         expected.colNames = {"_vid",
                              "_stats",
@@ -1319,7 +1374,7 @@ TEST(GetNeighborsTest, FilterTest) {
         auto resp = std::move(fut).get();
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
-        // vId, stat, player, serve
+        // vId, stat, player, serve, expr
         nebula::DataSet expected;
         expected.colNames = {"_vid",
                              "_stats",
@@ -1358,6 +1413,8 @@ TEST(GetNeighborsTest, FilterTest) {
             }
         }
         {
+            // same as 1.0, tag data is returned even if can't pass the filter.
+            // no edge satisfies the filter
             nebula::Row row({"Tony Parker",
                             NullType::__NULL__,
                             nebula::List({"Tony Parker", 38, 15.5}),
@@ -1371,7 +1428,8 @@ TEST(GetNeighborsTest, FilterTest) {
             }
         }
         {
-            // same as 1.0, tag data is returned even if can't pass the filter
+            // same as 1.0, tag data is returned even if can't pass the filter.
+            // no edge satisfies the filter
             nebula::Row row({"Manu Ginobili",
                             NullType::__NULL__,
                             nebula::List({"Manu Ginobili", 42, 13.3}),
@@ -1412,7 +1470,7 @@ TEST(GetNeighborsTest, FilterTest) {
         auto resp = std::move(fut).get();
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
-        // vId, stat, player, serve
+        // vId, stat, player, serve, expr
         nebula::DataSet expected;
         expected.colNames = {"_vid",
                              "_stats",
@@ -1432,6 +1490,102 @@ TEST(GetNeighborsTest, FilterTest) {
                          NullType::__NULL__});
         expected.rows.emplace_back(std::move(row));
         ASSERT_EQ(expected, resp.vertices);
+    }
+    {
+        LOG(INFO) << "FilterOnReverseEdge";
+        std::vector<VertexID> vertices = {"Spurs"};
+        std::vector<EdgeType> over = {-serve};
+        std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+        std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
+        tags.emplace_back(team, std::vector<std::string>{"name"});
+        edges.emplace_back(-serve, std::vector<std::string>{"teamName", "startYear", "endYear",
+                                                            kSrc, kDst});
+        auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
+
+        {
+            // The edgeName in exp will be unique, we don't distinguish it from reverse edges.
+            // where reverseServe.teamAvgScore >= 10
+            RelationalExpression exp(
+                Expression::Kind::kRelGE,
+                new EdgePropertyExpression(new std::string(folly::to<std::string>(serve)),
+                                           new std::string("teamAvgScore")),
+                new ConstantExpression(Value(15)));
+            req.traverse_spec.set_filter(Expression::encode(exp));
+        }
+
+        auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+
+        ASSERT_EQ(0, resp.result.failed_parts.size());
+        // vId, stat, player, serve, expr
+        nebula::DataSet expected;
+        expected.colNames = {
+            "_vid",
+            "_stats",
+            "_tag:2:name",
+            folly::stringPrintf("_edge:-101:teamName:startYear:endYear:%s:%s", kSrc, kDst),
+            "_expr"};
+        nebula::Row row({
+            "Spurs",
+            NullType::__NULL__,
+            nebula::List({"Spurs"}),
+            nebula::List({nebula::List({"Spurs", 1997, 2016, "Spurs", "Tim Duncan"}),
+                            nebula::List({"Spurs", 2001, 2018, "Spurs", "Tony Parker"}),
+                            nebula::List({"Spurs", 2015, 2020, "Spurs", "LaMarcus Aldridge"})}),
+            NullType::__NULL__});
+        expected.rows.emplace_back(std::move(row));
+        ASSERT_EQ(expected, resp.vertices);
+    }
+    {
+        LOG(INFO) << "FilterOnBidirectEdge";
+        std::vector<VertexID> vertices = {"Tim Duncan"};
+        std::vector<EdgeType> over = {teammate, -teammate};
+        std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+        std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
+        tags.emplace_back(player, std::vector<std::string>{"name", "age", "avgScore"});
+        edges.emplace_back(teammate, std::vector<std::string>{kSrc, kType, kDst,
+                                                              "teamName", "startYear", "endYear"});
+        edges.emplace_back(-teammate, std::vector<std::string>{kSrc, kType, kDst,
+                                                               "teamName", "startYear", "endYear"});
+        auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
+
+        {
+            // The edgeName in exp will be unique, we don't distinguish it from reverse edges.
+            // where teammate.startYear < 2002
+            RelationalExpression exp(
+                Expression::Kind::kRelLT,
+                new EdgePropertyExpression(new std::string(folly::to<std::string>(teammate)),
+                                           new std::string("startYear")),
+                new ConstantExpression(Value(2002)));
+            req.traverse_spec.set_filter(Expression::encode(exp));
+        }
+        auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+
+        ASSERT_EQ(0, resp.result.failed_parts.size());
+        // vId, stat, player, teammate, -teammate, expr
+        nebula::DataSet expected;
+        expected.colNames = {
+            "_vid",
+            "_stats",
+            "_tag:1:name:age:avgScore",
+            folly::stringPrintf("_edge:+102:%s:%s:%s:teamName:startYear:endYear",
+                                kSrc, kType, kDst),
+            folly::stringPrintf("_edge:-102:%s:%s:%s:teamName:startYear:endYear",
+                                kSrc, kType, kDst),
+            "_expr"};
+        nebula::Row row({
+            "Tim Duncan",
+            NullType::__NULL__,
+            nebula::List({"Tim Duncan", 44, 19.0}),
+            nebula::List(nebula::List({"Tim Duncan", 102, "Tony Parker", "Spurs", 2001, 2016})),
+            nebula::List(nebula::List({"Tim Duncan", -102, "Tony Parker", "Spurs", 2001, 2016})),
+            NullType::__NULL__,
+            NullType::__NULL__});
     }
 }
 

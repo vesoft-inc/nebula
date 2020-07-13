@@ -104,11 +104,14 @@ struct TagContext {
 };
 
 struct EdgeContext {
+    // propContexts_, indexMap_, edgeNames_ will contain both +/- edges
     std::vector<std::pair<EdgeType, std::vector<PropContext>>> propContexts_;
     // indicates whether EdgeType is in propContxts_
     std::unordered_map<EdgeType, size_t> indexMap_;
     // EdgeType -> edgeName
     std::unordered_map<EdgeType, std::string> edgeNames_;
+
+    // schemas_ and ttlInfo_ will contains only + edges
     // EdgeType -> edge schema
     std::unordered_map<EdgeType,
                        std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>> schemas_;
