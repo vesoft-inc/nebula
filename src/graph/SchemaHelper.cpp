@@ -183,6 +183,10 @@ Status SchemaHelper::setTTLCol(SchemaPropItem* schemaProp, nebula::cpp2::Schema&
     }
 
     auto  ttlColName = ret.value();
+    if (ttlColName.empty()) {
+        schema.schema_prop.set_ttl_col("");
+        return Status::OK();
+    }
     // Check the legality of the ttl column name
     for (auto& col : schema.columns) {
         if (col.name == ttlColName) {

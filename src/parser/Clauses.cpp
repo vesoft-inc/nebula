@@ -68,6 +68,7 @@ Status VerticesClause::prepare(Clause::Vertices &vertices) const {
         vertices.vids_.reserve(vidList.size());
         Getters getters;
         for (auto *expr : vidList) {
+            expr->setContext(expCtx_);
             status = expr->prepare();
             if (!status.ok()) {
                 break;
