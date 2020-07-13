@@ -10,32 +10,30 @@
 namespace nebula {
 namespace storage {
 
-Value StorageExpressionContext::value_ = NullType::__NULL__;
-
 // Get the specified property from the edge, such as edgename.prop_name
-const Value& StorageExpressionContext::getEdgeProp(const std::string& edgeName,
-                                                   const std::string& prop) const {
-    if (edgeName != name_) {
-        return Value::kNullValue;
+Value StorageExpressionContext::getEdgeProp(const std::string& edgeName,
+                                            const std::string& prop) const {
+    if (reader_ != nullptr) {
+        if (edgeName != name_) {
+            return Value::kNullValue;
+        }
+        if (prop == kSrc) {
+            return NebulaKeyUtils::getSrcId(vIdLen_, key_);
+        } else if (prop == kDst) {
+            return NebulaKeyUtils::getDstId(vIdLen_, key_);
+        } else if (prop == kRank) {
+            return NebulaKeyUtils::getRank(vIdLen_, key_);
+        } else if (prop == kType) {
+            return NebulaKeyUtils::getEdgeType(vIdLen_, key_);
+        } else {
+            return reader_->getValueByName(prop);
+        }
     }
-    if (prop == kSrc) {
-        value_ = NebulaKeyUtils::getSrcId(vIdLen_, key_);
-    } else if (prop == kDst) {
-        value_ = NebulaKeyUtils::getDstId(vIdLen_, key_);
-    } else if (prop == kRank) {
-        value_ = NebulaKeyUtils::getRank(vIdLen_, key_);
-    } else if (prop == kType) {
-        value_ = NebulaKeyUtils::getEdgeType(vIdLen_, key_);
-    } else {
-        // todo(doodle): const reference... wait change return value type by value,
-        // and we need to use schema to get default value if necessary
-        value_ = reader_->getValueByName(prop);
-    }
-    return value_;
+    return Value::kNullValue;
 }
 
-const Value& StorageExpressionContext::getSrcProp(const std::string& tagName,
-                                                  const std::string& prop) const {
+Value StorageExpressionContext::getSrcProp(const std::string& tagName,
+                                           const std::string& prop) const {
     auto iter = tagFilters_.find(std::make_pair(tagName, prop));
     if (iter == tagFilters_.end()) {
         return Value::kNullValue;

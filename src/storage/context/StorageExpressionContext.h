@@ -53,12 +53,11 @@ public:
     }
 
     // Get the specified property from the edge, such as edgename.prop_name
-    const Value& getEdgeProp(const std::string& edgeName,
-                             const std::string& prop) const override;
+    Value getEdgeProp(const std::string& edgeName, const std::string& prop) const override;
 
     // Get the specified property of tagName from the source vertex,
     // such as $^.tagName.prop_name
-    const Value& getSrcProp(const std::string& tagName, const std::string& prop) const override;
+    Value getSrcProp(const std::string& tagName, const std::string& prop) const override;
 
     void setVar(const std::string&, Value) override {}
 
@@ -75,8 +74,6 @@ public:
 private:
     size_t vIdLen_;
 
-    // todo(doodle): temp solution because need to return const reference
-    static Value value_;
     folly::StringPiece key_;
     RowReader* reader_;
     // tag or edge name
