@@ -37,12 +37,12 @@ public:
                                     const std::string& prop) const = 0;
 
     // Get the specified property from the edge, such as edge_type.prop_name
-    virtual const Value& getEdgeProp(const std::string& edgeType,
-                                     const std::string& prop) const = 0;
+    virtual Value getEdgeProp(const std::string& edgeType,
+                              const std::string& prop) const = 0;
 
     // Get the specified property from the source vertex, such as $^.tag_name.prop_name
-    virtual const Value& getSrcProp(const std::string& tag,
-                                    const std::string& prop) const = 0;
+    virtual Value getSrcProp(const std::string& tag,
+                             const std::string& prop) const = 0;
 
     // Get the specified property from the destination vertex, such as $$.tag_name.prop_name
     virtual const Value& getDstProp(const std::string& tag,

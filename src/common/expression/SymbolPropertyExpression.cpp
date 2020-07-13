@@ -47,12 +47,12 @@ void SymbolPropertyExpression::resetFrom(Decoder& decoder) {
 
 
 const Value& EdgePropertyExpression::eval(ExpressionContext& ctx) {
-    return ctx.getEdgeProp(*sym_, *prop_);
+    result_ = ctx.getEdgeProp(*sym_, *prop_);
+    return result_;
 }
 
 
 const Value& InputPropertyExpression::eval(ExpressionContext& ctx) {
-    // TODO
     return ctx.getInputProp(*prop_);
 }
 
@@ -63,7 +63,8 @@ const Value& VariablePropertyExpression::eval(ExpressionContext& ctx) {
 
 
 const Value& SourcePropertyExpression::eval(ExpressionContext& ctx) {
-    return ctx.getSrcProp(*sym_, *prop_);
+    result_ = ctx.getSrcProp(*sym_, *prop_);
+    return result_;
 }
 
 
@@ -73,22 +74,26 @@ const Value& DestPropertyExpression::eval(ExpressionContext& ctx) {
 
 
 const Value& EdgeSrcIdExpression::eval(ExpressionContext& ctx) {
-    return ctx.getEdgeProp(*sym_, *prop_);
+    result_ = ctx.getEdgeProp(*sym_, *prop_);
+    return result_;
 }
 
 
 const Value& EdgeTypeExpression::eval(ExpressionContext& ctx) {
-    return ctx.getEdgeProp(*sym_, *prop_);
+    result_ = ctx.getEdgeProp(*sym_, *prop_);
+    return result_;
 }
 
 
 const Value& EdgeRankExpression::eval(ExpressionContext& ctx) {
-    return ctx.getEdgeProp(*sym_, *prop_);
+    result_ = ctx.getEdgeProp(*sym_, *prop_);
+    return result_;
 }
 
 
 const Value& EdgeDstIdExpression::eval(ExpressionContext& ctx) {
-    return ctx.getEdgeProp(*sym_, *prop_);
+    result_ = ctx.getEdgeProp(*sym_, *prop_);
+    return result_;
 }
 
 std::string EdgePropertyExpression::toString() const {
