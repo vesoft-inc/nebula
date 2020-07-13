@@ -8,6 +8,8 @@
 namespace cpp nebula
 namespace java com.vesoft.nebula
 namespace go nebula
+namespace js nebula
+namespace csharp nebula
 
 cpp_include "common/thrift/ThriftTypes.h"
 cpp_include "common/datatypes/DateOps.h"

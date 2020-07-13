@@ -7,6 +7,8 @@
 namespace cpp nebula.graph
 namespace java com.vesoft.nebula.graph
 namespace go nebula.graph
+namespace js nebula.graph
+namespace csharp nebula.graph
 
 include "common.thrift"
 

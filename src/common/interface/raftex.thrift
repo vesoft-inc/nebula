@@ -7,6 +7,8 @@
 namespace cpp nebula.raftex
 namespace java com.vesoft.nebula.raftex
 namespace go nebula.raftex
+namespace js nebula.raftex
+namespace csharp nebula.raftex
 
 cpp_include "common/thrift/ThriftTypes.h"
 
