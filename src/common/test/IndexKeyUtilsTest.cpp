@@ -172,8 +172,8 @@ TEST(IndexKeyUtilsTest, nullableValue) {
         std::string raw;
         std::vector<Value> values;
         std::vector<Value::Type> colsType;
-        for (int64_t j = 2; j <= 7; j++) {
-            auto type = Value::Type(j);
+        for (int64_t j = 1; j <= 6; j++) {
+            auto type = Value::Type(1UL << j);
             values.emplace_back(Value(NullType::__NULL__));
             colsType.emplace_back(type);
         }
@@ -213,8 +213,8 @@ TEST(IndexKeyUtilsTest, nullableValue) {
         std::vector<Value> values;
         std::vector<Value::Type> colsType;
         for (int64_t i = 0; i <2; i++) {
-            for (int64_t j = 2; j <= 7; j++) {
-                auto type = Value::Type(j);
+            for (int64_t j = 1; j <= 6; j++) {
+                auto type = Value::Type(1UL << j);
                 values.emplace_back(Value(NullType::__NULL__));
                 colsType.emplace_back(type);
             }
@@ -244,9 +244,9 @@ TEST(IndexKeyUtilsTest, nullableValue) {
         }
         std::vector<Value::Type> colsType;
         for (int64_t i = 0; i <2; i++) {
-            for (int64_t j = 2; j <= 7; j++) {
-                auto type = Value::Type(j);
-                if (j%2 == 0) {
+            for (int64_t j = 1; j <= 6; j++) {
+                auto type = Value::Type(1UL << j);
+                if (j%2 == 1) {
                     values.emplace_back(Value(NullType::__NULL__));
                 } else {
                     values.emplace_back(mockValues[type]);

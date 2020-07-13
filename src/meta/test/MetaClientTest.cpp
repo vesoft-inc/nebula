@@ -978,6 +978,7 @@ TEST(MetaClientTest, DiffTest) {
     sleep(FLAGS_heartbeat_interval_secs + 1);
     ASSERT_EQ(1, listener->spaceNum);
     ASSERT_EQ(9, listener->partNum);
+    client->unRegisterListener();
 }
 
 TEST(MetaClientTest, HeartbeatTest) {
