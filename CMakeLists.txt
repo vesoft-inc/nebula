@@ -16,8 +16,9 @@
 #   NEBULA_COMMON_REPO_URL         -- Git URL for the nebula-common repo
 #   NEBULA_COMMON_REPO_TAG         -- Tag/branch of the nebula-common repo
 #
-#   NEBULA_STORAGE_REPO_URL         -- Git URL for the nebula-storage repo
-#   NEBULA_STORAGE_REPO_TAG         -- Tag/branch of the nebula-storage repo
+#   NEBULA_STORAGE_REPO_URL        -- Git URL for the nebula-storage repo
+#   NEBULA_STORAGE_REPO_TAG        -- Tag/branch of the nebula-storage repo
+#   ENABLE_BUILD_STORAGE           -- Build storage repo
 #
 #   ENABLE_JEMALLOC                -- Link jemalloc into all executables
 #   ENABLE_NATIVE                  -- Build native client
@@ -76,29 +77,32 @@ find_package(${NEBULA_COMMON_PACKAGE} REQUIRED)
 message(STATUS ">>>>> The nebula-common repo has been configured successfully <<<<<")
 message(STATUS "")
 
-if("${NEBULA_STORAGE_REPO_URL}" STREQUAL "")
-    SET(NEBULA_STORAGE_REPO_URL "git@github.com:vesoft-inc-private/nebula-storage.git")
+if(ENABLE_BUILD_STORAGE)
+
+    if("${NEBULA_STORAGE_REPO_URL}" STREQUAL "")
+        SET(NEBULA_STORAGE_REPO_URL "git@github.com:vesoft-inc-private/nebula-storage.git")
+    endif()
+
+    if("${NEBULA_STORAGE_REPO_TAG}" STREQUAL "")
+        SET(NEBULA_STORAGE_REPO_TAG "master")
+    endif()
+
+    SET(NEBULA_COMMON_PACKAGE "nebula-storage")
+    SET(nebula-storage_DIR ${CMAKE_CURRENT_SOURCE_DIR}/modules/storage)
+
+    # Configure the dependent projects
+    message(STATUS "")
+    message(STATUS ">>>>> Configuring the nebula-storage repo <<<<<")
+    add_dependent_project(
+        ${NEBULA_HOME}/modules
+        storage
+        ${NEBULA_STORAGE_REPO_URL}
+        ${NEBULA_STORAGE_REPO_TAG}
+    )
+    find_package(${NEBULA_STORAGE_PACKAGE} REQUIRED)
+    message(STATUS ">>>>> The nebula-storage repo has been configured successfully <<<<<")
+    message(STATUS "")
 endif()
-
-if("${NEBULA_STORAGE_REPO_TAG}" STREQUAL "")
-    SET(NEBULA_STORAGE_REPO_TAG "master")
-endif()
-
-SET(NEBULA_COMMON_PACKAGE "nebula-storage")
-SET(nebula-storage_DIR ${CMAKE_CURRENT_SOURCE_DIR}/modules/storage)
-
-# Configure the dependent projects
-message(STATUS "")
-message(STATUS ">>>>> Configuring the nebula-storage repo <<<<<")
-add_dependent_project(
-    ${NEBULA_HOME}/modules
-    storage
-    ${NEBULA_STORAGE_REPO_URL}
-    ${NEBULA_STORAGE_REPO_TAG}
-)
-find_package(${NEBULA_STORAGE_PACKAGE} REQUIRED)
-message(STATUS ">>>>> The nebula-storage repo has been configured successfully <<<<<")
-message(STATUS "")
 
 add_subdirectory(tests)
 
@@ -122,6 +126,7 @@ option(ENABLE_TSAN "Whether to turn Thread Sanitizer ON or OFF" OFF)
 option(ENABLE_STATIC_ASAN "Whether directs the GCC driver to link libasan statically" OFF)
 option(ENABLE_STATIC_UBSAN "Whether directs the GCC driver to link libubsan statically" OFF)
 option(ENABLE_PACK_ONE "Whether to package into one" ON)
+option(ENABLE_BUILD_STORAGE "Whether to build storage" OFF)
 
 message(STATUS "ENABLE_ASAN: ${ENABLE_ASAN}")
 message(STATUS "ENABLE_TESTING: ${ENABLE_TESTING}")

@@ -33,12 +33,12 @@ public:
                             const std::string& prop) const override;
 
     // Get the specified property from the edge, such as edge_type.prop_name
-    const Value& getEdgeProp(const std::string& edge,
-                             const std::string& prop) const override;
+    Value getEdgeProp(const std::string& edge,
+                      const std::string& prop) const override;
 
     // Get the specified property from the source vertex, such as $^.prop_name
-    const Value& getSrcProp(const std::string& tag,
-                            const std::string& prop) const override;
+    Value getSrcProp(const std::string& tag,
+                     const std::string& prop) const override;
 
     // Get the specified property from the destination vertex, such as $$.prop_name
     const Value& getDstProp(const std::string& tag,

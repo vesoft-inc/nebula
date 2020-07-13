@@ -43,8 +43,8 @@ const Value& ExpressionContextImpl::getVarProp(const std::string& var,
     }
 }
 
-const Value& ExpressionContextImpl::getEdgeProp(const std::string& edge,
-                                                const std::string& prop) const {
+Value ExpressionContextImpl::getEdgeProp(const std::string& edge,
+                                         const std::string& prop) const {
     if (iter_ != nullptr) {
         return iter_->getEdgeProp(edge, prop);
     } else {
@@ -52,8 +52,8 @@ const Value& ExpressionContextImpl::getEdgeProp(const std::string& edge,
     }
 }
 
-const Value& ExpressionContextImpl::getSrcProp(const std::string& tag,
-                                               const std::string& prop) const {
+Value ExpressionContextImpl::getSrcProp(const std::string& tag,
+                                        const std::string& prop) const {
     if (iter_ != nullptr) {
         return iter_->getTagProp(tag, prop);
     } else {
