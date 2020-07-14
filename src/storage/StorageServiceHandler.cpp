@@ -27,8 +27,7 @@
 #include "storage/admin/SendBlockSignProcessor.h"
 #include "storage/admin/RebuildTagIndexProcessor.h"
 #include "storage/admin/RebuildEdgeIndexProcessor.h"
-#include "storage/index/LookUpVertexIndexProcessor.h"
-#include "storage/index/LookUpEdgeIndexProcessor.h"
+#include "storage/index/LookUpIndexProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -38,6 +37,7 @@
 DEFINE_int32(vertex_cache_num, 16 * 1000 * 1000, "Total keys inside the cache");
 DEFINE_int32(vertex_cache_bucket_exp, 4, "Total buckets number is 1 << cache_bucket_exp");
 DEFINE_int32(reader_handlers, 32, "Total reader handlers");
+DEFINE_string(reader_handlers_type, "cpu", "Type of reader handlers, options: cpu,io");
 
 namespace nebula {
 namespace storage {
@@ -247,22 +247,13 @@ StorageServiceHandler::future_rebuildEdgeIndex(const cpp2::RebuildIndexRequest& 
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::LookUpVertexIndexResp>
-StorageServiceHandler::future_lookUpVertexIndex(const cpp2::LookUpIndexRequest& req) {
-    auto* processor = LookUpVertexIndexProcessor::instance(kvstore_,
-                                                           schemaMan_,
-                                                           indexMan_,
-                                                           &lookupVerticesQpsStat_,
-                                                           &vertexCache_);
-    RETURN_FUTURE(processor);
-}
-
-folly::Future<cpp2::LookUpEdgeIndexResp>
-StorageServiceHandler::future_lookUpEdgeIndex(const cpp2::LookUpIndexRequest& req) {
-    auto* processor = LookUpEdgeIndexProcessor::instance(kvstore_,
-                                                         schemaMan_,
-                                                         indexMan_,
-                                                         &lookupEdgesQpsStat_);
+folly::Future<cpp2::LookUpIndexResp>
+StorageServiceHandler::future_lookUpIndex(const cpp2::LookUpIndexRequest& req) {
+    auto* processor = LookUpIndexProcessor::instance(kvstore_,
+                                                     schemaMan_,
+                                                     indexMan_,
+                                                     &lookupVerticesQpsStat_,
+                                                     &vertexCache_);
     RETURN_FUTURE(processor);
 }
 

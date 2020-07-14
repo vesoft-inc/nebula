@@ -21,7 +21,7 @@ fi
 }
 
 version=7.5.0
-url_base=https://nebula-graph.oss-accelerate.aliyuncs.com/toolset
+url_base=https://oss-cdn.nebula-graph.com.cn/toolset
 this_dir=$(dirname $(readlink -f $0))
 
 # We consider two derivatives: Red Hat and Debian

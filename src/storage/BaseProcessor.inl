@@ -118,20 +118,22 @@ kvstore::ResultCode BaseProcessor<RESP>::doRangeWithPrefix(
 }
 
 template <typename RESP>
-IndexValues
+StatusOr<IndexValues>
 BaseProcessor<RESP>::collectIndexValues(RowReader* reader,
                                         const std::vector<nebula::cpp2::ColumnDef>& cols) {
     IndexValues values;
     if (reader == nullptr) {
-        return values;
+        return Status::Error("Invalid row reader");
     }
     for (auto& col : cols) {
         auto res = RowReader::getPropByName(reader, col.get_name());
-        if (!ok(res)) {
-            LOG(ERROR) << "Skip bad column prop " << col.get_name();
+        if (ok(res)) {
+            auto val = NebulaKeyUtils::encodeVariant(value(std::move(res)));
+            values.emplace_back(col.get_type().get_type(), std::move(val));
+        } else {
+            LOG(ERROR) << "Skip bad column prop : " << col.get_name();
+            return Status::Error("Skip bad column prop : %s", col.get_name().c_str());
         }
-        auto val = NebulaKeyUtils::encodeVariant(value(std::move(res)));
-        values.emplace_back(col.get_type().get_type(), std::move(val));
     }
     return values;
 }

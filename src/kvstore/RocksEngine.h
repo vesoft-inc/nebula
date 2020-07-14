@@ -112,7 +112,8 @@ public:
     std::unique_ptr<WriteBatch> startBatchWrite() override;
 
     ResultCode commitBatchWrite(std::unique_ptr<WriteBatch> batch,
-                                bool disableWAL) override;
+                                bool disableWAL,
+                                bool sync) override;
 
     /*********************
      * Data retrieval

@@ -15,6 +15,8 @@ namespace storage {
 template <typename RESP>
 cpp2::ErrorCode IndexExecutor<RESP>::prepareRequest(const cpp2::LookUpIndexRequest &req) {
     spaceId_ = req.get_space_id();
+    isEdgeIndex_ = req.get_is_edge();
+
     /**
      * step 1 , check index meta , and collect index variable-length type of columns.
      */
@@ -276,11 +278,10 @@ std::string IndexExecutor<RESP>::getRowFromReader(RowReader* reader) {
 
 template<typename RESP>
 bool IndexExecutor<RESP>::conditionsCheck(const folly::StringPiece& key) {
-    UNUSED(key);
     Getters getters;
     getters.getAliasProp = [this, &key](const std::string&,
                                         const std::string &prop) -> OptVariantType {
-            return decodeValue(key, prop);
+        return decodeValue(key, prop);
     };
     return exprEval(getters);
 }

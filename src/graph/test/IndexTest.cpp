@@ -160,11 +160,15 @@ TEST_F(IndexTest, TagIndex) {
         std::string query = "SHOW CREATE TAG INDEX multi_person_index";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::string createTagIndex = "CREATE TAG INDEX multi_person_index ON person(name, email)";
+        std::string createTagIndex = "CREATE TAG INDEX `multi_person_index` "
+                                     "ON `person`(`name`, `email`)";
         std::vector<std::tuple<std::string, std::string>> expected{
             {"multi_person_index", createTagIndex},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        query = "DROP TAG INDEX multi_person_index;" + createTagIndex;
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     // List Tag Indexes
     {
@@ -172,11 +176,11 @@ TEST_F(IndexTest, TagIndex) {
         std::string query = "Show TAG INDEXES";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<int32_t, std::string>> expected{
-            {4, "single_person_index"},
-            {5, "multi_person_index"},
+        std::vector<std::tuple<std::string>> expected{
+            {"single_person_index"},
+            {"multi_person_index"},
         };
-        ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_TRUE(verifyResult(resp, expected, true, {0}));
     }
     // Drop Tag Index
     {
@@ -342,13 +346,16 @@ TEST_F(IndexTest, EdgeIndex) {
         cpp2::ExecutionResponse resp;
         std::string query = "SHOW CREATE EDGE INDEX multi_friend_index";
         auto code = client->execute(query, resp);
-        std::string createTagIndex = "CREATE EDGE INDEX multi_friend_index ON "
-                                     "friend(degree, start_time)";
+        std::string createEdgeIndex = "CREATE EDGE INDEX `multi_friend_index` ON "
+                                      "`friend`(`degree`, `start_time`)";
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<std::string, std::string>> expected{
-            {"multi_friend_index", createTagIndex},
+            {"multi_friend_index", createEdgeIndex},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+        query = "DROP EDGE INDEX multi_friend_index;" + createEdgeIndex;
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     // List Edge Indexes
     {
@@ -356,11 +363,11 @@ TEST_F(IndexTest, EdgeIndex) {
         std::string query = "SHOW EDGE INDEXES";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<int32_t, std::string>> expected{
-            {9, "single_friend_index"},
-            {10, "multi_friend_index"},
+        std::vector<std::tuple<std::string>> expected{
+            {"single_friend_index"},
+            {"multi_friend_index"},
         };
-        ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_TRUE(verifyResult(resp, expected, true, {0}));
     }
     // Drop Edge Index
     {
@@ -684,6 +691,229 @@ TEST_F(IndexTest, EdgeIndexTTL) {
         std::string query = "DROP SPACE edge_ttl_index_space";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+}
+
+TEST_F(IndexTest, AlterTag) {
+    auto client = gEnv->getClient();
+    ASSERT_NE(nullptr, client);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE SPACE tag_index_space(partition_num=1, replica_factor=1)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        query = "USE tag_index_space";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        query = "CREATE TAG person(name string, age int, gender string, email string)";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    // Single Tag Single Field
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG INDEX single_person_index ON person(name)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "INSERT VERTEX person(name, age, gender, email) VALUES "
+                     "100:  (\"Tim\",  18, \"M\", \"tim@ve.com\")";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "ALTER TAG person ADD (col1 int)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    // Single Tag Single Field
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG INDEX single_person_index2 ON person(col1)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "INSERT VERTEX person(name, age, gender, email, col1) VALUES "
+                     "100:(\"Tim\",  18, \"M\", \"tim@ve.com\", 5)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON person WHERE person.col1 == 5 YIELD person.col1, person.name";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID, int64_t, std::string>> expected = {
+            {100, 5, "Tim"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON person where person.name == \"Tim\" YIELD person.name, person.col1";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID, std::string, int64_t>> expected = {
+            {100, "Tim", 5},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+bool verifyIndexStatus(GraphClient* client , bool isEdge) {
+    for (auto retry = 1; retry <= 3; retry++) {
+        cpp2::ExecutionResponse resp;
+        std::string query = isEdge ? "SHOW EDGE INDEX STATUS" : "SHOW TAG INDEX STATUS";
+        auto code = client->execute(query, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return false;
+        }
+        auto rows = *resp.get_rows();
+        const auto &columns = rows[0].get_columns();
+        if ("RUNNING" != columns[1].get_str()) {
+            return true;
+        }
+        sleep(1);
+    }
+    return false;
+}
+
+TEST_F(IndexTest, RebuildTagIndexStatusInfo) {
+    auto client = gEnv->getClient();
+    ASSERT_NE(nullptr, client);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE SPACE tag_status_space(partition_num=1, replica_factor=1)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        query = "USE tag_status_space";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        query = "CREATE TAG tag_status(name string)";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG INDEX tag_index_status ON tag_status(name)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW TAG INDEX STATUS";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(0, resp.get_rows()->size());
+    }
+    // Rebuild Tag Index
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "REBUILD TAG INDEX tag_index_status OFFLINE";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        ASSERT_TRUE(verifyIndexStatus(client.get(), false));
+    }
+    // Drop Tag Index
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DROP TAG INDEX tag_index_status";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        query = "DESCRIBE TAG INDEX tag_index_status";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    // rebuild index status deleted.
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW TAG INDEX STATUS";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(0, resp.get_rows()->size());
+    }
+}
+
+TEST_F(IndexTest, RebuildEdgeIndexStatusInfo) {
+    auto client = gEnv->getClient();
+    ASSERT_NE(nullptr, client);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE SPACE edge_status_space(partition_num=1, replica_factor=1)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        query = "USE edge_status_space";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        query = "CREATE EDGE edge_status(name string)";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE EDGE INDEX edge_index_status ON edge_status(name)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW EDGE INDEX STATUS";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(0, resp.get_rows()->size());
+    }
+    // Rebuild Edge Index
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "REBUILD EDGE INDEX edge_index_status OFFLINE";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        ASSERT_TRUE(verifyIndexStatus(client.get(), true));
+    }
+    // Drop Edge Index
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DROP EDGE INDEX edge_index_status";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        query = "DESCRIBE EDGE INDEX edge_index_status";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    // rebuild index status deleted.
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW EDGE INDEX STATUS";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(0, resp.get_rows()->size());
     }
 }
 

@@ -99,6 +99,7 @@ public:
     STATUS_GENERATOR(Error);
     STATUS_GENERATOR(NoSuchFile);
     STATUS_GENERATOR(NotSupported);
+    STATUS_GENERATOR(InvalidParameter);
 
     // Graph engine errors
     STATUS_GENERATOR(SyntaxError);
@@ -142,6 +143,7 @@ public:
         kError            = 101,
         kNoSuchFile       = 102,
         kNotSupported     = 103,
+        kInvalidParameter       = 104,
         // 2xx, for graph engine errors
         kSyntaxError      = 201,
         kStatementEmpty   = 202,

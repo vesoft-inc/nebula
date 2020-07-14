@@ -28,6 +28,21 @@ void DropEdgeIndexProcessor::process(const cpp2::DropEdgeIndexReq& req) {
     }
 
     std::vector<std::string> keys;
+    // delete rebuild index status info
+    auto indexStatusKey = MetaServiceUtils::rebuildIndexStatus(spaceID, 'E', indexName);
+    std::string status;
+    auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, indexStatusKey, &status);
+    if (ret == kvstore::ResultCode::SUCCEEDED) {
+        if (status == "RUNNING") {
+            LOG(ERROR) << "Edge Index status is RUNNING, drop index is not allowed. Index : "
+                       << indexName;
+            handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
+            onFinished();
+            return;
+        } else {
+            keys.emplace_back(std::move(indexStatusKey));
+        }
+    }
     keys.emplace_back(MetaServiceUtils::indexIndexKey(spaceID, indexName));
     keys.emplace_back(MetaServiceUtils::indexKey(spaceID, edgeIndexID.value()));
 
