@@ -65,6 +65,8 @@ public:
     // Connect to the HBase thrift server.
     void init();
 
+    void stop() override {}
+
     uint32_t capability() const override {
         return 0;
     }

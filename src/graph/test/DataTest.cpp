@@ -85,7 +85,8 @@ AssertionResult DataTest::prepareSchema() {
                                                        "isMarried bool DEFAULT false, "
                                                        "BMI double DEFAULT 18.5, "
                                                        "department string DEFAULT \"engineering\","
-                                                       "birthday timestamp DEFAULT 0)";
+                                                       "birthday timestamp DEFAULT "
+                                                       "\"2020-01-10 10:00:00\")";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
             return TestError() << "Do cmd:" << cmd
@@ -831,13 +832,15 @@ TEST_F(DataTest, InsertWithDefaultValueTest) {
         cpp2::ExecutionResponse resp;
         std::string cmd = "GO FROM hash(\"Lucy\") OVER schoolmateWithDefault YIELD "
                           "schoolmateWithDefault.likeness, $$.personWithDefault.name,"
+                          "$$.personWithDefault.birthday, $$.personWithDefault.department,"
                           "$$.studentWithDefault.grade, $$.studentWithDefault.number";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        using valueType = std::tuple<int64_t, std::string, std::string, int64_t>;
+        using valueType = std::tuple<int64_t, std::string, int64_t,
+                                     std::string, std::string, int64_t>;
         std::vector<valueType> expected = {
-            {80, "Laura", "one", 20190901008},
-            {80, "Amber", "one", 20180901003},
+            {80, "Laura", 1578621600, "engineering", "one", 20190901008},
+            {80, "Amber", 1578621600, "engineering", "one", 20180901003},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -993,7 +996,7 @@ static inline void execute(GraphClient* client, const std::string& nGQL) {
     ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << "Do cmd:" << nGQL << " failed";
 }
 
-class FetchEmptyPropsTest : public ::testing::Test {
+class FetchEmptyPropsTest : public TestBase {
 protected:
     void SetUp() override {
         // Access the Nebula Environment
@@ -1016,7 +1019,8 @@ private:
 
         const std::vector<std::string> queries = {
             "USE empty",
-            "CREATE TAG empty_tag()",
+            "CREATE TAG empty_tag_0()",
+            "CREATE TAG empty_tag_1()",
             "CREATE EDGE empty_edge()"
         };
 
@@ -1029,7 +1033,8 @@ private:
 
     void prepareData() {
         const std::vector<std::string> queries = {
-            "INSERT VERTEX empty_tag() values 1:(), 2:()",
+            "INSERT VERTEX empty_tag_0() values 1:(), 2:()",
+            "INSERT VERTEX empty_tag_1() values 1:(), 2:()",
             "INSERT EDGE empty_edge() values 1->2:()",
         };
 
@@ -1039,40 +1044,64 @@ private:
     }
 };
 
-static inline void assertEmptyResult(GraphClient* client, const std::string& stmt) {
-    cpp2::ExecutionResponse resp;
-    auto code = DCHECK_NOTNULL(client)->execute(stmt, resp);
-    ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    ASSERT_NE(resp.get_column_names(), nullptr);
-    ASSERT_TRUE(resp.get_column_names()->empty());
-    ASSERT_NE(resp.get_rows(), nullptr);
-    ASSERT_TRUE(resp.get_rows()->empty());
-}
-
 // #1478
 // Fetch property from empty tag
 TEST_F(FetchEmptyPropsTest, EmptyProps) {
     {
-        const std::string stmt = "FETCH PROP ON empty_tag 1";
-        assertEmptyResult(client_.get(), stmt);
+        cpp2::ExecutionResponse resp;
+        const std::string stmt = "FETCH PROP ON empty_tag_0 1";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected = {
+            {1}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
     {
+        cpp2::ExecutionResponse resp;
+        const std::string stmt = "FETCH PROP ON * 1";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected = {
+            {1}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
         const std::string stmt = "FETCH PROP ON empty_edge 1->2";
-        assertEmptyResult(client_.get(), stmt);
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t, int64_t>> expected = {
+            {1, 2, 0}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
 
 TEST_F(FetchEmptyPropsTest, WithInput) {
     {
+        cpp2::ExecutionResponse resp;
         const std::string stmt = "GO FROM 1 OVER empty_edge YIELD empty_edge._dst as id"
-                                 " | FETCH PROP ON empty_tag $-.id";
-        assertEmptyResult(client_.get(), stmt);
+                                 " | FETCH PROP ON empty_tag_0 $-.id";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected = {
+            {2}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
     {
+        cpp2::ExecutionResponse resp;
         const std::string stmt =
             "GO FROM 1 OVER empty_edge YIELD empty_edge._src as src, empty_edge._dst as dst"
             " | FETCH PROP ON empty_edge $-.src->$-.dst";
-        assertEmptyResult(client_.get(), stmt);
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t, int64_t>> expected = {
+            {1, 2, 0}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
 

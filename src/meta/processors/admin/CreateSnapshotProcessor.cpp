@@ -90,6 +90,7 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
         handleErrorCode(MetaCommon::to(putRet));
     }
 
+    LOG(INFO) << "Create snapshot " << snapshot << " successfully";
     onFinished();
 }
 

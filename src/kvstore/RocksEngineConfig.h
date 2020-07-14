@@ -28,12 +28,17 @@ DECLARE_string(memtable_factory);
 // rocksdb db wal disable
 DECLARE_bool(rocksdb_disable_wal);
 
+DECLARE_bool(rocksdb_wal_sync);
+
 // BlockBasedTable block_cache
 DECLARE_int64(rocksdb_block_cache);
 
 DECLARE_int32(rocksdb_batch_size);
 
 DECLARE_string(part_man_type);
+
+DECLARE_string(rocksdb_compression_per_level);
+DECLARE_string(rocksdb_compression);
 
 
 namespace nebula {

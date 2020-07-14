@@ -103,6 +103,8 @@ public:
         LOG(INFO) << "Release rocksdb on " << dataPath_;
     }
 
+    void stop() override;
+
     const char* getDataRoot() const override {
         return dataPath_.c_str();
     }
@@ -110,7 +112,8 @@ public:
     std::unique_ptr<WriteBatch> startBatchWrite() override;
 
     ResultCode commitBatchWrite(std::unique_ptr<WriteBatch> batch,
-                                bool disableWAL) override;
+                                bool disableWAL,
+                                bool sync) override;
 
     /*********************
      * Data retrieval

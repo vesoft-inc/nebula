@@ -297,44 +297,6 @@ bool Executor::checkValueType(const nebula::cpp2::ValueType &type, const Variant
     return false;
 }
 
-StatusOr<int64_t> Executor::toTimestamp(const VariantType &value) {
-    if (value.which() != VAR_INT64 && value.which() != VAR_STR) {
-        return Status::Error("Invalid value type");
-    }
-
-    int64_t timestamp;
-    if (value.which() == VAR_STR) {
-        static const std::regex reg("^([1-9]\\d{3})-"
-                                    "(0[1-9]|1[0-2]|\\d)-"
-                                    "(0[1-9]|[1-2][0-9]|3[0-1]|\\d)\\s+"
-                                    "(20|21|22|23|[0-1]\\d|\\d):"
-                                    "([0-5]\\d|\\d):"
-                                    "([0-5]\\d|\\d)$");
-        std::smatch result;
-        if (!std::regex_match(boost::get<std::string>(value), result, reg)) {
-            return Status::Error("Invalid timestamp type");
-        }
-        struct tm time;
-        memset(&time, 0, sizeof(time));
-        time.tm_year = atoi(result[1].str().c_str()) - 1900;
-        time.tm_mon = atoi(result[2].str().c_str()) - 1;
-        time.tm_mday = atoi(result[3].str().c_str());
-        time.tm_hour = atoi(result[4].str().c_str());
-        time.tm_min = atoi(result[5].str().c_str());
-        time.tm_sec = atoi(result[6].str().c_str());
-        timestamp = mktime(&time);
-    } else {
-        timestamp = boost::get<int64_t>(value);
-    }
-
-    // The mainstream Linux kernel's implementation constrains this
-    static const int64_t maxTimestamp = std::numeric_limits<int64_t>::max() / 1000000000;
-    if (timestamp < 0 || (timestamp > maxTimestamp)) {
-        return Status::Error("Invalid timestamp type");
-    }
-    return timestamp;
-}
-
 StatusOr<cpp2::ColumnValue> Executor::toColumnValue(const VariantType& value,
                                                     cpp2::ColumnValue::Type type) const {
     cpp2::ColumnValue colVal;
@@ -409,51 +371,6 @@ OptVariantType Executor::toVariantType(const cpp2::ColumnValue& value) const {
 
     LOG(ERROR) << "Unknown ColumnType: " << static_cast<int32_t>(value.getType());
     return Status::Error("Unknown ColumnType: %d", static_cast<int32_t>(value.getType()));
-}
-
-StatusOr<VariantType> Executor::transformDefaultValue(nebula::cpp2::SupportedType type,
-                                                      std::string& originalValue) {
-    switch (type) {
-        case nebula::cpp2::SupportedType::BOOL:
-            try {
-                return folly::to<bool>(originalValue);
-            } catch (const std::exception& ex) {
-                LOG(ERROR) << "Conversion to bool failed: " << originalValue;
-                return Status::Error("Type Conversion Failed");
-            }
-            break;
-        case nebula::cpp2::SupportedType::INT:
-            try {
-                return folly::to<int64_t>(originalValue);
-            } catch (const std::exception& ex) {
-                LOG(ERROR) << "Conversion to int64_t failed: " << originalValue;
-                return Status::Error("Type Conversion Failed");
-            }
-            break;
-        case nebula::cpp2::SupportedType::DOUBLE:
-            try {
-                return folly::to<double>(originalValue);
-            } catch (const std::exception& ex) {
-                LOG(ERROR) << "Conversion to double failed: " << originalValue;
-                return Status::Error("Type Conversion Failed");
-            }
-            break;
-        case nebula::cpp2::SupportedType::STRING:
-            return originalValue;
-            break;
-        case nebula::cpp2::SupportedType::TIMESTAMP:
-            try {
-                return folly::to<int64_t>(originalValue);
-            } catch (const std::exception& ex) {
-                LOG(ERROR) << "Conversion to int64_t failed: " << originalValue;
-                return Status::Error("Type Conversion Failed");
-            }
-            break;
-        default:
-            LOG(ERROR) << "Unknow type";
-            return Status::Error("Unknow type");
-    }
-    return Status::OK();
 }
 
 void Executor::doError(Status status, uint32_t count) const {

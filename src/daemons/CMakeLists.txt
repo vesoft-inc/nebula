@@ -35,6 +35,8 @@ nebula_add_executable(
         $<TARGET_OBJECTS:encryption_obj>
         $<TARGET_OBJECTS:session_obj>
         $<TARGET_OBJECTS:permission_obj>
+        $<TARGET_OBJECTS:kvstore_storage_utils_obj>
+        $<TARGET_OBJECTS:convert_time_type_utils_obj>
     LIBRARIES
         proxygenhttpserver
         proxygenlib
@@ -80,6 +82,8 @@ nebula_add_executable(
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:kvstore_storage_utils_obj>
+        $<TARGET_OBJECTS:convert_time_type_utils_obj>
     LIBRARIES
         proxygenhttpserver
         proxygenlib
@@ -124,6 +128,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:encryption_obj>
+        $<TARGET_OBJECTS:kvstore_storage_utils_obj>
     LIBRARIES
         proxygenhttpserver
         proxygenlib

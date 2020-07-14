@@ -214,7 +214,7 @@ void UpdateVertexExecutor::execute() {
                     doError(Status::Error("Maybe invalid tag or property in WHEN clause!"));
                     return;
                 case nebula::storage::cpp2::ErrorCode::E_INVALID_UPDATER:
-                    doError(Status::Error("Maybe invalid tag or property in SET/YIELD clasue!"));
+                    doError(Status::Error("Maybe invalid tag or property in SET/YIELD clause!"));
                     return;
                 case nebula::storage::cpp2::ErrorCode::E_FILTER_OUT:
                     // Treat as Ok so do nothing
@@ -223,7 +223,7 @@ void UpdateVertexExecutor::execute() {
                     break;
                 default:
                     std::string errMsg =
-                        folly::stringPrintf("Maybe vertex does not exist or filter failed, "
+                        folly::stringPrintf("Maybe vertex does not exist, "
                                             "part: %d, error code: %d!",
                                             code.get_part_id(),
                                             static_cast<int32_t>(code.get_code()));

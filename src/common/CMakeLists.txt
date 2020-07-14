@@ -16,4 +16,5 @@ nebula_add_subdirectory(algorithm)
 nebula_add_subdirectory(encryption)
 nebula_add_subdirectory(permission)
 nebula_add_subdirectory(session)
+nebula_add_subdirectory(utils)
 

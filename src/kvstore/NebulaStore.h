@@ -73,6 +73,8 @@ public:
     // the current store instance
     bool init();
 
+    void stop() override;
+
     uint32_t capability() const override {
         return 0;
     }
@@ -232,6 +234,8 @@ private:
     ErrorOr<ResultCode, KVEngine*> engine(GraphSpaceID spaceId, PartitionID partId);
 
     bool checkLeader(std::shared_ptr<Part> part) const;
+
+    void cleanWAL();
 
 private:
     // The lock used to protect spaces_

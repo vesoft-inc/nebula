@@ -20,6 +20,7 @@
 DECLARE_int32(vertex_cache_num);
 DECLARE_int32(vertex_cache_bucket_exp);
 DECLARE_int32(reader_handlers);
+DECLARE_string(reader_handlers_type);
 
 namespace nebula {
 namespace storage {
@@ -36,8 +37,21 @@ public:
         , schemaMan_(schemaMan)
         , indexMan_(indexMan)
         , metaClient_(client)
-        , vertexCache_(FLAGS_vertex_cache_num, FLAGS_vertex_cache_bucket_exp)
-        , readerPool_(std::make_unique<folly::IOThreadPoolExecutor>(FLAGS_reader_handlers)) {
+        , vertexCache_(FLAGS_vertex_cache_num, FLAGS_vertex_cache_bucket_exp) {
+        if (FLAGS_reader_handlers_type == "io") {
+            auto tf = std::make_shared<folly::NamedThreadFactory>("reader-pool");
+            readerPool_ = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_reader_handlers,
+                                                                        std::move(tf));
+        } else {
+            if (FLAGS_reader_handlers_type != "cpu") {
+                LOG(WARNING) << "Unknown value for --reader_handlers_type, using `cpu'";
+            }
+            using TM = apache::thrift::concurrency::PriorityThreadManager;
+            auto pool = TM::newPriorityThreadManager(FLAGS_reader_handlers, true);
+            pool->setNamePrefix("reader-pool");
+            pool->start();
+            readerPool_ = std::move(pool);
+        }
         getBoundQpsStat_ = stats::Stats("storage", "get_bound");
         boundStatsQpsStat_ = stats::Stats("storage", "bound_stats");
         vertexPropsQpsStat_ = stats::Stats("storage", "vertex_props");
@@ -140,11 +154,8 @@ public:
     folly::Future<cpp2::AdminExecResp>
     future_rebuildEdgeIndex(const cpp2::RebuildIndexRequest& req) override;
 
-    folly::Future<cpp2::LookUpVertexIndexResp>
-    future_lookUpVertexIndex(const cpp2::LookUpIndexRequest& req) override;
-
-    folly::Future<cpp2::LookUpEdgeIndexResp>
-    future_lookUpEdgeIndex(const cpp2::LookUpIndexRequest& req) override;
+    folly::Future<cpp2::LookUpIndexResp>
+    future_lookUpIndex(const cpp2::LookUpIndexRequest& req) override;
 
 private:
     kvstore::KVStore* kvstore_{nullptr};
@@ -152,7 +163,7 @@ private:
     meta::IndexManager* indexMan_{nullptr};
     meta::MetaClient* metaClient_{nullptr};
     VertexCache vertexCache_;
-    std::unique_ptr<folly::IOThreadPoolExecutor> readerPool_;
+    std::shared_ptr<folly::Executor> readerPool_;
 
     stats::Stats getBoundQpsStat_;
     stats::Stats boundStatsQpsStat_;

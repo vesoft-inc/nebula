@@ -5,7 +5,7 @@
  */
 
 #include "storage/mutate/DeleteVerticesProcessor.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 
 DECLARE_bool(enable_vertex_cache);
 
@@ -128,13 +128,20 @@ DeleteVerticesProcessor::deleteVertices(GraphSpaceID spaceId,
                                                                  iter->val(),
                                                                  spaceId,
                                                                  tagId);
+                            if (reader == nullptr) {
+                                LOG(WARNING) << "Bad format row";
+                                return folly::none;
+                            }
                         }
                         const auto& cols = index->get_fields();
                         auto values = collectIndexValues(reader.get(), cols);
+                        if (!values.ok()) {
+                            continue;
+                        }
                         auto indexKey = NebulaKeyUtils::vertexIndexKey(partId,
                                                                        indexId,
                                                                        vertex,
-                                                                       values);
+                                                                       values.value());
                         batchHolder->remove(std::move(indexKey));
                     }
                 }

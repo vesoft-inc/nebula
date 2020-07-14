@@ -5,7 +5,7 @@
  */
 
 #include "storage/mutate/AddVerticesProcessor.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include <algorithm>
 #include <limits>
 #include "time/WallClock.h"
@@ -16,8 +16,8 @@ namespace nebula {
 namespace storage {
 
 void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
-    auto version =
-        std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec();
+    auto version = FLAGS_enable_multi_versions ?
+        std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec() : 0L;
     // Switch version to big-endian, make sure the key is in ordered.
     version = folly::Endian::big(version);
 
@@ -119,6 +119,10 @@ std::string AddVerticesProcessor::addVertices(int64_t version, PartitionID partI
                                                               val,
                                                               spaceId_,
                                                               tagId);
+                    if (reader == nullptr) {
+                        LOG(WARNING) << "Bad format row";
+                        return "";
+                    }
                     auto oi = indexKey(partId, vId, reader.get(), index);
                     if (!oi.empty()) {
                         batchHolder->remove(std::move(oi));
@@ -132,9 +136,15 @@ std::string AddVerticesProcessor::addVertices(int64_t version, PartitionID partI
                                                           v.second,
                                                           spaceId_,
                                                           tagId);
+                    if (nReader == nullptr) {
+                        LOG(WARNING) << "Bad format row";
+                        return "";
+                    }
                 }
                 auto ni = indexKey(partId, vId, nReader.get(), index);
-                batchHolder->put(std::move(ni), "");
+                if (!ni.empty()) {
+                    batchHolder->put(std::move(ni), "");
+                }
             }
         }
         /*
@@ -169,9 +179,12 @@ std::string AddVerticesProcessor::indexKey(PartitionID partId,
                                            RowReader* reader,
                                            std::shared_ptr<nebula::cpp2::IndexItem> index) {
     auto values = collectIndexValues(reader, index->get_fields());
+    if (!values.ok()) {
+        return "";
+    }
     return NebulaKeyUtils::vertexIndexKey(partId,
                                           index->get_index_id(),
-                                          vId, values);
+                                          vId, values.value());
 }
 
 }  // namespace storage

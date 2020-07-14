@@ -1,4 +1,5 @@
 set(storage_test_deps
+    $<TARGET_OBJECTS:kvstore_storage_utils_obj>
     $<TARGET_OBJECTS:storage_service_handler>
     $<TARGET_OBJECTS:filter_obj>
     $<TARGET_OBJECTS:storage_client>
@@ -25,6 +26,7 @@ set(storage_test_deps
     $<TARGET_OBJECTS:stats_obj>
     $<TARGET_OBJECTS:adHocSchema_obj>
     $<TARGET_OBJECTS:adHocIndex_obj>
+    $<TARGET_OBJECTS:convert_time_type_utils_obj>
 )
 
 

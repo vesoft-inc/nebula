@@ -95,10 +95,19 @@ void DropUserProcessor::process(const cpp2::DropUserReq& req) {
 
 
 void GrantProcessor::process(const cpp2::GrantRoleReq& req) {
-    folly::SharedMutex::WriteHolder wHolder(LockUtils::userLock());
+    folly::SharedMutex::WriteHolder userHolder(LockUtils::userLock());
+    folly::SharedMutex::ReadHolder spaceHolder(LockUtils::spaceLock());
     const auto& roleItem = req.get_role_item();
     auto spaceId = roleItem.get_space_id();
-    CHECK_SPACE_ID_AND_RETURN(spaceId);
+    /**
+     *  for cloud authority, need init a god user by this interface. the god user default grant to
+     *  meta space (kDefaultSpaceId). so skip the space check.
+     *  Should be reject the grant operation and return a error 
+     *  when grant a user to GOD through graph layer.
+    */
+    if (!(spaceId == kDefaultSpaceId && roleItem.get_role_type() == nebula::cpp2::RoleType::GOD)) {
+        CHECK_SPACE_ID_AND_RETURN(spaceId);
+    }
     auto userRet = userExist(roleItem.get_user());
     if (!userRet.ok()) {
         handleErrorCode(MetaCommon::to(userRet));
@@ -115,7 +124,8 @@ void GrantProcessor::process(const cpp2::GrantRoleReq& req) {
 
 
 void RevokeProcessor::process(const cpp2::RevokeRoleReq& req) {
-    folly::SharedMutex::WriteHolder wHolder(LockUtils::userLock());
+    folly::SharedMutex::WriteHolder userHolder(LockUtils::userLock());
+    folly::SharedMutex::ReadHolder spaceHolder(LockUtils::spaceLock());
     const auto& roleItem = req.get_role_item();
     auto spaceId = roleItem.get_space_id();
     CHECK_SPACE_ID_AND_RETURN(spaceId);

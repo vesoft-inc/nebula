@@ -6,7 +6,7 @@
 
 #include "kvstore/Part.h"
 #include "kvstore/LogEncoder.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include "kvstore/RocksEngineConfig.h"
 
 DEFINE_int32(cluster_id, 0, "A unique id for each cluster");
@@ -305,8 +305,9 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
             return false;
         }
     }
-    return engine_->commitBatchWrite(std::move(batch), FLAGS_rocksdb_disable_wal)
-                    == ResultCode::SUCCEEDED;
+    return engine_->commitBatchWrite(std::move(batch),
+                                     FLAGS_rocksdb_disable_wal,
+                                     FLAGS_rocksdb_wal_sync) == ResultCode::SUCCEEDED;
 }
 
 std::pair<int64_t, int64_t> Part::commitSnapshot(const std::vector<std::string>& rows,

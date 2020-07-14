@@ -36,58 +36,10 @@ public:
     }
 
     Status MUST_USE_RESULT prepare() {
-        if (hasDefault()) {
+        if (hasDefaultValue()) {
             return defaultExpr_->prepare();
         }
         return Status::Error();
-    }
-
-    StatusOr<int64_t> getIntValue(Getters& getter) {
-        auto r = defaultExpr_->eval(getter);
-        if (!r.ok()) {
-            return std::move(r).status();
-        }
-        auto v = std::move(r).value();
-        if (!Value::isInt(v)) {
-            return Status::Error("Wrong type");
-        }
-        return Value::toInt(v);
-    }
-
-    StatusOr<bool> getBoolValue(Getters& getter) {
-        auto r = defaultExpr_->eval(getter);
-        if (!r.ok()) {
-            return std::move(r).status();
-        }
-        auto v = std::move(r).value();
-        if (!Value::isBool(v)) {
-            return Status::Error("Wrong type");
-        }
-        return Value::toBool(v);
-    }
-
-    StatusOr<double> getDoubleValue(Getters& getter) {
-        auto r = defaultExpr_->eval(getter);
-        if (!r.ok()) {
-            return std::move(r).status();
-        }
-        auto v = std::move(r).value();
-        if (!Value::isDouble(v)) {
-            return Status::Error("Wrong type");
-        }
-        return Value::toDouble(v);
-    }
-
-    StatusOr<std::string> getStringValue(Getters& getter) {
-        auto r = defaultExpr_->eval(getter);
-        if (!r.ok()) {
-            return std::move(r).status();
-        }
-        auto v = std::move(r).value();
-        if (!Value::isString(v)) {
-            return Status::Error("Wrong type");
-        }
-        return Value::toString(v);
     }
 
     void setContext(ExpressionContext* ctx) {
@@ -96,7 +48,15 @@ public:
         }
     }
 
-    bool hasDefault() {
+    OptVariantType getDefault(Getters& getter) {
+        auto r = defaultExpr_->eval(getter);
+        if (!r.ok()) {
+            return std::move(r).status();
+        }
+        return std::move(r).value();
+    }
+
+    bool hasDefaultValue() {
         return defaultExpr_ != nullptr;
     }
 
