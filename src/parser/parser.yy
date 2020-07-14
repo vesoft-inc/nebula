@@ -124,6 +124,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_USER KW_USERS KW_ACCOUNT
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_ROLES
 %token KW_GOD KW_ADMIN KW_DBA KW_GUEST KW_GRANT KW_REVOKE KW_ON
+%token KW_CONTAINS
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -308,6 +309,7 @@ unreserved_keyword
      | KW_ALL                { $$ = new std::string("all"); }
      | KW_SHORTEST           { $$ = new std::string("shortest"); }
      | KW_COUNT_DISTINCT     { $$ = new std::string("count_distinct"); }
+     | KW_CONTAINS           { $$ = new std::string("contains"); }
      ;
 
 agg_function
@@ -531,6 +533,9 @@ relational_expression
     | relational_expression GE additive_expression {
         $$ = new RelationalExpression($1, RelationalExpression::GE, $3);
     }
+    | relational_expression KW_CONTAINS additive_expression {
+        $$ = new RelationalExpression($1, RelationalExpression::CONTAINS, $3);
+    }
     ;
 
 equality_expression
@@ -605,9 +610,13 @@ step_clause
         ifOutOfRange($1, @1);
         $$ = new StepClause($1);
     }
-    | KW_UPTO INTEGER KW_STEPS {
-        ifOutOfRange($2, @2);
-        $$ = new StepClause($2, true);
+    | INTEGER KW_TO INTEGER KW_STEPS {
+        ifOutOfRange($1, @2);
+        ifOutOfRange($3, @2);
+        if ($1 > $3) {
+            throw nebula::GraphParser::syntax_error(@1, "Invalid step range");
+        }
+        $$ = new StepClause($1, $3);
     }
     ;
 
@@ -937,10 +946,10 @@ find_path_sentence
     ;
 
 find_path_upto_clause
-    : %empty { $$ = new StepClause(5, true); }
+    : %empty { $$ = new StepClause(5); }
     | KW_UPTO INTEGER KW_STEPS {
         ifOutOfRange($2, @2);
-        $$ = new StepClause($2, true);
+        $$ = new StepClause($2);
     }
     ;
 

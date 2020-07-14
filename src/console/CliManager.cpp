@@ -13,17 +13,16 @@
 #include "console/CliManager.h"
 #include "client/cpp/GraphClient.h"
 #include "fs/FileUtils.h"
+#include "network/NetworkUtils.h"
 
+DECLARE_string(addr);
+DECLARE_int32(port);
 DECLARE_string(u);
 DECLARE_string(p);
 DEFINE_bool(enable_history, false, "Whether to force saving the command history");
 
 namespace nebula {
 namespace graph {
-
-const int32_t kMaxAuthInfoRetries = 3;
-const int32_t kMaxUsernameLen = 16;
-const int32_t kMaxPasswordLen = 24;
 
 CliManager::CliManager() {
     if (!fs::FileUtils::isStdinTTY()) {
@@ -45,64 +44,20 @@ CliManager::CliManager() {
 }
 
 
-bool CliManager::connect(const std::string& addr,
-                         uint16_t port,
-                         const std::string& username,
-                         const std::string& password) {
-    char user[kMaxUsernameLen + 1];
-    char pass[kMaxPasswordLen + 1];
+bool CliManager::connect() {
+    addr_ = FLAGS_addr;
+    port_ = FLAGS_port;
+    username_ = FLAGS_u;
+    std::string passwd = FLAGS_p;
 
-    strncpy(user, username.c_str(), kMaxUsernameLen);
-    user[kMaxUsernameLen] = '\0';
-    strncpy(pass, password.c_str(), kMaxPasswordLen);
-    pass[kMaxPasswordLen] = '\0';
-
-    // Make sure username is not empty
-    if (FLAGS_u.empty()) {
-        for (int32_t i = 0; i < kMaxAuthInfoRetries && !strlen(user); i++) {
-            // Need to interactively get the username
-            std::cout << "Username: ";
-            std::cin.getline(user, kMaxUsernameLen);
-            user[kMaxUsernameLen] = '\0';
-        }
-    } else {
-        strcpy(user, FLAGS_u.c_str());  // NOLINT
-    }
-    if (!strlen(user)) {
-        std::cout << "Authentication failed: "
-                     "Need a valid username to authenticate\n\n";
+    IPv4 temp;
+    if (!network::NetworkUtils::ipv4ToInt(addr_, temp)) {
+        std::cout << "Invalid ip string\n";
         return false;
     }
-
-    // Make sure password is not empty
-    if (FLAGS_p.empty()) {
-        for (int32_t i = 0; i < kMaxAuthInfoRetries && !strlen(pass); i++) {
-            // Need to interactively get the password
-            std::cout << "Password: ";
-            termios oldTerminal;
-            tcgetattr(STDIN_FILENO, &oldTerminal);
-            termios newTerminal = oldTerminal;
-            newTerminal.c_lflag &= ~ECHO;
-            tcsetattr(STDIN_FILENO, TCSANOW, &newTerminal);
-            std::cin.getline(pass, kMaxPasswordLen);
-            pass[kMaxPasswordLen] = '\0';
-            tcsetattr(STDIN_FILENO, TCSANOW, &oldTerminal);
-        }
-    } else {
-        strcpy(pass, FLAGS_p.c_str());  // NOLINT
-    }
-    if (!strlen(pass)) {
-        std::cout << "Authentication failed: "
-                     "Need a valid password\n\n";
-        return false;
-    }
-
-    addr_ = addr;
-    port_ = port;
-    username_ = user;
 
     auto client = std::make_unique<GraphClient>(addr_, port_);
-    cpp2::ErrorCode res = client->connect(user, pass);
+    cpp2::ErrorCode res = client->connect(username_, passwd);
     if (res == cpp2::ErrorCode::SUCCEEDED) {
 #if defined(NEBULA_BUILD_VERSION)
         std::cerr << "\nWelcome to Nebula Graph (Version "
@@ -171,8 +126,8 @@ bool CliManager::readLine(std::string &line, bool linebreak) {
         if (!isInteractive_) {
             break;
         }
-        auto purePrompt = folly::stringPrintf("(%s@%s:%d) [%s]> ",
-                                              username_.c_str(), addr_.c_str(), port_,
+        auto purePrompt = folly::stringPrintf("(%s@nebula) [%s]> ",
+                                              username_.c_str(),
                                               cmdProcessor_->getSpaceName().c_str());
         if (linebreak) {
             purePrompt.assign(purePrompt.size() - 3, ' ');

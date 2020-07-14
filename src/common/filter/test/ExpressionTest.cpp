@@ -358,6 +358,20 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
     TEST_EXPR(false < 0.0, false);
     TEST_EXPR(false <= 0.0, true);
 
+    TEST_EXPR(abcd CONTAINS a, true)
+    TEST_EXPR(abcd CONTAINS bc, true)
+    TEST_EXPR(abcd CONTAINS cd, true)
+    TEST_EXPR(bcd CONTAINS a, false)
+    TEST_EXPR("abcd" CONTAINS "a", true)
+    TEST_EXPR("abcd" CONTAINS "bc", true)
+    TEST_EXPR("abcd" CONTAINS "cd", true)
+    TEST_EXPR("bcd" CONTAINS "a", false)
+    TEST_EXPR("Abcd" CONTAINS "A", true)
+    TEST_EXPR("Abcd" CONTAINS "a", false)
+    TEST_EXPR("abcd" CONTAINS "", true)
+    TEST_EXPR("" CONTAINS "abcd", false)
+    TEST_EXPR("" CONTAINS "", true)
+
     TEST_EXPR(8 % 2 + 1 == 1, true);
     TEST_EXPR(8 % 2 + 1 != 1, false);
     TEST_EXPR(8 % 3 + 1 == 3, true);
@@ -616,8 +630,16 @@ TEST_F(ExpressionTest, FunctionCall) {
 
     TEST_EXPR_LT(rand32(1024), 1024);
     TEST_EXPR_GE(rand32(1024), 0);
+    TEST_EXPR_FAILED(rand32(-1));
+    TEST_EXPR_FAILED(rand32(-1, -2));
+    TEST_EXPR_FAILED(rand32(3, 2));
+    TEST_EXPR_FAILED(rand32(2, 2));
     TEST_EXPR_LT(rand64(1024, 4096), 4096);
     TEST_EXPR_GE(rand64(1024, 4096), 1024);
+    TEST_EXPR_FAILED(rand64(-1));
+    TEST_EXPR_FAILED(rand64(-1, -2));
+    TEST_EXPR_FAILED(rand64(3, 2));
+    TEST_EXPR_FAILED(rand64(2, 2));
 
     TEST_EXPR_GT(now(), 1554716753);
     TEST_EXPR_LE(now(), 4773548753);  // failed 102 years later
@@ -697,6 +719,10 @@ TEST_F(ExpressionTest, InvalidExpressionTest) {
     TEST_EXPR_FAILED("123" <= 123);
     TEST_EXPR_FAILED("123" == 123);
     TEST_EXPR_FAILED("123" != 123);
+    TEST_EXPR_FAILED("abc" CONTAINS 0);
+    TEST_EXPR_FAILED("abc" CONTAINS 1.0);
+    TEST_EXPR_FAILED("abc" CONTAINS true);
+    TEST_EXPR_FAILED(0 CONTAINS 0);
 }
 
 

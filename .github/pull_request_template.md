@@ -21,6 +21,13 @@ Please clarify why the changes are needed. For instance,
   2. If you fix a bug, you can clarify why it is a bug.
 -->
 
+### Will break the compatibility? How if so?
+<!--
+Please label `alert/break' if so, such as
+  1. nGQL grammar changes;
+  2. RPC protocol can't be compatible with previous, refer to https://diwakergupta.github.io/thrift-missing-guide/#_versioning_compatibility;
+  3. Storage format; etc.
+-->
 
 ### Does this PR introduce any user-facing change?
 <!--

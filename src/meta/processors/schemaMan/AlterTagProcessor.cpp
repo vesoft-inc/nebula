@@ -61,10 +61,13 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
         }
     }
 
+    std::vector<kvstore::KV> data;
+    std::vector<std::string> removeDefaultKeys;
     for (auto& tagItem : tagItems) {
         auto& cols = tagItem.get_schema().get_columns();
         for (auto& col : cols) {
-            auto retCode = MetaServiceUtils::alterColumnDefs(columns, prop, col, tagItem.op);
+            auto retCode = MetaServiceUtils::alterColumnDefs(columns, prop, data, removeDefaultKeys,
+                spaceId, tagId, col, tagItem.op);
             if (retCode != cpp2::ErrorCode::SUCCEEDED) {
                 LOG(ERROR) << "Alter tag column error " << static_cast<int32_t>(retCode);
                 handleErrorCode(retCode);
@@ -89,11 +92,20 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     }
     schema.set_columns(std::move(columns));
 
-    std::vector<kvstore::KV> data;
     LOG(INFO) << "Alter Tag " << req.get_tag_name() << ", tagId " << tagId;
     data.emplace_back(MetaServiceUtils::schemaTagKey(spaceId, tagId, version),
                       MetaServiceUtils::schemaTagVal(req.get_tag_name(), schema));
     resp_.set_id(to(tagId, EntryType::TAG));
+    // Now we get default value from meta instead of cache
+    // So don't update
+    if (!removeDefaultKeys.empty()) {
+        auto retRemove = multiRemove(removeDefaultKeys);
+        if (retRemove != kvstore::ResultCode::SUCCEEDED) {
+            handleErrorCode(MetaCommon::to(retRemove));
+            onFinished();
+            return;
+        }
+    }
     doSyncPutAndUpdate(std::move(data));
 }
 

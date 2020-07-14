@@ -26,36 +26,28 @@ bool CloudAuthenticator::auth(const std::string& user, const std::string& passwo
         return false;
     }
 
-    // Second, use different authentication methods based on the password prefix
-    // Use user + password method
+    // Second, use user + password authentication methods
     StatusOr<std::string> result;
-    if (password[0] == 'A') {
-        std::string passwd = password.substr(1);
-        std::string userAndPasswd = user + ":" + passwd;
-        std::string base64Str = encryption::Base64::encode(userAndPasswd);
+    std::string userAndPasswd = user + ":" + password;
+    std::string base64Str = encryption::Base64::encode(userAndPasswd);
 
-        std::string header = "-H \"Content-Type: application/json\"  -H \"Authorization:Basic ";
-        header =  header + base64Str + "\"";
-        result = http::HttpClient::post(FLAGS_cloud_http_url, header);
-    } else if (password[0] == 'T') {
-        // Use token method
-        std::string passwd = password.substr(1);
-        std::string header = "-H \"Content-Type: application/json\"  -H \"Authorization:Bearer ";
-        header = header + passwd + "\"";
-        result = http::HttpClient::post(FLAGS_cloud_http_url, header);
-    } else {
-        LOG(ERROR) << "Cloud authentication failed, password is incorrect";
-        return false;
-    }
+    std::string header = "-H \"Content-Type: application/json\"  -H \"Authorization:Nebula ";
+    header =  header + base64Str + "\"";
+    result = http::HttpClient::post(FLAGS_cloud_http_url, header);
 
     if (!result.ok()) {
         LOG(ERROR) << result.status();
         return false;
     }
 
-    auto json = folly::parseJson(result.value());
-    if (json["code"].asString().compare("0") != 0) {
-        LOG(ERROR) << "Cloud authentication failed";
+    try {
+        auto json = folly::parseJson(result.value());
+        if (json["code"].asString().compare("0") != 0) {
+            LOG(ERROR) << "Cloud authentication failed";
+            return false;
+        }
+    } catch (std::exception& e) {
+        LOG(ERROR) << "Invalid json: " << e.what();
         return false;
     }
     return true;
