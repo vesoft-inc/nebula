@@ -12,7 +12,7 @@
 
 #include "parser/TraverseSentences.h"
 #include "planner/Query.h"
-#include "context/ExpressionContextImpl.h"
+#include "context/QueryExpressionContext.h"
 
 namespace nebula {
 namespace graph {
@@ -66,7 +66,7 @@ Status GetSubgraphValidator::validateFrom(FromClause* from) {
         return Status::Error("From clause was not declared.");
     }
 
-    ExpressionContextImpl ctx(nullptr, nullptr);
+    QueryExpressionContext ctx(nullptr, nullptr);
     if (from->isRef()) {
         srcRef_ = from->ref();
     } else {

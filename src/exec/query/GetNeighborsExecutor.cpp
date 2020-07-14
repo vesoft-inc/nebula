@@ -40,7 +40,7 @@ Status GetNeighborsExecutor::buildRequestDataSet() {
     auto& inputVar = gn_->inputVar();
     auto& inputResult = ectx_->getResult(inputVar);
     auto iter = inputResult.iter();
-    ExpressionContextImpl ctx(ectx_, iter.get());
+    QueryExpressionContext ctx(ectx_, iter.get());
     DataSet input;
     reqDs_.colNames = {kVid};
     reqDs_.rows.reserve(iter->size());

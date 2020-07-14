@@ -6,7 +6,7 @@
 
 #include "exec/logic/SelectExecutor.h"
 
-#include "context/ExpressionContextImpl.h"
+#include "context/QueryExpressionContext.h"
 #include "planner/Query.h"
 
 namespace nebula {
@@ -25,7 +25,7 @@ folly::Future<Status> SelectExecutor::execute() {
 
     auto* select = asNode<Select>(node());
     auto* expr = select->condition();
-    ExpressionContextImpl ctx(ectx_, nullptr);
+    QueryExpressionContext ctx(ectx_, nullptr);
     auto value = expr->eval(ctx);
     DCHECK(value.isBool());
     return finish(ResultBuilder().value(std::move(value)).iter(Iterator::Kind::kDefault).finish());

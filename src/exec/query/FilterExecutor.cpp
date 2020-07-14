@@ -8,7 +8,7 @@
 
 #include "planner/Query.h"
 
-#include "context/ExpressionContextImpl.h"
+#include "context/QueryExpressionContext.h"
 
 namespace nebula {
 namespace graph {
@@ -24,7 +24,7 @@ folly::Future<Status> FilterExecutor::execute() {
     }
     ResultBuilder builder;
     builder.value(iter->valuePtr());
-    ExpressionContextImpl ctx(ectx_, iter.get());
+    QueryExpressionContext ctx(ectx_, iter.get());
     auto condition = filter->condition();
     while (iter->valid()) {
         auto val = condition->eval(ctx);

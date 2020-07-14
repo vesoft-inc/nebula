@@ -5,7 +5,7 @@
  */
 
 #include "exec/query/SortExecutor.h"
-#include "context/ExpressionContextImpl.h"
+#include "context/QueryExpressionContext.h"
 #include "planner/Query.h"
 
 namespace nebula {

@@ -9,7 +9,7 @@
 #include "common/datatypes/List.h"
 #include "common/function/AggregateFunction.h"
 
-#include "context/ExpressionContextImpl.h"
+#include "context/QueryExpressionContext.h"
 #include "context/Result.h"
 #include "planner/PlanNode.h"
 #include "planner/Query.h"
@@ -24,7 +24,7 @@ folly::Future<Status> AggregateExecutor::execute() {
     auto groupItems = agg->groupItems();
     auto iter = ectx_->getResult(agg->inputVar()).iter();
     DCHECK(!!iter);
-    ExpressionContextImpl ctx(ectx_, iter.get());
+    QueryExpressionContext ctx(ectx_, iter.get());
 
     std::unordered_map<List, std::vector<std::unique_ptr<AggFun>>> result;
     for (; iter->valid(); iter->next()) {

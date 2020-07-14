@@ -452,7 +452,7 @@ StatusOr<Value::Type> Validator::deduceExprType(const Expression* expr) const {
         }
 
         case Expression::Kind::kConstant: {
-            ExpressionContextImpl ctx(nullptr, nullptr);
+            QueryExpressionContext ctx(nullptr, nullptr);
             auto* mutableExpr = const_cast<Expression*>(expr);
             return mutableExpr->eval(ctx).type();
         }

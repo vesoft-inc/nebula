@@ -6,7 +6,7 @@
 
 #include "exec/query/DedupExecutor.h"
 #include "planner/Query.h"
-#include "context/ExpressionContextImpl.h"
+#include "context/QueryExpressionContext.h"
 
 namespace nebula {
 namespace graph {
@@ -26,7 +26,7 @@ folly::Future<Status> DedupExecutor::execute() {
     }
     ResultBuilder builder;
     builder.value(iter->valuePtr());
-    ExpressionContextImpl ctx(ectx_, iter.get());
+    QueryExpressionContext ctx(ectx_, iter.get());
     std::unordered_set<const Row *> unique;
     while (iter->valid()) {
         if (unique.find(iter->row()) != unique.end()) {

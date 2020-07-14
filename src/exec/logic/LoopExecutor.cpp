@@ -9,7 +9,7 @@
 #include <folly/String.h>
 
 #include "common/interface/gen-cpp2/common_types.h"
-#include "context/ExpressionContextImpl.h"
+#include "context/QueryExpressionContext.h"
 #include "planner/Query.h"
 
 using folly::stringPrintf;
@@ -24,7 +24,7 @@ folly::Future<Status> LoopExecutor::execute() {
     dumpLog();
     auto *loopNode = asNode<Loop>(node());
     Expression *expr = loopNode->condition();
-    ExpressionContextImpl ctx(ectx_, nullptr);
+    QueryExpressionContext ctx(ectx_, nullptr);
     auto value = expr->eval(ctx);
     DCHECK(value.isBool());
     return finish(ResultBuilder().value(std::move(value)).iter(Iterator::Kind::kDefault).finish());

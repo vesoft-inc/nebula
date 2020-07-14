@@ -122,7 +122,7 @@ Status GoValidator::validateFrom(const FromClause* from) {
         }
     } else {
         auto vidList = from->vidList();
-        ExpressionContextImpl ctx(qctx_->ectx(), nullptr);
+        QueryExpressionContext ctx(qctx_->ectx(), nullptr);
         for (auto* expr : vidList) {
             if (!evaluableExpr(expr)) {
                 return Status::Error("`%s' is not an evaluable expression.",

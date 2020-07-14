@@ -6,7 +6,7 @@
 
 #include <gtest/gtest.h>
 #include "context/ExecutionContext.h"
-#include "context/ExpressionContextImpl.h"
+#include "context/QueryExpressionContext.h"
 
 namespace nebula {
 namespace graph {
@@ -15,7 +15,7 @@ TEST(ExpressionContextTest, GetVar) {
     qctx.setValue("v1", 10);
     qctx.setValue("v2", "Hello world");
 
-    graph::ExpressionContextImpl ectx(&qctx, nullptr);
+    graph::QueryExpressionContext ectx(&qctx, nullptr);
     EXPECT_EQ(Value(10), ectx.getVar("v1"));
     EXPECT_EQ(Value("Hello world"), ectx.getVar("v2"));
 

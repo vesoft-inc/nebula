@@ -6,7 +6,7 @@
 
 #include "common/base/Base.h"
 #include "util/SchemaUtil.h"
-#include "context/ExpressionContextImpl.h"
+#include "context/QueryExpressionContext.h"
 
 namespace nebula {
 namespace graph {
@@ -217,7 +217,7 @@ Status SchemaUtil::setTTLCol(SchemaPropItem* schemaProp, meta::cpp2::Schema& sch
 
 // static
 StatusOr<VertexID> SchemaUtil::toVertexID(Expression *expr) {
-    ExpressionContextImpl ctx(nullptr, nullptr);
+    QueryExpressionContext ctx(nullptr, nullptr);
     auto vertexId = expr->eval(ctx);
     if (vertexId.type() != Value::Type::STRING) {
         LOG(ERROR) << "Wrong vertex id type";
@@ -231,7 +231,7 @@ StatusOr<std::vector<Value>>
 SchemaUtil::toValueVec(std::vector<Expression*> exprs) {
     std::vector<Value> values;
     values.reserve(exprs.size());
-    ExpressionContextImpl ctx(nullptr, nullptr);
+    QueryExpressionContext ctx(nullptr, nullptr);
     for (auto *expr : exprs) {
         auto value = expr->eval(ctx);
          if (value.isNull() && value.getNull() != NullType::__NULL__) {

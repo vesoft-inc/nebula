@@ -6,7 +6,7 @@
 
 #include "exec/query/ProjectExecutor.h"
 
-#include "context/ExpressionContextImpl.h"
+#include "context/QueryExpressionContext.h"
 #include "parser/Clauses.h"
 #include "planner/Query.h"
 
@@ -19,7 +19,7 @@ folly::Future<Status> ProjectExecutor::execute() {
     auto columns = project->columns()->columns();
     auto iter = ectx_->getResult(project->inputVar()).iter();
     DCHECK(!!iter);
-    ExpressionContextImpl ctx(ectx_, iter.get());
+    QueryExpressionContext ctx(ectx_, iter.get());
 
     DataSet ds;
     ds.colNames = project->colNames();
