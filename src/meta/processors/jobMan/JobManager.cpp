@@ -23,7 +23,7 @@
 #include "webservice/Common.h"
 #include "common/time/WallClock.h"
 
-DEFINE_int32(dispatch_thread_num, 3, "Number of job dispatch http thread");
+DEFINE_int32(dispatch_thread_num, 10, "Number of job dispatch http thread");
 DEFINE_int32(job_check_intervals, 5000, "job intervals in us");
 DEFINE_double(job_expired_secs, 7*24*60*60, "job expired intervals in sec");
 

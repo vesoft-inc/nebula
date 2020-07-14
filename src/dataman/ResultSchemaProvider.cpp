@@ -40,13 +40,38 @@ bool ResultSchemaProvider::ResultSchemaField::isValid() const {
 }
 
 
-bool ResultSchemaProvider::ResultSchemaField::hasDefault() const {
-    LOG(FATAL) << "Not Supported";
+bool ResultSchemaProvider::ResultSchemaField::hasDefaultValue() const {
+    if (!isValid() || !column_->__isset.default_value) {
+        return false;
+    }
+    return true;
 }
 
 
-std::string ResultSchemaProvider::ResultSchemaField::getDefaultValue() const {
-    LOG(FATAL) << "Not Supported";
+VariantType ResultSchemaProvider::ResultSchemaField::getDefaultValue() const {
+    CHECK(column_ != nullptr);
+    VariantType defaultValue;
+    switch (column_->default_value.getType()) {
+        case nebula::cpp2::Value::Type::__EMPTY__:
+            LOG(FATAL) << "Empty type ";
+            break;
+        case nebula::cpp2::Value::Type::int_value:
+            defaultValue = column_->default_value.get_int_value();
+            break;
+        case nebula::cpp2::Value::Type::bool_value:
+            defaultValue = column_->default_value.get_bool_value();
+            break;
+        case nebula::cpp2::Value::Type::double_value:
+            defaultValue = column_->default_value.get_double_value();
+            break;
+        case nebula::cpp2::Value::Type::string_value:
+            defaultValue = column_->default_value.get_string_value();
+            break;
+        case nebula::cpp2::Value::Type::timestamp:
+            defaultValue = column_->default_value.get_timestamp();
+            break;
+    }
+    return defaultValue;
 }
 
 
@@ -127,6 +152,30 @@ nebula::cpp2::Schema ResultSchemaProvider::toSchema() const {
     nebula::cpp2::Schema schema;
     schema.set_columns(columns_);
     return schema;
+}
+
+const StatusOr<VariantType>
+ResultSchemaProvider::getDefaultValue(const folly::StringPiece name) const {
+    auto index = getFieldIndex(name);
+    if (index < 0 || index >= static_cast<int64_t>(columns_.size())) {
+        VLOG(2) << "Unknown field \"" << name.toString() << "\"";
+        return Status::Error("Unknown field \"%s\"", name.toString().c_str());
+    }
+    return getDefaultValue(index);
+}
+
+const StatusOr<VariantType>
+ResultSchemaProvider::getDefaultValue(int64_t index) const {
+    if (index < 0 || index >= static_cast<int64_t>(columns_.size())) {
+        LOG(ERROR) << "Index[" << index << "] is out of range[0-" << columns_.size() << "]";
+        return Status::Error("Index[%ld] is out of range[0-%zu]", index, columns_.size());
+    }
+    auto resultSchema = std::make_shared<ResultSchemaField>(&(columns_[index]));
+    if (!resultSchema->hasDefaultValue()) {
+        VLOG(2) << "Index " << index << " has no default value";
+        return Status::Error("%ld has no default value", index);
+    }
+    return resultSchema->getDefaultValue();
 }
 
 }  // namespace nebula

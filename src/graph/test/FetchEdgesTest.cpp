@@ -415,13 +415,45 @@ TEST_F(FetchEdgesTest, Distinct) {
 }
 
 TEST_F(FetchEdgesTest, EmptyInput) {
+    std::string name = "NON EXIST VERTEX ID";
+    int64_t nonExistPlayerID = std::hash<std::string>()(name);
+    auto iter = players_.begin();
+    while (iter != players_.end()) {
+        if (iter->vid() == nonExistPlayerID) {
+            ++nonExistPlayerID;
+            iter = players_.begin();
+            continue;
+        }
+        ++iter;
+    }
     {
         cpp2::ExecutionResponse resp;
-        auto &nobody = players_["Nobody"];
         auto *fmt = "GO FROM %ld OVER serve YIELD serve._src AS src, serve._dst AS dst"
                     "| FETCH PROP ON serve $-.src->$-.dst"
                     " YIELD serve.start_year, serve.end_year";
-        auto query = folly::stringPrintf(fmt, nobody.vid());
+        auto query = folly::stringPrintf(fmt, nonExistPlayerID);
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve._src"},
+            {"serve._dst"},
+            {"serve._rank"},
+            {"serve.start_year"},
+            {"serve.end_year"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "YIELD serve._src AS src, serve._dst AS dst, serve.start_year as start "
+                    "| YIELD $-.src as src, $-.dst as dst WHERE $-.start > 20000"
+                    "| FETCH PROP ON serve $-.src->$-.dst"
+                    " YIELD serve.start_year, serve.end_year";
+        auto query = folly::stringPrintf(fmt, players_["Marco Belinelli"].vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 

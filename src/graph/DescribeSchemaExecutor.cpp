@@ -21,7 +21,7 @@ namespace graph {
             return std::to_string(value.get_double_value());
         }
         case ::nebula::cpp2::Value::Type::string_value: {
-            return value.get_string_value();
+            return "\"" + value.get_string_value() + "\"";
         }
         case ::nebula::cpp2::Value::Type::timestamp: {
             return std::to_string(value.get_timestamp());

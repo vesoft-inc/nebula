@@ -59,7 +59,7 @@ object SparkClientGenerator {
   private[this] val EDGE_VALUE_TEMPLATE_WITH_POLICY                 = "%s->%s@%d: (%s)"
   private[this] val USE_TEMPLATE                                    = "USE %s"
 
-  private[this] val DEFAULT_BATCH                = 2
+  private[this] val DEFAULT_BATCH                = 512
   private[this] val DEFAULT_PARTITION            = -1
   private[this] val DEFAULT_CONNECTION_TIMEOUT   = 3000
   private[this] val DEFAULT_CONNECTION_RETRY     = 3
@@ -374,7 +374,15 @@ object SparkClientGenerator {
                       new FutureCallback[Optional[Integer]] {
                         override def onSuccess(result: Optional[Integer]): Unit = {
                           latch.countDown()
-                          batchSuccess.add(1)
+                          if (result.get == ErrorCode.SUCCEEDED) {
+                            batchSuccess.add(1)
+                          } else {
+                            if (batchFailure.value > DEFAULT_ERROR_TIMES) {
+                              throw TooManyErrorsException("too many errors")
+                            } else {
+                              batchFailure.add(1)
+                            }
+                          }
                         }
 
                         override def onFailure(t: Throwable): Unit = {
@@ -647,7 +655,15 @@ object SparkClientGenerator {
                       new FutureCallback[Optional[Integer]] {
                         override def onSuccess(result: Optional[Integer]): Unit = {
                           latch.countDown()
-                          batchSuccess.add(1)
+                          if (result.get == ErrorCode.SUCCEEDED) {
+                            batchSuccess.add(1)
+                          } else {
+                            if (batchFailure.value > DEFAULT_ERROR_TIMES) {
+                              throw TooManyErrorsException("too many errors")
+                            } else {
+                              batchFailure.add(1)
+                            }
+                          }
                         }
 
                         override def onFailure(t: Throwable): Unit = {

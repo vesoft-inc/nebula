@@ -114,12 +114,15 @@ DeleteEdgesProcessor::deleteEdges(GraphSpaceID spaceId,
                         }
                         auto values = collectIndexValues(reader.get(),
                                                          index->get_fields());
+                        if (!values.ok()) {
+                            continue;
+                        }
                         auto indexKey = NebulaKeyUtils::edgeIndexKey(partId,
                                                                      indexId,
                                                                      srcId,
                                                                      rank,
                                                                      dstId,
-                                                                     values);
+                                                                     values.value());
                         batchHolder->remove(std::move(indexKey));
                     }
                 }

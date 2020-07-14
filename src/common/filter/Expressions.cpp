@@ -143,6 +143,14 @@ OptVariantType AliasPropertyExpression::eval(Getters &getters) const {
     return getters.getAliasProp(*alias_, *prop_);
 }
 
+Status AliasPropertyExpression::traversal(std::function<void(const Expression*)> visitor) const {
+    if (!visitor) {
+        return Status::Error("Null visitor.");
+    }
+    visitor(this);
+    return Status::OK();
+}
+
 Status AliasPropertyExpression::prepare() {
     context_->addAliasProp(*alias_, *prop_);
     return Status::OK();
@@ -210,6 +218,14 @@ OptVariantType InputPropertyExpression::eval(Getters &getters) const {
     return getters.getInputProp(*prop_);
 }
 
+Status
+InputPropertyExpression::traversal(std::function<void(const Expression*)> visitor) const {
+    if (!visitor) {
+        return Status::Error("Null visitor.");
+    }
+    visitor(this);
+    return Status::OK();
+}
 
 DestPropertyExpression::DestPropertyExpression(std::string *tag, std::string *prop) {
     kind_ = kDestProp;
@@ -225,6 +241,13 @@ OptVariantType DestPropertyExpression::eval(Getters &getters) const {
     return getters.getDstTagProp(*alias_, *prop_);
 }
 
+Status DestPropertyExpression::traversal(std::function<void(const Expression*)> visitor) const {
+    if (!visitor) {
+        return Status::Error("Null visitor.");
+    }
+    visitor(this);
+    return Status::OK();
+}
 
 Status DestPropertyExpression::prepare() {
     context_->addDstTagProp(*alias_, *prop_);
@@ -246,6 +269,14 @@ OptVariantType VariablePropertyExpression::eval(Getters &getters) const {
     return getters.getVariableProp(*prop_);
 }
 
+Status VariablePropertyExpression::traversal(std::function<void(const Expression*)> visitor) const {
+    if (!visitor) {
+        return Status::Error("Null visitor.");
+    }
+    visitor(this);
+    return Status::OK();
+}
+
 Status VariablePropertyExpression::prepare() {
     context_->addVariableProp(*alias_, *prop_);
     return Status::OK();
@@ -256,6 +287,14 @@ OptVariantType EdgeTypeExpression::eval(Getters &getters) const {
         return Status::Error("`getAliasProp' function is not implemented");
     }
     return getters.getAliasProp(*alias_, *prop_);
+}
+
+Status EdgeTypeExpression::traversal(std::function<void(const Expression*)> visitor) const {
+    if (!visitor) {
+        return Status::Error("Null visitor.");
+    }
+    visitor(this);
+    return Status::OK();
 }
 
 Status EdgeTypeExpression::prepare() {
@@ -271,6 +310,13 @@ OptVariantType EdgeSrcIdExpression::eval(Getters &getters) const {
     return getters.getAliasProp(*alias_, *prop_);
 }
 
+Status EdgeSrcIdExpression::traversal(std::function<void(const Expression*)> visitor) const {
+    if (!visitor) {
+        return Status::Error("Null visitor.");
+    }
+    visitor(this);
+    return Status::OK();
+}
 
 Status EdgeSrcIdExpression::prepare() {
     context_->addAliasProp(*alias_, *prop_);
@@ -283,6 +329,14 @@ OptVariantType EdgeDstIdExpression::eval(Getters &getters) const {
         return Status::Error("`getEdgeDstId' function is not implemented");
     }
     return getters.getEdgeDstId(*alias_);
+}
+
+Status EdgeDstIdExpression::traversal(std::function<void(const Expression*)> visitor) const {
+    if (!visitor) {
+        return Status::Error("Null visitor.");
+    }
+    visitor(this);
+    return Status::OK();
 }
 
 Status EdgeDstIdExpression::prepare() {
@@ -298,6 +352,13 @@ OptVariantType EdgeRankExpression::eval(Getters &getters) const {
     return getters.getAliasProp(*alias_, *prop_);
 }
 
+Status EdgeRankExpression::traversal(std::function<void(const Expression*)> visitor) const {
+    if (!visitor) {
+        return Status::Error("Null visitor.");
+    }
+    visitor(this);
+    return Status::OK();
+}
 
 Status EdgeRankExpression::prepare() {
     context_->addAliasProp(*alias_, *prop_);
@@ -319,6 +380,13 @@ OptVariantType SourcePropertyExpression::eval(Getters &getters) const {
     return getters.getSrcTagProp(*alias_, *prop_);
 }
 
+Status SourcePropertyExpression::traversal(std::function<void(const Expression*)> visitor) const {
+    if (!visitor) {
+        return Status::Error("Null visitor.");
+    }
+    visitor(this);
+    return Status::OK();
+}
 
 Status SourcePropertyExpression::prepare() {
     context_->addSrcTagProp(*alias_, *prop_);
@@ -364,6 +432,14 @@ OptVariantType PrimaryExpression::eval(Getters &getters) const {
     }
 
     return OptVariantType(Status::Error("Unknown type"));
+}
+
+Status PrimaryExpression::traversal(std::function<void(const Expression*)> visitor) const {
+    if (!visitor) {
+        return Status::Error("Null visitor.");
+    }
+    visitor(this);
+    return Status::OK();
 }
 
 Status PrimaryExpression::prepare() {
@@ -460,7 +536,18 @@ OptVariantType FunctionCallExpression::eval(Getters &getters) const {
 
     // TODO(simon.liu)
     auto r = function_(args);
-    return OptVariantType(r);
+    return r;
+}
+
+Status FunctionCallExpression::traversal(std::function<void(const Expression*)> visitor) const {
+    if (!visitor) {
+        return Status::Error("Null visitor.");
+    }
+    for (const auto &it : args_) {
+        it->traversal(visitor);
+    }
+    visitor(this);
+    return Status::OK();
 }
 
 Status FunctionCallExpression::prepare() {
@@ -540,6 +627,14 @@ OptVariantType UUIDExpression::eval(Getters &getters) const {
      return v.get_id();
 }
 
+Status UUIDExpression::traversal(std::function<void(const Expression*)> visitor) const {
+    if (!visitor) {
+        return Status::Error("Null visitor.");
+    }
+    visitor(this);
+    return Status::OK();
+}
+
 Status UUIDExpression::prepare() {
     return Status::OK();
 }
@@ -583,6 +678,15 @@ OptVariantType UnaryExpression::eval(Getters &getters) const {
     return OptVariantType(Status::Error(folly::sformat(
         "attempt to perform unary arithmetic on a `{}'",
         VARIANT_TYPE_NAME[value.value().which()])));
+}
+
+Status UnaryExpression::traversal(std::function<void(const Expression*)> visitor) const {
+    if (!visitor) {
+        return Status::Error("Null visitor.");
+    }
+    operand_->traversal(visitor);
+    visitor(this);
+    return Status::OK();
 }
 
 Status UnaryExpression::prepare() {
@@ -658,13 +762,33 @@ OptVariantType TypeCastingExpression::eval(Getters &getters) const {
     LOG(FATAL) << "casting to unknown type: " << static_cast<int>(type_);
 }
 
+Status TypeCastingExpression::traversal(std::function<void(const Expression*)> visitor) const {
+    if (!visitor) {
+        return Status::Error("Null visitor.");
+    }
+    operand_->traversal(visitor);
+    visitor(this);
+    return Status::OK();
+}
 
 Status TypeCastingExpression::prepare() {
     return operand_->prepare();
 }
 
 
-void TypeCastingExpression::encode(Cord &) const {
+void TypeCastingExpression::encode(Cord &cord) const {
+    cord << kindToInt(kind());
+    cord << static_cast<uint8_t>(type_);
+    operand_->encode(cord);
+}
+
+
+const char* TypeCastingExpression::decode(const char *pos, const char *end) {
+    THROW_IF_NO_SPACE(pos, end, 2UL);
+    type_ = *reinterpret_cast<const ColumnType*>(pos++);
+
+    operand_ = makeExpr(*reinterpret_cast<const uint8_t*>(pos++));
+    return operand_->decode(pos, end);
 }
 
 
@@ -846,6 +970,16 @@ OptVariantType ArithmeticExpression::eval(Getters &getters) const {
         VARIANT_TYPE_NAME[l.which()], VARIANT_TYPE_NAME[r.which()])));
 }
 
+Status ArithmeticExpression::traversal(std::function<void(const Expression*)> visitor) const {
+    if (!visitor) {
+        return Status::Error("Null visitor.");
+    }
+    left_->traversal(visitor);
+    right_->traversal(visitor);
+    visitor(this);
+    return Status::OK();
+}
+
 Status ArithmeticExpression::prepare() {
     auto status = left_->prepare();
     if (!status.ok()) {
@@ -905,6 +1039,9 @@ std::string RelationalExpression::toString() const {
         case NE:
             buf += "!=";
             break;
+        case CONTAINS:
+            buf += " CONTAINS ";
+            break;
     }
     buf.append(right_->toString());
     buf += ')';
@@ -957,9 +1094,23 @@ OptVariantType RelationalExpression::eval(Getters &getters) const {
                 }
             }
             return OptVariantType(l != r);
+        case CONTAINS:
+            if (isString(l) && isString(r)) {
+                return OptVariantType(contains(asString(l), asString(r)));
+            }
     }
 
     return OptVariantType(Status::Error("Wrong operator"));
+}
+
+Status RelationalExpression::traversal(std::function<void(const Expression*)> visitor) const {
+    if (!visitor) {
+        return Status::Error("Null visitor.");
+    }
+    left_->traversal(visitor);
+    right_->traversal(visitor);
+    visitor(this);
+    return Status::OK();
 }
 
 Status RelationalExpression::implicitCasting(VariantType &lhs, VariantType &rhs) const {
@@ -1006,7 +1157,9 @@ void RelationalExpression::encode(Cord &cord) const {
 const char* RelationalExpression::decode(const char *pos, const char *end) {
     THROW_IF_NO_SPACE(pos, end, 2UL);
     op_ = *reinterpret_cast<const Operator*>(pos++);
-    DCHECK(op_ == LT || op_ == LE || op_ == GT || op_ == GE || op_ == EQ || op_ == NE);
+    DCHECK(op_ == LT || op_ == LE || op_ == GT ||
+            op_ == GE || op_ == EQ || op_ == NE ||
+            op_ == CONTAINS);
 
     left_ = makeExpr(*reinterpret_cast<const uint8_t*>(pos++));
     pos = left_->decode(pos, end);
@@ -1066,6 +1219,16 @@ OptVariantType LogicalExpression::eval(Getters &getters) const {
         }
         return OptVariantType(true);
     }
+}
+
+Status LogicalExpression::traversal(std::function<void(const Expression*)> visitor) const {
+    if (!visitor) {
+        return Status::Error("Null visitor.");
+    }
+    left_->traversal(visitor);
+    right_->traversal(visitor);
+    visitor(this);
+    return Status::OK();
 }
 
 Status LogicalExpression::prepare() {

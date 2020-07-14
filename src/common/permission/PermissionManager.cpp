@@ -93,7 +93,12 @@ bool PermissionManager::canWriteSchema(session::Session *session) {
 
 // static
 bool PermissionManager::canWriteUser(session::Session *session) {
-    return session->isGod();
+    // Cloud auth user cannot create user
+    if (!FLAGS_auth_type.compare("cloud")) {
+        return false;
+    } else {
+        return session->isGod();
+    }
 }
 
 bool PermissionManager::canWriteRole(session::Session *session,
@@ -103,6 +108,12 @@ bool PermissionManager::canWriteRole(session::Session *session,
     if (!FLAGS_enable_authorize) {
         return true;
     }
+
+    // Cloud auth user cannot grant role
+    if (!FLAGS_auth_type.compare("cloud")) {
+        return false;
+    }
+
     /**
      * Reject grant or revoke to himself.
      */

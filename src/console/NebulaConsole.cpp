@@ -10,13 +10,21 @@
 
 DEFINE_string(addr, "127.0.0.1", "Nebula daemon IP address");
 DEFINE_int32(port, 0, "Nebula daemon listening port");
-DEFINE_string(u, "", "Username used to authenticate");
+DEFINE_string(u, "root", "Username used to authenticate");
 DEFINE_string(p, "", "Password used to authenticate");
 
 
 int main(int argc, char *argv[]) {
     google::SetVersionString(nebula::versionString());
     folly::init(&argc, &argv, true);
+    if (argc > 1/*executable name*/) {
+        std::cout << "Unrecognized arguments: ";
+        for (int i = 1; i < argc; ++i) {
+            std::cout << argv[i] << " ";
+        }
+        std::cout << std::endl;
+        return EXIT_FAILURE;
+    }
 
     using nebula::graph::CliManager;
     using nebula::fs::FileUtils;
@@ -37,7 +45,7 @@ int main(int argc, char *argv[]) {
     }
 
     CliManager cli;
-    if (!cli.connect(FLAGS_addr, FLAGS_port, FLAGS_u, FLAGS_p)) {
+    if (!cli.connect()) {
         return EXIT_FAILURE;
     }
 

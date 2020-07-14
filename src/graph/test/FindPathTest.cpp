@@ -515,5 +515,50 @@ TEST_F(FindPathTest, DuplicateColumn) {
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code) << *(resp.get_error_msg());
     }
 }
+
+TEST_F(FindPathTest, EmptyInput) {
+    std::string name = "NON EXIST VERTEX ID";
+    int64_t nonExistPlayerID = std::hash<std::string>()(name);
+    auto iter = players_.begin();
+    while (iter != players_.end()) {
+        if (iter->vid() == nonExistPlayerID) {
+            ++nonExistPlayerID;
+            iter = players_.begin();
+            continue;
+        }
+        ++iter;
+    }
+
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER like yield like._src AS src, like._dst AS dst| "
+                    "FIND SHORTEST PATH FROM $-.src TO $-.dst OVER like UPTO 5 STEPS";
+        auto query = folly::stringPrintf(fmt, nonExistPlayerID);
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code) << *(resp.get_error_msg());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "YIELD serve._src as src, serve._dst as dst, serve.start_year as start "
+                    "| YIELD $-.src as arc, $-.dst as dst WHERE $-.start > 20000 "
+                    "| FIND SHORTEST PATH FROM $-.src TO $-.dst OVER like UPTO 5 STEPS";
+        auto query = folly::stringPrintf(fmt, players_["Marco Belinelli"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code) << *(resp.get_error_msg());
+    }
+}
+
+TEST_F(FindPathTest, UseUUID) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "FIND SHORTEST PATH FROM UUID(\"Tim Duncan\") TO UUID(\"Tony Parker\") "
+                     "OVER like UPTO 5 STEPS";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        ASSERT_TRUE(resp.get_rows() != nullptr);
+        ASSERT_EQ(resp.get_rows()->size(), 1);
+    }
+}
 }  // namespace graph
 }  // namespace nebula
