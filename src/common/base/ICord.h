@@ -217,7 +217,6 @@ private:
     void allocateBlock() {
         DCHECK(isFull());
         char* blk = reinterpret_cast<char*>(malloc(kBlockSize * sizeof(char)));
-        CHECK(blk) << "Out of memory";
 
         if (tail_) {
             // Link the tail to the new block
