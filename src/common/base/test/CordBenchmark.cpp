@@ -92,17 +92,17 @@ int main(int argc, char** argv) {
 
 
 /*
-Benchmark number is from virtualbox running on i7-8650
+// In Intel(R) Xeon(R) Platinum 8260M CPU @ 2.30GHz
 ============================================================================
-CordBenchmark.cpp                               relative  time/iter  iters/s
+/root/nebula/src/common/base/test/CordBenchmark.cpprelative  time/iter  iters/s
 ============================================================================
+sstream_10k_string                                          10.13us   98.76K
+cord_10k_string                                  167.30%     6.05us  165.22K
 ----------------------------------------------------------------------------
-sstream_10k_string                                          44.75us   22.35K
-cord_10k_string                                  137.72%    32.49us   30.78K
+sstream_1k_mix                                              14.47us   69.11K
+cord_1k_mix                                       53.20%    27.20us   36.77K
 ----------------------------------------------------------------------------
-sstream_1k_mix                                              32.51us   30.76K
-cord_1k_mix                                      207.38%    15.68us   63.79K
-----------------------------------------------------------------------------
+sstream_512_mix                                              7.44us  134.33K
+cord_512_mix                                      52.73%    14.12us   70.83K
 ============================================================================
 */
-
