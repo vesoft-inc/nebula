@@ -30,6 +30,7 @@ nebula_add_library(
     $<TARGET_OBJECTS:graph_thrift_obj>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
+    $<TARGET_OBJECTS:convert_time_type_utils_obj>
     ExecutionResponse.cpp
     NebulaClientImpl.cpp
     NebulaClient.cpp
@@ -65,6 +66,7 @@ target_link_libraries(
     -static-libgcc
     -static-libstdc++
     -Wl,--no-undefined
+    -latomic
 )
 
 install(

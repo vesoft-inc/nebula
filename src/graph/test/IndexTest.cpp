@@ -810,7 +810,7 @@ TEST_F(IndexTest, AlterTag) {
     }
 }
 
-bool verifyIndexStatus(GraphClient* client , bool isEdge) {
+bool verifyIndexStatus(NebulaClientImpl* client , bool isEdge) {
     for (auto retry = 1; retry <= 3; retry++) {
         cpp2::ExecutionResponse resp;
         std::string query = isEdge ? "SHOW EDGE INDEX STATUS" : "SHOW TAG INDEX STATUS";

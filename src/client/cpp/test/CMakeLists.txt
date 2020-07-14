@@ -53,6 +53,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:ws_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:kvstore_storage_utils_obj>
+        $<TARGET_OBJECTS:convert_time_type_utils_obj>
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}

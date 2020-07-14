@@ -19,7 +19,8 @@ DECLARE_string(addr);
 DECLARE_int32(port);
 DECLARE_string(u);
 DECLARE_string(p);
-DECLARE_int32(server_conn_timeout_ms);
+DEFINE_int32(server_conn_timeout_ms, 1000,
+            "Connection timeout in milliseconds");
 DEFINE_bool(enable_history, false, "Whether to force saving the command history");
 
 namespace nebula {
@@ -56,10 +57,6 @@ bool CliManager::connect() {
         std::cout << "Invalid ip string\n";
         return false;
     }
-
-    addr_ = addr;
-    port_ = port;
-    username_ = user;
 
     ConnectionInfo connectionInfo;
     connectionInfo.addr = addr_;
