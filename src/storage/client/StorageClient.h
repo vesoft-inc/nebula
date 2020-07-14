@@ -64,6 +64,10 @@ public:
         return responses_;
     }
 
+    const std::vector<Response>& responses() const {
+        return responses_;
+    }
+
     const std::vector<std::tuple<HostAddr, int32_t, int32_t>>& hostLatency() const {
         return hostLatency_;
     }
@@ -178,19 +182,13 @@ public:
         const std::string& name,
         folly::EventBase* evb = nullptr);
 
-    folly::SemiFuture<StorageRpcResponse<storage::cpp2::LookUpVertexIndexResp>> lookUpVertexIndex(
-            GraphSpaceID space,
-            IndexID indexId,
-            std::string filter,
-            std::vector<std::string> returnCols,
-            folly::EventBase *evb = nullptr);
-
-    folly::SemiFuture<StorageRpcResponse<storage::cpp2::LookUpEdgeIndexResp>> lookUpEdgeIndex(
-            GraphSpaceID space,
-            IndexID indexId,
-            std::string filter,
-            std::vector<std::string> returnCols,
-            folly::EventBase *evb = nullptr);
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::LookUpIndexResp>> lookUpIndex(
+        GraphSpaceID space,
+        IndexID indexId,
+        std::string filter,
+        std::vector<std::string> returnCols,
+        bool isEdge,
+        folly::EventBase *evb = nullptr);
 
 protected:
     // Calculate the partition id for the given vertex id

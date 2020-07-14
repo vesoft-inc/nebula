@@ -277,6 +277,13 @@ TEST_F(FetchVerticesTest, SyntaxError) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
     }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "GO FROM 11 over like YIELD like._dst as id "
+                     "| FETCH PROP ON player 11 YIELD $-.id";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+    }
 }
 
 TEST_F(FetchVerticesTest, NonexistentTag) {
@@ -424,13 +431,37 @@ TEST_F(FetchVerticesTest, NonexistentProp) {
 }
 
 TEST_F(FetchVerticesTest, EmptyInput) {
-    // YIELD has input prop, and input is empty
+    std::string name = "NON EXIST VERTEX ID";
+    int64_t nonExistPlayerID = std::hash<std::string>()(name);
+    auto iter = players_.begin();
+    while (iter != players_.end()) {
+        if (iter->vid() == nonExistPlayerID) {
+            ++nonExistPlayerID;
+            iter = players_.begin();
+            continue;
+        }
+        ++iter;
+    }
+
     {
         cpp2::ExecutionResponse resp;
-        auto query = "GO FROM 11 over like YIELD like._dst as id "
-                     "| FETCH PROP ON player 11 YIELD $-.id";
+        std::string fmt = "GO FROM %ld over like YIELD like._dst as id "
+                          "| FETCH PROP ON player $-.id";
+        auto query = folly::stringPrintf(fmt.c_str(), nonExistPlayerID);
         auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string fmt = "GO FROM %ld over serve "
+                          "YIELD serve._dst as id, serve.start_year as start "
+                          "| YIELD $-.id as id WHERE $-.start > 20000"
+                          "| FETCH PROP ON player $-.id";
+        auto query = folly::stringPrintf(fmt.c_str(), players_["Marco Belinelli"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(nullptr, resp.get_rows());
     }
 }
 

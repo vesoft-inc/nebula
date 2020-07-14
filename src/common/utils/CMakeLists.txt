@@ -3,4 +3,9 @@ nebula_add_library(
     NebulaKeyUtils.cpp
 )
 
+nebula_add_library(
+    convert_time_type_utils_obj OBJECT
+    ConvertTimeType.cpp
+)
+
 nebula_add_subdirectory(test)

@@ -25,8 +25,7 @@ nebula_add_library(
     admin/RebuildEdgeIndexProcessor.cpp
     index/IndexPolicyMaker.cpp
     index/IndexExecutor.cpp
-    index/LookUpEdgeIndexProcessor.cpp
-    index/LookUpVertexIndexProcessor.cpp
+    index/LookUpIndexProcessor.cpp
 )
 
 nebula_add_library(

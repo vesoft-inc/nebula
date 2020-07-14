@@ -119,9 +119,12 @@ std::unique_ptr<WriteBatch> RocksEngine::startBatchWrite() {
 }
 
 
-ResultCode RocksEngine::commitBatchWrite(std::unique_ptr<WriteBatch> batch, bool disableWAL) {
+ResultCode RocksEngine::commitBatchWrite(std::unique_ptr<WriteBatch> batch,
+                                         bool disableWAL,
+                                         bool sync) {
     rocksdb::WriteOptions options;
     options.disableWAL = disableWAL;
+    options.sync = sync;
     auto* b = static_cast<RocksWriteBatch*>(batch.get());
     rocksdb::Status status = db_->Write(options, b->data());
     if (status.ok()) {

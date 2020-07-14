@@ -12,7 +12,7 @@
 #include "meta/ServerBasedSchemaManager.h"
 #include "dataman/ResultSchemaProvider.h"
 #include "storage/test/AdHocSchemaManager.h"
-#include "storage/index/LookUpVertexIndexProcessor.h"
+#include "storage/index/LookUpIndexProcessor.h"
 #include "dataman/RowWriter.h"
 #include <folly/Benchmark.h>
 #include "storage/test/TestUtils.h"
@@ -149,7 +149,7 @@ bool processLookup(kvstore::KVStore* kv,
     req.set_parts(std::move(parts));
     req.set_index_id(indexId);
     req.set_filter(filter);
-    auto* processor = LookUpVertexIndexProcessor::instance(kv, schemaMan, indexMan, nullptr);
+    auto* processor = LookUpIndexProcessor::instance(kv, schemaMan, indexMan, nullptr);
     auto fut = processor->getFuture();
     processor->process(req);
     auto resp = std::move(fut).get();
@@ -158,9 +158,9 @@ bool processLookup(kvstore::KVStore* kv,
             LOG(ERROR) << "Process error";
             return false;
         }
-        if (resp.rows.size() != expectRowNum) {
+        if (resp.get_vertices()->size() != expectRowNum) {
             LOG(ERROR) << "Row number error , expected : " << expectRowNum
-                       << " actual ： " << resp.rows.size();
+                       << " actual ： " << resp.get_vertices()->size();
             return false;
         }
     };

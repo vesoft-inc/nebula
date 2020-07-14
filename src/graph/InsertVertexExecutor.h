@@ -41,7 +41,7 @@ private:
     std::vector<std::vector<std::string*>>                 tagProps_;
     std::vector<std::unordered_map<std::string, int32_t>>  propsPositions_;
     GraphSpaceID                                           spaceId_{-1};
-    std::unordered_map<std::string, std::string>           defaultValues_;
+    std::unordered_map<std::string, VariantType>           defaultValues_;
 };
 
 }   // namespace graph

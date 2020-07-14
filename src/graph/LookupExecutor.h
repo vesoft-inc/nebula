@@ -12,6 +12,9 @@
 
 namespace nebula {
 namespace graph {
+
+using RpcResponse = storage::StorageRpcResponse<storage::cpp2::LookUpIndexResp>;
+
 class LookupExecutor final : public TraverseExecutor {
 public:
     LookupExecutor(Sentence *sentence, ExecutionContext *ectx);
@@ -49,32 +52,23 @@ private:
 
     Status findValidIndex();
 
-    void stepEdgeOut();
-
-    void stepVertexOut();
+    void lookUp();
 
     std::vector<std::string> getResultColumnNames() const;
-
-    using EdgeRpcResponse = storage::StorageRpcResponse<storage::cpp2::LookUpEdgeIndexResp>;
-
-    using VertexRpcResponse = storage::StorageRpcResponse<storage::cpp2::LookUpVertexIndexResp>;
 
     using Callback = std::function<Status(std::vector<VariantType>,
                                           const std::vector<nebula::cpp2::SupportedType>&)>;
 
-    void finishExecution(EdgeRpcResponse &&eRpcResp,
-                         VertexRpcResponse &&vRpcResp);
+    void finishExecution(RpcResponse &&resp);
 
-    bool setupInterimResult(EdgeRpcResponse &&eRpcResp,
-                            VertexRpcResponse &&vRpcResp,
+    bool setupInterimResult(RpcResponse &&resp,
                             std::unique_ptr<InterimResult> &result);
 
-    StatusOr<std::vector<cpp2::RowValue>> toThriftResponse(EdgeRpcResponse&& eRpcResp,
-                                                           VertexRpcResponse &&vRpcResp);
+    StatusOr<std::vector<cpp2::RowValue>> toThriftResponse(RpcResponse&& resp);
 
-    bool processFinalEdgeResult(EdgeRpcResponse &rpcResp, const Callback& cb) const;
+    bool processFinalEdgeResult(RpcResponse &rpcResp, const Callback& cb) const;
 
-    bool processFinalVertexResult(VertexRpcResponse &rpcResp, const Callback& cb) const;
+    bool processFinalVertexResult(RpcResponse &rpcResp, const Callback& cb) const;
 
 
 private:
