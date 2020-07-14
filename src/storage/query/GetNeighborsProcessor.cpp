@@ -238,7 +238,7 @@ void GetNeighborsProcessor::buildTagColName(const std::vector<cpp2::VertexProp>&
         for (const auto& prop : tagProp.props) {
             colName += ":" + std::move(prop);
         }
-        DVLOG(1) << "append col name: " << colName;
+        VLOG(1) << "append col name: " << colName;
         resultDataSet_.colNames.emplace_back(std::move(colName));
     }
 }
@@ -253,7 +253,7 @@ void GetNeighborsProcessor::buildEdgeColName(const std::vector<cpp2::EdgeProp>& 
         for (const auto& prop : edgeProp.props) {
             colName += ":" + std::move(prop);
         }
-        DVLOG(1) << "append col name: " << colName;
+        VLOG(1) << "append col name: " << colName;
         resultDataSet_.colNames.emplace_back(std::move(colName));
     }
 }

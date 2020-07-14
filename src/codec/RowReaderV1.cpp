@@ -484,7 +484,7 @@ int32_t RowReaderV1::readDouble(int64_t offset, double& v) const noexcept {
 
 
 int32_t RowReaderV1::readString(int64_t offset, folly::StringPiece& v) const noexcept {
-    int64_t strLen;
+    int64_t strLen = 0;
     int32_t intLen = readInteger(offset, strLen);
     CHECK_GT(intLen, 0) << "Invalid string length";
     if (offset + intLen + strLen > static_cast<int64_t>(data_.size())) {

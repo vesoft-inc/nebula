@@ -19,7 +19,7 @@ class FutureNode {
     friend class FutureDAG<T>;
 public:
     folly::Future<kvstore::ResultCode> execute(PartitionID, const T&) {
-        DVLOG(1) << name_;
+        VLOG(1) << name_;
         return kvstore::ResultCode::SUCCEEDED;
     }
 
