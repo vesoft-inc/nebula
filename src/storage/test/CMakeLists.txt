@@ -292,9 +292,9 @@ nebula_add_executable(
 
 nebula_add_test(
     NAME
-        update_vertex_edge_bm
+        add_update_vertex_edge_bm
     SOURCES
-        UpdateVertexAndEdgeBenchmark.cpp
+        AddAndUpdateVertexAndEdgeBenchmark.cpp
     OBJECTS
         ${storage_test_deps}
     LIBRARIES

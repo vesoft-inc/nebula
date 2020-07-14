@@ -10,6 +10,8 @@
 #include "utils/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
+#include "storage/mutate/AddVerticesProcessor.h"
+#include "storage/mutate/AddEdgesProcessor.h"
 #include "storage/mutate/UpdateVertexProcessor.h"
 #include "storage/mutate/UpdateEdgeProcessor.h"
 #include "dataman/RowSetReader.h"
@@ -128,8 +130,34 @@ void setUp(const char* path) {
     mockData(gKV.get());
 }
 
+cpp2::AddVerticesRequest buildAddVertexReq() {
+    cpp2::AddVerticesRequest req;
+    GraphSpaceID spaceId = 0;
+    PartitionID partId = 0;
+    VertexID vertexId = 1;
 
-cpp2::UpdateVertexRequest buildUpdateVertexReq(bool insertable) {
+    req.set_space_id(spaceId);
+    req.set_overwritable(true);
+    // only insert one vertex one tag, 1.3009
+    auto vertices = TestUtils::setupVertices(partId, vertexId, vertexId + 1, 3009, 3010);
+    req.parts.emplace(partId, std::move(vertices));
+    return req;
+}
+
+cpp2::AddEdgesRequest buildAddEdgeReq() {
+    cpp2::AddEdgesRequest req;
+    GraphSpaceID spaceId = 0;
+    PartitionID partId = 0;
+    VertexID srcId = 1;
+
+    req.set_space_id(spaceId);
+    req.set_overwritable(true);
+    auto edges = TestUtils::setupEdges(partId, srcId, srcId + 1);
+    req.parts.emplace(partId, std::move(edges));
+    return req;
+}
+
+cpp2::UpdateVertexRequest buildUpdateVertexReq() {
     cpp2::UpdateVertexRequest req;
     GraphSpaceID spaceId = 0;
     PartitionID partId = 0;
@@ -140,186 +168,146 @@ cpp2::UpdateVertexRequest buildUpdateVertexReq(bool insertable) {
     req.set_vertex_id(vertexId);
     req.set_filter("");
 
-    if (!insertable) {
-        // Build updated props
-        std::vector<cpp2::UpdateItem> items;
-        // int: 3001.tag_3001_col_0 = 1
-        cpp2::UpdateItem item1;
-        item1.set_name("3001");
-        item1.set_prop("tag_3001_col_0");
-        PrimaryExpression val1(1L);
-        item1.set_value(Expression::encode(&val1));
-        items.emplace_back(item1);
+    // Build updated props
+    std::vector<cpp2::UpdateItem> items;
+    // int: 3001.tag_3001_col_0 = 1
+    cpp2::UpdateItem item1;
+    item1.set_name("3001");
+    item1.set_prop("tag_3001_col_0");
+    PrimaryExpression val1(1L);
+    item1.set_value(Expression::encode(&val1));
+    items.emplace_back(item1);
 
-        // string: 3001.tag_3001_col_4 = tag_string_col_4_2_new
-        cpp2::UpdateItem item2;
-        item2.set_name("3001");
-        item2.set_prop("tag_3001_col_4");
-        std::string col4new("tag_string_col_4_2_new");
-        PrimaryExpression val2(col4new);
-        item2.set_value(Expression::encode(&val2));
-        items.emplace_back(item2);
-        req.set_update_items(std::move(items));
+    // string: 3001.tag_3001_col_4 = tag_string_col_4_2_new
+    cpp2::UpdateItem item2;
+    item2.set_name("3001");
+    item2.set_prop("tag_3001_col_4");
+    std::string col4new("tag_string_col_4_2_new");
+    PrimaryExpression val2(col4new);
+    item2.set_value(Expression::encode(&val2));
+    items.emplace_back(item2);
+    req.set_update_items(std::move(items));
 
-        // Build yield
-        // Return player props: name, age, country
-        decltype(req.return_columns) tmpProps;
-        auto* yTag1 =  new std::string(folly::to<std::string>(3001));
-        auto* yProp1 = new std::string("tag_3001_col_0");
-        SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
-        tmpProps.emplace_back(Expression::encode(&sourcePropExp1));
+    // Build yield
+    // Return player props: name, age, country
+    decltype(req.return_columns) tmpProps;
+    auto* yTag1 =  new std::string(folly::to<std::string>(3001));
+    auto* yProp1 = new std::string("tag_3001_col_0");
+    SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
+    tmpProps.emplace_back(Expression::encode(&sourcePropExp1));
 
-        auto* yTag2 =  new std::string(folly::to<std::string>(3001));
-        auto* yProp2 = new std::string("tag_3001_col_2");
-        SourcePropertyExpression sourcePropExp2(yTag2, yProp2);
-        tmpProps.emplace_back(Expression::encode(&sourcePropExp2));
+    auto* yTag2 =  new std::string(folly::to<std::string>(3001));
+    auto* yProp2 = new std::string("tag_3001_col_2");
+    SourcePropertyExpression sourcePropExp2(yTag2, yProp2);
+    tmpProps.emplace_back(Expression::encode(&sourcePropExp2));
 
-        auto* yTag3 =  new std::string(folly::to<std::string>(3001));
-        auto* yProp3 = new std::string("tag_3001_col_4");
-        SourcePropertyExpression sourcePropExp3(yTag3, yProp3);
-        tmpProps.emplace_back(Expression::encode(&sourcePropExp3));
+    auto* yTag3 =  new std::string(folly::to<std::string>(3001));
+    auto* yProp3 = new std::string("tag_3001_col_4");
+    SourcePropertyExpression sourcePropExp3(yTag3, yProp3);
+    tmpProps.emplace_back(Expression::encode(&sourcePropExp3));
 
-        req.set_return_columns(std::move(tmpProps));
-        req.set_insertable(false);
-    } else {
-        std::vector<cpp2::UpdateItem> items;
-        // int: 3009.tag_3009_col_0 = 1
-        cpp2::UpdateItem item1;
-        item1.set_name("3009");
-        item1.set_prop("tag_3009_col_0");
-        PrimaryExpression val1(1L);
-        item1.set_value(Expression::encode(&val1));
-        items.emplace_back(item1);
-
-        // string: 3009.tag_3009_col_4 = tag_string_col_4_2_new
-        cpp2::UpdateItem item2;
-        item2.set_name("3009");
-        item2.set_prop("tag_3009_col_4");
-        std::string col4new("tag_string_col_4_2_new");
-        PrimaryExpression val2(col4new);
-        item2.set_value(Expression::encode(&val2));
-        items.emplace_back(item2);
-        req.set_update_items(std::move(items));
-
-        // Build yield
-        // Return player props: name, age, country
-        decltype(req.return_columns) tmpProps;
-        auto* yTag1 =  new std::string(folly::to<std::string>(3009));
-        auto* yProp1 = new std::string("tag_3009_col_0");
-        SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
-        tmpProps.emplace_back(Expression::encode(&sourcePropExp1));
-
-        auto* yTag2 =  new std::string(folly::to<std::string>(3009));
-        auto* yProp2 = new std::string("tag_3009_col_2");
-        SourcePropertyExpression sourcePropExp2(yTag2, yProp2);
-        tmpProps.emplace_back(Expression::encode(&sourcePropExp2));
-
-        auto* yTag3 =  new std::string(folly::to<std::string>(3009));
-        auto* yProp3 = new std::string("tag_3009_col_4");
-        SourcePropertyExpression sourcePropExp3(yTag3, yProp3);
-        tmpProps.emplace_back(Expression::encode(&sourcePropExp3));
-
-        req.set_return_columns(std::move(tmpProps));
-        req.set_insertable(true);
-    }
+    req.set_return_columns(std::move(tmpProps));
+    req.set_insertable(false);
     return req;
 }
 
-cpp2::UpdateEdgeRequest buildUpdateEdgeReq(bool insertable) {
+cpp2::UpdateEdgeRequest buildUpdateEdgeReq() {
     cpp2::UpdateEdgeRequest req;
     GraphSpaceID spaceId = 0;
     PartitionID partId = 0;
     req.set_space_id(spaceId);
     req.set_part_id(partId);
 
-    if (!insertable) {
-        // src = 1, edge_type = 101, ranking = 0, dst = 10001
-        VertexID srcId = 1;
-        VertexID dstId = 10001;
-        storage::cpp2::EdgeKey edgeKey;
-        edgeKey.set_src(srcId);
-        edgeKey.set_edge_type(101);
-        edgeKey.set_ranking(0);
-        edgeKey.set_dst(dstId);
-        req.set_edge_key(edgeKey);
-        req.set_filter("");
-        // Build updated props
-        std::vector<cpp2::UpdateItem> items;
-        // int: 101.col_0  = 10003
-        cpp2::UpdateItem item1;
-        item1.set_name("101");
-        item1.set_prop("col_0");
-        PrimaryExpression val1(100L);
-        item1.set_value(Expression::encode(&val1));
-        items.emplace_back(item1);
+    // src = 1, edge_type = 101, ranking = 0, dst = 10001
+    VertexID srcId = 1;
+    VertexID dstId = 10001;
+    storage::cpp2::EdgeKey edgeKey;
+    edgeKey.set_src(srcId);
+    edgeKey.set_edge_type(101);
+    edgeKey.set_ranking(0);
+    edgeKey.set_dst(dstId);
+    req.set_edge_key(edgeKey);
+    req.set_filter("");
+    // Build updated props
+    std::vector<cpp2::UpdateItem> items;
+    // int: 101.col_0  = 10003
+    cpp2::UpdateItem item1;
+    item1.set_name("101");
+    item1.set_prop("col_0");
+    PrimaryExpression val1(100L);
+    item1.set_value(Expression::encode(&val1));
+    items.emplace_back(item1);
 
-        // string: 101.col_10 = string_col_10_2_new
-        cpp2::UpdateItem item2;
-        item2.set_name("101");
-        item2.set_prop("col_10");
-        std::string col10new("string_col_10_2_new");
-        PrimaryExpression val2(col10new);
-        item2.set_value(Expression::encode(&val2));
-        items.emplace_back(item2);
-        req.set_update_items(std::move(items));
+    // string: 101.col_10 = string_col_10_2_new
+    cpp2::UpdateItem item2;
+    item2.set_name("101");
+    item2.set_prop("col_10");
+    std::string col10new("string_col_10_2_new");
+    PrimaryExpression val2(col10new);
+    item2.set_value(Expression::encode(&val2));
+    items.emplace_back(item2);
+    req.set_update_items(std::move(items));
 
 
-        decltype(req.return_columns) tmpColumns;
-        tmpColumns.emplace_back(Expression::encode(&val1));
-        tmpColumns.emplace_back(Expression::encode(&val2));
-        req.set_return_columns(std::move(tmpColumns));
-        req.set_insertable(false);
-    } else {
-        VertexID srcId = 1;
-        VertexID dstId = 10008;
-        // src = 1, edge_type = 101, ranking = 0, dst = 10008
-        storage::cpp2::EdgeKey edgeKey;
-        edgeKey.set_src(srcId);
-        edgeKey.set_edge_type(101);
-        edgeKey.set_ranking(0);
-        edgeKey.set_dst(dstId);
-        req.set_edge_key(edgeKey);
-        req.set_filter("");
-
-        // Build updated props
-        std::vector<cpp2::UpdateItem> items;
-        // build update props
-        cpp2::UpdateItem item1;
-        item1.set_name("101");
-        item1.set_prop("col_0");
-        PrimaryExpression val1(100L);
-        item1.set_value(Expression::encode(&val1));
-        items.emplace_back(item1);
-
-        // string: 101.col_10 = string_col_10_2_new
-        cpp2::UpdateItem item2;
-        item2.set_name("101");
-        item2.set_prop("col_10");
-        std::string col10new("string_col_10_2_new");
-        PrimaryExpression val2(col10new);
-        item2.set_value(Expression::encode(&val2));
-        items.emplace_back(item2);
-        req.set_update_items(std::move(items));
-
-        // Build yield
-        // Return player props: name, age, country
-        decltype(req.return_columns) tmpColumns;
-        tmpColumns.emplace_back(Expression::encode(&val1));
-        tmpColumns.emplace_back(Expression::encode(&val2));
-        req.set_return_columns(std::move(tmpColumns));
-        req.set_insertable(false);
-        req.set_insertable(true);
-    }
+    decltype(req.return_columns) tmpColumns;
+    tmpColumns.emplace_back(Expression::encode(&val1));
+    tmpColumns.emplace_back(Expression::encode(&val2));
+    req.set_return_columns(std::move(tmpColumns));
+    req.set_insertable(false);
     return req;
 }
 
 }  // namespace storage
 }  // namespace nebula
 
-void updateVertex(int32_t iters, bool insertable) {
+void insertVertex(int32_t iters) {
+    nebula::storage::cpp2::AddVerticesRequest  req;
+    BENCHMARK_SUSPEND {
+        req = nebula::storage::buildAddVertexReq();
+    }
+    for (decltype(iters) i = 0; i < iters; i++) {
+        // Test UpdateVertexRequest
+        auto* processor
+            = nebula::storage::AddVerticesProcessor::instance(gKV.get(),
+                                                             schemaM.get(),
+                                                             indexM.get(),
+                                                             nullptr);
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        if (!resp.result.failed_codes.empty()) {
+            LOG(ERROR) << "update faild";
+            return;
+        }
+    }
+}
+
+void insertEdge(int32_t iters) {
+    nebula::storage::cpp2::AddEdgesRequest  req;
+    BENCHMARK_SUSPEND {
+        req = nebula::storage::buildAddEdgeReq();
+    }
+    for (decltype(iters) i = 0; i < iters; i++) {
+        // Test UpdateVertexRequest
+        auto* processor
+            = nebula::storage::AddEdgesProcessor::instance(gKV.get(),
+                                                           schemaM.get(),
+                                                           indexM.get(),
+                                                           nullptr);
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        if (!resp.result.failed_codes.empty()) {
+            LOG(ERROR) << "update faild";
+            return;
+        }
+    }
+}
+
+void updateVertex(int32_t iters) {
     nebula::storage::cpp2::UpdateVertexRequest req;
     BENCHMARK_SUSPEND {
-        req = nebula::storage::buildUpdateVertexReq(insertable);
+        req = nebula::storage::buildUpdateVertexReq();
     }
 
     for (decltype(iters) i = 0; i < iters; i++) {
@@ -340,10 +328,10 @@ void updateVertex(int32_t iters, bool insertable) {
 }
 
 
-void updateEdge(int32_t iters, bool insertable) {
+void updateEdge(int32_t iters) {
     nebula::storage::cpp2::UpdateEdgeRequest req;
     BENCHMARK_SUSPEND {
-        req = nebula::storage::buildUpdateEdgeReq(insertable);
+        req = nebula::storage::buildUpdateEdgeReq();
     }
 
     for (decltype(iters) i = 0; i < iters; i++) {
@@ -364,22 +352,21 @@ void updateEdge(int32_t iters, bool insertable) {
 }
 
 
-BENCHMARK(update_vertex, iters) {
-    updateVertex(iters, false);
+BENCHMARK(insert_vertex, iters) {
+    insertVertex(iters);
 }
 
-BENCHMARK(upsert_vertex, iters) {
-    updateVertex(iters, true);
+BENCHMARK(insert_edge, iters) {
+    insertEdge(iters);
+}
+
+BENCHMARK(update_vertex, iters) {
+    updateVertex(iters);
 }
 
 BENCHMARK(update_edge, iters) {
-    updateEdge(iters, false);
+    updateEdge(iters);
 }
-
-BENCHMARK(upsert_edge, iters) {
-    updateEdge(iters, true);
-}
-
 
 int main(int argc, char** argv) {
     folly::init(&argc, &argv, true);
@@ -395,22 +382,25 @@ int main(int argc, char** argv) {
 
 CPU : Intel(R) Xeon(R) CPU E5-2697 v3 @ 2.60GHz
 
-update_vertex   : tag data exist and update
+release version
 
-upsert_vertex   : tag data (first not exist) and upsert
+insert_vertex   : insert one record of one tag of one vertex
+
+insert_edge     : insert one record of one edge
+
+update_vertex   : tag data exist and update
 
 update_edge     : edge data exist and update
 
-upsert_edge     : edge data (first not exist)  and upsert
 
 V1.0
 ==============================================================================
 src/storage/test/UpdateVertexAndEdgeBenchmark.cpprelative  time/iter  iters/s
 ==============================================================================
-update_vertex                                               322.47us    3.10K
-upsert_vertex                                               324.23us    3.08K
-update_edge                                                 387.79us    2.58K
-upsert_edge                                                 369.61us    2.71K
+insert_vertex                                               33.17us   30.15K
+insert_edge                                                 46.26us   21.62K
+update_vertex                                               59.19us   16.90K
+update_edge                                                 74.70us   13.39K
 ==============================================================================
 
 **/
