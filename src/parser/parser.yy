@@ -610,9 +610,13 @@ step_clause
         ifOutOfRange($1, @1);
         $$ = new StepClause($1);
     }
-    | KW_UPTO INTEGER KW_STEPS {
-        ifOutOfRange($2, @2);
-        $$ = new StepClause($2, true);
+    | INTEGER KW_TO INTEGER KW_STEPS {
+        ifOutOfRange($1, @2);
+        ifOutOfRange($3, @2);
+        if ($1 > $3) {
+            throw nebula::GraphParser::syntax_error(@1, "Invalid step range");
+        }
+        $$ = new StepClause($1, $3);
     }
     ;
 
@@ -942,10 +946,10 @@ find_path_sentence
     ;
 
 find_path_upto_clause
-    : %empty { $$ = new StepClause(5, true); }
+    : %empty { $$ = new StepClause(5); }
     | KW_UPTO INTEGER KW_STEPS {
         ifOutOfRange($2, @2);
-        $$ = new StepClause($2, true);
+        $$ = new StepClause($2);
     }
     ;
 

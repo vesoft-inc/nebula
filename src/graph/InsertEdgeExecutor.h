@@ -40,7 +40,7 @@ private:
     std::vector<std::string*>                         props_;
     std::vector<EdgeRowItem*>                         rows_;
     GraphSpaceID                                      spaceId_{-1};
-    std::unordered_map<std::string, std::string>      defaultValues_;
+    std::unordered_map<std::string, VariantType>      defaultValues_;
     std::unordered_map<std::string, int32_t>          propsPosition_;
 };
 

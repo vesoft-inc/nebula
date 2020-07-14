@@ -5,6 +5,7 @@
  */
 
 #include "base/Base.h"
+#include "utils/ConvertTimeType.h"
 #include "graph/SchemaHelper.h"
 #include "graph/Executor.h"
 
@@ -29,6 +30,81 @@ nebula::cpp2::SupportedType SchemaHelper::columnTypeToSupportedType(nebula::Colu
     }
 }
 
+StatusOr<nebula::cpp2::Value> SchemaHelper::toDefaultValue(ColumnSpecification* spec) {
+    nebula::cpp2::Value v;
+    Getters getter;
+    CHECK(spec->hasDefaultValue());
+    auto s = spec->prepare();
+    if (!s.ok()) {
+        return s;
+    }
+    auto valStatus = spec->getDefault(getter);
+    if (!valStatus.ok()) {
+        return std::move(valStatus).status();
+    }
+    auto value = std::move(valStatus).value();
+    auto type = spec->type();
+    switch (type) {
+        case nebula::ColumnType::BOOL: {
+            if (value.which() != VAR_BOOL) {
+                LOG(ERROR) << "ValueType is wrong, input type "
+                            << static_cast<int32_t>(type)
+                            << ", value type " <<  value.which();
+                return Status::Error("Wrong type");
+            }
+            v.set_bool_value(boost::get<bool>(value));
+            return v;
+        }
+        case nebula::ColumnType::INT: {
+            if (value.which() != VAR_INT64) {
+                LOG(ERROR) << "ValueType is wrong, input type "
+                            << static_cast<int32_t>(type)
+                            << ", value type " <<  value.which();
+                return Status::Error("Wrong type");
+            }
+            v.set_int_value(boost::get<int64_t>(value));
+            return v;
+        }
+        case nebula::ColumnType::DOUBLE: {
+            if (value.which() != VAR_DOUBLE) {
+                LOG(ERROR) << "ValueType is wrong, input type "
+                            << static_cast<int32_t>(type)
+                            << ", value type " <<  value.which();
+                return Status::Error("Wrong type");
+            }
+            v.set_double_value(boost::get<double>(value));
+            return v;
+        }
+        case nebula::ColumnType::STRING: {
+            if (value.which() != VAR_STR) {
+                LOG(ERROR) << "ValueType is wrong, input type "
+                            << static_cast<int32_t>(type)
+                            << ", value type " <<  value.which();
+                return Status::Error("Wrong type");
+            }
+            v.set_string_value(boost::get<std::string>(value));
+            return v;
+        }
+        case nebula::ColumnType::TIMESTAMP: {
+            if (value.which() != VAR_INT64 && value.which() != VAR_STR) {
+                LOG(ERROR) << "ValueType is wrong, input type "
+                            << static_cast<int32_t>(type)
+                            << ", value type " <<  value.which();
+                return Status::Error("Wrong type");
+            }
+            auto timestamp = ConvertTimeType::toTimestamp(value);
+            if (!timestamp.ok()) {
+                return timestamp.status();
+            }
+            v.set_timestamp(timestamp.value());
+            return v;
+        }
+        default:
+            LOG(ERROR) << "Unsupported Type";
+            return Status::Error("Unsupported type");
+    }
+}
+
 // static
 Status SchemaHelper::createSchema(const std::vector<ColumnSpecification*>& specs,
                                   const std::vector<SchemaPropItem*>& schemaProps,
@@ -44,79 +120,12 @@ Status SchemaHelper::createSchema(const std::vector<ColumnSpecification*>& specs
         nebula::cpp2::ColumnDef column;
         column.name = *spec->name();
         column.type.type = columnTypeToSupportedType(spec->type());
-        nebula::cpp2::Value v;
-        Getters getter;
-        if (spec->hasDefault()) {
-            auto s = spec->prepare();
-            if (!s.ok()) {
-                return s;
+        if (spec->hasDefaultValue()) {
+            auto statusV = toDefaultValue(spec);
+            if (!statusV.ok()) {
+                return statusV.status();
             }
-            auto valStatus = spec->getDefault(getter);
-            if (!valStatus.ok()) {
-                return std::move(valStatus).status();
-            }
-            auto value = std::move(valStatus).value();
-            auto type = spec->type();
-            switch (type) {
-                case nebula::ColumnType::BOOL: {
-                    if (value.which() != VAR_BOOL) {
-                        LOG(ERROR) << "ValueType is wrong, input type "
-                                   << static_cast<int32_t>(type)
-                                   << ", value type " <<  value.which();
-                        return Status::Error("Wrong type");
-                    }
-                    v.set_bool_value(boost::get<bool>(value));
-                    break;
-                }
-                case nebula::ColumnType::INT: {
-                    if (value.which() != VAR_INT64) {
-                        LOG(ERROR) << "ValueType is wrong, input type "
-                                   << static_cast<int32_t>(type)
-                                   << ", value type " <<  value.which();
-                        return Status::Error("Wrong type");
-                    }
-                    v.set_int_value(boost::get<int64_t>(value));
-                    break;
-                }
-                case nebula::ColumnType::DOUBLE: {
-                    if (value.which() != VAR_DOUBLE) {
-                        LOG(ERROR) << "ValueType is wrong, input type "
-                                   << static_cast<int32_t>(type)
-                                   << ", value type " <<  value.which();
-                        return Status::Error("Wrong type");
-                    }
-                    v.set_double_value(boost::get<double>(value));
-                    break;
-                }
-                case nebula::ColumnType::STRING: {
-                    if (value.which() != VAR_STR) {
-                        LOG(ERROR) << "ValueType is wrong, input type "
-                                   << static_cast<int32_t>(type)
-                                   << ", value type " <<  value.which();
-                        return Status::Error("Wrong type");
-                    }
-                    v.set_string_value(boost::get<std::string>(value));
-                    break;
-                }
-                case nebula::ColumnType::TIMESTAMP: {
-                    if (value.which() != VAR_INT64 && value.which() != VAR_STR) {
-                        LOG(ERROR) << "ValueType is wrong, input type "
-                                   << static_cast<int32_t>(type)
-                                   << ", value type " <<  value.which();
-                        return Status::Error("Wrong type");
-                    }
-                    auto timestamp = toTimestamp(value);
-                    if (!timestamp.ok()) {
-                        return timestamp.status();
-                    }
-                    v.set_timestamp(timestamp.value());
-                    break;
-                }
-                default:
-                    LOG(ERROR) << "Unsupported Type";
-                    return Status::Error("Unsupported type");
-            }
-            column.set_default_value(std::move(v));
+            column.set_default_value(std::move(statusV).value());
         }
         schema.columns.emplace_back(std::move(column));
     }
@@ -174,6 +183,10 @@ Status SchemaHelper::setTTLCol(SchemaPropItem* schemaProp, nebula::cpp2::Schema&
     }
 
     auto  ttlColName = ret.value();
+    if (ttlColName.empty()) {
+        schema.schema_prop.set_ttl_col("");
+        return Status::OK();
+    }
     // Check the legality of the ttl column name
     for (auto& col : schema.columns) {
         if (col.name == ttlColName) {
@@ -196,6 +209,7 @@ Status SchemaHelper::alterSchema(const std::vector<AlterSchemaOptItem*>& schemaO
                                  const std::vector<SchemaPropItem*>& schemaProps,
                                  std::vector<nebula::meta::cpp2::AlterSchemaItem>& options,
                                  nebula::cpp2::SchemaProp& prop) {
+    Getters g;
     for (auto& schemaOpt : schemaOpts) {
         nebula::meta::cpp2::AlterSchemaItem schemaItem;
         auto opType = schemaOpt->toType();
@@ -214,6 +228,13 @@ Status SchemaHelper::alterSchema(const std::vector<AlterSchemaOptItem*>& schemaO
                 nebula::cpp2::ColumnDef column;
                 column.name = *spec->name();
                 column.type.type = columnTypeToSupportedType(spec->type());
+                if (spec->hasDefaultValue()) {
+                    auto statusV = toDefaultValue(spec);
+                    if (!statusV.ok()) {
+                        return statusV.status();
+                    }
+                    column.set_default_value(std::move(statusV).value());
+                }
                 schema.columns.emplace_back(std::move(column));
             }
         }
@@ -249,44 +270,6 @@ Status SchemaHelper::alterSchema(const std::vector<AlterSchemaOptItem*>& schemaO
         }
     }
     return Status::OK();
-}
-
-StatusOr<int64_t> SchemaHelper::toTimestamp(const VariantType &value) {
-    if (value.which() != VAR_INT64 && value.which() != VAR_STR) {
-        return Status::Error("Invalid value type");
-    }
-
-    int64_t timestamp;
-    if (value.which() == VAR_STR) {
-        static const std::regex reg("^([1-9]\\d{3})-"
-                                    "(0[1-9]|1[0-2]|\\d)-"
-                                    "(0[1-9]|[1-2][0-9]|3[0-1]|\\d)\\s+"
-                                    "(20|21|22|23|[0-1]\\d|\\d):"
-                                    "([0-5]\\d|\\d):"
-                                    "([0-5]\\d|\\d)$");
-        std::smatch result;
-        if (!std::regex_match(boost::get<std::string>(value), result, reg)) {
-            return Status::Error("Invalid timestamp type");
-        }
-        struct tm time;
-        memset(&time, 0, sizeof(time));
-        time.tm_year = atoi(result[1].str().c_str()) - 1900;
-        time.tm_mon = atoi(result[2].str().c_str()) - 1;
-        time.tm_mday = atoi(result[3].str().c_str());
-        time.tm_hour = atoi(result[4].str().c_str());
-        time.tm_min = atoi(result[5].str().c_str());
-        time.tm_sec = atoi(result[6].str().c_str());
-        timestamp = mktime(&time);
-    } else {
-        timestamp = boost::get<int64_t>(value);
-    }
-
-    // The mainstream Linux kernel's implementation constrains this
-    static const int64_t maxTimestamp = std::numeric_limits<int64_t>::max() / 1000000000;
-    if (timestamp < 0 || (timestamp > maxTimestamp)) {
-        return Status::Error("Invalid timestamp type");
-    }
-    return timestamp;
 }
 }   // namespace graph
 }   // namespace nebula
