@@ -14,7 +14,7 @@ std::unordered_set<std::string> SetConfigProcessor::mutableFields_ = {
     // rocksdb_column_family_options
     "disable_auto_compactions",
     // TODO: write_buffer_size will cause rocksdb crash
-    // "write_buffer_size",
+    "write_buffer_size",
     "max_write_buffer_number",
     "level0_file_num_compaction_trigger",
     "level0_slowdown_writes_trigger",
@@ -23,14 +23,11 @@ std::unordered_set<std::string> SetConfigProcessor::mutableFields_ = {
     "target_file_size_multiplier",
     "max_bytes_for_level_base",
     "max_bytes_for_level_multiplier",
-    "ttl",
 
     // rocksdb_db_options
     "max_total_wal_size",
     "delete_obsolete_files_period_micros",
     "max_background_jobs",
-    "base_background_compactions",
-    "max_background_compactions",
     "stats_dump_period_sec",
     "compaction_readahead_size",
     "writable_file_max_buffer_size",
@@ -95,7 +92,6 @@ void SetConfigProcessor::process(const cpp2::SetConfigReq& req) {
             doSyncPutAndUpdate(std::move(data));
             return;
         }
-        return;
     } while (false);
 
     handleErrorCode(code);
@@ -141,9 +137,6 @@ cpp2::ErrorCode SetConfigProcessor::setNestedConfig(const cpp2::ConfigModule& mo
     }
 
     Configuration conf;
-    auto confRet = conf.parseFromString(item.get_value());
-    CHECK(confRet.ok());
-
     std::vector<std::string> updateFields;
     folly::split(",", updateList, updateFields, true);
     bool updated = false;
@@ -156,11 +149,12 @@ cpp2::ErrorCode SetConfigProcessor::setNestedConfig(const cpp2::ConfigModule& mo
         auto key = field.substr(0, pos);
         auto value = field.substr(pos + 1);
         // TODO: Maybe need to handle illegal value here
-        if (mutableFields_.count(key) && conf.updateStringField(key.c_str(), value).ok()) {
+        if (!conf.upsertStringField(key.c_str(), value).ok()) {
+            LOG(ERROR) << "Update configs failed: " << key;
+            return cpp2::ErrorCode::E_UNSUPPORTED;
+        }
+        if (mutableFields_.count(key)) {
             updated = true;
-        } else {
-            LOG(ERROR) << "Unsupported configs " << key;
-            return cpp2::ErrorCode::E_NOT_FOUND;
         }
     }
 

@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 #include "storage/mutate/AddEdgesProcessor.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include <algorithm>
 #include <limits>
 #include "time/WallClock.h"
@@ -14,8 +14,8 @@ namespace storage {
 
 void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
     spaceId_ = req.get_space_id();
-    auto version =
-        std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec();
+    auto version = FLAGS_enable_multi_versions ?
+        std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec() : 0L;
     // Switch version to big-endian, make sure the key is in ordered.
     version = folly::Endian::big(version);
 
@@ -44,7 +44,7 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
         std::for_each(req.parts.begin(), req.parts.end(), [&](auto& partEdges) {
             auto partId = partEdges.first;
             auto atomic = [version, partId, edges = std::move(partEdges.second), this]()
-                          -> std::string {
+                          -> folly::Optional<std::string> {
                 return addEdges(version, partId, edges);
             };
             auto callback = [partId, this](kvstore::ResultCode code) {
@@ -102,6 +102,10 @@ std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
                                                                val,
                                                                spaceId_,
                                                                edgeType);
+                    if (reader == nullptr) {
+                        LOG(WARNING) << "Bad format row";
+                        return "";
+                    }
                     auto oi = indexKey(partId, reader.get(), e.first, index);
                     if (!oi.empty()) {
                         batchHolder->remove(std::move(oi));
@@ -115,9 +119,15 @@ std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
                                                            e.second,
                                                            spaceId_,
                                                            edgeType);
+                    if (nReader == nullptr) {
+                        LOG(WARNING) << "Bad format row";
+                        return "";
+                    }
                 }
                 auto ni = indexKey(partId, nReader.get(), e.first, index);
-                batchHolder->put(std::move(ni), "");
+                if (!ni.empty()) {
+                    batchHolder->put(std::move(ni), "");
+                }
             }
         }
         /*
@@ -156,12 +166,15 @@ std::string AddEdgesProcessor::indexKey(PartitionID partId,
                                         const folly::StringPiece& rawKey,
                                         std::shared_ptr<nebula::cpp2::IndexItem> index) {
     auto values = collectIndexValues(reader, index->get_fields());
+    if (!values.ok()) {
+        return "";
+    }
     return NebulaKeyUtils::edgeIndexKey(partId,
                                         index->get_index_id(),
                                         NebulaKeyUtils::getSrcId(rawKey),
                                         NebulaKeyUtils::getRank(rawKey),
                                         NebulaKeyUtils::getDstId(rawKey),
-                                        values);
+                                        values.value());
 }
 
 }  // namespace storage

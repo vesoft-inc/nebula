@@ -10,6 +10,7 @@
 #include "fs/FileUtils.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/RocksEngineConfig.h"
+#include <rocksdb/convenience.h>
 
 namespace nebula {
 namespace kvstore {
@@ -27,10 +28,9 @@ namespace {
 class RocksWriteBatch : public WriteBatch {
 private:
     rocksdb::WriteBatch batch_;
-    rocksdb::DB* db_{nullptr};
 
 public:
-    explicit RocksWriteBatch(rocksdb::DB* db) : batch_(FLAGS_rocksdb_batch_size), db_(db) {}
+    RocksWriteBatch() : batch_(FLAGS_rocksdb_batch_size) {}
 
     virtual ~RocksWriteBatch() = default;
 
@@ -48,25 +48,6 @@ public:
         } else {
             return ResultCode::ERR_UNKNOWN;
         }
-    }
-
-    ResultCode removePrefix(folly::StringPiece prefix) override {
-        rocksdb::Slice pre(prefix.begin(), prefix.size());
-        rocksdb::ReadOptions options;
-        std::unique_ptr<rocksdb::Iterator> iter(db_->NewIterator(options));
-        iter->Seek(pre);
-        while (iter->Valid()) {
-            if (iter->key().starts_with(pre)) {
-                if (!batch_.Delete(iter->key()).ok()) {
-                    return ResultCode::ERR_UNKNOWN;
-                }
-            } else {
-                // Done
-                break;
-            }
-            iter->Next();
-        }
-        return ResultCode::SUCCEEDED;
     }
 
     // Remove all keys in the range [start, end)
@@ -125,15 +106,25 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
     LOG(INFO) << "open rocksdb on " << path;
 }
 
+void RocksEngine::stop() {
+    if (db_) {
+        // Because we trigger compaction in WebService, we need to stop all background work
+        // before we stop HttpServer.
+        rocksdb::CancelAllBackgroundWork(db_.get(), true);
+    }
+}
 
 std::unique_ptr<WriteBatch> RocksEngine::startBatchWrite() {
-    return std::make_unique<RocksWriteBatch>(db_.get());
+    return std::make_unique<RocksWriteBatch>();
 }
 
 
-ResultCode RocksEngine::commitBatchWrite(std::unique_ptr<WriteBatch> batch) {
+ResultCode RocksEngine::commitBatchWrite(std::unique_ptr<WriteBatch> batch,
+                                         bool disableWAL,
+                                         bool sync) {
     rocksdb::WriteOptions options;
-    options.disableWAL = FLAGS_rocksdb_disable_wal;
+    options.disableWAL = disableWAL;
+    options.sync = sync;
     auto* b = static_cast<RocksWriteBatch*>(batch.get());
     rocksdb::Status status = db_->Write(options, b->data());
     if (status.ok()) {
@@ -285,8 +276,6 @@ ResultCode RocksEngine::removeRange(const std::string& start,
                                     const std::string& end) {
     rocksdb::WriteOptions options;
     options.disableWAL = FLAGS_rocksdb_disable_wal;
-    // TODO(sye) Given the RocksDB version we are using,
-    // we should avoud using DeleteRange
     auto status = db_->DeleteRange(options, db_->DefaultColumnFamily(), start, end);
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
@@ -296,40 +285,9 @@ ResultCode RocksEngine::removeRange(const std::string& start,
     }
 }
 
-
-ResultCode RocksEngine::removePrefix(const std::string& prefix) {
-    rocksdb::Slice pre(prefix.data(), prefix.size());
-    rocksdb::ReadOptions readOptions;
-    rocksdb::WriteBatch batch;
-    std::unique_ptr<rocksdb::Iterator> iter(db_->NewIterator(readOptions));
-    iter->Seek(pre);
-    while (iter->Valid()) {
-        if (iter->key().starts_with(pre)) {
-            auto status = batch.Delete(iter->key());
-            if (!status.ok()) {
-                return ResultCode::ERR_UNKNOWN;
-            }
-        } else {
-            // Done
-            break;
-        }
-        iter->Next();
-    }
-
-    rocksdb::WriteOptions writeOptions;
-    writeOptions.disableWAL = FLAGS_rocksdb_disable_wal;
-    if (db_->Write(writeOptions, &batch).ok()) {
-        return ResultCode::SUCCEEDED;
-    } else {
-        return ResultCode::ERR_UNKNOWN;
-    }
-}
-
-
 std::string RocksEngine::partKey(PartitionID partId) {
     return NebulaKeyUtils::systemPartKey(partId);
 }
-
 
 void RocksEngine::addPart(PartitionID partId) {
     auto ret = put(partKey(partId), "");

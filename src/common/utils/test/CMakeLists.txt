@@ -1,0 +1,12 @@
+nebula_add_test(
+    NAME
+        nebula_key_utils_test
+    SOURCES
+        NebulaKeyUtilsTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:kvstore_storage_utils_obj>
+    LIBRARIES
+        gtest
+        gtest_main
+)

@@ -48,9 +48,13 @@ struct SpaceInfoCache {
     std::string spaceName;
     PartsAlloc partsAlloc_;
     std::unordered_map<HostAddr, std::vector<PartitionID>> partsOnHost_;
+    std::vector<cpp2::TagItem> tagItemVec_;
     TagSchemas  tagSchemas_;
+    std::vector<cpp2::EdgeItem> edgeItemVec_;
     EdgeSchemas edgeSchemas_;
+    std::vector<nebula::cpp2::IndexItem> tagIndexItemVec_;
     Indexes tagIndexes_;
+    std::vector<nebula::cpp2::IndexItem> edgeIndexItemVec_;
     Indexes edgeIndexes_;
 };
 
@@ -416,6 +420,7 @@ public:
     StatusOr<std::string>
     getEdgeNameByTypeFromCache(const GraphSpaceID& space, const EdgeType edgeType);
 
+    // get all lastest version edge
     StatusOr<std::vector<std::string>> getAllEdgeFromCache(const GraphSpaceID& space);
 
     PartsMap getPartsMapFromCache(const HostAddr& host);
@@ -480,6 +485,8 @@ public:
     std::vector<nebula::cpp2::RoleItem> getRolesByUserFromCache(const std::string& user);
 
     bool authCheckFromCache(const std::string& account, const std::string& password);
+
+    bool checkShadowAccountFromCache(const std::string& account);
 
     Status refreshCache();
 
@@ -567,8 +574,24 @@ private:
 
     std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds_;
     folly::RWSpinLock     leaderIdsLock_;
-    int64_t               localLastUpdateTime_{0};
-    int64_t               metadLastUpdateTime_{0};
+    std::atomic<int64_t>  localDataLastUpdateTime_{-1};
+    std::atomic<int64_t>  localCfgLastUpdateTime_{-1};
+    std::atomic<int64_t>  metadLastUpdateTime_{0};
+
+    struct ThreadLocalInfo {
+        int64_t               localLastUpdateTime_{-1};
+        LocalCache            localCache_;
+        SpaceNameIdMap        spaceIndexByName_;
+        SpaceTagNameIdMap     spaceTagIndexByName_;
+        SpaceEdgeNameTypeMap  spaceEdgeIndexByName_;
+        SpaceEdgeTypeNameMap  spaceEdgeIndexByType_;
+        SpaceTagIdNameMap     spaceTagIndexById_;
+        SpaceNewestTagVerMap  spaceNewestTagVerMap_;
+        SpaceNewestEdgeVerMap spaceNewestEdgeVerMap_;
+        SpaceAllEdgeMap       spaceAllEdgeMap_;
+    };
+
+    const ThreadLocalInfo& getThreadLocalInfo();
 
     LocalCache localCache_;
     std::vector<HostAddr> addrs_;

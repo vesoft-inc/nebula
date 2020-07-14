@@ -20,7 +20,7 @@
 
 
 DEFINE_int32(bulk_insert_size, 1000, "The number of vertices by bulk insert");
-DEFINE_int32(total_vertices_size, 1000000, "The number of vertices");
+DEFINE_int32(total_vertices_size, 1000, "The number of vertices");
 DEFINE_string(root_data_path, "/tmp/IndexWritePref", "Engine data path");
 
 namespace nebula {
@@ -52,7 +52,7 @@ bool processVertices(kvstore::KVStore* kv,
         req.space_id = 0;
         req.overwritable = true;
         std::vector<cpp2::Vertex> vertices;
-        auto v = genVertices(vId, 1);
+        auto v = genVertices(vId, 3001);
         vertices.insert(vertices.end(), v.begin(), v.end());
         req.parts.emplace(0, std::move(vertices));
     };
@@ -90,7 +90,7 @@ void insertVertices(bool withoutIndex) {
             indexMan = std::make_unique<nebula::storage::AdHocIndexManager>();
             schemaMan = TestUtils::mockSchemaMan();
         } else {
-            indexMan = TestUtils::mockIndexMan(0, 3001, 3002);
+            indexMan = TestUtils::mockIndexMan(0, 3001, 3002, 0, 0);
             schemaMan = TestUtils::mockSchemaMan();
         }
     };
@@ -141,7 +141,7 @@ void insertVertices(bool withoutIndex) {
                 }
             }
             {
-                auto prefix = NebulaKeyUtils::indexPrefix(0, 1);
+                auto prefix = NebulaKeyUtils::indexPrefix(0, 4001);
                 std::unique_ptr<kvstore::KVIterator> iter;
                 auto status = kv->prefix(0, 0, prefix, &iter);
                 if (status != kvstore::ResultCode::SUCCEEDED) {
@@ -246,12 +246,20 @@ void insertDupVertices() {
                                             "duplicateIndex");
         kv = TestUtils::initKV(std::move(rootPath).c_str());
         schemaMan = TestUtils::mockSchemaMan();
-        indexMan = TestUtils::mockIndexMan(0, 3001, 3002);
+        indexMan = TestUtils::mockIndexMan(0, 3001, 3002, 0, 0);
     };
 
     while (vId < FLAGS_total_vertices_size) {
-        if (!processVertices(kv.get(), schemaMan.get(), indexMan.get(), vId) ||
-                !processVertices(kv.get(), schemaMan.get(), indexMan.get(), vId)) {
+        if (!processVertices(kv.get(), schemaMan.get(), indexMan.get(), vId)) {
+            LOG(ERROR) << "Vertices bulk insert error";
+            return;
+        }
+    }
+
+    // insert new version vertices.
+    vId = 0;
+    while (vId < FLAGS_total_vertices_size) {
+        if (!processVertices(kv.get(), schemaMan.get(), indexMan.get(), vId)) {
             LOG(ERROR) << "Vertices bulk insert error";
             return;
         }
@@ -273,13 +281,13 @@ void insertDupVertices() {
             }
             if (cnt != FLAGS_total_vertices_size * 2) {
                 LOG(ERROR) << "Vertices insert error , expected : "
-                           << FLAGS_total_vertices_size
+                           << FLAGS_total_vertices_size * 2
                            << "actual : " << cnt;
                 return;
             }
         }
         {
-            auto prefix = NebulaKeyUtils::indexPrefix(0, 1);
+            auto prefix = NebulaKeyUtils::indexPrefix(0, 4001);
             std::unique_ptr<kvstore::KVIterator> iter;
             auto status = kv->prefix(0, 0, prefix, &iter);
             if (status != kvstore::ResultCode::SUCCEEDED) {
@@ -318,7 +326,7 @@ void insertVerticesMultIndex() {
                                        "multIndex");
 
         kv = TestUtils::initKV(std::move(rootPath).c_str());
-        indexMan = TestUtils::mockMultiIndexMan(0, 3001, 3002);
+        indexMan = TestUtils::mockMultiIndexMan(0, 3001, 3004, 0, 0);
         schemaMan = TestUtils::mockSchemaMan(0);
     };
     while (vId < FLAGS_total_vertices_size) {
@@ -388,6 +396,7 @@ BENCHMARK(withoutIndex) {
 BENCHMARK(unmatchIndex) {
     insertUnmatchIndex();
 }
+
 
 BENCHMARK(attachIndex) {
     insertVertices(false);

@@ -114,13 +114,15 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
                     defaultValue = folly::to<std::string>(value->get_timestamp());
                     break;
                 default:
-                    LOG(ERROR) << "Unsupported type";
+                    LOG(ERROR) << "Unknown type " << static_cast<int>(column.get_type().get_type());
+                    handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
+                    onFinished();
                     return;
             }
 
             LOG(INFO) << "Get Tag Default value: Property Name " << name
                     << ", Value " << defaultValue;
-            auto defaultKey = MetaServiceUtils::tagDefaultKey(req.get_space_id(),
+            auto defaultKey = MetaServiceUtils::defaultKey(req.get_space_id(),
                                                               tagId,
                                                               name);
             data.emplace_back(std::move(defaultKey), std::move(defaultValue));

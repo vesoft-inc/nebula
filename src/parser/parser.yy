@@ -103,14 +103,14 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_GO KW_AS KW_TO KW_OR KW_AND KW_XOR KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
 %token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_OFFLINE
 %token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND KW_REBUILD
-%token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
+%token KW_INT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_PART KW_PARTS KW_TIMESTAMP KW_ADD
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_CHARSET KW_COLLATE KW_COLLATION
 %token KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_INDEX KW_INDEXES
 %token KW_IF KW_NOT KW_EXISTS KW_WITH
 %token KW_COUNT KW_COUNT_DISTINCT KW_SUM KW_AVG KW_MAX KW_MIN KW_STD KW_BIT_AND KW_BIT_OR KW_BIT_XOR
 %token KW_BY KW_DOWNLOAD KW_HDFS KW_UUID KW_CONFIGS KW_FORCE KW_STATUS
-%token KW_VARIABLES KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
+%token KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
 %token KW_TTL KW_TTL_DURATION KW_TTL_COL KW_DATA KW_STOP
 %token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
 %token KW_ORDER KW_ASC KW_LIMIT KW_OFFSET KW_GROUP
@@ -124,6 +124,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_USER KW_USERS KW_ACCOUNT
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_ROLES
 %token KW_GOD KW_ADMIN KW_DBA KW_GUEST KW_GRANT KW_REVOKE KW_ON
+%token KW_CONTAINS
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -219,7 +220,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 
 %type <sentence> admin_sentence
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
-%type <sentence> show_sentence 
+%type <sentence> show_sentence
 
 %type <sentence> mutate_sentence
 %type <sentence> insert_vertex_sentence insert_edge_sentence
@@ -281,23 +282,34 @@ unreserved_keyword
      | KW_DATA               { $$ = new std::string("data"); }
      | KW_LEADER             { $$ = new std::string("leader"); }
      | KW_UUID               { $$ = new std::string("uuid"); }
-     | KW_VARIABLES          { $$ = new std::string("variables"); }
      | KW_JOB                { $$ = new std::string("job"); }
      | KW_JOBS               { $$ = new std::string("jobs"); }
-     | KW_SUBMIT             { $$ = new std::string("submit"); }
-     | KW_RECOVER            { $$ = new std::string("recover"); }
-     | KW_FLUSH              { $$ = new std::string("flush"); }
-     | KW_COMPACT            { $$ = new std::string("compact"); }
      | KW_BIDIRECT           { $$ = new std::string("bidirect"); }
      | KW_OFFLINE            { $$ = new std::string("offline"); }
      | KW_FORCE              { $$ = new std::string("force"); }
      | KW_STATUS             { $$ = new std::string("status"); }
-     | KW_REBUILD            { $$ = new std::string("rebuild"); }
      | KW_PART               { $$ = new std::string("part"); }
      | KW_PARTS              { $$ = new std::string("parts"); }
      | KW_DEFAULT            { $$ = new std::string("default"); }
      | KW_CONFIGS            { $$ = new std::string("configs"); }
      | KW_ACCOUNT            { $$ = new std::string("account"); }
+     | KW_HDFS               { $$ = new std::string("hdfs"); }
+     | KW_PARTITION_NUM      { $$ = new std::string("partition_num"); }
+     | KW_REPLICA_FACTOR     { $$ = new std::string("replica_factor"); }
+     | KW_CHARSET            { $$ = new std::string("charset"); }
+     | KW_COLLATE            { $$ = new std::string("collate"); }
+     | KW_COLLATION          { $$ = new std::string("collation"); }
+     | KW_TTL_DURATION       { $$ = new std::string("ttl_duration"); }
+     | KW_TTL_COL            { $$ = new std::string("ttl_col"); }
+     | KW_SNAPSHOT           { $$ = new std::string("snapshot"); }
+     | KW_SNAPSHOTS          { $$ = new std::string("snapshots"); }
+     | KW_GRAPH              { $$ = new std::string("graph"); }
+     | KW_META               { $$ = new std::string("meta"); }
+     | KW_STORAGE            { $$ = new std::string("storage"); }
+     | KW_ALL                { $$ = new std::string("all"); }
+     | KW_SHORTEST           { $$ = new std::string("shortest"); }
+     | KW_COUNT_DISTINCT     { $$ = new std::string("count_distinct"); }
+     | KW_CONTAINS           { $$ = new std::string("contains"); }
      ;
 
 agg_function
@@ -474,7 +486,6 @@ type_spec
     | KW_DOUBLE { $$ = ColumnType::DOUBLE; }
     | KW_STRING { $$ = ColumnType::STRING; }
     | KW_BOOL { $$ = ColumnType::BOOL; }
-    | KW_BIGINT { $$ = ColumnType::BIGINT; }
     | KW_TIMESTAMP { $$ = ColumnType::TIMESTAMP; }
     ;
 
@@ -521,6 +532,9 @@ relational_expression
     }
     | relational_expression GE additive_expression {
         $$ = new RelationalExpression($1, RelationalExpression::GE, $3);
+    }
+    | relational_expression KW_CONTAINS additive_expression {
+        $$ = new RelationalExpression($1, RelationalExpression::CONTAINS, $3);
     }
     ;
 
@@ -596,9 +610,13 @@ step_clause
         ifOutOfRange($1, @1);
         $$ = new StepClause($1);
     }
-    | KW_UPTO INTEGER KW_STEPS {
-        ifOutOfRange($2, @2);
-        $$ = new StepClause($2, true);
+    | INTEGER KW_TO INTEGER KW_STEPS {
+        ifOutOfRange($1, @2);
+        ifOutOfRange($3, @2);
+        if ($1 > $3) {
+            throw nebula::GraphParser::syntax_error(@1, "Invalid step range");
+        }
+        $$ = new StepClause($1, $3);
     }
     ;
 
@@ -928,10 +946,10 @@ find_path_sentence
     ;
 
 find_path_upto_clause
-    : %empty { $$ = new StepClause(5, true); }
+    : %empty { $$ = new StepClause(5); }
     | KW_UPTO INTEGER KW_STEPS {
         ifOutOfRange($2, @2);
-        $$ = new StepClause($2, true);
+        $$ = new StepClause($2);
     }
     ;
 
@@ -1005,11 +1023,8 @@ create_schema_prop_list
     ;
 
 create_schema_prop_item
-    : KW_TTL_DURATION ASSIGN unary_integer {
-        // Less than or equal to 0 means infinity, so less than 0 is equivalent to 0
-        if ($3 < 0) {
-            $3 = 0;
-        }
+    : KW_TTL_DURATION ASSIGN INTEGER {
+        ifOutOfRange($3, @3);
         $$ = new SchemaPropItem(SchemaPropItem::TTL_DURATION, $3);
     }
     | KW_TTL_COL ASSIGN STRING {
@@ -1086,11 +1101,8 @@ alter_schema_prop_list
     ;
 
 alter_schema_prop_item
-    : KW_TTL_DURATION ASSIGN unary_integer {
-        // Less than or equal to 0 means infinity, so less than 0 is equivalent to 0
-        if ($3 < 0) {
-            $3 = 0;
-        }
+    : KW_TTL_DURATION ASSIGN INTEGER {
+        ifOutOfRange($3, @3);
         $$ = new SchemaPropItem(SchemaPropItem::TTL_DURATION, $3);
     }
     | KW_TTL_COL ASSIGN STRING {

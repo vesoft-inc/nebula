@@ -53,7 +53,9 @@ public:
     void setInterim(std::unique_ptr<RowSetWriter> rsWriter);
 
     bool hasData() const {
-        return (rsWriter_ != nullptr) && (rsReader_ != nullptr);
+        return (rsWriter_ != nullptr)
+                && (!rsWriter_->data().empty())
+                && (rsReader_ != nullptr);
     }
 
     std::shared_ptr<const meta::SchemaProviderIf> schema() const {
@@ -84,8 +86,22 @@ public:
 
     class InterimResultIndex final {
     public:
-        OptVariantType getColumnWithVID(VertexID id, const std::string &col) const;
+        OptVariantType getColumnWithRow(std::size_t row, const std::string &col) const;
         nebula::cpp2::SupportedType getColumnType(const std::string &col) const;
+        auto rowsOfVid(VertexID id) {
+            return vidToRowIndex_.equal_range(id);
+        }
+
+        std::vector<uint32_t> rowsOfVids(const std::vector<VertexID> &ids) {
+            std::vector<uint32_t> rows;
+            for (const auto vid : ids) {
+                const auto range = rowsOfVid(vid);
+                for (auto i = range.first; i != range.second; ++i) {
+                    rows.emplace_back(i->second);
+                }
+            }
+            return rows;
+        }
 
     private:
         friend class InterimResult;
@@ -94,7 +110,7 @@ public:
         using SchemaPtr = std::shared_ptr<const meta::SchemaProviderIf>;
         SchemaPtr                                   schema_{nullptr};
         std::unordered_map<std::string, uint32_t>   columnToIndex_;
-        std::unordered_map<VertexID, uint32_t>      vidToRowIndex_;
+        std::multimap<VertexID, uint32_t>           vidToRowIndex_;
     };
 
 private:

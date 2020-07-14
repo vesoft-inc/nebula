@@ -5,6 +5,7 @@ nebula_add_executable(
         DumpEdgesTool.cpp
     OBJECTS
         $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:kvstore_storage_utils_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         glog

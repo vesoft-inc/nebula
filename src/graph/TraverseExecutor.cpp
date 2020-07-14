@@ -138,11 +138,19 @@ nebula::cpp2::SupportedType TraverseExecutor::calculateExprType(Expression* exp)
             }
             return nebula::cpp2::SupportedType::UNKNOWN;
         }
-        case Expression::kVariableProp:
+        case Expression::kVariableProp: {
+            auto* propExp = static_cast<const AliasPropertyExpression*>(exp);
+            const auto* propName = propExp->prop();
+            auto variable = ectx()->variableHolder()->get(*propExp->alias());
+            if (variable == nullptr || !variable->hasData()) {
+                return nebula::cpp2::SupportedType::UNKNOWN;
+            }
+            return variable->getColumnType(*propName);
+        }
         case Expression::kInputProp: {
             auto* propExp = static_cast<const AliasPropertyExpression*>(exp);
             const auto* propName = propExp->prop();
-            if (inputs_ == nullptr) {
+            if (inputs_ == nullptr || !inputs_->hasData()) {
                 return nebula::cpp2::SupportedType::UNKNOWN;
             } else {
                 return inputs_->getColumnType(*propName);

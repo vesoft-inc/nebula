@@ -8,7 +8,7 @@
 #define STORAGE_COMPACTIONFILTER_H_
 
 #include "base/Base.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include "dataman/RowReader.h"
 #include "meta/NebulaSchemaProvider.h"
 #include "kvstore/CompactionFilter.h"
@@ -103,6 +103,10 @@ public:
                 return false;
             }
             auto reader = nebula::RowReader::getTagPropReader(schemaMan_, val, spaceId, tagId);
+            if (reader == nullptr) {
+                VLOG(3) << "Remove the bad format vertex";
+                return false;
+            }
             return checkDataTtlValid(schema.get(), reader.get());
         } else if (NebulaKeyUtils::isEdge(key)) {
             auto edgeType = NebulaKeyUtils::getEdgeType(key);
@@ -113,6 +117,10 @@ public:
             }
             auto reader = nebula::RowReader::getEdgePropReader(schemaMan_, val,
                                                                spaceId, std::abs(edgeType));
+            if (reader == nullptr) {
+                VLOG(3) << "Remove the bad format edge!";
+                return false;
+            }
             return checkDataTtlValid(schema.get(), reader.get());
         }
         return true;
@@ -177,9 +185,8 @@ class StorageCompactionFilterFactory final : public kvstore::KVCompactionFilterF
 public:
     StorageCompactionFilterFactory(meta::SchemaManager* schemaMan,
                                    meta::IndexManager* indexMan,
-                                   GraphSpaceID spaceId,
-                                   int32_t customFilterIntervalSecs):
-        KVCompactionFilterFactory(spaceId, customFilterIntervalSecs),
+                                   GraphSpaceID spaceId):
+        KVCompactionFilterFactory(spaceId),
         schemaMan_(schemaMan),
         indexMan_(indexMan) {}
 
@@ -206,11 +213,10 @@ public:
     virtual ~StorageCompactionFilterFactoryBuilder() = default;
 
     std::shared_ptr<kvstore::KVCompactionFilterFactory>
-    buildCfFactory(GraphSpaceID spaceId, int32_t customFilterIntervalSecs) override {
+    buildCfFactory(GraphSpaceID spaceId) override {
         return std::make_shared<StorageCompactionFilterFactory>(schemaMan_,
                                                                 indexMan_,
-                                                                spaceId,
-                                                                customFilterIntervalSecs);
+                                                                spaceId);
     }
 
 private:

@@ -16,6 +16,7 @@ set(KVSTORE_TEST_LIBS
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:gflags_man_obj>
+    $<TARGET_OBJECTS:kvstore_storage_utils_obj>
 )
 
 nebula_add_test(
@@ -77,6 +78,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:thrift_obj>
         $<TARGET_OBJECTS:time_obj>
+        $<TARGET_OBJECTS:kvstore_storage_utils_obj>
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}

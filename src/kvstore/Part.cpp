@@ -6,7 +6,8 @@
 
 #include "kvstore/Part.h"
 #include "kvstore/LogEncoder.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
+#include "kvstore/RocksEngineConfig.h"
 
 DEFINE_int32(cluster_id, 0, "A unique id for each cluster");
 
@@ -90,16 +91,6 @@ void Part::asyncRemove(folly::StringPiece key, KVCallback cb) {
 
 void Part::asyncMultiRemove(const std::vector<std::string>& keys, KVCallback cb) {
     std::string log = encodeMultiValues(OP_MULTI_REMOVE, keys);
-
-    appendAsync(FLAGS_cluster_id, std::move(log))
-        .thenValue([this, callback = std::move(cb)] (AppendLogResult res) mutable {
-            callback(this->toResultCode(res));
-        });
-}
-
-
-void Part::asyncRemovePrefix(folly::StringPiece prefix, KVCallback cb) {
-    std::string log = encodeSingleValue(OP_REMOVE_PREFIX, prefix);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
         .thenValue([this, callback = std::move(cb)] (AppendLogResult res) mutable {
@@ -249,14 +240,6 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
             }
             break;
         }
-        case OP_REMOVE_PREFIX: {
-            auto prefix = decodeSingleValue(log);
-            if (batch->removePrefix(prefix) != ResultCode::SUCCEEDED) {
-                LOG(ERROR) << idStr_ << "Failed to call WriteBatch::removePrefix()";
-                return false;
-            }
-            break;
-        }
         case OP_REMOVE_RANGE: {
             auto range = decodeMultiValues(log);
             DCHECK_EQ(2, range.size());
@@ -276,10 +259,7 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
                     code = batch->remove(op.second.first);
                 } else if (op.first == BatchLogType::OP_BATCH_REMOVE_RANGE) {
                     code = batch->removeRange(op.second.first, op.second.second);
-                } else if (op.first == BatchLogType::OP_BATCH_REMOVE_PREFIX) {
-                    code = batch->removePrefix(op.second.first);
                 }
-
                 if (code != ResultCode::SUCCEEDED) {
                     LOG(ERROR) << idStr_ << "Failed to call WriteBatch";
                     return false;
@@ -312,7 +292,7 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
             break;
         }
         default: {
-            LOG(FATAL) << idStr_ << "Unknown operation: " << static_cast<uint8_t>(log[0]);
+            LOG(WARNING) << idStr_ << "Unknown operation: " << static_cast<int32_t>(log[0]);
         }
         }
 
@@ -325,7 +305,9 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
             return false;
         }
     }
-    return engine_->commitBatchWrite(std::move(batch)) == ResultCode::SUCCEEDED;
+    return engine_->commitBatchWrite(std::move(batch),
+                                     FLAGS_rocksdb_disable_wal,
+                                     FLAGS_rocksdb_wal_sync) == ResultCode::SUCCEEDED;
 }
 
 std::pair<int64_t, int64_t> Part::commitSnapshot(const std::vector<std::string>& rows,
@@ -350,7 +332,8 @@ std::pair<int64_t, int64_t> Part::commitSnapshot(const std::vector<std::string>&
             return std::make_pair(0, 0);
         }
     }
-    if (ResultCode::SUCCEEDED != engine_->commitBatchWrite(std::move(batch))) {
+    // For snapshot, we open the rocksdb's wal to avoid loss data if crash.
+    if (ResultCode::SUCCEEDED != engine_->commitBatchWrite(std::move(batch), false)) {
         LOG(ERROR) << idStr_ << "Put failed in commit";
         return std::make_pair(0, 0);
     }

@@ -40,7 +40,7 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
     }
 
     // step 2 : Blocking all writes action for storage engines.
-    auto signRet = Snapshot::instance(kvstore_)->blockingWrites(SignType::BLOCK_ON);
+    auto signRet = Snapshot::instance(kvstore_, client_)->blockingWrites(SignType::BLOCK_ON);
     if (signRet != cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Send blocking sign to storage engine error";
         handleErrorCode(signRet);
@@ -50,7 +50,7 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
     }
 
     // step 3 : Create checkpoint for all storage engines and meta engine.
-    auto csRet = Snapshot::instance(kvstore_)->createSnapshot(snapshot);
+    auto csRet = Snapshot::instance(kvstore_,  client_)->createSnapshot(snapshot);
     if (csRet != cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Checkpoint create error on storage engine";
         handleErrorCode(csRet);
@@ -90,6 +90,7 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
         handleErrorCode(MetaCommon::to(putRet));
     }
 
+    LOG(INFO) << "Create snapshot " << snapshot << " successfully";
     onFinished();
 }
 
@@ -101,7 +102,7 @@ std::string CreateSnapshotProcessor::genSnapshotName() {
 }
 
 cpp2::ErrorCode CreateSnapshotProcessor::cancelWriteBlocking() {
-    auto signRet = Snapshot::instance(kvstore_)->blockingWrites(SignType::BLOCK_OFF);
+    auto signRet = Snapshot::instance(kvstore_, client_)->blockingWrites(SignType::BLOCK_OFF);
     if (signRet != cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Cancel write blocking error";
         return signRet;

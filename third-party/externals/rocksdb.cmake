@@ -5,12 +5,11 @@
 
 set(name rocksdb)
 set(source_dir ${CMAKE_CURRENT_BINARY_DIR}/${name}/source)
-set(ROCKSDB_CXX_FLAGS "-Wno-pessimizing-move -Wno-redundant-move -Wno-deprecated-copy -Wno-error=shadow -Wno-error=sign-compare")
 ExternalProject_Add(
     ${name}
-    URL https://github.com/facebook/rocksdb/archive/v5.15.10.tar.gz
-    URL_HASH MD5=5b1c1fa7ff4756218514205238d8900d
-    DOWNLOAD_NAME rocksdb-5.15.10.tar.gz
+    URL https://github.com/facebook/rocksdb/archive/v6.7.3.tar.gz
+    URL_HASH MD5=e8157696557ed80ab30c443321866f04
+    DOWNLOAD_NAME rocksdb-6.7.3.tar.gz
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/${name}
     TMP_DIR ${BUILD_INFO_DIR}
     STAMP_DIR ${BUILD_INFO_DIR}
@@ -23,6 +22,8 @@ ExternalProject_Add(
         -DWITH_SNAPPY=ON
         -DWITH_ZSTD=ON
         -DWITH_ZLIB=ON
+        -DWITH_LZ4=ON
+        -DWITH_BZ2=ON
         -DWITH_JEMALLOC=OFF
         -DWITH_GFLAGS=OFF
         -DWITH_TESTS=OFF
@@ -30,8 +31,7 @@ ExternalProject_Add(
         -DUSE_RTTI=ON
         -DFAIL_ON_WARNINGS=OFF
         -DCMAKE_BUILD_TYPE=Release
-#-DCMAKE_CXX_FLAGS:STRING=${ROCKSDB_CXX_FLAGS}
-    PATCH_COMMAND patch CMakeLists.txt ${CMAKE_SOURCE_DIR}/patches/rocksdb-5.15.10.patch
+        "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -D NPERF_CONTEXT"
     BUILD_IN_SOURCE 1
     BUILD_COMMAND make -s -j${BUILDING_JOBS_NUM} VERBOSE=1
     INSTALL_COMMAND make -s install -j${BUILDING_JOBS_NUM}

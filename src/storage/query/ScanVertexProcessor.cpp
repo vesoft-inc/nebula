@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 #include "storage/query/ScanVertexProcessor.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include <algorithm>
 #include <limits>
 #include "time/WallClock.h"
@@ -84,6 +84,9 @@ void ScanVertexProcessor::process(const cpp2::ScanVertexRequest& req) {
         } else if (!ctxIter->second.empty()) {
             // only return specified columns
             auto reader = RowReader::getTagPropReader(schemaMan_, value, spaceId_, tagId);
+            if (reader == nullptr) {
+                continue;
+            }
             RowWriter writer;
             PropsCollector collector(&writer);
             auto& props = ctxIter->second;

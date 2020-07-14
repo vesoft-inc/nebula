@@ -385,7 +385,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INPROPER_ROLE, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::E_IMPROPER_ROLE, resp.get_code());
     }
     // actual role is GUEST, but revoke unknown, expect error.
     {
@@ -398,7 +398,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INPROPER_ROLE, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::E_IMPROPER_ROLE, resp.get_code());
     }
     // revoke
     {

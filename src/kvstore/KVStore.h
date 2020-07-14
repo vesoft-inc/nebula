@@ -63,6 +63,8 @@ public:
     // Return bit-OR of StoreCapability values;
     virtual uint32_t capability() const = 0;
 
+    virtual void stop() = 0;
+
     // Retrieve the current leader for the given partition. This
     // is usually called when ERR_LEADER_CHANGED result code is
     // returned
@@ -152,11 +154,6 @@ public:
                                   const std::string& start,
                                   const std::string& end,
                                   KVCallback cb) = 0;
-
-    virtual void asyncRemovePrefix(GraphSpaceID spaceId,
-                                   PartitionID partId,
-                                   const std::string& prefix,
-                                   KVCallback cb) = 0;
 
     virtual void asyncAtomicOp(GraphSpaceID spaceId,
                                PartitionID partId,

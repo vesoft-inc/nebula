@@ -237,7 +237,7 @@ void UpdateEdgeExecutor::updateEdge(bool reversely) {
                     doError(Status::Error("Maybe invalid edge or property in WHEN clause!"));
                     return;
                 case nebula::storage::cpp2::ErrorCode::E_INVALID_UPDATER:
-                    doError(Status::Error("Maybe invalid property in SET/YIELD clasue!"));
+                    doError(Status::Error("Maybe invalid property in SET/YIELD clause!"));
                     return;
                 case nebula::storage::cpp2::ErrorCode::E_FILTER_OUT:
                     // Return ok when filter out without exception
@@ -249,7 +249,7 @@ void UpdateEdgeExecutor::updateEdge(bool reversely) {
                     return;
                 default:
                     std::string errMsg =
-                        folly::stringPrintf("Maybe edge does not exist or filter failed, "
+                        folly::stringPrintf("Maybe edge does not exist, "
                                             "part: %d, error code: %d!",
                                             code.get_part_id(),
                                             static_cast<int32_t>(code.get_code()));
@@ -277,7 +277,6 @@ void UpdateEdgeExecutor::updateEdge(bool reversely) {
 }
 
 void UpdateEdgeExecutor::execute() {
-    FLOG_INFO("Executing UpdateEdge: %s", sentence_->toString().c_str());
     auto status = prepareData();
     if (!status.ok()) {
         doError(std::move(status));

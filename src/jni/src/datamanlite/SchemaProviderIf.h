@@ -53,8 +53,7 @@ public:
         virtual const char* getName() const = 0;
         virtual const ValueType& getType() const = 0;
         virtual bool isValid() const = 0;
-        virtual bool hasDefault() const = 0;
-        virtual std::string getDefaultValue() const = 0;
+        virtual bool hasDefaultValue() const = 0;
     };
 
     // Inherited classes do not need to implement the Iterator

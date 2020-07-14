@@ -8,6 +8,10 @@
 
 namespace nebula {
 
+Configuration::Configuration() {
+    content_ = std::make_unique<folly::dynamic>(folly::dynamic::object());
+}
+
 Configuration::Configuration(folly::dynamic content) {
     CHECK(content.isObject()) << "The content is not a valid configuration";
     content_ = std::make_unique<folly::dynamic>(std::move(content));
@@ -160,7 +164,7 @@ Status Configuration::fetchAsSubConf(const char *key, Configuration &subconf) co
 }
 
 
-Status Configuration::updateStringField(const char* key, const std::string& val) {
+Status Configuration::upsertStringField(const char* key, const std::string& val) {
     DCHECK(content_ != nullptr);
     auto iter = content_->find(key);
     if (iter == content_->items().end() || iter->second.isString()) {
