@@ -553,6 +553,75 @@ FunctionManager::FunctionManager() {
             }
         };
     }
+    {
+        auto &attr = functions_["concat_ws"];
+        attr.minArity_ = 2;
+        attr.maxArity_ = 2;
+        attr.body_ = [] (const auto &args) {
+            auto sep   = Expression::asString(args[0]);
+            auto set   = Expression::asString(args[1]);
+
+            const char *p = set.data();
+            size_t size = set.size();
+            size_t offset = 0;
+            std::string s;
+
+            if (size != 0) {
+                uint8_t type = p[0];
+                offset += sizeof(type);
+                switch(type) {
+                    case VAR_INT64:
+                    {
+                        std::vector<int64_t> vec;
+                        vec.reserve((size - offset) / sizeof(int64_t));
+                        while (size - offset >= sizeof(int64_t)) {
+                            int64_t v;
+                            memcpy(&v, p + offset, sizeof(int64_t));
+                            vec.emplace_back(v);
+                            offset += sizeof(int64_t);
+                        }
+                        s = folly::join(sep, vec);
+                    }
+                        break;
+                    case VAR_BOOL:
+                    {
+                        std::vector<bool> vec;
+                        while (size - offset >= sizeof(bool)) {
+                            bool v;
+                            memcpy(&v, p + offset, sizeof(bool));
+                            vec.emplace_back(v);
+                            offset += sizeof(bool);
+                        }
+                        s = folly::join(sep, vec);
+                    }
+                        break;
+                    case VAR_DOUBLE:
+                    {
+                        std::vector<double> vec;
+                        vec.reserve((size - offset) / sizeof(double));
+                        while (size - offset >= sizeof(double)) {
+                            double v;
+                            memcpy(&v, p + offset, sizeof(double));
+                            vec.emplace_back(v);
+                            offset += sizeof(double);
+                        }
+                        s = folly::join(sep, vec);
+                    }
+                        break;
+                    case VAR_STR:
+                    {
+                        std::vector<std::string> vec;
+                        // TODO suport string.
+                        return folly::join(sep, vec);
+                    }
+                    default:
+                        break;
+                }
+            }
+
+            return s;
+        };
+    }
 }  // NOLINT
 
 

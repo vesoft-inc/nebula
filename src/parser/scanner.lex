@@ -146,6 +146,8 @@ STD                         ([Ss][Tt][Dd])
 BIT_AND                     ([Bb][Ii][Tt][_][Aa][Nn][Dd])
 BIT_OR                      ([Bb][Ii][Tt][_][Oo][Rr])
 BIT_XOR                     ([Bb][Ii][Tt][_][Xx][Oo][Rr])
+COLLECT_LIST                ([Cc][Oo][Ll][Ll][Ee][Cc][Tt][_][Ll][Ii][Ss][Tt])
+COLLECT_SET                 ([Cc][Oo][Ll][Ll][Ee][Cc][Tt][_][Ss][Ee][Tt])
 IS                          ([Ii][Ss])
 NULL                        ([Nn][Uu][Ll][Ll])
 SNAPSHOT                    ([Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt])
@@ -292,6 +294,8 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {BIT_AND}                   { return TokenType::KW_BIT_AND; }
 {BIT_OR}                    { return TokenType::KW_BIT_OR; }
 {BIT_XOR}                   { return TokenType::KW_BIT_XOR; }
+{COLLECT_LIST}              { return TokenType::KW_COLLECT_LIST; }
+{COLLECT_SET}               { return TokenType::KW_COLLECT_SET; }
 {PATH}                      { return TokenType::KW_PATH; }
 {BIDIRECT}                  { return TokenType::KW_BIDIRECT; }
 {STATUS}                    { return TokenType::KW_STATUS; }

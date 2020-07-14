@@ -293,6 +293,34 @@ TEST_F(GroupByLimitTest, GroupByTest) {
         };
        ASSERT_TRUE(verifyResult(resp, expected));
     }
+    // collect
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Marco Belinelli"];
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "YIELD $$.team.name AS name, "
+                    "serve._dst AS id, "
+                    "serve.start_year AS start_year, "
+                    "serve.end_year AS end_year"
+                    "| GROUP BY $-.start_year "
+                    "YIELD COUNT($-.id) as cnt, "
+                    "collect_set($-.end_year) AS end_years "
+                    "| YIELD $-.cnt as cnt, "
+                    "concat_ws(',', $-.end_years) AS end_years";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<uint64_t, std::string>> expected = {
+            {2, "2018,2019"},
+            {1, "2018"},
+            {1, "2017"},
+            {1, "2010"},
+            {1, "2009"},
+            {1, "2013"},
+            {1, "2016"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
     // Has alias col
     {
         cpp2::ExecutionResponse resp;
