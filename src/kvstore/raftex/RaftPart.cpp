@@ -1209,6 +1209,15 @@ bool RaftPart::leaderElection() {
 
 
 void RaftPart::statusPolling(int64_t startTime) {
+    {
+        std::lock_guard<std::mutex> g(raftLock_);
+        // If startTime is not same as the time when `statusPolling` is add to event loop,
+        // it means the part has been restarted (it only happens in ut for now), so don't
+        // add another `statusPolling`.
+        if (startTime != startTimeMs_) {
+            return;
+        }
+    }
     size_t delay = FLAGS_raft_heartbeat_interval_secs * 1000 / 3;
     if (needToStartElection()) {
         if (leaderElection()) {
@@ -1229,12 +1238,6 @@ void RaftPart::statusPolling(int64_t startTime) {
     }
     {
         std::lock_guard<std::mutex> g(raftLock_);
-        // If startTime is not same as the time when `statusPolling` is add to event loop,
-        // it means the part has been restarted (it only happens in ut for now), so don't
-        // add another `statusPolling`.
-        if (startTime != startTimeMs_) {
-            return;
-        }
         if (status_ == Status::RUNNING || status_ == Status::WAITING_SNAPSHOT) {
             VLOG(3) << idStr_ << "Schedule new task";
             bgWorkers_->addDelayTask(
