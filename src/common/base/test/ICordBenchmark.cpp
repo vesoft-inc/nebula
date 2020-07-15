@@ -106,3 +106,7 @@ sstream_512_mix                                              7.51us  133.08K
 cord_512_mix                                      51.81%    14.50us   68.95K
 ============================================================================
 */
+
+
+// In summary, compare to cord improve about 2-3 x performance
+// and avoid dynamic allocation when write a little data
