@@ -37,6 +37,9 @@ NEBULA_SOURCE_DIR=os.getenv('NEBULA_SOURCE_DIR')
 if NEBULA_SOURCE_DIR is None:
     NEBULA_SOURCE_DIR = str(Path(TEST_DIR).parent)
 
+NEBULA_DATA_DIR = os.getenv('NEBULA_DATA_DIR')
+if NEBULA_DATA_DIR is None or NEBULA_DATA_DIR == "":
+    NEBULA_DATA_DIR = TEST_DIR + "/data"
 
 NEBULA_START_COMMAND_FORMAT="bin/nebula-{} --flagfile conf/nebula-{}.conf {}"
 
@@ -107,6 +110,9 @@ class NebulaTestPlugin(object):
                          dest='replica_factor',
                          default=1,
                          help='the replica_factor of Nebula\'s space')
+        parser.addoption('--data_dir',
+                        dest='data_dir',
+                        help='Data Preload Directory for Nebula')
 
     # link to pytest_configure
     # https://docs.pytest.org/en/latest/reference.html#_pytest.hookspec.pytest_configure
@@ -117,6 +123,7 @@ class NebulaTestPlugin(object):
         pytest.cmdline.password = config.getoption("password")
         pytest.cmdline.replica_factor = config.getoption("replica_factor")
         pytest.cmdline.partition_num = config.getoption("partition_num")
+        pytest.cmdline.data_dir = NEBULA_DATA_DIR
         config._metadata['graphd digest'] = DOCKER_GRAPHD_DIGESTS
         config._metadata['metad digest'] = DOCKER_METAD_DIGESTS
         config._metadata['storaged digest'] = DOCKER_STORAGED_DIGESTS
@@ -203,7 +210,6 @@ def stopNebula(pids, test_dir):
             os.kill(pids[p], signal.SIGTERM)
         except OSError as err:
             print("nebula stop " + p + " failed: " + str(err))
-
     time.sleep(3)
     shutil.rmtree(test_dir)
 

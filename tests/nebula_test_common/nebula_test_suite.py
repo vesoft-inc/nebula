@@ -9,6 +9,9 @@ import sys
 from typing import Pattern, Set
 
 import pytest
+import time
+from pathlib import Path
+
 from nebula2.graph import ttypes
 from nebula2.ConnectionPool import ConnectionPool
 from nebula2.Client import AuthException, ExecutionException, GraphClient
@@ -45,6 +48,51 @@ class NebulaTestSuite(object):
         self.set_delay()
         self.prepare()
         self.check_format_str = 'result: {}, expect: {}'
+        self.data_dir = pytest.cmdline.data_dir
+        self.load_data()
+
+    @classmethod
+    def load_data(self):
+        pathlist = Path(self.data_dir).rglob('*.ngql')
+        for path in pathlist:
+            print("will open ", path)
+            with open(path, 'r') as data_file:
+                space_name = path.name.split('.')[0]
+                resp = self.execute(
+                'CREATE SPACE IF NOT EXISTS {space_name}(partition_num={partition_num}, replica_factor={replica_factor}, vid_size=30)'.format(partition_num=self.partition_num,
+                        replica_factor=self.replica_factor,
+                        space_name=space_name))
+                self.check_resp_succeeded(resp)
+                time.sleep(self.delay)
+                resp = self.execute('USE {}'.format(space_name))
+                self.check_resp_succeeded(resp)
+
+                lines = data_file.readlines()
+                ddl = False
+                ngql_statement = ""
+                for line in lines:
+                    strip_line = line.strip()
+                    if len(strip_line) == 0:
+                        continue
+                    elif strip_line.startswith('--'):
+                        comment = strip_line[2:]
+                        if comment == 'DDL':
+                            ddl = True
+                        elif comment == 'END':
+                            if ddl:
+                                time.sleep(self.delay)
+                                ddl = False
+                    else:
+                        line = line.rstrip()
+                        ngql_statement += " " + line
+                        if line.endswith(';'):
+                            resp = self.execute(ngql_statement)
+                            self.check_resp_succeeded(resp)
+                            ngql_statement = ""
+
+    @classmethod
+    def drop_data(self):
+        pass
 
     @classmethod
     def create_nebula_clients(self):
@@ -61,6 +109,7 @@ class NebulaTestSuite(object):
     def teardown_class(self):
         if self.client != None:
             self.cleanup()
+            self.drop_data()
             self.close_nebula_clients()
 
     @classmethod
