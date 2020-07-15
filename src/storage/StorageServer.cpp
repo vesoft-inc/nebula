@@ -150,6 +150,11 @@ bool StorageServer::start() {
         tfServer_->setThreadManager(workers_);
         tfServer_->setInterface(std::move(handler));
         tfServer_->setStopWorkersOnStopListening(false);
+        Status expected{Status::INIT};
+        if (!status_.compare_exchange_strong(expected, Status::RUNNING)) {
+            LOG(ERROR) << "Impossible! How could it happens!";
+            return false;
+        }
         tfServer_->serve();  // Will wait until the server shuts down
     } catch (const std::exception& e) {
         LOG(ERROR) << "Start thrift server failed, error:" << e.what();
@@ -159,11 +164,11 @@ bool StorageServer::start() {
 }
 
 void StorageServer::stop() {
-    if (stopped_) {
-        LOG(INFO) << "All services has been stopped";
+    Status expected{Status::RUNNING};
+    if (!status_.compare_exchange_strong(expected, Status::STOPPED)) {
+        LOG(INFO) << "The service is not running, status " << statusStr(expected);
         return;
     }
-    stopped_ = true;
 
     if (kvstore_) {
         kvstore_->stop();
