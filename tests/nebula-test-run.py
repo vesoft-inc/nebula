@@ -195,7 +195,7 @@ def startNebula(nebula_test_dir):
             print("error: " + p.communicate()[0])
 
     #wait nebula start
-    time.sleep(5)
+    time.sleep(8)
     for pf in glob.glob(nebula_test_dir+'/pids/*.pid'):
         with open(pf) as f:
             pid = int(f.readline())

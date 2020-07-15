@@ -11,7 +11,7 @@ from typing import Pattern, Set
 import pytest
 import time
 from pathlib import Path
-
+from nebula2.common import ttypes as CommonTtypes
 from nebula2.graph import ttypes
 from nebula2.ConnectionPool import ConnectionPool
 from nebula2.Client import AuthException, ExecutionException, GraphClient
@@ -24,14 +24,14 @@ class NebulaTestSuite(object):
         #     'get configs GRAPH:heartbeat_interval_secs')
         # self.check_resp_succeeded(resp)
         # assert len(resp.rows) == 1, "invalid row size: {}".format(resp.rows)
-        # self.graph_delay = int(resp.rows[0].columns[4].get_str()) + 1
+        # self.graph_delay = int(resp.rows[0].columns[4].get_sVal()) + 1
         self.graph_delay = 3
 
         # resp = self.client.execute_query(
         #     'get configs STORAGE:heartbeat_interval_secs')
         # self.check_resp_succeeded(resp)
         # assert len(resp.rows) == 1, "invalid row size: {}".format(resp.rows)
-        # self.storage_delay = int(resp.rows[0].columns[4].get_str()) + 1
+        # self.storage_delay = int(resp.rows[0].columns[4].get_sVal()) + 1
         self.storage_delay = 3
         self.delay = max(self.graph_delay, self.storage_delay) * 2
 
@@ -49,7 +49,6 @@ class NebulaTestSuite(object):
         self.prepare()
         self.check_format_str = 'result: {}, expect: {}'
         self.data_dir = pytest.cmdline.data_dir
-        self.load_data()
 
     @classmethod
     def load_data(self):
@@ -130,7 +129,8 @@ class NebulaTestSuite(object):
 
     @classmethod
     def check_resp_succeeded(self, resp):
-        assert resp.error_code == 0, resp.error_msg
+        assert resp.error_code == ttypes.ErrorCode.SUCCEEDED \
+               or resp.error_code == ttypes.ErrorCode.E_STATEMENT_EMTPY, resp.error_msg
 
     @classmethod
     def check_resp_failed(self, resp, error_code: ttypes.ErrorCode = ttypes.ErrorCode.SUCCEEDED):
@@ -147,12 +147,18 @@ class NebulaTestSuite(object):
 
     @classmethod
     def check_value(self, col, expect):
-        if col.getType() == ttypes.ColumnValue.__EMPTY__:
+        if col.getType() == CommonTtypes.Value.__EMPTY__:
             msg = 'ERROR: type is empty'
-            return False, msg
+            if isinstance(expect, Pattern):
+                if not expect.match(str('EMPTY')):
+                    return False, msg
+            else:
+                if 'EMPTY' != expect:
+                    return False, msg
+            return True, ''
 
-        if col.getType() == ttypes.ColumnValue.BOOL_VAL:
-            msg = self.check_format_str.format(col.get_bool_val(), expect)
+        if col.getType() == CommonTtypes.Value.BVAL:
+            msg = self.check_format_str.format(col.get_bVal(), expect)
             if isinstance(expect, Pattern):
                 if not expect.match(str(col.get_bool_val())):
                     return False, msg
@@ -161,55 +167,55 @@ class NebulaTestSuite(object):
                     return False, msg
             return True, ''
 
-        if col.getType() == ttypes.ColumnValue.INTEGER:
-            msg = self.check_format_str.format(col.get_integer(), expect)
+        if col.getType() == CommonTtypes.Value.IVAL:
+            msg = self.check_format_str.format(col.get_iVal(), expect)
             if isinstance(expect, Pattern):
-                if not expect.match(str(col.get_integer())):
+                if not expect.match(str(col.get_iVal())):
                     return False, msg
             else:
-                if col.get_integer() != expect:
+                if col.get_iVal() != expect:
                     return False, msg
             return True, ''
 
-        if col.getType() == ttypes.ColumnValue.ID:
-            msg = self.check_format_str.format(col.get_id(), expect)
-            if isinstance(expect, Pattern):
-                if not expect.match(str(col.get_id())):
-                    return False, msg
-            else:
-                if col.get_id() != expect:
-                    return False, msg
-            return True, ''
-
-        if col.getType() == ttypes.ColumnValue.STR:
-            msg = self.check_format_str.format(col.get_str().decode('utf-8'),
+        if col.getType() == CommonTtypes.Value.SVAL:
+            msg = self.check_format_str.format(col.get_sVal().decode('utf-8'),
                                                expect)
             if isinstance(expect, Pattern):
-                if not expect.match(col.get_str().decode('utf-8')):
+                if not expect.match(col.get_sVal().decode('utf-8')):
                     return False, msg
             else:
-                if col.get_str().decode('utf-8') != expect:
+                if col.get_sVal().decode('utf-8') != expect:
                     return False, msg
             return True, ''
 
-        if col.getType() == ttypes.ColumnValue.DOUBLE_PRECISION:
-            msg = self.check_format_str.format(col.get_double_precision(),
+        if col.getType() == CommonTtypes.Value.FVAL:
+            msg = self.check_format_str.format(col.get_fVal(),
                                                expect)
             if isinstance(expect, Pattern):
-                if not expect.match(str(col.get_double_precision())):
+                if not expect.match(str(col.get_fVal())):
                     return False, msg
             else:
-                if not math.isclose(col.get_double_precision(), expect):
+                if not math.isclose(col.get_fVal(), expect):
                     return False, msg
             return True, ''
 
-        if col.getType() == ttypes.ColumnValue.TIMESTAMP:
-            msg = self.check_format_str.format(col.get_timestamp(), expect)
+        if col.getType() == CommonTtypes.Value.DVAL:
+            msg = self.check_format_str.format(col.get_dVal(), expect)
             if isinstance(expect, Pattern):
-                if not expect.match(str(col.get_timestamp())):
+                if not expect.match(str(col.get_dVal())):
                     return False, msg
             else:
-                if col.get_timestamp() != expect:
+                if col.get_dVal() != expect:
+                    return False, msg
+            return True, ''
+
+        if col.getType() == CommonTtypes.Value.TVAL:
+            msg = self.check_format_str.format(col.get_tVal(), expect)
+            if isinstance(expect, Pattern):
+                if not expect.match(str(col.get_tVal())):
+                    return False, msg
+            else:
+                if col.get_tVal() != expect:
                     return False, msg
             return True, ''
 
@@ -219,25 +225,33 @@ class NebulaTestSuite(object):
     def row_to_string(self, row):
         value_list = []
         for col in row.columns:
-            if col.getType() == ttypes.ColumnValue.__EMPTY__:
-                print('ERROR: type is empty')
-                return
-            elif col.getType() == ttypes.ColumnValue.BOOL_VAL:
-                value_list.append(col.get_bool_val())
-            elif col.getType() == ttypes.ColumnValue.INTEGER:
-                value_list.append(col.get_integer())
-            elif col.getType() == ttypes.ColumnValue.ID:
+            if col.getType() == CommonTtypes.Value.__EMPTY__:
+                value_list.append('EMPTY')
+            elif col.getType() == CommonTtypes.Value.NVAL:
+                value_list.append('NULL')
+            elif col.getType() == CommonTtypes.Value.BVAL:
+                value_list.append(col.get_bVal())
+            elif col.getType() == CommonTtypes.Value.IVAL:
+                value_list.append(col.get_iVal())
+            elif col.getType() == CommonTtypes.Value.FVAL:
                 value_list.append(col.get_id())
-            elif col.getType() == ttypes.ColumnValue.STR:
-                value_list.append(col.get_str().decode('utf-8'))
-            elif col.getType() == ttypes.ColumnValue.DOUBLE_PRECISION:
-                value_list.append(col.get_double_precision())
-            elif col.getType() == ttypes.ColumnValue.TIMESTAMP:
-                value_list.append(col.get_timestamp())
+            elif col.getType() == CommonTtypes.Value.SVAL:
+                value_list.append(col.get_sVal().decode('utf-8'))
+            elif col.getType() == CommonTtypes.Type.DVAL:
+                value_list.append(col.get_dVal().decode('utf-8'))
+            elif col.getType() == CommonTtypes.Type.DATETIME:
+                value_list.append(col.get_datetime())
         return str(value_list)
 
     @classmethod
-    def search_result(self, rows, expect):
+    def search_result(self, resp, expect):
+        if resp.data is None and len(expect) == 0:
+            return
+
+        if resp.data is None:
+            assert False, 'resp.data is None'
+        rows = resp.data.rows
+
         msg = 'len(rows)[%d] != len(expect)[%d]' % (len(rows), len(expect))
         assert len(rows) == len(expect), msg
         for row in rows:
@@ -255,9 +269,13 @@ class NebulaTestSuite(object):
             expect.remove(exp)
 
     @classmethod
-    def check_result(self, rows, expect, ignore_col: Set[int] = set()):
-        if rows is None and len(expect) == 0:
+    def check_result(self, resp, expect, ignore_col: Set[int] = set()):
+        if resp.data is None and len(expect) == 0:
             return
+
+        if resp.data is None:
+            assert False, 'resp.data is None'
+        rows = resp.data.rows
 
         msg = 'len(rows)[%d] != len(expect)[%d]' % (len(rows), len(expect))
         assert len(rows) == len(expect), msg
@@ -275,21 +293,25 @@ class NebulaTestSuite(object):
                     self.row_to_string(row), expect[i], msg)
 
     @classmethod
-    def check_out_of_order_result(self, rows, expect):
-        if rows is None and len(expect) == 0:
+    def check_out_of_order_result(self, resp, expect, ignore_col: Set[int] = set()):
+        if resp.data is None and len(expect) == 0:
             return
 
+        if resp.data is None:
+            assert False, 'resp.data is None'
+        rows = resp.data.rows
         sorted_rows = sorted(rows, key=str)
+        resp.data.rows = sorted_rows
         sorted_expect = sorted(expect)
-        self.check_result(sorted_rows, sorted_expect)
+        self.check_result(resp, sorted_expect, ignore_col)
 
     @classmethod
-    def check_empty_result(self, rows):
-        msg = 'the row was not empty {}'.format(rows)
+    def check_empty_result(self, resp):
+        msg = 'the row was not empty {}'.format(resp)
         empty = False
-        if rows is None:
+        if resp.data is None:
             empty = True
-        elif len(rows) == 0:
+        elif len(resp.data.rows) == 0:
             empty = True
         assert empty, msg
 
@@ -321,9 +343,9 @@ class NebulaTestSuite(object):
                 assert len(
                     row.columns
                 ) == 1, "invalid columns size in rows: {}".format(row)
-                assert row.columns[0].getType(
-                ) == ttypes.ColumnValue.PATH, "invalid column path type: {}".format(
-                    row.columns[0].getType())
+                assert row.columns[0].getType()(
+                ) == ttypes.Value.PATH, "invalid column path type: {}".format(
+                    row.columns[0].getType()())
                 if row.columns[0].get_path() == path:
                     find = True
                     break

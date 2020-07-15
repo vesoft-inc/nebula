@@ -9,8 +9,6 @@ import re
 import sys
 import time
 
-from graph import ttypes
-
 from nebula_test_common.nebula_test_suite import NebulaTestSuite
 
 
@@ -32,7 +30,7 @@ class TestSchema(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         resp = self.execute_query('DESC TAG TAG_empty')
         self.check_resp_succeeded(resp)
-        self.check_empty_result(resp.rows)
+        self.check_empty_result(resp)
 
         # create tag with all type
         resp = self.execute_query('CREATE TAG TAG_all_type(name string, age int, '
@@ -41,9 +39,12 @@ class TestSchema(NebulaTestSuite):
 
         resp = self.execute_query('DESC TAG TAG_all_type')
         self.check_resp_succeeded(resp)
-        expect = [['name', 'string'], ['age', 'int'], ['is_man', 'bool'],
-                  ['account', 'double'], ['birthday', 'timestamp']]
-        self.check_result(resp.rows, expect)
+        expect = [['name', 'string', 'YES', 'EMPTY'],
+                  ['age', 'int64', 'YES', 'EMPTY'],
+                  ['is_man', 'bool', 'YES', 'EMPTY'],
+                  ['account', 'double', 'YES', 'EMPTY'],
+                  ['birthday', 'timestamp', 'YES', 'EMPTY']]
+        self.check_result(resp, expect)
 
         # create tag with default value
         resp = self.execute('CREATE TAG TAG_default(name string, age int, gender string DEFAULT "male")')
@@ -51,9 +52,9 @@ class TestSchema(NebulaTestSuite):
 
         resp = self.execute_query('SHOW CREATE TAG TAG_default')
         self.check_resp_succeeded(resp)
-        expect = [['TAG_default', 'CREATE TAG TAG_default (\n  name string,\n  age int,\n  '
-                                  'gender string default male\n) ttl_duration = 0, ttl_col = ""']]
-        self.check_result(resp.rows, expect)
+        expect = [['TAG_default', 'CREATE TAG `TAG_default` (\n `name` string NULL,\n `age` int64 NULL,\n '
+                                  '`gender` string NULL DEFAULT "male"\n) ttl_duration = 0, ttl_col = ""']]
+        self.check_result(resp, expect)
 
         # create tag with ttl
         resp = self.execute('CREATE TAG person(name string, email string, '
@@ -63,15 +64,17 @@ class TestSchema(NebulaTestSuite):
 
         resp = self.execute_query('DESC TAG person')
         self.check_resp_succeeded(resp)
-        expect = [['name', 'string'], ['email', 'string'], ['age', 'int'],
-                  ['gender', 'string'], ['birthday', 'timestamp']]
-        self.check_result(resp.rows, expect)
+        expect = [['name', 'string', 'YES', 'EMPTY'],
+                  ['email', 'string', 'YES', 'EMPTY'],
+                  ['age', 'int64', 'YES', 'EMPTY'],
+                  ['gender', 'string', 'YES', 'EMPTY'],
+                  ['birthday', 'timestamp', 'YES', 'EMPTY']]
+        self.check_result(resp, expect)
 
         # show all tags
         resp = self.execute_query('SHOW TAGS')
         self.check_resp_succeeded(resp)
-        self.check_result(resp.rows, [[re.compile(r'\d+'), 'TAG_empty'], [re.compile(r'\d+'), 'TAG_all_type'],
-                                      [re.compile(r'\d+'), 'TAG_default'], [re.compile(r'\d+'), 'person']])
+        self.check_out_of_order_result(resp, [['TAG_empty'], ['TAG_all_type'], ['TAG_default'], ['person']])
 
     def test_create_tag_failed(self):
         # create tag without prop
@@ -119,8 +122,10 @@ class TestSchema(NebulaTestSuite):
 
         resp = self.execute_query('DESC TAG student')
         self.check_resp_succeeded(resp)
-        expect = [['name', 'string'], ['email', 'string'], ['birthday', 'timestamp']]
-        self.check_result(resp.rows, expect)
+        expect = [['name', 'string', 'YES', 'EMPTY'],
+                  ['email', 'string', 'YES', 'EMPTY'],
+                  ['birthday', 'timestamp', 'YES', 'EMPTY']]
+        self.check_result(resp, expect)
 
         # alter add
         resp = self.execute('ALTER TAG student add (age string)')
@@ -128,8 +133,11 @@ class TestSchema(NebulaTestSuite):
 
         resp = self.execute_query('DESC TAG student')
         self.check_resp_succeeded(resp)
-        expect = [['name', 'string'], ['email', 'string'], ['birthday', 'timestamp'], ['age', 'string']]
-        self.check_result(resp.rows, expect)
+        expect = [['name', 'string', 'YES', 'EMPTY'],
+                  ['email', 'string', 'YES', 'EMPTY'],
+                  ['birthday', 'timestamp', 'YES', 'EMPTY'],
+                  ['age', 'string', 'YES', 'EMPTY']]
+        self.check_result(resp, expect)
 
         # alter change
         resp = self.execute('ALTER TAG student change (age int)')
@@ -137,8 +145,11 @@ class TestSchema(NebulaTestSuite):
 
         resp = self.execute_query('DESC TAG student')
         self.check_resp_succeeded(resp)
-        expect = [['name', 'string'], ['email', 'string'], ['birthday', 'timestamp'], ['age', 'int']]
-        self.check_result(resp.rows, expect)
+        expect = [['name', 'string', 'YES', 'EMPTY'],
+                  ['email', 'string', 'YES', 'EMPTY'],
+                  ['birthday', 'timestamp', 'YES', 'EMPTY'],
+                  ['age', 'int64', 'YES', 'EMPTY']]
+        self.check_result(resp, expect)
 
         # alter all
         resp = self.execute('ALTER TAG student drop (name),'
@@ -148,8 +159,11 @@ class TestSchema(NebulaTestSuite):
 
         resp = self.execute_query('DESC TAG student')
         self.check_resp_succeeded(resp)
-        expect = [['email', 'string'], ['birthday', 'timestamp'], ['age', 'int'], ['gender', 'int']]
-        self.check_result(resp.rows, expect)
+        expect = [['email', 'string', 'YES', 'EMPTY'],
+                  ['birthday', 'timestamp', 'YES', 'EMPTY'],
+                  ['age', 'int64', 'YES', 'EMPTY'],
+                  ['gender', 'int64', 'YES', 'EMPTY']]
+        self.check_result(resp, expect)
 
     def test_alter_tag_failed(self):
         # alter ttl_col on wrong type
@@ -179,7 +193,7 @@ class TestSchema(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         resp = self.execute_query('DESC EDGE EDGE_empty')
         self.check_resp_succeeded(resp)
-        self.check_empty_result(resp.rows)
+        self.check_empty_result(resp)
 
         # create tag with all type
         resp = self.execute_query('CREATE EDGE EDGE_all_type(name string, age int, '
@@ -188,9 +202,12 @@ class TestSchema(NebulaTestSuite):
 
         resp = self.execute_query('DESC EDGE EDGE_all_type')
         self.check_resp_succeeded(resp)
-        expect = [['name', 'string'], ['age', 'int'], ['is_man', 'bool'],
-                  ['account', 'double'], ['birthday', 'timestamp']]
-        self.check_result(resp.rows, expect)
+        expect = [['name', 'string', 'YES', 'EMPTY'],
+                  ['age', 'int64', 'YES', 'EMPTY'],
+                  ['is_man', 'bool', 'YES', 'EMPTY'],
+                  ['account', 'double', 'YES', 'EMPTY'],
+                  ['birthday', 'timestamp', 'YES', 'EMPTY']]
+        self.check_result(resp, expect)
 
         # create tag with default value
         resp = self.execute('CREATE EDGE EDGE_default(name string, age int, gender string DEFAULT "male")')
@@ -198,9 +215,9 @@ class TestSchema(NebulaTestSuite):
 
         resp = self.execute_query('SHOW CREATE EDGE EDGE_default')
         self.check_resp_succeeded(resp)
-        expect = [['EDGE_default', 'CREATE EDGE EDGE_default (\n  name string,\n  age int,\n  '
-                                   'gender string default male\n) ttl_duration = 0, ttl_col = ""']]
-        self.check_result(resp.rows, expect)
+        expect = [['EDGE_default', 'CREATE EDGE `EDGE_default` (\n `name` string NULL,\n `age` int64 NULL,\n '
+                                   '`gender` string NULL DEFAULT "male"\n) ttl_duration = 0, ttl_col = ""']]
+        self.check_result(resp, expect)
 
         # create tag with ttl
         resp = self.execute('CREATE EDGE human(name string, email string, '
@@ -210,15 +227,17 @@ class TestSchema(NebulaTestSuite):
 
         resp = self.execute_query('DESC EDGE human')
         self.check_resp_succeeded(resp)
-        expect = [['name', 'string'], ['email', 'string'], ['age', 'int'],
-                  ['gender', 'string'], ['birthday', 'timestamp']]
-        self.check_result(resp.rows, expect)
+        expect = [['name', 'string', 'YES', 'EMPTY'],
+                  ['email', 'string', 'YES', 'EMPTY'],
+                  ['age', 'int64', 'YES', 'EMPTY'],
+                  ['gender', 'string', 'YES', 'EMPTY'],
+                  ['birthday', 'timestamp', 'YES', 'EMPTY']]
+        self.check_result(resp, expect)
 
         # show all tags
         resp = self.execute_query('SHOW EDGES')
         self.check_resp_succeeded(resp)
-        self.check_result(resp.rows, [[re.compile(r'\d+'), 'EDGE_empty'], [re.compile(r'\d+'), 'EDGE_all_type'],
-                                      [re.compile(r'\d+'), 'EDGE_default'], [re.compile(r'\d+'), 'human']])
+        self.check_out_of_order_result(resp, [['EDGE_empty'], ['EDGE_all_type'], ['EDGE_default'], ['human']])
 
     def test_create_edge_failed(self):
         # create edge without prop
@@ -263,8 +282,8 @@ class TestSchema(NebulaTestSuite):
 
         resp = self.execute_query('DESC EDGE relationship')
         self.check_resp_succeeded(resp)
-        expect = [['name', 'string'], ['email', 'string']]
-        self.check_result(resp.rows, expect)
+        expect = [['name', 'string', 'YES', 'EMPTY'], ['email', 'string', 'YES', 'EMPTY']]
+        self.check_result(resp, expect)
 
         # alter add
         resp = self.execute('ALTER EDGE relationship ADD (start_year string)')
@@ -272,8 +291,10 @@ class TestSchema(NebulaTestSuite):
 
         resp = self.execute_query('DESC EDGE relationship')
         self.check_resp_succeeded(resp)
-        expect = [['name', 'string'], ['email', 'string'], ['start_year', 'string']]
-        self.check_result(resp.rows, expect)
+        expect = [['name', 'string', 'YES', 'EMPTY'],
+                  ['email', 'string', 'YES', 'EMPTY'],
+                  ['start_year', 'string', 'YES', 'EMPTY']]
+        self.check_result(resp, expect)
 
         # alter change
         resp = self.execute('ALTER EDGE relationship change (start_year int)')
@@ -281,8 +302,10 @@ class TestSchema(NebulaTestSuite):
 
         resp = self.execute_query('DESC EDGE relationship')
         self.check_resp_succeeded(resp)
-        expect = [['name', 'string'], ['email', 'string'], ['start_year', 'int']]
-        self.check_result(resp.rows, expect)
+        expect = [['name', 'string', 'YES', 'EMPTY'],
+                  ['email', 'string', 'YES', 'EMPTY'],
+                  ['start_year', 'int64', 'YES', 'EMPTY']]
+        self.check_result(resp, expect)
 
         # alter all
         resp = self.execute('ALTER EDGE relationship drop (name),'
@@ -292,8 +315,10 @@ class TestSchema(NebulaTestSuite):
 
         resp = self.execute_query('DESC EDGE relationship')
         self.check_resp_succeeded(resp)
-        expect = [['email', 'string'], ['start_year', 'int'], ['end_year', 'int']]
-        self.check_result(resp.rows, expect)
+        expect = [['email', 'string', 'YES', 'EMPTY'],
+                  ['start_year', 'int64', 'YES', 'EMPTY'],
+                  ['end_year', 'int64', 'YES', 'EMPTY']]
+        self.check_result(resp, expect)
 
     def test_alter_edge_failed(self):
         # alter ttl_col on wrong type

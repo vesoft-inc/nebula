@@ -3,6 +3,6 @@ pytest-html==2.0.1
 pytest-metadata==1.8.0
 pytest-reportlog==0.1.0
 pytest-xdist==1.31.0
-nebula2_python==0.0.1.post2
+nebula2_python
 pytest-benchmark==v3.2.3
 pytest-metadata==1.8.0
