@@ -69,7 +69,7 @@ macro(add_dependent_project)
     # Add a custom target to build the project
     add_custom_target(
         ${DEP_PROJ_NAME}_project ALL
-        COMMAND make -j $(nproc)
+        COMMAND make -j$(nproc)
         WORKING_DIRECTORY ${CLONE_DIR}
     )
 

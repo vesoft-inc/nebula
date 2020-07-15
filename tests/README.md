@@ -6,7 +6,7 @@
   - 设置结果输出目录
     - export NEBULA_TEST_LOGS_DIR=xxx
 - 运行测试程序
-  - 进入Nebula编译目录
+  - 进入Nebula编译目录下的 tests 目录
   - ./ntr  query/stateless/
 - 测试如何编写
   - 例子：query/stateless/test_simple_query.py
