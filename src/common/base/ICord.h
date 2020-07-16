@@ -109,7 +109,7 @@ public:
         std::size_t lengthModSize = lengthMod();
         size_t bytesToWrite =
             std::min(len, static_cast<size_t>(kBlockContentSize - lengthModSize));
-        if (isFull()) {
+        if (len_ != 0 && lengthModSize == 0) {  // is full filled.
             allocateBlock();
             bytesToWrite = std::min(len, static_cast<size_t>(kBlockContentSize));
         }
