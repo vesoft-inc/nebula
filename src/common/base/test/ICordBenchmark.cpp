@@ -7,8 +7,10 @@
 #include "base/Base.h"
 #include <folly/Benchmark.h>
 #include "base/ICord.h"
+#include "base/Cord.h"
 
 using nebula::ICord;
+using nebula::Cord;
 
 BENCHMARK(sstream_10k_string, iters) {
     for (auto i = 0u; i < iters; i++) {
@@ -20,9 +22,19 @@ BENCHMARK(sstream_10k_string, iters) {
         folly::doNotOptimizeAway(&str);
     }
 }
-BENCHMARK_RELATIVE(cord_10k_string, iters) {
+BENCHMARK_RELATIVE(icord_10k_string, iters) {
     for (auto i = 0u; i < iters; i++) {
         ICord<> cord;
+        for (int j = 0; j < 1000; j++) {
+            cord << "abcdefghij";
+        }
+        std::string str = cord.str();
+        folly::doNotOptimizeAway(&str);
+    }
+}
+BENCHMARK_RELATIVE(cord_10k_string, iters) {
+    for (auto i = 0u; i < iters; i++) {
+        Cord cord;
         for (int j = 0; j < 1000; j++) {
             cord << "abcdefghij";
         }
@@ -43,9 +55,22 @@ BENCHMARK(sstream_1k_mix, iters) {
         folly::doNotOptimizeAway(&str);
     }
 }
-BENCHMARK_RELATIVE(cord_1k_mix, iters) {
+BENCHMARK_RELATIVE(icord_1k_mix, iters) {
     for (auto i = 0u; i < iters; i++) {
         ICord<> cord;
+        for (int j = 0; j < 50; j++) {
+            cord << "abcdefg"
+                 << folly::to<std::string>(1234567890L)
+                 << folly::to<std::string>(true)
+                 << folly::to<std::string>(1.23456789);
+        }
+        std::string str = cord.str();
+        folly::doNotOptimizeAway(&str);
+    }
+}
+BENCHMARK_RELATIVE(cord_1k_mix, iters) {
+    for (auto i = 0u; i < iters; i++) {
+        Cord cord;
         for (int j = 0; j < 50; j++) {
             cord << "abcdefg"
                  << folly::to<std::string>(1234567890L)
@@ -69,9 +94,22 @@ BENCHMARK(sstream_512_mix, iters) {
         folly::doNotOptimizeAway(&str);
     }
 }
-BENCHMARK_RELATIVE(cord_512_mix, iters) {
+BENCHMARK_RELATIVE(icord_512_mix, iters) {
     for (auto i = 0u; i < iters; i++) {
         ICord<> cord;
+        for (int j = 0; j < 25; j++) {
+            cord << "abcdefg"
+                 << folly::to<std::string>(1234567890L)
+                 << folly::to<std::string>(true)
+                 << folly::to<std::string>(1.23456789);
+        }
+        std::string str = cord.str();
+        folly::doNotOptimizeAway(&str);
+    }
+}
+BENCHMARK_RELATIVE(cord_512_mix, iters) {
+    for (auto i = 0u; i < iters; i++) {
+        Cord cord;
         for (int j = 0; j < 25; j++) {
             cord << "abcdefg"
                  << folly::to<std::string>(1234567890L)
