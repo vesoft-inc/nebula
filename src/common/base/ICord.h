@@ -86,8 +86,8 @@ public:
         }
 
         // Last block
-        str.append(tail_,
-                   lengthMod() == 0 ? kBlockContentSize : lengthMod());
+        std::size_t lengthModSize = lengthMod();
+        str.append(tail_, lengthModSize == 0 ? kBlockContentSize : lengthModSize);
 
         return len_;
     }
@@ -106,13 +106,14 @@ public:
             return *this;
         }
 
+        std::size_t lengthModSize = lengthMod();
         size_t bytesToWrite =
-            std::min(len, static_cast<size_t>(kBlockContentSize - lengthMod()));
+            std::min(len, static_cast<size_t>(kBlockContentSize - lengthModSize));
         if (isFull()) {
             allocateBlock();
             bytesToWrite = std::min(len, static_cast<size_t>(kBlockContentSize));
         }
-        memcpy(tail_ + lengthMod(), value, bytesToWrite);
+        memcpy(tail_ + lengthModSize, value, bytesToWrite);
         len_ += bytesToWrite;
 
         if (bytesToWrite < len) {
