@@ -5,13 +5,6 @@ nebula_add_test(
     LIBRARIES gtest
 )
 
-nebula_add_executable(
-    NAME cord_bm
-    SOURCES CordBenchmark.cpp
-    OBJECTS $<TARGET_OBJECTS:base_obj>
-    LIBRARIES follybenchmark boost_regex
-)
-
 nebula_add_test(
     NAME icord_test
     SOURCES ICordTest.cpp
