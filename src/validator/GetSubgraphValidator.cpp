@@ -8,7 +8,6 @@
 
 #include "common/expression/VariableExpression.h"
 #include "common/expression/UnaryExpression.h"
-#include "common/expression/ConstantExpression.h"
 
 #include "parser/TraverseSentences.h"
 #include "planner/Query.h"
@@ -71,7 +70,6 @@ Status GetSubgraphValidator::validateFrom(FromClause* from) {
         srcRef_ = from->ref();
     } else {
         for (auto* expr : from->vidList()) {
-            // TODO:
             auto vid = Expression::eval(expr, ctx);
             starts_.emplace_back(std::move(vid));
         }

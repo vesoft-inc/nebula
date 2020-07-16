@@ -58,7 +58,7 @@ Value ExecutionContext::moveValue(const std::string& name) {
 
 const Result& ExecutionContext::getResult(const std::string& name) const {
     auto it = valueMap_.find(name);
-    if (it != valueMap_.end()) {
+    if (it != valueMap_.end() && !it->second.empty()) {
         return it->second.back();
     } else {
         return Result::kEmptyResult;

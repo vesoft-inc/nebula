@@ -176,6 +176,22 @@ public:
         return orderBy_;
     }
 
+    void setDedup() {
+        dedup_ = true;
+    }
+
+    void setLimit(int64_t limit) {
+        limit_ = limit;
+    }
+
+    void setFilter(std::string filter) {
+        filter_ = std::move(filter);
+    }
+
+    void setOrderBy(std::vector<storage::cpp2::OrderBy> orderBy) {
+        orderBy_ = std::move(orderBy);
+    }
+
 protected:
     Explore(ExecutionPlan* plan,
             Kind kind,
@@ -212,6 +228,11 @@ public:
     using EdgeProps = std::unique_ptr<std::vector<storage::cpp2::EdgeProp>>;
     using StatProps = std::unique_ptr<std::vector<storage::cpp2::StatProp>>;
     using Exprs = std::unique_ptr<std::vector<storage::cpp2::Expr>>;
+
+    static GetNeighbors* make(ExecutionPlan* plan, PlanNode* input, GraphSpaceID space) {
+        return new GetNeighbors(plan, input, space);
+    }
+
     static GetNeighbors* make(ExecutionPlan* plan,
                               PlanNode* input,
                               GraphSpaceID space,
@@ -279,7 +300,42 @@ public:
         return random_;
     }
 
+    void setSrc(Expression* src) {
+        src_ = src;
+    }
+
+    void setEdgeDirection(storage::cpp2::EdgeDirection direction) {
+        edgeDirection_ = direction;
+    }
+
+    void setEdgeTypes(std::vector<EdgeType> edgeTypes) {
+        edgeTypes_ = std::move(edgeTypes);
+    }
+
+    void setVertexProps(VertexProps vertexProps) {
+        vertexProps_ = std::move(vertexProps);
+    }
+
+    void setEdgeProps(EdgeProps edgeProps) {
+        edgeProps_ = std::move(edgeProps);
+    }
+
+    void setStatProps(StatProps statProps) {
+        statProps_ = std::move(statProps);
+    }
+
+    void setExprs(Exprs exprs) {
+        exprs_ = std::move(exprs);
+    }
+
+    void setRandom() {
+        random_ = true;
+    }
+
 private:
+    GetNeighbors(ExecutionPlan* plan, PlanNode* input, GraphSpaceID space)
+        : Explore(plan, Kind::kGetNeighbors, input, space) {}
+
     GetNeighbors(ExecutionPlan* plan,
                  PlanNode* input,
                  GraphSpaceID space,

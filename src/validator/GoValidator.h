@@ -37,7 +37,11 @@ private:
 
     Status buildNStepsPlan();
 
+    Status oneStep(PlanNode* input, const std::string& inputVarName);
+
     std::string buildInput();
+
+    PlanNode* buildRuntimeInput();
 
     std::vector<EdgeType> buildEdgeTypes();
 
@@ -46,6 +50,10 @@ private:
     GetNeighbors::VertexProps buildDstVertexProps();
 
     GetNeighbors::EdgeProps buildEdgeProps();
+
+    GetNeighbors::EdgeProps buildNStepLoopEdgeProps();
+
+    Expression* buildNStepLoopCondition(int64_t steps) const;
 
     enum FromType {
         kConstantExpr,
