@@ -10,9 +10,11 @@
 
 namespace nebula {
 
-template <std::size_t kBlockSize = 1024>
+template <std::size_t kBlockContentSize = 1024>
 class ICord {
 public:
+    static_assert(kBlockContentSize && !(kBlockContentSize & (kBlockContentSize-1)),
+                  "kBlockContentSize must be power of 2");
     ICord() : head_(inlineBlock_), tail_(head_) {}
 
     virtual ~ICord() {
@@ -67,7 +69,7 @@ public:
         }
 
         // Last block
-        return visitor(tail_, len_ % kBlockContentSize);
+        return visitor(tail_, lengthMod());
     }
 
     // Append the cord content to the given string
@@ -85,7 +87,7 @@ public:
 
         // Last block
         str.append(tail_,
-                   len_ % kBlockContentSize == 0 ? kBlockContentSize : len_ % kBlockContentSize);
+                   lengthMod() == 0 ? kBlockContentSize : lengthMod());
 
         return len_;
     }
@@ -99,18 +101,18 @@ public:
         return buf;
     }
 
-    ICord<kBlockSize>& write(const char* value, size_t len) {
+    ICord<kBlockContentSize>& write(const char* value, size_t len) {
         if (len == 0) {
             return *this;
         }
 
         size_t bytesToWrite =
-            std::min(len, static_cast<size_t>(kBlockContentSize - len_ % kBlockContentSize));
+            std::min(len, static_cast<size_t>(kBlockContentSize - lengthMod()));
         if (isFull()) {
             allocateBlock();
             bytesToWrite = std::min(len, static_cast<size_t>(kBlockContentSize));
         }
-        memcpy(tail_ + len_ % kBlockContentSize, value, bytesToWrite);
+        memcpy(tail_ + lengthMod(), value, bytesToWrite);
         len_ += bytesToWrite;
 
         if (bytesToWrite < len) {
@@ -121,63 +123,63 @@ public:
     }
 
     // stream
-    ICord<kBlockSize>& operator<<(int8_t value) {
+    ICord<kBlockContentSize>& operator<<(int8_t value) {
         return write(reinterpret_cast<char*>(&value), sizeof(int8_t));
     }
 
-    ICord<kBlockSize>& operator<<(uint8_t value) {
+    ICord<kBlockContentSize>& operator<<(uint8_t value) {
         return write(reinterpret_cast<char*>(&value), sizeof(uint8_t));
     }
 
-    ICord<kBlockSize>& operator<<(int16_t value) {
+    ICord<kBlockContentSize>& operator<<(int16_t value) {
         return write(reinterpret_cast<char*>(&value), sizeof(int16_t));
     }
 
-    ICord<kBlockSize>& operator<<(uint16_t value) {
+    ICord<kBlockContentSize>& operator<<(uint16_t value) {
         return write(reinterpret_cast<char*>(&value), sizeof(uint16_t));
     }
 
-    ICord<kBlockSize>& operator<<(int32_t value) {
+    ICord<kBlockContentSize>& operator<<(int32_t value) {
         return write(reinterpret_cast<char*>(&value), sizeof(int32_t));
     }
 
-    ICord<kBlockSize>& operator<<(uint32_t value) {
+    ICord<kBlockContentSize>& operator<<(uint32_t value) {
         return write(reinterpret_cast<char*>(&value), sizeof(uint32_t));
     }
 
-    ICord<kBlockSize>& operator<<(int64_t value) {
+    ICord<kBlockContentSize>& operator<<(int64_t value) {
         return write(reinterpret_cast<char*>(&value), sizeof(int64_t));
     }
 
-    ICord<kBlockSize>& operator<<(uint64_t value) {
+    ICord<kBlockContentSize>& operator<<(uint64_t value) {
         return write(reinterpret_cast<char*>(&value), sizeof(uint64_t));
     }
 
-    ICord<kBlockSize>& operator<<(char value) {
+    ICord<kBlockContentSize>& operator<<(char value) {
         return write(&value, sizeof(char));
     }
 
-    ICord<kBlockSize>& operator<<(bool value) {
+    ICord<kBlockContentSize>& operator<<(bool value) {
         return write(reinterpret_cast<char*>(&value), sizeof(bool));
     }
 
-    ICord<kBlockSize>& operator<<(float value) {
+    ICord<kBlockContentSize>& operator<<(float value) {
         return write(reinterpret_cast<char*>(&value), sizeof(float));
     }
 
-    ICord<kBlockSize>& operator<<(double value) {
+    ICord<kBlockContentSize>& operator<<(double value) {
         return write(reinterpret_cast<char*>(&value), sizeof(double));
     }
 
-    ICord<kBlockSize>& operator<<(const std::string& value) {
+    ICord<kBlockContentSize>& operator<<(const std::string& value) {
         return write(value.data(), value.size());
     }
 
-    ICord<kBlockSize>& operator<<(const char* value) {
+    ICord<kBlockContentSize>& operator<<(const char* value) {
         return write(value, strlen(value));
     }
 
-    ICord<kBlockSize>& operator<<(const ICord& rhs) {
+    ICord<kBlockContentSize>& operator<<(const ICord& rhs) {
         char* n = rhs.head_;
         while (n != rhs.tail_) {
             write(n, kBlockContentSize);
@@ -186,7 +188,7 @@ public:
         }
 
         // Last block
-        write(rhs.tail_, rhs.len_ % kBlockContentSize);
+        write(rhs.tail_, rhs.lengthMod());
 
         return *this;
     }
@@ -197,7 +199,12 @@ private:
 
     // Is the capacity full filled
     bool isFull() const {
-        return len_ != 0 && len_ % kBlockContentSize == 0;
+        return len_ != 0 && lengthMod() == 0;
+    }
+
+    // Used size in last block
+    std::size_t lengthMod() const {
+        return len_ & (kBlockContentSize - 1);
     }
 
     // Is there only inline allocation
@@ -229,7 +236,7 @@ private:
         }
     }
 
-    static constexpr std::size_t kBlockContentSize = kBlockSize - sizeof(char*);
+    static constexpr std::size_t kBlockSize = kBlockContentSize + sizeof(char*);
 
     size_t len_ = 0;
     char* head_;
