@@ -55,6 +55,10 @@ struct List {
         return values == rhs.values;
     }
 
+    bool operator<(const List& rhs) const {
+        return values < rhs.values;
+    }
+
     const Value& operator[](size_t i) const {
         return values[i];
     }
