@@ -92,6 +92,17 @@ public:
             return vidToRowIndex_.equal_range(id);
         }
 
+        std::vector<uint32_t> rowsOfVids(const std::vector<VertexID> &ids) {
+            std::vector<uint32_t> rows;
+            for (const auto vid : ids) {
+                const auto range = rowsOfVid(vid);
+                for (auto i = range.first; i != range.second; ++i) {
+                    rows.emplace_back(i->second);
+                }
+            }
+            return rows;
+        }
+
     private:
         friend class InterimResult;
         using Row = std::vector<VariantType>;
