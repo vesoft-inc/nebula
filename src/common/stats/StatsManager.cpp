@@ -249,6 +249,36 @@ void StatsManager::readAllValue(folly::dynamic& vals) {
                 vals.push_back(std::move(stat));
             }
         }
+
+        // add Percentile
+        for (auto range = TimeRange::FIVE_SECONDS; range <= TimeRange::ONE_HOUR;
+             range = static_cast<TimeRange>(static_cast<int>(range) + 1)) {
+            auto metricName = statsName.first + ".p99";
+            switch (range) {
+                case TimeRange::FIVE_SECONDS:
+                    metricName += ".5";
+                    break;
+                case TimeRange::ONE_MINUTE:
+                    metricName += ".60";
+                    break;
+                case TimeRange::TEN_MINUTES:
+                    metricName += ".600";
+                    break;
+                case TimeRange::ONE_HOUR:
+                    metricName += ".3600";
+                    break;
+                    // intentionally no `default'
+            }
+            auto status = readValue(metricName);
+            if (!status.ok()) {
+                continue;
+            }
+            auto metricValue = status.value();
+            folly::dynamic stat = folly::dynamic::object();
+            stat["name"] = metricName;
+            stat["value"] = metricValue;
+            vals.push_back(std::move(stat));
+        }
     }
 }
 
