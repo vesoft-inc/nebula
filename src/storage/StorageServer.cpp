@@ -21,7 +21,7 @@
 
 
 DEFINE_int32(port, 44500, "Storage daemon listening port");
-DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
+DEFINE_bool(reuse_port, false, "Whether to turn on the SO_REUSEPORT option");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
 DEFINE_int32(num_worker_threads, 32, "Number of workers");
 DEFINE_int32(storage_http_thread_num, 3, "Number of storage daemon's http thread");

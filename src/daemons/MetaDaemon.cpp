@@ -31,7 +31,7 @@ using nebula::Status;
 using nebula::web::PathParams;
 
 DEFINE_int32(port, 45500, "Meta daemon listening port");
-DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
+DEFINE_bool(reuse_port, false, "Whether to turn on the SO_REUSEPORT option");
 DEFINE_string(data_path, "", "Root data path");
 DEFINE_string(meta_server_addrs,
               "",
@@ -249,7 +249,7 @@ int main(int argc, char *argv[]) {
         if (nebula::value(ret) == localhost) {
             LOG(INFO) << "Check and init root user";
             if (!nebula::meta::RootUserMan::isUserExists(kvstore.get())) {
-                if(!nebula::meta::RootUserMan::initRootUser(kvstore.get())) {
+                if (!nebula::meta::RootUserMan::initRootUser(kvstore.get())) {
                     LOG(ERROR) << "Init root user failed";
                     return EXIT_FAILURE;
                 }
