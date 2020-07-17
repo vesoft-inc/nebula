@@ -18,7 +18,6 @@ bool BinaryExpression::operator==(const Expression& rhs) const {
 }
 
 
-
 void BinaryExpression::writeTo(Encoder& encoder) const {
     // kind_
     encoder << kind_;

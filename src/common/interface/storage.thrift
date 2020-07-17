@@ -37,7 +37,7 @@ enum ErrorCode {
     E_KEY_NOT_FOUND        = -15,
     E_CONSENSUS_ERROR      = -16,
     E_DATA_TYPE_MISMATCH   = -17,
-    E_INVALID_VID          = -18,
+    E_INVALID_FIELD_VALUE  = -18,
     E_REBUILD_INDEX_FAILED = -19,
     E_INVALID_OPERATION    = -20,
 
@@ -58,6 +58,7 @@ enum ErrorCode {
     E_RETRY_EXHAUSTED        = -35,
     E_TRANSFER_LEADER_FAILED = -36,
     E_INVALID_STAT_TYPE      = -37,
+    E_INVALID_VID            = -38,
 
     // meta client failed
     E_LOAD_META_FAILED = -41,
@@ -68,6 +69,10 @@ enum ErrorCode {
 
     // partial result, used for kv interfaces
     E_PARTIAL_RESULT = -61,
+
+    // Filter out
+    E_FILTER_OUT             = -71,
+    E_INVALID_DATA           = -72,
 
     // task manager failed
     E_INVALID_TASK_PARA = -90,

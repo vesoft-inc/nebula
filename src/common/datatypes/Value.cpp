@@ -1439,6 +1439,37 @@ std::string Value::toString() const {
     LOG(FATAL) << "Unknown value type " << static_cast<int>(type_);
 }
 
+StatusOr<bool> Value::toBool() {
+    switch (type_) {
+        // Type::__EMPTY__ is always false
+        case Value::Type::__EMPTY__: {
+            return false;
+        }
+        // Type::NULLVALUE is always false
+        case Value::Type::NULLVALUE: {
+            return false;
+        }
+        case Value::Type::BOOL: {
+            return getBool();
+        }
+        case Value::Type::INT: {
+            return getInt() != 0;
+        }
+        case Value::Type::FLOAT: {
+            return std::abs(getFloat()) > kEpsilon;
+        }
+        case Value::Type::STRING: {
+            return !getStr().empty();
+        }
+        case Value::Type::DATE: {
+            return getDate().toInt() != 0;
+        }
+        default: {
+            return Status::Error("Value can not convert to bool");
+        }
+    }
+}
+
 void swap(Value& a, Value& b) {
     Value temp(std::move(a));
     a = std::move(b);

@@ -291,6 +291,8 @@ struct Value {
 
     std::string toString() const;
 
+    StatusOr<bool> toBool();
+
 private:
     Type type_;
 
