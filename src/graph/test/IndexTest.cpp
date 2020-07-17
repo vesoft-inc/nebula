@@ -55,6 +55,12 @@ TEST_F(IndexTest, TagIndex) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG INDEX duplicate_person_index ON person(name)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
     // Tag not exist
     {
         cpp2::ExecutionResponse resp;
@@ -80,6 +86,24 @@ TEST_F(IndexTest, TagIndex) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG INDEX multi_person_index ON person(name, email)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG INDEX duplicate_person_index ON person(name, email)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG INDEX duplicate_index ON person(name, name)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG INDEX disorder_person_index ON person(email, name)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -133,12 +157,6 @@ TEST_F(IndexTest, TagIndex) {
             ASSERT_NE("FAILED", columns[1].get_str());
         }
     }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "CREATE TAG INDEX duplicate_index ON person(name, name)";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
-    }
     // Describe Tag Index
     {
         cpp2::ExecutionResponse resp;
@@ -179,6 +197,7 @@ TEST_F(IndexTest, TagIndex) {
         std::vector<std::tuple<std::string>> expected{
             {"single_person_index"},
             {"multi_person_index"},
+            {"disorder_person_index"},
         };
         ASSERT_TRUE(verifyResult(resp, expected, true, {0}));
     }
@@ -242,6 +261,12 @@ TEST_F(IndexTest, EdgeIndex) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE EDGE INDEX duplicate_friend_index ON friend(degree)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
     // Edge not exist
     {
         cpp2::ExecutionResponse resp;
@@ -267,6 +292,25 @@ TEST_F(IndexTest, EdgeIndex) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE EDGE INDEX multi_friend_index ON friend(degree, start_time)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE EDGE INDEX duplicate_friend_index "
+                            "ON friend(degree, start_time)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE EDGE INDEX duplicate_index ON friend(degree, degree)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE EDGE INDEX disorder_friend_index ON friend(start_time, degree)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -320,12 +364,6 @@ TEST_F(IndexTest, EdgeIndex) {
             ASSERT_NE("FAILED", columns[1].get_str());
         }
     }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "CREATE EDGE INDEX duplicate_index ON friend(degree, degree)";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
-    }
     // Describe Edge Index
     {
         cpp2::ExecutionResponse resp;
@@ -366,6 +404,7 @@ TEST_F(IndexTest, EdgeIndex) {
         std::vector<std::tuple<std::string>> expected{
             {"single_friend_index"},
             {"multi_friend_index"},
+            {"disorder_friend_index"},
         };
         ASSERT_TRUE(verifyResult(resp, expected, true, {0}));
     }
