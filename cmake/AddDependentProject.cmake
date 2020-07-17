@@ -27,7 +27,6 @@ macro(add_dependent_project)
         execute_process(
             COMMAND ${GIT_EXECUTABLE} clone
                 --depth 1
-                --progress
                 --single-branch
                 --branch ${DEP_PROJ_TAG}
                 ${DEP_PROJ_REPO}

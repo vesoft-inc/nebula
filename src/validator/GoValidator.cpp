@@ -15,73 +15,41 @@
 namespace nebula {
 namespace graph {
 Status GoValidator::validateImpl() {
-    Status status;
     auto* goSentence = static_cast<GoSentence*>(sentence_);
-    do {
-        status = validateStep(goSentence->stepClause());
-        if (!status.ok()) {
-            break;
-        }
+    NG_RETURN_IF_ERROR(validateStep(goSentence->stepClause()));
+    NG_RETURN_IF_ERROR(validateFrom(goSentence->fromClause()));
+    NG_RETURN_IF_ERROR(validateOver(goSentence->overClause()));
+    NG_RETURN_IF_ERROR(validateWhere(goSentence->whereClause()));
+    NG_RETURN_IF_ERROR(validateYield(goSentence->yieldClause()));
 
-        status = validateFrom(goSentence->fromClause());
-        if (!status.ok()) {
-            break;
-        }
+    if (!inputProps_.empty() && fromType_ != kPipe) {
+        return Status::Error("$- must be referred in FROM before used in WHERE or YIELD");
+    }
 
-        status = validateOver(goSentence->overClause());
-        if (!status.ok()) {
-            break;
-        }
+    if (!varProps_.empty() && fromType_ != kVariable) {
+        return Status::Error("A variable must be referred in FROM before used in WHERE or YIELD");
+    }
 
-        status = validateWhere(goSentence->whereClause());
-        if (!status.ok()) {
-            break;
-        }
+    if ((!inputProps_.empty() && !varProps_.empty()) || varProps_.size() > 1) {
+        return Status::Error("Only support single input in a go sentence.");
+    }
 
-        status = validateYield(goSentence->yieldClause());
-        if (!status.ok()) {
-            break;
-        }
+    if (!dstTagProps_.empty()) {
+        // TODO: inplement get vertex props.
+        return Status::Error("Not support get dst yet.");
+    }
 
-        if (!inputProps_.empty() && fromType_ != kPipe) {
-            status = Status::Error("$- must be referred in FROM "
-                                   "before used in WHERE or YIELD");
-            break;
-        }
+    if (isOverAll_) {
+        // TODO: implement over all.
+        return Status::Error("Not support over all yet.");
+    }
 
-        if (!varProps_.empty() && fromType_ != kVariable) {
-            status = Status::Error("A variable must be referred in FROM "
-                                   "before used in WHERE or YIELD");
-            break;
-        }
+    if (!inputProps_.empty()) {
+        // TODO: inplement get input props.
+        return Status::Error("Not support input prop yet.");
+    }
 
-        if ((!inputProps_.empty() && !varProps_.empty())
-                || varProps_.size() > 1) {
-            status = Status::Error(
-                    "Only support single input in a go sentence.");
-            break;
-        }
-
-        if (!dstTagProps_.empty()) {
-            // TODO: inplement get vertex props.
-            status = Status::Error("Not support get dst yet.");
-            break;
-        }
-
-        if (isOverAll_) {
-            // TODO: implement over all.
-            status = Status::Error("Not support over all yet.");
-            break;
-        }
-
-        if (!inputProps_.empty()) {
-            // TODO: inplement get input props.
-            status = Status::Error("Not support input prop yet.");
-            break;
-        }
-    } while (false);
-
-    return status;
+    return Status::OK();
 }
 
 Status GoValidator::validateStep(const StepClause* step) {

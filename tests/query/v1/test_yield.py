@@ -1,0 +1,523 @@
+# --coding:utf-8--
+#
+# Copyright (c) 2020 vesoft inc. All rights reserved.
+#
+# This source code is licensed under Apache 2.0 License,
+# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+
+import time
+
+import pytest
+from nebula2.graph import ttypes
+from nebula_test_common.nebula_test_suite import NebulaTestSuite
+
+
+class TestYield(NebulaTestSuite):
+    @classmethod
+    def prepare(self):
+        self.load_data()
+
+    @pytest.mark.skip(reason="")
+    def test_base(self):
+        query = 'YIELD 1'
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        print(resp)
+        print(resp.data.column_names)
+        self.check_column_names(resp, ['1'])
+        self.check_result(resp, [[1]])
+
+        query = "YIELD 1+1, '1+1', (int)3.14, (string)(1+1), (string)true"
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = [
+            "(1+1)", "1+1", "(int)3.140000000000000", "(string)(1+1)",
+            "(string)true"
+        ]
+        self.check_column_names(resp, columns)
+        expect_result = [[2, "1+1", 3, "2", "true"]]
+        self.check_result(resp, expect_result)
+
+        query = 'YIELD "Hello", hash("Hello")'
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = ["Hello", "hash(Hello)"]
+        self.check_column_names(resp, columns)
+        expect_result = [['Hello', 2275118702903107253]]
+        self.check_result(resp, expect_result)
+
+    @pytest.mark.skip(reason="")
+    def test_hash_call(self):
+        query = 'YIELD hash("Boris")'
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = ["hash(Boris)"]
+        self.check_column_names(resp, columns)
+        expect_result = [[""]]
+        self.check_result(resp, expect_result)
+
+        query = 'YIELD hash(123)'
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = ["YIELD hash(123)"]
+        self.check_column_names(resp, columns)
+        expect_result = [[""]]
+        self.check_result(resp, expect_result)
+
+        query = 'YIELD hash(123 + 456)'
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = ["YIELD hash(123 + 456)"]
+        self.check_column_names(resp, columns)
+        expect_result = [[""]]
+        self.check_result(resp, expect_result)
+
+        query = 'YIELD hash(123.0)'
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = ["hash(123.000000000000000)"]
+        self.check_column_names(resp, columns)
+        expect_result = [[""]]
+        self.check_result(resp, expect_result)
+
+        query = 'YIELD hash(!0)'
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = ["hash(!(0))"]
+        self.check_column_names(resp, columns)
+        expect_result = [[""]]
+        self.check_result(resp, expect_result)
+
+    @pytest.mark.skip(reason="")
+    def test_logic(self):
+        query = 'YIELD NOT 0 || 0 AND 0 XOR 0'
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = [""]
+        self.check_column_names(resp, columns)
+        expect_result = [[1]]
+        self.check_result(resp, expect_result)
+
+        query = 'YIELD !0 OR 0 && 0 XOR 1'
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = [""]
+        self.check_column_names(resp, columns)
+        expect_result = [[0]]
+        self.check_result(resp, expect_result)
+
+        query = 'YIELD (NOT 0 || 0) AND 0 XOR 1'
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = [""]
+        self.check_column_names(resp, columns)
+        expect_result = [[1]]
+        self.check_result(resp, expect_result)
+
+        query = 'YIELD 2.5 % 1.2 ^ 1.6'
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = [""]
+        self.check_column_names(resp, columns)
+        expect_result = [[1]]
+        self.check_result(resp, expect_result)
+
+        query = 'YIELD (5 % 3) ^ 1'
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = [""]
+        self.check_column_names(resp, columns)
+        expect_result = [[3]]
+        self.check_result(resp, expect_result)
+
+    @pytest.mark.skip(reason="")
+    def test_in_call(self):
+        query = 'YIELD udf_is_in(1,0,1,2), 123'
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = ["udf_is_in(1,0,1,2)", "123"]
+        self.check_column_names(resp, columns)
+        expect_result = [[true, 123]]
+        self.check_result(resp, expect_result)
+
+    @pytest.mark.skip(reason="")
+    def test_yield_pipe(self):
+        query = '''GO FROM "Boris Diaw" OVER serve \
+        YIELD $^.player.name as name, serve.start_year as start, $$.team.name as team \
+        | YIELD $-.team'''
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = []
+        self.check_column_names(resp, columns)
+        expect_result = [[]]
+        self.check_result(resp, expect_result)
+
+        query = '''GO FROM "Boris Diaw" OVER serve \
+        YIELD $^.player.name as name, serve.start_year as start, $$.team.name as team \
+        | YIELD $-.team WHERE 1 == 1'''
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = []
+        self.check_column_names(resp, columns)
+        expect_result = [[]]
+        self.check_result(resp, expect_result)
+
+        query = '''GO FROM "Boris Diaw" OVER serve \
+        YIELD $^.player.name as name, serve.start_year as start, $$.team.name as team \
+        | YIELD $-.team WHERE $-.start > 2005'''
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = []
+        self.check_column_names(resp, columns)
+        expect_result = [[]]
+        self.check_result(resp, expect_result)
+
+        query = '''GO FROM "Boris Diaw" OVER serve \
+        YIELD $^.player.name as name, serve.start_year as start, $$.team.name as team \
+        | YIELD $-.*'''
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = []
+        self.check_column_names(resp, columns)
+        expect_result = [[]]
+        self.check_result(resp, expect_result)
+
+        query = '''GO FROM "Boris Diaw" OVER serve \
+        YIELD $^.player.name as name, serve.start_year as start, $$.team.name as team \
+        | YIELD $-.* WHERE $-.start > 2005'''
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = []
+        self.check_column_names(resp, columns)
+        expect_result = [[]]
+        self.check_result(resp, expect_result)
+
+        query = '''GO FROM "Boris Diaw" OVER serve \
+        YIELD $^.player.name as name, serve.start_year as start, $$.team.name as team \
+        | YIELD $-.*,hash(123) as hash WHERE $-.start > 2005'''
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = []
+        self.check_column_names(resp, columns)
+        expect_result = [[]]
+        self.check_result(resp, expect_result)
+
+    @pytest.mark.skip(reason="")
+    def test_yield_var(self):
+        query = '''$var = GO FROM "Boris Diaw" OVER serve \
+        YIELD $^.player.name as name, serve.start_year as start, $$.team.name as team; \
+        YIELD $var.team'''
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = []
+        self.check_column_names(resp, columns)
+        expect_result = [[]]
+        self.check_result(resp, expect_result)
+
+        query = '''$var = GO FROM "Boris Diaw" OVER serve \
+        YIELD $^.player.name as name, serve.start_year as start, $$.team.name as team; \
+        YIELD $var.team WHERE 1 == 1'''
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = []
+        self.check_column_names(resp, columns)
+        expect_result = [[]]
+        self.check_result(resp, expect_result)
+
+        query = '''$var = GO FROM "Boris Diaw" OVER serve \
+        YIELD $^.player.name as name, serve.start_year as start, $$.team.name as team; \
+        YIELD $var.team WHERE $var.start > 2005'''
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = []
+        self.check_column_names(resp, columns)
+        expect_result = [[]]
+        self.check_result(resp, expect_result)
+
+        query = '''$var = GO FROM "Boris Diaw" OVER serve \
+        YIELD $^.player.name as name, serve.start_year as start, $$.team.name as team; \
+        YIELD $var.*'''
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = []
+        self.check_column_names(resp, columns)
+        expect_result = [[]]
+        self.check_result(resp, expect_result)
+
+        query = '''$var = GO FROM "Boris Diaw" OVER serve \
+        YIELD $^.player.name as name, serve.start_year as start, $$.team.name as team; \
+        YIELD $var.* WHERE $var.start > 2005'''
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = []
+        self.check_column_names(resp, columns)
+        expect_result = [[]]
+        self.check_result(resp, expect_result)
+
+        query = '''$var = GO FROM "Boris Diaw" OVER serve \
+        YIELD $^.player.name as name, serve.start_year as start, $$.team.name as team; \
+        YIELD $var.*, hash(123) as hash WHERE $var.start > 2005'''
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = []
+        self.check_column_names(resp, columns)
+        expect_result = [[]]
+        self.check_result(resp, expect_result)
+
+    @pytest.mark.skip(reason="")
+    def test_error(self):
+        query = 'YIELD $-'
+        resp = self.execute_query(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_SYNTAX_ERROR)
+
+        query = '''$var = GO FROM "Boris Diaw" OVER serve YIELD $^.player.name AS name, serve.start_year AS start, $$.team.name AS team; \
+        YIELD $var.team WHERE $-.start > 2005'''
+        resp = self.execute_query(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_SYNTAX_ERROR)
+
+        query = '''$var = GO FROM "Boris Diaw" OVER serve YIELD $^.player.name AS name, serve.start_year AS start, $$.team.name AS team; \
+        YIELD $var.team WHERE $var1.start > 2005'''
+        resp = self.execute_query(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_SYNTAX_ERROR)
+
+        query = '''$var = GO FROM "Boris Diaw" OVER serve YIELD $^.player.name AS name, serve.start_year AS start, $$.team.name AS team; \
+        YIELD $var.abc'''
+        resp = self.execute_query(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_SYNTAX_ERROR)
+
+        query = '''$var = GO FROM "Boris Diaw" OVER serve YIELD $^.player.name AS name, serve.start_year AS start, $$.team.name AS team; \
+        YIELD $$.a.team'''
+        resp = self.execute_query(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_SYNTAX_ERROR)
+
+        query = '''$var = GO FROM "Boris Diaw" OVER serve YIELD $^.player.name AS name, serve.start_year AS start, $$.team.name AS team; \
+        YIELD $^.a.team'''
+        resp = self.execute_query(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_SYNTAX_ERROR)
+
+        query = '''$var = GO FROM "Boris Diaw" OVER serve YIELD $^.player.name AS name, serve.start_year AS start, $$.team.name AS team; \
+        YIELD a.team'''
+        resp = self.execute_query(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_SYNTAX_ERROR)
+
+        query = '''GO FROM "Boris Diaw" OVER like | YIELD $-.abc;'''
+        resp = self.execute_query(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_SYNTAX_ERROR)
+
+    @pytest.mark.skip(reason="")
+    def test_calculate_overflow(self):
+        query = '''YIELD 9223372036854775807+1'''
+        resp = self.execute_query(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
+
+        query = '''YIELD -9223372036854775807-2'''
+        resp = self.execute_query(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
+
+        query = '''YIELD -9223372036854775807+-2'''
+        resp = self.execute_query(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
+
+        query = '''YIELD 1-(-9223372036854775807)'''
+        resp = self.execute_query(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
+
+        query = '''YIELD 9223372036854775807*2'''
+        resp = self.execute_query(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
+
+        query = '''YIELD -9223372036854775807*-2'''
+        resp = self.execute_query(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
+
+        query = '''YIELD 9223372036854775807*-2'''
+        resp = self.execute_query(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
+
+        query = '''YIELD -9223372036854775807*2'''
+        resp = self.execute_query(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
+
+        query = '''YIELD 1/0'''
+        resp = self.execute_query(query)
+        print(resp)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
+
+        query = '''YIELD 2%0'''
+        resp = self.execute_query(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
+
+        query = '''YIELD 9223372036854775807'''
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+
+        # Negation of -9223372036854775808 incurs a runtime error under UBSan
+        query = '''YIELD -9223372036854775808'''
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+
+        query = '''YIELD -2*4611686018427387904'''
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+
+        query = '''YIELD -9223372036854775808*1'''
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+
+        query = '''YIELD -9223372036854775809'''
+        resp = self.execute_query(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_SYNTAX_ERROR)
+
+    @pytest.mark.skip(reason="")
+    def test_agg_call(self):
+        query = '''YIELD COUNT(1), $-.name'''
+        resp = self.execute_query(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
+
+        query = '''YIELD COUNT(*), 1+1'''
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = []
+        self.check_column_names(resp, columns)
+        expect_result = [[1, 2]]
+        self.check_result(resp, expect_result)
+
+        query = '''GO FROM "Carmelo Anthony" OVER like YIELD $$.player.age AS age, like.likeness AS like \
+        | YIELD COUNT(*), $-.age'''
+        resp = self.execute_query(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_SYNTAX_ERROR)
+
+        # Test input
+        query = '''GO FROM "Carmelo Anthony" OVER like YIELD $$.player.age AS age, like.likeness AS like \
+        | YIELD AVG($-.age), SUM($-.like), COUNT(*), 1+1'''
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = []
+        self.check_column_names(resp, columns)
+        expect_result = [[34.666666666666664, 270, 3, 2]]
+        self.check_result(resp, expect_result)
+
+        # Yield field has not input
+        query = '''GO FROM "Carmelo Anthony"" OVER like | YIELD COUNT(*)'''
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = []
+        self.check_column_names(resp, columns)
+        expect_result = [[3]]
+        self.check_result(resp, expect_result)
+
+        query = '''GO FROM "Carmelo Anthony"" OVER like | YIELD 1'''
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = []
+        self.check_column_names(resp, columns)
+        expect_result = [[1, 1, 1]]
+        self.check_result(resp, expect_result)
+
+        # input is empty
+        query = '''GO FROM "Nobody"" OVER like | YIELD 1'''
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+
+        # Test var
+        query = '''$var = GO FROM %ld OVER like \
+        YIELD $$.player.age AS age, like.likeness AS like; \
+        YIELD AVG($var.age), SUM($var.like), COUNT(*)'''
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        expect_result = [[34.666666666666664, 270, 3]]
+        self.check_result(resp, expect_result)
+
+    @pytest.mark.skip(reason="")
+    def test_empty_input(self):
+        query = '''GO FROM "NON_EXIST_VERTEX_ID" OVER serve \
+        YIELD $^.player.name AS name, serve.start_year AS start, $$.team.name AS team \
+        | YIELD $-.team'''
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = ["$-.team"],
+        self.check_column_names(resp, columns)
+        expect_result = [[]]
+        self.check_result(resp, expect_result)
+
+        query = '''$var = GO FROM "NON_EXIST_VERTEX_ID" OVER serve YIELD \
+        $^.player.name as name, serve.start_year as start, $$.team.name as team; \
+        YIELD $var.team'''
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = ["$var.team"],
+        self.check_column_names(resp, columns)
+        expect_result = [[]]
+        self.check_result(resp, expect_result)
+
+        query = '''GO FROM "Marco Belinelli" OVER serve \
+        YIELD $^.player.name as name, serve.start_year as start, $$.team.name as team \
+        | YIELD $-.name as name WHERE $-.start > 20000 \
+        | YIELD $-.name AS name'''
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = ["name"],
+        self.check_column_names(resp, columns)
+        expect_result = [[]]
+        self.check_result(resp, expect_result)
+
+    @pytest.mark.skip(reason="")
+    def test_duplicate_columns(self):
+        query = 'YIELD 1, 1'
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = ["1", "1"],
+        self.check_column_names(resp, columns)
+        expect_result = [[1, 1]]
+        self.check_result(resp, expect_result)
+
+        query = '''GO FROM "Boris Diaw" OVER serve YIELD \
+        $^.player.name as team, serve.start_year as start, $$.team.name as team \
+        | YIELD $-.team'''
+        resp = self.execute_query(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
+
+    @pytest.mark.skip(reason="")
+    def test_pipe_yield_go(self):
+        query = '''GO FROM "Tim Duncan" OVER serve YIELD serve._src AS id | \
+        YIELD $-.id AS id | \
+        GO FROM $-.id OVER serve YIELD $$.team.name AS name'''
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = ["name"],
+        self.check_column_names(resp, columns)
+        expect_result = [["Spurs"]]
+        self.check_result(resp, expect_result)
+
+        query = '''$var = GO FROM "Tim Duncan" OVER serve YIELD serve._src AS id | YIELD $-.id AS id; \
+        GO FROM $var.id OVER serve YIELD $$.team.name AS name'''
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = ["name"],
+        self.check_column_names(resp, columns)
+        expect_result = [["Spurs"]]
+        self.check_result(resp, expect_result)
+
+        query = '''$var = GO FROM "Tim Duncan" OVER serve YIELD serve._src AS id; \
+        $var2 = YIELD $var.id AS id; \
+        GO FROM $var2.id OVER serve YIELD $$.team.name AS name'''
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        columns = ["name"],
+        self.check_column_names(resp, columns)
+        expect_result = [["Spurs"]]
+        self.check_result(resp, expect_result)
+
+    @pytest.mark.skip(reason="")
+    def test_with_comment(self):
+        query = 'YIELD 1--1'
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        expect_result = [[2]]
+        self.check_result(resp, expect_result)
+
+        query = 'YIELD 1-- 1'
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        expect_result = [[1]]
+        self.check_result(resp, expect_result)

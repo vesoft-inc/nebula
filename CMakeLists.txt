@@ -101,7 +101,9 @@ if(ENABLE_BUILD_STORAGE)
         NAME storage
         REPO ${NEBULA_STORAGE_REPO_URL}
         TAG  ${NEBULA_STORAGE_REPO_TAG}
-             -DNEBULA_COMMON_PATH=${nebula-common_DIR}
+             -DNEBULA_COMMON_PATH=${nebula-common_DIR} " "
+             -DNEBULA_COMMON_REPO_URL=${NEBULA_COMMON_REPO_URL} " "
+             -DNEBULA_COMMON_REPO_TAG=${NEBULA_COMMON_REPO_TAG}
     )
     message(STATUS ">>>>> The nebula-storage repo has been configured successfully <<<<<")
     message(STATUS "")

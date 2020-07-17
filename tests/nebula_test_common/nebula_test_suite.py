@@ -269,6 +269,13 @@ class NebulaTestSuite(object):
             expect.remove(exp)
 
     @classmethod
+    def check_column_names(self, resp, expect):
+        for i in range(len(expect)):
+            ok = (expect[i] == bytes.decode(resp.data.column_names[i]))
+            assert ok, "different column name, expect: {} vs. result: {}".format(
+                expect[i], resp.data.column_names[i])
+
+    @classmethod
     def check_result(self, resp, expect, ignore_col: Set[int] = set()):
         if resp.data is None and len(expect) == 0:
             return

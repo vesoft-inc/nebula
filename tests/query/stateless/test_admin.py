@@ -22,7 +22,7 @@ class TestAdmin(NebulaTestSuite):
     @classmethod
     def cleanup(self):
         pass
-    
+
     def test_config(self):
         '''
         @brief Testing about configuration query
