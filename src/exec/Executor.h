@@ -17,7 +17,6 @@
 #include "common/base/Status.h"
 #include "common/cpp/helpers.h"
 #include "common/datatypes/Value.h"
-
 #include "context/ExecutionContext.h"
 
 namespace nebula {

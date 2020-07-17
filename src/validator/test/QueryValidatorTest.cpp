@@ -8,6 +8,8 @@
 
 #include "validator/test/ValidatorTestBase.h"
 
+DECLARE_uint32(max_allowed_statements);
+
 namespace nebula {
 namespace graph {
 
@@ -445,5 +447,23 @@ TEST_F(QueryValidatorTest, TestSetValidator) {
       EXPECT_TRUE(checkResult(query, expected));
   }
 }
+
+TEST_F(QueryValidatorTest, TestMaxAllowedStatements) {
+    std::vector<std::string> stmts;
+    for (uint32_t i = 0; i < FLAGS_max_allowed_statements; i++) {
+        stmts.emplace_back(folly::stringPrintf("CREATE TAG tag_%d(name string)", i));
+    }
+    auto query = folly::join(";", stmts);
+    EXPECT_TRUE(checkResult(query));
+
+    stmts.emplace_back(
+        folly::stringPrintf("CREATE TAG tag_%d(name string)", FLAGS_max_allowed_statements));
+    query = folly::join(";", stmts);
+    auto result = checkResult(query);
+    EXPECT_FALSE(result);
+    EXPECT_EQ(std::string(result.message()),
+              "The maximum number of statements allowed has been exceeded");
+}
+
 }  // namespace graph
 }  // namespace nebula

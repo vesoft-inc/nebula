@@ -12,9 +12,9 @@
 #include "context/ExecutionContext.h"
 #include "context/QueryContext.h"
 #include "exec/ExecutionError.h"
-#include "exec/admin/SwitchSpaceExecutor.h"
-#include "exec/admin/SpaceExecutor.h"
 #include "exec/admin/SnapshotExecutor.h"
+#include "exec/admin/SpaceExecutor.h"
+#include "exec/admin/SwitchSpaceExecutor.h"
 #include "exec/logic/LoopExecutor.h"
 #include "exec/logic/MultiOutputsExecutor.h"
 #include "exec/logic/SelectExecutor.h"
@@ -24,6 +24,7 @@
 #include "exec/mutate/InsertEdgesExecutor.h"
 #include "exec/mutate/InsertVerticesExecutor.h"
 #include "exec/query/AggregateExecutor.h"
+#include "exec/query/DataCollectExecutor.h"
 #include "exec/query/DedupExecutor.h"
 #include "exec/query/FilterExecutor.h"
 #include "exec/query/GetEdgesExecutor.h"
@@ -36,7 +37,6 @@
 #include "exec/query/ReadIndexExecutor.h"
 #include "exec/query/SortExecutor.h"
 #include "exec/query/UnionExecutor.h"
-#include "exec/query/DataCollectExecutor.h"
 #include "planner/Admin.h"
 #include "planner/Maintain.h"
 #include "planner/Mutate.h"
@@ -373,8 +373,8 @@ Executor::Executor(const std::string &name, const PlanNode *node, QueryContext *
     : id_(DCHECK_NOTNULL(node)->id()),
       name_(name),
       node_(DCHECK_NOTNULL(node)),
-      qctx_(DCHECK_NOTNULL(qctx)) {
-    ectx_ = qctx->ectx();
+      qctx_(DCHECK_NOTNULL(qctx)),
+      ectx_(DCHECK_NOTNULL(qctx->ectx())) {
     // Initialize the position in ExecutionContext for each executor before execution plan
     // starting to run. This will avoid lock something for thread safety in real execution
     if (!ectx_->exist(node->varName())) {

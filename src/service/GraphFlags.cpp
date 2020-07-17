@@ -40,3 +40,4 @@ DEFINE_string(auth_type, "password", "User login authentication type,"
                                      "cloud for cloud authentication");
 
 DEFINE_string(cloud_http_url, "", "cloud http url including ip, port, url path");
+DEFINE_uint32(max_allowed_statements, 512, "Max allowed sequential statements");
