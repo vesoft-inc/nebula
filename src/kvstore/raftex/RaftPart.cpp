@@ -1002,22 +1002,6 @@ bool RaftPart::prepareElectionRequest(
         return false;
     }
 
-    if (UNLIKELY(status_ == Status::STOPPED)) {
-        VLOG(2) << idStr_
-                << "The part has been stopped, skip the request";
-        return false;
-    }
-
-    if (UNLIKELY(status_ == Status::STARTING)) {
-        VLOG(2) << idStr_ << "The partition is still starting";
-        return false;
-    }
-
-    if (UNLIKELY(status_ == Status::WAITING_SNAPSHOT)) {
-        VLOG(2) << idStr_ << "The partition is still waiting snapshot";
-        return false;
-    }
-
     // Make sure the role is still CANDIDATE
     if (role_ != Role::CANDIDATE) {
         VLOG(2) << idStr_ << "A leader has been elected";
