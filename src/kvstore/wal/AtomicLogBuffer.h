@@ -131,9 +131,8 @@ public:
                     currIndex_ = 0;
                 }
             }
-            DCHECK_NOTNULL(currNode_);
             DCHECK_LT(currIndex_, kMaxLength);
-            currRec_ = currNode_->rec(currIndex_);
+            currRec_ = DCHECK_NOTNULL(currNode_)->rec(currIndex_);
             return *this;
         }
 
@@ -172,8 +171,7 @@ public:
             if (!valid_) {
                 return nullptr;
             }
-            DCHECK_NOTNULL(currRec_);
-            return currRec_;
+            return DCHECK_NOTNULL(currRec_);
         }
 
         void seek(LogID logId) {
