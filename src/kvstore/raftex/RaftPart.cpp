@@ -316,8 +316,8 @@ void RaftPart::start(std::vector<HostAddr>&& peers, bool asLearner) {
     startTimeMs_ = time::WallClock::fastNowInMilliSec();
     // Set up a leader election task
     size_t delayMS = 100 + folly::Random::rand32(900);
-    bgWorkers_->addDelayTask(delayMS, [self = shared_from_this()] {
-        self->statusPolling();
+    bgWorkers_->addDelayTask(delayMS, [self = shared_from_this(), startTime = startTimeMs_] {
+        self->statusPolling(startTime);
     });
 }
 
@@ -1192,7 +1192,16 @@ bool RaftPart::leaderElection() {
 }
 
 
-void RaftPart::statusPolling() {
+void RaftPart::statusPolling(int64_t startTime) {
+    {
+        std::lock_guard<std::mutex> g(raftLock_);
+        // If startTime is not same as the time when `statusPolling` is add to event loop,
+        // it means the part has been restarted (it only happens in ut for now), so don't
+        // add another `statusPolling`.
+        if (startTime != startTimeMs_) {
+            return;
+        }
+    }
     size_t delay = FLAGS_raft_heartbeat_interval_secs * 1000 / 3;
     if (needToStartElection()) {
         if (leaderElection()) {
@@ -1217,8 +1226,8 @@ void RaftPart::statusPolling() {
             VLOG(3) << idStr_ << "Schedule new task";
             bgWorkers_->addDelayTask(
                 delay,
-                [self = shared_from_this()] {
-                    self->statusPolling();
+                [self = shared_from_this(), startTime] {
+                    self->statusPolling(startTime);
                 });
         }
     }
