@@ -13,6 +13,8 @@ import sys, time
 import logging
 import random
 import shutil
+import socket
+from contextlib import closing
 from _pytest.main import ExitCode
 from time import localtime, strftime
 from pathlib import Path
@@ -114,6 +116,16 @@ class NebulaTestPlugin(object):
                         dest='data_dir',
                         help='Data Preload Directory for Nebula')
 
+        parser.addoption('--stop_nebula',
+                         dest='stop_nebula',
+                         default='true',
+                         help='Stop the nebula services')
+
+        parser.addoption('--rm_dir',
+                         dest='rm_dir',
+                         default='true',
+                         help='Remove the temp test dir')
+
     # link to pytest_configure
     # https://docs.pytest.org/en/latest/reference.html#_pytest.hookspec.pytest_configure
     def pytest_configure(self, config):
@@ -124,6 +136,8 @@ class NebulaTestPlugin(object):
         pytest.cmdline.replica_factor = config.getoption("replica_factor")
         pytest.cmdline.partition_num = config.getoption("partition_num")
         pytest.cmdline.data_dir = NEBULA_DATA_DIR
+        pytest.cmdline.stop_nebula = config.getoption("stop_nebula")
+        pytest.cmdline.rm_dir = config.getoption("rm_dir")
         config._metadata['graphd digest'] = DOCKER_GRAPHD_DIGESTS
         config._metadata['metad digest'] = DOCKER_METAD_DIGESTS
         config._metadata['storaged digest'] = DOCKER_STORAGED_DIGESTS
@@ -150,6 +164,15 @@ class TestExecutor(object):
                 print(test)
 
         self.total_executed += len(plugin.tests_executed)
+
+def find_free_port():
+    ports = []
+    for i in range(0, 3):
+        with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+            s.bind(('', 0))
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            ports.append(s.getsockname()[1])
+    return ports
 
 def copy_nebula_conf(nebula_test_dir):
     shutil.copy(NEBULA_BUILD_DIR+'/bin/nebula-graphd', nebula_test_dir + '/bin/')
@@ -178,21 +201,25 @@ def formatNebulaCommand(name, meta_port, ports):
 
 def startNebula(nebula_test_dir):
     os.chdir(nebula_test_dir)
-    graphd_ports = random.sample(range(4000,5000), 3)
-    metad_ports = random.sample(range(5000,6000), 3)
-    storaged_ports = random.sample(range(6000,7000), 3)
-
-    graphd_command = formatNebulaCommand("graphd", metad_ports[0], graphd_ports)
-    metad_command = formatNebulaCommand("metad", metad_ports[0], metad_ports)
-    storaged_command = formatNebulaCommand("storaged", metad_ports[0], storaged_ports)
 
     pids = {}
-    for command in [graphd_command, metad_command, storaged_command]:
+    metad_ports = find_free_port()
+    command = ''
+    graph_port = 0
+    for server_name in ['metad', 'storaged', 'graphd']:
+        ports = []
+        if server_name != 'metad':
+            ports = find_free_port()
+        else:
+            ports = metad_ports
+        command = formatNebulaCommand(server_name, metad_ports[0], ports)
         print("exec: " + command)
         p = subprocess.Popen([command], shell=True, stdout=subprocess.PIPE)
         p.wait()
         if p.returncode != 0:
             print("error: " + p.communicate()[0])
+        else:
+            graph_port = ports[0]
 
     #wait nebula start
     time.sleep(8)
@@ -201,7 +228,7 @@ def startNebula(nebula_test_dir):
             pid = int(f.readline())
             pids[f.name] = pid
 
-    return graphd_ports[0],pids
+    return graph_port, pids
 
 def stopNebula(pids, test_dir):
     print("try to stop nebula services...")
@@ -211,7 +238,8 @@ def stopNebula(pids, test_dir):
         except OSError as err:
             print("nebula stop " + p + " failed: " + str(err))
     time.sleep(3)
-    shutil.rmtree(test_dir)
+    if pytest.cmdline.rm_dir.lower() == 'true':
+        shutil.rmtree(test_dir)
 
 if __name__ == "__main__":
     # If the user is just asking for --help, just print the help test and then exit.
@@ -243,7 +271,8 @@ if __name__ == "__main__":
 
         executor.run_tests(args)
     finally:
-        stopNebula(pids, test_dir)
+        if pytest.cmdline.stop_nebula.lower() == 'true':
+            stopNebula(pids, test_dir)
 
     if executor.total_executed == 0:
         sys.exit(1)

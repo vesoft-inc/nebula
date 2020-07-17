@@ -384,6 +384,7 @@ class TestSchema(NebulaTestSuite):
         resp = self.client.execute('DROP EDGE IF EXISTS exist_edge')
         self.check_resp_succeeded(resp)
 
+    # When turn on asan, it will lead to graphd Stack overflow
     def test_multi(self):
         # multi sentences
         cmd = ''
