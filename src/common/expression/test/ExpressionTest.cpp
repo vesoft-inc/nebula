@@ -1045,7 +1045,7 @@ TEST_F(ExpressionTest, FunctionCallToStringTest) {
         EXPECT_EQ(ep.toString(), "abs(-1)");
     }
     {
-        FunctionCallExpression ep(new std::string("now"), new ArgumentList());
+        FunctionCallExpression ep(new std::string("now"));
         EXPECT_EQ(ep.toString(), "now()");
     }
 }

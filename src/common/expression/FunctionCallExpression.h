@@ -43,9 +43,15 @@ class FunctionCallExpression final : public Expression {
 public:
     FunctionCallExpression(std::string* name = nullptr,
                            ArgumentList* args = nullptr)
-        : Expression(Kind::kFunctionCall)
-        , name_(name)
-        , args_(args) {}
+        : Expression(Kind::kFunctionCall) {
+        if (args == nullptr) {
+            args_ = std::make_unique<ArgumentList>();
+        } else {
+            args_.reset(args);
+        }
+
+        name_.reset(name);
+    }
 
     const Value& eval(ExpressionContext& ctx) override;
 
