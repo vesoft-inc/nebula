@@ -830,5 +830,106 @@ TEST_F(PermissionTest, ShowTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
 }
+
+TEST_F(PermissionTest, ShowRolesTest) {
+    auto client = gEnv->getClient();
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE SPACE space5(partition_num=1, replica_factor=1)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "GRANT ROLE ADMIN ON space5 TO admin";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "GRANT ROLE DBA ON space5 TO dba";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "GRANT ROLE USER ON space5 TO user";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "GRANT ROLE GUEST ON space5 TO guest";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    auto adminClient = gEnv->getClient("admin", "admin");
+    auto dbaClient = gEnv->getClient("dba", "dba");
+    auto userClient = gEnv->getClient("user", "user");
+    auto guestClient = gEnv->getClient("guest", "guest");
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW ROLES IN space5";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(4, resp.get_rows()->size());
+        std::vector<std::tuple<std::string, std::string>> rows = {
+            {"guest", "GUEST"},
+            {"user", "USER"},
+            {"dba", "DBA"},
+            {"admin", "ADMIN"}
+        };
+        ASSERT_TRUE(verifyResult(resp, rows));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW ROLES IN space5";
+        auto code = adminClient->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(4, resp.get_rows()->size());
+        std::vector<std::tuple<std::string, std::string>> rows = {
+            {"guest", "GUEST"},
+            {"user", "USER"},
+            {"dba", "DBA"},
+            {"admin", "ADMIN"}
+        };
+        ASSERT_TRUE(verifyResult(resp, rows));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW ROLES IN space5";
+        auto code = dbaClient->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(1, resp.get_rows()->size());
+        std::vector<std::tuple<std::string, std::string>> rows = {
+            {"dba", "DBA"}
+        };
+        ASSERT_TRUE(verifyResult(resp, rows));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW ROLES IN space5";
+        auto code = userClient->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(1, resp.get_rows()->size());
+        std::vector<std::tuple<std::string, std::string>> rows = {
+            {"user", "USER"}
+        };
+        ASSERT_TRUE(verifyResult(resp, rows));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW ROLES IN space5";
+        auto code = guestClient->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(1, resp.get_rows()->size());
+        std::vector<std::tuple<std::string, std::string>> rows = {
+            {"guest", "GUEST"}
+        };
+        ASSERT_TRUE(verifyResult(resp, rows));
+    }
+}
 }   // namespace graph
 }   // namespace nebula

@@ -93,6 +93,21 @@ void BaseProcessor<RESP>::doMultiRemove(std::vector<std::string> keys) {
     this->onFinished();
 }
 
+template<typename RESP>
+kvstore::ResultCode BaseProcessor<RESP>::multiRemove(std::vector<std::string> keys) {
+    folly::Baton<true, std::atomic> baton;
+    kvstore::ResultCode retCode;
+    kvstore_->asyncMultiRemove(kDefaultSpaceId,
+                               kDefaultPartId,
+                               std::move(keys),
+                               [this, &baton, &retCode] (kvstore::ResultCode code) {
+        this->handleErrorCode(MetaCommon::to(code));
+        retCode = code;
+        baton.post();
+    });
+    baton.wait();
+    return retCode;
+}
 
 template<typename RESP>
 void BaseProcessor<RESP>::doRemoveRange(const std::string& start,
@@ -452,6 +467,22 @@ BaseProcessor<RESP>::indexCheck(const std::vector<nebula::cpp2::IndexItem>& item
         }
     }
     return cpp2::ErrorCode::SUCCEEDED;
+}
+
+template<typename RESP>
+bool BaseProcessor<RESP>::checkIndexExist(const std::vector<std::string>& fields,
+                                          const nebula::cpp2::IndexItem& item) {
+    for (size_t i = 0; i < fields.size(); i++) {
+        if (fields[i] != item.get_fields()[i].get_name()) {
+            break;
+        }
+
+        if (i == fields.size() - 1) {
+            LOG(ERROR) << "Index " << item.get_index_name() << " have existed";
+            return true;
+        }
+    }
+    return false;
 }
 
 }  // namespace meta

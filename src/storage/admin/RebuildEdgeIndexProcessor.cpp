@@ -87,8 +87,11 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
                     continue;
                 }
                 auto values = collectIndexValues(reader.get(), item->get_fields());
+                if (!values.ok()) {
+                    continue;
+                }
                 auto indexKey = NebulaKeyUtils::edgeIndexKey(part, indexID, source,
-                                                             ranking, destination, values);
+                                                             ranking, destination, values.value());
                 data.emplace_back(std::move(indexKey), "");
                 batchNum += 1;
                 iter->next();

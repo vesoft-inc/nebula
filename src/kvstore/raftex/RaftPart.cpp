@@ -32,6 +32,7 @@ DEFINE_int32(wal_ttl, 14400, "Default wal ttl");
 DEFINE_int64(wal_file_size, 16 * 1024 * 1024, "Default wal file size");
 DEFINE_int32(wal_buffer_size, 8 * 1024 * 1024, "Default wal buffer size");
 DEFINE_int32(wal_buffer_num, 2, "Default wal buffer number");
+DEFINE_bool(wal_sync, false, "Whether fsync needs to be called every write");
 DEFINE_bool(trace_raft, false, "Enable trace one raft request");
 
 namespace nebula {
@@ -225,6 +226,7 @@ RaftPart::RaftPart(ClusterID clusterId,
     policy.fileSize = FLAGS_wal_file_size;
     policy.bufferSize = FLAGS_wal_buffer_size;
     policy.numBuffers = FLAGS_wal_buffer_num;
+    policy.sync = FLAGS_wal_sync;
     wal_ = FileBasedWal::getWal(walRoot,
                                 idStr_,
                                 policy,
@@ -314,8 +316,8 @@ void RaftPart::start(std::vector<HostAddr>&& peers, bool asLearner) {
     startTimeMs_ = time::WallClock::fastNowInMilliSec();
     // Set up a leader election task
     size_t delayMS = 100 + folly::Random::rand32(900);
-    bgWorkers_->addDelayTask(delayMS, [self = shared_from_this()] {
-        self->statusPolling();
+    bgWorkers_->addDelayTask(delayMS, [self = shared_from_this(), startTime = startTimeMs_] {
+        self->statusPolling(startTime);
     });
 }
 
@@ -1000,22 +1002,6 @@ bool RaftPart::prepareElectionRequest(
         return false;
     }
 
-    if (UNLIKELY(status_ == Status::STOPPED)) {
-        VLOG(2) << idStr_
-                << "The part has been stopped, skip the request";
-        return false;
-    }
-
-    if (UNLIKELY(status_ == Status::STARTING)) {
-        VLOG(2) << idStr_ << "The partition is still starting";
-        return false;
-    }
-
-    if (UNLIKELY(status_ == Status::WAITING_SNAPSHOT)) {
-        VLOG(2) << idStr_ << "The partition is still waiting snapshot";
-        return false;
-    }
-
     // Make sure the role is still CANDIDATE
     if (role_ != Role::CANDIDATE) {
         VLOG(2) << idStr_ << "A leader has been elected";
@@ -1038,7 +1024,8 @@ bool RaftPart::prepareElectionRequest(
 
 typename RaftPart::Role RaftPart::processElectionResponses(
         const RaftPart::ElectionResponses& results,
-        std::vector<std::shared_ptr<Host>> hosts) {
+        std::vector<std::shared_ptr<Host>> hosts,
+        TermID proposedTerm) {
     std::lock_guard<std::mutex> g(raftLock_);
 
     if (UNLIKELY(status_ == Status::STOPPED)) {
@@ -1081,8 +1068,8 @@ typename RaftPart::Role RaftPart::processElectionResponses(
     if (numSucceeded >= quorum_) {
         LOG(INFO) << idStr_
                   << "Partition is elected as the new leader for term "
-                  << proposedTerm_;
-        term_ = proposedTerm_;
+                  << proposedTerm;
+        term_ = proposedTerm;
         role_ = Role::LEADER;
     }
 
@@ -1122,6 +1109,7 @@ bool RaftPart::leaderElection() {
               << ", candidatePort = " << voteReq.get_candidate_port()
               << ")";
 
+    auto proposedTerm = voteReq.get_term();
     auto resps = ElectionResponses();
     if (hosts.empty()) {
         VLOG(2) << idStr_ << "No peer found, I will be the leader";
@@ -1162,7 +1150,7 @@ bool RaftPart::leaderElection() {
     }
 
     // Process the responses
-    switch (processElectionResponses(resps, std::move(hosts))) {
+    switch (processElectionResponses(resps, std::move(hosts), proposedTerm)) {
         case Role::LEADER: {
             // Elected
             LOG(INFO) << idStr_
@@ -1204,7 +1192,16 @@ bool RaftPart::leaderElection() {
 }
 
 
-void RaftPart::statusPolling() {
+void RaftPart::statusPolling(int64_t startTime) {
+    {
+        std::lock_guard<std::mutex> g(raftLock_);
+        // If startTime is not same as the time when `statusPolling` is add to event loop,
+        // it means the part has been restarted (it only happens in ut for now), so don't
+        // add another `statusPolling`.
+        if (startTime != startTimeMs_) {
+            return;
+        }
+    }
     size_t delay = FLAGS_raft_heartbeat_interval_secs * 1000 / 3;
     if (needToStartElection()) {
         if (leaderElection()) {
@@ -1223,17 +1220,14 @@ void RaftPart::statusPolling() {
         LOG(INFO) << idStr_ << "Clean up the snapshot";
         cleanupSnapshot();
     }
-    if (needToCleanWal()) {
-        wal_->cleanWAL(FLAGS_wal_ttl);
-    }
     {
         std::lock_guard<std::mutex> g(raftLock_);
         if (status_ == Status::RUNNING || status_ == Status::WAITING_SNAPSHOT) {
             VLOG(3) << idStr_ << "Schedule new task";
             bgWorkers_->addDelayTask(
                 delay,
-                [self = shared_from_this()] {
-                    self->statusPolling();
+                [self = shared_from_this(), startTime] {
+                    self->statusPolling(startTime);
                 });
         }
     }
@@ -1255,7 +1249,7 @@ void RaftPart::cleanupSnapshot() {
 
 bool RaftPart::needToCleanWal() {
     std::lock_guard<std::mutex> g(raftLock_);
-    if (status_ == Status::WAITING_SNAPSHOT) {
+    if (status_ == Status::STARTING || status_ == Status::WAITING_SNAPSHOT) {
         return false;
     }
     for (auto& host : hosts_) {

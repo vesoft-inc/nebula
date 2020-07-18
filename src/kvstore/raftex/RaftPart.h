@@ -211,6 +211,8 @@ public:
 
     bool leaseValid();
 
+    bool needToCleanWal();
+
 protected:
     // Protected constructor to prevent from instantiating directly
     RaftPart(ClusterID clusterId,
@@ -326,13 +328,11 @@ private:
 
     bool needToStartElection();
 
-    void statusPolling();
+    void statusPolling(int64_t startTime);
 
     bool needToCleanupSnapshot();
 
     void cleanupSnapshot();
-
-    bool needToCleanWal();
 
     // The method sends out AskForVote request
     // It return true if a leader is elected, otherwise returns false
@@ -347,7 +347,8 @@ private:
 
     // The method returns the partition's role after the election
     Role processElectionResponses(const ElectionResponses& results,
-                                  std::vector<std::shared_ptr<Host>> hosts);
+                                  std::vector<std::shared_ptr<Host>> hosts,
+                                  TermID proposedTerm);
 
     // Check whether new logs can be appended
     // Pre-condition: The caller needs to hold the raftLock_

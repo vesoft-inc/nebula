@@ -15,6 +15,18 @@ namespace nebula {
 TEST(Parser, Go) {
     {
         GQLParser parser;
+        std::string query = "GO 0 STEPS FROM 1 OVER friend";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO -1 STEPS FROM 1 OVER friend";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
         std::string query = "GO FROM 1 OVER friend";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
@@ -33,9 +45,21 @@ TEST(Parser, Go) {
     }
     {
         GQLParser parser;
-        std::string query = "GO UPTO 2 STEPS FROM 1 OVER friend";
+        std::string query = "GO 2 TO 3 STEPS FROM 1 OVER friend";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO 2 TO 2 STEPS FROM 1 OVER friend";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO 3 TO 2 STEPS FROM 1 OVER friend";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
@@ -1397,6 +1421,13 @@ TEST(Parser, Annotation) {
         std::string query = "# test comment....";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.status().isStatementEmpty());
+    }
+    // need use space after "--"
+    {
+        GQLParser parser;
+        std::string query = "--test comment....";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
     }
     {
         GQLParser parser;

@@ -53,10 +53,7 @@ public:
 
     StatusOr<TagID> toTagID(GraphSpaceID space, folly::StringPiece tagName) override;
 
-    StatusOr<std::string> toTagName(GraphSpaceID, TagID) override {
-        LOG(FATAL) << "Unimplemented";
-        return Status::Error("Unimplemented");
-    }
+    StatusOr<std::string> toTagName(GraphSpaceID space, TagID tagId) override;
 
     StatusOr<EdgeType> toEdgeType(GraphSpaceID space, folly::StringPiece typeName) override;
 
@@ -87,6 +84,7 @@ protected:
     std::set<GraphSpaceID> spaces_;
     // Key: spaceId + tagName,  Val: tagId
     std::unordered_map<std::string, TagID> tagNameToId_;
+    std::unordered_map<TagID, std::string> tagIdToName_;
 };
 
 }  // namespace storage

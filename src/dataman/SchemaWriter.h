@@ -20,10 +20,12 @@ public:
     cpp2::Schema moveSchema() noexcept;
 
     SchemaWriter& appendCol(folly::StringPiece name,
-                            cpp2::SupportedType type) noexcept;
+                            cpp2::SupportedType type,
+                            cpp2::Value defaultValue = {}) noexcept;
 
     SchemaWriter& appendCol(folly::StringPiece name,
-                            cpp2::ValueType&& type)noexcept;
+                            cpp2::ValueType&& type,
+                            cpp2::Value defaultValue = {})noexcept;
 
 private:
 };

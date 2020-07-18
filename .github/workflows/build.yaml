@@ -72,7 +72,7 @@ jobs:
         continue-on-error: false
         working-directory: build
         env:
-          ASAN_SYMBOLIZER_PATH: /usr/bin/llvm-symbolizer
+          ASAN_SYMBOLIZER_PATH: /opt/vesoft/toolset/clang/9.0.0/bin/llvm-symbolizer
           ASAN_OPTIONS: fast_unwind_on_malloc=1
         run: |
           ctest \
@@ -84,7 +84,7 @@ jobs:
         timeout-minutes: 40
         working-directory: build
         env:
-          ASAN_SYMBOLIZER_PATH: /usr/bin/llvm-symbolizer
+          ASAN_SYMBOLIZER_PATH: /opt/vesoft/toolset/clang/9.0.0/bin/llvm-symbolizer
           ASAN_OPTIONS: fast_unwind_on_malloc=0
         run: |
           ctest \
@@ -96,8 +96,9 @@ jobs:
         if: success() && matrix.compiler == 'gcc-9.2' && matrix.os == 'centos7'
         run: |
           set -e
-          fastcov -o coverage.info -g $GCOV -l --exclude=/opt/vesoft/ --exclude=scanner.lex
-          bash <(curl -s https://codecov.io/bash) -Z -f coverage.info
+          fastcov -o coverage.info -g $GCOV -l --exclude=scanner.lex
+          lcov --remove coverage.info '*/opt/vesoft/*' -o clean.info
+          bash <(curl -s https://codecov.io/bash) -Z -f clean.info
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         shell: bash

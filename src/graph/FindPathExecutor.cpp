@@ -16,16 +16,21 @@ FindPathExecutor::FindPathExecutor(Sentence *sentence, ExecutionContext *exct)
 }
 
 Status FindPathExecutor::prepare() {
+    spaceId_ = ectx()->rctx()->session()->space();
     Status status;
     expCtx_ = std::make_unique<ExpressionContext>();
+    expCtx_->setStorageClient(ectx()->getStorageClient());
+    expCtx_->setSpace(spaceId_);
     do {
         if (sentence_->from() != nullptr) {
+            sentence_->from()->setContext(expCtx_.get());
             status = sentence_->from()->prepare(from_);
             if (!status.ok()) {
                 break;
             }
         }
         if (sentence_->to() != nullptr) {
+            sentence_->to()->setContext(expCtx_.get());
             status = sentence_->to()->prepare(to_);
             if (!status.ok()) {
                 break;
@@ -65,7 +70,6 @@ Status FindPathExecutor::beforeExecute() {
         if (!status.ok()) {
             break;;
         }
-        spaceId_ = ectx()->rctx()->session()->space();
 
         status = prepareOver();
         if (!status.ok()) {
@@ -148,7 +152,7 @@ void FindPathExecutor::execute() {
         return;
     }
 
-    steps_ = step_.steps_ / 2 + step_.steps_ % 2;
+    steps_ = step_.recordTo_ / 2 + step_.recordTo_ % 2;
     fromVids_ = from_.vids_;
     toVids_ = to_.vids_;
     visitedFrom_.insert(fromVids_.begin(), fromVids_.end());
@@ -291,7 +295,7 @@ inline void FindPathExecutor::meetOddPath(VertexID src, VertexID dst, Neighbor &
     for (auto i = rangeF.first; i != rangeF.second; ++i) {
         auto rangeT = pathTo_.equal_range(dst);
         for (auto j = rangeT.first; j != rangeT.second; ++j) {
-            if (j->second.size() + i->second.size() > step_.steps_) {
+            if (j->second.size() + i->second.size() > step_.recordTo_) {
                 continue;
             }
             // Build path:
@@ -336,7 +340,7 @@ inline void FindPathExecutor::meetEvenPath(VertexID intersectId) {
     auto rangeT = pathTo_.equal_range(intersectId);
     for (auto i = rangeF.first; i != rangeF.second; ++i) {
         for (auto j = rangeT.first; j != rangeT.second; ++j) {
-            if (j->second.size() + i->second.size() > step_.steps_) {
+            if (j->second.size() + i->second.size() > step_.recordTo_) {
                 continue;
             }
             // Build path:

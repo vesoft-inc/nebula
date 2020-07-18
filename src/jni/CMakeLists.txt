@@ -13,7 +13,7 @@
 #   NEBULA_THIRDPARTY_ROOT         -- Specify the third-party root dir.
 #   ENABLE_TESTING                 -- Build unit test
 #
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.5.0)
 
 project("Nebula Graph codec" C CXX)
 

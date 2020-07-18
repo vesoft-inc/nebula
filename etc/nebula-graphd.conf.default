@@ -58,3 +58,7 @@
 ########## authorization ##########
 # Enable authorization
 --enable_authorize=false
+
+########## Authentication ##########
+# User login authentication type, password for nebula authentication, ldap for ldap authentication, cloud for cloud authentication
+--auth_type=password

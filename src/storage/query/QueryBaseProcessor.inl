@@ -511,6 +511,9 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
             VLOG(3) << "Only get the latest version for each edge.";
             continue;
         }
+        if (firstLoop) {
+            firstLoop = false;
+        }
         lastRank = rank;
         lastDstId = dstId;
         std::unique_ptr<RowReader> reader;
@@ -597,9 +600,6 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
 
         proc(std::move(reader), key);
         ++cnt;
-        if (firstLoop) {
-            firstLoop = false;
-        }
     }
 
     return ret;
