@@ -971,6 +971,51 @@ private:
     std::vector<std::string>    vars_;
 };
 
+/**
+ * An implementation of inner join which join two given variable.
+ */
+class DataJoin final : public SingleInputNode {
+public:
+    static DataJoin* make(ExecutionPlan* plan,
+                          PlanNode* input,
+                          std::pair<std::string, std::string> vars,
+                          std::vector<Expression*> hashKeys,
+                          std::vector<Expression*> probeKeys) {
+        return new DataJoin(plan, input, std::move(vars), std::move(hashKeys),
+                            std::move(probeKeys));
+    }
+
+    std::string explain() const override {
+        return "DataJoin";
+    }
+
+    const std::pair<std::string, std::string>& vars() const {
+        return vars_;
+    }
+
+    const std::vector<Expression*>& hashKeys() const {
+        return hashKeys_;
+    }
+
+    const std::vector<Expression*>& probeKeys() const {
+        return probeKeys_;
+    }
+
+private:
+    DataJoin(ExecutionPlan* plan, PlanNode* input,
+            std::pair<std::string, std::string> vars,
+            std::vector<Expression*> hashKeys, std::vector<Expression*> probeKeys)
+        : SingleInputNode(plan, Kind::kDataJoin, input),
+        vars_(std::move(vars)),
+        hashKeys_(std::move(hashKeys)),
+        probeKeys_(std::move(probeKeys)) {}
+
+private:
+    std::pair<std::string, std::string>     vars_;
+    std::vector<Expression*>                hashKeys_;
+    std::vector<Expression*>                probeKeys_;
+};
+
 class ProduceSemiShortestPath : public PlanNode {
 };
 

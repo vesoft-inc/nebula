@@ -185,10 +185,8 @@ Status GetSubgraphValidator::toPlan() {
 
     auto* columns = new YieldColumns();
     auto* column = new YieldColumn(
-            new VariablePropertyExpression(
-                new std::string("*"),
-                new std::string(kDst)),
-            new std::string(kVid));
+        new EdgePropertyExpression(new std::string("*"), new std::string(kDst)),
+        new std::string(kVid));
     columns->addColumn(column);
     auto* project = Project::make(plan, gn1, plan->saveObject(columns));
     project->setInputVar(gn1->varName());

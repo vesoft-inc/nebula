@@ -10,6 +10,39 @@
 #include "common/datatypes/Edge.h"
 #include "common/interface/gen-cpp2/common_types.h"
 
+namespace std {
+
+bool equal_to<const nebula::graph::LogicalRow*>::operator()(
+    const nebula::graph::LogicalRow* lhs,
+    const nebula::graph::LogicalRow* rhs) const {
+    DCHECK_EQ(lhs->kind(), rhs->kind());
+    switch (lhs->kind()) {
+        case nebula::graph::LogicalRow::Kind::kSequential:
+        case nebula::graph::LogicalRow::Kind::kJoin: {
+            auto lhsValues = lhs->segments();
+            auto rhsValues = rhs->segments();
+            if (lhsValues.size() != rhsValues.size()) {
+                return false;
+            }
+            for (size_t i = lhsValues.size(); i < lhsValues.size(); ++i) {
+                const auto* l = lhsValues[i];
+                const auto* r = rhsValues[i];
+                auto equal =
+                    l == r ? true : (l != nullptr) && (r != nullptr) && (*l == *r);
+                if (!equal) {
+                    return false;
+                }
+            }
+            break;
+        }
+        default:
+            LOG(FATAL) << "Not support equal_to for " << lhs->kind();
+            return false;
+    }
+    return true;
+}
+}  // namespace std
+
 namespace nebula {
 namespace graph {
 
@@ -52,7 +85,7 @@ StatusOr<GetNeighborsIter::DataSetIndex> GetNeighborsIter::makeDataSetIndex(cons
     int64_t edgeStartIndex = std::move(buildResult).value();
     if (edgeStartIndex < 0) {
         for (auto& row : dsIndex.ds->rows) {
-            logicalRows_.emplace_back(LogicalRow{idx, &row, "", nullptr});
+            logicalRows_.emplace_back(LogicalRowGN{idx, &row, "", nullptr});
         }
     } else {
         makeLogicalRowByEdge(edgeStartIndex, idx, dsIndex);
@@ -77,7 +110,8 @@ void GetNeighborsIter::makeLogicalRowByEdge(int64_t edgeStartIndex,
                 }
                 auto edgeName = dsIndex.tagEdgeNameIndices.find(column);
                 DCHECK(edgeName != dsIndex.tagEdgeNameIndices.end());
-                logicalRows_.emplace_back(LogicalRow{idx, &row, edgeName->second, &edge.getList()});
+                logicalRows_.emplace_back(
+                    LogicalRowGN{idx, &row, edgeName->second, &edge.getList()});
             }
         }
     }
@@ -161,7 +195,7 @@ const Value& GetNeighborsIter::getColumn(const std::string& col) const {
     if (found == index.end()) {
         return Value::kNullValue;
     }
-    return row()->values[found->second];
+    return iter_->row_->values[found->second];
 }
 
 const Value& GetNeighborsIter::getTagProp(const std::string& tag,
@@ -181,7 +215,7 @@ const Value& GetNeighborsIter::getTagProp(const std::string& tag,
         return Value::kNullValue;
     }
     auto colId = index->second.colIdx;
-    auto& row = *this->row();
+    auto& row = *(iter_->row_);
     DCHECK_GT(row.size(), colId);
     if (!row[colId].isList()) {
         return Value::kNullBadType;
@@ -230,7 +264,7 @@ Value GetNeighborsIter::getVertex() const {
     vertex.vid = vidVal.getStr();
     auto& tagPropMap = dsIndices_[segment].tagPropsMap;
     for (auto& tagProp : tagPropMap) {
-        auto& row = *this->row();
+        auto& row = *(iter_->row_);
         auto& tagPropNameList = tagProp.second.propList;
         auto tagColId = tagProp.second.colIdx;
         if (!row[tagColId].isList()) {
@@ -297,6 +331,52 @@ Value GetNeighborsIter::getEdge() const {
     return Value(std::move(edge));
 }
 
+void JoinIter::joinIndex(const Iterator* lhs, const Iterator* rhs) {
+    size_t nextSeg = 0;
+    if (lhs->isSequentialIter()) {
+        nextSeg = buildIndexFromSeqIter(static_cast<const SequentialIter*>(lhs), 0);
+    } else if (lhs->isJoinIter()) {
+        nextSeg = buildIndexFromJoinIter(static_cast<const JoinIter*>(lhs), 0);
+    }
+
+    if (rhs->isSequentialIter()) {
+        buildIndexFromSeqIter(static_cast<const SequentialIter*>(rhs), nextSeg);
+    } else if (rhs->isJoinIter()) {
+        buildIndexFromJoinIter(static_cast<const JoinIter*>(rhs), nextSeg);
+    }
+}
+
+size_t JoinIter::buildIndexFromSeqIter(const SequentialIter* iter,
+                                       size_t segIdx) {
+    auto colIdxStart = colIndices_.size();
+    for (auto& col : iter->getColIndices()) {
+        colIndices_.emplace(col.first, std::make_pair(segIdx, col.second));
+        colIdxIndices_.emplace(col.second + colIdxStart,
+                               std::make_pair(segIdx, col.second));
+    }
+    return segIdx + 1;
+}
+
+size_t JoinIter::buildIndexFromJoinIter(const JoinIter* iter, size_t segIdx) {
+    auto colIdxStart = colIndices_.size();
+    size_t nextSeg = 0;
+    for (auto& col : iter->getColIndices()) {
+        auto oldSeg = col.second.first;
+        size_t newSeg = oldSeg + segIdx;
+        if (newSeg > nextSeg) {
+            nextSeg = newSeg;
+        }
+        colIndices_.emplace(col.first,
+                            std::make_pair(newSeg, col.second.second));
+    }
+    for (auto& col : iter->getColIdxIndices()) {
+        colIdxIndices_.emplace(
+            col.first + colIdxStart,
+            std::make_pair(col.second.first + segIdx, col.second.second));
+    }
+    return nextSeg + 1;
+}
+
 std::ostream& operator<<(std::ostream& os, Iterator::Kind kind) {
     switch (kind) {
         case Iterator::Kind::kDefault:
@@ -308,10 +388,53 @@ std::ostream& operator<<(std::ostream& os, Iterator::Kind kind) {
         case Iterator::Kind::kGetNeighbors:
             os << "get neighbors";
             break;
+        case Iterator::Kind::kJoin:
+            os << "join";
+            break;
     }
     os << " iterator";
     return os;
 }
 
+std::ostream& operator<<(std::ostream& os, LogicalRow::Kind kind) {
+    switch (kind) {
+        case LogicalRow::Kind::kGetNeighbors:
+            os << "get neighbors row";
+            break;
+        case LogicalRow::Kind::kSequential:
+            os << "sequential row";
+            break;
+        case LogicalRow::Kind::kJoin:
+            os << "join row";
+            break;
+    }
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const LogicalRow& row) {
+    switch (row.kind()) {
+        case nebula::graph::LogicalRow::Kind::kSequential:
+        case nebula::graph::LogicalRow::Kind::kJoin: {
+            std::stringstream ss;
+            size_t cnt = 0;
+            for (auto* seg : row.segments()) {
+                if (seg == nullptr) {
+                    ss << "nullptr";
+                } else {
+                    ss << *seg;
+                }
+                if (cnt < row.size() - 1) {
+                    ss << ",";
+                }
+                ++cnt;
+            }
+            os << ss.str();
+            break;
+        }
+        default:
+            LOG(FATAL) << "Not support streaming for " << row.kind();
+    }
+    return os;
+}
 }  // namespace graph
 }  // namespace nebula

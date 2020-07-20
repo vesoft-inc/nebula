@@ -65,6 +65,7 @@ public:
         kCreateSnapshot,
         kDropSnapshot,
         kShowSnapshots,
+        kDataJoin,
     };
 
     PlanNode(ExecutionPlan* plan, Kind kind);

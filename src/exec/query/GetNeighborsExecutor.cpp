@@ -28,15 +28,12 @@ folly::Future<Status> GetNeighborsExecutor::execute() {
         return error(std::move(status));
     }
     return getNeighbors().ensure([this]() {
-        // TODO(yee): some cleanup or stats actions
-        UNUSED(this);
+        // clear the members
+        reqDs_.rows.clear();
     });
 }
 
 Status GetNeighborsExecutor::buildRequestDataSet() {
-    // clear the members
-    reqDs_.rows.clear();
-
     auto& inputVar = gn_->inputVar();
     auto& inputResult = ectx_->getResult(inputVar);
     auto iter = inputResult.iter();

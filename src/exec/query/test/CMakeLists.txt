@@ -66,6 +66,7 @@ nebula_add_test(
         LimitTest.cpp
         SortTest.cpp
         AggregateTest.cpp
+        DataJoinTest.cpp
     OBJECTS
         ${EXEC_QUERY_TEST_OBJS}
     LIBRARIES

@@ -102,7 +102,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
             return "DropSnapshot";
         case Kind::kShowSnapshots:
             return "ShowSnapshots";
-        // no default so the compiler will warning when lack one enumerate
+        case Kind::kDataJoin:
+            return "DataJoin";
     }
     LOG(FATAL) << "Impossible kind plan node " << static_cast<int>(kind);
 }

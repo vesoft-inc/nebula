@@ -26,36 +26,37 @@ folly::Future<Status> SortExecutor::execute() {
     if (iter->isSequentialIter()) {
         auto seqIter = static_cast<SequentialIter*>(iter.get());
         auto &factors = sort->factors();
-        auto &colIndexes = seqIter->getColIndexes();
+        auto &colIndices = seqIter->getColIndices();
         std::vector<std::pair<size_t, OrderFactor::OrderType>> indexes;
         for (auto &factor : factors) {
-            auto indexFind = colIndexes.find(factor.first);
-            if (indexFind == colIndexes.end()) {
-                LOG(ERROR) << "Column name `" << factor.first << "' is not exist.";
-                return Status::Error("Column name `%s' is not exist.", factor.first.c_str());
+            auto indexFind = colIndices.find(factor.first);
+            if (indexFind == colIndices.end()) {
+                LOG(ERROR) << "Column name `" << factor.first
+                           << "' does not exist.";
+                return Status::Error("Column name `%s' does not exist.",
+                                     factor.first.c_str());
             }
             indexes.emplace_back(std::make_pair(indexFind->second, factor.second));
         }
-        auto comparator = [&indexes] (const Row* lhs, const Row *rhs) {
-            const auto &lhsColumns = lhs->values;
-            const auto &rhsColumns = rhs->values;
+        auto comparator = [&indexes] (const LogicalRow &lhs, const LogicalRow &rhs) {
             for (auto &item : indexes) {
                 auto index = item.first;
                 auto orderType = item.second;
-                if (lhsColumns[index] == rhsColumns[index]) {
+                if (lhs[index] == rhs[index]) {
                     continue;
                 }
 
                 if (orderType == OrderFactor::OrderType::ASCEND) {
-                    return lhsColumns[index] < rhsColumns[index];
+                    return lhs[index] < rhs[index];
                 } else if (orderType == OrderFactor::OrderType::DESCEND) {
-                    return lhsColumns[index] > rhsColumns[index];
+                    return lhs[index] > rhs[index];
                 }
             }
             return false;
         };
         std::sort(seqIter->begin(), seqIter->end(), comparator);
     }
+    // TODO: Sort the join iter.
     return finish(ResultBuilder().value(iter->valuePtr()).iter(std::move(iter)).finish());
 }
 

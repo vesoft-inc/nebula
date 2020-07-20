@@ -25,6 +25,7 @@ nebula_add_library(
     query/SetExecutor.cpp
     query/UnionExecutor.cpp
     query/DataCollectExecutor.cpp
+    query/DataJoinExecutor.cpp
     admin/SwitchSpaceExecutor.cpp
     admin/SpaceExecutor.cpp
     admin/SnapshotExecutor.cpp
