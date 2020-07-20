@@ -310,7 +310,7 @@ object SparkClientGenerator {
               val values = (for {
                 property <- valueProperties if property.trim.length != 0
               } yield extraValue(row, property)).mkString(",")
-              (row.getString(vertexIndex), values)
+              (String.valueOf(extraValue(row, vertex)), values)
             }(Encoders.tuple(Encoders.STRING, Encoders.STRING))
             .foreachPartition { iterator: Iterator[(String, String)] =>
               val service      = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(1))
@@ -810,7 +810,10 @@ object SparkClientGenerator {
     row.schema.fields(index).dataType match {
       case StringType =>
         if (!row.isNullAt(index)) {
-          row.getString(index).mkString("\"", "", "\"")
+          row.getString(index)
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+            .mkString("\"", "", "\"")
         } else {
           "\"\""
         }

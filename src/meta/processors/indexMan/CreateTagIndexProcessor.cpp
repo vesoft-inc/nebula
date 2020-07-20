@@ -51,14 +51,41 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     }
 
     auto tagID = tagIDRet.value();
-    auto retSchema = getLatestTagSchema(space, tagID);
-    if (!retSchema.ok()) {
+    auto prefix = MetaServiceUtils::indexPrefix(space);
+    std::unique_ptr<kvstore::KVIterator> checkIter;
+    auto checkRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &checkIter);
+    if (checkRet != kvstore::ResultCode::SUCCEEDED) {
+        resp_.set_code(MetaCommon::to(checkRet));
+        onFinished();
+        return;
+    }
+
+    while (checkIter->valid()) {
+        auto val = checkIter->val();
+        auto item = MetaServiceUtils::parseIndex(val);
+        if (item.get_schema_id().getType() != nebula::cpp2::SchemaID::Type::tag_id ||
+            fieldNames.size() > item.get_fields().size() ||
+            tagID != item.get_schema_id().get_tag_id()) {
+            checkIter->next();
+            continue;
+        }
+
+        if (checkIndexExist(fieldNames, item)) {
+            resp_.set_code(cpp2::ErrorCode::E_EXISTED);
+            onFinished();
+            return;
+        }
+        checkIter->next();
+    }
+
+    auto schemaRet = getLatestTagSchema(space, tagID);
+    if (!schemaRet.ok()) {
         handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
 
-    auto latestTagSchema = retSchema.value();
+    auto latestTagSchema = schemaRet.value();
     if (tagOrEdgeHasTTL(latestTagSchema)) {
        LOG(ERROR) << "Tag: " << tagName << " has ttl, not create index";
        handleErrorCode(cpp2::ErrorCode::E_INDEX_WITH_TTL);
