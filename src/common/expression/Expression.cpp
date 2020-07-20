@@ -332,6 +332,11 @@ std::unique_ptr<Expression> Expression::decode(Expression::Decoder& decoder) {
             exp->resetFrom(decoder);
             return exp;
         }
+        case Expression::Kind::kTagProperty: {
+            exp = std::make_unique<TagPropertyExpression>();
+            exp->resetFrom(decoder);
+            return exp;
+        }
         case Expression::Kind::kEdgeSrc: {
             exp = std::make_unique<EdgeSrcIdExpression>();
             exp->resetFrom(decoder);
@@ -446,6 +451,9 @@ std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
             break;
         case Expression::Kind::kEdgeProperty:
             os << "EdgeProp";
+            break;
+        case Expression::Kind::kTagProperty:
+            os << "TagProp";
             break;
         case Expression::Kind::kInputProperty:
             os << "InputProp";

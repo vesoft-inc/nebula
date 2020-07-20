@@ -338,6 +338,13 @@ TEST_F(ExpressionTest, GetProp) {
         EXPECT_EQ(eval, 1);
     }
     {
+        // t1.int
+        TagPropertyExpression ep(new std::string("t1"), new std::string("int"));
+        auto eval = Expression::eval(&ep, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::INT);
+        EXPECT_EQ(eval, 1);
+    }
+    {
         // $-.int
         InputPropertyExpression ep(new std::string("int"));
         auto eval = Expression::eval(&ep, gExpCtxt);

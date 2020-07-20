@@ -47,6 +47,7 @@ public:
         kFunctionCall,
 
         kSymProperty,
+        kTagProperty,
         kEdgeProperty,
         kInputProperty,
         kVarProperty,
