@@ -53,23 +53,23 @@ class TestYield(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         columns = ["hash(Boris)"]
         self.check_column_names(resp, columns)
-        expect_result = [[""]]
+        expect_result = [[9126854228122744212]]
         self.check_result(resp, expect_result)
 
         query = 'YIELD hash(123)'
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = ["YIELD hash(123)"]
+        columns = ["hash(123)"]
         self.check_column_names(resp, columns)
-        expect_result = [[""]]
+        expect_result = [[123]]
         self.check_result(resp, expect_result)
 
         query = 'YIELD hash(123 + 456)'
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = ["YIELD hash(123 + 456)"]
+        columns = ["hash((123 + 456))"]
         self.check_column_names(resp, columns)
-        expect_result = [[""]]
+        expect_result = [[579]]
         self.check_result(resp, expect_result)
 
         query = 'YIELD hash(123.0)'
@@ -77,7 +77,7 @@ class TestYield(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         columns = ["hash(123.000000000000000)"]
         self.check_column_names(resp, columns)
-        expect_result = [[""]]
+        expect_result = [[-2256853663865737834]]
         self.check_result(resp, expect_result)
 
         query = 'YIELD hash(!0)'
@@ -85,7 +85,7 @@ class TestYield(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         columns = ["hash(!(0))"]
         self.check_column_names(resp, columns)
-        expect_result = [[""]]
+        expect_result = [[1]]
         self.check_result(resp, expect_result)
 
     @pytest.mark.skip(reason="")
@@ -93,39 +93,39 @@ class TestYield(NebulaTestSuite):
         query = 'YIELD NOT 0 || 0 AND 0 XOR 0'
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = [""]
+        columns = ["((!(0)||(0&&0))XOR0)"]
         self.check_column_names(resp, columns)
-        expect_result = [[1]]
+        expect_result = [[True]]
         self.check_result(resp, expect_result)
 
         query = 'YIELD !0 OR 0 && 0 XOR 1'
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = [""]
+        columns = ["((!(0)||(0&&0))XOR1)"]
         self.check_column_names(resp, columns)
-        expect_result = [[0]]
+        expect_result = [[False]]
         self.check_result(resp, expect_result)
 
         query = 'YIELD (NOT 0 || 0) AND 0 XOR 1'
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = [""]
+        columns = ["(((!(0)||0)&&0)XOR1)"]
         self.check_column_names(resp, columns)
-        expect_result = [[1]]
+        expect_result = [[True]]
         self.check_result(resp, expect_result)
 
         query = 'YIELD 2.5 % 1.2 ^ 1.6'
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = [""]
+        columns = ["(2.500000000000000%(1.200000000000000^1.600000000000000))"]
         self.check_column_names(resp, columns)
-        expect_result = [[1]]
+        expect_result = [[2.5]]
         self.check_result(resp, expect_result)
 
         query = 'YIELD (5 % 3) ^ 1'
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = [""]
+        columns = ["((5%3)^1)"]
         self.check_column_names(resp, columns)
         expect_result = [[3]]
         self.check_result(resp, expect_result)
@@ -137,7 +137,7 @@ class TestYield(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         columns = ["udf_is_in(1,0,1,2)", "123"]
         self.check_column_names(resp, columns)
-        expect_result = [[true, 123]]
+        expect_result = [[True, 123]]
         self.check_result(resp, expect_result)
 
     @pytest.mark.skip(reason="")
@@ -147,9 +147,9 @@ class TestYield(NebulaTestSuite):
         | YIELD $-.team'''
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = []
+        columns = ["$-.team"]
         self.check_column_names(resp, columns)
-        expect_result = [[]]
+        expect_result = [["Suns"], ["Hawks"], ["Spurs"], ["Hornets"], ["Jazz"]]
         self.check_result(resp, expect_result)
 
         query = '''GO FROM "Boris Diaw" OVER serve \
@@ -157,9 +157,9 @@ class TestYield(NebulaTestSuite):
         | YIELD $-.team WHERE 1 == 1'''
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = []
+        columns = ["$-.team"]
         self.check_column_names(resp, columns)
-        expect_result = [[]]
+        expect_result = [["Suns"], ["Hawks"], ["Spurs"], ["Hornets"], ["Jazz"]]
         self.check_result(resp, expect_result)
 
         query = '''GO FROM "Boris Diaw" OVER serve \
@@ -167,9 +167,9 @@ class TestYield(NebulaTestSuite):
         | YIELD $-.team WHERE $-.start > 2005'''
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = []
+        columns = ["$-.team"]
         self.check_column_names(resp, columns)
-        expect_result = [[]]
+        expect_result = [["Spurs"], ["Hornets"], ["Jazz"]]
         self.check_result(resp, expect_result)
 
         query = '''GO FROM "Boris Diaw" OVER serve \
@@ -177,9 +177,13 @@ class TestYield(NebulaTestSuite):
         | YIELD $-.*'''
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = []
+        columns = ["$-.name", "$-.start", "$-.team"]
         self.check_column_names(resp, columns)
-        expect_result = [[]]
+        expect_result = [["Boris Diaw", 2005, "Suns"],
+                         ["Boris Diaw", 2003, "Hawks"],
+                         ["Boris Diaw", 2012, "Spurs"],
+                         ["Boris Diaw", 2008, "Hornets"],
+                         ["Boris Diaw", 2016, "Jazz"]]
         self.check_result(resp, expect_result)
 
         query = '''GO FROM "Boris Diaw" OVER serve \
@@ -187,9 +191,11 @@ class TestYield(NebulaTestSuite):
         | YIELD $-.* WHERE $-.start > 2005'''
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = []
+        columns = ["$-.name", "$-.start", "$-.team"]
         self.check_column_names(resp, columns)
-        expect_result = [[]]
+        expect_result = [["Boris Diaw", 2012, "Spurs"],
+                         ["Boris Diaw", 2008, "Hornets"],
+                         ["Boris Diaw", 2016, "Jazz"]]
         self.check_result(resp, expect_result)
 
         query = '''GO FROM "Boris Diaw" OVER serve \
@@ -197,9 +203,11 @@ class TestYield(NebulaTestSuite):
         | YIELD $-.*,hash(123) as hash WHERE $-.start > 2005'''
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = []
+        columns = ["$-.name", "$-.start", "$-.team", "hash"]
         self.check_column_names(resp, columns)
-        expect_result = [[]]
+        expect_result = [["Boris Diaw", 2012, "Spurs", 123],
+                         ["Boris Diaw", 2008, "Hornets", 123],
+                         ["Boris Diaw", 2016, "Jazz", 123]]
         self.check_result(resp, expect_result)
 
     @pytest.mark.skip(reason="")
@@ -209,9 +217,9 @@ class TestYield(NebulaTestSuite):
         YIELD $var.team'''
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = []
+        columns = ["$var.team"]
         self.check_column_names(resp, columns)
-        expect_result = [[]]
+        expect_result = [["Suns"], ["Hawks"], ["Spurs"], ["Hornets"], ["Jazz"]]
         self.check_result(resp, expect_result)
 
         query = '''$var = GO FROM "Boris Diaw" OVER serve \
@@ -219,9 +227,9 @@ class TestYield(NebulaTestSuite):
         YIELD $var.team WHERE 1 == 1'''
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = []
+        columns = ["$var.team"]
         self.check_column_names(resp, columns)
-        expect_result = [[]]
+        expect_result = [["Suns"], ["Hawks"], ["Spurs"], ["Hornets"], ["Jazz"]]
         self.check_result(resp, expect_result)
 
         query = '''$var = GO FROM "Boris Diaw" OVER serve \
@@ -229,9 +237,9 @@ class TestYield(NebulaTestSuite):
         YIELD $var.team WHERE $var.start > 2005'''
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = []
+        columns = ["$var.team"]
         self.check_column_names(resp, columns)
-        expect_result = [[]]
+        expect_result = [["Spurs"], ["Hornets"], ["Jazz"]]
         self.check_result(resp, expect_result)
 
         query = '''$var = GO FROM "Boris Diaw" OVER serve \
@@ -239,9 +247,13 @@ class TestYield(NebulaTestSuite):
         YIELD $var.*'''
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = []
+        columns = ["$var.name", "$var.start", "$var.team"]
         self.check_column_names(resp, columns)
-        expect_result = [[]]
+        expect_result = [["Boris Diaw", 2005, "Suns"],
+                         ["Boris Diaw", 2003, "Hawks"],
+                         ["Boris Diaw", 2012, "Spurs"],
+                         ["Boris Diaw", 2008, "Hornets"],
+                         ["Boris Diaw", 2016, "Jazz"]]
         self.check_result(resp, expect_result)
 
         query = '''$var = GO FROM "Boris Diaw" OVER serve \
@@ -249,9 +261,11 @@ class TestYield(NebulaTestSuite):
         YIELD $var.* WHERE $var.start > 2005'''
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = []
+        columns = ["$var.name", "$var.start", "$var.team"]
         self.check_column_names(resp, columns)
-        expect_result = [[]]
+        expect_result = [["Boris Diaw", 2012, "Spurs"],
+                         ["Boris Diaw", 2008, "Hornets"],
+                         ["Boris Diaw", 2016, "Jazz"]]
         self.check_result(resp, expect_result)
 
         query = '''$var = GO FROM "Boris Diaw" OVER serve \
@@ -259,9 +273,11 @@ class TestYield(NebulaTestSuite):
         YIELD $var.*, hash(123) as hash WHERE $var.start > 2005'''
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = []
+        columns = ["$var.name", "$var.start", "$var.team", "hash"]
         self.check_column_names(resp, columns)
-        expect_result = [[]]
+        expect_result = [["Boris Diaw", 2012, "Spurs", 123],
+                         ["Boris Diaw", 2008, "Hornets", 123],
+                         ["Boris Diaw", 2016, "Jazz", 123]]
         self.check_result(resp, expect_result)
 
     @pytest.mark.skip(reason="")
@@ -377,7 +393,7 @@ class TestYield(NebulaTestSuite):
         query = '''YIELD COUNT(*), 1+1'''
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = []
+        columns = ["count(*)", "(1+1)"]
         self.check_column_names(resp, columns)
         expect_result = [[1, 2]]
         self.check_result(resp, expect_result)
@@ -392,7 +408,7 @@ class TestYield(NebulaTestSuite):
         | YIELD AVG($-.age), SUM($-.like), COUNT(*), 1+1'''
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = []
+        columns = ["$-.age", "$-.like", "count(*)", "(1+1)"]
         self.check_column_names(resp, columns)
         expect_result = [[34.666666666666664, 270, 3, 2]]
         self.check_result(resp, expect_result)
@@ -401,7 +417,7 @@ class TestYield(NebulaTestSuite):
         query = '''GO FROM "Carmelo Anthony"" OVER like | YIELD COUNT(*)'''
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = []
+        columns = ["count(*)"]
         self.check_column_names(resp, columns)
         expect_result = [[3]]
         self.check_result(resp, expect_result)
@@ -409,22 +425,26 @@ class TestYield(NebulaTestSuite):
         query = '''GO FROM "Carmelo Anthony"" OVER like | YIELD 1'''
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = []
+        columns = ["1"]
         self.check_column_names(resp, columns)
-        expect_result = [[1, 1, 1]]
+        expect_result = [[1], [1], [1]]
         self.check_result(resp, expect_result)
 
         # input is empty
-        query = '''GO FROM "Nobody"" OVER like | YIELD 1'''
+        query = '''GO FROM "Nobody" OVER like | YIELD 1'''
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
+        columns = ["1"]
+        self.check_column_names(resp, columns)
 
         # Test var
-        query = '''$var = GO FROM %ld OVER like \
+        query = '''$var = GO FROM "Carmelo Anthony" OVER like \
         YIELD $$.player.age AS age, like.likeness AS like; \
         YIELD AVG($var.age), SUM($var.like), COUNT(*)'''
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
+        columns = ["$var.age", "$var.like", "count(*)"]
+        self.check_column_names(resp, columns)
         expect_result = [[34.666666666666664, 270, 3]]
         self.check_result(resp, expect_result)
 
@@ -437,7 +457,7 @@ class TestYield(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         columns = ["$-.team"],
         self.check_column_names(resp, columns)
-        expect_result = [[]]
+        expect_result = []
         self.check_result(resp, expect_result)
 
         query = '''$var = GO FROM "NON_EXIST_VERTEX_ID" OVER serve YIELD \
@@ -447,7 +467,7 @@ class TestYield(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         columns = ["$var.team"],
         self.check_column_names(resp, columns)
-        expect_result = [[]]
+        expect_result = []
         self.check_result(resp, expect_result)
 
         query = '''GO FROM "Marco Belinelli" OVER serve \
@@ -458,7 +478,7 @@ class TestYield(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         columns = ["name"],
         self.check_column_names(resp, columns)
-        expect_result = [[]]
+        expect_result = []
         self.check_result(resp, expect_result)
 
     @pytest.mark.skip(reason="")
