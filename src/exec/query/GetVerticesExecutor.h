@@ -7,15 +7,15 @@
 #ifndef EXEC_QUERY_GETVERTICESEXECUTOR_H_
 #define EXEC_QUERY_GETVERTICESEXECUTOR_H_
 
-#include "exec/Executor.h"
+#include "exec/query/GetPropExecutor.h"
 
 namespace nebula {
 namespace graph {
 
-class GetVerticesExecutor final : public Executor {
+class GetVerticesExecutor final : public GetPropExecutor {
 public:
     GetVerticesExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("GetVerticesExecutor", node, qctx) {}
+        : GetPropExecutor("GetVerticesExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 

@@ -7,15 +7,15 @@
 #ifndef EXEC_QUERY_GETEDGESEXECUTOR_H_
 #define EXEC_QUERY_GETEDGESEXECUTOR_H_
 
-#include "exec/Executor.h"
+#include "exec/query/GetPropExecutor.h"
 
 namespace nebula {
 namespace graph {
 
-class GetEdgesExecutor final : public Executor {
+class GetEdgesExecutor final : public GetPropExecutor {
 public:
     GetEdgesExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("GetEdgesExecutor", node, qctx) {}
+        : GetPropExecutor("GetEdgesExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 

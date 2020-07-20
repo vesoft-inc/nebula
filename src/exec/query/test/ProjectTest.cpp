@@ -103,7 +103,7 @@ TEST_F(ProjectTest, EmptyInput) {
     std::string input = "empty";
     auto yieldColumns = getYieldColumns("YIELD $input_project.vid AS vid");
     auto* plan = qctx_->plan();
-    auto* project = Project::make(plan, nullptr, yieldColumns);
+    auto* project = Project::make(plan, nullptr, std::move(yieldColumns));
     project->setInputVar(input);
     project->setColNames(std::vector<std::string>{"vid"});
 

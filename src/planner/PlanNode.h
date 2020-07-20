@@ -100,6 +100,10 @@ public:
         return colNames_;
     }
 
+    const std::vector<std::string>& colNamesRef() const {
+        return colNames_;
+    }
+
     void setId(int64_t id) {
         id_ = id;
         outputVar_ = folly::stringPrintf("%s_%ld", toString(kind_), id_);
@@ -113,7 +117,15 @@ public:
         colNames_ = std::move(cols);
     }
 
+    void setColNames(const std::vector<std::string>& cols) {
+        colNames_ = cols;
+    }
+
     static const char* toString(Kind kind);
+
+    const std::string& nodeLabel() const {
+        return outputVar_;
+    }
 
 protected:
     Kind                                     kind_{Kind::kUnknown};

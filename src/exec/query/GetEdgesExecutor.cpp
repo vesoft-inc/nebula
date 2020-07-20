@@ -5,9 +5,6 @@
  */
 
 #include "exec/query/GetEdgesExecutor.h"
-
-#include "common/clients/storage/GraphStorageClient.h"
-
 #include "planner/Query.h"
 #include "context/QueryContext.h"
 
@@ -25,21 +22,46 @@ folly::Future<Status> GetEdgesExecutor::execute() {
 folly::Future<Status> GetEdgesExecutor::getEdges() {
     dumpLog();
 
-    GraphStorageClient *client = qctx_->getStorageClient();
-    if (client == nullptr) {
-        return error(Status::Error("Invalid storage client for GetEdgesExecutor"));
+    GraphStorageClient *client = qctx()->getStorageClient();
+
+    auto *ge = asNode<GetEdges>(node());
+    nebula::DataSet edges({kSrc, kType, kRank, kDst});
+    if (!ge->edges().empty()) {
+        edges.rows.insert(edges.rows.end(),
+                          std::make_move_iterator(ge->edges().begin()),
+                          std::make_move_iterator(ge->edges().end()));
     }
-
-    // auto *ge = asNode<GetEdges>(node());
-
-    // return client->getProps(ge->space(), ge->edges(), ge->props(), ge->filter())
-    //     .via(runner())
-    //     .then([this](StorageRpcResponse<GetPropResponse> resp) {
-    //         resp.responses();
-    //         nebula::Value value;
-    //         return finish(std::move(value));
-    //     });
-    return start();
+    if (ge->src() != nullptr && ge->ranking() != nullptr && ge->dst() != nullptr) {
+        // Accept Table such as | $a | $b | $c | $d |... which indicate src, ranking or dst
+        auto valueIter = ectx_->getResult(ge->inputVar()).iter();
+        auto expCtx = QueryExpressionContext(qctx()->ectx(), valueIter.get());
+        for (; valueIter->valid(); valueIter->next()) {
+            auto src = ge->src()->eval(expCtx);
+            auto ranking = ge->ranking()->eval(expCtx);
+            auto dst = ge->dst()->eval(expCtx);
+            if (!src.isStr() || !ranking.isInt() || !dst.isStr()) {
+                LOG(WARNING) << "Mismatched edge key type";
+                continue;
+            }
+            edges.emplace_back(Row({
+                std::move(src), ge->type(), std::move(ranking), std::move(dst)
+            }));
+        }
+    }
+    return DCHECK_NOTNULL(client)
+        ->getProps(ge->space(),
+                   std::move(edges),
+                   nullptr,
+                   &ge->props(),
+                   ge->exprs().empty() ? nullptr : &ge->exprs(),
+                   ge->dedup(),
+                   ge->orderBy(),
+                   ge->limit(),
+                   ge->filter())
+        .via(runner())
+        .then([this](StorageRpcResponse<GetPropResponse> &&rpcResp) {
+            return handleResp(std::move(rpcResp));
+        });
 }
 
 }   // namespace graph

@@ -64,6 +64,7 @@ Status DataCollectExecutor::collectSubgraph(const std::vector<std::string>& vars
 Status DataCollectExecutor::rowBasedMove(const std::vector<std::string>& vars) {
     DataSet ds;
     ds.colNames = std::move(colNames_);
+    DCHECK(!ds.colNames.empty());
     for (auto& var : vars) {
         auto& result = ectx_->getResult(var);
         auto iter = result.iter();

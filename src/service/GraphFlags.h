@@ -35,4 +35,4 @@ DECLARE_string(auth_type);
 DECLARE_string(cloud_http_url);
 DECLARE_uint32(max_allowed_statements);
 
-#endif  // GRAPH_GRAPHFLAGS_H_
+#endif   // GRAPH_GRAPHFLAGS_H_

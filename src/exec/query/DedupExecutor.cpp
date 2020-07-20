@@ -13,6 +13,7 @@ namespace graph {
 folly::Future<Status> DedupExecutor::execute() {
     dumpLog();
     auto* dedup = asNode<Dedup>(node());
+    DCHECK(!dedup->inputVar().empty());
     auto iter = ectx_->getResult(dedup->inputVar()).iter();
 
     if (UNLIKELY(iter == nullptr)) {

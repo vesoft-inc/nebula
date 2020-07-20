@@ -62,12 +62,12 @@ nebula_add_test(
     OBJECTS
         ${GRAPH_TEST_LIB}
     LIBRARIES
-        proxygenhttpserver
-        proxygenlib
         ${THRIFT_LIBRARIES}
-        wangle
         gtest
         gtest_main
+        proxygenhttpserver
+        proxygenlib
+        wangle
 )
 
 nebula_add_test(
@@ -78,12 +78,12 @@ nebula_add_test(
     OBJECTS
         ${GRAPH_TEST_LIB}
     LIBRARIES
-        proxygenhttpserver
-        proxygenlib
         ${THRIFT_LIBRARIES}
-        wangle
         gtest
         gtest_main
+        proxygenhttpserver
+        proxygenlib
+        wangle
 )
 
 nebula_add_test(

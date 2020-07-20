@@ -20,7 +20,6 @@ StorageCache::StorageCache(uint16_t metaPort) {
     metaClient_ = std::make_unique<meta::MetaClient>(threadPool,
                                                      std::move(hostStatus).value(), options);
     metaClient_->waitForMetadReady();
-
     mgr_ = std::make_unique<meta::ServerBasedSchemaManager>();
     mgr_->init(metaClient_.get());
 }

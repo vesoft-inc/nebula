@@ -424,6 +424,12 @@ public:
         }
     }
 
+    const Value& getEdgeProp(const std::string& edge,
+                             const std::string& prop) const override {
+        return getColumn(edge + "." + prop);
+    }
+
+protected:
     const Row* row() const override {
         if (!valid()) {
             return nullptr;

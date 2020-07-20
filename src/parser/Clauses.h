@@ -248,6 +248,10 @@ private:
     std::unique_ptr<std::string>                aggFunName_{nullptr};
 };
 
+bool operator==(const YieldColumn &l, const YieldColumn &r);
+inline bool operator!=(const YieldColumn &l, const YieldColumn &r) {
+    return !(l == r);
+}
 
 class YieldColumns final {
 public:
