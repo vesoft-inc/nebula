@@ -155,7 +155,7 @@ StoragePlan<std::string> fanoutStorageDAG() {
 
 FutureDAG<std::string> chainFutureDAG() {
     FutureDAG<std::string> dag;
-    size_t lastIdx;
+    size_t lastIdx = 0;
     for (size_t i = 0; i < 10; i++) {
         auto node = std::make_unique<FutureNode<std::string>>(folly::to<std::string>(i));
         if (i != 0) {
@@ -171,7 +171,7 @@ FutureDAG<std::string> chainFutureDAG() {
 
 StoragePlan<std::string> chainStorageDAG() {
     StoragePlan<std::string> dag;
-    size_t lastIdx;
+    size_t lastIdx = 0;
     for (size_t i = 0; i < 10; i++) {
         auto node = std::make_unique<RelNode<std::string>>(folly::to<std::string>(i));
         if (i != 0) {

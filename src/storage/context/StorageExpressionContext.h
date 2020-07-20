@@ -57,6 +57,11 @@ public:
         return Value::kNullValue;
     }
 
+    // Get the specified property from the tag, such as tag.prop_name
+    Value getTagProp(const std::string&, const std::string&) const override {
+        return Value::kNullValue;
+    }
+
     // Get the specified property from the edge, such as edgename.prop_name
     Value getEdgeProp(const std::string& edgeName, const std::string& prop) const override;
 
