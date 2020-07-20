@@ -104,6 +104,7 @@ protected:
     std::unordered_map<TagID, std::vector<std::string>> srcTagProps_;
     std::unordered_map<TagID, std::vector<std::string>> dstTagProps_;
     std::unordered_map<EdgeType, std::vector<std::string>> edgeProps_;
+    std::unordered_map<TagID, std::vector<std::string>> tagProps_;
 };
 
 }  // namespace graph

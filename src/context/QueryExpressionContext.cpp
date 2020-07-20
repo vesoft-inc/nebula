@@ -43,6 +43,15 @@ const Value& QueryExpressionContext::getVarProp(const std::string& var,
     }
 }
 
+Value QueryExpressionContext::getTagProp(const std::string& tag,
+                    const std::string& prop) const {
+    if (iter_ != nullptr) {
+        return iter_->getTagProp(tag, prop);
+    } else {
+        return Value::kEmpty;
+    }
+}
+
 Value QueryExpressionContext::getEdgeProp(const std::string& edge,
                                          const std::string& prop) const {
     if (iter_ != nullptr) {

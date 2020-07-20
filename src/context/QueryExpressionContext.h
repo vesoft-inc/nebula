@@ -33,6 +33,10 @@ public:
     const Value& getVarProp(const std::string& var,
                             const std::string& prop) const override;
 
+    // Get the specified property from the tag, such as tag.prop_name
+    Value getTagProp(const std::string& tag,
+                     const std::string& prop) const override;
+
     // Get the specified property from the edge, such as edge_type.prop_name
     Value getEdgeProp(const std::string& edge,
                       const std::string& prop) const override;
