@@ -17,6 +17,30 @@ FunctionManager &FunctionManager::instance() {
     return instance;
 }
 
+std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typeSignature_ = {
+    {"abs",
+     {TypeSignature({Value::Type::INT}, Value::Type::INT),
+      TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT)}},
+    {"floor",
+     {TypeSignature({Value::Type::INT}, Value::Type::INT),
+      TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT)}}};
+
+// static
+StatusOr<Value::Type>
+FunctionManager::getReturnType(const std::string &funName,
+                               const std::vector<Value::Type> &argsType) {
+    auto iter = typeSignature_.find(funName);
+    if (iter == typeSignature_.end()) {
+        return Status::Error("Function `%s' not defined", funName.c_str());
+    }
+    for (const auto &args : iter->second) {
+        if (argsType == args.argsType_) {
+            return args.returnType_;
+        }
+    }
+    return Status::Error("parameter's type error");
+}
+
 FunctionManager::FunctionManager() {
     {
         // absolute value

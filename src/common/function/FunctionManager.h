@@ -21,6 +21,14 @@
 
 namespace nebula {
 
+struct TypeSignature {
+    TypeSignature() = default;
+    TypeSignature(std::vector<Value::Type> argsType, Value::Type returnType)
+        :argsType_(std::move(argsType)), returnType_(returnType) {}
+    std::vector<Value::Type> argsType_;
+    Value::Type returnType_;
+};
+
 class FunctionManager final {
 public:
     using Function = std::function<Value(const std::vector<Value>&)>;
@@ -40,6 +48,12 @@ public:
      */
     static Status unload(const std::string &soname, const std::vector<std::string> &funcs);
 
+    /**
+     * To obtain the return value type according to the parameter type
+     */
+    static StatusOr<Value::Type> getReturnType(const std::string &funcName,
+                                               const std::vector<Value::Type> &argsType);
+
 private:
     /**
      * FunctionManager functions as a singleton, since the dynamic loading is process-wide.
@@ -53,6 +67,8 @@ private:
     Status loadInternal(const std::string &soname, const std::vector<std::string> &funcs);
 
     Status unloadInternal(const std::string &soname, const std::vector<std::string> &funcs);
+
+    static std::unordered_map<std::string, std::vector<TypeSignature>> typeSignature_;
 
     struct FunctionAttributes final {
         size_t minArity_{0};
