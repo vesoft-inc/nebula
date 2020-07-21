@@ -298,6 +298,9 @@ void signalHandler(int sig) {
         case SIGINT:
         case SIGTERM:
             FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
+            if (gServer) {
+                gServer->stop();
+            }
             {
                 auto gJobMgr = nebula::meta::JobManager::getInstance();
                 gJobMgr->shutDown();
@@ -305,9 +308,6 @@ void signalHandler(int sig) {
             if (gKVStore) {
                 gKVStore->stop();
                 gKVStore.reset();
-            }
-            if (gServer) {
-                gServer->stop();
             }
             break;
         default:
