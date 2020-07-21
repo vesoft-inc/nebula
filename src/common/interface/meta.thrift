@@ -69,6 +69,9 @@ enum ErrorCode {
     E_BLOCK_WRITE_FAILURE    = -52,
     E_REBUILD_INDEX_FAILURE  = -53,
     E_INDEX_WITH_TTL         = -54,
+    E_ADD_JOB_FAILURE        = -55,
+    E_STOP_JOB_FAILURE       = -56,
+    E_SAVE_JOB_FAILURE       = -57,
 
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)

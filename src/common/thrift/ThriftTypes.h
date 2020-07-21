@@ -37,6 +37,8 @@ using SchemaVer = int64_t;
 using IndexID = int32_t;
 using Timestamp = int64_t;
 
+using JobID  = int32_t;
+using TaskID = int32_t;
 
 }  // namespace nebula
 #endif  // COMMON_THRIFT_THRIFTTYPES_H_
