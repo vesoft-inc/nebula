@@ -199,7 +199,6 @@ Status GoValidator::oneStep(PlanNode* input, const std::string& inputVarName) {
 
     auto* gn = GetNeighbors::make(plan, input, space_.id);
     gn->setSrc(src_);
-    gn->setEdgeTypes(buildEdgeTypes());
     gn->setVertexProps(buildSrcVertexProps());
     gn->setEdgeProps(buildEdgeProps());
     gn->setInputVar(inputVarName);
@@ -320,24 +319,6 @@ PlanNode* GoValidator::buildRuntimeInput() {
     return project;
 }
 
-
-std::vector<EdgeType> GoValidator::buildEdgeTypes() {
-    std::vector<EdgeType> edgeTypes(edgeTypes_.size());
-    if (direction_ == storage::cpp2::EdgeDirection::IN_EDGE) {
-        std::transform(edgeTypes_.begin(), edgeTypes_.end(), edgeTypes.begin(), [] (auto& type) {
-            return -type;
-        });
-    } else if (direction_ == storage::cpp2::EdgeDirection::BOTH) {
-        edgeTypes = edgeTypes_;
-        std::transform(edgeTypes_.begin(), edgeTypes_.end(), edgeTypes.begin(), [] (auto& type) {
-            return -type;
-        });
-    } else {
-        edgeTypes = edgeTypes_;
-    }
-    return edgeTypes;
-}
-
 GetNeighbors::VertexProps GoValidator::buildSrcVertexProps() {
     GetNeighbors::VertexProps vertexProps;
     if (!srcTagProps_.empty()) {
@@ -373,13 +354,42 @@ GetNeighbors::VertexProps GoValidator::buildDstVertexProps() {
 GetNeighbors::EdgeProps GoValidator::buildEdgeProps() {
     GetNeighbors::EdgeProps edgeProps;
     if (!edgeProps_.empty()) {
-        edgeProps = std::make_unique<std::vector<storage::cpp2::EdgeProp>>(edgeProps_.size());
-        std::transform(edgeProps_.begin(), edgeProps_.end(), edgeProps->begin(), [] (auto& edge) {
-            storage::cpp2::EdgeProp ep;
-            ep.type = edge.first;
-            ep.props = std::move(edge.second);
-            return ep;
-        });
+        if (direction_ == storage::cpp2::EdgeDirection::IN_EDGE) {
+            edgeProps = std::make_unique<std::vector<storage::cpp2::EdgeProp>>(edgeProps_.size());
+            std::transform(edgeProps_.begin(), edgeProps_.end(), edgeProps->begin(),
+                    [] (auto& edge) {
+                storage::cpp2::EdgeProp ep;
+                ep.type = -edge.first;
+                ep.props = std::move(edge.second);
+                return ep;
+            });
+        } else if (direction_ == storage::cpp2::EdgeDirection::BOTH) {
+            auto size = edgeProps_.size();
+            edgeProps = std::make_unique<std::vector<storage::cpp2::EdgeProp>>(size * 2);
+            std::transform(edgeProps_.begin(), edgeProps_.end(), edgeProps->begin(),
+                    [] (auto& edge) {
+                storage::cpp2::EdgeProp ep;
+                ep.type = edge.first;
+                ep.props = std::move(edge.second);
+                return ep;
+            });
+            std::transform(edgeProps_.begin(), edgeProps_.end(), edgeProps->begin() + size,
+                    [] (auto& edge) {
+                storage::cpp2::EdgeProp ep;
+                ep.type = -edge.first;
+                ep.props = std::move(edge.second);
+                return ep;
+            });
+        } else {
+            edgeProps = std::make_unique<std::vector<storage::cpp2::EdgeProp>>(edgeProps_.size());
+            std::transform(edgeProps_.begin(), edgeProps_.end(), edgeProps->begin(),
+                    [] (auto& edge) {
+                storage::cpp2::EdgeProp ep;
+                ep.type = edge.first;
+                ep.props = std::move(edge.second);
+                return ep;
+            });
+        }
     }
     return edgeProps;
 }

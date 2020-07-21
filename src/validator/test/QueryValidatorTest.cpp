@@ -187,6 +187,15 @@ TEST_F(QueryValidatorTest, GoOneStep) {
         EXPECT_TRUE(checkResult(query, expected));
     }
     {
+        std::string query = "GO FROM \"1\" OVER like BIDIRECT";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kStart,
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+    {
         std::string query = "GO FROM \"1\" OVER like YIELD like.start";
         std::vector<PlanNode::Kind> expected = {
             PK::kProject,

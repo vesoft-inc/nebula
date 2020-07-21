@@ -43,8 +43,6 @@ private:
 
     PlanNode* buildRuntimeInput();
 
-    std::vector<EdgeType> buildEdgeTypes();
-
     GetNeighbors::VertexProps buildSrcVertexProps();
 
     GetNeighbors::VertexProps buildDstVertexProps();
