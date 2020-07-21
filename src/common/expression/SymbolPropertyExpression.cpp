@@ -106,6 +106,26 @@ const Value& EdgeDstIdExpression::eval(ExpressionContext& ctx) {
     return result_;
 }
 
+std::string SymbolPropertyExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+
+    if (ref_ != nullptr && !ref_->empty()) {
+        buf += *ref_;
+        buf += ".";
+    }
+
+    if (sym_ != nullptr && !sym_->empty()) {
+        buf += *sym_;
+        buf += ".";
+    }
+    if (prop_ != nullptr) {
+        buf += *prop_;
+    }
+
+    return buf;
+}
+
 std::string EdgePropertyExpression::toString() const {
     std::string buf;
     buf.reserve(64);

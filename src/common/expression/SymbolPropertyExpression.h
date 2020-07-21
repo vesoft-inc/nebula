@@ -54,6 +54,8 @@ public:
         return prop_.get();
     }
 
+    std::string toString() const override;
+
 protected:
     void writeTo(Encoder& encoder) const override;
 
