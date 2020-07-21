@@ -21,6 +21,7 @@ enum ErrorCode {
     E_LEADER_CHANGED   = -11,
 
     // Operation Failure
+    E_TOO_MANY_PARTS   = -20,
     E_NO_HOSTS         = -21,
     E_EXISTED          = -22,
     E_NOT_FOUND        = -23,

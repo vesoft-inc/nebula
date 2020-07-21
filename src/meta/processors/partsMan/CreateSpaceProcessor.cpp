@@ -9,6 +9,7 @@
 
 DEFINE_int32(default_parts_num, 100, "The default number of parts when a space is created");
 DEFINE_int32(default_replica_factor, 1, "The default replica factor when a space is created");
+DEFINE_int32(default_max_parts_num, 100, "The default max partitions number");
 
 namespace nebula {
 namespace meta {
@@ -54,6 +55,19 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     auto replicaFactor = properties.get_replica_factor();
     auto charsetName = properties.get_charset_name();
     auto collateName = properties.get_collate_name();
+    auto count = GetPartsNumbers();
+    if (count == -1) {
+        handleErrorCode(cpp2::ErrorCode::E_UNKNOWN);
+        onFinished();
+        return;
+    }
+
+    if (count + partitionNum >= FLAGS_default_max_parts_num) {
+        LOG(ERROR) << "Create Space Failed : TOO MANY PARTITIONS!";
+        handleErrorCode(cpp2::ErrorCode::E_TOO_MANY_PARTS);
+        onFinished();
+        return;
+    }
 
     // Use default values or values from meta's configuration file
     if (partitionNum == 0) {
@@ -67,6 +81,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         // Set the default value back to the struct, which will be written to storage
         properties.set_partition_num(partitionNum);
     }
+
     if (replicaFactor == 0) {
         replicaFactor = FLAGS_default_replica_factor;
         if (replicaFactor <= 0) {
@@ -119,6 +134,24 @@ CreateSpaceProcessor::pickHosts(PartitionID partId,
     return pickedHosts;
 }
 
+int32_t CreateSpaceProcessor::GetPartsNumbers() {
+    int32_t count = 0;
+    auto prefix = MetaServiceUtils::spacePrefix();
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "List Spaces Failed";
+        return -1;
+    }
+
+    while (iter->valid()) {
+        auto properties = MetaServiceUtils::parseSpace(iter->val());
+        count += properties.get_partition_num();
+        iter->next();
+    }
+
+    return count;
+}
 }  // namespace meta
 }  // namespace nebula
 
