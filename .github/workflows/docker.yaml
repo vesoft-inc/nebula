@@ -64,11 +64,6 @@ jobs:
       - uses: actions/checkout@v1
         with:
           fetch-depth: 1
-      - name: Compute tag
-        id: tag
-        run: |
-          echo "::set-output name=tag::debug-nightly"
-        shell: bash
       - name: Build image
         env:
           IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/nebula-${{ matrix.service }}:debug-nightly
