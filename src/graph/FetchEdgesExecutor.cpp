@@ -31,7 +31,12 @@ Status FetchEdgesExecutor::prepareClauses() {
         expCtx_->setStorageClient(ectx()->getStorageClient());
         spaceId_ = ectx()->rctx()->session()->space();
         yieldClause_ = DCHECK_NOTNULL(sentence_)->yieldClause();
-        labelName_ = sentence_->edge();
+        auto edgeLabelNames = sentence_->edges()->labels();
+        if (edgeLabelNames.size() != 1) {
+            status = Status::Error("fetch prop on edge support only one edge label now.");
+            break;
+        }
+        labelName_ = edgeLabelNames[0];
         auto result = ectx()->schemaManager()->toEdgeType(spaceId_, *labelName_);
         if (!result.ok()) {
             status = result.status();
@@ -308,7 +313,7 @@ void FetchEdgesExecutor::fetchEdges() {
     auto cb = [this] (RpcResponse &&result) mutable {
         auto completeness = result.completeness();
         if (completeness == 0) {
-            doError(Status::Error("Get edge `%s' props failed", sentence_->edge()->c_str()));
+            doError(Status::Error("Get edge `%s' props failed", labelName_->c_str()));
             return;
         } else if (completeness != 100) {
             LOG(INFO) << "Get edges partially failed: "  << completeness << "%";
@@ -322,7 +327,7 @@ void FetchEdgesExecutor::fetchEdges() {
     };
     auto error = [this] (auto &&e) {
         auto msg = folly::stringPrintf("Get edge `%s' props faield: %s.",
-                sentence_->edge()->c_str(), e.what().c_str());
+                labelName_->c_str(), e.what().c_str());
         LOG(ERROR) << msg;
         doError(Status::Error(std::move(msg)));
     };

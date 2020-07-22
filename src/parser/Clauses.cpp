@@ -150,6 +150,19 @@ std::string OverEdges::toString() const {
     return buf;
 }
 
+std::string FetchLabels::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    for (auto &label : labels_) {
+        buf += *label;
+        buf += ",";
+    }
+    if (!buf.empty()) {
+        buf.pop_back();
+    }
+    return buf;
+}
+
 std::string OverClause::toString() const {
     std::string buf;
     buf.reserve(256);

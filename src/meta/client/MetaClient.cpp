@@ -171,6 +171,7 @@ bool MetaClient::loadData() {
     decltype(spaceEdgeIndexByType_)  spaceEdgeIndexByType;
     decltype(spaceTagIndexById_)     spaceTagIndexById;
     decltype(spaceAllEdgeMap_)       spaceAllEdgeMap;
+    decltype(spaceAllTagMap_)        spaceAllTagMap;
 
     for (auto space : ret.value()) {
         auto spaceId = space.first;
@@ -197,7 +198,8 @@ bool MetaClient::loadData() {
                          spaceEdgeIndexByType,
                          spaceNewestTagVerMap,
                          spaceNewestEdgeVerMap,
-                         spaceAllEdgeMap)) {
+                         spaceAllEdgeMap,
+                         spaceAllTagMap)) {
             LOG(ERROR) << "Load Schemas Failed";
             return false;
         }
@@ -224,6 +226,7 @@ bool MetaClient::loadData() {
         spaceEdgeIndexByType_  = std::move(spaceEdgeIndexByType);
         spaceTagIndexById_     = std::move(spaceTagIndexById);
         spaceAllEdgeMap_       = std::move(spaceAllEdgeMap);
+        spaceAllTagMap_        = std::move(spaceAllTagMap);
     }
     localDataLastUpdateTime_.store(metadLastUpdateTime_.load());
     diff(oldCache, localCache_);
@@ -278,7 +281,8 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
                              SpaceEdgeTypeNameMap &edgeTypeNameMap,
                              SpaceNewestTagVerMap &newestTagVerMap,
                              SpaceNewestEdgeVerMap &newestEdgeVerMap,
-                             SpaceAllEdgeMap &allEdgeMap) {
+                             SpaceAllEdgeMap &allEdgeMap,
+                             SpaceAllTagMap &allTagMap) {
     auto tagRet = listTagSchemas(spaceId).get();
     if (!tagRet.ok()) {
         LOG(ERROR) << "Get tag schemas failed for spaceId " << spaceId << ", " << tagRet.status();
@@ -292,6 +296,7 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
     }
 
     allEdgeMap[spaceId] = {};
+    allTagMap[spaceId] = {};
     auto tagItemVec = tagRet.value();
     auto edgeItemVec = edgeRet.value();
     spaceInfoCache->tagItemVec_ = tagItemVec;
@@ -299,9 +304,15 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
     spaceInfoCache->edgeItemVec_ = edgeItemVec;
     spaceInfoCache->edgeSchemas_ = __buildEdgeSchemas(edgeItemVec);
 
+    std::unordered_set<std::pair<GraphSpaceID, TagID>> tags;
     for (auto& tagIt : tagItemVec) {
         tagNameIdMap.emplace(std::make_pair(spaceId, tagIt.tag_name), tagIt.tag_id);
         tagIdNameMap.emplace(std::make_pair(spaceId, tagIt.tag_id), tagIt.tag_name);
+        if (tags.find({spaceId, tagIt.tag_id}) != tags.cend()) {
+            continue;
+        }
+        tags.emplace(spaceId, tagIt.tag_id);
+        allTagMap[spaceId].emplace_back(tagIt.tag_name);
         // get the latest tag version
         auto it = newestTagVerMap.find(std::make_pair(spaceId, tagIt.tag_id));
         if (it != newestTagVerMap.end()) {
@@ -414,6 +425,7 @@ const MetaClient::ThreadLocalInfo& MetaClient::getThreadLocalInfo() {
         threadLocalInfo.spaceEdgeIndexByType_ = spaceEdgeIndexByType_;
         threadLocalInfo.spaceTagIndexById_ = spaceTagIndexById_;
         threadLocalInfo.spaceAllEdgeMap_ = spaceAllEdgeMap_;
+        threadLocalInfo.spaceAllTagMap_ = spaceAllTagMap_;
     }
 
     return threadLocalInfo;
@@ -914,6 +926,20 @@ StatusOr<std::vector<std::string>> MetaClient::getAllEdgeFromCache(const GraphSp
     const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
     auto it = threadLocalInfo.spaceAllEdgeMap_.find(space);
     if (it == threadLocalInfo.spaceAllEdgeMap_.end()) {
+        std::string error = folly::stringPrintf("SpaceId `%d'  is nonexistent", space);
+        return Status::Error(std::move(error));
+    }
+    return it->second;
+}
+
+StatusOr<std::vector<std::string>> MetaClient::getAllTagFromCache(const GraphSpaceID& space) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+//    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+    auto it = threadLocalInfo.spaceAllTagMap_.find(space);
+    if (it == threadLocalInfo.spaceAllTagMap_.end()) {
         std::string error = folly::stringPrintf("SpaceId `%d'  is nonexistent", space);
         return Status::Error(std::move(error));
     }
