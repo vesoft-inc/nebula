@@ -46,6 +46,7 @@ jobs:
         shell: bash
   docker-debug:
     name: build docker debug image
+    if: github.event_name == "push"
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -66,12 +67,11 @@ jobs:
       - name: Compute tag
         id: tag
         run: |
-          [[ "${{ github.event_name }}" == "push" ]] && \
-            echo "::set-output name=tag::debug-nightly"
+          echo "::set-output name=tag::debug-nightly"
         shell: bash
       - name: Build image
         env:
-          IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/nebula-${{ matrix.service }}:${{ steps.tag.outputs.tag }}
+          IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/nebula-${{ matrix.service }}:debug-nightly
         run: |
           docker build -t ${IMAGE_NAME} -f docker/Dockerfile.${{ matrix.service }} . --build-arg build_with_sanitizer="-d static"
           docker push ${IMAGE_NAME}
