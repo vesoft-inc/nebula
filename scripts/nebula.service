@@ -180,7 +180,7 @@ function wait_daemon_to_exit {
 
     [[ -f ${config} ]] || ERROR_AND_EXIT "${config} not found"
 
-    wait_for_exit $(get_pid_file_from_config ${config}) 5
+    wait_for_exit $(get_pid_file_from_config ${config}) ${daemon_name}
 }
 
 

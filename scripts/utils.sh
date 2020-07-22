@@ -83,15 +83,19 @@ function is_port_listened_on {
 
 
 # To wait for a process to exit
-# args: <path to pid file> <seconds to wait>
+# args: <path to pid file> <daemon name>
 function wait_for_exit {
     local pid_file=${1}
-    local seconds=${2}
+    local daemon_name=${2}
     is_process_running ${pid_file} || return 0
-    while [[ ${seconds} > 0 ]]; do
+    sleep_count=1
+    while true; do
         sleep 0.1
         is_process_running ${pid_file} || return 0
-        seconds=$(echo "${seconds} - 0.1" | bc -l)
+        if [[ $(( $sleep_count%10 )) == 0 ]]; then
+            WARN "Cost $(( $sleep_count/10 )) seconds to stop ${daemon_name}"
+        fi
+        sleep_count=$[$sleep_count+1];
     done
 }
 
@@ -148,3 +152,4 @@ function env_check {
         WARN "The CPU time a process can consume is restricted to ${cputime}"
     fi
 }
+
