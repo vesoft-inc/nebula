@@ -13,10 +13,9 @@ namespace nebula {
 std::string StepClause::toString() const {
     std::string buf;
     buf.reserve(256);
-    if (isUpto()) {
-        buf += "UPTO ";
-    }
-    buf += std::to_string(steps_);
+    buf += std::to_string(step_.recordFrom_);
+    buf += " TO";
+    buf += std::to_string(step_.recordTo_);
     buf += " STEPS";
     return buf;
 }
@@ -69,6 +68,7 @@ Status VerticesClause::prepare(Clause::Vertices &vertices) const {
         vertices.vids_.reserve(vidList.size());
         Getters getters;
         for (auto *expr : vidList) {
+            expr->setContext(expCtx_);
             status = expr->prepare();
             if (!status.ok()) {
                 break;

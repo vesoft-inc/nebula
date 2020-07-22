@@ -179,8 +179,6 @@ Status GroupByExecutor::checkAll() {
 
 
 void GroupByExecutor::execute() {
-    FLOG_INFO("Executing Group by: %s", sentence_->toString().c_str());
-
     if (inputs_ == nullptr || !inputs_->hasData()) {
         onEmptyInputs();
         return;
@@ -198,6 +196,10 @@ void GroupByExecutor::execute() {
         return;
     }
     rows_ = std::move(ret).value();
+    if (rows_.empty()) {
+        onEmptyInputs();
+        return;
+    }
     schema_ = inputs_->schema();
 
     status = checkAll();
@@ -344,13 +346,15 @@ std::vector<std::string> GroupByExecutor::getResultColumnNames() const {
 
 
 Status GroupByExecutor::generateOutputSchema() {
+    CHECK(!rows_.empty());
+    auto& row = rows_[0];
     using nebula::cpp2::SupportedType;
     if (resultSchema_ == nullptr) {
         resultSchema_ = std::make_shared<SchemaWriter>();
         auto colnames = getResultColumnNames();
-        for (auto i = 0u; i < rows_[0].columns.size(); i++) {
+        for (auto i = 0u; i < row.columns.size(); i++) {
             SupportedType type;
-            switch (rows_[0].columns[i].getType()) {
+            switch (row.columns[i].getType()) {
                 case cpp2::ColumnValue::Type::id:
                     type = SupportedType::VID;
                     break;
@@ -370,8 +374,8 @@ Status GroupByExecutor::generateOutputSchema() {
                     type = SupportedType::TIMESTAMP;
                     break;
                 default:
-                    LOG(ERROR) << "Unknown VariantType: " << rows_[0].columns[i].getType();
-                    return Status::Error("Unknown VariantType: %d", rows_[0].columns[i].getType());
+                    LOG(ERROR) << "Unknown VariantType: " << row.columns[i].getType();
+                    return Status::Error("Unknown VariantType: %d", row.columns[i].getType());
             }
             // TODO(laura) : should handle exist colname
             resultSchema_->appendCol(colnames[i], type);

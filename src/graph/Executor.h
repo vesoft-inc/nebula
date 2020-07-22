@@ -97,8 +97,6 @@ protected:
 
     bool checkValueType(const nebula::cpp2::ValueType &type, const VariantType &value);
 
-    StatusOr<int64_t> toTimestamp(const VariantType &value);
-
     StatusOr<cpp2::ColumnValue> toColumnValue(const VariantType& value,
                                               cpp2::ColumnValue::Type type) const;
 
@@ -111,8 +109,6 @@ protected:
         return Status::OK();
     }
 
-    StatusOr<VariantType> transformDefaultValue(nebula::cpp2::SupportedType type,
-                                                std::string& originalValue);
     void doError(Status status, uint32_t count = 1) const;
     void doFinish(ProcessControl pro, uint32_t count = 1) const;
 

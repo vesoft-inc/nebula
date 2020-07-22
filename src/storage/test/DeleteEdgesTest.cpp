@@ -11,13 +11,14 @@
 #include "storage/test/TestUtils.h"
 #include "storage/mutate/DeleteEdgesProcessor.h"
 #include "storage/mutate/AddEdgesProcessor.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 
 
 namespace nebula {
 namespace storage {
 
 TEST(DeleteEdgesTest, SimpleTest) {
+    FLAGS_enable_multi_versions = true;
     fs::TempDir rootPath("/tmp/DeleteEdgesTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     auto schemaMan = TestUtils::mockSchemaMan();

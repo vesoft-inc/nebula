@@ -40,6 +40,15 @@ int32_t StatsManager::registerStats(folly::StringPiece counterName) {
     auto& sm = get();
 
     std::string name = counterName.toString();
+    {
+        folly::RWSpinLock::ReadHolder rh(sm.nameMapLock_);
+        auto it = sm.nameMap_.find(name);
+        if (it != sm.nameMap_.end()) {
+            VLOG(2) << "The counter \"" << name << "\" already exists";
+            return it->second;
+        }
+    }
+
     folly::RWSpinLock::WriteHolder wh(sm.nameMapLock_);
     auto it = sm.nameMap_.find(name);
     if (it != sm.nameMap_.end()) {
@@ -72,6 +81,15 @@ int32_t StatsManager::registerHisto(folly::StringPiece counterName,
 
     auto& sm = get();
     std::string name = counterName.toString();
+    {
+        folly::RWSpinLock::ReadHolder rh(sm.nameMapLock_);
+        auto it = sm.nameMap_.find(name);
+        if (it != sm.nameMap_.end()) {
+            VLOG(2) << "The counter \"" << name << "\" already exists";
+            return it->second;
+        }
+    }
+
     folly::RWSpinLock::WriteHolder wh(sm.nameMapLock_);
     auto it = sm.nameMap_.find(name);
     if (it != sm.nameMap_.end()) {
@@ -230,6 +248,36 @@ void StatsManager::readAllValue(folly::dynamic& vals) {
                 stat["value"] = metricValue;
                 vals.push_back(std::move(stat));
             }
+        }
+
+        // add Percentile
+        for (auto range = TimeRange::FIVE_SECONDS; range <= TimeRange::ONE_HOUR;
+             range = static_cast<TimeRange>(static_cast<int>(range) + 1)) {
+            auto metricName = statsName.first + ".p99";
+            switch (range) {
+                case TimeRange::FIVE_SECONDS:
+                    metricName += ".5";
+                    break;
+                case TimeRange::ONE_MINUTE:
+                    metricName += ".60";
+                    break;
+                case TimeRange::TEN_MINUTES:
+                    metricName += ".600";
+                    break;
+                case TimeRange::ONE_HOUR:
+                    metricName += ".3600";
+                    break;
+                    // intentionally no `default'
+            }
+            auto status = readValue(metricName);
+            if (!status.ok()) {
+                continue;
+            }
+            auto metricValue = status.value();
+            folly::dynamic stat = folly::dynamic::object();
+            stat["name"] = metricName;
+            stat["value"] = metricValue;
+            vals.push_back(std::move(stat));
         }
     }
 }

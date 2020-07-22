@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 #include "storage/query/ScanEdgeProcessor.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include <algorithm>
 #include <limits>
 #include "time/WallClock.h"
@@ -89,6 +89,10 @@ void ScanEdgeProcessor::process(const cpp2::ScanEdgeRequest& req) {
         } else if (!ctxIter->second.empty()) {
             // only return specified columns
             auto reader = RowReader::getEdgePropReader(schemaMan_, value, spaceId_, edgeType);
+            if (reader == nullptr) {
+                LOG(WARNING) << "Skip the bad format row";
+                continue;
+            }
             RowWriter writer;
             PropsCollector collector(&writer);
             auto& props = ctxIter->second;

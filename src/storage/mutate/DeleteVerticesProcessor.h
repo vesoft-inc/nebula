@@ -36,9 +36,10 @@ private:
             , indexMan_(indexMan)
             , vertexCache_(cache) {}
 
-    std::string deleteVertices(GraphSpaceID spaceId,
-                               PartitionID partId,
-                               const std::vector<VertexID>& vertices);
+    folly::Optional<std::string>
+    deleteVertices(GraphSpaceID spaceId,
+                   PartitionID partId,
+                   const std::vector<VertexID>& vertices);
 
 private:
     meta::IndexManager*                                   indexMan_{nullptr};

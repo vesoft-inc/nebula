@@ -36,6 +36,9 @@ std::string Status::toString() const {
         case kPermissionError:
             str = "PermissionError: ";
             break;
+        case kSpaceNotFound:
+            str = "Space not found";
+            break;
         default:
             snprintf(tmp, sizeof(tmp), "Unknown error(%hu): ", static_cast<uint16_t>(code()));
             str = tmp;

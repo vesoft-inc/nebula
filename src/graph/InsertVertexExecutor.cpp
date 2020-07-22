@@ -5,9 +5,11 @@
  */
 
 #include "base/Base.h"
+#include "utils/ConvertTimeType.h"
 #include "graph/InsertVertexExecutor.h"
 #include "storage/client/StorageClient.h"
 #include "meta/NebulaSchemaProvider.h"
+#include "graph/SchemaHelper.h"
 
 namespace nebula {
 namespace graph {
@@ -75,8 +77,6 @@ Status InsertVertexExecutor::check() {
             }
         }
 
-        auto *mc = ectx()->getMetaClient();
-
         std::unordered_map<std::string, int32_t> propsPosition;
         for (size_t i = 0; i < schema->getNumFields(); i++) {
             std::string name = schema->getFieldName(i);
@@ -86,7 +86,7 @@ Status InsertVertexExecutor::check() {
             // If the property name not find in schema's field
             // We need to check the default value and save it.
             if (it == props.end()) {
-                auto valueResult = mc->getTagDefaultValue(spaceId_, tagId, name).get();
+                auto valueResult = schema->getDefaultValue(i);
                 if (!valueResult.ok()) {
                     LOG(ERROR) << "Not exist default value: " << name;
                     return Status::Error("`%s' not exist default value", name.c_str());
@@ -185,17 +185,12 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
                     }
                 } else {
                     // fetch default value from cache
-                    auto result = transformDefaultValue(schemaType.type, defaultValues_[fieldName]);
-                    if (!result.ok()) {
-                        return result.status();
-                    }
-
-                    value = result.value();
+                    value = defaultValues_[fieldName];
                     VLOG(3) << "Supplement default value : " << fieldName << " : " << value;
                 }
 
                 if (schemaType.type == nebula::cpp2::SupportedType::TIMESTAMP) {
-                    auto timestamp = toTimestamp(value);
+                    auto timestamp = ConvertTimeType::toTimestamp(value);
                     if (!timestamp.ok()) {
                         return timestamp.status();
                     }

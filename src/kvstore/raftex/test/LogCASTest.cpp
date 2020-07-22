@@ -217,6 +217,31 @@ TEST_F(LogCASTest, ZipCasTest) {
     checkConsensus(copies_, 0, 4, msgs);
 }
 
+TEST_F(LogCASTest, EmptyTest) {
+    {
+        LOG(INFO) << "return empty string for atomic operation!";
+        folly::Baton<> baton;
+        leader_->atomicOpAsync([log = std::move(log)] () mutable {
+            return "";
+        }).then([&baton] (AppendLogResult res) {
+            ASSERT_EQ(AppendLogResult::SUCCEEDED, res);
+            baton.post();
+        });
+        baton.wait();
+    }
+    {
+        LOG(INFO) << "return none string for atomic operation!";
+        folly::Baton<> baton;
+        leader_->atomicOpAsync([log = std::move(log)] () mutable {
+            return folly::none;
+        }).then([&baton] (AppendLogResult res) {
+            ASSERT_EQ(AppendLogResult::E_ATOMIC_OP_FAILURE, res);
+            baton.post();
+        });
+        baton.wait();
+    }
+}
+
 }  // namespace raftex
 }  // namespace nebula
 

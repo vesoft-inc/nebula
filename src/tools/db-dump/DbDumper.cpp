@@ -6,7 +6,7 @@
 
 #include "base/Base.h"
 #include "DbDumper.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include "fs/FileUtils.h"
 #include "kvstore/RocksEngine.h"
 #include "time/Duration.h"
@@ -481,6 +481,9 @@ inline void DbDumper::printEdgeKey(const folly::StringPiece& key) {
 }
 
 void DbDumper::printValue(const RowReader* reader) {
+    if (reader == nullptr) {
+        return;
+    }
     std::cout << " value: ";
     auto schema = reader->getSchema();
     if (schema == nullptr) {

@@ -17,7 +17,6 @@ enum LogType : char {
     OP_MULTI_PUT      = 0x2,
     OP_REMOVE         = 0x3,
     OP_MULTI_REMOVE   = 0x4,
-    OP_REMOVE_PREFIX  = 0x5,
     OP_REMOVE_RANGE   = 0x6,
     OP_ADD_LEARNER    = 0x07,
     OP_TRANS_LEADER   = 0x08,
@@ -30,7 +29,6 @@ enum BatchLogType : char {
     OP_BATCH_PUT            = 0x1,
     OP_BATCH_REMOVE         = 0x2,
     OP_BATCH_REMOVE_RANGE   = 0x3,
-    OP_BATCH_REMOVE_PREFIX  = 0x4,
 };
 
 std::string encodeKV(const folly::StringPiece& key,
@@ -83,13 +81,6 @@ public:
         auto op = std::make_tuple(BatchLogType::OP_BATCH_REMOVE_RANGE,
                                   std::forward<std::string>(begin),
                                   std::forward<std::string>(end));
-        batch_.emplace_back(std::move(op));
-    }
-
-    void removePrefix(std::string&& key) {
-        auto op = std::make_tuple(BatchLogType::OP_BATCH_REMOVE_PREFIX,
-                                  std::forward<std::string>(key),
-                                  "");
         batch_.emplace_back(std::move(op));
     }
 

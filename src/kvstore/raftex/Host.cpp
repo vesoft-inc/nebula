@@ -19,6 +19,7 @@ DEFINE_uint32(max_outstanding_requests, 1024,
 DEFINE_int32(raft_rpc_timeout_ms, 500, "rpc timeout for raft client");
 
 DECLARE_bool(trace_raft);
+DECLARE_uint32(raft_heartbeat_interval_secs);
 
 namespace nebula {
 namespace raftex {
@@ -80,7 +81,7 @@ folly::Future<cpp2::AskForVoteResponse> Host::askForVote(
             return resp;
         }
     }
-    auto client = tcManager().client(addr_, eb, false, FLAGS_raft_rpc_timeout_ms);
+    auto client = tcManager().client(addr_, eb, false, FLAGS_raft_heartbeat_interval_secs * 1000);
     return client->future_askForVote(req);
 }
 
@@ -303,7 +304,8 @@ void Host::appendLogsInternal(folly::EventBase* eb,
                         r.set_error_code(cpp2::ErrorCode::SUCCEEDED);
                         self->setResponse(r);
                     } else {
-                        self->lastLogIdSent_ = resp.get_last_log_id();
+                        self->lastLogIdSent_ = std::min(resp.get_last_log_id(),
+                                                        self->logIdToSend_ - 1);
                         self->lastLogTermSent_ = resp.get_last_log_term();
                         self->followerCommittedLogId_ = resp.get_committed_log_id();
                         newReq = self->prepareAppendLogRequest();
@@ -362,14 +364,15 @@ void Host::appendLogsInternal(folly::EventBase* eb,
                     } else if (self->logIdToSend_ <= resp.get_last_log_id()) {
                         VLOG(1) << self->idStr_
                                 << "It means the request has been received by follower";
-                        self->lastLogIdSent_ = resp.get_last_log_id();
+                        self->lastLogIdSent_ = self->logIdToSend_ - 1;
                         self->lastLogTermSent_ = resp.get_last_log_term();
                         self->followerCommittedLogId_ = resp.get_committed_log_id();
                         cpp2::AppendLogResponse r;
                         r.set_error_code(cpp2::ErrorCode::SUCCEEDED);
                         self->setResponse(r);
                     } else {
-                        self->lastLogIdSent_ = resp.get_last_log_id();
+                        self->lastLogIdSent_ = std::min(resp.get_last_log_id(),
+                                                        self->logIdToSend_ - 1);
                         self->lastLogTermSent_ = resp.get_last_log_term();
                         self->followerCommittedLogId_ = resp.get_committed_log_id();
                         newReq = self->prepareAppendLogRequest();

@@ -35,7 +35,7 @@ public:
     static std::unique_ptr<kvstore::KVStore>
     initKV(const char* rootPath,
            int32_t partitionNumber = 6,
-           HostAddr localhost = {0, 0},
+           HostAddr localhost = {0, network::NetworkUtils::getAvailablePort()},
            meta::MetaClient* mClient = nullptr,
            bool useMetaServer = false,
            std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder = nullptr) {
@@ -74,7 +74,31 @@ public:
                                                             localhost,
                                                             workers);
         store->init();
-        sleep(1);
+
+        // When useMetaServer is true, we deal with it using waitUntilAllElected.
+        if (useMetaServer) {
+            sleep(1);
+        } else {
+            // Wait until all part leader exist, here spaceId can only be 0.
+            GraphSpaceID spaceId = 0;
+            while (true) {
+                int readyNum = 0;
+                for (auto partId = 0; partId < partitionNumber; partId++) {
+                    auto retLeader = store->partLeader(spaceId, partId);
+                    if (ok(retLeader)) {
+                        auto leader = value(std::move(retLeader));
+                        if (leader == localhost) {
+                            readyNum++;
+                        }
+                    }
+                }
+                if (readyNum == partitionNumber) {
+                    LOG(INFO) << "All leaders have been elected!";
+                    break;
+                }
+                usleep(100000);
+            }
+        }
         return store;
     }
 
@@ -289,17 +313,22 @@ public:
     static std::shared_ptr<meta::SchemaProviderIf>
     genEdgeSchemaProvider(int32_t intFieldsNum, int32_t stringFieldsNum) {
         std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(0));
+        nebula::cpp2::Value defaultValue;
+        defaultValue.set_int_value(0);
         for (int32_t i = 0; i < intFieldsNum; i++) {
             nebula::cpp2::ColumnDef column;
             column.name = folly::stringPrintf("col_%d", i);
             column.type.type = nebula::cpp2::SupportedType::INT;
             schema->addField(column.name, std::move(column.type));
+            schema->addDefaultValue(column.name, defaultValue);
         }
+        defaultValue.set_string_value("");
         for (int32_t i = intFieldsNum; i < intFieldsNum + stringFieldsNum; i++) {
             nebula::cpp2::ColumnDef column;
             column.name = folly::stringPrintf("col_%d", i);
             column.type.type = nebula::cpp2::SupportedType::STRING;
             schema->addField(column.name, std::move(column.type));
+            schema->addDefaultValue(column.name, defaultValue);
         }
         return schema;
     }
@@ -336,17 +365,22 @@ public:
     static std::shared_ptr<meta::SchemaProviderIf>
     genTagSchemaProvider(TagID tagId, int32_t intFieldsNum, int32_t stringFieldsNum) {
         std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(0));
+        nebula::cpp2::Value defaultValue;
+        defaultValue.set_int_value(0);
         for (int32_t i = 0; i < intFieldsNum; i++) {
             nebula::cpp2::ColumnDef column;
             column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
             column.type.type = nebula::cpp2::SupportedType::INT;
             schema->addField(column.name, std::move(column.type));
+            schema->addDefaultValue(column.name, defaultValue);
         }
+        defaultValue.set_string_value("");
         for (int32_t i = intFieldsNum; i < intFieldsNum + stringFieldsNum; i++) {
             nebula::cpp2::ColumnDef column;
             column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
             column.type.type = nebula::cpp2::SupportedType::STRING;
             schema->addField(column.name, std::move(column.type));
+            schema->addDefaultValue(column.name, defaultValue);
         }
         return schema;
     }
@@ -453,31 +487,6 @@ public:
         while (true) {
             int readyNum = 0;
             for (auto partId = 1; partId <= partNum; partId++) {
-                auto retLeader = nKV->partLeader(spaceId, partId);
-                if (ok(retLeader)) {
-                    auto leader = value(std::move(retLeader));
-                    if (leader != HostAddr(0, 0)) {
-                        readyNum++;
-                    }
-                }
-            }
-            if (readyNum == partNum) {
-                LOG(INFO) << "All leaders have been elected!";
-                break;
-            }
-            usleep(100000);
-        }
-    }
-
-    // Wait the specified partition elected
-    static void waitUntilAllElected(kvstore::KVStore* kvstore, GraphSpaceID spaceId,
-        std::set<PartitionID> parts) {
-        auto* nKV = static_cast<kvstore::NebulaStore*>(kvstore);
-        const int32_t partNum = parts.size();
-        // wait until all part leader exists
-        while (true) {
-            int readyNum = 0;
-            for (const auto partId : parts) {
                 auto retLeader = nKV->partLeader(spaceId, partId);
                 if (ok(retLeader)) {
                     auto leader = value(std::move(retLeader));

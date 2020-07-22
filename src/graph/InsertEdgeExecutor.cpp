@@ -5,8 +5,11 @@
  */
 
 #include "base/Base.h"
+#include "utils/ConvertTimeType.h"
 #include "graph/InsertEdgeExecutor.h"
 #include "storage/client/StorageClient.h"
+#include "graph/SchemaHelper.h"
+#include "meta/NebulaSchemaProvider.h"
 
 namespace nebula {
 namespace graph {
@@ -64,15 +67,13 @@ Status InsertEdgeExecutor::check() {
         }
     }
 
-    auto *mc = ectx()->getMetaClient();
-
     for (size_t i = 0; i < schema_->getNumFields(); i++) {
         std::string name = schema_->getFieldName(i);
         auto it = std::find_if(props_.begin(), props_.end(),
                                [name](std::string *prop) { return *prop == name;});
 
         if (it == props_.end()) {
-            auto valueResult = mc->getEdgeDefaultValue(spaceId_, edgeType_, name).get();
+            auto valueResult = schema_->getDefaultValue(i);
 
             if (!valueResult.ok()) {
                 LOG(ERROR) << "Not exist default value: " << name;
@@ -175,22 +176,17 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
                 if (!checkValueType(schemaType, value)) {
                     LOG(ERROR) << "ValueType is wrong, schema type "
                                << static_cast<int32_t>(schemaType.type)
-                                << ", input type " <<  value.which();
+                               << ", input type " <<  value.which();
                     return Status::Error("ValueType is wrong");
                 }
             } else {
                 // fetch default value from cache
-                auto result = transformDefaultValue(schemaType.type, defaultValues_[fieldName]);
-                if (!result.ok()) {
-                    return result.status();
-                }
-
-                value = result.value();
+                value = defaultValues_[fieldName];
                 VLOG(3) << "Supplement default value : " << fieldName << " : " << value;
             }
 
             if (schemaType.type == nebula::cpp2::SupportedType::TIMESTAMP) {
-                auto timestamp = toTimestamp(value);
+                auto timestamp = ConvertTimeType::toTimestamp(value);
                 if (!timestamp.ok()) {
                     return timestamp.status();
                 }

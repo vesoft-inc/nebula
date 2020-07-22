@@ -8,7 +8,7 @@
 #define KVSTORE_PART_H_
 
 #include "base/Base.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include "raftex/RaftPart.h"
 #include "kvstore/Common.h"
 #include "kvstore/KVEngine.h"
@@ -45,7 +45,6 @@ public:
 
     void asyncRemove(folly::StringPiece key, KVCallback cb);
     void asyncMultiRemove(const std::vector<std::string>& keys, KVCallback cb);
-    void asyncRemovePrefix(folly::StringPiece prefix, KVCallback cb);
     void asyncRemoveRange(folly::StringPiece start,
                           folly::StringPiece end,
                           KVCallback cb);

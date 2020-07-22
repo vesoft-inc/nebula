@@ -6,7 +6,7 @@
 
     <groupId>com.vesoft</groupId>
     <artifactId>sst.generator</artifactId>
-    <version>1.0.0-rc3</version>
+    <version>1.0.0-rc4</version>
 
     <properties>
         <java.version>1.8</java.version>
@@ -21,7 +21,7 @@
         <config.version>1.4.0</config.version>
         <scala-logging.version>3.9.2</scala-logging.version>
         <scopt.version>3.7.1</scopt.version>
-        <nebula.version>1.0.0-rc3.20200207</nebula.version>
+        <nebula.version>1.0.0-rc4.20200323</nebula.version>
         <s2.version>1.0.0</s2.version>
     </properties>
 

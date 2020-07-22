@@ -5,7 +5,7 @@
  */
 
 #include "storage/kv/GetProcessor.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 
 namespace nebula {
 namespace storage {

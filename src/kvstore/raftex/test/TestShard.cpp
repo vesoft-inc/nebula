@@ -29,12 +29,12 @@ HostAddr decodeLearner(const folly::StringPiece& log) {
     return learner;
 }
 
-std::string compareAndSet(const std::string& log) {
+folly::Optional<std::string> compareAndSet(const std::string& log) {
     switch (log[0]) {
         case 'T':
             return log.substr(1);
         default:
-            return std::string();
+            return folly::none;
     }
 }
 

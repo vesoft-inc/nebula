@@ -103,12 +103,17 @@ public:
         LOG(INFO) << "Release rocksdb on " << dataPath_;
     }
 
+    void stop() override;
+
     const char* getDataRoot() const override {
         return dataPath_.c_str();
     }
 
     std::unique_ptr<WriteBatch> startBatchWrite() override;
-    ResultCode commitBatchWrite(std::unique_ptr<WriteBatch> batch) override;
+
+    ResultCode commitBatchWrite(std::unique_ptr<WriteBatch> batch,
+                                bool disableWAL,
+                                bool sync) override;
 
     /*********************
      * Data retrieval
@@ -142,8 +147,6 @@ public:
 
     ResultCode removeRange(const std::string& start,
                            const std::string& end) override;
-
-    ResultCode removePrefix(const std::string& prefix) override;
 
     /*********************
      * Non-data operation

@@ -26,6 +26,7 @@ jobs:
     needs: lint
     runs-on: self-hosted
     strategy:
+      fail-fast: false
       matrix:
         os:
           - centos7
@@ -72,20 +73,16 @@ jobs:
             -DENABLE_ASAN=on \
             -B build/
       - name: Make
-        if: (matrix.compiler != 'gcc-9.2' || matrix.os != 'centos7') && steps.ignore_docs.outputs.num_source_files != 0
+        if: steps.ignore_docs.outputs.num_source_files != 0
         run: |
           cmake --build build/ -j $(nproc)
-      - name: Make with less concurrency
-        if: matrix.compiler == 'gcc-9.2' && matrix.os == 'centos7' && steps.ignore_docs.outputs.num_source_files != 0
-        run: |
-          cmake --build build/ -j $(($(nproc)/2))
       - name: CTest with multiple threads
         if: steps.ignore_docs.outputs.num_source_files != 0
         timeout-minutes: 15
         continue-on-error: false
         working-directory: build
         env:
-          ASAN_SYMBOLIZER_PATH: /usr/bin/llvm-symbolizer
+          ASAN_SYMBOLIZER_PATH: /opt/vesoft/toolset/clang/9.0.0/bin/llvm-symbolizer
           ASAN_OPTIONS: fast_unwind_on_malloc=1
         run: |
           ctest \
@@ -98,7 +95,7 @@ jobs:
         timeout-minutes: 30
         working-directory: build
         env:
-          ASAN_SYMBOLIZER_PATH: /usr/bin/llvm-symbolizer
+          ASAN_SYMBOLIZER_PATH: /opt/vesoft/toolset/clang/9.0.0/bin/llvm-symbolizer
           ASAN_OPTIONS: fast_unwind_on_malloc=0
         run: |
           ctest \
@@ -110,9 +107,8 @@ jobs:
         if: success() && matrix.compiler == 'gcc-9.2' && matrix.os == 'centos7' && steps.ignore_docs.outputs.num_source_files != 0
         run: |
           set -e
-          /usr/local/bin/lcov --version
-          /usr/local/bin/lcov --capture --gcov-tool $GCOV --directory . --output-file coverage.info
-          /usr/local/bin/lcov --remove coverage.info '*/opt/vesoft/*' -o clean.info
+          fastcov -o coverage.info -l --exclude=scanner.lex
+          lcov --remove coverage.info '*/opt/vesoft/*' -o clean.info
           bash <(curl -s https://codecov.io/bash) -Z -t $(cat /etc/action/secrets/codecov) -f clean.info
         shell: bash
       - name: Cleanup

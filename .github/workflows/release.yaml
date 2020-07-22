@@ -40,12 +40,9 @@ jobs:
         run: |
           ./ci/scripts/upload-github-release-asset.sh github_token=${{ secrets.GITHUB_TOKEN }} repo=${{ github.repository }} tag=${{ steps.vars.outputs.tag }} filepath=${{ steps.vars.outputs.filepath }}
           ./ci/scripts/upload-github-release-asset.sh github_token=${{ secrets.GITHUB_TOKEN }} repo=${{ github.repository }} tag=${{ steps.vars.outputs.tag }} filepath=${{ steps.vars.outputs.shafilepath }}
+          ./ci/scripts/upload-oss.sh OSS_ENDPOINT=${{ secrets.OSS_ENDPOINT }} OSS_ID=${{ secrets.OSS_ID }} OSS_SECRET=${{ secrets.OSS_SECRET }} tag=${{ steps.vars.outputs.tag }} filepath=${{ steps.vars.outputs.filepath }}
+          ./ci/scripts/upload-oss.sh OSS_ENDPOINT=${{ secrets.OSS_ENDPOINT }} OSS_ID=${{ secrets.OSS_ID }} OSS_SECRET=${{ secrets.OSS_SECRET }} tag=${{ steps.vars.outputs.tag }} filepath=${{ steps.vars.outputs.shafilepath }}
         shell: bash
-      - name: upload release artifacts
-        uses: actions/upload-artifact@v1
-        with:
-          name: ${{ matrix.os }}-release
-          path: build/cpack_output
 
   docker:
     name: build docker images

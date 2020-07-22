@@ -19,15 +19,23 @@ using nebula::RowReader;
 auto schema = std::make_shared<SchemaWriter>();
 
 void prepareSchema() {
-    schema->appendCol("col1", nebula::cpp2::SupportedType::INT);
-    schema->appendCol("col2", nebula::cpp2::SupportedType::INT);
-    schema->appendCol("col3", nebula::cpp2::SupportedType::STRING);
-    schema->appendCol("col4", nebula::cpp2::SupportedType::STRING);
-    schema->appendCol("col5", nebula::cpp2::SupportedType::BOOL);
-    schema->appendCol("col6", nebula::cpp2::SupportedType::FLOAT);
-    schema->appendCol("col7", nebula::cpp2::SupportedType::VID);
-    schema->appendCol("col8", nebula::cpp2::SupportedType::DOUBLE);
-    schema->appendCol("col9", nebula::cpp2::SupportedType::TIMESTAMP);
+    nebula::cpp2::Value value;
+    value.set_int_value(0);
+    schema->appendCol("col1", nebula::cpp2::SupportedType::INT, value);
+    schema->appendCol("col2", nebula::cpp2::SupportedType::INT, value);
+    value.set_string_value("");
+    schema->appendCol("col3", nebula::cpp2::SupportedType::STRING, value);
+    schema->appendCol("col4", nebula::cpp2::SupportedType::STRING, value);
+    value.set_bool_value(false);
+    schema->appendCol("col5", nebula::cpp2::SupportedType::BOOL, value);
+    value.set_double_value(static_cast<float>(0.0));
+    schema->appendCol("col6", nebula::cpp2::SupportedType::FLOAT, value);
+    value.set_int_value(0);
+    schema->appendCol("col7", nebula::cpp2::SupportedType::VID, value);
+    value.set_double_value(static_cast<double>(0.0));
+    schema->appendCol("col8", nebula::cpp2::SupportedType::DOUBLE, value);
+    value.set_int_value(0);
+    schema->appendCol("col9", nebula::cpp2::SupportedType::TIMESTAMP, value);
 }
 
 
@@ -180,7 +188,8 @@ TEST(RowUpdater, encodeWithAllFields) {
     EXPECT_EQ(ResultType::SUCCEEDED,
               updater.setInt("col9", 1551331830));
 
-    std::string encoded(updater.encode());
+    auto status = updater.encode();
+    std::string encoded(status.value());
 
     bool bVal;
     int64_t iVal, tVal;
@@ -242,7 +251,8 @@ TEST(RowUpdater, encodeWithMissingFields) {
     EXPECT_EQ(ResultType::SUCCEEDED,
               updater.setVid("col7", 0xABCDABCDABCDABCD));
 
-    std::string encoded(updater.encode());
+    auto status = updater.encode();
+    std::string encoded(status.value());
 
     bool bVal;
     int64_t iVal, tVal;

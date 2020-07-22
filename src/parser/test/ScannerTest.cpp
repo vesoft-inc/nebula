@@ -4,17 +4,17 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
 #include <gtest/gtest.h>
 #include <sstream>
-#include <vector>
 #include <utility>
+#include <vector>
+#include "base/Base.h"
 #include "parser/GraphParser.hpp"
 #include "parser/GraphScanner.h"
 
 using testing::AssertionFailure;
-using testing::AssertionSuccess;
 using testing::AssertionResult;
+using testing::AssertionSuccess;
 
 namespace nebula {
 
@@ -24,113 +24,131 @@ static auto checkSemanticValue(const char *expected, semantic_type *sv) {
     delete sv->strval;
     if (expected != actual) {
         return AssertionFailure() << "Semantic value not match, "
-                                  << "expected: " << expected
-                                  << ", actual: " << actual;
+                                  << "expected: " << expected << ", actual: " << actual;
     }
     return AssertionSuccess();
 }
-
 
 static auto checkSemanticValue(bool expected, semantic_type *sv) {
     auto actual = sv->boolval;
     if (expected != actual) {
         return AssertionFailure() << "Semantic value not match, "
-                                  << "expected: " << expected
-                                  << ", actual: " << actual;
+                                  << "expected: " << expected << ", actual: " << actual;
     }
     return AssertionSuccess();
 }
 
-
 template <typename T>
-static std::enable_if_t<std::is_integral<T>::value, AssertionResult>
-checkSemanticValue(T expected, semantic_type *sv) {
+static std::enable_if_t<std::is_integral<T>::value, AssertionResult> checkSemanticValue(
+    T expected,
+    semantic_type *sv) {
     auto actual = static_cast<T>(sv->intval);
     if (expected != actual) {
         return AssertionFailure() << "Semantic value not match, "
-                                  << "expected: " << expected
-                                  << ", actual: " << actual;
+                                  << "expected: " << expected << ", actual: " << actual;
     }
     return AssertionSuccess();
 }
 
-
 template <typename T>
-static std::enable_if_t<std::is_floating_point<T>::value, AssertionResult>
-checkSemanticValue(T expected, semantic_type *sv) {
+static std::enable_if_t<std::is_floating_point<T>::value, AssertionResult> checkSemanticValue(
+    T expected,
+    semantic_type *sv) {
     auto actual = static_cast<T>(sv->doubleval);
     if (expected != actual) {
         return AssertionFailure() << "Semantic value not match, "
-                                  << "expected: " << expected
-                                  << ", actual: " << actual;
+                                  << "expected: " << expected << ", actual: " << actual;
     }
     return AssertionSuccess();
 }
 
+using TokenType = nebula::GraphParser::token_type;
+using Validator = std::function<::testing::AssertionResult()>;
+
+static Validator __CHECK_SEMANTIC_TYPE(const std::string &str,
+                                       TokenType type,
+                                       nebula::GraphParser::semantic_type &yylval,
+                                       nebula::GraphParser::location_type &yyloc,
+                                       GraphScanner &scanner,
+                                       std::string &stream) {
+    stream += " ";
+    stream += str;
+    return [&scanner, &yylval, &yyloc, type, str]() {
+        auto actual = scanner.yylex(&yylval, &yyloc);
+        if (actual != type) {
+            return AssertionFailure() << "Token type not match for `" << str
+                                      << "', expected: " << static_cast<int>(type)
+                                      << ", actual: " << static_cast<int>(actual);
+        } else {
+            return AssertionSuccess();
+        }
+    };
+}
+
+#define CHECK_SEMANTIC_TYPE(STR, TYPE)                                                             \
+    __CHECK_SEMANTIC_TYPE(STR, TYPE, yylval, yyloc, scanner, stream)
+
+template <typename T>
+static Validator __CHECK_SEMANTIC_VALUE(const std::string &str,
+                                        TokenType type,
+                                        T &&value,
+                                        nebula::GraphParser::semantic_type &yylval,
+                                        nebula::GraphParser::location_type &yyloc,
+                                        GraphScanner &scanner,
+                                        std::string &stream) {
+    stream += " ";
+    stream += str;
+    return [&scanner, &yylval, &yyloc, type, str, value = std::forward<T>(value)]() {
+        auto actual = scanner.yylex(&yylval, &yyloc);
+        if (actual != type) {
+            return AssertionFailure() << "Token type not match for `" << str
+                                      << "', expected: " << static_cast<int>(type)
+                                      << ", actual: " << static_cast<int>(actual);
+        } else {
+            return checkSemanticValue(value, &yylval);
+        }
+    };
+}
+
+#define CHECK_SEMANTIC_VALUE(STR, TYPE, VALUE)                                                     \
+    __CHECK_SEMANTIC_VALUE(STR, TYPE, VALUE, yylval, yyloc, scanner, stream)
+
+static Validator CHECK_LEXICAL_ERROR(std::string &&str) {
+    return [str]() {
+        auto input = [&str](char *buf, int) -> int {
+            static bool first = true;
+            if (!first) {
+                return 0;
+            }
+            first = false;
+            auto size = str.size();
+            ::memcpy(buf, str.data(), size);
+            return size;
+        };
+        GraphScanner lexer;
+        lexer.setReadBuffer(input);
+        nebula::GraphParser::semantic_type dumyyylval;
+        nebula::GraphParser::location_type dumyyyloc;
+        try {
+            auto token = lexer.yylex(&dumyyylval, &dumyyyloc);
+            if (token != 0) {
+                return AssertionFailure() << "Lexical error should've "
+                                          << "happened for `" << str << "'";
+            } else {
+                return AssertionSuccess();
+            }
+        } catch (const std::exception &e) {
+            LOG(INFO) << e.what() << str;
+            return AssertionSuccess();
+        }
+    };
+}
 
 TEST(Scanner, Basic) {
-    using TokenType = nebula::GraphParser::token_type;
-    using Validator = std::function<::testing::AssertionResult()>;
     nebula::GraphParser::semantic_type yylval;
     nebula::GraphParser::location_type yyloc;
     GraphScanner scanner;
     std::string stream;
-
-#define CHECK_SEMANTIC_TYPE(STR, TYPE)                                      \
-    (stream += " ", stream += STR, [&] () {                                 \
-        auto actual = scanner.yylex(&yylval, &yyloc);                       \
-        if (actual != TYPE) {                                               \
-            return AssertionFailure() << "Token type not match for `"       \
-                                      << STR << "', expected: "             \
-                                      << static_cast<int>(TYPE)             \
-                                      << ", actual: "                       \
-                                      << static_cast<int>(actual);          \
-        } else {                                                            \
-            return AssertionSuccess();                                      \
-        }                                                                   \
-    })
-
-#define CHECK_SEMANTIC_VALUE(STR, TYPE, value)                              \
-    (stream += " ", stream += STR, [&] () {                                 \
-        auto actual = scanner.yylex(&yylval, &yyloc);                       \
-        if (actual != TYPE) {                                               \
-            return AssertionFailure() << "Token type not match for `"       \
-                                      << STR << "', expected: "             \
-                                      << static_cast<int>(TYPE)             \
-                                      << ", actual: "                       \
-                                      << static_cast<int>(actual);          \
-        } else {                                                            \
-            return checkSemanticValue(value, &yylval);                      \
-        }                                                                   \
-    })
-
-#define CHECK_LEXICAL_ERROR(STR)                                            \
-    ([] () {                                                                \
-        auto input = [] (char *buf, int) -> int {                           \
-            static bool first = true;                                       \
-            if (!first) { return 0; }                                       \
-            first = false;                                                  \
-            auto size = ::strlen(STR);                                      \
-            ::memcpy(buf, STR, size);                                       \
-            return size;                                                    \
-        };                                                                  \
-        GraphScanner lexer;                                                 \
-        lexer.setReadBuffer(input);                                         \
-        nebula::GraphParser::semantic_type dumyyylval;                      \
-        nebula::GraphParser::location_type dumyyyloc;                       \
-        try {                                                               \
-            auto token = lexer.yylex(&dumyyylval, &dumyyyloc);              \
-            if (token != 0) {                                               \
-                return AssertionFailure() << "Lexical error should've "     \
-                                          << "happened for `" << STR << "'";\
-            } else {                                                        \
-                return AssertionSuccess();                                  \
-            }                                                               \
-        } catch (const std::exception &e) {                                 \
-            LOG(INFO) << e.what() << STR;                                   \
-            return AssertionSuccess();                                      \
-        }                                                                   \
-    })
 
     std::vector<Validator> validators = {
         CHECK_SEMANTIC_TYPE(".", TokenType::DOT),
@@ -235,9 +253,6 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("PARTS", TokenType::KW_PARTS),
         CHECK_SEMANTIC_TYPE("Parts", TokenType::KW_PARTS),
         CHECK_SEMANTIC_TYPE("parts", TokenType::KW_PARTS),
-        CHECK_SEMANTIC_TYPE("BIGINT", TokenType::KW_BIGINT),
-        CHECK_SEMANTIC_TYPE("Bigint", TokenType::KW_BIGINT),
-        CHECK_SEMANTIC_TYPE("bigint", TokenType::KW_BIGINT),
         CHECK_SEMANTIC_TYPE("DOUBLE", TokenType::KW_DOUBLE),
         CHECK_SEMANTIC_TYPE("double", TokenType::KW_DOUBLE),
         CHECK_SEMANTIC_TYPE("STRING", TokenType::KW_STRING),
@@ -429,6 +444,9 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("OFFLINE", TokenType::KW_OFFLINE),
         CHECK_SEMANTIC_TYPE("Offline", TokenType::KW_OFFLINE),
         CHECK_SEMANTIC_TYPE("offline", TokenType::KW_OFFLINE),
+        CHECK_SEMANTIC_TYPE("CONTAINS", TokenType::KW_CONTAINS),
+        CHECK_SEMANTIC_TYPE("Contains", TokenType::KW_CONTAINS),
+        CHECK_SEMANTIC_TYPE("contains", TokenType::KW_CONTAINS),
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
         CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),
@@ -454,12 +472,14 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_VALUE("123.", TokenType::DOUBLE, 123.),
         CHECK_SEMANTIC_VALUE(".123", TokenType::DOUBLE, 0.123),
         CHECK_SEMANTIC_VALUE("123.456", TokenType::DOUBLE, 123.456),
+        CHECK_SEMANTIC_VALUE("123.456E1", TokenType::DOUBLE, 1234.56),
+        CHECK_SEMANTIC_VALUE("123.456E-1", TokenType::DOUBLE, 12.3456),
 
         CHECK_SEMANTIC_VALUE("0x7FFFFFFFFFFFFFFF", TokenType::INTEGER, 0x7FFFFFFFFFFFFFFFL),
         CHECK_SEMANTIC_VALUE("0x007FFFFFFFFFFFFFFF", TokenType::INTEGER, 0x007FFFFFFFFFFFFFFFL),
         CHECK_SEMANTIC_VALUE("9223372036854775807", TokenType::INTEGER, 9223372036854775807L),
-        CHECK_SEMANTIC_VALUE("00777777777777777777777", TokenType::INTEGER,
-                              00777777777777777777777),
+        CHECK_SEMANTIC_VALUE(
+            "00777777777777777777777", TokenType::INTEGER, 00777777777777777777777),
         CHECK_LEXICAL_ERROR("9223372036854775809"),
         CHECK_LEXICAL_ERROR("0x8000000000000001"),
         CHECK_LEXICAL_ERROR("001000000000000000000001"),
@@ -495,13 +515,12 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_VALUE("\"\\\\\\\\110 \"", TokenType::STRING, "\\\\110 "),
         CHECK_SEMANTIC_VALUE("\"\\\\\\\\\110 \"", TokenType::STRING, "\\\\H "),
 
-
         CHECK_SEMANTIC_VALUE("\"己所不欲，勿施于人\"", TokenType::STRING, "己所不欲，勿施于人"),
     };
 #undef CHECK_SEMANTIC_TYPE
 #undef CHECK_SEMANTIC_VALUE
 
-    auto input = [&] (char *buf, int maxSize) {
+    auto input = [&stream](char *buf, int maxSize) {
         static int copied = 0;
         int left = stream.size() - copied;
         if (left == 0) {

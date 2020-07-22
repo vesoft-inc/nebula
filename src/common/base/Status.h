@@ -29,7 +29,7 @@ public:
         state_ = rhs.state_ == nullptr ? nullptr : copyState(rhs.state_.get());
     }
 
-    Status& operator=(const Status &rhs) {
+    Status &operator=(const Status &rhs) {
         // `state_ == rhs.state_' means either `this == &rhs',
         // or both `*this' and `rhs' are OK
         if (state_ != rhs.state_) {
@@ -42,7 +42,7 @@ public:
         state_ = std::move(rhs.state_);
     }
 
-    Status& operator=(Status &&rhs) noexcept {
+    Status &operator=(Status &&rhs) noexcept {
         // `state_ == rhs.state_' means either `this == &rhs',
         // or both `*this' and `rhs' are OK
         if (state_ != rhs.state_) {
@@ -72,26 +72,25 @@ public:
         return Status();
     }
 
-#define STATUS_GENERATOR(ERROR)                         \
-    static Status ERROR() {                             \
-        return Status(k##ERROR, "");                    \
-    }                                                   \
-                                                        \
-    static Status ERROR(folly::StringPiece msg) {       \
-        return Status(k##ERROR, msg);                   \
-    }                                                   \
-                                                        \
-    static Status ERROR(const char *fmt, ...)           \
-        __attribute__((format(printf, 1, 2))) {         \
-        va_list args;                                   \
-        va_start(args, fmt);                            \
-        auto msg = format(fmt, args);                   \
-        va_end(args);                                   \
-        return Status(k##ERROR, msg);                   \
-    }                                                   \
-                                                        \
-    bool is##ERROR() const {                            \
-        return code() == k##ERROR;                      \
+#define STATUS_GENERATOR(ERROR)                                                                    \
+    static Status ERROR() {                                                                        \
+        return Status(k##ERROR, "");                                                               \
+    }                                                                                              \
+                                                                                                   \
+    static Status ERROR(folly::StringPiece msg) {                                                  \
+        return Status(k##ERROR, msg);                                                              \
+    }                                                                                              \
+                                                                                                   \
+    static Status ERROR(const char *fmt, ...) __attribute__((format(printf, 1, 2))) {              \
+        va_list args;                                                                              \
+        va_start(args, fmt);                                                                       \
+        auto msg = format(fmt, args);                                                              \
+        va_end(args);                                                                              \
+        return Status(k##ERROR, msg);                                                              \
+    }                                                                                              \
+                                                                                                   \
+    bool is##ERROR() const {                                                                       \
+        return code() == k##ERROR;                                                                 \
     }
     // Some succeeded codes
     STATUS_GENERATOR(Inserted);
@@ -100,9 +99,11 @@ public:
     STATUS_GENERATOR(Error);
     STATUS_GENERATOR(NoSuchFile);
     STATUS_GENERATOR(NotSupported);
+    STATUS_GENERATOR(InvalidParameter);
 
     // Graph engine errors
     STATUS_GENERATOR(SyntaxError);
+    STATUS_GENERATOR(MalformedRequest);
     // Nothing is executed When command is comment
     STATUS_GENERATOR(StatementEmpty);
 
@@ -128,49 +129,53 @@ public:
 
     std::string toString() const;
 
-    friend std::ostream& operator<<(std::ostream &os, const Status &status);
+    friend std::ostream &operator<<(std::ostream &os, const Status &status);
 
     // If some kind of error really needs to be distinguished with others using a specific
     // code, other than a general code and specific msg, you could add a new code below,
     // e.g. kSomeError, and add the cooresponding STATUS_GENERATOR(SomeError)
     enum Code : uint16_t {
+        // clang-format off
         // OK
-        kOk                     = 0,
-        kInserted               = 1,
+        kOk               = 0,
+        kInserted         = 1,
         // 1xx, for general errors
-        kError                  = 101,
-        kNoSuchFile             = 102,
-        kNotSupported           = 103,
+        kError            = 101,
+        kNoSuchFile       = 102,
+        kNotSupported     = 103,
+        kInvalidParameter       = 104,
         // 2xx, for graph engine errors
-        kSyntaxError            = 201,
-        kStatementEmpty         = 202,
+        kSyntaxError      = 201,
+        kStatementEmpty   = 202,
+        kMalformedRequest = 203,
         // 3xx, for storage engine errors
-        kKeyNotFound            = 301,
+        kKeyNotFound      = 301,
         // 4xx, for meta service errors
-        kSpaceNotFound          = 404,
-        kHostNotFound           = 405,
-        kTagNotFound            = 406,
-        kEdgeNotFound           = 407,
-        kUserNotFound           = 408,
-        kLeaderChanged          = 409,
-        kBalanced               = 410,
-        kIndexNotFound          = 411,
-        kPartNotFound           = 412,
+        kSpaceNotFound    = 404,
+        kHostNotFound     = 405,
+        kTagNotFound      = 406,
+        kEdgeNotFound     = 407,
+        kUserNotFound     = 408,
+        kLeaderChanged    = 409,
+        kBalanced         = 410,
+        kIndexNotFound    = 411,
+        kPartNotFound     = 412,
         // 5xx for user or permission error
-        kPermissionError        = 501,
+        kPermissionError  = 501,
+        // clang-format on
     };
 
     Code code() const {
         if (state_ == nullptr) {
             return kOk;
         }
-        return reinterpret_cast<const Header*>(state_.get())->code_;
+        return reinterpret_cast<const Header *>(state_.get())->code_;
     }
 
 private:
     // REQUIRES: stat_ != nullptr
     uint16_t size() const {
-        return reinterpret_cast<const Header*>(state_.get())->size_;
+        return reinterpret_cast<const Header *>(state_.get())->size_;
     }
 
     Status(Code code, folly::StringPiece msg);
@@ -181,8 +186,8 @@ private:
 
 private:
     struct Header {
-        uint16_t                    size_;
-        Code                        code_;
+        uint16_t size_;
+        Code code_;
     };
     static constexpr auto kHeaderSize = sizeof(Header);
     // state_ == nullptr indicates OK
@@ -190,14 +195,13 @@ private:
     // state_[0..1]                 length of the error msg, i.e. size() - kHeaderSize
     // state_[2..3]                 code
     // state_[4...]                 verbose error message
-    std::unique_ptr<const char[]>   state_;
+    std::unique_ptr<const char[]> state_;
 };
 
-
-inline std::ostream& operator<<(std::ostream &os, const Status &status) {
+inline std::ostream &operator<<(std::ostream &os, const Status &status) {
     return os << status.toString();
 }
 
 }   // namespace nebula
 
-#endif  // COMMON_BASE_STATUS_H_
+#endif   // COMMON_BASE_STATUS_H_

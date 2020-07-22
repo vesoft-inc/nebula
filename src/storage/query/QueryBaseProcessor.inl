@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 #include "storage/query/QueryBaseProcessor.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include <algorithm>
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
@@ -412,6 +412,9 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
         if (result.ok()) {
             auto v = std::move(result).value();
             auto reader = RowReader::getTagPropReader(this->schemaMan_, v, spaceId_, tagId);
+            if (reader == nullptr) {
+                return kvstore::ResultCode::ERR_CORRUPT_DATA;
+            }
 
             // Check if ttl data expired
             auto retTtlOpt = getTagTTLInfo(tagId);
@@ -445,7 +448,9 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
     // stored along with the properties
     if (iter && iter->valid()) {
         auto reader = RowReader::getTagPropReader(this->schemaMan_, iter->val(), spaceId_, tagId);
-
+        if (reader == nullptr) {
+            return kvstore::ResultCode::ERR_CORRUPT_DATA;
+        }
         // Check if ttl data expired
         auto retTtlOpt = getTagTTLInfo(tagId);
         if (retTtlOpt.hasValue()) {
@@ -475,7 +480,6 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                                                PartitionID partId,
                                                VertexID vId,
                                                EdgeType edgeType,
-                                               const std::vector<PropContext>& props,
                                                FilterContext* fcontext,
                                                EdgeProcessor proc) {
     auto prefix = NebulaKeyUtils::edgePrefix(partId, vId, edgeType);
@@ -491,15 +495,6 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
     int         cnt = 0;
     bool onlyStructure = onlyStructures_[edgeType];
     Getters getters;
-    std::unique_ptr<nebula::algorithm::ReservoirSampling<
-        std::pair<std::unique_ptr<RowReader>, std::string>>> sampler;
-    if (FLAGS_enable_reservoir_sampling) {
-        sampler = std::make_unique<
-            nebula::algorithm::ReservoirSampling<
-                std::pair<std::unique_ptr<RowReader>, std::string>
-            >
-        >(FLAGS_max_edge_returned_per_vertex);
-    }
 
     auto schema = this->schemaMan_->getEdgeSchema(spaceId_, std::abs(edgeType));
     auto retTTL = getEdgeTTLInfo(edgeType);
@@ -516,15 +511,21 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
             VLOG(3) << "Only get the latest version for each edge.";
             continue;
         }
+        if (firstLoop) {
+            firstLoop = false;
+        }
         lastRank = rank;
         lastDstId = dstId;
         std::unique_ptr<RowReader> reader;
-        if (!onlyStructure
-                && !val.empty()) {
+        if ((!onlyStructure || retTTL.has_value()) && !val.empty()) {
             reader = RowReader::getEdgePropReader(this->schemaMan_,
                                                   val,
                                                   spaceId_,
                                                   std::abs(edgeType));
+            if (reader == nullptr) {
+                LOG(WARNING) << "Skip the bad format row!";
+                continue;
+            }
             // Check if ttl data expired
             if (retTTL.has_value() && checkDataExpiredForTTL(schema.get(),
                                                              reader.get(),
@@ -543,7 +544,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                                 "Edge `%s' not found when call getters.", edgeName.c_str());
                     }
                     if (std::abs(edgeType) != edgeFound->second) {
-                        return Status::Error("Ignore this edge");
+                        return Status::Error("Ignore this edge : %s", edgeFound->first.c_str());
                     }
 
                     if (prop == _SRC) {
@@ -574,7 +575,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                                 "Edge `%s' not found when call getters.", edgeName.c_str());
                     }
                     if (std::abs(edgeType) != edgeFound->second) {
-                        return Status::Error("Ignore this edge");
+                        return Status::Error("Ignore this edge : %s", edgeFound->first.c_str());
                     }
                     return dstId;
                 };
@@ -589,6 +590,10 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                     return it->second;
                 };
                 auto value = exp_->eval(getters);
+                if (!value.ok()) {
+                    VLOG(3) << value.status();
+                    continue;
+                }
                 if (value.ok() && !Expression::asBool(value.value())) {
                     VLOG(1) << "Filter the edge "
                             << vId << "-> " << dstId << "@" << rank << ":" << edgeType;
@@ -597,22 +602,8 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
             }
         }
 
-        if (FLAGS_enable_reservoir_sampling) {
-            sampler->sampling(std::make_pair(std::move(reader), key.str()));
-        } else {
-            proc(reader.get(), key, props);
-        }
+        proc(std::move(reader), key);
         ++cnt;
-        if (firstLoop) {
-            firstLoop = false;
-        }
-    }
-
-    if (FLAGS_enable_reservoir_sampling) {
-        auto samples = std::move(*sampler).samples();
-        for (auto& sample : samples) {
-            proc(sample.first.get(), sample.second, props);
-        }
     }
 
     return ret;

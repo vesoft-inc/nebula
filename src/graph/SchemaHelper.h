@@ -36,6 +36,9 @@ public:
                               nebula::cpp2::SchemaProp& schemaProp);
 
     static nebula::cpp2::SupportedType columnTypeToSupportedType(nebula::ColumnType type);
+
+private:
+    static StatusOr<nebula::cpp2::Value> toDefaultValue(ColumnSpecification* spec);
 };
 
 }   // namespace graph

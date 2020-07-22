@@ -115,7 +115,6 @@ Status FetchVerticesExecutor::checkTagProps() {
 }
 
 void FetchVerticesExecutor::execute() {
-    FLOG_INFO("Executing FetchVertices: %s", sentence_->toString().c_str());
     auto status = prepareClauses();
     if (!status.ok()) {
         doError(std::move(status));
@@ -140,11 +139,6 @@ void FetchVerticesExecutor::fetchVertices() {
     std::vector<storage::cpp2::PropDef> props;
     if (!sentence_->isAllTagProps()) {
         props = getPropNames();
-        if (props.empty()) {
-            LOG(WARNING) << "Empty props";
-            doEmptyResp();
-            return;
-        }
     }
 
     auto future = ectx()->getStorageClient()->getVertexProps(spaceId_, vids_, std::move(props));
@@ -200,65 +194,79 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
             continue;
         }
 
-        auto *schema = resp.get_vertex_schema();
-        if (schema == nullptr) {
-            continue;
-        }
-
-        std::unordered_map<TagID, std::shared_ptr<ResultSchemaProvider>> tagSchema;
-        std::transform(schema->cbegin(), schema->cend(),
-                       std::inserter(tagSchema, tagSchema.begin()), [](auto &s) {
-                           return std::make_pair(
-                               s.first, std::make_shared<ResultSchemaProvider>(s.second));
-                       });
-
-        for (auto &vdata : resp.vertices) {
-            std::unique_ptr<RowReader> vreader;
-            if (!vdata.__isset.tag_data || vdata.tag_data.empty()) {
+        if (resultColNames_.empty()) {
+            for (auto &vdata : resp.vertices) {
+                if (outputSchema == nullptr) {
+                    outputSchema = std::make_shared<SchemaWriter>();
+                    outputSchema->appendCol("VertexID", nebula::cpp2::SupportedType::VID);
+                    rsWriter = std::make_unique<RowSetWriter>(outputSchema);
+                }
+                auto writer = std::make_unique<RowWriter>(outputSchema);
+                (*writer) << vdata.vertex_id;
+                std::string encode = writer->encode();
+                rsWriter->addRow(std::move(encode));
+            }
+        } else {
+            auto *schema = resp.get_vertex_schema();
+            if (schema == nullptr) {
                 continue;
             }
 
-            auto vschema = tagSchema[vdata.tag_data[0].tag_id];
-            vreader = RowReader::getRowReader(vdata.tag_data[0].data, vschema);
-            if (outputSchema == nullptr) {
-                outputSchema = std::make_shared<SchemaWriter>();
-                outputSchema->appendCol("VertexID", nebula::cpp2::SupportedType::VID);
-                auto status = getOutputSchema(vschema.get(), vreader.get(), outputSchema.get());
-                if (!status.ok()) {
-                    LOG(ERROR) << "Get output schema failed: " << status;
-                    doError(Status::Error("Get output schema failed: %s.",
-                                status.toString().c_str()));
-                    return;
-                }
-                rsWriter = std::make_unique<RowSetWriter>(outputSchema);
-            }
+            std::unordered_map<TagID, std::shared_ptr<ResultSchemaProvider>> tagSchema;
+            std::transform(schema->cbegin(), schema->cend(),
+                        std::inserter(tagSchema, tagSchema.begin()), [](auto &s) {
+                            return std::make_pair(
+                                s.first, std::make_shared<ResultSchemaProvider>(s.second));
+                        });
 
-            auto writer = std::make_unique<RowWriter>(outputSchema);
-            (*writer) << vdata.vertex_id;
-            getters.getAliasProp =
-                [&vreader, &vschema] (const std::string&,
-                                      const std::string &prop) -> OptVariantType {
-                return Collector::getProp(vschema.get(), prop, vreader.get());
-            };
-            for (auto *column : yields_) {
-                auto *expr = column->expr();
-                auto value = expr->eval(getters);
-                if (!value.ok()) {
-                    doError(std::move(value).status());
-                    return;
+            for (auto &vdata : resp.vertices) {
+                std::unique_ptr<RowReader> vreader;
+                if (!vdata.__isset.tag_data || vdata.tag_data.empty()) {
+                    continue;
                 }
-                auto status = Collector::collect(value.value(), writer.get());
-                if (!status.ok()) {
-                    LOG(ERROR) << "Collect prop error: " << status;
-                    doError(std::move(status));
-                    return;
+
+                auto vschema = tagSchema[vdata.tag_data[0].tag_id];
+                vreader = RowReader::getRowReader(vdata.tag_data[0].data, vschema);
+                if (outputSchema == nullptr) {
+                    outputSchema = std::make_shared<SchemaWriter>();
+                    outputSchema->appendCol("VertexID", nebula::cpp2::SupportedType::VID);
+                    auto status = getOutputSchema(vschema.get(), vreader.get(), outputSchema.get());
+                    if (!status.ok()) {
+                        LOG(ERROR) << "Get output schema failed: " << status;
+                        doError(Status::Error("Get output schema failed: %s.",
+                                    status.toString().c_str()));
+                        return;
+                    }
+                    rsWriter = std::make_unique<RowSetWriter>(outputSchema);
                 }
-            }
-            // TODO Consider float/double, and need to reduce mem copy.
-            std::string encode = writer->encode();
-            rsWriter->addRow(std::move(encode));
-        }  // for `vdata'
-    }      // for `resp'
+
+                auto writer = std::make_unique<RowWriter>(outputSchema);
+                (*writer) << vdata.vertex_id;
+                getters.getAliasProp =
+                    [&vreader, &vschema] (const std::string&,
+                                        const std::string &prop) -> OptVariantType {
+                    return Collector::getProp(vschema.get(), prop, vreader.get());
+                };
+                for (auto *column : yields_) {
+                    auto *expr = column->expr();
+                    auto value = expr->eval(getters);
+                    if (!value.ok()) {
+                        doError(std::move(value).status());
+                        return;
+                    }
+                    auto status = Collector::collect(value.value(), writer.get());
+                    if (!status.ok()) {
+                        LOG(ERROR) << "Collect prop error: " << status;
+                        doError(std::move(status));
+                        return;
+                    }
+                }
+                // TODO Consider float/double, and need to reduce mem copy.
+                std::string encode = writer->encode();
+                rsWriter->addRow(std::move(encode));
+            }  // for `vdata'
+        }
+    }  // for `resp'
 
     finishExecution(std::move(rsWriter));
 }

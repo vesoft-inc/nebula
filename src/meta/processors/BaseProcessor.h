@@ -147,12 +147,14 @@ protected:
     /**
      * Scan keys from start to end, doesn't contain end.
      * */
-     StatusOr<std::vector<std::string>> doScan(const std::string& start,
-                                               const std::string& end);
-     /**
+    StatusOr<std::vector<std::string>> doScan(const std::string& start,
+                                              const std::string& end);
+    /**
      * General multi remove function.
-     **/
-     void doMultiRemove(std::vector<std::string> keys);
+     * */
+    void doMultiRemove(std::vector<std::string> keys);
+
+    kvstore::ResultCode multiRemove(std::vector<std::string> keys);
 
     /**
      * Get all hosts
@@ -235,13 +237,16 @@ protected:
     void doSyncMultiRemoveAndUpdate(std::vector<std::string> keys);
 
     /**
-     * check if the edge or tag contains indexes when alter edge or tag.
+     * Check the edge or tag contains indexes when alter it.
      **/
     cpp2::ErrorCode indexCheck(const std::vector<nebula::cpp2::IndexItem>& items,
                                const std::vector<cpp2::AlterSchemaItem>& alterItems);
 
     StatusOr<std::vector<nebula::cpp2::IndexItem>>
     getIndexes(GraphSpaceID spaceId, int32_t tagOrEdge);
+
+    bool checkIndexExist(const std::vector<std::string>& fields,
+                         const nebula::cpp2::IndexItem& item);
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;

@@ -111,20 +111,18 @@ void DeleteVerticesExecutor::execute() {
         for (auto& response : rpcResp) {
             std::unordered_map<EdgeType, std::shared_ptr<ResultSchemaProvider>> edgeSchema;
             auto *eschema = response.get_edge_schema();
-            if (eschema != nullptr) {
-                std::transform(eschema->cbegin(), eschema->cend(),
-                               std::inserter(edgeSchema, edgeSchema.begin()), [](auto &schema) {
-                                   return std::make_pair(
-                                       schema.first,
-                                       std::make_shared<ResultSchemaProvider>(schema.second));
-                               });
+            if (eschema == nullptr || eschema->empty()) {
+                continue;
             }
 
-            if (edgeSchema.empty()) {
-                LOG(ERROR) << "Can't find edge's schema";
-                doError(Status::Error("Can't find edge's schema"));
-                return;
-            }
+            std::transform(eschema->cbegin(),
+                           eschema->cend(),
+                           std::inserter(edgeSchema, edgeSchema.begin()),
+                           [](auto &schema) {
+                               return std::make_pair(
+                                   schema.first,
+                                   std::make_shared<ResultSchemaProvider>(schema.second));
+                           });
 
             for (auto &vdata : response.vertices) {
                 auto src = vdata.get_vertex_id();

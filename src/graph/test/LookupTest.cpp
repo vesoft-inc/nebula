@@ -55,7 +55,7 @@ TEST_F(LookupTest, SimpleVertex) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<VertexID>> expected = {
-                {200},
+            {200},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
         std::vector<std::string> cols = {
@@ -70,7 +70,7 @@ TEST_F(LookupTest, SimpleVertex) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<VertexID, std::string, std::string, std::string>> expected = {
-                {200, "col1_200", "col2_200", "col3_200"},
+            {200, "col1_200", "col2_200", "col3_200"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
         std::vector<std::string> cols = {
@@ -115,7 +115,7 @@ TEST_F(LookupTest, SimpleEdge) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<VertexID, VertexID, EdgeRanking>> expected = {
-                {200, 201, 0},
+            {200, 201, 0},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
         std::vector<std::string> cols = {
@@ -131,7 +131,7 @@ TEST_F(LookupTest, SimpleEdge) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<VertexID, VertexID, EdgeRanking,
                                std::string, std::string, std::string>> expected = {
-                {200, 201, 0, "col1_200_1", "col2_200_1", "col3_200_1"},
+            {200, 201, 0, "col1_200_1", "col2_200_1", "col3_200_1"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
         std::vector<std::string> cols = {
@@ -162,7 +162,7 @@ TEST_F(LookupTest, VertexIndexHint) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<VertexID>> expected = {
-                {200},
+            {200},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -192,7 +192,7 @@ TEST_F(LookupTest, EdgeIndexHint) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<VertexID, VertexID, EdgeRanking>> expected = {
-                {200, 201, 0},
+            {200, 201, 0},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -684,6 +684,66 @@ TEST_F(LookupTest, FunctionExprTest) {
         auto query = "LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col2 > (lookup_tag_2.col3 - 100)";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+}
+
+TEST_F(LookupTest, YieldClauseTest) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto stmt = "CREATE TAG student(name string, age int)";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto stmt = "CREATE TAG INDEX student_index ON student(name, age)";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto stmt = "CREATE TAG teacher(name string, age int)";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "INSERT VERTEX student(name, age), teacher(name, age)  VALUES "
+                     "220:(\"student_1\", 20, \"teacher_1\", 30), "
+                     "221:(\"student_2\", 22, \"teacher_1\", 32)";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Invalid tag name in yield clause.
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON student WHERE student.name == \"student_1\" YIELD teacher.age";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+    }
+    // Invalid tag name in yield clause. and Alias is same with tag name.
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON student WHERE student.name == \"student_1\" YIELD teacher.age"
+                     " as student_name";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+    }
+    // Invalid tag name in where clause.
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON student WHERE teacher.name == \"student_1\" YIELD student.age";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON student WHERE student.name == \"student_1\" YIELD student.age";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID, int64_t>> expected = {{220, 20}};
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
 

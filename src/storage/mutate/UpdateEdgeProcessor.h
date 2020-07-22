@@ -10,6 +10,7 @@
 #include "storage/query/QueryBaseProcessor.h"
 #include "dataman/RowReader.h"
 #include "dataman/RowUpdater.h"
+#include "storage/StorageFlags.h"
 
 namespace nebula {
 namespace storage {
@@ -53,9 +54,10 @@ private:
     kvstore::ResultCode collectEdgesProps(const PartitionID partId,
                                           const cpp2::EdgeKey& edgeKey);
 
-    FilterResult checkFilter(const PartitionID partId, const cpp2::EdgeKey& edgeKey);
+    cpp2::ErrorCode checkFilter(const PartitionID partId, const cpp2::EdgeKey& edgeKey);
 
-    std::string updateAndWriteBack(PartitionID partId, const cpp2::EdgeKey& edgeKey);
+    folly::Optional<std::string> updateAndWriteBack(PartitionID partId,
+                                                    const cpp2::EdgeKey& edgeKey);
 
 private:
     bool                                                            insertable_{false};
@@ -68,7 +70,7 @@ private:
     std::unique_ptr<RowUpdater>                                     updater_;
     meta::IndexManager*                                             indexMan_{nullptr};
     std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>           indexes_;
-    std::atomic<FilterResult>                                  filterResult_{FilterResult::E_ERROR};
+    std::atomic<cpp2::ErrorCode>                          filterResult_{cpp2::ErrorCode::SUCCEEDED};
 };
 
 }  // namespace storage

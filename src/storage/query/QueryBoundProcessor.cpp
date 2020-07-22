@@ -34,18 +34,19 @@ kvstore::ResultCode QueryBoundProcessor::processEdgeImpl(const PartitionID partI
     std::vector<cpp2::IdAndProp> edges;
     edges.reserve(FLAGS_reserved_edges_one_vertex);
     auto ret = collectEdgeProps(
-        partId, vId, edgeType, props, &fcontext,
-        [&, this](RowReader* reader, folly::StringPiece k, const std::vector<PropContext>& p) {
+        partId, vId, edgeType, &fcontext,
+        [&, this](std::unique_ptr<RowReader> reader,
+                  folly::StringPiece k) {
             cpp2::IdAndProp edge;
             if (!onlyStructure) {
                 RowWriter writer(currEdgeSchema);
                 PropsCollector collector(&writer);
-                this->collectProps(reader, k, p, &fcontext, &collector);
+                this->collectProps(reader.get(), k, props, &fcontext, &collector);
                 edge.set_dst(collector.getDstId());
                 edge.set_props(writer.encode());
             } else {
                 PropsCollector collector(nullptr);
-                this->collectProps(reader, k, p, &fcontext, &collector);
+                this->collectProps(reader.get(), k, props, &fcontext, &collector);
                 edge.set_dst(collector.getDstId());
             }
             edges.emplace_back(std::move(edge));
@@ -77,6 +78,88 @@ kvstore::ResultCode QueryBoundProcessor::processEdge(PartitionID partId, VertexI
         }
     }
 
+    return kvstore::ResultCode::SUCCEEDED;
+}
+
+kvstore::ResultCode QueryBoundProcessor::processEdgeSampling(const PartitionID partId,
+                                                             const VertexID vId,
+                                                             FilterContext& fcontext,
+                                                             cpp2::VertexData& vdata) {
+    using Sample = std::tuple<
+        EdgeType, /* type */
+        std::string, /* key */
+        std::unique_ptr<RowReader>, /* val */
+        std::shared_ptr<meta::SchemaProviderIf>, /* schema of this value*/
+        const std::vector<PropContext>* /* props needed */>;
+    auto sampler = std::make_unique<
+                    nebula::algorithm::ReservoirSampling<Sample>
+                   >(FLAGS_max_edge_returned_per_vertex);
+
+    for (const auto& ec : edgeContexts_) {
+        auto edgeType = ec.first;
+        auto* props   = &ec.second;
+        bool onlyStructure = onlyStructures_[edgeType];
+        std::shared_ptr<meta::SchemaProviderIf> currEdgeSchema;
+        if (!onlyStructure) {
+            auto schema = edgeSchema_.find(edgeType);
+            if (schema == edgeSchema_.end()) {
+                LOG(ERROR) << "Not found the edge type: " << edgeType;
+                return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
+            }
+            currEdgeSchema = schema->second;
+        }
+        if (!props->empty()) {
+            CHECK(!onlyVertexProps_);
+            auto ret = collectEdgeProps(
+                partId, vId, edgeType, &fcontext,
+                [&](std::unique_ptr<RowReader> reader,
+                    folly::StringPiece k) {
+                    sampler->sampling(
+                        std::make_tuple(edgeType, k.str(), std::move(reader),
+                                        currEdgeSchema, props));
+                });
+            if (ret != kvstore::ResultCode::SUCCEEDED) {
+                return ret;
+            }
+        }
+    }
+
+    std::unordered_map<EdgeType, cpp2::EdgeData> edgeDataMap;
+    auto samples = std::move(*sampler).samples();
+    for (auto& sample : samples) {
+        auto edgeType = std::get<0>(sample);
+        auto currEdgeSchema = std::get<3>(sample);
+        auto& props = *std::get<4>(sample);
+        bool onlyStructure = onlyStructures_[edgeType];
+        cpp2::IdAndProp edge;
+        if (!onlyStructure) {
+            RowWriter writer(currEdgeSchema);
+            PropsCollector collector(&writer);
+            this->collectProps(
+                    std::get<2>(sample).get(), std::get<1>(sample), props, &fcontext, &collector);
+            edge.set_dst(collector.getDstId());
+            edge.set_props(writer.encode());
+        } else {
+            PropsCollector collector(nullptr);
+            this->collectProps(
+                    std::get<2>(sample).get(), std::get<1>(sample), props, &fcontext, &collector);
+            edge.set_dst(collector.getDstId());
+        }
+        auto edges = edgeDataMap.find(edgeType);
+        if (edges == edgeDataMap.end()) {
+            cpp2::EdgeData edgeData;
+            edgeData.set_type(edgeType);
+            edgeData.edges.emplace_back(std::move(edge));
+            edgeDataMap.emplace(edgeType, std::move(edgeData));
+        } else {
+            edges->second.edges.emplace_back(std::move(edge));
+        }
+    }
+
+    std::transform(edgeDataMap.begin(), edgeDataMap.end(), std::back_inserter(vdata.edge_data),
+            [] (auto& data) {
+                return std::move(data).second;
+            });
     return kvstore::ResultCode::SUCCEEDED;
 }
 
@@ -119,7 +202,12 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, Verte
         return kvstore::ResultCode::SUCCEEDED;
     }
 
-    auto ret = processEdge(partId, vId, fcontext, vResp);
+    kvstore::ResultCode ret;
+    if (FLAGS_enable_reservoir_sampling) {
+        ret = processEdgeSampling(partId, vId, fcontext, vResp);
+    } else {
+        ret = processEdge(partId, vId, fcontext, vResp);
+    }
 
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         return ret;

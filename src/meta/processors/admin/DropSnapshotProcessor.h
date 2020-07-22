@@ -9,20 +9,27 @@
 
 #include <gtest/gtest_prod.h>
 #include "meta/processors/BaseProcessor.h"
+#include "meta/processors/admin/AdminClient.h"
 
 namespace nebula {
 namespace meta {
 
 class DropSnapshotProcessor : public BaseProcessor<cpp2::ExecResp> {
 public:
-    static DropSnapshotProcessor* instance(kvstore::KVStore* kvstore) {
-        return new DropSnapshotProcessor(kvstore);
+    static DropSnapshotProcessor* instance(kvstore::KVStore* kvstore,
+                                           AdminClient* client) {
+        return new DropSnapshotProcessor(kvstore, client);
     }
+
     void process(const cpp2::DropSnapshotReq& req);
 
 private:
-    explicit DropSnapshotProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+    explicit DropSnapshotProcessor(kvstore::KVStore* kvstore,
+                                   AdminClient* client)
+            : BaseProcessor<cpp2::ExecResp>(kvstore), client_(client) {}
+
+private:
+    AdminClient* client_;
 };
 }  // namespace meta
 }  // namespace nebula

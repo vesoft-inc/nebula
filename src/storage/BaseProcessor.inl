@@ -93,27 +93,6 @@ void BaseProcessor<RESP>::doRemove(GraphSpaceID spaceId,
         });
 }
 
-template <typename RESP>
-void BaseProcessor<RESP>::doRemoveRange(GraphSpaceID spaceId,
-                                        PartitionID partId,
-                                        std::string start,
-                                        std::string end) {
-    this->kvstore_->asyncRemoveRange(
-        spaceId, partId, start, end, [spaceId, partId, this](kvstore::ResultCode code) {
-            handleAsync(spaceId, partId, code);
-        });
-}
-
-template <typename RESP>
-void BaseProcessor<RESP>::doRemovePrefix(GraphSpaceID spaceId,
-                                         PartitionID partId,
-                                         std::string prefix) {
-    this->kvstore_->asyncRemovePrefix(
-        spaceId, partId, prefix, [spaceId, partId, this](kvstore::ResultCode code) {
-            handleAsync(spaceId, partId, code);
-        });
-}
-
 template<typename RESP>
 kvstore::ResultCode BaseProcessor<RESP>::doRange(GraphSpaceID spaceId,
                                                  PartitionID partId,
@@ -139,20 +118,22 @@ kvstore::ResultCode BaseProcessor<RESP>::doRangeWithPrefix(
 }
 
 template <typename RESP>
-IndexValues
+StatusOr<IndexValues>
 BaseProcessor<RESP>::collectIndexValues(RowReader* reader,
                                         const std::vector<nebula::cpp2::ColumnDef>& cols) {
     IndexValues values;
     if (reader == nullptr) {
-        return values;
+        return Status::Error("Invalid row reader");
     }
     for (auto& col : cols) {
         auto res = RowReader::getPropByName(reader, col.get_name());
-        if (!ok(res)) {
-            LOG(ERROR) << "Skip bad column prop " << col.get_name();
+        if (ok(res)) {
+            auto val = NebulaKeyUtils::encodeVariant(value(std::move(res)));
+            values.emplace_back(col.get_type().get_type(), std::move(val));
+        } else {
+            LOG(ERROR) << "Skip bad column prop : " << col.get_name();
+            return Status::Error("Skip bad column prop : %s", col.get_name().c_str());
         }
-        auto val = NebulaKeyUtils::encodeVariant(value(std::move(res)));
-        values.emplace_back(col.get_type().get_type(), std::move(val));
     }
     return values;
 }

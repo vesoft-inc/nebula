@@ -134,7 +134,6 @@ Status FetchEdgesExecutor::checkEdgeProps() {
 }
 
 void FetchEdgesExecutor::execute() {
-    FLOG_INFO("Executing FetchEdges: %s", sentence_->toString().c_str());
     auto status = prepareClauses();
     if (!status.ok()) {
         doError(std::move(status));
@@ -304,12 +303,6 @@ void FetchEdgesExecutor::fetchEdges() {
         return;
     }
 
-    if (props.empty()) {
-        LOG(WARNING) << "Empty props of tag " << labelName_;
-        doEmptyResp();
-        return;
-    }
-
     auto future = ectx()->getStorageClient()->getEdgeProps(spaceId_, edgeKeys_, std::move(props));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (RpcResponse &&result) mutable {
@@ -373,11 +366,14 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
             outputSchema->appendCol(edgeSrcName_, nebula::cpp2::SupportedType::VID);
             outputSchema->appendCol(edgeDstName_, nebula::cpp2::SupportedType::VID);
             outputSchema->appendCol(edgeRankName_, nebula::cpp2::SupportedType::INT);
-            auto status = getOutputSchema(eschema.get(), &*iter, outputSchema.get());
-            if (!status.ok()) {
-                LOG(ERROR) << "Get output schema failed: " << status;
-                doError(Status::Error("Get output schema failed: %s.", status.toString().c_str()));
-                return;
+            if ((eschema != nullptr) && !resultColNames_.empty()) {
+                auto status = getOutputSchema(eschema.get(), &*iter, outputSchema.get());
+                if (!status.ok()) {
+                    LOG(ERROR) << "Get output schema failed: " << status;
+                    doError(Status::Error("Get output schema failed: %s.",
+                                status.toString().c_str()));
+                    return;
+                }
             }
             rsWriter = std::make_unique<RowSetWriter>(outputSchema);
         }
