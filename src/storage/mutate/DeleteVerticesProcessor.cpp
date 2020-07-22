@@ -6,6 +6,7 @@
 
 #include "storage/mutate/DeleteVerticesProcessor.h"
 #include "utils/NebulaKeyUtils.h"
+#include "utils/IndexKeyUtils.h"
 #include "storage/StorageFlags.h"
 
 namespace nebula {
@@ -154,7 +155,8 @@ DeleteVerticesProcessor::deleteVertices(PartitionID partId,
                         }
                         std::vector<Value::Type> colsType;
                         const auto& cols = index->get_fields();
-                        auto values = collectIndexValues(reader.get(), cols, colsType);
+                        auto values = IndexKeyUtils::collectIndexValues(reader.get(),
+                                                                        cols, colsType);
                         if (!values.ok()) {
                             continue;
                         }

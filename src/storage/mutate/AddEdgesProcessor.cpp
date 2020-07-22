@@ -7,6 +7,7 @@
 #include "storage/mutate/AddEdgesProcessor.h"
 #include "common/time/WallClock.h"
 #include "utils/NebulaKeyUtils.h"
+#include "utils/IndexKeyUtils.h"
 #include <algorithm>
 #include "codec/RowWriterV2.h"
 
@@ -74,7 +75,7 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
                                                 edgeKey.dst,
                                                 version);
             auto schema = env_->schemaMan_->getEdgeSchema(spaceId_,
-                                                            std::abs(edgeKey.edge_type));
+                                                          std::abs(edgeKey.edge_type));
             if (!schema) {
                 LOG(ERROR) << "Space " << spaceId_ << ", Edge "
                             << edgeKey.edge_type << " invalid";
@@ -218,7 +219,7 @@ std::string AddEdgesProcessor::indexKey(PartitionID partId,
                                         const folly::StringPiece& rawKey,
                                         std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
     std::vector<Value::Type> colsType;
-    auto values = collectIndexValues(reader, index->get_fields(), colsType);
+    auto values = IndexKeyUtils::collectIndexValues(reader, index->get_fields(), colsType);
     if (!values.ok()) {
         return "";
     }

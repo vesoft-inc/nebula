@@ -32,35 +32,37 @@ public:
 
 class SingleTagIterator : public StorageIterator {
 public:
-    SingleTagIterator(std::unique_ptr<kvstore::KVIterator> iter,
+    SingleTagIterator(PlanContext* planCtx,
+                      std::unique_ptr<kvstore::KVIterator> iter,
                       TagID tagId,
-                      size_t vIdLen,
                       const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>* schemas,
                       const folly::Optional<std::pair<std::string, int64_t>>* ttl)
-        : iter_(std::move(iter))
+        : planContext_(planCtx)
+        , iter_(std::move(iter))
         , tagId_(tagId)
-        , vIdLen_(vIdLen)
         , schemas_(schemas)
         , ttl_(ttl) {
+        lookupOne_ = true;
         check(iter_->val());
     }
 
-    SingleTagIterator(folly::StringPiece val,
+    SingleTagIterator(PlanContext* planCtx,
+                      folly::StringPiece val,
                       const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>* schemas,
                       const folly::Optional<std::pair<std::string, int64_t>>* ttl)
-        : schemas_(schemas)
+        : planContext_(planCtx)
+        , schemas_(schemas)
         , ttl_(ttl) {
+        lookupOne_ = true;
         check(val);
     }
 
     bool valid() const override {
-        return reader_ != nullptr;
+        return lookupOne_ && reader_ != nullptr;
     }
 
     void next() override {
-        do {
-            iter_->next();
-        } while (iter_->valid() && !check(iter_->val()));
+        lookupOne_ = false;
     }
 
     folly::StringPiece key() const override {
@@ -80,6 +82,7 @@ protected:
     bool check(folly::StringPiece val) {
         reader_ = RowReader::getRowReader(*schemas_, val);
         if (!reader_) {
+            planContext_->resultStat_ = ResultStatus::ILLEGAL_DATA;
             return false;
         }
 
@@ -95,35 +98,38 @@ protected:
         return true;
     }
 
-    std::unique_ptr<kvstore::KVIterator> iter_;
-    TagID tagId_;
-    size_t vIdLen_;
-    const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>* schemas_ = nullptr;
-    const folly::Optional<std::pair<std::string, int64_t>>* ttl_ = nullptr;
+    PlanContext                                                          *planContext_ = nullptr;
+    std::unique_ptr<kvstore::KVIterator>                                  iter_;
+    TagID                                                                 tagId_;
+    const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>> *schemas_ = nullptr;
+    const folly::Optional<std::pair<std::string, int64_t>>               *ttl_ = nullptr;
+    bool                                                                  lookupOne_ = true;
 
-    std::unique_ptr<RowReader> reader_;
+    std::unique_ptr<RowReader>                                            reader_;
 };
 
 // Iterator of single specified type
 class SingleEdgeIterator : public StorageIterator {
 public:
     SingleEdgeIterator(
+            PlanContext* planCtx,
             std::unique_ptr<kvstore::KVIterator> iter,
             EdgeType edgeType,
-            size_t vIdLen,
             const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>* schemas,
             const folly::Optional<std::pair<std::string, int64_t>>* ttl,
             bool moveToValidRecord = true)
-        : iter_(std::move(iter))
+        : planContext_(planCtx)
+        , iter_(std::move(iter))
         , edgeType_(edgeType)
-        , vIdLen_(vIdLen)
         , schemas_(schemas)
-        , ttl_(ttl) {
+        , ttl_(ttl)
+        , moveToValidRecord_(moveToValidRecord) {
         CHECK(!!iter_);
+        lookupOne_ = true;
         // If moveToValidRecord is true, iterator will try to move to first valid record,
         // which is used in GetNeighbors. If it is false, it will only check the latest record,
         // which is used in GetProps and UpdateEdge.
-        if (moveToValidRecord) {
+        if (moveToValidRecord_) {
             while (iter_->valid() && !check()) {
                 iter_->next();
             }
@@ -133,10 +139,14 @@ public:
     }
 
     bool valid() const override {
-        return reader_ != nullptr;
+        return lookupOne_ && reader_ != nullptr;
     }
 
     void next() override {
+        if (!moveToValidRecord_) {
+            lookupOne_ = false;
+            return;
+        }
         do {
             iter_->next();
             if (!iter_->valid()) {
@@ -167,8 +177,8 @@ protected:
     bool check() {
         reader_.reset();
         auto key = iter_->key();
-        auto rank = NebulaKeyUtils::getRank(vIdLen_, key);
-        auto dstId = NebulaKeyUtils::getDstId(vIdLen_, key);
+        auto rank = NebulaKeyUtils::getRank(planContext_->vIdLen_, key);
+        auto dstId = NebulaKeyUtils::getDstId(planContext_->vIdLen_, key);
         if (!firstLoop_ && rank == lastRank_ && lastDstId_ == dstId) {
             // pass old version data of same edge
             return false;
@@ -178,9 +188,11 @@ protected:
         if (!reader_) {
             reader_ = RowReader::getRowReader(*schemas_, val);
             if (!reader_) {
+                planContext_->resultStat_ = ResultStatus::ILLEGAL_DATA;
                 return false;
             }
         } else if (!reader_->reset(*schemas_, val)) {
+            planContext_->resultStat_ = ResultStatus::ILLEGAL_DATA;
             return false;
         }
 
@@ -200,16 +212,18 @@ protected:
         return true;
     }
 
-    std::unique_ptr<kvstore::KVIterator> iter_;
-    EdgeType edgeType_;
-    size_t vIdLen_;
-    const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>* schemas_ = nullptr;
-    const folly::Optional<std::pair<std::string, int64_t>>* ttl_ = nullptr;
+    PlanContext                                                          *planContext_;
+    std::unique_ptr<kvstore::KVIterator>                                  iter_;
+    EdgeType                                                              edgeType_;
+    const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>> *schemas_ = nullptr;
+    const folly::Optional<std::pair<std::string, int64_t>>               *ttl_ = nullptr;
+    bool                                                                  moveToValidRecord_{true};
+    bool                                                                  lookupOne_ = true;
 
-    std::unique_ptr<RowReader> reader_;
-    EdgeRanking lastRank_ = 0;
-    VertexID lastDstId_ = "";
-    bool firstLoop_ = true;
+    std::unique_ptr<RowReader>                                            reader_;
+    EdgeRanking                                                           lastRank_ = 0;
+    VertexID                                                              lastDstId_ = "";
+    bool                                                                  firstLoop_ = true;
 };
 
 // Iterator of multiple SingleEdgeIterator, it will iterate over edges of different types

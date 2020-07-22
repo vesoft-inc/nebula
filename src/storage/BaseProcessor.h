@@ -86,13 +86,6 @@ protected:
                                        const std::vector<std::string>& propNames,
                                        const std::vector<Value>& props);
 
-    StatusOr<std::vector<Value>>
-    collectIndexValues(RowReader* reader,
-                       const std::vector<nebula::meta::cpp2::ColumnDef>& cols,
-                       std::vector<Value::Type>& colsType);
-
-    Status checkValue(const Value& v, bool isNullable);
-
 protected:
     StorageEnv*                                     env_{nullptr};
     stats::Stats*                                   stats_{nullptr};

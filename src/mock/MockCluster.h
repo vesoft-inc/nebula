@@ -52,6 +52,7 @@ public:
 
     storage::GeneralStorageClient* initGeneralStorageClient();
 
+    // Default spaceId is 1
     std::unique_ptr<meta::SchemaManager> memSchemaMan(SchemaVer schemaVerCount = 1);
 
     std::unique_ptr<meta::IndexManager> memIndexMan();

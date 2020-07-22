@@ -115,7 +115,7 @@ protected:
             StorageExpressionContext* ctx = nullptr) {
         for (auto& prop : *props) {
             VLOG(2) << "Collect prop " << prop.name_ << ", type " << tagId;
-            auto status = QueryUtils::readValue(reader, prop);
+            auto status = QueryUtils::readValue(reader, prop.name_, prop.field_);
             if (!status.ok()) {
                 return kvstore::ResultCode::ERR_TAG_PROP_NOT_FOUND;
             }

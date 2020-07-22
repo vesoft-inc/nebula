@@ -46,11 +46,12 @@ public:
         VLOG(1) << "partId " << partId << ", vId " << vId << ", tagId " << tagId_
                 << ", prop size " << props_->size();
 
+        // when update, has already evicted
         if (FLAGS_enable_vertex_cache && tagContext_->vertexCache_ != nullptr) {
             auto result = tagContext_->vertexCache_->get(std::make_pair(vId, tagId_), partId);
             if (result.ok()) {
                 cacheResult_ = std::move(result).value();
-                iter_.reset(new SingleTagIterator(cacheResult_, schemas_, &ttl_));
+                iter_.reset(new SingleTagIterator(planContext_, cacheResult_, schemas_, &ttl_));
                 return kvstore::ResultCode::SUCCEEDED;
             }
         }
@@ -59,7 +60,7 @@ public:
         prefix_ = NebulaKeyUtils::vertexPrefix(planContext_->vIdLen_, partId, vId, tagId_);
         ret = planContext_->env_->kvstore_->prefix(planContext_->spaceId_, partId, prefix_, &iter);
         if (ret == kvstore::ResultCode::SUCCEEDED && iter && iter->valid()) {
-            iter_.reset(new SingleTagIterator(std::move(iter), tagId_, planContext_->vIdLen_,
+            iter_.reset(new SingleTagIterator(planContext_, std::move(iter), tagId_,
                                               schemas_, &ttl_));
         } else {
             iter_.reset();
@@ -76,7 +77,7 @@ public:
     }
 
     bool valid() const override {
-        return iter_->valid();
+        return iter_ && iter_->valid();
     }
 
     void next() override {
@@ -92,7 +93,10 @@ public:
     }
 
     RowReader* reader() const override {
-        return iter_->reader();
+        if (iter_) {
+            return iter_->reader();
+        }
+        return nullptr;
     }
 
     const std::string& getTagName() {
@@ -100,19 +104,19 @@ public:
     }
 
 private:
-    PlanContext* planContext_;
-    TagContext* tagContext_;
-    TagID tagId_;
-    const std::vector<PropContext>* props_;
-    ExpressionContext* expCtx_;
-    Expression* exp_;
+    PlanContext                                                          *planContext_;
+    TagContext                                                           *tagContext_;
+    TagID                                                                 tagId_;
+    const std::vector<PropContext>                                       *props_;
+    ExpressionContext                                                    *expCtx_;
+    Expression                                                           *exp_;
     const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>* schemas_ = nullptr;
-    folly::Optional<std::pair<std::string, int64_t>> ttl_;
-    std::string tagName_;
+    folly::Optional<std::pair<std::string, int64_t>>                      ttl_;
+    std::string                                                           tagName_;
 
-    std::unique_ptr<StorageIterator> iter_;
-    std::string prefix_;
-    std::string cacheResult_;
+    std::unique_ptr<StorageIterator>                                      iter_;
+    std::string                                                           prefix_;
+    std::string                                                           cacheResult_;
 };
 
 }  // namespace storage

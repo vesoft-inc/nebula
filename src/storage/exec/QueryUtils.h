@@ -16,29 +16,46 @@ namespace storage {
 
 class QueryUtils final {
 public:
-    static StatusOr<nebula::Value> readValue(RowReader* reader, const PropContext& ctx) {
-        auto value = reader->getValueByName(ctx.name_);
+    static StatusOr<nebula::Value> readValue(RowReader* reader,
+                                             const std::string& propName,
+                                             const meta::SchemaProviderIf::Field* field) {
+        auto value = reader->getValueByName(propName);
         if (value.type() == Value::Type::NULLVALUE) {
             // read null value
             auto nullType = value.getNull();
-            if (nullType == NullType::BAD_DATA ||
-                nullType == NullType::BAD_TYPE ||
-                nullType == NullType::UNKNOWN_PROP) {
-                VLOG(1) << "Fail to read prop " << ctx.name_;
-                if (ctx.field_ != nullptr) {
-                    if (ctx.field_->hasDefault()) {
-                        return ctx.field_->defaultValue();
-                    } else if (ctx.field_->nullable()) {
-                        return NullType::__NULL__;
-                    }
+
+            if (nullType == NullType::UNKNOWN_PROP) {
+                VLOG(1) << "Fail to read prop " << propName;
+                if (field->hasDefault()) {
+                    return field->defaultValue();
+                } else if (field->nullable()) {
+                    return NullType::__NULL__;
                 }
-            } else if (nullType == NullType::__NULL__ || nullType == NullType::NaN) {
-                return value;
+            } else if (nullType == NullType::__NULL__) {
+                // Need to check whether the field is nullable
+                if (field->nullable()) {
+                    return value;
+                }
             }
-            return Status::Error(folly::stringPrintf("Fail to read prop %s ", ctx.name_.c_str()));
+            return Status::Error(folly::stringPrintf("Fail to read prop %s ", propName.c_str()));
         }
         return value;
     }
+
+    // read prop value, If the RowReader contains this field,
+    // read from the rowreader, otherwise read the default value
+    // or null value from the latest schema
+    static StatusOr<nebula::Value> readValue(RowReader* reader,
+                                             const std::string& propName,
+                                             const meta::NebulaSchemaProvider* schema) {
+        auto field = schema->field(propName);
+        if (!field) {
+            return Status::Error(folly::stringPrintf("Fail to read prop %s ",
+                                                     propName.c_str()));
+        }
+        return readValue(reader, propName, field);
+    }
+
 
     static StatusOr<nebula::Value> readEdgeProp(VertexIDSlice srcId,
                                                 EdgeType edgeType,
@@ -49,7 +66,7 @@ public:
         switch (prop.propInKeyType_) {
             // prop in value
             case PropContext::PropInKeyType::NONE: {
-                return readValue(reader, prop);
+                return readValue(reader, prop.name_, prop.field_);
             }
             case PropContext::PropInKeyType::SRC: {
                 return srcId.subpiece(0, srcId.find_first_of('\0'));

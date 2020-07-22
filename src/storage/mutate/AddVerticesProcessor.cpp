@@ -6,6 +6,7 @@
 
 #include "storage/mutate/AddVerticesProcessor.h"
 #include "utils/NebulaKeyUtils.h"
+#include "utils/IndexKeyUtils.h"
 #include <algorithm>
 #include "common/time/WallClock.h"
 #include "codec/RowWriterV2.h"
@@ -70,7 +71,7 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
                         << ", TagID: " << tagId << ", TagVersion: " << version;
 
                 auto key = NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid,
-                                                        tagId, version);
+                                                     tagId, version);
                 auto schema = env_->schemaMan_->getTagSchema(spaceId_, tagId);
                 if (!schema) {
                     LOG(ERROR) << "Space " << spaceId_ << ", Tag " << tagId << " invalid";
@@ -220,7 +221,7 @@ std::string AddVerticesProcessor::indexKey(PartitionID partId,
                                            RowReader* reader,
                                            std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
     std::vector<Value::Type> colsType;
-    auto values = collectIndexValues(reader, index->get_fields(), colsType);
+    auto values = IndexKeyUtils::collectIndexValues(reader, index->get_fields(), colsType);
     if (!values.ok()) {
         return "";
     }

@@ -32,7 +32,7 @@ public:
     }
 
     bool valid() const override {
-        return iter_->valid();
+        return iter_ && iter_->valid();
     }
 
     void next() override {
@@ -48,7 +48,10 @@ public:
     }
 
     RowReader* reader() const override {
-        return iter_->reader();
+        if (iter_) {
+            return iter_->reader();
+        }
+        return nullptr;
     }
 
     const std::string& getEdgeName() {
@@ -73,7 +76,7 @@ protected:
         CHECK(schemaIter != edgeContext_->schemas_.end());
         CHECK(!schemaIter->second.empty());
         schemas_ = &(schemaIter->second);
-        ttl_ = QueryUtils::getEdgeTTLInfo(edgeContext_, edgeType_);
+        ttl_ = QueryUtils::getEdgeTTLInfo(edgeContext_, std::abs(edgeType_));
         edgeName_ = edgeContext_->edgeNames_[edgeType_];
     }
 
@@ -131,7 +134,7 @@ public:
         ret = planContext_->env_->kvstore_->prefix(planContext_->spaceId_, partId, prefix_, &iter);
         if (ret == kvstore::ResultCode::SUCCEEDED && iter && iter->valid()) {
             iter_.reset(new SingleEdgeIterator(
-                std::move(iter), edgeType_, planContext_->vIdLen_, schemas_, &ttl_, false));
+                planContext_, std::move(iter), edgeType_, schemas_, &ttl_, false));
         } else {
             iter_.reset();
         }
@@ -163,7 +166,7 @@ public:
         ret = planContext_->env_->kvstore_->prefix(planContext_->spaceId_, partId, prefix_, &iter);
         if (ret == kvstore::ResultCode::SUCCEEDED && iter && iter->valid()) {
             iter_.reset(new SingleEdgeIterator(
-                std::move(iter), edgeType_, planContext_->vIdLen_, schemas_, &ttl_));
+                planContext_, std::move(iter), edgeType_, schemas_, &ttl_));
         } else {
             iter_.reset();
         }

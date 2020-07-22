@@ -77,6 +77,9 @@ AdHocSchemaManager::getTagSchema(GraphSpaceID space,
     } else {
         // Looking for the specified version
         if (static_cast<size_t>(ver) >= tagIt->second.size()) {
+            if (ver == 0 && tagIt->first == 0) {
+                return tagIt->second[ver];
+            }
             // Not found
             return std::shared_ptr<const nebula::meta::NebulaSchemaProvider>();
         } else {
@@ -148,6 +151,9 @@ AdHocSchemaManager::getEdgeSchema(GraphSpaceID space,
     } else {
         // Looking for the specified version
         if (static_cast<size_t>(ver) >= edgeIt->second.size()) {
+            if (ver == 0 && edgeIt->first == 0) {
+                return edgeIt->second[ver];
+            }
             // Not found
             return std::shared_ptr<const nebula::meta::NebulaSchemaProvider>();
         } else {

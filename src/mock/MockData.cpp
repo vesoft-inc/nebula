@@ -295,58 +295,19 @@ std::unordered_map<std::string, std::vector<Serve>> MockData::teamServes_ = team
 // Mock schema
 std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockPlayerTagSchema(SchemaVer ver) {
     std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(ver));
-    meta::cpp2::ColumnDef col1;
-    col1.name = "name";
-    col1.type = meta::cpp2::PropertyType::STRING;
-    schema->addField(std::move(col1.name), std::move(col1.type));
-
-    meta::cpp2::ColumnDef col2;
-    col2.name = "age";
-    col2.type = meta::cpp2::PropertyType::INT64;
-    schema->addField(std::move(col2.name), std::move(col2.type));
-
-    meta::cpp2::ColumnDef col3;
-    col3.name = "playing";
-    col3.type = meta::cpp2::PropertyType::BOOL;
-    schema->addField(std::move(col3.name), std::move(col3.type));
-
-    meta::cpp2::ColumnDef col4;
-    col4.name = "career";
-    col4.type = meta::cpp2::PropertyType::INT64;
-    schema->addField(std::move(col4.name), std::move(col4.type));
-
-    meta::cpp2::ColumnDef col5;
-    col5.name = "startYear";
-    col5.type = meta::cpp2::PropertyType::INT64;
-    schema->addField(std::move(col5.name), std::move(col5.type));
-
-    meta::cpp2::ColumnDef col6;
-    col6.name = "endYear";
-    col6.type = meta::cpp2::PropertyType::INT64;
-    schema->addField(std::move(col6.name), std::move(col6.type));
-
-    meta::cpp2::ColumnDef col7;
-    col7.name = "games";
-    col7.type = meta::cpp2::PropertyType::INT64;
-    schema->addField(std::move(col7.name), std::move(col7.type));
-
-    meta::cpp2::ColumnDef col8;
-    col8.name = "avgScore";
-    col8.type = meta::cpp2::PropertyType::DOUBLE;
-    schema->addField(std::move(col8.name), std::move(col8.type));
-
-    meta::cpp2::ColumnDef col9;
-    col9.name = "serveTeams";
-    col9.type = meta::cpp2::PropertyType::INT64;
-    schema->addField(std::move(col9.name), std::move(col9.type));
+    schema->addField("name", meta::cpp2::PropertyType::STRING, 0, false, "");
+    schema->addField("age", meta::cpp2::PropertyType::INT64, 0, false, 18L);
+    schema->addField("playing", meta::cpp2::PropertyType::BOOL, 0, false, true);
+    schema->addField("career", meta::cpp2::PropertyType::INT64, 0, false, 10L);
+    schema->addField("startYear", meta::cpp2::PropertyType::INT64, 0, false, 0L);
+    schema->addField("endYear", meta::cpp2::PropertyType::INT64, 0, false, 0L);
+    schema->addField("games", meta::cpp2::PropertyType::INT64, 0, false, 0L);
+    schema->addField("avgScore", meta::cpp2::PropertyType::DOUBLE, 0, false, 0.0);
+    schema->addField("serveTeams", meta::cpp2::PropertyType::INT64, 0, false, 0L);
 
     // Set ttl property
     if (FLAGS_mock_ttl_col) {
-        meta::cpp2::ColumnDef ttlCol;
-        ttlCol.name = "insertTime";
-        ttlCol.type = meta::cpp2::PropertyType::INT64;
-        schema->addField(std::move(ttlCol.name), std::move(ttlCol.type));
-
+        schema->addField("insertTime", meta::cpp2::PropertyType::INT64, 0, false, 0L);
         meta::cpp2::SchemaProp prop;
         prop.set_ttl_col("insertTime");
         prop.set_ttl_duration(FLAGS_mock_ttl_duration);
@@ -354,74 +315,32 @@ std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockPlayerTagSchema(Schema
     }
 
     // Use default value
-    meta::cpp2::ColumnDef col10;
-    col10.name = "country";
-    col10.type = meta::cpp2::PropertyType::STRING;
-    Value defaultVal = "America";
-    schema->addField(std::move(col10.name), std::move(col10.type), 0, false, defaultVal);
-
+    schema->addField("country", meta::cpp2::PropertyType::STRING, 0, false, "America");
     // Use nullable
-    meta::cpp2::ColumnDef col11;
-    col11.name = "champions";
-    col11.type = meta::cpp2::PropertyType::INT64;
-    schema->addField(std::move(col11.name), std::move(col11.type), 0, true);
+    schema->addField("champions", meta::cpp2::PropertyType::INT64, 0, true);
 
     return schema;
 }
 
 std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockTeamTagSchema(SchemaVer ver) {
     std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(ver));
-    meta::cpp2::ColumnDef col;
-    col.name = "name";
-    col.type = meta::cpp2::PropertyType::STRING;
-    schema->addField(std::move(col.name), std::move(col.type));
+    schema->addField("name", meta::cpp2::PropertyType::STRING);
     return schema;
 }
 
 std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockServeSchema(SchemaVer ver) {
     std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(ver));
-    meta::cpp2::ColumnDef col1;
-    col1.name = "playerName";
-    col1.type = meta::cpp2::PropertyType::STRING;
-    schema->addField(std::move(col1.name), std::move(col1.type));
-
-    meta::cpp2::ColumnDef col2;
-    col2.name = "teamName";
-    col2.type = meta::cpp2::PropertyType::STRING;
-    schema->addField(std::move(col2.name), std::move(col2.type));
-
-    meta::cpp2::ColumnDef col3;
-    col3.name = "startYear";
-    col3.type = meta::cpp2::PropertyType::INT64;
-    schema->addField(std::move(col3.name), std::move(col3.type));
-
-    meta::cpp2::ColumnDef col4;
-    col4.name = "endYear";
-    col4.type = meta::cpp2::PropertyType::INT64;
-    schema->addField(std::move(col4.name), std::move(col4.type));
-
-    meta::cpp2::ColumnDef col5;
-    col5.name = "teamCareer";
-    col5.type = meta::cpp2::PropertyType::INT64;
-    schema->addField(std::move(col5.name), std::move(col5.type));
-
-    meta::cpp2::ColumnDef col6;
-    col6.name = "teamGames";
-    col6.type = meta::cpp2::PropertyType::INT64;
-    schema->addField(std::move(col6.name), std::move(col6.type));
-
-    meta::cpp2::ColumnDef col7;
-    col7.name = "teamAvgScore";
-    col7.type = meta::cpp2::PropertyType::DOUBLE;
-    schema->addField(std::move(col7.name), std::move(col7.type));
+    schema->addField("playerName", meta::cpp2::PropertyType::STRING, 0, false, "");
+    schema->addField("teamName", meta::cpp2::PropertyType::STRING, 0, false, "");
+    schema->addField("startYear", meta::cpp2::PropertyType::INT64, 0, false, 2020L);
+    schema->addField("endYear", meta::cpp2::PropertyType::INT64, 0, false, 2020L);
+    schema->addField("teamCareer", meta::cpp2::PropertyType::INT64, 0, false, 1L);
+    schema->addField("teamGames", meta::cpp2::PropertyType::INT64, 0, false, 1L);
+    schema->addField("teamAvgScore", meta::cpp2::PropertyType::DOUBLE, 0, false, 0.0);
 
     // Set ttl property
     if (FLAGS_mock_ttl_col) {
-        meta::cpp2::ColumnDef ttlCol;
-        ttlCol.name = "insertTime";
-        ttlCol.type = meta::cpp2::PropertyType::INT64;
-        schema->addField(std::move(ttlCol.name), std::move(ttlCol.type));
-
+        schema->addField("insertTime", meta::cpp2::PropertyType::INT64, 0, false, 0L);
         meta::cpp2::SchemaProp prop;
         prop.set_ttl_col("insertTime");
         prop.set_ttl_duration(FLAGS_mock_ttl_duration);
@@ -429,48 +348,20 @@ std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockServeSchema(SchemaVer 
     }
 
     // Use default value
-    meta::cpp2::ColumnDef col8;
-    col8.name = "type";
-    col8.type = meta::cpp2::PropertyType::STRING;
-    Value defaultVal = "trade";
-    schema->addField(std::move(col8.name), std::move(col8.type), 0, false, defaultVal);
-
+    schema->addField("type", meta::cpp2::PropertyType::STRING, 0, false, "trade");
     // Use nullable
-    meta::cpp2::ColumnDef col9;
-    col9.name = "champions";
-    col9.type = meta::cpp2::PropertyType::INT64;
-    schema->addField(std::move(col9.name), std::move(col9.type), 0, true);
+    schema->addField("champions", meta::cpp2::PropertyType::INT64, 0, true);
 
     return schema;
 }
 
 std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockTeammateSchema(SchemaVer ver) {
     std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(ver));
-    meta::cpp2::ColumnDef col1;
-    col1.name = "player1";
-    col1.type = meta::cpp2::PropertyType::STRING;
-    schema->addField(std::move(col1.name), std::move(col1.type));
-
-    meta::cpp2::ColumnDef col2;
-    col2.name = "player2";
-    col2.type = meta::cpp2::PropertyType::STRING;
-    schema->addField(std::move(col2.name), std::move(col2.type));
-
-    meta::cpp2::ColumnDef col3;
-    col3.name = "teamName";
-    col3.type = meta::cpp2::PropertyType::STRING;
-    schema->addField(std::move(col3.name), std::move(col3.type));
-
-    meta::cpp2::ColumnDef col4;
-    col4.name = "startYear";
-    col4.type = meta::cpp2::PropertyType::INT64;
-    schema->addField(std::move(col4.name), std::move(col4.type));
-
-    meta::cpp2::ColumnDef col5;
-    col5.name = "endYear";
-    col5.type = meta::cpp2::PropertyType::INT64;
-    schema->addField(std::move(col5.name), std::move(col5.type));
-
+    schema->addField("player1", meta::cpp2::PropertyType::STRING);
+    schema->addField("player2", meta::cpp2::PropertyType::STRING);
+    schema->addField("teamName", meta::cpp2::PropertyType::STRING);
+    schema->addField("startYear", meta::cpp2::PropertyType::INT64);
+    schema->addField("endYear", meta::cpp2::PropertyType::INT64);
     return schema;
 }
 
@@ -530,162 +421,49 @@ MockData::mockEdgeIndexColumns() {
 
 std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockGeneralTagSchemaV1() {
     std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(0));
-    meta::cpp2::ColumnDef col;
-    col.name = "col_bool";
-    col.type = meta::cpp2::PropertyType::BOOL;
-    schema->addField(std::move(col.name), std::move(col.type));
-
-    col.name = "col_int";
-    col.type = meta::cpp2::PropertyType::INT64;
-    schema->addField(std::move(col.name), std::move(col.type));
-
-    col.name = "col_float";
-    col.type = meta::cpp2::PropertyType::FLOAT;
-    schema->addField(std::move(col.name), std::move(col.type));
-
-    col.name = "col_double";
-    col.type = meta::cpp2::PropertyType::DOUBLE;
-    schema->addField(std::move(col.name), std::move(col.type));
-
-    col.name = "col_str";
-    col.type = meta::cpp2::PropertyType::STRING;
-    schema->addField(std::move(col.name), std::move(col.type));
-
+    schema->addField("col_bool", meta::cpp2::PropertyType::BOOL);
+    schema->addField("col_int", meta::cpp2::PropertyType::INT64);
+    schema->addField("col_float", meta::cpp2::PropertyType::FLOAT);
+    schema->addField("col_double", meta::cpp2::PropertyType::DOUBLE);
+    schema->addField("col_str", meta::cpp2::PropertyType::STRING);
     return schema;
  }
 
 std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockGeneralTagSchemaV2() {
     std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(1));
-    meta::cpp2::ColumnDef col;
-    col.name = "col_bool";
-    col.type = meta::cpp2::PropertyType::BOOL;
-    schema->addField(std::move(col.name), std::move(col.type));
-
-    col.name = "col_int";
-    col.type = meta::cpp2::PropertyType::INT64;
-    schema->addField(std::move(col.name), std::move(col.type));
-
-    col.name = "col_float";
-    col.type = meta::cpp2::PropertyType::FLOAT;
-    schema->addField(std::move(col.name), std::move(col.type));
-
-    col.name = "col_double";
-    col.type = meta::cpp2::PropertyType::DOUBLE;
-    schema->addField(std::move(col.name), std::move(col.type));
-
-    col.name = "col_str";
-    col.type = meta::cpp2::PropertyType::STRING;
-    schema->addField(std::move(col.name), std::move(col.type));
-
-    col.name = "col_int8";
-    col.type = meta::cpp2::PropertyType::INT8;
-    schema->addField(std::move(col.name), std::move(col.type));
-
-    col.name = "col_int16";
-    col.type = meta::cpp2::PropertyType::INT16;
-    schema->addField(std::move(col.name), std::move(col.type));
-
-    col.name = "col_int32";
-    col.type = meta::cpp2::PropertyType::INT32;
-    schema->addField(std::move(col.name), std::move(col.type));
-
-    col.name = "col_timestamp";
-    col.type = meta::cpp2::PropertyType::TIMESTAMP;
-    schema->addField(std::move(col.name), std::move(col.type));
-
-    col.name = "col_date";
-    col.type = meta::cpp2::PropertyType::DATE;
-    schema->addField(std::move(col.name), std::move(col.type));
-
-    col.name = "col_datetime";
-    col.type = meta::cpp2::PropertyType::DATETIME;
-    schema->addField(std::move(col.name), std::move(col.type));
+    schema->addField("col_bool", meta::cpp2::PropertyType::BOOL);
+    schema->addField("col_int", meta::cpp2::PropertyType::INT64);
+    schema->addField("col_float", meta::cpp2::PropertyType::FLOAT);
+    schema->addField("col_double", meta::cpp2::PropertyType::DOUBLE);
+    schema->addField("col_str", meta::cpp2::PropertyType::STRING);
+    schema->addField("col_int8", meta::cpp2::PropertyType::INT8);
+    schema->addField("col_int16", meta::cpp2::PropertyType::INT16);
+    schema->addField("col_int32", meta::cpp2::PropertyType::INT32);
+    schema->addField("col_timestamp", meta::cpp2::PropertyType::TIMESTAMP);
+    schema->addField("col_date", meta::cpp2::PropertyType::DATE);
+    schema->addField("col_datetime", meta::cpp2::PropertyType::DATETIME);
     return schema;
 }
 
 std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockTypicaSchemaV2() {
     std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(0));
-    meta::cpp2::ColumnDef col;
-    col.name = "col_bool";
-    col.type = meta::cpp2::PropertyType::BOOL;
-    schema->addField(std::move(col.name), std::move(col.type));
-
-    col.name = "col_bool_null";
-    col.type = meta::cpp2::PropertyType::BOOL;
-    col.nullable = true;
-    schema->addField(std::move(col.name), std::move(col.type), 0,
-                     std::move(col.nullable), std::move(col.default_value));
-
-    col.name = "col_bool_default";
-    col.type = meta::cpp2::PropertyType::BOOL;
-    col.default_value = Value(true);
-    schema->addField(std::move(col.name), std::move(col.type), 0,
-                     std::move(col.nullable), std::move(col.default_value));
-
-    col.name = "col_int";
-    col.type = meta::cpp2::PropertyType::INT64;
-    schema->addField(std::move(col.name), std::move(col.type));
-
-    col.name = "col_int_null";
-    col.type = meta::cpp2::PropertyType::INT64;
-    col.nullable = true;
-    schema->addField(std::move(col.name), std::move(col.type), 0,
-                     std::move(col.nullable), std::move(col.default_value));
-
-    col.name = "col_int_default";
-    col.type = meta::cpp2::PropertyType::INT64;
-    col.default_value = Value(20L);
-    schema->addField(std::move(col.name), std::move(col.type), 0,
-                     std::move(col.nullable), std::move(col.default_value));
-
-    col.name = "col_float";
-    col.type = meta::cpp2::PropertyType::FLOAT;
-    schema->addField(std::move(col.name), std::move(col.type));
-
-    col.name = "col_float_null";
-    col.type = meta::cpp2::PropertyType::FLOAT;
-    col.nullable = true;
-    schema->addField(std::move(col.name), std::move(col.type), 0,
-                     std::move(col.nullable), std::move(col.default_value));
-
-    col.name = "col_float_default";
-    col.type = meta::cpp2::PropertyType::FLOAT;
-    col.default_value = Value(2.2F);
-    schema->addField(std::move(col.name), std::move(col.type), 0,
-                     std::move(col.nullable), std::move(col.default_value));
-
-    col.name = "col_str";
-    col.type = meta::cpp2::PropertyType::STRING;
-    schema->addField(std::move(col.name), std::move(col.type));
-
-    col.name = "col_str_null";
-    col.type = meta::cpp2::PropertyType::STRING;
-    col.nullable = true;
-    schema->addField(std::move(col.name), std::move(col.type), 0,
-                     std::move(col.nullable), std::move(col.default_value));
-
-    col.name = "col_str_default";
-    col.type = meta::cpp2::PropertyType::STRING;
-    col.default_value = Value("sky");
-    schema->addField(std::move(col.name), std::move(col.type), 0,
-                     std::move(col.nullable), std::move(col.default_value));
-
-    col.name = "col_date";
-    col.type = meta::cpp2::PropertyType::DATE;
-    schema->addField(std::move(col.name), std::move(col.type));
-
-    col.name = "col_date_null";
-    col.type = meta::cpp2::PropertyType::DATE;
-    col.nullable = true;
-    schema->addField(std::move(col.name), std::move(col.type), 0,
-                     std::move(col.nullable), std::move(col.default_value));
+    schema->addField("col_bool", meta::cpp2::PropertyType::BOOL);
+    schema->addField("col_bool_null", meta::cpp2::PropertyType::BOOL, 0, true);
+    schema->addField("col_bool_default", meta::cpp2::PropertyType::BOOL, 0, false, true);
+    schema->addField("col_int", meta::cpp2::PropertyType::INT64);
+    schema->addField("col_int_null", meta::cpp2::PropertyType::INT64, 0, true);
+    schema->addField("col_int_default", meta::cpp2::PropertyType::INT64, 0, false, 20L);
+    schema->addField("col_float", meta::cpp2::PropertyType::FLOAT);
+    schema->addField("col_float_null", meta::cpp2::PropertyType::FLOAT, 0, true);
+    schema->addField("col_float_default", meta::cpp2::PropertyType::FLOAT, 0, false, 2.2F);
+    schema->addField("col_str", meta::cpp2::PropertyType::STRING);
+    schema->addField("col_str_null", meta::cpp2::PropertyType::STRING, 0, true);
+    schema->addField("col_str_default", meta::cpp2::PropertyType::STRING, 0, false, "sky");
+    schema->addField("col_date", meta::cpp2::PropertyType::DATE);
+    schema->addField("col_date_null", meta::cpp2::PropertyType::DATE, 0, true);
 
     const Date date = {2020, 2, 20};
-    col.name = "col_date_default";
-    col.type = meta::cpp2::PropertyType::DATE;
-    col.default_value = Value(date);
-    schema->addField(std::move(col.name), std::move(col.type), 0,
-                     std::move(col.nullable), std::move(col.default_value));
+    schema->addField("col_date_default", meta::cpp2::PropertyType::DATE, 0, false, date);
 
     return schema;
 }
@@ -804,6 +582,17 @@ std::vector<VertexData> MockData::mockVertices() {
     return ret;
 }
 
+std::unordered_map<PartitionID, std::vector<VertexData>>
+MockData::mockVerticesofPart(int32_t parts) {
+    std::unordered_map<PartitionID, std::vector<VertexData>> ret;
+    auto verticesVec = mockVertices();
+    for (auto& vertexData : verticesVec) {
+        auto partId = std::hash<std::string>()(vertexData.vId_) % parts + 1;
+        ret[partId].emplace_back(std::move(vertexData));
+    }
+    return ret;
+}
+
 std::vector<VertexID> MockData::mockVerticeIds() {
     std::vector<VertexID> ret;
     // Multiple vertices, each vertex has two tags, player and team
@@ -888,6 +677,17 @@ std::vector<EdgeData> MockData::mockMultiEdges() {
         auto reverseAntiData = getReverseEdge(antiData);
         ret.emplace_back(std::move(antiData));
         ret.emplace_back(std::move(reverseAntiData));
+    }
+    return ret;
+}
+
+std::unordered_map<PartitionID, std::vector<EdgeData>>
+MockData::mockEdgesofPart(int32_t parts) {
+    std::unordered_map<PartitionID, std::vector<EdgeData>> ret;
+    auto edgesVec = mockEdges();
+    for (auto& EdgeData : edgesVec) {
+        auto partId = std::hash<std::string>()(EdgeData.srcId_) % parts + 1;
+        ret[partId].emplace_back(std::move(EdgeData));
     }
     return ret;
 }

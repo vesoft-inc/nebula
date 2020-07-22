@@ -10,6 +10,7 @@
 #include "common/base/Base.h"
 #include "common/expression/Expression.h"
 #include "storage/exec/HashJoinNode.h"
+#include "storage/context/StorageExpressionContext.h"
 
 namespace nebula {
 namespace storage {
@@ -21,7 +22,7 @@ must make sure that the upstream only output only tag data or edge data, but not
 
 As for GetNeighbors, it will have filter that involves both tag and edge expression. In
 that case, FilterNode has a upstream of HashJoinNode, which will keeps poping out edge
-data. All tage data has been put into ExpressionContext before FilterNode is executed. 
+data. All tage data has been put into ExpressionContext before FilterNode is executed.
 By that means, it can check the filter of tag + edge.
 */
 template<typename T>
@@ -29,16 +30,12 @@ class FilterNode : public IterateNode<T> {
 public:
     FilterNode(PlanContext* planCtx,
                IterateNode<T>* upstream,
-               bool isEdge,
                StorageExpressionContext* expCtx = nullptr,
                Expression* exp = nullptr)
         : IterateNode<T>(upstream)
         , planContext_(planCtx)
-        , isEdge_(isEdge)
         , expCtx_(expCtx)
-        , exp_(exp) {
-        UNUSED(planContext_);
-    }
+        , filterExp_(exp) {}
 
     kvstore::ResultCode execute(PartitionID partId, const T& vId) override {
         auto ret = RelNode<T>::execute(partId, vId);
@@ -46,36 +43,41 @@ public:
             return ret;
         }
 
-        while (this->valid() && !check()) {
-            this->next();
-        }
+        do {
+            if (planContext_->resultStat_ == ResultStatus::ILLEGAL_DATA) {
+                break;
+            }
+            if (this->valid() && !check()) {
+                planContext_->resultStat_ = ResultStatus::FILTER_OUT;
+                this->next();
+                continue;
+            }
+            break;
+        } while (true);
         return kvstore::ResultCode::SUCCEEDED;
     }
 
 private:
     // return true when the value iter points to a value which can filter
     bool check() override {
-        if (exp_ != nullptr) {
-            if (isEdge_) {
-                expCtx_->reset(this->reader(), this->key(), planContext_->edgeName_, isEdge_);
-            } else {
-                expCtx_->reset(this->reader(), this->key(), planContext_->tagName_, isEdge_);
+        if (filterExp_ != nullptr) {
+            expCtx_->reset(this->reader(), this->key());
+            // result is false when filter out
+            auto result = filterExp_->eval(*expCtx_);
+            // NULL is always false
+            auto ret = result.toBool();
+            if (ret.ok() && ret.value()) {
+                return true;
             }
-            auto result = exp_->eval(*expCtx_);
-            if (result.type() == Value::Type::BOOL) {
-                return result.getBool();
-            } else {
-                return false;
-            }
+            return false;
         }
         return true;
     }
 
 private:
-    PlanContext* planContext_;
-    bool isEdge_;
-    StorageExpressionContext* expCtx_;
-    Expression* exp_;
+    PlanContext                      *planContext_;
+    StorageExpressionContext         *expCtx_;
+    Expression                       *filterExp_;
 };
 
 }  // namespace storage

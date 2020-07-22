@@ -23,13 +23,19 @@ If we need to read value from the RowReader, be sure to set the reader by callin
 it only supports read from **one row**. So the reader is either a row of vertex or a row of edge.
 This mode is used in GetNeighbors at present.
 
-If we need to read value from not from user defined plase, just set the related value by
+If we need to read value from a user defined plase, just set the related value by
 `setTagProp` and `setEdgeProp`. Be sure about not pass the RowReader by `reset`.
 */
 class StorageExpressionContext final : public ExpressionContext {
 public:
-    explicit StorageExpressionContext(size_t vIdLen)
-        : vIdLen_(vIdLen) {}
+    explicit StorageExpressionContext(size_t vIdLen,
+                                      const std::string& name = "",
+                                      const meta::NebulaSchemaProvider* schema = nullptr,
+                                      bool isEdge = false)
+        : vIdLen_(vIdLen)
+        , name_(name)
+        , schema_(schema)
+        , isEdge_(isEdge) {}
 
     // Get the latest version value for the given variable name, such as $a, $b
     const Value& getVar(const std::string&) const override {
@@ -71,28 +77,38 @@ public:
 
     void setVar(const std::string&, Value) override {}
 
-    void reset(RowReader* reader, folly::StringPiece key, folly::StringPiece name, bool isEdge) {
+    // isEdge_ set in ctor
+    void reset(RowReader* reader,
+               folly::StringPiece key) {
         reader_ = reader;
         key_ = key;
-        name_ = name;
-        isEdge_ = isEdge;
     }
 
     void reset() {
         reader_ = nullptr;
         key_ = "";
+        name_ = "";
+        schema_ = nullptr;
+    }
+
+    void resetSchema(const std::string& name,
+                     const meta::NebulaSchemaProvider* schema,
+                     bool isEdge) {
+        name_ = name;
+        schema_ = schema;
+        isEdge_ = isEdge;
     }
 
     void setTagProp(const std::string& tagName,
                     const std::string& prop,
                     nebula::Value value) {
-        tagFilters_.emplace(std::make_pair(tagName, prop), std::move(value));
+        tagFilters_[std::make_pair(tagName, prop)] = std::move(value);
     }
 
     void setEdgeProp(const std::string& edgeName,
                      const std::string& prop,
                      nebula::Value value) {
-        edgeFilters_.emplace(std::make_pair(edgeName, prop), std::move(value));
+        edgeFilters_[std::make_pair(edgeName, prop)] = std::move(value);
     }
 
     void clear() {
@@ -100,14 +116,18 @@ public:
         edgeFilters_.clear();
     }
 
-private:
-    size_t vIdLen_;
+    Value readValue(const std::string& propName) const;
 
-    folly::StringPiece key_;
-    RowReader* reader_;
+private:
+    size_t                             vIdLen_;
+
+    RowReader                         *reader_;
+    folly::StringPiece                 key_;
     // tag or edge name
-    folly::StringPiece name_;
-    bool isEdge_;
+    std::string                        name_;
+    // tag or edge latest schema
+    const meta::NebulaSchemaProvider  *schema_;
+    bool                               isEdge_;
 
     // <tagName, property> -> value
     std::unordered_map<std::pair<std::string, std::string>, nebula::Value> tagFilters_;

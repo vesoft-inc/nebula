@@ -7,6 +7,7 @@
 #include "storage/mutate/DeleteEdgesProcessor.h"
 #include <algorithm>
 #include "utils/NebulaKeyUtils.h"
+#include "utils/IndexKeyUtils.h"
 
 namespace nebula {
 namespace storage {
@@ -136,9 +137,9 @@ DeleteEdgesProcessor::deleteEdges(PartitionID partId,
                             }
                         }
                         std::vector<Value::Type> colsType;
-                        auto values = collectIndexValues(reader.get(),
-                                                         index->get_fields(),
-                                                         colsType);
+                        auto values = IndexKeyUtils::collectIndexValues(reader.get(),
+                                                                        index->get_fields(),
+                                                                        colsType);
                         if (!values.ok()) {
                             continue;
                         }

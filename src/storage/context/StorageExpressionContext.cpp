@@ -10,6 +10,26 @@
 namespace nebula {
 namespace storage {
 
+Value StorageExpressionContext::readValue(const std::string& propName) const {
+    if (!schema_) {
+        return Value::kNullValue;
+    }
+    auto field = schema_->field(propName);
+    if (!field) {
+       return Value::kNullValue;
+    }
+    auto value = reader_->getValueByName(propName);
+    if (value.type() == Value::Type::NULLVALUE) {
+        // read null value
+        auto nullType = value.getNull();
+        if (nullType == NullType::UNKNOWN_PROP && field->hasDefault()) {
+            return field->defaultValue();
+        }
+        return Value::kNullValue;
+    }
+    return value;
+}
+
 // Get the specified property from the edge, such as edgename.prop_name
 Value StorageExpressionContext::getEdgeProp(const std::string& edgeName,
                                             const std::string& prop) const {
@@ -26,7 +46,7 @@ Value StorageExpressionContext::getEdgeProp(const std::string& edgeName,
         } else if (prop == kType) {
             return NebulaKeyUtils::getEdgeType(vIdLen_, key_);
         } else {
-            return reader_->getValueByName(prop);
+            return readValue(prop);
         }
     } else {
         auto iter = edgeFilters_.find(std::make_pair(edgeName, prop));
@@ -44,7 +64,7 @@ Value StorageExpressionContext::getSrcProp(const std::string& tagName,
         if (tagName != name_) {
             return Value::kNullValue;
         }
-        return reader_->getValueByName(prop);
+        return readValue(prop);
     } else {
         auto iter = tagFilters_.find(std::make_pair(tagName, prop));
         if (iter == tagFilters_.end()) {

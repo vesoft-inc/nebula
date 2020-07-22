@@ -41,6 +41,10 @@ public:
             return ret;
         }
 
+        if (planContext_->resultStat_ == ResultStatus::ILLEGAL_DATA) {
+            return kvstore::ResultCode::ERR_INVALID_DATA;
+        }
+
         std::vector<Value> row;
         // vertexId is the first column
         row.emplace_back(vId);

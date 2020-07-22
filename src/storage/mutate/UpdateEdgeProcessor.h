@@ -1,4 +1,4 @@
-/* Copyright (c) 2019 vesoft inc. All rights reserved.
+/* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -8,6 +8,10 @@
 #define STORAGE_MUTATE_UPDATEEDGEROCESSOR_H_
 
 #include "storage/query/QueryBaseProcessor.h"
+#include "storage/exec/StoragePlan.h"
+#include "storage/context/StorageExpressionContext.h"
+#include "common/expression/Expression.h"
+#include "common/interface/gen-cpp2/storage_types.h"
 
 namespace nebula {
 namespace storage {
@@ -15,58 +19,56 @@ namespace storage {
 class UpdateEdgeProcessor
     : public QueryBaseProcessor<cpp2::UpdateEdgeRequest, cpp2::UpdateResponse> {
 public:
-    static UpdateEdgeProcessor* instance(kvstore::KVStore* kvstore,
-                                         meta::SchemaManager* schemaMan,
-                                         meta::IndexManager* indexMan,
+    static UpdateEdgeProcessor* instance(StorageEnv* env,
                                          stats::Stats* stats) {
-        return new UpdateEdgeProcessor(kvstore, schemaMan, indexMan, stats);
+        return new UpdateEdgeProcessor(env, stats);
     }
 
-    void process(const cpp2::UpdateEdgeRequest& req);
+    void process(const cpp2::UpdateEdgeRequest& req) override;
 
 private:
-    explicit UpdateEdgeProcessor(kvstore::KVStore* kvstore,
-                                 meta::SchemaManager* schemaMan,
-                                 meta::IndexManager* indexMan,
-                                 stats::Stats* stats)
+    UpdateEdgeProcessor(StorageEnv* env, stats::Stats* stats)
         : QueryBaseProcessor<cpp2::UpdateEdgeRequest,
-                             cpp2::UpdateResponse>(kvstore, schemaMan, stats)
-        , indexMan_(indexMan) {}
+                             cpp2::UpdateResponse>(env, stats) {}
 
-    kvstore::ResultCode processVertex(PartitionID, VertexID) override {
-        LOG(FATAL) << "Unimplement!";
-        return kvstore::ResultCode::SUCCEEDED;
+    cpp2::ErrorCode checkAndBuildContexts(const cpp2::UpdateEdgeRequest& req) override;
+
+    StoragePlan<cpp2::EdgeKey> buildPlan(nebula::DataSet* result);
+
+    // Get the schema of all versions of edgeType in the spaceId
+    cpp2::ErrorCode buildEdgeSchema();
+
+    // Build EdgeContext by parsing return props expressions,
+    // filter expression, update props expression
+    cpp2::ErrorCode buildEdgeContext(const cpp2::UpdateEdgeRequest& req);
+
+    void onProcessFinished() override;
+
+    std::vector<Expression*> getReturnPropsExp() {
+        std::vector<Expression*> result;
+        result.resize(returnPropsExp_.size());
+        auto get = [] (auto &ptr) {return ptr.get(); };
+        std::transform(returnPropsExp_.begin(), returnPropsExp_.end(), result.begin(), get);
+        return result;
     }
-
-    void onProcessFinished(int32_t retNum) override;
-
-    cpp2::ErrorCode checkAndBuildContexts(const cpp2::UpdateEdgeRequest& req);
-
-    kvstore::ResultCode collectVertexProps(
-                            const PartitionID partId,
-                            const VertexID vId,
-                            const TagID tagId,
-                            const std::vector<PropContext>& props);
-
-    kvstore::ResultCode collectEdgesProps(const PartitionID partId,
-                                          const cpp2::EdgeKey& edgeKey);
-
-    FilterResult checkFilter(const PartitionID partId, const cpp2::EdgeKey& edgeKey);
-
-    std::string updateAndWriteBack(PartitionID partId, const cpp2::EdgeKey& edgeKey);
 
 private:
     bool                                                            insertable_{false};
-    std::vector<storage::cpp2::UpdateItem>                          updateItems_;
-    std::vector<std::unique_ptr<Expression>>                        returnColumnsExp_;
-    std::unordered_map<std::pair<TagID, std::string>, VariantType>  tagFilters_;
-    std::unordered_map<std::string, VariantType>                    edgeFilters_;
-    std::string                                                     key_;
-    std::string                                                     val_;
-    std::unique_ptr<RowUpdater>                                     updater_;
-    meta::IndexManager*                                             indexMan_{nullptr};
-    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>           indexes_;
-    std::atomic<FilterResult>                                  filterResult_{FilterResult::E_ERROR};
+
+    cpp2::EdgeKey                                                   edgeKey_;
+
+    std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>>     indexes_;
+
+    std::unique_ptr<StorageExpressionContext>                       expCtx_;
+
+    // update <prop name, new value expression>
+    std::vector<storage::cpp2::UpdatedProp>                         updatedProps_;
+
+    // return props expression
+    std::vector<std::unique_ptr<Expression>>                        returnPropsExp_;
+
+    // condition expression
+    std::unique_ptr<Expression>                                     filterExp_;
 };
 
 }  // namespace storage

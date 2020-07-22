@@ -49,6 +49,9 @@ public:
         }
         result_.setList(nebula::List());
         auto& result = result_.mutableList();
+        if (planContext_->resultStat_ == ResultStatus::ILLEGAL_DATA) {
+            return kvstore::ResultCode::ERR_INVALID_DATA;
+        }
 
         // add result of each tag node to tagResult
         for (auto* tagNode : tagNodes_) {
@@ -127,6 +130,7 @@ private:
             CHECK(schemaIter != edgeContext_->schemas_.end());
             CHECK(!schemaIter->second.empty());
 
+            planContext_->edgeSchema_ = schemaIter->second.back().get();
             // idx is the index in all edges need to return
             auto idx = idxIter->second;
             planContext_->edgeType_ = type;
@@ -135,6 +139,8 @@ private:
             // the offset of tags and other fields
             planContext_->columnIdx_ = edgeContext_->offset_ + idx;
             planContext_->props_ = &(edgeContext_->propContexts_[idx].second);
+
+            expCtx_->resetSchema(planContext_->edgeName_,  planContext_->edgeSchema_, true);
         }
     }
 
