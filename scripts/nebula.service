@@ -89,7 +89,7 @@ case ${TARGET} in
         TARGETS=(${TARGET})
         ;;
     all)
-        TARGETS=(metad graphd storaged)
+        TARGETS=(metad storaged graphd)
         ;;
     *)
         ERROR "Unknown daemon \`${DAEMON}'"
