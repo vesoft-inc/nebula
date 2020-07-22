@@ -302,7 +302,7 @@ public:
     listTagIndexes(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<bool>>
-    rebuildTagIndex(GraphSpaceID spaceID, std::string name, bool isOffline);
+    rebuildTagIndex(GraphSpaceID spaceID, std::string name);
 
     folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>>
     listTagIndexStatus(GraphSpaceID spaceId);
@@ -325,7 +325,7 @@ public:
     listEdgeIndexes(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<bool>>
-    rebuildEdgeIndex(GraphSpaceID spaceId, std::string name, bool isOffline);
+    rebuildEdgeIndex(GraphSpaceID spaceId, std::string name);
 
     folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>>
     listEdgeIndexStatus(GraphSpaceID spaceId);
