@@ -64,6 +64,11 @@ public:
         return Status::Error("Unimplemented");
     }
 
+    StatusOr<std::vector<std::string>> getAllTag(GraphSpaceID) override {
+        LOG(FATAL) << "Unimplemented";
+        return Status::Error("Unimplemented");
+    }
+
     void init(nebula::meta::MetaClient *) override {
     }
 
