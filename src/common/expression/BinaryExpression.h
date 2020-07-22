@@ -29,8 +29,24 @@ public:
         return lhs_.get();
     }
 
+    Expression* left() {
+        return lhs_.get();
+    }
+
+    void setLeft(Expression* expr) {
+        lhs_.reset(expr);
+    }
+
     const Expression* right() const {
         return rhs_.get();
+    }
+
+    Expression* right() {
+        return rhs_.get();
+    }
+
+    void setRight(Expression* expr) {
+        rhs_.reset(expr);
     }
 
 protected:

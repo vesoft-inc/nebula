@@ -26,6 +26,10 @@ public:
         return args_;
     }
 
+    auto& args() {
+        return args_;
+    }
+
     size_t numArgs() const {
         return args_.size();
     }
@@ -65,6 +69,14 @@ public:
 
     const ArgumentList* args() const {
         return args_.get();
+    }
+
+    ArgumentList* args() {
+        return args_.get();
+    }
+
+    void setArgs(ArgumentList* args) {
+        args_.reset(args);
     }
 
 private:

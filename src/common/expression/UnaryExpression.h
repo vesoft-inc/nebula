@@ -30,6 +30,14 @@ public:
         return operand_.get();
     }
 
+    Expression* operand() {
+        return operand_.get();
+    }
+
+    void setOperand(Expression* expr) {
+        operand_.reset(expr);
+    }
+
 private:
     void writeTo(Encoder& encoder) const override;
 
