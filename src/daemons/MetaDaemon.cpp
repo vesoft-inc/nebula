@@ -48,6 +48,7 @@ DEFINE_bool(daemonize, true, "Whether run as a daemon process");
 DECLARE_bool(check_leader);
 
 static std::unique_ptr<apache::thrift::ThriftServer> gServer;
+static std::unique_ptr<nebula::kvstore::KVStore> gKVStore;
 static void signalHandler(int sig);
 static Status setupSignalHandler();
 
@@ -210,8 +211,8 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    auto kvstore = initKV(peersRet.value(), localhost);
-    if (kvstore == nullptr) {
+    gKVStore = initKV(peersRet.value(), localhost);
+    if (gKVStore == nullptr) {
         LOG(ERROR) << "Init kv failed!";
         return EXIT_FAILURE;
     }
@@ -222,7 +223,7 @@ int main(int argc, char *argv[]) {
     pool->start(FLAGS_meta_http_thread_num, "http thread pool");
 
     auto webSvc = std::make_unique<nebula::WebService>();
-    status = initWebService(webSvc.get(), kvstore.get(), helper.get(), pool.get());
+    status = initWebService(webSvc.get(), gKVStore.get(), helper.get(), pool.get());
     if (!status.ok()) {
         LOG(ERROR) << "Init web service failed: " << status;
         return EXIT_FAILURE;
@@ -230,7 +231,7 @@ int main(int argc, char *argv[]) {
 
     {
         nebula::meta::JobManager* jobMgr = nebula::meta::JobManager::getInstance();
-        if (!jobMgr->init(kvstore.get())) {
+        if (!jobMgr->init(gKVStore.get())) {
             LOG(ERROR) << "Init job manager failed";
             return EXIT_FAILURE;
         }
@@ -240,16 +241,16 @@ int main(int argc, char *argv[]) {
         /**
          *  Only leader part needed.
          */
-        auto ret = kvstore->partLeader(nebula::meta::kDefaultSpaceId,
-                                       nebula::meta::kDefaultPartId);
+        auto ret = gKVStore->partLeader(nebula::meta::kDefaultSpaceId,
+                                        nebula::meta::kDefaultPartId);
         if (!nebula::ok(ret)) {
             LOG(ERROR) << "Part leader get failed";
             return EXIT_FAILURE;
         }
         if (nebula::value(ret) == localhost) {
             LOG(INFO) << "Check and init root user";
-            if (!nebula::meta::RootUserMan::isUserExists(kvstore.get())) {
-                if(!nebula::meta::RootUserMan::initRootUser(kvstore.get())) {
+            if (!nebula::meta::RootUserMan::isUserExists(gKVStore.get())) {
+                if (!nebula::meta::RootUserMan::initRootUser(gKVStore.get())) {
                     LOG(ERROR) << "Init root user failed";
                     return EXIT_FAILURE;
                 }
@@ -264,7 +265,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kvstore.get(), gClusterId);
+    auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(gKVStore.get(), gClusterId);
     LOG(INFO) << "The meta deamon start on " << localhost;
     try {
         gServer = std::make_unique<apache::thrift::ThriftServer>();
@@ -303,6 +304,10 @@ void signalHandler(int sig) {
             {
                 auto gJobMgr = nebula::meta::JobManager::getInstance();
                 gJobMgr->shutDown();
+            }
+            if (gKVStore) {
+                gKVStore->stop();
+                gKVStore.reset();
             }
             break;
         default:

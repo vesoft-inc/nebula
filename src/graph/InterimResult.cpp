@@ -191,11 +191,14 @@ InterimResult::buildIndex(const std::string &vidColumn) const {
         auto name = schema->getFieldName(i);
         if (vidColumn == name) {
             VLOG(1) << "col name: " << vidColumn << ", col index: " << i;
-            if (schema->getFieldType(i).type != SupportedType::VID) {
+            if (schema->getFieldType(i).type != SupportedType::INT &&
+                schema->getFieldType(i).type != SupportedType::VID &&
+                schema->getFieldType(i).type != SupportedType::TIMESTAMP) {
                 return Status::Error(
-                        "Build internal index for input data failed. "
-                        "The specific vid column `%s' is not type of VID, column index: %ul.",
-                        vidColumn.c_str(), i);
+                    "Build internal index for input data failed. "
+                    "The specific vid column `%s' is not type of VID, INT or TIMESTAMP, "
+                    "column index: %u.",
+                    vidColumn.c_str(), i);
             }
             vidIndex = i;
         }
@@ -255,6 +258,9 @@ InterimResult::buildIndex(const std::string &vidColumn) const {
                     auto rc = rowIter->getInt(i, v);
                     if (rc != ResultType::SUCCEEDED) {
                         return Status::Error("Get int from interim failed.");
+                    }
+                    if (i == vidIndex) {
+                        index->vidToRowIndex_.emplace(v, rowIndex++);
                     }
                     row.emplace_back(v);
                     break;
