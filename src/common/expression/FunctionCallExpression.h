@@ -34,6 +34,10 @@ public:
         return args_.size();
     }
 
+    void setArgs(std::vector<std::unique_ptr<Expression>> args) {
+        args_ = std::move(args);
+    }
+
     bool operator==(const ArgumentList& rhs) const;
 
 private:
