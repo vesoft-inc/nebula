@@ -284,6 +284,7 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
 
     auto tagItemVec = tagRet.value();
     auto edgeItemVec = edgeRet.value();
+    allEdgeMap[spaceId] = {};
     TagSchemas tagSchemas;
     EdgeSchemas edgeSchemas;
     TagID lastTagId = -1;
@@ -350,18 +351,11 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
         edgeSchemas[edgeIt.edge_type][schema->getVersion()] = std::move(schema);
         edgeNameTypeMap.emplace(std::make_pair(spaceId, edgeIt.edge_name), edgeIt.edge_type);
         edgeTypeNameMap.emplace(std::make_pair(spaceId, edgeIt.edge_type), edgeIt.edge_name);
-        auto it = allEdgeMap.find(spaceId);
-        if (it == allEdgeMap.end()) {
-            std::vector<std::string> v = {edgeIt.edge_name};
-            allEdgeMap.emplace(spaceId, std::move(v));
-            edges.emplace(spaceId, edgeIt.edge_type);
-        } else {
-            if (edges.find({spaceId, edgeIt.edge_type}) != edges.cend()) {
-                continue;
-            }
-            edges.emplace(spaceId, edgeIt.edge_type);
-            it->second.emplace_back(edgeIt.edge_name);
+        if (edges.find({spaceId, edgeIt.edge_type}) != edges.cend()) {
+            continue;
         }
+        edges.emplace(spaceId, edgeIt.edge_type);
+        allEdgeMap[spaceId].emplace_back(edgeIt.edge_name);
         // get the latest edge version
         auto it2 = newestEdgeVerMap.find(std::make_pair(spaceId, edgeIt.edge_type));
         if (it2 != newestEdgeVerMap.end()) {
