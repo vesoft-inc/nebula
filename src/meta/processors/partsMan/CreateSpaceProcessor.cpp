@@ -9,7 +9,7 @@
 
 DEFINE_int32(default_parts_num, 100, "The default number of parts when a space is created");
 DEFINE_int32(default_replica_factor, 1, "The default replica factor when a space is created");
-DEFINE_int32(default_max_parts_num, 100, "The default max partitions number");
+DEFINE_int32(max_parts_num, 16777216, "The default max partitions number");
 
 namespace nebula {
 namespace meta {
@@ -62,7 +62,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         return;
     }
 
-    if (count + partitionNum >= FLAGS_default_max_parts_num) {
+    if (count + partitionNum >= FLAGS_max_parts_num) {
         LOG(ERROR) << "Create Space Failed : TOO MANY PARTITIONS!";
         handleErrorCode(cpp2::ErrorCode::E_TOO_MANY_PARTS);
         onFinished();
