@@ -444,4 +444,25 @@ TEST(StatusOr, ConvertibleButNotConstructible) {
 }
 */
 
+TEST(StatusOr, ReturnIfError) {
+    auto value = []() -> StatusOr<int> { return 1; };
+    auto error = []() -> StatusOr<int> { return Status::Error("error"); };
+    auto returnOk = [=]() {
+        NG_RETURN_IF_ERROR(value());
+        return Status::OK();
+    };
+    auto returnError = [=]() {
+        NG_RETURN_IF_ERROR(error());
+        return Status::OK();
+    };
+    auto returnError2 = [=]() {
+        auto err = error();
+        NG_RETURN_IF_ERROR(err);
+        return Status::OK();
+    };
+    EXPECT_TRUE(returnOk().ok());
+    EXPECT_FALSE(returnError().ok());
+    EXPECT_FALSE(returnError2().ok());
+}
+
 }   // namespace nebula

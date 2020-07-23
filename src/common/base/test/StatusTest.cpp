@@ -94,5 +94,17 @@ TEST(Status, Move) {
     }
 }
 
+TEST(Status, ReturnIfError) {
+    auto testReturnIfError = []() {
+        NG_RETURN_IF_ERROR(Status::Error("error"));
+        return Status::OK();
+    };
+    auto testReturnOK = []() {
+        NG_RETURN_IF_ERROR(Status::OK());
+        return Status::OK();
+    };
+    EXPECT_FALSE(testReturnIfError().ok());
+    EXPECT_TRUE(testReturnOK().ok());
+}
 
 }   // namespace nebula

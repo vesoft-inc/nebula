@@ -54,7 +54,7 @@ public:
         return *this;
     }
 
-    static Status from(Status s) {
+    static Status from(const Status &s) {
         return s;
     }
 
@@ -219,21 +219,21 @@ inline std::ostream& operator<<(std::ostream &os, const Status &status) {
 
 }   // namespace nebula
 
-#define NG_RETURN_IF_ERROR(...)                                                                    \
+#define NG_RETURN_IF_ERROR(s)                                                                      \
     do {                                                                                           \
-        auto s = (__VA_ARGS__);                                                                    \
-        if (UNLIKELY(!s.ok())) {                                                                   \
-            return ::nebula::Status::from(std::move(s));                                           \
+        const auto &__s = (s);                                                                     \
+        if (UNLIKELY(!__s.ok())) {                                                                 \
+            return ::nebula::Status::from(__s);                                                    \
         }                                                                                          \
     } while (0)
 
-#define NG_LOG_AND_RETURN_IF_ERROR(...)                                                            \
+#define NG_LOG_AND_RETURN_IF_ERROR(s)                                                              \
     do {                                                                                           \
-        auto s = (__VA_ARGS__);                                                                    \
-        if (UNLIKELY(!s.ok())) {                                                                   \
-            ::nebula::Status status = ::nebula::Status::from(std::move(s));                        \
-            LOG(ERROR) << status;                                                                  \
-            return status;                                                                         \
+        const auto &__s = (s);                                                                     \
+        if (UNLIKELY(!__s.ok())) {                                                                 \
+            ::nebula::Status __status = ::nebula::Status::from(__s);                               \
+            LOG(ERROR) << __status;                                                                \
+            return __status;                                                                       \
         }                                                                                          \
     } while (0)
 
