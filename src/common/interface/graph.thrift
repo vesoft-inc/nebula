@@ -64,7 +64,8 @@ struct PlanNodeDescription {
     2: required i64                             id;
     3: required binary                          output_var;
     // other description of an executor
-    4: optional map<binary, binary>             description;
+    4: optional map<binary, binary>
+        (cpp.template = "std::unordered_map")   description;
     // If an executor would be executed multi times,
     // the profiling statistics should be multi-versioned.
     5: optional list<ProfilingStats>            profiles;
@@ -80,10 +81,11 @@ enum PlanFormat {
 
 
 struct PlanDescription {
-    1: required list<PlanNodeDescription>   plan_node_descs;
+    1: required list<PlanNodeDescription>     plan_node_descs;
     // map from node id to index of list
-    2: required map<i64, i64>               node_index_map;
-    3: required PlanFormat                  format = PlanFormat.ROW;
+    2: required map<i64, i64>
+        (cpp.template = "std::unordered_map") node_index_map;
+    3: required PlanFormat                    format = PlanFormat.ROW;
 }
 
 
