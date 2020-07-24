@@ -110,7 +110,7 @@ cpp2::ErrorCode GetPropProcessor::checkColumnNames(const std::vector<std::string
     if (colNames.size() != 1 && colNames.size() != 4) {
         return cpp2::ErrorCode::E_INVALID_OPERATION;
     }
-    if (colNames.size() == 1 && colNames[0] == "_vid") {
+    if (colNames.size() == 1 && colNames[0] == kVid) {
         isEdge_ = false;
         return cpp2::ErrorCode::SUCCEEDED;
     } else if (colNames.size() == 4 &&
@@ -130,6 +130,7 @@ cpp2::ErrorCode GetPropProcessor::checkAndBuildContexts(const cpp2::GetPropReque
         return code;
     }
     if (!isEdge_) {
+        resultDataSet_.colNames.emplace_back(kVid);
         code = getSpaceVertexSchema();
         if (code != cpp2::ErrorCode::SUCCEEDED) {
             return code;

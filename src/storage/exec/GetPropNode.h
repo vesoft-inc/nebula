@@ -28,6 +28,8 @@ public:
         }
 
         std::vector<Value> row;
+        // vertexId is the first column
+        row.emplace_back(vId);
         for (auto* tagNode : tagNodes_) {
             const auto& tagName = tagNode->getTagName();
             ret = tagNode->collectTagPropsIfValid(

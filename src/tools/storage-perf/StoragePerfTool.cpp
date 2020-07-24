@@ -274,7 +274,7 @@ private:
     void getNeighborsTask() {
         auto* evb = threadPool_->getEventBase();
         std::vector<std::string> colNames;
-        colNames.emplace_back("_vid");
+        colNames.emplace_back(kVid);
         std::vector<Row> vertices;
         for (auto& vertex : randomVertices()) {
             nebula::Row row;
@@ -369,7 +369,7 @@ private:
     void getVerticesTask() {
         auto* evb = threadPool_->getEventBase();
         nebula::DataSet input;
-        input.colNames = {"_vid"};
+        input.colNames = {kVid};
         nebula::Row row;
         auto vertices = randomVertices();
         for (const auto& vertex : vertices) {

@@ -141,7 +141,7 @@ StoragePlan<VertexID> GetNeighborsProcessor::buildPlan(nebula::DataSet* result,
 }
 
 cpp2::ErrorCode GetNeighborsProcessor::checkAndBuildContexts(const cpp2::GetNeighborsRequest& req) {
-    resultDataSet_.colNames.emplace_back("_vid");
+    resultDataSet_.colNames.emplace_back(kVid);
     // reserve second colname for stat
     resultDataSet_.colNames.emplace_back("_stats");
 

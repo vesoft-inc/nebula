@@ -220,7 +220,7 @@ private:
             cpp2::VertexProp tagProp;
             tagProp.tag = tagId_;
             tagProp.props.emplace_back(propName_);
-            DataSet dataset({"_vid"});
+            DataSet dataset({kVid});
             auto future = client_->getProps(spaceId_, dataset, &props, nullptr, nullptr);
             auto resp = std::move(future).get();
             if (!resp.succeeded()) {

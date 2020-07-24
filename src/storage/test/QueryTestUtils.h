@@ -176,7 +176,7 @@ public:
         cpp2::GetNeighborsRequest req;
         decltype(req.traverse_spec) traverseSpec;
         req.space_id = 1;
-        req.column_names.emplace_back("_vid");
+        req.column_names.emplace_back(kVid);
         for (const auto& vertex : vertices) {
             PartitionID partId = (hash(vertex) % totalParts) + 1;
             nebula::Row row;
@@ -285,7 +285,7 @@ public:
             const std::vector<std::pair<EdgeType, std::vector<std::string>>>& edges) {
         auto colNames = dataSet.colNames;
         ASSERT_EQ(colNames.size(), tags.size() + edges.size() + 3);
-        ASSERT_EQ("_vid", colNames[0]);
+        ASSERT_EQ(kVid, colNames[0]);
         ASSERT_EQ(0, colNames[1].find("_stats"));
         ASSERT_EQ(0, colNames[colNames.size() - 1].find("_expr"));
 

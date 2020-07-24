@@ -19,7 +19,7 @@ cpp2::GetPropRequest buildVertexRequest(
     std::hash<std::string> hash;
     cpp2::GetPropRequest req;
     req.space_id = 1;
-    req.column_names.emplace_back("_vid");
+    req.column_names.emplace_back(kVid);
     for (const auto& vertex : vertices) {
         PartitionID partId = (hash(vertex) % totalParts) + 1;
         nebula::Row row;
@@ -122,9 +122,10 @@ TEST(GetPropTest, PropertyTest) {
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
         nebula::DataSet expected;
-        expected.colNames = {"1:name", "1:age", "1:avgScore"};
-        nebula::Row row({"Tim Duncan", 44, 19.0});
+        expected.colNames = {kVid, "1:name", "1:age", "1:avgScore"};
+        nebula::Row row({"Tim Duncan", "Tim Duncan", 44, 19.0});
         expected.rows.emplace_back(std::move(row));
+        LOG(INFO) << resp.props;
         ASSERT_EQ(expected, resp.props);
     }
     {
@@ -156,7 +157,7 @@ TEST(GetPropTest, PropertyTest) {
     }
 }
 
-TEST(GetPropTest, AllPropertyInOneEntryTest) {
+TEST(GetPropTest, AllPropertyInOneSchemaTest) {
     fs::TempDir rootPath("/tmp/GetPropTest.XXXXXX");
     mock::MockCluster cluster;
     cluster.initStorageKV(rootPath.path());
@@ -182,9 +183,11 @@ TEST(GetPropTest, AllPropertyInOneEntryTest) {
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
         nebula::DataSet expected;
-        expected.colNames = {"1:name", "1:age", "1:playing", "1:career", "1:startYear", "1:endYear",
-                             "1:games", "1:avgScore", "1:serveTeams", "1:country", "1:champions"};
-        nebula::Row row({"Tim Duncan", 44, false, 19, 1997, 2016, 1392, 19.0, 1, "America", 5});
+        expected.colNames = {kVid, "1:name", "1:age", "1:playing", "1:career",
+                             "1:startYear", "1:endYear", "1:games", "1:avgScore",
+                             "1:serveTeams", "1:country", "1:champions"};
+        nebula::Row row({"Tim Duncan", "Tim Duncan", 44, false, 19, 1997, 2016, 1392, 19.0, 1,
+                         "America", 5});
         expected.rows.emplace_back(std::move(row));
         ASSERT_EQ(expected, resp.props);
     }
@@ -224,7 +227,7 @@ TEST(GetPropTest, AllPropertyInOneEntryTest) {
     }
 }
 
-TEST(GetPropTest, AllPropertyInAllEntryTest) {
+TEST(GetPropTest, AllPropertyInAllSchemaTest) {
     fs::TempDir rootPath("/tmp/GetPropTest.XXXXXX");
     mock::MockCluster cluster;
     cluster.initStorageKV(rootPath.path());
@@ -249,7 +252,7 @@ TEST(GetPropTest, AllPropertyInAllEntryTest) {
             std::vector<nebula::Row> expected;
             nebula::Row row;
             std::vector<Value> values {  // player
-                "Tim Duncan", 44, false, 19, 1997, 2016, 1392, 19.0, 1, "America", 5};
+                "Tim Duncan", "Tim Duncan", 44, false, 19, 1997, 2016, 1392, 19.0, 1, "America", 5};
             for (size_t i = 0; i < 1 + 11; i++) {  // team and tag3
                 values.emplace_back(NullType::__NULL__);
             }
@@ -331,6 +334,7 @@ TEST(GetPropTest, AllPropertyInAllEntryTest) {
             std::vector<nebula::Row> expected;
             nebula::Row row;
             std::vector<Value> values;
+            values.emplace_back("Not existed");
             for (size_t i = 0; i < 1 + 11 + 11; i++) {
                 values.emplace_back(NullType::__NULL__);
             }

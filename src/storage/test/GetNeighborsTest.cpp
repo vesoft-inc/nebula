@@ -1176,7 +1176,7 @@ TEST(GetNeighborsTest, FilterTest) {
         ASSERT_EQ(0, resp.result.failed_parts.size());
         // vId, stat, player, serve, expr
         nebula::DataSet expected;
-        expected.colNames = {"_vid",
+        expected.colNames = {kVid,
                              "_stats",
                              "_tag:1:name:age:avgScore",
                              "_edge:+101:teamName:startYear:endYear",
@@ -1222,7 +1222,7 @@ TEST(GetNeighborsTest, FilterTest) {
         ASSERT_EQ(0, resp.result.failed_parts.size());
         // vId, stat, player, serve, expr
         nebula::DataSet expected;
-        expected.colNames = {"_vid",
+        expected.colNames = {kVid,
                              "_stats",
                              "_tag:1:name:age:avgScore",
                              "_edge:+101:teamName:startYear:endYear",
@@ -1274,7 +1274,7 @@ TEST(GetNeighborsTest, FilterTest) {
         ASSERT_EQ(0, resp.result.failed_parts.size());
         // vId, stat, player, serve, expr
         nebula::DataSet expected;
-        expected.colNames = {"_vid",
+        expected.colNames = {kVid,
                              "_stats",
                              "_tag:1:name:age:avgScore",
                              "_edge:+101:teamName:startYear:endYear",
@@ -1325,7 +1325,7 @@ TEST(GetNeighborsTest, FilterTest) {
         ASSERT_EQ(0, resp.result.failed_parts.size());
         // vId, stat, player, serve, expr
         nebula::DataSet expected;
-        expected.colNames = {"_vid",
+        expected.colNames = {kVid,
                              "_stats",
                              "_tag:1:name:age:avgScore",
                              "_edge:+101:teamName:startYear:endYear",
@@ -1376,7 +1376,7 @@ TEST(GetNeighborsTest, FilterTest) {
         ASSERT_EQ(0, resp.result.failed_parts.size());
         // vId, stat, player, serve, expr
         nebula::DataSet expected;
-        expected.colNames = {"_vid",
+        expected.colNames = {kVid,
                              "_stats",
                              "_tag:1:name:age:avgScore",
                              "_edge:+101:teamName:startYear:endYear",
@@ -1472,7 +1472,7 @@ TEST(GetNeighborsTest, FilterTest) {
         ASSERT_EQ(0, resp.result.failed_parts.size());
         // vId, stat, player, serve, expr
         nebula::DataSet expected;
-        expected.colNames = {"_vid",
+        expected.colNames = {kVid,
                              "_stats",
                              "_tag:1:name:age:avgScore",
                              "_edge:+101:teamName:startYear:endYear",
@@ -1522,7 +1522,7 @@ TEST(GetNeighborsTest, FilterTest) {
         // vId, stat, player, serve, expr
         nebula::DataSet expected;
         expected.colNames = {
-            "_vid",
+            kVid,
             "_stats",
             "_tag:2:name",
             folly::stringPrintf("_edge:-101:teamName:startYear:endYear:%s:%s", kSrc, kDst),
@@ -1570,7 +1570,7 @@ TEST(GetNeighborsTest, FilterTest) {
         // vId, stat, player, teammate, -teammate, expr
         nebula::DataSet expected;
         expected.colNames = {
-            "_vid",
+            kVid,
             "_stats",
             "_tag:1:name:age:avgScore",
             folly::stringPrintf("_edge:+102:%s:%s:%s:teamName:startYear:endYear",
