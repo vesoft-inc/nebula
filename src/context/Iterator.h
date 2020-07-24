@@ -179,10 +179,12 @@ public:
     }
 
     const Value& getColumn(const std::string& /* col */) const override {
+        DLOG(FATAL) << "This method should not be invoked";
         return Value::kEmpty;
     }
 
     const LogicalRow* row() const override {
+        DLOG(FATAL) << "This method should not be invoked";
         return nullptr;
     }
 
