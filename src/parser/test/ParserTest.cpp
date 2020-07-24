@@ -2037,4 +2037,109 @@ TEST(Parser, IssueLabelAsExpression) {
     }
 }
 
+TEST(Parser, TypeCast) {
+    {
+        GQLParser parser;
+        std::string query = "YIELD (INT)\"123\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "YIELD (INT)  \"123\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "YIELD (INT)\".123\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "YIELD (INT8)\".123\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "YIELD (INT16)\".123\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "YIELD (INT32)\".123\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "YIELD (INT64)\"1.23\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "YIELD (INT65)\"1.23\"";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "YIELD (DOUBLE)\"123abc\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "YIELD (INT)\"abc123\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "YIELD (FLOAT)\"123\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "YIELD (FLOAT)\"1.23\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "YIELD (FLOAT)\".123\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "YIELD (STRING)123";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "YIELD (STRING)1.23";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "YIELD (MAP)123";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "YIELD (INT)true";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok());
+    }
+}
+
 }   // namespace nebula
