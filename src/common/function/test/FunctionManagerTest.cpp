@@ -116,6 +116,291 @@ TEST_F(FunctionManagerTest, functionCall) {
     }
 }
 
+TEST_F(FunctionManagerTest, returnType) {
+    {
+        auto result = FunctionManager::getReturnType("abs", {Value::Type::INT});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::INT);
+    }
+    {
+        auto result = FunctionManager::getReturnType("abs", {Value::Type::FLOAT});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::FLOAT);
+    }
+    {
+        auto result = FunctionManager::getReturnType("abs", {Value::Type::BOOL});
+        ASSERT_FALSE(result.ok());
+        EXPECT_EQ(result.status().toString(), "Parameter's type error");
+    }
+    {
+        auto result = FunctionManager::getReturnType("now", {});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::INT);
+    }
+    {
+        auto result = FunctionManager::getReturnType("now", {Value::Type::BOOL});
+        ASSERT_FALSE(result.ok());
+        EXPECT_EQ(result.status().toString(), "Parameter's type error");
+    }
+    {
+        auto result = FunctionManager::getReturnType("rand32", {});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::INT);
+    }
+    {
+        auto result = FunctionManager::getReturnType("rand32", {Value::Type::INT});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::INT);
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("rand32", {Value::Type::INT, Value::Type::INT});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::INT);
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("rand32", {Value::Type::INT, Value::Type::FLOAT});
+        ASSERT_FALSE(result.ok());
+        EXPECT_EQ(result.status().toString(), "Parameter's type error");
+    }
+    {
+        auto result = FunctionManager::getReturnType("sqrt", {Value::Type::INT});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::FLOAT);
+    }
+    {
+        auto result = FunctionManager::getReturnType("sqrt", {Value::Type::FLOAT});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::FLOAT);
+    }
+    {
+        auto result = FunctionManager::getReturnType("floor", {Value::Type::FLOAT});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::INT);
+    }
+    {
+        auto result = FunctionManager::getReturnType("floor", {Value::Type::INT});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::INT);
+    }
+    {
+        auto result = FunctionManager::getReturnType("floor", {Value::Type::STRING});
+        ASSERT_FALSE(result.ok());
+        EXPECT_EQ(result.status().toString(), "Parameter's type error");
+    }
+    {
+        auto result = FunctionManager::getReturnType("round", {Value::Type::INT});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::INT);
+    }
+    {
+        auto result = FunctionManager::getReturnType("round", {Value::Type::FLOAT});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::INT);
+    }
+    {
+        auto result = FunctionManager::getReturnType("cbrt", {Value::Type::INT});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::INT);
+    }
+    {
+        auto result = FunctionManager::getReturnType("cbrt", {Value::Type::FLOAT});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::FLOAT);
+    }
+    {
+        auto result = FunctionManager::getReturnType("pow", {Value::Type::INT, Value::Type::INT});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::INT);
+    }
+    {
+        auto result = FunctionManager::getReturnType("pow", {Value::Type::INT, Value::Type::FLOAT});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::FLOAT);
+    }
+    {
+        auto result = FunctionManager::getReturnType("pow", {Value::Type::FLOAT, Value::Type::INT});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::FLOAT);
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("pow", {Value::Type::FLOAT, Value::Type::FLOAT});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::FLOAT);
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("cos", {Value::Type::FLOAT});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::FLOAT);
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("sin", {Value::Type::INT});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::FLOAT);
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("asin", {Value::Type::INT});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::FLOAT);
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("acos", {Value::Type::FLOAT});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::FLOAT);
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("acos", {Value::Type::STRING});
+        ASSERT_FALSE(result.ok());
+        EXPECT_EQ(result.status().toString(), "Parameter's type error");
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("hypot", {Value::Type::FLOAT, Value::Type::INT});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::FLOAT);
+    }
+    {
+        auto result = FunctionManager::getReturnType("hypot", {Value::Type::INT, Value::Type::INT});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::INT);
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("hypot", {Value::Type::BOOL, Value::Type::INT});
+        ASSERT_FALSE(result.ok());
+        EXPECT_EQ(result.status().toString(), "Parameter's type error");
+    }
+    {
+        auto result = FunctionManager::getReturnType("lower", {Value::Type::STRING});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::STRING);
+    }
+    {
+        auto result = FunctionManager::getReturnType("upper", {Value::Type::STRING});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::STRING);
+    }
+    {
+        auto result = FunctionManager::getReturnType("upper", {Value::Type::BOOL});
+        ASSERT_FALSE(result.ok());
+        EXPECT_EQ(result.status().toString(), "Parameter's type error");
+    }
+    {
+        auto result = FunctionManager::getReturnType("length", {Value::Type::STRING});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::INT);
+    }
+    {
+        auto result = FunctionManager::getReturnType("length", {});
+        ASSERT_FALSE(result.ok());
+        EXPECT_EQ(result.status().toString(), "Parameter's type error");
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("length", {Value::Type::STRING, Value::Type::INT});
+        ASSERT_FALSE(result.ok());
+        EXPECT_EQ(result.status().toString(), "Parameter's type error");
+    }
+    {
+        auto result = FunctionManager::getReturnType("length", {Value::Type::FLOAT});
+        ASSERT_FALSE(result.ok());
+        EXPECT_EQ(result.status().toString(), "Parameter's type error");
+    }
+    {
+        auto result = FunctionManager::getReturnType("trim", {Value::Type::STRING});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::STRING);
+    }
+    {
+        auto result = FunctionManager::getReturnType("ltrim", {Value::Type::STRING});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::STRING);
+    }
+    {
+        auto result = FunctionManager::getReturnType("strcasecmp",
+                                                     {Value::Type::STRING, Value::Type::STRING});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::STRING);
+    }
+    {
+        auto result = FunctionManager::getReturnType("strcasecmp", {Value::Type::STRING});
+        ASSERT_FALSE(result.ok());
+        EXPECT_EQ(result.status().toString(), "Parameter's type error");
+    }
+    {
+        auto result = FunctionManager::getReturnType(
+            "lpad", {Value::Type::STRING, Value::Type::INT, Value::Type::STRING});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::STRING);
+    }
+    {
+        auto result = FunctionManager::getReturnType(
+            "lpad", {Value::Type::STRING, Value::Type::INT, Value::Type::INT});
+        ASSERT_FALSE(result.ok());
+        EXPECT_EQ(result.status().toString(), "Parameter's type error");
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("lpad", {Value::Type::STRING, Value::Type::INT});
+        ASSERT_FALSE(result.ok());
+        EXPECT_EQ(result.status().toString(), "Parameter's type error");
+    }
+    {
+        auto result = FunctionManager::getReturnType("hash", {Value::Type::STRING});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::INT);
+    }
+    {
+        auto result = FunctionManager::getReturnType("hash", {Value::Type::INT});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::INT);
+    }
+    {
+        auto result = FunctionManager::getReturnType("hash", {Value::Type::NULLVALUE});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::INT);
+    }
+    {
+        auto result = FunctionManager::getReturnType("hash", {Value::Type::__EMPTY__});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::INT);
+    }
+    {
+        auto result = FunctionManager::getReturnType("hash", {Value::Type::DATE});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::INT);
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("hash", {Value::Type::STRING, Value::Type::INT});
+        ASSERT_FALSE(result.ok());
+        EXPECT_EQ(result.status().toString(), "Parameter's type error");
+    }
+    {
+        auto result = FunctionManager::getReturnType("hash", {});
+        ASSERT_FALSE(result.ok());
+        EXPECT_EQ(result.status().toString(), "Parameter's type error");
+    }
+    {
+        auto result = FunctionManager::getReturnType("hash", {Value::Type::DATASET});
+        ASSERT_FALSE(result.ok());
+        EXPECT_EQ(result.status().toString(), "Parameter's type error");
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("noexist", {Value::Type::INT});
+        ASSERT_FALSE(result.ok());
+        EXPECT_EQ(result.status().toString(), "Function `noexist' not defined");
+    }
+}
+
 }   // namespace nebula
 
 int main(int argc, char **argv) {
