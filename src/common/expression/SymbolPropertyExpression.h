@@ -28,6 +28,7 @@ constexpr char const kDstRef[] = "$$";
 class SymbolPropertyExpression: public Expression {
     friend class Expression;
 public:
+    SymbolPropertyExpression() : Expression(Kind::kSymProperty) {}
     SymbolPropertyExpression(Kind kind,
                              std::string* ref,
                              std::string* sym,

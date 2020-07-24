@@ -305,6 +305,8 @@ std::unique_ptr<Expression> Expression::decode(Expression::Decoder& decoder) {
             return exp;
         }
         case Expression::Kind::kSymProperty: {
+            exp = std::make_unique<SymbolPropertyExpression>();
+            exp->resetFrom(decoder);
             return exp;
         }
         case Expression::Kind::kInputProperty: {
