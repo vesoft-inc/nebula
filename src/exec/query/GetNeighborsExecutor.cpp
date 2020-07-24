@@ -35,6 +35,7 @@ folly::Future<Status> GetNeighborsExecutor::execute() {
 
 Status GetNeighborsExecutor::buildRequestDataSet() {
     auto& inputVar = gn_->inputVar();
+    VLOG(1) << node()->varName() << " : " << inputVar;
     auto& inputResult = ectx_->getResult(inputVar);
     auto iter = inputResult.iter();
     QueryExpressionContext ctx(ectx_, iter.get());
@@ -58,7 +59,11 @@ Status GetNeighborsExecutor::buildRequestDataSet() {
 folly::Future<Status> GetNeighborsExecutor::getNeighbors() {
     if (reqDs_.rows.empty()) {
         LOG(INFO) << "Empty input.";
-        return folly::makeFuture(Status::OK());
+        DataSet emptyResult;
+        return finish(ResultBuilder()
+                          .value(Value(std::move(emptyResult)))
+                          .iter(Iterator::Kind::kGetNeighbors)
+                          .finish());
     }
     GraphStorageClient* storageClient = qctx_->getStorageClient();
     return storageClient

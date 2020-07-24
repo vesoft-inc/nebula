@@ -91,7 +91,7 @@ void DataJoinTest::testJoin(std::string left, std::string right,
 
     auto* plan = qctx_->plan();
     auto* dataJoin =
-        DataJoin::make(plan, nullptr, {left, right}, std::move(hashKeys),
+        DataJoin::make(plan, nullptr, {left, 0}, {right, 0}, std::move(hashKeys),
                        std::move(probeKeys));
     dataJoin->setColNames(std::vector<std::string>{
         "src", "dst", kVid, "tag_prop", "edge_prop", kDst});
@@ -163,7 +163,7 @@ TEST_F(DataJoinTest, JoinTwice) {
 
         auto* plan = qctx_->plan();
         auto* dataJoin =
-            DataJoin::make(plan, nullptr, {left, right}, std::move(hashKeys),
+            DataJoin::make(plan, nullptr, {left, 0}, {right, 0}, std::move(hashKeys),
                         std::move(probeKeys));
         dataJoin->setColNames(std::vector<std::string>{
             "src", "dst", kVid, "tag_prop", "edge_prop", kDst});
@@ -186,7 +186,7 @@ TEST_F(DataJoinTest, JoinTwice) {
 
     auto* plan = qctx_->plan();
     auto* dataJoin =
-        DataJoin::make(plan, nullptr, {left, right}, std::move(hashKeys),
+        DataJoin::make(plan, nullptr, {left, 0}, {right, 0}, std::move(hashKeys),
                     std::move(probeKeys));
     dataJoin->setColNames(std::vector<std::string>{
         "src", "dst", kVid, "tag_prop", "edge_prop", kDst, "col1"});

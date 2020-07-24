@@ -17,7 +17,7 @@ Status AssignmentValidator::validateImpl() {
     validator_ = makeValidator(assignSentence->sentence(), qctx_);
     NG_RETURN_IF_ERROR(validator_->validate());
 
-    auto outputs = validator_->outputs();
+    auto outputs = validator_->outputCols();
     var_ = *assignSentence->var();
     vctx_->registerVariable(var_, std::move(outputs));
     return Status::OK();

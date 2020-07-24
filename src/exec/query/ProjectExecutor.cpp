@@ -21,17 +21,19 @@ folly::Future<Status> ProjectExecutor::execute() {
     DCHECK(!!iter);
     QueryExpressionContext ctx(ectx_, iter.get());
 
+    VLOG(1) << "input: " << project->inputVar();
     DataSet ds;
     ds.colNames = project->colNames();
     for (; iter->valid(); iter->next()) {
         Row row;
         for (auto& col : columns) {
             Value val = col->expr()->eval(ctx);
-            VLOG(3) << "Project: " << val;
             row.values.emplace_back(std::move(val));
         }
         ds.rows.emplace_back(std::move(row));
     }
+
+    VLOG(1) << node()->varName() << " : " << ds;
     return finish(ResultBuilder().value(Value(std::move(ds))).finish());
 }
 

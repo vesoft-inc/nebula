@@ -30,7 +30,11 @@ public:
 
     Status validate();
 
-    void setInputs(ColsDef&& inputs) {
+    void setInputVarName(std::string name) {
+        inputVarName_ = std::move(name);
+    }
+
+    void setInputCols(ColsDef&& inputs) {
         inputs_ = std::move(inputs);
     }
 
@@ -42,11 +46,11 @@ public:
         return tail_;
     }
 
-    ColsDef outputs() const {
+    ColsDef outputCols() const {
         return outputs_;
     }
 
-    ColsDef inputs() const {
+    ColsDef inputCols() const {
         return inputs_;
     }
 
@@ -95,6 +99,8 @@ protected:
     // The input columns and output columns of a sentence.
     ColsDef                         outputs_;
     ColsDef                         inputs_;
+    // The variable name of the input node.
+    std::string                     inputVarName_;
     // Admin sentences do not requires a space to be chosen.
     bool                            noSpaceRequired_{false};
 

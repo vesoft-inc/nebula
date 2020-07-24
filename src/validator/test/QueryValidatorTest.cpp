@@ -165,6 +165,129 @@ TEST_F(QueryValidatorTest, GoNSteps) {
         };
         EXPECT_TRUE(checkResult(query, expected));
     }
+    {
+        std::string query = "GO 1 STEPS FROM \"1\" OVER like YIELD like._dst AS "
+                            "id | GO 1 STEPS FROM $-.id OVER like YIELD $-.id, like._dst";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kProject,
+            PK::kDataJoin,
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kStart
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+    {
+        std::string query = "GO 1 STEPS FROM \"1\" OVER like YIELD like._dst AS "
+                            "id | GO 1 STEPS FROM $-.id OVER like "
+                            "WHERE $-.id == \"2\" YIELD $-.id, like._dst";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kProject,
+            PK::kFilter,
+            PK::kDataJoin,
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kStart
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+    {
+        std::string query = "GO 1 STEPS FROM \"1\" OVER like YIELD like._dst AS "
+                            "id | GO 1 STEPS FROM $-.id OVER like "
+                            "WHERE $-.id == \"2\" YIELD DISTINCT $-.id, like._dst";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kDataCollect,
+            PK::kDedup,
+            PK::kProject,
+            PK::kFilter,
+            PK::kDataJoin,
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kStart
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+    {
+        std::string query = "GO 1 STEPS FROM \"1\" OVER like YIELD like._dst AS "
+                            "id | GO 2 STEPS FROM $-.id OVER like YIELD $-.id, like._dst";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kProject,
+            PK::kDataJoin,
+            PK::kDataJoin,
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kLoop,
+            PK::kProject,
+            PK::kProject,
+            PK::kProject,
+            PK::kDataJoin,
+            PK::kProject,
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kGetNeighbors,
+            PK::kStart,
+            PK::kStart,
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+    {
+        std::string query = "GO 1 STEPS FROM \"1\" OVER like YIELD like._dst AS "
+                            "id | GO 2 STEPS FROM $-.id OVER like "
+                            "WHERE $-.id == \"2\" YIELD $-.id, like._dst";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kProject,
+            PK::kFilter,
+            PK::kDataJoin,
+            PK::kDataJoin,
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kLoop,
+            PK::kProject,
+            PK::kProject,
+            PK::kProject,
+            PK::kDataJoin,
+            PK::kProject,
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kGetNeighbors,
+            PK::kStart,
+            PK::kStart,
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+    {
+        std::string query = "GO 1 STEPS FROM \"1\" OVER like YIELD like._dst AS "
+                            "id | GO 2 STEPS FROM $-.id OVER like "
+                            "WHERE $-.id == \"2\" YIELD DISTINCT $-.id, like._dst";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kDataCollect,
+            PK::kDedup,
+            PK::kProject,
+            PK::kFilter,
+            PK::kDataJoin,
+            PK::kDataJoin,
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kLoop,
+            PK::kProject,
+            PK::kProject,
+            PK::kProject,
+            PK::kDataJoin,
+            PK::kProject,
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kGetNeighbors,
+            PK::kStart,
+            PK::kStart,
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
 }
 
 TEST_F(QueryValidatorTest, GoOneStep) {
@@ -476,3 +599,4 @@ TEST_F(QueryValidatorTest, TestMaxAllowedStatements) {
 
 }  // namespace graph
 }  // namespace nebula
+

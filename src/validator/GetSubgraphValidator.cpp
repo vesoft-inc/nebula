@@ -155,7 +155,7 @@ Status GetSubgraphValidator::toPlan() {
     auto edgeProps = std::make_unique<std::vector<storage::cpp2::EdgeProp>>();
     auto statProps = std::make_unique<std::vector<storage::cpp2::StatProp>>();
     auto exprs = std::make_unique<std::vector<storage::cpp2::Expr>>();
-    auto vidsToSave = vctx_->varGen()->getVar();
+    auto vidsToSave = vctx_->anonVarGen()->getVar();
     DataSet ds;
     ds.colNames.emplace_back(kVid);
     for (auto& vid : starts_) {
@@ -194,7 +194,7 @@ Status GetSubgraphValidator::toPlan() {
     project->setColNames(deduceColNames(columns));
 
     // ++counter{0} <= steps
-    auto counter = vctx_->varGen()->getVar();
+    auto counter = vctx_->anonVarGen()->getVar();
     qctx_->ectx()->setValue(counter, 0);
     auto* condition = new RelationalExpression(
                 Expression::Kind::kRelLE,

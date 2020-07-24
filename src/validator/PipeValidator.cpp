@@ -21,10 +21,11 @@ Status PipeValidator::validateImpl() {
 
     auto right = pipeSentence->right();
     rValidator_ = makeValidator(right, qctx_);
-    rValidator_->setInputs(lValidator_->outputs());
+    rValidator_->setInputCols(lValidator_->outputCols());
+    rValidator_->setInputVarName(lValidator_->root()->varName());
     NG_RETURN_IF_ERROR(rValidator_->validate());
 
-    outputs_ = rValidator_->outputs();
+    outputs_ = rValidator_->outputCols();
     return Status::OK();
 }
 

@@ -22,15 +22,7 @@ const Value& QueryExpressionContext::getVersionedVar(const std::string& var,
     if (ectx_ == nullptr) {
         return Value::kEmpty;
     }
-    auto& result = ectx_->getHistory(var);
-    auto size = result.size();
-    if (version <= 0 && static_cast<size_t>(std::abs(version)) < size) {
-        return result[size + version -1].value();
-    } else if (version > 0 && static_cast<size_t>(version) <= size) {
-        return result[version - 1].value();
-    } else {
-        return Value::kEmpty;
-    }
+    return ectx_->getVersionedResult(var, version).value();
 }
 
 const Value& QueryExpressionContext::getVarProp(const std::string& var,

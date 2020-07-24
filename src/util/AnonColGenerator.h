@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef UTIL_ANNOVARGENERATOR_H_
-#define UTIL_ANNOVARGENERATOR_H_
+#ifndef UTIL_ANONCOLGENERATOR_H_
+#define UTIL_ANONCOLGENERATOR_H_
 
 #include "common/base/Base.h"
 
@@ -14,16 +14,16 @@
 namespace nebula {
 namespace graph {
 /**
- * An utility to generate an anonymous variable.
+ * An utility to generate an anonymous column name.
  */
-class AnnoVarGenerator final {
+class AnonColGenerator final {
 public:
-    AnnoVarGenerator() {
+    AnonColGenerator() {
         idGen_ = std::make_unique<IdGenerator>();
     }
 
-    std::string getVar() const {
-        return folly::stringPrintf("UNAMED_%ld", idGen_->id());
+    std::string getCol() const {
+        return folly::stringPrintf("__UNAMED_COL_%ld", idGen_->id());
     }
 
 private:
@@ -31,4 +31,4 @@ private:
 };
 }  // namespace graph
 }  // namespace nebula
-#endif  // UTIL_ANNOVARGENERATOR_H_
+#endif  // UTIL_ANONCOLGENERATOR_H_

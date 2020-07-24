@@ -21,7 +21,7 @@ Status LimitValidator::validateImpl() {
         return Status::SyntaxError("count `%ld' is illegal", count_);
     }
 
-    outputs_ = inputs();
+    outputs_ = inputCols();
     return Status::OK();
 }
 

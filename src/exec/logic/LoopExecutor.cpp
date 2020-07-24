@@ -26,6 +26,7 @@ folly::Future<Status> LoopExecutor::execute() {
     Expression *expr = loopNode->condition();
     QueryExpressionContext ctx(ectx_, nullptr);
     auto value = expr->eval(ctx);
+    VLOG(1) << "Loop condition: " << value;
     DCHECK(value.isBool());
     return finish(ResultBuilder().value(std::move(value)).iter(Iterator::Kind::kDefault).finish());
 }

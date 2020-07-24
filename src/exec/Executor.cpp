@@ -37,6 +37,7 @@
 #include "exec/query/ReadIndexExecutor.h"
 #include "exec/query/SortExecutor.h"
 #include "exec/query/UnionExecutor.h"
+#include "exec/query/DataJoinExecutor.h"
 #include "planner/Admin.h"
 #include "planner/Maintain.h"
 #include "planner/Mutate.h"
@@ -354,6 +355,13 @@ Executor *Executor::makeExecutor(const PlanNode *node,
             auto showSnapshots = asNode<ShowSnapshots>(node);
             auto input = makeExecutor(showSnapshots->dep(), qctx, visited);
             exec = new ShowSnapshotsExecutor(showSnapshots, qctx);
+            exec->addDependent(input);
+            break;
+        }
+        case PlanNode::Kind::kDataJoin: {
+            auto dataJoin = asNode<DataJoin>(node);
+            auto input = makeExecutor(dataJoin->dep(), qctx, visited);
+            exec = new DataJoinExecutor(dataJoin, qctx);
             exec->addDependent(input);
             break;
         }

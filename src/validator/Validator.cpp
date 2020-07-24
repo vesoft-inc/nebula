@@ -194,16 +194,8 @@ std::vector<std::string> Validator::deduceColNames(const YieldColumns* cols) con
 std::string Validator::deduceColName(const YieldColumn* col) const {
     if (col->alias() != nullptr) {
         return *col->alias();
-    }
-
-    switch (col->expr()->kind()) {
-        case Expression::Kind::kInputProperty: {
-            auto expr = static_cast<InputPropertyExpression*>(col->expr());
-            return *expr->prop();
-        }
-        default: {
-            return col->expr()->toString();
-        }
+    } else {
+        return col->expr()->toString();
     }
 }
 

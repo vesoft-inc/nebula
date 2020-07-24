@@ -978,10 +978,12 @@ class DataJoin final : public SingleInputNode {
 public:
     static DataJoin* make(ExecutionPlan* plan,
                           PlanNode* input,
-                          std::pair<std::string, std::string> vars,
+                          std::pair<std::string, int64_t> leftVar,
+                          std::pair<std::string, int64_t> rightVar,
                           std::vector<Expression*> hashKeys,
                           std::vector<Expression*> probeKeys) {
-        return new DataJoin(plan, input, std::move(vars), std::move(hashKeys),
+        return new DataJoin(plan, input, std::move(leftVar),
+                            std::move(rightVar), std::move(hashKeys),
                             std::move(probeKeys));
     }
 
@@ -989,8 +991,12 @@ public:
         return "DataJoin";
     }
 
-    const std::pair<std::string, std::string>& vars() const {
-        return vars_;
+    const std::pair<std::string, int64_t>& leftVar() const {
+        return leftVar_;
+    }
+
+    const std::pair<std::string, int64_t>& rightVar() const {
+        return rightVar_;
     }
 
     const std::vector<Expression*>& hashKeys() const {
@@ -1003,15 +1009,19 @@ public:
 
 private:
     DataJoin(ExecutionPlan* plan, PlanNode* input,
-            std::pair<std::string, std::string> vars,
-            std::vector<Expression*> hashKeys, std::vector<Expression*> probeKeys)
+             std::pair<std::string, int64_t> leftVar,
+             std::pair<std::string, int64_t> rightVar,
+             std::vector<Expression*> hashKeys, std::vector<Expression*> probeKeys)
         : SingleInputNode(plan, Kind::kDataJoin, input),
-        vars_(std::move(vars)),
+        leftVar_(std::move(leftVar)),
+        rightVar_(std::move(rightVar)),
         hashKeys_(std::move(hashKeys)),
         probeKeys_(std::move(probeKeys)) {}
 
 private:
-    std::pair<std::string, std::string>     vars_;
+    // var name, var version
+    std::pair<std::string, int64_t>         leftVar_;
+    std::pair<std::string, int64_t>         rightVar_;
     std::vector<Expression*>                hashKeys_;
     std::vector<Expression*>                probeKeys_;
 };

@@ -31,6 +31,11 @@ class QueryInstance;
  **************************************************************************/
 class ExecutionContext {
 public:
+    // 0 is the latest, -1 is the preveos one, and so on
+    // 1 is the oldest, 2 is the second elder, and so on
+    static constexpr int64_t kLatestVersion = 0;
+    static constexpr int64_t kOldestVersion = 1;
+
     ExecutionContext() = default;
 
     virtual ~ExecutionContext() = default;
@@ -43,6 +48,8 @@ public:
     const Value& getValue(const std::string& name) const;
 
     const Result& getResult(const std::string& name) const;
+
+    const Result& getVersionedResult(const std::string& name, int64_t version) const;
 
     size_t numVersions(const std::string& name) const;
 

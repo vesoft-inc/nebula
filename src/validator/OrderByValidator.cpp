@@ -12,7 +12,7 @@ namespace nebula {
 namespace graph {
 Status OrderByValidator::validateImpl() {
     auto sentence = static_cast<OrderBySentence*>(sentence_);
-    auto inputColNames = inputs();
+    auto inputColNames = inputCols();
     auto factors = sentence->factors();
     for (auto &factor : factors) {
         if (factor->expr()->kind() != Expression::Kind::kInputProperty) {
@@ -32,7 +32,7 @@ Status OrderByValidator::validateImpl() {
         colOrderTypes_.emplace_back(std::make_pair(name, factor->orderType()));
     }
 
-    outputs_ = inputs();
+    outputs_ = inputCols();
     return Status::OK();
 }
 

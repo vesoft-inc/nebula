@@ -68,6 +68,7 @@ Status SequentialValidator::toPlan() {
     }
     tail_ = StartNode::make(plan);
     NG_RETURN_IF_ERROR(validators_.front()->appendPlan(tail_));
+    VLOG(1) << "root: " << root_->kind() << " tail: " << tail_->kind();
     return Status::OK();
 }
 
