@@ -346,7 +346,7 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
         if (edgeIt.edge_type != lastEdgeType) {
             // init schema vector, since schema version is zero-based, need to add one
             edgeSchemas[edgeIt.edge_type].resize(schema->getVersion() + 1);
-            lastTagId = edgeIt.edge_type;
+            lastEdgeType = edgeIt.edge_type;
         }
         edgeSchemas[edgeIt.edge_type][schema->getVersion()] = std::move(schema);
         edgeNameTypeMap.emplace(std::make_pair(spaceId, edgeIt.edge_name), edgeIt.edge_type);
