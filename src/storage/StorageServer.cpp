@@ -11,6 +11,7 @@
 #include "storage/http/StorageHttpDownloadHandler.h"
 #include "storage/http/StorageHttpIngestHandler.h"
 #include "storage/http/StorageHttpAdminHandler.h"
+#include "storage/http/SysInfoHandler.h"
 #include "kvstore/PartManager.h"
 #include "webservice/Router.h"
 #include "webservice/WebService.h"
@@ -86,6 +87,11 @@ bool StorageServer::initWebService() {
     });
     router.get("/admin").handler([this](web::PathParams&&) {
         return new storage::StorageHttpAdminHandler(schemaMan_.get(), kvstore_.get());
+    });
+    router.get("/sysinfo").handler([this](web::PathParams&&) {
+        auto handler = new storage::SysInfoHandler();
+        handler->init(dataPaths_[0]);
+        return handler;
     });
 
     auto status = webSvc_->start();

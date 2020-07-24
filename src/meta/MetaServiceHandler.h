@@ -8,6 +8,7 @@
 #define META_METASERVICEHANDLER_H_
 
 #include "base/Base.h"
+#include <sys/statvfs.h>
 #include <mutex>
 #include "interface/gen-cpp2/MetaService.h"
 #include "kvstore/KVStore.h"

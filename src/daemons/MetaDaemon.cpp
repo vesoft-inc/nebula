@@ -11,6 +11,7 @@
 #include "meta/MetaHttpIngestHandler.h"
 #include "meta/MetaHttpDownloadHandler.h"
 #include "meta/MetaHttpReplaceHostHandler.h"
+#include "meta/SysInfoHandler.h"
 #include "webservice/Router.h"
 #include "webservice/WebService.h"
 #include "network/NetworkUtils.h"
@@ -153,6 +154,11 @@ Status initWebService(nebula::WebService* svc,
     router.get("/replace").handler([kvstore](PathParams &&) {
         auto handler = new nebula::meta::MetaHttpReplaceHostHandler();
         handler->init(kvstore);
+        return handler;
+    });
+    router.get("/sysinfo").handler([kvstore](PathParams &&) {
+        auto handler = new nebula::meta::SysInfoHandler();
+        handler->init(FLAGS_data_path);
         return handler;
     });
     return svc->start();

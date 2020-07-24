@@ -6,6 +6,7 @@
 
 #include "base/Base.h"
 #include "fs/FileUtils.h"
+#include <sys/statvfs.h>
 #include <dirent.h>
 #include <fnmatch.h>
 #include <limits.h>
@@ -134,6 +135,20 @@ std::string FileUtils::basename(const char *path) {
     return result[3].str();
 }
 
+std::tuple<double, double, double, double> FileUtils::detectFilesystemUsage(std::string data_path) {
+    const unsigned int GB = (1024 * 1024) * 1024;
+    struct statvfs buffer;
+    int ret = statvfs(data_path.c_str(), &buffer);
+
+    if (!ret) {
+        const double total = (double)(buffer.f_blocks * buffer.f_frsize) / GB;
+        const double available = (double)(buffer.f_bfree * buffer.f_frsize) / GB;
+        const double used = total - available;
+        const double usedPercentage = (double)(used / total) * (double)100;
+        return std::tuple<double, double, double, double>(total, available, used, usedPercentage);
+    }
+    return std::tuple<double, double, double, double>(0, 0, 0, 0);
+}
 
 const char* FileUtils::getFileTypeName(FileType type) {
     static const char* kTypeNames[] = {
