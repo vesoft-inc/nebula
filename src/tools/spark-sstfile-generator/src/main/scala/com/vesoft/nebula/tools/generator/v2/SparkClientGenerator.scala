@@ -297,7 +297,6 @@ object SparkClientGenerator {
           fields.asScala.keys.toList
         }
 
-        val vertexIndex      = sourceProperties.indexOf(vertex)
         val nebulaProperties = properties.mkString(",")
         val data             = createDataSource(spark, pathOpt, tagConfig)
 
@@ -310,7 +309,11 @@ object SparkClientGenerator {
               val values = (for {
                 property <- valueProperties if property.trim.length != 0
               } yield extraValue(row, property)).mkString(",")
-              (String.valueOf(extraValue(row, vertex)), values)
+              (if (String.valueOf(extraValue(row, vertex)).startsWith("\"") && String.valueOf(extraValue(row, vertex)).endsWith("\"")) {
+                String.valueOf(extraValue(row, vertex)).slice(1,-1)
+              } else {
+                String.valueOf(extraValue(row, vertex))
+              }, values)
             }(Encoders.tuple(Encoders.STRING, Encoders.STRING))
             .foreachPartition { iterator: Iterator[(String, String)] =>
               val service      = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(1))
