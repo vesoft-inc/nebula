@@ -75,7 +75,7 @@ function build {
 
     pushd ${build_dir}
 
-    cmake -DCMAKE_BUILD_TYPE=${build_type} -DNEBULA_BUILD_VERSION=${version} -DENABLE_ASAN=${san} --DENABLE_UBSAN=${san} \ 
+    cmake -DCMAKE_BUILD_TYPE=${build_type} -DNEBULA_BUILD_VERSION=${version} -DENABLE_ASAN=${san} --DENABLE_UBSAN=${san} \
         -DENABLE_STATIC_ASAN=${ssan} -DENABLE_STATIC_UBSAN=${ssan} -DCMAKE_INSTALL_PREFIX=/usr/local/nebula -DENABLE_TESTING=OFF \
         -DENABLE_PACK_ONE=${package_one} $PROJECT_DIR
 
