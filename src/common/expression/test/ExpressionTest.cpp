@@ -956,7 +956,7 @@ TEST_F(ExpressionTest, toStringTest) {
     }
     {
         ConstantExpression ep(1.123);
-        EXPECT_EQ(ep.toString(), "1.123000");
+        EXPECT_EQ(ep.toString(), "1.123");
     }
     {
         ConstantExpression ep(true);
@@ -972,7 +972,7 @@ TEST_F(ExpressionTest, toStringTest) {
     }
     {
         ConstantExpression ep(Set({1, 2.3, "hello", true}));
-        EXPECT_EQ(ep.toString(), "{true,2.300000,hello,1}");
+        EXPECT_EQ(ep.toString(), "{true,2.3,hello,1}");
     }
     {
         ConstantExpression ep(Date(1234));
@@ -1107,6 +1107,130 @@ TEST_F(ExpressionTest, PropertyToStringTest) {
     {
         EdgeDstIdExpression ep(new std::string("like"));
         EXPECT_EQ(ep.toString(), "like._dst");
+    }
+}
+
+TEST_F(ExpressionTest, TypeCastTest) {
+    {
+        TypeCastingExpression typeCast(Value::Type::INT, new ConstantExpression(1));
+        auto eval = Expression::eval(&typeCast, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::INT);
+        EXPECT_EQ(eval, 1);
+    }
+    {
+        TypeCastingExpression typeCast(Value::Type::INT, new ConstantExpression(1.23));
+        auto eval = Expression::eval(&typeCast, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::INT);
+        EXPECT_EQ(eval, 1);
+    }
+    {
+        TypeCastingExpression typeCast(Value::Type::INT, new ConstantExpression("1.23"));
+        auto eval = Expression::eval(&typeCast, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::INT);
+        EXPECT_EQ(eval, 1);
+    }
+    {
+        TypeCastingExpression typeCast(Value::Type::INT, new ConstantExpression("123"));
+        auto eval = Expression::eval(&typeCast, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::INT);
+        EXPECT_EQ(eval, 123);
+    }
+    {
+        TypeCastingExpression typeCast(Value::Type::INT, new ConstantExpression(".123"));
+        auto eval = Expression::eval(&typeCast, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::INT);
+        EXPECT_EQ(eval, 0);
+    }
+    {
+        TypeCastingExpression typeCast(Value::Type::INT, new ConstantExpression(".123ab"));
+        auto eval = Expression::eval(&typeCast, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+    }
+    {
+        TypeCastingExpression typeCast(Value::Type::INT, new ConstantExpression("abc123"));
+        auto eval = Expression::eval(&typeCast, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+    }
+    {
+        TypeCastingExpression typeCast(Value::Type::INT, new ConstantExpression("123abc"));
+        auto eval = Expression::eval(&typeCast, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+    }
+    {
+        TypeCastingExpression typeCast(Value::Type::INT, new ConstantExpression(true));
+        auto eval = Expression::eval(&typeCast, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+    }
+
+    {
+        TypeCastingExpression typeCast(Value::Type::FLOAT, new ConstantExpression(1.23));
+        auto eval = Expression::eval(&typeCast, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::FLOAT);
+        EXPECT_EQ(eval, 1.23);
+    }
+    {
+        TypeCastingExpression typeCast(Value::Type::FLOAT, new ConstantExpression(2));
+        auto eval = Expression::eval(&typeCast, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::FLOAT);
+        EXPECT_EQ(eval, 2.0);
+    }
+    {
+        TypeCastingExpression typeCast(Value::Type::FLOAT, new ConstantExpression("1.23"));
+        auto eval = Expression::eval(&typeCast, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::FLOAT);
+        EXPECT_EQ(eval, 1.23);
+    }
+    {
+        TypeCastingExpression typeCast(Value::Type::BOOL, new ConstantExpression(2));
+        auto eval = Expression::eval(&typeCast, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::BOOL);
+        EXPECT_EQ(eval, true);
+    }
+    {
+        TypeCastingExpression typeCast(Value::Type::BOOL, new ConstantExpression(0));
+        auto eval = Expression::eval(&typeCast, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::BOOL);
+        EXPECT_EQ(eval, false);
+    }
+    {
+        TypeCastingExpression typeCast(Value::Type::STRING, new ConstantExpression(true));
+        auto eval = Expression::eval(&typeCast, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::STRING);
+        EXPECT_EQ(eval, "true");
+    }
+    {
+        TypeCastingExpression typeCast(Value::Type::STRING, new ConstantExpression(false));
+        auto eval = Expression::eval(&typeCast, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::STRING);
+        EXPECT_EQ(eval, "false");
+    }
+    {
+        TypeCastingExpression typeCast(Value::Type::STRING, new ConstantExpression(12345));
+        auto eval = Expression::eval(&typeCast, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::STRING);
+        EXPECT_EQ(eval, "12345");
+    }
+    {
+        TypeCastingExpression typeCast(Value::Type::STRING, new ConstantExpression(34.23));
+        auto eval = Expression::eval(&typeCast, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::STRING);
+        EXPECT_EQ(eval, "34.23");
+    }
+    {
+        TypeCastingExpression typeCast(Value::Type::STRING, new ConstantExpression(.23));
+        auto eval = Expression::eval(&typeCast, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::STRING);
+        EXPECT_EQ(eval, "0.23");
+    }
+    {
+        TypeCastingExpression typeCast(Value::Type::SET, new ConstantExpression(23));
+        auto eval = Expression::eval(&typeCast, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+    }
+    {
+        TypeCastingExpression typeCast(Value::Type::INT, new ConstantExpression(Set()));
+        auto eval = Expression::eval(&typeCast, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
     }
 }
 

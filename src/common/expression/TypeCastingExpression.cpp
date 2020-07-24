@@ -8,7 +8,42 @@
 
 namespace nebula {
 const Value& TypeCastingExpression::eval(ExpressionContext& ctx) {
-    UNUSED(ctx);
+    auto val = operand_->eval(ctx);
+
+    switch (vType_) {
+        case Value::Type::BOOL: {
+            auto result = val.toBool();
+            if (!result.ok()) {
+                return Value::kNullValue;
+            }
+            result_.setBool(result.value());
+            break;
+        }
+        case Value::Type::INT: {
+            auto result = val.toInt();
+            if (!result.ok()) {
+                return Value::kNullValue;
+            }
+            result_.setInt(result.value());
+            break;
+        }
+        case Value::Type::FLOAT: {
+            auto result = val.toFloat();
+            if (!result.ok()) {
+                return Value::kNullValue;
+            }
+            result_.setFloat(result.value());
+            break;
+        }
+        case Value::Type::STRING: {
+            result_.setStr(val.toString());
+            break;
+        }
+        default: {
+            LOG(ERROR) << "Can not convert the type of `" << val << "` to `" << vType_ << "`";
+            return Value::kNullValue;
+        }
+    }
     return result_;
 }
 

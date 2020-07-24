@@ -1398,10 +1398,10 @@ std::string Value::toString() const {
             return getBool() ? "true" : "false";
         }
         case Value::Type::INT: {
-            return folly::stringPrintf("%ld", getInt());
+            return folly::to<std::string>(getInt());
         }
         case Value::Type::FLOAT: {
-            return folly::stringPrintf("%lf", getFloat());
+            return folly::to<std::string>(getFloat());
         }
         case Value::Type::STRING: {
             return getStr();
@@ -1465,7 +1465,59 @@ StatusOr<bool> Value::toBool() {
             return getDate().toInt() != 0;
         }
         default: {
-            return Status::Error("Value can not convert to bool");
+            std::stringstream ss;
+            ss << *this << "'s type " << type_ << " can not convert to Bool";
+            return Status::Error(ss.str());
+        }
+    }
+}
+
+StatusOr<double> Value::toFloat() {
+    switch (type_) {
+        case Value::Type::INT: {
+            return static_cast<double>(getInt());
+        }
+        case Value::Type::FLOAT: {
+            return getFloat();
+        }
+        case Value::Type::STRING: {
+            const auto& str = getStr();
+            char *pEnd;
+            double val = strtod(str.c_str(), &pEnd);
+            if (*pEnd != '\0') {
+                return Status::Error("%s can not convert to Float", str.c_str());
+            }
+            return val;
+        }
+        default: {
+            std::stringstream ss;
+            ss << *this << "'s type " << type_ << " can not convert to Float";
+            return Status::Error(ss.str());
+        }
+    }
+}
+
+StatusOr<int64_t> Value::toInt() {
+    switch (type_) {
+        case Value::Type::INT: {
+            return getInt();
+        }
+        case Value::Type::FLOAT: {
+            return static_cast<int64_t>(getFloat());
+        }
+        case Value::Type::STRING: {
+            const auto& str = getStr();
+            char *pEnd;
+            double val = strtod(str.c_str(), &pEnd);
+            if (*pEnd != '\0') {
+                return Status::Error("%s can not convert to Int", str.c_str());
+            }
+            return static_cast<int64_t>(val);
+        }
+        default: {
+            std::stringstream ss;
+            ss << *this << "'s type " << type_ << " can not convert to Int";
+            return Status::Error(ss.str());
         }
     }
 }

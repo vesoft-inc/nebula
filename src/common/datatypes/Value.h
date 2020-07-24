@@ -293,6 +293,10 @@ struct Value {
 
     StatusOr<bool> toBool();
 
+    StatusOr<double> toFloat();
+
+    StatusOr<int64_t> toInt();
+
 private:
     Type type_;
 
