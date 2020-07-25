@@ -926,7 +926,7 @@ void GoExecutor::fetchVertexProps(std::vector<VertexID> ids) {
     auto returns = status.value();
     auto future = ectx()->getStorageClient()->getVertexProps(spaceId, ids, returns);
     auto *runner = ectx()->rctx()->runner();
-    auto cb = [this] (auto &&result) mutable {
+    auto cb = [this, ectx = ectx()] (auto &&result) mutable {
         auto completeness = result.completeness();
         if (completeness == 0) {
             doError(Status::Error("Get dest props failed"));
@@ -939,7 +939,7 @@ void GoExecutor::fetchVertexProps(std::vector<VertexID> ids) {
             }
         }
         if (vertexHolder_ == nullptr) {
-            vertexHolder_ = std::make_unique<VertexHolder>();
+            vertexHolder_ = std::make_unique<VertexHolder>(ectx);
         }
         for (auto &resp : result.responses()) {
             vertexHolder_->add(resp);
@@ -1315,28 +1315,24 @@ bool GoExecutor::processFinalResult(Callback cb) const {
     return true;
 }
 
-OptVariantType GoExecutor::VertexHolder::getDefaultProp(TagID tid, const std::string &prop) const {
-    for (auto it = data_.cbegin(); it != data_.cend(); ++it) {
-        auto it2 = it->second.find(tid);
-        if (it2 != it->second.cend()) {
-            return RowReader::getDefaultProp(std::get<0>(it2->second).get(), prop);
-        }
+OptVariantType GoExecutor::VertexHolder::getDefaultProp(
+    TagID tagId, const std::string &prop) const {
+    auto space = ectx_->rctx()->session()->space();
+    auto schema = ectx_->schemaManager()->getTagSchema(space, tagId);
+    if (schema == nullptr) {
+        return Status::Error("No tag schema for tagId %d", tagId);
     }
-
-
-    return Status::Error("Unknown property: `%s'", prop.c_str());
+    return RowReader::getDefaultProp(schema.get(), prop);
 }
 
-SupportedType GoExecutor::VertexHolder::getDefaultPropType(TagID tid,
-                                                           const std::string &prop) const {
-    for (auto it = data_.cbegin(); it != data_.cend(); ++it) {
-        auto it2 = it->second.find(tid);
-        if (it2 != it->second.cend()) {
-            return std::get<0>(it2->second)->getFieldType(prop).type;
-        }
+SupportedType GoExecutor::VertexHolder::getDefaultPropType(
+    TagID tagId, const std::string &prop) const {
+    auto space = ectx_->rctx()->session()->space();
+    auto schema = ectx_->schemaManager()->getTagSchema(space, tagId);
+    if (schema == nullptr) {
+        return nebula::cpp2::SupportedType::UNKNOWN;
     }
-
-    return nebula::cpp2::SupportedType::UNKNOWN;
+    return schema->getFieldType(prop).type;
 }
 
 OptVariantType GoExecutor::VertexHolder::get(VertexID id, TagID tid,
