@@ -38,6 +38,9 @@ public:
         return *router_;
     }
 
+    void SetDataPath(std::vector<std::string> dataPaths) {
+        dataPaths_ = dataPaths;
+    }
     // To start the global web server.
     // Two ports would be bound, one for HTTP, another one for HTTP2.
     // If FLAGS_ws_http_port or FLAGS_ws_h2_port is zero, an ephemeral port
@@ -54,6 +57,8 @@ private:
     std::unique_ptr<proxygen::HTTPServer> server_;
     std::unique_ptr<thread::NamedThread> wsThread_;
     std::unique_ptr<web::Router> router_;
+public:
+    std::vector<std::string> dataPaths_;
 };
 
 }  // namespace nebula

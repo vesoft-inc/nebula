@@ -12,7 +12,6 @@
 #include <proxygen/httpserver/RequestHandler.h>
 
 namespace nebula {
-namespace storage {
 
 using nebula::HttpCode;
 
@@ -24,7 +23,7 @@ public:
 
     void onBody(std::unique_ptr<folly::IOBuf> body)  noexcept override;
 
-    void init(std::string data_path);
+    void init(std::vector<std::string> data_path);
 
     void onEOM() noexcept override;
 
@@ -39,10 +38,9 @@ private:
 
 private:
     HttpCode err_{HttpCode::SUCCEEDED};
-    std::string data_path_;
+    std::vector<std::string> dataPaths_;
 };
 
-}  // namespace storage
 }  // namespace nebula
 
 #endif  // WEBSERVICE_SYSINFOHANDLER_H_

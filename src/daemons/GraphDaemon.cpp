@@ -223,7 +223,6 @@ Status setupLogging() {
     return status;
 }
 
-
 void printHelp(const char *prog) {
     fprintf(stderr, "%s --flagfile <config_file>\n", prog);
 }

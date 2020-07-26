@@ -5,14 +5,15 @@
  */
 
 #include "fs/FileUtils.h"
-#include "meta/SysInfoHandler.h"
+#include "process/ProcessUtils.h"
+#include "webservice/SysInfoHandler.h"
 #include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
 #include <proxygen/httpserver/ResponseBuilder.h>
 
 namespace nebula {
-namespace meta {
 
+using nebula::ProcessUtils;
 using proxygen::HTTPMessage;
 using proxygen::HTTPMethod;
 using proxygen::ProxygenError;
@@ -61,8 +62,8 @@ void SysInfoHandler::requestComplete() noexcept {
     delete this;
 }
 
-void SysInfoHandler::init(std::string data_path) {
-    data_path_ = data_path;
+void SysInfoHandler::init(std::vector<std::string> data_path) {
+    dataPaths_ = data_path;
 }
 
 void SysInfoHandler::onError(ProxygenError error) noexcept {
@@ -72,14 +73,19 @@ void SysInfoHandler::onError(ProxygenError error) noexcept {
 
 folly::dynamic SysInfoHandler::getSysInfo() {
     folly::dynamic json = folly::dynamic::object();
-    auto res = fs::FileUtils::detectFilesystemUsage(data_path_);
-    json["disk_total"] = std::get<0>(res);
-    json["disk_avail"] = std::get<1>(res);
-    json["disk_used"] = std::get<2>(res);
-    json["disk_used_percentage"] = std::get<3>(res);
+    for (long unsigned int i = 0; i < dataPaths_.size(); i++) {
+        auto res = fs::FileUtils::detectFilesystemUsage(dataPaths_[i]);
+        json["data_path_" + dataPaths_[i]] = folly::dynamic::object();
+        json["data_path_" + dataPaths_[i]]["disk_total"] = std::get<0>(res);
+        json["data_path_" + dataPaths_[i]]["disk_avail"] = std::get<1>(res);
+    }
 
+    auto memUsage = ProcessUtils::getMemUsage();
+    json["memory_usage"] = memUsage;
+
+    auto cpuUsage = ProcessUtils::getCpuUsage();
+    json["cpu_usage"] = cpuUsage;
     return json;
 }
 
-}  // namespace meta
 }  // namespace nebula

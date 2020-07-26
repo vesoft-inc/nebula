@@ -57,6 +57,14 @@ public:
      * Execute a shell command and return the standard output of the command
      */
     static StatusOr<std::string> runCommand(const char* command);
+    /**
+     * Get Process Memory Usage 
+     */
+    static int64_t getMemUsage();
+    /**
+     * Get Process Cpu Usage 
+     */
+    static double getCpuUsage();
 };
 
 }   // namespace nebula
