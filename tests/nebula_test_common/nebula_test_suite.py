@@ -24,14 +24,14 @@ class NebulaTestSuite(object):
         #     'get configs GRAPH:heartbeat_interval_secs')
         # self.check_resp_succeeded(resp)
         # assert len(resp.rows) == 1, "invalid row size: {}".format(resp.rows)
-        # self.graph_delay = int(resp.rows[0].columns[4].get_sVal()) + 1
+        # self.graph_delay = int(resp.rows[0].values[4].get_sVal()) + 1
         self.graph_delay = 3
 
         # resp = self.client.execute_query(
         #     'get configs STORAGE:heartbeat_interval_secs')
         # self.check_resp_succeeded(resp)
         # assert len(resp.rows) == 1, "invalid row size: {}".format(resp.rows)
-        # self.storage_delay = int(resp.rows[0].columns[4].get_sVal()) + 1
+        # self.storage_delay = int(resp.rows[0].values[4].get_sVal()) + 1
         self.storage_delay = 3
         self.delay = max(self.graph_delay, self.storage_delay) * 2
 
@@ -224,7 +224,7 @@ class NebulaTestSuite(object):
     @classmethod
     def row_to_string(self, row):
         value_list = []
-        for col in row.columns:
+        for col in row.values:
             if col.getType() == CommonTtypes.Value.__EMPTY__:
                 value_list.append('EMPTY')
             elif col.getType() == CommonTtypes.Value.NVAL:
@@ -258,7 +258,7 @@ class NebulaTestSuite(object):
             ok = False
             msg = ""
             for exp in expect:
-                for col, i in zip(row.columns, range(0, len(exp))):
+                for col, i in zip(row.values, range(0, len(exp))):
                     ok, msg = self.check_value(col, exp[i])
                     if not ok:
                         break
@@ -289,9 +289,9 @@ class NebulaTestSuite(object):
         for row, i in zip(rows, range(0, len(expect))):
             print(row)
             print(expect[i])
-            assert len(row.columns) - len(ignore_col) == len(expect[i])
+            assert len(row.values) - len(ignore_col) == len(expect[i])
             ignored_col_count = 0
-            for j, col in enumerate(row.columns):
+            for j, col in enumerate(row.values):
                 if j in ignore_col:
                     ignored_col_count += 1
                     continue
@@ -338,7 +338,7 @@ class NebulaTestSuite(object):
                     path.entry_list.append(pathEntry)
                 else:
                     assert len(
-                        ecol) == 2, "invalid columns size in expect result"
+                        ecol) == 2, "invalid values size in expect result"
                     pathEntry = ttypes.PathEntry()
                     edge = ttypes.Edge()
                     edge.type = ecol[0]
@@ -348,14 +348,14 @@ class NebulaTestSuite(object):
             find = False
             for row in rows:
                 assert len(
-                    row.columns
-                ) == 1, "invalid columns size in rows: {}".format(row)
-                assert row.columns[0].getType()(
+                    row.values
+                ) == 1, "invalid values size in rows: {}".format(row)
+                assert row.values[0].getType()(
                 ) == ttypes.Value.PATH, "invalid column path type: {}".format(
-                    row.columns[0].getType()())
-                if row.columns[0].get_path() == path:
+                    row.values[0].getType()())
+                if row.values[0].get_path() == path:
                     find = True
                     break
-            msg = self.check_format_str.format(row.columns[0].get_path(), path)
+            msg = self.check_format_str.format(row.values[0].get_path(), path)
             assert find, msg
             rows.remove(row)
