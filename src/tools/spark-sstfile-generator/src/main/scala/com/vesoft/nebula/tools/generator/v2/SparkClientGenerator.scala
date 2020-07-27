@@ -329,7 +329,7 @@ object SparkClientGenerator {
                 val switchSpaceCode = client.execute(USE_TEMPLATE.format(space)).get().get()
                 if (isSuccessfully(switchSpaceCode)) {
                   val rateLimiter = RateLimiter.create(rateLimit)
-                  val futures     = new ListBuffer[ListenableFuture[Optional[Integer]]]()
+                  val futures     = new ListBuffer[(ListenableFuture[Optional[Integer]], String)]()
                   iterator.grouped(batch).foreach { tags =>
                     val exec = BATCH_INSERT_TEMPLATE.format(
                       Type.VERTEX.toString,
@@ -357,7 +357,7 @@ object SparkClientGenerator {
                     LOG.info(s"Exec : ${exec}")
                     if (rateLimiter.tryAcquire(rateTimeout, TimeUnit.MILLISECONDS)) {
                       val future = client.execute(exec)
-                      futures += future
+                      futures += new Tuple2[ListenableFuture[Optional[Integer]], String](future, exec)
                     } else {
                       batchFailure.add(1)
                       errorBuffer += exec
@@ -370,13 +370,14 @@ object SparkClientGenerator {
                   val latch = new CountDownLatch(futures.size)
                   for (future <- futures) {
                     Futures.addCallback(
-                      future,
+                      future._1,
                       new FutureCallback[Optional[Integer]] {
                         override def onSuccess(result: Optional[Integer]): Unit = {
                           latch.countDown()
                           if (result.get == ErrorCode.SUCCEEDED) {
                             batchSuccess.add(1)
                           } else {
+                            errorBuffer += future._2
                             if (batchFailure.value > DEFAULT_ERROR_TIMES) {
                               throw TooManyErrorsException("too many errors")
                             } else {
@@ -387,6 +388,7 @@ object SparkClientGenerator {
 
                         override def onFailure(t: Throwable): Unit = {
                           latch.countDown()
+                          errorBuffer += future._2
                           if (batchFailure.value > DEFAULT_ERROR_TIMES) {
                             throw TooManyErrorsException("too many errors")
                           } else {
@@ -550,7 +552,7 @@ object SparkClientGenerator {
                 if (isSuccessfully(switchSpaceCode)) {
                   val errorBuffer = ArrayBuffer[String]()
                   val rateLimiter = RateLimiter.create(rateLimit)
-                  val futures     = new ListBuffer[ListenableFuture[Optional[Integer]]]()
+                  val futures     = new ListBuffer[(ListenableFuture[Optional[Integer]], String)]()
                   iterator.grouped(batch).foreach { edges =>
                     val values =
                       if (rankingOpt.isEmpty) {
@@ -637,7 +639,7 @@ object SparkClientGenerator {
                     LOG.info(s"Exec : ${exec}")
                     if (rateLimiter.tryAcquire(rateTimeout, TimeUnit.MILLISECONDS)) {
                       val future = client.execute(exec)
-                      futures += future
+                      futures += new Tuple2[ListenableFuture[Optional[Integer]], String](future, exec)
                     } else {
                       batchFailure.add(1)
                       LOG.debug("Save the error execution sentence into buffer")
@@ -651,13 +653,14 @@ object SparkClientGenerator {
                   val latch = new CountDownLatch(futures.size)
                   for (future <- futures) {
                     Futures.addCallback(
-                      future,
+                      future._1,
                       new FutureCallback[Optional[Integer]] {
                         override def onSuccess(result: Optional[Integer]): Unit = {
                           latch.countDown()
                           if (result.get == ErrorCode.SUCCEEDED) {
                             batchSuccess.add(1)
                           } else {
+                            errorBuffer += future._2
                             if (batchFailure.value > DEFAULT_ERROR_TIMES) {
                               throw TooManyErrorsException("too many errors")
                             } else {
@@ -668,6 +671,7 @@ object SparkClientGenerator {
 
                         override def onFailure(t: Throwable): Unit = {
                           latch.countDown()
+                          errorBuffer += future._2
                           if (batchFailure.value > DEFAULT_ERROR_TIMES) {
                             throw TooManyErrorsException("too many errors")
                           } else {
