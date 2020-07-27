@@ -491,7 +491,6 @@ cpp2::ErrorCode UpdateVertexProcessor::checkAndBuildContexts(
         }
     }
     auto vId = req.get_vertex_id();
-    auto partId = req.get_part_id();
     // build context of the update items
     for (auto& item : req.get_update_items()) {
         const auto &name = item.get_name();
@@ -510,7 +509,7 @@ cpp2::ErrorCode UpdateVertexProcessor::checkAndBuildContexts(
         auto tagId = tagRet.value();
         if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
             VLOG(3) << "Evict cache for vId " << vId << ", tagId " << tagId;
-            vertexCache_->evict(std::make_pair(req.get_vertex_id(), tagId), partId);
+            vertexCache_->evict(std::make_pair(req.get_vertex_id(), tagId));
         }
         updateTagIds_.emplace(tagId);
         auto exp = Expression::decode(item.get_value());
