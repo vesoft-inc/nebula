@@ -92,8 +92,8 @@ function wait_for_exit {
     while true; do
         sleep 0.1
         is_process_running ${pid_file} || return 0
-        if [[ $(( $sleep_count%10 )) == 0 ]]; then
-            WARN "Cost $(( $sleep_count/10 )) seconds to stop ${daemon_name}"
+        if [[ $(( $sleep_count%50 )) == 0 ]]; then
+            WARN "Stopping ${daemon_name}..."
         fi
         sleep_count=$[$sleep_count+1];
     done
