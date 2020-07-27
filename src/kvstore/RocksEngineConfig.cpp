@@ -60,6 +60,9 @@ DEFINE_string(rocksdb_compression_per_level, "", "Specify per level compression 
                                                  "e.g. \"no:no:lz4:lz4::zstd\" === "
                                                  "\"no:no:lz4:lz4:lz4:snappy:zstd:snappy\"");
 
+DEFINE_bool(enable_rocksdb_statistics, false, "Whether or not to enable rocksdb's statistics");
+DEFINE_string(rocksdb_stats_level, "kExceptHistogramOrTimers", "rocksdb statistics level");
+
 namespace nebula {
 namespace kvstore {
 
@@ -123,6 +126,10 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options &baseOpts) {
     if (!s.ok()) {
         return s;
     }
+    std::shared_ptr<rocksdb::Statistics> stats = getDBStatistics();
+    if (stats) {
+        dbOpts.statistics = std::move(stats);
+    }
     dbOpts.listeners.emplace_back(new EventListener());
 
     std::unordered_map<std::string, std::string> cfOptsMap;
@@ -184,6 +191,30 @@ bool loadOptionsMap(std::unordered_map<std::string, std::string> &map, const std
         map.emplace(key, val.asString());
     });
     return true;
+}
+
+static std::shared_ptr<rocksdb::Statistics> createDBStatistics() {
+    std::shared_ptr<rocksdb::Statistics> dbstats = rocksdb::CreateDBStatistics();
+    if (FLAGS_rocksdb_stats_level == "kExceptHistogramOrTimers") {
+        dbstats->set_stats_level(rocksdb::StatsLevel::kExceptHistogramOrTimers);
+    } else if (FLAGS_rocksdb_stats_level == "kExceptTimers") {
+        dbstats->set_stats_level(rocksdb::StatsLevel::kExceptTimers);
+    } else if (FLAGS_rocksdb_stats_level == "kExceptDetailedTimers") {
+        dbstats->set_stats_level(rocksdb::StatsLevel::kExceptDetailedTimers);
+    } else if (FLAGS_rocksdb_stats_level == "kExceptTimeForMutex") {
+        dbstats->set_stats_level(rocksdb::StatsLevel::kExceptTimeForMutex);
+    } else {
+        dbstats->set_stats_level(rocksdb::StatsLevel::kAll);
+    }
+    return dbstats;
+}
+
+std::shared_ptr<rocksdb::Statistics> getDBStatistics() {
+    if (FLAGS_enable_rocksdb_statistics) {
+        static std::shared_ptr<rocksdb::Statistics> dbstats = createDBStatistics();
+        return dbstats;
+    }
+    return nullptr;
 }
 
 }  // namespace kvstore

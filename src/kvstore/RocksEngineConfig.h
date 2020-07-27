@@ -40,6 +40,8 @@ DECLARE_string(part_man_type);
 DECLARE_string(rocksdb_compression_per_level);
 DECLARE_string(rocksdb_compression);
 
+DECLARE_bool(enable_rocksdb_statistics);
+DECLARE_string(rocksdb_stats_level);
 
 namespace nebula {
 namespace kvstore {
@@ -47,6 +49,8 @@ namespace kvstore {
 rocksdb::Status initRocksdbOptions(rocksdb::Options &baseOpts);
 
 bool loadOptionsMap(std::unordered_map<std::string, std::string> &map, const std::string& gflags);
+
+std::shared_ptr<rocksdb::Statistics> getDBStatistics();
 
 }  // namespace kvstore
 }  // namespace nebula

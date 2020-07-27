@@ -88,6 +88,25 @@ TEST(RocksEngineConfigTest, createOptionsTest) {
     FLAGS_rocksdb_db_options = "{}";
 }
 
+TEST(RocksEngineConfigTest, StatisticsConfigTest) {
+    {
+        FLAGS_enable_rocksdb_statistics = false;
+        rocksdb::Options options;
+        auto status = initRocksdbOptions(options);
+        ASSERT_TRUE(status.ok()) << status.ToString();
+        ASSERT_EQ(nullptr, getDBStatistics());
+    }
+
+    {
+        FLAGS_enable_rocksdb_statistics = true;
+        FLAGS_rocksdb_stats_level = "kExceptTimers";
+        rocksdb::Options options;
+        auto status = initRocksdbOptions(options);
+        ASSERT_TRUE(status.ok()) << status.ToString();
+        std::shared_ptr<rocksdb::Statistics> stats = getDBStatistics();
+        ASSERT_EQ(rocksdb::StatsLevel::kExceptTimers, stats->get_stats_level());
+    }
+}
 
 TEST(RocksEngineConfigTest, CompressionConfigTest) {
     {
