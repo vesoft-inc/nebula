@@ -14,6 +14,8 @@
 #include "rocksdb/slice_transform.h"
 #include "rocksdb/filter_policy.h"
 #include "base/Configuration.h"
+#include "rocksdb/concurrent_task_limiter.h"
+#include "rocksdb/rate_limiter.h"
 
 // [WAL]
 DEFINE_bool(rocksdb_disable_wal,
@@ -62,6 +64,12 @@ DEFINE_string(rocksdb_compression_per_level, "", "Specify per level compression 
 
 DEFINE_bool(enable_rocksdb_statistics, false, "Whether or not to enable rocksdb's statistics");
 DEFINE_string(rocksdb_stats_level, "kExceptHistogramOrTimers", "rocksdb statistics level");
+
+DEFINE_int32(num_compaction_threads, 0,
+            "Number of total compaction threads. 0 means unlimited.");
+
+DEFINE_int32(rate_limit, 0,
+            "write limit in bytes per sec. The unit is MB. 0 means unlimited.");
 
 namespace nebula {
 namespace kvstore {
@@ -164,6 +172,16 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options &baseOpts) {
         static std::shared_ptr<rocksdb::Cache> blockCache
             = rocksdb::NewLRUCache(FLAGS_rocksdb_block_cache * 1024 * 1024, 8/*shard bits*/);
         bbtOpts.block_cache = blockCache;
+    }
+    if (FLAGS_num_compaction_threads > 0) {
+        static std::shared_ptr<rocksdb::ConcurrentTaskLimiter> compaction_thread_limiter{
+            rocksdb::NewConcurrentTaskLimiter("compaction", FLAGS_num_compaction_threads)};
+        baseOpts.compaction_thread_limiter = compaction_thread_limiter;
+    }
+    if (FLAGS_rate_limit > 0) {
+        static std::shared_ptr<rocksdb::RateLimiter> rate_limiter{
+            rocksdb::NewGenericRateLimiter(FLAGS_rate_limit * 1024 * 1024)};
+        baseOpts.rate_limiter = rate_limiter;
     }
 
     bbtOpts.filter_policy.reset(rocksdb::NewBloomFilterPolicy(10, false));
