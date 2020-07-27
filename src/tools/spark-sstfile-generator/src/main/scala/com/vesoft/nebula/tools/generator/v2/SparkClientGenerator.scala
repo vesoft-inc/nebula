@@ -297,7 +297,6 @@ object SparkClientGenerator {
           fields.asScala.keys.toList
         }
 
-        val vertexIndex      = sourceProperties.indexOf(vertex)
         val nebulaProperties = properties.mkString(",")
         val data             = createDataSource(spark, pathOpt, tagConfig)
 
@@ -310,7 +309,7 @@ object SparkClientGenerator {
               val values = (for {
                 property <- valueProperties if property.trim.length != 0
               } yield extraValue(row, property)).mkString(",")
-              (String.valueOf(extraValue(row, vertex)), values)
+              (String.valueOf(extraIndexValue(row, vertex)), values)
             }(Encoders.tuple(Encoders.STRING, Encoders.STRING))
             .foreachPartition { iterator: Iterator[(String, String)] =>
               val service      = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(1))
@@ -882,6 +881,94 @@ object SparkClientGenerator {
           row.getMap(index).mkString("\"{", ",", "}\"")
         } else {
           "\"{}\""
+        }
+    }
+  }
+
+  /**
+    * Extra Index value from the row by field name.
+    * When the field is null, we will fill it with default value.
+    *
+    * @param row   The row value.
+    * @param field The field name.
+    * @return
+    */
+  private[this] def extraIndexValue(row: Row, field: String): Any = {
+    val index = row.schema.fieldIndex(field)
+    row.schema.fields(index).dataType match {
+      case StringType =>
+        if (!row.isNullAt(index)) {
+          row.getString(index)
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+        } else {
+          ""
+        }
+      case ShortType =>
+        if (!row.isNullAt(index)) {
+          row.getShort(index).toString
+        } else {
+          "0"
+        }
+      case IntegerType =>
+        if (!row.isNullAt(index)) {
+          row.getInt(index).toString
+        } else {
+          "0"
+        }
+      case LongType =>
+        if (!row.isNullAt(index)) {
+          row.getLong(index).toString
+        } else {
+          "0"
+        }
+      case FloatType =>
+        if (!row.isNullAt(index)) {
+          row.getFloat(index).toString
+        } else {
+          "0.0"
+        }
+      case DoubleType =>
+        if (!row.isNullAt(index)) {
+          row.getDouble(index).toString
+        } else {
+          "0.0"
+        }
+      case _: DecimalType =>
+        if (!row.isNullAt(index)) {
+          row.getDecimal(index).toString
+        } else {
+          "0.0"
+        }
+      case BooleanType =>
+        if (!row.isNullAt(index)) {
+          row.getBoolean(index).toString
+        } else {
+          "false"
+        }
+      case TimestampType =>
+        if (!row.isNullAt(index)) {
+          row.getTimestamp(index).getTime
+        } else {
+          "0"
+        }
+      case _: DateType =>
+        if (!row.isNullAt(index)) {
+          row.getDate(index).toString
+        } else {
+          ""
+        }
+      case _: ArrayType =>
+        if (!row.isNullAt(index)) {
+          row.getSeq(index).mkString("[", ",", "]")
+        } else {
+          "[]"
+        }
+      case _: MapType =>
+        if (!row.isNullAt(index)) {
+          row.getMap(index).mkString("{", ",", "}")
+        } else {
+          "{}"
         }
     }
   }
