@@ -114,6 +114,36 @@ TEST_F(FunctionManagerTest, functionCall) {
         ASSERT_TRUE(result.ok());
         result.value()(args_["string"]);
     }
+    {
+        auto result = FunctionManager::get("hash", 1);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({"Hello"});
+        EXPECT_EQ(res, 2275118702903107253);
+    }
+    {
+        auto result = FunctionManager::get("hash", 1);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({3.14159265});
+        EXPECT_EQ(res, -8359970742410469755);
+    }
+    {
+        auto result = FunctionManager::get("hash", 1);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({1234567890});
+        EXPECT_EQ(res, 1234567890);
+    }
+    {
+        auto result = FunctionManager::get("hash", 1);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({true});
+        EXPECT_EQ(res, 1);
+    }
+    {
+        auto result = FunctionManager::get("hash", 1);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({false});
+        EXPECT_EQ(res, 0);
+    }
 }
 
 TEST_F(FunctionManagerTest, returnType) {

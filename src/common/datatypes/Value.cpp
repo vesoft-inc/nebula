@@ -27,19 +27,16 @@ std::size_t hash<nebula::Value>::operator()(const nebula::Value& v) const noexce
                                           sizeof(nebula::NullType));
         }
         case nebula::Value::Type::BOOL: {
-            return folly::hash::fnv64_buf(reinterpret_cast<const void*>(&v.getBool()),
-                                          sizeof(bool));
+            return hash<bool>()(v.getBool());
         }
         case nebula::Value::Type::INT: {
-            return folly::hash::fnv64_buf(reinterpret_cast<const void*>(&v.getInt()),
-                                          sizeof(int64_t));
+            return hash<int64_t>()(v.getInt());
         }
         case nebula::Value::Type::FLOAT: {
-            return folly::hash::fnv64_buf(reinterpret_cast<const void*>(&v.getFloat()),
-                                          sizeof(double));
+            return hash<double>()(v.getFloat());
         }
         case nebula::Value::Type::STRING: {
-            return folly::hash::fnv64(v.getStr());
+            return hash<string>()(v.getStr());
         }
         case nebula::Value::Type::DATE: {
             return hash<nebula::Date>()(v.getDate());

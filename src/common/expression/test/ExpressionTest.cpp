@@ -972,7 +972,7 @@ TEST_F(ExpressionTest, toStringTest) {
     }
     {
         ConstantExpression ep(Set({1, 2.3, "hello", true}));
-        EXPECT_EQ(ep.toString(), "{true,2.3,hello,1}");
+        EXPECT_EQ(ep.toString(), "{hello,2.3,true,1}");
     }
     {
         ConstantExpression ep(Date(1234));
