@@ -43,14 +43,16 @@ Status GetNeighborsExecutor::buildRequestDataSet() {
     reqDs_.colNames = {kVid};
     reqDs_.rows.reserve(iter->size());
     auto* src = gn_->src();
+    std::unordered_set<Value> uniqueVid;
     for (; iter->valid(); iter->next()) {
         auto val = Expression::eval(src, ctx);
         if (!val.isStr()) {
             continue;
         }
-        Row row;
-        row.values.emplace_back(std::move(val));
-        reqDs_.rows.emplace_back(std::move(row));
+        auto ret = uniqueVid.emplace(val);
+        if (ret.second) {
+            reqDs_.rows.emplace_back(Row({std::move(val)}));
+        }
     }
 
     return Status::OK();

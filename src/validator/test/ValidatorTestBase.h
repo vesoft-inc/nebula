@@ -51,6 +51,7 @@ protected:
     ::testing::AssertionResult checkResult(const std::string& query,
                                            const std::vector<PlanNode::Kind>& expected = {},
                                            const std::vector<std::string> &rootColumns = {}) {
+        VLOG(1) << "query: " << query;
         auto result = GQLParser().parse(query);
         if (!result.ok()) {
             return ::testing::AssertionFailure() << result.status();

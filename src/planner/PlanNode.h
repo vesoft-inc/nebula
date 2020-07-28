@@ -107,7 +107,7 @@ public:
 
     void setId(int64_t id) {
         id_ = id;
-        outputVar_ = folly::stringPrintf("%s_%ld", toString(kind_), id_);
+        outputVar_ = folly::stringPrintf("__%s_%ld", toString(kind_), id_);
     }
 
     void setPlan(ExecutionPlan* plan) {

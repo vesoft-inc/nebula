@@ -39,6 +39,7 @@ protected:
         for (auto &colName : v.colNames) {
             std::replace(colName.begin(), colName.end(), ':', '.');
         }
+        VLOG(1) << "Resp: " << v;
         return finish(ResultBuilder()
                       .value(std::move(v))
                       .iter(Iterator::Kind::kSequential)

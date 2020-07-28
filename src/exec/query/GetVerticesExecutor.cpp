@@ -29,7 +29,14 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
 
     GraphStorageClient *storageClient = qctx()->getStorageClient();
     nebula::DataSet vertices({kVid});
+    std::unordered_set<Value> uniqueVid;
     if (!gv->vertices().empty()) {
+        for (auto& v : gv->vertices()) {
+            auto ret = uniqueVid.emplace(v.values.front());
+            if (ret.second) {
+                vertices.emplace_back(std::move(v));
+            }
+        }
         vertices.rows.insert(vertices.rows.end(),
                              std::make_move_iterator(gv->vertices().begin()),
                              std::make_move_iterator(gv->vertices().end()));
@@ -37,18 +44,27 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
     if (gv->src() != nullptr) {
         // Accept Table such as | $a | $b | $c |... as input which one column indicate src
         auto valueIter = ectx_->getResult(gv->inputVar()).iter();
+        VLOG(1) << "GV input var: " << gv->inputVar() << " iter kind: " << valueIter->kind();
         auto expCtx = QueryExpressionContext(qctx()->ectx(), valueIter.get());
         for (; valueIter->valid(); valueIter->next()) {
             auto src = gv->src()->eval(expCtx);
+            VLOG(1) << "src vid: " << src;
             if (!src.isStr()) {
-                LOG(WARNING) << "Mismatched vid type.";
+                LOG(WARNING) << "Mismatched vid type: " << src.type();
                 continue;
             }
-            vertices.emplace_back(Row({
-                std::move(src)
-            }));
+            auto ret = uniqueVid.emplace(src);
+            if (ret.second) {
+                vertices.emplace_back(Row({std::move(src)}));
+            }
         }
     }
+
+    if (vertices.rows.empty()) {
+        // TODO: add test for empty input.
+        return finish(ResultBuilder().value(Value(DataSet())).finish());
+    }
+
     return DCHECK_NOTNULL(storageClient)
         ->getProps(gv->space(),
                    std::move(vertices),
