@@ -51,8 +51,8 @@ object SparkClientGenerator {
 
   private[this] val BATCH_INSERT_TEMPLATE                           = "INSERT %s %s(%s) VALUES %s"
   private[this] val INSERT_VALUE_TEMPLATE                           = "%s: (%s)"
-  private[this] val INSERT_VALUE_TEMPLATE_WITH_POLICY               = "%s(\"%s\"): (%s)"
-  private[this] val ENDPOINT_TEMPLATE                               = "%s(\"%s\")"
+  private[this] val INSERT_VALUE_TEMPLATE_WITH_POLICY               = "%s(%s): (%s)"
+  private[this] val ENDPOINT_TEMPLATE                               = "%s(%s)"
   private[this] val EDGE_VALUE_WITHOUT_RANKING_TEMPLATE             = "%s->%s: (%s)"
   private[this] val EDGE_VALUE_WITHOUT_RANKING_TEMPLATE_WITH_POLICY = "%s->%s: (%s)"
   private[this] val EDGE_VALUE_TEMPLATE                             = "%s->%s@%d: (%s)"
@@ -297,7 +297,6 @@ object SparkClientGenerator {
           fields.asScala.keys.toList
         }
 
-        val vertexIndex      = sourceProperties.indexOf(vertex)
         val nebulaProperties = properties.mkString(",")
         val data             = createDataSource(spark, pathOpt, tagConfig)
 
