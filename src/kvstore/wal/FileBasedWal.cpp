@@ -60,7 +60,10 @@ FileBasedWal::FileBasedWal(const folly::StringPiece dir,
                   << ", path is " << info->path();
         currFd_ = open(info->path(), O_WRONLY | O_APPEND);
         currInfo_ = info;
-        CHECK_GE(currFd_, 0);
+        if (currFd_ < 0) {
+            LOG(FATAL) << "Failed to open the file \"" << info->path() << "\" ("
+                       << errno << "): " << strerror(errno);
+        }
     }
 }
 
