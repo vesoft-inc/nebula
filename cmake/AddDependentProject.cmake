@@ -6,10 +6,10 @@
 
 macro(add_dependent_project)
     cmake_parse_arguments(
-        DEP_PROJ                    # prefix
-        ""                          # <options>
-        "BASE;NAME;REPO;TAG"        # <one_value_args>
-        ""                          # <multi_value_args>
+        DEP_PROJ                      # prefix
+        ""                            # <options>
+        "BASE;NAME;REPO;TAG;JOBS"     # <one_value_args>
+        ""                            # <multi_value_args>
         ${ARGN}
     )
 
@@ -68,7 +68,7 @@ macro(add_dependent_project)
     # Add a custom target to build the project
     add_custom_target(
         ${DEP_PROJ_NAME}_project ALL
-        COMMAND make -j$(nproc)
+        COMMAND make -j${DEP_PROJ_JOBS}
         WORKING_DIRECTORY ${CLONE_DIR}
     )
 

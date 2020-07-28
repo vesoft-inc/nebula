@@ -9,7 +9,8 @@
   - 进入Nebula编译目录下的 tests 目录
   - ./ntr  query/stateless/
   - 可以通过 --rm_dir=false 取消删除创建的临时目录 /tmp/nebula-XXXXXXXX
-  - 可以通过 --stop_nebula=false 取消停止 nebula 服务 /tmp/nebula-XXXXXXXX
+  - 可以通过 --stop_nebula=false 取消停止 nebula 服务
+  - 可以通过 --address=ip:port 连接自己的服务
 - 测试如何编写
   - 例子：query/stateless/test_simple_query.py
   - 其中每一个功能 test case 都是一个类，而这个类必须继承 NebulaTestSuite.
