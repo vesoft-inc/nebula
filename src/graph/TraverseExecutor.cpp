@@ -281,7 +281,9 @@ OptVariantType Collector::getProp(const meta::SchemaProviderIf *schema,
         }
         default:
             std::string errMsg =
-                folly::stringPrintf("Unknown type: %d", static_cast<int32_t>(type));
+                folly::stringPrintf(
+                    "Unknown type: %d, prop: %s",
+                    static_cast<int32_t>(type), prop.c_str());
             LOG(ERROR) << errMsg;
             return Status::Error(errMsg);
     }

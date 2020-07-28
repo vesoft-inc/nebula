@@ -46,6 +46,8 @@ public:
 
     StatusOr<std::vector<std::string>> getAllEdge(GraphSpaceID space) override;
 
+    StatusOr<std::vector<std::string>> getAllTag(GraphSpaceID space) override;
+
     void init(MetaClient *client) override;
 
 private:

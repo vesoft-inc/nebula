@@ -54,6 +54,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
     nebula::VertexIDList                   *vid_list;
     nebula::OverEdge                       *over_edge;
     nebula::OverEdges                      *over_edges;
+    nebula::FetchLabels                    *fetch_labels;
     nebula::OverClause                     *over_clause;
     nebula::WhereClause                    *where_clause;
     nebula::WhenClause                     *when_clause;
@@ -159,6 +160,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %type <vid_list> vid_list
 %type <over_edge> over_edge
 %type <over_edges> over_edges
+%type <fetch_labels> fetch_labels
 %type <over_clause> over_clause
 %type <where_clause> where_clause
 %type <when_clause> when_clause
@@ -856,14 +858,32 @@ order_by_sentence
     ;
 
 fetch_vertices_sentence
-    : KW_FETCH KW_PROP KW_ON name_label vid_list yield_clause {
+    : KW_FETCH KW_PROP KW_ON fetch_labels vid_list yield_clause {
         $$ = new FetchVerticesSentence($4, $5, $6);
     }
-    | KW_FETCH KW_PROP KW_ON name_label vid_ref_expression yield_clause {
+    | KW_FETCH KW_PROP KW_ON fetch_labels vid_ref_expression yield_clause {
         $$ = new FetchVerticesSentence($4, $5, $6);
     }
-    | KW_FETCH KW_PROP KW_ON MUL vid {
-        $$ = new FetchVerticesSentence($5);
+    | KW_FETCH KW_PROP KW_ON MUL vid_list yield_clause {
+        auto labels = new nebula::FetchLabels();
+        labels->addLabel(new std::string("*"));
+        $$ = new FetchVerticesSentence(labels, $5, $6);
+    }
+    | KW_FETCH KW_PROP KW_ON MUL vid_ref_expression yield_clause {
+        auto labels = new nebula::FetchLabels();
+        labels->addLabel(new std::string("*"));
+        $$ = new FetchVerticesSentence(labels, $5, $6);
+    }
+    ;
+
+fetch_labels
+    : name_label {
+        $$ = new FetchLabels();
+        $$->addLabel($1);
+    }
+    | fetch_labels COMMA name_label {
+        $$ = $1;
+        $$->addLabel($3);
     }
     ;
 
@@ -907,11 +927,11 @@ edge_key_ref:
     ;
 
 fetch_edges_sentence
-    : KW_FETCH KW_PROP KW_ON name_label edge_keys yield_clause {
+    : KW_FETCH KW_PROP KW_ON fetch_labels edge_keys yield_clause {
         auto fetch = new FetchEdgesSentence($4, $5, $6);
         $$ = fetch;
     }
-    | KW_FETCH KW_PROP KW_ON name_label edge_key_ref yield_clause {
+    | KW_FETCH KW_PROP KW_ON fetch_labels edge_key_ref yield_clause {
         auto fetch = new FetchEdgesSentence($4, $5, $6);
         $$ = fetch;
     }
@@ -1568,6 +1588,7 @@ admin_sentence
     : KW_SUBMIT KW_JOB admin_operation {
         auto sentence = new AdminSentence("add_job");
         sentence->addPara(*$3);
+        delete $3;
         $$ = sentence;
     }
     | KW_SHOW KW_JOBS {

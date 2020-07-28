@@ -46,6 +46,8 @@ public:
 
     virtual StatusOr<std::vector<std::string>> getAllEdge(GraphSpaceID space) = 0;
 
+    virtual StatusOr<std::vector<std::string>> getAllTag(GraphSpaceID space) = 0;
+
     virtual void init(MetaClient *client = nullptr) = 0;
 
 protected:
