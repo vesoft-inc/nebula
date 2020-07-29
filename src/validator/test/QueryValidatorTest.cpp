@@ -714,6 +714,10 @@ TEST_F(QueryValidatorTest, GoInvalid) {
                             "| GO FROM $-.id OVER like WHERE $var.id == \"\"";
         EXPECT_FALSE(checkResult(query));
     }
+    {
+        std::string query = "GO FROM \"2\" OVER like YIELD COUNT(123);";
+        EXPECT_FALSE(checkResult(query));
+    }
 }
 
 TEST_F(QueryValidatorTest, Limit) {

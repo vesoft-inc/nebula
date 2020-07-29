@@ -36,11 +36,6 @@ Status GoValidator::validateImpl() {
 
     NG_RETURN_IF_ERROR(buildColumns());
 
-    if (isOverAll_) {
-        // TODO: implement over all.
-        return Status::Error("Not support over all yet.");
-    }
-
     return Status::OK();
 }
 
@@ -112,7 +107,7 @@ Status GoValidator::validateOver(const OverClause* over) {
     direction_ = over->direction();
     if (over->isOverAll()) {
         isOverAll_ = true;
-        return Status::OK();
+        return Status::Error("Not support over all yet.");
     }
     auto edges = over->edges();
     auto* schemaMng = qctx_->schemaMng();
@@ -163,6 +158,11 @@ Status GoValidator::validateYield(const YieldClause* yield) {
     distinct_ = yield->isDistinct();
     auto cols = yield->columns();
     for (auto col : cols) {
+        if (!col->getAggFunName().empty()) {
+            return Status::Error(
+                "`%s', not support aggregate function in go sentence.",
+                col->toString().c_str());
+        }
         auto colName = deduceColName(col);
         colNames_.emplace_back(colName);
 
@@ -767,6 +767,11 @@ void GoValidator::extractPropExprs(const Expression* expr) {
             extractPropExprs(unaryExpr->operand());
             break;
         }
+        case Expression::Kind::kTypeCasting: {
+            auto typeCastingExpr = static_cast<const TypeCastingExpression*>(expr);
+            extractPropExprs(typeCastingExpr->operand());
+            break;
+        }
         case Expression::Kind::kFunctionCall: {
             auto funcExpr = static_cast<const FunctionCallExpression*>(expr);
             auto& args = funcExpr->args()->args();
@@ -823,7 +828,6 @@ void GoValidator::extractPropExprs(const Expression* expr) {
         case Expression::Kind::kVar:
         case Expression::Kind::kVersionedVar:
         case Expression::Kind::kSymProperty:
-        case Expression::Kind::kTypeCasting:
         case Expression::Kind::kUnaryIncr:
         case Expression::Kind::kUnaryDecr:
         case Expression::Kind::kRelIn: {
@@ -873,6 +877,16 @@ std::unique_ptr<Expression> GoValidator::rewriteToInputProp(Expression* expr) {
             }
             break;
         }
+        case Expression::Kind::kTypeCasting: {
+            auto typeCastingExpr =
+                static_cast<TypeCastingExpression*>(expr);
+            auto rewrite = rewriteToInputProp(
+                const_cast<Expression*>(typeCastingExpr->operand()));
+            if (rewrite != nullptr) {
+                typeCastingExpr->setOperand(rewrite.release());
+            }
+            break;
+        }
         case Expression::Kind::kFunctionCall: {
             auto funcExpr = static_cast<FunctionCallExpression*>(expr);
             auto* argList = const_cast<ArgumentList*>(funcExpr->args());
@@ -907,7 +921,6 @@ std::unique_ptr<Expression> GoValidator::rewriteToInputProp(Expression* expr) {
         case Expression::Kind::kVar:
         case Expression::Kind::kVersionedVar:
         case Expression::Kind::kSymProperty:
-        case Expression::Kind::kTypeCasting:
         case Expression::Kind::kUnaryIncr:
         case Expression::Kind::kUnaryDecr:
         case Expression::Kind::kRelIn: {
