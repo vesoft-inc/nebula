@@ -48,14 +48,14 @@ struct CxxCurl {
     }
 
 private:
-    static size_t response_callback(char *data, size_t size, size_t count, void *userptr);
+    static size_t response_callback(char *data, size_t size, size_t nmemb, void *userptr);
     CURL *curl;
     std::string response;
 };
 
-size_t CxxCurl::response_callback(char *data, size_t size, size_t count, void *userptr) {
+size_t CxxCurl::response_callback(char *data, size_t size, size_t nmemb, void *userptr) {
     std::string *response = (std::string*)userptr;
-    size *= count;
+    size *= nmemb;
     response->append(data, size);
     return size;
 }
