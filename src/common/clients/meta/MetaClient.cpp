@@ -1677,8 +1677,11 @@ MetaClient::getTagSchemaFromCache(GraphSpaceID spaceId, TagID tagID, SchemaVer v
     } else {
         auto tagIt = spaceIt->second->tagSchemas_.find(tagID);
         if (tagIt == spaceIt->second->tagSchemas_.end() ||
+            tagIt->second.empty() ||
             tagIt->second.size() <= static_cast<size_t>(ver)) {
             return std::shared_ptr<const NebulaSchemaProvider>();
+        } else if (ver < 0) {
+            return tagIt->second.back();
         } else {
             return tagIt->second[ver];
         }
@@ -1699,10 +1702,11 @@ MetaClient::getEdgeSchemaFromCache(GraphSpaceID spaceId, EdgeType edgeType, Sche
     } else {
         auto edgeIt = spaceIt->second->edgeSchemas_.find(edgeType);
         if (edgeIt == spaceIt->second->edgeSchemas_.end() ||
+            edgeIt->second.empty() ||
             edgeIt->second.size() <= static_cast<size_t>(ver)) {
-            LOG(ERROR) << "Space " << spaceId << ", EdgeType " << edgeType << ", version "
-                       << ver << " not found!";
             return std::shared_ptr<const NebulaSchemaProvider>();
+        } else if (ver < 0) {
+            return edgeIt->second.back();
         } else {
             return edgeIt->second[ver];
         }
@@ -2005,12 +2009,12 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
     req.set_host(options_.localHost_);
     req.set_role(options_.role_);
     req.set_git_info_sha(options_.gitInfoSHA_);
-    if (options_.clusterId_.load() == 0) {
-        options_.clusterId_ =
-            FileBasedClusterIdMan::getClusterIdFromFile(FLAGS_cluster_id_path);
-    }
-    req.set_cluster_id(options_.clusterId_.load());
     if (options_.role_ == cpp2::HostRole::STORAGE) {
+        if (options_.clusterId_.load() == 0) {
+            options_.clusterId_ =
+                FileBasedClusterIdMan::getClusterIdFromFile(FLAGS_cluster_id_path);
+        }
+        req.set_cluster_id(options_.clusterId_.load());
         std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
         if (listener_ != nullptr) {
             listener_->fetchLeaderInfo(leaderIds);

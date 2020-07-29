@@ -340,6 +340,9 @@ struct GetPropResponse {
     //   | .....                            |
     //   ====================================
     //
+    // If the request is to get tag prop, the first column will **always** be the vid,
+    // and the first column name is "_vid".
+    //
     // Each column represents one peoperty. When all properties are returned, the
     //   column name is in the form of
     //   "<tag_name>:<prop_alias>" or "<edge_type_name>:<prop_alias>"
