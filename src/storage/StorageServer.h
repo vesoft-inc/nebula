@@ -61,6 +61,7 @@ private:
 
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
     std::shared_ptr<apache::thrift::concurrency::ThreadManager> workers_;
+    std::shared_ptr<apache::thrift::concurrency::ThreadManager> raftWorkers_;
 
     std::unique_ptr<apache::thrift::ThriftServer> tfServer_;
     std::unique_ptr<nebula::WebService> webSvc_;

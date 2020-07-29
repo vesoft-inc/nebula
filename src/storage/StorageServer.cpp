@@ -26,6 +26,8 @@ DEFINE_int32(num_io_threads, 16, "Number of IO threads");
 DEFINE_int32(num_worker_threads, 32, "Number of workers");
 DEFINE_int32(storage_http_thread_num, 3, "Number of storage daemon's http thread");
 DEFINE_bool(local_config, false, "meta client will not retrieve latest configuration from meta");
+DEFINE_int32(raft_num_worker_threads, 0,
+             "Number of workers for raft alone. 0 means reuse worker threads");
 
 namespace nebula {
 namespace storage {
@@ -48,10 +50,11 @@ std::unique_ptr<kvstore::KVStore> StorageServer::getStoreInstance() {
     options.cffBuilder_ = std::make_unique<StorageCompactionFilterFactoryBuilder>(schemaMan_.get(),
                                                                                   indexMan_.get());
     if (FLAGS_store_type == "nebula") {
-        auto nbStore = std::make_unique<kvstore::NebulaStore>(std::move(options),
-                                                              ioThreadPool_,
-                                                              localHost_,
-                                                              workers_);
+        auto nbStore = std::make_unique<kvstore::NebulaStore>(
+            std::move(options),
+            ioThreadPool_,
+            localHost_,
+            raftWorkers_ != nullptr ? raftWorkers_ : workers_);
         if (!(nbStore->init())) {
             LOG(ERROR) << "nebula store init failed";
             return nullptr;
@@ -98,6 +101,13 @@ bool StorageServer::start() {
                                  FLAGS_num_worker_threads, true /*stats*/);
     workers_->setNamePrefix("executor");
     workers_->start();
+
+    if (FLAGS_raft_num_worker_threads > 0) {
+        raftWorkers_ = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
+            FLAGS_raft_num_worker_threads, true /*stats*/);
+        raftWorkers_->setNamePrefix("raft");
+        raftWorkers_->start();
+    }
 
     // Meta client
     meta::MetaClientOptions options;
