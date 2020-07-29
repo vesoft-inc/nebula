@@ -39,6 +39,7 @@ enum ErrorCode {
     E_EXECUTION_ERROR = -8,
     // Nothing is executed When command is comment
     E_STATEMENT_EMTPY = -9,
+    E_SEMANTIC_ERROR = -10,
 } (cpp.enum_strict)
 
 

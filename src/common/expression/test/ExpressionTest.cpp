@@ -958,6 +958,11 @@ TEST_F(ExpressionTest, toStringTest) {
         ConstantExpression ep(1.123);
         EXPECT_EQ(ep.toString(), "1.123");
     }
+    // FIXME: double/float to string conversion
+    // {
+    //     ConstantExpression ep(1.0);
+    //     EXPECT_EQ(ep.toString(), "1.0");
+    // }
     {
         ConstantExpression ep(true);
         EXPECT_EQ(ep.toString(), "true");

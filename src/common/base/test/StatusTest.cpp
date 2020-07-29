@@ -25,6 +25,7 @@ TEST(Status, toString) {
     ASSERT_EQ("Error", Status::Error("Error").toString());
     ASSERT_EQ("SomeError", Status::Error("SomeError").toString());
     ASSERT_EQ("SomeError(-1)", Status::Error("%s(%d)", "SomeError", -1).toString());
+    ASSERT_EQ("SyntaxError: message", Status::SyntaxError("message").toString());
 }
 
 
@@ -105,6 +106,22 @@ TEST(Status, ReturnIfError) {
     };
     EXPECT_FALSE(testReturnIfError().ok());
     EXPECT_TRUE(testReturnOK().ok());
+}
+
+TEST(Status, Message) {
+    Status err = Status::Error("error");
+    EXPECT_EQ(err.message(), "error");
+    Status syntaxError = Status::SyntaxError(err.message());
+    EXPECT_EQ(err.message(), "error");
+    EXPECT_EQ(syntaxError.message(), "error");
+    EXPECT_EQ(syntaxError.toString(), "SyntaxError: error");
+    EXPECT_EQ("some reason", Status::Error("some reason").message());
+    EXPECT_EQ("", Status::OK().message());
+    std::string msg;
+    {
+        msg = Status::Error("reason").message();
+    }
+    EXPECT_EQ(msg, "reason");
 }
 
 }   // namespace nebula
