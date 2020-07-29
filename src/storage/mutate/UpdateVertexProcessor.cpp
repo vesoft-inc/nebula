@@ -410,7 +410,8 @@ folly::Optional<std::string> UpdateVertexProcessor::updateAndWriteBack(const Par
         }
         auto nVal = std::move(status.value());
         if (!indexes_.empty()) {
-            std::unique_ptr<RowReader> reader, oReader;
+            RowReader reader = RowReader::getEmptyRowReader();
+            RowReader oReader = RowReader::getEmptyRowReader();
             for (auto &index : indexes_) {
                 if (index->get_schema_id().get_tag_id() == u.first) {
                     if (!(u.second->kv.second.empty())) {

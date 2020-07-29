@@ -12,7 +12,7 @@ namespace nebula {
 using folly::hash::SpookyHashV2;
 using nebula::meta::SchemaProviderIf;
 
-RowUpdater::RowUpdater(std::unique_ptr<RowReader> reader,
+RowUpdater::RowUpdater(RowReader reader,
                        std::shared_ptr<const meta::SchemaProviderIf> schema)
         : schema_(std::move(schema))
         , reader_(std::move(reader)) {
@@ -22,7 +22,7 @@ RowUpdater::RowUpdater(std::unique_ptr<RowReader> reader,
 
 RowUpdater::RowUpdater(std::shared_ptr<const meta::SchemaProviderIf> schema)
         : schema_(std::move(schema))
-        , reader_(nullptr) {
+        , reader_(RowReader::getEmptyRowReader()) {
     CHECK(!!schema_);
 }
 

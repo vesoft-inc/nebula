@@ -1222,7 +1222,7 @@ bool GoExecutor::processFinalResult(Callback cb) const {
                                 return index_->getColumnWithRow(*inputRow, prop);
                             };
 
-                            std::unique_ptr<RowReader> reader;
+                            RowReader reader = RowReader::getEmptyRowReader();
                             if (currEdgeSchema) {
                                 reader = RowReader::getRowReader(edge.props, currEdgeSchema);
                             }

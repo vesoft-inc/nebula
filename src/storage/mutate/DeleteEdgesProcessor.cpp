@@ -98,7 +98,7 @@ DeleteEdgesProcessor::deleteEdges(GraphSpaceID spaceId,
              * just get the latest version edge for index.
              */
             if (isLatestVE) {
-                std::unique_ptr<RowReader> reader;
+                RowReader reader = RowReader::getEmptyRowReader();
                 for (auto& index : indexes_) {
                     auto indexId = index->get_index_id();
                     if (type == index->get_schema_id().get_edge_type()) {
