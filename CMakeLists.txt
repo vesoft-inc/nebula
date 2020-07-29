@@ -266,6 +266,7 @@ find_package(FLEX REQUIRED)
 find_package(Readline REQUIRED)
 find_package(NCURSES REQUIRED)
 find_package(LibLZMA MODULE)
+find_package(CURL REQUIRED)
 if(ENABLE_PCH AND NOT ENABLE_ASAN AND NOT ENABLE_NATIVE)
     find_package(PCHSupport)
     add_compile_options(-Winvalid-pch)
@@ -482,6 +483,7 @@ macro(nebula_add_library name type)
     )
 endmacro()
 
+include_directories(AFTER ${CURL_INCLUDE_DIRS})
 include_directories(AFTER ${NEBULA_HOME}/src)
 include_directories(AFTER src/common)
 include_directories(AFTER src/interface)
@@ -565,6 +567,7 @@ macro(nebula_link_libraries target)
         ${libatomic_link_flags}
         -pthread
         ${COVERAGES}
+        ${CURL_LIBRARIES}
     )
 endmacro(nebula_link_libraries)
 
