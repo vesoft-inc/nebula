@@ -175,6 +175,7 @@ private:
      */
     class VertexHolder final {
     public:
+        explicit VertexHolder(ExecutionContext* ectx) : ectx_(ectx) { }
         OptVariantType getDefaultProp(TagID tid, const std::string &prop) const;
         OptVariantType get(VertexID id, TagID tid, const std::string &prop) const;
         void add(const storage::cpp2::QueryResponse &resp);
@@ -184,6 +185,7 @@ private:
     private:
         using VData = std::tuple<std::shared_ptr<ResultSchemaProvider>, std::string>;
         std::unordered_map<VertexID, std::unordered_map<TagID, VData>> data_;
+        ExecutionContext* ectx_{nullptr};
     };
 
     class VertexBackTracker final {
