@@ -17,17 +17,15 @@ namespace graph {
 
 Status SetExecutor::checkInputDataSets() {
     auto setNode = asNode<SetOp>(node());
-    auto& lResult = ectx_->getResult(setNode->leftInputVar());
-    auto& rResult = ectx_->getResult(setNode->rightInputVar());
 
-    auto lIter = lResult.iter();
-    auto rIter = rResult.iter();
+    auto lIter = ectx_->getResult(setNode->leftInputVar()).iter();
+    auto rIter = ectx_->getResult(setNode->rightInputVar()).iter();
 
     if (UNLIKELY(lIter->kind() == Iterator::Kind::kGetNeighbors ||
                  rIter->kind() == Iterator::Kind::kGetNeighbors)) {
-        return Status::Error("Invalid iterator kind, %d vs. %d",
-                             static_cast<uint8_t>(lIter->kind()),
-                             static_cast<uint8_t>(rIter->kind()));
+        std::stringstream ss;
+        ss << "Invalid iterator kind: " << lIter->kind() << " vs. " << rIter->kind();
+        return Status::Error(ss.str());
     }
 
     auto& leftData = lIter->value();
@@ -50,19 +48,17 @@ Status SetExecutor::checkInputDataSets() {
     auto lcols = folly::join(",", lds.colNames);
     auto rcols = folly::join(",", rds.colNames);
     return Status::Error(
-        "Data sets have different columns: <%s> vs. <%s>", lcols.c_str(), rcols.c_str());
+        "Datasets have different columns: <%s> vs. <%s>", lcols.c_str(), rcols.c_str());
 }
 
 std::unique_ptr<Iterator> SetExecutor::getLeftInputDataIter() const {
     auto left = asNode<SetOp>(node())->leftInputVar();
-    auto& result = ectx_->getResult(left);
-    return result.iter();
+    return ectx_->getResult(left).iter();
 }
 
 std::unique_ptr<Iterator> SetExecutor::getRightInputDataIter() const {
     auto right = asNode<SetOp>(node())->rightInputVar();
-    auto& result = ectx_->getResult(right);
-    return result.iter();
+    return ectx_->getResult(right).iter();
 }
 
 }   // namespace graph

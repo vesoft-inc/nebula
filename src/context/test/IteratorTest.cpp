@@ -608,8 +608,8 @@ TEST(IteratorTest, Join) {
     joinIter.joinIndex(&iter1, &iter2);
     EXPECT_EQ(joinIter.getColIdxIndices().size(), 6);
     EXPECT_EQ(joinIter.getColIdxIndices().size(), 6);
-    joinIter.addRow(JoinIter::LogicalRowJoin({ &row1, &row2 }, 6, &joinIter.getColIdxIndices()));
-    joinIter.addRow(JoinIter::LogicalRowJoin({ &row1, &row2 }, 6, &joinIter.getColIdxIndices()));
+    joinIter.addRow(JoinIter::JoinLogicalRow({ &row1, &row2 }, 6, &joinIter.getColIdxIndices()));
+    joinIter.addRow(JoinIter::JoinLogicalRow({ &row1, &row2 }, 6, &joinIter.getColIdxIndices()));
 
     for (; joinIter.valid(); joinIter.next()) {
         const auto& row = *joinIter.row();
@@ -655,9 +655,9 @@ TEST(IteratorTest, Join) {
         joinIter2.joinIndex(&iter3, &joinIter);
         EXPECT_EQ(joinIter2.getColIndices().size(), 8);
         EXPECT_EQ(joinIter2.getColIdxIndices().size(), 8);
-        joinIter2.addRow(JoinIter::LogicalRowJoin({ &row3, &row1, &row2}, 8,
+        joinIter2.addRow(JoinIter::JoinLogicalRow({ &row3, &row1, &row2}, 8,
                                                 &joinIter2.getColIdxIndices()));
-        joinIter2.addRow(JoinIter::LogicalRowJoin({ &row3, &row1, &row2}, 8,
+        joinIter2.addRow(JoinIter::JoinLogicalRow({ &row3, &row1, &row2}, 8,
                                                 &joinIter2.getColIdxIndices()));
 
         for (; joinIter2.valid(); joinIter2.next()) {
@@ -698,9 +698,9 @@ TEST(IteratorTest, Join) {
         joinIter2.joinIndex(&joinIter, &iter3);
         EXPECT_EQ(joinIter2.getColIndices().size(), 8);
         EXPECT_EQ(joinIter2.getColIdxIndices().size(), 8);
-        joinIter2.addRow(JoinIter::LogicalRowJoin({ &row1, &row2, &row3 }, 8,
+        joinIter2.addRow(JoinIter::JoinLogicalRow({ &row1, &row2, &row3 }, 8,
                                                 &joinIter2.getColIdxIndices()));
-        joinIter2.addRow(JoinIter::LogicalRowJoin({ &row1, &row2, &row3 }, 8,
+        joinIter2.addRow(JoinIter::JoinLogicalRow({ &row1, &row2, &row3 }, 8,
                                                 &joinIter2.getColIdxIndices()));
 
         for (; joinIter2.valid(); joinIter2.next()) {
@@ -739,4 +739,3 @@ int main(int argc, char** argv) {
 
     return RUN_ALL_TESTS();
 }
-

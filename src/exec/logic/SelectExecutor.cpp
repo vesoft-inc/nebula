@@ -7,6 +7,7 @@
 #include "exec/logic/SelectExecutor.h"
 
 #include "context/QueryExpressionContext.h"
+#include "planner/Logic.h"
 #include "planner/Query.h"
 #include "util/ScopedTimer.h"
 

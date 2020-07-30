@@ -4,18 +4,18 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef EXEC_QUERY_READINDEXEXECUTOR_H_
-#define EXEC_QUERY_READINDEXEXECUTOR_H_
+#ifndef EXEC_QUERY_INDEXSCANEXECUTOR_H_
+#define EXEC_QUERY_INDEXSCANEXECUTOR_H_
 
 #include "exec/Executor.h"
 
 namespace nebula {
 namespace graph {
 
-class ReadIndexExecutor final : public Executor {
+class IndexScanExecutor final : public Executor {
 public:
-    ReadIndexExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("ReadIndexExecutor", node, qctx) {}
+    IndexScanExecutor(const PlanNode *node, QueryContext *qctx)
+        : Executor("IndexScanExecutor", node, qctx) {}
 
 private:
     folly::Future<Status> execute() override;
@@ -24,4 +24,4 @@ private:
 }   // namespace graph
 }   // namespace nebula
 
-#endif   // EXEC_QUERY_READINDEXEXECUTOR_H_
+#endif   // EXEC_QUERY_INDEXSCANEXECUTOR_H_

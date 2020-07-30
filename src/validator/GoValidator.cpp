@@ -7,10 +7,10 @@
 #include "validator/GoValidator.h"
 
 #include "common/base/Base.h"
-#include "common/interface/gen-cpp2/storage_types.h"
 #include "common/expression/VariableExpression.h"
-
+#include "common/interface/gen-cpp2/storage_types.h"
 #include "parser/TraverseSentences.h"
+#include "planner/Logic.h"
 
 namespace nebula {
 namespace graph {

@@ -142,7 +142,7 @@ Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
         case PlanNode::Kind::kCreateSnapshot:
         case PlanNode::Kind::kDropSnapshot:
         case PlanNode::Kind::kShowSnapshots: {
-            static_cast<SingleDependencyNode*>(node)->setDep(appended);
+            static_cast<SingleDependencyNode*>(node)->dependsOn(appended);
             break;
         }
         default: {

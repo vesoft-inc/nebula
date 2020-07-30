@@ -6,12 +6,12 @@
 
 #include "validator/GetSubgraphValidator.h"
 
-#include "common/expression/VariableExpression.h"
 #include "common/expression/UnaryExpression.h"
-
-#include "parser/TraverseSentences.h"
-#include "planner/Query.h"
+#include "common/expression/VariableExpression.h"
 #include "context/QueryExpressionContext.h"
+#include "parser/TraverseSentences.h"
+#include "planner/Logic.h"
+#include "planner/Query.h"
 
 namespace nebula {
 namespace graph {

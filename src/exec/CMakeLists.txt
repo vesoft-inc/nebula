@@ -21,7 +21,7 @@ nebula_add_library(
     query/MinusExecutor.cpp
     query/ProjectExecutor.cpp
     query/SortExecutor.cpp
-    query/ReadIndexExecutor.cpp
+    query/IndexScanExecutor.cpp
     query/SetExecutor.cpp
     query/UnionExecutor.cpp
     query/DataCollectExecutor.cpp

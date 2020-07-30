@@ -28,8 +28,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
             return "GetVertices";
         case Kind::kGetEdges:
             return "GetEdges";
-        case Kind::kReadIndex:
-            return "ReadIndex";
+        case Kind::kIndexScan:
+            return "IndexScan";
         case Kind::kFilter:
             return "Filter";
         case Kind::kUnion:

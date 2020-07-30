@@ -6,6 +6,7 @@
 
 #include "validator/UseValidator.h"
 #include "parser/TraverseSentences.h"
+#include "planner/Logic.h"
 #include "planner/Query.h"
 
 namespace nebula {

@@ -6,6 +6,7 @@
 
 #include "validator/SetValidator.h"
 
+#include "planner/Logic.h"
 #include "planner/Query.h"
 
 namespace nebula {

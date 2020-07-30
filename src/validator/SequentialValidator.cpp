@@ -8,6 +8,7 @@
 #include "validator/SequentialValidator.h"
 #include "service/GraphFlags.h"
 #include "service/PermissionCheck.h"
+#include "planner/Logic.h"
 #include "planner/Query.h"
 
 DECLARE_uint32(max_allowed_statements);

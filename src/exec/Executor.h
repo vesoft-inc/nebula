@@ -68,7 +68,7 @@ public:
         return successors_;
     }
 
-    Executor *addDependent(Executor *dep) {
+    Executor *dependsOn(Executor *dep) {
         depends_.emplace(dep);
         dep->successors_.emplace(this);
         return this;

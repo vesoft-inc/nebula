@@ -7,7 +7,6 @@
 #include "service/QueryInstance.h"
 
 #include "common/base/Base.h"
-
 #include "exec/ExecutionError.h"
 #include "exec/Executor.h"
 #include "parser/ExplainSentence.h"

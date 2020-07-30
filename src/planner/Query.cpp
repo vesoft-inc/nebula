@@ -27,9 +27,9 @@ std::string GetEdges::explain() const {
     return "GetEdges";
 }
 
-std::string ReadIndex::explain() const {
+std::string IndexScan::explain() const {
     // TODO:
-    return "ReadIndex";
+    return "IndexScan";
 }
 
 std::string Filter::explain() const {
@@ -74,18 +74,6 @@ std::string Aggregate::explain() const {
     // TODO:
     return "Aggregate";
 }
-
-std::string Select::explain() const {
-    return "Selector";
-}
-
-Loop::Loop(ExecutionPlan* plan, PlanNode* input, PlanNode* body, Expression* condition)
-    : BinarySelect(plan, Kind::kLoop, input, condition), body_(body) {}
-
-std::string Loop::explain() const {
-    return "Loop";
-}
-
 std::string SwitchSpace::explain() const {
     return "SwitchSpace";
 }
