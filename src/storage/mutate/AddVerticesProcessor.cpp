@@ -44,7 +44,7 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
                                                          tag.get_tag_id(), version);
                     data.emplace_back(std::move(key), std::move(tag.get_props()));
                     if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
-                        vertexCache_->evict(std::make_pair(v.get_id(), tag.get_tag_id()), partId);
+                        vertexCache_->evict(std::make_pair(v.get_id(), tag.get_tag_id()));
                         VLOG(3) << "Evict cache for vId " << v.get_id()
                                 << ", tagId " << tag.get_tag_id();
                     }
@@ -95,7 +95,7 @@ std::string AddVerticesProcessor::addVertices(int64_t version, PartitionID partI
             auto key = NebulaKeyUtils::vertexKey(partId, vId, tagId, version);
             newVertices[key] = std::move(prop);
             if (FLAGS_enable_vertex_cache && this->vertexCache_ != nullptr) {
-                this->vertexCache_->evict(std::make_pair(vId, tagId), partId);
+                this->vertexCache_->evict(std::make_pair(vId, tagId));
                 VLOG(3) << "Evict cache for vId " << vId << ", tagId " << tagId;
             }
         });
@@ -103,7 +103,7 @@ std::string AddVerticesProcessor::addVertices(int64_t version, PartitionID partI
 
     for (auto& v : newVertices) {
         std::string val;
-        std::unique_ptr<RowReader> nReader;
+        RowReader nReader = RowReader::getEmptyRowReader();
         auto tagId = NebulaKeyUtils::getTagId(v.first);
         auto vId = NebulaKeyUtils::getVertexId(v.first);
         for (auto& index : indexes_) {
