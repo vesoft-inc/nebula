@@ -7,7 +7,7 @@
 
 import time
 
-from query.stateless.prepare_data import PrepareData
+from tests.query.stateless.prepare_data import PrepareData
 
 
 class TestQuery(PrepareData):

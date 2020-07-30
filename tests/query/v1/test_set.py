@@ -8,7 +8,7 @@
 import pytest
 from nebula2.graph import ttypes
 
-from nebula_test_common.nebula_test_suite import NebulaTestSuite
+from tests.common.nebula_test_suite import NebulaTestSuite
 
 
 class TestSetQuery(NebulaTestSuite):
@@ -16,22 +16,18 @@ class TestSetQuery(NebulaTestSuite):
     def prepare(self):
         self.load_data()
 
-    @classmethod
-    def cleanup(cls):
-        pass
-
     @pytest.mark.skip(reason="")
     def test_union_all(self):
         stmt = '''GO FROM "Tim Duncan" OVER serve YIELD $^.player.name, serve.start_year, $$.team.name \
          UNION ALL GO FROM "Tony Parker" OVER serve YIELD $^.player.name, serve.start_year, $$.team.name'''
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
-        column_names = ["$^.player.name", "serve.start_year", "$$.team.name"],
+        column_names = ["$^.player.name", "serve.start_year", "$$.team.name"]
         self.check_column_names(resp, column_names)
         expected_data = [["Tim Duncan", 1997, "Spurs"],
                          ["Tony Parker", 1999, "Spurs"],
                          ["Tony Parker", 2018, "Hornets"]]
-        self.check_result(resp, expected_data)
+        self.check_out_of_order_result(resp, expected_data)
 
         stmt = '''GO FROM "Tim Duncan" OVER serve YIELD $^.player.name, serve.start_year, $$.team.name \
          UNION ALL GO FROM "Tony Parker" OVER serve YIELD $^.player.name, serve.start_year, $$.team.name \
@@ -44,7 +40,7 @@ class TestSetQuery(NebulaTestSuite):
                          ["Tony Parker", 1999, "Spurs"],
                          ["Tony Parker", 2018, "Hornets"],
                          ["Manu Ginobili", 2002, "Spurs"]]
-        self.check_result(resp, expected_data)
+        self.check_out_of_order_result(resp, expected_data)
 
         stmt = '''(GO FROM "Tim Duncan" OVER like YIELD like._dst AS id | \
          GO FROM $-.id OVER serve YIELD $^.player.name, serve.start_year, $$.team.name) \
@@ -58,7 +54,7 @@ class TestSetQuery(NebulaTestSuite):
                          ["Tony Parker", 2018, "Hornets"],
                          ["Tony Parker", 1999, "Spurs"],
                          ["Tony Parker", 2018, "Hornets"]]
-        self.check_result(resp, expected_data)
+        self.check_out_of_order_result(resp, expected_data)
 
         stmt = '''GO FROM "Tim Duncan" OVER like YIELD like._dst AS id | \
          GO FROM $-.id OVER serve YIELD $^.player.name, serve.start_year, $$.team.name \
@@ -72,7 +68,7 @@ class TestSetQuery(NebulaTestSuite):
                          ["Tony Parker", 2018, "Hornets"],
                          ["Tony Parker", 1999, "Spurs"],
                          ["Tony Parker", 2018, "Hornets"]]
-        self.check_result(resp, expected_data)
+        self.check_out_of_order_result(resp, expected_data)
 
         stmt = '''GO FROM "Tim Duncan" OVER serve YIELD $^.player.name, serve.start_year, $$.team.name \
          UNION ALL (GO FROM "Tony Parker" OVER like YIELD like._dst AS id | \
@@ -86,7 +82,7 @@ class TestSetQuery(NebulaTestSuite):
                          ["LaMarcus Aldridge", 2006, "Trail Blazers"],
                          ["Manu Ginobili", 2002, "Spurs"],
                          ["Tim Duncan", 1997, "Spurs"]]
-        self.check_result(resp, expected_data)
+        self.check_out_of_order_result(resp, expected_data)
 
         stmt = '''GO FROM "Tim Duncan" OVER serve YIELD $^.player.name, serve.start_year, $$.team.name \
          UNION ALL GO FROM "Tony Parker" OVER like YIELD like._dst AS id | \
@@ -100,7 +96,7 @@ class TestSetQuery(NebulaTestSuite):
                          ["LaMarcus Aldridge", 2006, "Trail Blazers"],
                          ["Manu Ginobili", 2002, "Spurs"],
                          ["Tim Duncan", 1997, "Spurs"]]
-        self.check_result(resp, expected_data)
+        self.check_out_of_order_result(resp, expected_data)
 
         stmt = '''(GO FROM "Tim Duncan" OVER like YIELD like._dst AS id \
          UNION ALL GO FROM "Tony Parker" OVER like YIELD like._dst AS id) \
@@ -116,7 +112,7 @@ class TestSetQuery(NebulaTestSuite):
                          ["LaMarcus Aldridge", 2006, "Trail Blazers"],
                          ["Manu Ginobili", 2002, "Spurs"],
                          ["Tim Duncan", 1997, "Spurs"]]
-        self.check_result(resp, expected_data)
+        self.check_out_of_order_result(resp, expected_data)
 
         stmt = '''GO FROM "Tim Duncan" OVER serve YIELD $^.player.name as name, $$.team.name as player \
          UNION ALL \
@@ -128,7 +124,7 @@ class TestSetQuery(NebulaTestSuite):
         self.check_column_names(resp, column_names)
         expected_data = [["Tim Duncan", "Spurs"], ["Tony Parker", "1999"],
                          ["Tony Parker", "2018"]]
-        self.check_result(resp, expected_data)
+        self.check_out_of_order_result(resp, expected_data)
 
         stmt = '''GO FROM "Nobody" OVER serve YIELD $^.player.name AS player, serve.start_year AS start \
          UNION ALL \
@@ -138,7 +134,7 @@ class TestSetQuery(NebulaTestSuite):
         column_names = ["$^.player.name", "serve.start_year", "$$.team.name"]
         self.check_column_names(resp, column_names)
         expected_data = [["Tony Parker", 1999], ["Tony Parker", 2018]]
-        self.check_result(resp, expected_data)
+        self.check_out_of_order_result(resp, expected_data)
 
     @pytest.mark.skip(reason="")
     def test_union_distinct(self):

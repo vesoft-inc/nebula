@@ -8,7 +8,7 @@
 import time
 import re
 
-from nebula_test_common.nebula_test_suite import NebulaTestSuite
+from tests.common.nebula_test_suite import NebulaTestSuite
 
 
 class TestSpace(NebulaTestSuite):

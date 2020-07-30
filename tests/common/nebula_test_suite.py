@@ -130,7 +130,7 @@ class NebulaTestSuite(object):
 
     @classmethod
     def teardown_class(self):
-        if self.client != None:
+        if self.client is not None:
             self.cleanup()
             self.drop_data()
             self.close_nebula_clients()
@@ -144,12 +144,14 @@ class NebulaTestSuite(object):
         return self.client.execute_query(ngql)
 
     @classmethod
-    def prepare(self):
-        self.prepare()
+    def prepare(cls):
+        if hasattr(cls.prepare, 'is_overridden'):
+            cls.prepare()
 
     @classmethod
-    def cleanup(self):
-        self.cleanup()
+    def cleanup(cls):
+        if hasattr(cls.cleanup, 'is_overridden'):
+            cls.cleanup()
 
     @classmethod
     def check_resp_succeeded(self, resp):
@@ -269,9 +271,9 @@ class NebulaTestSuite(object):
     @classmethod
     def check_column_names(self, resp, expect):
         for i in range(len(expect)):
-            ok = (expect[i] == bytes.decode(resp.data.column_names[i]))
-            assert ok, "different column name, expect: {} vs. result: {}".format(
-                expect[i], resp.data.column_names[i])
+            result = bytes.decode(resp.data.column_names[i])
+            ok = (expect[i] == result)
+            assert ok, "different column name, expect: {} vs. result: {}".format(expect[i], result)
 
     @classmethod
     def convert_expect(self, expect):

@@ -5,7 +5,7 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-from query.stateless.prepare_data import PrepareData
+from tests.query.stateless.prepare_data import PrepareData
 
 
 class TestFetchQuery(PrepareData):

@@ -6,7 +6,7 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
 import pytest
-from query.stateless.prepare_data import PrepareData
+from tests.query.stateless.prepare_data import PrepareData
 
 
 class TestGoQuery(PrepareData):
@@ -224,7 +224,3 @@ class TestGoQuery(PrepareData):
         expect_result = [['male', 1], ['female', 3]]
         self.check_resp_succeeded(resp)
         self.check_out_of_order_result(resp, expect_result)
-
-
-
-

@@ -13,7 +13,7 @@ import time
 from graph import ttypes
 
 import nebula.Client
-from nebula_test_common.nebula_test_suite import NebulaTestSuite
+from tests.common.nebula_test_suite import NebulaTestSuite
 
 class TestReservedKeyword(NebulaTestSuite):
     @classmethod
@@ -921,14 +921,14 @@ class TestReservedKeyword(NebulaTestSuite):
             self.check_resp_succeeded(resp)
         except Exception as e:
             assert "SyntaxError: syntax error" in str(e)
- 
+
         try:
             cmd = 'create EDGE `EDGE` (`EDGE` string)'
             resp = self.execute_query(cmd)
             self.check_resp_succeeded(resp)
         except Exception as e:
             assert "SyntaxError: syntax error" in str(e)
- 
+
         resp = self.execute('drop space test')
         self.check_resp_succeeded(resp)
 

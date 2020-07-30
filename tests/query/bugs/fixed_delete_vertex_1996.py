@@ -11,7 +11,7 @@ import time
 
 from graph import ttypes
 
-from nebula_test_common.nebula_test_suite import NebulaTestSuite
+from tests.common.nebula_test_suite import NebulaTestSuite
 
 class TestSimpleQuery(NebulaTestSuite):
     @classmethod
@@ -29,7 +29,7 @@ class TestSimpleQuery(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
     def test_issue1996(self):
-        time.sleep(self.delay)       
+        time.sleep(self.delay)
         resp = self.execute('INSERT VERTEX person(name, age) VALUES 101:("Tony Parker", 36)')
         self.check_resp_succeeded(resp)
         resp = self.execute('DELETE VERTEX 101')

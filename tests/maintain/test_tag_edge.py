@@ -7,8 +7,8 @@
 
 import time
 
-from nebula_test_common.nebula_test_suite import NebulaTestSuite
-from nebula_test_common.nebula_test_suite import T_EMPTY, T_NULL
+from tests.common.nebula_test_suite import NebulaTestSuite
+from tests.common.nebula_test_suite import T_EMPTY, T_NULL
 
 class TestSchema(NebulaTestSuite):
 
@@ -150,7 +150,7 @@ class TestSchema(NebulaTestSuite):
                                    'CHANGE (age string), '
                                    'DROP (gender)')
         self.check_resp_succeeded(resp)
-        
+
         # drop not exist prop
         resp = self.client.execute('ALTER TAG person DROP (gender)')
         self.check_resp_failed(resp)

@@ -9,7 +9,7 @@ import time
 
 from graph import ttypes
 
-from nebula_test_common.nebula_test_suite import NebulaTestSuite
+from tests.common.nebula_test_suite import NebulaTestSuite
 
 class TestSimpleQuery(NebulaTestSuite):
     @classmethod
@@ -31,11 +31,11 @@ class TestSimpleQuery(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         time.sleep(self.delay)
-        
+
         resp = self.execute('INSERT VERTEX person(name) VALUES hash("Laura"):("Laura");'
                 'INSERT VERTEX person(name) VALUES hash("Lucy"):("Lucy")')
         self.check_resp_succeeded(resp)
-    
+
         resp = self.execute('INSERT EDGE relation() VALUES hash("Laura")->hash("Lucy"):();')
         self.check_resp_succeeded(resp)
 

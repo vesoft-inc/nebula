@@ -1,8 +1,8 @@
 import time
 import pytest
 from graph import ttypes
-from nebula_test_common.nebula_test_suite import NebulaTestSuite
-from bench.data_generate import insert_vertexs, insert_edges
+from tests.common.nebula_test_suite import NebulaTestSuite
+from tests.bench.data_generate import insert_vertexs, insert_edges
 
 
 class TestLookupBench(NebulaTestSuite):

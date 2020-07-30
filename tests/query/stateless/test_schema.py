@@ -9,8 +9,8 @@ import re
 import sys
 import time
 
-from nebula_test_common.nebula_test_suite import NebulaTestSuite
-from nebula_test_common.nebula_test_suite import T_EMPTY, T_NULL
+from tests.common.nebula_test_suite import NebulaTestSuite
+from tests.common.nebula_test_suite import T_EMPTY, T_NULL
 
 
 class TestSchema(NebulaTestSuite):

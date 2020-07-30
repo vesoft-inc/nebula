@@ -11,7 +11,7 @@ import time
 
 from graph import ttypes
 
-from nebula_test_common.nebula_test_suite import NebulaTestSuite
+from tests.common.nebula_test_suite import NebulaTestSuite
 
 class TestPR1983(NebulaTestSuite):
     @classmethod
@@ -29,7 +29,7 @@ class TestPR1983(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
     def test_unreasonable_error_message(self):
-        time.sleep(self.delay)       
+        time.sleep(self.delay)
         resp = self.execute(
             'INSERT VERTEX person(name, age) VALUES 1:(\'Bob\', 10)')
         self.check_resp_succeeded(resp)

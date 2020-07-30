@@ -7,7 +7,7 @@
 
 import time
 
-from query.stateless.prepare_data import PrepareData
+from tests.query.stateless.prepare_data import PrepareData
 
 
 class TestQuery(PrepareData):
@@ -153,4 +153,3 @@ class TestQuery(PrepareData):
                          ['Sandy', 4], ['Lynn', 5], ['Bonnie', 5], ['Peter', 5], ['XiaMei', 6]]
         print(cmd)
         self.check_resp_succeeded(resp)
-
