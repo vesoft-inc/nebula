@@ -34,7 +34,7 @@ Status PipeValidator::toPlan() {
     tail_ = lValidator_->tail();
     NG_RETURN_IF_ERROR(rValidator_->appendPlan(lValidator_->root()));
     auto node = static_cast<SingleInputNode*>(rValidator_->tail());
-    if (node->varName().empty()) {
+    if (node->inputVar().empty()) {
         // If the input variable was not set, set it dynamically.
         node->setInputVar(lValidator_->root()->varName());
     }
