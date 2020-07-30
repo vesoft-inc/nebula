@@ -169,7 +169,7 @@ class TestInsert1(NebulaTestSuite):
         #                     '("2019-01-01 10:00:00", now()+3600*24*365*3)')
         # self.check_resp_succeeded(resp)
 
-        # get result TODO: does not support get dst vertex
+        # get result, type cast is not yet implemented in go
         # resp = self.execute('GO FROM "Laura" OVER study '
         #                     'YIELD $$.school.name, study._dst,'
         #                     '$$.school.create_time, (string)study.start_time')
@@ -260,11 +260,11 @@ class TestInsert1(NebulaTestSuite):
         # self.check_resp_succeeded(resp)
 
         # get result, does not support get dst vertex
-        # resp = self.execute('GO FROM "Tom" OVER schoolmate YIELD $^.person.name,'
-        #                     'schoolmate.likeness, $$.person.name')
-        # self.check_resp_succeeded(resp)
-        # expect_result = [['Tom', 85, 'Lucy'], ['Tom', 81, 'Kitty'], ['Tom', 83, 'Peter'], ['Tom', 87, 'Bob']]
-        # self.check_out_of_order_result(resp, expect_result)
+        resp = self.execute_query('GO FROM "Tom" OVER schoolmate YIELD $^.person.name,'
+                                  'schoolmate.likeness, $$.person.name')
+        self.check_resp_succeeded(resp)
+        expect_result = [['Tom', 85, 'Lucy'], ['Tom', 81, 'Kitty'], ['Tom', 83, 'Peter'], ['Tom', 87, 'Bob']]
+        self.check_out_of_order_result(resp, expect_result)
 
         # get result use uuid
         # resp = self.execute('GO FROM uuid("Tom") OVER schoolmate YIELD $^.person.name,'
@@ -286,12 +286,12 @@ class TestInsert1(NebulaTestSuite):
         # self.check_resp_succeeded(resp)
 
         # get multi tag through go, does not support get dst vertex
-        # resp = self.execute('GO FROM "Lucy" OVER schoolmate YIELD '
-        #                     'schoolmate.likeness, $$.person.name,'
-        #                     '$$.student.grade, $$.student.number')
-        # self.check_resp_succeeded(resp)
-        # expect_result = [[90, 'Laura', 'three', 20190901008], [95, 'Amber', 'four', 20180901003]]
-        # self.check_out_of_order_result(resp, expect_result)
+        resp = self.execute_query('GO FROM "Lucy" OVER schoolmate YIELD '
+                                  'schoolmate.likeness, $$.person.name,'
+                                  '$$.student.grade, $$.student.number')
+        self.check_resp_succeeded(resp)
+        expect_result = [[90, 'Laura', 'three', 20190901008], [95, 'Amber', 'four', 20180901003]]
+        self.check_out_of_order_result(resp, expect_result)
 
         # get multi tag  use uuid through go
         # resp = self.execute('GO FROM uuid("Lucy") OVER schoolmate YIELD '
@@ -322,10 +322,11 @@ class TestInsert1(NebulaTestSuite):
         # self.check_resp_succeeded(resp)
 
         # get result, does not support get dst vertex
-        # resp = self.execute('GO FROM "Laura" OVER schoolmate YIELD $$.student.number, $$.person.name')
-        # self.check_resp_succeeded(resp)
-        # expect_result = [[20190901003, 'Aero']]
-        # self.check_result(resp, expect_result)
+        resp = self.execute_query('GO FROM "Laura" OVER schoolmate '
+                                  'YIELD $$.student.number, $$.person.name')
+        self.check_resp_succeeded(resp)
+        expect_result = [[20190901003, 'Aero']]
+        self.check_result(resp, expect_result)
 
         # get uuid result
         # resp = self.execute('GO FROM uuid("Laura") OVER schoolmate YIELD $$.student.number, $$.person.name')
@@ -355,11 +356,11 @@ class TestInsert1(NebulaTestSuite):
         # self.check_resp_succeeded(resp)
 
         # TODO: does not support get dst vertex
-        # resp = self.execute('GO FROM "Joy" OVER schoolmate YIELD $^.person.name,'
-        #                     'schoolmate.likeness, $$.person.name, $$.person.age,$$.employee.name')
-        # self.check_resp_succeeded(resp)
-        # expect_result = [['Joy', 90, 'Petter', 19, 456]]
-        # self.check_result(resp, expect_result)
+        resp = self.execute_query('GO FROM "Joy" OVER schoolmate YIELD $^.person.name,'
+                                  'schoolmate.likeness, $$.person.name, $$.person.age,$$.employee.name')
+        self.check_resp_succeeded(resp)
+        expect_result = [['Joy', 90, 'Petter', 19, 456]]
+        self.check_result(resp, expect_result)
 
         # uuid, TODO: does not support get dst vertex
         # resp = self.execute('GO FROM uuid("Joy") OVER schoolmate YIELD $^.person.name,'
@@ -387,14 +388,14 @@ class TestInsert1(NebulaTestSuite):
         #                     'uuid("Petter")->uuid("Bob"):(90, "Bob")')
         # self.check_resp_succeeded(resp)
 
-        # TODO: does not support get dst vertex
-        # resp = self.execute('GO FROM "Petter" OVER schoolmate '
-        #                     'YIELD $^.person.name, $^.employee.name, '
-        #                     'schoolmate.likeness, $$.person.name, '
-        #                     '$$.interest.name, $$.person.age')
-        # self.check_resp_succeeded(resp)
-        # expect_result = [['Petter', 456, 90, 'Bob', 'basketball', 19]]
-        # self.check_result(resp, expect_result)
+        # get result
+        resp = self.execute_query('GO FROM "Petter" OVER schoolmate '
+                                  'YIELD $^.person.name, $^.employee.name, '
+                                  'schoolmate.likeness, $$.person.name, '
+                                  '$$.interest.name, $$.person.age')
+        self.check_resp_succeeded(resp)
+        expect_result = [['Petter', 456, 90, 'Bob', 'basketball', 19]]
+        self.check_result(resp, expect_result)
 
         # uuid
         # resp = self.execute('GO FROM uuid("Petter") OVER schoolmate '
@@ -467,21 +468,22 @@ class TestInsert1(NebulaTestSuite):
                             '"Tom"->"Kitty":(), "Tom"->"Peter":(), "Lucy"->"Laura":(), "Lucy"->"Amber":()')
         self.check_resp_succeeded(resp)
 
-        # get result, TODO: does not support get dst vertex
-        # resp = self.execute('GO FROM "Tom" OVER schoolmateWithDefault YIELD $^.person.name,'
-        #                     'schoolmateWithDefault.likeness, $$.person.name')
-        # self.check_resp_succeeded(resp)
-        # expect_result = [['Tom', 80, 'Lucy'], ['Tom', 80, 'Kitty'], ['Tom', 80, 'Peter']]
-        # self.check_result(resp, expect_result)
-        #
-        # resp = self.execute('GO FROM "Lucy" OVER schoolmateWithDefault YIELD '
-        #                     'schoolmateWithDefault.likeness, $$.personWithDefault.name,'
-        #                     '$$.personWithDefault.birthday, $$.personWithDefault.department,'
-        #                     '$$.studentWithDefault.grade, $$.studentWithDefault.number')
+        # get result
+        resp = self.execute_query('GO FROM "Tom" OVER schoolmateWithDefault YIELD $^.person.name,'
+                                  'schoolmateWithDefault.likeness, $$.person.name')
+        self.check_resp_succeeded(resp)
+        expect_result = [['Tom', 80, 'Lucy'], ['Tom', 80, 'Kitty'], ['Tom', 80, 'Peter']]
+        self.check_out_of_order_result(resp, expect_result)
+
+        # timestamp has not implement
+        # resp = self.execute_query('GO FROM "Lucy" OVER schoolmateWithDefault YIELD '
+        #                           'schoolmateWithDefault.likeness, $$.personWithDefault.name,'
+        #                           '$$.personWithDefault.birthday, $$.personWithDefault.department,'
+        #                           '$$.studentWithDefault.grade, $$.studentWithDefault.number')
         # self.check_resp_succeeded(resp)
         # expect_result = [[80, 'Laura', 1578621600, 'engineering', 'one', 20190901008],
         #                  [80, 'Amber', 1578621600, 'engineering', 'one', 20180901003]]
-        # self.check_result(resp, expect_result)
+        # self.check_out_of_order_result(resp, expect_result)
 
     def test_multi_version(self):
         # insert multi version vertex
@@ -508,12 +510,12 @@ class TestInsert1(NebulaTestSuite):
                             ' VALUES "Tony"->"Mack"@1:(3, "")')
         self.check_resp_succeeded(resp)
 
-        # TODO: does not support get dst vertex
-        # resp = self.execute('GO FROM "Tony" OVER schoolmate '
-        #                     'YIELD $$.person.name, $$.person.age, schoolmate.likeness')
-        # self.check_resp_succeeded(resp)
-        # expect_result = [['Mack', 21, 3]]
-        # self.check_result(resp, expect_result)
+        # get result
+        resp = self.execute_query('GO FROM "Tony" OVER schoolmate '
+                                  'YIELD $$.person.name, $$.person.age, schoolmate.likeness')
+        self.check_resp_succeeded(resp)
+        expect_result = [['Mack', 21, 3]]
+        self.check_result(resp, expect_result)
 
     @pytest.mark.skip(reason="does not support uuid")
     def test_multi_version_with_uuid(self):
@@ -541,9 +543,9 @@ class TestInsert1(NebulaTestSuite):
                             ' VALUES uuid("Tony")->uuid("Mack")@1:(3, "")')
         self.check_resp_succeeded(resp)
 
-        # TODO: does not support get dst vertex
-        resp = self.execute('GO FROM uuid("Tony") OVER schoolmate '
-                            'YIELD $$.person.name, $$.person.age, schoolmate.likeness')
+        # get result
+        resp = self.execute_query('GO FROM uuid("Tony") OVER schoolmate '
+                                  'YIELD $$.person.name, $$.person.age, schoolmate.likeness')
         self.check_resp_succeeded(resp)
         expect_result = [['Mack', 21, 3]]
         self.check_result(resp, expect_result)

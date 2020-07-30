@@ -49,11 +49,11 @@ class TestRangeChecking(NebulaTestSuite):
     @pytest.mark.parametrize('number', [-9223372036854775808, -1, 0, 1, 9223372036854775807])
     def test_integer_range_valid(self, number):
         # integer bound checking
-        resp = self.execute("INSERT VERTEX test(id) VALUES 100:({})".format(number))
+        resp = self.execute("INSERT VERTEX test(id) VALUES '100':({})".format(number))
         self.check_resp_succeeded(resp)
 
         # hex bound checking
-        resp = self.execute("INSERT VERTEX test(id) VALUES 100:({:#x})".format(number))
+        resp = self.execute("INSERT VERTEX test(id) VALUES '100':({:#x})".format(number))
         self.check_resp_succeeded(resp)
 
         # oct bound checking
@@ -61,22 +61,22 @@ class TestRangeChecking(NebulaTestSuite):
         # I don't think the zero prefix oct number is good design
         # plan to change to `0o' prefix
         if (number < 0):
-            query = "INSERT VERTEX test(id) VALUES 100:(-0{:o})".format(abs(number))
+            query = "INSERT VERTEX test(id) VALUES '100':(-0{:o})".format(abs(number))
         else:
-            query = "INSERT VERTEX test(id) VALUES 100:(0{:o})".format(abs(number))
+            query = "INSERT VERTEX test(id) VALUES '100':(0{:o})".format(abs(number))
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
     @pytest.mark.parametrize('number', [-9223372036854999999, -9223372036854775809, 9223372036854775808, 9223372036899999999])
     def test_integer_range_invalid(self, number):
         # integer bound
-        resp = self.execute("INSERT VERTEX test(id) VALUES 100:({})".format(number));
+        resp = self.execute("INSERT VERTEX test(id) VALUES '100':({})".format(number));
         self.check_resp_failed(resp, ttypes.ErrorCode.E_SYNTAX_ERROR)
         error = "SyntaxError: Out of range: near `{}'".format(number);
         assert resp.error_msg, error
 
         # hex bound
-        resp = self.execute("INSERT VERTEX test(id) VALUES 100:({:#x})".format(number));
+        resp = self.execute("INSERT VERTEX test(id) VALUES '100':({:#x})".format(number));
         self.check_resp_failed(resp, ttypes.ErrorCode.E_SYNTAX_ERROR)
         error = "SyntaxError: Out of range: near `{:#x}'".format(number);
         assert resp.error_msg, error
@@ -86,9 +86,9 @@ class TestRangeChecking(NebulaTestSuite):
         # I don't think the zero prefix oct number is good design
         # plan to change to `0o' prefix
         if number < 0:
-            query = "INSERT VERTEX test(id) VALUES 100:(-0{:o})".format(abs(number))
+            query = "INSERT VERTEX test(id) VALUES '100':(-0{:o})".format(abs(number))
         else:
-            query = "INSERT VERTEX test(id) VALUES 100:(0{:o})".format(abs(number))
+            query = "INSERT VERTEX test(id) VALUES '100':(0{:o})".format(abs(number))
         resp = self.execute(query);
         self.check_resp_failed(resp, ttypes.ErrorCode.E_SYNTAX_ERROR)
         if number < 0:
