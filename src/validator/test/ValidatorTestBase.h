@@ -157,7 +157,9 @@ protected:
                 case PlanNode::Kind::kCreateSnapshot:
                 case PlanNode::Kind::kDropSnapshot:
                 case PlanNode::Kind::kShowSnapshots:
-                case PlanNode::Kind::kDataJoin: {
+                case PlanNode::Kind::kDataJoin:
+                case PlanNode::Kind::kDeleteVertices:
+                case PlanNode::Kind::kDeleteEdges: {
                     auto* current = static_cast<const SingleInputNode*>(node);
                     queue.emplace(current->dep());
                     break;

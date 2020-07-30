@@ -22,8 +22,8 @@
 #include "exec/logic/StartExecutor.h"
 #include "exec/maintain/EdgeExecutor.h"
 #include "exec/maintain/TagExecutor.h"
-#include "exec/mutate/InsertEdgesExecutor.h"
-#include "exec/mutate/InsertVerticesExecutor.h"
+#include "exec/mutate/InsertExecutor.h"
+#include "exec/mutate/DeleteExecutor.h"
 #include "exec/query/AggregateExecutor.h"
 #include "exec/query/DataCollectExecutor.h"
 #include "exec/query/DataJoinExecutor.h"
@@ -367,6 +367,20 @@ Executor *Executor::makeExecutor(const PlanNode *node,
             auto dataJoin = asNode<DataJoin>(node);
             auto input = makeExecutor(dataJoin->dep(), qctx, visited);
             exec = new DataJoinExecutor(dataJoin, qctx);
+            exec->dependsOn(input);
+            break;
+        }
+        case PlanNode::Kind::kDeleteVertices: {
+            auto deleteV = asNode<DeleteVertices>(node);
+            auto input = makeExecutor(deleteV->dep(), qctx, visited);
+            exec = new DeleteVerticesExecutor(deleteV, qctx);
+            exec->dependsOn(input);
+            break;
+        }
+        case PlanNode::Kind::kDeleteEdges: {
+            auto deleteE = asNode<DeleteEdges>(node);
+            auto input = makeExecutor(deleteE->dep(), qctx, visited);
+            exec = new DeleteEdgesExecutor(deleteE, qctx);
             exec->dependsOn(input);
             break;
         }

@@ -13,8 +13,6 @@
 
 namespace nebula {
 
-class EdgeKeys;
-
 class PropertyList final {
 public:
     void addProp(std::string *propname) {
@@ -505,36 +503,70 @@ class DeleteVerticesSentence final : public Sentence {
 public:
     explicit DeleteVerticesSentence(VertexIDList *vidList) {
         vidList_.reset(vidList);
-        kind_ = Kind::kDeleteVertex;
+        kind_ = Kind::kDeleteVertices;
+    }
+
+    explicit DeleteVerticesSentence(Expression *ref) {
+        vidRef_.reset(ref);
+        kind_ = Kind::kDeleteVertices;
     }
 
     VertexIDList* vidList() const {
         return vidList_.get();
     }
 
+    Expression* vidRef() const {
+        return vidRef_.get();
+    }
+
+    bool isRef() const {
+        return vidRef_ != nullptr;
+    }
+
     std::string toString() const override;
 
 private:
     std::unique_ptr<VertexIDList>                vidList_;
+    std::unique_ptr<Expression>                  vidRef_;
 };
 
 
 class DeleteEdgesSentence final : public Sentence {
 public:
-    explicit DeleteEdgesSentence(std::string *edge,
-                                 EdgeKeys    *keys);
+    DeleteEdgesSentence(std::string *edge, EdgeKeys *keys) {
+        edge_.reset(edge);
+        edgeKeys_.reset(keys);
+        kind_ = Kind::kDeleteEdges;
+    }
+
+    DeleteEdgesSentence(std::string *edge, EdgeKeyRef *ref) {
+        edge_.reset(edge);
+        edgeKeyRef_.reset(ref);
+        kind_ = Kind::kDeleteEdges;
+    }
 
     const std::string* edge() const {
         return edge_.get();
     }
 
-    EdgeKeys* keys() const;
+    EdgeKeys* edgeKeys() const {
+        return edgeKeys_.get();
+    }
+
+    EdgeKeyRef* edgeKeyRef() const {
+        return edgeKeyRef_.get();
+    }
+
+    bool isRef() const {
+        return edgeKeyRef_ != nullptr;
+    }
 
     std::string toString() const override;
 
 private:
     std::unique_ptr<std::string>                edge_;
     std::unique_ptr<EdgeKeys>                   edgeKeys_;
+    std::unique_ptr<EdgeKeyRef>                 edgeKeyRef_;
 };
 
 

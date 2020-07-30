@@ -66,6 +66,8 @@ public:
         kDropSnapshot,
         kShowSnapshots,
         kDataJoin,
+        kDeleteVertices,
+        kDeleteEdges,
     };
 
     PlanNode(ExecutionPlan* plan, Kind kind);

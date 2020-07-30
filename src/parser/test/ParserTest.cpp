@@ -932,6 +932,13 @@ TEST(Parser, DeleteVertex) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM \"Ann\" OVER schoolmate YIELD $$.person.name as name"
+                            "| DELETE VERTEX $-.id";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
 }
 
 TEST(Parser, DeleteEdge) {
@@ -952,6 +959,15 @@ TEST(Parser, DeleteEdge) {
         GQLParser parser;
         std::string query = "DELETE EDGE transfer \"jack\" -> \"rose\","
                             "\"mr\" -> \"miss\"@13";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM \"Ann\" OVER schoolmate "
+                            "YIELD schoolmate._src as src, schoolmate._dst as dst, "
+                            "schoolmate._rank as rank"
+                            "| DELETE EDGE transfer $-.src -> $-.dst @ $-.rank";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

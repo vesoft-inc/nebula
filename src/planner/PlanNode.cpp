@@ -104,6 +104,10 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
             return "ShowSnapshots";
         case Kind::kDataJoin:
             return "DataJoin";
+        case Kind::kDeleteVertices:
+            return "DeleteVertices";
+        case Kind::kDeleteEdges:
+            return "DeleteEdges";
     }
     LOG(FATAL) << "Impossible kind plan node " << static_cast<int>(kind);
 }

@@ -4,7 +4,6 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 #include "common/base/Base.h"
-#include "parser/TraverseSentences.h"
 #include "parser/MutateSentences.h"
 
 namespace nebula {
@@ -269,17 +268,6 @@ std::string DeleteEdgesSentence::toString() const {
     buf += " ";
     buf += edgeKeys_->toString();
     return buf;
-}
-
-DeleteEdgesSentence::DeleteEdgesSentence(std::string *edge,
-                                         EdgeKeys    *keys) {
-        edge_.reset(edge);
-        edgeKeys_.reset(keys);
-        kind_ = Kind::kDeleteEdges;
-}
-
-EdgeKeys* DeleteEdgesSentence::keys() const {
-    return edgeKeys_.get();
 }
 
 std::string DownloadSentence::toString() const {

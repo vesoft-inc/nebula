@@ -54,7 +54,6 @@ Status GetNeighborsExecutor::buildRequestDataSet() {
             reqDs_.rows.emplace_back(Row({std::move(val)}));
         }
     }
-
     return Status::OK();
 }
 

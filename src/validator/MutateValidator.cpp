@@ -14,11 +14,6 @@ Status InsertVerticesValidator::validateImpl() {
     spaceId_ = vctx_->whichSpace().id;
     auto status = Status::OK();
     do {
-        if (!spaceChosen()) {
-            status = Status::Error("Please choose a graph space with `USE spaceName' firstly");
-            break;
-        }
-
         status = check();
         if (!status.ok()) {
             break;
@@ -250,5 +245,244 @@ Status InsertEdgesValidator::prepareEdges() {;
 
     return Status::OK();
 }
+
+Status DeleteVerticesValidator::validateImpl() {
+    auto sentence = static_cast<DeleteVerticesSentence*>(sentence_);
+    spaceId_ = vctx_->whichSpace().id;
+    if (sentence->isRef()) {
+        vidRef_ = sentence->vidRef();
+        auto type = deduceExprType(vidRef_);
+        if (!type.ok()) {
+            return type.status();
+        }
+        if (type.value() != Value::Type::STRING) {
+            std::stringstream ss;
+            ss << "The vid should be string type, "
+               << "but input is `" << type.value() << "'";
+            return Status::Error(ss.str());
+        }
+    } else {
+        auto vIds = sentence->vidList()->vidList();
+        for (auto vId : vIds) {
+            auto idStatus = SchemaUtil::toVertexID(vId);
+            if (!idStatus.ok()) {
+                return idStatus.status();
+            }
+            vertices_.emplace_back(std::move(idStatus).value());
+        }
+    }
+
+    auto ret = qctx_->schemaMng()->getAllEdge(spaceId_);
+    if (!ret.ok()) {
+        return ret.status();
+    }
+    edgeNames_ = std::move(ret).value();
+    for (auto &name : edgeNames_) {
+        auto edgeStatus = qctx_->schemaMng()->toEdgeType(spaceId_, name);
+        if (!edgeStatus.ok()) {
+            return edgeStatus.status();
+        }
+        auto edgeType = edgeStatus.value();
+        edgeTypes_.emplace_back(edgeType);
+    }
+    return Status::OK();
+}
+
+std::string DeleteVerticesValidator::buildVIds() {
+    auto input = vctx_->anonVarGen()->getVar();
+    DataSet ds;
+    ds.colNames.emplace_back(kVid);
+    for (auto& vid : vertices_) {
+        Row row;
+        row.values.emplace_back(vid);
+        ds.rows.emplace_back(std::move(row));
+    }
+    qctx_->ectx()->setResult(input, ResultBuilder().value(Value(std::move(ds))).finish());
+
+    auto* vIds = new VariablePropertyExpression(
+            new std::string(input),
+            new std::string(kVid));
+    qctx_->plan()->saveObject(vIds);
+    vidRef_ = vIds;
+    return input;
+}
+
+Status DeleteVerticesValidator::toPlan() {
+    auto plan = qctx_->plan();
+    std::string vidVar;
+    if (!vertices_.empty() && vidRef_ == nullptr) {
+        vidVar = buildVIds();
+    } else if (vidRef_ != nullptr && vidRef_->kind() == Expression::Kind::kVarProperty) {
+        vidVar = *static_cast<SymbolPropertyExpression*>(vidRef_)->sym();
+    }
+
+    std::vector<storage::cpp2::EdgeProp> edgeProps;
+    // make edgeRefs and edgeProp
+    auto index = 0u;
+    DCHECK(edgeTypes_.size() == edgeNames_.size());
+    for (auto &name : edgeNames_) {
+        auto *edgeKeyRef = new EdgeKeyRef(
+                new EdgeSrcIdExpression(new std::string(name)),
+                new EdgeDstIdExpression(new std::string(name)),
+                new EdgeRankExpression(new std::string(name)));
+        edgeKeyRef->setType(new EdgeTypeExpression(new std::string(name)));
+        qctx_->plan()->saveObject(edgeKeyRef);
+        edgeKeyRefs_.emplace_back(edgeKeyRef);
+
+        storage::cpp2::EdgeProp edgeProp;
+        edgeProp.set_type(edgeTypes_[index]);
+        edgeProp.props.emplace_back(kSrc);
+        edgeProp.props.emplace_back(kDst);
+        edgeProp.props.emplace_back(kType);
+        edgeProp.props.emplace_back(kRank);
+        edgeProps.emplace_back(edgeProp);
+
+        edgeProp.set_type(-edgeTypes_[index]);
+        edgeProps.emplace_back(std::move(edgeProp));
+        index++;
+    }
+
+    auto vertexPropsPtr = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
+    auto edgePropsPtr = std::make_unique<std::vector<storage::cpp2::EdgeProp>>(edgeProps);
+    auto statPropsPtr = std::make_unique<std::vector<storage::cpp2::StatProp>>();
+    auto exprPtr = std::make_unique<std::vector<storage::cpp2::Expr>>();
+    auto* getNeighbors = GetNeighbors::make(plan,
+                                            nullptr,
+                                            spaceId_,
+                                            vidRef_,
+                                            edgeTypes_,
+                                            storage::cpp2::EdgeDirection::BOTH,
+                                            nullptr,
+                                            std::move(edgePropsPtr),
+                                            std::move(statPropsPtr),
+                                            std::move(exprPtr));
+    getNeighbors->setInputVar(vidVar);
+
+    // create deleteEdges node
+    auto *deNode = DeleteEdges::make(plan,
+                                     getNeighbors,
+                                     spaceId_,
+                                     std::move(edgeKeyRefs_));
+
+    deNode->setInputVar(getNeighbors->varName());
+
+    auto *dvNode = DeleteVertices::make(plan,
+                                        deNode,
+                                        spaceId_,
+                                        vidRef_);
+
+    dvNode->setInputVar(vidVar);
+    root_ = dvNode;
+    tail_ = getNeighbors;
+    return Status::OK();
+}
+
+Status DeleteEdgesValidator::validateImpl() {
+    auto sentence = static_cast<DeleteEdgesSentence*>(sentence_);
+    auto spaceId = vctx_->whichSpace().id;
+    auto edgeStatus = qctx_->schemaMng()->toEdgeType(spaceId, *sentence->edge());
+    if (!edgeStatus.ok()) {
+        return edgeStatus.status();
+    }
+    auto edgeType = edgeStatus.value();
+    if (sentence->isRef()) {
+        edgeKeyRefs_.emplace_back(sentence->edgeKeyRef());
+        (*edgeKeyRefs_.begin())->setType(new ConstantExpression(edgeType));
+        auto status = checkInput();
+        if (!status.ok()) {
+            return status;
+        }
+    } else {
+        return buildEdgeKeyRef(sentence->edgeKeys()->keys(), edgeType);
+    }
+
+    return Status::OK();
+}
+
+Status DeleteEdgesValidator::buildEdgeKeyRef(const std::vector<EdgeKey*> &edgeKeys,
+                                             const EdgeType edgeType) {
+    edgeKeyVar_ = vctx_->anonVarGen()->getVar();
+    DataSet ds({kSrc, kType, kRank, kDst});
+    for (auto &edgeKey : edgeKeys) {
+        Row row;
+        storage::cpp2::EdgeKey key;
+        auto srcIdStatus = SchemaUtil::toVertexID(edgeKey->srcid());
+        if (!srcIdStatus.ok()) {
+            return srcIdStatus.status();
+        }
+        auto dstIdStatus = SchemaUtil::toVertexID(edgeKey->dstid());
+        if (!dstIdStatus.ok()) {
+            return dstIdStatus.status();
+        }
+
+        auto srcId = std::move(srcIdStatus).value();
+        auto dstId = std::move(dstIdStatus).value();
+        // out edge
+        row.emplace_back(std::move(srcId));
+        row.emplace_back(edgeType);
+        row.emplace_back(edgeKey->rank());
+        row.emplace_back(std::move(dstId));
+        ds.emplace_back(std::move(row));
+    }
+    qctx_->ectx()->setResult(edgeKeyVar_, ResultBuilder().value(Value(std::move(ds))).finish());
+
+    auto* srcIdExpr = new InputPropertyExpression(new std::string(kSrc));
+    auto* typeExpr = new InputPropertyExpression(new std::string(kType));
+    auto* rankExpr = new InputPropertyExpression(new std::string(kRank));
+    auto* dstIdExpr = new InputPropertyExpression(new std::string(kDst));
+    auto* edgeKeyRef = new EdgeKeyRef(srcIdExpr, dstIdExpr, rankExpr);
+    edgeKeyRef->setType(typeExpr);
+    qctx_->plan()->saveObject(edgeKeyRef);
+
+    edgeKeyRefs_.emplace_back(edgeKeyRef);
+    return Status::OK();
+}
+
+Status DeleteEdgesValidator::checkInput() {
+    CHECK(!edgeKeyRefs_.empty());
+    auto &edgeKeyRef = *edgeKeyRefs_.begin();
+    NG_LOG_AND_RETURN_IF_ERROR(deduceProps(edgeKeyRef->srcid()));
+    NG_LOG_AND_RETURN_IF_ERROR(deduceProps(edgeKeyRef->dstid()));
+    NG_LOG_AND_RETURN_IF_ERROR(deduceProps(edgeKeyRef->rank()));
+
+    if (!srcTagProps_.empty() || !dstTagProps_.empty() || !edgeProps_.empty()) {
+        return Status::SyntaxError("Only support input and variable.");
+    }
+
+    if (!inputProps_.empty() && !varProps_.empty()) {
+        return Status::Error("Not support both input and variable.");
+    }
+
+    if (!varProps_.empty() && varProps_.size() > 1) {
+        return Status::Error("Only one variable allowed to use.");
+    }
+
+    auto status = deduceExprType(edgeKeyRef->srcid());
+    NG_RETURN_IF_ERROR(status);
+
+    status = deduceExprType(edgeKeyRef->dstid());
+    NG_RETURN_IF_ERROR(status);
+
+    status = deduceExprType(edgeKeyRef->rank());
+    NG_RETURN_IF_ERROR(status);
+
+    if (edgeKeyRef->srcid()->kind() == Expression::Kind::kVarProperty) {
+        edgeKeyVar_ = *static_cast<SymbolPropertyExpression*>(edgeKeyRef->srcid())->sym();
+    }
+    return Status::OK();
+}
+
+Status DeleteEdgesValidator::toPlan() {
+    auto* plan = qctx_->plan();
+    auto *doNode = DeleteEdges::make(plan,
+                                     nullptr,
+                                     vctx_->whichSpace().id,
+                                     edgeKeyRefs_);
+    doNode->setInputVar(edgeKeyVar_);
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
 }  // namespace graph
 }  // namespace nebula
