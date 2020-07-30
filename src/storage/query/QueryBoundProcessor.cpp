@@ -35,8 +35,7 @@ kvstore::ResultCode QueryBoundProcessor::processEdgeImpl(const PartitionID partI
     edges.reserve(FLAGS_reserved_edges_one_vertex);
     auto ret = collectEdgeProps(
         partId, vId, edgeType, &fcontext,
-        [&, this](std::unique_ptr<RowReader> reader,
-                  folly::StringPiece k) {
+        [&, this](RowReader reader, folly::StringPiece k) {
             cpp2::IdAndProp edge;
             if (!onlyStructure) {
                 RowWriter writer(currEdgeSchema);
@@ -112,11 +111,12 @@ kvstore::ResultCode QueryBoundProcessor::processEdgeSampling(const PartitionID p
             CHECK(!onlyVertexProps_);
             auto ret = collectEdgeProps(
                 partId, vId, edgeType, &fcontext,
-                [&](std::unique_ptr<RowReader> reader,
-                    folly::StringPiece k) {
+                [&](RowReader reader, folly::StringPiece k) {
                     sampler->sampling(
-                        std::make_tuple(edgeType, k.str(), std::move(reader),
-                                        currEdgeSchema, props));
+                        std::make_tuple(
+                            edgeType, k.str(),
+                            std::make_unique<RowReader>(std::move(reader)),
+                            currEdgeSchema, props));
                 });
             if (ret != kvstore::ResultCode::SUCCEEDED) {
                 return ret;

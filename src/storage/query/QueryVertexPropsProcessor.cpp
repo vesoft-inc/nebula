@@ -150,8 +150,7 @@ kvstore::ResultCode QueryVertexPropsProcessor::collectVertexProps(
         }
         auto valStr = val.str();
         if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
-            vertexCache_->insert(std::make_pair(vId, tagId),
-                                 valStr, partId);
+            vertexCache_->insert(std::make_pair(vId, tagId), valStr);
             VLOG(3) << "Insert cache for vId " << vId << ", tagId " << tagId;
         }
         cpp2::TagData td;
