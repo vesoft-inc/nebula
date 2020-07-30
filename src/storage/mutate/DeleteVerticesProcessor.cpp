@@ -49,7 +49,7 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
                         // Evict vertices from cache
                         if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
                             VLOG(3) << "Evict vertex cache for VID " << *v << ", TagID " << tag;
-                            vertexCache_->evict(std::make_pair(*v, tag), part);
+                            vertexCache_->evict(std::make_pair(*v, tag));
                         }
                         keys.emplace_back(key.str());
                     }
@@ -99,7 +99,7 @@ DeleteVerticesProcessor::deleteVertices(GraphSpaceID spaceId,
             if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
                 if (NebulaKeyUtils::isVertex(key)) {
                     VLOG(3) << "Evict vertex cache for vertex ID " << vertex << ", tagId " << tagId;
-                    vertexCache_->evict(std::make_pair(vertex, tagId), partId);
+                    vertexCache_->evict(std::make_pair(vertex, tagId));
                 }
             }
 
