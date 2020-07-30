@@ -4,7 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#pragma once
+#ifndef _EXEC_QUERY_GET_PROP_EXECUTOR_H_
+#define _EXEC_QUERY_GET_PROP_EXECUTOR_H_
 
 #include "exec/Executor.h"
 #include "common/clients/storage/StorageClientBase.h"
@@ -69,3 +70,5 @@ protected:
 
 }   // namespace graph
 }   // namespace nebula
+
+#endif  // _EXEC_QUERY_GET_PROP_EXECUTOR_H_

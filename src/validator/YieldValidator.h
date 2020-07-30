@@ -42,6 +42,7 @@ private:
     YieldColumns *getYieldColumns(YieldColumns *yieldColumns,
                                   ObjectPool *objPool,
                                   size_t numColumns);
+    void rebuildYield(YieldClause* yield);
 
     bool hasAggFun_{false};
 };

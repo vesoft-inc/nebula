@@ -6,6 +6,8 @@
 
 #include "validator/GoValidator.h"
 
+#include "util/ExpressionUtils.h"
+
 #include "common/base/Base.h"
 #include "common/expression/VariableExpression.h"
 #include "common/interface/gen-cpp2/storage_types.h"
@@ -123,12 +125,20 @@ Status GoValidator::validateOver(const OverClause* over) {
     return Status::OK();
 }
 
-Status GoValidator::validateWhere(const WhereClause* where) {
+Status GoValidator::validateWhere(WhereClause* where) {
     if (where == nullptr) {
         return Status::OK();
     }
 
     filter_ = where->filter();
+
+    if (filter_->kind() == Expression::Kind::kSymProperty) {
+        auto symbolExpr = static_cast<SymbolPropertyExpression*>(filter_);
+        where->setFilter(ExpressionUtils::transSymbolPropertyExpression<EdgePropertyExpression>(
+            symbolExpr));
+    } else {
+        ExpressionUtils::transAllSymbolPropertyExpr<EdgePropertyExpression>(filter_);
+    }
 
     auto typeStatus = deduceExprType(filter_);
     if (!typeStatus.ok()) {
@@ -150,7 +160,7 @@ Status GoValidator::validateWhere(const WhereClause* where) {
     return Status::OK();
 }
 
-Status GoValidator::validateYield(const YieldClause* yield) {
+Status GoValidator::validateYield(YieldClause* yield) {
     if (yield == nullptr) {
         return Status::Error("Yield clause nullptr.");
     }
@@ -158,6 +168,14 @@ Status GoValidator::validateYield(const YieldClause* yield) {
     distinct_ = yield->isDistinct();
     auto cols = yield->columns();
     for (auto col : cols) {
+        if (col->expr()->kind() == Expression::Kind::kSymProperty) {
+            auto symbolExpr = static_cast<SymbolPropertyExpression*>(col->expr());
+            col->setExpr(ExpressionUtils::transSymbolPropertyExpression<EdgePropertyExpression>(
+                symbolExpr));
+        } else {
+            ExpressionUtils::transAllSymbolPropertyExpr<EdgePropertyExpression>(col->expr());
+        }
+
         if (!col->getAggFunName().empty()) {
             return Status::Error(
                 "`%s', not support aggregate function in go sentence.",

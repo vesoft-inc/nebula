@@ -6,6 +6,7 @@
 
 #include <gtest/gtest.h>
 
+#include "util/ExpressionUtils.h"
 #include "context/QueryContext.h"
 #include "planner/Query.h"
 #include "exec/query/LimitExecutor.h"
@@ -17,26 +18,37 @@ namespace graph {
 class LimitTest : public QueryTestBase {
 };
 
-#define LIMIT_RESUTL_CHECK(outputName, offset, count, expected)                       \
-    do {                                                                              \
-        auto* plan = qctx_->plan();                                                   \
-        auto* limitNode = Limit::make(plan, nullptr, offset, count);                  \
-        limitNode->setInputVar("input_neighbor");                                     \
-        limitNode->setOutputVar(outputName);                                          \
-        auto limitExec = std::make_unique<LimitExecutor>(limitNode, qctx_.get());     \
-        EXPECT_TRUE(limitExec->execute().get().ok());                                 \
-        auto& limitResult = qctx_->ectx()->getResult(limitNode->varName());           \
-        EXPECT_EQ(limitResult.state(), Result::State::kSuccess);                      \
-        auto yieldSentence = getYieldSentence(                                        \
-                "YIELD study._dst AS name, study.start_year AS start");               \
-        auto* project = Project::make(plan, nullptr, yieldSentence->yieldColumns());  \
-        project->setInputVar(limitNode->varName());                                   \
-        project->setColNames(std::vector<std::string>{"name", "start"});              \
-        auto proExe = std::make_unique<ProjectExecutor>(project, qctx_.get());        \
-        EXPECT_TRUE(proExe->execute().get().ok());                                    \
-        auto& proResult = qctx_->ectx()->getResult(project->varName());               \
-        EXPECT_EQ(proResult.value().getDataSet(), expected);                          \
-        EXPECT_EQ(proResult.state(), Result::State::kSuccess);                        \
+#define LIMIT_RESUTL_CHECK(outputName, offset, count, expected)                           \
+    do {                                                                                  \
+        auto* plan = qctx_->plan();                                                       \
+        auto* limitNode = Limit::make(plan, nullptr, offset, count);                      \
+        limitNode->setInputVar("input_neighbor");                                         \
+        limitNode->setOutputVar(outputName);                                              \
+        auto limitExec = std::make_unique<LimitExecutor>(limitNode, qctx_.get());         \
+        EXPECT_TRUE(limitExec->execute().get().ok());                                     \
+        auto& limitResult = qctx_->ectx()->getResult(limitNode->varName());               \
+        EXPECT_EQ(limitResult.state(), Result::State::kSuccess);                          \
+        auto yieldSentence = getYieldSentence(                                            \
+                "YIELD study._dst AS name, study.start_year AS start");                   \
+        auto columns = yieldSentence->columns();                                          \
+        for (auto& col : columns) {                                                       \
+            if (col->expr()->kind() == Expression::Kind::kSymProperty) {                  \
+                auto symbolExpr = static_cast<SymbolPropertyExpression*>(col->expr());    \
+                col->setExpr(ExpressionUtils                                              \
+                    ::transSymbolPropertyExpression<EdgePropertyExpression>(symbolExpr)); \
+            } else {                                                                      \
+                ExpressionUtils::transAllSymbolPropertyExpr<EdgePropertyExpression>(      \
+                    col->expr());                                                         \
+            }                                                                             \
+        }                                                                                 \
+        auto* project = Project::make(plan, nullptr, yieldSentence->yieldColumns());      \
+        project->setInputVar(limitNode->varName());                                       \
+        project->setColNames(std::vector<std::string>{"name", "start"});                  \
+        auto proExe = std::make_unique<ProjectExecutor>(project, qctx_.get());            \
+        EXPECT_TRUE(proExe->execute().get().ok());                                        \
+        auto& proResult = qctx_->ectx()->getResult(project->varName());                   \
+        EXPECT_EQ(proResult.value().getDataSet(), expected);                              \
+        EXPECT_EQ(proResult.state(), Result::State::kSuccess);                            \
     } while (false)
 
 

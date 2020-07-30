@@ -5,7 +5,7 @@
  */
 
 #include "validator/YieldValidator.h"
-
+#include "util/ExpressionUtils.h"
 #include "common/expression/Expression.h"
 #include "context/QueryContext.h"
 #include "parser/Clauses.h"
@@ -20,6 +20,7 @@ YieldValidator::YieldValidator(Sentence *sentence, QueryContext *qctx)
 
 Status YieldValidator::validateImpl() {
     auto yield = static_cast<YieldSentence *>(sentence_);
+    rebuildYield(yield->yield());
     NG_RETURN_IF_ERROR(validateYieldAndBuildOutputs(yield->yield()));
     NG_RETURN_IF_ERROR(validateWhere(yield->where()));
 
@@ -259,6 +260,20 @@ Status YieldValidator::toPlan() {
     }
 
     return Status::OK();
+}
+
+void YieldValidator::rebuildYield(YieldClause* yield) {
+    // TODO(shylock) keep same with previous so transfer to EdgePropertyExpression
+    auto columns = yield->columns();
+    for (auto& col : columns) {
+        if (col->expr()->kind() == Expression::Kind::kSymProperty) {
+            auto symbolExpr = static_cast<SymbolPropertyExpression*>(col->expr());
+            col->setExpr(ExpressionUtils::transSymbolPropertyExpression<EdgePropertyExpression>(
+                symbolExpr));
+        } else {
+            ExpressionUtils::transAllSymbolPropertyExpr<EdgePropertyExpression>(col->expr());
+        }
+    }
 }
 
 }   // namespace graph

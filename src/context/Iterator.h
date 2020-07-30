@@ -116,17 +116,15 @@ public:
     // The derived class should rewrite get prop if the Value is kind of dataset.
     virtual const Value& getColumn(const std::string& col) const = 0;
 
-    virtual const Value& getTagProp(const std::string& tag,
-                                    const std::string& prop) const {
-        UNUSED(tag);
-        UNUSED(prop);
+    virtual const Value& getTagProp(const std::string&,
+                                    const std::string&) const {
+        DLOG(FATAL) << "Shouldn't call the unimplemented method";
         return Value::kEmpty;
     }
 
-    virtual const Value& getEdgeProp(const std::string& edge,
-                                     const std::string& prop) const {
-        UNUSED(edge);
-        UNUSED(prop);
+    virtual const Value& getEdgeProp(const std::string&,
+                                     const std::string&) const {
+        DLOG(FATAL) << "Shouldn't call the unimplemented method";
         return Value::kEmpty;
     }
 

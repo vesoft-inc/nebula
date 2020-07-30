@@ -56,7 +56,15 @@ public:
         return whereClause_.get();
     }
 
+    WhereClause* whereClause() {
+        return whereClause_.get();
+    }
+
     const YieldClause* yieldClause() const {
+        return yieldClause_.get();
+    }
+
+    YieldClause* yieldClause() {
         return yieldClause_.get();
     }
 

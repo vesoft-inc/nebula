@@ -49,6 +49,8 @@ set(VALIDATOR_TEST_LIBS
 nebula_add_test(
     NAME validator_test
     SOURCES
+        FetchVerticesTest.cpp
+        FetchEdgesTest.cpp
         MockSchemaManagerTest.cpp
         ValidatorTestBase.cpp
         QueryValidatorTest.cpp

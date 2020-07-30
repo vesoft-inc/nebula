@@ -32,15 +32,13 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
     nebula::DataSet vertices({kVid});
     std::unordered_set<Value> uniqueVid;
     if (!gv->vertices().empty()) {
+        // TODO(shylock) not dedup in here, do it when generate plan
         for (auto& v : gv->vertices()) {
             auto ret = uniqueVid.emplace(v.values.front());
             if (ret.second) {
                 vertices.emplace_back(std::move(v));
             }
         }
-        vertices.rows.insert(vertices.rows.end(),
-                             std::make_move_iterator(gv->vertices().begin()),
-                             std::make_move_iterator(gv->vertices().end()));
     }
     if (gv->src() != nullptr) {
         // Accept Table such as | $a | $b | $c |... as input which one column indicate src

@@ -9,6 +9,7 @@
 #include "common/base/Base.h"
 #include "common/expression/Expression.h"
 #include "common/interface/gen-cpp2/storage_types.h"
+#include "util/ExpressionUtils.h"
 
 namespace nebula {
 class StepClause final {
@@ -203,6 +204,10 @@ public:
         return filter_.get();
     }
 
+    void setFilter(Expression* expr) {
+        filter_.reset(expr);
+    }
+
     std::string toString() const;
 
 private:
@@ -218,8 +223,28 @@ public:
         alias_.reset(alias);
     }
 
+    std::unique_ptr<YieldColumn> clone() const {
+        auto col = std::make_unique<YieldColumn>(
+            graph::ExpressionUtils::clone(expr_.get()).release());
+        if (alias_ != nullptr) {
+            col->setAlias(new std::string(*alias_));
+        }
+        if (aggFunName_ != nullptr) {
+            col->setAggFunction(new std::string(*aggFunName_));
+        }
+        return col;
+    }
+
+    void setExpr(Expression* expr) {
+        expr_.reset(expr);
+    }
+
     Expression* expr() const {
         return expr_.get();
+    }
+
+    void setAlias(std::string* alias) {
+        alias_.reset(alias);
     }
 
     std::string* alias() const {

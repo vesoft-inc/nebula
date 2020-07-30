@@ -19,6 +19,12 @@ public:
     MockSchemaManager() = default;
     ~MockSchemaManager() = default;
 
+    static std::unique_ptr<MockSchemaManager> makeUnique() {
+        auto instance = std::make_unique<MockSchemaManager>();
+        instance->init();
+        return instance;
+    }
+
     void init();
 
     std::shared_ptr<const nebula::meta::NebulaSchemaProvider>
