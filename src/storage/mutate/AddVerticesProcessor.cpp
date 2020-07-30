@@ -103,7 +103,7 @@ std::string AddVerticesProcessor::addVertices(int64_t version, PartitionID partI
 
     for (auto& v : newVertices) {
         std::string val;
-        std::unique_ptr<RowReader> nReader;
+        RowReader nReader = RowReader::getEmptyRowReader();
         auto tagId = NebulaKeyUtils::getTagId(v.first);
         auto vId = NebulaKeyUtils::getVertexId(v.first);
         for (auto& index : indexes_) {
