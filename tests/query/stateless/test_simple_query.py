@@ -8,6 +8,7 @@
 import re
 import sys
 import time
+import pytest
 
 from graph import ttypes
 
@@ -39,70 +40,73 @@ class TestSimpleQuery(NebulaTestSuite):
 
         resp = self.execute_query('SHOW TAGS')
         self.check_resp_succeeded(resp)
-        self.search_result(resp.rows, [[re.compile(r'\d+'), 'person']])
+        # 2.0 enable to show tagID
+        self.search_result(resp, [[re.compile(r'per')]], is_regex = True)
 
         resp = self.execute_query('SHOW EDGES')
         self.check_resp_succeeded(resp)
-        self.check_result(resp.rows, [[re.compile(r'\d+'), 'like']])
+        self.check_result(resp, [[re.compile('lik')]], is_regex = True)
 
     def test_insert(self):
         resp = self.execute('USE simplequeryspace')
         self.check_resp_succeeded(resp)
 
         resp = self.execute(
-            'INSERT VERTEX person(name, age) VALUES 1:(\'Bob\', 10)')
+            'INSERT VERTEX person(name, age) VALUES "1":(\'Bob\', 10)')
         self.check_resp_succeeded(resp)
 
         resp = self.execute(
-            'INSERT VERTEX person(name, age) VALUES 2:(\'Lily\', 9)')
+            'INSERT VERTEX person(name, age) VALUES "2":(\'Lily\', 9)')
         self.check_resp_succeeded(resp)
 
         resp = self.execute(
-            'INSERT VERTEX person(name, age) VALUES 3:(\'Tom\', 10)')
+            'INSERT VERTEX person(name, age) VALUES "3":(\'Tom\', 10)')
         self.check_resp_succeeded(resp)
 
-        resp = self.execute('INSERT EDGE like(likeness) VALUES 1->2:(80.0)')
+        resp = self.execute('INSERT EDGE like(likeness) VALUES "1"->"2":(80.0)')
         self.check_resp_succeeded(resp)
 
-        resp = self.execute('INSERT EDGE like(likeness) VALUES 1->3:(90.0)')
+        resp = self.execute('INSERT EDGE like(likeness) VALUES "1"->"3":(90.0)')
         self.check_resp_succeeded(resp)
 
-        resp = self.execute('INSERT EDGE like(likeness) VALUES 2->3:(100.0)')
+        resp = self.execute('INSERT EDGE like(likeness) VALUES "2"->"3":(100.0)')
         self.check_resp_succeeded(resp)
 
+    @pytest.mark.skip(reason="does not support fetch and update")
     def test_upsert(self):
-        resp = self.execute_query('FETCH PROP on person 1')
+        resp = self.execute_query('FETCH PROP on person "1"')
         expect_result = [[1, 'Bob', 10]]
-        self.check_result(resp.rows, expect_result)
-        resp = self.execute('UPSERT VERTEX 1 SET person.name = "BobUpsert"')
+        self.check_result(resp, expect_result)
+        resp = self.execute('UPSERT VERTEX "1" SET person.name = "BobUpsert"')
         self.check_resp_succeeded(resp)
-        resp = self.execute_query('FETCH PROP on person 1')
-        expect_result = [[1, 'BobUpsert', 10]]
-        self.check_result(resp.rows, expect_result)
+        resp = self.execute_query('FETCH PROP on person "1"')
+        expect_result = [["1", 'BobUpsert', 10]]
+        self.check_result(resp, expect_result)
         resp = self.execute('UPSERT VERTEX 4 SET person.name = "NewBob", person.age=11')
         self.check_resp_succeeded(resp)
-        resp = self.execute_query('FETCH PROP on person 4')
-        expect_result = [[4, 'NewBob', 11]]
-        self.check_result(resp.rows, expect_result)
-        resp = self.execute('UPDATE VERTEX 4 SET person.age=20')
+        resp = self.execute_query('FETCH PROP on person "4"')
+        expect_result = [["4", 'NewBob', 11]]
+        self.check_result(resp, expect_result)
+        resp = self.execute('UPDATE VERTEX "4" SET person.age=20')
         self.check_resp_succeeded(resp)
-        resp = self.execute_query('FETCH PROP on person 4')
-        expect_result = [[4, 'NewBob', 20]]
-        self.check_result(resp.rows, expect_result)
+        resp = self.execute_query('FETCH PROP on person "4"')
+        expect_result = [["4", 'NewBob', 20]]
+        self.check_result(resp, expect_result)
 
     def test_query(self):
         resp = self.execute('USE simplequeryspace')
         self.check_resp_succeeded(resp)
 
-        resp = self.execute_query('GO FROM 1 OVER like YIELD $$.person.name, '
+        resp = self.execute_query('GO FROM "1" OVER like YIELD $$.person.name, '
                                   '$$.person.age, like.likeness')
         self.check_resp_succeeded(resp)
 
         expect_result = [['Lily', 9, 80.0], ['Tom', 10, 90.0]]
-        self.check_result(resp.rows, expect_result)
+        self.check_result(resp, expect_result)
         expect_result_OO = [['Tom', 10, 90.0], ['Lily', 9, 80.0]]
-        self.check_out_of_order_result(resp.rows, expect_result_OO)
+        self.check_out_of_order_result(resp, expect_result_OO)
 
+    @pytest.mark.skip(reason="does not support FIND SHORTEST")
     def test_path(self):
         resp = self.execute('USE simplequeryspace')
         self.check_resp_succeeded(resp)
@@ -110,7 +114,7 @@ class TestSimpleQuery(NebulaTestSuite):
         resp = self.execute_query('FIND SHORTEST PATH FROM 1 to 3 OVER *')
         self.check_resp_succeeded(resp)
         expect_result = [[1, (b"like", 0), 3]]
-        self.check_path_result(resp.rows, expect_result)
+        self.check_path_result(resp, expect_result)
 
     @classmethod
     def cleanup(self):

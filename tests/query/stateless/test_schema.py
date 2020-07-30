@@ -10,6 +10,7 @@ import sys
 import time
 
 from nebula_test_common.nebula_test_suite import NebulaTestSuite
+from nebula_test_common.nebula_test_suite import T_EMPTY, T_NULL
 
 
 class TestSchema(NebulaTestSuite):
@@ -39,11 +40,11 @@ class TestSchema(NebulaTestSuite):
 
         resp = self.execute_query('DESC TAG TAG_all_type')
         self.check_resp_succeeded(resp)
-        expect = [['name', 'string', 'YES', 'EMPTY'],
-                  ['age', 'int64', 'YES', 'EMPTY'],
-                  ['is_man', 'bool', 'YES', 'EMPTY'],
-                  ['account', 'double', 'YES', 'EMPTY'],
-                  ['birthday', 'timestamp', 'YES', 'EMPTY']]
+        expect = [['name', 'string', 'YES', T_EMPTY],
+                  ['age', 'int64', 'YES', T_EMPTY],
+                  ['is_man', 'bool', 'YES', T_EMPTY],
+                  ['account', 'double', 'YES', T_EMPTY],
+                  ['birthday', 'timestamp', 'YES', T_EMPTY]]
         self.check_result(resp, expect)
 
         # create tag with default value
@@ -64,11 +65,11 @@ class TestSchema(NebulaTestSuite):
 
         resp = self.execute_query('DESC TAG person')
         self.check_resp_succeeded(resp)
-        expect = [['name', 'string', 'YES', 'EMPTY'],
-                  ['email', 'string', 'YES', 'EMPTY'],
-                  ['age', 'int64', 'YES', 'EMPTY'],
-                  ['gender', 'string', 'YES', 'EMPTY'],
-                  ['birthday', 'timestamp', 'YES', 'EMPTY']]
+        expect = [['name', 'string', 'YES', T_EMPTY],
+                  ['email', 'string', 'YES', T_EMPTY],
+                  ['age', 'int64', 'YES', T_EMPTY],
+                  ['gender', 'string', 'YES', T_EMPTY],
+                  ['birthday', 'timestamp', 'YES', T_EMPTY]]
         self.check_result(resp, expect)
 
         # show all tags
@@ -122,9 +123,9 @@ class TestSchema(NebulaTestSuite):
 
         resp = self.execute_query('DESC TAG student')
         self.check_resp_succeeded(resp)
-        expect = [['name', 'string', 'YES', 'EMPTY'],
-                  ['email', 'string', 'YES', 'EMPTY'],
-                  ['birthday', 'timestamp', 'YES', 'EMPTY']]
+        expect = [['name', 'string', 'YES', T_EMPTY],
+                  ['email', 'string', 'YES', T_EMPTY],
+                  ['birthday', 'timestamp', 'YES', T_EMPTY]]
         self.check_result(resp, expect)
 
         # alter add
@@ -133,10 +134,10 @@ class TestSchema(NebulaTestSuite):
 
         resp = self.execute_query('DESC TAG student')
         self.check_resp_succeeded(resp)
-        expect = [['name', 'string', 'YES', 'EMPTY'],
-                  ['email', 'string', 'YES', 'EMPTY'],
-                  ['birthday', 'timestamp', 'YES', 'EMPTY'],
-                  ['age', 'string', 'YES', 'EMPTY']]
+        expect = [['name', 'string', 'YES', T_EMPTY],
+                  ['email', 'string', 'YES', T_EMPTY],
+                  ['birthday', 'timestamp', 'YES', T_EMPTY],
+                  ['age', 'string', 'YES', T_EMPTY]]
         self.check_result(resp, expect)
 
         # alter change
@@ -145,10 +146,10 @@ class TestSchema(NebulaTestSuite):
 
         resp = self.execute_query('DESC TAG student')
         self.check_resp_succeeded(resp)
-        expect = [['name', 'string', 'YES', 'EMPTY'],
-                  ['email', 'string', 'YES', 'EMPTY'],
-                  ['birthday', 'timestamp', 'YES', 'EMPTY'],
-                  ['age', 'int64', 'YES', 'EMPTY']]
+        expect = [['name', 'string', 'YES', T_EMPTY],
+                  ['email', 'string', 'YES', T_EMPTY],
+                  ['birthday', 'timestamp', 'YES', T_EMPTY],
+                  ['age', 'int64', 'YES', T_EMPTY]]
         self.check_result(resp, expect)
 
         # alter all
@@ -159,10 +160,10 @@ class TestSchema(NebulaTestSuite):
 
         resp = self.execute_query('DESC TAG student')
         self.check_resp_succeeded(resp)
-        expect = [['email', 'string', 'YES', 'EMPTY'],
-                  ['birthday', 'timestamp', 'YES', 'EMPTY'],
-                  ['age', 'int64', 'YES', 'EMPTY'],
-                  ['gender', 'int64', 'YES', 'EMPTY']]
+        expect = [['email', 'string', 'YES', T_EMPTY],
+                  ['birthday', 'timestamp', 'YES', T_EMPTY],
+                  ['age', 'int64', 'YES', T_EMPTY],
+                  ['gender', 'int64', 'YES', T_EMPTY]]
         self.check_result(resp, expect)
 
     def test_alter_tag_failed(self):
@@ -202,11 +203,11 @@ class TestSchema(NebulaTestSuite):
 
         resp = self.execute_query('DESC EDGE EDGE_all_type')
         self.check_resp_succeeded(resp)
-        expect = [['name', 'string', 'YES', 'EMPTY'],
-                  ['age', 'int64', 'YES', 'EMPTY'],
-                  ['is_man', 'bool', 'YES', 'EMPTY'],
-                  ['account', 'double', 'YES', 'EMPTY'],
-                  ['birthday', 'timestamp', 'YES', 'EMPTY']]
+        expect = [['name', 'string', 'YES', T_EMPTY],
+                  ['age', 'int64', 'YES', T_EMPTY],
+                  ['is_man', 'bool', 'YES', T_EMPTY],
+                  ['account', 'double', 'YES', T_EMPTY],
+                  ['birthday', 'timestamp', 'YES', T_EMPTY]]
         self.check_result(resp, expect)
 
         # create tag with default value
@@ -227,11 +228,11 @@ class TestSchema(NebulaTestSuite):
 
         resp = self.execute_query('DESC EDGE human')
         self.check_resp_succeeded(resp)
-        expect = [['name', 'string', 'YES', 'EMPTY'],
-                  ['email', 'string', 'YES', 'EMPTY'],
-                  ['age', 'int64', 'YES', 'EMPTY'],
-                  ['gender', 'string', 'YES', 'EMPTY'],
-                  ['birthday', 'timestamp', 'YES', 'EMPTY']]
+        expect = [['name', 'string', 'YES', T_EMPTY],
+                  ['email', 'string', 'YES', T_EMPTY],
+                  ['age', 'int64', 'YES', T_EMPTY],
+                  ['gender', 'string', 'YES', T_EMPTY],
+                  ['birthday', 'timestamp', 'YES', T_EMPTY]]
         self.check_result(resp, expect)
 
         # show all tags
@@ -282,7 +283,7 @@ class TestSchema(NebulaTestSuite):
 
         resp = self.execute_query('DESC EDGE relationship')
         self.check_resp_succeeded(resp)
-        expect = [['name', 'string', 'YES', 'EMPTY'], ['email', 'string', 'YES', 'EMPTY']]
+        expect = [['name', 'string', 'YES', T_EMPTY], ['email', 'string', 'YES', T_EMPTY]]
         self.check_result(resp, expect)
 
         # alter add
@@ -291,9 +292,9 @@ class TestSchema(NebulaTestSuite):
 
         resp = self.execute_query('DESC EDGE relationship')
         self.check_resp_succeeded(resp)
-        expect = [['name', 'string', 'YES', 'EMPTY'],
-                  ['email', 'string', 'YES', 'EMPTY'],
-                  ['start_year', 'string', 'YES', 'EMPTY']]
+        expect = [['name', 'string', 'YES', T_EMPTY],
+                  ['email', 'string', 'YES', T_EMPTY],
+                  ['start_year', 'string', 'YES', T_EMPTY]]
         self.check_result(resp, expect)
 
         # alter change
@@ -302,9 +303,9 @@ class TestSchema(NebulaTestSuite):
 
         resp = self.execute_query('DESC EDGE relationship')
         self.check_resp_succeeded(resp)
-        expect = [['name', 'string', 'YES', 'EMPTY'],
-                  ['email', 'string', 'YES', 'EMPTY'],
-                  ['start_year', 'int64', 'YES', 'EMPTY']]
+        expect = [['name', 'string', 'YES', T_EMPTY],
+                  ['email', 'string', 'YES', T_EMPTY],
+                  ['start_year', 'int64', 'YES', T_EMPTY]]
         self.check_result(resp, expect)
 
         # alter all
@@ -315,9 +316,9 @@ class TestSchema(NebulaTestSuite):
 
         resp = self.execute_query('DESC EDGE relationship')
         self.check_resp_succeeded(resp)
-        expect = [['email', 'string', 'YES', 'EMPTY'],
-                  ['start_year', 'int64', 'YES', 'EMPTY'],
-                  ['end_year', 'int64', 'YES', 'EMPTY']]
+        expect = [['email', 'string', 'YES', T_EMPTY],
+                  ['start_year', 'int64', 'YES', T_EMPTY],
+                  ['end_year', 'int64', 'YES', T_EMPTY]]
         self.check_result(resp, expect)
 
     def test_alter_edge_failed(self):

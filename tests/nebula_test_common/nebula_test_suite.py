@@ -18,6 +18,20 @@ from nebula2.ConnectionPool import ConnectionPool
 from nebula2.graph import ttypes
 
 
+T_EMPTY = CommonTtypes.Value()
+T_NULL = CommonTtypes.Value()
+T_NULL.set_nVal(CommonTtypes.NullType.__NULL__)
+T_NULL_NaN = CommonTtypes.Value()
+T_NULL_NaN.set_nVal(CommonTtypes.NullType.NaN)
+T_NULL_BAD_DATA = CommonTtypes.Value()
+T_NULL_BAD_DATA.set_nVal(CommonTtypes.NullType.BAD_DATA)
+T_NULL_BAD_TYPE = CommonTtypes.Value()
+T_NULL_BAD_TYPE.set_nVal(CommonTtypes.NullType.BAD_TYPE)
+T_NULL_UNKNOWN_PROP = CommonTtypes.Value()
+T_NULL_BAD_TYPE.set_nVal(CommonTtypes.NullType.UNKNOWN_PROP)
+T_NULL_UNKNOWN_DIV_BY_ZERO = CommonTtypes.Value()
+T_NULL_UNKNOWN_DIV_BY_ZERO.set_nVal(CommonTtypes.NullType.DIV_BY_ZERO)
+
 class NebulaTestSuite(object):
     @classmethod
     def set_delay(self):
@@ -157,94 +171,55 @@ class NebulaTestSuite(object):
 
     @classmethod
     def check_value(self, col, expect):
-        if col.getType() == CommonTtypes.Value.__EMPTY__:
-            msg = 'ERROR: type is empty'
-            if isinstance(expect, Pattern):
-                if not expect.match(str('EMPTY')):
+        if isinstance(expect, Pattern):
+            if col.getType() == CommonTtypes.Value.BVAL:
+                msg = self.check_format_str.format(col.get_bVal(), expect)
+                if not expect.match(str(col.get_bVal())):
                     return False, msg
-            else:
-                if 'EMPTY' != expect:
-                    return False, msg
-            return True, ''
+                return True, ''
 
-        if col.getType() == CommonTtypes.Value.BVAL:
-            msg = self.check_format_str.format(col.get_bVal(), expect)
-            if isinstance(expect, Pattern):
-                if not expect.match(str(col.get_bool_val())):
-                    return False, msg
-            else:
-                if col.get_bool_val() != expect:
-                    return False, msg
-            return True, ''
-
-        if col.getType() == CommonTtypes.Value.IVAL:
-            msg = self.check_format_str.format(col.get_iVal(), expect)
-            if isinstance(expect, Pattern):
+            if col.getType() == CommonTtypes.Value.IVAL:
+                msg = self.check_format_str.format(col.get_iVal(), expect)
                 if not expect.match(str(col.get_iVal())):
                     return False, msg
-            else:
-                if col.get_iVal() != expect:
-                    return False, msg
-            return True, ''
+                return True, ''
 
-        if col.getType() == CommonTtypes.Value.SVAL:
-            msg = self.check_format_str.format(col.get_sVal().decode('utf-8'),
-                                               expect)
-            if isinstance(expect, Pattern):
+            if col.getType() == CommonTtypes.Value.SVAL:
+                msg = self.check_format_str.format(col.get_sVal().decode('utf-8'),
+                                                   expect)
                 if not expect.match(col.get_sVal().decode('utf-8')):
                     return False, msg
-            else:
-                if col.get_sVal().decode('utf-8') != expect:
-                    return False, msg
-            return True, ''
+                return True, ''
 
-        if col.getType() == CommonTtypes.Value.FVAL:
-            msg = self.check_format_str.format(col.get_fVal(),
-                                               expect)
-            if isinstance(expect, Pattern):
+            if col.getType() == CommonTtypes.Value.FVAL:
+                msg = self.check_format_str.format(col.get_fVal(),
+                                                   expect)
                 if not expect.match(str(col.get_fVal())):
                     return False, msg
-            else:
-                if not math.isclose(col.get_fVal(), expect):
-                    return False, msg
-            return True, ''
+                return True, ''
 
-        if col.getType() == CommonTtypes.Value.DVAL:
-            msg = self.check_format_str.format(col.get_dVal(), expect)
-            if isinstance(expect, Pattern):
-                if not expect.match(str(col.get_dVal())):
-                    return False, msg
-            else:
-                if col.get_dVal() != expect:
-                    return False, msg
-            return True, ''
+            return False, 'ERROR: Type unsupported'
 
-        if col.getType() == CommonTtypes.Value.TVAL:
-            msg = self.check_format_str.format(col.get_tVal(), expect)
-            if isinstance(expect, Pattern):
-                if not expect.match(str(col.get_tVal())):
-                    return False, msg
-            else:
-                if col.get_tVal() != expect:
-                    return False, msg
+        msg = self.check_format_str.format(col, expect)
+        if col == expect:
             return True, ''
-
-        return False, 'ERROR: Type unsupported'
+        else:
+            return False, msg
 
     @classmethod
     def row_to_string(self, row):
         value_list = []
         for col in row.values:
             if col.getType() == CommonTtypes.Value.__EMPTY__:
-                value_list.append('EMPTY')
+                value_list.append('__EMPTY__')
             elif col.getType() == CommonTtypes.Value.NVAL:
-                value_list.append('NULL')
+                value_list.append('__NULL__')
             elif col.getType() == CommonTtypes.Value.BVAL:
                 value_list.append(col.get_bVal())
             elif col.getType() == CommonTtypes.Value.IVAL:
                 value_list.append(col.get_iVal())
             elif col.getType() == CommonTtypes.Value.FVAL:
-                value_list.append(col.get_id())
+                value_list.append(col.get_fVal())
             elif col.getType() == CommonTtypes.Value.SVAL:
                 value_list.append(col.get_sVal().decode('utf-8'))
             elif col.getType() == CommonTtypes.Type.DVAL:
@@ -254,7 +229,7 @@ class NebulaTestSuite(object):
         return str(value_list)
 
     @classmethod
-    def search_result(self, resp, expect):
+    def search_result(self, resp, expect, is_regex = False):
         if resp.data is None and len(expect) == 0:
             return
 
@@ -264,19 +239,32 @@ class NebulaTestSuite(object):
 
         msg = 'len(rows)[%d] != len(expect)[%d]' % (len(rows), len(expect))
         assert len(rows) == len(expect), msg
+
+        new_expect = expect
+        if not is_regex:
+            # convert expect to thrift value
+            ok, new_expect, msg = self.convert_expect(expect)
+            if not ok:
+                assert ok, 'convert expect failed, error msg: {}'.format(msg)
+
         for row in rows:
             ok = False
             msg = ""
-            for exp in expect:
-                for col, i in zip(row.values, range(0, len(exp))):
-                    ok, msg = self.check_value(col, exp[i])
+            for exp in new_expect:
+                exp_values = []
+                if not is_regex:
+                    exp_values = exp.values
+                else:
+                    exp_values = exp
+                for col, i in zip(row.values, range(0, len(exp_values))):
+                    ok, msg = self.check_value(col, exp_values[i])
                     if not ok:
                         break
                 if ok:
                     break
             assert ok, 'The returned row from nebula could not be found, row: {}, error message: {}'.format(
                 self.row_to_string(row), msg)
-            expect.remove(exp)
+            new_expect.remove(exp)
 
     @classmethod
     def check_column_names(self, resp, expect):
@@ -286,28 +274,70 @@ class NebulaTestSuite(object):
                 expect[i], resp.data.column_names[i])
 
     @classmethod
-    def check_result(self, resp, expect, ignore_col: Set[int] = set()):
+    def convert_expect(self, expect):
+        result = []
+        for row in expect:
+            if not isinstance(row, list):
+                return False, [], '{} is not list type'.format(str(row))
+            new_row = CommonTtypes.Row()
+            new_row.values = []
+            for col in row:
+                if isinstance(col, CommonTtypes.Value):
+                    new_row.values.append(col)
+                else:
+                    value = CommonTtypes.Value()
+                    if isinstance(col, bool):
+                        value.set_bVal(col)
+                    elif isinstance(col, int):
+                        value.set_iVal(col)
+                    elif isinstance(col, float):
+                        value.set_fVal(col)
+                    elif isinstance(col, str):
+                        value.set_sVal(col.encode('utf-8'))
+                    new_row.values.append(value)
+            result.append(new_row)
+        return True, result, ''
+
+    @classmethod
+    def check_result(self, resp, expect, ignore_col: Set[int] = set(), is_regex = False):
         if resp.data is None and len(expect) == 0:
             return
 
         if resp.data is None:
             assert False, 'resp.data is None'
         rows = resp.data.rows
+        if not is_regex:
+            msg = 'len(rows)[%d] != len(expect)[%d]' % (len(rows), len(expect))
+            assert len(rows) == len(expect), msg
 
-        msg = 'len(rows)[%d] != len(expect)[%d]' % (len(rows), len(expect))
-        assert len(rows) == len(expect), msg
-        for row, i in zip(rows, range(0, len(expect))):
-            print(row)
-            print(expect[i])
-            assert len(row.values) - len(ignore_col) == len(expect[i])
+        new_expect = expect
+        if not is_regex:
+            # convert expect to thrift value
+            ok, new_expect, msg = self.convert_expect(expect)
+            if not ok:
+                assert ok, 'convert expect failed, error msg: {}'.format(msg)
+
+        for row, i in zip(rows, range(0, len(new_expect))):
+            if isinstance(new_expect[i], CommonTtypes.Row):
+                assert len(row.values) - len(ignore_col) == len(new_expect[i].values)
+            else:
+                assert len(row.values) - len(ignore_col) == len(new_expect[i])
             ignored_col_count = 0
             for j, col in enumerate(row.values):
                 if j in ignore_col:
                     ignored_col_count += 1
                     continue
-                ok, msg = self.check_value(col, expect[i][j - ignored_col_count])
+                exp_val = None
+                expect_to_string = ''
+                if isinstance(new_expect[i], CommonTtypes.Row):
+                    exp_val = new_expect[i].values[j - ignored_col_count]
+                    expect_to_string = self.row_to_string(new_expect[i])
+                else:
+                    exp_val = new_expect[i][j - ignored_col_count]
+                    expect_to_string = str(new_expect[i])
+                ok, msg = self.check_value(col, exp_val)
                 assert ok, 'The returned row from nebula could not be found, row: {}, expect: {}, error message: {}'.format(
-                    self.row_to_string(row), expect[i], msg)
+                        self.row_to_string(row), expect_to_string, msg)
 
     @classmethod
     def check_out_of_order_result(self, resp, expect, ignore_col: Set[int] = set()):
@@ -316,11 +346,17 @@ class NebulaTestSuite(object):
 
         if resp.data is None:
             assert False, 'resp.data is None'
+
+        # convert expect to thrift value
+        ok, new_expect, msg = self.convert_expect(expect)
+        if not ok:
+            assert ok, 'convert expect failed, error msg: {}'.format(msg)
         rows = resp.data.rows
         sorted_rows = sorted(rows, key=str)
         resp.data.rows = sorted_rows
-        sorted_expect = sorted(expect)
-        self.check_result(resp, sorted_expect, ignore_col)
+        sorted_expect = sorted(new_expect, key=str)
+        # has convert the expect, so set is_regex to True
+        self.check_result(resp, sorted_expect, ignore_col, True)
 
     @classmethod
     def check_empty_result(self, resp):
