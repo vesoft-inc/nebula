@@ -182,7 +182,7 @@ kvstore::ResultCode IndexExecutor<RESP>::getVertexRow(PartitionID partId,
         return kvstore::ResultCode::SUCCEEDED;
     }
     if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
-        auto result = vertexCache_->get(std::make_pair(vId, tagOrEdge_), partId);
+        auto result = vertexCache_->get(std::make_pair(vId, tagOrEdge_));
         if (result.ok()) {
             auto v = std::move(result).value();
             auto reader = RowReader::getTagPropReader(schemaMan_, v, spaceId_, tagOrEdge_);
@@ -216,7 +216,7 @@ kvstore::ResultCode IndexExecutor<RESP>::getVertexRow(PartitionID partId,
         data->set_props(std::move(row));
         if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
             vertexCache_->insert(std::make_pair(vId, tagOrEdge_),
-                                 iter->val().str(), partId);
+                                 iter->val().str());
             VLOG(3) << "Insert cache for vId " << vId << ", tagId " << tagOrEdge_;
         }
     } else {
