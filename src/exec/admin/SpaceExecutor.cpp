@@ -69,10 +69,14 @@ folly::Future<Status> DropSpaceExecutor::execute() {
     auto *dsNode = asNode<DropSpace>(node());
     return qctx()->getMetaClient()->dropSpace(dsNode->getSpaceName(), dsNode->getIfExists())
             .via(runner())
-            .then([](StatusOr<bool> resp) {
+            .then([this, dsNode](StatusOr<bool> resp) {
                 if (!resp.ok()) {
-                    LOG(ERROR) << resp.status();
+                    LOG(ERROR) << "Drop space `" << dsNode->getSpaceName()
+                               << "' failed: " << resp.status();
                     return resp.status();
+                }
+                if (dsNode->getSpaceName() == qctx()->rctx()->session()->spaceName()) {
+                    qctx()->rctx()->session()->setSpace("", -1);
                 }
                 return Status::OK();
             });
@@ -85,7 +89,7 @@ folly::Future<Status> ShowSpacesExecutor::execute() {
     return qctx()->getMetaClient()->listSpaces().via(runner()).then(
         [this](StatusOr<std::vector<meta::SpaceIdName>> resp) {
             if (!resp.ok()) {
-                LOG(ERROR) << resp.status();
+                LOG(ERROR) << "Show spaces failed: " << resp.status();
                 return resp.status();
             }
             auto spaceItems = std::move(resp).value();
@@ -113,9 +117,10 @@ folly::Future<Status> ShowCreateSpaceExecutor::execute() {
     auto *scsNode = asNode<ShowCreateSpace>(node());
     return qctx()->getMetaClient()->getSpace(scsNode->getSpaceName())
             .via(runner())
-            .then([this](StatusOr<meta::cpp2::SpaceItem> resp) {
+            .then([this, scsNode](StatusOr<meta::cpp2::SpaceItem> resp) {
                 if (!resp.ok()) {
-                    LOG(ERROR) << resp.status();
+                    LOG(ERROR) << "Show create space `" << scsNode->getSpaceName()
+                               << "' failed: " << resp.status();
                     return resp.status();
                 }
                 auto properties = resp.value().get_properties();

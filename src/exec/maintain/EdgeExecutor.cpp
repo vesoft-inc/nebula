@@ -20,9 +20,11 @@ folly::Future<Status> CreateEdgeExecutor::execute() {
     return qctx()->getMetaClient()->createEdgeSchema(spaceId,
             ceNode->getName(), ceNode->getSchema(), ceNode->getIfNotExists())
             .via(runner())
-            .then([](StatusOr<bool> resp) {
+            .then([ceNode, spaceId](StatusOr<bool> resp) {
                 if (!resp.ok()) {
-                    LOG(ERROR) << resp.status();
+                    LOG(ERROR) << "SpaceId: " << spaceId
+                               << ", Create edge `" << ceNode->getName()
+                               << "' failed: " << resp.status();
                     return resp.status();
                 }
                 return Status::OK();
@@ -37,14 +39,16 @@ folly::Future<Status> DescEdgeExecutor::execute() {
     auto spaceId = qctx()->rctx()->session()->space();
     return qctx()->getMetaClient()->getEdgeSchema(spaceId, deNode->getName())
             .via(runner())
-            .then([this](StatusOr<meta::cpp2::Schema> resp) {
+            .then([this, deNode, spaceId](StatusOr<meta::cpp2::Schema> resp) {
                 if (!resp.ok()) {
                     LOG(ERROR) << resp.status();
                     return resp.status();
                 }
                 auto ret = SchemaUtil::toDescSchema(resp.value());
                 if (!ret.ok()) {
-                    LOG(ERROR) << ret.status();
+                    LOG(ERROR) << "SpaceId: " << spaceId
+                               << ", Desc edge `" << deNode->getName()
+                               << "' failed: " << resp.status();
                     return ret.status();
                 }
                 return finish(ResultBuilder()
@@ -64,9 +68,11 @@ folly::Future<Status> DropEdgeExecutor::execute() {
                                                    deNode->getName(),
                                                    deNode->getIfExists())
             .via(runner())
-            .then([](StatusOr<bool> resp) {
+            .then([deNode, spaceId](StatusOr<bool> resp) {
                 if (!resp.ok()) {
-                    LOG(ERROR) << resp.status();
+                    LOG(ERROR) << "SpaceId: " << spaceId
+                               << ", Drop edge `" << deNode->getName()
+                               << "' failed: " << resp.status();
                     return resp.status();
                 }
                 return Status::OK();
@@ -78,9 +84,10 @@ folly::Future<Status> ShowEdgesExecutor::execute() {
 
     auto spaceId = qctx()->rctx()->session()->space();
     return qctx()->getMetaClient()->listEdgeSchemas(spaceId).via(runner()).then(
-        [this](StatusOr<std::vector<meta::cpp2::EdgeItem>> resp) {
+        [this, spaceId](StatusOr<std::vector<meta::cpp2::EdgeItem>> resp) {
             if (!resp.ok()) {
-                LOG(ERROR) << resp.status();
+                LOG(ERROR) << "SpaceId: " << spaceId
+                           << ", Show edges failed: " << resp.status();
                 return resp.status();
             }
             auto edgeItems = std::move(resp).value();
@@ -112,9 +119,11 @@ folly::Future<Status> ShowCreateEdgeExecutor::execute() {
         ->getMetaClient()
         ->getEdgeSchema(spaceId, sceNode->getName())
         .via(runner())
-        .then([this, sceNode](StatusOr<meta::cpp2::Schema> resp) {
+        .then([this, sceNode, spaceId](StatusOr<meta::cpp2::Schema> resp) {
             if (!resp.ok()) {
-                LOG(ERROR) << resp.status();
+                LOG(ERROR) << "SpaceId: " << spaceId
+                           << ", ShowCreate edge `" << sceNode->getName()
+                           << "' failed: " << resp.status();
                 return resp.status();
             }
             auto ret = SchemaUtil::toShowCreateSchema(false, sceNode->getName(), resp.value());
@@ -138,9 +147,11 @@ folly::Future<Status> AlterEdgeExecutor::execute() {
                                                     aeNode->getSchemaItems(),
                                                     aeNode->getSchemaProp())
             .via(runner())
-            .then([this](StatusOr<EdgeType> resp) {
+            .then([this, aeNode](StatusOr<EdgeType> resp) {
                 if (!resp.ok()) {
-                    LOG(ERROR) << resp.status();
+                    LOG(ERROR) << "SpaceId: " << aeNode->space()
+                               << ", Alter edge `" << aeNode->getName()
+                               << "' failed: " << resp.status();
                     return resp.status();
                 }
                 return finish(
