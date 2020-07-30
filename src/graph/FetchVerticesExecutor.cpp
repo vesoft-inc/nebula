@@ -364,7 +364,7 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
         finishExecution(std::move(rsWriter));
         return;
     }
-    std::unordered_map<VertexID, std::map<TagID, std::unique_ptr<RowReader>>> dataMap;
+    std::unordered_map<VertexID, std::map<TagID, RowReader>> dataMap;
     dataMap.reserve(num);
 
     std::unordered_map<TagID, std::shared_ptr<const meta::SchemaProviderIf>> tagSchemaMap;
@@ -407,7 +407,7 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
                 }
                 auto vschema = tagSchemaMap[tagId];
                 auto vreader = RowReader::getRowReader(data, vschema);
-                dataMap[vid][tagId] = std::move(vreader);
+                dataMap[vid].emplace(std::make_pair(tagId, std::move(vreader)));
                 tagIdSet.insert(tagId);
             }
         }

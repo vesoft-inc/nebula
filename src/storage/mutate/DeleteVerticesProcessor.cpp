@@ -119,7 +119,7 @@ DeleteVerticesProcessor::deleteVertices(GraphSpaceID spaceId,
              * Using newlyVertexId to identify if it is the latest version
              */
             if (latestVVId != tagId) {
-                std::unique_ptr<RowReader> reader;
+                RowReader reader = RowReader::getEmptyRowReader();
                 for (auto& index : indexes_) {
                     auto indexId = index->get_index_id();
                     if (index->get_schema_id().get_tag_id() == tagId) {
