@@ -8,7 +8,7 @@
 #define DATAMAN_ROWWRITER_H_
 
 #include "base/Base.h"
-#include "base/Cord.h"
+#include "base/ICord.h"
 #include "dataman/SchemaWriter.h"
 
 namespace nebula {
@@ -107,7 +107,7 @@ public:
 private:
     std::shared_ptr<const meta::SchemaProviderIf> schema_;
     std::shared_ptr<SchemaWriter> schemaWriter_;
-    Cord cord_;
+    ICord<> cord_;
 
     int64_t colNum_ = 0;
     std::unique_ptr<ColName> colName_;
