@@ -18,13 +18,13 @@ struct Tag {
     std::unordered_map<std::string, Value> props;
 
     Tag() = default;
-    Tag(Tag&& tag)
+    Tag(Tag&& tag) noexcept
         : name(std::move(tag.name))
         , props(std::move(tag.props)) {}
     Tag(const Tag& tag)
         : name(tag.name)
         , props(tag.props) {}
-    Tag(std::string&& tagName, std::unordered_map<std::string, Value>&& tagProps)
+    Tag(std::string tagName, std::unordered_map<std::string, Value> tagProps)
         : name(std::move(tagName))
         , props(std::move(tagProps)) {}
 
@@ -47,15 +47,19 @@ struct Tag {
         return os.str();
     }
 
-    Tag& operator=(Tag&& rhs) {
-        name = std::move(rhs.name);
-        props = std::move(rhs.props);
+    Tag& operator=(Tag&& rhs) noexcept {
+        if (&rhs != this) {
+            name = std::move(rhs.name);
+            props = std::move(rhs.props);
+        }
         return *this;
     }
 
     Tag& operator=(const Tag& rhs) {
-        name = rhs.name;
-        props = rhs.props;
+        if (&rhs != this) {
+            name = rhs.name;
+            props = rhs.props;
+        }
         return *this;
     }
 
@@ -71,10 +75,10 @@ struct Vertex {
 
     Vertex() = default;
     Vertex(const Vertex& v) : vid(v.vid), tags(v.tags) {}
-    Vertex(Vertex&& v)
+    Vertex(Vertex&& v) noexcept
         : vid(std::move(v.vid))
         , tags(std::move(v.tags)) {}
-    Vertex(VertexID&& id, std::vector<Tag>&& t)
+    Vertex(VertexID id, std::vector<Tag> t)
         : vid(std::move(id))
         , tags(std::move(t)) {}
 
@@ -95,15 +99,19 @@ struct Vertex {
         return os.str();
     }
 
-    Vertex& operator=(Vertex&& rhs) {
-        vid = std::move(rhs.vid);
-        tags = std::move(rhs.tags);
+    Vertex& operator=(Vertex&& rhs) noexcept {
+        if (&rhs != this) {
+            vid = std::move(rhs.vid);
+            tags = std::move(rhs.tags);
+        }
         return *this;
     }
 
     Vertex& operator=(const Vertex& rhs) {
-        vid = rhs.vid;
-        tags = rhs.tags;
+        if (&rhs != this) {
+            vid = rhs.vid;
+            tags = rhs.tags;
+        }
         return *this;
     }
 

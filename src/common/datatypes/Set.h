@@ -17,8 +17,8 @@ struct Set {
 
     Set() = default;
     Set(const Set&) = default;
-    Set(Set&&) = default;
-    explicit Set(std::unordered_set<Value>&& value) {
+    Set(Set&&) noexcept = default;
+    explicit Set(std::unordered_set<Value> value) {
         values = std::move(value);
     }
 
@@ -42,7 +42,8 @@ struct Set {
         values = rhs.values;
         return *this;
     }
-    Set& operator=(Set&& rhs) {
+
+    Set& operator=(Set&& rhs) noexcept {
         if (this == &rhs) { return *this; }
         values = std::move(rhs.values);
         return *this;

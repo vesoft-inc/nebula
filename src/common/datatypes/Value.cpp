@@ -23,8 +23,7 @@ std::size_t hash<nebula::Value>::operator()(const nebula::Value& v) const noexce
             return 0;
         }
         case nebula::Value::Type::NULLVALUE: {
-            return folly::hash::fnv64_buf(reinterpret_cast<const void*>(&v.getNull()),
-                                          sizeof(nebula::NullType));
+            return ~0UL;
         }
         case nebula::Value::Type::BOOL: {
             return hash<bool>()(v.getBool());
@@ -88,7 +87,7 @@ const Value Value::kNullDivByZero(NullType::DIV_BY_ZERO);
 const uint64_t Value::kEmptyNullType = Value::Type::__EMPTY__ | Value::Type::NULLVALUE;
 const uint64_t Value::kNumericType   = Value::Type::INT | Value::Type::FLOAT;
 
-Value::Value(Value&& rhs) : type_(Value::Type::__EMPTY__) {
+Value::Value(Value&& rhs) noexcept : type_(Value::Type::__EMPTY__) {
     if (this == &rhs) { return; }
     if (rhs.type_ == Type::__EMPTY__) { return; }
     switch (rhs.type_) {
@@ -975,7 +974,7 @@ void Value::clear() {
 }
 
 
-Value& Value::operator=(Value&& rhs) {
+Value& Value::operator=(Value&& rhs) noexcept {
     if (this == &rhs) { return *this; }
     clear();
     if (rhs.type_ == Type::__EMPTY__) { return *this; }

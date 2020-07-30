@@ -27,11 +27,12 @@ struct Step {
                         , name(s.name)
                         , ranking(s.ranking)
                         , props(s.props) {}
-    Step(Step&& s) : dst(std::move(s.dst))
-                   , type(std::move(s.type))
-                   , name(std::move(s.name))
-                   , ranking(std::move(s.ranking))
-                   , props(std::move(s.props)) {}
+    Step(Step&& s) noexcept
+        : dst(std::move(s.dst))
+        , type(std::move(s.type))
+        , name(std::move(s.name))
+        , ranking(std::move(s.ranking))
+        , props(std::move(s.props)) {}
 
     void clear() {
         dst.clear();
@@ -68,7 +69,8 @@ struct Path {
 
     Path() = default;
     Path(const Path& p) : src(p.src), steps(p.steps) {}
-    Path(Path&& p) : src(std::move(p.src)), steps(std::move(p.steps)) {}
+    Path(Path&& p) noexcept
+        : src(std::move(p.src)), steps(std::move(p.steps)) {}
 
     void clear() {
         src.clear();

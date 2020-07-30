@@ -25,8 +25,7 @@ struct HostAddr {
      * so, add an explicit delete ctor
      * */
     HostAddr(int h, int p) = delete;
-    HostAddr(std::string&& h, Port p) : host(std::move(h)), port(p) {}
-    HostAddr(const std::string& h, Port p) : host(h), port(p) {}
+    HostAddr(std::string h, Port p) : host(std::move(h)), port(p) {}
 
     void clear() {
         host.clear();

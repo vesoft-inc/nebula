@@ -78,7 +78,7 @@ struct Value {
 
     // Constructors
     Value() : type_(Type::__EMPTY__) {}
-    Value(Value&& rhs);
+    Value(Value&& rhs) noexcept;
     Value(const Value& rhs);
 
     Value(const NullType& v);       // NOLINT
@@ -186,7 +186,7 @@ struct Value {
 
     void clear();
 
-    Value& operator=(Value&& rhs);
+    Value& operator=(Value&& rhs) noexcept;
     Value& operator=(const Value& rhs);
 
     void setNull(const NullType& v);

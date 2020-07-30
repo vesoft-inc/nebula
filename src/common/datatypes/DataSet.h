@@ -30,13 +30,17 @@ struct DataSet {
         rows = std::move(ds.rows);
     }
     DataSet& operator=(const DataSet& ds) noexcept {
-        colNames = ds.colNames;
-        rows = ds.rows;
+        if (&ds != this) {
+            colNames = ds.colNames;
+            rows = ds.rows;
+        }
         return *this;
     }
     DataSet& operator=(DataSet&& ds) noexcept {
-        colNames = std::move(ds.colNames);
-        rows = std::move(ds.rows);
+        if (&ds != this) {
+            colNames = std::move(ds.colNames);
+            rows = std::move(ds.rows);
+        }
         return *this;
     }
 
@@ -58,7 +62,7 @@ struct DataSet {
                 return false;
             }
         }
-        rows.reserve(o.rows.size());
+        rows.reserve(rowSize() + o.rowSize());
         rows.insert(rows.end(),
                     std::make_move_iterator(o.rows.begin()),
                     std::make_move_iterator(o.rows.end()));
@@ -70,12 +74,12 @@ struct DataSet {
         if (rowSize() != o.rowSize()) {
             return false;
         }
-        colNames.reserve(o.colSize());
+        colNames.reserve(colSize() + o.colSize());
         colNames.insert(colNames.end(),
                         std::make_move_iterator(o.colNames.begin()),
                         std::make_move_iterator(o.colNames.end()));
         for (std::size_t i = 0; i < rowSize(); ++i) {
-            rows[i].values.reserve(o.rows[i].size());
+            rows[i].values.reserve(colSize());
             rows[i].values.insert(rows[i].values.begin(),
                                   std::make_move_iterator(o.rows[i].values.begin()),
                                   std::make_move_iterator(o.rows[i].values.end()));

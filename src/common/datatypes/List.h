@@ -17,7 +17,7 @@ struct List {
 
     List() = default;
     List(const List&) = default;
-    List(List&&) = default;
+    List(List&&) noexcept = default;
     explicit List(std::vector<Value>&& vals) {
         values = std::move(vals);
     }
@@ -45,7 +45,7 @@ struct List {
         values = rhs.values;
         return *this;
     }
-    List& operator=(List&& rhs) {
+    List& operator=(List&& rhs) noexcept {
         if (this == &rhs) { return *this; }
         values = std::move(rhs.values);
         return *this;

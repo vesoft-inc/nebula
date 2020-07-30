@@ -23,7 +23,7 @@ struct Edge {
     std::unordered_map<std::string, Value> props;
 
     Edge() {}
-    Edge(Edge&& v)
+    Edge(Edge&& v) noexcept
         : src(std::move(v.src))
         , dst(std::move(v.dst))
         , type(std::move(v.type))

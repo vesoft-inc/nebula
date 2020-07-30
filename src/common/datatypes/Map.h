@@ -17,8 +17,8 @@ struct Map {
 
     Map() = default;
     Map(const Map&) = default;
-    Map(Map&&) = default;
-    explicit Map(std::unordered_map<std::string, Value> &&values) {
+    Map(Map&&) noexcept = default;
+    explicit Map(std::unordered_map<std::string, Value> values) {
         kvs = std::move(values);
     }
 
@@ -27,7 +27,7 @@ struct Map {
         kvs = rhs.kvs;
         return *this;
     }
-    Map& operator=(Map&& rhs) {
+    Map& operator=(Map&& rhs) noexcept {
         if (this == &rhs) { return *this; }
         kvs = std::move(rhs.kvs);
         return *this;
