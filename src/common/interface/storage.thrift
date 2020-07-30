@@ -40,45 +40,49 @@ enum ErrorCode {
     E_INVALID_FIELD_VALUE  = -18,
     E_REBUILD_INDEX_FAILED = -19,
     E_INVALID_OPERATION    = -20,
+    E_NOT_NULLABLE         = -21,   // Not allowed to be null
+    E_FIELD_UNSET          = -22,   // The field neither can be NULL, nor has a default value
+    E_OUT_OF_RANGE         = -23,   // Value exceeds the range of type
+    E_ATOMIC_OP_FAILED     = -24,   // Atomic operation failed
 
     // meta failures
-    E_EDGE_PROP_NOT_FOUND    = -21,
-    E_TAG_PROP_NOT_FOUND     = -22,
-    E_IMPROPER_DATA_TYPE     = -23,
-    E_EDGE_NOT_FOUND         = -24,
-    E_TAG_NOT_FOUND          = -25,
-    E_INVALID_SPACEVIDLEN    = -26,
-    E_INDEX_NOT_FOUND        = -27,
+    E_EDGE_PROP_NOT_FOUND    = -31,
+    E_TAG_PROP_NOT_FOUND     = -32,
+    E_IMPROPER_DATA_TYPE     = -33,
+    E_EDGE_NOT_FOUND         = -34,
+    E_TAG_NOT_FOUND          = -35,
+    E_INVALID_SPACEVIDLEN    = -36,
+    E_INDEX_NOT_FOUND        = -37,
 
     // Invalid request
-    E_INVALID_FILTER         = -31,
-    E_INVALID_UPDATER        = -32,
-    E_INVALID_STORE          = -33,
-    E_INVALID_PEER           = -34,
-    E_RETRY_EXHAUSTED        = -35,
-    E_TRANSFER_LEADER_FAILED = -36,
-    E_INVALID_STAT_TYPE      = -37,
-    E_INVALID_VID            = -38,
+    E_INVALID_FILTER         = -41,
+    E_INVALID_UPDATER        = -42,
+    E_INVALID_STORE          = -43,
+    E_INVALID_PEER           = -44,
+    E_RETRY_EXHAUSTED        = -45,
+    E_TRANSFER_LEADER_FAILED = -46,
+    E_INVALID_STAT_TYPE      = -47,
+    E_INVALID_VID            = -48,
 
     // meta client failed
-    E_LOAD_META_FAILED = -41,
+    E_LOAD_META_FAILED       = -51,
 
     // checkpoint failed
-    E_FAILED_TO_CHECKPOINT = -50,
-    E_CHECKPOINT_BLOCKED   = -51,
+    E_FAILED_TO_CHECKPOINT   = -60,
+    E_CHECKPOINT_BLOCKED     = -61,
 
     // partial result, used for kv interfaces
-    E_PARTIAL_RESULT = -61,
+    E_PARTIAL_RESULT         = -71,
 
     // Filter out
-    E_FILTER_OUT             = -71,
-    E_INVALID_DATA           = -72,
+    E_FILTER_OUT             = -81,
+    E_INVALID_DATA           = -82,
 
     // task manager failed
-    E_INVALID_TASK_PARA = -90,
-    E_USER_CANCEL = -99,
+    E_INVALID_TASK_PARA      = -90,
+    E_USER_CANCEL            = -99,
 
-    E_UNKNOWN = -100,
+    E_UNKNOWN               = -100,
 } (cpp.enum_strict)
 
 
