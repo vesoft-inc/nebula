@@ -8,17 +8,17 @@
 
 #include "common/datatypes/List.h"
 #include "common/function/AggregateFunction.h"
-
 #include "context/QueryExpressionContext.h"
 #include "context/Result.h"
 #include "planner/PlanNode.h"
 #include "planner/Query.h"
+#include "util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
 
 folly::Future<Status> AggregateExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
     auto* agg = asNode<Aggregate>(node());
     auto groupKeys = agg->groupKeys();
     auto groupItems = agg->groupItems();

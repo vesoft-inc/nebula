@@ -178,6 +178,10 @@ JOBS                        ([Jj][Oo][Bb][Ss])
 JOB                         ([Jj][Oo][Bb])
 RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 
+EXPLAIN                     ([Ee][Xx][Pp][Ll][Aa][Ii][Nn])
+PROFILE                     ([Pp][Rr][Oo][Ff][Ii][Ll][Ee])
+FORMAT                      ([Ff][Oo][Rr][Mm][Aa][Tt])
+
 %%
 
  /* Reserved keyword */
@@ -268,7 +272,9 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {IS}                        { return TokenType::KW_IS; }
 {NULL}                      { return TokenType::KW_NULL; }
 {RECOVER}                   { return TokenType::KW_RECOVER; }
-
+{EXPLAIN}                   { return TokenType::KW_EXPLAIN; }
+{PROFILE}                   { return TokenType::KW_PROFILE; }
+{FORMAT}                    { return TokenType::KW_FORMAT; }
 
  /* Unreserved keyword */
 {HOSTS}                     { return TokenType::KW_HOSTS; }

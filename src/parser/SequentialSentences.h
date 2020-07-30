@@ -17,10 +17,6 @@
 
 namespace nebula {
 
-namespace graph {
-class SequentialExecutor;
-}
-
 class SequentialSentences final : public Sentence {
 public:
     explicit SequentialSentences(Sentence *sentence) {
@@ -43,7 +39,6 @@ public:
     std::string toString() const override;
 
 private:
-    friend class nebula::graph::SequentialExecutor;
     std::vector<std::unique_ptr<Sentence>>      sentences_;
 };
 

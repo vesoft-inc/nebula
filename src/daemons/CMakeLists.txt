@@ -43,14 +43,12 @@ nebula_add_executable(
         $<TARGET_OBJECTS:common_ws_common_obj>
         # $<TARGET_OBJECTS:meta_gflags_man_obj>
         $<TARGET_OBJECTS:common_thread_obj>
-        $<TARGET_OBJECTS:common_time_obj>
         $<TARGET_OBJECTS:common_fs_obj>
         $<TARGET_OBJECTS:common_base_obj>
         $<TARGET_OBJECTS:common_concurrent_obj>
         $<TARGET_OBJECTS:common_datatypes_obj>
         $<TARGET_OBJECTS:common_conf_obj>
         $<TARGET_OBJECTS:common_file_based_cluster_id_man_obj>
-        $<TARGET_OBJECTS:common_meta_thrift_obj>
         $<TARGET_OBJECTS:common_charset_obj>
         $<TARGET_OBJECTS:common_encryption_obj>
         $<TARGET_OBJECTS:common_function_manager_obj>

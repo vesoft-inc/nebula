@@ -7,12 +7,13 @@
 #include "exec/admin/SnapshotExecutor.h"
 #include "planner/Admin.h"
 #include "context/QueryContext.h"
+#include "util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
 
 folly::Future<Status> CreateSnapshotExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
 
     return qctx()->getMetaClient()->createSnapshot()
             .via(runner())
@@ -26,7 +27,7 @@ folly::Future<Status> CreateSnapshotExecutor::execute() {
 }
 
 folly::Future<Status> DropSnapshotExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
 
     auto *dsNode = asNode<DropSnapshot>(node());
     return qctx()->getMetaClient()->dropSnapshot(dsNode->getShapshotName())
@@ -41,7 +42,7 @@ folly::Future<Status> DropSnapshotExecutor::execute() {
 }
 
 folly::Future<Status> ShowSnapshotsExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
 
     return qctx()->getMetaClient()->listSnapshots()
             .via(runner())

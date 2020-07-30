@@ -70,7 +70,7 @@ private:
 
     folly::Future<Status> iterate(LoopExecutor *loop);
 
-    QueryContext *qctx_;
+    QueryContext *qctx_{nullptr};
 
     struct MultiOutputsData {
         folly::SpinLock lock;

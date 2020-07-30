@@ -27,6 +27,7 @@ public:
 
     enum class Kind : uint32_t {
         kUnknown,
+        kExplain,
         kSequential,
         kGo,
         kSet,
@@ -108,6 +109,9 @@ public:
     }
 
 protected:
+    Sentence() = default;
+    explicit Sentence(Kind kind) : kind_(kind) {}
+
     Kind                kind_{Kind::kUnknown};
 };
 

@@ -9,6 +9,7 @@ import time
 
 import pytest
 from nebula2.graph import ttypes
+
 from nebula_test_common.nebula_test_suite import NebulaTestSuite
 
 
@@ -17,13 +18,15 @@ class TestYield(NebulaTestSuite):
     def prepare(self):
         self.load_data()
 
+    @classmethod
+    def cleanup(cls):
+        pass
+
     @pytest.mark.skip(reason="")
     def test_base(self):
         query = 'YIELD 1'
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        print(resp)
-        print(resp.data.column_names)
         self.check_column_names(resp, ['1'])
         self.check_result(resp, [[1]])
 

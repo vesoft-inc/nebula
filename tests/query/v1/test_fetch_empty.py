@@ -6,8 +6,8 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
 import time
-import pytest
 
+import pytest
 from nebula_test_common.nebula_test_suite import NebulaTestSuite
 
 
@@ -16,10 +16,10 @@ class TestFetchEmptyVertices(NebulaTestSuite):
     def prepare(self):
         resp = self.execute('CREATE SPACE empty(partition_num=1, replica_factor=1)')
         self.check_resp_succeeded(resp)
-    
+
         # 2.0 use space get from cache
         time.sleep(self.delay)
-    
+
         resp = self.execute('USE empty')
         self.check_resp_succeeded(resp)
 
@@ -38,12 +38,12 @@ class TestFetchEmptyVertices(NebulaTestSuite):
                             'INSERT VERTEX empty_tag_1() values "1":(), "2":();'
                             'INSERT EDGE empty_edge() values "1"->"2":();')
         self.check_resp_succeeded(resp)
-    
+
     @classmethod
     def cleanup(self):
         resp = self.execute('DROP SPACE empty')
         self.check_resp_succeeded(resp)
-    
+
     @pytest.mark.skip(reason="does not support fetch")
     def test_empty_props(self):
         # empty_tag_0
@@ -77,4 +77,3 @@ class TestFetchEmptyVertices(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         expect_result = [['1', '2', 0]]
         self.check_result(resp, expect_result)
-

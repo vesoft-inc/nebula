@@ -8,41 +8,25 @@ SET(CONTEXT_TEST_LIBS
     $<TARGET_OBJECTS:common_time_obj>
     $<TARGET_OBJECTS:common_base_obj>
     $<TARGET_OBJECTS:common_thread_obj>
+    $<TARGET_OBJECTS:common_common_thrift_obj>
+    $<TARGET_OBJECTS:common_graph_thrift_obj>
     $<TARGET_OBJECTS:context_obj>
     $<TARGET_OBJECTS:graph_flags_obj>
     $<TARGET_OBJECTS:session_obj>
+    $<TARGET_OBJECTS:planner_obj>
+    $<TARGET_OBJECTS:idgenerator_obj>
 )
 
 nebula_add_test(
-    NAME exec_context_test
-    SOURCES ExecutionContextTest.cpp
-    OBJECTS
-        ${CONTEXT_TEST_LIBS}
-    LIBRARIES
-        gtest
-        gtest_main
-)
-
-nebula_add_test(
-    NAME
-        expression_context_test
-    SOURCES
-        ExpressionContextTest.cpp
-    OBJECTS
-        ${CONTEXT_TEST_LIBS}
-    LIBRARIES
-        gtest
-        gtest_main
-)
-
-nebula_add_test(
-    NAME
-        iterator_test
+    NAME context_test
     SOURCES
         IteratorTest.cpp
+        ExpressionContextTest.cpp
+        ExecutionContextTest.cpp
     OBJECTS
         ${CONTEXT_TEST_LIBS}
     LIBRARIES
+        ${THRIFT_LIBRARIES}
         gtest
 )
 
@@ -56,4 +40,5 @@ nebula_add_executable(
     LIBRARIES
         follybenchmark
         boost_regex
+        ${THRIFT_LIBRARIES}
 )

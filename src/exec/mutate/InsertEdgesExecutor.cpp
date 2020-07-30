@@ -10,6 +10,7 @@
 
 #include "planner/Mutate.h"
 #include "context/QueryContext.h"
+#include "util/ScopedTimer.h"
 
 
 namespace nebula {
@@ -20,12 +21,22 @@ folly::Future<Status> InsertEdgesExecutor::execute() {
 }
 
 folly::Future<Status> InsertEdgesExecutor::insertEdges() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
+
     auto *ieNode = asNode<InsertEdges>(node());
-    return qctx()->getStorageClient()->addEdges(ieNode->getSpace(),
-            ieNode->getEdges(), ieNode->getPropNames(), ieNode->getOverwritable())
+    time::Duration addEdgeTime;
+    return qctx()
+        ->getStorageClient()
+        ->addEdges(ieNode->getSpace(),
+                   ieNode->getEdges(),
+                   ieNode->getPropNames(),
+                   ieNode->getOverwritable())
         .via(runner())
+        .ensure([addEdgeTime]() {
+            VLOG(1) << "Add edge time: " << addEdgeTime.elapsedInUSec() << "us";
+        })
         .then([this](storage::StorageRpcResponse<storage::cpp2::ExecResponse> resp) {
+            SCOPED_TIMER(&execTime_);
             auto completeness = resp.completeness();
             if (completeness != 100) {
                 const auto& failedCodes = resp.failedParts();

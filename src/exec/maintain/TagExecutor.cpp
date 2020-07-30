@@ -5,15 +5,16 @@
  */
 
 #include "exec/maintain/TagExecutor.h"
+#include "context/QueryContext.h"
 #include "planner/Maintain.h"
 #include "util/SchemaUtil.h"
-#include "context/QueryContext.h"
+#include "util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
 
 folly::Future<Status> CreateTagExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
 
     auto *ctNode = asNode<CreateTag>(node());
     auto spaceId = qctx()->rctx()->session()->space();
@@ -32,7 +33,7 @@ folly::Future<Status> CreateTagExecutor::execute() {
 }
 
 folly::Future<Status> DescTagExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
 
     auto *dtNode = asNode<DescTag>(node());
     auto spaceId = qctx()->rctx()->session()->space();
@@ -60,7 +61,7 @@ folly::Future<Status> DescTagExecutor::execute() {
 }
 
 folly::Future<Status> DropTagExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
 
     auto *dtNode = asNode<DropTag>(node());
     auto spaceId = qctx()->rctx()->session()->space();
@@ -80,7 +81,7 @@ folly::Future<Status> DropTagExecutor::execute() {
 }
 
 folly::Future<Status> ShowTagsExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
 
     auto spaceId = qctx()->rctx()->session()->space();
     return qctx()->getMetaClient()->listTagSchemas(spaceId).via(runner()).then(
@@ -111,7 +112,7 @@ folly::Future<Status> ShowTagsExecutor::execute() {
 }
 
 folly::Future<Status> ShowCreateTagExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
 
     auto *sctNode = asNode<ShowCreateTag>(node());
     auto spaceId = qctx()->rctx()->session()->space();
@@ -137,7 +138,7 @@ folly::Future<Status> ShowCreateTagExecutor::execute() {
 }
 
 folly::Future<Status> AlterTagExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
 
     auto *aeNode = asNode<AlterTag>(node());
     return qctx()->getMetaClient()->alterTagSchema(aeNode->space(),

@@ -9,12 +9,13 @@
 #include "context/QueryExpressionContext.h"
 #include "parser/Clauses.h"
 #include "planner/Query.h"
+#include "util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
 
 folly::Future<Status> ProjectExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
     auto* project = asNode<Project>(node());
     auto columns = project->columns()->columns();
     auto iter = ectx_->getResult(project->inputVar()).iter();
@@ -32,8 +33,7 @@ folly::Future<Status> ProjectExecutor::execute() {
         }
         ds.rows.emplace_back(std::move(row));
     }
-
-    VLOG(1) << node()->varName() << " : " << ds;
+    numRows_ = ds.rows.size();
     return finish(ResultBuilder().value(Value(std::move(ds))).finish());
 }
 

@@ -9,18 +9,19 @@
 #include "planner/Query.h"
 #include "context/QueryExpressionContext.h"
 #include "context/Iterator.h"
+#include "util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
 folly::Future<Status> DataJoinExecutor::execute() {
-    dumpLog();
-
     return doInnerJoin().ensure([this]() {
         exchange_ = false;
     });
 }
 
 folly::Future<Status> DataJoinExecutor::doInnerJoin() {
+    SCOPED_TIMER(&execTime_);
+
     auto* dataJoin = asNode<DataJoin>(node());
 
     VLOG(1) << "lhs hist: " << ectx_->getHistory(dataJoin->leftVar().first).size();

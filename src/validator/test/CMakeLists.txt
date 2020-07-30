@@ -56,6 +56,7 @@ nebula_add_test(
         MaintainValidatorTest.cpp
         MutateValidatorTest.cpp
         YieldValidatorTest.cpp
+        ExplainValidatorTest.cpp
     OBJECTS ${VALIDATOR_TEST_LIBS}
     LIBRARIES
         gtest

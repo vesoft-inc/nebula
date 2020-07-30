@@ -11,24 +11,17 @@
 #include "validator/Validator.h"
 #include "parser/SequentialSentences.h"
 
+namespace nebula {
+namespace graph {
+
 /**
  * A SequentialValidator is the entrance of validators.
  */
-namespace nebula {
-namespace graph {
 class SequentialValidator final : public Validator {
 public:
     SequentialValidator(Sentence* sentence, QueryContext* context)
         : Validator(sentence, context) {
         setNoSpaceRequired();
-    }
-
-private:
-    /**
-     * Will not check the space from the beginning of a query.
-     */
-    bool spaceChosen() override {
-        return true;
     }
 
     Status validateImpl() override;
@@ -38,6 +31,14 @@ private:
      * be cascaded together into a complete execution plan.
      */
     Status toPlan() override;
+
+private:
+    /**
+     * Will not check the space from the beginning of a query.
+     */
+    bool spaceChosen() override {
+        return true;
+    }
 
     const Sentence* getFirstSentence(const Sentence* sentence) const;
 

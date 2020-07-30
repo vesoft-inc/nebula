@@ -127,7 +127,8 @@ protected:
         auto ret = GQLParser().parse(query);
         CHECK(ret.ok()) << ret.status();
         sentences_ = std::move(ret).value();
-        auto sens = sentences_->sentences();
+        CHECK_EQ(sentences_->kind(), Sentence::Kind::kSequential);
+        auto sens = static_cast<const SequentialSentences*>(sentences_.get())->sentences();
         CHECK_EQ(sens.size(), 1);
         CHECK_EQ(sens[0]->kind(), Sentence::Kind::kYield);
         return static_cast<YieldSentence*>(sens[0]);
@@ -150,7 +151,7 @@ protected:
 
 protected:
     std::unique_ptr<QueryContext>         qctx_;
-    std::unique_ptr<SequentialSentences>  sentences_;
+    std::unique_ptr<Sentence>             sentences_;
 };
 }  // namespace graph
 }  // namespace nebula

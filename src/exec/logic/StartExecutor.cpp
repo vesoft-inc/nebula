@@ -7,12 +7,14 @@
 #include "exec/logic/StartExecutor.h"
 
 #include "planner/PlanNode.h"
+#include "util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
 
 folly::Future<Status> StartExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
+
     return start();
 }
 

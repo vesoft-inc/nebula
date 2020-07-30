@@ -7,12 +7,14 @@
 #include "exec/query/UnionExecutor.h"
 
 #include "context/ExecutionContext.h"
+#include "util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
 
 folly::Future<Status> UnionExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
+
     NG_RETURN_IF_ERROR(checkInputDataSets());
     auto left = getLeftInputDataIter();
     auto right = getRightInputDataIter();

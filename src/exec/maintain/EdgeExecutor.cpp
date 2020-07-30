@@ -5,15 +5,16 @@
  */
 
 #include "exec/maintain/EdgeExecutor.h"
+#include "context/QueryContext.h"
 #include "planner/Maintain.h"
 #include "util/SchemaUtil.h"
-#include "context/QueryContext.h"
+#include "util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
 
 folly::Future<Status> CreateEdgeExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
 
     auto *ceNode = asNode<CreateEdge>(node());
     auto spaceId = qctx()->rctx()->session()->space();
@@ -33,7 +34,7 @@ folly::Future<Status> CreateEdgeExecutor::execute() {
 
 
 folly::Future<Status> DescEdgeExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
 
     auto *deNode = asNode<DescEdge>(node());
     auto spaceId = qctx()->rctx()->session()->space();
@@ -60,7 +61,7 @@ folly::Future<Status> DescEdgeExecutor::execute() {
 
 
 folly::Future<Status> DropEdgeExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
 
     auto *deNode = asNode<DropEdge>(node());
     auto spaceId = qctx()->rctx()->session()->space();
@@ -80,7 +81,7 @@ folly::Future<Status> DropEdgeExecutor::execute() {
 }
 
 folly::Future<Status> ShowEdgesExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
 
     auto spaceId = qctx()->rctx()->session()->space();
     return qctx()->getMetaClient()->listEdgeSchemas(spaceId).via(runner()).then(
@@ -111,7 +112,7 @@ folly::Future<Status> ShowEdgesExecutor::execute() {
 }
 
 folly::Future<Status> ShowCreateEdgeExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
 
     auto *sceNode = asNode<ShowCreateEdge>(node());
     auto spaceId = qctx()->rctx()->session()->space();
@@ -139,7 +140,7 @@ folly::Future<Status> ShowCreateEdgeExecutor::execute() {
 }
 
 folly::Future<Status> AlterEdgeExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
 
     auto *aeNode = asNode<AlterEdge>(node());
     return qctx()->getMetaClient()->alterEdgeSchema(aeNode->space(),

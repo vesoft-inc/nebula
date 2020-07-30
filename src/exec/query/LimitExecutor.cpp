@@ -7,12 +7,14 @@
 #include "exec/query/LimitExecutor.h"
 #include "context/QueryExpressionContext.h"
 #include "planner/Query.h"
+#include "util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
 
 folly::Future<Status> LimitExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
+
     auto* limit = asNode<Limit>(node());
     auto iter = ectx_->getResult(limit->inputVar()).iter();
     ResultBuilder builder;

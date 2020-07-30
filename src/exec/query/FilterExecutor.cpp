@@ -9,12 +9,13 @@
 #include "planner/Query.h"
 
 #include "context/QueryExpressionContext.h"
+#include "util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
 
 folly::Future<Status> FilterExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
     auto* filter = asNode<Filter>(node());
     auto iter = ectx_->getResult(filter->inputVar()).iter();
 

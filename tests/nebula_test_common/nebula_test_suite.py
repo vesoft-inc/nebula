@@ -6,16 +6,17 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 import math
 import sys
+import time
+from pathlib import Path
 from typing import Pattern, Set
 
 import pytest
-import time
-from pathlib import Path
-from nebula2.common import ttypes as CommonTtypes
-from nebula2.graph import ttypes
-from nebula2.ConnectionPool import ConnectionPool
 from nebula2.Client import AuthException, ExecutionException, GraphClient
+from nebula2.common import ttypes as CommonTtypes
 from nebula2.Common import *
+from nebula2.ConnectionPool import ConnectionPool
+from nebula2.graph import ttypes
+
 
 class NebulaTestSuite(object):
     @classmethod
@@ -46,12 +47,14 @@ class NebulaTestSuite(object):
         self.partition_num = pytest.cmdline.partition_num
         self.check_format_str = 'result: {}, expect: {}'
         self.data_dir = pytest.cmdline.data_dir
+        self.data_loaded = False
         self.create_nebula_clients()
         self.set_delay()
         self.prepare()
 
     @classmethod
     def load_data(self):
+        self.data_loaded = True
         pathlist = Path(self.data_dir).rglob('*.ngql')
         for path in pathlist:
             print("will open ", path)
@@ -91,7 +94,14 @@ class NebulaTestSuite(object):
 
     @classmethod
     def drop_data(self):
-        pass
+        if self.data_loaded:
+            pathlist = Path(self.data_dir).rglob('*.ngql')
+            drop_stmt = []
+            for path in pathlist:
+                space_name = path.name.split('.')[0]
+                drop_stmt.append('DROP SPACE {}'.format(space_name))
+            resp = self.execute(';'.join(drop_stmt))
+            self.check_resp_succeeded(resp)
 
     @classmethod
     def create_nebula_clients(self):

@@ -166,6 +166,7 @@ bool PermissionCheck::permissionCheck(Session *session,
         case Sentence::Kind::kChangePassword : {
             return true;
         }
+        case Sentence::Kind::kExplain:
         case Sentence::Kind::kSequential:
             LOG(FATAL) << "Impossible sequential sentences permission checking";
     }
@@ -173,4 +174,3 @@ bool PermissionCheck::permissionCheck(Session *session,
 }
 }  // namespace graph
 }  // namespace nebula
-

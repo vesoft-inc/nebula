@@ -7,13 +7,14 @@
 %lex-param { nebula::GraphScanner& scanner }
 %parse-param { nebula::GraphScanner& scanner }
 %parse-param { std::string &errmsg }
-%parse-param { nebula::SequentialSentences** sentences }
+%parse-param { nebula::Sentence** sentences }
 
 %code requires {
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <cstddef>
+#include "parser/ExplainSentence.h"
 #include "parser/SequentialSentences.h"
 #include "parser/ColumnTypeDef.h"
 #include "util/SchemaUtil.h"
@@ -45,7 +46,9 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
     nebula::ColumnTypeDef                  *type;
     nebula::Expression                     *expr;
     nebula::Sentence                       *sentence;
-    nebula::SequentialSentences            *sentences;
+    nebula::Sentence                       *sentences;
+    nebula::SequentialSentences            *seq_sentences;
+    nebula::ExplainSentence                *explain_sentence;
     nebula::ColumnSpecification            *colspec;
     nebula::ColumnSpecificationList        *colspeclist;
     nebula::ColumnNameList                 *colsnamelist;
@@ -132,6 +135,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_ROLES
 %token KW_GOD KW_ADMIN KW_DBA KW_GUEST KW_GRANT KW_REVOKE KW_ON
 %token KW_OUT KW_BOTH KW_SUBGRAPH
+%token KW_EXPLAIN KW_PROFILE KW_FORMAT
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -249,6 +253,8 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %type <sentence> set_config_sentence get_config_sentence balance_sentence
 %type <sentence> process_control_sentence return_sentence
 %type <sentence> sentence
+%type <seq_sentences> seq_sentences
+%type <explain_sentence> explain_sentence
 %type <sentences> sentences
 
 %type <boolval> opt_if_not_exists
@@ -2042,21 +2048,19 @@ sentence
     | process_control_sentence { $$ = $1; }
     ;
 
-sentences
+seq_sentences
     : sentence {
         $$ = new SequentialSentences($1);
-        *sentences = $$;
     }
-    | sentences SEMICOLON sentence {
+    | seq_sentences SEMICOLON sentence {
         if ($1 == nullptr) {
             $$ = new SequentialSentences($3);
-            *sentences = $$;
         } else {
-            $$ = $1;
             $1->addSentence($3);
+            $$ = $1;
         }
     }
-    | sentences SEMICOLON {
+    | seq_sentences SEMICOLON {
         $$ = $1;
     }
     | %empty {
@@ -2064,6 +2068,46 @@ sentences
     }
     ;
 
+explain_sentence
+    : KW_EXPLAIN sentence {
+        $$ = new ExplainSentence(new SequentialSentences($2));
+    }
+    | KW_EXPLAIN KW_FORMAT ASSIGN STRING sentence {
+        $$ = new ExplainSentence(new SequentialSentences($5), false, $4);
+    }
+    | KW_EXPLAIN L_BRACE seq_sentences R_BRACE {
+        $$ = new ExplainSentence($3);
+    }
+    | KW_EXPLAIN KW_FORMAT ASSIGN STRING L_BRACE seq_sentences R_BRACE {
+        $$ = new ExplainSentence($6, false, $4);
+    }
+    | KW_PROFILE sentence {
+        $$ = new ExplainSentence(new SequentialSentences($2), true);
+    }
+    | KW_PROFILE KW_FORMAT ASSIGN STRING sentence {
+        $$ = new ExplainSentence(new SequentialSentences($5), true, $4);
+    }
+    | KW_PROFILE L_BRACE seq_sentences R_BRACE {
+        $$ = new ExplainSentence($3, true);
+    }
+    | KW_PROFILE KW_FORMAT ASSIGN STRING L_BRACE seq_sentences R_BRACE {
+        $$ = new ExplainSentence($6, true, $4);
+    }
+    | explain_sentence SEMICOLON {
+        $$ = $1;
+    }
+    ;
+
+sentences
+    : seq_sentences {
+        $$ = $1;
+        *sentences = $$;
+    }
+    | explain_sentence {
+        $$ = $1;
+        *sentences = $$;
+    }
+    ;
 
 %%
 

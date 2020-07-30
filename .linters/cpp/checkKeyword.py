@@ -6,9 +6,8 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
 import os
-import sys
 import re
-
+import sys
 
 PASER_FILE_PATH = 'src/parser/parser.yy'
 SCANNER_FILE_PATH = 'src/parser/scanner.lex'
@@ -103,7 +102,10 @@ reserved_key_words = [
     'KW_IS',
     'KW_NULL',
     'KW_FORCE',
-    'KW_RECOVER'
+    'KW_RECOVER',
+    'KW_EXPLAIN',
+    'KW_PROFILE',
+    'KW_FORMAT'
 ]
 
 

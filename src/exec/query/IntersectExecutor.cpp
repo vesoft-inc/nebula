@@ -10,12 +10,14 @@
 
 #include "planner/PlanNode.h"
 #include "planner/Query.h"
+#include "util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
 
 folly::Future<Status> IntersectExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
+
     NG_RETURN_IF_ERROR(checkInputDataSets());
 
     auto lIter = getLeftInputDataIter();

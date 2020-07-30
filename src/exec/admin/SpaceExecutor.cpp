@@ -7,11 +7,12 @@
 #include "exec/admin/SpaceExecutor.h"
 #include "planner/Admin.h"
 #include "context/QueryContext.h"
+#include "util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
 folly::Future<Status> CreateSpaceExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
 
     auto *csNode = asNode<CreateSpace>(node());
     return qctx()->getMetaClient()->createSpace(csNode->getSpaceDesc(), csNode->getIfNotExists())
@@ -27,7 +28,7 @@ folly::Future<Status> CreateSpaceExecutor::execute() {
 
 
 folly::Future<Status> DescSpaceExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
 
     auto *dsNode = asNode<DescSpace>(node());
     return qctx()->getMetaClient()->getSpace(dsNode->getSpaceName())
@@ -64,7 +65,7 @@ folly::Future<Status> DescSpaceExecutor::execute() {
 }
 
 folly::Future<Status> DropSpaceExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
 
     auto *dsNode = asNode<DropSpace>(node());
     return qctx()->getMetaClient()->dropSpace(dsNode->getSpaceName(), dsNode->getIfExists())
@@ -84,7 +85,7 @@ folly::Future<Status> DropSpaceExecutor::execute() {
 
 
 folly::Future<Status> ShowSpacesExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
 
     return qctx()->getMetaClient()->listSpaces().via(runner()).then(
         [this](StatusOr<std::vector<meta::SpaceIdName>> resp) {
@@ -112,7 +113,7 @@ folly::Future<Status> ShowSpacesExecutor::execute() {
 }
 
 folly::Future<Status> ShowCreateSpaceExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
 
     auto *scsNode = asNode<ShowCreateSpace>(node());
     return qctx()->getMetaClient()->getSpace(scsNode->getSpaceName())

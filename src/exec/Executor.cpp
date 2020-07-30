@@ -9,6 +9,7 @@
 #include <folly/String.h>
 #include <folly/executors/InlineExecutor.h>
 
+#include "common/interface/gen-cpp2/graph_types.h"
 #include "context/ExecutionContext.h"
 #include "context/QueryContext.h"
 #include "exec/ExecutionError.h"
@@ -44,6 +45,7 @@
 #include "planner/PlanNode.h"
 #include "planner/Query.h"
 #include "util/ObjectPool.h"
+#include "util/ScopedTimer.h"
 
 using folly::stringPrintf;
 
@@ -60,6 +62,8 @@ Executor *Executor::makeExecutor(const PlanNode *node, QueryContext *qctx) {
 Executor *Executor::makeExecutor(const PlanNode *node,
                                  QueryContext *qctx,
                                  std::unordered_map<int64_t, Executor *> *visited) {
+    DCHECK(qctx != nullptr);
+    DCHECK(node != nullptr);
     auto iter = visited->find(node->id());
     if (iter != visited->end()) {
         return iter->second;
@@ -390,6 +394,22 @@ Executor::Executor(const std::string &name, const PlanNode *node, QueryContext *
     }
 }
 
+Executor::~Executor() {}
+
+void Executor::startProfiling() {
+    numRows_ = 0;
+    execTime_ = 0;
+    totalDuration_.reset();
+}
+
+void Executor::stopProfiling() {
+    cpp2::ProfilingStats stats;
+    stats.set_total_duration_in_us(totalDuration_.elapsedInUSec());
+    stats.set_rows(numRows_);
+    stats.set_exec_duration_in_us(execTime_);
+    qctx()->addProfilingData(node_->id(), std::move(stats));
+}
+
 folly::Future<Status> Executor::start(Status status) const {
     return folly::makeFuture(std::move(status)).via(runner());
 }
@@ -401,10 +421,6 @@ folly::Future<Status> Executor::error(Status status) const {
 Status Executor::finish(Result &&result) {
     ectx_->setResult(node()->varName(), std::move(result));
     return Status::OK();
-}
-
-void Executor::dumpLog() const {
-    VLOG(4) << name() << "(" << id() << ")";
 }
 
 folly::Executor *Executor::runner() const {

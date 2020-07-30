@@ -8,20 +8,25 @@
 #define CONTEXT_QUERYCONTEXT_H_
 
 #include "common/base/Base.h"
-#include "common/datatypes/Value.h"
-#include "common/meta/SchemaManager.h"
-#include "common/cpp/helpers.h"
 #include "common/charset/Charset.h"
 #include "common/clients/meta/MetaClient.h"
 #include "common/clients/storage/GraphStorageClient.h"
+#include "common/cpp/helpers.h"
+#include "common/datatypes/Value.h"
+#include "common/meta/SchemaManager.h"
+#include "context/ExecutionContext.h"
+#include "context/ValidateContext.h"
 #include "parser/SequentialSentences.h"
 #include "service/RequestContext.h"
 #include "util/ObjectPool.h"
-#include "context/ValidateContext.h"
-#include "context/ExecutionContext.h"
 
 namespace nebula {
 namespace graph {
+
+namespace cpp2 {
+class ProfilingStats;
+class PlanDescription;
+}   // namespace cpp2
 
 /***************************************************************************
  *
@@ -121,6 +126,18 @@ public:
         return objPool_.get();
     }
 
+    void addProfilingData(int64_t planNodeId, cpp2::ProfilingStats&& profilingStats);
+
+    cpp2::PlanDescription* planDescription() const {
+        return planDescription_.get();
+    }
+
+    void setPlanDescription(std::unique_ptr<cpp2::PlanDescription> planDescription) {
+        planDescription_ = std::move(planDescription);
+    }
+
+    void fillPlanDescription();
+
 private:
     RequestContextPtr                                       rctx_;
     std::unique_ptr<ValidateContext>                        vctx_;
@@ -134,8 +151,11 @@ private:
     // The Object Pool holds all internal generated objects.
     // e.g. expressions, plan nodes, executors
     std::unique_ptr<ObjectPool>                             objPool_;
+
+    // plan description for explain and profile query
+    std::unique_ptr<cpp2::PlanDescription>                  planDescription_;
 };
 
-}  // namespace graph
-}  // namespace nebula
-#endif  // CONTEXT_QUERYCONTEXT_H_
+}   // namespace graph
+}   // namespace nebula
+#endif   // CONTEXT_QUERYCONTEXT_H_

@@ -8,12 +8,13 @@
 
 #include "planner/Query.h"
 #include "context/QueryContext.h"
+#include "util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
 
 folly::Future<Status> SwitchSpaceExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
 
     auto *spaceToNode = asNode<SwitchSpace>(node());
     auto spaceName = spaceToNode->getSpaceName();

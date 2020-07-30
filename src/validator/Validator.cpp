@@ -11,6 +11,7 @@
 #include "util/SchemaUtil.h"
 #include "validator/AdminValidator.h"
 #include "validator/AssignmentValidator.h"
+#include "validator/ExplainValidator.h"
 #include "validator/GetSubgraphValidator.h"
 #include "validator/GoValidator.h"
 #include "validator/LimitValidator.h"
@@ -36,6 +37,8 @@ Validator::Validator(Sentence* sentence, QueryContext* qctx)
 std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryContext* context) {
     auto kind = sentence->kind();
     switch (kind) {
+        case Sentence::Kind::kExplain:
+            return std::make_unique<ExplainValidator>(sentence, context);
         case Sentence::Kind::kSequential:
             return std::make_unique<SequentialValidator>(sentence, context);
         case Sentence::Kind::kGo:

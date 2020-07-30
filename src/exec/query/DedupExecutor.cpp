@@ -7,11 +7,12 @@
 #include "exec/query/DedupExecutor.h"
 #include "planner/Query.h"
 #include "context/QueryExpressionContext.h"
+#include "util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
 folly::Future<Status> DedupExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
     auto* dedup = asNode<Dedup>(node());
     DCHECK(!dedup->inputVar().empty());
     auto iter = ectx_->getResult(dedup->inputVar()).iter();

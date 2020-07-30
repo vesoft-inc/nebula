@@ -7,6 +7,7 @@
 
 import pytest
 from nebula2.graph import ttypes
+
 from nebula_test_common.nebula_test_suite import NebulaTestSuite
 
 
@@ -14,6 +15,10 @@ class TestSetQuery(NebulaTestSuite):
     @classmethod
     def prepare(self):
         self.load_data()
+
+    @classmethod
+    def cleanup(cls):
+        pass
 
     @pytest.mark.skip(reason="")
     def test_union_all(self):

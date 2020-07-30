@@ -19,9 +19,7 @@ protected:
 
     Status handleResp(storage::StorageRpcResponse<storage::cpp2::GetPropResponse> &&rpcResp) {
         auto result = handleCompleteness(rpcResp);
-        if (!result.ok()) {
-            return std::move(result).status();
-        }
+        NG_RETURN_IF_ERROR(result);
         auto state = std::move(result).value();
         // Ok, merge DataSets to one
         nebula::DataSet v;

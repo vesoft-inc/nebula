@@ -194,7 +194,7 @@ def installNebula():
     return test_dir
 
 def formatNebulaCommand(name, meta_port, ports):
-    param_format = "--meta_server_addrs={} --port={} --ws_http_port={} --ws_h2_port={}"
+    param_format = "--meta_server_addrs={} --port={} --ws_http_port={} --ws_h2_port={} -v=4"
     param = param_format.format("127.0.0.1:" + str(meta_port), ports[0], ports[1], ports[2])
     command=NEBULA_START_COMMAND_FORMAT.format(name, name, param)
     return command

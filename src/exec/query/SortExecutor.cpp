@@ -7,12 +7,14 @@
 #include "exec/query/SortExecutor.h"
 #include "context/QueryExpressionContext.h"
 #include "planner/Query.h"
+#include "util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
 
 folly::Future<Status> SortExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
+
     auto* sort = asNode<Sort>(node());
     auto iter = ectx_->getResult(sort->inputVar()).iter();
     if (UNLIKELY(iter == nullptr)) {

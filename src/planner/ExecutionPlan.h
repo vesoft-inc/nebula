@@ -14,11 +14,14 @@
 
 #include "common/base/Status.h"
 #include "common/expression/Expression.h"
-
 #include "util/ObjectPool.h"
 
 namespace nebula {
 namespace graph {
+
+namespace cpp2 {
+class PlanDescription;
+}  // namespace cpp2
 
 class Executor;
 class IdGenerator;
@@ -60,7 +63,7 @@ public:
         return objPool_;
     }
 
-    folly::Future<Status> execute();
+    void fillPlanDescription(cpp2::PlanDescription* planDesc) const;
 
 private:
     Executor* createExecutor();

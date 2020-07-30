@@ -34,18 +34,17 @@ public:
     }
 
     ~GQLParser() {
-        delete sentences_;
+        if (sentences_ != nullptr) delete sentences_;
     }
 
-    StatusOr<std::unique_ptr<SequentialSentences>> parse(std::string query) {
+    StatusOr<std::unique_ptr<Sentence>> parse(std::string query) {
         // Since GraphScanner needs a writable buffer, we have to copy the query string
         buffer_ = std::move(query);
         pos_ = &buffer_[0];
         end_ = pos_ + buffer_.size();
 
         scanner_.setQuery(&buffer_);
-        auto ok = parser_.parse() == 0;
-        if (!ok) {
+        if (parser_.parse() != 0) {
             pos_ = nullptr;
             end_ = nullptr;
             // To flush the internal buffer to recover from a failure
@@ -64,7 +63,7 @@ public:
         auto *sentences = sentences_;
         sentences_ = nullptr;
         scanner_.setQuery(nullptr);
-        return std::unique_ptr<SequentialSentences>(sentences);
+        return std::unique_ptr<Sentence>(sentences);
     }
 
 private:
@@ -74,7 +73,7 @@ private:
     nebula::GraphScanner            scanner_;
     nebula::GraphParser             parser_;
     std::string                     error_;
-    SequentialSentences            *sentences_ = nullptr;
+    Sentence                       *sentences_{nullptr};
 };
 
 }   // namespace nebula

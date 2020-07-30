@@ -7,12 +7,14 @@
 #include "exec/logic/MultiOutputsExecutor.h"
 
 #include "planner/Query.h"
+#include "util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
 
 folly::Future<Status> MultiOutputsExecutor::execute() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
+
     return Status::OK();
 }
 

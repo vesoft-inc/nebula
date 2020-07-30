@@ -21,10 +21,7 @@ Status ASTValidator::validate() {
     }
 
     auto validator = Validator::makeValidator(sentences_, qctx_);
-    auto status = validator->validate();
-    if (!status.ok()) {
-        return status;
-    }
+    NG_RETURN_IF_ERROR(validator->validate());
 
     auto root = validator->root();
     if (!root) {

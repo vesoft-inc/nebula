@@ -7,6 +7,7 @@
 #include "exec/query/GetVerticesExecutor.h"
 #include "planner/Query.h"
 #include "context/QueryContext.h"
+#include "util/ScopedTimer.h"
 
 using nebula::storage::GraphStorageClient;
 using nebula::storage::StorageRpcResponse;
@@ -23,7 +24,7 @@ folly::Future<Status> GetVerticesExecutor::execute() {
 }
 
 folly::Future<Status> GetVerticesExecutor::getVertices() {
-    dumpLog();
+    SCOPED_TIMER(&execTime_);
 
     auto *gv = asNode<GetVertices>(node());
 
@@ -65,6 +66,7 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
         return finish(ResultBuilder().value(Value(DataSet())).finish());
     }
 
+    time::Duration getPropsTime;
     return DCHECK_NOTNULL(storageClient)
         ->getProps(gv->space(),
                    std::move(vertices),
@@ -76,10 +78,13 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
                    gv->limit(),
                    gv->filter())
         .via(runner())
+        .ensure([getPropsTime]() {
+            VLOG(1) << "Get props time: " << getPropsTime.elapsedInUSec() << "us";
+        })
         .then([this](StorageRpcResponse<GetPropResponse> &&rpcResp) {
+            SCOPED_TIMER(&execTime_);
             return handleResp(std::move(rpcResp));
         });
-    return start();
 }
 
 }   // namespace graph

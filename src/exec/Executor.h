@@ -11,11 +11,13 @@
 #include <set>
 #include <string>
 #include <vector>
+
 #include <folly/futures/Future.h>
 
 #include "common/base/Status.h"
 #include "common/cpp/helpers.h"
 #include "common/datatypes/Value.h"
+#include "common/time/Duration.h"
 #include "context/ExecutionContext.h"
 
 namespace nebula {
@@ -29,12 +31,18 @@ public:
     // Create executor according to plan node
     static Executor *makeExecutor(const PlanNode *node, QueryContext *qctx);
 
-    virtual ~Executor() {}
+    virtual ~Executor();
 
     // Each executor inherited from this class should get input values from ExecutionContext,
     // execute expression evaluation and save output result back to ExecutionContext after
     // computation
     virtual folly::Future<Status> execute() = 0;
+
+    // Reset all profiling stats
+    void startProfiling();
+
+    // Finish profiling stats and save them to profiling stats container of QueryContext
+    void stopProfiling();
 
     QueryContext *qctx() const {
         return qctx_;
@@ -76,8 +84,8 @@ public:
     folly::Future<Status> error(Status status) const;
 
 protected:
-    static Executor *makeExecutor(const PlanNode                          *node,
-                                  QueryContext                            *qctx,
+    static Executor *makeExecutor(const PlanNode *node,
+                                  QueryContext *qctx,
                                   std::unordered_map<int64_t, Executor *> *visited);
 
     // Only allow derived executor to construct
@@ -90,10 +98,6 @@ protected:
 
     // Store the result of this executor to execution context
     Status finish(Result &&result);
-
-    // Dump some execution logging messages, only for debugging
-    // TODO(yee): Remove it after implementing profile function
-    void dumpLog() const;
 
     int64_t id_;
 
@@ -111,10 +115,13 @@ protected:
     std::set<Executor *> depends_;
     std::set<Executor *> successors_;
 
-    // TODO: Some statistics
+    // profiling data
+    uint64_t numRows_{0};
+    uint64_t execTime_{0};
+    time::Duration totalDuration_;
 };
 
-}  // namespace graph
-}  // namespace nebula
+}   // namespace graph
+}   // namespace nebula
 
-#endif  // EXEC_EXECUTOR_H_
+#endif   // EXEC_EXECUTOR_H_

@@ -66,7 +66,8 @@ folly::Future<Status> Scheduler::schedule(Executor *executor) {
                 .then(task(sel,
                            [sel](Status status) {
                                if (!status.ok()) return sel->error(std::move(status));
-                               return sel->execute();
+                               sel->startProfiling();
+                               return sel->execute().ensure([sel]() { sel->stopProfiling(); });
                            }))
                 .then(task(sel, [sel, this](Status status) {
                     if (!status.ok()) return sel->error(std::move(status));
@@ -108,16 +109,21 @@ folly::Future<Status> Scheduler::schedule(Executor *executor) {
 
                 if (!status.ok()) return mout->error(std::move(status));
 
-                return mout->execute();
+                mout->startProfiling();
+                return mout->execute().ensure([mout]() { mout->stopProfiling(); });
             }));
         }
         default: {
             auto deps = executor->depends();
-            if (deps.empty()) return executor->execute();
+            if (deps.empty()) {
+                executor->startProfiling();
+                return executor->execute().ensure([executor]() { executor->stopProfiling(); });
+            }
 
             return schedule(deps).then(task(executor, [executor](Status stats) {
                 if (!stats.ok()) return executor->error(std::move(stats));
-                return executor->execute();
+                executor->startProfiling();
+                return executor->execute().ensure([executor]() { executor->stopProfiling(); });
             }));
         }
     }
@@ -139,22 +145,25 @@ folly::Future<Status> Scheduler::schedule(const std::set<Executor *> &dependents
 }
 
 folly::Future<Status> Scheduler::iterate(LoopExecutor *loop) {
-    return loop->execute().then(task(loop, [loop, this](Status status) {
-        if (!status.ok()) return loop->error(std::move(status));
+    loop->startProfiling();
+    return loop->execute()
+        .ensure([loop]() { loop->stopProfiling(); })
+        .then(task(loop, [loop, this](Status status) {
+            if (!status.ok()) return loop->error(std::move(status));
 
-        auto val = qctx_->ectx()->getValue(loop->node()->varName());
-        if (!val.isBool()) {
-            std::stringstream ss;
-            ss << "Loop produces a bad condition result: " << val << " type: " << val.type();
-            return loop->error(Status::Error(ss.str()));
-        }
-        auto cond = val.moveBool();
-        if (!cond) return folly::makeFuture(Status::OK());
-        return schedule(loop->loopBody()).then(task(loop, [loop, this](Status s) {
-            if (!s.ok()) return loop->error(std::move(s));
-            return iterate(loop);
+            auto val = qctx_->ectx()->getValue(loop->node()->varName());
+            if (!val.isBool()) {
+                std::stringstream ss;
+                ss << "Loop produces a bad condition result: " << val << " type: " << val.type();
+                return loop->error(Status::Error(ss.str()));
+            }
+            auto cond = val.moveBool();
+            if (!cond) return folly::makeFuture(Status::OK());
+            return schedule(loop->loopBody()).then(task(loop, [loop, this](Status s) {
+                if (!s.ok()) return loop->error(std::move(s));
+                return iterate(loop);
+            }));
         }));
-    }));
 }
 
 }   // namespace graph
