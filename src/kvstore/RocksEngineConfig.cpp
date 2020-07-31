@@ -137,6 +137,7 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options &baseOpts) {
     std::shared_ptr<rocksdb::Statistics> stats = getDBStatistics();
     if (stats) {
         dbOpts.statistics = std::move(stats);
+        dbOpts.stats_dump_period_sec = 0;  // exposing statistics ourself
     }
     dbOpts.listeners.emplace_back(new EventListener());
 
