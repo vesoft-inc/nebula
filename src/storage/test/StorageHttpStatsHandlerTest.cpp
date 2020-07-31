@@ -33,7 +33,7 @@ public:
         VLOG(1) << "Starting web service...";
         webSvc_ = std::make_unique<WebService>();
         auto& router = webSvc_->router();
-        router.get("/rocksdb_stats").handler([this](nebula::web::PathParams&&) {
+        router.get("/rocksdb_stats").handler([](nebula::web::PathParams&&) {
             return new storage::StorageHttpStatsHandler();
         });
         auto status = webSvc_->start();
