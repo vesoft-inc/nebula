@@ -27,7 +27,7 @@ public:
     // reader holds the original data
     // schema is the writer schema, which means the updated data will be encoded
     //   using this schema
-    RowUpdater(std::unique_ptr<RowReader> reader,
+    RowUpdater(RowReader reader,
                std::shared_ptr<const meta::SchemaProviderIf> schema);
     explicit RowUpdater(std::shared_ptr<const meta::SchemaProviderIf> schema);
 
@@ -79,7 +79,7 @@ public:
 
 private:
     std::shared_ptr<const meta::SchemaProviderIf> schema_;
-    std::unique_ptr<RowReader> reader_;
+    RowReader reader_ = RowReader::getEmptyRowReader();
     // Hash64(field_name) => value
     std::unordered_map<uint64_t, FieldValue> updatedFields_;
 };

@@ -87,7 +87,7 @@ std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
     });
     for (auto& e : newEdges) {
         std::string val;
-        std::unique_ptr<RowReader> nReader;
+        RowReader nReader = RowReader::getEmptyRowReader();
         auto edgeType = NebulaKeyUtils::getEdgeType(e.first);
         for (auto& index : indexes_) {
             if (edgeType == index->get_schema_id().get_edge_type()) {
