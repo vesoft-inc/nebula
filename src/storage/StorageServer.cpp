@@ -8,6 +8,7 @@
 #include "network/NetworkUtils.h"
 #include "storage/StorageFlags.h"
 #include "storage/StorageServiceHandler.h"
+#include "storage/http/StorageHttpStatsHandler.h"
 #include "storage/http/StorageHttpDownloadHandler.h"
 #include "storage/http/StorageHttpIngestHandler.h"
 #include "storage/http/StorageHttpAdminHandler.h"
@@ -86,6 +87,9 @@ bool StorageServer::initWebService() {
     });
     router.get("/admin").handler([this](web::PathParams&&) {
         return new storage::StorageHttpAdminHandler(schemaMan_.get(), kvstore_.get());
+    });
+    router.get("/rocksdb_stats").handler([](web::PathParams&&) {
+        return new storage::StorageHttpStatsHandler();
     });
 
     auto status = webSvc_->start();

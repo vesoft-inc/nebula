@@ -403,7 +403,8 @@ folly::Optional<std::string> UpdateEdgeProcessor::updateAndWriteBack(PartitionID
     auto nVal = std::move(status.value());
     // TODO(heng) we don't update the index for reverse edge.
     if (!indexes_.empty() && edgeKey.edge_type > 0) {
-        std::unique_ptr<RowReader> reader, rReader;
+        RowReader reader = RowReader::getEmptyRowReader();
+        RowReader rReader = RowReader::getEmptyRowReader();
         for (auto& index : indexes_) {
             auto indexId = index->get_index_id();
             if (index->get_schema_id().get_edge_type() == edgeKey.edge_type) {

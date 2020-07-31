@@ -86,7 +86,7 @@ kvstore::ResultCode QueryStatsProcessor::processVertex(PartitionID partId,
         auto& props = ec.second;
         if (!props.empty()) {
             auto r = this->collectEdgeProps(partId, vId, edgeType, &fcontext,
-                                            [&, this](std::unique_ptr<RowReader> reader,
+                                            [&, this](RowReader reader,
                                                       folly::StringPiece key) {
                                                 this->collectProps(
                                                         reader.get(), key, props, &fcontext,

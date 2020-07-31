@@ -408,7 +408,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
                             Collector* collector) {
     auto schema = this->schemaMan_->getTagSchema(spaceId_, tagId);
     if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
-        auto result = vertexCache_->get(std::make_pair(vId, tagId), partId);
+        auto result = vertexCache_->get(std::make_pair(vId, tagId));
         if (result.ok()) {
             auto v = std::move(result).value();
             auto reader = RowReader::getTagPropReader(this->schemaMan_, v, spaceId_, tagId);
@@ -465,7 +465,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
         this->collectProps(reader.get(), iter->key(), props, fcontext, collector);
         if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
             vertexCache_->insert(std::make_pair(vId, tagId),
-                                 iter->val().str(), partId);
+                                 iter->val().str());
             VLOG(3) << "Insert cache for vId " << vId << ", tagId " << tagId;
         }
     } else {
@@ -516,7 +516,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
         }
         lastRank = rank;
         lastDstId = dstId;
-        std::unique_ptr<RowReader> reader;
+        RowReader reader = RowReader::getEmptyRowReader();
         if ((!onlyStructure || retTTL.has_value()) && !val.empty()) {
             reader = RowReader::getEdgePropReader(this->schemaMan_,
                                                   val,
