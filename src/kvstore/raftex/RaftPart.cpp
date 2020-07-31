@@ -1837,7 +1837,8 @@ AppendLogResult RaftPart::isCatchedUp(const HostAddr& peer) {
     }
     for (auto& host : hosts_) {
         if (host->addr_ == peer) {
-            if (host->followerCommittedLogId_ < wal_->firstLogId()) {
+            if (host->followerCommittedLogId_ == 0
+                    || host->followerCommittedLogId_ < wal_->firstLogId()) {
                 LOG(INFO) << idStr_ << "The committed log id of peer is "
                           << host->followerCommittedLogId_
                           << ", which is invalid or less than my first wal log id";
