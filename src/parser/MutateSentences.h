@@ -596,12 +596,30 @@ public:
         delete url;
     }
 
+    void setEdge(std::string* edge) {
+        edge_.reset(edge);
+    }
+
+    const std::string* edge() const {
+        return edge_.get();
+    }
+
+    void setTag(std::string* tag) {
+        tag_.reset(tag);
+    }
+
+    const std::string* tag() const {
+        return tag_.get();
+    }
+
     std::string toString() const override;
 
 private:
     std::unique_ptr<std::string>                host_;
     int32_t                                     port_;
     std::unique_ptr<std::string>                path_;
+    std::unique_ptr<std::string>                edge_;
+    std::unique_ptr<std::string>                tag_;
 };
 
 class IngestSentence final : public Sentence {
@@ -610,7 +628,27 @@ public:
         kind_ = Kind::kIngest;
     }
 
+    void setEdge(std::string* edge) {
+        edge_.reset(edge);
+    }
+
+    const std::string* edge() const {
+        return edge_.get();
+    }
+
+    void setTag(std::string* tag) {
+        tag_.reset(tag);
+    }
+
+    const std::string* tag() const {
+        return tag_.get();
+    }
+
     std::string toString() const override;
+
+private:
+    std::unique_ptr<std::string>                edge_;
+    std::unique_ptr<std::string>                tag_;
 };
 
 class AdminSentence final : public Sentence {

@@ -29,13 +29,25 @@ void StorageHttpIngestHandler::onRequest(std::unique_ptr<HTTPMessage> headers) n
         err_ = HttpCode::E_UNSUPPORTED_METHOD;
         return;
     }
-
     if (!headers->hasQueryParam("space")) {
         err_ = HttpCode::E_ILLEGAL_ARGUMENT;
         return;
     }
-
-    space_ = headers->getIntQueryParam("space");
+    spaceID_ = headers->getIntQueryParam("space");
+    try {
+        if (headers->hasQueryParam("tag")) {
+            auto& tag = headers->getQueryParam("tag");
+            tag_.assign(folly::to<TagID>(tag));
+        }
+        if (headers->hasQueryParam("edge")) {
+            auto& edge = headers->getQueryParam("edge");
+            edge_.assign(folly::to<EdgeType>(edge));
+        }
+    } catch (std::exception& e) {
+        LOG(ERROR) << "Parse tag/edge error. " << e.what();
+        err_ = HttpCode::E_ILLEGAL_ARGUMENT;
+        return;
+    }
 }
 
 void StorageHttpIngestHandler::onBody(std::unique_ptr<folly::IOBuf>) noexcept {
@@ -59,8 +71,7 @@ void StorageHttpIngestHandler::onEOM() noexcept {
         default:
             break;
     }
-
-    if (ingestSSTFiles(space_)) {
+    if (ingestSSTFiles()) {
         LOG(ERROR) << "SSTFile ingest successfully ";
         ResponseBuilder(downstream_)
             .status(WebServiceUtils::to(HttpStatusCode::OK),
@@ -91,8 +102,21 @@ void StorageHttpIngestHandler::onError(ProxygenError error) noexcept {
                << proxygen::getErrorString(error);
 }
 
-bool StorageHttpIngestHandler::ingestSSTFiles(GraphSpaceID space) {
-    auto code = kvstore_->ingest(space);
+bool StorageHttpIngestHandler::ingestSSTFiles() {
+    kvstore::ResultCode code;
+    if (edge_.has_value()) {
+        LOG(INFO) << folly::stringPrintf(
+            "ingest space %d edge %d", spaceID_, edge_.value());
+        code = kvstore_->ingestEdge(spaceID_, edge_.value());
+    } else if (tag_.has_value()) {
+        LOG(INFO) << folly::stringPrintf(
+            "ingest space %d tag %d", spaceID_, tag_.value());
+        code = kvstore_->ingestTag(spaceID_, tag_.value());
+    } else {
+        LOG(INFO) << folly::stringPrintf(
+            "ingest space %d", spaceID_);
+        code = kvstore_->ingest(spaceID_);
+    }
     if (code == kvstore::ResultCode::SUCCEEDED) {
         return true;
     } else {

@@ -58,7 +58,7 @@ bool NebulaStore::init() {
             auto rootPath = folly::stringPrintf("%s/nebula", path.c_str());
             auto dirs = fs::FileUtils::listAllDirsInDir(rootPath.c_str());
             for (auto& dir : dirs) {
-                LOG(INFO) << "Scan path \"" << path << "/" << dir << "\"";
+                LOG(INFO) << "Scan path \"" << path << "/nebula/" << dir << "\"";
                 try {
                     GraphSpaceID spaceId;
                     try {
@@ -563,35 +563,63 @@ ErrorOr<ResultCode, std::shared_ptr<Part>> NebulaStore::part(GraphSpaceID spaceI
 }
 
 ResultCode NebulaStore::ingest(GraphSpaceID spaceId) {
+    return ingest(spaceId, "general");
+}
+
+ResultCode NebulaStore::ingestTag(GraphSpaceID spaceId, TagID tagId) {
+    return ingest(spaceId, folly::stringPrintf("tag/%d", tagId));
+}
+
+ResultCode NebulaStore::ingestEdge(GraphSpaceID spaceId, EdgeType edgeType) {
+    return ingest(spaceId, folly::stringPrintf("edge/%d", edgeType));
+}
+
+ResultCode NebulaStore::ingest(GraphSpaceID spaceId, const std::string& subdir) {
     auto spaceRet = space(spaceId);
     if (!ok(spaceRet)) {
+        LOG(INFO) << "Space not found: " << spaceId;
         return error(spaceRet);
     }
     auto space = nebula::value(spaceRet);
+
     for (auto& engine : space->engines_) {
         auto parts = engine->allParts();
         for (auto part : parts) {
-            auto ret = this->engine(spaceId, part);
-            if (!ok(ret)) {
-                return error(ret);
-            }
-
-            auto path = folly::stringPrintf("%s/download/%d", value(ret)->getDataRoot(), part);
+            auto path = folly::stringPrintf(
+                "%s/download/%s/%d",
+                engine->getDataRoot(), subdir.c_str(), part);
             if (!fs::FileUtils::exist(path)) {
-                LOG(INFO) << path << " not existed";
+                LOG(INFO) << "Ingest ignore: "
+                          << "part[" << part << "], "
+                          << "not exist dir[" << path << "]";
                 continue;
             }
 
             auto files = nebula::fs::FileUtils::listAllFilesInDir(path.c_str(), true, "*.sst");
-            for (auto file : files) {
-                LOG(INFO) << "Ingesting extra file: " << file;
-                auto code = engine->ingest(std::vector<std::string>({file}));
-                if (code != ResultCode::SUCCEEDED) {
-                    return code;
-                }
+            if (files.empty()) {
+                LOG(INFO) << "Ingest ignore: "
+                          << "part[" << part << "], "
+                          << "empty dir[" << path << "]";
+                continue;
+            }
+
+            auto code = engine->ingest(files);
+            if (code != ResultCode::SUCCEEDED) {
+                LOG(ERROR) << "Ingest failed: "
+                           << "part[" << part << "], "
+                           << "code[" << code << "], "
+                           << "dir[" << path << "], "
+                           << "files[" << folly::join(",", files) << "]";
+                return code;
+            } else {
+                LOG(INFO) << "Ingest success: "
+                          << "part[" << part << "], "
+                          << "dir[" << path << "], "
+                          << "files[" << folly::join(",", files) << "]";
             }
         }
     }
+
     return ResultCode::SUCCEEDED;
 }
 
