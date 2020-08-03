@@ -54,6 +54,7 @@ bool NebulaStore::init() {
     CHECK(!!options_.partMan_);
     LOG(INFO) << "Scan the local path, and init the spaces_";
     {
+        std::unordered_set<std::pair<GraphSpaceID, PartitionID>> spacePartIdSet;
         for (auto& path : options_.dataPaths_) {
             auto rootPath = folly::stringPrintf("%s/nebula", path.c_str());
             auto dirs = fs::FileUtils::listAllDirsInDir(rootPath.c_str());
@@ -104,12 +105,13 @@ bool NebulaStore::init() {
                             enginePtr->removePart(partId);
                             continue;
                         } else {
-                             auto it = std::find(partIds.begin(), partIds.end(), partId);
-                             if (it != partIds.end()) {
+                            auto spacePart = std::make_pair(spaceId, partId);
+                            if (spacePartIdSet.find(spacePart) != spacePartIdSet.end()) {
                                 LOG(INFO) << "Part " << partId
                                           << " has been loaded, skip current one, remove it!";
                                 enginePtr->removePart(partId);
                              } else {
+                                spacePartIdSet.emplace(spacePart);
                                 partIds.emplace_back(partId);
                              }
                         }
