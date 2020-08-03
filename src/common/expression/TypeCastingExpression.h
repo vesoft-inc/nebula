@@ -39,6 +39,10 @@ public:
         operand_.reset(expr);
     }
 
+    Value::Type type() const {
+        return vType_;
+    }
+
 private:
     void writeTo(Encoder& encoder) const override;
 
