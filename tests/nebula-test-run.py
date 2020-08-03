@@ -45,18 +45,20 @@ class TestExecutor(object):
     def run_tests(self, args):
         plugin = NebulaTestPlugin(TEST_DIR)
 
+        error_code = 0
         try:
-            pytest.main(args, plugins=[plugin])
+            error_code = pytest.main(args, plugins=[plugin])
         except Exception:
             sys.stderr.write(
                 "Unexpected exception with pytest {0}".format(args))
-            raise
+            error_code = 1
 
         if '--collect-only' in args:
             for test in plugin.tests_collected:
                 print(test)
 
         self.total_executed += len(plugin.tests_executed)
+        return error_code
 
 
 if __name__ == "__main__":
@@ -67,8 +69,8 @@ if __name__ == "__main__":
         sys.exit(0)
     nebula_svc = NebulaService(NEBULA_BUILD_DIR, NEBULA_SOURCE_DIR)
     stop_nebula = True
+    error_code = 0
     try:
-        os.chdir(TEST_DIR)
         # Create the test result directory if it doesn't already exist.
         if not os.path.exists(RESULT_DIR):
             os.makedirs(RESULT_DIR)
@@ -90,12 +92,12 @@ if __name__ == "__main__":
         else:
             stop_nebula = False
         print("Running TestExecutor with args: {} ".format(args))
-        executor.run_tests(args)
+
+        # Switch to your $src_dir/tests
+        os.chdir(TEST_DIR)
+        error_code = executor.run_tests(args)
     finally:
         if stop_nebula and pytest.cmdline.stop_nebula.lower() == 'true':
             nebula_svc.stop(pytest.cmdline.rm_dir.lower() == 'true')
 
-    if executor.total_executed == 0:
-        sys.exit(1)
-    if executor.tests_failed:
-        sys.exit(1)
+    sys.exit(error_code)

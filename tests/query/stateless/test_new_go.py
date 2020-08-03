@@ -393,15 +393,15 @@ class TestGoQuery(NebulaTestSuite):
 
     def test_multi_edges(self):
         stmt = '''GO FROM "Russell Westbrook" OVER serve, like \
-            YIELD serve.start_year, like.likeness, serve._type, like._type'''
+            YIELD serve.start_year, like.likeness'''
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names" : [],
             "rows" : [
-                [2008, T_NULL, 6, T_NULL],
-                [T_NULL, 90, T_NULL, 5],
-                [T_NULL, 90, T_NULL, 5]
+                [2008, T_NULL],
+                [T_NULL, 90],
+                [T_NULL, 90]
             ]
         }
         self.check_out_of_order_result(resp, expected_data["rows"])
@@ -437,15 +437,15 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = '''GO FROM "Russell Westbrook" OVER serve, like REVERSELY \
-            YIELD serve._dst, like._dst, serve._type, like._type'''
+            YIELD serve._dst, like._dst, serve.start_year, like.likeness'''
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names" : [],
             "rows" : [
-                [T_NULL, "James Harden", T_NULL, -5],
-                [T_NULL, "Dejounte Murray", T_NULL, -5],
-                [T_NULL, "Paul George", T_NULL, -5],
+                [T_NULL, "James Harden", T_NULL, 80],
+                [T_NULL, "Dejounte Murray", T_NULL, 99],
+                [T_NULL, "Paul George", T_NULL, 95],
             ]
         }
         self.check_out_of_order_result(resp, expected_data["rows"])
