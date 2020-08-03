@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "common/base/Status.h"
+#include "planner/Query.h"
 #include "validator/Validator.h"
 
 namespace nebula {
@@ -38,13 +39,13 @@ private:
     Status validateWhere(const WhereClause *clause);
     Status checkVarProps() const;
     Status checkInputProps() const;
-    Status checkColumnRefAggFun(const YieldClause *clause) const;
-    YieldColumns *getYieldColumns(YieldColumns *yieldColumns,
-                                  ObjectPool *objPool,
-                                  size_t numColumns);
-    void rebuildYield(YieldClause* yield);
+    Status checkAggFunAndBuildGroupItems(const YieldClause *clause);
+    Status makeOutputColumn(YieldColumn *column);
 
     bool hasAggFun_{false};
+    YieldColumns *columns_{nullptr};
+    std::vector<std::string> outputColumnNames_;
+    std::vector<Aggregate::GroupItem> groupItems_;
 };
 
 }   // namespace graph

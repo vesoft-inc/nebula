@@ -134,6 +134,11 @@ std::string YieldColumn::toString() const {
         buf += expr_->toString();
     }
 
+    if (alias_ != nullptr) {
+        buf += " AS ";
+        buf += *alias_;
+    }
+
     return buf;
 }
 
@@ -142,10 +147,6 @@ std::string YieldColumns::toString() const {
     buf.reserve(256);
     for (auto &col : columns_) {
         buf += col->toString();
-        if (col->alias() != nullptr) {
-            buf += " AS ";
-            buf += *col->alias();
-        }
         buf += ",";
     }
     if (!buf.empty()) {

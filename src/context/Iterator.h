@@ -24,7 +24,7 @@ public:
     enum class Kind : uint8_t {
         kGetNeighbors,
         kSequential,
-        kJoin
+        kJoin,
     };
 
     virtual ~LogicalRow() {}
@@ -36,6 +36,11 @@ public:
 
 class Iterator {
 public:
+    template <typename T>
+    using RowsType = std::vector<T>;
+    template <typename T>
+    using RowsIter = typename RowsType<T>::iterator;
+
     enum class Kind : uint8_t {
         kDefault,
         kGetNeighbors,
@@ -81,14 +86,6 @@ public:
 
     virtual std::shared_ptr<Value> valuePtr() const {
         return value_;
-    }
-
-    virtual const Value& value() const {
-        return *value_;
-    }
-
-    const Value& operator*() const {
-        return value();
     }
 
     virtual size_t size() const = 0;
@@ -369,13 +366,10 @@ private:
 
     FRIEND_TEST(IteratorTest, TestHead);
 
-    using RowsType = std::vector<GetNbrLogicalRow>;
-    using RowsIter = typename RowsType::iterator;
-
-    bool                      valid_{false};
-    RowsType                  logicalRows_;
-    RowsIter                  iter_;
-    std::vector<DataSetIndex> dsIndices_;
+    bool                       valid_{false};
+    RowsType<GetNbrLogicalRow> logicalRows_;
+    RowsIter<GetNbrLogicalRow> iter_;
+    std::vector<DataSetIndex>  dsIndices_;
 };
 
 class SequentialIter final : public Iterator {
@@ -409,9 +403,6 @@ public:
         const Row* row_;
     };
 
-    using RowsType = std::vector<SeqLogicalRow>;
-    using RowsIter = typename RowsType::iterator;
-
     explicit SequentialIter(std::shared_ptr<Value> value)
         : Iterator(value, Kind::kSequential) {
         DCHECK(value->isDataSet());
@@ -427,7 +418,7 @@ public:
 
     // union two sequential iterator.
     SequentialIter(std::unique_ptr<Iterator> left, std::unique_ptr<Iterator> right)
-        : Iterator(nullptr, Kind::kSequential) {
+        : Iterator(left->valuePtr(), Kind::kSequential) {
         DCHECK(left->isSequentialIter());
         DCHECK(right->isSequentialIter());
         auto lIter = static_cast<SequentialIter*>(left.get());
@@ -480,11 +471,11 @@ public:
         reset();
     }
 
-    RowsIter begin() {
+    RowsIter<SeqLogicalRow> begin() {
         return rows_.begin();
     }
 
-    RowsIter end() {
+    RowsIter<SeqLogicalRow> end() {
         return rows_.end();
     }
 
@@ -543,8 +534,8 @@ private:
     }
 
 private:
-    RowsType                                     rows_;
-    RowsIter                                     iter_;
+    RowsType<SeqLogicalRow>                      rows_;
+    RowsIter<SeqLogicalRow>                      iter_;
     std::unordered_map<std::string, int64_t>     colIndices_;
 };
 
@@ -594,9 +585,6 @@ public:
         const std::unordered_map<size_t, std::pair<size_t, size_t>>* colIdxIndices_;
     };
 
-    using RowsType = std::vector<JoinLogicalRow>;
-    using RowsIter = typename RowsType::iterator;
-
     JoinIter() : Iterator(nullptr, Kind::kJoin) {}
 
     void joinIndex(const Iterator* lhs, const Iterator* rhs);
@@ -643,11 +631,11 @@ public:
         reset();
     }
 
-    RowsIter begin() {
+    RowsIter<JoinLogicalRow> begin() {
         return rows_.begin();
     }
 
-    RowsIter end() {
+    RowsIter<JoinLogicalRow> end() {
         return rows_.end();
     }
 
@@ -699,8 +687,8 @@ private:
     size_t buildIndexFromJoinIter(const JoinIter* iter, size_t segIdx);
 
 private:
-    RowsType                                                       rows_;
-    RowsIter                                                       iter_;
+    RowsType<JoinLogicalRow>                                       rows_;
+    RowsIter<JoinLogicalRow>                                       iter_;
     // colName -> segIdx, currentSegColIdx
     std::unordered_map<std::string, std::pair<size_t, size_t>>     colIndices_;
     // colIdx -> segIdx, currentSegColIdx

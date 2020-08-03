@@ -119,7 +119,9 @@ class NebulaTestSuite(object):
 
     @classmethod
     def create_nebula_clients(self):
-        self.client_pool = ConnectionPool(ip = self.host, port = self.port, network_timeout = 0)
+        self.client_pool = ConnectionPool(ip=self.host,
+                                          port=self.port,
+                                          network_timeout=0)
         self.client = GraphClient(self.client_pool)
         self.client.authenticate(self.user, self.password)
 

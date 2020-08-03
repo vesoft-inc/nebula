@@ -17,7 +17,7 @@ TEST(IteratorTest, Default) {
     DefaultIter iter(constant);
     EXPECT_EQ(iter.size(), 1);
     for (; iter.valid(); iter.next()) {
-        EXPECT_EQ(*iter, *constant);
+        EXPECT_EQ(*iter.valuePtr(), *constant);
     }
 }
 

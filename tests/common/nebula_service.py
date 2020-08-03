@@ -18,7 +18,7 @@ from contextlib import closing
 NEBULA_START_COMMAND_FORMAT = "bin/nebula-{} --flagfile conf/nebula-{}.conf {}"
 
 
-class NebulaManager(object):
+class NebulaService(object):
     def __init__(self, build_dir, src_dir):
         self.build_dir = build_dir
         self.src_dir = src_dir
@@ -67,7 +67,7 @@ class NebulaManager(object):
 
     def install(self):
         os.mkdir(self.work_dir)
-        print("created work directory:" + self.work_dir)
+        print("work directory: " + self.work_dir)
         os.chdir(self.work_dir)
         installed_files = ['logs', 'bin', 'conf', 'data', 'pids', 'scripts']
         for f in installed_files:

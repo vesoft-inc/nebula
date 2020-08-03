@@ -60,7 +60,7 @@ TEST_F(YieldValidatorTest, HashCall) {
         std::string query = "YIELD hash(!0)";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                  "`!(0)' is not a valid expression, can not apply `!' to INT.");
+                  "SemanticError: `!(0)' is not a valid expression, can not apply `!' to INT.");
     }
 }
 
@@ -94,11 +94,13 @@ TEST_F(YieldValidatorTest, Logic) {
 }
 
 TEST_F(YieldValidatorTest, FuncitonCall) {
+#if 0
     {
         // TODO not support udf_is_in
-        // std::string query = "YIELD udf_is_in(1,0,1,2), 123";
-        // EXPECT_TRUE(checkResult(query, expected_));
+        std::string query = "YIELD udf_is_in(1,0,1,2), 123";
+        EXPECT_TRUE(checkResult(query, expected_));
     }
+#endif
     {
         std::string query = "YIELD abs(-12)";
         EXPECT_TRUE(checkResult(query, expected_));
@@ -111,19 +113,20 @@ TEST_F(YieldValidatorTest, FuncitonCall) {
         std::string query = "YIELD abs(true)";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                  "`abs(true)` is not a valid expression : Parameter's type error");
+                  "SemanticError: `abs(true)` is not a valid expression : Parameter's type error");
     }
     {
         std::string query = "YIELD abs(\"test\")";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                    "`abs(test)` is not a valid expression : Parameter's type error");
+                  "SemanticError: `abs(test)` is not a valid expression : Parameter's type error");
     }
     {
         std::string query = "YIELD noexist(12)";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                  "`noexist(12)` is not a valid expression : Function `noexist' not defined");
+                  "SemanticError: `noexist(12)` is not a valid expression : Function `noexist' not "
+                  "defined");
     }
 }
 
@@ -155,20 +158,19 @@ TEST_F(YieldValidatorTest, TypeCastTest) {
     {
         std::string query = "YIELD (int30)(\"-123\")";
         auto result = checkResult(query);
-        EXPECT_EQ(std::string(result.message()),
-                   "SyntaxError: syntax error near `(\"-123\")'");
+        EXPECT_EQ(std::string(result.message()), "SyntaxError: syntax error near `(\"-123\")'");
     }
     {
         std::string query = "YIELD (int)\"123abc\"";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                   "`(INT)123abc` is not a valid expression ");
+                  "SemanticError: `(INT)123abc` is not a valid expression ");
     }
     {
         std::string query = "YIELD (int)\"abc123\"";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                   "`(INT)abc123` is not a valid expression ");
+                  "SemanticError: `(INT)abc123` is not a valid expression ");
     }
     {
         std::string query = "YIELD (doublE)\"123\"";
@@ -182,7 +184,7 @@ TEST_F(YieldValidatorTest, TypeCastTest) {
         std::string query = "YIELD (doublE)\".a123\"";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                   "`(FLOAT).a123` is not a valid expression ");
+                  "SemanticError: `(FLOAT).a123` is not a valid expression ");
     }
     {
         std::string query = "YIELD (STRING)1.23";
@@ -211,26 +213,22 @@ TEST_F(YieldValidatorTest, TypeCastTest) {
     {
         std::string query = "YIELD (MAP)(\"12\")";
         auto result = checkResult(query);
-        EXPECT_EQ(std::string(result.message()),
-                   "SyntaxError: syntax error near `(\"12\")'");
+        EXPECT_EQ(std::string(result.message()), "SyntaxError: syntax error near `(\"12\")'");
     }
     {
         std::string query = "YIELD (SET)12";
         auto result = checkResult(query);
-        EXPECT_EQ(std::string(result.message()),
-                   "SyntaxError: syntax error near `SET'");
+        EXPECT_EQ(std::string(result.message()), "SyntaxError: syntax error near `SET'");
     }
     {
         std::string query = "YIELD (PATH)true";
         auto result = checkResult(query);
-        EXPECT_EQ(std::string(result.message()),
-                   "SyntaxError: syntax error near `true'");
+        EXPECT_EQ(std::string(result.message()), "SyntaxError: syntax error near `true'");
     }
     {
         std::string query = "YIELD (NOEXIST)true";
         auto result = checkResult(query);
-        EXPECT_EQ(std::string(result.message()),
-                   "SyntaxError: syntax error near `true'");
+        EXPECT_EQ(std::string(result.message()), "SyntaxError: syntax error near `true'");
     }
 }
 
@@ -288,7 +286,7 @@ TEST_F(YieldValidatorTest, YieldPipe) {
             PlanNode::Kind::kGetNeighbors,
             PlanNode::Kind::kStart,
         };
-        EXPECT_TRUE(checkResult(query, expected_, {"name", "start"}));
+        EXPECT_TRUE(checkResult(query, expected_, {"$-.name", "$-.start"}));
     }
 #if 0
     {
@@ -369,7 +367,7 @@ TEST_F(YieldValidatorTest, YieldVar) {
             PlanNode::Kind::kGetNeighbors,
             PlanNode::Kind::kStart,
         };
-        EXPECT_TRUE(checkResult(query, expected_, {"name", "start"}));
+        EXPECT_TRUE(checkResult(query, expected_, {"$var.name", "$var.start"}));
     }
     {
         auto query = var + "YIELD $var.* WHERE $var.start > 2005";
@@ -380,7 +378,7 @@ TEST_F(YieldValidatorTest, YieldVar) {
             PlanNode::Kind::kGetNeighbors,
             PlanNode::Kind::kStart,
         };
-        EXPECT_TRUE(checkResult(query, expected_, {"name", "start"}));
+        EXPECT_TRUE(checkResult(query, expected_, {"$var.name", "$var.start"}));
     }
 #if 0
     {
@@ -392,7 +390,7 @@ TEST_F(YieldValidatorTest, YieldVar) {
             PlanNode::Kind::kGetNeighbors,
             PlanNode::Kind::kStart,
         };
-        EXPECT_TRUE(checkResult(query, expected_, {"name", "start", "hash"}));
+        EXPECT_TRUE(checkResult(query, expected_, {"$var.name", "$var.start", "hash"}));
     }
 #endif
     {
@@ -411,7 +409,7 @@ TEST_F(YieldValidatorTest, YieldVar) {
             PlanNode::Kind::kGetNeighbors,
             PlanNode::Kind::kStart,
         };
-        EXPECT_TRUE(checkResult(query, expected_, {"name", "start", "hash"}));
+        EXPECT_TRUE(checkResult(query, expected_, {"$var.name", "$var.start", "hash"}));
     }
 #endif
 }
@@ -428,13 +426,15 @@ TEST_F(YieldValidatorTest, Error) {
         // Not support reference input and variable
         auto query = var + "YIELD $var.name WHERE $-.start > 2005";
         auto result = checkResult(query);
-        EXPECT_EQ(std::string(result.message()), "Not support both input and variable.");
+        EXPECT_EQ(std::string(result.message()),
+                  "SemanticError: Not support both input and variable.");
     }
     {
         // Not support reference two different variable
         auto query = var + "YIELD $var.name WHERE $var1.start > 2005";
         auto result = checkResult(query);
-        EXPECT_EQ(std::string(result.message()), "Only one variable allowed to use.");
+        EXPECT_EQ(std::string(result.message()),
+                  "SemanticError: Only one variable allowed to use.");
     }
     {
         // Reference a non-existed prop is meaningless.
@@ -451,19 +451,19 @@ TEST_F(YieldValidatorTest, Error) {
         auto query = var + "YIELD $$.person.name";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                  "SyntaxError: Only support input and variable in yield sentence.");
+                  "SemanticError: Only support input and variable in yield sentence.");
     }
     {
         auto query = var + "YIELD $^.person.name";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                  "SyntaxError: Only support input and variable in yield sentence.");
+                  "SemanticError: Only support input and variable in yield sentence.");
     }
     {
         auto query = var + "YIELD like.start";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                  "SyntaxError: Only support input and variable in yield sentence.");
+                  "SemanticError: Not supported expression kind for type deduction: like.start");
     }
 }
 
@@ -472,9 +472,9 @@ TEST_F(YieldValidatorTest, AggCall) {
         std::string query = "YIELD COUNT(1), $-.name";
         auto result = checkResult(query);
         // Error would be reported when no input
-        // EXPECT_EQ(std::string(result.message()), "SyntaxError: column `name' not exist in
+        // EXPECT_EQ(std::string(result.message()), "SemanticError: column `name' not exist in
         // input");
-        EXPECT_EQ(std::string(result.message()), "`$-.name', not exist prop `name'");
+        EXPECT_EQ(std::string(result.message()), "SemanticError: `$-.name', not exist prop `name'");
     }
     {
         std::string query = "YIELD COUNT(*), 1+1";
@@ -487,7 +487,7 @@ TEST_F(YieldValidatorTest, AggCall) {
                      "| YIELD COUNT(*), $-.age";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                  "SyntaxError: Input columns without aggregation are not supported in YIELD "
+                  "SemanticError: Input columns without aggregation are not supported in YIELD "
                   "statement without GROUP BY, near `$-.age'");
     }
     // Test input
@@ -546,7 +546,7 @@ TEST_F(YieldValidatorTest, AggCall) {
                      "| YIELD AVG($-.*)";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                  "SyntaxError: could not apply aggregation function on `$-.*'");
+                  "SemanticError: could not apply aggregation function on `$-.*'");
     }
     // Yield field has not input
     {
@@ -626,7 +626,7 @@ TEST_F(YieldValidatorTest, AggCall) {
                      "YIELD AVG($var.*)";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                  "SyntaxError: could not apply aggregation function on `$var.*'");
+                  "SemanticError: could not apply aggregation function on `$var.*'");
     }
 }
 

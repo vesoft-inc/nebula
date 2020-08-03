@@ -22,8 +22,15 @@ Status SetValidator::validateImpl() {
     auto lCols = lValidator_->outputCols();
     auto rCols = rValidator_->outputCols();
 
-    if (UNLIKELY(lCols != rCols)) {
-        return Status::Error("Different columns to UNION/INTERSECT/MINUS");
+    if (lCols.size() != rCols.size()) {
+        return Status::SemanticError("number of columns to UNION/INTERSECT/MINUS must be same");
+    }
+
+    for (size_t i = 0, e = lCols.size(); i < e; i++) {
+        if (lCols[i].first != rCols[i].first) {
+            return Status::SemanticError(
+                "different column names to UNION/INTERSECT/MINUS are not supported");
+        }
     }
 
     outputs_ = std::move(lCols);

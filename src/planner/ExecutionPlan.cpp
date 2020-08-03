@@ -73,7 +73,7 @@ static size_t makePlanNodeDesc(const PlanNode* node, cpp2::PlanDescription* plan
             planDesc->plan_node_descs[thenPos].set_branch_info(std::move(thenInfo));
             auto otherwisePos = makePlanNodeDesc(select->otherwise(), planDesc);
             cpp2::PlanNodeBranchInfo elseInfo;
-            elseInfo.set_is_do_branch(true);
+            elseInfo.set_is_do_branch(false);
             elseInfo.set_condition_node_id(select->id());
             planDesc->plan_node_descs[otherwisePos].set_branch_info(std::move(elseInfo));
             makePlanNodeDesc(select->dep(), planDesc);

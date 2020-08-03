@@ -57,7 +57,7 @@ TEST(ExecutionContextTest, TestResult) {
     ctx.setResult("ds", std::move(expected));
     auto& result = ctx.getResult("ds");
     EXPECT_TRUE(result.value().isDataSet());
-    EXPECT_TRUE(result.iter()->value().isDataSet());
+    EXPECT_TRUE(result.valuePtr()->isDataSet());
 }
 
 }   // namespace graph

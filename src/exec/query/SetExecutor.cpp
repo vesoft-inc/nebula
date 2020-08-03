@@ -28,18 +28,23 @@ Status SetExecutor::checkInputDataSets() {
         return Status::Error(ss.str());
     }
 
-    auto& leftData = lIter->value();
-    auto& rightData = rIter->value();
+    auto leftData = lIter->valuePtr();
+    auto rightData = rIter->valuePtr();
 
-    if (UNLIKELY(!leftData.isDataSet() || !rightData.isDataSet())) {
+    if (UNLIKELY(!leftData || !rightData)) {
+        return Status::Error("SET related executor failed, %s side input dataset is null",
+                             !leftData ? "left" : "right");
+    }
+
+    if (UNLIKELY(!leftData->isDataSet() || !rightData->isDataSet())) {
         std::stringstream ss;
-        ss << "Invalid data types of dependencies: " << leftData.type() << " vs. "
-           << rightData.type() << ".";
+        ss << "Invalid data types of dependencies: " << leftData->type() << " vs. "
+           << rightData->type() << ".";
         return Status::Error(ss.str());
     }
 
-    auto& lds = leftData.getDataSet();
-    auto& rds = rightData.getDataSet();
+    auto& lds = leftData->getDataSet();
+    auto& rds = rightData->getDataSet();
 
     if (LIKELY(lds.colNames == rds.colNames)) {
         return Status::OK();

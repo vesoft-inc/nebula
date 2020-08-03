@@ -5,7 +5,7 @@
  */
 
 #include "validator/YieldValidator.h"
-#include "util/ExpressionUtils.h"
+
 #include "common/expression/Expression.h"
 #include "context/QueryContext.h"
 #include "parser/Clauses.h"
@@ -20,58 +20,56 @@ YieldValidator::YieldValidator(Sentence *sentence, QueryContext *qctx)
 
 Status YieldValidator::validateImpl() {
     auto yield = static_cast<YieldSentence *>(sentence_);
-    rebuildYield(yield->yield());
     NG_RETURN_IF_ERROR(validateYieldAndBuildOutputs(yield->yield()));
     NG_RETURN_IF_ERROR(validateWhere(yield->where()));
 
     if (!srcTagProps_.empty() || !dstTagProps_.empty() || !edgeProps_.empty()) {
-        return Status::SyntaxError("Only support input and variable in yield sentence.");
+        return Status::SemanticError("Only support input and variable in yield sentence.");
     }
 
     if (!inputProps_.empty() && !varProps_.empty()) {
-        return Status::Error("Not support both input and variable.");
+        return Status::SemanticError("Not support both input and variable.");
     }
 
     if (!varProps_.empty() && varProps_.size() > 1) {
-        return Status::Error("Only one variable allowed to use.");
+        return Status::SemanticError("Only one variable allowed to use.");
     }
 
+    // TODO(yee): following check maybe not make sense
     NG_RETURN_IF_ERROR(checkInputProps());
     NG_RETURN_IF_ERROR(checkVarProps());
 
     if (hasAggFun_) {
-        NG_RETURN_IF_ERROR(checkColumnRefAggFun(yield->yield()));
+        NG_RETURN_IF_ERROR(checkAggFunAndBuildGroupItems(yield->yield()));
     }
 
     return Status::OK();
 }
 
-Status YieldValidator::checkColumnRefAggFun(const YieldClause *clause) const {
+Status YieldValidator::checkAggFunAndBuildGroupItems(const YieldClause *clause) {
     auto yield = clause->yields();
     for (auto column : yield->columns()) {
         auto expr = column->expr();
         auto fun = column->getAggFunName();
         if (!evaluableExpr(expr) && fun.empty()) {
-            return Status::SyntaxError(
+            return Status::SemanticError(
                 "Input columns without aggregation are not supported in YIELD statement "
                 "without GROUP BY, near `%s'",
                 expr->toString().c_str());
         }
+
+        groupItems_.emplace_back(Aggregate::GroupItem{expr, AggFun::nameIdMap_[fun], false});
     }
     return Status::OK();
 }
 
 Status YieldValidator::checkInputProps() const {
     if (inputs_.empty() && !inputProps_.empty()) {
-        return Status::SyntaxError("no inputs for yield columns.");
+        return Status::SemanticError("no inputs for yield columns.");
     }
     for (auto &prop : inputProps_) {
         DCHECK_NE(prop, "*");
-        auto iter = std::find_if(
-            inputs_.cbegin(), inputs_.cend(), [&](auto &in) { return prop == in.first; });
-        if (iter == inputs_.cend()) {
-            return Status::SyntaxError("column `%s' not exist in input", prop.c_str());
-        }
+        NG_RETURN_IF_ERROR(checkPropNonexistOrDuplicate(inputs_, prop));
     }
     return Status::OK();
 }
@@ -80,23 +78,38 @@ Status YieldValidator::checkVarProps() const {
     for (auto &pair : varProps_) {
         auto &var = pair.first;
         if (!vctx_->existVar(var)) {
-            return Status::SyntaxError("variable `%s' not exist.", var.c_str());
+            return Status::SemanticError("variable `%s' not exist.", var.c_str());
         }
         auto &props = vctx_->getVar(var);
         for (auto &prop : pair.second) {
             DCHECK_NE(prop, "*");
-            auto iter = std::find_if(
-                props.cbegin(), props.cend(), [&](auto &in) { return in.first == prop; });
-            if (iter == props.cend()) {
-                return Status::SyntaxError("column `%s' not exist in variable.", prop.c_str());
-            }
+            NG_RETURN_IF_ERROR(checkPropNonexistOrDuplicate(props, prop));
         }
     }
     return Status::OK();
 }
 
+Status YieldValidator::makeOutputColumn(YieldColumn *column) {
+    columns_->addColumn(column);
+
+    auto expr = column->expr();
+    DCHECK(expr != nullptr);
+    NG_RETURN_IF_ERROR(deduceProps(expr));
+
+    auto status = deduceExprType(expr);
+    NG_RETURN_IF_ERROR(status);
+    auto type = std::move(status).value();
+
+    auto name = deduceColName(column);
+    outputColumnNames_.emplace_back(name);
+
+    outputs_.emplace_back(name, type);
+    return Status::OK();
+}
+
 Status YieldValidator::validateYieldAndBuildOutputs(const YieldClause *clause) {
     auto columns = clause->columns();
+    columns_ = qctx_->objPool()->add(new YieldColumns);
     for (auto column : columns) {
         auto expr = DCHECK_NOTNULL(column->expr());
         if (expr->kind() == Expression::Kind::kInputProperty) {
@@ -105,11 +118,11 @@ Status YieldValidator::validateYieldAndBuildOutputs(const YieldClause *clause) {
             // it's always a root of expression.
             if (*ipe->prop() == "*") {
                 for (auto &colDef : inputs_) {
-                    outputs_.emplace_back(colDef);
-                    inputProps_.emplace_back(colDef.first);
+                    auto newExpr = new InputPropertyExpression(new std::string(colDef.first));
+                    NG_RETURN_IF_ERROR(makeOutputColumn(new YieldColumn(newExpr)));
                 }
                 if (!column->getAggFunName().empty()) {
-                    return Status::SyntaxError("could not apply aggregation function on `$-.*'");
+                    return Status::SemanticError("could not apply aggregation function on `$-.*'");
                 }
                 continue;
             }
@@ -119,37 +132,32 @@ Status YieldValidator::validateYieldAndBuildOutputs(const YieldClause *clause) {
             if (*vpe->prop() == "*") {
                 auto var = DCHECK_NOTNULL(vpe->sym());
                 if (!vctx_->existVar(*var)) {
-                    return Status::Error("variable `%s' not exists.", var->c_str());
+                    return Status::SemanticError("variable `%s' not exists.", var->c_str());
                 }
                 auto &varColDefs = vctx_->getVar(*var);
-                auto &propsVec = varProps_[*var];
                 for (auto &colDef : varColDefs) {
-                    outputs_.emplace_back(colDef);
-                    propsVec.emplace_back(colDef.first);
+                    auto newExpr = new VariablePropertyExpression(new std::string(*var),
+                                                                  new std::string(colDef.first));
+                    NG_RETURN_IF_ERROR(makeOutputColumn(new YieldColumn(newExpr)));
                 }
                 if (!column->getAggFunName().empty()) {
-                    return Status::SyntaxError("could not apply aggregation function on `$%s.*'",
-                                               var->c_str());
+                    return Status::SemanticError("could not apply aggregation function on `$%s.*'",
+                                                 var->c_str());
                 }
                 continue;
             }
         }
 
-        auto status = deduceExprType(expr);
-        NG_RETURN_IF_ERROR(status);
-        auto type = std::move(status).value();
-        auto name = deduceColName(column);
-        outputs_.emplace_back(name, type);
-        NG_RETURN_IF_ERROR(deduceProps(expr));
-
         auto fun = column->getAggFunName();
         if (!fun.empty()) {
             auto foundAgg = AggFun::nameIdMap_.find(fun);
             if (foundAgg == AggFun::nameIdMap_.end()) {
-                return Status::Error("Unkown aggregate function: `%s'", fun.c_str());
+                return Status::SemanticError("Unkown aggregate function: `%s'", fun.c_str());
             }
             hasAggFun_ = true;
         }
+
+        NG_RETURN_IF_ERROR(makeOutputColumn(column->clone().release()));
     }
     return Status::OK();
 }
@@ -163,52 +171,6 @@ Status YieldValidator::validateWhere(const WhereClause *clause) {
         NG_RETURN_IF_ERROR(deduceProps(filter));
     }
     return Status::OK();
-}
-
-YieldColumns *YieldValidator::getYieldColumns(YieldColumns *yieldColumns,
-                                              ObjectPool *objPool,
-                                              size_t numColumns) {
-    auto oldColumns = yieldColumns->columns();
-    DCHECK_LE(oldColumns.size(), numColumns);
-    if (oldColumns.size() == numColumns) {
-        return yieldColumns;
-    }
-
-    // There are some unfolded expressions, need to rebuild project expressions
-    auto newColumns = objPool->add(new YieldColumns);
-    for (auto &column : oldColumns) {
-        auto expr = column->expr();
-        if (expr->kind() == Expression::Kind::kInputProperty) {
-            auto ipe = static_cast<const InputPropertyExpression *>(expr);
-            if (*ipe->prop() == "*") {
-                for (auto &colDef : inputs_) {
-                    newColumns->addColumn(new YieldColumn(
-                        new InputPropertyExpression(new std::string(colDef.first))));
-                }
-                continue;
-            }
-        } else if (expr->kind() == Expression::Kind::kVarProperty) {
-            auto vpe = static_cast<const VariablePropertyExpression *>(expr);
-            if (*vpe->prop() == "*") {
-                auto sym = vpe->sym();
-                CHECK(vctx_->existVar(*sym));
-                auto &varColDefs = vctx_->getVar(*sym);
-                for (auto &colDef : varColDefs) {
-                    newColumns->addColumn(new YieldColumn(new VariablePropertyExpression(
-                        new std::string(*sym), new std::string(colDef.first))));
-                }
-                continue;
-            }
-        }
-
-        auto newExpr = Expression::decode(column->expr()->encode());
-        std::string *alias = nullptr;
-        if (column->alias() != nullptr) {
-            alias = new std::string(*column->alias());
-        }
-        newColumns->addColumn(new YieldColumn(newExpr.release(), alias));
-    }
-    return newColumns;
 }
 
 Status YieldValidator::toPlan() {
@@ -226,28 +188,24 @@ Status YieldValidator::toPlan() {
 
     SingleInputNode *dedupDep = nullptr;
     if (!hasAggFun_) {
-        auto yieldColumns =
-            getYieldColumns(yield->yieldColumns(), plan->objPool(), outputs_.size());
-        dedupDep = Project::make(plan, filter, yieldColumns);
+        dedupDep = Project::make(plan, filter, columns_);
     } else {
-        std::vector<Aggregate::GroupItem> items;
-        for (auto& col : yield->yieldColumns()->columns()) {
-            Aggregate::GroupItem item(col->expr(), AggFun::nameIdMap_[col->getAggFunName()], false);
-            items.emplace_back(std::move(item));
-        }
-        dedupDep = Aggregate::make(plan, filter, {}, std::move(items));
+        // We do not use group items later, so move it is safe
+        dedupDep = Aggregate::make(plan, filter, {}, std::move(groupItems_));
     }
 
-    std::vector<std::string> outputColumns(outputs_.size());
-    std::transform(outputs_.cbegin(), outputs_.cend(), outputColumns.begin(), [](auto &colDef) {
-        return colDef.first;
-    });
-    dedupDep->setColNames(std::move(outputColumns));
+    dedupDep->setColNames(std::move(outputColumnNames_));
     if (filter != nullptr) {
         dedupDep->setInputVar(filter->varName());
         tail_ = filter;
     } else {
         tail_ = dedupDep;
+    }
+
+    if (!varProps_.empty()) {
+        DCHECK_EQ(varProps_.size(), 1u);
+        auto var = varProps_.cbegin()->first;
+        static_cast<SingleInputNode *>(tail_)->setInputVar(var);
     }
 
     if (yield->yield()->isDistinct()) {
@@ -260,20 +218,6 @@ Status YieldValidator::toPlan() {
     }
 
     return Status::OK();
-}
-
-void YieldValidator::rebuildYield(YieldClause* yield) {
-    // TODO(shylock) keep same with previous so transfer to EdgePropertyExpression
-    auto columns = yield->columns();
-    for (auto& col : columns) {
-        if (col->expr()->kind() == Expression::Kind::kSymProperty) {
-            auto symbolExpr = static_cast<SymbolPropertyExpression*>(col->expr());
-            col->setExpr(ExpressionUtils::transSymbolPropertyExpression<EdgePropertyExpression>(
-                symbolExpr));
-        } else {
-            ExpressionUtils::transAllSymbolPropertyExpr<EdgePropertyExpression>(col->expr());
-        }
-    }
 }
 
 }   // namespace graph

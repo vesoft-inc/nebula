@@ -18,7 +18,6 @@ class TestYield(NebulaTestSuite):
     def prepare(self):
         self.load_data()
 
-    @pytest.mark.skip(reason="")
     def test_base(self):
         query = 'YIELD 1'
         resp = self.execute_query(query)
@@ -44,7 +43,6 @@ class TestYield(NebulaTestSuite):
         expect_result = [['Hello', 2275118702903107253]]
         self.check_result(resp, expect_result)
 
-    @pytest.mark.skip(reason="")
     def test_hash_call(self):
         query = 'YIELD hash("Boris")'
         resp = self.execute_query(query)
@@ -86,7 +84,6 @@ class TestYield(NebulaTestSuite):
         # expect_result = [[1]]
         # self.check_result(resp, expect_result)
 
-    @pytest.mark.skip(reason="")
     def test_logic(self):
         query = 'YIELD NOT FALSE || FALSE AND FALSE XOR FALSE'
         resp = self.execute_query(query)
@@ -164,7 +161,6 @@ class TestYield(NebulaTestSuite):
         expect_result = [[True, 123]]
         self.check_result(resp, expect_result)
 
-    @pytest.mark.skip(reason="")
     def test_yield_pipe(self):
         query = '''GO FROM "Boris Diaw" OVER serve \
         YIELD $^.player.name as name, serve.start_year as start, $$.team.name as team \
@@ -234,7 +230,6 @@ class TestYield(NebulaTestSuite):
                          ["Boris Diaw", 2016, "Jazz", 123]]
         self.check_out_of_order_result(resp, expect_result)
 
-    @pytest.mark.skip(reason="")
     def test_yield_var(self):
         query = '''$var = GO FROM "Boris Diaw" OVER serve \
         YIELD $^.player.name as name, serve.start_year as start, $$.team.name as team; \
@@ -304,7 +299,6 @@ class TestYield(NebulaTestSuite):
                          ["Boris Diaw", 2016, "Jazz", 123]]
         self.check_out_of_order_result(resp, expect_result)
 
-    @pytest.mark.skip(reason="")
     def test_error(self):
         query = 'YIELD $-'
         resp = self.execute_query(query)
@@ -408,7 +402,6 @@ class TestYield(NebulaTestSuite):
         resp = self.execute_query(query)
         self.check_resp_failed(resp, ttypes.ErrorCode.E_SEMANTIC_ERROR)
 
-    @pytest.mark.skip(reason="")
     def test_agg_call(self):
         query = '''YIELD COUNT(1), $-.name'''
         resp = self.execute_query(query)
@@ -480,7 +473,6 @@ class TestYield(NebulaTestSuite):
         expect_result = [[34.666666666666664, 270, 3]]
         self.check_result(resp, expect_result)
 
-    @pytest.mark.skip(reason="")
     def test_empty_input(self):
         query = '''GO FROM "NON_EXIST_VERTEX_ID" OVER serve \
         YIELD $^.player.name AS name, serve.start_year AS start, $$.team.name AS team \
@@ -513,7 +505,6 @@ class TestYield(NebulaTestSuite):
         expect_result = []
         self.check_result(resp, expect_result)
 
-    @pytest.mark.skip(reason="")
     def test_duplicate_columns(self):
         query = 'YIELD 1, 1'
         resp = self.execute_query(query)
@@ -535,7 +526,6 @@ class TestYield(NebulaTestSuite):
         resp = self.execute_query(query)
         self.check_resp_failed(resp, ttypes.ErrorCode.E_SEMANTIC_ERROR)
 
-    @pytest.mark.skip(reason="")
     def test_pipe_yield_go(self):
         query = '''GO FROM "Tim Duncan" OVER serve YIELD serve._src AS id | \
         YIELD $-.id AS id | \

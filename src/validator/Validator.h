@@ -86,6 +86,8 @@ protected:
 
     bool evaluableExpr(const Expression* expr) const;
 
+    static Status checkPropNonexistOrDuplicate(const ColsDef& cols, const std::string& prop);
+
     static Status appendPlan(PlanNode* plan, PlanNode* appended);
 
     // Check the variable or input property reference

@@ -44,7 +44,7 @@ class TestExplain(NebulaTestSuite):
 
         query = 'EXPLAIN FORMAT="unknown" YIELD 1;'
         resp = self.execute_query(query)
-        self.check_resp_failed(resp, ttypes.ErrorCode.E_SYNTAX_ERROR)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_SEMANTIC_ERROR)
 
     def test_explain_stmts_block(self):
         query = 'EXPLAIN {$var = YIELD 1 AS a; YIELD $var.*;};'
@@ -66,7 +66,7 @@ class TestExplain(NebulaTestSuite):
         query = '''EXPLAIN FORMAT="unknown" \
             {$var = YIELD 1 AS a; YIELD $var.*;};'''
         resp = self.execute_query(query)
-        self.check_resp_failed(resp, ttypes.ErrorCode.E_SYNTAX_ERROR)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_SEMANTIC_ERROR)
 
     def test_profile(self):
         query = 'PROFILE YIELD 1 AS id;'
@@ -83,7 +83,7 @@ class TestExplain(NebulaTestSuite):
 
         query = 'PROFILE FORMAT="unknown" YIELD 1;'
         resp = self.execute_query(query)
-        self.check_resp_failed(resp, ttypes.ErrorCode.E_SYNTAX_ERROR)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_SEMANTIC_ERROR)
 
     def test_profile_stmts_block(self):
         query = 'PROFILE {$var = YIELD 1 AS a; YIELD $var.*;};'
@@ -105,4 +105,4 @@ class TestExplain(NebulaTestSuite):
         query = '''PROFILE FORMAT="unknown" \
             {$var = YIELD 1 AS a; YIELD $var.*;};'''
         resp = self.execute_query(query)
-        self.check_resp_failed(resp, ttypes.ErrorCode.E_SYNTAX_ERROR)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_SEMANTIC_ERROR)

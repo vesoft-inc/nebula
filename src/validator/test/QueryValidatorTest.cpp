@@ -888,9 +888,8 @@ TEST_F(QueryValidatorTest, TestMaxAllowedStatements) {
     auto result = checkResult(query);
     EXPECT_FALSE(result);
     EXPECT_EQ(std::string(result.message()),
-              "The maximum number of statements allowed has been exceeded");
+              "SemanticError: The maximum number of statements allowed has been exceeded");
 }
 
 }  // namespace graph
 }  // namespace nebula
-

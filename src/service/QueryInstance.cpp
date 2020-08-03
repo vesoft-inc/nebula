@@ -107,6 +107,8 @@ void QueryInstance::onError(Status status) {
         rctx->resp().set_error_code(cpp2::ErrorCode::E_SYNTAX_ERROR);
     } else if (status.isStatementEmpty()) {
         rctx->resp().set_error_code(cpp2::ErrorCode::E_STATEMENT_EMTPY);
+    } else if (status.isSemanticError()) {
+        rctx->resp().set_error_code(cpp2::ErrorCode::E_SEMANTIC_ERROR);
     } else {
         rctx->resp().set_error_code(cpp2::ErrorCode::E_EXECUTION_ERROR);
     }
