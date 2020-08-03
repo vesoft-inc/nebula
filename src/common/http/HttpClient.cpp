@@ -102,7 +102,7 @@ StatusOr<std::string> HttpClient::get(const std::string& path, const std::string
 }
 
 StatusOr<std::string> HttpClient::post(const std::string& path,
-    const std::vector<std::string> *headers, const void *data, size_t dataLength) {
+    const std::vector<std::string>* headers, const void* data, size_t dataLength) {
     CxxCurl curl;
     if (!curl.isValid()) {
         return Status::Error("curl_easy_init() failed");
