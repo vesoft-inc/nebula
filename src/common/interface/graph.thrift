@@ -94,6 +94,7 @@ struct ExecutionResponse {
     4: optional binary                  space_name;
     5: optional binary                  error_msg;
     6: optional PlanDescription         plan_desc;
+    7: optional binary                  comment;        // Supplementary instruction
 }
 
 
