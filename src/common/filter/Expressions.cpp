@@ -6,7 +6,7 @@
  */
 
 #include "base/Base.h"
-#include "base/Cord.h"
+#include "base/ICord.h"
 #include "filter/Expressions.h"
 #include "filter/FunctionManager.h"
 
@@ -91,7 +91,7 @@ std::unique_ptr<Expression> Expression::makeExpr(uint8_t kind) {
 
 // static
 std::string Expression::encode(Expression *expr) noexcept {
-    Cord cord(1024);
+    ICord<> cord;
     expr->encode(cord);
     return cord.str();
 }
@@ -156,7 +156,7 @@ Status AliasPropertyExpression::prepare() {
     return Status::OK();
 }
 
-void AliasPropertyExpression::encode(Cord &cord) const {
+void AliasPropertyExpression::encode(ICord<> &cord) const {
     cord << kindToInt(kind());
     cord << static_cast<uint16_t>(ref_->size());
     cord << *ref_;
@@ -447,7 +447,7 @@ Status PrimaryExpression::prepare() {
 }
 
 
-void PrimaryExpression::encode(Cord &cord) const {
+void PrimaryExpression::encode(ICord<> &cord) const {
     cord << kindToInt(kind());
     uint8_t which = operand_.which();
     cord << which;
@@ -569,7 +569,7 @@ Status FunctionCallExpression::prepare() {
 }
 
 
-void FunctionCallExpression::encode(Cord &cord) const {
+void FunctionCallExpression::encode(ICord<> &cord) const {
     cord << kindToInt(kind());
 
     cord << static_cast<uint16_t>(name_->size());
@@ -694,7 +694,7 @@ Status UnaryExpression::prepare() {
 }
 
 
-void UnaryExpression::encode(Cord &cord) const {
+void UnaryExpression::encode(ICord<> &cord) const {
     cord << kindToInt(kind());
     cord << static_cast<uint8_t>(op_);
     operand_->encode(cord);
@@ -776,7 +776,7 @@ Status TypeCastingExpression::prepare() {
 }
 
 
-void TypeCastingExpression::encode(Cord &cord) const {
+void TypeCastingExpression::encode(ICord<> &cord) const {
     cord << kindToInt(kind());
     cord << static_cast<uint8_t>(type_);
     operand_->encode(cord);
@@ -993,7 +993,7 @@ Status ArithmeticExpression::prepare() {
 }
 
 
-void ArithmeticExpression::encode(Cord &cord) const {
+void ArithmeticExpression::encode(ICord<> &cord) const {
     cord << kindToInt(kind());
     cord << static_cast<uint8_t>(op_);
     left_->encode(cord);
@@ -1146,7 +1146,7 @@ Status RelationalExpression::prepare() {
 }
 
 
-void RelationalExpression::encode(Cord &cord) const {
+void RelationalExpression::encode(ICord<> &cord) const {
     cord << kindToInt(kind());
     cord << static_cast<uint8_t>(op_);
     left_->encode(cord);
@@ -1240,7 +1240,7 @@ Status LogicalExpression::prepare() {
     return Status::OK();
 }
 
-void LogicalExpression::encode(Cord &cord) const {
+void LogicalExpression::encode(ICord<> &cord) const {
     cord << kindToInt(kind());
     cord << static_cast<uint8_t>(op_);
     left_->encode(cord);

@@ -113,66 +113,59 @@ RowReader::Iterator::operator bool() const {
  * class RowReader
  *
  ********************************************/
-// static
-std::unique_ptr<RowReader> RowReader::getTagPropReader(
+RowReader RowReader::getTagPropReader(
         meta::SchemaManager* schemaMan,
         folly::StringPiece row,
         GraphSpaceID space,
         TagID tag) {
     if (schemaMan == nullptr) {
         LOG(ERROR) << "schemaMan should not be nullptr!";
-        return nullptr;
+        return RowReader();
     }
     int32_t ver = getSchemaVer(row);
     if (ver >= 0) {
         auto schema = schemaMan->getTagSchema(space, tag, ver);
         if (schema == nullptr) {
-            return nullptr;
+            return RowReader();
         }
-        return std::unique_ptr<RowReader>(new RowReader(
-            row,
-            schema));
+        return RowReader(row, schema);
     } else {
         LOG(WARNING) << "Invalid schema version in the row data!";
-        return nullptr;
+        return RowReader();
     }
 }
 
-
 // static
-std::unique_ptr<RowReader> RowReader::getEdgePropReader(
-        meta::SchemaManager* schemaMan,
-        folly::StringPiece row,
-        GraphSpaceID space,
-        EdgeType edge) {
+RowReader RowReader::getEdgePropReader(
+    meta::SchemaManager* schemaMan,
+    folly::StringPiece row,
+    GraphSpaceID space,
+    EdgeType edge) {
     if (schemaMan == nullptr) {
         LOG(ERROR) << "schemaMan should not be nullptr!";
-        return nullptr;
+        return RowReader();
     }
     int32_t ver = getSchemaVer(row);
     if (ver >= 0) {
         auto schema = schemaMan->getEdgeSchema(space, edge, ver);
         if (schema == nullptr) {
-            return nullptr;
+            return RowReader();
         }
-        return std::unique_ptr<RowReader>(new RowReader(
-            row,
-            schema));
+        return RowReader(row, schema);
     } else {
         LOG(WARNING) << "Invalid schema version in the row data!";
-        return nullptr;
+        return RowReader();
     }
 }
 
 // static
-std::unique_ptr<RowReader> RowReader::getRowReader(
-        folly::StringPiece row,
-        std::shared_ptr<const meta::SchemaProviderIf> schema) {
+RowReader RowReader::getRowReader(
+    folly::StringPiece row,
+    std::shared_ptr<const meta::SchemaProviderIf> schema) {
     SchemaVer ver = getSchemaVer(row);
     CHECK_EQ(ver, schema->getVersion());
-    return std::unique_ptr<RowReader>(new RowReader(row, std::move(schema)));
+    return RowReader(row, std::move(schema));
 }
-
 
 // static
 int32_t RowReader::getSchemaVer(folly::StringPiece row) {
