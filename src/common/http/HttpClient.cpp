@@ -31,15 +31,15 @@ struct CxxCurl {
         return curl != nullptr;
     }
 
-    std::string &&getResponse(){
+    std::string&& getResponse(){
         return std::move(response);
     }
 
-    const std::string &getResponse()const{
+    const std::string& getResponse()const{
         return response;
     }
 
-    CURLcode get(const std::string &path) {
+    CURLcode get(const std::string& path) {
         curl_easy_setopt(curl, CURLOPT_URL, path.c_str());
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, response_callback);
@@ -47,13 +47,13 @@ struct CxxCurl {
         return curl_easy_perform(curl);
     }
 
-    CURLcode post(const std::string &path, const std::vector<std::string> *headers,
-        const void *data, size_t dataLength) {
+    CURLcode post(const std::string& path, const std::vector<std::string>* headers,
+        const void* data, size_t dataLength) {
         curl_easy_setopt(curl, CURLOPT_URL, path.c_str());
         curl_easy_setopt(curl, CURLOPT_POST, 1L);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, response_callback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-        curl_slist *list = nullptr;
+        curl_slist* list = nullptr;
         if (headers != nullptr && !headers->empty()) {
             for (auto headerIter = headers->cbegin();
                 headerIter != headers->cend(); ++headerIter) {
@@ -73,13 +73,13 @@ struct CxxCurl {
     }
 
 private:
-    static size_t response_callback(char *data, size_t size, size_t nmemb, void *userptr);
-    CURL *curl = curl_easy_init();
+    static size_t response_callback(char* data, size_t size, size_t nmemb, void* userptr);
+    CURL* curl = curl_easy_init();
     std::string response;
 };
 
-size_t CxxCurl::response_callback(char *data, size_t size, size_t nmemb, void *userptr) {
-    std::string *response = reinterpret_cast<std::string*>(userptr);
+size_t CxxCurl::response_callback(char* data, size_t size, size_t nmemb, void* userptr) {
+    std::string* response = reinterpret_cast<std::string*>(userptr);
     size *= nmemb;
     response->append(data, size);
     return size;
