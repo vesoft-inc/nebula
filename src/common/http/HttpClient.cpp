@@ -19,18 +19,26 @@ static struct __curl_init_helper {
 }curl_init_helper;
 
 struct CxxCurl {
-    CxxCurl():curl(curl_easy_init()) {}
+    CxxCurl() {}
+
     ~CxxCurl() {
         if (curl) {
             curl_easy_cleanup(curl);
         }
     }
+
     bool isValid()const {
         return curl != nullptr;
     }
-    const std::string &getResponse()const {
+
+    std::string &&getResponse(){
+        return std::move(response);
+    }
+
+    const std::string &getResponse()const{
         return response;
     }
+
     CURLcode get(const std::string &path) {
         curl_easy_setopt(curl, CURLOPT_URL, path.c_str());
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
@@ -38,23 +46,40 @@ struct CxxCurl {
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
         return curl_easy_perform(curl);
     }
-    CURLcode post(const std::string &path, const std::string &data) {
+
+    CURLcode post(const std::string &path, const std::vector<std::string> *headers,
+        const void *data, size_t dataLength) {
         curl_easy_setopt(curl, CURLOPT_URL, path.c_str());
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data.c_str());
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (int64_t)data.size());
+        curl_easy_setopt(curl, CURLOPT_POST, 1L);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, response_callback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-        return curl_easy_perform(curl);
+        curl_slist *list = nullptr;
+        if (headers != nullptr && !headers->empty()) {
+            for (auto headerIter = headers->cbegin();
+                headerIter != headers->cend(); ++headerIter) {
+                list = curl_slist_append(list, headerIter->c_str());
+            }
+            curl_easy_setopt(curl, CURLOPT_HTTPHEADER, list);
+        }
+        if (data != nullptr && dataLength != 0) {
+            curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+            curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE_LARGE, dataLength);
+        }
+        CURLcode retCode = curl_easy_perform(curl);
+        if (list != nullptr) {
+            curl_slist_free_all(list);
+        }
+        return retCode;
     }
 
 private:
     static size_t response_callback(char *data, size_t size, size_t nmemb, void *userptr);
-    CURL *curl;
+    CURL *curl = curl_easy_init();
     std::string response;
 };
 
 size_t CxxCurl::response_callback(char *data, size_t size, size_t nmemb, void *userptr) {
-    std::string *response = (std::string*)userptr;
+    std::string *response = reinterpret_cast<std::string*>(userptr);
     size *= nmemb;
     response->append(data, size);
     return size;
@@ -71,21 +96,20 @@ StatusOr<std::string> HttpClient::get(const std::string& path, const std::string
     }
     CURLcode res = curl.get(path);
     if (res != CURLE_OK) {
-        return Status::Error(
-            folly::stringPrintf("curl_easy_perform() failed: %s", curl_easy_strerror(res)));
+        return Status::Error("curl_easy_perform() failed: %s", curl_easy_strerror(res));
     }
     return curl.getResponse();
 }
 
-StatusOr<std::string> HttpClient::post(const std::string& path, const std::string& header) {
+StatusOr<std::string> HttpClient::post(const std::string& path,
+    const std::vector<std::string> *headers, const void *data, size_t dataLength) {
     CxxCurl curl;
     if (!curl.isValid()) {
         return Status::Error("curl_easy_init() failed");
     }
-    CURLcode res = curl.post(path, header);
+    CURLcode res = curl.post(path, headers, data, dataLength);
     if (res != CURLE_OK) {
-        return Status::Error(
-            folly::stringPrintf("curl_easy_perform() failed: %s", curl_easy_strerror(res)));
+        return Status::Error("curl_easy_perform() failed: %s", curl_easy_strerror(res));
     }
     return curl.getResponse();
 }
