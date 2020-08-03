@@ -93,10 +93,12 @@ Status FetchEdgesValidator::prepareEdges() {
         NG_RETURN_IF_ERROR(result);
         inputVar_ = std::move(result).value();
         ranking_ = sentence->ref()->rank();
-        result = checkRef(ranking_, Value::Type::INT);
-        NG_RETURN_IF_ERROR(result);
-        if (inputVar_ != result.value()) {
-            return Status::Error("Can't refer to different variable as key at same time.");
+        if (ranking_->kind() != Expression::Kind::kConstant) {
+            result = checkRef(ranking_, Value::Type::INT);
+            NG_RETURN_IF_ERROR(result);
+            if (inputVar_ != result.value()) {
+                return Status::Error("Can't refer to different variable as key at same time.");
+            }
         }
         dst_ = sentence->ref()->dstid();
         result = checkRef(dst_, Value::Type::STRING);

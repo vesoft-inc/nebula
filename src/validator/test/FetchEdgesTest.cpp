@@ -318,7 +318,7 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesInputOutput) {
     {
         const std::string query = "$a = FETCH PROP ON like \"1\"->\"2\" "
                                   "YIELD like._src AS src, like._dst AS dst, like._rank AS rank;"
-                                  "FETCH PROP ON like $a.src->$a.dst@$a.rank";
+                                  "FETCH PROP ON like $a.src->$a.dst";
         EXPECT_TRUE(checkResult(query,
                                 {
                                     PlanNode::Kind::kGetEdges,
