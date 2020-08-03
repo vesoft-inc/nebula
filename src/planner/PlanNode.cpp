@@ -108,6 +108,10 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
             return "DeleteVertices";
         case Kind::kDeleteEdges:
             return "DeleteEdges";
+        case Kind::kUpdateVertex:
+            return "UpdateVertex";
+        case Kind::kUpdateEdge:
+            return "UpdateEdge";
     }
     LOG(FATAL) << "Impossible kind plan node " << static_cast<int>(kind);
 }

@@ -88,13 +88,25 @@ Status InsertVerticesValidator::prepareVertices() {
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
         if (propSize_ != row->values().size()) {
-            return Status::Error("Wrong number of value");
+            return Status::Error("Column count doesn't match value count.");
+        }
+        if (!evaluableExpr(row->id())) {
+            LOG(ERROR) << "Wrong vid expression `" << row->id()->toString() << "\"";
+            return Status::Error("Wrong vid expression `%s'", row->id()->toString().c_str());
         }
         auto idStatus = SchemaUtil::toVertexID(row->id());
         if (!idStatus.ok()) {
             return idStatus.status();
         }
         auto vertexId = std::move(idStatus).value();
+
+        // check value expr
+        for (auto &value : row->values()) {
+            if (!evaluableExpr(value)) {
+                LOG(ERROR) << "Insert wrong value: `" << value->toString() << "'.";
+                return Status::Error("Insert wrong value: `%s'.", value->toString().c_str());
+            }
+        }
         auto valsRet = SchemaUtil::toValueVec(row->values());
         if (!valsRet.ok()) {
             return valsRet.status();
@@ -195,8 +207,18 @@ Status InsertEdgesValidator::prepareEdges() {;
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
         if (propNames_.size() != row->values().size()) {
-            return Status::Error("Wrong number of value");
+            return Status::Error("Column count doesn't match value count.");
         }
+        if (!evaluableExpr(row->srcid())) {
+            LOG(ERROR) << "Wrong src vid expression `" << row->srcid()->toString() << "\"";
+            return Status::Error("Wrong src vid expression `%s'", row->srcid()->toString().c_str());
+        }
+
+        if (!evaluableExpr(row->dstid())) {
+            LOG(ERROR) << "Wrong dst vid expression `" << row->dstid()->toString() << "\"";
+            return Status::Error("Wrong dst vid expression `%s'", row->dstid()->toString().c_str());
+        }
+
         auto idStatus = SchemaUtil::toVertexID(row->srcid());
         if (!idStatus.ok()) {
             return idStatus.status();
@@ -209,6 +231,14 @@ Status InsertEdgesValidator::prepareEdges() {;
         auto dstId = std::move(idStatus).value();
 
         int64_t rank = row->rank();
+
+        // check value expr
+        for (auto &value : row->values()) {
+            if (!evaluableExpr(value)) {
+                LOG(ERROR) << "Insert wrong value: `" << value->toString() << "'.";
+                return Status::Error("Insert wrong value: `%s'.", value->toString().c_str());
+            }
+        }
 
         auto valsRet = SchemaUtil::toValueVec(row->values());
         if (!valsRet.ok()) {
@@ -481,6 +511,323 @@ Status DeleteEdgesValidator::toPlan() {
     doNode->setInputVar(edgeKeyVar_);
     root_ = doNode;
     tail_ = root_;
+    return Status::OK();
+}
+
+Status UpdateValidator::initProps() {
+    spaceId_ = vctx_->whichSpace().id;
+    insertable_ = sentence_->getInsertable();
+    if (sentence_->getName() != nullptr) {
+        name_ = *sentence_->getName();
+    }
+    NG_RETURN_IF_ERROR(getUpdateProps());
+    NG_RETURN_IF_ERROR(getCondition());
+    return getReturnProps();
+}
+
+Status UpdateValidator::getCondition() {
+    auto *clause = sentence_->whenClause();
+    if (clause != nullptr) {
+        auto filter = clause->filter();
+        if (filter != nullptr) {
+            auto encodeStr = filter->encode();
+            auto copyFilterExpr = Expression::decode(encodeStr);
+            NG_LOG_AND_RETURN_IF_ERROR(
+                    checkAndResetSymExpr(copyFilterExpr.get(), name_, encodeStr));
+            condition_ = std::move(encodeStr);
+        }
+    }
+    return Status::OK();
+}
+
+Status UpdateValidator::getReturnProps() {
+    auto *clause = sentence_->yieldClause();
+    if (clause != nullptr) {
+        auto yields = clause->columns();
+        for (auto *col : yields) {
+            if (col->alias() == nullptr) {
+                yieldColNames_.emplace_back(col->expr()->toString());
+            } else {
+                yieldColNames_.emplace_back(*col->alias());
+            }
+            auto encodeStr = col->expr()->encode();
+            auto copyColExpr = Expression::decode(encodeStr);
+
+            NG_LOG_AND_RETURN_IF_ERROR(checkAndResetSymExpr(copyColExpr.get(), name_, encodeStr));
+            returnProps_.emplace_back(std::move(encodeStr));
+        }
+    }
+    return Status::OK();
+}
+
+Status UpdateValidator::getUpdateProps() {
+    auto status = Status::OK();
+    auto items = sentence_->updateList()->items();
+    std::unordered_set<std::string> symNames;
+    std::string fieldName;
+    const std::string *symName = nullptr;
+    for (auto& item : items) {
+        storage::cpp2::UpdatedProp updatedProp;
+        // The syntax has guaranteed it is name or expression
+        if (item->getFieldName() != nullptr) {
+            symName = &name_;
+            fieldName = *item->getFieldName();
+            symNames.emplace(name_);
+        }
+        if (item->getFieldExpr() != nullptr) {
+            DCHECK(item->getFieldExpr()->kind() == Expression::Kind::kSymProperty);
+            auto symExpr = static_cast<const SymbolPropertyExpression*>(item->getFieldExpr());
+            symNames.emplace(*symExpr->sym());
+            symName = symExpr->sym();
+            fieldName = *symExpr->prop();
+        }
+        auto valueExpr = item->value();
+        if (valueExpr == nullptr) {
+            LOG(ERROR) << "valueExpr is nullptr";
+            return Status::SyntaxError("Empty update item field value");
+        }
+        auto encodeStr = valueExpr->encode();
+        auto copyValueExpr = Expression::decode(encodeStr);
+        NG_LOG_AND_RETURN_IF_ERROR(checkAndResetSymExpr(copyValueExpr.get(), *symName, encodeStr));
+        updatedProp.set_value(std::move(encodeStr));
+        updatedProp.set_name(fieldName);
+        updatedProps_.emplace_back(std::move(updatedProp));
+    }
+
+    if (symNames.size() != 1) {
+        auto errorMsg = "Multi schema name: " + folly::join(",", symNames);
+        LOG(ERROR) << errorMsg;
+        return Status::Error(std::move(errorMsg));
+    }
+    if (symName != nullptr) {
+        name_ = *symName;
+    }
+    return status;
+}
+
+
+Status UpdateValidator::checkAndResetSymExpr(Expression* inExpr,
+                                             const std::string& symName,
+                                             std::string &encodeStr) {
+    bool hasWrongType = false;
+    auto symExpr = rewriteSymExpr(inExpr, symName, hasWrongType, isEdge_);
+    if (hasWrongType) {
+        return Status::Error("Has wrong expr in `%s'",
+                             inExpr->toString().c_str());
+    }
+    if (symExpr != nullptr) {
+        encodeStr = symExpr->encode();
+        return Status::OK();
+    }
+    encodeStr = inExpr->encode();
+    return Status::OK();
+}
+
+// rewrite the expr which has kSymProperty expr to toExpr
+std::unique_ptr<Expression> UpdateValidator::rewriteSymExpr(Expression* expr,
+                                                            const std::string &sym,
+                                                            bool &hasWrongType,
+                                                            bool isEdge) {
+    switch (expr->kind()) {
+        case Expression::Kind::kConstant: {
+            break;
+        }
+        case Expression::Kind::kAdd:
+        case Expression::Kind::kMinus:
+        case Expression::Kind::kMultiply:
+        case Expression::Kind::kDivision:
+        case Expression::Kind::kMod:
+        case Expression::Kind::kRelEQ:
+        case Expression::Kind::kRelNE:
+        case Expression::Kind::kRelLT:
+        case Expression::Kind::kRelLE:
+        case Expression::Kind::kRelGT:
+        case Expression::Kind::kRelGE:
+        case Expression::Kind::kRelIn:
+        case Expression::Kind::kLogicalAnd:
+        case Expression::Kind::kLogicalOr:
+        case Expression::Kind::kLogicalXor: {
+            auto biExpr = static_cast<BinaryExpression*>(expr);
+            auto left = rewriteSymExpr(biExpr->left(), sym, hasWrongType, isEdge);
+            if (left != nullptr) {
+                biExpr->setLeft(left.release());
+            }
+            auto right = rewriteSymExpr(biExpr->right(), sym, hasWrongType, isEdge);
+            if (right != nullptr) {
+                biExpr->setRight(right.release());
+            }
+            break;
+        }
+        case Expression::Kind::kUnaryPlus:
+        case Expression::Kind::kUnaryNegate:
+        case Expression::Kind::kUnaryNot: {
+            auto unaryExpr = static_cast<UnaryExpression*>(expr);
+            auto rewrite = rewriteSymExpr(unaryExpr->operand(), sym, hasWrongType, isEdge);
+            if (rewrite != nullptr) {
+                unaryExpr->setOperand(rewrite.release());
+            }
+            break;
+        }
+        case Expression::Kind::kFunctionCall: {
+            auto funcExpr = static_cast<FunctionCallExpression*>(expr);
+            auto* argList = const_cast<ArgumentList*>(funcExpr->args());
+            auto args = argList->moveArgs();
+            for (auto iter = args.begin(); iter < args.end(); ++iter) {
+                auto rewrite = rewriteSymExpr(iter->get(), sym, hasWrongType, isEdge);
+                if (rewrite != nullptr) {
+                    *iter = std::move(rewrite);
+                }
+            }
+            argList->setArgs(std::move(args));
+            break;
+        }
+        case Expression::Kind::kTypeCasting: {
+            auto castExpr = static_cast<TypeCastingExpression*>(expr);
+            auto operand = rewriteSymExpr(castExpr->operand(), sym, hasWrongType, isEdge);
+            if (operand != nullptr) {
+                castExpr->setOperand(operand.release());
+            }
+            break;
+        }
+        case Expression::Kind::kSymProperty: {
+            auto symExpr = static_cast<SymbolPropertyExpression*>(expr);
+            if (isEdge) {
+                return std::make_unique<EdgePropertyExpression>(
+                        new std::string(sym), new std::string(*symExpr->prop()));
+            } else {
+                if (symExpr->sym() == nullptr || !symExpr->sym()->empty()) {
+                    hasWrongType = true;
+                    return nullptr;
+                }
+                return std::make_unique<SourcePropertyExpression>(
+                        new std::string(sym), new std::string(*symExpr->prop()));
+            }
+        }
+        case Expression::Kind::kSrcProperty: {
+            if (isEdge) {
+                hasWrongType = true;
+            }
+            break;
+        }
+        case Expression::Kind::kEdgeProperty: {
+            if (!isEdge) {
+                hasWrongType = true;
+            }
+            break;
+        }
+        case Expression::Kind::kDstProperty:
+        case Expression::Kind::kTagProperty:
+        case Expression::Kind::kEdgeSrc:
+        case Expression::Kind::kEdgeRank:
+        case Expression::Kind::kEdgeDst:
+        case Expression::Kind::kEdgeType:
+        case Expression::Kind::kUUID:
+        case Expression::Kind::kVar:
+        case Expression::Kind::kVersionedVar:
+        case Expression::Kind::kVarProperty:
+        case Expression::Kind::kInputProperty:
+        case Expression::Kind::kUnaryIncr:
+        case Expression::Kind::kUnaryDecr: {
+            hasWrongType = true;
+            break;
+        }
+    }
+    return nullptr;
+}
+
+
+Status UpdateVertexValidator::validateImpl() {
+    auto sentence = static_cast<UpdateVertexSentence*>(sentence_);
+    auto idRet = SchemaUtil::toVertexID(sentence->getVid());
+    if (!idRet.ok()) {
+        LOG(ERROR) << idRet.status();
+        return idRet.status();
+    }
+    vId_ = std::move(idRet).value();
+    NG_RETURN_IF_ERROR(initProps());
+    auto ret = qctx_->schemaMng()->toTagID(spaceId_, name_);
+    if (!ret.ok()) {
+        LOG(ERROR) << "No schema found for " << name_;
+        return Status::Error("No schema found for `%s'", name_.c_str());
+    }
+    tagId_ = ret.value();
+    return Status::OK();
+}
+
+Status UpdateVertexValidator::toPlan() {
+    auto* plan = qctx_->plan();
+    auto *update = UpdateVertex::make(plan,
+                                      nullptr,
+                                      spaceId_,
+                                      std::move(name_),
+                                      vId_,
+                                      tagId_,
+                                      insertable_,
+                                      std::move(updatedProps_),
+                                      std::move(returnProps_),
+                                      std::move(condition_),
+                                      std::move(yieldColNames_));
+    root_ = update;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status UpdateEdgeValidator::validateImpl() {
+    auto sentence = static_cast<UpdateEdgeSentence*>(sentence_);
+    auto srcIdRet = SchemaUtil::toVertexID(sentence->getSrcId());
+    if (!srcIdRet.ok()) {
+        LOG(ERROR) << srcIdRet.status();
+        return srcIdRet.status();
+    }
+    srcId_ = std::move(srcIdRet).value();
+    auto dstIdRet = SchemaUtil::toVertexID(sentence->getDstId());
+    if (!dstIdRet.ok()) {
+        LOG(ERROR) << dstIdRet.status();
+        return dstIdRet.status();
+    }
+    dstId_ = std::move(dstIdRet).value();
+    rank_ = sentence->getRank();
+    NG_RETURN_IF_ERROR(initProps());
+    auto ret = qctx_->schemaMng()->toEdgeType(spaceId_, name_);
+    if (!ret.ok()) {
+        LOG(ERROR) << "No schema found for " << name_;
+        return Status::Error("No schema found for `%s'", name_.c_str());
+    }
+    edgeType_ = ret.value();
+    return Status::OK();
+}
+
+Status UpdateEdgeValidator::toPlan() {
+    auto* plan = qctx_->plan();
+    auto *outNode = UpdateEdge::make(plan,
+                                     nullptr,
+                                     spaceId_,
+                                     name_,
+                                     srcId_,
+                                     dstId_,
+                                     edgeType_,
+                                     rank_,
+                                     insertable_,
+                                     updatedProps_,
+                                     {},
+                                     condition_,
+                                     {});
+
+    auto *inNode = UpdateEdge::make(plan,
+                                    outNode,
+                                    spaceId_,
+                                    std::move(name_),
+                                    std::move(dstId_),
+                                    std::move(srcId_),
+                                    -edgeType_,
+                                    rank_,
+                                    insertable_,
+                                    std::move(updatedProps_),
+                                    std::move(returnProps_),
+                                    std::move(condition_),
+                                    std::move(yieldColNames_));
+    root_ = inNode;
+    tail_ = outNode;
     return Status::OK();
 }
 

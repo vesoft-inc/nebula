@@ -81,6 +81,8 @@ namespace graph {
         case PlanNode::Kind::kDropSnapshot:
         case PlanNode::Kind::kShowSnapshots:
         case PlanNode::Kind::kDataJoin:
+        case PlanNode::Kind::kUpdateVertex:
+        case PlanNode::Kind::kUpdateEdge:
             LOG(FATAL) << "Unimplemented";
         case PlanNode::Kind::kDataCollect: {
             const auto *lDC = static_cast<const DataCollect*>(l);

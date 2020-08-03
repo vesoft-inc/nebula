@@ -303,22 +303,24 @@ private:
 class UpdateItem final {
 public:
     UpdateItem(std::string *field, Expression *value) {
-        field_.reset(field);
+        fieldStr_.reset(field);
         value_.reset(value);
     }
 
     UpdateItem(Expression *field, Expression *value) {
-        // TODO
-        UNUSED(field);
-        field_ = std::make_unique<std::string>("");
+        fieldExpr_.reset(field);
         value_.reset(value);
     }
 
-    std::string* field() const {
-        return field_.get();
+    std::string* getFieldName() const {
+        return fieldStr_.get();
     }
 
-    Expression* value() const {
+    const Expression* getFieldExpr() const {
+        return fieldExpr_.get();
+    }
+
+    const Expression* value() const {
         return value_.get();
     }
 
@@ -327,13 +329,17 @@ public:
     StatusOr<std::string> toEvaledString() const;
 
 private:
-    std::unique_ptr<std::string>                field_;
+    std::unique_ptr<std::string>                fieldStr_;
+    std::unique_ptr<Expression>                 fieldExpr_;
     std::unique_ptr<Expression>                 value_;
 };
 
 
 class UpdateList final {
 public:
+    UpdateList() = default;
+    ~UpdateList() = default;
+
     void addItem(UpdateItem *item) {
         items_.emplace_back(item);
     }
@@ -355,47 +361,89 @@ private:
     std::vector<std::unique_ptr<UpdateItem>>    items_;
 };
 
-
-class UpdateVertexSentence final : public Sentence {
+class UpdateBaseSentence : public Sentence {
 public:
-    UpdateVertexSentence() {
-        kind_ = Kind::kUpdateVertex;
+    UpdateBaseSentence(UpdateList *updateList,
+                       WhenClause *whenClause,
+                       YieldClause *yieldClause,
+                       std::string* name,
+                       bool isInsertable = false) {
+        updateList_.reset(updateList);
+        whenClause_.reset(whenClause);
+        yieldClause_.reset(yieldClause);
+        name_.reset(name);
+        insertable_ = isInsertable;
     }
 
-    void setInsertable(bool insertable) {
-        insertable_ = insertable;
-    }
+    virtual ~UpdateBaseSentence() = default;
 
     bool getInsertable() const {
         return insertable_;
     }
 
-    void setVid(Expression *vid) {
+    const UpdateList* updateList() const {
+        return updateList_.get();
+    }
+
+    const WhenClause* whenClause() const {
+        return whenClause_.get();
+    }
+
+    const YieldClause* yieldClause() const {
+        return yieldClause_.get();
+    }
+
+    const std::string* getName() const {
+        return name_.get();
+    }
+
+protected:
+    bool                                        insertable_{false};
+    std::unique_ptr<UpdateList>                 updateList_;
+    std::unique_ptr<WhenClause>                 whenClause_;
+    std::unique_ptr<YieldClause>                yieldClause_;
+    std::unique_ptr<std::string>                name_;
+};
+
+class UpdateVertexSentence final : public UpdateBaseSentence {
+public:
+    UpdateVertexSentence(Expression *vid,
+                         std::string *tagName,
+                         UpdateList *updateList,
+                         WhenClause *whenClause,
+                         YieldClause *yieldClause,
+                         bool isInsertable = false)
+        : UpdateBaseSentence(updateList, whenClause, yieldClause, tagName, isInsertable) {
+        kind_ = Kind::kUpdateVertex;
         vid_.reset(vid);
+    }
+
+    UpdateVertexSentence(Expression *vid,
+                         UpdateList *updateList,
+                         WhenClause *whenClause,
+                         YieldClause *yieldClause,
+                         bool isInsertable = false)
+        : UpdateBaseSentence(updateList, whenClause, yieldClause, nullptr, isInsertable) {
+        kind_ = Kind::kUpdateVertex;
+        vid_.reset(vid);
+    }
+
+    ~UpdateVertexSentence() {}
+
+    bool getInsertable() const {
+        return insertable_;
     }
 
     Expression* getVid() const {
         return vid_.get();
     }
 
-    void setUpdateList(UpdateList *updateList) {
-        updateList_.reset(updateList);
-    }
-
     const UpdateList* updateList() const {
         return updateList_.get();
     }
 
-    void setWhenClause(WhenClause *clause) {
-        whenClause_.reset(clause);
-    }
-
     const WhenClause* whenClause() const {
         return whenClause_.get();
-    }
-
-    void setYieldClause(YieldClause *clause) {
-        yieldClause_.reset(clause);
     }
 
     const YieldClause* yieldClause() const {
@@ -405,97 +453,45 @@ public:
     std::string toString() const override;
 
 private:
-    bool                                        insertable_{false};
     std::unique_ptr<Expression>                 vid_;
-    std::unique_ptr<UpdateList>                 updateList_;
-    std::unique_ptr<WhenClause>                 whenClause_;
-    std::unique_ptr<YieldClause>                yieldClause_;
 };
 
 
-class UpdateEdgeSentence final : public Sentence {
+class UpdateEdgeSentence final : public UpdateBaseSentence {
 public:
-    UpdateEdgeSentence() {
+    UpdateEdgeSentence(Expression *srcId,
+                       Expression *dstId,
+                       int64_t rank,
+                       std::string *edgeName,
+                       UpdateList *updateList,
+                       WhenClause *whenClause,
+                       YieldClause *yieldClause,
+                       bool isInsertable = false)
+        : UpdateBaseSentence(updateList, whenClause, yieldClause, edgeName, isInsertable) {
         kind_ = Kind::kUpdateEdge;
-    }
-
-    void setInsertable(bool insertable) {
-        insertable_ = insertable;
-    }
-
-    bool getInsertable() const {
-        return insertable_;
-    }
-
-    void setSrcId(Expression* srcid) {
-        srcid_.reset(srcid);
+        srcId_.reset(srcId);
+        dstId_.reset(dstId);
+        rank_ = rank;
     }
 
     Expression* getSrcId() const {
-        return srcid_.get();
-    }
-
-    void setDstId(Expression* dstid) {
-        dstid_.reset(dstid);
+        return srcId_.get();
     }
 
     Expression* getDstId() const {
-        return dstid_.get();
-    }
-
-    void setRank(int64_t rank) {
-        rank_ = rank;
-        hasRank_ = true;
+        return dstId_.get();
     }
 
     int64_t getRank() const {
         return rank_;
     }
 
-    void setEdgeType(std::string* edgeType) {
-        edgeType_.reset(edgeType);
-    }
-
-    const std::string* getEdgeType() const {
-        return edgeType_.get();
-    }
-
-    void setUpdateList(UpdateList *updateList) {
-        updateList_.reset(updateList);
-    }
-
-    const UpdateList* updateList() const {
-        return updateList_.get();
-    }
-
-    void setWhenClause(WhenClause *clause) {
-        whenClause_.reset(clause);
-    }
-
-    const WhenClause* whenClause() const {
-        return whenClause_.get();
-    }
-
-    void setYieldClause(YieldClause *clause) {
-        yieldClause_.reset(clause);
-    }
-
-    const YieldClause* yieldClause() const {
-        return yieldClause_.get();
-    }
-
     std::string toString() const override;
 
 private:
-    bool                                        insertable_{false};
-    bool                                        hasRank_{false};
-    std::unique_ptr<Expression>                 srcid_;
-    std::unique_ptr<Expression>                 dstid_;
+    std::unique_ptr<Expression>                 srcId_;
+    std::unique_ptr<Expression>                 dstId_;
     int64_t                                     rank_{0L};
-    std::unique_ptr<std::string>                edgeType_;
-    std::unique_ptr<UpdateList>                 updateList_;
-    std::unique_ptr<WhenClause>                 whenClause_;
-    std::unique_ptr<YieldClause>                yieldClause_;
 };
 
 

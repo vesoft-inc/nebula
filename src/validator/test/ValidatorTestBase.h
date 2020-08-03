@@ -188,7 +188,9 @@ protected:
                 case PlanNode::Kind::kShowSnapshots:
                 case PlanNode::Kind::kDataJoin:
                 case PlanNode::Kind::kDeleteVertices:
-                case PlanNode::Kind::kDeleteEdges: {
+                case PlanNode::Kind::kDeleteEdges:
+                case PlanNode::Kind::kUpdateVertex:
+                case PlanNode::Kind::kUpdateEdge: {
                     auto* current = static_cast<const SingleInputNode*>(node);
                     queue.emplace(current->dep());
                     break;

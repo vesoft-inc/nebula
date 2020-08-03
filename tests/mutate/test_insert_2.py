@@ -46,6 +46,10 @@ class TestInsert2(NebulaTestSuite):
         resp = self.execute('INSERT VERTEX course(name) VALUES "English":("English")')
         self.check_resp_succeeded(resp)
 
+    def test_insert_with_name_label(self):
+        resp = self.execute('INSERT VERTEX course(name) VALUES "English":(English)')
+        self.check_resp_failed(resp)
+
     @pytest.mark.skip(reason="does not support fetch")
     def test_insert_with_fix_string(self):
         resp = self.execute('FETCH PROP ON course "English"')

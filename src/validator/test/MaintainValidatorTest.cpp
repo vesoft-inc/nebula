@@ -28,7 +28,7 @@ TEST_F(MaintainValidatorTest, TagTest) {
     }
     // the same name schema
     {
-        ASSERT_FALSE(checkResult("CREATE TAG TEST(); CREATE TAG TEST;", {}));
+        ASSERT_FALSE(checkResult("CREATE TAG TEST();CREATE TAG TEST()", {}));
     }
 }
 
@@ -41,7 +41,7 @@ TEST_F(MaintainValidatorTest, EdgeTest) {
     }
     // the same name schema
     {
-        ASSERT_FALSE(checkResult("CREATE EDGE TEST(); CREATE EDGE TEST;", {}));
+        ASSERT_FALSE(checkResult("CREATE EDGE TEST();CREATE EDGE TEST()", {}));
     }
 }
 }  // namespace graph

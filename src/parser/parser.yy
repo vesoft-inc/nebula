@@ -390,6 +390,10 @@ base_expression
     | function_call_expression {
         $$ = $1;
     }
+    | name_label {
+        // need to rewrite the expression
+        $$ = new SymbolPropertyExpression(Expression::Kind::kSymProperty, new std::string(""), new std::string(""), $1);
+    }
     ;
 
 input_ref_expression
@@ -1492,26 +1496,6 @@ edge_row_item
 
 rank: unary_integer { $$ = $1; };
 
-update_vertex_sentence
-    : KW_UPDATE KW_VERTEX vid KW_SET update_list when_clause yield_clause {
-        auto sentence = new UpdateVertexSentence();
-        sentence->setVid($3);
-        sentence->setUpdateList($5);
-        sentence->setWhenClause($6);
-        sentence->setYieldClause($7);
-        $$ = sentence;
-    }
-    | KW_UPSERT KW_VERTEX vid KW_SET update_list when_clause yield_clause {
-        auto sentence = new UpdateVertexSentence();
-        sentence->setInsertable(true);
-        sentence->setVid($3);
-        sentence->setUpdateList($5);
-        sentence->setWhenClause($6);
-        sentence->setYieldClause($7);
-        $$ = sentence;
-    }
-    ;
-
 update_list
     : update_item {
         $$ = new UpdateList();
@@ -1527,59 +1511,74 @@ update_item
     : name_label ASSIGN expression {
         $$ = new UpdateItem($1, $3);
     }
-    | alias_ref_expression ASSIGN expression {
-        $$ = new UpdateItem($1, $3);
-        delete $1;
+    | name_label DOT name_label ASSIGN expression {
+        auto symExpr = new SymbolPropertyExpression(Expression::Kind::kSymProperty, new std::string(""), $1, $3);
+        $$ = new UpdateItem(symExpr, $5);
+    }
+    ;
+
+update_vertex_sentence
+    // ======== Begin: Compatible with 1.0 =========
+    : KW_UPDATE KW_VERTEX vid KW_SET update_list when_clause yield_clause {
+        auto sentence = new UpdateVertexSentence($3, $5, $6, $7);
+        $$ = sentence;
+    }
+    | KW_UPSERT KW_VERTEX vid KW_SET update_list when_clause yield_clause {
+        auto sentence = new UpdateVertexSentence($3, $5, $6, $7,true);
+        $$ = sentence;
+    }
+     // ======== End: Compatible with 1.0 =========
+    | KW_UPDATE KW_VERTEX KW_ON name_label vid KW_SET update_list when_clause yield_clause {
+        auto sentence = new UpdateVertexSentence($5, $4, $7, $8, $9);
+        $$ = sentence;
+    }
+    | KW_UPSERT KW_VERTEX KW_ON name_label vid KW_SET update_list when_clause yield_clause {
+        auto sentence = new UpdateVertexSentence($5, $4, $7, $8, $9, true);
+        $$ = sentence;
     }
     ;
 
 update_edge_sentence
+    // ======== Begin: Compatible with 1.0 =========
     : KW_UPDATE KW_EDGE vid R_ARROW vid KW_OF name_label
       KW_SET update_list when_clause yield_clause {
-        auto sentence = new UpdateEdgeSentence();
-        sentence->setSrcId($3);
-        sentence->setDstId($5);
-        sentence->setEdgeType($7);
-        sentence->setUpdateList($9);
-        sentence->setWhenClause($10);
-        sentence->setYieldClause($11);
+        auto sentence = new UpdateEdgeSentence($3, $5, 0, $7, $9, $10, $11);
         $$ = sentence;
     }
     | KW_UPSERT KW_EDGE vid R_ARROW vid KW_OF name_label
       KW_SET update_list when_clause yield_clause {
-        auto sentence = new UpdateEdgeSentence();
-        sentence->setInsertable(true);
-        sentence->setSrcId($3);
-        sentence->setDstId($5);
-        sentence->setEdgeType($7);
-        sentence->setUpdateList($9);
-        sentence->setWhenClause($10);
-        sentence->setYieldClause($11);
+        auto sentence = new UpdateEdgeSentence($3, $5, 0, $7, $9, $10, $11, true);
         $$ = sentence;
     }
     | KW_UPDATE KW_EDGE vid R_ARROW vid AT rank KW_OF name_label
       KW_SET update_list when_clause yield_clause {
-        auto sentence = new UpdateEdgeSentence();
-        sentence->setSrcId($3);
-        sentence->setDstId($5);
-        sentence->setRank($7);
-        sentence->setEdgeType($9);
-        sentence->setUpdateList($11);
-        sentence->setWhenClause($12);
-        sentence->setYieldClause($13);
+        auto sentence = new UpdateEdgeSentence($3, $5, $7, $9, $11, $12, $13);
         $$ = sentence;
     }
     | KW_UPSERT KW_EDGE vid R_ARROW vid AT rank KW_OF name_label
       KW_SET update_list when_clause yield_clause {
-        auto sentence = new UpdateEdgeSentence();
-        sentence->setInsertable(true);
-        sentence->setSrcId($3);
-        sentence->setDstId($5);
-        sentence->setRank($7);
-        sentence->setEdgeType($9);
-        sentence->setUpdateList($11);
-        sentence->setWhenClause($12);
-        sentence->setYieldClause($13);
+        auto sentence = new UpdateEdgeSentence($3, $5, $7, $9, $11, $12, $13, true);
+        $$ = sentence;
+    }
+    // ======== End: Compatible with 1.0 =========
+    | KW_UPDATE KW_EDGE KW_ON name_label vid R_ARROW vid
+      KW_SET update_list when_clause yield_clause {
+        auto sentence = new UpdateEdgeSentence($5, $7, 0, $4, $9, $10, $11);
+        $$ = sentence;
+    }
+    | KW_UPSERT KW_EDGE KW_ON name_label vid R_ARROW vid
+      KW_SET update_list when_clause yield_clause {
+        auto sentence = new UpdateEdgeSentence($5, $7, 0, $4, $9, $10, $11, true);
+        $$ = sentence;
+    }
+    | KW_UPDATE KW_EDGE KW_ON name_label vid R_ARROW vid AT rank
+      KW_SET update_list when_clause yield_clause {
+        auto sentence = new UpdateEdgeSentence($5, $7, $9, $4, $11, $12, $13);
+        $$ = sentence;
+    }
+    | KW_UPSERT KW_EDGE KW_ON name_label vid R_ARROW vid AT rank
+      KW_SET update_list when_clause yield_clause {
+        auto sentence = new UpdateEdgeSentence($5, $7, $9, $4, $11, $12, $13, true);
         $$ = sentence;
     }
     ;

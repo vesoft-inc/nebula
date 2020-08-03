@@ -33,6 +33,7 @@ nebula_add_library(
     maintain/EdgeExecutor.cpp
     mutate/InsertExecutor.cpp
     mutate/DeleteExecutor.cpp
+    mutate/UpdateExecutor.cpp
 )
 
 nebula_add_subdirectory(query/test)

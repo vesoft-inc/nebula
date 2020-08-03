@@ -132,18 +132,223 @@ private:
     bool                                       overwritable_;
 };
 
-class UpdateVertex final : public SingleInputNode {
+class Update : public SingleInputNode {
 public:
+    bool getInsertable() const {
+        return insertable_;
+    }
+
+    const std::vector<std::string>& getReturnProps() const {
+        return returnProps_;
+    }
+
+    const std::string getCondition() const {
+        return condition_;
+    }
+
+    const std::vector<std::string>& getYieldNames() const {
+        return yieldNames_;
+    }
+
+    GraphSpaceID getSpaceId() const {
+        return spaceId_;
+    }
+
+    const std::vector<storage::cpp2::UpdatedProp>& getUpdatedProps() const {
+        return updatedProps_;
+    }
+
+    const std::string& getName() const {
+        return schemaName_;
+    }
+
+protected:
+    Update(Kind kind,
+           ExecutionPlan* plan,
+           PlanNode* input,
+           GraphSpaceID spaceId,
+           std::string name,
+           bool insertable,
+           std::vector<storage::cpp2::UpdatedProp> updatedProps,
+           std::vector<std::string> returnProps,
+           std::string condition,
+           std::vector<std::string> yieldNames)
+        : SingleInputNode(plan, kind, input)
+        , spaceId_(spaceId)
+        , schemaName_(std::move(name))
+        , insertable_(insertable)
+        , updatedProps_(std::move(updatedProps))
+        , returnProps_(std::move(returnProps))
+        , condition_(std::move(condition))
+        , yieldNames_(std::move(yieldNames)) {}
+
+protected:
+    GraphSpaceID                                        spaceId_{-1};
+    std::string                                         schemaName_;
+    bool                                                insertable_;
+    std::vector<storage::cpp2::UpdatedProp>             updatedProps_;
+    std::vector<std::string>                            returnProps_;
+    std::string                                         condition_;
+    std::vector<std::string>                            yieldNames_;
+};
+
+class UpdateVertex final : public Update {
+public:
+    static UpdateVertex* make(ExecutionPlan* plan,
+                              PlanNode* input,
+                              GraphSpaceID spaceId,
+                              std::string name,
+                              std::string vId,
+                              TagID tagId,
+                              bool insertable,
+                              std::vector<storage::cpp2::UpdatedProp> updatedProps,
+                              std::vector<std::string> returnProps,
+                              std::string condition,
+                              std::vector<std::string> yieldNames) {
+        return new UpdateVertex(plan,
+                                input,
+                                spaceId,
+                                std::move(name),
+                                std::move(vId),
+                                tagId,
+                                insertable,
+                                std::move(updatedProps),
+                                std::move(returnProps),
+                                std::move(condition),
+                                std::move(yieldNames));
+    }
+
     std::string explain() const override {
         return "UpdateVertex";
     }
+
+    const std::string& getVId() const {
+        return vId_;
+    }
+
+    TagID getTagId() const {
+        return tagId_;
+    }
+
+private:
+    UpdateVertex(ExecutionPlan* plan,
+                 PlanNode* input,
+                 GraphSpaceID spaceId,
+                 std::string name,
+                 std::string vId,
+                 TagID tagId,
+                 bool insertable,
+                 std::vector<storage::cpp2::UpdatedProp> updatedProps,
+                 std::vector<std::string> returnProps,
+                 std::string condition,
+                 std::vector<std::string> yieldNames)
+        : Update(Kind::kUpdateVertex,
+                 plan,
+                 input,
+                 spaceId,
+                 std::move(name),
+                 insertable,
+                 std::move(updatedProps),
+                 std::move(returnProps),
+                 std::move(condition),
+                 std::move(yieldNames))
+        , vId_(std::move(vId))
+        , tagId_(tagId) {}
+
+private:
+    std::string                                     vId_;
+    TagID                                           tagId_{-1};
 };
 
-class UpdateEdge final : public SingleInputNode {
+class UpdateEdge final : public Update {
 public:
+    static UpdateEdge* make(ExecutionPlan* plan,
+                            PlanNode* input,
+                            GraphSpaceID spaceId,
+                            std::string name,
+                            std::string srcId,
+                            std::string dstId,
+                            EdgeType edgeType,
+                            int64_t rank,
+                            bool insertable,
+                            std::vector<storage::cpp2::UpdatedProp> updatedProps,
+                            std::vector<std::string> returnProps,
+                            std::string condition,
+                            std::vector<std::string> yieldNames) {
+        return new UpdateEdge(plan,
+                              input,
+                              spaceId,
+                              std::move(name),
+                              std::move(srcId),
+                              std::move(dstId),
+                              edgeType,
+                              rank,
+                              insertable,
+                              std::move(updatedProps),
+                              std::move(returnProps),
+                              std::move(condition),
+                              std::move(yieldNames));
+    }
+
     std::string explain() const override {
         return "UpdateEdge";
     }
+
+    const std::string& getSrcId() const {
+        return srcId_;
+    }
+
+    const std::string& getDstId() const {
+        return dstId_;
+    }
+
+    int64_t getRank() const {
+        return rank_;
+    }
+
+    int64_t getEdgeType() const {
+        return edgeType_;
+    }
+
+    const std::vector<storage::cpp2::UpdatedProp>& getUpdatedProps() const {
+        return updatedProps_;
+    }
+
+private:
+    UpdateEdge(ExecutionPlan* plan,
+               PlanNode* input,
+               GraphSpaceID spaceId,
+               std::string name,
+               std::string srcId,
+               std::string dstId,
+               EdgeType edgeType,
+               int64_t rank,
+               bool insertable,
+               std::vector<storage::cpp2::UpdatedProp> updatedProps,
+               std::vector<std::string> returnProps,
+               std::string condition,
+               std::vector<std::string> yieldNames)
+        : Update(Kind::kUpdateEdge,
+                 plan,
+                 input,
+                 spaceId,
+                 std::move(name),
+                 insertable,
+                 std::move(updatedProps),
+                 std::move(returnProps),
+                 std::move(condition),
+                 std::move(yieldNames))
+
+        , srcId_(std::move(srcId))
+        , dstId_(std::move(dstId))
+        , rank_(rank)
+        , edgeType_(edgeType) {}
+
+private:
+    std::string                                         srcId_;
+    std::string                                         dstId_;
+    int64_t                                             rank_{0};
+    EdgeType                                            edgeType_{-1};
 };
 
 class DeleteVertices final : public SingleInputNode {

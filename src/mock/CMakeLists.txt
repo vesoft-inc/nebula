@@ -6,13 +6,13 @@
 
 nebula_add_library(
     mock_obj OBJECT
-        MetaCache.cpp
-        StorageCache.cpp
-        MockMetaServiceHandler.cpp
-        MockStorageServiceHandler.cpp
-        test/TestMain.cpp
-        test/TestEnv.cpp
-        test/TestBase.cpp
+    MetaCache.cpp
+    StorageCache.cpp
+    MockMetaServiceHandler.cpp
+    MockStorageServiceHandler.cpp
+    test/TestMain.cpp
+    test/TestEnv.cpp
+    test/TestBase.cpp
 )
 
 nebula_add_subdirectory(test)

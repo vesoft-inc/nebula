@@ -68,6 +68,8 @@ public:
         kDataJoin,
         kDeleteVertices,
         kDeleteEdges,
+        kUpdateVertex,
+        kUpdateEdge,
     };
 
     PlanNode(ExecutionPlan* plan, Kind kind);

@@ -153,10 +153,10 @@ TEST_F(YieldValidatorTest, TypeCastTest) {
         EXPECT_TRUE(checkResult(query, expected_));
     }
     {
-        std::string query = "YIELD (int30)\"-123\"";
+        std::string query = "YIELD (int30)(\"-123\")";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                   "SyntaxError: syntax error near `)\"-123\"'");
+                   "SyntaxError: syntax error near `(\"-123\")'");
     }
     {
         std::string query = "YIELD (int)\"123abc\"";
@@ -209,10 +209,10 @@ TEST_F(YieldValidatorTest, TypeCastTest) {
         EXPECT_TRUE(checkResult(query, expected_));
     }
     {
-        std::string query = "YIELD (MAP)\"12\"";
+        std::string query = "YIELD (MAP)(\"12\")";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                   "SyntaxError: syntax error near `)\"12\"'");
+                   "SyntaxError: syntax error near `(\"12\")'");
     }
     {
         std::string query = "YIELD (SET)12";
@@ -224,13 +224,13 @@ TEST_F(YieldValidatorTest, TypeCastTest) {
         std::string query = "YIELD (PATH)true";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                   "SyntaxError: syntax error near `)true'");
+                   "SyntaxError: syntax error near `true'");
     }
     {
         std::string query = "YIELD (NOEXIST)true";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                   "SyntaxError: syntax error near `)true'");
+                   "SyntaxError: syntax error near `true'");
     }
 }
 

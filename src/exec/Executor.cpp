@@ -24,6 +24,7 @@
 #include "exec/maintain/TagExecutor.h"
 #include "exec/mutate/InsertExecutor.h"
 #include "exec/mutate/DeleteExecutor.h"
+#include "exec/mutate/UpdateExecutor.h"
 #include "exec/query/AggregateExecutor.h"
 #include "exec/query/DataCollectExecutor.h"
 #include "exec/query/DataJoinExecutor.h"
@@ -381,6 +382,20 @@ Executor *Executor::makeExecutor(const PlanNode *node,
             auto deleteE = asNode<DeleteEdges>(node);
             auto input = makeExecutor(deleteE->dep(), qctx, visited);
             exec = new DeleteEdgesExecutor(deleteE, qctx);
+            exec->dependsOn(input);
+            break;
+        }
+        case PlanNode::Kind::kUpdateVertex: {
+            auto updateV = asNode<UpdateVertex>(node);
+            auto input = makeExecutor(updateV->dep(), qctx, visited);
+            exec = new UpdateVertexExecutor(updateV, qctx);
+            exec->dependsOn(input);
+            break;
+        }
+        case PlanNode::Kind::kUpdateEdge: {
+            auto updateE = asNode<UpdateEdge>(node);
+            auto input = makeExecutor(updateE->dep(), qctx, visited);
+            exec = new UpdateEdgeExecutor(updateE, qctx);
             exec->dependsOn(input);
             break;
         }

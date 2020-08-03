@@ -110,6 +110,84 @@ private:
     std::vector<EdgeKeyRef*>                       edgeKeyRefs_;
     std::string                                    edgeKeyVar_;
 };
+
+class UpdateValidator : public Validator {
+public:
+    explicit UpdateValidator(Sentence* sentence,
+                             QueryContext* context,
+                             bool isEdge = false)
+        : Validator(sentence, context) {
+        sentence_ = static_cast<UpdateBaseSentence*>(sentence);
+        isEdge_ = isEdge;
+    }
+
+    virtual ~UpdateValidator() {}
+
+protected:
+    Status initProps();
+
+    Status getCondition();
+
+    Status getReturnProps();
+
+    Status getUpdateProps();
+
+private:
+    Status checkAndResetSymExpr(Expression* inExpr,
+                                const std::string& symName,
+                                std::string &encodeStr);
+
+    std::unique_ptr<Expression> rewriteSymExpr(Expression* expr,
+                                               const std::string &sym,
+                                               bool &hasWrongType,
+                                               bool isEdge = false);
+
+protected:
+    UpdateBaseSentence                                 *sentence_;
+    bool                                                insertable_{false};
+    GraphSpaceID                                        spaceId_{-1};
+    std::vector<std::string>                            returnProps_;
+    std::vector<std::string>                            yieldColNames_;
+    std::string                                         condition_;
+    std::vector<storage::cpp2::UpdatedProp>             updatedProps_;
+    std::string                                         name_;
+    bool                                                isEdge_{false};
+};
+
+class UpdateVertexValidator final : public UpdateValidator {
+public:
+    UpdateVertexValidator(Sentence* sentence, QueryContext* context)
+        : UpdateValidator(sentence, context) {
+    }
+
+private:
+    Status validateImpl() override;
+
+    Status toPlan() override;
+
+private:
+    std::string               vId_;
+    TagID                     tagId_{-1};
+};
+
+class UpdateEdgeValidator final : public UpdateValidator {
+public:
+    UpdateEdgeValidator(Sentence* sentence, QueryContext* context)
+        : UpdateValidator(sentence, context, true) {
+    }
+
+private:
+    Status validateImpl() override;
+
+    Status toPlan() override;
+
+private:
+    std::string                                       srcId_;
+    std::string                                       dstId_;
+    EdgeRanking                                       rank_{0};
+    EdgeType                                          edgeType_{-1};
+};
 }  // namespace graph
 }  // namespace nebula
 #endif  // VALIDATOR_MUTATEVALIDATOR_H
+

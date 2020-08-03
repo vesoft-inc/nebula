@@ -156,7 +156,12 @@ std::string InsertEdgesSentence::toString() const {
 std::string UpdateItem::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += *field_;
+    if (fieldStr_ != nullptr)  {
+        buf += *fieldStr_;
+    } else if (fieldExpr_ != nullptr) {
+        buf += fieldExpr_->toString();
+    }
+
     buf += "=";
     buf += value_->toString();
     return buf;
@@ -196,7 +201,6 @@ StatusOr<std::string> UpdateList::toEvaledString() const {
     return buf;
 }
 
-
 std::string UpdateVertexSentence::toString() const {
     std::string buf;
     buf.reserve(256);
@@ -206,6 +210,7 @@ std::string UpdateVertexSentence::toString() const {
         buf += "UPDATE ";
     }
     buf += "VERTEX ";
+    buf += "ON " + *name_ + " ";
     buf += vid_->toString();
     buf += " SET ";
     buf += updateList_->toString();
@@ -231,13 +236,11 @@ std::string UpdateEdgeSentence::toString() const {
         buf += "UPDATE ";
     }
     buf += "EDGE ";
-    buf += srcid_->toString();
+    buf += srcId_->toString();
     buf += "->";
-    buf += dstid_->toString();
-    if (hasRank_) {
-        buf += " AT" + std::to_string(rank_);
-    }
-    buf += " OF " + *edgeType_;
+    buf += dstId_->toString();
+    buf += " AT" + std::to_string(rank_);
+    buf += " OF " + *name_;
     buf += " SET ";
     buf += updateList_->toString();
     if (whenClause_ != nullptr) {
