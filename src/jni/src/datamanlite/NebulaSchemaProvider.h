@@ -40,7 +40,7 @@ public:
             return hasDefaultValue_;
         }
 
-        VariantType getDefaultValue() const override {
+        std::string getDefaultValue() const {
             return defaultValue_;
         }
 
