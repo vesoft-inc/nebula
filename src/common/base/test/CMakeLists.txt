@@ -92,8 +92,19 @@ nebula_add_test(
 nebula_add_test(
     NAME lru_test
     SOURCES ConcurrentLRUCacheTest.cpp
-    OBJECTS $<TARGET_OBJECTS:base_obj>
+    OBJECTS
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:time_obj>
     LIBRARIES gtest gtest_main
+)
+
+nebula_add_executable(
+    NAME cache_bm
+    SOURCES CacheBenchmark.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:time_obj>
+    LIBRARIES follybenchmark boost_regex
 )
 
 nebula_add_executable(

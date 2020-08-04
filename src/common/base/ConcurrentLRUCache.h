@@ -13,13 +13,18 @@
 #include <utility>
 #include <boost/optional.hpp>
 #include <gtest/gtest_prod.h>
+#include <folly/container/F14Map.h>
+#include <folly/SpinLock.h>
+#include "time/WallClock.h"
+
+DECLARE_int64(cache_ttl_ms);
 
 namespace nebula {
 
 template<class Key, class Value>
 class LRU;
 
-template<typename K, typename V>
+template<typename K, typename V, typename C = LRU<K, V>>
 class ConcurrentLRUCache final {
     FRIEND_TEST(ConcurrentLRUCacheTest, SimpleTest);
 
@@ -93,26 +98,27 @@ public:
     }
 
 private:
+    template<class Cache>
     class Bucket {
     public:
         explicit Bucket(size_t capacity)
-            : lru_(std::make_unique<LRU<K, V>>(capacity)) {}
+            : lru_(std::make_unique<Cache>(capacity)) {}
 
         Bucket(Bucket&& b)
             : lru_(std::move(b.lru_)) {}
 
         bool contains(const K& key) {
-            std::lock_guard<std::mutex> guard(lock_);
+            std::lock_guard<folly::SpinLock> guard(lock_);
             return lru_->contains(key);
         }
 
         void insert(K&& key, V&& val) {
-            std::lock_guard<std::mutex> guard(lock_);
+            std::lock_guard<folly::SpinLock> guard(lock_);
             lru_->insert(std::forward<K>(key), std::forward<V>(val));
         }
 
         StatusOr<V> get(const K& key) {
-            std::lock_guard<std::mutex> guard(lock_);
+            std::lock_guard<folly::SpinLock> guard(lock_);
             auto v = lru_->get(key);
             if (v == boost::none) {
                 return Status::Error();
@@ -121,7 +127,7 @@ private:
         }
 
         StatusOr<V> putIfAbsent(K&& key, V&& val) {
-            std::lock_guard<std::mutex> guard(lock_);
+            std::lock_guard<folly::SpinLock> guard(lock_);
             auto v = lru_->get(key);
             if (v == boost::none) {
                 lru_->insert(std::forward<K>(key), std::forward<V>(val));
@@ -131,19 +137,18 @@ private:
         }
 
         void evict(const K& key) {
-            std::lock_guard<std::mutex> guard(lock_);
+            std::lock_guard<folly::SpinLock> guard(lock_);
             lru_->evict(key);
         }
 
         void clear() {
-            std::lock_guard<std::mutex> guard(lock_);
+            std::lock_guard<folly::SpinLock> guard(lock_);
             lru_->clear();
         }
 
-        std::mutex lock_;
-        std::unique_ptr<LRU<K, V>> lru_;
+        folly::SpinLock lock_;
+        std::unique_ptr<Cache> lru_;
     };
-
 
 private:
     /**
@@ -156,7 +161,7 @@ private:
 
 
 private:
-    std::vector<Bucket> buckets_;
+    std::vector<Bucket<C>> buckets_;
     uint32_t bucketsNum_ = 1;
     uint32_t bucketsExp_ = 0;
 };
@@ -178,10 +183,8 @@ public:
     typedef Key key_type;
     typedef Value value_type;
     typedef std::list<key_type> list_type;
-    typedef std::unordered_map<
-                key_type,
-                std::tuple<value_type, typename list_type::iterator>
-            > map_type;
+    typedef std::unordered_map<key_type,
+                               std::tuple<value_type, typename list_type::iterator>> map_type;
 
     explicit LRU(size_t capacity)
         : capacity_(capacity) {
@@ -296,9 +299,114 @@ private:
     map_type map_;
     list_type list_;
     size_t capacity_;
-    std::atomic_uint64_t total_{0};
-    std::atomic_uint64_t hits_{0};
-    std::atomic_uint64_t evicts_{0};
+    uint64_t total_{0};
+    uint64_t hits_{0};
+    uint64_t evicts_{0};
+};
+
+template<class Key, class Value>
+class MapTTLCache {
+public:
+    typedef Key key_type;
+    typedef Value value_type;
+    typedef folly::F14FastMap<key_type,
+                              std::tuple<value_type, int64_t>> map_type;
+
+    explicit MapTTLCache(size_t capacity)
+        : capacity_(capacity) {
+    }
+
+    ~MapTTLCache() = default;
+
+    size_t size() const {
+        return map_.size();
+    }
+
+    size_t capacity() const {
+        return capacity_;
+    }
+
+    bool empty() const {
+        return map_.empty();
+    }
+
+    bool contains(const key_type& key) {
+        return map_.find(key) != map_.end();
+    }
+
+    void insert(key_type&& key, value_type&& value) {
+        // insert item into the cache, but first check if it is full
+        if (size() >= capacity_) {
+            VLOG(3) << "Size:" << size() << ", capacity " << capacity_;
+            return;
+        }
+        VLOG(3) << "Insert key " << key << ", val " << value;
+        typename map_type::iterator it = map_.find(key);
+        if (it == map_.end()) {
+            map_.emplace(std::forward<key_type>(key),
+                         std::make_tuple(std::forward<value_type>(value),
+                                         time::WallClock::fastNowInMilliSec()));
+        } else {
+            // Overwrite the value
+            std::get<0>(it->second) = std::move(value);
+        }
+    }
+
+    boost::optional<value_type> get(const key_type& key) {
+        // lookup value in the cache
+        total_++;
+        typename map_type::iterator i = map_.find(key);
+        if (i == map_.end()) {
+            // value not in cache
+            VLOG(3) << key  << " not found!";
+            return boost::none;
+        }
+        auto ts = std::get<1>(i->second);
+        if (UNLIKELY(FLAGS_cache_ttl_ms > 0
+                && time::WallClock::fastNowInMilliSec() - ts > FLAGS_cache_ttl_ms)) {
+            map_.erase(i);
+            evicts_++;
+            return boost::none;
+        }
+        hits_++;
+        return std::get<0>(i->second);
+    }
+    /**
+     * evict the key if exist.
+     * */
+    void evict(const key_type& key) {
+        auto it = map_.find(key);
+        if (it != map_.end()) {
+            map_.erase(it);
+            evicts_++;
+        }
+    }
+
+    uint64_t total() {
+        return total_;
+    }
+
+    uint64_t hits() {
+        return hits_;
+    }
+
+    uint64_t evicts() {
+        return evicts_;
+    }
+
+    void clear() {
+        map_.clear();
+        total_ = 0;
+        hits_ = 0;
+        evicts_ = 0;
+    }
+
+private:
+    map_type map_;
+    size_t capacity_;
+    uint64_t total_{0};
+    uint64_t hits_{0};
+    uint64_t evicts_{0};
 };
 
 }  // namespace nebula

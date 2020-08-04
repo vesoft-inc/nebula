@@ -10,6 +10,7 @@ add_library(
     SanitizerOptions.cpp
     SignalHandler.cpp
     SlowOpTracker.cpp
+    ConcurrentLRUCache.cpp
 )
 
 IF(${PCHSupport_FOUND})
