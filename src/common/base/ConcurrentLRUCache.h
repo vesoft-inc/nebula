@@ -348,7 +348,8 @@ public:
                                          time::WallClock::fastNowInMilliSec()));
         } else {
             // Overwrite the value
-            std::get<0>(it->second) = std::move(value);
+            it->second = std::make_tuple(std::move(value),
+                                         time::WallClock::fastNowInMilliSec());
         }
     }
 

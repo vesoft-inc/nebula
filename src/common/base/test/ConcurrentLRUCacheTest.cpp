@@ -8,6 +8,8 @@
 #include "base/ConcurrentLRUCache.h"
 #include <gtest/gtest.h>
 
+DECLARE_int64(cache_ttl_ms);
+
 namespace nebula {
 
 TEST(ConcurrentLRUCacheTest, SimpleTest) {
@@ -139,6 +141,48 @@ TEST(ConcurrentLRUCacheTest, MultiThreadsTest) {
     EXPECT_EQ(10000, cache.total());
 }
 
+using MapCache = ConcurrentLRUCache<int32_t, std::string, MapTTLCache<int32_t, std::string>>;
+TEST(ConcurrentLRUCacheTest, MapTTLCacheTest) {
+    MapCache cache(1024 * 1024);
+    std::vector<std::thread> threads;
+    for (auto i = 0; i < 10; i++) {
+        threads.emplace_back([&cache, i] () {
+            for (auto j = i * 1000; j < (i + 1) *1000; j++) {
+                cache.insert(j, folly::stringPrintf("%d_str", j));
+            }
+        });
+    }
+    for (auto i = 0; i < 10; i++) {
+        threads[i].join();
+    }
+    for (auto i = 0; i < 10000; i++) {
+        auto v = cache.get(i);
+        EXPECT_TRUE(v.ok());
+        EXPECT_EQ(folly::stringPrintf("%d_str", i), v.value());
+    }
+
+    EXPECT_EQ(0, cache.evicts());
+    EXPECT_EQ(10000, cache.hits());
+    EXPECT_EQ(10000, cache.total());
+}
+
+TEST(ConcurrentLRUCacheTest, TTLTest) {
+    FLAGS_cache_ttl_ms = 1000;
+    MapCache cache(1024 * 10);
+    for (int32_t i = 0; i < 1000; i++) {
+        cache.insert(i, folly::stringPrintf("%d_str", i));
+    }
+    for (int32_t i = 0; i < 1000; i++) {
+        auto v = cache.get(i);
+        EXPECT_TRUE(v.ok());
+        EXPECT_EQ(folly::stringPrintf("%d_str", i), v.value());
+    }
+    usleep((FLAGS_cache_ttl_ms + 100) * 1000);
+    for (int32_t i = 0; i < 1000; i++) {
+        auto v = cache.get(i);
+        EXPECT_FALSE(v.ok());
+    }
+}
 
 }  // namespace nebula
 
