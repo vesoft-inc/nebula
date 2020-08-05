@@ -43,6 +43,8 @@ DECLARE_string(rocksdb_compression);
 DECLARE_bool(enable_rocksdb_statistics);
 DECLARE_string(rocksdb_stats_level);
 
+DECLARE_bool(enable_prefix_filtering);
+
 namespace nebula {
 namespace kvstore {
 
