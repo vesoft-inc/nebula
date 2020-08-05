@@ -66,7 +66,7 @@ target_link_libraries(
     -static-libgcc
     -static-libstdc++
     -Wl,--no-undefined
-    -latomic
+    ${GETTIME_LIB}
 )
 
 install(
