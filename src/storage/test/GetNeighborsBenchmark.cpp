@@ -229,6 +229,7 @@ void go(int32_t iters,
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
+        folly::doNotOptimizeAway(resp);
     }
 }
 
@@ -246,7 +247,7 @@ void goFilter(int32_t iters,
         auto* edgeExp = new nebula::AliasPropertyExpression(new std::string(""), alias, edgeProp);
         auto* priExp = new nebula::PrimaryExpression(value);
         auto relExp = std::make_unique<nebula::RelationalExpression>(
-            edgeExp, nebula::RelationalExpression::Operator::GE, priExp);
+            edgeExp, nebula::RelationalExpression::Operator::LT, priExp);
         req.set_filter(nebula::Expression::encode(relExp.get()));
     }
     for (decltype(iters) i = 0; i < iters; i++) {
@@ -255,6 +256,7 @@ void goFilter(int32_t iters,
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
+        folly::doNotOptimizeAway(resp);
     }
 }
 
@@ -290,29 +292,29 @@ release
 ============================================================================
 GetNeighborsBenchmark.cpprelative                         time/iter  iters/s
 ============================================================================
-OneVertexOneProperty                                       666.90us    1.50K
-OneVertexOnePropertyWithFilter                    59.88%     1.11ms   897.93
-TenVertexOneProperty                                         6.33ms   158.04
-TenVertexOnePropertyWithFilter                    58.19%    10.87ms    91.96
+OneVertexOneProperty                                       624.38us    1.60K
+OneVertexOnePropertyWithFilter                    88.79%   703.23us    1.42K
+TenVertexOneProperty                                         6.00ms   166.76
+TenVertexOnePropertyWithFilter                    89.82%     6.68ms   149.78
 ============================================================================
 
 --max_rank=1000 --filter_ratio=0.5
 ============================================================================
 GetNeighborsBenchmark.cpprelative                         time/iter  iters/s
 ============================================================================
-OneVertexOneProperty                                       665.77us    1.50K
-OneVertexOnePropertyWithFilter                    78.97%   843.05us    1.19K
-TenVertexOneProperty                                         6.30ms   158.70
-TenVertexOnePropertyWithFilter                    78.05%     8.07ms   123.87
+OneVertexOneProperty                                       629.54us    1.59K
+OneVertexOnePropertyWithFilter                    72.33%   870.39us    1.15K
+TenVertexOneProperty                                         6.02ms   166.09
+TenVertexOnePropertyWithFilter                    71.40%     8.43ms   118.58
 ============================================================================
 
 --max_rank=1000 --filter_ratio=1
 ============================================================================
 GetNeighborsBenchmark.cpprelative                         time/iter  iters/s
 ============================================================================
-OneVertexOneProperty                                       660.44us    1.51K
-OneVertexOnePropertyWithFilter                   109.45%   603.40us    1.66K
-TenVertexOneProperty                                         6.34ms   157.76
-TenVertexOnePropertyWithFilter                   108.41%     5.85ms   171.03
+OneVertexOneProperty                                       624.29us    1.60K
+OneVertexOnePropertyWithFilter                    57.67%     1.08ms   923.84
+TenVertexOneProperty                                         5.95ms   168.17
+TenVertexOnePropertyWithFilter                    56.89%    10.45ms    95.67
 ============================================================================
 */
