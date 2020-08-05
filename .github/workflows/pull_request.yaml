@@ -1,0 +1,116 @@
+name: pull_request
+
+on:
+  pull_request:
+    types: [synchronize, reopened, labeled]
+    branches:
+      - master
+      - 'v[0-9]+.*'
+
+jobs:
+  lint:
+    name: cpplint
+    if: contains(join(toJson(github.event.pull_request.labels.*.name)), 'ready-for-testing')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
+      - name: Cpplint
+        run: |
+          cd .linters/cpp && ln -snf hooks/pre-commit.sh
+          ./pre-commit.sh $(git --no-pager diff --name-only $(git log --oneline -n 1 | cut -d ' ' -f 1,5) | sed -E 's/(.*)/..\/..\/\1/g')
+
+  build:
+    name: build
+    needs: lint
+    runs-on: self-hosted
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - centos7
+          - ubuntu1804
+        compiler:
+          - gcc-9.2
+          - clang-9
+        exclude:
+          - os: centos7
+            compiler: clang-9
+    container:
+      image: vesoft/nebula-dev:${{ matrix.os }}
+      env:
+        CCACHE_DIR: /tmp/ccache/${{ matrix.os }}-${{ matrix.compiler }}
+      options: --mount type=tmpfs,destination=/tmp/ccache,tmpfs-size=1073741824 -v /tmp/ccache/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/${{ matrix.os }}-${{ matrix.compiler }} -v /etc/action/secrets/codecov:/etc/action/secrets/codecov
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
+      - name: Ignore only documents changes
+        id: ignore_docs
+        run: |
+          num_source_files=$(git --no-pager diff --name-only $(git log --oneline -n 1 | cut -d' ' -f1,5) | grep '^src\|^CMakeLists.txt\|^cmake\|^.github/workflows' | wc -l)
+          echo "::set-output name=num_source_files::${num_source_files}"
+      - name: Prepare environment
+        run: |
+          [ -f "$CCACHE_DIR/ccache.conf" ] || cp ci/ccache.conf "$CCACHE_DIR"
+          [ -d build/ ] && rm -rf build/* || mkdir -p build
+        shell: bash
+      - name: CMake with gcc-9.2
+        if: matrix.compiler == 'gcc-9.2' && matrix.os != 'centos7' && steps.ignore_docs.outputs.num_source_files != 0
+        run: |
+          cmake -DCMAKE_BUILD_TYPE=Release -B build/
+      - name: CMake with Coverage
+        if: matrix.compiler == 'gcc-9.2' && matrix.os == 'centos7' && steps.ignore_docs.outputs.num_source_files != 0
+        run: |
+          cmake -DENABLE_COVERAGE=ON -B build/
+      - name: CMake with clang-9
+        if: matrix.compiler == 'clang-9' && steps.ignore_docs.outputs.num_source_files != 0
+        run: |
+          cmake \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DCMAKE_C_COMPILER=clang \
+            -DENABLE_ASAN=on \
+            -B build/
+      - name: Make
+        if: steps.ignore_docs.outputs.num_source_files != 0
+        run: |
+          cmake --build build/ -j $(nproc)
+      - name: CTest with multiple threads
+        if: steps.ignore_docs.outputs.num_source_files != 0
+        timeout-minutes: 15
+        continue-on-error: false
+        working-directory: build
+        env:
+          ASAN_SYMBOLIZER_PATH: /opt/vesoft/toolset/clang/9.0.0/bin/llvm-symbolizer
+          ASAN_OPTIONS: fast_unwind_on_malloc=1
+        run: |
+          ctest \
+            -j $(($(nproc)/2)) \
+            --timeout 400 \
+            --output-on-failure
+        shell: bash
+      - name: CTest with single thread
+        if: failure() && steps.ignore_docs.outputs.num_source_files != 0
+        timeout-minutes: 30
+        working-directory: build
+        env:
+          ASAN_SYMBOLIZER_PATH: /opt/vesoft/toolset/clang/9.0.0/bin/llvm-symbolizer
+          ASAN_OPTIONS: fast_unwind_on_malloc=0
+        run: |
+          ctest \
+            --timeout 400 \
+            --output-on-failure \
+            --rerun-failed
+      - name: Testing Coverage Report
+        working-directory: build
+        if: success() && matrix.compiler == 'gcc-9.2' && matrix.os == 'centos7' && steps.ignore_docs.outputs.num_source_files != 0
+        run: |
+          set -e
+          fastcov -o coverage.info -l --exclude=scanner.lex
+          lcov --remove coverage.info '*/opt/vesoft/*' -o clean.info
+          bash <(curl -s https://codecov.io/bash) -Z -t $(cat /etc/action/secrets/codecov) -f clean.info
+        shell: bash
+      - name: Cleanup
+        if: always()
+        run: rm -rf build

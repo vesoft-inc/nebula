@@ -40,6 +40,8 @@ public:
     static std::string basename(const char *path);
     // Get the content of a symbol link
     static StatusOr<std::string> readLink(const char *path);
+    // Get the canonicalized absolute pathname of a path
+    static StatusOr<std::string> realPath(const char *path);
 
     // return the size of the given file
     static size_t fileSize(const char* path);
@@ -111,6 +113,10 @@ public:
     static bool makeDir(const std::string& dir, uint32_t mode = 0775);
     // Check the path is exist
     static bool exist(const std::string& path);
+    // Like the command `mv', apply to file and directory
+    // Refer to `man 3 rename'
+    // return false when rename failed
+    static bool rename(const std::string& src, const std::string& dst);
 
     /**
      * List all entities in the given directory, whose type matches
@@ -144,6 +150,14 @@ public:
         const char* dirpath,
         bool returnFullPath = false,
         const char* namePattern = nullptr);
+
+    static bool isReg(struct dirent* dEnt, const char* path);
+    static bool isDir(struct dirent* dEnt, const char* path);
+    static bool isLink(struct dirent* dEnt, const char* path);
+    static bool isChr(struct dirent* dEnt, const char* path);
+    static bool isBlk(struct dirent* dEnt, const char* path);
+    static bool isFifo(struct dirent* dEnt, const char* path);
+    static bool isSock(struct dirent* dEnt, const char* path);
 
     /**
      * class Iterator works like other iterators,
@@ -236,6 +250,16 @@ public:
 
 }  // namespace fs
 }  // namespace nebula
+
+#define CHECK_TYPE(NAME, FTYPE, DTYPE) \
+    bool FileUtils::is ## NAME(struct dirent *dEnt, const char* path) { \
+        if (dEnt->d_type == DT_UNKNOWN) { \
+            const char* subPath = FileUtils::joinPath(path, dEnt->d_name).c_str(); \
+            return FileUtils::fileType(subPath) == FileType::FTYPE; \
+        } else { \
+            return dEnt->d_type == DT_ ## DTYPE; \
+        } \
+    }
 
 #endif  // COMMON_FS_FILEUTILS_H_
 

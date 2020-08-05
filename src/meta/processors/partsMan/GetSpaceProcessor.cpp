@@ -13,7 +13,7 @@ void GetSpaceProcessor::process(const cpp2::GetSpaceReq& req) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
     auto spaceRet = getSpaceId(req.get_space_name());
     if (!spaceRet.ok()) {
-        resp_.set_code(to(spaceRet.status()));
+        handleErrorCode(MetaCommon::to(spaceRet.status()));
         onFinished();
         return;
     }
@@ -23,7 +23,7 @@ void GetSpaceProcessor::process(const cpp2::GetSpaceReq& req) {
     auto ret = doGet(spaceKey);
     if (!ret.ok()) {
         LOG(ERROR) << "Get Space SpaceName: " << req.get_space_name() << " not found";
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
@@ -36,7 +36,7 @@ void GetSpaceProcessor::process(const cpp2::GetSpaceReq& req) {
     cpp2::SpaceItem item;
     item.set_space_id(spaceId);
     item.set_properties(properties);
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_item(item);
     onFinished();
 }

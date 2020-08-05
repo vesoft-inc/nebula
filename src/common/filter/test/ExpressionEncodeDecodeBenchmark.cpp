@@ -74,13 +74,13 @@ auto simpleQuery =  "123 + 123 - 123 * 123 / 123";
 auto complexQuery =  "alias.prop1 + alias.prop2 * alias.prop3 > alias.prop4 && "
                      "alias.prop5 == alias.prop6";
 
-BENCHMARK_NAMED_PARAM_MULTI(Encode, Simple, simpleQuery);
-BENCHMARK_RELATIVE_NAMED_PARAM_MULTI(Encode, Complex, complexQuery);
+BENCHMARK_NAMED_PARAM_MULTI(Encode, Simple, simpleQuery)
+BENCHMARK_RELATIVE_NAMED_PARAM_MULTI(Encode, Complex, complexQuery)
 
 BENCHMARK_DRAW_LINE();
 
-BENCHMARK_NAMED_PARAM_MULTI(Decode, Simple, simpleQuery);
-BENCHMARK_RELATIVE_NAMED_PARAM_MULTI(Decode, Complex, complexQuery);
+BENCHMARK_NAMED_PARAM_MULTI(Decode, Simple, simpleQuery)
+BENCHMARK_RELATIVE_NAMED_PARAM_MULTI(Decode, Complex, complexQuery)
 
 int
 main(int argc, char **argv) {

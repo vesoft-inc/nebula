@@ -30,8 +30,11 @@ public:
         auto threadFactory = std::make_shared<folly::NamedThreadFactory>("benchmark-netio");
         auto ioExecutor = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_io_threads,
                                                                         std::move(threadFactory));
+        meta::MetaClientOptions options;
+        options.skipConfig_ = true;
         metaClient_ = std::make_unique<nebula::meta::MetaClient>(ioExecutor,
-                                                                 std::move(addrs.value()));
+                                                                 std::move(addrs.value()),
+                                                                 options);
 
         // load data try 3 time
         bool loadDataOk = metaClient_->waitForMetadReady(3);
@@ -60,8 +63,10 @@ public:
             auto key = std::to_string(folly::Random::rand32(1000000000));
             auto value = std::to_string(folly::Random::rand32(1000000000));
             data[key] = value;
-            pairs.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                               std::move(key), std::move(value));
+            nebula::cpp2::Pair pair;
+            pair.set_key(std::move(key));
+            pair.set_value(std::move(value));
+            pairs.emplace_back(std::move(pair));
         }
 
         auto future = storageClient_->put(space_, std::move(pairs));

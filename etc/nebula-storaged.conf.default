@@ -10,7 +10,7 @@
 # Log level, 0, 1, 2, 3 for INFO, WARNING, ERROR, FATAL respectively
 --minloglevel=0
 # Verbose log level, 1, 2, 3, 4, the higher of the level, the more verbose of the logging
---v=4
+--v=0
 # Maximum seconds to buffer the log messages
 --logbufsecs=0
 
@@ -27,28 +27,63 @@
 --ws_http_port=12000
 # HTTP2 service port
 --ws_h2_port=12002
+# heartbeat with meta service
+--heartbeat_interval_secs=10
 
-########## storage ##########
-# Root data path, multiple paths should be splitted by comma.
-# One path per instance, if --engine_type is `rocksdb'
+######### Raft #########
+# Raft election timeout
+--raft_heartbeat_interval_secs=30
+# RPC timeout for raft client (ms)
+--raft_rpc_timeout_ms=500
+## recycle Raft WAL
+--wal_ttl=3600
+
+########## Disk ##########
+# Root data path. Split by comma. e.g. --data_path=/disk1/path1/,/disk2/path2/
+# One path per Rocksdb instance.
 --data_path=data/storage
-# The type of part manager, [memory | meta]
---part_man_type=memory
+
+############## Rocksdb Options ##############
 # The default reserved bytes for one batch operation
 --rocksdb_batch_size=4096
-# The default block cache size used in BlockBasedTable.
-# The unit is MB.
+
+# The default block cache size used in BlockBasedTable. (MB)
+# recommend: 1/3 of all memory
 --rocksdb_block_cache=4
-# The type of storage engine, `rocksdb', `memory', etc.
---engine_type=rocksdb
-# The type of part, `simple', `consensus'...
---part_type=simple
+
+# Compression algorithm, options: no,snappy,lz4,lz4hc,zlib,bzip2,zstd
+# For the sake of binary compatibility, the default value is snappy.
+# Recommend to use:
+#   * lz4 to gain more CPU performance, with the same compression ratio with snappy
+#   * zstd to occupy less disk space
+#   * lz4hc for the read-heavy write-light scenario
+--rocksdb_compression=snappy
+
+# Set different compressions for different levels
+# For example, if --rocksdb_compression is snappy,
+# "no:no:lz4:lz4::zstd" is identical to "no:no:lz4:lz4:snappy:zstd:snappy"
+# In order to disable compression for level 0/1, set it to "no:no"
+--rocksdb_compression_per_level=
+
+# Whether or not to enable rocksdb's statistics, disabled by default
+--enable_rocksdb_statistics=false
+
+# Statslevel used by rocksdb to collection statistics, optional values are
+#   * kExceptHistogramOrTimers, disable timer stats, and skip histogram stats
+#   * kExceptTimers, Skip timer stats
+#   * kExceptDetailedTimers, Collect all stats except time inside mutex lock AND time spent on compression.
+#   * kExceptTimeForMutex, Collect all stats except the counters requiring to get time inside the mutex lock.
+#   * kAll, Collect all stats
+--rocksdb_stats_level=kExceptHistogramOrTimers
 
 ############## rocksdb Options ##############
---rocksdb_disable_wal=true
-# rocksdb DBOptions, each option will be given as <option_name>:<option_value> separated by ;
---rocksdb_db_options=
-# rocksdb ColumnFamilyOptions, each option will be given as <option_name>:<option_value> separated by ;
---rocksdb_column_family_options=
-# rocksdb BlockBasedTableOptions, each option will be given as <option_name>:<option_value> separated by ;
---rocksdb_block_based_table_options=
+# rocksdb DBOptions in json, each name and value of option is a string, given as "option_name":"option_value" separated by comma
+--rocksdb_db_options={"max_subcompactions":"1","max_background_jobs":"1"}
+# rocksdb ColumnFamilyOptions in json, each name and value of option is string, given as "option_name":"option_value" separated by comma
+--rocksdb_column_family_options={"disable_auto_compactions":"false","write_buffer_size":"67108864","max_write_buffer_number":"4","max_bytes_for_level_base":"268435456"}
+# rocksdb BlockBasedTableOptions in json, each name and value of option is string, given as "option_name":"option_value" separated by comma
+--rocksdb_block_based_table_options={"block_size":"8192"}
+
+############# edge samplings ##############
+# --enable_reservoir_sampling=false
+# --max_edge_returned_per_vertex=2147483647

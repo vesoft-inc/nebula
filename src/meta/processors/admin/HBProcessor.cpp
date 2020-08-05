@@ -15,40 +15,47 @@ DEFINE_bool(hosts_whitelist_enabled, false, "Check host whether in whitelist whe
 namespace nebula {
 namespace meta {
 
-
 void HBProcessor::process(const cpp2::HBReq& req) {
     HostAddr host(req.host.ip, req.host.port);
     if (FLAGS_hosts_whitelist_enabled
             && hostExist(MetaServiceUtils::hostKey(host.first, host.second))
                 == Status::HostNotFound()) {
         LOG(INFO) << "Reject unregistered host " << host << "!";
-        resp_.set_code(cpp2::ErrorCode::E_INVALID_HOST);
+        handleErrorCode(cpp2::ErrorCode::E_INVALID_HOST);
         onFinished();
         return;
     }
 
-    ClusterID peerCluserId = req.get_cluster_id();
-    if (peerCluserId == 0) {
-        LOG(INFO) << "Set clusterId for new host " << host << "!";
-        resp_.set_cluster_id(clusterId_);
-    } else if (peerCluserId != clusterId_) {
-        LOG(ERROR) << "Reject wrong cluster host " << host << "!";
-        resp_.set_code(cpp2::ErrorCode::E_WRONGCLUSTER);
-        onFinished();
-        return;
-    }
-
-    LOG(INFO) << "Receive heartbeat from " << host;
-    HostInfo info;
-    info.lastHBTimeInSec_ = time::WallClock::fastNowInSec();
-    auto ret = ActiveHostsMan::updateHostInfo(kvstore_, host, info);
-    resp_.set_code(to(ret));
-    if (ret == kvstore::ResultCode::ERR_LEADER_CHANGED) {
-        auto leaderRet = kvstore_->partLeader(kDefaultSpaceId, kDefaultPartId);
-        if (nebula::ok(leaderRet)) {
-            resp_.set_leader(toThriftHost(nebula::value(leaderRet)));
+    auto ret = kvstore::ResultCode::SUCCEEDED;
+    if (req.get_in_storaged()) {
+        LOG(INFO) << "Receive heartbeat from " << host;
+        ClusterID peerCluserId = req.get_cluster_id();
+        if (peerCluserId == 0) {
+            LOG(INFO) << "Set clusterId for new host " << host << "!";
+            resp_.set_cluster_id(clusterId_);
+        } else if (peerCluserId != clusterId_) {
+            LOG(ERROR) << "Reject wrong cluster host " << host << "!";
+            handleErrorCode(cpp2::ErrorCode::E_WRONGCLUSTER);
+            onFinished();
+            return;
+        }
+        HostInfo info(time::WallClock::fastNowInMilliSec());
+        if (req.__isset.leader_partIds) {
+            ret = ActiveHostsMan::updateHostInfo(kvstore_, host, info,
+                                                 req.get_leader_partIds());
+        } else {
+            ret = ActiveHostsMan::updateHostInfo(kvstore_, host, info);
+        }
+        if (ret == kvstore::ResultCode::ERR_LEADER_CHANGED) {
+            auto leaderRet = kvstore_->partLeader(kDefaultSpaceId, kDefaultPartId);
+            if (nebula::ok(leaderRet)) {
+                resp_.set_leader(toThriftHost(nebula::value(leaderRet)));
+            }
         }
     }
+    handleErrorCode(MetaCommon::to(ret));
+    int64_t lastUpdateTime = LastUpdateTimeMan::get(this->kvstore_);
+    resp_.set_last_update_time_in_ms(lastUpdateTime);
     onFinished();
 }
 

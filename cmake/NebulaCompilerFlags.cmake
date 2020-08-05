@@ -59,6 +59,7 @@ list(APPEND NEBULA_CLANG_FLAGS
     "-Wno-overloaded-virtual"
     "-Wno-self-move"
     "-Wno-self-assign-overloaded"
+    "-Wno-undefined-reinterpret-cast"
 )
 
 list(APPEND NEBULA_GCC_FLAGS

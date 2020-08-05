@@ -5,7 +5,7 @@
  */
 
 #include "base/Base.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include "network/NetworkUtils.h"
 #include "dataman/NebulaCodecImpl.h"
 #include "kvstore/plugins/hbase/HBaseStore.h"
@@ -52,13 +52,13 @@ std::shared_ptr<const meta::SchemaProviderIf> HBaseStore::getSchema(GraphSpaceID
     if (NebulaKeyUtils::isVertex(key)) {
         TagID tagId = NebulaKeyUtils::getTagId(rawKey);
         if (version == -1) {
-            version = schemaMan_->getNewestTagSchemaVer(spaceId, tagId).value();
+            version = schemaMan_->getLatestTagSchemaVersion(spaceId, tagId).value();
         }
         schema = schemaMan_->getTagSchema(spaceId, tagId, version);
     } else if (NebulaKeyUtils::isEdge(key)) {
         EdgeType edgeTypeId = NebulaKeyUtils::getEdgeType(rawKey);
         if (version == -1) {
-            version = schemaMan_->getNewestEdgeSchemaVer(spaceId, edgeTypeId).value();
+            version = schemaMan_->getLatestEdgeSchemaVersion(spaceId, edgeTypeId).value();
         }
         schema = schemaMan_->getEdgeSchema(spaceId, edgeTypeId, version);
     } else {
@@ -199,6 +199,33 @@ ResultCode HBaseStore::prefix(GraphSpaceID spaceId,
 }
 
 
+ResultCode HBaseStore::rangeWithPrefix(GraphSpaceID spaceId,
+                                       PartitionID  partId,
+                                       const std::string& start,
+                                       const std::string& prefix,
+                                       std::unique_ptr<KVIterator>* storageIter) {
+    UNUSED(partId);
+    auto tableName = this->spaceIdToTableName(spaceId);
+    std::string startRowKey, endRowKey;
+    startRowKey = this->getRowKey(start);
+    endRowKey.reserve(kMaxRowKeyLength);
+    for (size_t n = 0; n < kMaxRowKeyLength - prefix.size(); n++) {
+        endRowKey.append(reinterpret_cast<const char*>(&kFillMax), sizeof(uint8_t));
+    }
+    ResultCode code = this->range(spaceId, startRowKey, endRowKey, storageIter);
+    if (code == ResultCode::ERR_IO_ERROR) {
+        LOG(ERROR) << "Prefix " << prefix << " Failed: the HBase I/O error.";
+    }
+    return code;
+}
+
+
+ResultCode HBaseStore::sync(GraphSpaceID spaceId, PartitionID partId) {
+    UNUSED(spaceId);
+    UNUSED(partId);
+    LOG(FATAL) << "Unimplement";
+}
+
 ResultCode HBaseStore::multiRemove(GraphSpaceID spaceId,
                                    std::vector<std::string>& keys) {
     auto tableName = this->spaceIdToTableName(spaceId);
@@ -235,10 +262,11 @@ ResultCode HBaseStore::get(GraphSpaceID spaceId,
 }
 
 
-ResultCode HBaseStore::multiGet(GraphSpaceID spaceId,
-                                PartitionID partId,
-                                const std::vector<std::string>& keys,
-                                std::vector<std::string>* values) {
+std::pair<ResultCode, std::vector<Status>> HBaseStore::multiGet(
+        GraphSpaceID spaceId,
+        PartitionID partId,
+        const std::vector<std::string>& keys,
+        std::vector<std::string>* values) {
     UNUSED(partId);
     auto tableName = this->spaceIdToTableName(spaceId);
     std::vector<std::string> rowKeys;
@@ -247,15 +275,16 @@ ResultCode HBaseStore::multiGet(GraphSpaceID spaceId,
         rowKeys.emplace_back(rowKey);
     }
     std::vector<std::pair<std::string, KVMap>> dataList;
-    ResultCode code = client_->multiGet(tableName, rowKeys, dataList);
-    for (size_t index = 0; index < dataList.size(); index++) {
-        auto value = this->encode(spaceId, keys[index], dataList[index].second);
-        values->emplace_back(value);
-    }
-    if (code == ResultCode::ERR_IO_ERROR) {
+    auto ret = client_->multiGet(tableName, rowKeys, dataList);
+    if (ret.first == ResultCode::SUCCEEDED || ret.first == ResultCode::ERR_PARTIAL_RESULT) {
+        for (size_t index = 0; index < dataList.size(); index++) {
+            auto value = this->encode(spaceId, keys[index], dataList[index].second);
+            values->emplace_back(value);
+        }
+    } else {
         LOG(ERROR) << "MultiGet Failed: the HBase I/O error.";
     }
-    return code;
+    return ret;
 }
 
 

@@ -1,0 +1,52 @@
+name: package
+
+on:
+  schedule:
+    - cron: '0 18 * * *'
+  push:
+    # Releases are all branch based, and the branch package here is for testing.
+    branches:
+      - 'v[0-9]+.*'
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+
+jobs:
+  package:
+    name: build package
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os:
+          - ubuntu1604
+          - ubuntu1804
+          - centos6
+          - centos7
+    container:
+      image: vesoft/nebula-dev:${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v1
+      - name: Package
+        run: ./package/package.sh
+        shell: bash
+      - name: Compute version
+        id: version
+        env:
+          CPACK_OUTPUT_DIR: build/cpack_output
+        run: |
+          [[ "${{ github.event_name }}" == "push" ]] && \
+            echo "::set-output name=version::$(cut -d/ -f3 <<< ${{ github.ref }})" || \
+            (echo "::set-output name=version::nightly"
+              cd $CPACK_OUTPUT_DIR && \
+              filename=$(find . -type f \( -iname \*.deb -o -iname \*.rpm \) -exec basename {} \;)
+              echo "::set-output name=filepath::$CPACK_OUTPUT_DIR/$filename")
+        shell: bash
+      - name: upload oss
+        if: github.event_name != 'push'
+        run: |
+          ./ci/scripts/upload-oss.sh OSS_ENDPOINT=${{ secrets.OSS_ENDPOINT }} OSS_ID=${{ secrets.OSS_ID }} OSS_SECRET=${{ secrets.OSS_SECRET }} filepath=${{ steps.version.outputs.filepath }} nightly=true
+        shell: bash
+      - uses: actions/upload-artifact@v1
+        with:
+          name: ${{ matrix.os }}-${{ steps.version.outputs.version }}
+          path: build/cpack_output

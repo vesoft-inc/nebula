@@ -1,0 +1,108 @@
+# specify kubernetes namespace
+namespace: default 
+
+# the nebula images
+image:
+  # the nebula-graphd images,change tag to use a different version.
+  graphd:
+    repository: vesoft/nebula-graphd
+    tag: nightly
+    pullPolicy: Always
+  # the nebula-metad images,change tag to use a different version.
+  metad: 
+    repository: vesoft/nebula-metad
+    tag: nightly 
+    pullPolicy: Always
+  # the nebula storaged images,change tag to use a different version.
+  storaged:
+    repository: vesoft/nebula-storaged
+    tag: nightly
+    pullPolicy: Always 
+
+# set livenessProbe, kubelet will check nebula pod alive
+livenessProbe:
+  graphd:
+    Enable: true
+  metad:
+    Enable: true 
+  storaged:
+    Enable: true 
+
+## Optional resource requests and limits for the nebula container
+resources: 
+  graphd:
+    limits:
+      cpu: 1000m
+      memory: 1024Mi
+    requests:
+      cpu: 1000m
+      memory: 1024Mi
+
+  metad:
+    limits:
+      cpu: 1000m
+      memory: 1024Mi
+    requests:
+      cpu: 1000m
+      memory: 1024Mi
+  
+  storaged:
+    limits:
+      cpu: 1000m
+      memory: 1024Mi
+    requests:
+      cpu: 1000m
+      memory: 1024Mi
+
+replication:
+  ## Number of nebula-storaged replicas
+  storaged:
+    replicas: 3
+  ## Number of nebula-metad replicas
+  metad: 
+    replicas: 3
+  ## Number of nebula-graphd replicas
+  graphd: 
+    replicas: 3
+
+port:
+  ## Service And Container Port Setting of Nebula-Graphd  
+  graphd:
+    serviceType: ClusterIP 
+    thriftPort: 3699
+    httpPort: 13000 
+    http2Port: 13002 
+  ## Service And Container Port Setting of Nebula-Storaged  
+  storaged:
+    serviceType: ClusterIP 
+    thriftPort: 45600 
+    raftPort: 45601 
+    httpPort: 12000
+    http2Port: 12002 
+  ## Service And Container Port Setting of Nebula-Metad  
+  metad:
+    serviceType: ClusterIP 
+    thriftPort: 44500 
+    raftPort: 44501 
+    httpPort: 11000
+    http2Port: 11002
+
+MetadHosts:
+  - 192.168.8.21:44500
+  - 192.168.8.22:44500
+  - 192.168.8.23:44500
+
+## Storage Setting of Nebula-Metad and Nebula-Storaged
+storage:
+  storageClass: fast-disks
+  storaged:
+    size: 20Gi 
+  metad:
+    size: 20Gi 
+
+nodeSelector: 
+  nebula: "yes"
+
+tolerations: []
+
+affinity: {}

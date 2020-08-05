@@ -210,6 +210,19 @@ TEST(FileUtils, makeDir) {
     EXPECT_TRUE(FileUtils::makeDir(subDirWithoutSlash));
     EXPECT_EQ(FileType::DIRECTORY, FileUtils::fileType(subDirWithoutSlash));
 
+    // Create symbolic links, then makedir
+    char srcDirTemp[64];
+    snprintf(srcDirTemp, sizeof(srcDirTemp), "%s/srcdir.XXXXXX", dirTemp);
+    EXPECT_TRUE(FileUtils::makeDir(srcDirTemp));
+    char linkDirTemp[64];
+    snprintf(linkDirTemp, sizeof(linkDirTemp), "%s/symlink1", dirTemp);
+    ASSERT_EQ(0, symlink(srcDirTemp, linkDirTemp));
+    char linkSubDir[128];
+    snprintf(linkSubDir, sizeof(linkSubDir), "%s/sub.XXXXXX", linkDirTemp);
+    EXPECT_TRUE(FileUtils::makeDir(linkSubDir));
+    EXPECT_EQ(FileType::SYM_LINK, FileUtils::fileType(linkDirTemp));
+    EXPECT_EQ(FileType::DIRECTORY, FileUtils::fileType(linkSubDir));
+
     // clean up
     EXPECT_TRUE(FileUtils::remove(dirTemp, true));
     // Verify everything is cleaned up
@@ -234,13 +247,15 @@ TEST(FileUtils, listContentInDir) {
     std::string fn1 = FileUtils::joinPath(dirTemp, "file1");
     FILE* f1 = fopen(fn1.c_str(), "w");
     ASSERT_NE(nullptr, f1);
-    fwrite("file1", 5, 1, f1);
+    auto r = fwrite("file1", 5, 1, f1);
+    ASSERT_EQ(r, 1);
     ASSERT_EQ(0, fclose(f1));
 
     std::string fn2 = FileUtils::joinPath(dirTemp, "file2");
     FILE* f2 = fopen(fn2.c_str(), "w");
     ASSERT_NE(nullptr, f2);
-    fwrite("file2", 5, 1, f2);
+    r = fwrite("file2", 5, 1, f2);
+    ASSERT_EQ(r, 1);
     ASSERT_EQ(0, fclose(f2));
 
     // Create two symbolic links

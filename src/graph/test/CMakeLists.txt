@@ -1,6 +1,7 @@
 set(GRAPH_TEST_LIBS
     $<TARGET_OBJECTS:graph_obj>
     $<TARGET_OBJECTS:graph_thrift_obj>
+    $<TARGET_OBJECTS:kvstore_storage_utils_obj>
     $<TARGET_OBJECTS:storage_service_handler>
     $<TARGET_OBJECTS:storage_client>
     $<TARGET_OBJECTS:storage_thrift_obj>
@@ -8,6 +9,7 @@ set(GRAPH_TEST_LIBS
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:filter_obj>
     $<TARGET_OBJECTS:schema_obj>
+    $<TARGET_OBJECTS:index_obj>
     $<TARGET_OBJECTS:dataman_obj>
     $<TARGET_OBJECTS:http_client_obj>
     $<TARGET_OBJECTS:ws_common_obj>
@@ -30,6 +32,18 @@ set(GRAPH_TEST_LIBS
     $<TARGET_OBJECTS:gflags_man_obj>
     $<TARGET_OBJECTS:ws_common_obj>
     $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:charset_obj>
+    $<TARGET_OBJECTS:encryption_obj>
+    $<TARGET_OBJECTS:session_obj>
+    $<TARGET_OBJECTS:permission_obj>
+    $<TARGET_OBJECTS:convert_time_type_utils_obj>
+)
+
+set(GRAPH_TEST_CLIENT_LIBS
+    $<TARGET_OBJECTS:graph_test_common_obj>
+    $<TARGET_OBJECTS:client_cpp_obj>
+    $<TARGET_OBJECTS:adHocSchema_obj>
+    $<TARGET_OBJECTS:adHocIndex_obj>
 )
 
 nebula_add_library(
@@ -49,6 +63,7 @@ nebula_add_test(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        proxygenlib
         wangle
         gtest
         gtest_main
@@ -58,17 +73,15 @@ nebula_add_test(
     NAME
         query_engine_test
     SOURCES
-        YieldTest.cpp
         SchemaTest.cpp
         ConfigTest.cpp
     OBJECTS
-        $<TARGET_OBJECTS:graph_test_common_obj>
-        $<TARGET_OBJECTS:client_cpp_obj>
-        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        proxygenlib
         wangle
         gtest
 )
@@ -79,36 +92,12 @@ nebula_add_test(
     SOURCES
         GoTest.cpp
     OBJECTS
-        $<TARGET_OBJECTS:graph_test_common_obj>
-        $<TARGET_OBJECTS:client_cpp_obj>
-        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
-        wangle
-        gtest
-)
-
-nebula_add_test(
-    NAME
-        graph_http_test
-    SOURCES
-        GraphHttpHandlerTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:graph_test_common_obj>
-        $<TARGET_OBJECTS:graph_http_handler>
-        $<TARGET_OBJECTS:ws_obj>
-        $<TARGET_OBJECTS:client_cpp_obj>
-        $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:process_obj>
-        $<TARGET_OBJECTS:adHocSchema_obj>
-        ${GRAPH_TEST_LIBS}
-    LIBRARIES
-        proxygenhttpserver
         proxygenlib
-        ${THRIFT_LIBRARIES}
-        ${ROCKSDB_LIBRARIES}
         wangle
         gtest
 )
@@ -118,15 +107,13 @@ nebula_add_test(
         data_test
     SOURCES
         DataTest.cpp
-        OBJECTS
-        $<TARGET_OBJECTS:graph_test_common_obj>
-        $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:client_cpp_obj>
-        $<TARGET_OBJECTS:adHocSchema_obj>
+    OBJECTS
+        ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        proxygenlib
         wangle
         gtest
 )
@@ -137,14 +124,12 @@ nebula_add_test(
     SOURCES
         OrderByTest.cpp
     OBJECTS
-        $<TARGET_OBJECTS:graph_test_common_obj>
-        $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:client_cpp_obj>
-        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        proxygenlib
         wangle
         gtest
 )
@@ -155,13 +140,12 @@ nebula_add_test(
     SOURCES
         FetchVerticesTest.cpp
     OBJECTS
-        $<TARGET_OBJECTS:graph_test_common_obj>
-        $<TARGET_OBJECTS:client_cpp_obj>
-        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        proxygenlib
         wangle
         gtest
 )
@@ -172,13 +156,12 @@ nebula_add_test(
     SOURCES
         FetchEdgesTest.cpp
     OBJECTS
-        $<TARGET_OBJECTS:graph_test_common_obj>
-        $<TARGET_OBJECTS:client_cpp_obj>
-        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        proxygenlib
         wangle
         gtest
 )
@@ -189,30 +172,44 @@ nebula_add_test(
     SOURCES
         SetTest.cpp
     OBJECTS
-        $<TARGET_OBJECTS:graph_test_common_obj>
-        $<TARGET_OBJECTS:client_cpp_obj>
-        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        proxygenlib
         wangle
         gtest
 )
 
 nebula_add_test(
     NAME
-        delete_vertex_sentence_test
+        delete_vertices_sentence_test
     SOURCES
-        DeleteVertexTest.cpp
+        DeleteVerticesTest.cpp
     OBJECTS
-        $<TARGET_OBJECTS:graph_test_common_obj>
-        $<TARGET_OBJECTS:client_cpp_obj>
-        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        proxygenlib
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        delete_edges_sentence_test
+    SOURCES
+        DeleteEdgesTest.cpp
+    OBJECTS
+        ${GRAPH_TEST_CLIENT_LIBS}
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        proxygenlib
         wangle
         gtest
 )
@@ -223,14 +220,214 @@ nebula_add_test(
     SOURCES
         UpdateTest.cpp
     OBJECTS
-        $<TARGET_OBJECTS:graph_test_common_obj>
-        $<TARGET_OBJECTS:client_cpp_obj>
-        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_CLIENT_LIBS}
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        proxygenlib
         wangle
         gtest
 )
 
+nebula_add_test(
+    NAME
+        find_path_test
+    SOURCES
+        FindPathTest.cpp
+    OBJECTS
+        ${GRAPH_TEST_CLIENT_LIBS}
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        proxygenlib
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        group_by_limit_test
+    SOURCES
+        GroupByLimitTest.cpp
+    OBJECTS
+        ${GRAPH_TEST_CLIENT_LIBS}
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        proxygenlib
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        yield_test
+    SOURCES
+        YieldTest.cpp
+    OBJECTS
+        ${GRAPH_TEST_CLIENT_LIBS}
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        proxygenlib
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        geo_test
+    SOURCES
+        GeoTest.cpp
+    OBJECTS
+        ${GRAPH_TEST_CLIENT_LIBS}
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        proxygenlib
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        snapshot_command_test
+    SOURCES
+        SnapshotCommandTest.cpp
+    OBJECTS
+        ${GRAPH_TEST_CLIENT_LIBS}
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        proxygenlib
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        index_test
+    SOURCES
+        IndexTest.cpp
+    OBJECTS
+        ${GRAPH_TEST_CLIENT_LIBS}
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        proxygenlib
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        lookup_test
+    SOURCES
+        LookupTest.cpp
+    OBJECTS
+        ${GRAPH_TEST_CLIENT_LIBS}
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        proxygenlib
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+    charsetCollate_test
+    SOURCES
+        CharsetCollateTest.cpp
+    OBJECTS
+        ${GRAPH_TEST_CLIENT_LIBS}
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        proxygenlib
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        user_test
+    SOURCES
+        UserTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:adHocIndex_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        proxygenlib
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        permission_test
+    SOURCES
+        PermissionTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:adHocIndex_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        proxygenlib
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        ttl_test
+    SOURCES
+        TTLTest.cpp
+    OBJECTS
+        ${GRAPH_TEST_CLIENT_LIBS}
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        proxygenlib
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    DISABLED
+    NAME
+        cloud_account_auth_test
+    SOURCES
+        CloudAccountAuthTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:adHocIndex_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        proxygenlib
+        wangle
+        gtest
+)

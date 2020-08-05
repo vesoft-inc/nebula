@@ -11,7 +11,8 @@ namespace nebula {
 namespace graph {
 
 DescribeTagExecutor::DescribeTagExecutor(Sentence *sentence,
-                                         ExecutionContext *ectx) : Executor(ectx) {
+                                         ExecutionContext *ectx)
+    : Executor(ectx, "describe_tag") {
     sentence_ = static_cast<DescribeTagSentence*>(sentence);
 }
 
@@ -24,8 +25,7 @@ Status DescribeTagExecutor::prepare() {
 void DescribeTagExecutor::execute() {
     auto status = checkIfGraphSpaceChosen();
     if (!status.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(status));
+        doError(std::move(status));
         return;
     }
     auto *name = sentence_->name();
@@ -37,8 +37,8 @@ void DescribeTagExecutor::execute() {
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(Status::Error("Schema not found for tag '%s'", sentence_->name()->c_str()));
+            doError(Status::Error("Describe tag `%s' failed.",
+                        sentence_->name()->c_str()));
             return;
         }
 
@@ -56,14 +56,14 @@ void DescribeTagExecutor::execute() {
         }
 
         resp_->set_rows(std::move(rows));
-        DCHECK(onFinish_);
-        onFinish_();
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        auto msg = folly::stringPrintf("Describe tag `%s' exception: %s",
+                sentence_->name()->c_str(), e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(std::move(msg)));
     };
 
     std::move(future).via(runner).thenValue(cb).thenError(error);

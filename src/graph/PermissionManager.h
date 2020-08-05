@@ -31,8 +31,6 @@
 // kDeleteVertex    | Y             | Y             | Y             |
 // kDeleteEdge      | Y             | Y             | Y             |
 // kFind            | Y             | Y             | Y             | Y
-// kAddHosts        | Y             |               |               |
-// kRemoveHosts     | Y             |               |               |
 // kCreateSpace     | Y             |               |               |
 // kDropSpace       | Y             | Y             |               |
 // kYield           | Y             | Y             | Y             | Y

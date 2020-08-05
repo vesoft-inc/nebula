@@ -4,6 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+include "common.thrift"
+
 namespace cpp nebula.graph
 namespace java com.vesoft.nebula.graph
 namespace go nebula.graph
@@ -27,6 +29,11 @@ enum ErrorCode {
     E_EXECUTION_ERROR = -8,
     // Nothing is executed When command is comment
     E_STATEMENT_EMTPY = -9,
+
+    // User and permission error
+    E_USER_NOT_FOUND = -10,
+    E_BAD_PERMISSION = -11,
+
 } (cpp.enum_strict)
 
 
@@ -53,6 +60,22 @@ struct DateTime {
     8: i16 microsec;
 }
 
+struct Vertex {
+    1: common.VertexID id;
+}
+struct Edge {
+    1: binary type;
+    2: common.EdgeRanking ranking;
+    3: optional common.VertexID src;
+    4: optional common.VertexID dst;
+}
+union PathEntry {
+    1: Vertex vertex;
+    2: Edge edge;
+}
+struct Path {
+    1: list<PathEntry> entry_list;
+}
 
 union ColumnValue {
     // Simple types
@@ -71,7 +94,7 @@ union ColumnValue {
     11: DateTime datetime;
 
     // Graph specific
-    // PATH = 41;
+    41: Path path;
 
     // Container types
     // LIST = 101;
@@ -85,7 +108,6 @@ struct RowValue {
     1: list<ColumnValue> columns;
 }
 
-
 struct ExecutionResponse {
     1: required ErrorCode error_code;
     2: required i32 latency_in_us;          // Execution time on server
@@ -93,6 +115,7 @@ struct ExecutionResponse {
     4: optional list<binary> column_names;  // Column names
     5: optional list<RowValue> rows;
     6: optional string space_name;
+    7: optional string warning_msg;
 }
 
 

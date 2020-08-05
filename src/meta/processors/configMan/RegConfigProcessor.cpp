@@ -30,11 +30,11 @@ void RegConfigProcessor::process(const cpp2::RegConfigReq& req) {
         }
 
         if (!data.empty()) {
-            doPut(std::move(data));
+            doSyncPutAndUpdate(std::move(data));
             return;
         }
     }
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }
 

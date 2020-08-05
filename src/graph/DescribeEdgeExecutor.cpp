@@ -11,7 +11,8 @@ namespace nebula {
 namespace graph {
 
 DescribeEdgeExecutor::DescribeEdgeExecutor(Sentence *sentence,
-                                           ExecutionContext *ectx) : Executor(ectx) {
+                                           ExecutionContext *ectx)
+    : Executor(ectx, "describe_edge") {
     sentence_ = static_cast<DescribeEdgeSentence*>(sentence);
 }
 
@@ -24,8 +25,7 @@ Status DescribeEdgeExecutor::prepare() {
 void DescribeEdgeExecutor::execute() {
     auto status = checkIfGraphSpaceChosen();
     if (!status.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(status));
+        doError(std::move(status));
         return;
     }
     auto *name = sentence_->name();
@@ -37,8 +37,8 @@ void DescribeEdgeExecutor::execute() {
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(Status::Error("Schema not found for edge '%s'", sentence_->name()->c_str()));
+            doError(Status::Error("Describe edge `%s' failed.",
+                        sentence_->name()->c_str()));
             return;
         }
 
@@ -56,14 +56,14 @@ void DescribeEdgeExecutor::execute() {
         }
 
         resp_->set_rows(std::move(rows));
-        DCHECK(onFinish_);
-        onFinish_();
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        auto msg = folly::stringPrintf("Describe edge `%s' exception: %s.",
+                sentence_->name()->c_str(), e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(std::move(msg)));
     };
 
     std::move(future).via(runner).thenValue(cb).thenError(error);

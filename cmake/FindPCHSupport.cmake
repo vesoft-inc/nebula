@@ -13,7 +13,7 @@
 IF(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
     EXEC_PROGRAM(
         ${CMAKE_CXX_COMPILER}
-        ARGS 			--version
+        ARGS             --version
         OUTPUT_VARIABLE _compiler_output)
     STRING(REGEX REPLACE ".* ([0-9]\\.[0-9]\\.[0-9]) .*" "\\1"
            gcc_compiler_version ${_compiler_output})
@@ -36,9 +36,11 @@ MACRO(ADD_PRECOMPILED_HEADER _targetName _input)
 
     GET_FILENAME_COMPONENT(_name ${_input} NAME)
     SET(_source "${CMAKE_CURRENT_SOURCE_DIR}/${_input}")
-    SET(_output "${CMAKE_CURRENT_BINARY_DIR}/${_name}.gch")
+    SET(_output "${CMAKE_CURRENT_SOURCE_DIR}/${_name}.gch")
     STRING(TOUPPER "CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}" _flags_var_name)
     SET(_compiler_FLAGS ${${_flags_var_name}})
+    GET_DIRECTORY_PROPERTY(_directory_compile_options COMPILE_OPTIONS)
+    LIST(APPEND _compiler_FLAGS ${_directory_compile_options})
 
     GET_DIRECTORY_PROPERTY(_directory_flags INCLUDE_DIRECTORIES)
     SET(_system_INCLUDE_DIRS "/usr/include" "/usr/local/include")
@@ -47,37 +49,46 @@ MACRO(ADD_PRECOMPILED_HEADER _targetName _input)
         LIST(FIND _system_INCLUDE_DIRS ${item} _index)
         IF(NOT ${_index} EQUAL -1)
             continue()
-        ENDIF(NOT ${_index} EQUAL -1)
+        ENDIF()
 
         IF(item MATCHES "^${PROJECT_SOURCE_DIR}.*")
             # Directories in this project
-            IF(item MATCHES "^${PROJECT_SOURCE_DIR}/third-party.*")
+            IF(item MATCHES "^${PROJECT_SOURCE_DIR}/.*third-party.*")
                 # third-party
                 LIST(APPEND _compiler_FLAGS "-isystem ${item}")
-            ELSE(item MATCHES "^${PROJECT_SOURCE_DIR}/third-party.*")
+            ELSE()
                 # Our own directories
                 LIST(APPEND _compiler_FLAGS "-I ${item}")
-            ENDIF(item MATCHES "^${PROJECT_SOURCE_DIR}/third-party.*")
-        ELSE(item MATCHES "^${PROJECT_SOURCE_DIR}.*")
+            ENDIF()
+        ELSE()
             # All of others
             LIST(APPEND _compiler_FLAGS "-isystem ${item}")
-        ENDIF(item MATCHES "^${PROJECT_SOURCE_DIR}.*")
+        ENDIF()
     ENDFOREACH(item)
 
-	GET_DIRECTORY_PROPERTY(_directory_flags COMPILE_DEFINITIONS)
+    GET_DIRECTORY_PROPERTY(_directory_flags COMPILE_DEFINITIONS)
     FOREACH(item ${_directory_flags})
-        LIST(APPEND _compiler_FLAGS "-D${item}")
+        IF(NOT ${item} MATCHES "^GIT_INFO_SHA")
+            LIST(APPEND _compiler_FLAGS "-D${item}")
+        ENDIF()
     ENDFOREACH(item)
 
     SEPARATE_ARGUMENTS(_compiler_FLAGS)
     MESSAGE("Precompile header file " ${_source} " into " ${_output})
+    IF(CMAKE_CXX_EXTENSIONS OR NOT DEFINED CMAKE_CXX_EXTENSIONS)
+        SET(_cxx_standard "gnu++${CMAKE_CXX_STANDARD}")
+    ELSE()
+        SET(_cxx_standard "c++${CMAKE_CXX_STANDARD}")
+    ENDIF()
     ADD_CUSTOM_COMMAND(
         OUTPUT ${_output}
         COMMAND ${CMAKE_CXX_COMPILER}
-				${_compiler_FLAGS}
-				-x c++-header
-				-o ${_output} ${_source}
-        MAIN_DEPENDENCY ${_source})
+                ${_compiler_FLAGS}
+                -x c++-header
+                -std=${_cxx_standard}
+                -o ${_output} ${_source}
+        MAIN_DEPENDENCY ${_source}
+        DEPENDS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
     ADD_CUSTOM_TARGET(${_targetName}_gch DEPENDS ${_output})
     ADD_DEPENDENCIES(${_targetName} ${_targetName}_gch)
 

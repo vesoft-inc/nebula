@@ -5,9 +5,16 @@ nebula_add_test(
     LIBRARIES gtest
 )
 
+nebula_add_test(
+    NAME icord_test
+    SOURCES ICordTest.cpp
+    OBJECTS $<TARGET_OBJECTS:base_obj>
+    LIBRARIES gtest
+)
+
 nebula_add_executable(
-    NAME cord_bm
-    SOURCES CordBenchmark.cpp
+    NAME icord_bm
+    SOURCES ICordBenchmark.cpp
     OBJECTS $<TARGET_OBJECTS:base_obj>
     LIBRARIES follybenchmark boost_regex
 )
@@ -76,8 +83,15 @@ nebula_add_test(
 )
 
 nebula_add_test(
-    NAME nebulakey_utils_test
-    SOURCES NebulaKeyUtilsTest.cpp
+    NAME slow_op_tracker_test
+    SOURCES SlowOpTrackerTest.cpp
+    OBJECTS $<TARGET_OBJECTS:base_obj> $<TARGET_OBJECTS:time_obj>
+    LIBRARIES gtest gtest_main
+)
+
+nebula_add_test(
+    NAME lru_test
+    SOURCES ConcurrentLRUCacheTest.cpp
     OBJECTS $<TARGET_OBJECTS:base_obj>
     LIBRARIES gtest gtest_main
 )

@@ -9,6 +9,7 @@
 
 #include "base/Base.h"
 #include "gen-cpp2/common_constants.h"
+#include "base/StatusOr.h"
 
 
 namespace nebula {
@@ -27,6 +28,8 @@ public:
         virtual const char* getName() const = 0;
         virtual const nebula::cpp2::ValueType& getType() const = 0;
         virtual bool isValid() const = 0;
+        virtual bool hasDefaultValue() const = 0;
+        virtual VariantType getDefaultValue() const = 0;
     };
 
     // Inherited classes do not need to implement the Iterator
@@ -75,7 +78,7 @@ public:
 
     private:
         explicit Iterator(const SchemaProviderIf* schema,
-                         int64_t idx = 0)
+                          int64_t idx = 0)
                 : schema_(schema)
                 , numFields_(schema_->getNumFields())
                 , index_(idx) {
@@ -99,6 +102,10 @@ public:
     virtual std::shared_ptr<const Field> field(int64_t index) const = 0;
     virtual std::shared_ptr<const Field> field(const folly::StringPiece name) const = 0;
 
+    virtual nebula::cpp2::Schema toSchema() const = 0;
+
+    virtual const StatusOr<VariantType> getDefaultValue(const folly::StringPiece name) const = 0;
+    virtual const StatusOr<VariantType> getDefaultValue(int64_t index) const = 0;
     /******************************************
      *
      * Iterator implementation

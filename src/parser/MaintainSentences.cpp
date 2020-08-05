@@ -203,11 +203,65 @@ std::string DropEdgeSentence::toString() const {
 }
 
 
-std::string YieldSentence::toString() const {
+std::string CreateTagIndexSentence::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += "YIELD ";
-    buf += yieldColumns_->toString();
+    buf += "CREATE TAG INDEX ";
+    buf += *indexName_;
+    buf += " ON ";
+    buf += *tagName_;
+    buf += " (";
+    std::string columns;
+    folly::join(", ", this->names(), columns);
+    buf += columns;
+    buf += ")";
     return buf;
 }
+
+
+std::string CreateEdgeIndexSentence::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += "CREATE EDGE INDEX ";
+    buf += *indexName_;
+    buf += " ON ";
+    buf += *edgeName_;
+    buf += " (";
+    std::string columns;
+    folly::join(", ", this->names(), columns);
+    buf += columns;
+    buf += ")";
+    return buf;
+}
+
+
+std::string DescribeTagIndexSentence::toString() const {
+    return folly::stringPrintf("DESCRIBE TAG INDEX %s", indexName_.get()->c_str());
+}
+
+
+std::string DescribeEdgeIndexSentence::toString() const {
+    return folly::stringPrintf("DESCRIBE EDGE INDEX %s", indexName_.get()->c_str());
+}
+
+
+std::string DropTagIndexSentence::toString() const {
+    return folly::stringPrintf("DROP TAG INDEX %s", indexName_.get()->c_str());
+}
+
+
+std::string DropEdgeIndexSentence::toString() const {
+    return folly::stringPrintf("DROP EDGE INDEX %s", indexName_.get()->c_str());
+}
+
+
+std::string RebuildTagIndexSentence::toString() const {
+    return folly::stringPrintf("BUILD TAG INDEX %s", indexName_.get()->c_str());
+}
+
+
+std::string RebuildEdgeIndexSentence::toString() const {
+    return folly::stringPrintf("BUILD EDGE INDEX %s", indexName_.get()->c_str());
+}
+
 }   // namespace nebula

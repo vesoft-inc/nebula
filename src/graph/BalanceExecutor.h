@@ -27,7 +27,9 @@ public:
 
     void balanceLeader();
 
-    void balanceData();
+    void balanceData(bool isStop = false);
+
+    void stopBalanceData();
 
     void showBalancePlan();
 

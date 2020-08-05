@@ -10,9 +10,8 @@
 #include "meta/processors/partsMan/DropSpaceProcessor.h"
 #include "meta/processors/partsMan/ListSpacesProcessor.h"
 #include "meta/processors/partsMan/GetSpaceProcessor.h"
-#include "meta/processors/partsMan/AddHostsProcessor.h"
 #include "meta/processors/partsMan/ListHostsProcessor.h"
-#include "meta/processors/partsMan/RemoveHostsProcessor.h"
+#include "meta/processors/partsMan/ListPartsProcessor.h"
 #include "meta/processors/partsMan/GetPartsAllocProcessor.h"
 #include "meta/processors/schemaMan/CreateTagProcessor.h"
 #include "meta/processors/schemaMan/AlterTagProcessor.h"
@@ -24,6 +23,18 @@
 #include "meta/processors/schemaMan/DropEdgeProcessor.h"
 #include "meta/processors/schemaMan/GetEdgeProcessor.h"
 #include "meta/processors/schemaMan/ListEdgesProcessor.h"
+#include "meta/processors/indexMan/CreateTagIndexProcessor.h"
+#include "meta/processors/indexMan/DropTagIndexProcessor.h"
+#include "meta/processors/indexMan/GetTagIndexProcessor.h"
+#include "meta/processors/indexMan/ListTagIndexesProcessor.h"
+#include "meta/processors/indexMan/RebuildTagIndexProcessor.h"
+#include "meta/processors/indexMan/ListTagIndexStatusProcessor.h"
+#include "meta/processors/indexMan/CreateEdgeIndexProcessor.h"
+#include "meta/processors/indexMan/DropEdgeIndexProcessor.h"
+#include "meta/processors/indexMan/GetEdgeIndexProcessor.h"
+#include "meta/processors/indexMan/ListEdgeIndexesProcessor.h"
+#include "meta/processors/indexMan/RebuildEdgeIndexProcessor.h"
+#include "meta/processors/indexMan/ListEdgeIndexStatusProcessor.h"
 #include "meta/processors/customKV/MultiPutProcessor.h"
 #include "meta/processors/customKV/GetProcessor.h"
 #include "meta/processors/customKV/MultiGetProcessor.h"
@@ -34,10 +45,14 @@
 #include "meta/processors/usersMan/AuthenticationProcessor.h"
 #include "meta/processors/admin/BalanceProcessor.h"
 #include "meta/processors/admin/LeaderBalanceProcessor.h"
+#include "meta/processors/admin/CreateSnapshotProcessor.h"
+#include "meta/processors/admin/DropSnapshotProcessor.h"
+#include "meta/processors/admin/ListSnapshotsProcessor.h"
 #include "meta/processors/configMan/RegConfigProcessor.h"
 #include "meta/processors/configMan/GetConfigProcessor.h"
 #include "meta/processors/configMan/SetConfigProcessor.h"
 #include "meta/processors/configMan/ListConfigsProcessor.h"
+#include "meta/processors/jobMan/AdminJobProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -65,27 +80,27 @@ MetaServiceHandler::future_listSpaces(const cpp2::ListSpacesReq& req) {
     RETURN_FUTURE(processor);
 }
 
+folly::Future<cpp2::AdminJobResp>
+MetaServiceHandler::future_runAdminJob(const cpp2::AdminJobReq& req) {
+    auto* processor = AdminJobProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
 folly::Future<cpp2::GetSpaceResp>
 MetaServiceHandler::future_getSpace(const cpp2::GetSpaceReq& req) {
     auto* processor = GetSpaceProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ExecResp>
-MetaServiceHandler::future_addHosts(const cpp2::AddHostsReq& req) {
-    auto* processor = AddHostsProcessor::instance(kvstore_);
-    RETURN_FUTURE(processor);
-}
-
 folly::Future<cpp2::ListHostsResp>
 MetaServiceHandler::future_listHosts(const cpp2::ListHostsReq& req) {
-    auto* processor = ListHostsProcessor::instance(kvstore_, adminClient_.get());
+    auto* processor = ListHostsProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ExecResp>
-MetaServiceHandler::future_removeHosts(const cpp2::RemoveHostsReq& req) {
-    auto* processor = RemoveHostsProcessor::instance(kvstore_);
+folly::Future<cpp2::ListPartsResp>
+MetaServiceHandler::future_listParts(const cpp2::ListPartsReq& req) {
+    auto* processor = ListPartsProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 
@@ -191,9 +206,81 @@ MetaServiceHandler::future_listEdges(const cpp2::ListEdgesReq& req) {
     RETURN_FUTURE(processor);
 }
 
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_createTagIndex(const cpp2::CreateTagIndexReq& req) {
+    auto* processor = CreateTagIndexProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_dropTagIndex(const cpp2::DropTagIndexReq& req) {
+    auto* processor = DropTagIndexProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::GetTagIndexResp>
+MetaServiceHandler::future_getTagIndex(const cpp2::GetTagIndexReq &req) {
+    auto* processor = GetTagIndexProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ListTagIndexesResp>
+MetaServiceHandler::future_listTagIndexes(const cpp2::ListTagIndexesReq& req) {
+    auto* processor = ListTagIndexesProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_rebuildTagIndex(const cpp2::RebuildIndexReq& req) {
+    auto* processor = RebuildTagIndexProcessor::instance(kvstore_, adminClient_.get());
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ListIndexStatusResp>
+MetaServiceHandler::future_listTagIndexStatus(const cpp2::ListIndexStatusReq& req) {
+    auto* processor = ListTagIndexStatusProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_createEdgeIndex(const cpp2::CreateEdgeIndexReq& req) {
+    auto* processor = CreateEdgeIndexProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_dropEdgeIndex(const cpp2::DropEdgeIndexReq& req) {
+    auto* processor = DropEdgeIndexProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::GetEdgeIndexResp>
+MetaServiceHandler::future_getEdgeIndex(const cpp2::GetEdgeIndexReq& req) {
+    auto* processor = GetEdgeIndexProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ListEdgeIndexesResp>
+MetaServiceHandler::future_listEdgeIndexes(const cpp2::ListEdgeIndexesReq& req) {
+    auto* processor = ListEdgeIndexesProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_rebuildEdgeIndex(const cpp2::RebuildIndexReq& req) {
+    auto* processor = RebuildEdgeIndexProcessor::instance(kvstore_, adminClient_.get());
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ListIndexStatusResp>
+MetaServiceHandler::future_listEdgeIndexStatus(const cpp2::ListIndexStatusReq& req) {
+    auto* processor = ListEdgeIndexStatusProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
 folly::Future<cpp2::HBResp>
 MetaServiceHandler::future_heartBeat(const cpp2::HBReq& req) {
-    auto* processor = HBProcessor::instance(kvstore_, clusterId_);
+    auto* processor = HBProcessor::instance(kvstore_, clusterId_, &heartBeatStat_);
     RETURN_FUTURE(processor);
 }
 
@@ -227,12 +314,6 @@ MetaServiceHandler::future_revokeRole(const cpp2::RevokeRoleReq& req) {
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::GetUserResp>
-MetaServiceHandler::future_getUser(const cpp2::GetUserReq& req) {
-    auto* processor = GetUserProcessor::instance(kvstore_);
-    RETURN_FUTURE(processor);
-}
-
 folly::Future<cpp2::ListUsersResp>
 MetaServiceHandler::future_listUsers(const cpp2::ListUsersReq& req) {
     auto* processor = ListUsersProcessor::instance(kvstore_);
@@ -251,9 +332,9 @@ MetaServiceHandler::future_changePassword(const cpp2::ChangePasswordReq& req) {
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ExecResp>
-MetaServiceHandler::future_checkPassword(const cpp2::CheckPasswordReq& req) {
-    auto* processor = CheckPasswordProcessor::instance(kvstore_);
+folly::Future<cpp2::ListRolesResp>
+MetaServiceHandler::future_getUserRoles(const cpp2::GetUserRolesReq& req) {
+    auto* processor = GetUserRolesProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 
@@ -290,6 +371,24 @@ MetaServiceHandler::future_setConfig(const cpp2::SetConfigReq &req) {
 folly::Future<cpp2::ListConfigsResp>
 MetaServiceHandler::future_listConfigs(const cpp2::ListConfigsReq &req) {
     auto* processor = ListConfigsProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_createSnapshot(const cpp2::CreateSnapshotReq& req) {
+    auto* processor = CreateSnapshotProcessor::instance(kvstore_, adminClient_.get());
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_dropSnapshot(const cpp2::DropSnapshotReq& req) {
+    auto* processor = DropSnapshotProcessor::instance(kvstore_, adminClient_.get());
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ListSnapshotsResp>
+MetaServiceHandler::future_listSnapshots(const cpp2::ListSnapshotsReq& req) {
+    auto* processor = ListSnapshotsProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

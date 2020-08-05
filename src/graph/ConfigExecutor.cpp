@@ -5,6 +5,7 @@
  */
 
 #include "graph/ConfigExecutor.h"
+#include "base/Configuration.h"
 
 namespace nebula {
 namespace graph {
@@ -12,7 +13,8 @@ namespace graph {
 const std::string kConfigUnknown = "UNKNOWN"; // NOLINT
 
 ConfigExecutor::ConfigExecutor(Sentence *sentence,
-                               ExecutionContext *ectx) : Executor(ectx) {
+                               ExecutionContext *ectx)
+    : Executor(ectx, "config") {
     sentence_ = static_cast<ConfigSentence*>(sentence);
 }
 
@@ -34,7 +36,7 @@ void ConfigExecutor::execute() {
             getVariables();
             break;
         case ConfigSentence::SubType::kUnknown:
-            onError_(Status::Error("Type unknown"));
+            doError(Status::Error("Type unknown"));
             break;
     }
 }
@@ -48,8 +50,7 @@ void ConfigExecutor::showVariables() {
     }
 
     if (module == meta::cpp2::ConfigModule::UNKNOWN) {
-        DCHECK(onError_);
-        onError_(Status::Error("Parse config module error"));
+        doError(Status::Error("Parse config module error"));
         return;
     }
 
@@ -58,8 +59,7 @@ void ConfigExecutor::showVariables() {
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(std::move(resp.status()));
+            doError(std::move(resp.status()));
             return;
         }
 
@@ -76,14 +76,12 @@ void ConfigExecutor::showVariables() {
         }
         resp_->set_rows(std::move(rows));
 
-        DCHECK(onFinish_);
-        onFinish_();
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error(folly::stringPrintf("Internal error : %s", e.what().c_str())));
+        LOG(ERROR) << "Show config exception: " << e.what();
+        doError(Status::Error("Show config exception : %s", e.what().c_str()));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
@@ -93,6 +91,7 @@ void ConfigExecutor::setVariables() {
     meta::cpp2::ConfigModule module = meta::cpp2::ConfigModule::UNKNOWN;
     std::string name;
     VariantType value;
+    meta::cpp2::ConfigType type;
     if (configItem_ != nullptr) {
         if (configItem_->getModule() != nullptr) {
             module = toThriftConfigModule(*configItem_->getModule());
@@ -101,63 +100,66 @@ void ConfigExecutor::setVariables() {
             name = *configItem_->getName();
         }
         if (configItem_->getValue() != nullptr) {
-            auto v = configItem_->getValue()->eval();
+            Getters getters;
+            auto v = configItem_->getValue()->eval(getters);
             if (!v.ok()) {
-                DCHECK(onError_);
-                onError_(v.status());
+                doError(v.status());
                 return;
             }
             value = v.value();
+            switch (value.which()) {
+                case VAR_INT64:
+                    type = meta::cpp2::ConfigType::INT64;
+                    break;
+                case VAR_DOUBLE:
+                    type = meta::cpp2::ConfigType::DOUBLE;
+                    break;
+                case VAR_BOOL:
+                    type = meta::cpp2::ConfigType::BOOL;
+                    break;
+                case VAR_STR:
+                    type = meta::cpp2::ConfigType::STRING;
+                    break;
+                default:
+                    doError(Status::Error("Parse value type error"));
+                    return;
+            }
+        } else if (configItem_->getUpdateItems() != nullptr) {
+            auto status = configItem_->getUpdateItems()->toEvaledString();
+            if (!status.ok()) {
+                doError(status.status());
+                return;
+            }
+            value = status.value();
+            // all nested options are regarded as string
+            type = meta::cpp2::ConfigType::NESTED;
         }
     }
 
     if (module == meta::cpp2::ConfigModule::UNKNOWN) {
-        DCHECK(onError_);
-        onError_(Status::Error("Parse config module error"));
+        doError(Status::Error("Parse config module error"));
         return;
-    }
-
-    meta::cpp2::ConfigType type;
-    switch (value.which()) {
-        case VAR_INT64:
-            type = meta::cpp2::ConfigType::INT64;
-            break;
-        case VAR_DOUBLE:
-            type = meta::cpp2::ConfigType::DOUBLE;
-            break;
-        case VAR_BOOL:
-            type = meta::cpp2::ConfigType::BOOL;
-            break;
-        case VAR_STR:
-            type = meta::cpp2::ConfigType::STRING;
-            break;
-        default:
-            DCHECK(onError_);
-            onError_(Status::Error("Parse value type error"));
-            return;
     }
 
     auto future = ectx()->gflagsManager()->setConfig(module, name, type, value);
     auto *runner = ectx()->rctx()->runner();
 
-    auto cb = [this] (auto && resp) {
+    auto cb = [this, name] (auto && resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(std::move(resp.status()));
+            doError(Status::Error("Set config `%s' failed: %s.",
+                                    name.c_str(), resp.status().toString().c_str()));
             return;
         }
 
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
-
-        DCHECK(onFinish_);
-        onFinish_();
+        doFinish(Executor::ProcessControl::kNext);
     };
 
-    auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error(folly::stringPrintf("Internal error : %s",
-                                                   e.what().c_str())));
+    auto error = [this, name] (auto &&e) {
+        auto msg = folly::stringPrintf("Set congfig `%s' exception: %s",
+                                        name.c_str(), e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(std::move(msg)));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
@@ -176,18 +178,17 @@ void ConfigExecutor::getVariables() {
     }
 
     if (module == meta::cpp2::ConfigModule::UNKNOWN) {
-        DCHECK(onError_);
-        onError_(Status::Error("Parse config module error"));
+        doError(Status::Error("Parse config module error"));
         return;
     }
 
     auto future = ectx()->gflagsManager()->getConfig(module, name);
     auto *runner = ectx()->rctx()->runner();
 
-    auto cb = [this] (auto && resp) {
+    auto cb = [this, name] (auto && resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(std::move(resp.status()));
+            doError(Status::Error("Get config `%s' failed: %s.",
+                                    name.c_str(), resp.status().toString().c_str()));
             return;
         }
 
@@ -203,15 +204,14 @@ void ConfigExecutor::getVariables() {
             rows.back().set_columns(std::move(row));
         }
         resp_->set_rows(std::move(rows));
-
-        DCHECK(onFinish_);
-        onFinish_();
+        doFinish(Executor::ProcessControl::kNext);
     };
 
-    auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error(folly::stringPrintf("Internal error : %s", e.what().c_str())));
+    auto error = [this, name] (auto &&e) {
+        auto msg = folly::stringPrintf("Get config `%s' exception: %s",
+                                        name.c_str(), e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(std::move(msg)));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
@@ -243,6 +243,16 @@ std::vector<cpp2::ColumnValue> ConfigExecutor::genRow(const meta::cpp2::ConfigIt
         case meta::cpp2::ConfigType::STRING:
             value = item.get_value();
             row[4].set_str(boost::get<std::string>(value));
+            break;
+        case meta::cpp2::ConfigType::NESTED:
+            value = item.get_value();
+            Configuration conf;
+            auto status = conf.parseFromString(boost::get<std::string>(value));
+            if (!status.ok()) {
+                row[4].set_str(boost::get<std::string>(value));
+            } else {
+                row[4].set_str(conf.dumpToPrettyString());
+            }
             break;
     }
     return row;

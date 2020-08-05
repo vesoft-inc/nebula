@@ -192,7 +192,8 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& hdfsHost,
     }
 
     bool successfully{true};
-    folly::collectAll(std::move(futures)).then([&](const std::vector<folly::Try<bool>>& tries) {
+    folly::collectAll(std::move(futures)).thenValue(
+            [&](const std::vector<folly::Try<bool>>& tries) {
         for (const auto& t : tries) {
             if (t.hasException()) {
                 LOG(ERROR) << "Download Failed: " << t.exception();

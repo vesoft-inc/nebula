@@ -177,8 +177,8 @@ std::shared_ptr<RaftPart> RaftexService::findPart(
     auto it = parts_.find(std::make_pair(spaceId, partId));
     if (it == parts_.end()) {
         // Part not found
-        LOG(ERROR) << "Cannot find the part " << partId
-                   << " in the graph space " << spaceId;
+        LOG(WARNING) << "Cannot find the part " << partId
+                     << " in the graph space " << spaceId;
         return std::shared_ptr<RaftPart>();
     }
 

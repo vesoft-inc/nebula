@@ -8,6 +8,8 @@
 #include "fs/FileUtils.h"
 #include <dirent.h>
 #include <fnmatch.h>
+#include <limits.h>
+#include <stdlib.h>
 
 namespace nebula {
 namespace fs {
@@ -33,7 +35,8 @@ bool removeDir(const char* path, bool recursively) {
             // Skip "." and ".."
             continue;
         }
-        if (dEnt->d_type == DT_DIR && !recursively) {
+
+        if (FileUtils::isDir(dEnt, path) && !recursively) {
             LOG(ERROR) << "Cannot remove the directory \"" << path
                        << "\" because it contains sub-directory \""
                        << dEnt->d_name << "\"";
@@ -93,6 +96,15 @@ StatusOr<std::string> FileUtils::readLink(const char *path) {
     return std::string(buffer, len);
 }
 
+StatusOr<std::string> FileUtils::realPath(const char *path) {
+    char *buffer  = ::realpath(path, NULL);
+    if (buffer == NULL) {
+        return Status::Error("realpath %s: %s", path, ::strerror(errno));
+    }
+    std::string truePath(buffer);
+    ::free(buffer);
+    return truePath;
+}
 
 std::string FileUtils::dirname(const char *path) {
     DCHECK(path != nullptr && *path != '\0');
@@ -318,7 +330,7 @@ bool FileUtils::makeDir(const std::string& dir, uint32_t mode) {
         return false;
     }
     FileType type = fileType(dir.c_str());
-    if (type == FileType::DIRECTORY) {
+    if (type == FileType::DIRECTORY || type == FileType::SYM_LINK) {
         // The directory already exists
         return true;
     } else if (type != FileType::NOTEXIST) {
@@ -352,6 +364,14 @@ bool FileUtils::exist(const std::string& path) {
     return access(path.c_str(), F_OK) == 0;
 }
 
+// static
+bool FileUtils::rename(const std::string& src, const std::string& dst) {
+    auto status = ::rename(src.c_str(), dst.c_str());
+    LOG_IF(WARNING, status != 0) << "Rename " << src << " to " << dst << " failed, the errno: "
+        << ::strerror(errno);
+    return status == 0;
+}
+
 std::vector<std::string> FileUtils::listAllTypedEntitiesInDir(
         const char* dirpath,
         FileType type,
@@ -367,13 +387,13 @@ std::vector<std::string> FileUtils::listAllTypedEntitiesInDir(
     }
 
     while ((dirInfo = readdir(dir)) != nullptr) {
-        if ((type == FileType::REGULAR && dirInfo->d_type == DT_REG) ||
-            (type == FileType::DIRECTORY && dirInfo->d_type == DT_DIR) ||
-            (type == FileType::SYM_LINK && dirInfo->d_type == DT_LNK) ||
-            (type == FileType::CHAR_DEV && dirInfo->d_type == DT_CHR) ||
-            (type == FileType::BLOCK_DEV && dirInfo->d_type == DT_BLK) ||
-            (type == FileType::FIFO && dirInfo->d_type == DT_FIFO) ||
-            (type == FileType::SOCKET && dirInfo->d_type == DT_SOCK)) {
+        if ((type == FileType::REGULAR && FileUtils::isReg(dirInfo, dirpath)) ||
+            (type == FileType::DIRECTORY && FileUtils::isDir(dirInfo, dirpath)) ||
+            (type == FileType::SYM_LINK && FileUtils::isLink(dirInfo, dirpath)) ||
+            (type == FileType::CHAR_DEV && FileUtils::isChr(dirInfo, dirpath)) ||
+            (type == FileType::BLOCK_DEV && FileUtils::isBlk(dirInfo, dirpath)) ||
+            (type == FileType::FIFO && FileUtils::isFifo(dirInfo, dirpath)) ||
+            (type == FileType::SOCKET && FileUtils::isSock(dirInfo, dirpath))) {
             if (!strcmp(dirInfo->d_name, ".") || !strcmp(dirInfo->d_name, "..")) {
                 // Skip the "." and ".."
                 continue;
@@ -502,6 +522,14 @@ void FileUtils::Iterator::openFileOrDirectory() {
             status_ = Status::Error("open `%s': %s", path_.c_str(), ::strerror(errno));
             return;
         }
+    } else if (type_ == FileType::SYM_LINK) {
+        auto result = FileUtils::realPath(path_.c_str());
+        if (!result.ok()) {
+            status_ = std::move(result).status();
+            return;
+        }
+        path_ = std::move(result).value();
+        openFileOrDirectory();
     } else {
         status_ = Status::Error("Filetype not supported `%s': %s",
                                 path_.c_str(), FileUtils::getFileTypeName(type_));
@@ -510,6 +538,13 @@ void FileUtils::Iterator::openFileOrDirectory() {
     status_ = Status::OK();
 }
 
+CHECK_TYPE(Reg, REGULAR, REG)
+CHECK_TYPE(Dir, DIRECTORY, DIR)
+CHECK_TYPE(Link, SYM_LINK, LNK)
+CHECK_TYPE(Chr, CHAR_DEV, CHR)
+CHECK_TYPE(Blk, BLOCK_DEV, BLK)
+CHECK_TYPE(Fifo, FIFO, FIFO)
+CHECK_TYPE(Sock, SOCKET, SOCK)
 }  // namespace fs
 }  // namespace nebula
 

@@ -65,9 +65,10 @@ ResultCode HBaseClient::get(const std::string& tableName,
 }
 
 
-ResultCode HBaseClient::multiGet(const std::string& tableName,
-                                 const std::vector<std::string>& rowKeys,
-                                 std::vector<std::pair<std::string, KVMap>>& dataList) {
+std::pair<ResultCode, std::vector<Status>> HBaseClient::multiGet(
+        const std::string& tableName,
+        const std::vector<std::string>& rowKeys,
+        std::vector<std::pair<std::string, KVMap>>& dataList) {
     std::vector<TGet> tGetList;
     for (auto& rowKey : rowKeys) {
         TGet tGet;
@@ -81,6 +82,8 @@ ResultCode HBaseClient::multiGet(const std::string& tableName,
     }
 
     std::vector<TResult> tResultList;
+    std::vector<Status> status;
+    ResultCode resultCode = ResultCode::SUCCEEDED;
     try {
         client_->sync_getMultiple(tResultList, tableName, tGetList);
         for (auto& tResult : tResultList) {
@@ -92,18 +95,21 @@ ResultCode HBaseClient::multiGet(const std::string& tableName,
                     data.emplace(cv.qualifier, cv.value);
                 }
                 dataList.emplace_back(std::make_pair(rowKey, std::move(data)));
+                status.emplace_back(Status::OK());
             } else {
-                dataList.clear();
-                return ResultCode::ERR_UNKNOWN;
+                resultCode = ResultCode::ERR_PARTIAL_RESULT;
+                status.emplace_back(Status::KeyNotFound());
             }
         }
-        return ResultCode::SUCCEEDED;
+        return {resultCode, status};
     } catch (const TIOError &ex) {
         LOG(ERROR) << "TIOError: " << ex.message;
-        return ResultCode::ERR_IO_ERROR;
+        return {ResultCode::ERR_IO_ERROR, status};
     } catch (const apache::thrift::transport::TTransportException &tte) {
         LOG(ERROR) << "TTransportException: " << tte.what();
-        return ResultCode::ERR_IO_ERROR;
+        return {ResultCode::ERR_IO_ERROR, status};
+    } catch (const std::exception&) {
+        return {ResultCode::ERR_UNKNOWN, status};
     }
 }
 

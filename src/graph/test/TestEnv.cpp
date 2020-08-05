@@ -8,8 +8,9 @@
 #include "graph/test/TestEnv.h"
 #include "meta/test/TestUtils.h"
 #include "storage/test/TestUtils.h"
+#include "meta/RootUserMan.h"
 
-DECLARE_int32(load_data_interval_secs);
+DECLARE_int32(heartbeat_interval_secs);
 DECLARE_string(meta_server_addrs);
 
 namespace nebula {
@@ -27,7 +28,7 @@ TestEnv::~TestEnv() {
 
 
 void TestEnv::SetUp() {
-    FLAGS_load_data_interval_secs = 1;
+    FLAGS_heartbeat_interval_secs = 1;
     const nebula::ClusterID kClusterId = 10;
     // Create metaServer
     metaServer_ = nebula::meta::TestUtils::mockMetaServer(
@@ -48,11 +49,17 @@ void TestEnv::SetUp() {
     }
     auto& localhost = hostRet.value();
 
+    if (!nebula::meta::RootUserMan::initRootUser(metaServer_->kvStore_.get())) {
+        LOG(ERROR) << "Init root user failed";
+    }
+
+    meta::MetaClientOptions options;
+    options.localHost_ = localhost;
+    options.clusterId_ = kClusterId;
+    options.inStoraged_ = true;
     mClient_ = std::make_unique<meta::MetaClient>(threadPool,
                                                   std::move(addrsRet.value()),
-                                                  localhost,
-                                                  kClusterId,
-                                                  true);
+                                                  options);
     mClient_->waitForMetadReady();
     gflagsManager_ = std::make_unique<meta::ClientBasedGflagsManager>(mClient_.get());
 
@@ -72,7 +79,7 @@ void TestEnv::SetUp() {
 
 void TestEnv::TearDown() {
     // TO make sure the drop space be invoked on storage server
-    sleep(FLAGS_load_data_interval_secs + 1);
+    sleep(FLAGS_heartbeat_interval_secs + 1);
     graphServer_.reset();
     storageServer_.reset();
     mClient_.reset();
@@ -92,9 +99,10 @@ uint16_t TestEnv::storageServerPort() const {
     return storageServer_->port_;
 }
 
-std::unique_ptr<GraphClient> TestEnv::getClient() const {
+std::unique_ptr<GraphClient> TestEnv::getClient(const std::string& user,
+                                                const std::string& password) const {
     auto client = std::make_unique<GraphClient>("127.0.0.1", graphServerPort());
-    if (cpp2::ErrorCode::SUCCEEDED != client->connect("user", "password")) {
+    if (cpp2::ErrorCode::SUCCEEDED != client->connect(user, password)) {
         return nullptr;
     }
     return client;
@@ -102,6 +110,14 @@ std::unique_ptr<GraphClient> TestEnv::getClient() const {
 
 meta::ClientBasedGflagsManager* TestEnv::gflagsManager() {
     return gflagsManager_.get();
+}
+
+test::ServerContext* TestEnv::storageServer() {
+    return storageServer_.get();
+}
+
+meta::MetaClient* TestEnv::metaClient() {
+    return mClient_.get();
 }
 
 }   // namespace graph

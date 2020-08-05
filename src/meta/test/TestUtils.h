@@ -12,11 +12,11 @@
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/NebulaStore.h"
-#include "meta/processors/partsMan/AddHostsProcessor.h"
 #include "meta/processors/partsMan/ListHostsProcessor.h"
 #include "meta/MetaServiceHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include <folly/synchronization/Baton.h>
+#include <folly/executors/CPUThreadPoolExecutor.h>
 #include "meta/processors/usersMan/AuthenticationProcessor.h"
 #include "interface/gen-cpp2/common_types.h"
 #include "time/WallClock.h"
@@ -29,10 +29,101 @@ namespace nebula {
 namespace meta {
 
 using nebula::cpp2::SupportedType;
-using apache::thrift::FragileConstructor::FRAGILE;
+
+class TestFaultInjector : public FaultInjector {
+public:
+    explicit TestFaultInjector(std::vector<Status> sts)
+        : statusArray_(std::move(sts)) {
+        executor_.reset(new folly::CPUThreadPoolExecutor(1));
+    }
+
+    ~TestFaultInjector() {
+    }
+
+    folly::Future<Status> response(int index) {
+        folly::Promise<Status> pro;
+        auto f = pro.getFuture();
+        LOG(INFO) << "Response " << index;
+        executor_->add([this, p = std::move(pro), index]() mutable {
+            LOG(INFO) << "Call callback";
+            p.setValue(this->statusArray_[index]);
+        });
+        return f;
+    }
+
+    folly::Future<Status> transLeader() override {
+        return response(0);
+    }
+
+    folly::Future<Status> addPart() override {
+        return response(1);
+    }
+
+    folly::Future<Status> addLearner() override {
+        return response(2);
+    }
+
+    folly::Future<Status> waitingForCatchUpData() override {
+        return response(3);
+    }
+
+    folly::Future<Status> memberChange() override {
+        return response(4);
+    }
+
+    folly::Future<Status> updateMeta() override {
+        return response(5);
+    }
+
+    folly::Future<Status> removePart() override {
+        return response(6);
+    }
+
+    folly::Future<Status> checkPeers() override {
+        return response(7);
+    }
+
+    folly::Future<Status> getLeaderDist(HostLeaderMap* hostLeaderMap) override {
+        (*hostLeaderMap)[HostAddr(0, 0)][1] = {1, 2, 3, 4, 5};
+        (*hostLeaderMap)[HostAddr(1, 1)][1] = {6, 7, 8};
+        (*hostLeaderMap)[HostAddr(2, 2)][1] = {9};
+        return response(8);
+    }
+
+
+    folly::Future<Status> createSnapshot() override {
+        return response(8);
+    }
+
+    folly::Future<Status> dropSnapshot() override {
+        return response(9);
+    }
+
+    folly::Future<Status> blockingWrites() override {
+        return response(10);
+    }
+
+    folly::Future<Status> rebuildTagIndex() override {
+        return response(11);
+    }
+
+    folly::Future<Status> rebuildEdgeIndex() override {
+        return response(12);
+    }
+
+    void reset(std::vector<Status> sts) {
+        statusArray_ = std::move(sts);
+    }
+
+private:
+    std::vector<Status> statusArray_;
+    std::unique_ptr<folly::Executor> executor_;
+};
+
+
 class TestUtils {
 public:
-    static std::unique_ptr<kvstore::KVStore> initKV(const char* rootPath) {
+    static std::unique_ptr<kvstore::KVStore> initKV(const char* rootPath, uint16_t port = 0) {
         auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
         auto partMan = std::make_unique<kvstore::MemPartManager>();
         auto workers = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
@@ -51,15 +142,30 @@ public:
         kvstore::KVOptions options;
         options.dataPaths_ = std::move(paths);
         options.partMan_ = std::move(partMan);
-        HostAddr localhost = HostAddr(0, 0);
+        IPv4 localIp;
+        network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+        if (port == 0) {
+            port = network::NetworkUtils::getAvailablePort();
+        }
+        HostAddr localhost = HostAddr(localIp, port);
 
         auto store = std::make_unique<kvstore::NebulaStore>(std::move(options),
                                                             ioPool,
                                                             localhost,
                                                             workers);
         store->init();
-        sleep(1);
-        return std::move(store);
+        while (true) {
+            auto retLeader = store->partLeader(0, 0);
+            if (ok(retLeader)) {
+                auto leader = value(std::move(retLeader));
+                LOG(INFO) << "Leader: " << leader;
+                if (leader == localhost) {
+                    break;
+                }
+            }
+            usleep(100000);
+        }
+        return store;
     }
 
     static nebula::cpp2::ColumnDef columnDef(int32_t index, nebula::cpp2::SupportedType st) {
@@ -71,11 +177,40 @@ public:
         return column;
     }
 
+    static nebula::cpp2::ColumnDef columnDefWithDefault(int32_t index,
+                                                        nebula::cpp2::SupportedType st) {
+        nebula::cpp2::ColumnDef column;
+        column.set_name(folly::stringPrintf("col_%d", index));
+        nebula::cpp2::ValueType vType;
+        vType.set_type(std::move(st));
+        column.set_type(std::move(vType));
+        nebula::cpp2::Value defaultValue;
+        switch (st) {
+            case nebula::cpp2::SupportedType::BOOL:
+                defaultValue.set_bool_value(true);
+                break;
+            case nebula::cpp2::SupportedType::INT:
+                defaultValue.set_int_value(1);
+                break;
+            case nebula::cpp2::SupportedType::DOUBLE:
+                defaultValue.set_double_value(3.14);
+                break;
+            case nebula::cpp2::SupportedType::STRING:
+                defaultValue.set_string_value("default value");
+                break;
+            default:
+                LOG(ERROR) << "Unsupoort type";
+        }
+        column.set_default_value(std::move(defaultValue));
+        return column;
+    }
+
     static void registerHB(kvstore::KVStore* kv, const std::vector<HostAddr>& hosts) {
-         auto now = time::WallClock::fastNowInSec();
-         for (auto& h : hosts) {
-             ActiveHostsMan::updateHostInfo(kv, h, HostInfo(now));
-         }
+        auto now = time::WallClock::fastNowInMilliSec();
+        for (auto& h : hosts) {
+            auto ret = ActiveHostsMan::updateHostInfo(kv, h, HostInfo(now));
+            CHECK_EQ(ret, kvstore::ResultCode::SUCCEEDED);
+        }
      }
 
     static int32_t createSomeHosts(kvstore::KVStore* kv,
@@ -89,15 +224,6 @@ public:
             th.set_port(h.second);
             return th;
         });
-        {
-            cpp2::AddHostsReq req;
-            req.set_hosts(std::move(thriftHosts));
-            auto* processor = AddHostsProcessor::instance(kv);
-            auto f = processor->getFuture();
-            processor->process(req);
-            auto resp = std::move(f).get();
-            EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-        }
         registerHB(kv, hosts);
         {
             cpp2::ListHostsReq req;
@@ -128,7 +254,10 @@ public:
 
         std::vector<nebula::cpp2::HostAddr> allHosts;
         for (int i = 0; i < totalHost; i++) {
-            allHosts.emplace_back(apache::thrift::FragileConstructor::FRAGILE, i, i);
+            nebula::cpp2::HostAddr address;
+            address.set_ip(i);
+            address.set_port(i);
+            allHosts.emplace_back(std::move(address));
         }
 
         for (auto partId = 1; partId <= partitionNum; partId++) {
@@ -211,7 +340,7 @@ public:
         LOG(INFO) << "Initializing KVStore at \"" << dataPath << "\"";
 
         auto sc = std::make_unique<test::ServerContext>();
-        sc->kvStore_ = TestUtils::initKV(dataPath);
+        sc->kvStore_ = TestUtils::initKV(dataPath, port);
 
         auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(sc->kvStore_.get(),
                                                                           clusterId);
@@ -222,35 +351,108 @@ public:
         return sc;
     }
 
-    static StatusOr<UserID> createUser(kvstore::KVStore* kv,
-                                       bool missingOk,
-                                       folly::StringPiece account,
-                                       folly::StringPiece password,
-                                       bool               isLock,
-                                       int32_t            maxQueries,
-                                       int32_t            maxUpdates,
-                                       int32_t            maxConnections,
-                                       int32_t            maxConnectors) {
-        cpp2::CreateUserReq req;
-        req.set_missing_ok(missingOk);
-        req.set_encoded_pwd(password.str());
-        decltype(req.user) user(FRAGILE,
-                                account.str(),
-                                isLock,
-                                maxQueries,
-                                maxUpdates,
-                                maxConnections,
-                                maxConnectors);
-        req.set_user(std::move(user));
-        auto* processor = CreateUserProcessor::instance(kv);
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        if (resp.get_code() == cpp2::ErrorCode::SUCCEEDED) {
-            return resp.get_id().get_user_id();
-        } else {
-            return Status::Error("Create user fail");
+    static bool verifySchema(nebula::cpp2::Schema &result,
+                             nebula::cpp2::Schema &expected) {
+        if (result.get_columns().size() != expected.get_columns().size()) {
+            return false;
         }
+
+        std::vector<nebula::cpp2::ColumnDef> resultColumns = result.get_columns();
+        std::vector<nebula::cpp2::ColumnDef> expectedColumns = expected.get_columns();
+        std::sort(resultColumns.begin(), resultColumns.end(),
+                  [](nebula::cpp2::ColumnDef col0, nebula::cpp2::ColumnDef col1) {
+                      return col0.get_name() < col1.get_name();
+                  });
+        std::sort(expectedColumns.begin(), expectedColumns.end(),
+                  [](nebula::cpp2::ColumnDef col0, nebula::cpp2::ColumnDef col1) {
+                      return col0.get_name() < col1.get_name();
+                  });
+
+        int32_t size = resultColumns.size();
+        for (auto i = 0; i < size; i++) {
+            if (resultColumns[i].get_name() != expectedColumns[i].get_name() ||
+                resultColumns[i].get_type() != expectedColumns[i].get_type()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static bool verifyMap(std::map<std::string, std::vector<std::string>> &result,
+                          std::map<std::string, std::vector<std::string>> &expected) {
+        if (result.size() != expected.size()) {
+            return false;
+        }
+
+        for (auto resultIter = result.begin(), expectedIter = expected.begin();
+             resultIter != result.end() && expectedIter != expected.end();
+             resultIter++, expectedIter++) {
+            if (resultIter->first != expectedIter->first &&
+                !verifyResult(resultIter->second, expectedIter->second)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    static bool verifyMap(std::map<std::string, std::vector<nebula::cpp2::ColumnDef>> &result,
+                          std::map<std::string, std::vector<nebula::cpp2::ColumnDef>> &expected) {
+        if (result.size() != expected.size()) {
+            return false;
+        }
+
+        for (auto resultIter = result.begin(), expectedIter = expected.begin();
+             resultIter != result.end() && expectedIter != expected.end();
+             resultIter++, expectedIter++) {
+            if (resultIter->first != expectedIter->first &&
+                !verifyResult(resultIter->second, expectedIter->second)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static bool verifyResult(std::vector<std::string> &result,
+                             std::vector<std::string> &expected) {
+        if (result.size() != expected.size()) {
+            return false;
+        }
+
+        std::sort(result.begin(), result.end());
+        std::sort(expected.begin(), expected.end());
+        int32_t size = result.size();
+        for (int32_t i = 0; i < size; i++) {
+            if (result[i] != expected[i]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    static bool verifyResult(std::vector<nebula::cpp2::ColumnDef> &result,
+                             std::vector<nebula::cpp2::ColumnDef> &expected) {
+        if (result.size() != expected.size()) {
+            return false;
+        }
+
+        std::sort(result.begin(), result.end(),
+                  [](nebula::cpp2::ColumnDef& x, nebula::cpp2::ColumnDef& y) {
+                      return x.get_name().compare(y.get_name());
+                  });
+        std::sort(expected.begin(), expected.end(),
+                  [](nebula::cpp2::ColumnDef& x, nebula::cpp2::ColumnDef& y) {
+                      return x.get_name().compare(y.get_name());
+                  });
+        int32_t size = result.size();
+        for (int32_t i = 0; i < size; i++) {
+            if (result[i].get_name() != expected[i].get_name() ||
+                result[i].get_type() != expected[i].get_type()) {
+                return false;
+            }
+        }
+        return true;
     }
 };
 

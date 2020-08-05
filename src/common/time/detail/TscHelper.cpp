@@ -5,42 +5,46 @@
  */
 
 #include "base/Base.h"
+#include <time.h>
 #include "thread/NamedThread.h"
 #include "time/detail/TscHelper.h"
 
 namespace nebula {
 namespace time {
 
-namespace {
-
-double calibrateTicksPerUSecFactor() {
-    auto dur = std::chrono::steady_clock::now() - kUptime;
-    uint64_t tickDiff = readTsc() - kFirstTick;
-
-    uint64_t ticksPerUSec =
-        tickDiff / std::chrono::duration_cast<std::chrono::microseconds>(dur).count();
-    ticksPerSecFactor = 1.0 / ticksPerUSec / 1000000.0;
-    ticksPerMSecFactor = 1.0 / ticksPerUSec / 1000.0;
-    return 1.0 / ticksPerUSec;
-}
-
-
-void launchTickTockThread() {
-    thread::NamedThread t(
-        "tick-tock",
-        [] {
+TscHelper::TscHelper() {
+    auto ret = clock_gettime(CLOCK_REALTIME, &startRealTime_);
+    DCHECK_EQ(0, ret);
+    startMonoTime_ = std::chrono::steady_clock::now();
+    firstTick_ = readTscImpl();
+    ::usleep(10000);
+    calibrate();
+    thread::NamedThread calibrator("tsc-calibrator",
+        [this] () {
             while (true) {
                 sleep(2);
-                ticksPerUSecFactor.store(calibrateTicksPerUSecFactor());
-            }  // while
+                calibrate();
+            }
         });
-    t.detach();
+    /**
+     * Detach the thread so we can avoid the joining latency introduced by `sleep'.
+     * This shall be safe because all data this thread will access are static POD.
+     */
+    calibrator.detach();
 }
 
-}  // Anonymous namespace
+
+TscHelper& TscHelper::get() {
+    static TscHelper tscHelper;
+    return tscHelper;
+}
 
 
-uint64_t readTsc() {
+uint64_t TscHelper::readTsc() {
+    return get().readTscImpl();
+}
+
+uint64_t TscHelper::readTscImpl() {
 #ifdef DURATION_USE_RDTSCP
     uint32_t eax, ecx, edx;
     __asm__ volatile ("rdtscp" : "=a" (eax), "=d" (edx) : "c");
@@ -52,27 +56,52 @@ uint64_t readTsc() {
 }
 
 
-const struct timespec kStartTime = [] {
-    struct timespec st;
-    auto res = clock_gettime(CLOCK_REALTIME, &st);
-    DCHECK_EQ(0, res);
-    return st;
-}();
-const std::chrono::steady_clock::time_point kUptime = std::chrono::steady_clock::now();
-const uint64_t kFirstTick = readTsc();
+void TscHelper::calibrate() {
+    auto dur = std::chrono::steady_clock::now() - startMonoTime_;
+    uint64_t tickDiff = readTscImpl() - firstTick_;
 
-volatile std::atomic<double> ticksPerSecFactor{0.0};
-volatile std::atomic<double> ticksPerMSecFactor{0.0};
-volatile std::atomic<double> ticksPerUSecFactor{[] {
-    launchTickTockThread();
-    // re-launch tick-tock thread after forking
-    ::pthread_atfork(nullptr, nullptr, &launchTickTockThread);
+    uint64_t ticksPerUSec =
+        tickDiff / std::chrono::duration_cast<std::chrono::microseconds>(dur).count();
+    ticksPerSecFactor_ = 1.0 / ticksPerUSec / 1000000.0;
+    ticksPerMSecFactor_ = 1.0 / ticksPerUSec / 1000.0;
+    ticksPerUSecFactor_ = 1.0 / ticksPerUSec;
+}
 
-    usleep(10000);
 
-    return calibrateTicksPerUSecFactor();
-}()};
+uint64_t TscHelper::ticksToDurationInSec(uint64_t ticks) {
+    return ticks * get().ticksPerSecFactor_ + 0.5;
+}
+
+
+uint64_t TscHelper::ticksToDurationInMSec(uint64_t ticks) {
+    return ticks * get().ticksPerMSecFactor_ + 0.5;
+}
+
+
+uint64_t TscHelper::ticksToDurationInUSec(uint64_t ticks) {
+    return ticks * get().ticksPerUSecFactor_;
+}
+
+
+uint64_t TscHelper::tickToTimePointInSec(uint64_t tick) {
+    static const int64_t st = get().startRealTime_.tv_sec;
+    return st + get().ticksToDurationInSec(tick - get().firstTick_);
+}
+
+
+uint64_t TscHelper::tickToTimePointInMSec(uint64_t tick) {
+    static const int64_t st = get().startRealTime_.tv_sec * 1000
+                                + get().startRealTime_.tv_nsec / 1000000;
+    return st + get().ticksToDurationInMSec(tick - get().firstTick_);
+}
+
+
+uint64_t TscHelper::tickToTimePointInUSec(uint64_t tick) {
+    static const int64_t st = get().startRealTime_.tv_sec * 1000000
+                                + get().startRealTime_.tv_nsec / 1000;
+    return st + get().ticksToDurationInUSec(tick - get().firstTick_);
+}
+
 
 }  // namespace time
 }  // namespace nebula
-

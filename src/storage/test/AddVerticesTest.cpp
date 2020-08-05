@@ -5,12 +5,12 @@
  */
 
 #include "base/Base.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
-#include "storage/AddVerticesProcessor.h"
+#include "storage/mutate/AddVerticesProcessor.h"
 
 namespace nebula {
 namespace storage {
@@ -18,7 +18,12 @@ namespace storage {
 TEST(AddVerticesTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/AddVerticesTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
-    auto* processor = AddVerticesProcessor::instance(kv.get(), nullptr, nullptr);
+    auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
+    auto* processor = AddVerticesProcessor::instance(kv.get(),
+                                                     schemaMan.get(),
+                                                     indexMan.get(),
+                                                     nullptr);
 
     LOG(INFO) << "Build AddVerticesRequest...";
     cpp2::AddVerticesRequest req;
@@ -27,19 +32,8 @@ TEST(AddVerticesTest, SimpleTest) {
     // partId => List<Vertex>
     // Vertex => {Id, List<VertexProp>}
     // VertexProp => {tagId, tags}
-    for (auto partId = 0; partId < 3; partId++) {
-        std::vector<cpp2::Vertex> vertices;
-        for (auto vertexId = partId * 10; vertexId < 10 * (partId + 1); vertexId++) {
-            std::vector<cpp2::Tag> tags;
-            for (auto tagId = 0; tagId < 10; tagId++) {
-                tags.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                   tagId,
-                                   folly::stringPrintf("%d_%d_%d", partId, vertexId, tagId));
-            }
-            vertices.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                  vertexId,
-                                  std::move(tags));
-        }
+    for (PartitionID partId = 0; partId < 3; partId++) {
+        auto vertices = TestUtils::setupVertices(partId, partId * 10, 10 * (partId + 1));
         req.parts.emplace(partId, std::move(vertices));
     }
 
@@ -50,14 +44,14 @@ TEST(AddVerticesTest, SimpleTest) {
     EXPECT_EQ(0, resp.result.failed_codes.size());
 
     LOG(INFO) << "Check data in kv store...";
-    for (auto partId = 0; partId < 3; partId++) {
-        for (auto vertexId = 10 * partId; vertexId < 10 * (partId + 1); vertexId++) {
+    for (PartitionID partId = 0; partId < 3; partId++) {
+        for (VertexID vertexId = 10 * partId; vertexId < 10 * (partId + 1); vertexId++) {
             auto prefix = NebulaKeyUtils::vertexPrefix(partId, vertexId);
             std::unique_ptr<kvstore::KVIterator> iter;
             EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
             TagID tagId = 0;
             while (iter->valid()) {
-                EXPECT_EQ(folly::stringPrintf("%d_%d_%d", partId, vertexId, tagId), iter->val());
+                EXPECT_EQ(TestUtils::encodeValue(partId, vertexId, tagId), iter->val());
                 tagId++;
                 iter->next();
             }

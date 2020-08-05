@@ -10,11 +10,13 @@
 # Log level, 0, 1, 2, 3 for INFO, WARNING, ERROR, FATAL respectively
 --minloglevel=0
 # Verbose log level, 1, 2, 3, 4, the higher of the level, the more verbose of the logging
---v=4
+--v=0
 # Maximum seconds to buffer the log messages
 --logbufsecs=0
 
 ########## networking ##########
+# Meta Server Address
+--meta_server_addrs=127.0.0.1:45500
 # Local ip
 --local_ip=127.0.0.1
 # Meta daemon listening port
@@ -26,13 +28,8 @@
 # HTTP2 service port
 --ws_h2_port=11002
 
+--heartbeat_interval_secs=10
+
 ########## storage ##########
-# Root data path, multi paths should be split by comma.For rocksdb engine, one path one instance.
+# Root data path, here should be only single path for metad
 --data_path=data/meta
-
-
-########## Misc #########
-# The default number of parts when a space is created
---default_parts_num=1024
-# The default replica factor when a space is created
---default_replica_factor=1

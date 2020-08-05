@@ -9,6 +9,7 @@
 
 #include "base/Base.h"
 #include "time/WallClock.h"
+#include "base/StatusOr.h"
 #include <folly/RWSpinLock.h>
 #include <folly/stats/MultiLevelTimeSeries.h>
 #include <folly/stats/TimeseriesHistogram.h>
@@ -31,6 +32,7 @@ namespace stats {
  *   <counter_name>.<statistic_type>.<time_range>
  *
  * Here are some examples:
+ *   query.rate.5       -- query per second in the five seconds 
  *   query.rate.60      -- query per second in the last minute
  *   latency.p99.600    -- The latency that slower than 99% of all queries
  *                           in the last ten minutes
@@ -52,9 +54,10 @@ public:
     };
 
     enum class TimeRange {
-        ONE_MINUTE = 0,
-        TEN_MINUTES = 1,
-        ONE_HOUR = 2
+        FIVE_SECONDS = 0,
+        ONE_MINUTE = 1,
+        TEN_MINUTES = 2,
+        ONE_HOUR = 3
     };
 
     static void setDomain(folly::StringPiece domain);
@@ -64,7 +67,9 @@ public:
     static void setReportInfo(HostAddr addr, int32_t interval);
 
     // Both register methods return the index to the internal data structure.
-    // This index will be used by addValue() methods
+    // This index will be used by addValue() methods.
+    // Both register methods is not thread safe, and user need to register stats one
+    // by onebefore calling addValue, readStats, readHisto and so on.
     static int32_t registerStats(folly::StringPiece counterName);
     static int32_t registerHisto(folly::StringPiece counterName,
                                  VT bucketSize,
@@ -73,16 +78,16 @@ public:
 
     static void addValue(int32_t index, VT value = 1);
 
-    static VT readValue(folly::StringPiece counter);
-    static VT readStats(int32_t index,
-                        TimeRange range,
-                        StatsMethod method);
-    static VT readStats(const std::string& counterName,
-                        TimeRange range,
-                        StatsMethod method);
-    static VT readHisto(const std::string& counterName,
-                        TimeRange range,
-                        double pct);
+    static StatusOr<VT> readValue(folly::StringPiece counter);
+    static StatusOr<VT> readStats(int32_t index,
+                                  TimeRange range,
+                                  StatsMethod method);
+    static StatusOr<VT> readStats(const std::string& counterName,
+                                  TimeRange range,
+                                  StatsMethod method);
+    static StatusOr<VT> readHisto(const std::string& counterName,
+                                  TimeRange range,
+                                  double pct);
     static void readAllValue(folly::dynamic& vals);
 
 private:
@@ -108,7 +113,6 @@ private:
     std::unordered_map<std::string, int32_t> nameMap_;
 
     // All time series stats
-    folly::RWSpinLock statsLock_;
     std::vector<
         std::pair<std::unique_ptr<std::mutex>,
                   std::unique_ptr<StatsType>
@@ -116,7 +120,6 @@ private:
     > stats_;
 
     // All histogram stats
-    folly::RWSpinLock histogramsLock_;
     std::vector<
         std::pair<std::unique_ptr<std::mutex>,
                   std::unique_ptr<HistogramType>

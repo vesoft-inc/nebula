@@ -14,6 +14,7 @@
 #include "interface/gen-cpp2/storage_types.h"
 #include "kvstore/KVStore.h"
 #include "meta/SchemaManager.h"
+#include "meta/IndexManager.h"
 #include "dataman/RowSetWriter.h"
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
@@ -21,7 +22,7 @@
 #include "meta/SchemaManager.h"
 #include "time/Duration.h"
 #include "stats/StatsManager.h"
-#include "storage/StorageStats.h"
+#include "stats/Stats.h"
 
 namespace nebula {
 namespace storage {
@@ -31,8 +32,9 @@ using PartCode = std::pair<PartitionID, kvstore::ResultCode>;
 template<typename RESP>
 class BaseProcessor {
 public:
-    explicit BaseProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan,
-                           StorageStats* stats = nullptr)
+    explicit BaseProcessor(kvstore::KVStore* kvstore,
+                           meta::SchemaManager* schemaMan,
+                           stats::Stats* stats = nullptr)
             : kvstore_(kvstore)
             , schemaMan_(schemaMan)
             , stats_(stats) {}
@@ -45,15 +47,9 @@ public:
 
 protected:
     virtual void onFinished() {
-        if (this->stats_ != nullptr) {
-            stats::StatsManager::addValue(this->stats_->latencyStatId_,
-                                          this->duration_.elapsedInUSec());
-            if (this->result_.get_failed_codes().empty()) {
-                stats::StatsManager::addValue(this->stats_->qpsStatId_, 1);
-            } else {
-                stats::StatsManager::addValue(this->stats_->errorQpsStatId_, 1);
-            }
-        }
+        stats::Stats::addStatsValue(stats_,
+                                    this->result_.get_failed_codes().empty(),
+                                    this->duration_.elapsedInUSec());
         this->result_.set_latency_in_us(this->duration_.elapsedInUSec());
         this->result_.set_failed_codes(this->codes_);
         this->resp_.set_result(std::move(this->result_));
@@ -63,10 +59,37 @@ protected:
 
     void doPut(GraphSpaceID spaceId, PartitionID partId, std::vector<kvstore::KV> data);
 
+    kvstore::ResultCode doSyncPut(GraphSpaceID spaceId,
+                                  PartitionID partId,
+                                  std::vector<kvstore::KV> data);
+
     void doRemove(GraphSpaceID spaceId, PartitionID partId, std::vector<std::string> keys);
 
-    void doRemoveRange(GraphSpaceID spaceId, PartitionID partId, std::string start,
-                       std::string end);
+    kvstore::ResultCode doRange(GraphSpaceID spaceId, PartitionID partId, std::string start,
+                                std::string end, std::unique_ptr<kvstore::KVIterator>* iter);
+
+    kvstore::ResultCode doRange(GraphSpaceID spaceId, PartitionID partId, const std::string& start,
+                                const std::string& end, std::unique_ptr<kvstore::KVIterator>* iter);
+
+    kvstore::ResultCode doRange(GraphSpaceID spaceId, PartitionID partId,
+                                std::string&& start, std::string&& end,
+                                std::unique_ptr<kvstore::KVIterator>* iter) = delete;
+
+    kvstore::ResultCode doPrefix(GraphSpaceID spaceId, PartitionID partId,
+                                 const std::string& prefix,
+                                 std::unique_ptr<kvstore::KVIterator>* iter);
+
+    kvstore::ResultCode doPrefix(GraphSpaceID spaceId, PartitionID partId,
+                                 std::string prefix,
+                                 std::unique_ptr<kvstore::KVIterator>* iter) = delete;
+
+    kvstore::ResultCode doRangeWithPrefix(GraphSpaceID spaceId, PartitionID partId,
+                                          const std::string& start, const std::string& prefix,
+                                          std::unique_ptr<kvstore::KVIterator>* iter);
+
+    kvstore::ResultCode doRangeWithPrefix(GraphSpaceID spaceId, PartitionID partId,
+                                          std::string&& start, std::string&& prefix,
+                                          std::unique_ptr<kvstore::KVIterator>* iter) = delete;
 
     nebula::cpp2::ColumnDef columnDef(std::string name, nebula::cpp2::SupportedType type) {
         nebula::cpp2::ColumnDef column;
@@ -98,6 +121,28 @@ protected:
         }
     }
 
+    void handleErrorCode(kvstore::ResultCode code, GraphSpaceID spaceId, PartitionID partId) {
+        if (code != kvstore::ResultCode::SUCCEEDED) {
+            if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
+                handleLeaderChanged(spaceId, partId);
+            } else {
+                pushResultCode(to(code), partId);
+            }
+        }
+    }
+
+    void handleLeaderChanged(GraphSpaceID spaceId, PartitionID partId) {
+        auto addrRet = kvstore_->partLeader(spaceId, partId);
+        if (ok(addrRet)) {
+            auto leader = value(std::move(addrRet));
+            this->pushResultCode(cpp2::ErrorCode::E_LEADER_CHANGED, partId, leader);
+        } else {
+            LOG(ERROR) << "Fail to get part leader, spaceId: " << spaceId
+                       << ", partId: " << partId << ", ResultCode: " << error(addrRet);
+            this->pushResultCode(to(error(addrRet)), partId);
+        }
+    }
+
     nebula::cpp2::HostAddr toThriftHost(const HostAddr& host) {
         nebula::cpp2::HostAddr tHost;
         tHost.set_ip(host.first);
@@ -105,10 +150,18 @@ protected:
         return tHost;
     }
 
+    StatusOr<IndexValues> collectIndexValues(RowReader* reader,
+                                             const std::vector<nebula::cpp2::ColumnDef>& cols);
+
+    void collectProps(RowReader* reader, const std::vector<PropContext>& props,
+                      Collector* collector);
+
+    void handleAsync(GraphSpaceID spaceId, PartitionID partId, kvstore::ResultCode code);
+
 protected:
-    kvstore::KVStore*                               kvstore_ = nullptr;
-    meta::SchemaManager*                            schemaMan_ = nullptr;
-    StorageStats*                                   stats_ = nullptr;
+    kvstore::KVStore*                               kvstore_{nullptr};
+    meta::SchemaManager*                            schemaMan_{nullptr};
+    stats::Stats*                                   stats_{nullptr};
     RESP                                            resp_;
     folly::Promise<RESP>                            promise_;
     cpp2::ResponseCommon                            result_;
@@ -116,7 +169,7 @@ protected:
     time::Duration                                  duration_;
     std::vector<cpp2::ResultCode>                   codes_;
     std::mutex                                      lock_;
-    int32_t                                         callingNum_ = 0;
+    int32_t                                         callingNum_{0};
 };
 
 }  // namespace storage

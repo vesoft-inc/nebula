@@ -27,13 +27,13 @@ import scala.sys.process._
   * Custom outputFormat, which generates a sub dir per partition per worker, the local dir structure of EACH worker node is:
   *
   * ${LOCAL_ROOT} (local dir will be stripped off when `hdfs -copyFromLocal`, specified by user through cmd line)
-  *    |---1 (this is PARTITION number)
-  *    |        | ----  vertex-${FIRST_KEY_IN_THIS_FILE}.sst
+  *    |---1 (this is partition number)
+  *    |        | ---- vertex-${FIRST_KEY_IN_THIS_FILE}.sst
   *    |        | ---- vertex-${FIRST_KEY_IN_THIS_FILE}.sst
   *    |        | ---- edge-${FIRST_KEY_IN_THIS_FILE}.sst
   *    |        | ---- edge-${FIRST_KEY_IN_THIS_FILE}.sst
   *    |---2
-  *             | ----  vertex-${FIRST_KEY_IN_THIS_FILE}.sst
+  *             | ---- vertex-${FIRST_KEY_IN_THIS_FILE}.sst
   *             | ---- edge-${FIRST_KEY_IN_THIS_FILE}.sst
   *             | ---- edge-${FIRST_KEY_IN_THIS_FILE}.sst
   *      ....
@@ -44,13 +44,13 @@ import scala.sys.process._
   * After hdfs -copyFromLocal ,the final hdfs dir layout is:
   *
   * ${HDFS_ROOT} (specified by user through cmd line)
-  *    |---1 (this is the PARTITION number, and it will hold all sst files from every single worker node with the same PARTITION number)
-  *    |        | ----  vertex-${FIRST_KEY_IN_THIS_FILE}.sst(may be from worker node#1)
+  *    |---1 (this is the partition number, and it will hold all sst files from every single worker node with the same partition number)
+  *    |        | ---- vertex-${FIRST_KEY_IN_THIS_FILE}.sst(may be from worker node#1)
   *    |        | ---- vertex-${FIRST_KEY_IN_THIS_FILE}.sst(may be from worker node#2)
   *    |        | ---- edge-${FIRST_KEY_IN_THIS_FILE}.sst(may be from worker node#1)
   *    |        | ---- edge-${FIRST_KEY_IN_THIS_FILE}.sst(may be from worker node#2)
   *    |---2 (same as above)
-  *             | ----  vertex-${FIRST_KEY_IN_THIS_FILE}.sst
+  *             | ---- vertex-${FIRST_KEY_IN_THIS_FILE}.sst
   *
   **/
 class SstFileOutputFormat
@@ -170,7 +170,6 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration)
       val hdfsSubDirectory =
         s"${File.separator}${key.partitionId}${File.separator}"
 
-
       val localDir = s"${localSstFileOutput}${hdfsSubDirectory}"
       val sstFileName =
         s"${value.vertexOrEdgeEnum}-${key.`type`}-${DatatypeConverter
@@ -223,7 +222,6 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration)
             log.error("Error when closing a sst file", e)
           }
         }
-
 
         try {
           // There could be multiple containers on a single host, parent dir are shared between multiple containers,

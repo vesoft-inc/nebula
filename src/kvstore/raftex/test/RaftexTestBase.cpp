@@ -98,7 +98,7 @@ void waitUntilLeaderElected(
             });
 
             // Sleep some time to wait until resp of heartbeat has come back when elected as leader
-            usleep(30000);
+            usleep(50000);
 
             bool sameLeader = true;
             int32_t index = 0;
@@ -319,7 +319,6 @@ void killOneCopy(std::vector<std::shared_ptr<RaftexService>>& services,
                  std::vector<std::shared_ptr<test::TestShard>>& copies,
                  std::shared_ptr<test::TestShard>& leader,
                  size_t index) {
-    copies[index]->stop();
     services[index]->removePartition(copies[index]);
     if (leader != nullptr && index == leader->index()) {
         std::lock_guard<std::mutex> lock(leaderMutex);

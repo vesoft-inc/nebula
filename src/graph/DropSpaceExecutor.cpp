@@ -10,7 +10,8 @@ namespace nebula {
 namespace graph {
 
 DropSpaceExecutor::DropSpaceExecutor(Sentence *sentence,
-                                     ExecutionContext *ectx) : Executor(ectx) {
+                                     ExecutionContext *ectx)
+    : Executor(ectx, "drop_space") {
     sentence_ = static_cast<DropSpaceSentence*>(sentence);
 }
 
@@ -22,38 +23,39 @@ Status DropSpaceExecutor::prepare() {
 
 
 void DropSpaceExecutor::execute() {
-    auto future = ectx()->getMetaClient()->dropSpace(*spaceName_);
+    auto future = ectx()->getMetaClient()->dropSpace(*spaceName_, sentence_->isIfExists());
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(std::move(resp).status());
+            doError(std::move(resp).status());
             return;
         }
         auto  ret = std::move(resp).value();
         if (!ret) {
-            DCHECK(onError_);
-            onError_(Status::Error("Drop space failed"));
+            doError(Status::Error("Drop space `%s' failed.", spaceName_->c_str()));
             return;
         }
 
         if (*spaceName_ == ectx()->rctx()->session()->spaceName()) {
             ectx()->rctx()->session()->setSpace("", -1);
         }
-        DCHECK(onFinish_);
-        onFinish_();
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        auto msg = folly::stringPrintf("Drop space `%s' exception: %s",
+                spaceName_->c_str(), e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(std::move(msg)));
         return;
     };
 
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
+void DropSpaceExecutor::setupResponse(cpp2::ExecutionResponse &resp)  {
+    resp.set_warning_msg("Data will be deleted completely after restarting the services.");
+}
 }   // namespace graph
 }   // namespace nebula

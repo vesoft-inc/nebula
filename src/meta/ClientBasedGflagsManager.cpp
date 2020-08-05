@@ -48,6 +48,7 @@ ClientBasedGflagsManager::setConfig(const cpp2::ConfigModule& module, const std:
         case cpp2::ConfigType::BOOL:
             return set(module, name, type, boost::get<bool>(value));
         case cpp2::ConfigType::STRING:
+        case cpp2::ConfigType::NESTED:
             return set(module, name, type, boost::get<std::string>(value));
         default:
             return Status::Error("parse value type error");

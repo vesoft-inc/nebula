@@ -10,12 +10,12 @@
 #include "graph/ExecutionPlan.h"
 #include "storage/client/StorageClient.h"
 
-DECLARE_string(meta_server_addrs);
 
 namespace nebula {
 namespace graph {
 
-ExecutionEngine::ExecutionEngine() {
+ExecutionEngine::ExecutionEngine(meta::MetaClient* client) {
+    metaClient_ = client;
 }
 
 
@@ -24,24 +24,16 @@ ExecutionEngine::~ExecutionEngine() {
 
 
 Status ExecutionEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor) {
-    auto addrs = network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
-    if (!addrs.ok()) {
-        return addrs.status();
-    }
-    metaClient_ = std::make_unique<meta::MetaClient>(ioExecutor, std::move(addrs.value()));
-    // load data try 3 time
-    bool loadDataOk = metaClient_->waitForMetadReady(3);
-    if (!loadDataOk) {
-        // Resort to retrying in the background
-        LOG(WARNING) << "Failed to synchronously wait for meta service ready";
-    }
-
     schemaManager_ = meta::SchemaManager::create();
-    schemaManager_->init(metaClient_.get());
+    schemaManager_->init(metaClient_);
 
-    gflagsManager_ = std::make_unique<meta::ClientBasedGflagsManager>(metaClient_.get());
+    gflagsManager_ = std::make_unique<meta::ClientBasedGflagsManager>(metaClient_);
 
-    storage_ = std::make_unique<storage::StorageClient>(ioExecutor, metaClient_.get());
+    storage_ = std::make_unique<storage::StorageClient>(ioExecutor,
+                                                        metaClient_,
+                                                        "graph");
+    charsetInfo_ = CharsetInfo::instance();
+
     return Status::OK();
 }
 
@@ -50,7 +42,8 @@ void ExecutionEngine::execute(RequestContextPtr rctx) {
                                                    schemaManager_.get(),
                                                    gflagsManager_.get(),
                                                    storage_.get(),
-                                                   metaClient_.get());
+                                                   metaClient_,
+                                                   charsetInfo_);
     // TODO(dutor) add support to plan cache
     auto plan = new ExecutionPlan(std::move(ectx));
 

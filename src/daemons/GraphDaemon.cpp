@@ -15,7 +15,6 @@
 #include "process/ProcessUtils.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "graph/GraphService.h"
-#include "graph/GraphHttpHandler.h"
 #include "graph/GraphFlags.h"
 #include "webservice/WebService.h"
 
@@ -51,12 +50,6 @@ int main(int argc, char *argv[]) {
     if (FLAGS_flagfile.empty()) {
         printHelp(argv[0]);
         return EXIT_FAILURE;
-    }
-
-    if (FLAGS_daemonize) {
-        google::SetStderrLogging(google::FATAL);
-    } else {
-        google::SetStderrLogging(google::INFO);
     }
 
     // Setup logging
@@ -101,19 +94,30 @@ int main(int argc, char *argv[]) {
     }
 
     LOG(INFO) << "Starting Graph HTTP Service";
-    // http://127.0.0.1:XXXX/status is equivalent to http://127.0.0.1:XXXX
-    nebula::WebService::registerHandler("/status", [] {
-        return new nebula::graph::GraphHttpHandler();
-    });
-    status = nebula::WebService::start();
+    auto webSvc = std::make_unique<nebula::WebService>();
+    status = webSvc->start();
     if (!status.ok()) {
         return EXIT_FAILURE;
     }
 
+    if (FLAGS_num_netio_threads == 0) {
+        FLAGS_num_netio_threads = std::thread::hardware_concurrency();
+    }
     if (FLAGS_num_netio_threads <= 0) {
         LOG(WARNING) << "Number of networking IO threads should be greater than zero";
         return EXIT_FAILURE;
     }
+    LOG(INFO) << "Number of networking IO threads: " << FLAGS_num_netio_threads;
+
+    if (FLAGS_num_worker_threads == 0) {
+        FLAGS_num_worker_threads = std::thread::hardware_concurrency();
+    }
+    if (FLAGS_num_worker_threads <= 0) {
+        LOG(WARNING) << "Number of worker threads should be greater than zero";
+        return EXIT_FAILURE;
+    }
+    LOG(INFO) << "Number of worker threads: " << FLAGS_num_worker_threads;
+
     auto threadFactory = std::make_shared<folly::NamedThreadFactory>("graph-netio");
     auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(
                             FLAGS_num_netio_threads, std::move(threadFactory));
@@ -129,7 +133,11 @@ int main(int argc, char *argv[]) {
 
     gServer->setInterface(std::move(interface));
     gServer->setAddress(localIP, FLAGS_port);
-    gServer->setReusePort(FLAGS_reuse_port);
+    // fbthrift-2018.08.20 always enables SO_REUSEPORT once `setReusePort' is called
+    // which had been fixed in later version.
+    if (FLAGS_reuse_port) {
+        gServer->setReusePort(FLAGS_reuse_port);
+    }
     gServer->setIdleTimeout(std::chrono::seconds(FLAGS_client_idle_timeout_secs));
     gServer->setNumCPUWorkerThreads(FLAGS_num_worker_threads);
     gServer->setCPUWorkerThreadName("executor");
@@ -141,7 +149,6 @@ int main(int argc, char *argv[]) {
     status = setupSignalHandler();
     if (!status.ok()) {
         LOG(ERROR) << status;
-        nebula::WebService::stop();
         return EXIT_FAILURE;
     }
 
@@ -149,12 +156,10 @@ int main(int argc, char *argv[]) {
     try {
         gServer->serve();  // Blocking wait until shut down via gServer->stop()
     } catch (const std::exception &e) {
-        nebula::WebService::stop();
         FLOG_ERROR("Exception thrown while starting the RPC server: %s", e.what());
         return EXIT_FAILURE;
     }
 
-    nebula::WebService::stop();
     FLOG_INFO("nebula-graphd on %s:%d has been stopped", localIP.c_str(), FLAGS_port);
 
     return EXIT_SUCCESS;

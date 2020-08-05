@@ -18,7 +18,8 @@ namespace nebula {
 namespace graph {
 
 DownloadExecutor::DownloadExecutor(Sentence *sentence,
-                                   ExecutionContext *ectx) : Executor(ectx) {
+                                   ExecutionContext *ectx)
+    : Executor(ectx, "download") {
     sentence_ = static_cast<DownloadSentence*>(sentence);
 }
 
@@ -29,8 +30,7 @@ Status DownloadExecutor::prepare() {
 void DownloadExecutor::execute() {
     auto status = checkIfGraphSpaceChosen();
     if (!status.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(status));
+        doError(std::move(status));
         return;
     }
 
@@ -44,7 +44,7 @@ void DownloadExecutor::execute() {
     if (hdfsHost == nullptr || hdfsPort == 0 || hdfsPath == nullptr) {
         LOG(ERROR) << "URL Parse Failed";
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
-        onError_(Status::Error("URL Parse Failed"));
+        doError(Status::Error("URL Parse Failed"));
         return;
     }
 
@@ -68,19 +68,16 @@ void DownloadExecutor::execute() {
 
     auto cb = [this] (auto &&resp) {
         if (!resp) {
-            DCHECK(onError_);
-            onError_(Status::Error("Download Failed"));
+            doError(Status::Error("Download Failed"));
             return;
         }
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
-        DCHECK(onFinish_);
-        onFinish_();
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        LOG(ERROR) << "Download exception: " << e.what();
+        doError(Status::Error("Download exception: %s", e.what().c_str()));
         return;
     };
 

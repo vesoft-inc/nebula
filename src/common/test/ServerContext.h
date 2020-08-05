@@ -11,6 +11,7 @@
 #include "kvstore/KVStore.h"
 #include "meta/client/MetaClient.h"
 #include "meta/SchemaManager.h"
+#include "meta/IndexManager.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
 namespace nebula {
@@ -26,6 +27,7 @@ struct ServerContext {
         }
         kvStore_ = nullptr;
         schemaMan_.reset();
+        indexMan_.reset();
         server_ = nullptr;
         thread_ = nullptr;
         VLOG(3) << "~ServerContext";
@@ -56,6 +58,7 @@ struct ServerContext {
     // To keep meta and storage's KVStore
     std::unique_ptr<kvstore::KVStore>                  kvStore_{nullptr};
     std::unique_ptr<meta::SchemaManager>               schemaMan_{nullptr};
+    std::unique_ptr<meta::IndexManager>                indexMan_{nullptr};
     uint16_t                                           port_{0};
 };
 

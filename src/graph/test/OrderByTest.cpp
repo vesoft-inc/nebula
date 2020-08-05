@@ -46,7 +46,19 @@ TEST_F(OrderByTest, SyntaxError) {
     }
 }
 
-TEST_F(OrderByTest, NoInput) {
+TEST_F(OrderByTest, EmptyInput) {
+    std::string name = "NON EXIST VERTEX ID";
+    int64_t nonExistPlayerID = std::hash<std::string>()(name);
+    auto iter = players_.begin();
+    while (iter != players_.end()) {
+        if (iter->vid() == nonExistPlayerID) {
+            ++nonExistPlayerID;
+            iter = players_.begin();
+            continue;
+        }
+        ++iter;
+    }
+
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "ORDER BY $-.xx";
@@ -57,13 +69,35 @@ TEST_F(OrderByTest, NoInput) {
     }
     {
         cpp2::ExecutionResponse resp;
-        auto &player = players_["Nobody"];
         auto *fmt = "GO FROM %ld OVER serve YIELD "
-                    "$^.player.name as name, serve.start_year as start, $$.team.name as name"
+                    "$^.player.name as name, serve.start_year as start, $$.team.name as team"
                     "| ORDER BY $-.name";
-        auto query = folly::stringPrintf(fmt, player.vid());
+        auto query = folly::stringPrintf(fmt, nonExistPlayerID);
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"name"}, {"start"}, {"team"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "YIELD $^.player.name as name, serve.start_year as start, $$.team.name as team "
+                    "| YIELD $-.name as name WHERE $-.start > 20000 "
+                    "| ORDER BY $-.name";
+        auto query = folly::stringPrintf(fmt, players_["Marco Belinelli"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         ASSERT_EQ(nullptr, resp.get_rows());
     }
 }
@@ -323,6 +357,19 @@ TEST_F(OrderByTest, InterimResult) {
             teams_["Hornets"].vid(),
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+TEST_F(OrderByTest, DuplicateColumn) {
+    std::string go = "GO FROM %ld OVER serve YIELD "
+                     "$^.player.name as team, serve.start_year as start, $$.team.name as team";
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto fmt = go + "| ORDER BY $-.team";
+        auto query = folly::stringPrintf(fmt.c_str(), player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
 }
 }   // namespace graph

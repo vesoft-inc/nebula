@@ -1,0 +1,62 @@
+########## basics ##########
+# Whether to run as a daemon process
+--daemonize=true
+# The file to host the process id
+--pid_file=pids/nebula-graphd.pid
+
+########## logging ##########
+# The directory to host logging files, which must already exists
+--log_dir=logs
+# Log level, 0, 1, 2, 3 for INFO, WARNING, ERROR, FATAL respectively
+--minloglevel=0
+# Verbose log level, 1, 2, 3, 4, the higher of the level, the more verbose of the logging
+--v=0
+# Maximum seconds to buffer the log messages
+--logbufsecs=0
+# Whether to redirect stdout and stderr to separate output files
+--redirect_stdout=true
+# Destination filename of stdout and stderr, which will also reside in log_dir.
+--stdout_log_file=stdout.log
+--stderr_log_file=stderr.log
+# Copy log messages at or above this level to stderr in addition to logfiles. The numbers of severity levels INFO, WARNING, ERROR, and FATAL are 0, 1, 2, and 3, respectively.
+--stderrthreshold=2
+
+########## networking ##########
+# Meta Server Address
+--meta_server_addrs=127.0.0.1:45500
+# Local ip
+--local_ip=127.0.0.1
+# Network device to listen on
+--listen_netdev=any
+# Port to listen on
+--port=3699
+# To turn on SO_REUSEPORT or not
+--reuse_port=false
+# Backlog of the listen socket, adjust this together with net.core.somaxconn
+--listen_backlog=1024
+# Seconds before the idle connections are closed, 0 for never closed
+--client_idle_timeout_secs=0
+# Seconds before the idle sessions are expired, 0 for no expiration
+--session_idle_timeout_secs=60000
+# The number of threads to accept incoming connections
+--num_accept_threads=1
+# The number of networking IO threads, 0 for # of CPU cores
+--num_netio_threads=0
+# The number of threads to execute user queries, 0 for # of CPU cores
+--num_worker_threads=0
+# HTTP service ip
+--ws_ip=127.0.0.1
+# HTTP service port
+--ws_http_port=13000
+# HTTP2 service port
+--ws_h2_port=13002
+
+--heartbeat_interval_secs=10
+
+########## authorization ##########
+# Enable authorization
+--enable_authorize=false
+
+########## authentication ##########
+# User login authentication type, password for nebula authentication, ldap for ldap authentication, cloud for cloud authentication
+--auth_type=password

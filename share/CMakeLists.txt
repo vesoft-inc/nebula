@@ -7,6 +7,8 @@ install(
         WORLD_READ
     DESTINATION
         share/resources
+    COMPONENT
+        console
 )
 
 install(
@@ -18,4 +20,6 @@ install(
         WORLD_READ
     DESTINATION
         share/resources
+    COMPONENT
+        common
 )

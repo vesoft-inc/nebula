@@ -39,6 +39,7 @@ public:
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
 private:
+    Status prepareData();
     // To do some preparing works on the clauses
     Status prepareSet();
 
@@ -48,10 +49,10 @@ private:
 
     std::vector<std::string> getReturnColumns();
 
-    void insertReverselyEdge(storage::cpp2::UpdateResponse &&rpcResp);
+    void updateEdge(bool reversely);
 
     // All required data have arrived, finish the execution.
-    void finishExecution(storage::cpp2::UpdateResponse &&rpcResp);
+    void toResponse(storage::cpp2::UpdateResponse &&rpcResp);
 
 private:
     UpdateEdgeSentence                         *sentence_{nullptr};

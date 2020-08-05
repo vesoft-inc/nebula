@@ -9,7 +9,8 @@
 
 #include "base/Base.h"
 #include "graph/Executor.h"
-
+#include "graph/GraphFlags.h"
+#include "graph/PermissionCheck.h"
 
 namespace nebula {
 namespace graph {
@@ -31,6 +32,7 @@ public:
 private:
     SequentialSentences                        *sentences_{nullptr};
     std::vector<std::unique_ptr<Executor>>      executors_;
+    uint32_t                                    respExecutorIndex_{0};
 };
 
 

@@ -68,7 +68,7 @@ bool ColumnValue::operator < (const ColumnValue& rhs) const {
 }  // namespace cpp2
 
 OrderByExecutor::OrderByExecutor(Sentence *sentence, ExecutionContext *ectx)
-    : TraverseExecutor(ectx) {
+    : TraverseExecutor(ectx, "order_by") {
     sentence_ = static_cast<OrderBySentence*>(sentence);
 }
 
@@ -76,28 +76,11 @@ Status OrderByExecutor::prepare() {
     return Status::OK();
 }
 
-void OrderByExecutor::feedResult(std::unique_ptr<InterimResult> result) {
-    if (result == nullptr) {
-        return;
-    }
-    DCHECK(sentence_ != nullptr);
-    inputs_ = std::move(result);
-    colNames_ = inputs_->getColNames();
-    auto ret = inputs_->getRows();
-    if (!ret.ok()) {
-        return;
-    }
-    rows_ = std::move(ret).value();
-}
-
 void OrderByExecutor::execute() {
-    DCHECK(onFinish_);
-    DCHECK(onError_);
-    FLOG_INFO("Executing Order By: %s", sentence_->toString().c_str());
     auto status = beforeExecute();
     if (!status.ok()) {
         LOG(ERROR) << "Error happened before execute: " << status.toString();
-        onError_(std::move(status));
+        doError(std::move(status));
         return;
     }
 
@@ -115,8 +98,6 @@ void OrderByExecutor::execute() {
                 return lhsColumns[fieldIndex] < rhsColumns[fieldIndex];
             } else if (orderType == OrderFactor::OrderType::DESCEND) {
                 return lhsColumns[fieldIndex] > rhsColumns[fieldIndex];
-            } else {
-                LOG(FATAL) << "Unkown Order Type: " << orderType;
             }
         }
         return false;
@@ -127,16 +108,37 @@ void OrderByExecutor::execute() {
     }
 
     if (onResult_) {
-        onResult_(setupInterimResult());
+        auto ret = setupInterimResult();
+        if (!ret.ok()) {
+            onError_(std::move(ret).status());
+            return;
+        }
+        onResult_(std::move(ret).value());
     }
-    onFinish_();
+    doFinish(Executor::ProcessControl::kNext);
 }
 
 Status OrderByExecutor::beforeExecute() {
-    if (inputs_ == nullptr || !inputs_->hasData()) {
+    if (inputs_ == nullptr) {
         return Status::OK();
     }
 
+    auto status = checkIfDuplicateColumn();
+    if (!status.ok()) {
+        return status;
+    }
+    colNames_ = inputs_->getColNames();
+    if (!inputs_->hasData()) {
+        return Status::OK();
+    }
+
+    auto ret = inputs_->getRows();
+    if (!ret.ok()) {
+        LOG(ERROR) << "Get rows failed: " << ret.status();
+        doError(ret.status());
+        return std::move(ret).status();
+    }
+    rows_ = std::move(ret).value();
     auto schema = inputs_->schema();
     auto factors = sentence_->factors();
     sortFactors_.reserve(factors.size());
@@ -147,13 +149,18 @@ Status OrderByExecutor::beforeExecute() {
         if (fieldIndex == -1) {
             return Status::Error("Field (%s) not exist in input schema.", field.str().c_str());
         }
+        if (factor->orderType() != OrderFactor::OrderType::ASCEND &&
+                factor->orderType() != OrderFactor::OrderType::DESCEND) {
+            LOG(ERROR) << "Unkown Order Type: " << factor->orderType();
+            return Status::Error("Unkown Order Type: %d", factor->orderType());
+        }
         auto pair = std::make_pair(schema->getFieldIndex(field), factor->orderType());
         sortFactors_.emplace_back(std::move(pair));
     }
     return Status::OK();
 }
 
-std::unique_ptr<InterimResult> OrderByExecutor::setupInterimResult() {
+StatusOr<std::unique_ptr<InterimResult>> OrderByExecutor::setupInterimResult() {
     auto result = std::make_unique<InterimResult>(std::move(colNames_));
     if (rows_.empty()) {
         return result;
@@ -186,7 +193,8 @@ std::unique_ptr<InterimResult> OrderByExecutor::setupInterimResult() {
                     writer << column.get_timestamp();
                     break;
                 default:
-                    LOG(FATAL) << "Not Support: " << column.getType();
+                    LOG(ERROR) << "Not Support type: " << column.getType();
+                    return Status::Error("Not Support type: %d", column.getType());
             }
         }
         rsWriter->addRow(writer);
@@ -197,11 +205,11 @@ std::unique_ptr<InterimResult> OrderByExecutor::setupInterimResult() {
 }
 
 void OrderByExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
+    resp.set_column_names(std::move(colNames_));
+
     if (rows_.empty()) {
         return;
     }
-
-    resp.set_column_names(std::move(colNames_));
     resp.set_rows(std::move(rows_));
 }
 

@@ -1,6 +1,8 @@
 set(KVSTORE_TEST_LIBS
     $<TARGET_OBJECTS:kvstore_obj>
     $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:raftex_obj>
@@ -14,36 +16,50 @@ set(KVSTORE_TEST_LIBS
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:gflags_man_obj>
+    $<TARGET_OBJECTS:kvstore_storage_utils_obj>
 )
 
 nebula_add_test(
-    NAME part_test
-    SOURCES PartTest.cpp
-    OBJECTS ${KVSTORE_TEST_LIBS}
-    LIBRARIES ${THRIFT_LIBRARIES} ${ROCKSDB_LIBRARIES} wangle gtest
+    NAME
+        part_test
+    SOURCES
+        PartTest.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
 )
 
 nebula_add_test(
-    NAME rocks_engine_test
-    SOURCES RocksEngineTest.cpp
-    OBJECTS ${KVSTORE_TEST_LIBS}
-    LIBRARIES ${THRIFT_LIBRARIES} ${ROCKSDB_LIBRARIES} wangle gtest
+    NAME
+        rocks_engine_test
+    SOURCES
+        RocksEngineTest.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
 )
 
 nebula_add_test(
-    NAME nebula_store_test
-    SOURCES NebulaStoreTest.cpp
-    OBJECTS ${KVSTORE_TEST_LIBS}
-    LIBRARIES ${THRIFT_LIBRARIES} ${ROCKSDB_LIBRARIES} wangle gtest
+    NAME
+        nebula_store_test
+    SOURCES
+        NebulaStoreTest.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
 )
-
-nebula_add_test(
-    NAME load_test
-    SOURCES LoadTest.cpp
-    OBJECTS ${KVSTORE_TEST_LIBS}
-    LIBRARIES ${THRIFT_LIBRARIES} ${ROCKSDB_LIBRARIES} wangle gtest
-)
-
 
 nebula_add_test(
     NAME
@@ -62,6 +78,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:thrift_obj>
         $<TARGET_OBJECTS:time_obj>
+        $<TARGET_OBJECTS:kvstore_storage_utils_obj>
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
@@ -71,15 +88,59 @@ nebula_add_test(
 
 
 nebula_add_test(
-    NAME log_encoder_test
-    SOURCES LogEncoderTest.cpp
-    OBJECTS ${KVSTORE_TEST_LIBS}
-    LIBRARIES ${THRIFT_LIBRARIES} ${ROCKSDB_LIBRARIES} wangle gtest
+    NAME
+        log_encoder_test
+    SOURCES
+        LogEncoderTest.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        snapshot_link_test
+    SOURCES
+        SnapshotLinkTest.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
 )
 
 nebula_add_executable(
-    NAME multi_versions_perf_test_bm
-    SOURCES MultiVersionBenchmark.cpp
-    OBJECTS $<TARGET_OBJECTS:base_obj> $<TARGET_OBJECTS:fs_obj>
-    LIBRARIES follybenchmark ${ROCKSDB_LIBRARIES} boost_regex
+    NAME
+        multi_versions_perf_test_bm
+    SOURCES
+        MultiVersionBenchmark.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:fs_obj>
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        follybenchmark
+        boost_regex
+)
+
+nebula_add_executable(
+    NAME
+        part_performance_test
+    SOURCES
+        PartPerformanceTest.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        follybenchmark
+        wangle
+        gtest
+        boost_regex
 )

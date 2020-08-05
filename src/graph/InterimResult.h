@@ -43,6 +43,9 @@ public:
     static Status castToBool(cpp2::ColumnValue *col);
     static Status castToStr(cpp2::ColumnValue *col);
 
+    static Status getResultWriter(const std::vector<cpp2::RowValue> &rows,
+                                  RowSetWriter *rsWriter);
+
     void setColNames(std::vector<std::string> &&colNames) {
         colNames_ = std::move(colNames);
     }
@@ -50,7 +53,9 @@ public:
     void setInterim(std::unique_ptr<RowSetWriter> rsWriter);
 
     bool hasData() const {
-        return (rsWriter_ != nullptr) && (rsReader_ != nullptr);
+        return (rsWriter_ != nullptr)
+                && (!rsWriter_->data().empty())
+                && (rsReader_ != nullptr);
     }
 
     std::shared_ptr<const meta::SchemaProviderIf> schema() const {
@@ -60,9 +65,8 @@ public:
         return rsReader_->schema();
     }
 
-    std::vector<std::string> getColNames() {
-        // Once getColNames called, colNames_ would be invalid
-        return std::move(colNames_);
+    std::vector<std::string> getColNames() const {
+        return colNames_;
     }
 
     StatusOr<std::vector<VertexID>> getVIDs(const std::string &col) const;
@@ -75,10 +79,29 @@ public:
     StatusOr<std::unique_ptr<InterimResultIndex>>
     buildIndex(const std::string &vidColumn) const;
 
+    Status applyTo(std::function<Status(const RowReader *reader)> visitor,
+                   int64_t limit = INT64_MAX) const;
+
+    nebula::cpp2::SupportedType getColumnType(const std::string &col) const;
+
     class InterimResultIndex final {
     public:
-        OptVariantType getColumnWithVID(VertexID id, const std::string &col) const;
+        OptVariantType getColumnWithRow(std::size_t row, const std::string &col) const;
         nebula::cpp2::SupportedType getColumnType(const std::string &col) const;
+        auto rowsOfVid(VertexID id) {
+            return vidToRowIndex_.equal_range(id);
+        }
+
+        std::vector<uint32_t> rowsOfVids(const std::vector<VertexID> &ids) {
+            std::vector<uint32_t> rows;
+            for (const auto vid : ids) {
+                const auto range = rowsOfVid(vid);
+                for (auto i = range.first; i != range.second; ++i) {
+                    rows.emplace_back(i->second);
+                }
+            }
+            return rows;
+        }
 
     private:
         friend class InterimResult;
@@ -87,7 +110,7 @@ public:
         using SchemaPtr = std::shared_ptr<const meta::SchemaProviderIf>;
         SchemaPtr                                   schema_{nullptr};
         std::unordered_map<std::string, uint32_t>   columnToIndex_;
-        std::unordered_map<VertexID, uint32_t>      vidToRowIndex_;
+        std::multimap<VertexID, uint32_t>           vidToRowIndex_;
     };
 
 private:

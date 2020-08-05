@@ -5,13 +5,13 @@
  */
 
 #include "base/Base.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include <limits>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
-#include "storage/UpdateEdgeProcessor.h"
+#include "storage/mutate/UpdateEdgeProcessor.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
 
@@ -21,29 +21,30 @@ namespace storage {
 static void mockData(kvstore::KVStore* kv) {
     LOG(INFO) << "Prepare data...";
     std::vector<kvstore::KV> data;
-    for (auto partId = 0; partId < 3; partId++) {
-        for (auto vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
-            for (auto tagId = 3001; tagId < 3010; tagId++) {
+    for (PartitionID partId = 0; partId < 3; partId++) {
+        for (VertexID vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
+            for (TagID tagId = 3001; tagId < 3010; tagId++) {
                 // Write multi versions, we should get/update the latest version
-                for (auto version = 0; version < 3; version++) {
+                for (TagVersion version = 0; version < 3; version++) {
                     auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId,
                             std::numeric_limits<int32_t>::max() - version);
                     RowWriter writer;
                     for (int64_t numInt = 0; numInt < 3; numInt++) {
                         writer << partId + tagId + version + numInt;
                     }
-                    for (auto numString = 3; numString < 6; numString++) {
-                        writer << folly::stringPrintf("tag_string_col_%d_%d", numString, version);
+                    for (int32_t numString = 3; numString < 6; numString++) {
+                        writer << folly::stringPrintf("tag_string_col_%d_%ld", numString, version);
                     }
                     auto val = writer.encode();
                     data.emplace_back(std::move(key), std::move(val));
                 }
             }
+
             // Generate 7 out-edges for each edgeType.
-            for (auto dstId = 10001; dstId <= 10007; dstId++) {
+            for (VertexID dstId = 10001; dstId <= 10007; dstId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", dst " << dstId;
                 // Write multi versions,  we should get the latest version.
-                for (auto version = 0; version < 3; version++) {
+                for (EdgeVersion version = 0; version < 3; version++) {
                     auto key = NebulaKeyUtils::edgeKey(partId, vertexId, 101, 0, dstId,
                                                        std::numeric_limits<int>::max() - version);
                     RowWriter writer(nullptr);
@@ -51,16 +52,16 @@ static void mockData(kvstore::KVStore* kv) {
                         writer << (dstId + numInt);
                     }
                     for (auto numString = 10; numString < 20; numString++) {
-                        writer << folly::stringPrintf("string_col_%d_%d", numString, version);
+                        writer << folly::stringPrintf("string_col_%d_%ld", numString, version);
                     }
                     auto val = writer.encode();
                     data.emplace_back(std::move(key), std::move(val));
                 }
             }
             // Generate 5 in-edges for each edgeType, the edgeType is negative
-            for (auto srcId = 10001; srcId <= 10005; srcId++) {
+            for (VertexID srcId = 10001; srcId <= 10005; srcId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", src " << srcId;
-                for (auto version = 0; version < 3; version++) {
+                for (EdgeVersion version = 0; version < 3; version++) {
                     auto key = NebulaKeyUtils::edgeKey(partId, vertexId, -101, 0, srcId,
                                                        std::numeric_limits<int>::max() - version);
                     data.emplace_back(std::move(key), "");
@@ -84,6 +85,7 @@ TEST(UpdateEdgeTest, Set_Filter_Yield_Test) {
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
     mockData(kv.get());
 
     LOG(INFO) << "Build UpdateEdgeRequest...";
@@ -152,7 +154,10 @@ TEST(UpdateEdgeTest, Set_Filter_Yield_Test) {
     req.set_return_columns(std::move(tmpColumns));
     req.set_insertable(false);
     LOG(INFO) << "Test UpdateEdgeRequest...";
-    auto* processor = UpdateEdgeProcessor::instance(kv.get(), schemaMan.get(), nullptr);
+    auto* processor = UpdateEdgeProcessor::instance(kv.get(),
+                                                    schemaMan.get(),
+                                                    indexMan.get(),
+                                                    nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -194,8 +199,8 @@ TEST(UpdateEdgeTest, Set_Filter_Yield_Test) {
     auto lastVersion = std::numeric_limits<int32_t>::max() - 2;
     auto kvstoreEdgeKey = NebulaKeyUtils::edgeKey(partId, srcId, 101, 0, dstId, lastVersion);
     keys.emplace_back(kvstoreEdgeKey);
-    kvstore::ResultCode code = kv->multiGet(spaceId, partId, std::move(keys), &values);
-    CHECK_EQ(code, kvstore::ResultCode::SUCCEEDED);
+    auto ret = kv->multiGet(spaceId, partId, std::move(keys), &values);
+    EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret.first);
     EXPECT_EQ(1, values.size());
     auto edgeSchema = schemaMan->getEdgeSchema(spaceId, 101);
     auto edgeReader = RowReader::getRowReader(values[0], edgeSchema);
@@ -216,6 +221,7 @@ TEST(UpdateEdgeTest, Insertable_Test) {
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
     mockData(kv.get());
 
     LOG(INFO) << "Build UpdateEdgeRequest...";
@@ -272,7 +278,10 @@ TEST(UpdateEdgeTest, Insertable_Test) {
     req.set_insertable(true);
 
     LOG(INFO) << "Test UpdateEdgeRequest...";
-    auto* processor = UpdateEdgeProcessor::instance(kv.get(), schemaMan.get(), nullptr);
+    auto* processor = UpdateEdgeProcessor::instance(kv.get(),
+                                                    schemaMan.get(),
+                                                    indexMan.get(),
+                                                    nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -341,6 +350,72 @@ TEST(UpdateEdgeTest, Insertable_Test) {
     EXPECT_TRUE(ok(res));
     auto&& v3 = value(std::move(res));
     EXPECT_STREQ("", boost::get<std::string>(v3).c_str());
+}
+
+
+TEST(UpdateEdgeTest, CorruptDataTest) {
+    fs::TempDir rootPath("/tmp/UpdateEdgeTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    LOG(INFO) << "Prepare meta...";
+    auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
+    LOG(INFO) << "Write an edge with empty value!";
+
+    // partId, srcId, edgeType, rank, dstId, version
+    auto key = NebulaKeyUtils::edgeKey(0, 10, 101, 0, 11, 0);
+    std::vector<kvstore::KV> data;
+    data.emplace_back(std::make_pair(key, ""));
+    folly::Baton<> baton;
+    kv->asyncMultiPut(0, 0, std::move(data),
+        [&](kvstore::ResultCode code) {
+            CHECK_EQ(code, kvstore::ResultCode::SUCCEEDED);
+            baton.post();
+        });
+    baton.wait();
+
+    LOG(INFO) << "Build UpdateEdgeRequest...";
+    GraphSpaceID spaceId = 0;
+    PartitionID partId = 0;
+    VertexID srcId = 10;
+    VertexID dstId = 11;
+    // src = 10, edge_type = 101, ranking = 0, dst = 11
+    storage::cpp2::EdgeKey edgeKey;
+    edgeKey.set_src(srcId);
+    edgeKey.set_edge_type(101);
+    edgeKey.set_ranking(0);
+    edgeKey.set_dst(dstId);
+
+    cpp2::UpdateEdgeRequest req;
+    req.set_space_id(spaceId);
+    req.set_edge_key(edgeKey);
+    req.set_part_id(partId);
+    req.set_filter("");
+    LOG(INFO) << "Build update items...";
+    std::vector<cpp2::UpdateItem> items;
+    // string: 101.col_10 = string_col_10_2_new
+    cpp2::UpdateItem item;
+    item.set_name("101");
+    item.set_prop("col_10");
+    std::string col10new("string_col_10_2_new");
+    PrimaryExpression val2(col10new);
+    item.set_value(Expression::encode(&val2));
+    items.emplace_back(item);
+    req.set_update_items(std::move(items));
+    req.set_insertable(true);
+
+    LOG(INFO) << "Test UpdateEdgeRequest...";
+    auto* processor = UpdateEdgeProcessor::instance(kv.get(),
+                                                    schemaMan.get(),
+                                                    indexMan.get(),
+                                                    nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+
+    EXPECT_EQ(1, resp.result.failed_codes.size());
+    EXPECT_TRUE(cpp2::ErrorCode::E_EDGE_NOT_FOUND == resp.result.failed_codes[0].code);
+    EXPECT_EQ(0, resp.result.failed_codes[0].part_id);
 }
 
 }  // namespace storage

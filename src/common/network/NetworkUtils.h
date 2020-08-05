@@ -37,10 +37,9 @@ public:
     // So don't use it in production code.
     static uint16_t getAvailablePort();
 
-    // Convert the given IP (must be in the form of "xx.xx.xx.xx") and Port to a HostAddr
-    static StatusOr<HostAddr> toHostAddr(folly::StringPiece ip, int32_t port);
-    // Convert the given IP/Port (must be in the form of "xx.xx.xx.xx:pp") to a HostAddr
-    static StatusOr<HostAddr> toHostAddr(folly::StringPiece ipPort);
+    static StatusOr<std::vector<HostAddr>> resolveHost(const std::string &host, int32_t port);
+    // Convert the given IP/HOST and Port to a HostAddr
+    static StatusOr<HostAddr> toHostAddr(const std::string &ip, int32_t port);
     // Retrieve the string-form IP from the given HostAddr
     static std::string ipFromHostAddr(const HostAddr& host);
     // Retrieve the port number from the given HostAddr
@@ -63,6 +62,7 @@ public:
     // (Peers str format example: 192.168.1.1:10001, 192.168.1.2:10001)
     // Return Status::Error if peersStr is invalid.
     static StatusOr<std::vector<HostAddr>> toHosts(const std::string& peersStr);
+    static std::string toHosts(const std::vector<HostAddr>& hosts);
 
 private:
 };
@@ -71,4 +71,3 @@ private:
 }  // namespace nebula
 
 #endif  // COMMON_NETWORK_NETWORKUTILS_H_
-

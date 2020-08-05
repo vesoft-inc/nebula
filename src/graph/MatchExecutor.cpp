@@ -11,7 +11,7 @@ namespace nebula {
 namespace graph {
 
 MatchExecutor::MatchExecutor(Sentence *sentence, ExecutionContext *ectx)
-    : TraverseExecutor(ectx) {
+    : TraverseExecutor(ectx, "match") {
     sentence_ = static_cast<MatchSentence*>(sentence);
 }
 

@@ -11,40 +11,57 @@ namespace meta {
 
 void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
     CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
+    GraphSpaceID spaceId = req.get_space_id();
     folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeLock());
-    auto ret = getEdgeKeys(req.get_space_id(), req.get_edge_name());
-    if (!ret.ok()) {
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+    EdgeType edgeType;
+    auto indexKey = MetaServiceUtils::indexEdgeKey(spaceId, req.get_edge_name());
+    auto iRet = doGet(indexKey);
+    if (iRet.ok()) {
+        edgeType = *reinterpret_cast<const EdgeType *>(iRet.value().data());
+        resp_.set_id(to(edgeType, EntryType::EDGE));
+    } else {
+        handleErrorCode(req.get_if_exists() == true ? cpp2::ErrorCode::SUCCEEDED
+                                                   : cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+
+    auto indexes = getIndexes(spaceId, edgeType);
+    if (!indexes.ok()) {
+        handleErrorCode(MetaCommon::to(indexes.status()));
+        onFinished();
+        return;
+    }
+    if (!indexes.value().empty()) {
+        LOG(ERROR) << "Drop edge error, index conflict";
+        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
+        onFinished();
+        return;
+    }
+
+    auto ret = getEdgeKeys(req.get_space_id(), edgeType);
+    if (!ret.ok()) {
+        handleErrorCode(MetaCommon::to(ret.status()));
+        onFinished();
+        return;
+    }
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+    auto keys = std::move(ret).value();
+    keys.emplace_back(std::move(indexKey));
     LOG(INFO) << "Drop Edge " << req.get_edge_name();
-    doMultiRemove(std::move(ret.value()));
+    doSyncMultiRemoveAndUpdate(std::move(keys));
 }
 
 StatusOr<std::vector<std::string>> DropEdgeProcessor::getEdgeKeys(GraphSpaceID id,
-                                                                    const std::string& edgeName) {
-    auto indexKey = MetaServiceUtils::indexEdgeKey(id, edgeName);
+                                                                  EdgeType edgeType) {
     std::vector<std::string> keys;
-    std::string edgeVal;
-    EdgeType edgeType;
-    auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, indexKey, &edgeVal);
-    if (ret == kvstore::ResultCode::SUCCEEDED) {
-        edgeType = *reinterpret_cast<const EdgeType *>(edgeVal.data());
-        resp_.set_id(to(edgeType, EntryType::EDGE));
-        keys.emplace_back(indexKey);
-    } else {
-        return Status::Error("No Edge!");
-    }
-
-    std::unique_ptr<kvstore::KVIterator> iter;
     auto key = MetaServiceUtils::schemaEdgePrefix(id, edgeType);
-    ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, key, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    auto iterRet = doPrefix(key);
+    if (!iterRet.ok()) {
         return Status::Error("Edge get error by id : %d !", edgeType);
     }
 
+    auto iter = iterRet.value().get();
     while (iter->valid()) {
         keys.emplace_back(iter->key());
         iter->next();

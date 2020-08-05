@@ -14,7 +14,7 @@ void GetTagProcessor::process(const cpp2::GetTagReq& req) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::tagLock());
     auto tagIdRet = getTagId(req.get_space_id(), req.get_tag_name());
     if (!tagIdRet.ok()) {
-        resp_.set_code(to(tagIdRet.status()));
+        handleErrorCode(MetaCommon::to(tagIdRet.status()));
         onFinished();
         return;
     }
@@ -29,7 +29,7 @@ void GetTagProcessor::process(const cpp2::GetTagReq& req) {
             LOG(ERROR) << "Get Tag SpaceID: " << req.get_space_id()
                        << ", tagName: " << req.get_tag_name()
                        << ", version " << req.get_version() << " not found";
-            resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+            handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
             onFinished();
             return;
         }
@@ -43,7 +43,7 @@ void GetTagProcessor::process(const cpp2::GetTagReq& req) {
             LOG(ERROR) << "Get Tag SpaceID: " << req.get_space_id()
                        << ", tagName: " << req.get_tag_name()
                        << ", version " << req.get_version() << " not found";
-            resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+            handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
             onFinished();
             return;
         }
@@ -54,7 +54,7 @@ void GetTagProcessor::process(const cpp2::GetTagReq& req) {
             << ", tagName: " << req.get_tag_name()
             << ", version " << req.get_version();
 
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_schema(MetaServiceUtils::parseSchema(schemaValue));
     onFinished();
 }

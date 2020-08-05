@@ -119,7 +119,7 @@ TEST(LearnerTest, CatchUpDataTest) {
     auto f = leader->sendCommandAsync(test::encodeLearner(allHosts[3]));
     f.wait();
 
-    sleep(1);
+    sleep(FLAGS_raft_heartbeat_interval_secs);
     auto& learner = copies[3];
     ASSERT_EQ(100, learner->getNumLogs());
     for (int i = 0; i < 100; ++i) {

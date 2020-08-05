@@ -158,32 +158,35 @@ TEST(FileBasedWal, Rollback) {
     wal->rollbackToLog(9900);
     ASSERT_EQ(9900, wal->lastLogId());
 
-    // Try to read the last 10 logs
-    auto it = wal->iterator(9891, 9900);
-    LogID id = 9891;
-    while (it->valid()) {
-        ASSERT_EQ(id, it->logId());
-        ASSERT_EQ(folly::stringPrintf(kLongMsg, id), it->logMsg());
-        ++(*it);
-        ++id;
+    {
+        // Try to read the last 10 logs
+        auto it = wal->iterator(9891, 9900);
+        LogID id = 9891;
+        while (it->valid()) {
+            ASSERT_EQ(id, it->logId());
+            ASSERT_EQ(folly::stringPrintf(kLongMsg, id), it->logMsg());
+            ++(*it);
+            ++id;
+        }
+        EXPECT_EQ(9901, id);
     }
-    EXPECT_EQ(9901, id);
 
     // Now let's rollback even more
     wal->rollbackToLog(5000);
     ASSERT_EQ(5000, wal->lastLogId());
 
-    // Let's verify the last 10 logs
-    it = wal->iterator(4991, 5000);
-    id = 4991;
-    while (it->valid()) {
-        ASSERT_EQ(id, it->logId());
-        ASSERT_EQ(folly::stringPrintf(kLongMsg, id), it->logMsg());
-        ++(*it);
-        ++id;
+    {
+        // Let's verify the last 10 logs
+        auto it = wal->iterator(4991, 5000);
+        LogID id = 4991;
+        while (it->valid()) {
+            ASSERT_EQ(id, it->logId());
+            ASSERT_EQ(folly::stringPrintf(kLongMsg, id), it->logMsg());
+            ++(*it);
+            ++id;
+        }
+        EXPECT_EQ(5001, id);
     }
-    EXPECT_EQ(5001, id);
-
     // Now let's append 1000 more logs
     for (int i = 5001; i <= 6000; i++) {
         ASSERT_TRUE(
@@ -193,8 +196,8 @@ TEST(FileBasedWal, Rollback) {
     ASSERT_EQ(6000, wal->lastLogId());
 
     // Let's verify the last 10 logs
-    it = wal->iterator(5991, 6000);
-    id = 5991;
+    auto it = wal->iterator(5991, 6000);
+    LogID id = 5991;
     while (it->valid()) {
         ASSERT_EQ(id, it->logId());
         ASSERT_EQ(folly::stringPrintf(kLongMsg, id + 1000), it->logMsg());
@@ -237,7 +240,7 @@ TEST(FileBasedWal, RollbackThenReopen) {
 
     // Check the number of files
     auto files = FileUtils::listAllFilesInDir(walDir.path());
-    ASSERT_EQ(2, files.size());
+    ASSERT_EQ(1, files.size());
 
     // Now let's open it to read
     wal = FileBasedWal::getWal(walDir.path(),
@@ -329,13 +332,19 @@ TEST(FileBasedWal, BackAndForth) {
         ASSERT_EQ(100 * (count + 1), wal->lastLogId());
     }
 
-    // We don't delete the overlaping wals, there must be 10 wal files
-    ASSERT_EQ(11, FileUtils::listAllFilesInDir(walDir.path(), false, "*.wal").size());
+    ASSERT_EQ(10, FileUtils::listAllFilesInDir(walDir.path(), false, "*.wal").size());
 
     // Rollback
     for (int i = 999; i >= 0; i--) {
         ASSERT_TRUE(wal->rollbackToLog(i));
         ASSERT_EQ(i, wal->lastLogId());
+    }
+    ASSERT_EQ(0, FileUtils::listAllFilesInDir(walDir.path(), false, "*.wal").size());
+
+    for (int i = 1; i <= 10; i++) {
+        EXPECT_TRUE(
+            wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
+                           folly::stringPrintf("Test string %02d", i)));
     }
     ASSERT_EQ(1, FileUtils::listAllFilesInDir(walDir.path(), false, "*.wal").size());
 }
@@ -426,6 +435,147 @@ TEST(FileBasedWal, TTLTest) {
         }
         EXPECT_EQ(201, id);
     }
+}
+
+TEST(FileBasedWal, CheckLastWalTest) {
+    FileBasedWalPolicy policy;
+    policy.fileSize = 1024L * 1024L;
+    TempDir walDir("/tmp/testWal.XXXXXX");
+
+    auto wal = FileBasedWal::getWal(walDir.path(),
+                                    "",
+                                    policy,
+                                    [](LogID, TermID, ClusterID, const std::string&) {
+                                        return true;
+                                    });
+    {
+        EXPECT_EQ(0, wal->lastLogId());
+
+        for (int i = 1; i <= 1000; i++) {
+            EXPECT_TRUE(
+                wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
+                               folly::stringPrintf(kLongMsg, i)));
+        }
+        EXPECT_EQ(1000, wal->lastLogId());
+        wal.reset();
+    }
+    {
+        // Modify the wal file, make last wal invalid
+        std::vector<std::string> files = FileUtils::listAllFilesInDir(walDir.path(), true, "*.wal");
+        std::sort(files.begin(), files.end());
+        size_t size = FileUtils::fileSize(files.back().c_str());
+        auto fd = open(files.back().c_str(), O_WRONLY | O_APPEND);
+        if (ftruncate(fd, size - sizeof(int32_t)) < 0) {
+            LOG(ERROR) << "truncate failed";
+            close(fd);
+            return;
+        }
+        close(fd);
+
+        // Now let's open it to read
+        wal = FileBasedWal::getWal(walDir.path(),
+                                   "",
+                                   policy,
+                                   [](LogID, TermID, ClusterID, const std::string&) {
+                                       return true;
+                                   });
+        EXPECT_EQ(999, wal->lastLogId());
+    }
+    {
+        // get lastId in previous wal, make last wal invalid
+        std::vector<std::string> files = FileUtils::listAllFilesInDir(walDir.path(), true, "*.wal");
+        std::sort(files.begin(), files.end());
+        auto lastWalPath = files.back();
+        auto it = wal->walFiles_.rbegin();
+        it++;
+        auto expected = it->second->lastId();
+        wal.reset();
+
+        auto fd = open(lastWalPath.c_str(), O_WRONLY | O_APPEND);
+        if (ftruncate(fd, sizeof(LogID) + sizeof(TermID)) < 0) {
+            LOG(ERROR) << "truncate failed";
+            close(fd);
+            return;
+        }
+        close(fd);
+
+        // Now let's open it to read
+        wal = FileBasedWal::getWal(walDir.path(),
+                                   "",
+                                   policy,
+                                   [](LogID, TermID, ClusterID, const std::string&) {
+                                       return true;
+                                   });
+        EXPECT_EQ(expected, wal->lastLogId());
+        wal.reset();
+
+        // truncate last wal
+        fd = open(lastWalPath.c_str(), O_WRONLY | O_APPEND);
+        if (ftruncate(fd, 0) < 0) {
+            LOG(ERROR) << "truncate failed";
+            close(fd);
+            return;
+        }
+        close(fd);
+
+        // Now let's open it to read
+        wal = FileBasedWal::getWal(walDir.path(),
+                                   "",
+                                   policy,
+                                   [](LogID, TermID, ClusterID, const std::string&) {
+                                       return true;
+                                   });
+        EXPECT_EQ(expected, wal->lastLogId());
+
+        // Append more log, and reset to 1000, the last wal should be an empty file
+        for (int i = expected + 1; i <= expected + 1000; i++) {
+           EXPECT_TRUE(wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
+               folly::stringPrintf(kLongMsg, i)));
+        }
+        EXPECT_EQ(expected + 1000, wal->lastLogId());
+
+        wal->rollbackToLog(1000);
+        ASSERT_EQ(1000, wal->lastLogId());
+        wal.reset();
+
+        // Now let's open it to read
+        wal = FileBasedWal::getWal(walDir.path(),
+                                   "",
+                                   policy,
+                                   [](LogID, TermID, ClusterID, const std::string&) {
+                                       return true;
+                                   });
+        EXPECT_EQ(1000, wal->lastLogId());
+    }
+}
+
+TEST(FileBasedWal, LinkTest) {
+    TempDir walDir("/tmp/testWal.XXXXXX");
+    FileBasedWalPolicy policy;
+    policy.fileSize = 1024 * 512;
+    auto wal = FileBasedWal::getWal(walDir.path(),
+                                    "",
+                                    policy,
+                                    [](LogID, TermID, ClusterID, const std::string&) {
+                                        return true;
+                                    });
+    EXPECT_EQ(0, wal->lastLogId());
+    for (int i = 1; i <= 1000; i++) {
+        EXPECT_TRUE(
+            wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
+                           folly::stringPrintf(kLongMsg, i)));
+    }
+    auto snapshotFile = folly::stringPrintf("%s/snapshot", walDir.path());
+    CHECK(wal->linkCurrentWAL(snapshotFile.c_str()));
+    auto it = wal->walFiles_.rbegin();
+    auto files = fs::FileUtils::listAllFilesInDir(snapshotFile.data(), true);
+    ASSERT_EQ(1, files.size());
+    EXPECT_EQ(FileUtils::fileSize(it->second->path()), FileUtils::fileSize(files[0].c_str()));
+    auto num = wal->walFiles_.size();
+    EXPECT_TRUE(
+            wal->appendLog(1001 /*id*/, 1 /*term*/, 0 /*cluster*/,
+                           folly::stringPrintf(kLongMsg, 1001)));
+    EXPECT_EQ(num + 1, wal->walFiles_.size());
 }
 
 }  // namespace wal

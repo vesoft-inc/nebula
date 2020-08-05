@@ -1,3 +1,6 @@
+
+# The base_obj is a basic library. Other libraries are not allowed to depend on it.
+
 add_library(
     base_obj OBJECT
     Base.cpp
@@ -6,7 +9,7 @@ add_library(
     Status.cpp
     SanitizerOptions.cpp
     SignalHandler.cpp
-    NebulaKeyUtils.cpp
+    SlowOpTracker.cpp
 )
 
 IF(${PCHSupport_FOUND})
