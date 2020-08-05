@@ -40,6 +40,7 @@ enum class NullType {
     ERR_OVERFLOW = 4,
     UNKNOWN_PROP = 5,
     DIV_BY_ZERO = 6,
+    OUT_OF_RANGE = 7,
 };
 
 
@@ -52,6 +53,7 @@ struct Value {
     static const Value kNullOverflow;
     static const Value kNullUnknownProp;
     static const Value kNullDivByZero;
+    static const Value kNullOutOfRange;
 
     static const uint64_t kEmptyNullType;
     static const uint64_t kNumericType;
@@ -139,7 +141,8 @@ struct Value {
             || null == NullType::BAD_TYPE
             || null == NullType::ERR_OVERFLOW
             || null == NullType::UNKNOWN_PROP
-            || null == NullType::DIV_BY_ZERO;
+            || null == NullType::DIV_BY_ZERO
+            || null == NullType::OUT_OF_RANGE;
     }
     bool isNumeric() const {
         return type_ == Type::INT || type_ == Type::FLOAT;

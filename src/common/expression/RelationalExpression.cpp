@@ -6,6 +6,8 @@
 
 #include "common/expression/RelationalExpression.h"
 #include "common/datatypes/List.h"
+#include "common/datatypes/Set.h"
+#include "common/datatypes/Map.h"
 
 namespace nebula {
 const Value& RelationalExpression::eval(ExpressionContext& ctx) {
@@ -39,16 +41,26 @@ const Value& RelationalExpression::eval(ExpressionContext& ctx) {
             result_ = lhs >= rhs;
             break;
         case Kind::kRelIn: {
-            if (UNLIKELY(rhs.type() != Value::Type::LIST)) {
-                result_ = Value(NullType::BAD_TYPE);
-                break;
-            }
-            auto& list = rhs.getList().values;
-            auto found = std::find(list.begin(), list.end(), lhs);
-            if (found == list.end()) {
-                result_ = false;
+            if (rhs.isList()) {
+                result_ = rhs.getList().contains(lhs);
+            } else if (rhs.isSet()) {
+                result_ = rhs.getSet().contains(lhs);
+            } else if (rhs.isMap()) {
+                result_ = rhs.getMap().contains(lhs);
             } else {
-                result_ = true;
+                result_ = Value(NullType::BAD_TYPE);
+            }
+            break;
+        }
+        case Kind::kRelNotIn: {
+            if (rhs.isList()) {
+                result_ = !rhs.getList().contains(lhs);
+            } else if (rhs.isSet()) {
+                result_ = !rhs.getSet().contains(lhs);
+            } else if (rhs.isMap()) {
+                result_ = !rhs.getMap().contains(lhs);
+            } else {
+                result_ = Value(NullType::BAD_TYPE);
             }
             break;
         }
@@ -81,6 +93,9 @@ std::string RelationalExpression::toString() const {
             break;
         case Kind::kRelIn:
             op = " IN ";
+            break;
+        case Kind::kRelNotIn:
+            op = " NOT IN ";
             break;
         default:
             op = "illegal symbol ";

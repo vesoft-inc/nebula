@@ -63,6 +63,10 @@ struct List {
         return values[i];
     }
 
+    bool contains(const Value &value) const {
+        return std::find(values.begin(), values.end(), value) != values.end();
+    }
+
     size_t size() const {
         return values.size();
     }

@@ -13,10 +13,12 @@
 #include "common/expression/FunctionCallExpression.h"
 #include "common/expression/LogicalExpression.h"
 #include "common/expression/RelationalExpression.h"
+#include "common/expression/SubscriptExpression.h"
 #include "common/expression/TypeCastingExpression.h"
 #include "common/expression/UUIDExpression.h"
 #include "common/expression/UnaryExpression.h"
 #include "common/expression/VariableExpression.h"
+#include "common/expression/ContainerExpression.h"
 
 namespace nebula {
 
@@ -279,6 +281,16 @@ std::unique_ptr<Expression> Expression::decode(Expression::Decoder& decoder) {
             exp->resetFrom(decoder);
             return exp;
         }
+        case Expression::Kind::kRelNotIn: {
+            exp = std::make_unique<RelationalExpression>(Expression::Kind::kRelNotIn);
+            exp->resetFrom(decoder);
+            return exp;
+        }
+        case Expression::Kind::kSubscript: {
+            exp = std::make_unique<SubscriptExpression>();
+            exp->resetFrom(decoder);
+            return exp;
+        }
         case Expression::Kind::kLogicalAnd: {
             exp = std::make_unique<LogicalExpression>(Expression::Kind::kLogicalAnd);
             exp->resetFrom(decoder);
@@ -370,6 +382,21 @@ std::unique_ptr<Expression> Expression::decode(Expression::Decoder& decoder) {
             exp->resetFrom(decoder);
             return exp;
         }
+        case Expression::Kind::kList: {
+            exp = std::make_unique<ListExpression>();
+            exp->resetFrom(decoder);
+            return exp;
+        }
+        case Expression::Kind::kSet: {
+            exp = std::make_unique<SetExpression>();
+            exp->resetFrom(decoder);
+            return exp;
+        }
+        case Expression::Kind::kMap: {
+            exp = std::make_unique<MapExpression>();
+            exp->resetFrom(decoder);
+            return exp;
+        }
         // no default so the compiler will warning when lack
     }
 
@@ -433,6 +460,12 @@ std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
         case Expression::Kind::kRelIn:
             os << "In";
             break;
+        case Expression::Kind::kRelNotIn:
+            os << "NotIn";
+            break;
+        case Expression::Kind::kSubscript:
+            os << "Subscript";
+            break;
         case Expression::Kind::kLogicalAnd:
             os << "LogicalAnd";
             break;
@@ -489,6 +522,15 @@ std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
             break;
         case Expression::Kind::kVersionedVar:
             os << "VersionedVariable";
+            break;
+        case Expression::Kind::kList:
+            os << "List";
+            break;
+        case Expression::Kind::kSet:
+            os << "Set";
+            break;
+        case Expression::Kind::kMap:
+            os << "Map";
             break;
     }
     return os;

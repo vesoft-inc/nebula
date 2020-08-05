@@ -52,6 +52,10 @@ struct Set {
     bool operator==(const Set& rhs) const {
         return values == rhs.values;
     }
+
+    bool contains(const Value &value) const {
+        return values.count(value) != 0;
+    }
 };
 
 inline std::ostream &operator<<(std::ostream& os, const Set& s) {

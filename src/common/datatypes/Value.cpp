@@ -83,6 +83,7 @@ const Value Value::kNullBadType(NullType::BAD_TYPE);
 const Value Value::kNullOverflow(NullType::ERR_OVERFLOW);
 const Value Value::kNullUnknownProp(NullType::UNKNOWN_PROP);
 const Value Value::kNullDivByZero(NullType::DIV_BY_ZERO);
+const Value Value::kNullOutOfRange(NullType::OUT_OF_RANGE);
 
 const uint64_t Value::kEmptyNullType = Value::Type::__EMPTY__ | Value::Type::NULLVALUE;
 const uint64_t Value::kNumericType   = Value::Type::INT | Value::Type::FLOAT;
@@ -1387,6 +1388,8 @@ std::string Value::toString() const {
                     return "__NULL_NaN__";
                 case NullType::UNKNOWN_PROP:
                     return "__NULL_UNKNOWN_PROP__";
+                case NullType::OUT_OF_RANGE:
+                    return "__NULL_OUT_OF_RANGE__";
             }
             LOG(FATAL) << "Unknown Null type " << static_cast<int>(getNull());
         }
