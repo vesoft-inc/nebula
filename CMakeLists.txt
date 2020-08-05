@@ -63,6 +63,7 @@ option(ENABLE_PACK_ONE "Whether to package into one" ON)
 option(ENABLE_PCH "Whether to enable use of precompiled header" OFF)
 option(ENABLE_FRAME_POINTER "Whether to build with -fno-omit-frame-pointer" ON)
 option(ENABLE_CPPCLIENT_LIB "Whether to build cpp client lib ON or OFF" OFF)
+option(DISABLE_CXX11_ABI "Whether to disable cxx11 abi" OFF)
 
 message(STATUS "ENABLE_ASAN: ${ENABLE_ASAN}")
 message(STATUS "ENABLE_TESTING: ${ENABLE_TESTING}")
@@ -76,6 +77,7 @@ message(STATUS "ENABLE_STRICT_ALIASING: ${ENABLE_STRICT_ALIASING}")
 message(STATUS "ENABLE_PCH: ${ENABLE_PCH}")
 message(STATUS "ENABLE_FRAME_POINTER: ${ENABLE_FRAME_POINTER}")
 message(STATUS "ENABLE_CPPCLIENT_LIB: ${ENABLE_CPPCLIENT_LIB}")
+message(STATUS "DISABLE_CXX11_ABI: ${DISABLE_CXX11_ABI}")
 
 if (ENABLE_NATIVE OR ENABLE_CPPCLIENT_LIB)
     message(STATUS "ENABLE_NATIVE is ${ENABLE_NATIVE}")
@@ -187,21 +189,39 @@ if (GIT_INFO_SHA)
     add_definitions(-DGIT_INFO_SHA=${GIT_INFO_SHA})
 endif()
 
+if (${DISABLE_CXX11_ABI})
+    message(STATUS "Set D_GLIBCXX_USE_CXX11_ABI to 0")
+    add_compile_options(-D_GLIBCXX_USE_CXX11_ABI=0)
+else()
+    message(STATUS "Set D_GLIBCXX_USE_CXX11_ABI to 1")
+    add_compile_options(-D_GLIBCXX_USE_CXX11_ABI=1)
+endif()
+
 # The precedence to decide NEBULA_THIRDPARTY_ROOT is:
 #   1. The path defined with CMake argument, i.e -DNEBULA_THIRDPARTY_ROOT=path
 #   2. ${CMAKE_BINARY_DIR}/third-party/install, if exists
 #   3. The path specified with environment variable NEBULA_THIRDPARTY_ROOT=path
 #   4. /opt/vesoft/third-party, if exists
 #   5. At last, one copy will be downloaded and installed to ${CMAKE_BINARY_DIR}/third-party/install
-if("${NEBULA_THIRDPARTY_ROOT}" STREQUAL "")
+if(${DISABLE_CXX11_ABI})
     if(EXISTS ${CMAKE_BINARY_DIR}/third-party/install)
         SET(NEBULA_THIRDPARTY_ROOT ${CMAKE_BINARY_DIR}/third-party/install)
-    elseif(NOT $ENV{NEBULA_THIRDPARTY_ROOT} STREQUAL "")
-        SET(NEBULA_THIRDPARTY_ROOT $ENV{NEBULA_THIRDPARTY_ROOT})
-    elseif(EXISTS /opt/vesoft/third-party)
-        SET(NEBULA_THIRDPARTY_ROOT "/opt/vesoft/third-party")
     else()
+        message(STATUS "Install abi 98 third-party")
         include(InstallThirdParty)
+    endif()
+
+else()
+    if("${NEBULA_THIRDPARTY_ROOT}" STREQUAL "")
+        if(EXISTS ${CMAKE_BINARY_DIR}/third-party/install)
+            SET(NEBULA_THIRDPARTY_ROOT ${CMAKE_BINARY_DIR}/third-party/install)
+        elseif(NOT $ENV{NEBULA_THIRDPARTY_ROOT} STREQUAL "")
+            SET(NEBULA_THIRDPARTY_ROOT $ENV{NEBULA_THIRDPARTY_ROOT})
+        elseif(EXISTS /opt/vesoft/third-party)
+            SET(NEBULA_THIRDPARTY_ROOT "/opt/vesoft/third-party")
+        else()
+            include(InstallThirdParty)
+        endif()
     endif()
 endif()
 

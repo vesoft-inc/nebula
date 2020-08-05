@@ -37,29 +37,22 @@ bash> ldconfig
 git clone https://github.com/vesoft-inc/nebula.git
 ```
 
-### install dependencies
+### build
 
 ```bash
-bash> cd nebula && ./build_dep.sh
+bash> cd nebula && mkdir build && cd build
+bash> cmake -DENABLE_CPPCLIENT_LIB=ON ..
+bash> make nebula_client
 ```
 
-### build and package
-
-package **RPM**
+If your g++ can't support c++11, you need to do
 
 ```bash
-bash> cd package
-bash> ./package_libcppclient.sh ${VERSION} RPM
+bash> cmake -DDISABLE_CXX11_ABI=ON -DENABLE_CPPCLIENT_LIB=ON ..
 ```
 
-package **DEB**
 
-```bash
-bash> cd package
-bash> ./package_libcppclient.sh ${VERSION} DEB
-```
-
-after finish package, install the rpm or deb file
+after finish building, cp the lib and include files to your dir
 
 ## How to use in your code
 
