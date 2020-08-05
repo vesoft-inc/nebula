@@ -848,7 +848,12 @@ void GoValidator::extractPropExprs(const Expression* expr) {
         case Expression::Kind::kSymProperty:
         case Expression::Kind::kUnaryIncr:
         case Expression::Kind::kUnaryDecr:
-        case Expression::Kind::kRelIn: {
+        case Expression::Kind::kList:   // FIXME(dutor)
+        case Expression::Kind::kSet:
+        case Expression::Kind::kMap:
+        case Expression::Kind::kSubscript:
+        case Expression::Kind::kRelIn:
+        case Expression::Kind::kRelNotIn: {
             LOG(FATAL) << "Not support " << expr->kind();
             break;
         }
@@ -941,7 +946,12 @@ std::unique_ptr<Expression> GoValidator::rewriteToInputProp(Expression* expr) {
         case Expression::Kind::kSymProperty:
         case Expression::Kind::kUnaryIncr:
         case Expression::Kind::kUnaryDecr:
-        case Expression::Kind::kRelIn: {
+        case Expression::Kind::kList:   // FIXME(dutor)
+        case Expression::Kind::kSet:
+        case Expression::Kind::kMap:
+        case Expression::Kind::kSubscript:
+        case Expression::Kind::kRelIn:
+        case Expression::Kind::kRelNotIn: {
             LOG(FATAL) << "Not support " << expr->kind();
             break;
         }

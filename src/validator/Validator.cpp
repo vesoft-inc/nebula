@@ -312,13 +312,14 @@ StatusOr<Value::Type> Validator::deduceExprType(const Expression* expr) const {
         case Expression::Kind::kLogicalOr: {
             DETECT_BIEXPR_TYPE(||)
         }
-        case Expression::Kind::kRelIn: {
+        case Expression::Kind::kRelIn:
+        case Expression::Kind::kRelNotIn: {
             auto biExpr = static_cast<const BinaryExpression*>(expr);
             NG_RETURN_IF_ERROR(deduceExprType(biExpr->left()));
 
             auto right = deduceExprType(biExpr->right());
             NG_RETURN_IF_ERROR(right);
-            if (right.value() != Value::Type::LIST) {
+            if (right.value() != Value::Type::LIST) {   // FIXME(dutor)
                 std::stringstream ss;
                 ss << "`" << expr->toString() << "' is not a valid expression, "
                     << "expected `LIST' but `" << right.value() << "' was given.";
@@ -508,6 +509,18 @@ StatusOr<Value::Type> Validator::deduceExprType(const Expression* expr) const {
             // TODO: not only dataset
             return Value::Type::DATASET;
         }
+        case Expression::Kind::kList: {
+            return Value::Type::LIST;
+        }
+        case Expression::Kind::kSet: {
+            return Value::Type::SET;
+        }
+        case Expression::Kind::kMap: {
+            return Value::Type::MAP;
+        }
+        case Expression::Kind::kSubscript: {
+            return Value::Type::LIST;   // FIXME(dutor)
+        }
     }
     return Status::SemanticError("Unknown expression kind: %ld",
                                  static_cast<int64_t>(expr->kind()));
@@ -612,7 +625,12 @@ Status Validator::deduceProps(const Expression* expr) {
         case Expression::Kind::kSymProperty:
         case Expression::Kind::kUnaryIncr:
         case Expression::Kind::kUnaryDecr:
-        case Expression::Kind::kRelIn: {
+        case Expression::Kind::kList:
+        case Expression::Kind::kSet:
+        case Expression::Kind::kMap:
+        case Expression::Kind::kSubscript:
+        case Expression::Kind::kRelIn:
+        case Expression::Kind::kRelNotIn: {
             // TODO:
             std::stringstream ss;
             ss << "Not supported expression kind for type deduction: " << expr->toString();
@@ -639,6 +657,7 @@ bool Validator::evaluableExpr(const Expression* expr) const {
         case Expression::Kind::kRelGT:
         case Expression::Kind::kRelGE:
         case Expression::Kind::kRelIn:
+        case Expression::Kind::kRelNotIn:
         case Expression::Kind::kLogicalAnd:
         case Expression::Kind::kLogicalOr:
         case Expression::Kind::kLogicalXor: {
@@ -679,7 +698,11 @@ bool Validator::evaluableExpr(const Expression* expr) const {
         case Expression::Kind::kInputProperty:
         case Expression::Kind::kSymProperty:
         case Expression::Kind::kUnaryIncr:
-        case Expression::Kind::kUnaryDecr: {
+        case Expression::Kind::kUnaryDecr:
+        case Expression::Kind::kList:   // FIXME(dutor)
+        case Expression::Kind::kSet:
+        case Expression::Kind::kMap:
+        case Expression::Kind::kSubscript: {
             return false;
         }
     }
