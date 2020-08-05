@@ -191,6 +191,7 @@ private:
         auto props = genData(FLAGS_size);
         edge.set_props(std::move(props));
         edges.emplace_back(std::move(edge));
+        vId++;
         return edges;
     }
 
