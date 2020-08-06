@@ -1876,6 +1876,10 @@ void RaftPart::checkAndResetPeers(const std::vector<HostAddr>& peers) {
 }
 
 bool RaftPart::leaseValid() {
+    std::lock_guard<std::mutex> g(raftLock_);
+    if (hosts_.empty()) {
+        return true;
+    }
     // When majority has accepted a log, leader obtains a lease which last for heartbeat.
     // However, we need to take off the net io time. On the left side of the inequality is
     // the time duration since last time leader send a log (the log has been accepted as well)
