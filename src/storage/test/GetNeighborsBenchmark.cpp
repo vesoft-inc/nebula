@@ -27,7 +27,7 @@ std::unique_ptr<folly::CPUThreadPoolExecutor> gExecutor;
 namespace nebula {
 namespace storage {
 
-// only add two tag and two edge
+// 10 tags and 10 * max_rank edges
 void mockData(kvstore::KVStore* kv) {
     GraphSpaceID spaceId = 0;
     PartitionID partId = 0;
