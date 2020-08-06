@@ -37,7 +37,9 @@ cpp2::ErrorCode IndexExecutor<RESP>::buildExecutionPlan(const std::string& filte
     if (ret != cpp2::ErrorCode::SUCCEEDED) {
         return ret;
     }
-    buildPolicy();
+    if (!buildPolicy()) {
+        return cpp2::ErrorCode::E_INVALID_FILTER;
+    }
     return ret;
 }
 
@@ -116,15 +118,83 @@ cpp2::ErrorCode IndexExecutor<RESP>::checkReturnColumns(const std::vector<std::s
 }
 
 template <typename RESP>
+std::pair<std::string, std::string>
+IndexExecutor<RESP>::makeScanPair(PartitionID partId, IndexID indexId) {
+    std::string beginStr = NebulaKeyUtils::indexPrefix(partId, indexId);
+    std::string endStr = NebulaKeyUtils::indexPrefix(partId, indexId);
+    const auto& fields = index_->get_fields();
+    for (const auto& field : fields) {
+        auto item = scanItems_.find(field.get_name());
+        if (item == scanItems_.end()) {
+            break;
+        }
+        // here need check the value type, maybe different data types appear.
+        // for example:
+        // index (c1 double)
+        // where c1 > abs(1) , FunctionCallExpression->eval(abs(1))
+        // should be cast type from int to double.
+        bool suc = true;
+        if (std::get<1>((*item).second).ok()) {
+            suc = NebulaKeyUtils::checkAndCastVariant(field.get_type().type,
+                                                      std::get<1>((*item).second).value());
+        }
+        if (std::get<3>((*item).second).ok()) {
+            suc = NebulaKeyUtils::checkAndCastVariant(field.get_type().type,
+                                                      std::get<3>((*item).second).value());
+        }
+        if (!suc) {
+            VLOG(1) << "Unknown VariantType";
+            return {};
+        }
+        auto pair = normalizeScanPair(field, (*item).second);
+        beginStr.append(pair.first);
+        endStr.append(pair.second);
+    }
+    return std::make_pair(beginStr, endStr);
+}
+
+template <typename RESP>
+std::pair<std::string, std::string>
+IndexExecutor<RESP>::normalizeScanPair(const nebula::cpp2::ColumnDef& field, const ScanItem& item) {
+    std::string begin, end;
+    auto type = field.get_type().type;
+    // if begin == end, means the scan is equivalent scan.
+    if (!std::get<0>(item) && !std::get<2>(item) &&
+        std::get<1>(item).ok() && std::get<3>(item).ok() &&
+        std::get<1>(item).value() == std::get<3>(item).value()) {
+        begin = end = NebulaKeyUtils::encodeVariant(std::get<1>(item).value());
+        return std::make_pair(begin, end);
+    }
+    if (!std::get<1>(item).ok()) {
+        begin = NebulaKeyUtils::boundVariant(type, NebulaBoundValueType::kMin);
+    } else if (std::get<0>(item)) {
+        begin = NebulaKeyUtils::boundVariant(type, NebulaBoundValueType::kAddition,
+                                             std::get<1>(item).value());
+    } else {
+        begin = NebulaKeyUtils::encodeVariant(std::get<1>(item).value());
+    }
+    if (!std::get<3>(item).ok()) {
+        end = NebulaKeyUtils::boundVariant(type, NebulaBoundValueType::kMax);
+    } else if (std::get<2>(item)) {
+        end = NebulaKeyUtils::encodeVariant(std::get<3>(item).value());
+    } else {
+        end = NebulaKeyUtils::boundVariant(type, NebulaBoundValueType::kAddition,
+                                           std::get<3>(item).value());
+    }
+    return std::make_pair(begin, end);
+}
+
+template <typename RESP>
 kvstore::ResultCode IndexExecutor<RESP>::executeExecutionPlan(PartitionID part) {
-    std::string prefix = NebulaKeyUtils::indexPrefix(part, index_->get_index_id())
-                        .append(prefix_);
     std::unique_ptr<kvstore::KVIterator> iter;
     std::vector<std::string> keys;
-    auto ret = this->kvstore_->prefix(spaceId_,
-                                      part,
-                                      prefix,
-                                      &iter);
+    auto pair = makeScanPair(part, index_->get_index_id());
+    if (pair.first.empty() || pair.second.empty()) {
+        return kvstore::ResultCode::ERR_KEY_NOT_FOUND;
+    }
+    auto ret = (pair.first == pair.second)
+               ? this->doPrefix(spaceId_, part, pair.first, &iter)
+               : this->doRange(spaceId_, part, pair.first, pair.second, &iter);
     if (ret != nebula::kvstore::SUCCEEDED) {
         return ret;
     }

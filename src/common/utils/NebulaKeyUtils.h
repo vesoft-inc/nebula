@@ -36,6 +36,13 @@ enum class NebulaSystemKeyType : uint32_t {
     kSystemPart        = 0x00000002,
 };
 
+enum class NebulaBoundValueType : uint8_t {
+    kMax                = 0x0001,
+    kMin                = 0x0002,
+    kSubtraction        = 0x0003,
+    kAddition           = 0x0004,
+};
+
 /**
  * This class supply some utils for transition between Vertex/Edge and key in kvstore.
  * */
@@ -246,6 +253,108 @@ public:
     static folly::StringPiece keyWithNoVersion(const folly::StringPiece& rawKey) {
         // TODO(heng) We should change the method if varint data version supportted.
         return rawKey.subpiece(0, rawKey.size() - sizeof(int64_t));
+    }
+
+    // Only int and double are supported
+    static std::string boundVariant(nebula::cpp2::SupportedType type,
+                                    NebulaBoundValueType op,
+                                    const VariantType& v = 0L) {
+        switch (op) {
+            case NebulaBoundValueType::kMax : {
+                std::vector<unsigned char> bytes = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+                return std::string(bytes.begin(), bytes.end());
+            }
+            case NebulaBoundValueType::kMin : {
+                std::string str;
+                str.reserve(sizeof(int64_t));
+                str.append(sizeof(int64_t), '\0');
+                return str;
+            }
+            case NebulaBoundValueType::kSubtraction : {
+                std::string str;
+                if (type == nebula::cpp2::SupportedType::INT) {
+                    str = encodeInt64(boost::get<int64_t>(v));
+                } else {
+                    str = encodeDouble(boost::get<double>(v));
+                }
+                std::vector<unsigned char> bytes(str.begin(), str.end());
+                for (size_t i = bytes.size(); i > 0; i--) {
+                    if (bytes[i-1] > 0) {
+                        bytes[i-1] -= 1;
+                        break;
+                    }
+                }
+                return std::string(bytes.begin(), bytes.end());
+            }
+            case NebulaBoundValueType::kAddition : {
+                std::string str;
+                if (type == nebula::cpp2::SupportedType::INT) {
+                    str = encodeInt64(boost::get<int64_t>(v));
+                } else {
+                    str = encodeDouble(boost::get<double>(v));
+                }
+                std::vector<unsigned char> bytes(str.begin(), str.end());
+                for (size_t i = bytes.size(); i > 0; i--) {
+                    if (bytes[i-1] < 255) {
+                        bytes[i-1] += 1;
+                        break;
+                    }
+                }
+                return std::string(bytes.begin(), bytes.end());
+            }
+        }
+        return "";
+    }
+
+    static bool checkAndCastVariant(nebula::cpp2::SupportedType sType,
+                                    VariantType& v) {
+        nebula::cpp2::SupportedType type = nebula::cpp2::SupportedType::UNKNOWN;
+        switch (v.which()) {
+            case VAR_INT64: {
+                type = nebula::cpp2::SupportedType::INT;
+                break;
+            }
+            case VAR_DOUBLE: {
+                type = nebula::cpp2::SupportedType::DOUBLE;
+                break;
+            }
+            case VAR_BOOL: {
+                type = nebula::cpp2::SupportedType::BOOL;
+                break;
+            }
+            case VAR_STR: {
+                type = nebula::cpp2::SupportedType::STRING;
+                break;
+            }
+            default:
+                return false;
+        }
+        if (sType != type) {
+            switch (sType) {
+                case nebula::cpp2::SupportedType::INT:
+                case nebula::cpp2::SupportedType::TIMESTAMP: {
+                    v = Expression::toInt(v);
+                    break;
+                }
+                case nebula::cpp2::SupportedType::BOOL: {
+                    v = Expression::toBool(v);
+                    break;
+                }
+                case nebula::cpp2::SupportedType::FLOAT:
+                case nebula::cpp2::SupportedType::DOUBLE: {
+                    v = Expression::toDouble(v);
+                    break;
+                }
+                case nebula::cpp2::SupportedType::STRING: {
+                    v = Expression::toString(v);
+                    break;
+                }
+                default: {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     static std::string encodeVariant(const VariantType& v)  {

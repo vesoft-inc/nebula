@@ -22,6 +22,11 @@ namespace storage {
  */
 using OperatorItem = std::tuple<std::string, VariantType, RelationalExpression::Operator>;
 
+/**
+ * Range scan item tuple<less_than , begin_value, greater_than, end_value>
+ **/
+using ScanItem = std::tuple<bool, OptVariantType, bool, OptVariantType>;
+
 class IndexPolicyMaker {
 public:
     virtual ~IndexPolicyMaker() = default;
@@ -48,7 +53,7 @@ protected:
      *         execution policy according to PolicyType.
      *         In this method, it is best to use as many index columns as possible.
      **/
-    void buildPolicy();
+    bool buildPolicy();
 
     /**
      * Details Evaluate filter conditions.
@@ -64,16 +69,20 @@ private:
 
     cpp2::ErrorCode traversalExpression(const Expression *expr);
 
+    RelationalExpression::Operator reversalRelationalExprOP(RelationalExpression::Operator op);
+
+    bool writeScanItem(const std::string& prop, const OperatorItem& item);
+
 protected:
     meta::SchemaManager*                     schemaMan_{nullptr};
     meta::IndexManager*                      indexMan_{nullptr};
     std::unique_ptr<ExpressionContext>       expCtx_{nullptr};
     std::unique_ptr<Expression>              exp_{nullptr};
-    std::string                              prefix_;
     std::shared_ptr<nebula::cpp2::IndexItem> index_{nullptr};
-    bool                                     optimizedPolicy_{true};
-    bool                                     requiredFilter_{true};
+    bool                                     requiredFilter_{false};
     std::vector<OperatorItem>                operatorList_;
+    // map<field_name, scan_item>
+    std::map<std::string, ScanItem>          scanItems_;
 };
 }  // namespace storage
 }  // namespace nebula
