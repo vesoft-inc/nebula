@@ -390,14 +390,19 @@ StatusOr<Value::Type> Validator::deduceExprType(const Expression* expr) const {
             auto castExpr = static_cast<const TypeCastingExpression*>(expr);
             auto result = deduceExprType(castExpr->operand());
             NG_RETURN_IF_ERROR(result);
-
-            auto* typeCastExpr = const_cast<TypeCastingExpression*>(castExpr);
             if (!evaluableExpr(castExpr->operand())) {
-                auto detectVal = kConstantValues.at(result.value());
-                typeCastExpr->setOperand(new ConstantExpression(detectVal));
+                if (TypeCastingExpression::validateTypeCast(result.value(),
+                                                            castExpr->type())) {
+                    return castExpr->type();
+                }
+                std::stringstream out;
+                out << "Can not convert " << castExpr->operand()
+                    << " 's type : " << result.value() << " to "
+                    << castExpr->type();
+                return Status::Error(out.str());
             }
-
             QueryExpressionContext ctx(nullptr, nullptr);
+            auto* typeCastExpr = const_cast<TypeCastingExpression*>(castExpr);
             auto val = typeCastExpr->eval(ctx);
             if (val.isNull()) {
                 return Status::SemanticError("`%s` is not a valid expression ",
