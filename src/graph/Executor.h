@@ -91,7 +91,7 @@ public:
 protected:
     std::unique_ptr<Executor> makeExecutor(Sentence *sentence);
 
-    std::string valueTypeToString(nebula::cpp2::ValueType type);
+    static std::string valueTypeToString(nebula::cpp2::ValueType type);
 
     Status writeVariantType(RowWriter &writer, const VariantType &value);
 

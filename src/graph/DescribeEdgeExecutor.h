@@ -8,12 +8,11 @@
 #define GRAPH_DESCRIBEEDGEEXECUTOR_H_
 
 #include "base/Base.h"
-#include "graph/Executor.h"
-
+#include "graph/DescribeSchemaExecutor.h"
 namespace nebula {
 namespace graph {
 
-class DescribeEdgeExecutor final : public Executor {
+class DescribeEdgeExecutor final : public DescribeSchemaExecutor {
 public:
     DescribeEdgeExecutor(Sentence *sentence, ExecutionContext *ectx);
 

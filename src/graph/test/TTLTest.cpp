@@ -5,10 +5,10 @@
  */
 
 #include "base/Base.h"
-#include "graph/test/TestEnv.h"
 #include "graph/test/TestBase.h"
-#include "meta/test/TestUtils.h"
+#include "graph/test/TestEnv.h"
 #include "graph/test/TraverseTestBase.h"
+#include "meta/test/TestUtils.h"
 #include "storage/test/TestUtils.h"
 
 DECLARE_int32(heartbeat_interval_secs);
@@ -18,6 +18,10 @@ namespace graph {
 
 class TTLTest : public TestBase {
 protected:
+    // Field Type Null Key Default Extra
+    using SchemaTuple =
+        std::tuple<std::string, std::string, bool, std::string, std::string, std::string>;
+
     void SetUp() override {
         TestBase::SetUp();
         // ...
@@ -36,12 +40,17 @@ TEST_F(TTLTest, schematest) {
         cpp2::ExecutionResponse resp;
         std::string query = "SHOW HOSTS";
         client->execute(query, resp);
-        std::vector<std::tuple<std::string, std::string, std::string,
-                               int, std::string, std::string>> expected {
-            {"127.0.0.1", std::to_string(gEnv->storageServerPort()), "online", 0,
-             "No valid partition", "No valid partition"},
-            {"Total", "", "", 0, "", ""},
-        };
+        std::vector<
+            std::tuple<std::string, std::string, std::string, int, std::string, std::string>>
+            expected{
+                {"127.0.0.1",
+                 std::to_string(gEnv->storageServerPort()),
+                 "online",
+                 0,
+                 "No valid partition",
+                 "No valid partition"},
+                {"Total", "", "", 0, "", ""},
+            };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     {
@@ -70,12 +79,12 @@ TEST_F(TTLTest, schematest) {
         std::string query = "DESCRIBE TAG person";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<uniform_tuple_t<std::string, 2>> expected{
-            {"name", "string"},
-            {"email", "string"},
-            {"age", "int"},
-            {"gender", "string"},
-            {"row_timestamp", "timestamp"},
+        std::vector<SchemaTuple> expected{
+            {"name", "string", false, "", "", ""},
+            {"email", "string", false, "", "", ""},
+            {"age", "int", false, "", "", ""},
+            {"gender", "string", false, "", "", ""},
+            {"row_timestamp", "timestamp", false, "", "", ""},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -360,9 +369,9 @@ TEST_F(TTLTest, schematest) {
         std::string query = "DESCRIBE EDGE work";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<uniform_tuple_t<std::string, 2>> expected{
-            {"number", "string"},
-            {"start_time", "timestamp"},
+        std::vector<SchemaTuple> expected{
+            {"number", "string", false, "", "", ""},
+            {"start_time", "timestamp", false, "", "", ""},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -664,7 +673,6 @@ TEST_F(TTLTest, Datatest) {
         auto code4 = client->execute(cmd4, resp4);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code4);
 
-
         cpp2::ExecutionResponse resp5;
         std::string cmd5 = "CREATE Edge like(id int) "
                            "ttl_col=\"id\", ttl_duration=100";
@@ -675,7 +683,6 @@ TEST_F(TTLTest, Datatest) {
         std::string cmd6 = "CREATE Edge friend(id int)";
         auto code6 = client->execute(cmd6, resp6);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code6);
-
 
         sleep(FLAGS_heartbeat_interval_secs + 3);
     }
@@ -748,10 +755,7 @@ TEST_F(TTLTest, Datatest) {
         auto code = client->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
-        std::vector<std::string> expectedColNames{
-            {"VertexID"},
-            {"career.id"}
-        };
+        std::vector<std::string> expectedColNames{{"VertexID"}, {"career.id"}};
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
         std::vector<std::tuple<int64_t, int>> expected = {
             {2, 200},
@@ -764,10 +768,7 @@ TEST_F(TTLTest, Datatest) {
         auto code = client->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
-        std::vector<std::string> expectedColNames{
-            {"VertexID"},
-            {"career.id"}
-        };
+        std::vector<std::string> expectedColNames{{"VertexID"}, {"career.id"}};
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
         std::vector<std::tuple<int64_t, int>> expected = {
             {2, 200},
@@ -780,10 +781,7 @@ TEST_F(TTLTest, Datatest) {
         auto code = client->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
-        std::vector<std::string> expectedColNames{
-            {"VertexID"},
-            {"career.id"}
-        };
+        std::vector<std::string> expectedColNames{{"VertexID"}, {"career.id"}};
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
         std::vector<std::tuple<int64_t, int>> expected = {
             {2, 200},

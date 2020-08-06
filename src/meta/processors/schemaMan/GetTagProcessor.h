@@ -21,6 +21,8 @@ public:
     void process(const cpp2::GetTagReq& req);
 
 private:
+    std::vector<::nebula::cpp2::IndexItem> getTagIndexKey(GraphSpaceID spaceId, TagID tagId);
+
     explicit GetTagProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::GetTagResp>(kvstore) {}
 };

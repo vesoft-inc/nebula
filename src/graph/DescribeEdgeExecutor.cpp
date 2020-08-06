@@ -12,7 +12,7 @@ namespace graph {
 
 DescribeEdgeExecutor::DescribeEdgeExecutor(Sentence *sentence,
                                            ExecutionContext *ectx)
-    : Executor(ectx, "describe_edge") {
+    : DescribeSchemaExecutor(ectx, "describe_edge") {
     sentence_ = static_cast<DescribeEdgeSentence*>(sentence);
 }
 
@@ -43,19 +43,8 @@ void DescribeEdgeExecutor::execute() {
         }
 
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
-        std::vector<std::string> header{"Field", "Type"};
-        resp_->set_column_names(std::move(header));
-        std::vector<cpp2::RowValue> rows;
-        for (auto& item : resp.value().columns) {
-            std::vector<cpp2::ColumnValue> row;
-            row.resize(2);
-            row[0].set_str(item.name);
-            row[1].set_str(valueTypeToString(item.type));
-            rows.emplace_back();
-            rows.back().set_columns(std::move(row));
-        }
-
-        resp_->set_rows(std::move(rows));
+        resp_->set_column_names(header_);
+        resp_->set_rows(genRows(resp.value().columns));
         doFinish(Executor::ProcessControl::kNext);
     };
 
