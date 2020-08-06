@@ -173,6 +173,9 @@ Status IndexKeyUtils::checkValue(const Value& v, bool isNullable) {
         case nebula::NullType::NaN : {
             return Status::Error("NaN");
         }
+        case nebula::NullType::OUT_OF_RANGE : {
+            return Status::Error("Out of range");
+        }
     }
     return Status::OK();
 }
