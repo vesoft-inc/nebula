@@ -19,6 +19,25 @@
  */
 namespace nebula {
 namespace graph {
+// TODO: All DDLs, DMLs and DQLs could be used in a single query
+// which would make them in a single and big execution plan
+
+class ShowHosts final : public SingleDependencyNode {
+    // TODO(shylock) meta/storage/graph enumerate
+public:
+    static ShowHosts* make(ExecutionPlan* plan, PlanNode* dep) {
+        return new ShowHosts(plan, dep);
+    }
+
+    std::string explain() const override {
+        return "ShowHosts";
+    }
+
+private:
+    explicit ShowHosts(ExecutionPlan* plan, PlanNode* dep)
+        : SingleDependencyNode(plan, Kind::kShowHosts, dep) {}
+};
+
 class CreateSpace final : public SingleInputNode {
 public:
     static CreateSpace* make(ExecutionPlan* plan,

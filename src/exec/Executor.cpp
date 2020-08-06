@@ -13,6 +13,7 @@
 #include "context/ExecutionContext.h"
 #include "context/QueryContext.h"
 #include "exec/ExecutionError.h"
+#include "exec/admin/ShowHostsExecutor.h"
 #include "exec/admin/SnapshotExecutor.h"
 #include "exec/admin/SpaceExecutor.h"
 #include "exec/admin/SwitchSpaceExecutor.h"
@@ -399,6 +400,13 @@ Executor *Executor::makeExecutor(const PlanNode *node,
             exec->dependsOn(input);
             break;
         }
+        case PlanNode::Kind::kShowHosts: {
+            auto showHosts = asNode<ShowHosts>(node);
+            auto input = makeExecutor(showHosts->dep(), qctx, visited);
+            exec = new ShowHostsExecutor(showHosts, qctx);
+            exec->dependsOn(input);
+            break;
+        }
         case PlanNode::Kind::kUnknown:
         default:
             LOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());
@@ -450,6 +458,15 @@ folly::Future<Status> Executor::error(Status status) const {
 
 Status Executor::finish(Result &&result) {
     ectx_->setResult(node()->varName(), std::move(result));
+    return Status::OK();
+}
+
+Status Executor::finish(Value &&value) {
+    ectx_->setResult(node()->varName(),
+                     ResultBuilder()
+                        .value(std::move(value))
+                        .iter(Iterator::Kind::kDefault)
+                        .finish());
     return Status::OK();
 }
 

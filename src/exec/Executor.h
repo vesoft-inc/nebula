@@ -98,6 +98,8 @@ protected:
 
     // Store the result of this executor to execution context
     Status finish(Result &&result);
+    // Store the default result which not used for later executor
+    Status finish(Value &&value);
 
     int64_t id_;
 
