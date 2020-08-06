@@ -112,7 +112,9 @@ protected:
 
     int32_t getBucketsNum(int32_t verticesNum, int32_t minVerticesPerBucket, int32_t handlerNum);
 
-    bool checkExp(const Expression* exp);
+    // updated whether it is the set clause of update
+    // updateEdge whether it is an update edge
+    bool checkExp(const Expression* exp, bool updated = false, bool updateEdge = false);
 
     void buildTTLInfoAndRespSchema();
 
@@ -143,6 +145,9 @@ protected:
     std::unordered_map<EdgeType, std::pair<std::string, int64_t>> edgeTTLInfo_;
 
     std::unordered_map<TagID, std::pair<std::string, int64_t>> tagTTLInfo_;
+
+    // Collect dependent props of one prop in value expression in upsert set clause
+    std::unordered_set<std::pair<std::string, std::string>>    valueProps_;
 };
 
 }  // namespace storage
