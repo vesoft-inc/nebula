@@ -1060,6 +1060,10 @@ typename RaftPart::Role RaftPart::processElectionResponses(
                       << ", double my election interval.";
             uint64_t curWeight = weight_.load();
             weight_.store(curWeight * 2);
+        } else {
+            LOG(ERROR) << idStr_ << "Receive response about askForVote from "
+                       << hosts[r.first]->address()
+                       << ", error code is " << static_cast<int32_t>(r.second.get_error_code());
         }
     }
 
@@ -1619,7 +1623,7 @@ cpp2::ErrorCode RaftPart::verifyLeader(
                 return h->address() == candidate;
             });
     if (it == hosts.end()) {
-        VLOG(2) << idStr_ << "The candidate leader " << candidate << " is not my peers";
+        LOG(INFO) << idStr_ << "The candidate leader " << candidate << " is not my peers";
         return cpp2::ErrorCode::E_WRONG_LEADER;
     }
 
@@ -1833,7 +1837,8 @@ AppendLogResult RaftPart::isCatchedUp(const HostAddr& peer) {
     }
     for (auto& host : hosts_) {
         if (host->addr_ == peer) {
-            if (host->followerCommittedLogId_ < wal_->firstLogId()) {
+            if (host->followerCommittedLogId_ == 0
+                    || host->followerCommittedLogId_ < wal_->firstLogId()) {
                 LOG(INFO) << idStr_ << "The committed log id of peer is "
                           << host->followerCommittedLogId_
                           << ", which is invalid or less than my first wal log id";

@@ -60,7 +60,6 @@ private:
         Function                body_;
     };
 
-    mutable folly::RWSpinLock                           lock_;
     std::unordered_map<std::string, FunctionAttributes> functions_;
 };
 
