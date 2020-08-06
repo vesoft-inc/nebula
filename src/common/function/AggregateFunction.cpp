@@ -42,7 +42,7 @@ std::unordered_map<std::string, AggFun::Function> AggFun::nameIdMap_ = {
     {"AVG", AggFun::Function::kAvg},
     {"MAX", AggFun::Function::kMax},
     {"MIN", AggFun::Function::kMin},
-    {"STDEV", AggFun::Function::kStdev},
+    {"STD", AggFun::Function::kStdev},
     {"BIT_AND", AggFun::Function::kBitAnd},
     {"BIT_OR", AggFun::Function::kBitOr},
     {"BIT_XOR", AggFun::Function::kBitXor},
