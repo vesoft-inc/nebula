@@ -277,7 +277,9 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
             if (ts > startTimeMs_) {
                 commitTransLeader(newLeader);
             } else {
-                LOG(INFO) << idStr_ << "Skip commit stale transfer leader " << newLeader;
+                LOG(INFO) << idStr_ << "Skip commit stale transfer leader " << newLeader
+                          << ", the part is opened at " << startTimeMs_
+                          << ", but the log timestamp is " << ts;
             }
             break;
         }
@@ -287,7 +289,9 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
             if (ts > startTimeMs_) {
                 commitRemovePeer(peer);
             } else {
-                LOG(INFO) << idStr_ << "Skip commit stale remove peer " << peer;
+                LOG(INFO) << idStr_ << "Skip commit stale remove peer " << peer
+                          << ", the part is opened at " << startTimeMs_
+                          << ", but the log timestamp is " << ts;
             }
             break;
         }
@@ -364,7 +368,9 @@ bool Part::preProcessLog(LogID logId,
                     LOG(INFO) << idStr_ << "preprocess add learner " << learner;
                     addLearner(learner);
                 } else {
-                    LOG(INFO) << idStr_ << "Skip stale add learner " << learner;
+                    LOG(INFO) << idStr_ << "Skip stale add learner " << learner
+                              << ", the part is opened at " << startTimeMs_
+                              << ", but the log timestamp is " << ts;
                 }
                 break;
             }
@@ -375,7 +381,9 @@ bool Part::preProcessLog(LogID logId,
                     LOG(INFO) << idStr_ << "preprocess trans leader " << newLeader;
                     preProcessTransLeader(newLeader);
                 } else {
-                    LOG(INFO) << idStr_ << "Skip stale transfer leader " << newLeader;
+                    LOG(INFO) << idStr_ << "Skip stale transfer leader " << newLeader
+                              << ", the part is opened at " << startTimeMs_
+                              << ", but the log timestamp is " << ts;
                 }
                 break;
             }
@@ -386,7 +394,9 @@ bool Part::preProcessLog(LogID logId,
                     LOG(INFO) << idStr_ << "preprocess add peer " << peer;
                     addPeer(peer);
                 } else {
-                    LOG(INFO) << idStr_ << "Skip stale add peer " << peer;
+                    LOG(INFO) << idStr_ << "Skip stale add peer " << peer
+                              << ", the part is opened at " << startTimeMs_
+                              << ", but the log timestamp is " << ts;
                 }
                 break;
             }
@@ -397,7 +407,9 @@ bool Part::preProcessLog(LogID logId,
                     LOG(INFO) << idStr_ << "preprocess remove peer " << peer;
                     preProcessRemovePeer(peer);
                 } else {
-                    LOG(INFO) << idStr_ << "Skip stale remove peer " << peer;
+                    LOG(INFO) << idStr_ << "Skip stale remove peer " << peer
+                              << ", the part is opened at " << startTimeMs_
+                              << ", but the log timestamp is " << ts;
                 }
                 break;
             }
