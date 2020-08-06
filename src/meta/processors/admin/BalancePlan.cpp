@@ -43,6 +43,10 @@ void BalancePlan::dispatchTasks() {
 
 void BalancePlan::invoke() {
     status_ = Status::IN_PROGRESS;
+    // Sort the tasks by its id to ensure the order after recovery.
+    std::sort(tasks_.begin(), tasks_.end(), [](auto& l, auto& r) {
+        return l.taskIdStr() < r.taskIdStr();
+    });
     dispatchTasks();
     for (size_t i = 0; i < buckets_.size(); i++) {
         for (size_t j = 0; j < buckets_[i].size(); j++) {
