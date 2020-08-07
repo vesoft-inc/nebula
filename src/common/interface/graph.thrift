@@ -63,13 +63,17 @@ struct PlanNodeBranchInfo {
     2: required i64   condition_node_id;
 }
 
+struct Pair {
+    1: required binary key;
+    2: required binary value;
+}
+
 struct PlanNodeDescription {
     1: required binary                          name;
     2: required i64                             id;
     3: required binary                          output_var;
     // other description of an executor
-    4: optional map<binary, binary>
-        (cpp.template = "std::unordered_map")   description;
+    4: optional list<Pair>                      description;
     // If an executor would be executed multi times,
     // the profiling statistics should be multi-versioned.
     5: optional list<ProfilingStats>            profiles;
