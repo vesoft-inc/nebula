@@ -302,7 +302,11 @@ StatusOr<Value::Type> Validator::deduceExprType(const Expression* expr) const {
         case Expression::Kind::kRelLT:
         case Expression::Kind::kRelLE:
         case Expression::Kind::kRelGT:
-        case Expression::Kind::kRelGE: {
+        case Expression::Kind::kRelGE:
+        case Expression::Kind::kContains: {
+            auto biExpr = static_cast<const BinaryExpression*>(expr);
+            NG_RETURN_IF_ERROR(deduceExprType(biExpr->left()));
+            NG_RETURN_IF_ERROR(deduceExprType(biExpr->right()));
             // TODO: Should deduce.
             return Value::Type::BOOL;
         }
@@ -548,6 +552,7 @@ Status Validator::deduceProps(const Expression* expr) {
         case Expression::Kind::kRelLE:
         case Expression::Kind::kRelGT:
         case Expression::Kind::kRelGE:
+        case Expression::Kind::kContains:
         case Expression::Kind::kLogicalAnd:
         case Expression::Kind::kLogicalOr:
         case Expression::Kind::kLogicalXor: {
@@ -664,6 +669,7 @@ bool Validator::evaluableExpr(const Expression* expr) const {
         case Expression::Kind::kRelGE:
         case Expression::Kind::kRelIn:
         case Expression::Kind::kRelNotIn:
+        case Expression::Kind::kContains:
         case Expression::Kind::kLogicalAnd:
         case Expression::Kind::kLogicalOr:
         case Expression::Kind::kLogicalXor: {

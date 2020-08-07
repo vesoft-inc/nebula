@@ -391,6 +391,36 @@ class TestGoQuery(NebulaTestSuite):
         }
         self.check_out_of_order_result(resp, expected_data["rows"])
 
+    @pytest.mark.skip(reason = 'return diffrent numbers when edge type wanted.')
+    def test_edge_type(self):
+        stmt = '''GO FROM "Russell Westbrook" OVER serve, like \
+            YIELD serve.start_year, like.likeness, serve._type, like._type'''
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = {
+            "column_names" : [],
+            "rows" : [
+                [2008, T_NULL, 6, T_NULL],
+                [T_NULL, 90, T_NULL, 5],
+                [T_NULL, 90, T_NULL, 5]
+            ]
+        }
+        self.check_out_of_order_result(resp, expected_data["rows"])
+
+        stmt = '''GO FROM "Russell Westbrook" OVER serve, like REVERSELY \
+            YIELD serve._dst, like._dst, serve._type, like._type'''
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = {
+            "column_names" : [],
+            "rows" : [
+                [T_NULL, "James Harden", T_NULL, -5],
+                [T_NULL, "Dejounte Murray", T_NULL, -5],
+                [T_NULL, "Paul George", T_NULL, -5],
+            ]
+        }
+        self.check_out_of_order_result(resp, expected_data["rows"])
+
     def test_multi_edges(self):
         stmt = '''GO FROM "Russell Westbrook" OVER serve, like \
             YIELD serve.start_year, like.likeness'''
@@ -423,6 +453,7 @@ class TestGoQuery(NebulaTestSuite):
             ]
         }
         self.check_out_of_order_result(resp, expected_data["rows"])
+
         stmt = "GO FROM 'Russell Westbrook' OVER serve, like"
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
@@ -1112,7 +1143,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_column_names(resp, expected_data["column_names"])
         self.check_out_of_order_result(resp, expected_data["rows"])
 
-       
+
 
         stmt = "GO FROM 'Tim Duncan' OVER serve bidirect YIELD $$.team.name"
         resp = self.execute_query(stmt)
@@ -1212,14 +1243,14 @@ class TestGoQuery(NebulaTestSuite):
         }
         self.check_column_names(resp, expected_data["column_names"])
         self.check_out_of_order_result(resp, expected_data["rows"])
-    
+
         stmt = '''GO FROM 'Tim Duncan' OVER like YIELD like._dst AS id, like.likeness AS id \
             | GO FROM $-.id OVER serve'''
         resp = self.execute_query(stmt)
         self.check_resp_failed(resp)
 
-    @pytest.mark.skip(reason = 'not implement')
     def test_contains(self):
+        """ the name_label is not a string any more, will be deprecated such a way of writing.
         stmt = '''GO FROM 'Boris Diaw' OVER serve WHERE $$.team.name CONTAINS Haw\
             YIELD $^.player.name, serve.start_year, serve.end_year, $$.team.name'''
         resp = self.execute_query(stmt)
@@ -1232,6 +1263,22 @@ class TestGoQuery(NebulaTestSuite):
         }
         self.check_column_names(resp, expected_data["column_names"])
         self.check_out_of_order_result(resp, expected_data["rows"])
+        """
+
+
+        stmt = '''GO FROM 'Boris Diaw' OVER serve WHERE $$.team.name CONTAINS \"Haw\"\
+            YIELD $^.player.name, serve.start_year, serve.end_year, $$.team.name'''
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = {
+            "column_names" : ["$^.player.name", "serve.start_year", "serve.end_year", "$$.team.name"],
+            "rows" : [
+                ["Boris Diaw", 2003, 2005, "Hawks"]
+            ]
+        }
+        self.check_column_names(resp, expected_data["column_names"])
+        self.check_out_of_order_result(resp, expected_data["rows"])
+
 
         stmt = '''GO FROM 'Boris Diaw' OVER serve WHERE (string)serve.start_year CONTAINS "05" \
             YIELD $^.player.name, serve.start_year, serve.end_year, $$.team.name'''
