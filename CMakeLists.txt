@@ -24,6 +24,7 @@
 #   ENABLE_JEMALLOC                -- Link jemalloc into all executables
 #   ENABLE_NATIVE                  -- Build native client
 #   ENABLE_TESTING                 -- Build unit test
+#   ENABLE_UPDATE_EXTERNAL_PROJ    -- Whether to update external project
 #
 # CMake version check
 cmake_minimum_required(VERSION 3.5.0)
@@ -141,11 +142,13 @@ option(ENABLE_STATIC_ASAN "Whether directs the GCC driver to link libasan static
 option(ENABLE_STATIC_UBSAN "Whether directs the GCC driver to link libubsan statically" OFF)
 option(ENABLE_PACK_ONE "Whether to package into one" ON)
 option(ENABLE_BUILD_STORAGE "Whether to build storage" OFF)
+option(ENABLE_UPDATE_EXTERNAL_PROJ "Whether to update external project" OFF)
 
 message(STATUS "ENABLE_ASAN: ${ENABLE_ASAN}")
 message(STATUS "ENABLE_TESTING: ${ENABLE_TESTING}")
 message(STATUS "ENABLE_UBSAN: ${ENABLE_UBSAN}")
 message(STATUS "ENABLE_FUZZ_TEST: ${ENABLE_FUZZ_TEST}")
+message(STATUS "ENABLE_UPDATE_EXTERNAL_PROJ: ${ENABLE_UPDATE_EXTERNAL_PROJ}")
 
 add_compile_options(-fno-strict-aliasing)
 
