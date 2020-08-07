@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
     // Check pid before glog init, in case of user may start daemon twice
     // the 2nd will make the 1st failed to output log anymore
     auto pidPath = FLAGS_pid_file;
-    status = ProcessUtils::isPidAvailable(pidPath);
+    auto status = ProcessUtils::isPidAvailable(pidPath);
     if (!status.ok()) {
         LOG(ERROR) << status;
         return EXIT_FAILURE;
@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Setup logging
-    auto status = setupLogging();
+    status = setupLogging();
     if (!status.ok()) {
         LOG(ERROR) << status;
         return EXIT_FAILURE;
