@@ -48,7 +48,10 @@ static size_t makePlanNodeDesc(const PlanNode* node, cpp2::PlanDescription* plan
     planNodeDesc.set_id(node->id());
     planNodeDesc.set_name(PlanNode::toString(node->kind()));
     planNodeDesc.set_output_var(node->varName());
-    planNodeDesc.set_description({{"description", node->explain()}});
+    cpp2::Pair p;
+    p.set_key("description");
+    p.set_value(node->explain());
+    planNodeDesc.set_description({std::move(p)});
 
     switch (node->kind()) {
         case PlanNode::Kind::kStart: {
