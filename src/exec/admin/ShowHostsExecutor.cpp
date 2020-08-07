@@ -7,6 +7,7 @@
 #include "exec/admin/ShowHostsExecutor.h"
 #include "planner/Admin.h"
 #include "context/QueryContext.h"
+#include "util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
