@@ -33,6 +33,16 @@ static void printHelp(const char *prog);
 DECLARE_string(flagfile);
 
 int main(int argc, char *argv[]) {
+    // Detect if the server has already been started
+    // Check pid before glog init, in case of user may start daemon twice
+    // the 2nd will make the 1st failed to output log anymore
+    auto pidPath = FLAGS_pid_file;
+    auto status = ProcessUtils::isPidAvailable(pidPath);
+    if (!status.ok()) {
+        LOG(ERROR) << status;
+        return EXIT_FAILURE;
+    }
+
     google::SetVersionString(nebula::versionString());
     if (argc == 1) {
         printHelp(argv[0]);
@@ -53,15 +63,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Setup logging
-    auto status = setupLogging();
-    if (!status.ok()) {
-        LOG(ERROR) << status;
-        return EXIT_FAILURE;
-    }
-
-    // Detect if the server has already been started
-    auto pidPath = FLAGS_pid_file;
-    status = ProcessUtils::isPidAvailable(pidPath);
+    status = setupLogging();
     if (!status.ok()) {
         LOG(ERROR) << status;
         return EXIT_FAILURE;
