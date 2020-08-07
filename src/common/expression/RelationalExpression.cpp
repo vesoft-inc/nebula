@@ -64,6 +64,14 @@ const Value& RelationalExpression::eval(ExpressionContext& ctx) {
             }
             break;
         }
+        case Kind::kContains: {
+            if (lhs.isStr() && rhs.isStr()) {
+                result_ = lhs.getStr().find(rhs.getStr()) != std::string::npos;
+            } else {
+                return Value::kNullBadType;
+            }
+            break;
+        }
         default:
             LOG(FATAL) << "Unknown type: " << kind_;
     }
@@ -96,6 +104,9 @@ std::string RelationalExpression::toString() const {
             break;
         case Kind::kRelNotIn:
             op = " NOT IN ";
+            break;
+        case Kind::kContains:
+            op = " CONTAINS ";
             break;
         default:
             op = "illegal symbol ";

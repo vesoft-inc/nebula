@@ -1664,6 +1664,70 @@ TEST_F(ExpressionTest, TypeCastTest) {
     }
 }
 
+TEST_F(ExpressionTest, RelationContains) {
+    {
+        // "abc" contains "a"
+        RelationalExpression expr(
+                Expression::Kind::kContains,
+                new ConstantExpression("abc"),
+                new ConstantExpression("a"));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::BOOL);
+        EXPECT_EQ(eval, true);
+    }
+    {
+        // "abc" contains "bc"
+        RelationalExpression expr(
+                Expression::Kind::kContains,
+                new ConstantExpression("abc"),
+                new ConstantExpression("bc"));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::BOOL);
+        EXPECT_EQ(eval, true);
+    }
+    {
+        // "abc" contains "d"
+        RelationalExpression expr(
+                Expression::Kind::kContains,
+                new ConstantExpression("abc"),
+                new ConstantExpression("d"));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::BOOL);
+        EXPECT_EQ(eval, false);
+    }
+    {
+        // "abc" contains 1
+        RelationalExpression expr(
+                Expression::Kind::kContains,
+                new ConstantExpression("abc1"),
+                new ConstantExpression(1));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval, Value::kNullBadType);
+    }
+    {
+        // 1234 contains 1
+        RelationalExpression expr(
+                Expression::Kind::kContains,
+                new ConstantExpression(1234),
+                new ConstantExpression(1));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval, Value::kNullBadType);
+    }
+}
+
+TEST_F(ExpressionTest, ContainsToString) {
+    {
+        // "abc" contains "a"
+        RelationalExpression expr(
+                Expression::Kind::kContains,
+                new ConstantExpression("abc"),
+                new ConstantExpression("a"));
+        auto str = expr.toString();
+        ASSERT_EQ("(abc CONTAINS a)", expr.toString());
+    }
+}
 }  // namespace nebula
 
 int main(int argc, char** argv) {

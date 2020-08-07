@@ -192,6 +192,13 @@ TEST(ExpressionEncodeDecode, RelationalExpression) {
     encoded = Expression::encode(geEx);
     decoded = Expression::decode(folly::StringPiece(encoded.data(), encoded.size()));
     EXPECT_EQ(geEx, *decoded);
+
+    RelationalExpression containEx(Expression::Kind::kContains,
+                              new ConstantExpression("12345"),
+                              new ConstantExpression("123"));
+    encoded = Expression::encode(containEx);
+    decoded = Expression::decode(folly::StringPiece(encoded.data(), encoded.size()));
+    EXPECT_EQ(containEx, *decoded);
 }
 
 
