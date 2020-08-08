@@ -165,6 +165,13 @@ IndexExecutor<RESP>::normalizeScanPair(const nebula::cpp2::ColumnDef& field, con
         begin = end = NebulaKeyUtils::encodeVariant(std::get<1>(item).value());
         return std::make_pair(begin, end);
     }
+    // normalize begin and end value using ScanItem. for example :
+    // 1 < c1 < 5   --> ScanItem:<true, 1, true, 5> --> {2, 5}
+    // 1 <= c1 <= 5 --> ScanItem:<false, 1, false, 5> --> {1, 6}
+    // c1 > 5 --> ScanItem:<true, 5, false, invalid_V> --> {6, max}
+    // c1 >= 5 --> ScanItem:<false, 5, false, invalid_V> --> {5, max}
+    // c1 < 6 --> ScanItem:<false, invalid_V, true, 6> --> {min, 6}
+    // c1 <= 6 --> ScanItem:<false, invalid_V, false, 6> --> {min, 7}
     if (!std::get<1>(item).ok()) {
         begin = NebulaKeyUtils::boundVariant(type, NebulaBoundValueType::kMin);
     } else if (std::get<0>(item)) {

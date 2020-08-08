@@ -178,15 +178,20 @@ IndexPolicyMaker::reversalRelationalExprOP(RelationalExpression::Operator op) {
 bool IndexPolicyMaker::writeScanItem(const std::string& prop, const OperatorItem& item) {
     auto op = std::get<2>(item);
     switch (op) {
+        // for example col > 1, means the operator is GT. if col >= 1 ,means the opertor is GE.
+        // if operator is GT or GE . the 1 should a begin value.
         case RelationalExpression::Operator::GE :
         case RelationalExpression::Operator::GT : {
             auto endThan = op == RelationalExpression::Operator::GT;
             auto v = scanItems_.find(prop);
             if (v == scanItems_.end()) {
+                // if the field did not exist in scanItems_, add an new one.
+                // default value is invalid VariantType.
                 scanItems_[prop] = std::make_tuple(endThan, std::get<1>(item),
                                                    false, Status::Error());
             } else {
                 if (!std::get<1>(v->second).ok()) {
+                    // if value is invalid VariantType, reset it.
                     std::get<1>(v->second) = std::get<1>(item);
                 } else if (std::get<1>(v->second).value() < std::get<1>(item)) {
                     // This might be the case where c1 > 1 and c1 > 5 , so the 5 should be save.
@@ -195,6 +200,10 @@ bool IndexPolicyMaker::writeScanItem(const std::string& prop, const OperatorItem
             }
             break;
         }
+        /**
+         * if col < 1, means the operator is LT. if col <= 1 ,means the opertor is LE.
+         * if operator is LT or LE . the 1 should a end value.
+         **/
         case RelationalExpression::Operator::LE :
         case RelationalExpression::Operator::LT : {
             auto beginThan = op == RelationalExpression::Operator::LT;

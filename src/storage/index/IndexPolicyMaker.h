@@ -24,6 +24,12 @@ using OperatorItem = std::tuple<std::string, VariantType, RelationalExpression::
 
 /**
  * Range scan item tuple<less_than , begin_value, greater_than, end_value>
+ * for example :
+ * index (c1)
+ * where c1 > 1 --> <true, 1, false, max>
+ * where c1 >= 1 --> <false , 1, false, max>
+ * where 1 < c1 < 2 <true, 1, true, 2>
+ * where 1 <= c1 <= 2 <false, 1, false, 2>
  **/
 using ScanItem = std::tuple<bool, OptVariantType, bool, OptVariantType>;
 
