@@ -51,6 +51,16 @@ private:
                             const TagID tagId,
                             const std::vector<PropContext>& props);
 
+    kvstore::ResultCode checkField(const std::string& edgeName, const std::string& propName,
+                                   const meta::SchemaProviderIf* schema);
+
+    kvstore::ResultCode checkAndGetDefault(const std::string& edgeName,
+                                           const std::string& propNamem,
+                                           const meta::SchemaProviderIf* schema);
+
+    kvstore::ResultCode buildDependProps(const cpp2::EdgeKey& edgeKey,
+                                         const meta::SchemaProviderIf* schema);
+
     kvstore::ResultCode collectEdgesProps(const PartitionID partId,
                                           const cpp2::EdgeKey& edgeKey);
 
@@ -71,6 +81,15 @@ private:
     meta::IndexManager*                                             indexMan_{nullptr};
     std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>           indexes_;
     std::atomic<cpp2::ErrorCode>                          filterResult_{cpp2::ErrorCode::SUCCEEDED};
+
+    // Each UpdateItem in updateItems_ depend props in value expression
+    // <edgename, propNmae> -> unordered_set<edgename,propNmae>
+    using PropPair = std::pair<std::string, std::string>;
+    std::vector<std::pair<PropPair, std::unordered_set<PropPair>>>  depPropMap_;
+
+
+    // Checked props
+    std::unordered_set<std::string>                                 checkedProp_;
 };
 
 }  // namespace storage

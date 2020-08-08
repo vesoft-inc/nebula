@@ -239,12 +239,13 @@ TEST_P(UpdateUpsertTest, UpdateUpsertEdge) {
     }
     {   // Filter out
         // https://github.com/vesoft-inc/nebula/issues/1888
+        // Update set clause and filter clause are not allowed to manipulate tag attributes
         cpp2::ExecutionResponse resp;
         auto query = GetParam() + " EDGE 200 -> 101@0 OF select "
                     + "SET grade = select.grade + 1, year = 2000 "
                     + "WHEN select.grade > 1024 && $^.student.age > 15";
         auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {   // SetFilter
         cpp2::ExecutionResponse resp;
@@ -252,13 +253,13 @@ TEST_P(UpdateUpsertTest, UpdateUpsertEdge) {
                     + "SET grade = select.grade + 1, year = 2000 "
                     + "WHEN select.grade > 4 && $^.student.age > 15";
         auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
         cpp2::ExecutionResponse resp;
         auto query = GetParam() + " EDGE uuid(\"Monica\") -> uuid(\"Math\")@0 OF select "
                     + "SET grade = select.grade + 1, year = 2000 "
-                    + "WHEN select.grade > 4 && $^.student.age > 15";
+                    + "WHEN select.grade > 4";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -270,7 +271,7 @@ TEST_P(UpdateUpsertTest, UpdateUpsertEdge) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<std::string, int64_t, int64_t>> expected = {
-            {"Monica", 8, 2018},
+            {"Monica", 7, 2018},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -290,12 +291,12 @@ TEST_P(UpdateUpsertTest, UpdateUpsertEdge) {
         cpp2::ExecutionResponse resp;
         auto query = GetParam() + " EDGE 200 -> 101@0 OF select "
                     + "SET grade = select.grade + 1, year = 2019 "
-                    + "WHEN select.grade > 4 && $^.student.age > 15 "
+                    + "WHEN select.grade > 4"
                     + "YIELD $^.student.name AS Name, select.grade AS Grade, select.year AS Year";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<std::string, int64_t, int64_t>> expected = {
-            {"Monica", 9, 2019},
+            {"Monica", 8, 2019},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -303,7 +304,7 @@ TEST_P(UpdateUpsertTest, UpdateUpsertEdge) {
         cpp2::ExecutionResponse resp;
         auto query = GetParam() + " EDGE uuid(\"Monica\") -> uuid(\"Math\")@0 OF select "
                     + "SET grade = select.grade + 1, year = 2019 "
-                    + "WHEN select.grade > 4 && $^.student.age > 15 "
+                    + "WHEN select.grade > 4"
                     + "YIELD $^.student.name AS Name, select.grade AS Grade, select.year AS Year";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -316,12 +317,12 @@ TEST_P(UpdateUpsertTest, UpdateUpsertEdge) {
         cpp2::ExecutionResponse resp;
         auto query = GetParam() + " EDGE 200 -> 101@0 OF select "
                     + "SET grade = select.grade + 1, year = 2019 "
-                    + "WHEN select.grade > 233333333333 && $^.student.age > 15 "
+                    + "WHEN select.grade > 233333333333"
                     + "YIELD $^.student.name AS Name, select.grade AS Grade, select.year AS Year";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<std::string, int64_t, int64_t>> expected = {
-            {"Monica", 9, 2019},
+            {"Monica", 8, 2019},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -329,7 +330,7 @@ TEST_P(UpdateUpsertTest, UpdateUpsertEdge) {
         cpp2::ExecutionResponse resp;
         auto query = GetParam() + " EDGE uuid(\"Monica\") -> uuid(\"Math\")@0 OF select "
                     + "SET grade = select.grade + 1, year = 2019 "
-                    + "WHEN select.grade > 233333333333 && $^.student.age > 15 "
+                    + "WHEN select.grade > 233333333333"
                     + "YIELD $^.student.name AS Name, select.grade AS Grade, select.year AS Year";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -378,7 +379,7 @@ TEST_P(UpdateUpsertTest, InvalidTest) {
         cpp2::ExecutionResponse resp;
         auto query = GetParam() + " EDGE 200 -> 101@0 OF select "
                     + "SET nonexistentProperty = select.grade + 1, year = 2019 "
-                    + "WHEN nonexistentEdgeName.grade > 4 && $^.student.nonexistentProperty > 15 "
+                    + "WHEN nonexistentEdgeName.grade > 4"
                     + "YIELD $^.nonexistentTag.name AS Name, select.nonexistentProperty AS Grade";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code) << resp.get_error_msg();
@@ -542,6 +543,23 @@ TEST_F(UpsertTest, VertexNotExists) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    {   // Insertable success, 118 is nonexistent, name and age without default value,
+        // the filter is always true.
+        // use
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT VERTEX 118 "
+                     "SET student_default.age = 1, "
+                     "student_default.birthday = $^.student_default.age, "
+                     "student_default.name = \"Kate\" "
+                     "YIELD $^.student_default.name AS Name, $^.student_default.age AS Age, "
+                     "$^.student_default.gender AS gender, $^.student_default.birthday AS birthday";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t, std::string, int64_t>> expected = {
+                {"Kate", 1, "one", 1},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
 }
 
 TEST_F(UpsertTest, EdgeNotExists) {
@@ -558,10 +576,19 @@ TEST_F(UpsertTest, EdgeNotExists) {
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     {   // Insertable, upsert when edge exists
+        // Update set clause and filter clause are not allowed to manipulate tag attributes
         cpp2::ExecutionResponse resp;
         auto query = "UPSERT EDGE 201 -> 101@0 OF select "
                      "SET grade = 3, year = 2019 "
                      "WHEN $^.student.age > 15 && $^.student.gender == \"male\" "
+                     "YIELD select.grade AS Grade, select.year AS Year";
+        auto code = client_->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {   // Insertable, upsert when edge exists
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT EDGE 201 -> 101@0 OF select "
+                     "SET grade = 3, year = 2019 "
                      "YIELD select.grade AS Grade, select.year AS Year";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -671,6 +698,19 @@ TEST_F(UpsertTest, EdgeNotExists) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    // update select_default's year with edge prop value
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT EDGE 222 -> 445@0 OF select_default "
+                     "SET grade = 3, year = select_default.grade + 10 "
+                     "YIELD select_default.grade AS Grade, select_default.year AS Year";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector <std::tuple<int64_t, int64_t>> expected = {
+            {3, 13},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
 }
 
 TEST_F(UpdateTest, NotExists) {
@@ -687,7 +727,7 @@ TEST_F(UpdateTest, NotExists) {
         cpp2::ExecutionResponse resp;
         auto query = "UPDATE EDGE 200 -> 101000000000000@0 OF select "
                      "SET grade = select.grade + 1, year = 2019 "
-                     "WHEN select.grade > 4 && $^.student.age > 15 "
+                     "WHEN select.grade > 4 "
                      "YIELD $^.student.name AS Name, select.grade AS Grade, select.year AS Year";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code) << resp.get_error_msg();
@@ -696,7 +736,7 @@ TEST_F(UpdateTest, NotExists) {
         cpp2::ExecutionResponse resp;
         auto query = "UPDATE EDGE 200 -> 101@123456789 OF select "
                      "SET grade = select.grade + 1, year = 2019 "
-                     "WHEN select.grade > 4 && $^.student.age > 15 "
+                     "WHEN select.grade > 4"
                      "YIELD $^.student.name AS Name, select.grade AS Grade, select.year AS Year";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code) << resp.get_error_msg();

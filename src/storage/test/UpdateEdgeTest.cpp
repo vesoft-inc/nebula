@@ -78,8 +78,8 @@ void mockData(kvstore::KVStore* kv) {
     }
 }
 
-
-TEST(UpdateEdgeTest, Set_Filter_Yield_Test) {
+// Fiter has $^ props, failed
+TEST(UpdateEdgeTest, Set_Filter_Yield_Failed_Test) {
     fs::TempDir rootPath("/tmp/UpdateEdgeTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
 
@@ -124,6 +124,7 @@ TEST(UpdateEdgeTest, Set_Filter_Yield_Test) {
     // left AND right is ture
     auto logExp = std::make_unique<LogicalExpression>(left, LogicalExpression::AND, right);
     req.set_filter(Expression::encode(logExp.get()));
+
     LOG(INFO) << "Build update items...";
     std::vector<cpp2::UpdateItem> items;
     // int: 101.col_0 = 101.col_2 = 10001 + 2 = 10003
@@ -144,15 +145,105 @@ TEST(UpdateEdgeTest, Set_Filter_Yield_Test) {
     item2.set_value(Expression::encode(&val2));
     items.emplace_back(item2);
     req.set_update_items(std::move(items));
+
     decltype(req.return_columns) tmpColumns;
     tmpColumns.emplace_back(Expression::encode(&val1));
     tmpColumns.emplace_back(Expression::encode(&val2));
     SourcePropertyExpression sourcePropExp(new std::string(folly::to<std::string>(3002)),
                                            new std::string("tag_3002_col_2"));
     tmpColumns.emplace_back(Expression::encode(&sourcePropExp));
-
     req.set_return_columns(std::move(tmpColumns));
     req.set_insertable(false);
+
+    LOG(INFO) << "Test UpdateEdgeRequest...";
+    auto* processor = UpdateEdgeProcessor::instance(kv.get(),
+                                                    schemaMan.get(),
+                                                    indexMan.get(),
+                                                    nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    LOG(INFO) << "Check the results...";
+    EXPECT_EQ(1, resp.result.failed_codes.size());
+}
+
+TEST(UpdateEdgeTest, Set_Filter_Yield_Success_Test) {
+    fs::TempDir rootPath("/tmp/UpdateEdgeTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+
+    LOG(INFO) << "Prepare meta...";
+    auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
+    mockData(kv.get());
+
+    LOG(INFO) << "Build UpdateEdgeRequest...";
+    GraphSpaceID spaceId = 0;
+    PartitionID partId = 0;
+    VertexID srcId = 1;
+    VertexID dstId = 10001;
+    // src = 1, edge_type = 101, ranking = 0, dst = 10001
+    storage::cpp2::EdgeKey edgeKey;
+    edgeKey.set_src(srcId);
+    edgeKey.set_edge_type(101);
+    edgeKey.set_ranking(0);
+    edgeKey.set_dst(dstId);
+    cpp2::UpdateEdgeRequest req;
+    req.set_space_id(spaceId);
+    req.set_edge_key(edgeKey);
+    req.set_part_id(partId);
+    LOG(INFO) << "Build filter...";
+    // left int: 101.col_0 >= 0
+    auto* edge1 = new std::string("101");
+    auto* prop1 = new std::string("col_0");
+    auto* srcExp1 = new AliasPropertyExpression(new std::string(""), edge1, prop1);
+    auto* priExp1 = new PrimaryExpression(0L);
+    auto* left = new RelationalExpression(srcExp1,
+                                          RelationalExpression::Operator::GE,
+                                          priExp1);
+    // right string: 101.col_11 == string_col_11_2;
+    auto* edge2 = new std::string("101");
+    auto* prop2 = new std::string("col_11");
+    auto* srcExp2 = new AliasPropertyExpression(new std::string(""), edge2, prop2);
+    std::string col3("string_col_11_2");
+    auto* priExp2 = new PrimaryExpression(col3);
+    auto* right = new RelationalExpression(srcExp2,
+                                           RelationalExpression::Operator::EQ,
+                                           priExp2);
+    // left AND right is ture
+    auto logExp = std::make_unique<LogicalExpression>(left, LogicalExpression::AND, right);
+    req.set_filter(Expression::encode(logExp.get()));
+
+    LOG(INFO) << "Build update items...";
+    std::vector<cpp2::UpdateItem> items;
+    // int: 101.col_0 = 101.col_2 = 10001 + 2 = 10003
+    cpp2::UpdateItem item1;
+    item1.set_name("101");
+    item1.set_prop("col_0");
+    auto* edge101 = new std::string("101");
+    auto* propCol2 = new std::string("col_2");
+    AliasPropertyExpression val1(new std::string(""), edge101, propCol2);
+    item1.set_value(Expression::encode(&val1));
+    items.emplace_back(item1);
+    // string: 101.col_10 = string_col_10_2_new
+    cpp2::UpdateItem item2;
+    item2.set_name("101");
+    item2.set_prop("col_10");
+    std::string col10new("string_col_10_2_new");
+    PrimaryExpression val2(col10new);
+    item2.set_value(Expression::encode(&val2));
+    items.emplace_back(item2);
+    req.set_update_items(std::move(items));
+
+    decltype(req.return_columns) tmpColumns;
+    tmpColumns.emplace_back(Expression::encode(&val1));
+    tmpColumns.emplace_back(Expression::encode(&val2));
+    SourcePropertyExpression sourcePropExp(new std::string(folly::to<std::string>(3002)),
+                                           new std::string("tag_3002_col_2"));
+    tmpColumns.emplace_back(Expression::encode(&sourcePropExp));
+    req.set_return_columns(std::move(tmpColumns));
+    req.set_insertable(false);
+
     LOG(INFO) << "Test UpdateEdgeRequest...";
     auto* processor = UpdateEdgeProcessor::instance(kv.get(),
                                                     schemaMan.get(),
@@ -214,8 +305,8 @@ TEST(UpdateEdgeTest, Set_Filter_Yield_Test) {
     EXPECT_STREQ("string_col_10_2_new", boost::get<std::string>(v2).c_str());
 }
 
-
-TEST(UpdateEdgeTest, Insertable_Test) {
+// Update set clause has $^ props, failed
+TEST(UpdateEdgeTest, Insertable_Failed_Test) {
     fs::TempDir rootPath("/tmp/UpdateEdgeTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
 
@@ -240,6 +331,7 @@ TEST(UpdateEdgeTest, Insertable_Test) {
     req.set_edge_key(edgeKey);
     req.set_part_id(partId);
     req.set_filter("");
+
     LOG(INFO) << "Build update items...";
     std::vector<cpp2::UpdateItem> items;
     // int: 101.col_0 = $^.3002.tag_3002_col_2
@@ -260,6 +352,67 @@ TEST(UpdateEdgeTest, Insertable_Test) {
     item2.set_value(Expression::encode(&val2));
     items.emplace_back(item2);
     req.set_update_items(std::move(items));
+    req.set_insertable(true);
+
+    LOG(INFO) << "Test UpdateEdgeRequest...";
+    auto* processor = UpdateEdgeProcessor::instance(kv.get(),
+                                                    schemaMan.get(),
+                                                    indexMan.get(),
+                                                    nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    LOG(INFO) << "Check the results...";
+    EXPECT_EQ(1, resp.result.failed_codes.size());
+}
+
+TEST(UpdateEdgeTest, Insertable_Success_Test) {
+    fs::TempDir rootPath("/tmp/UpdateEdgeTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+
+    LOG(INFO) << "Prepare meta...";
+    auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
+    mockData(kv.get());
+
+    LOG(INFO) << "Build UpdateEdgeRequest...";
+    GraphSpaceID spaceId = 0;
+    PartitionID partId = 0;
+    VertexID srcId = 1;
+    VertexID dstId = 10008;
+    // src = 1, edge_type = 101, ranking = 0, dst = 10008
+    storage::cpp2::EdgeKey edgeKey;
+    edgeKey.set_src(srcId);
+    edgeKey.set_edge_type(101);
+    edgeKey.set_ranking(0);
+    edgeKey.set_dst(dstId);
+    cpp2::UpdateEdgeRequest req;
+    req.set_space_id(spaceId);
+    req.set_edge_key(edgeKey);
+    req.set_part_id(partId);
+    req.set_filter("");
+
+    LOG(INFO) << "Build update items...";
+    std::vector<cpp2::UpdateItem> items;
+    // int: 101.col_0 = 1
+    cpp2::UpdateItem item1;
+    item1.set_name("101");
+    item1.set_prop("col_0");
+    PrimaryExpression val1(1L);
+    item1.set_value(Expression::encode(&val1));
+    items.emplace_back(item1);
+    // string: 101.col_10 = string_col_10
+    cpp2::UpdateItem item2;
+    item2.set_name("101");
+    item2.set_prop("col_10");
+    std::string col10new("string_col_10_2_new");
+    PrimaryExpression val2(col10new);
+    item2.set_value(Expression::encode(&val2));
+    items.emplace_back(item2);
+
+    req.set_update_items(std::move(items));
+
     decltype(req.return_columns) tmpColumns;
     AliasPropertyExpression edgePropExp(
         new std::string(""), new std::string("101"), new std::string("col_0"));
@@ -299,7 +452,7 @@ TEST(UpdateEdgeTest, Insertable_Test) {
             switch (i) {
                 case 0: {
                     auto&& v0 = value(std::move(res));
-                    EXPECT_EQ(3006, boost::get<int64_t>(v0));
+                    EXPECT_EQ(1, boost::get<int64_t>(v0));
                     break;
                 }
                 case 1: {
@@ -319,7 +472,7 @@ TEST(UpdateEdgeTest, Insertable_Test) {
                 }
                 case 4: {
                     auto&& v4 = value(std::move(res));
-                    EXPECT_EQ(3006, boost::get<int64_t>(v4));
+                    EXPECT_EQ(1, boost::get<int64_t>(v4));
                     break;
                 }
                 default:
@@ -337,7 +490,7 @@ TEST(UpdateEdgeTest, Insertable_Test) {
     auto res = RowReader::getPropByName(reader.get(), "col_0");
     EXPECT_TRUE(ok(res));
     auto&& v0 = value(std::move(res));
-    EXPECT_EQ(3006L, boost::get<int64_t>(v0));
+    EXPECT_EQ(1L, boost::get<int64_t>(v0));
     res = RowReader::getPropByName(reader.get(), "col_1");
     EXPECT_TRUE(ok(res));
     auto&& v1 = value(std::move(res));

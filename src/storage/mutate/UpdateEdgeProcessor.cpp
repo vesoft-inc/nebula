@@ -149,6 +149,84 @@ kvstore::ResultCode UpdateEdgeProcessor::collectVertexProps(
     return ret;
 }
 
+kvstore::ResultCode UpdateEdgeProcessor::checkField(const std::string& edgeName,
+                                                    const std::string& propName,
+                                                    const meta::SchemaProviderIf* schema) {
+    auto field = schema->field(propName);
+    if (!field) {
+        VLOG(3) << "Can't find the schema prop  " << propName
+                << " in edge " << edgeName;
+        return kvstore::ResultCode::ERR_UNKNOWN;
+    }
+
+    return kvstore::ResultCode::SUCCEEDED;
+}
+
+kvstore::ResultCode
+UpdateEdgeProcessor::checkAndGetDefault(const std::string& edgeName,
+                                        const std::string& propName,
+                                        const meta::SchemaProviderIf* schema) {
+    auto ret = checkField(edgeName, propName, schema);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        return ret;
+    }
+
+    auto value = schema->getDefaultValue(propName);
+    if (!value.ok()) {
+        VLOG(3) << "Edge: " << edgeName << ", prop: " << propName
+                << " without default value";
+        return kvstore::ResultCode::ERR_UNKNOWN;
+    }
+    auto v = std::move(value.value());
+    edgeFilters_.emplace(propName, v);
+    return kvstore::ResultCode::SUCCEEDED;
+}
+
+kvstore::ResultCode
+UpdateEdgeProcessor::buildDependProps(const cpp2::EdgeKey& edgeKey,
+                                      const meta::SchemaProviderIf* schema) {
+    // Only one edge, check depPropMap_ in set clause
+    // This props must have default value or nullable, or set int UpdateItems_
+
+    // get updated edgeName
+    auto edgeNameRet = this->schemaMan_->toEdgeName(spaceId_, std::abs(edgeKey.edge_type));
+    if (!edgeNameRet.ok()) {
+        VLOG(3) << "Can't find edgeType" << edgeKey.edge_type;
+        return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
+    }
+    auto& edgeName = edgeNameRet.value();
+
+    for (auto& prop : depPropMap_) {
+        if (prop.first.first.compare(edgeName) != 0) {
+            VLOG(3) << "Only one edge can be used in the update set clause";
+            return kvstore::ResultCode::ERR_UNKNOWN;
+        }
+
+        for (auto& p : prop.second) {
+            if (p.first.compare(edgeName) != 0) {
+                VLOG(3) << "Only one edge can be used in the update set clause";
+                return kvstore::ResultCode::ERR_UNKNOWN;
+            }
+
+            auto it = checkedProp_.find(p.second);
+            if (it == checkedProp_.end()) {
+                auto ret = checkAndGetDefault(p.first, p.second, schema);
+                if (ret != kvstore::ResultCode::SUCCEEDED) {
+                    return kvstore::ResultCode::ERR_UNKNOWN;
+                }
+                checkedProp_.emplace(p.second);
+            }
+        }
+
+        // set field not need default value or nullable
+        auto ret = checkField(prop.first.first, prop.first.second, schema);
+        if (ret != kvstore::ResultCode::SUCCEEDED) {
+            return kvstore::ResultCode::ERR_UNKNOWN;
+        }
+        checkedProp_.emplace(prop.first.second);
+    }
+    return kvstore::ResultCode::SUCCEEDED;
+}
 
 kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
                             const PartitionID partId,
@@ -219,15 +297,20 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
         }
         auto updater = std::make_unique<RowUpdater>(constSchema);
 
+        // Onlt handle one edge
+        ret = buildDependProps(edgeKey, constSchema.get());
+        if (ret != kvstore::ResultCode::SUCCEEDED) {
+            return ret;
+        }
+
+        // When the schema field is not in update field or the update item has src item,
+        // need to get default value from schema. If nonexistent return error.
+        // props not in set clause must have default value
         for (auto index = 0UL; index < constSchema->getNumFields(); index++) {
             auto propName = std::string(constSchema->getFieldName(index));
-            auto findIter = std::find_if(updateItems_.cbegin(), updateItems_.cend(),
-                    [&propName](auto &item) { return item.prop == propName; });
-            OptVariantType value;
-            if (findIter == updateItems_.end()) {
-                // When the schema field is not in update field
-                // need to get default value from schema. If nonexistent return error.
-                value = constSchema->getDefaultValue(index);
+            auto propIter = checkedProp_.find(propName);
+            if (propIter == checkedProp_.end()) {
+                auto value = constSchema->getDefaultValue(propName);
                 if (!value.ok()) {
                     LOG(ERROR) << "EdgeType: " << edgeKey.edge_type
                                << ", prop: " << propName << " without default value";
@@ -235,38 +318,6 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
                 }
                 auto v = std::move(value.value());
                 edgeFilters_.emplace(propName, v);
-            } else {
-                // When the update item has src item,
-                // need to get default value from schema. If nonexistent return error.
-                auto expStatus = Expression::decode(findIter->get_value());
-                if (!expStatus.ok()) {
-                    LOG(ERROR) << "Expression decode failed, propName: " << propName;
-                    return kvstore::ResultCode::ERR_UNKNOWN;
-                }
-
-                auto expression = std::move(expStatus).value();
-                ExpressionContext expCtx;
-                expression->setContext(&expCtx);
-                if (!expression->prepare().ok()) {
-                    LOG(ERROR) << "Expression::prepare failed";
-                    return kvstore::ResultCode::ERR_UNKNOWN;
-                }
-                if (expCtx.hasEdgeProp()) {
-                    auto aliasProps = expCtx.aliasProps();
-                    for (auto& prop : aliasProps) {
-                        value = constSchema->getDefaultValue(prop.second);
-                        if (!value.ok()) {
-                            LOG(ERROR) << "EdgeType: " << edgeKey.edge_type
-                                       << ", prop: " << prop.second << " without default value";
-                            return kvstore::ResultCode::ERR_UNKNOWN;
-                        }
-                        VLOG(2) << "UpdateItem on propName: " << prop.second << " has edge prop";
-                        auto v = std::move(value.value());
-                        edgeFilters_.emplace(prop.second, v);
-                    }
-                } else {
-                    VLOG(2) << "Nothing set on propName: " << propName;
-                }
             }
         }
         updater_ = std::unique_ptr<RowUpdater>(std::move(updater));
@@ -546,15 +597,17 @@ cpp2::ErrorCode UpdateEdgeProcessor::checkAndBuildContexts(
         this->exp_ = std::move(expRet).value();
         this->exp_->setContext(this->expCtx_.get());
         auto status = this->exp_->prepare();
-        if (!status.ok() || !this->checkExp(this->exp_.get())) {
+        if (!status.ok() || !this->checkExp(this->exp_.get(), false, true)) {
             return cpp2::ErrorCode::E_INVALID_FILTER;
         }
     }
     // build context of the update items
     for (auto& item : req.get_update_items()) {
+        const auto& name = item.get_name();
+        const auto& propName = item.get_prop();
         AliasPropertyExpression edgePropExp(new std::string(""),
-                                            new std::string(item.get_name()),
-                                            new std::string(item.get_prop()));
+                                            new std::string(name),
+                                            new std::string(propName));
         edgePropExp.setContext(this->expCtx_.get());
         auto status = edgePropExp.prepare();
         if (!status.ok() || !this->checkExp(&edgePropExp)) {
@@ -567,10 +620,16 @@ cpp2::ErrorCode UpdateEdgeProcessor::checkAndBuildContexts(
             return cpp2::ErrorCode::E_INVALID_UPDATER;
         }
         auto vexp = std::move(exp).value();
+
+        // Get dependent prop
+        valueProps_.clear();
         vexp->setContext(this->expCtx_.get());
         status = vexp->prepare();
-        if (!status.ok() || !this->checkExp(vexp.get())) {
+        if (!status.ok() || !this->checkExp(vexp.get(), insertable_, true)) {
             return cpp2::ErrorCode::E_INVALID_UPDATER;
+        }
+        if (insertable_) {
+            depPropMap_.emplace_back(std::make_pair(std::make_pair(name, propName), valueProps_));
         }
     }
     if (this->expCtx_->hasDstTagProp() || this->expCtx_->hasVariableProp()

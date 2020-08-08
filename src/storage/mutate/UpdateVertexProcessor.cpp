@@ -128,6 +128,31 @@ kvstore::ResultCode UpdateVertexProcessor::checkAndGetDefault(const std::string&
     return kvstore::ResultCode::SUCCEEDED;
 }
 
+kvstore::ResultCode UpdateVertexProcessor::buildDependProps() {
+    // Check depPropMap_ in set clause
+    // This props must have default value or nullable, or set int UpdateItems_
+    for (auto& prop : depPropMap_) {
+        for (auto& p : prop.second) {
+            auto it = checkedProp_.find(p);
+            if (it == checkedProp_.end()) {
+                auto ret = checkAndGetDefault(p.first, p.second);
+                if (ret != kvstore::ResultCode::SUCCEEDED) {
+                    return kvstore::ResultCode::ERR_UNKNOWN;
+                }
+                checkedProp_.emplace(p);
+            }
+        }
+
+        // set field not need default value or nullable
+        auto ret = checkField(prop.first.first, prop.first.second);
+        if (ret != kvstore::ResultCode::SUCCEEDED) {
+            return kvstore::ResultCode::ERR_UNKNOWN;
+        }
+        checkedProp_.emplace(prop.first);
+    }
+    return kvstore::ResultCode::SUCCEEDED;
+}
+
 kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
                             const PartitionID partId,
                             const VertexID vId,
@@ -203,36 +228,22 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
 
         auto updater = std::make_unique<RowUpdater>(schema);
 
-        // When the schema field is not in update field or the update item has src item,
-        // need to get default value from schema. If nonexistent return error.
-        std::unordered_set<std::pair<std::string, std::string>> checkedProp;
-        // check depPropMap_ in set clause
-        // this props must have default value or nullable, or set int UpdateItems_
-        for (auto& prop : depPropMap_) {
-            for (auto& p : prop.second) {
-                auto it = checkedProp.find(p);
-                if (it == checkedProp.end()) {
-                    ret = checkAndGetDefault(p.first, p.second);
-                    if (ret != kvstore::ResultCode::SUCCEEDED) {
-                        return kvstore::ResultCode::ERR_UNKNOWN;
-                    }
-                    checkedProp.emplace(p);
-                }
-            }
-
-            // set field not need default value or nullable
-            ret = checkField(prop.first.first, prop.first.second);
+        // Multiple tags, only execute once
+        if (!checked_) {
+            ret = buildDependProps();
             if (ret != kvstore::ResultCode::SUCCEEDED) {
-                return kvstore::ResultCode::ERR_UNKNOWN;
+                return ret;
             }
-            checkedProp.emplace(prop.first);
+            checked_ = true;
         }
 
-        // props not in set clause must have default value or nullable
+        // When the schema field is not in update field or the update item has src item,
+        // need to get default value from schema. If nonexistent return error.
+        // props not in set clause must have default value
         for (auto index = 0UL; index < schema->getNumFields(); index++) {
             auto propName = std::string(schema->getFieldName(index));
-            auto propIter = checkedProp.find(std::make_pair(tagName, propName));
-            if (propIter == checkedProp.end()) {
+            auto propIter = checkedProp_.find(std::make_pair(tagName, propName));
+            if (propIter == checkedProp_.end()) {
                 auto value = schema->getDefaultValue(propName);
                 if (!value.ok()) {
                     LOG(ERROR) << "TagId: " << tagId << ", prop: " << propName
@@ -521,8 +532,8 @@ cpp2::ErrorCode UpdateVertexProcessor::checkAndBuildContexts(
     auto vId = req.get_vertex_id();
     // build context of the update items
     for (auto& item : req.get_update_items()) {
-        const auto &name = item.get_name();
-        const auto &propName = item.get_prop();
+        const auto& name = item.get_name();
+        const auto& propName = item.get_prop();
         SourcePropertyExpression sourcePropExp(new std::string(name),
                                                new std::string(propName));
         sourcePropExp.setContext(this->expCtx_.get());
@@ -552,7 +563,7 @@ cpp2::ErrorCode UpdateVertexProcessor::checkAndBuildContexts(
         valueProps_.clear();
         vexp->setContext(this->expCtx_.get());
         status = vexp->prepare();
-        if (!status.ok() || !this->checkExp(vexp.get(), true)) {
+        if (!status.ok() || !this->checkExp(vexp.get(), insertable_)) {
             return cpp2::ErrorCode::E_INVALID_UPDATER;
         }
         if (insertable_) {
