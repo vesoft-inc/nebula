@@ -47,6 +47,14 @@ if("${NEBULA_COMMON_REPO_TAG}" STREQUAL "")
     SET(NEBULA_COMMON_REPO_TAG "master")
 endif()
 
+if("${NEBULA_STORAGE_REPO_URL}" STREQUAL "")
+    SET(NEBULA_STORAGE_REPO_URL "git@github.com:vesoft-inc-private/nebula-storage.git")
+endif()
+
+if("${NEBULA_STORAGE_REPO_TAG}" STREQUAL "")
+    SET(NEBULA_STORAGE_REPO_TAG "master")
+endif()
+
 if(NOT NEBULA_COMMON_SOURCE_DIR)
     include(FetchModule)
     nebula_fetch_module(
