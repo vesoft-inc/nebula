@@ -97,7 +97,6 @@ jobs:
                   -DCMAKE_BUILD_TYPE=Release \
                   -DENABLE_TESTING=on \
                   -DENABLE_BUILD_STORAGE=on \
-                  -DMODULE_BUILDING_JOBS=$(nproc) \
                   -B build
               ;;
             ubuntu1804)
@@ -108,7 +107,6 @@ jobs:
                   -DCMAKE_BUILD_TYPE=Debug \
                   -DENABLE_TESTING=on \
                   -DENABLE_BUILD_STORAGE=on \
-                  -DMODULE_BUILDING_JOBS=$(nproc) \
                   -B build
               ;;
             esac
@@ -122,16 +120,9 @@ jobs:
                 -DENABLE_ASAN=on \
                 -DENABLE_TESTING=on \
                 -DENABLE_BUILD_STORAGE=on \
-                -DMODULE_BUILDING_JOBS=$(nproc) \
                 -B build
             ;;
           esac
-      - name: Make common
-        run: cmake --build modules/common/ -j $(nproc)
-      - name: Make storage
-        run: |
-          cmake --build modules/storage --target nebula-storaged -j$(nproc)
-          cmake --build modules/storage --target nebula-metad -j$(nproc)
       - name: Make graph
         run: cmake --build build/ -j $(nproc)
       - name: CTest

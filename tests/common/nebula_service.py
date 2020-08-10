@@ -32,7 +32,7 @@ class NebulaService(object):
     def _copy_nebula_conf(self):
         graph_path = self.build_dir + '/bin'
         graph_conf_path = self.src_dir + '/conf'
-        storage_path = self.src_dir + '/modules/storage/src/daemons/_build'
+        storage_path = self.src_dir + '/build/modules/storage/bin'
         storage_conf_path = self.src_dir + '/modules/storage/conf'
 
         # graph
