@@ -69,6 +69,8 @@ public:
         kList,
         kSet,
         kMap,
+
+        kLabel,
     };
 
     explicit Expression(Kind kind) : kind_(kind) {}

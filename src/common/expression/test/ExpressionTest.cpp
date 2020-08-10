@@ -25,6 +25,7 @@
 #include "common/expression/FunctionCallExpression.h"
 #include "common/expression/TypeCastingExpression.h"
 #include "common/expression/ContainerExpression.h"
+#include "common/expression/LabelExpression.h"
 
 nebula::ExpressionContextMock gExpCtxt;
 
@@ -1724,9 +1725,13 @@ TEST_F(ExpressionTest, ContainsToString) {
                 Expression::Kind::kContains,
                 new ConstantExpression("abc"),
                 new ConstantExpression("a"));
-        auto str = expr.toString();
         ASSERT_EQ("(abc CONTAINS a)", expr.toString());
     }
+}
+
+TEST_F(ExpressionTest, LabelExprToString) {
+    LabelExpression expr(new std::string("name"));
+    ASSERT_EQ("name", expr.toString());
 }
 }  // namespace nebula
 

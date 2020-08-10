@@ -19,6 +19,7 @@
 #include "common/expression/UnaryExpression.h"
 #include "common/expression/VariableExpression.h"
 #include "common/expression/ContainerExpression.h"
+#include "common/expression/LabelExpression.h"
 
 namespace nebula {
 
@@ -402,6 +403,11 @@ std::unique_ptr<Expression> Expression::decode(Expression::Decoder& decoder) {
             exp->resetFrom(decoder);
             return exp;
         }
+        case Expression::Kind::kLabel: {
+            exp = std::make_unique<LabelExpression>();
+            exp->resetFrom(decoder);
+            return exp;
+        }
         // no default so the compiler will warning when lack
     }
 
@@ -539,6 +545,9 @@ std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
             break;
         case Expression::Kind::kMap:
             os << "Map";
+            break;
+        case Expression::Kind::kLabel:
+            os << "Label";
             break;
     }
     return os;

@@ -17,6 +17,7 @@
 #include "common/expression/UUIDExpression.h"
 #include "common/expression/UnaryExpression.h"
 #include "common/expression/ContainerExpression.h"
+#include "common/expression/LabelExpression.h"
 
 namespace nebula {
 
@@ -317,6 +318,12 @@ TEST(ExpressionEncodeDecode, SubscriptExpression) {
     auto *left = new ConstantExpression(1);
     auto *right = new ConstantExpression(2);
     auto origin = std::make_unique<SubscriptExpression>(left, right);
+    auto decoded = Expression::decode(Expression::encode(*origin));
+    ASSERT_EQ(*origin, *decoded);
+}
+
+TEST(ExpressionEncodeDecode, LabelExpression) {
+    auto origin = std::make_unique<LabelExpression>(new std::string("name"));
     auto decoded = Expression::decode(Expression::encode(*origin));
     ASSERT_EQ(*origin, *decoded);
 }

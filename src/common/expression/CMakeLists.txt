@@ -19,6 +19,7 @@ nebula_add_library(
     VariableExpression.cpp
     ContainerExpression.cpp
     SubscriptExpression.cpp
+    LabelExpression.cpp
 )
 
 nebula_add_subdirectory(test)
