@@ -275,7 +275,7 @@ void RaftPart::start(std::vector<HostAddr>&& peers, bool asLearner) {
 
     lastLogId_ = wal_->lastLogId();
     lastLogTerm_ = wal_->lastLogTerm();
-    term_ = proposedTerm_ = lastLogTerm_;
+    term_ = lastLogTerm_;
 
     // Set the quorum number
     quorum_ = (peers.size() + 1) / 2;
@@ -1012,7 +1012,7 @@ bool RaftPart::prepareElectionRequest(
     req.set_part(partId_);
     req.set_candidate_ip(addr_.first);
     req.set_candidate_port(addr_.second);
-    req.set_term(++proposedTerm_);  // Bump up the proposed term
+    req.set_term(term_ + 1);
     req.set_last_log_id(lastLogId_);
     req.set_last_log_term(lastLogTerm_);
 
@@ -1053,6 +1053,9 @@ typename RaftPart::Role RaftPart::processElectionResponses(
 
     size_t numSucceeded = 0;
     for (auto& r : results) {
+        if (r.second.get_current_term() != proposedTerm) {
+            continue;
+        }
         if (r.second.get_error_code() == cpp2::ErrorCode::SUCCEEDED) {
             ++numSucceeded;
         } else if (r.second.get_error_code() == cpp2::ErrorCode::E_LOG_STALE) {
@@ -1280,6 +1283,7 @@ void RaftPart::processAskForVoteRequest(
 
     std::lock_guard<std::mutex> g(raftLock_);
 
+    resp.set_current_term(term_);
     // Make sure the partition is running
     if (UNLIKELY(status_ == Status::STOPPED)) {
         LOG(INFO) << idStr_
@@ -1320,13 +1324,12 @@ void RaftPart::processAskForVoteRequest(
     }
 
     // Check term id
-    auto term = role_ == Role::CANDIDATE ? proposedTerm_ : term_;
-    if (req.get_term() <= term) {
+    if (req.get_term() <= term_) {
         LOG(INFO) << idStr_
                   << (role_ == Role::CANDIDATE
                     ? "The partition is currently proposing term "
                     : "The partition currently is on term ")
-                  << term
+                  << term_
                   << ". The term proposed by the candidate is"
                      " no greater, so it will be rejected";
         resp.set_error_code(cpp2::ErrorCode::E_TERM_OUT_OF_DATE);
@@ -1368,14 +1371,16 @@ void RaftPart::processAskForVoteRequest(
     }
     // Ok, no reason to refuse, we will vote for the candidate
     LOG(INFO) << idStr_ << "The partition will vote for the candidate";
-    resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
 
     Role oldRole = role_;
     TermID oldTerm = term_;
     role_ = Role::FOLLOWER;
-    term_ = proposedTerm_ = req.get_term();
+    term_ = req.get_term();
     leader_ = std::make_pair(req.get_candidate_ip(),
                              req.get_candidate_port());
+
+    resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
+    resp.set_current_term(term_);
 
     // Reset the last message time
     lastMsgRecvDur_.reset();
@@ -1689,7 +1694,7 @@ cpp2::ErrorCode RaftPart::verifyLeader(
     }
     leader_ = std::make_pair(req.get_leader_ip(),
                              req.get_leader_port());
-    term_ = proposedTerm_ = req.get_current_term();
+    term_ = req.get_current_term();
     weight_ = 1;
     if (oldRole == Role::LEADER) {
         VLOG(2) << idStr_ << "Was a leader, need to do some clean-up";
