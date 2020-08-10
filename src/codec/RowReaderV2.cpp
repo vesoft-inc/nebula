@@ -136,7 +136,7 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const noexcept {
             memcpy(reinterpret_cast<void*>(&dt.day),
                    &data_[offset + sizeof(int16_t) + sizeof(int8_t)],
                    sizeof(int8_t));
-            return std::move(dt);
+            return dt;
         }
         case meta::cpp2::PropertyType::DATETIME: {
             DateTime dt;
@@ -162,7 +162,7 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const noexcept {
             memcpy(reinterpret_cast<void*>(&dt.timezone),
                    &data_[offset + sizeof(int16_t) + 5 * sizeof(int8_t) + sizeof(int32_t)],
                    sizeof(int32_t));
-            return std::move(dt);
+            return dt;
         }
         default:
             LOG(FATAL) << "Should not reach here";

@@ -54,7 +54,7 @@ struct Serve {
     int                 teamCareer_;
     int                 teamGames_;
     double              teamAvgScore_;
-    std::string         type_;
+    std::string         type_{""};
     int                 champions_{0};
 };
 

@@ -20,7 +20,7 @@ const std::string str = "Hello world!";    // NOLINT
 const std::string fixed = "Nebula Graph";  // NOLINT
 const Timestamp now = 1582183355;
 const Date date = {2020, 2, 20};
-const DateTime dt = {2020, 2, 20, 10, 30, 45, -8 * 3600};
+const DateTime dt = {2020, 2, 20, 10, 30, 45, -8 * 3600, 0};
 const Value sVal("Hello world!");
 const Value iVal(64);
 

@@ -110,11 +110,11 @@ TEST(RowReaderV2, encodedData) {
     encoded.append(3, 0);
 
     // Col 3
-    encoded.append(8, 0xFF);
+    encoded.append(8, static_cast<char>(0xFF));
 
     // Col 4
     encoded.append(1, 0x11).append(1, 0x22).append(1, 0x33).append(1, 0x44)
-           .append(1, 0x55).append(1, 0x66).append(1, 0x77).append(1, 0x88);
+           .append(1, 0x55).append(1, 0x66).append(1, 0x77).append(1, static_cast<char>(0x88));
 
     // Col 5
     int32_t offset = 1 + schema.size();  // Header and data (no NULL flag)

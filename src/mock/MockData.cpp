@@ -105,8 +105,7 @@ std::vector<Player> MockData::players_ = {
     {"Amare Stoudemire",      37,  false,  14,  2002,  2016,   846,  18.9,  4                 }
 };
 
-// Player name, team name, start year, end year, team career(years), games, average scores
-// player source type(default value "trade"), champions in team(nullable)
+
 std::vector<Serve> MockData::serves_ = {
     {"Tim Duncan",            "Spurs",         1997, 2016, 19, 1392, 19.0, "zzzzz", 5},
     {"Tony Parker",           "Spurs",         2001, 2018, 17, 1198, 16.6, "trade", 4},
@@ -276,6 +275,7 @@ std::vector<Serve> MockData::serves_ = {
     {"Ben Simmons",           "76ers",         2017, 2020,  3,  214, 16.4            },
     {"Luka Doncic",           "Mavericks",     2018, 2020,  2,  126, 24.4            },
 };
+
 
 std::vector<Teammate> MockData::teammates_ = {
     {"Tim Duncan",     "Tony Parker",      "Spurs",    2001, 2016},

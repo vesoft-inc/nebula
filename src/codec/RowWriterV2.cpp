@@ -124,8 +124,10 @@ RowWriterV2::RowWriterV2(RowReader& reader)
                 break;
             case Value::Type::DATE:
                 set(i, v.moveDate());
+                break;
             case Value::Type::DATETIME:
                 set(i, v.moveDateTime());
+                break;
             default:
                 LOG(FATAL) << "Invalid data";
         }
@@ -256,10 +258,10 @@ WriteResult RowWriterV2::write(ssize_t index, bool v) noexcept {
             buf_[offset + 7] = 0;
             buf_[offset + 6] = 0;
             buf_[offset + 5] = 0;
-            buf_[offset + 4] = 0;
+            buf_[offset + 4] = 0;   // fallthrough
         case meta::cpp2::PropertyType::INT32:
             buf_[offset + 3] = 0;
-            buf_[offset + 2] = 0;
+            buf_[offset + 2] = 0;   // fallthrough
         case meta::cpp2::PropertyType::INT16:
             buf_[offset + 1] = 0;
             buf_[offset + 0] = v ? 0x01 : 0;
