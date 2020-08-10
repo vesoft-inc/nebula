@@ -300,7 +300,8 @@ LookupExecutor::findValidIndex() {
         for (const auto& field : index->get_fields()) {
             auto it = std::find_if(filters_.begin(), filters_.end(),
                                    [field](const auto &rel) {
-                                       return rel.second == RelationalExpression::EQ;
+                                       return rel.second == RelationalExpression::EQ
+                                       && rel.first == field.get_name();
                                    });
             if (it == filters_.end()) {
                 break;
