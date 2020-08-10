@@ -251,7 +251,11 @@ TEST_F(LookupTest, VertexConditionScan) {
         cpp2::ExecutionResponse resp;
         auto query = "LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col2 != 100";
         auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID>> expected = {
+            {221, 222, 223, 224, 225}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -275,7 +279,7 @@ TEST_F(LookupTest, VertexConditionScan) {
         auto query = "LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col2 >= 100 "
                      "AND lookup_tag_2.col4 != true";
         auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -407,7 +411,14 @@ TEST_F(LookupTest, EdgeConditionScan) {
         cpp2::ExecutionResponse resp;
         auto query = "LOOKUP ON lookup_edge_2 WHERE lookup_edge_2.col2 != 100";
         auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID, VertexID, EdgeRanking>> expected = {
+            {220, 222, 0},
+            {220, 223, 0},
+            {220, 224, 0},
+            {220, 225, 0}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -435,7 +446,7 @@ TEST_F(LookupTest, EdgeConditionScan) {
         auto query = "LOOKUP ON lookup_edge_2 WHERE lookup_edge_2.col2 >= 100 "
                      "AND lookup_edge_2.col4 != true";
         auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -586,6 +597,14 @@ TEST_F(LookupTest, FunctionExprTest) {
     }
     {
         cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col4 != (true && true)";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID>> expected = {};
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
         auto query = "LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col4 == (true && true)";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -624,7 +643,7 @@ TEST_F(LookupTest, FunctionExprTest) {
     }
     {
         cpp2::ExecutionResponse resp;
-        auto query = "LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col2 == lookup_tag_2.col3";
+        auto query = "LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col2 != lookup_tag_2.col3";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }

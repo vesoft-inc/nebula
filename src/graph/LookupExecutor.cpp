@@ -228,7 +228,8 @@ Status LookupExecutor::traversalExpr(const Expression *expr, const meta::SchemaP
                                            rExpr->toString().c_str());
             }
 
-            if (rExpr->op() != RelationalExpression::Operator::EQ) {
+            if (rExpr->op() != RelationalExpression::Operator::EQ &&
+                rExpr->op() != RelationalExpression::Operator::NE) {
                 auto type = schema->getFieldType(prop).type;
                 if (!dataTypeCheckForRange(type)) {
                     return Status::SyntaxError("Data type of field %s not support range scan",
@@ -711,10 +712,10 @@ Status LookupExecutor::relationalExprCheck(RelationalExpression::Operator op) co
         case RelationalExpression::Operator::GE :
         case RelationalExpression::Operator::GT :
         case RelationalExpression::Operator::LE :
-        case RelationalExpression::Operator::LT : {
+        case RelationalExpression::Operator::LT :
+        case RelationalExpression::Operator::NE : {
             return Status::OK();
         }
-        case RelationalExpression::Operator::NE :
         case RelationalExpression::Operator::CONTAINS : {
             return Status::SyntaxError("Unsupported operator '!=' or 'CONTAINS' in where clause");
         }
