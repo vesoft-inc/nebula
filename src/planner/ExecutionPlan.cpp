@@ -42,16 +42,8 @@ static size_t makePlanNodeDesc(const PlanNode* node, cpp2::PlanDescription* plan
 
     size_t planNodeDescPos = planDesc->plan_node_descs.size();
     planDesc->node_index_map.emplace(node->id(), planNodeDescPos);
-    planDesc->plan_node_descs.emplace_back(cpp2::PlanNodeDescription{});
+    planDesc->plan_node_descs.emplace_back(std::move(*node->explain()));
     auto& planNodeDesc = planDesc->plan_node_descs.back();
-
-    planNodeDesc.set_id(node->id());
-    planNodeDesc.set_name(PlanNode::toString(node->kind()));
-    planNodeDesc.set_output_var(node->varName());
-    cpp2::Pair p;
-    p.set_key("description");
-    p.set_value(node->explain());
-    planNodeDesc.set_description({std::move(p)});
 
     switch (node->kind()) {
         case PlanNode::Kind::kStart: {
@@ -61,7 +53,6 @@ static size_t makePlanNodeDesc(const PlanNode* node, cpp2::PlanDescription* plan
         case PlanNode::Kind::kIntersect:
         case PlanNode::Kind::kMinus: {
             auto bNode = static_cast<const BiInputNode*>(node);
-            planNodeDesc.set_dependencies({bNode->left()->id(), bNode->right()->id()});
             makePlanNodeDesc(bNode->left(), planDesc);
             makePlanNodeDesc(bNode->right(), planDesc);
             break;
@@ -96,7 +87,6 @@ static size_t makePlanNodeDesc(const PlanNode* node, cpp2::PlanDescription* plan
         default: {
             // Other plan nodes have single dependency
             auto singleDepNode = static_cast<const SingleDependencyNode*>(node);
-            planNodeDesc.set_dependencies({singleDepNode->dep()->id()});
             makePlanNodeDesc(singleDepNode->dep(), planDesc);
             break;
         }

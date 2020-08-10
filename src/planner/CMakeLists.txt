@@ -7,9 +7,11 @@ nebula_add_library(
     planner_obj OBJECT
     PlanNode.cpp
     ExecutionPlan.cpp
+    Admin.cpp
     Logic.cpp
     Query.cpp
-    Mutate.h
+    Mutate.cpp
+    Maintain.cpp
 )
 
 #nebula_add_subdirectory(test)

@@ -33,7 +33,6 @@ folly::Future<Status> ProjectExecutor::execute() {
         }
         ds.rows.emplace_back(std::move(row));
     }
-    numRows_ = ds.rows.size();
     return finish(ResultBuilder().value(Value(std::move(ds))).finish());
 }
 

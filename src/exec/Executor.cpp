@@ -24,8 +24,8 @@
 #include "exec/logic/StartExecutor.h"
 #include "exec/maintain/EdgeExecutor.h"
 #include "exec/maintain/TagExecutor.h"
-#include "exec/mutate/InsertExecutor.h"
 #include "exec/mutate/DeleteExecutor.h"
+#include "exec/mutate/InsertExecutor.h"
 #include "exec/mutate/UpdateExecutor.h"
 #include "exec/query/AggregateExecutor.h"
 #include "exec/query/DataCollectExecutor.h"
@@ -465,17 +465,13 @@ folly::Future<Status> Executor::error(Status status) const {
 }
 
 Status Executor::finish(Result &&result) {
+    numRows_ = result.size();
     ectx_->setResult(node()->varName(), std::move(result));
     return Status::OK();
 }
 
 Status Executor::finish(Value &&value) {
-    ectx_->setResult(node()->varName(),
-                     ResultBuilder()
-                        .value(std::move(value))
-                        .iter(Iterator::Kind::kDefault)
-                        .finish());
-    return Status::OK();
+    return finish(ResultBuilder().value(std::move(value)).iter(Iterator::Kind::kDefault).finish());
 }
 
 folly::Executor *Executor::runner() const {

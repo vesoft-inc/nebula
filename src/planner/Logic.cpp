@@ -6,19 +6,19 @@
 
 #include "planner/Logic.h"
 
+#include "common/interface/gen-cpp2/graph_types.h"
+
 namespace nebula {
 namespace graph {
 
-std::string Select::explain() const {
-    return "Select";
+std::unique_ptr<cpp2::PlanNodeDescription> BinarySelect::explain() const {
+    auto desc = SingleInputNode::explain();
+    addDescription("condition", condition_ ? condition_->toString() : "", desc.get());
+    return desc;
 }
 
 Loop::Loop(ExecutionPlan* plan, PlanNode* input, PlanNode* body, Expression* condition)
     : BinarySelect(plan, Kind::kLoop, input, condition), body_(body) {}
-
-std::string Loop::explain() const {
-    return "Loop";
-}
 
 }   // namespace graph
 }   // namespace nebula

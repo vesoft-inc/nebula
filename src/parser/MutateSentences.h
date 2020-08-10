@@ -9,6 +9,7 @@
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
 #include "parser/Clauses.h"
+#include "parser/EdgeKey.h"
 #include "parser/Sentence.h"
 
 namespace nebula {

@@ -14,6 +14,10 @@
 namespace nebula {
 namespace graph {
 
+namespace cpp2 {
+class PlanNodeDescription;
+}   // namespace cpp2
+
 class ExecutionPlan;
 
 /**
@@ -78,10 +82,8 @@ public:
 
     virtual ~PlanNode() = default;
 
-    /**
-     * To explain how a query would be executed
-     */
-    virtual std::string explain() const = 0;
+    // Describe plan node
+    virtual std::unique_ptr<cpp2::PlanNodeDescription> explain() const;
 
     Kind kind() const {
         return kind_;
@@ -135,6 +137,8 @@ public:
     }
 
 protected:
+    static void addDescription(std::string key, std::string value, cpp2::PlanNodeDescription* desc);
+
     Kind                                     kind_{Kind::kUnknown};
     int64_t                                  id_{IdGenerator::INVALID_ID};
     ExecutionPlan*                           plan_{nullptr};
@@ -163,6 +167,8 @@ protected:
     SingleDependencyNode(ExecutionPlan *plan, Kind kind, const PlanNode *dep)
         : PlanNode(plan, kind), dependency_(dep) {}
 
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+
     const PlanNode *dependency_;
 };
 
@@ -175,6 +181,8 @@ public:
     const std::string& inputVar() const {
         return inputVar_;
     }
+
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
 protected:
     SingleInputNode(ExecutionPlan* plan, Kind kind, const PlanNode* dep)
@@ -219,9 +227,7 @@ public:
         return rightVar_;
     }
 
-    std::string explain() const override {
-        return "";
-    }
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
 protected:
     BiInputNode(ExecutionPlan* plan, Kind kind, PlanNode* left, PlanNode* right)

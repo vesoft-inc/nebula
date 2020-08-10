@@ -19,6 +19,7 @@ set(PARSER_TEST_LIBS
     $<TARGET_OBJECTS:common_function_manager_obj>
     $<TARGET_OBJECTS:common_meta_thrift_obj>
     $<TARGET_OBJECTS:common_graph_thrift_obj>
+    $<TARGET_OBJECTS:common_storage_thrift_obj>
     $<TARGET_OBJECTS:common_meta_obj>
     $<TARGET_OBJECTS:common_meta_client_obj>
     $<TARGET_OBJECTS:common_conf_obj>

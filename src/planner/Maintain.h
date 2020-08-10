@@ -13,6 +13,7 @@
 
 namespace nebula {
 namespace graph {
+
 // which would make them in a single and big execution plan
 class CreateSchemaNode : public SingleInputNode {
 protected:
@@ -40,6 +41,8 @@ public:
         return ifNotExists_;
     }
 
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+
 protected:
     std::string            name_;
     meta::cpp2::Schema     schema_;
@@ -58,10 +61,6 @@ public:
                          std::move(tagName),
                          std::move(schema),
                          ifNotExists);
-    }
-
-    std::string explain() const override {
-        return "CreateTag";
     }
 
 private:
@@ -91,10 +90,6 @@ public:
                           std::move(edgeName),
                           std::move(schema),
                           ifNotExists);
-    }
-
-    std::string explain() const override {
-        return "CreateEdge";
     }
 
 private:
@@ -144,6 +139,8 @@ public:
         return space_;
     }
 
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+
 protected:
     GraphSpaceID                               space_;
     std::string                                name_;
@@ -165,10 +162,6 @@ public:
                             std::move(name),
                             std::move(items),
                             std::move(schemaProp));
-    }
-
-    std::string explain() const override {
-        return "AlterTag";
     }
 
 private:
@@ -204,10 +197,6 @@ public:
                              std::move(schemaProp));
     }
 
-    std::string explain() const override {
-        return "AlterEdge";
-    }
-
 private:
     AlterEdge(ExecutionPlan* plan,
               PlanNode* input,
@@ -240,6 +229,8 @@ public:
         return name_;
     }
 
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+
 protected:
     std::string            name_;
 };
@@ -250,10 +241,6 @@ public:
                          PlanNode* input,
                          std::string tagName) {
         return new DescTag(plan, input, std::move(tagName));
-    }
-
-    std::string explain() const override {
-        return "DescTag";
     }
 
 private:
@@ -272,10 +259,6 @@ public:
         return new DescEdge(plan, input, std::move(edgeName));
     }
 
-    std::string explain() const override {
-        return "DescEdge";
-    }
-
 private:
     DescEdge(ExecutionPlan* plan,
              PlanNode* input,
@@ -290,10 +273,6 @@ public:
                                PlanNode* input,
                                std::string name) {
         return new ShowCreateTag(plan, input, std::move(name));
-    }
-
-    std::string explain() const override {
-        return "ShowCreateTag";
     }
 
 private:
@@ -312,10 +291,6 @@ public:
         return new ShowCreateEdge(plan, input, std::move(name));
     }
 
-    std::string explain() const override {
-        return "ShowCreateEdge";
-    }
-
 private:
     ShowCreateEdge(ExecutionPlan* plan,
                    PlanNode* input,
@@ -331,10 +306,6 @@ public:
         return new ShowTags(plan, input);
     }
 
-    std::string explain() const override {
-        return "ShowTags";
-    }
-
 private:
     ShowTags(ExecutionPlan* plan,
              PlanNode* input)
@@ -347,10 +318,6 @@ public:
     static ShowEdges* make(ExecutionPlan* plan,
                            PlanNode* input) {
         return new ShowEdges(plan, input);
-    }
-
-    std::string explain() const override {
-        return "ShowEdges";
     }
 
 private:
@@ -380,6 +347,9 @@ public:
         return ifExists_;
     }
 
+
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+
 protected:
     std::string            name_;
     bool                   ifExists_;
@@ -392,10 +362,6 @@ public:
                          std::string name,
                          bool ifExists) {
         return new DropTag(plan, input, std::move(name), ifExists);
-    }
-
-    std::string explain() const override {
-        return "DropTag";
     }
 
 private:
@@ -416,10 +382,6 @@ public:
         return new DropEdge(plan, input, std::move(name), ifExists);
     }
 
-    std::string explain() const override {
-        return "DropEdge";
-    }
-
 private:
     DropEdge(ExecutionPlan* plan,
              PlanNode* input,
@@ -431,59 +393,36 @@ private:
 
 class CreateTagIndex final : public SingleInputNode {
 public:
-    std::string explain() const override {
-        return "CreateTagIndex";
-    }
 };
 
 class CreateEdgeIndex final : public SingleInputNode {
 public:
-    std::string explain() const override {
-        return "CreateEdgeIndex";
-    }
 };
 
 class DescribeTagIndex final : public SingleInputNode {
 public:
-    std::string explain() const override {
-        return "DescribeTagIndex";
-    }
 };
 
 class DescribeEdgeIndex final : public SingleInputNode {
 public:
-    std::string explain() const override {
-        return "DescribeEdgeIndex";
-    }
 };
 
 class DropTagIndex final : public SingleInputNode {
 public:
-    std::string explain() const override {
-        return "DropTagIndex";
-    }
 };
 
 class DropEdgeIndex final : public SingleInputNode {
 public:
-    std::string explain() const override {
-        return "DropEdgeIndex";
-    }
 };
 
 class BuildTagIndex final : public SingleInputNode {
 public:
-    std::string explain() const override {
-        return "BuildTagIndex";
-    }
 };
 
 class BuildEdgeIndex final : public SingleInputNode {
 public:
-    std::string explain() const override {
-        return "BuildEdgeIndex";
-    }
 };
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // PLANNER_MAINTAIN_H_

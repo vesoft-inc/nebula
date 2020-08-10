@@ -18,10 +18,6 @@ public:
         return new StartNode(plan);
     }
 
-    std::string explain() const override {
-        return "Start";
-    }
-
 private:
     explicit StartNode(ExecutionPlan* plan) : PlanNode(plan, Kind::kStart) {}
 };
@@ -31,6 +27,8 @@ public:
     Expression* condition() const {
         return condition_;
     }
+
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
 protected:
     BinarySelect(ExecutionPlan* plan, Kind kind, PlanNode* input, Expression* condition)
@@ -56,8 +54,6 @@ public:
     void setElse(PlanNode* elseBranch) {
         else_ = elseBranch;
     }
-
-    std::string explain() const override;
 
     const PlanNode* then() const {
         return if_;
@@ -90,8 +86,6 @@ public:
         body_ = body;
     }
 
-    std::string explain() const override;
-
     const PlanNode* body() const {
         return body_;
     }
@@ -109,10 +103,6 @@ class MultiOutputsNode final : public SingleInputNode {
 public:
     static MultiOutputsNode* make(ExecutionPlan* plan, PlanNode* input) {
         return new MultiOutputsNode(input, plan);
-    }
-
-    std::string explain() const override {
-        return "MultiOutputsNode";
     }
 
 private:

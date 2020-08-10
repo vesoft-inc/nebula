@@ -34,9 +34,7 @@ public:
                                   overwritable);
     }
 
-    std::string explain() const override {
-        return "InsertVertices";
-    }
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
     const std::vector<storage::cpp2::NewVertex>& getVertices() const {
         return vertices_;
@@ -91,9 +89,7 @@ public:
                                overwritable);
     }
 
-    std::string explain() const override {
-        return "InsertEdges";
-    }
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
     const std::vector<std::string>& getPropNames() const {
         return propNames_;
@@ -162,6 +158,8 @@ public:
         return schemaName_;
     }
 
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+
 protected:
     Update(Kind kind,
            ExecutionPlan* plan,
@@ -218,9 +216,7 @@ public:
                                 std::move(yieldNames));
     }
 
-    std::string explain() const override {
-        return "UpdateVertex";
-    }
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
     const std::string& getVId() const {
         return vId_;
@@ -290,9 +286,7 @@ public:
                               std::move(yieldNames));
     }
 
-    std::string explain() const override {
-        return "UpdateEdge";
-    }
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
     const std::string& getSrcId() const {
         return srcId_;
@@ -363,9 +357,7 @@ public:
                                   vidRef_);
     }
 
-    std::string explain() const override {
-        return "DeleteVertices";
-    }
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
     GraphSpaceID getSpace() const {
         return space_;
@@ -401,9 +393,7 @@ public:
                                std::move(edgeKeyRefs));
     }
 
-    std::string explain() const override {
-        return "DeleteEdges";
-    }
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
     GraphSpaceID getSpace() const {
         return space_;
@@ -423,9 +413,10 @@ private:
         , edgeKeyRefs_(std::move(edgeKeyRefs)) {}
 
 private:
-    GraphSpaceID                                   space_{-1};
-    std::vector<EdgeKeyRef*>  edgeKeyRefs_;
+    GraphSpaceID space_{-1};
+    std::vector<EdgeKeyRef*> edgeKeyRefs_;
 };
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // PLANNER_MUTATE_H_

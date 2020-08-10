@@ -20,6 +20,7 @@ nebula_add_library(
     ${FLEX_Scanner_OUTPUTS}
     ${BISON_Parser_OUTPUTS}
     Clauses.cpp
+    EdgeKey.cpp
     SequentialSentences.cpp
     MaintainSentences.cpp
     TraverseSentences.cpp

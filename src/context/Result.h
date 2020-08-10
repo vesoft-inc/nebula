@@ -42,6 +42,10 @@ public:
         return core_.state;
     }
 
+    size_t size() const {
+        return core_.iter->size();
+    }
+
     std::unique_ptr<Iterator> iter() const {
         return core_.iter->copy();
     }
