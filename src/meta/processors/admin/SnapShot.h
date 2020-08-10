@@ -28,7 +28,7 @@ public:
 
     cpp2::ErrorCode createSnapshot(const std::string& name);
 
-    cpp2::ErrorCode dropSnapshot(const std::string& name, const std::vector<HostAddr> hosts);
+    cpp2::ErrorCode dropSnapshot(const std::string& name, const std::vector<HostAddr>& hosts);
 
     cpp2::ErrorCode blockingWrites(storage::cpp2::EngineSignType sign);
 
