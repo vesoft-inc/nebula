@@ -25,6 +25,18 @@ DEFINE_int32(clean_wal_interval_secs, 600, "inerval to trigger clean expired wal
 namespace nebula {
 namespace kvstore {
 
+#define SPACE_EXIST_RETURN_IF_ERROR(...)                                                           \
+    do {                                                                                           \
+        auto s = (__VA_ARGS__);                                                                    \
+        if (!ok(s)) {                                                                              \
+            if (spaceRet.left() == ResultCode::ERR_SPACE_NOT_FOUND) {                              \
+                LOG(INFO) << "Space " << spaceId << " dis not exist, skip it.";                    \
+                return ResultCode::SUCCEEDED;                                                      \
+            }                                                                                      \
+            return error(s);                                                                       \
+        }                                                                                          \
+    } while (0)                                                                                    \
+
 NebulaStore::~NebulaStore() {
     LOG(INFO) << "Cut off the relationship with meta client";
     options_.partMan_.reset();
@@ -620,9 +632,7 @@ ResultCode NebulaStore::setOption(GraphSpaceID spaceId,
                                   const std::string& configKey,
                                   const std::string& configValue) {
     auto spaceRet = space(spaceId);
-    if (!ok(spaceRet)) {
-        return error(spaceRet);
-    }
+    SPACE_EXIST_RETURN_IF_ERROR(spaceRet);
     auto space = nebula::value(spaceRet);
     for (auto& engine : space->engines_) {
         auto code = engine->setOption(configKey, configValue);
@@ -638,9 +648,7 @@ ResultCode NebulaStore::setDBOption(GraphSpaceID spaceId,
                                     const std::string& configKey,
                                     const std::string& configValue) {
     auto spaceRet = space(spaceId);
-    if (!ok(spaceRet)) {
-        return error(spaceRet);
-    }
+    SPACE_EXIST_RETURN_IF_ERROR(spaceRet);
     auto space = nebula::value(spaceRet);
     for (auto& engine : space->engines_) {
         auto code = engine->setDBOption(configKey, configValue);
@@ -654,9 +662,7 @@ ResultCode NebulaStore::setDBOption(GraphSpaceID spaceId,
 
 ResultCode NebulaStore::compact(GraphSpaceID spaceId) {
     auto spaceRet = space(spaceId);
-    if (!ok(spaceRet)) {
-        return error(spaceRet);
-    }
+    SPACE_EXIST_RETURN_IF_ERROR(spaceRet);
     auto space = nebula::value(spaceRet);
 
     auto code = ResultCode::SUCCEEDED;
@@ -681,9 +687,7 @@ ResultCode NebulaStore::compact(GraphSpaceID spaceId) {
 
 ResultCode NebulaStore::flush(GraphSpaceID spaceId) {
     auto spaceRet = space(spaceId);
-    if (!ok(spaceRet)) {
-        return error(spaceRet);
-    }
+    SPACE_EXIST_RETURN_IF_ERROR(spaceRet);
     auto space = nebula::value(spaceRet);
     for (auto& engine : space->engines_) {
         auto code = engine->flush();
@@ -696,10 +700,7 @@ ResultCode NebulaStore::flush(GraphSpaceID spaceId) {
 
 ResultCode NebulaStore::createCheckpoint(GraphSpaceID spaceId, const std::string& name) {
     auto spaceRet = space(spaceId);
-    if (!ok(spaceRet)) {
-        return error(spaceRet);
-    }
-
+    SPACE_EXIST_RETURN_IF_ERROR(spaceRet);
     auto space = nebula::value(spaceRet);
     for (auto& engine : space->engines_) {
         auto code = engine->createCheckpoint(name);
@@ -727,9 +728,7 @@ ResultCode NebulaStore::createCheckpoint(GraphSpaceID spaceId, const std::string
 
 ResultCode NebulaStore::dropCheckpoint(GraphSpaceID spaceId, const std::string& name) {
     auto spaceRet = space(spaceId);
-    if (!ok(spaceRet)) {
-        return error(spaceRet);
-    }
+    SPACE_EXIST_RETURN_IF_ERROR(spaceRet);
     auto space = nebula::value(spaceRet);
     for (auto& engine : space->engines_) {
         /**
@@ -752,10 +751,7 @@ ResultCode NebulaStore::dropCheckpoint(GraphSpaceID spaceId, const std::string& 
 
 ResultCode NebulaStore::setWriteBlocking(GraphSpaceID spaceId, bool sign) {
     auto spaceRet = space(spaceId);
-    if (!ok(spaceRet)) {
-        LOG(ERROR) << "Get Space " << spaceId << " Failed";
-        return error(spaceRet);
-    }
+    SPACE_EXIST_RETURN_IF_ERROR(spaceRet);
     auto space = nebula::value(spaceRet);
     for (auto& engine : space->engines_) {
         auto parts = engine->allParts();
