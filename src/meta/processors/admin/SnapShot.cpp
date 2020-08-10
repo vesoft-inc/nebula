@@ -81,21 +81,8 @@ bool Snapshot::getAllSpaces(std::vector<GraphSpaceID>& spaces, kvstore::ResultCo
 }
 
 cpp2::ErrorCode Snapshot::blockingWrites(storage::cpp2::EngineSignType sign) {
-    folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
-    // check the index rebuild. not allowed to block write when index rebuilding.
-    auto prefix = MetaServiceUtils::rebuildIndexStatusPrefix();
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        return cpp2::ErrorCode::E_BLOCK_WRITE_FAILURE;
-    }
-    while (iter->valid()) {
-        if (iter->val() == "RUNNING") {
-            LOG(ERROR) << "Index is rebuilding, not allowed to block write.";
-            return cpp2::ErrorCode::E_BLOCK_WRITE_FAILURE;
-        }
-    }
     std::vector<GraphSpaceID> spaces;
+    kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
     if (!getAllSpaces(spaces, ret)) {
         LOG(ERROR) << "Can't access kvstore, ret = d"
                    << static_cast<int32_t>(ret);
