@@ -8,7 +8,7 @@
 import time
 import pytest
 
-from tests.common.nebula_test_suite import NebulaTestSuite
+from tests.common.nebula_test_suite import NebulaTestSuite, T_NULL
 
 
 class TestInsert2(NebulaTestSuite):
@@ -30,11 +30,11 @@ class TestInsert2(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
     def test_insert_out_of_range_id_size(self):
-        resp = self.execute('INSERT VERTEX person(name, age) VALUES "12345678901":("Tom", "2")')
+        resp = self.execute('INSERT VERTEX student(name, age) VALUES "12345678901":("Tom", "2")')
         self.check_resp_failed(resp)
 
     def test_insert_not_null_prop(self):
-        resp = self.execute('INSERT VERTEX person(name, age) VALUES "Tom":(NULL, 12)')
+        resp = self.execute('INSERT VERTEX student(name, age) VALUES "Tom":(NULL, 12)')
         self.check_resp_failed(resp)
 
     def test_insert_with_fix_string(self):
@@ -46,13 +46,8 @@ class TestInsert2(NebulaTestSuite):
         resp = self.execute('INSERT VERTEX course(name) VALUES "English":("English")')
         self.check_resp_succeeded(resp)
 
-    def test_insert_with_name_label(self):
-        resp = self.execute('INSERT VERTEX course(name) VALUES "English":(English)')
-        self.check_resp_failed(resp)
-
-    @pytest.mark.skip(reason="does not support fetch")
-    def test_insert_with_fix_string(self):
-        resp = self.execute('FETCH PROP ON course "English"')
+        # check
+        resp = self.execute_query('FETCH PROP ON course "English"')
         self.check_resp_succeeded(resp)
-        expect_result = [['English', 'Engli', 'NULL']]
+        expect_result = [['English', 'Engli', T_NULL]]
         self.check_out_of_order_result(resp, expect_result)

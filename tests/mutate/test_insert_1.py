@@ -101,11 +101,11 @@ class TestInsert1(NebulaTestSuite):
                             '"Laura"->"Amber":(88)')
         self.check_resp_failed(resp)
 
-        # insert edge invalid timestamp, TODO
-        # resp = self.execute('INSERT EDGE study(start_time, end_time) '
-        #                     'VALUES "Laura"->"sun_school":'
-        #                     '("2300-01-01 10:00:00", now()+3600*24*365*3)')
-        # self.check_resp_failed(resp)
+        # insert edge invalid timestamp,
+        resp = self.execute('INSERT EDGE study(start_time, end_time) '
+                            'VALUES "Laura"->"sun_school":'
+                            '("2300-01-01 10:00:00", now()+3600*24*365*3)')
+        self.check_resp_failed(resp)
 
     def test_insert_succeeded(self):
         # insert vertex succeeded
@@ -117,19 +117,19 @@ class TestInsert1(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         # check result, does not support
-        # resp = self.execute('FETCH PROP ON person "Conan"')
-        # self.check_resp_succeeded(resp)
-        # expect_result = [['Conan', 'Conan', 10]]
-        # self.check_out_of_order_result(resp, expect_result)
+        resp = self.execute_query('FETCH PROP ON person "Conan"')
+        self.check_resp_succeeded(resp)
+        expect_result = [['Conan', 'Conan', 10]]
+        self.check_out_of_order_result(resp, expect_result)
 
         # insert vertex with uuid
         # resp = self.execute('INSERT VERTEX person(name, age) VALUES uuid("Tom"):("Tom", 22)')
         # self.check_resp_succeeded(resp)
 
         # insert vertex with timestamp succeeded, timestamp not supported, TODO
-        # resp = self.execute('INSERT VERTEX school(name, create_time) VALUES '
-        #                     '"sun_school":("sun_school", "2010-01-01 10:00:00")')
-        # self.check_resp_succeeded(resp)
+        resp = self.execute('INSERT VERTEX school(name, create_time) VALUES '
+                            '"sun_school":("sun_school", "2010-01-01 10:00:00")')
+        self.check_resp_succeeded(resp)
 
         # insert vertex with timestamp succeeded uuid
         # resp = self.execute('INSERT VERTEX school(name, create_time) VALUES '
@@ -152,10 +152,10 @@ class TestInsert1(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         # check result, does not support
-        # resp = self.execute('FETCH PROP ON schoolmate "Tom"->"Bob"')
-        # self.check_resp_succeeded(resp)
-        # expect_result = [['Tom', 'Bob', 0, 87, 'Superman']]
-        # self.check_result(resp, expect_result)
+        resp = self.execute_query('FETCH PROP ON schoolmate "Tom"->"Bob"')
+        self.check_resp_succeeded(resp)
+        expect_result = [['Tom', 'Bob', 0, 87, 'Superman']]
+        self.check_result(resp, expect_result)
 
         # insert edge with timestamp succeed
         resp = self.execute('INSERT EDGE study(start_time, end_time) '
@@ -170,9 +170,9 @@ class TestInsert1(NebulaTestSuite):
         # self.check_resp_succeeded(resp)
 
         # get result, type cast is not yet implemented in go
-        # resp = self.execute('GO FROM "Laura" OVER study '
-        #                     'YIELD $$.school.name, study._dst,'
-        #                     '$$.school.create_time, (string)study.start_time')
+        # resp = self.execute_query('GO FROM "Laura" OVER study '
+        #                           'YIELD $$.school.name, study._dst,'
+        #                           '$$.school.create_time, (string)study.start_time')
         # self.check_resp_succeeded(resp)
         # expect_result = [["sun_school", "sun_school", 1262311200, "1546308000"]]
         # self.check_result(resp, expect_result)
@@ -185,11 +185,11 @@ class TestInsert1(NebulaTestSuite):
         # expect_result = [["sun_school", 1262311200, "1546308000"]]
         # self.check_result(resp, expect_result)
 
-        # fetch sun_school, does not support
-        # resp = self.execute('FETCH PROP ON school "sun_school"')
-        # self.check_resp_succeeded(resp)
-        # expect_result = [["sun_school", "sun_school", 1262311200]]
-        # self.check_result(resp, expect_result)
+        # fetch sun_school
+        resp = self.execute_query('FETCH PROP ON school "sun_school"')
+        self.check_resp_succeeded(resp)
+        expect_result = [["sun_school", "sun_school", 1262311200]]
+        self.check_result(resp, expect_result)
 
         # fetch sun_school by uuid
         # resp = self.execute('FETCH PROP ON school uuid("sun_school")')
@@ -214,15 +214,16 @@ class TestInsert1(NebulaTestSuite):
                             'VALUES "Bob":(9, "Bob", 20191106001, "four")')
         self.check_resp_succeeded(resp)
 
-        # check result, does not support
-        # resp = self.execute('FETCH PROP ON person "Bob"')
-        # self.check_resp_succeeded(resp)
-        # expect_result = [['Bob', 'Bob', 9]]
-        # self.check_out_of_order_result(resp, expect_result)
-        # resp = self.execute('FETCH PROP ON student "Bob"')
-        # self.check_resp_succeeded(resp)
-        # expect_result = [['Bob', 'Bob', 20191106001]]
-        # self.check_out_of_order_result(resp, expect_result)
+        # check result
+        resp = self.execute_query('FETCH PROP ON person "Bob"')
+        self.check_resp_succeeded(resp)
+        expect_result = [['Bob', 'Bob', 9]]
+        self.check_result(resp, expect_result)
+
+        resp = self.execute_query('FETCH PROP ON student "Bob"')
+        self.check_resp_succeeded(resp)
+        expect_result = [['Bob', 'four', 20191106001]]
+        self.check_result(resp, expect_result)
 
         # multi vertex multi tags
         resp = self.execute('INSERT VERTEX person(name, age),student(grade, number) '
@@ -259,11 +260,14 @@ class TestInsert1(NebulaTestSuite):
         #                     'uuid("Tom")->uuid("Peter"):(83, "Petter")')
         # self.check_resp_succeeded(resp)
 
-        # get result, does not support get dst vertex
+        # get result
         resp = self.execute_query('GO FROM "Tom" OVER schoolmate YIELD $^.person.name,'
                                   'schoolmate.likeness, $$.person.name')
         self.check_resp_succeeded(resp)
-        expect_result = [['Tom', 85, 'Lucy'], ['Tom', 81, 'Kitty'], ['Tom', 83, 'Peter'], ['Tom', 87, 'Bob']]
+        expect_result = [['Tom', 85, 'Lucy'],
+                         ['Tom', 81, 'Kitty'],
+                         ['Tom', 83, 'Peter'],
+                         ['Tom', 87, 'Bob']]
         self.check_out_of_order_result(resp, expect_result)
 
         # get result use uuid
@@ -290,7 +294,8 @@ class TestInsert1(NebulaTestSuite):
                                   'schoolmate.likeness, $$.person.name,'
                                   '$$.student.grade, $$.student.number')
         self.check_resp_succeeded(resp)
-        expect_result = [[90, 'Laura', 'three', 20190901008], [95, 'Amber', 'four', 20180901003]]
+        expect_result = [[90, 'Laura', 'three', 20190901008],
+                         [95, 'Amber', 'four', 20180901003]]
         self.check_out_of_order_result(resp, expect_result)
 
         # get multi tag  use uuid through go
@@ -362,7 +367,7 @@ class TestInsert1(NebulaTestSuite):
         expect_result = [['Joy', 90, 'Petter', 19, 456]]
         self.check_result(resp, expect_result)
 
-        # uuid, TODO: does not support get dst vertex
+        # uuid
         # resp = self.execute('GO FROM uuid("Joy") OVER schoolmate YIELD $^.person.name,'
         #                     'schoolmate.likeness, $$.person.name, $$.person.age,$$.employee.name')
         # self.check_resp_succeeded(resp)
@@ -472,18 +477,20 @@ class TestInsert1(NebulaTestSuite):
         resp = self.execute_query('GO FROM "Tom" OVER schoolmateWithDefault YIELD $^.person.name,'
                                   'schoolmateWithDefault.likeness, $$.person.name')
         self.check_resp_succeeded(resp)
-        expect_result = [['Tom', 80, 'Lucy'], ['Tom', 80, 'Kitty'], ['Tom', 80, 'Peter']]
+        expect_result = [['Tom', 80, 'Lucy'],
+                         ['Tom', 80, 'Kitty'],
+                         ['Tom', 80, 'Peter']]
         self.check_out_of_order_result(resp, expect_result)
 
-        # timestamp has not implement
-        # resp = self.execute_query('GO FROM "Lucy" OVER schoolmateWithDefault YIELD '
-        #                           'schoolmateWithDefault.likeness, $$.personWithDefault.name,'
-        #                           '$$.personWithDefault.birthday, $$.personWithDefault.department,'
-        #                           '$$.studentWithDefault.grade, $$.studentWithDefault.number')
-        # self.check_resp_succeeded(resp)
-        # expect_result = [[80, 'Laura', 1578621600, 'engineering', 'one', 20190901008],
-        #                  [80, 'Amber', 1578621600, 'engineering', 'one', 20180901003]]
-        # self.check_out_of_order_result(resp, expect_result)
+
+        resp = self.execute_query('GO FROM "Lucy" OVER schoolmateWithDefault YIELD '
+                                  'schoolmateWithDefault.likeness, $$.personWithDefault.name,'
+                                  '$$.personWithDefault.birthday, $$.personWithDefault.department,'
+                                  '$$.studentWithDefault.grade, $$.studentWithDefault.number')
+        self.check_resp_succeeded(resp)
+        expect_result = [[80, 'Laura', 1578621600, 'engineering', 'one', 20190901008],
+                         [80, 'Amber', 1578621600, 'engineering', 'one', 20180901003]]
+        self.check_out_of_order_result(resp, expect_result)
 
     def test_multi_version(self):
         # insert multi version vertex

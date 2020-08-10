@@ -20,7 +20,7 @@ class TestParts(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         # Wait for leader info
-        time.sleep(self.delay)
+        time.sleep(self.delay + 5)
 
     @classmethod
     def cleanup(self):

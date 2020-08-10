@@ -19,6 +19,7 @@ set(GRAPH_TEST_LIB
     $<TARGET_OBJECTS:idgenerator_obj>
     $<TARGET_OBJECTS:context_obj>
     $<TARGET_OBJECTS:graph_auth_obj>
+    $<TARGET_OBJECTS:common_time_function_obj>
     $<TARGET_OBJECTS:common_graph_client_obj>
     $<TARGET_OBJECTS:common_expression_obj>
     $<TARGET_OBJECTS:common_http_client_obj>

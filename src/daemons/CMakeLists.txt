@@ -23,6 +23,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:context_obj>
         $<TARGET_OBJECTS:graph_flags_obj>
         $<TARGET_OBJECTS:graph_auth_obj>
+        $<TARGET_OBJECTS:common_time_function_obj>
         $<TARGET_OBJECTS:common_expression_obj>
         $<TARGET_OBJECTS:common_http_client_obj>
         $<TARGET_OBJECTS:common_network_obj>

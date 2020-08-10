@@ -8,28 +8,25 @@
 #define EXEC_MUTATE_UPDATEEXECUTOR_H_
 
 #include "common/base/StatusOr.h"
-#include "exec/Executor.h"
+#include "exec/mutate/MutateExecutor.h"
 
 namespace nebula {
 namespace graph {
 
-class UpdateBaseExecutor : public Executor {
+class UpdateBaseExecutor : public MutateExecutor {
 public:
     UpdateBaseExecutor(const std::string &execName,
                        const PlanNode *node,
                        QueryContext *ectx)
-        : Executor(execName, node, ectx) {}
+        : MutateExecutor(execName, node, ectx) {}
 
     virtual ~UpdateBaseExecutor() {}
 
 protected:
     StatusOr<DataSet> handleResult(DataSet &&data);
 
-    Status handleErrorCode(nebula::storage::cpp2::ErrorCode code, PartitionID partId);
-
 protected:
     std::vector<std::string>         yieldNames_;
-    std::string                      schemaName_;
 };
 
 class UpdateVertexExecutor final : public UpdateBaseExecutor {

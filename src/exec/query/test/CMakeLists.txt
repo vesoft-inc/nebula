@@ -4,6 +4,7 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
 SET(EXEC_QUERY_TEST_OBJS
+    $<TARGET_OBJECTS:common_time_function_obj>
     $<TARGET_OBJECTS:common_expression_obj>
     $<TARGET_OBJECTS:common_network_obj>
     $<TARGET_OBJECTS:common_process_obj>

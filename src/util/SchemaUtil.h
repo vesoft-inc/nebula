@@ -36,15 +36,6 @@ public:
     static StatusOr<nebula::Value> toSchemaValue(const meta::cpp2::PropertyType type,
                                                  const Value &v);
 
-    // Conver int64 or string to Timestamp
-    static StatusOr<nebula::Timestamp> toTimestamp(const Value &v);
-
-    // Conver int64 or string to Date
-    static StatusOr<nebula::Date> toDate(const Value &v);
-
-    // Conver int64 or string to DateTime
-    static StatusOr<nebula::DateTime> toDateTime(const Value &v);
-
     static Status setTTLDuration(SchemaPropItem* schemaProp, meta::cpp2::Schema& schema);
 
     static Status setTTLCol(SchemaPropItem* schemaProp, meta::cpp2::Schema& schema);

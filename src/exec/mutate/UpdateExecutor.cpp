@@ -40,50 +40,10 @@ StatusOr<DataSet> UpdateBaseExecutor::handleResult(DataSet &&data) {
     return result;
 }
 
-Status UpdateBaseExecutor::handleErrorCode(nebula::storage::cpp2::ErrorCode code,
-                                           PartitionID partId) {
-    switch (code) {
-        case storage::cpp2::ErrorCode::E_INVALID_FIELD_VALUE:
-            return Status::Error(
-                    "Invalid field value: may be the filed without default value or wrong schema");
-        case storage::cpp2::ErrorCode::E_INVALID_FILTER:
-            return Status::Error("Invalid filter.");
-        case storage::cpp2::ErrorCode::E_INVALID_UPDATER:
-            return Status::Error("Invalid Update col or yield col.");
-        case storage::cpp2::ErrorCode::E_TAG_NOT_FOUND:
-            return Status::Error("Tag `%s' not found.", schemaName_.c_str());
-        case storage::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND:
-            return Status::Error("Tag prop not found.");
-        case storage::cpp2::ErrorCode::E_EDGE_NOT_FOUND:
-            return Status::Error("Edge `%s' not found.", schemaName_.c_str());
-        case storage::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND:
-            return Status::Error("Edge prop not found.");
-        case storage::cpp2::ErrorCode::E_INVALID_DATA:
-            return Status::Error("Invalid data, may be wrong value type.");
-        case storage::cpp2::ErrorCode::E_NOT_NULLABLE:
-            return Status::Error("The not null field cannot be null.");
-        case storage::cpp2::ErrorCode::E_FIELD_UNSET:
-            return Status::Error("The not null field doesn't have a default value.");
-        case storage::cpp2::ErrorCode::E_OUT_OF_RANGE:
-            return Status::Error("Out of range value.");
-        case storage::cpp2::ErrorCode::E_ATOMIC_OP_FAILED:
-            return Status::Error("Atomic operation failed.");
-        case storage::cpp2::ErrorCode::E_FILTER_OUT:
-            return Status::OK();
-        default:
-            auto status = Status::Error("Unknown error, part: %d, error code: %d.",
-                                         partId, static_cast<int32_t>(code));
-            LOG(ERROR) << status;
-            return status;
-    }
-    return Status::OK();
-}
-
 folly::Future<Status> UpdateVertexExecutor::execute() {
     SCOPED_TIMER(&execTime_);
     auto *uvNode = asNode<UpdateVertex>(node());
     yieldNames_ = uvNode->getYieldNames();
-    schemaName_ = uvNode->getName();
     time::Duration updateVertTime;
     return qctx()->getStorageClient()->updateVertex(uvNode->getSpaceId(),
                                                     uvNode->getVId(),
@@ -123,7 +83,6 @@ folly::Future<Status> UpdateVertexExecutor::execute() {
 folly::Future<Status> UpdateEdgeExecutor::execute() {
     SCOPED_TIMER(&execTime_);
     auto *ueNode = asNode<UpdateEdge>(node());
-    schemaName_ = ueNode->getName();
     storage::cpp2::EdgeKey edgeKey;
     edgeKey.set_src(ueNode->getSrcId());
     edgeKey.set_ranking(ueNode->getRank());

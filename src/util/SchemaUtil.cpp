@@ -5,6 +5,7 @@
 */
 
 #include "common/base/Base.h"
+#include "common/function/TimeFunction.h"
 #include "util/SchemaUtil.h"
 #include "context/QueryExpressionContext.h"
 
@@ -105,7 +106,7 @@ StatusOr<nebula::Value> SchemaUtil::toSchemaValue(const meta::cpp2::PropertyType
                            << ", v type " <<  v.type();
                 return Status::Error("Wrong type");
             }
-            auto timestamp = toTimestamp(v);
+            auto timestamp = TimeFunction::toTimestamp(v);
             if (!timestamp.ok()) {
                 return timestamp.status();
             }
@@ -118,7 +119,7 @@ StatusOr<nebula::Value> SchemaUtil::toSchemaValue(const meta::cpp2::PropertyType
                            << ", v type " <<  v.type();
                 return Status::Error("Wrong type");
             }
-            auto date = toDate(v);
+            auto date = TimeFunction::toDate(v);
             if (!date.ok()) {
                 return date.status();
             }
@@ -131,7 +132,7 @@ StatusOr<nebula::Value> SchemaUtil::toSchemaValue(const meta::cpp2::PropertyType
                            << ", v type " <<  v.type();
                 return Status::Error("Wrong type");
             }
-            auto datetime = toDateTime(v);
+            auto datetime = TimeFunction::toDateTime(v);
             if (!datetime.ok()) {
                 return datetime.status();
             }
@@ -143,36 +144,6 @@ StatusOr<nebula::Value> SchemaUtil::toSchemaValue(const meta::cpp2::PropertyType
     }
 }
 
-// static
-StatusOr<nebula::Timestamp> SchemaUtil::toTimestamp(const Value &) {
-    nebula::Timestamp timestamp = 0;
-    return timestamp;
-}
-
-// static
-StatusOr<nebula::Date> SchemaUtil::toDate(const Value &) {
-    // TODO: Add Date processing
-    nebula::Date date;
-    date.year = 0;
-    date.month = 0;
-    date.day = 0;
-    return date;
-}
-
-// static
-StatusOr<nebula::DateTime> SchemaUtil::toDateTime(const Value &) {
-    // TODO: Add AateTime processing
-    nebula::DateTime dateTime;
-    dateTime.year = 0;
-    dateTime.month = 0;
-    dateTime.day = 0;
-    dateTime.hour = 0;
-    dateTime.minute = 0;
-    dateTime.sec = 0;
-    dateTime.microsec = 0;
-    dateTime.timezone = 0;
-    return dateTime;
-}
 
 // static
 Status SchemaUtil::setTTLDuration(SchemaPropItem* schemaProp, meta::cpp2::Schema& schema) {

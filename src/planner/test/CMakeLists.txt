@@ -8,6 +8,7 @@ nebula_add_test(
     SOURCES
         ExecutionPlanTest.cpp
     OBJECTS
+        $<TARGET_OBJECTS:common_time_function_obj>
         $<TARGET_OBJECTS:common_expression_obj>
         $<TARGET_OBJECTS:common_http_client_obj>
         $<TARGET_OBJECTS:common_network_obj>
@@ -25,7 +26,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:common_meta_obj>
         $<TARGET_OBJECTS:common_ws_obj>
         $<TARGET_OBJECTS:common_ws_common_obj>
-        # $<TARGET_OBJECTS:meta_gflags_man_obj>
         $<TARGET_OBJECTS:common_thread_obj>
         $<TARGET_OBJECTS:common_time_obj>
         $<TARGET_OBJECTS:common_fs_obj>

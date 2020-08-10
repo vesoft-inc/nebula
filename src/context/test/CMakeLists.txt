@@ -20,6 +20,7 @@ SET(CONTEXT_TEST_LIBS
     $<TARGET_OBJECTS:common_common_thrift_obj>
     $<TARGET_OBJECTS:common_graph_thrift_obj>
     $<TARGET_OBJECTS:common_storage_thrift_obj>
+    $<TARGET_OBJECTS:common_time_function_obj>
     $<TARGET_OBJECTS:util_obj>
     $<TARGET_OBJECTS:context_obj>
     $<TARGET_OBJECTS:parser_obj>
