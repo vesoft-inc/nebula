@@ -201,5 +201,25 @@ Status ShowSnapshotsValidator::toPlan() {
     tail_ = root_;
     return Status::OK();
 }
+
+Status ShowPartsValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status ShowPartsValidator::toPlan() {
+    auto* plan = qctx_->plan();
+    auto sentence = static_cast<ShowPartsSentence*>(sentence_);
+    std::vector<PartitionID> partIds;
+    if (sentence->getList() != nullptr) {
+        partIds = *sentence->getList();
+    }
+    auto *node = ShowParts::make(plan,
+                                 nullptr,
+                                 vctx_->whichSpace().id,
+                                 std::move(partIds));
+    root_ = node;
+    tail_ = root_;
+    return Status::OK();
+}
 }  // namespace graph
 }  // namespace nebula

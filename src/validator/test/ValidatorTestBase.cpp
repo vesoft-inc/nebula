@@ -43,48 +43,6 @@ namespace graph {
         case PlanNode::Kind::kStart:
         case PlanNode::Kind::kDedup:
             return Status::OK();
-        case PlanNode::Kind::kShowHosts:
-        case PlanNode::Kind::kDeleteEdges:
-        case PlanNode::Kind::kDeleteVertices:
-        case PlanNode::Kind::kIndexScan:
-        case PlanNode::Kind::kGetNeighbors:
-        case PlanNode::Kind::kFilter:
-        case PlanNode::Kind::kSort:
-        case PlanNode::Kind::kLimit:
-        case PlanNode::Kind::kAggregate:
-        case PlanNode::Kind::kSwitchSpace:
-        case PlanNode::Kind::kMultiOutputs:
-        case PlanNode::Kind::kCreateSpace:
-        case PlanNode::Kind::kCreateTag:
-        case PlanNode::Kind::kCreateEdge:
-        case PlanNode::Kind::kDescSpace:
-        case PlanNode::Kind::kDescTag:
-        case PlanNode::Kind::kDescEdge:
-        case PlanNode::Kind::kInsertVertices:
-        case PlanNode::Kind::kInsertEdges:
-        case PlanNode::Kind::kUnion:
-        case PlanNode::Kind::kIntersect:
-        case PlanNode::Kind::kMinus:
-        case PlanNode::Kind::kSelect:
-        case PlanNode::Kind::kLoop:
-        case PlanNode::Kind::kAlterEdge:
-        case PlanNode::Kind::kAlterTag:
-        case PlanNode::Kind::kShowCreateSpace:
-        case PlanNode::Kind::kShowCreateTag:
-        case PlanNode::Kind::kShowCreateEdge:
-        case PlanNode::Kind::kDropSpace:
-        case PlanNode::Kind::kDropTag:
-        case PlanNode::Kind::kDropEdge:
-        case PlanNode::Kind::kShowSpaces:
-        case PlanNode::Kind::kShowTags:
-        case PlanNode::Kind::kShowEdges:
-        case PlanNode::Kind::kCreateSnapshot:
-        case PlanNode::Kind::kDropSnapshot:
-        case PlanNode::Kind::kShowSnapshots:
-        case PlanNode::Kind::kDataJoin:
-        case PlanNode::Kind::kUpdateVertex:
-        case PlanNode::Kind::kUpdateEdge:
-            LOG(FATAL) << "Unimplemented";
         case PlanNode::Kind::kDataCollect: {
             const auto *lDC = static_cast<const DataCollect*>(l);
             const auto *rDC = static_cast<const DataCollect*>(r);
@@ -192,8 +150,9 @@ namespace graph {
             }
             return Status::OK();
         }
+        default:
+            LOG(FATAL) << "Unknow plan node kind " << static_cast<int>(l->kind());
     }
-    LOG(FATAL) << "Unknow plan node kind " << static_cast<int>(l->kind());
 }
 
 // only traversal the plan by inputs, only `select` or `loop` make ring

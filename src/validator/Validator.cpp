@@ -118,6 +118,8 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
             return std::make_unique<UpdateVertexValidator>(sentence, context);
         case Sentence::Kind::kUpdateEdge:
             return std::make_unique<UpdateEdgeValidator>(sentence, context);
+        case Sentence::Kind::kShowParts:
+            return std::make_unique<ShowPartsValidator>(sentence, context);
         default:
             return std::make_unique<ReportError>(sentence, context);
     }
@@ -163,7 +165,8 @@ Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
         case PlanNode::Kind::kDeleteVertices:
         case PlanNode::Kind::kDeleteEdges:
         case PlanNode::Kind::kUpdateVertex:
-        case PlanNode::Kind::kUpdateEdge: {
+        case PlanNode::Kind::kUpdateEdge:
+        case PlanNode::Kind::kShowParts: {
             static_cast<SingleDependencyNode*>(node)->dependsOn(appended);
             break;
         }

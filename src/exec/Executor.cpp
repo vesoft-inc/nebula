@@ -17,6 +17,7 @@
 #include "exec/admin/SnapshotExecutor.h"
 #include "exec/admin/SpaceExecutor.h"
 #include "exec/admin/SwitchSpaceExecutor.h"
+#include "exec/admin/PartExecutor.h"
 #include "exec/logic/LoopExecutor.h"
 #include "exec/logic/MultiOutputsExecutor.h"
 #include "exec/logic/SelectExecutor.h"
@@ -404,6 +405,13 @@ Executor *Executor::makeExecutor(const PlanNode *node,
             auto showHosts = asNode<ShowHosts>(node);
             auto input = makeExecutor(showHosts->dep(), qctx, visited);
             exec = new ShowHostsExecutor(showHosts, qctx);
+            exec->dependsOn(input);
+            break;
+        }
+        case PlanNode::Kind::kShowParts: {
+            auto showParts = asNode<ShowParts>(node);
+            auto input = makeExecutor(showParts->dep(), qctx, visited);
+            exec = new ShowPartsExecutor(showParts, qctx);
             exec->dependsOn(input);
             break;
         }

@@ -58,6 +58,11 @@ public:
         list_.reset(list);
         kind_ = Kind::kShowParts;
     }
+
+    std::vector<int32_t>* getList() const {
+        return list_.get();
+    }
+
     std::string toString() const override;
 
 private:

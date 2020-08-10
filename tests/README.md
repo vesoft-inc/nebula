@@ -26,9 +26,9 @@
     - check_resp_failed(resp)
       - 和check_resp_succeeded相反
     - search_result(col, rows, expect)
-      - 用来检测返回的行是否和期望一致，这里行可以是乱序，并且列值支持正则, 使用正则的时候，需要设置下 is_regex=True
+      - 用来检测返回的行是否和期望一致，这里行可以是乱序，并且列值支持正则, 使用正则的时候，需要设置下 is_regex=True, 并且所有列都要用正则
     - check_result(rows, expect)
-      - 用来检测返回的行和期望一致，这里是行是按照严格顺序，并且列值支持正则, 需要设置下 is_regex=True
+      - 用来检测返回的行和期望一致，这里是行是按照严格顺序，并且列值支持正则, 需要设置下 is_regex=True, 并且所有列都要用正则
     - check_out_of_order_result
       - 用来检测返回的行是否和期望一致，行可以是乱序，不支持正则
     - check_empty_result

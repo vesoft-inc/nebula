@@ -271,6 +271,42 @@ public:
         return "Ingest";
     }
 };
+
+class ShowParts final : public SingleInputNode {
+public:
+    static ShowParts* make(ExecutionPlan* plan,
+                           PlanNode* input,
+                           GraphSpaceID spaceId,
+                           std::vector<PartitionID> partIds) {
+        return new ShowParts(plan, input, spaceId, std::move(partIds));
+    }
+
+    std::string explain() const override {
+        return "ShowParts";
+    }
+
+    GraphSpaceID getSpaceId() const {
+        return spaceId_;
+    }
+
+    const std::vector<PartitionID>& getPartIds() const {
+        return partIds_;
+    }
+
+private:
+    explicit ShowParts(ExecutionPlan* plan,
+                       PlanNode* input,
+                       GraphSpaceID spaceId,
+                       std::vector<PartitionID> partIds)
+        : SingleInputNode(plan, Kind::kShowParts, input) {
+        spaceId_ = spaceId;
+        partIds_ = std::move(partIds);
+    }
+
+private:
+    GraphSpaceID                       spaceId_{-1};
+    std::vector<PartitionID>           partIds_;
+};
 }  // namespace graph
 }  // namespace nebula
 #endif  // PLANNER_ADMIN_H_

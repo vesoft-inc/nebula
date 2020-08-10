@@ -30,6 +30,7 @@ nebula_add_library(
     admin/ShowHostsExecutor.cpp
     admin/SpaceExecutor.cpp
     admin/SnapshotExecutor.cpp
+    admin/PartExecutor.cpp
     maintain/TagExecutor.cpp
     maintain/EdgeExecutor.cpp
     mutate/InsertExecutor.cpp
