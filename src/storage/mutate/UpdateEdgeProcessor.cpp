@@ -186,9 +186,6 @@ kvstore::ResultCode
 UpdateEdgeProcessor::buildDependProps(const cpp2::EdgeKey& edgeKey,
                                       const meta::SchemaProviderIf* schema) {
     // Only one edge, check depPropMap_ in set clause
-    // This props must have default value or nullable, or set int UpdateItems_
-
-    // get updated edgeName
     auto edgeNameRet = this->schemaMan_->toEdgeName(spaceId_, std::abs(edgeKey.edge_type));
     if (!edgeNameRet.ok()) {
         VLOG(3) << "Can't find edgeType" << edgeKey.edge_type;
@@ -297,15 +294,14 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
         }
         auto updater = std::make_unique<RowUpdater>(constSchema);
 
-        // Onlt handle one edge
+        // Only handle one edge
         ret = buildDependProps(edgeKey, constSchema.get());
         if (ret != kvstore::ResultCode::SUCCEEDED) {
             return ret;
         }
 
-        // When the schema field is not in update field or the update item has src item,
+        // When the schema field is not in update set clause
         // need to get default value from schema. If nonexistent return error.
-        // props not in set clause must have default value
         for (auto index = 0UL; index < constSchema->getNumFields(); index++) {
             auto propName = std::string(constSchema->getFieldName(index));
             auto propIter = checkedProp_.find(propName);

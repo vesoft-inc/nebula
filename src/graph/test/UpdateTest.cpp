@@ -239,7 +239,7 @@ TEST_P(UpdateUpsertTest, UpdateUpsertEdge) {
     }
     {   // Filter out
         // https://github.com/vesoft-inc/nebula/issues/1888
-        // Update set clause and filter clause are not allowed to manipulate tag attributes
+        // Update edge set clause and filter clause are not allowed to manipulate tag attributes
         cpp2::ExecutionResponse resp;
         auto query = GetParam() + " EDGE 200 -> 101@0 OF select "
                     + "SET grade = select.grade + 1, year = 2000 "
@@ -545,7 +545,7 @@ TEST_F(UpsertTest, VertexNotExists) {
     }
     {   // Insertable success, 118 is nonexistent, name and age without default value,
         // the filter is always true.
-        // use
+        // age in set clause, not need default value
         cpp2::ExecutionResponse resp;
         auto query = "UPSERT VERTEX 118 "
                      "SET student_default.age = 1, "
@@ -576,7 +576,7 @@ TEST_F(UpsertTest, EdgeNotExists) {
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     {   // Insertable, upsert when edge exists
-        // Update set clause and filter clause are not allowed to manipulate tag attributes
+        // Update edge set clause and filter clause are not allowed to manipulate tag attributes
         cpp2::ExecutionResponse resp;
         auto query = "UPSERT EDGE 201 -> 101@0 OF select "
                      "SET grade = 3, year = 2019 "
@@ -699,6 +699,7 @@ TEST_F(UpsertTest, EdgeNotExists) {
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     // update select_default's year with edge prop value
+    // grade in set clause, not need default value
     {
         cpp2::ExecutionResponse resp;
         auto query = "UPSERT EDGE 222 -> 445@0 OF select_default "

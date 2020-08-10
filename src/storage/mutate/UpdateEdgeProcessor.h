@@ -87,7 +87,6 @@ private:
     using PropPair = std::pair<std::string, std::string>;
     std::vector<std::pair<PropPair, std::unordered_set<PropPair>>>  depPropMap_;
 
-
     // Checked props
     std::unordered_set<std::string>                                 checkedProp_;
 };

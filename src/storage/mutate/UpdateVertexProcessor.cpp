@@ -130,7 +130,6 @@ kvstore::ResultCode UpdateVertexProcessor::checkAndGetDefault(const std::string&
 
 kvstore::ResultCode UpdateVertexProcessor::buildDependProps() {
     // Check depPropMap_ in set clause
-    // This props must have default value or nullable, or set int UpdateItems_
     for (auto& prop : depPropMap_) {
         for (auto& p : prop.second) {
             auto it = checkedProp_.find(p);
@@ -225,7 +224,6 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
             return kvstore::ResultCode::ERR_UNKNOWN;
         }
         auto tagName = std::move(tagStatus.value());
-
         auto updater = std::make_unique<RowUpdater>(schema);
 
         // Multiple tags, only execute once
@@ -237,9 +235,8 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
             checked_ = true;
         }
 
-        // When the schema field is not in update field or the update item has src item,
+        // When the schema field is not in update set clause
         // need to get default value from schema. If nonexistent return error.
-        // props not in set clause must have default value
         for (auto index = 0UL; index < schema->getNumFields(); index++) {
             auto propName = std::string(schema->getFieldName(index));
             auto propIter = checkedProp_.find(std::make_pair(tagName, propName));
