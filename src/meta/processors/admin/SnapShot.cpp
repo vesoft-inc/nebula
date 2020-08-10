@@ -24,6 +24,11 @@ cpp2::ErrorCode Snapshot::createSnapshot(const std::string& name) {
     auto hosts = ActiveHostsMan::getActiveHosts(kv_);
     for (const auto& host : hosts) {
         for (auto& space : spaces) {
+            // If the storage node doesn't have this space. Skip this operation.
+            auto spaceExist = ActiveHostsMan::spaceExistInHost(kv_, space, host);
+            if (!spaceExist) {
+                continue;
+            }
             auto status = client_->createSnapshot(space, name, host).get();
             if (!status.ok()) {
                 return cpp2::ErrorCode::E_RPC_FAILURE;
@@ -46,7 +51,12 @@ cpp2::ErrorCode Snapshot::dropSnapshot(const std::string& name,
     auto activeHosts = ActiveHostsMan::getActiveHosts(kv_);
     for (auto& host : hosts) {
         if (std::find(activeHosts.begin(), activeHosts.end(), host) != activeHosts.end()) {
-            std::for_each(spaces.begin(), spaces.end(), [name, host, this](auto& space) {
+            for (const auto& space : spaces) {
+                // If the storage node doesn't have this space. Skip this operation.
+                auto spaceExist = ActiveHostsMan::spaceExistInHost(kv_, space, host);
+                if (!spaceExist) {
+                    continue;
+                }
                 auto status = client_->dropSnapshot(space, name, host).get();
                 if (!status.ok()) {
                     auto msg = "failed drop checkpoint : \"%s\". on host %s. error %s";
@@ -56,7 +66,7 @@ cpp2::ErrorCode Snapshot::dropSnapshot(const std::string& name,
                                                      status.toString().c_str());
                     LOG(ERROR) << error;
                 }
-            });
+            }
         }
     }
     return cpp2::ErrorCode::SUCCEEDED;
@@ -90,13 +100,18 @@ cpp2::ErrorCode Snapshot::blockingWrites(storage::cpp2::EngineSignType sign) {
     }
     auto hosts = ActiveHostsMan::getActiveHosts(kv_);
     for (const auto& host : hosts) {
-        std::for_each(spaces.begin(), spaces.end(), [host, sign, this](auto& space) {
+        for (const auto& space : spaces) {
+            // If the storage node doesn't have this space. Skip this operation.
+            auto spaceExist = ActiveHostsMan::spaceExistInHost(kv_, space, host);
+            if (!spaceExist) {
+                continue;
+            }
             auto status = client_->blockingWrites(space, sign, host).get();
             if (!status.ok()) {
                 LOG(ERROR) << " Send blocking sign error on host : "
                            << network::NetworkUtils::toHosts({host});
             }
-        });
+        }
     }
     return cpp2::ErrorCode::SUCCEEDED;
 }
