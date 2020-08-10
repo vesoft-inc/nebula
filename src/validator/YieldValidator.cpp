@@ -69,7 +69,7 @@ Status YieldValidator::checkInputProps() const {
     }
     for (auto &prop : inputProps_) {
         DCHECK_NE(prop, "*");
-        NG_RETURN_IF_ERROR(checkPropNonexistOrDuplicate(inputs_, prop));
+        NG_RETURN_IF_ERROR(checkPropNonexistOrDuplicate(inputs_, prop, "Yield sentence"));
     }
     return Status::OK();
 }
@@ -83,7 +83,7 @@ Status YieldValidator::checkVarProps() const {
         auto &props = vctx_->getVar(var);
         for (auto &prop : pair.second) {
             DCHECK_NE(prop, "*");
-            NG_RETURN_IF_ERROR(checkPropNonexistOrDuplicate(props, prop));
+            NG_RETURN_IF_ERROR(checkPropNonexistOrDuplicate(props, prop, "Yield sentence"));
         }
     }
     return Status::OK();

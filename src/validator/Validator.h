@@ -86,7 +86,9 @@ protected:
 
     bool evaluableExpr(const Expression* expr) const;
 
-    static Status checkPropNonexistOrDuplicate(const ColsDef& cols, const std::string& prop);
+    static Status checkPropNonexistOrDuplicate(const ColsDef& cols,
+                                               const std::string& prop,
+                                               const std::string &validatorName);
 
     static Status appendPlan(PlanNode* plan, PlanNode* appended);
 

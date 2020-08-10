@@ -12,27 +12,19 @@ namespace nebula {
 namespace graph {
 Status OrderByValidator::validateImpl() {
     auto sentence = static_cast<OrderBySentence*>(sentence_);
-    auto inputColNames = inputCols();
+    outputs_ = inputCols();
     auto factors = sentence->factors();
     for (auto &factor : factors) {
         if (factor->expr()->kind() != Expression::Kind::kInputProperty) {
-            return Status::Error("Wrong expression");
+            return Status::SemanticError("Order by with invalid expression `%s'",
+                                          factor->expr()->toString().c_str());
         }
         auto expr = static_cast<InputPropertyExpression*>(factor->expr());
-        auto name = *expr->prop();
-        // Check factor in input node's colNames
-        auto find = std::find_if(inputColNames.begin(), inputColNames.end(),
-                                 [&name] (const auto& colDef) {
-                                     return colDef.first == name;
-                                 });
-        if (find == inputColNames.end()) {
-            LOG(ERROR) << "Order BY on factor `" << name <<"` is not exist";
-            return Status::Error("Order BY on factor `%s` is not exist", name.c_str());
-        }
-        colOrderTypes_.emplace_back(std::make_pair(name, factor->orderType()));
+        auto *name = expr->prop();
+        NG_RETURN_IF_ERROR(checkPropNonexistOrDuplicate(outputs_, *name, "Order by"));
+        colOrderTypes_.emplace_back(std::make_pair(*name, factor->orderType()));
     }
 
-    outputs_ = inputCols();
     return Status::OK();
 }
 
