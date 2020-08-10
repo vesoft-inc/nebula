@@ -30,7 +30,7 @@ namespace kvstore {
         auto s = (__VA_ARGS__);                                                                    \
         if (!ok(s)) {                                                                              \
             if (spaceRet.left() == ResultCode::ERR_SPACE_NOT_FOUND) {                              \
-                LOG(INFO) << "Space " << spaceId << " dis not exist, skip it.";                    \
+                LOG(INFO) << "Space " << spaceId << " does not exist, skip it.";                   \
                 return ResultCode::SUCCEEDED;                                                      \
             }                                                                                      \
             return error(s);                                                                       \
