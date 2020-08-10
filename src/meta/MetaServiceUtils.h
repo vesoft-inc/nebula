@@ -117,6 +117,8 @@ public:
 
     static std::string rebuildIndexStatusPrefix(GraphSpaceID spaceId, char type);
 
+    static std::string rebuildIndexStatusPrefix();
+
     static std::string rebuildTagIndexStatusPrefix(GraphSpaceID spaceId) {
         return rebuildIndexStatusPrefix(spaceId, 'T');
     }
