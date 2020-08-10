@@ -38,6 +38,7 @@ class NebulaStore : public KVStore, public Handler {
     FRIEND_TEST(NebulaStoreTest, TransLeaderTest);
     FRIEND_TEST(NebulaStoreTest, CheckpointTest);
     FRIEND_TEST(NebulaStoreTest, ThreeCopiesCheckpointTest);
+    FRIEND_TEST(NebulaStoreTest, DifferentSpaceStructureTest);
 
 public:
     NebulaStore(KVOptions options,

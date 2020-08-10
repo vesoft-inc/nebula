@@ -926,6 +926,59 @@ TEST(NebulaStoreTest, AtomicOpBatchTest) {
         EXPECT_EQ(expected, result);
     }
 }
+
+TEST(NebulaStoreTest, DifferentSpaceStructureTest) {
+    // Cluster ==> {StorageNode1, StorageNode2}
+    // StorageNode1 ==> Space 1 == Parts {0}
+    // StorageNode2 ==> Space 2 == Parts {0}
+
+    // test StorageNode1
+    {
+        auto partMan = std::make_unique<MemPartManager>();
+        auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+        partMan->partsMap_[1][0] = PartMeta();
+        fs::TempDir rootPath("/tmp/DifferentSpaceStructureNode1.XXXXXX");
+        std::vector<std::string> paths;
+        paths.emplace_back(folly::stringPrintf("%s/disk1", rootPath.path()));
+        paths.emplace_back(folly::stringPrintf("%s/disk2", rootPath.path()));
+        KVOptions options;
+        options.dataPaths_ = std::move(paths);
+        options.partMan_ = std::move(partMan);
+        HostAddr local = {0, 0};
+        auto store = std::make_unique<NebulaStore>(std::move(options),
+                                                   ioThreadPool,
+                                                   local,
+                                                   getHandlers());
+        store->init();
+        sleep(1);
+        EXPECT_EQ(1, store->spaces_.size());
+        EXPECT_EQ(ResultCode::SUCCEEDED, store->createCheckpoint(1, "test"));
+        EXPECT_EQ(ResultCode::SUCCEEDED, store->createCheckpoint(2, "test"));
+    }
+    // test StorageNode2
+    {
+        auto partMan = std::make_unique<MemPartManager>();
+        auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+        partMan->partsMap_[2][0] = PartMeta();
+        fs::TempDir rootPath("/tmp/DifferentSpaceStructureNode2.XXXXXX");
+        std::vector<std::string> paths;
+        paths.emplace_back(folly::stringPrintf("%s/disk1", rootPath.path()));
+        paths.emplace_back(folly::stringPrintf("%s/disk2", rootPath.path()));
+        KVOptions options;
+        options.dataPaths_ = std::move(paths);
+        options.partMan_ = std::move(partMan);
+        HostAddr local = {0, 0};
+        auto store = std::make_unique<NebulaStore>(std::move(options),
+                                                   ioThreadPool,
+                                                   local,
+                                                   getHandlers());
+        store->init();
+        sleep(1);
+        EXPECT_EQ(1, store->spaces_.size());
+        EXPECT_EQ(ResultCode::SUCCEEDED, store->createCheckpoint(1, "test"));
+        EXPECT_EQ(ResultCode::SUCCEEDED, store->createCheckpoint(2, "test"));
+    }
+}
 }  // namespace kvstore
 }  // namespace nebula
 
