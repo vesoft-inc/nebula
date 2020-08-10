@@ -20,22 +20,31 @@ void MockSchemaManager::init() {
     tagIdNames_.emplace(2, "person");
     edgeNameIds_.emplace("like", 3);
     edgeIdNames_.emplace(3, "like");
+    edgeNameIds_.emplace("serve", 4);
+    edgeIdNames_.emplace(4, "serve");
 
+    Tags tagSchemas;
     // person {name : string, age : int8}
     std::shared_ptr<meta::NebulaSchemaProvider> personSchema(new meta::NebulaSchemaProvider(0));
     personSchema->addField("name", meta::cpp2::PropertyType::STRING);
     personSchema->addField("age", meta::cpp2::PropertyType::INT8);
-    Tags tagSchemas;
     tagSchemas.emplace(2, personSchema);
+
     tagSchemas_.emplace(1, std::move(tagSchemas));
 
+    Edges edgeSchemas;
     // like {start : timestamp, end : datetime}
     std::shared_ptr<meta::NebulaSchemaProvider> likeSchema(new meta::NebulaSchemaProvider(0));
     likeSchema->addField("start", meta::cpp2::PropertyType::TIMESTAMP);
     likeSchema->addField("end", meta::cpp2::PropertyType::DATETIME);
     likeSchema->addField("likeness", meta::cpp2::PropertyType::INT64);
-    Edges edgeSchemas;
     edgeSchemas.emplace(3, likeSchema);
+
+    std::shared_ptr<meta::NebulaSchemaProvider> serveSchema(new meta::NebulaSchemaProvider(0));
+    serveSchema->addField("start", meta::cpp2::PropertyType::TIMESTAMP);
+    serveSchema->addField("end", meta::cpp2::PropertyType::DATETIME);
+    edgeSchemas.emplace(4, serveSchema);
+
     edgeSchemas_.emplace(1, std::move(edgeSchemas));
 }
 

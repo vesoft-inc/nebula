@@ -689,6 +689,50 @@ TEST_F(QueryValidatorTest, GoOneStep) {
     }
 }
 
+TEST_F(QueryValidatorTest, GoOverAll) {
+    {
+        std::string query  = "GO FROM \"1\" OVER * REVERSELY "
+                             "YIELD serve._src, like._src";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kStart,
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+    {
+        std::string query  = "GO FROM \"1\" OVER * REVERSELY";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kStart,
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+    {
+        std::string query  = "GO FROM \"1\" OVER *";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kStart,
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+    {
+        std::string query  = "GO FROM \"1\" OVER * YIELD $$.person.name";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kProject,
+            PK::kDataJoin,
+            PK::kProject,
+            PK::kGetVertices,
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kStart,
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+}
+
 TEST_F(QueryValidatorTest, GoInvalid) {
     {
         // friend not exist.

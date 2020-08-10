@@ -107,20 +107,36 @@ Status GoValidator::validateOver(const OverClause* over) {
     }
 
     direction_ = over->direction();
-    if (over->isOverAll()) {
-        isOverAll_ = true;
-        return Status::Error("Not support over all yet.");
-    }
-    auto edges = over->edges();
     auto* schemaMng = qctx_->schemaMng();
-    for (auto* edge : edges) {
-        auto edgeName = *edge->edge();
-        auto edgeType = schemaMng->toEdgeType(space_.id, edgeName);
-        if (!edgeType.ok()) {
-            return Status::Error("%s not found in space [%s].",
-                    edgeName.c_str(), space_.name.c_str());
+    if (over->isOverAll()) {
+        auto allEdgeStatus = schemaMng->getAllEdge(space_.id);
+        NG_RETURN_IF_ERROR(allEdgeStatus);
+        auto edges = std::move(allEdgeStatus).value();
+        if (edges.empty()) {
+            return Status::Error("No edge type found in space %s",
+                    space_.name.c_str());
         }
-        edgeTypes_.emplace_back(edgeType.value());
+        for (auto edge : edges) {
+            auto edgeType = schemaMng->toEdgeType(space_.id, edge);
+            if (!edgeType.ok()) {
+                return Status::Error("%s not found in space [%s].",
+                        edge.c_str(), space_.name.c_str());
+            }
+            edgeTypes_.emplace_back(edgeType.value());
+        }
+        allEdges_ = std::move(edges);
+        isOverAll_ = true;
+    } else {
+        auto edges = over->edges();
+        for (auto* edge : edges) {
+            auto edgeName = *edge->edge();
+            auto edgeType = schemaMng->toEdgeType(space_.id, edgeName);
+            if (!edgeType.ok()) {
+                return Status::Error("%s not found in space [%s].",
+                        edgeName.c_str(), space_.name.c_str());
+            }
+            edgeTypes_.emplace_back(edgeType.value());
+        }
     }
     return Status::OK();
 }
@@ -167,37 +183,55 @@ Status GoValidator::validateYield(YieldClause* yield) {
 
     distinct_ = yield->isDistinct();
     auto cols = yield->columns();
-    for (auto col : cols) {
-        if (col->expr()->kind() == Expression::Kind::kSymProperty) {
-            auto symbolExpr = static_cast<SymbolPropertyExpression*>(col->expr());
-            col->setExpr(ExpressionUtils::transSymbolPropertyExpression<EdgePropertyExpression>(
-                symbolExpr));
-        } else {
-            ExpressionUtils::transAllSymbolPropertyExpr<EdgePropertyExpression>(col->expr());
+
+    if (cols.empty() && isOverAll_) {
+        DCHECK(!allEdges_.empty());
+        auto* newCols = new YieldColumns();
+        qctx_->objPool()->add(newCols);
+        for (auto& e : allEdges_) {
+            auto* col = new YieldColumn(new EdgeDstIdExpression(new std::string(e)));
+            newCols->addColumn(col);
+            auto colName = deduceColName(col);
+            colNames_.emplace_back(colName);
+            outputs_.emplace_back(colName, Value::Type::STRING);
+            NG_RETURN_IF_ERROR(deduceProps(col->expr()));
         }
 
-        if (!col->getAggFunName().empty()) {
-            return Status::Error(
-                "`%s', not support aggregate function in go sentence.",
-                col->toString().c_str());
+        yields_ = newCols;
+    } else {
+        for (auto col : cols) {
+            if (col->expr()->kind() == Expression::Kind::kSymProperty) {
+                auto symbolExpr = static_cast<SymbolPropertyExpression*>(col->expr());
+                col->setExpr(ExpressionUtils::transSymbolPropertyExpression<EdgePropertyExpression>(
+                    symbolExpr));
+            } else {
+                ExpressionUtils::transAllSymbolPropertyExpr<EdgePropertyExpression>(col->expr());
+            }
+
+            if (!col->getAggFunName().empty()) {
+                return Status::Error(
+                    "`%s', not support aggregate function in go sentence.",
+                    col->toString().c_str());
+            }
+            auto colName = deduceColName(col);
+            colNames_.emplace_back(colName);
+
+            auto typeStatus = deduceExprType(col->expr());
+            NG_RETURN_IF_ERROR(typeStatus);
+            auto type = typeStatus.value();
+            outputs_.emplace_back(colName, type);
+
+            NG_RETURN_IF_ERROR(deduceProps(col->expr()));
         }
-        auto colName = deduceColName(col);
-        colNames_.emplace_back(colName);
-
-        auto typeStatus = deduceExprType(col->expr());
-        NG_RETURN_IF_ERROR(typeStatus);
-        auto type = typeStatus.value();
-        outputs_.emplace_back(colName, type);
-
-        NG_RETURN_IF_ERROR(deduceProps(col->expr()));
+        for (auto& e : edgeProps_) {
+            auto found = std::find(edgeTypes_.begin(), edgeTypes_.end(), e.first);
+            if (found == edgeTypes_.end()) {
+                return Status::Error("Edges should be declared first in over clause.");
+            }
+        }
+        yields_ = yield->yields();
     }
-    for (auto& e : edgeProps_) {
-        auto found = std::find(edgeTypes_.begin(), edgeTypes_.end(), e.first);
-        if (found == edgeTypes_.end()) {
-            return Status::Error("Edges should be declared first in over clause.");
-        }
-    }
-    yields_ = yield->yields();
+
     return Status::OK();
 }
 

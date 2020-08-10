@@ -109,6 +109,7 @@ private:
     std::string                                             firstBeginningSrcVidColName_;
     // Used for get dst props
     std::string                                             joinDstVidColName_;
+    std::vector<std::string>                                allEdges_;
 };
 }  // namespace graph
 }  // namespace nebula

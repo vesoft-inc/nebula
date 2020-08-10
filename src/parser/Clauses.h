@@ -130,8 +130,6 @@ public:
         alias_.reset(alias);
     }
 
-    bool isOverAll() const { return *edge_ == "*"; }
-
     std::string *edge() const { return edge_.get(); }
 
     std::string *alias() const { return alias_.get(); }
@@ -174,6 +172,7 @@ public:
                storage::cpp2::EdgeDirection direction = storage::cpp2::EdgeDirection::OUT_EDGE) {
         isOverAll_ = isOverAll;
         direction_ = direction;
+        overEdges_ = std::make_unique<OverEdges>();
     }
 
     std::vector<OverEdge *> edges() const { return overEdges_->edges(); }
