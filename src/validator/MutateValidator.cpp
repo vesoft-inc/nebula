@@ -697,12 +697,18 @@ std::unique_ptr<Expression> UpdateValidator::rewriteSymExpr(Expression* expr,
                 return std::make_unique<EdgePropertyExpression>(
                         new std::string(sym), new std::string(*symExpr->prop()));
             } else {
-                if (symExpr->sym() == nullptr || !symExpr->sym()->empty()) {
-                    hasWrongType = true;
-                    return nullptr;
-                }
+                hasWrongType = true;
+                return nullptr;
+            }
+        }
+        case Expression::Kind::kLabel: {
+            auto labelExpr = static_cast<LabelExpression*>(expr);
+            if (isEdge) {
+                return std::make_unique<EdgePropertyExpression>(
+                        new std::string(sym), new std::string(*labelExpr->name()));
+            } else {
                 return std::make_unique<SourcePropertyExpression>(
-                        new std::string(sym), new std::string(*symExpr->prop()));
+                        new std::string(sym), new std::string(*labelExpr->name()));
             }
         }
         case Expression::Kind::kSrcProperty: {

@@ -13,6 +13,7 @@
 #include "common/expression/SymbolPropertyExpression.h"
 #include "common/expression/TypeCastingExpression.h"
 #include "common/expression/UnaryExpression.h"
+#include "common/expression/LabelExpression.h"
 
 namespace nebula {
 namespace graph {
@@ -103,7 +104,8 @@ public:
             case Expression::Kind::kList:   // FIXME(dutor)
             case Expression::Kind::kSet:
             case Expression::Kind::kMap:
-            case Expression::Kind::kSubscript: {
+            case Expression::Kind::kSubscript:
+            case Expression::Kind::kLabel: {
                 return false;
             }
         }
@@ -322,7 +324,8 @@ public:
                 case Expression::Kind::kList:   // FIXME(dutor)
                 case Expression::Kind::kSet:
                 case Expression::Kind::kMap:
-                case Expression::Kind::kSubscript: {
+                case Expression::Kind::kSubscript:
+                case Expression::Kind::kLabel: {
                     return false;
                 }
             }   // switch

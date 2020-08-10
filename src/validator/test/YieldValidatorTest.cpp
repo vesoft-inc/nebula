@@ -463,7 +463,7 @@ TEST_F(YieldValidatorTest, Error) {
         auto query = var + "YIELD like.start";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                  "SemanticError: Not supported expression kind for type deduction: like.start");
+                  "SemanticError: Not supported expression `like.start' for type deduction.");
     }
 }
 

@@ -887,6 +887,7 @@ void GoValidator::extractPropExprs(const Expression* expr) {
         case Expression::Kind::kSet:
         case Expression::Kind::kMap:
         case Expression::Kind::kSubscript:
+        case Expression::Kind::kLabel:
         case Expression::Kind::kRelIn:
         case Expression::Kind::kRelNotIn: {
             LOG(FATAL) << "Not support " << expr->kind();
@@ -986,6 +987,7 @@ std::unique_ptr<Expression> GoValidator::rewriteToInputProp(Expression* expr) {
         case Expression::Kind::kSet:
         case Expression::Kind::kMap:
         case Expression::Kind::kSubscript:
+        case Expression::Kind::kLabel:
         case Expression::Kind::kRelIn:
         case Expression::Kind::kRelNotIn: {
             LOG(FATAL) << "Not support " << expr->kind();

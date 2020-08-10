@@ -394,7 +394,7 @@ base_expression
     }
     | name_label {
         // need to rewrite the expression
-        $$ = new SymbolPropertyExpression(Expression::Kind::kSymProperty, new std::string(""), new std::string(""), $1);
+        $$ = new LabelExpression($1);
     }
     ;
 

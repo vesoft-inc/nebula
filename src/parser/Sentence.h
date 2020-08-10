@@ -17,6 +17,7 @@
 #include "common/expression/TypeCastingExpression.h"
 #include "common/expression/UnaryExpression.h"
 #include "common/expression/UUIDExpression.h"
+#include "common/expression/LabelExpression.h"
 
 namespace nebula {
 
