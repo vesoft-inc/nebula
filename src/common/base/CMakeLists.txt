@@ -14,13 +14,4 @@ nebula_add_library(
     StringValue.cpp
 )
 
-if(${PCHSupport_FOUND})
-    add_precompiled_header(base_obj Base.h)
-endif(${PCHSupport_FOUND})
-
-add_custom_target(
-    clean-pch
-    COMMAND "rm" "-fr" "Base.h.gch"
-)
-
 nebula_add_subdirectory(test)

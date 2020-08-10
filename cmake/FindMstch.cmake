@@ -15,7 +15,6 @@
 
 find_path(Mstch_INCLUDE_DIR NAMES mstch)
 find_library(Mstch_LIBRARY NAMES libmstch.a)
-message(STATUS "Mstch_INCLUDE_DIR = ${Mstch_INCLUDE_DIR} , Mstch_LIBRARY = ${Mstch_LIBRARY}")
 
 if(Mstch_INCLUDE_DIR AND Mstch_LIBRARY)
     set(Mstch_FOUND TRUE)
@@ -23,6 +22,8 @@ if(Mstch_INCLUDE_DIR AND Mstch_LIBRARY)
         Mstch_INCLUDE_DIR
         Mstch_LIBRARY
     )
+    message(STATUS "Mstch_INCLUDE_DIR       : ${Mstch_INCLUDE_DIR}")
+    message(STATUS "Mstch_LIBRARY           : ${Mstch_LIBRARY}")
 endif()
 
 if(NOT Mstch_FOUND)
