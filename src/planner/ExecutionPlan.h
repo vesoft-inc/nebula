@@ -51,6 +51,12 @@ public:
         return objPool_->add(obj);
     }
 
+    // follow the flavor like std::make_unique, combine the object creation and ownership holding
+    template <typename T, typename... Args>
+    T* makeAndSave(Args&&... args) {
+        return objPool_->makeAndAdd<T>(std::forward<Args>(args)...);
+    }
+
     int64_t id() const {
         return id_;
     }

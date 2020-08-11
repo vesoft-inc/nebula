@@ -20,25 +20,27 @@ Status FetchVerticesValidator::validateImpl() {
 
 Status FetchVerticesValidator::toPlan() {
     // Start [-> some input] -> GetVertices [-> Project] [-> Dedup] [-> next stage] -> End
-    auto *sentence = static_cast<FetchVerticesSentence*>(sentence_);
+    std::string vidsVar = (srcRef_ == nullptr ? buildConstantInput() : buildRuntimeInput());
+
     auto *plan = qctx_->plan();
     auto *getVerticesNode = GetVertices::make(plan,
                                               nullptr,
                                               spaceId_,
-                                              std::move(vertices_),
-                                              std::move(src_),
+                                              src_,
                                               std::move(props_),
                                               std::move(exprs_),
                                               dedup_,
                                               std::move(orderBy_),
                                               limit_,
                                               std::move(filter_));
-    getVerticesNode->setInputVar(inputVar_);
+    getVerticesNode->setInputVar(vidsVar);
+    // TODO(shylock) split the getVertices column names with project
+    getVerticesNode->setColNames(colNames_);
     // pipe will set the input variable
     PlanNode *current = getVerticesNode;
 
     if (withProject_) {
-        auto *projectNode = Project::make(plan, current, sentence->yieldClause()->yields());
+        auto *projectNode = Project::make(plan, current, newYieldColumns_);
         projectNode->setInputVar(current->varName());
         projectNode->setColNames(colNames_);
         current = projectNode;
@@ -82,8 +84,8 @@ Status FetchVerticesValidator::prepareVertices() {
     auto *sentence = static_cast<FetchVerticesSentence*>(sentence_);
     // from ref, eval when execute
     if (sentence->isRef()) {
-        src_ = sentence->ref();
-        auto result = checkRef(src_, Value::Type::STRING);
+        srcRef_ = sentence->ref();
+        auto result = checkRef(srcRef_, Value::Type::STRING);
         NG_RETURN_IF_ERROR(result);
         inputVar_ = std::move(result).value();
         return Status::OK();
@@ -93,7 +95,7 @@ Status FetchVerticesValidator::prepareVertices() {
     // TODO(shylock) add eval() method for expression
     QueryExpressionContext dummy(nullptr);
     auto vids = sentence->vidList();
-    vertices_.reserve(vids.size());
+    srcVids_.rows.reserve(vids.size());
     for (const auto vid : vids) {
         // TODO(shylock) Add a new value type VID to semantic this
         DCHECK(ExpressionUtils::isConstExpr(vid));
@@ -101,7 +103,7 @@ Status FetchVerticesValidator::prepareVertices() {
         if (!v.isStr()) {   // string as vid
             return Status::NotSupported("Not a vertex id");
         }
-        vertices_.emplace_back(nebula::Row({std::move(v).getStr()}));
+        srcVids_.emplace_back(nebula::Row({std::move(v).getStr()}));
     }
     return Status::OK();
 }
@@ -124,7 +126,7 @@ Status FetchVerticesValidator::prepareProperties() {
             for (std::size_t i = 0; i < schema_->getNumFields(); ++i) {
                 outputs_.emplace_back(schema_->getFieldName(i),
                                       SchemaUtil::propTypeToValueType(schema_->getFieldType(i)));
-                colNames_.emplace_back(schema_->getFieldName(i));
+                colNames_.emplace_back(tagName_ + '.' + schema_->getFieldName(i));
             }
         } else {
             // all schema properties
@@ -143,17 +145,27 @@ Status FetchVerticesValidator::prepareProperties() {
             outputs_.emplace_back(kVid, Value::Type::STRING);
             colNames_.emplace_back(kVid);
             for (const auto &tagSchema : allTagsSchema) {
+                auto tagNameResult = qctx_->schemaMng()->toTagName(spaceId_, tagSchema.first);
+                NG_RETURN_IF_ERROR(tagNameResult);
+                auto tagName = std::move(tagNameResult).value();
                 for (std::size_t i = 0; i < tagSchema.second->getNumFields(); ++i) {
                     outputs_.emplace_back(
                         tagSchema.second->getFieldName(i),
                         SchemaUtil::propTypeToValueType(tagSchema.second->getFieldType(i)));
-                    colNames_.emplace_back(tagSchema.second->getFieldName(i));
+                    colNames_.emplace_back(tagName + "." + tagSchema.second->getFieldName(i));
                 }
             }
         }
     } else {
         CHECK(!sentence->isAllTagProps()) << "Not supported yield for *.";
         withProject_ = true;
+        // outputs
+        auto yieldSize = yield->columns().size();
+        colNames_.reserve(yieldSize + 1);
+        outputs_.reserve(yieldSize + 1);
+        colNames_.emplace_back(kVid);
+        outputs_.emplace_back(kVid, Value::Type::STRING);  // kVid
+
         dedup_ = yield->isDistinct();
         storage::cpp2::VertexProp prop;
         prop.set_tag(tagId_.value());
@@ -190,18 +202,24 @@ Status FetchVerticesValidator::prepareProperties() {
                 }
                 propsName.emplace_back(*expr->prop());
             }
+            colNames_.emplace_back(deduceColName(col));
+            auto typeResult = deduceExprType(col->expr());
+            NG_RETURN_IF_ERROR(typeResult);
+            outputs_.emplace_back(colNames_.back(), typeResult.value());
             // TODO(shylock) think about the push-down expr
         }
         prop.set_props(std::move(propsName));
         props_.emplace_back(std::move(prop));
 
-        // outputs
-        colNames_ = deduceColNames(yield->yields());
-        outputs_.reserve(colNames_.size());
-        for (std::size_t i = 0; i < colNames_.size(); ++i) {
-            auto typeResult = deduceExprType(yield->columns()[i]->expr());
-            NG_RETURN_IF_ERROR(typeResult);
-            outputs_.emplace_back(colNames_[i], typeResult.value());
+        // insert the reserved properties expression be compatible with 1.0
+        // TODO(shylock) select kVid from storage
+        newYieldColumns_ = qctx_->objPool()->add(new YieldColumns());
+        // note eval vid by input expression
+        newYieldColumns_->addColumn(
+            new YieldColumn(new InputPropertyExpression(new std::string(kVid)),
+                            new std::string(kVid)));
+        for (auto col : yield->columns()) {
+            newYieldColumns_->addColumn(col->clone().release());
         }
     }
 
@@ -213,10 +231,27 @@ const Expression *FetchVerticesValidator::findInvalidYieldExpression(const Expre
     return ExpressionUtils::findAnyKind(root,
                                         {Expression::Kind::kInputProperty,
                                          Expression::Kind::kVarProperty,
+                                         Expression::Kind::kSrcProperty,
+                                         Expression::Kind::kDstProperty,
                                          Expression::Kind::kEdgeSrc,
                                          Expression::Kind::kEdgeType,
                                          Expression::Kind::kEdgeRank,
                                          Expression::Kind::kEdgeDst});
+}
+
+// TODO(shylock) optimize dedup input when distinct given
+std::string FetchVerticesValidator::buildConstantInput() {
+    auto input = vctx_->anonVarGen()->getVar();
+    qctx_->ectx()->setResult(input, ResultBuilder().value(Value(std::move(srcVids_))).finish());
+
+    src_ = qctx_->plan()->makeAndSave<VariablePropertyExpression>(new std::string(input),
+                                                                  new std::string(kVid));
+    return input;
+}
+
+std::string FetchVerticesValidator::buildRuntimeInput() {
+    src_ = DCHECK_NOTNULL(srcRef_);
+    return inputVar_;
 }
 
 }   // namespace graph

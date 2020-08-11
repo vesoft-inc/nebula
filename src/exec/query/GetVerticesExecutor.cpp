@@ -30,16 +30,6 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
 
     GraphStorageClient *storageClient = qctx()->getStorageClient();
     nebula::DataSet vertices({kVid});
-    std::unordered_set<Value> uniqueVid;
-    if (!gv->vertices().empty()) {
-        // TODO(shylock) not dedup in here, do it when generate plan
-        for (auto& v : gv->vertices()) {
-            auto ret = uniqueVid.emplace(v.values.front());
-            if (ret.second) {
-                vertices.emplace_back(std::move(v));
-            }
-        }
-    }
     if (gv->src() != nullptr) {
         // Accept Table such as | $a | $b | $c |... as input which one column indicate src
         auto valueIter = ectx_->getResult(gv->inputVar()).iter();
@@ -52,16 +42,13 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
                 LOG(WARNING) << "Mismatched vid type: " << src.type();
                 continue;
             }
-            auto ret = uniqueVid.emplace(src);
-            if (ret.second) {
-                vertices.emplace_back(Row({std::move(src)}));
-            }
+            vertices.emplace_back(Row({std::move(src)}));
         }
     }
 
     if (vertices.rows.empty()) {
         // TODO: add test for empty input.
-        return finish(ResultBuilder().value(Value(DataSet())).finish());
+        return finish(ResultBuilder().value(Value(DataSet(gv->colNames()))).finish());
     }
 
     time::Duration getPropsTime;

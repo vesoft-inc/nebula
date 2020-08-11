@@ -66,14 +66,21 @@ public:
 
     // get all version of all tags
     StatusOr<meta::TagSchemas> getAllVerTagSchema(GraphSpaceID space) override {
-        UNUSED(space);
-        return meta::TagSchemas();
+        meta::TagSchemas allVerTagSchemas;
+        const auto& tagSchemas = tagSchemas_[space];
+        for (const auto &tagSchema : tagSchemas) {
+            allVerTagSchemas.emplace(tagSchema.first,
+                                     std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>
+                                        {tagSchema.second});
+        }
+        return allVerTagSchemas;
     }
 
     // get all version of all edges
     StatusOr<meta::EdgeSchemas> getAllVerEdgeSchema(GraphSpaceID space) override {
         UNUSED(space);
-        return meta::EdgeSchemas();
+        DLOG(FATAL) << "Unimplemented";
+        return Status::Error("Unimplemented");
     }
 
 

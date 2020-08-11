@@ -33,10 +33,15 @@ private:
 
     static const Expression* findInvalidYieldExpression(const Expression* root);
 
+    // TODO(shylock) merge the code
+    std::string buildConstantInput();
+    std::string buildRuntimeInput();
+
 private:
     GraphSpaceID spaceId_{0};
-    std::vector<nebula::Row> vertices_;
-    Expression* src_{nullptr};
+    DataSet srcVids_{{kVid}};  // src from constant
+    Expression* srcRef_{nullptr};  // src from runtime
+    Expression* src_{nullptr};  // src in total
     std::string tagName_;
     // none if not specified tag
     folly::Optional<TagID> tagId_;
@@ -52,8 +57,10 @@ private:
     bool withProject_{false};
     // outputs
     std::vector<std::string> colNames_;
+    // new yield to inject reserved properties for compatible with 1.0
+    YieldColumns* newYieldColumns_{nullptr};
     // input
-    std::string inputVar_;
+    std::string inputVar_;  // empty when pipe or no input in fact
 };
 
 }   // namespace graph

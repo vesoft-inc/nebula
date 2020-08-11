@@ -33,13 +33,21 @@ private:
 
     static const Expression* findInvalidYieldExpression(const Expression* root);
 
+    // TODO(shylock) merge the code
+    std::string buildConstantInput();
+    std::string buildRuntimeInput();
+
     static const std::unordered_set<std::string> reservedProperties;
 
 private:
     GraphSpaceID spaceId_;
-    std::vector<nebula::Row> edges_;
+    DataSet edgeKeys_{{kSrc, kType, kRank, kDst}};
+    Expression* srcRef_{nullptr};
+    Expression* rankRef_{nullptr};
+    Expression* dstRef_{nullptr};
     Expression* src_{nullptr};
-    Expression* ranking_{nullptr};
+    Expression* type_{nullptr};
+    Expression* rank_{nullptr};
     Expression* dst_{nullptr};
     std::string edgeTypeName_;
     EdgeType edgeType_{0};

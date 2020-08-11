@@ -18,7 +18,9 @@ class TestDeleteVertices(NebulaTestSuite):
 
     @classmethod
     def cleanup(self):
-        pass
+        query = 'DROP SPACE IF EXISTS deletenoedges_space'
+        resp = self.execute(query)
+        self.check_resp_succeeded(resp)
 
     def test_delete_one_vertex(self):
         resp = self.execute_query('GO FROM "Boris Diaw" OVER like')
@@ -37,8 +39,7 @@ class TestDeleteVertices(NebulaTestSuite):
 
         resp = self.execute_query(' FETCH PROP ON player "Tony Parker" YIELD player.name, player.age')
         self.check_resp_succeeded(resp)
-        # 2.0, fetch when has yield clause, not return the vid
-        expect_result = [["Tony Parker", 36]]
+        expect_result = [["Tony Parker", "Tony Parker", 36]]
         self.check_out_of_order_result(resp, expect_result)
 
         resp = self.execute_query('FETCH PROP ON serve "Tony Parker"->"Spurs" '
@@ -209,5 +210,5 @@ class TestDeleteVertices(NebulaTestSuite):
         resp = self.execute_query('FETCH PROP ON person "101" yield person.name, person.age')
         # 2.0: when vertex not exist, return NULL
         self.check_resp_succeeded(resp)
-        expect_result = [[T_NULL, T_NULL]]
+        expect_result = [['101', T_NULL, T_NULL]]
         self.check_out_of_order_result(resp, expect_result)

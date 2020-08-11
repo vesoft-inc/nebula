@@ -400,14 +400,25 @@ PlanNode* GoValidator::buildJoinDstProps(PlanNode* projectSrcDstProps) {
 
     auto* plan = qctx_->plan();
 
+    auto* yieldDsts = plan->makeAndSave<YieldColumns>();
+    yieldDsts->addColumn(new YieldColumn(
+        new InputPropertyExpression(new std::string(joinDstVidColName_)),
+        new std::string(joinDstVidColName_)));
+    auto* projectDsts = Project::make(plan, projectSrcDstProps, yieldDsts);
+    projectDsts->setInputVar(projectSrcDstProps->varName());
+    projectDsts->setColNames(std::vector<std::string>{joinDstVidColName_});
+
+    auto* dedupVids = Dedup::make(plan, projectDsts);
+    dedupVids->setInputVar(projectDsts->varName());
+
     auto* vids = new VariablePropertyExpression(
-        new std::string(projectSrcDstProps->varName()),
+        new std::string(dedupVids->varName()),
         new std::string(joinDstVidColName_));
     plan->saveObject(vids);
     auto* getDstVertices =
-        GetVertices::make(plan, projectSrcDstProps, space_.id, {}, vids,
+        GetVertices::make(plan, dedupVids, space_.id, vids,
                             buildDstVertexProps(), {});
-    getDstVertices->setInputVar(projectSrcDstProps->varName());
+    getDstVertices->setInputVar(dedupVids->varName());
 
     auto vidColName = vctx_->anonColGen()->getCol();
     auto* vidCol = new YieldColumn(

@@ -63,6 +63,8 @@ TEST_F(GroupByValidatorTest, TestGroupBy) {
             PK::kDataJoin,
             PK::kProject,
             PK::kGetVertices,
+            PK::kDedup,
+            PK::kProject,
             PK::kProject,
             PK::kGetNeighbors,
             PK::kStart
@@ -86,6 +88,8 @@ TEST_F(GroupByValidatorTest, TestGroupBy) {
             PK::kDataJoin,
             PK::kProject,
             PK::kGetVertices,
+            PK::kDedup,
+            PK::kProject,
             PK::kProject,
             PK::kGetNeighbors,
             PK::kStart
@@ -110,6 +114,8 @@ TEST_F(GroupByValidatorTest, TestGroupBy) {
             PK::kDataJoin,
             PK::kProject,
             PK::kGetVertices,
+            PK::kDedup,
+            PK::kProject,
             PK::kProject,
             PK::kGetNeighbors,
             PK::kStart
@@ -134,6 +140,8 @@ TEST_F(GroupByValidatorTest, TestGroupBy) {
             PK::kDataJoin,
             PK::kProject,
             PK::kGetVertices,
+            PK::kDedup,
+            PK::kProject,
             PK::kProject,
             PK::kGetNeighbors,
             PK::kStart

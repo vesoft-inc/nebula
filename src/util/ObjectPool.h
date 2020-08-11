@@ -39,6 +39,11 @@ public:
         return obj;
     }
 
+    template <typename T, typename... Args>
+    T *makeAndAdd(Args&&... args) {
+        return add(new T(std::forward<Args>(args)...));
+    }
+
     bool empty() const {
         return objects_.empty();
     }
