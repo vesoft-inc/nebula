@@ -41,19 +41,17 @@ public:
     void onError(proxygen::ProxygenError error) noexcept override;
 
 private:
-    bool downloadSSTFiles(const std::string& url,
-                          int port,
-                          const std::string& path,
-                          const std::vector<std::string>& parts);
-
+    bool downloadSSTFiles();
 
 private:
     HttpCode err_{HttpCode::SUCCEEDED};
     GraphSpaceID spaceID_;
+    folly::Optional<TagID> tag_;
+    folly::Optional<EdgeType> edge_;
     std::string hdfsHost_;
     int32_t hdfsPort_;
     std::string hdfsPath_;
-    std::string partitions_;
+    std::vector<std::string> parts_;
     nebula::hdfs::HdfsHelper *helper_;
     nebula::thread::GenericThreadPool *pool_;
     nebula::kvstore::KVStore *kvstore_;

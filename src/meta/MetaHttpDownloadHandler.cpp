@@ -59,7 +59,36 @@ void MetaHttpDownloadHandler::onRequest(std::unique_ptr<HTTPMessage> headers) no
     hdfsHost_ = headers->getQueryParam("host");
     hdfsPort_ = headers->getIntQueryParam("port");
     hdfsPath_ = headers->getQueryParam("path");
+    auto existStatus = helper_->exist(hdfsHost_, hdfsPort_, hdfsPath_);
+    if (!existStatus.ok()) {
+        LOG(ERROR) << "Run Hdfs Test failed. hdfs://"
+                   << hdfsHost_ << ":" << hdfsPort_ << hdfsPath_;
+        err_ = HttpCode::E_ILLEGAL_ARGUMENT;
+        return;
+    }
+    bool exist = existStatus.value();
+    if (!exist) {
+        LOG(ERROR) << "Hdfs Path non exist. hdfs://"
+                   << hdfsHost_ << ":" << hdfsPort_ << hdfsPath_;
+        err_ = HttpCode::E_ILLEGAL_ARGUMENT;
+        return;
+    }
     spaceID_ = headers->getIntQueryParam("space");
+    try {
+        if (headers->hasQueryParam("tag")) {
+            auto& tag = headers->getQueryParam("tag");
+            tag_.assign(folly::to<TagID>(tag));
+        }
+
+        if (headers->hasQueryParam("edge")) {
+            auto& edge = headers->getQueryParam("edge");
+            edge_.assign(folly::to<EdgeType>(edge));
+        }
+    } catch (std::exception& e) {
+        LOG(ERROR) << "Parse tag/edge error. " << e.what();
+        err_ = HttpCode::E_ILLEGAL_ARGUMENT;
+        return;
+    }
 }
 
 
@@ -87,7 +116,7 @@ void MetaHttpDownloadHandler::onEOM() noexcept {
     }
 
     if (helper_->checkHadoopPath()) {
-        if (dispatchSSTFiles(hdfsHost_, hdfsPort_, hdfsPath_)) {
+        if (dispatchSSTFiles()) {
             ResponseBuilder(downstream_)
                 .status(WebServiceUtils::to(HttpStatusCode::OK),
                         WebServiceUtils::toString(HttpStatusCode::OK))
@@ -126,18 +155,16 @@ void MetaHttpDownloadHandler::onError(ProxygenError error) noexcept {
                << proxygen::getErrorString(error);
 }
 
-bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& hdfsHost,
-                                               int hdfsPort,
-                                               const std::string& hdfsPath) {
-    auto result = helper_->ls(hdfsHost, hdfsPort, hdfsPath);
+bool MetaHttpDownloadHandler::dispatchSSTFiles() {
+    auto result = helper_->ls(hdfsHost_, hdfsPort_, hdfsPath_);
     if (!result.ok()) {
-        LOG(ERROR) << "Dispatch SSTFile Failed";
+        LOG(ERROR) << "Dispatch SSTFile Failed. " << result.status();
         return false;
     }
+    std::string lsContent = result.value();
     std::vector<std::string> files;
-    folly::split("\n", result.value(), files, true);
-    int32_t  partNumber = files.size() - 1;
-
+    folly::split("\n", lsContent, files, true);
+    int32_t  partNumber = files.empty() ? 0 : files.size() - 1;
     std::unique_ptr<kvstore::KVIterator> iter;
     auto prefix = MetaServiceUtils::partPrefix(spaceID_);
     auto ret = kvstore_->prefix(0, 0, prefix, &iter);
@@ -165,9 +192,10 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& hdfsHost,
         iter->next();
     }
 
-    if (partNumber != partSize) {
-        LOG(ERROR) << "HDFS part number should be equal with nebula "
-                   << partNumber << " " << partSize;
+    if (partNumber == 0 || partNumber > partSize) {
+        LOG(ERROR) << "HDFS part number not valid parts in hdfs: "
+                   << partNumber << ", parts: " << partSize
+                   << ", ls: [" << lsContent << "]";
         return false;
     }
 
@@ -178,14 +206,33 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& hdfsHost,
         folly::join(",", pair.second, partsStr);
 
         auto storageIP = network::NetworkUtils::intToIPv4(pair.first.first);
-        auto dispatcher = [storageIP, hdfsHost, hdfsPort, hdfsPath, partsStr, this]() {
-            static const char *tmp = "http://%s:%d/%s?host=%s&port=%d&path=%s&parts=%s&space=%d";
-            std::string url = folly::stringPrintf(tmp, storageIP.c_str(),
-                                                  FLAGS_ws_storage_http_port, "download",
-                                                  hdfsHost.c_str(), hdfsPort, hdfsPath.c_str(),
-                                                  partsStr.c_str(), spaceID_);
+        std::string url;
+        if (edge_.has_value()) {
+            url = folly::stringPrintf(
+                "http://%s:%d/download?host=%s&port=%d&path=%s&parts=%s&space=%d&edge=%d",
+                storageIP.c_str(), FLAGS_ws_storage_http_port,
+                hdfsHost_.c_str(), hdfsPort_, hdfsPath_.c_str(),
+                partsStr.c_str(), spaceID_, edge_.value());
+        } else if (tag_.has_value()) {
+            url = folly::stringPrintf(
+                "http://%s:%d/download?host=%s&port=%d&path=%s&parts=%s&space=%d&tag=%d",
+                storageIP.c_str(), FLAGS_ws_storage_http_port,
+                hdfsHost_.c_str(), hdfsPort_, hdfsPath_.c_str(),
+                partsStr.c_str(), spaceID_, tag_.value());
+        } else {
+            url = folly::stringPrintf(
+                "http://%s:%d/download?host=%s&port=%d&path=%s&parts=%s&space=%d",
+                storageIP.c_str(), FLAGS_ws_storage_http_port,
+                hdfsHost_.c_str(), hdfsPort_, hdfsPath_.c_str(),
+                partsStr.c_str(), spaceID_);
+        }
+        auto dispatcher = [url] {
             auto downloadResult = nebula::http::HttpClient::get(url);
-            return downloadResult.ok() && downloadResult.value() == "SSTFile download successfully";
+            if (downloadResult.ok() && downloadResult.value() == "SSTFile download successfully") {
+                return true;
+            }
+            LOG(ERROR) << "Download Failed, url: " << url << " error: " << downloadResult.value();
+            return false;
         };
         auto future = pool_->addTask(dispatcher);
         futures.push_back(std::move(future));
@@ -193,19 +240,19 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& hdfsHost,
 
     bool successfully{true};
     folly::collectAll(std::move(futures)).thenValue(
-            [&](const std::vector<folly::Try<bool>>& tries) {
-        for (const auto& t : tries) {
-            if (t.hasException()) {
-                LOG(ERROR) << "Download Failed: " << t.exception();
-                successfully = false;
-                break;
+        [&](const std::vector<folly::Try<bool>>& tries) {
+            for (const auto& t : tries) {
+                if (t.hasException()) {
+                    LOG(ERROR) << "Download Failed: " << t.exception();
+                    successfully = false;
+                    break;
+                }
+                if (!t.value()) {
+                    successfully = false;
+                    break;
+                }
             }
-            if (!t.value()) {
-                successfully = false;
-                break;
-            }
-        }
-    }).wait();
+        }).wait();
 
     LOG(INFO) << "Download tasks have finished";
     return successfully;
