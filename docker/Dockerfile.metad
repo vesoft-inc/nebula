@@ -1,9 +1,11 @@
 FROM vesoft/nebula-dev:centos7 as builder
 
+ARG build_with_sanitizer
+
 COPY . /home/nebula/BUILD
 
 RUN cd /home/nebula/BUILD/package \
-  && ./package.sh -v $(git rev-parse --short HEAD) -n OFF
+  && ./package.sh $build_with_sanitizer -v $(git rev-parse --short HEAD) -n OFF
 
 FROM centos:7
 
