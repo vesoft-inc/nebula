@@ -297,13 +297,40 @@ EdgeKeys* DeleteEdgesSentence::keys() const {
 }
 
 std::string DownloadSentence::toString() const {
-    return folly::stringPrintf("DOWNLOAD HDFS \"%s:%d/%s\"", host_.get()->c_str(),
-                               port_, path_.get()->c_str());
+    std::string buf;
+    buf.reserve(256);
+    buf += "DOWNLOAD";
+    if (tag()) {
+        buf += " tag ";
+        buf += *tag();
+    }
+    if (edge()) {
+        buf += " edge ";
+        buf += *edge();
+    }
+    buf += folly::stringPrintf(
+        " HDFS \"%s:%d/%s\"",
+        host_.get()->c_str(), port_, path_.get()->c_str());
+
+    return buf;
 }
 
+
 std::string IngestSentence::toString() const {
-    return "INGEST";
+    std::string buf;
+    buf.reserve(256);
+    buf += "INGEST";
+    if (tag()) {
+        buf += " tag ";
+        buf += *tag();
+    }
+    if (edge()) {
+        buf += " edge ";
+        buf += *edge();
+    }
+    return buf;
 }
+
 
 std::string AdminSentence::toString() const {
     return op_;
