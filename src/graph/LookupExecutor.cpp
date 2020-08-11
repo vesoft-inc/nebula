@@ -312,7 +312,7 @@ Status LookupExecutor::findValidIndex() {
      */
     if (validIndexes.empty()) {
         return Status::IndexNotFound();
-    } else if (validIndexes.size() == 1 ) {
+    } else if (validIndexes.size() == 1) {
         // Verify the index again.
         // if the first field does not batch match means the index is invalid.
         // else return it and ignore conditions for other fields.

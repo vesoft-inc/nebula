@@ -58,6 +58,9 @@ bool IndexPolicyMaker::buildPolicy() {
                 if (col.get_type().type == nebula::cpp2::SupportedType::STRING) {
                     requiredFilter_ = true;
                 }
+                if (std::get<2>(*itr) == RelationalExpression::Operator::NE) {
+                    requiredFilter_ = true;
+                }
                 // Delete operator item if hint.
                 operatorList_.erase(itr);
             } else {
@@ -154,6 +157,25 @@ bool IndexPolicyMaker::exprEval(Getters &getters) {
     return true;
 }
 
+RelationType IndexPolicyMaker::toRel(RelationalExpression::Operator op) {
+    switch (op) {
+        case RelationalExpression::Operator::LT :
+            return RelationType::kLTRel;
+        case RelationalExpression::Operator::LE :
+            return RelationType::kLERel;
+        case RelationalExpression::Operator::GT :
+            return RelationType::kGTRel;
+        case RelationalExpression::Operator::GE:
+            return RelationType::kGERel;
+        case RelationalExpression::Operator::EQ :
+            return RelationType::kEQRel;
+        case RelationalExpression::Operator::NE :
+            return RelationType::kNERel;
+        default :
+            return RelationType::kNull;
+    }
+}
+
 RelationalExpression::Operator
 IndexPolicyMaker::reversalRelationalExprOP(RelationalExpression::Operator op) {
     switch (op) {
@@ -182,20 +204,18 @@ bool IndexPolicyMaker::writeScanItem(const std::string& prop, const OperatorItem
         // if operator is GT or GE . the 1 should a begin value.
         case RelationalExpression::Operator::GE :
         case RelationalExpression::Operator::GT : {
-            auto endThan = op == RelationalExpression::Operator::GT;
             auto v = scanItems_.find(prop);
             if (v == scanItems_.end()) {
                 // if the field did not exist in scanItems_, add an new one.
                 // default value is invalid VariantType.
-                scanItems_[prop] = std::make_tuple(endThan, std::get<1>(item),
-                                                   false, Status::Error());
+                scanItems_[prop] = ScanBound(Bound(toRel(op), std::get<1>(item)), Bound());
             } else {
-                if (!std::get<1>(v->second).ok()) {
+                if (v->second.beginBound_.rel_ == RelationType::kNull) {
                     // if value is invalid VariantType, reset it.
-                    std::get<1>(v->second) = std::get<1>(item);
-                } else if (std::get<1>(v->second).value() < std::get<1>(item)) {
+                    v->second.beginBound_ = Bound(toRel(op), std::get<1>(item));
+                } else if (v->second.beginBound_.val_ < std::get<1>(item)) {
                     // This might be the case where c1 > 1 and c1 > 5 , so the 5 should be save.
-                    std::get<1>(v->second) = std::get<1>(item);
+                    v->second.beginBound_.val_ = std::get<1>(item);
                 }
             }
             break;
@@ -206,26 +226,27 @@ bool IndexPolicyMaker::writeScanItem(const std::string& prop, const OperatorItem
          **/
         case RelationalExpression::Operator::LE :
         case RelationalExpression::Operator::LT : {
-            auto beginThan = op == RelationalExpression::Operator::LT;
             auto v = scanItems_.find(prop);
             if (v == scanItems_.end()) {
-                scanItems_[prop] = std::make_tuple(false, Status::Error(),
-                                                   beginThan, std::get<1>(item));
+                scanItems_[prop] = ScanBound(Bound(), Bound(toRel(op), std::get<1>(item)));
             } else {
-                if (!std::get<3>(v->second).ok()) {
-                    std::get<3>(v->second) = std::get<1>(item);
-                } else if (std::get<1>(v->second).value() > std::get<1>(item)) {
+                if (v->second.endBound_.rel_ == RelationType::kNull) {
+                    v->second.endBound_ = Bound(toRel(op), std::get<1>(item));
+                } else if (v->second.endBound_.val_ > std::get<1>(item)) {
                     // This might be the case where c1 < 1 and c1 < 5 , so the 1 should be save.
-                    std::get<3>(v->second) = std::get<1>(item);
+                    v->second.endBound_.val_ = std::get<1>(item);
                 }
             }
+            break;
+        }
+        case RelationalExpression::Operator::NE : {
             break;
         }
         default : {
             auto v = scanItems_.find(prop);
             if (v == scanItems_.end()) {
-                scanItems_[prop] = std::make_tuple(false, std::get<1>(item),
-                                                   false, std::get<1>(item));
+                scanItems_[prop] = ScanBound(Bound(toRel(op), std::get<1>(item)),
+                                             Bound(toRel(op), std::get<1>(item)));
             } else {
                 // If this field appears in scanItems_ ,
                 // means that the filter conditions are wrong, for example :

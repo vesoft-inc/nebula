@@ -51,7 +51,7 @@ protected:
     std::pair<std::string, std::string> makeScanPair(PartitionID partId, IndexID indexId);
 
     std::pair<std::string, std::string>
-    normalizeScanPair(const nebula::cpp2::ColumnDef& field, const ScanItem& item);
+    normalizeScanPair(const nebula::cpp2::ColumnDef& field, const ScanBound& item);
 
     /**
      * Details Scan index part as one by one.

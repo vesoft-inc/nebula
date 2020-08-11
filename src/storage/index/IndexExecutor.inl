@@ -134,13 +134,13 @@ IndexExecutor<RESP>::makeScanPair(PartitionID partId, IndexID indexId) {
         // where c1 > abs(1) , FunctionCallExpression->eval(abs(1))
         // should be cast type from int to double.
         bool suc = true;
-        if (std::get<1>((*item).second).ok()) {
+        if (item->second.beginBound_.rel_ != RelationType::kNull) {
             suc = NebulaKeyUtils::checkAndCastVariant(field.get_type().type,
-                                                      std::get<1>((*item).second).value());
+                                                      item->second.beginBound_.val_);
         }
-        if (std::get<3>((*item).second).ok()) {
+        if (item->second.endBound_.rel_ != RelationType::kNull) {
             suc = NebulaKeyUtils::checkAndCastVariant(field.get_type().type,
-                                                      std::get<3>((*item).second).value());
+                                                      item->second.endBound_.val_);
         }
         if (!suc) {
             VLOG(1) << "Unknown VariantType";
@@ -155,14 +155,17 @@ IndexExecutor<RESP>::makeScanPair(PartitionID partId, IndexID indexId) {
 
 template <typename RESP>
 std::pair<std::string, std::string>
-IndexExecutor<RESP>::normalizeScanPair(const nebula::cpp2::ColumnDef& field, const ScanItem& item) {
+IndexExecutor<RESP>::normalizeScanPair(const nebula::cpp2::ColumnDef& field,
+                                       const ScanBound& item) {
     std::string begin, end;
     auto type = field.get_type().type;
     // if begin == end, means the scan is equivalent scan.
-    if (!std::get<0>(item) && !std::get<2>(item) &&
-        std::get<1>(item).ok() && std::get<3>(item).ok() &&
-        std::get<1>(item).value() == std::get<3>(item).value()) {
-        begin = end = NebulaKeyUtils::encodeVariant(std::get<1>(item).value());
+    if (item.beginBound_.rel_ != RelationType::kGTRel &&
+        item.endBound_.rel_ != RelationType::kGTRel &&
+        item.beginBound_.rel_ != RelationType::kNull &&
+        item.endBound_.rel_ != RelationType::kNull &&
+        item.beginBound_.val_ == item.endBound_.val_) {
+        begin = end = NebulaKeyUtils::encodeVariant(item.beginBound_.val_);
         return std::make_pair(begin, end);
     }
     // normalize begin and end value using ScanItem. for example :
@@ -172,21 +175,22 @@ IndexExecutor<RESP>::normalizeScanPair(const nebula::cpp2::ColumnDef& field, con
     // c1 >= 5 --> ScanItem:<false, 5, false, invalid_V> --> {5, max}
     // c1 < 6 --> ScanItem:<false, invalid_V, true, 6> --> {min, 6}
     // c1 <= 6 --> ScanItem:<false, invalid_V, false, 6> --> {min, 7}
-    if (!std::get<1>(item).ok()) {
+    if (item.beginBound_.rel_ == RelationType::kNull) {
         begin = NebulaKeyUtils::boundVariant(type, NebulaBoundValueType::kMin);
-    } else if (std::get<0>(item)) {
+    } else if (item.beginBound_.rel_ == RelationType::kGTRel) {
         begin = NebulaKeyUtils::boundVariant(type, NebulaBoundValueType::kAddition,
-                                             std::get<1>(item).value());
+                                             item.beginBound_.val_);
     } else {
-        begin = NebulaKeyUtils::encodeVariant(std::get<1>(item).value());
+        begin = NebulaKeyUtils::encodeVariant(item.beginBound_.val_);
     }
-    if (!std::get<3>(item).ok()) {
+
+    if (item.endBound_.rel_ == RelationType::kNull) {
         end = NebulaKeyUtils::boundVariant(type, NebulaBoundValueType::kMax);
-    } else if (std::get<2>(item)) {
-        end = NebulaKeyUtils::encodeVariant(std::get<3>(item).value());
+    } else if (item.endBound_.rel_ == RelationType::kLTRel) {
+        end = NebulaKeyUtils::encodeVariant(item.endBound_.val_);
     } else {
         end = NebulaKeyUtils::boundVariant(type, NebulaBoundValueType::kAddition,
-                                           std::get<3>(item).value());
+                                           item.endBound_.val_);
     }
     return std::make_pair(begin, end);
 }

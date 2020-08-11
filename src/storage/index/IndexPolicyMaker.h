@@ -22,16 +22,43 @@ namespace storage {
  */
 using OperatorItem = std::tuple<std::string, VariantType, RelationalExpression::Operator>;
 
-/**
- * Range scan item tuple<less_than , begin_value, greater_than, end_value>
- * for example :
- * index (c1)
- * where c1 > 1 --> <true, 1, false, max>
- * where c1 >= 1 --> <false , 1, false, max>
- * where 1 < c1 < 2 <true, 1, true, 2>
- * where 1 <= c1 <= 2 <false, 1, false, 2>
- **/
-using ScanItem = std::tuple<bool, OptVariantType, bool, OptVariantType>;
+enum RelationType : uint8_t {
+    kGTRel,
+    kGERel,
+    kLTRel,
+    kLERel,
+    kEQRel,
+    kNERel,
+    kNull,
+};
+
+struct Bound {
+    RelationType rel_;
+    VariantType  val_;
+    Bound() {
+        rel_ = RelationType::kNull;
+    }
+    explicit Bound(RelationType rel) {
+        rel_ = rel;
+    }
+    Bound(RelationType rel, const VariantType& val) {
+        rel_ = rel;
+        val_ = val;
+    }
+};
+
+struct ScanBound {
+    Bound beginBound_;
+    Bound endBound_;
+    ScanBound() {
+        beginBound_ = Bound();
+        endBound_ = Bound();
+    }
+    ScanBound(const Bound& begin, const Bound& end) {
+        beginBound_ = begin;
+        endBound_ = end;
+    }
+};
 
 class IndexPolicyMaker {
 public:
@@ -66,6 +93,8 @@ protected:
      */
     bool exprEval(Getters &getters);
 
+    static RelationType toRel(RelationalExpression::Operator op);
+
 private:
     cpp2::ErrorCode decodeExpression(const std::string &filter);
 
@@ -88,7 +117,7 @@ protected:
     bool                                     requiredFilter_{false};
     std::vector<OperatorItem>                operatorList_;
     // map<field_name, scan_item>
-    std::map<std::string, ScanItem>          scanItems_;
+    std::map<std::string, ScanBound>         scanItems_;
 };
 }  // namespace storage
 }  // namespace nebula

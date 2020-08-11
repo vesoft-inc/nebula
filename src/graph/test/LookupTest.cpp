@@ -273,14 +273,19 @@ TEST_F(LookupTest, VertexConditionScan) {
         auto query = "LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col2 >= 100 "
                      "AND lookup_tag_2.col4 == true";
         auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID>> expected = {
+            {220, 221, 222, 223, 224, 225}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
     {
         cpp2::ExecutionResponse resp;
         auto query = "LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col2 >= 100 "
                      "AND lookup_tag_2.col4 != true";
         auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_FALSE(resp.__isset.rows);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -440,14 +445,23 @@ TEST_F(LookupTest, EdgeConditionScan) {
         auto query = "LOOKUP ON lookup_edge_2 WHERE lookup_edge_2.col2 >= 100 "
                      "AND lookup_edge_2.col4 == true";
         auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID, VertexID, EdgeRanking>> expected = {
+            {220, 221, 0},
+            {220, 222, 0},
+            {220, 223, 0},
+            {220, 224, 0},
+            {220, 225, 0}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
     {
         cpp2::ExecutionResponse resp;
         auto query = "LOOKUP ON lookup_edge_2 WHERE lookup_edge_2.col2 >= 100 "
                      "AND lookup_edge_2.col4 != true";
         auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_FALSE(resp.__isset.rows);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -765,8 +779,8 @@ TEST_F(LookupTest, OptimizerTest) {
         for (int8_t i = 1; i <= 5; i++) {
             auto indexName = folly::stringPrintf("i%d", i);
             auto index = std::find_if(executor->indexes_.begin(), executor->indexes_.end(),
-                                      [indexName](const auto &index) {
-                                          return index->get_index_name() == indexName;
+                                      [indexName](const auto &idx) {
+                                          return idx->get_index_name() == indexName;
                                       });
             if (index != executor->indexes_.end()) {
                 expected[index->get()->get_index_name()] = index->get()->get_index_id();
@@ -785,7 +799,7 @@ TEST_F(LookupTest, OptimizerTest) {
         ASSERT_TRUE(executor->findValidIndex().ok());
         ASSERT_TRUE(expected["i1"] == executor->index_ ||
                     expected["i4"] == executor->index_ ||
-                    expected["i5"] == executor->index_ );
+                    expected["i5"] == executor->index_);
         executor->filters_.clear();
     }
     {
