@@ -178,13 +178,12 @@ private:
         explicit VertexHolder(ExecutionContext* ectx) : ectx_(ectx) { }
         OptVariantType getDefaultProp(TagID tid, const std::string &prop) const;
         OptVariantType get(VertexID id, TagID tid, const std::string &prop) const;
-        void add(const storage::cpp2::QueryResponse &resp);
-        nebula::cpp2::SupportedType getDefaultPropType(TagID tid, const std::string &prop) const;
-        nebula::cpp2::SupportedType getType(VertexID id, TagID tid, const std::string &prop);
+        void add(const std::vector<storage::cpp2::QueryResponse> &responses);
 
     private:
-        using VData = std::tuple<std::shared_ptr<ResultSchemaProvider>, std::string>;
-        std::unordered_map<VertexID, std::unordered_map<TagID, VData>> data_;
+        std::unordered_map<std::pair<VertexID, TagID>, RowReader> data_;
+        mutable std::unordered_map<
+            TagID, std::shared_ptr<const meta::SchemaProviderIf>> tagSchemaMap_;
         ExecutionContext* ectx_{nullptr};
     };
 
