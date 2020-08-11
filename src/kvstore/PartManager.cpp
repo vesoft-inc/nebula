@@ -142,7 +142,7 @@ void MetaServerBasedPartManager::onSpaceOptionUpdated(
 
 void MetaServerBasedPartManager::onPartAdded(const PartMeta& partMeta) {
     if (handler_ != nullptr) {
-        handler_->addPart(partMeta.spaceId_, partMeta.partId_, false);
+        handler_->addPart(partMeta.spaceId_, partMeta.partId_, false, {});
     } else {
         VLOG(1) << "handler_ is nullptr!";
     }

@@ -68,7 +68,7 @@ Status UpdateVertexExecutor::prepareData() {
         }
     } while (false);
 
-    if (status.ok()) {
+    if (!status.ok()) {
         stats::Stats::addStatsValue(stats_.get(), false, duration().elapsedInUSec());
     }
     return status;

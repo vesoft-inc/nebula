@@ -216,7 +216,10 @@ public:
      * */
     void addSpace(GraphSpaceID spaceId) override;
 
-    void addPart(GraphSpaceID spaceId, PartitionID partId, bool asLearner) override;
+    void addPart(GraphSpaceID spaceId,
+                 PartitionID partId,
+                 bool asLearner,
+                 const std::vector<HostAddr>& peers = {}) override;
 
     void removeSpace(GraphSpaceID spaceId) override;
 
@@ -235,7 +238,8 @@ private:
     std::shared_ptr<Part> newPart(GraphSpaceID spaceId,
                                   PartitionID partId,
                                   KVEngine* engine,
-                                  bool asLearner);
+                                  bool asLearner,
+                                  const std::vector<HostAddr>& defaultPeers);
 
     ErrorOr<ResultCode, KVEngine*> engine(GraphSpaceID spaceId, PartitionID partId);
 

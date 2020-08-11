@@ -366,6 +366,13 @@ std::string MetaServiceUtils::rebuildIndexStatusPrefix(GraphSpaceID space,
     return key;
 }
 
+std::string MetaServiceUtils::rebuildIndexStatusPrefix() {
+    std::string key;
+    key.reserve(kIndexStatusTable.size());
+    key.append(kIndexStatusTable.data(), kIndexStatusTable.size());
+    return key;
+}
+
 std::string MetaServiceUtils::indexSpaceKey(const std::string& name) {
     EntryType type = EntryType::SPACE;
     std::string key;

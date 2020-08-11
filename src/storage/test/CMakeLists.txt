@@ -311,6 +311,22 @@ nebula_add_executable(
 )
 
 
+nebula_add_executable(
+    NAME
+        get_neighbors_bm
+    SOURCES
+        GetNeighborsBenchmark.cpp
+    OBJECTS
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        follybenchmark
+        wangle
+        boost_regex
+)
+
+
 nebula_add_test(
     NAME
         add_update_vertex_edge_bm
