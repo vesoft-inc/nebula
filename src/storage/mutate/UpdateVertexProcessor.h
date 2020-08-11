@@ -43,7 +43,7 @@ private:
                              cpp2::UpdateResponse>(kvstore, schemaMan, stats, nullptr, cache)
         , indexMan_(indexMan) {}
 
-    kvstore::ResultCode processVertex(PartitionID, VertexID) override {
+    kvstore::ResultCode processVertex(BucketIdx, PartitionID, VertexID) override {
         LOG(FATAL) << "Unimplement!";
         return kvstore::ResultCode::SUCCEEDED;
     }
