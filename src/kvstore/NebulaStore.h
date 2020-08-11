@@ -183,6 +183,12 @@ public:
 
     ResultCode ingest(GraphSpaceID spaceId) override;
 
+    ResultCode ingestTag(GraphSpaceID spaceId, TagID tagId) override;
+
+    ResultCode ingestEdge(GraphSpaceID spaceId, EdgeType edgeType) override;
+
+    ResultCode ingest(GraphSpaceID spaceId, const std::string& subdir);
+
     ResultCode setOption(GraphSpaceID spaceId,
                          const std::string& configKey,
                          const std::string& configValue);
