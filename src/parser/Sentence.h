@@ -97,7 +97,7 @@ public:
         kBalance,
         kFindPath,
         kLimit,
-        KGroupBy,
+        kGroupBy,
         kReturn,
         kCreateSnapshot,
         kDropSnapshot,

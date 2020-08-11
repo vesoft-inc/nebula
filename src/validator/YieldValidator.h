@@ -43,9 +43,11 @@ private:
     Status makeOutputColumn(YieldColumn *column);
 
     bool hasAggFun_{false};
+
     YieldColumns *columns_{nullptr};
     std::vector<std::string> outputColumnNames_;
     std::vector<Aggregate::GroupItem> groupItems_;
+    ExpressionProps  exprProps_;
 };
 
 }   // namespace graph

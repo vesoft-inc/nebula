@@ -471,19 +471,20 @@ Status DeleteEdgesValidator::buildEdgeKeyRef(const std::vector<EdgeKey*> &edgeKe
 Status DeleteEdgesValidator::checkInput() {
     CHECK(!edgeKeyRefs_.empty());
     auto &edgeKeyRef = *edgeKeyRefs_.begin();
-    NG_LOG_AND_RETURN_IF_ERROR(deduceProps(edgeKeyRef->srcid()));
-    NG_LOG_AND_RETURN_IF_ERROR(deduceProps(edgeKeyRef->dstid()));
-    NG_LOG_AND_RETURN_IF_ERROR(deduceProps(edgeKeyRef->rank()));
+    NG_LOG_AND_RETURN_IF_ERROR(deduceProps(edgeKeyRef->srcid(), exprProps_));
+    NG_LOG_AND_RETURN_IF_ERROR(deduceProps(edgeKeyRef->dstid(), exprProps_));
+    NG_LOG_AND_RETURN_IF_ERROR(deduceProps(edgeKeyRef->rank(), exprProps_));
 
-    if (!srcTagProps_.empty() || !dstTagProps_.empty() || !edgeProps_.empty()) {
+    if (!exprProps_.srcTagProps().empty() || !exprProps_.dstTagProps().empty() ||
+        !exprProps_.edgeProps().empty()) {
         return Status::SyntaxError("Only support input and variable.");
     }
 
-    if (!inputProps_.empty() && !varProps_.empty()) {
+    if (!exprProps_.inputProps().empty() && !exprProps_.varProps().empty()) {
         return Status::Error("Not support both input and variable.");
     }
 
-    if (!varProps_.empty() && varProps_.size() > 1) {
+    if (!exprProps_.varProps().empty() && exprProps_.varProps().size() > 1) {
         return Status::Error("Only one variable allowed to use.");
     }
 

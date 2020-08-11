@@ -23,15 +23,16 @@ Status YieldValidator::validateImpl() {
     NG_RETURN_IF_ERROR(validateYieldAndBuildOutputs(yield->yield()));
     NG_RETURN_IF_ERROR(validateWhere(yield->where()));
 
-    if (!srcTagProps_.empty() || !dstTagProps_.empty() || !edgeProps_.empty()) {
+    if (!exprProps_.srcTagProps().empty() || !exprProps_.dstTagProps().empty() ||
+        !exprProps_.edgeProps().empty()) {
         return Status::SemanticError("Only support input and variable in yield sentence.");
     }
 
-    if (!inputProps_.empty() && !varProps_.empty()) {
+    if (!exprProps_.inputProps().empty() && !exprProps_.varProps().empty()) {
         return Status::SemanticError("Not support both input and variable.");
     }
 
-    if (!varProps_.empty() && varProps_.size() > 1) {
+    if (!exprProps_.varProps().empty() && exprProps_.varProps().size() > 1) {
         return Status::SemanticError("Only one variable allowed to use.");
     }
 
@@ -64,10 +65,11 @@ Status YieldValidator::checkAggFunAndBuildGroupItems(const YieldClause *clause) 
 }
 
 Status YieldValidator::checkInputProps() const {
-    if (inputs_.empty() && !inputProps_.empty()) {
+    auto& inputProps = const_cast<ExpressionProps*>(&exprProps_)->inputProps();
+    if (inputs_.empty() && !inputProps.empty()) {
         return Status::SemanticError("no inputs for yield columns.");
     }
-    for (auto &prop : inputProps_) {
+    for (auto &prop : inputProps) {
         DCHECK_NE(prop, "*");
         NG_RETURN_IF_ERROR(checkPropNonexistOrDuplicate(inputs_, prop, "Yield sentence"));
     }
@@ -75,7 +77,8 @@ Status YieldValidator::checkInputProps() const {
 }
 
 Status YieldValidator::checkVarProps() const {
-    for (auto &pair : varProps_) {
+    auto& varProps = const_cast<ExpressionProps*>(&exprProps_)->varProps();
+    for (auto &pair : varProps) {
         auto &var = pair.first;
         if (!vctx_->existVar(var)) {
             return Status::SemanticError("variable `%s' not exist.", var.c_str());
@@ -94,7 +97,7 @@ Status YieldValidator::makeOutputColumn(YieldColumn *column) {
 
     auto expr = column->expr();
     DCHECK(expr != nullptr);
-    NG_RETURN_IF_ERROR(deduceProps(expr));
+    NG_RETURN_IF_ERROR(deduceProps(expr, exprProps_));
 
     auto status = deduceExprType(expr);
     NG_RETURN_IF_ERROR(status);
@@ -168,7 +171,7 @@ Status YieldValidator::validateWhere(const WhereClause *clause) {
         filter = clause->filter();
     }
     if (filter != nullptr) {
-        NG_RETURN_IF_ERROR(deduceProps(filter));
+        NG_RETURN_IF_ERROR(deduceProps(filter, exprProps_));
     }
     return Status::OK();
 }
@@ -202,9 +205,9 @@ Status YieldValidator::toPlan() {
         tail_ = dedupDep;
     }
 
-    if (!varProps_.empty()) {
-        DCHECK_EQ(varProps_.size(), 1u);
-        auto var = varProps_.cbegin()->first;
+    if (!exprProps_.varProps().empty()) {
+        DCHECK_EQ(exprProps_.varProps().size(), 1u);
+        auto var = exprProps_.varProps().cbegin()->first;
         static_cast<SingleInputNode *>(tail_)->setInputVar(var);
     }
 

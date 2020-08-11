@@ -19,6 +19,58 @@ class YieldColumns;
 
 namespace graph {
 
+class ExpressionProps final {
+public:
+    using TagIDPropsMap =  std::unordered_map<TagID, std::set<folly::StringPiece>>;
+    using EdgePropMap = std::unordered_map<EdgeType, std::set<folly::StringPiece>>;
+    using VarPropMap = std::unordered_map<std::string, std::set<folly::StringPiece>>;
+
+    void insertInputProp(folly::StringPiece prop);
+
+    void insertVarProp(const std::string& varName, folly::StringPiece prop);
+
+    void insertSrcTagProp(TagID tagId, folly::StringPiece prop);
+
+    void insertDstTagProp(TagID tagId, folly::StringPiece prop);
+
+    void insertEdgeProp(EdgeType edgeType, folly::StringPiece prop);
+
+    void insertTagProp(TagID tagId, folly::StringPiece prop);
+
+    std::set<folly::StringPiece>& inputProps() {
+        return inputProps_;
+    }
+    TagIDPropsMap& srcTagProps() {
+        return srcTagProps_;
+    }
+    TagIDPropsMap& dstTagProps() {
+        return dstTagProps_;
+    }
+    TagIDPropsMap& tagProps() {
+        return tagProps_;
+    }
+    EdgePropMap& edgeProps() {
+        return edgeProps_;
+    }
+    VarPropMap& varProps() {
+        return varProps_;
+    }
+
+    bool isSubsetOfInput(const std::set<folly::StringPiece>& props);
+
+    bool isSubsetOfVar(const VarPropMap& props);
+
+    void unionProps(ExpressionProps exprProps);
+
+private:
+    std::set<folly::StringPiece>  inputProps_;
+    VarPropMap                    varProps_;
+    TagIDPropsMap                 srcTagProps_;
+    TagIDPropsMap                 dstTagProps_;
+    EdgePropMap                   edgeProps_;
+    TagIDPropsMap                 tagProps_;
+};
+
 class Validator {
 public:
     virtual ~Validator() = default;
@@ -82,12 +134,12 @@ protected:
 
     StatusOr<Value::Type> deduceExprType(const Expression* expr) const;
 
-    Status deduceProps(const Expression* expr);
+    Status deduceProps(const Expression* expr, ExpressionProps& exprProps);
 
     bool evaluableExpr(const Expression* expr) const;
 
     static Status checkPropNonexistOrDuplicate(const ColsDef& cols,
-                                               const std::string& prop,
+                                               const folly::StringPiece& prop,
                                                const std::string &validatorName);
 
     static Status appendPlan(PlanNode* plan, PlanNode* appended);
@@ -111,14 +163,6 @@ protected:
     std::string                     inputVarName_;
     // Admin sentences do not requires a space to be chosen.
     bool                            noSpaceRequired_{false};
-
-    // properties
-    std::vector<std::string> inputProps_;
-    std::unordered_map<std::string, std::vector<std::string>> varProps_;
-    std::unordered_map<TagID, std::vector<std::string>> srcTagProps_;
-    std::unordered_map<TagID, std::vector<std::string>> dstTagProps_;
-    std::unordered_map<EdgeType, std::vector<std::string>> edgeProps_;
-    std::unordered_map<TagID, std::vector<std::string>> tagProps_;
 };
 
 }  // namespace graph

@@ -543,7 +543,7 @@ private:
 class GroupBySentence final : public Sentence {
 public:
     GroupBySentence() {
-        kind_ = Kind::KGroupBy;
+        kind_ = Kind::kGroupBy;
     }
 
     void setGroupClause(GroupClause *clause) {

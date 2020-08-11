@@ -109,6 +109,7 @@ private:
     // From InputPropertyExpression, ConstantExpression will covert to  InputPropertyExpression
     std::vector<EdgeKeyRef*>                       edgeKeyRefs_;
     std::string                                    edgeKeyVar_;
+    ExpressionProps                                exprProps_;
 };
 
 class UpdateValidator : public Validator {
