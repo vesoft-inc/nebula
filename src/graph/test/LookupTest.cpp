@@ -5,6 +5,7 @@
  */
 
 #include "graph/test/LookupTestBase.h"
+#include "graph/LookupExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -712,6 +713,143 @@ TEST_F(LookupTest, YieldClauseTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<VertexID, int64_t>> expected = {{220, 20}};
         ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+TEST_F(LookupTest, OptimizerTest) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto stmt = "CREATE TAG t1(c1 int, c2 int, c3 int, c4 int, c5 int)";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto stmt = "CREATE TAG INDEX i1 ON t1(c1, c2)";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto stmt = "CREATE TAG INDEX i2 ON t1(c2, c1)";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto stmt = "CREATE TAG INDEX i3 ON t1(c3)";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto stmt = "CREATE TAG INDEX i4 ON t1(c1, c2, c3, c4)";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto stmt = "CREATE TAG INDEX i5 ON t1(c1, c2, c3, c5)";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+
+    auto mc = gEnv->metaClient();
+    auto indexes = mc->getTagIndexesFromCache(1);
+    ASSERT_TRUE(indexes.ok());
+    auto executor = std::make_unique<LookupExecutor>(nullptr, nullptr);
+    std::map<std::string, IndexID> expected;
+    {
+        executor->indexes_ = indexes.value();
+        for (int8_t i = 1; i <= 5; i++) {
+            auto indexName = folly::stringPrintf("i%d", i);
+            auto index = std::find_if(executor->indexes_.begin(), executor->indexes_.end(),
+                                      [indexName](const auto &index) {
+                                          return index->get_index_name() == indexName;
+                                      });
+            if (index != executor->indexes_.end()) {
+                expected[index->get()->get_index_name()] = index->get()->get_index_id();
+            }
+        }
+    }
+    // tag (c1 , c2, c3)
+    // i1 on tag (c1, c2)
+    // i2 on tag (c2, c1)
+    // i3 on tag (c3)
+    // i4 on tag (c1, c2, c3, c4)
+    // i5 on tag (c1, c2, c3, c5)
+    {
+        // "LOOKUP on t1 WHERE t1.c1 == 1"; expected i1 or i4
+        executor->filters_.emplace_back("c1", RelationalExpression::Operator::EQ);
+        ASSERT_TRUE(executor->findValidIndex().ok());
+        ASSERT_TRUE(expected["i1"] == executor->index_ ||
+                    expected["i4"] == executor->index_ ||
+                    expected["i5"] == executor->index_ );
+        executor->filters_.clear();
+    }
+    {
+        // "LOOKUP on t1 WHERE t1.c1 == 1 and c2 > 1"; expected i1 or i4 i4 or i5
+        executor->filters_.emplace_back("c1", RelationalExpression::Operator::EQ);
+        executor->filters_.emplace_back("c2", RelationalExpression::Operator::GT);
+        ASSERT_TRUE(executor->findValidIndex().ok());
+        ASSERT_TRUE(expected["i1"] == executor->index_ ||
+                    expected["i4"] == executor->index_ ||
+                    expected["i5"] == executor->index_);
+        executor->filters_.clear();
+    }
+    {
+        // "LOOKUP on t1 WHERE t1.c1 > 1 and c2 == 1"; expected i2
+        executor->filters_.emplace_back("c1", RelationalExpression::Operator::GT);
+        executor->filters_.emplace_back("c2", RelationalExpression::Operator::EQ);
+        ASSERT_TRUE(executor->findValidIndex().ok());
+        ASSERT_TRUE(expected["i2"] == executor->index_);
+        executor->filters_.clear();
+    }
+    {
+        // "LOOKUP on t1 WHERE t1.c1 > 1 and c2 == 1 and c3 == 1"; expected i4 or i5
+        executor->filters_.emplace_back("c1", RelationalExpression::Operator::GT);
+        executor->filters_.emplace_back("c2", RelationalExpression::Operator::EQ);
+        executor->filters_.emplace_back("c3", RelationalExpression::Operator::EQ);
+        ASSERT_TRUE(executor->findValidIndex().ok());
+        ASSERT_TRUE(expected["i4"] == executor->index_ || expected["i5"] == executor->index_);
+        executor->filters_.clear();
+    }
+    {
+        // "LOOKUP on t1 WHERE t1.c3 > 1"; expected i3
+        executor->filters_.emplace_back("c3", RelationalExpression::Operator::GT);
+        ASSERT_TRUE(executor->findValidIndex().ok());
+        ASSERT_TRUE(expected["i3"] == executor->index_);
+        executor->filters_.clear();
+    }
+    {
+        // "LOOKUP on t1 WHERE t1.c3 > 1 and c1 > 1"; expected i4 or i5.
+        executor->filters_.emplace_back("c3", RelationalExpression::Operator::GT);
+        executor->filters_.emplace_back("c1", RelationalExpression::Operator::GT);
+        ASSERT_TRUE(executor->findValidIndex().ok());
+        ASSERT_TRUE(expected["i4"] == executor->index_ || expected["i5"] == executor->index_);
+        executor->filters_.clear();
+    }
+    {
+        // "LOOKUP on t1 WHERE t1.c4 > 1"; No invalid index found.
+        executor->filters_.emplace_back("c4", RelationalExpression::Operator::GT);
+        ASSERT_FALSE(executor->findValidIndex().ok());
+        executor->filters_.clear();
+    }
+    {
+        // "LOOKUP on t1 WHERE t1.c2 > 1 and c3 > 1"; No invalid index found.
+        executor->filters_.emplace_back("c2", RelationalExpression::Operator::GT);
+        executor->filters_.emplace_back("c3", RelationalExpression::Operator::GT);
+        ASSERT_FALSE(executor->findValidIndex().ok());
+        executor->filters_.clear();
+    }
+    {
+        // "LOOKUP on t1 WHERE t1.c2 > 1 and c1 != 1"; expected i2.
+        executor->filters_.emplace_back("c2", RelationalExpression::Operator::GT);
+        executor->filters_.emplace_back("c1", RelationalExpression::Operator::NE);
+        ASSERT_TRUE(executor->findValidIndex().ok());
+        ASSERT_TRUE(expected["i2"] == executor->index_);
+        executor->filters_.clear();
     }
 }
 

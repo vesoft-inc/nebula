@@ -16,6 +16,7 @@ namespace graph {
 using RpcResponse = storage::StorageRpcResponse<storage::cpp2::LookUpIndexResp>;
 
 class LookupExecutor final : public TraverseExecutor {
+    FRIEND_TEST(LookupTest, OptimizerTest);
 public:
     LookupExecutor(Sentence *sentence, ExecutionContext *ectx);
 

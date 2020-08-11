@@ -267,76 +267,162 @@ Status LookupExecutor::checkFilter() {
     return Status::OK();
 }
 
-Status
-LookupExecutor::findValidIndex() {
-    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> indexes;
-    std::set<std::string> filterCols;
-    for (auto& filter : filters_) {
-        filterCols.insert(filter.first);
-    }
+Status LookupExecutor::findValidIndex() {
+    /**
+     *
+     * tag (c1 , c2, c3)
+     * index1 on tag (c1, c2)
+     * index2 on tag (c2, c1)
+     * index3 on tag (c3)
+     * index4 on tag (c1, c2, c3)
+     */
+
     /**
      * step 1 : found out all valid indexes. for example :
-     * tag (col1 , col2, col3)
-     * index1 on tag (col1, col2)
-     * index2 on tag (col2, col1)
-     * index3 on tag (col3)
-     *
-     * where where clause is below :
-     * col1 > 1 and col2 > 1 --> index1 and index2 are valid.
-     * col1 > 1 --> index1 is valid.
-     * col2 > 1 --> index2 is valid.
-     * col3 > 1 --> index3 is valid.
+     * c1 > 1 --> index1 , index2, index4 are valid
+     * c2 > 1 --> index2 and index4 are valid
+     * c3 > 1 --> index3 and index4 are valid
+     * c1 > 1 and c2 > 1 index1, index2 and index4 are valid.
+     * c3 > 1 and c2 > 1 index4 is valid.
      */
-    for (auto& index : indexes_) {
-        bool matching = true;
-        size_t filterNum = 1;
-        for (const auto& field : index->get_fields()) {
-            auto it = std::find_if(filterCols.begin(), filterCols.end(),
-                                   [field](const auto &name) {
-                                       return field.get_name() == name;
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> validIndexes;
+    for (const auto& index : indexes_) {
+        bool allColsHint = true;
+        const auto& fields = index->get_fields();
+        for (const auto& filter : filters_) {
+            auto it = std::find_if(fields.begin(), fields.end(),
+                                   [filter](const auto &field) {
+                                       return field.get_name() == filter.first;
                                    });
-            if (it == filterCols.end()) {
-                matching = false;
-                break;
-            }
-            if (filterNum++ == filterCols.size()) {
+            if (it == fields.end()) {
+                allColsHint = false;
                 break;
             }
         }
-        if (!matching || index->get_fields().size() < filterCols.size()) {
-            continue;
+        if (allColsHint) {
+            validIndexes.emplace_back(index);
         }
-        indexes.emplace_back(index);
-    }
-
-    if (indexes.empty()) {
-        return Status::IndexNotFound();
     }
 
     /**
-     * step 2 , if have multiple valid indexes, get the best one.
-     * for example : if where clause is :
-     * col1 > 1 and col2 > 1 --> index1 and index2 are valid. get one of these at random.
-     * col1 > 1 and col2 == 1 --> index1 and index2 are valid.
-     *                            but need choose one for storage layer.
-     *                            here index2 is chosen because col2 have a equivalent value.
+     * step 2 : re-check valid indexes.
+     * Reject lookup scan if have not valid index found.
+     * Reject lookup scan if does not hint first field for all valid indexes.
+     * Direct return if just one valid index found.
      */
-    std::map<int32_t, IndexID> indexHint;
-    for (auto& index : indexes) {
+    if (validIndexes.empty()) {
+        return Status::IndexNotFound();
+    } else if (validIndexes.size() == 1 ) {
+        // Verify the index again.
+        // if the first field does not batch match means the index is invalid.
+        // else return it and ignore conditions for other fields.
+        const auto& fields = validIndexes[0]->get_fields();
+        auto it = std::find_if(filters_.begin(), filters_.end(),
+                               [fields](const auto &filter) {
+                                   return filter.first == fields[0].get_name();
+                               });
+        if (it == filters_.end()) {
+            return Status::IndexNotFound();
+        }
+        index_ = validIndexes[0]->get_index_id();
+        return Status::OK();
+    } else {
+        bool noHintWithFirstField = true;
+        for (const auto& index : validIndexes) {
+            const auto& fields = index->get_fields();
+            auto it = std::find_if(filters_.begin(), filters_.end(),
+                                   [fields](const auto &filter) {
+                                       return filter.first == fields[0].get_name();
+                                   });
+            if (it != filters_.end()) {
+                noHintWithFirstField = false;
+                break;
+            }
+        }
+        if (noHintWithFirstField) {
+            return Status::IndexNotFound();
+        }
+    }
+
+    /**
+     * step 3 , Sort the validIndexes for equivalent condition from validIndexes.
+     * for example :
+     * c1 > 1 and c2 == 1 --> index2 should be prioritized because col2 have a equivalent value.
+     * c1 == 1 and c2 > 1 --> index1 and index4 should be prioritized.
+     */
+    std::vector<std::pair<int32_t, std::shared_ptr<nebula::cpp2::IndexItem>>> eqIndexHint;
+    for (auto& index : validIndexes) {
         int32_t hintCount = 0;
         for (const auto& field : index->get_fields()) {
             auto it = std::find_if(filters_.begin(), filters_.end(),
-                                   [field](const auto &rel) {
-                                       return rel.second == RelationalExpression::EQ;
+                                   [field](const auto &filter) {
+                                       return filter.first == field.get_name();
                                    });
             if (it == filters_.end()) {
                 break;
             }
-            ++hintCount;
+            if (it->second == RelationalExpression::Operator::EQ) {
+                ++hintCount;
+            } else {
+                break;
+            }
         }
-        indexHint[hintCount] = index->get_index_id();
+        eqIndexHint.emplace_back(hintCount, index);
     }
-    index_ = indexHint.rbegin()->second;
+    /**
+     * get the first or tied for first from eqIndexHint.
+     */
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> priorityIdxs;
+    auto comp = [] (std::pair<int32_t, std::shared_ptr<nebula::cpp2::IndexItem>>& lhs,
+                    std::pair<int32_t, std::shared_ptr<nebula::cpp2::IndexItem>>& rhs) {
+        return lhs.first > rhs.first;
+    };
+    std::sort(eqIndexHint.begin(), eqIndexHint.end(), comp);
+    int32_t maxHint = eqIndexHint[0].first;
+    for (const auto& hint : eqIndexHint) {
+        if (hint.first < maxHint) {
+            break;
+        }
+        priorityIdxs.emplace_back(hint.second);
+    }
+    if (priorityIdxs.size() == 1) {
+        index_ = priorityIdxs.begin()->get()->get_index_id();
+        return Status::OK();
+    }
+
+    /**
+     * step 4 , Find the optimal index for range condition.
+     */
+    std::map<int32_t, IndexID> rangeIndexHint;
+    for (const auto& index : priorityIdxs) {
+        int32_t hintCount = 0;
+        for (const auto& field : index->get_fields()) {
+            auto fi = std::find_if(filters_.begin(), filters_.end(),
+                                   [field](const auto &rel) {
+                                       return rel.first == field.get_name();
+                                   });
+            if (fi == filters_.end()) {
+                break;
+            }
+            if (fi->second == RelationalExpression::Operator::EQ) {
+                continue;
+            }
+            if (fi->second == RelationalExpression::Operator::GE ||
+                fi->second == RelationalExpression::Operator::GT ||
+                fi->second == RelationalExpression::Operator::LE ||
+                fi->second == RelationalExpression::Operator::LT) {
+                hintCount++;
+            } else {
+                break;
+            }
+        }
+        rangeIndexHint[hintCount] = index->get_index_id();
+    }
+    /**
+     * step 5
+     * Because the storage layer only needs one. So return last one of rangeIndexHint.
+     */
+    index_ = rangeIndexHint.rbegin()->second;
     return Status::OK();
 }
 
