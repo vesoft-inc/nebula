@@ -255,6 +255,7 @@ private:
     std::vector<RpcResponse>                    records_;
     // The name of Tag or Edge, index of prop in data
     using SchemaPropIndex = std::unordered_map<std::pair<std::string, std::string>, int64_t>;
+    std::string                                  warningMsg_;
 };
 
 }   // namespace graph

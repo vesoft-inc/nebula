@@ -40,6 +40,8 @@ void DropSpaceExecutor::execute() {
         if (*spaceName_ == ectx()->rctx()->session()->spaceName()) {
             ectx()->rctx()->session()->setSpace("", -1);
         }
+        ectx()->addWarningMsg("Data will be deleted completely after restarting the services");
+
         doFinish(Executor::ProcessControl::kNext);
     };
 
@@ -52,10 +54,6 @@ void DropSpaceExecutor::execute() {
     };
 
     std::move(future).via(runner).thenValue(cb).thenError(error);
-}
-
-void DropSpaceExecutor::setupResponse(cpp2::ExecutionResponse &resp)  {
-    resp.set_warning_msg("Data will be deleted completely after restarting the services.");
 }
 }   // namespace graph
 }   // namespace nebula

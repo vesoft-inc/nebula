@@ -554,6 +554,7 @@ void GoExecutor::stepOut() {
                 LOG(ERROR) << "part: " << error.first
                            << "error code: " << static_cast<int>(error.second);
             }
+            warningMsg_ = "Go executor was partially performed";
         }
         if (FLAGS_trace_go) {
             LOG(INFO) << "Step:" << curStep_
@@ -724,7 +725,9 @@ void GoExecutor::finishExecution() {
             yc.emplace_back(std::move(ptr));
         }
     }
-
+    if (!warningMsg_.empty()) {
+        ectx()->addWarningMsg(std::move(warningMsg_));
+    }
 
     if (onResult_) {
         std::unique_ptr<InterimResult> outputs;
@@ -947,6 +950,7 @@ void GoExecutor::fetchVertexProps(std::vector<VertexID> ids) {
                 LOG(ERROR) << "part: " << error.first
                            << "error code: " << static_cast<int>(error.second);
             }
+            warningMsg_ = "Go executor was partially performed";
         }
         if (vertexHolder_ == nullptr) {
             vertexHolder_ = std::make_unique<VertexHolder>(ectx);
