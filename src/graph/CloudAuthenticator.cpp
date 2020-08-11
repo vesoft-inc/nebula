@@ -28,11 +28,14 @@ bool CloudAuthenticator::auth(const std::string& user, const std::string& passwo
 
     // Second, use user + password authentication methods
     std::string userAndPasswd = user + ":" + password;
-    std::string base64Str = encryption::Base64::encode(userAndPasswd);
-
-    std::string header = "-H \"Content-Type: application/json\"  -H \"Authorization:Nebula ";
-    header =  header + base64Str + "\"";
-    auto result = http::HttpClient::post(FLAGS_cloud_http_url, header);
+    std::string authorization = "Authorization:Nebula ";
+    authorization.append(encryption::Base64::encode(userAndPasswd));
+    std::vector<std::string> headers;
+    headers.emplace_back("Content-Type: application/json");
+    headers.emplace_back(authorization);
+    
+    auto result = http::HttpClient::post(FLAGS_cloud_http_url,
+        &headers, nullptr, 0);
 
     if (!result.ok()) {
         LOG(ERROR) << result.status();
