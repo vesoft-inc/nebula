@@ -639,15 +639,26 @@ void GoExecutor::onVertexProps(RpcResponse &&rpcResp) {
 
 std::vector<VertexID> GoExecutor::getDstIdsFromResps(std::vector<RpcResponse>::iterator begin,
                                                      std::vector<RpcResponse>::iterator end) const {
-    std::unordered_set<VertexID> set;
+    size_t num = 0;
     for (auto it = begin; it != end; ++it) {
         for (const auto &resp : it->responses()) {
-            auto *vertices = resp.get_vertices();
-            if (vertices == nullptr) {
+            if (!resp.__isset.vertices) {
+                continue;
+            }
+            num += resp.vertices.size();
+        }
+    }
+
+    std::unordered_set<VertexID> set;
+    set.reserve(num);
+
+    for (auto it = begin; it != end; ++it) {
+        for (const auto &resp : it->responses()) {
+            if (!resp.__isset.vertices) {
                 continue;
             }
 
-            for (const auto &vdata : *vertices) {
+            for (const auto &vdata : resp.vertices) {
                 for (const auto &edata : vdata.edge_data) {
                     for (const auto& edge : edata.get_edges()) {
                         auto dst = edge.get_dst();
@@ -672,12 +683,11 @@ std::vector<VertexID> GoExecutor::getDstIdsFromRespWithBackTrack(const RpcRespon
     std::multimap<VertexID, VertexID> backTrace;
     std::unordered_set<VertexID> set;
     for (const auto &resp : rpcResp.responses()) {
-        auto *vertices = resp.get_vertices();
-        if (vertices == nullptr) {
+        if (!resp.__isset.vertices) {
             continue;
         }
 
-        for (const auto &vdata : *vertices) {
+        for (const auto &vdata : resp.vertices) {
             for (const auto &edata : vdata.edge_data) {
                 for (const auto& edge : edata.get_edges()) {
                     auto dst = edge.get_dst();
@@ -941,9 +951,7 @@ void GoExecutor::fetchVertexProps(std::vector<VertexID> ids) {
         if (vertexHolder_ == nullptr) {
             vertexHolder_ = std::make_unique<VertexHolder>(ectx);
         }
-        for (auto &resp : result.responses()) {
-            vertexHolder_->add(resp);
-        }
+        vertexHolder_->add(result.responses());
         finishExecution();
         return;
     };
@@ -1317,37 +1325,27 @@ bool GoExecutor::processFinalResult(Callback cb) const {
 
 OptVariantType GoExecutor::VertexHolder::getDefaultProp(
     TagID tagId, const std::string &prop) const {
-    auto space = ectx_->rctx()->session()->space();
-    auto schema = ectx_->schemaManager()->getTagSchema(space, tagId);
-    if (schema == nullptr) {
-        return Status::Error("No tag schema for tagId %d", tagId);
+    auto iter = tagSchemaMap_.find(tagId);
+    if (iter == tagSchemaMap_.end()) {
+        auto space = ectx_->rctx()->session()->space();
+        auto schema = ectx_->schemaManager()->getTagSchema(space, tagId);
+        if (schema == nullptr) {
+            return Status::Error("No tag schema for tagId %d", tagId);
+        }
+        tagSchemaMap_.emplace(tagId, schema);
+        return RowReader::getDefaultProp(schema.get(), prop);
     }
-    return RowReader::getDefaultProp(schema.get(), prop);
+    return RowReader::getDefaultProp(iter->second.get(), prop);
 }
 
-SupportedType GoExecutor::VertexHolder::getDefaultPropType(
-    TagID tagId, const std::string &prop) const {
-    auto space = ectx_->rctx()->session()->space();
-    auto schema = ectx_->schemaManager()->getTagSchema(space, tagId);
-    if (schema == nullptr) {
-        return nebula::cpp2::SupportedType::UNKNOWN;
-    }
-    return schema->getFieldType(prop).type;
-}
-
-OptVariantType GoExecutor::VertexHolder::get(VertexID id, TagID tid,
-                                             const std::string &prop) const {
-    auto iter = data_.find(id);
+OptVariantType GoExecutor::VertexHolder::get(
+    VertexID id, TagID tid, const std::string &prop) const {
+    auto iter = data_.find(std::make_pair(id, tid));
     if (iter == data_.end()) {
         return getDefaultProp(tid, prop);
     }
 
-    auto iter2 = iter->second.find(tid);
-    if (iter2 == iter->second.end()) {
-        return getDefaultProp(tid, prop);
-    }
-
-    auto reader = RowReader::getRowReader(std::get<1>(iter2->second), std::get<0>(iter2->second));
+    auto &reader = iter->second;
 
     auto res = RowReader::getPropByName(reader.get(), prop);
     if (!ok(res)) {
@@ -1356,39 +1354,49 @@ OptVariantType GoExecutor::VertexHolder::get(VertexID id, TagID tid,
     return value(std::move(res));
 }
 
-SupportedType GoExecutor::VertexHolder::getType(VertexID id, TagID tid, const std::string &prop) {
-    auto iter = data_.find(id);
-    if (iter == data_.end()) {
-        return getDefaultPropType(tid, prop);
-    }
-
-    auto iter2 = iter->second.find(tid);
-    if (iter2 == iter->second.end()) {
-        return getDefaultPropType(tid, prop);
-    }
-
-    return std::get<0>(iter2->second)->getFieldType(prop).type;
-}
-
-void GoExecutor::VertexHolder::add(const storage::cpp2::QueryResponse &resp) {
-    auto *vertices = resp.get_vertices();
-    if (vertices == nullptr) {
-        return;
-    }
-
-    auto *vertexSchema = resp.get_vertex_schema();
-    if (vertexSchema == nullptr) {
-        return;
-    }
-    for (auto &vdata : *vertices) {
-        std::unordered_map<TagID, VData> m;
-        for (auto &td : vdata.tag_data) {
-            DCHECK(td.__isset.data);
-            auto it = vertexSchema->find(td.tag_id);
-            DCHECK(it != vertexSchema->end());
-            m[td.tag_id] = {std::make_shared<ResultSchemaProvider>(it->second), td.data};
+void GoExecutor::VertexHolder::add(
+    const std::vector<storage::cpp2::QueryResponse> &responses) {
+    size_t num = 0;
+    for (auto& resp : responses) {
+        if (!resp.__isset.vertices || !resp.__isset.vertex_schema) {
+            continue;
         }
-        data_[vdata.vertex_id] = std::move(m);
+        for (auto &vdata : resp.vertices) {
+            num += vdata.tag_data.size();
+        }
+    }
+
+    data_.reserve(num);
+
+    for (auto& resp : responses) {
+        if (!resp.__isset.vertices || !resp.__isset.vertex_schema) {
+            continue;
+        }
+
+        std::transform(
+            resp.vertex_schema.cbegin(),
+            resp.vertex_schema.cend(),
+            std::inserter(
+                tagSchemaMap_,
+                tagSchemaMap_.begin()),
+            [] (auto &s) {
+                return std::make_pair(
+                    s.first,
+                    std::make_shared<ResultSchemaProvider>(s.second));
+            });
+
+        for (auto &vdata : resp.vertices) {
+            auto vid = vdata.get_vertex_id();
+            for (auto &td : vdata.tag_data) {
+                DCHECK(td.__isset.data);
+                auto tagId = td.tag_id;
+                auto it = tagSchemaMap_.find(tagId);
+                DCHECK(it != tagSchemaMap_.end());
+                auto &vschema = it->second;
+                auto vreader = RowReader::getRowReader(td.data, vschema);
+                data_.emplace(std::make_pair(vid, tagId), std::move(vreader));
+            }
+        }
     }
 }
 
