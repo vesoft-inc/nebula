@@ -162,6 +162,7 @@ int main(int argc, char *argv[]) {
     // Detect if the server has already been started
     // Check pid before glog init, in case of user may start daemon twice
     // the 2nd will make the 1st failed to output log anymore
+    gflags::ParseCommandLineFlags(&argc, &argv, true);
     auto pidPath = FLAGS_pid_file;
     auto status = ProcessUtils::isPidAvailable(pidPath);
     if (!status.ok()) {
@@ -170,7 +171,8 @@ int main(int argc, char *argv[]) {
     }
 
     google::SetVersionString(nebula::versionString());
-    folly::init(&argc, &argv, true);
+    folly::SingletonVault::singleton()->registrationComplete();
+    google::InitGoogleLogging(argv[0]);
     if (FLAGS_data_path.empty()) {
         LOG(ERROR) << "Meta Data Path should not empty";
         return EXIT_FAILURE;
