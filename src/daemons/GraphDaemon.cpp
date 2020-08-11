@@ -56,8 +56,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    folly::SingletonVault::singleton()->registrationComplete();
-    google::InitGoogleLogging(argv[0]);
+    folly::init(&argc, &argv, true);
 
     if (FLAGS_flagfile.empty()) {
         printHelp(argv[0]);
