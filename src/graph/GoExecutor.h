@@ -77,15 +77,6 @@ private:
         return curStep_ >= recordFrom_ && curStep_ <= steps_;
     }
 
-    bool yieldInput() const {
-        for (const auto col : yields_) {
-            if (col->expr()->fromVarInput()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     /**
      * To obtain the source ids from various places,
      * such as the literal id list, inputs from the pipeline or results of variable.
