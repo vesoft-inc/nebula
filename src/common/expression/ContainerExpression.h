@@ -60,6 +60,19 @@ public:
 
     const Value& eval(ExpressionContext &ctx) override;
 
+    std::vector<const Expression*> items() const {
+        std::vector<const Expression*> items;
+        items.reserve(items_.size());
+        for (auto &item : items_) {
+            items.emplace_back(item.get());
+        }
+        return items;
+    }
+
+    void setItems(std::vector<std::unique_ptr<Expression>> items) {
+        items_ = std::move(items);
+    }
+
     size_t size() const {
         return items_.size();
     }
@@ -90,6 +103,19 @@ public:
     }
 
     const Value& eval(ExpressionContext &ctx) override;
+
+    std::vector<const Expression*> items() const {
+        std::vector<const Expression*> items;
+        items.reserve(items_.size());
+        for (auto &item : items_) {
+            items.emplace_back(item.get());
+        }
+        return items;
+    }
+
+    void setItems(std::vector<std::unique_ptr<Expression>> items) {
+        items_ = std::move(items);
+    }
 
     size_t size() const {
         return items_.size();
@@ -122,6 +148,20 @@ public:
 
     const Value& eval(ExpressionContext &ctx) override;
 
+    std::vector<std::pair<const std::string*, const Expression*>> items() const {
+        std::vector<std::pair<const std::string*, const Expression*>> items;
+        items.reserve(items_.size());
+        for (auto &item : items_) {
+            items.emplace_back(item.first.get(), item.second.get());
+        }
+        return items;
+    }
+
+    using Item = std::pair<std::unique_ptr<std::string>, std::unique_ptr<Expression>>;
+    void setItems(std::vector<Item> items) {
+        items_ = std::move(items);
+    }
+
     size_t size() const {
         return items_.size();
     }
@@ -136,8 +176,7 @@ private:
     void resetFrom(Decoder &decoder) override;
 
 private:
-    using Pair = std::pair<std::unique_ptr<std::string>, std::unique_ptr<Expression>>;
-    std::vector<Pair>                       items_;
+    std::vector<Item>                       items_;
     Value                                   result_;
 };
 
