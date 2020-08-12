@@ -43,3 +43,5 @@
       - storaged和meta同步的时间间隔
     - delay
       - 上面两个值之间的最大值
+- 运行 pylint
+    在 nebula 的源码目录执行: `pylint -j4 --rcfile=tests/.pylintrc tests`

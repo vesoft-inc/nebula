@@ -4,16 +4,14 @@
 #
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
-import math
-import sys
+
 import time
 from pathlib import Path
 from typing import Pattern, Set
 
 import pytest
-from nebula2.Client import AuthException, ExecutionException, GraphClient
+from nebula2.Client import GraphClient
 from nebula2.common import ttypes as CommonTtypes
-from nebula2.Common import *
 from nebula2.ConnectionPool import ConnectionPool
 from nebula2.graph import ttypes
 
