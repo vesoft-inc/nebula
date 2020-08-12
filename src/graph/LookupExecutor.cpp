@@ -171,37 +171,23 @@ Status LookupExecutor::optimize() {
     return status;
 }
 
-Status LookupExecutor::traversalExpr(const Expression *expr, const meta::SchemaProviderIf* schema) {
+Status LookupExecutor::traversalExpr(const Expression *expr) {
     switch (expr->kind()) {
         case nebula::Expression::kLogical : {
-            Status ret = Status::OK();
             auto* lExpr = dynamic_cast<const LogicalExpression*>(expr);
-            if (lExpr->op() == LogicalExpression::Operator::XOR ||
-                lExpr->op() == LogicalExpression::Operator::OR) {
-                return Status::SyntaxError("OR and XOR are not supported "
-                                           "in lookup where clause ：%s",
-                                           lExpr->toString().c_str());
+            if (lExpr->op() == LogicalExpression::Operator::XOR) {
+                return Status::SyntaxError("Syntax error : %s", lExpr->toString().c_str());
             }
             auto* left = lExpr->left();
-            ret = traversalExpr(left, schema);
-            if (!ret.ok()) {
-                return ret;
-            }
+            traversalExpr(left);
             auto* right = lExpr->right();
-            ret = traversalExpr(right, schema);
-            if (!ret.ok()) {
-                return ret;
-            }
+            traversalExpr(right);
             break;
         }
         case nebula::Expression::kRelational : {
             std::string prop;
             VariantType v;
             auto* rExpr = dynamic_cast<const RelationalExpression*>(expr);
-            auto ret = relationalExprCheck(rExpr->op());
-            if (!ret.ok()) {
-                return ret;
-            }
             auto* left = rExpr->left();
             auto* right = rExpr->right();
             /**
@@ -227,19 +213,15 @@ Status LookupExecutor::traversalExpr(const Expression *expr, const meta::SchemaP
                 return Status::SyntaxError("Unsupported expression ：%s",
                                            rExpr->toString().c_str());
             }
-
-            if (rExpr->op() != RelationalExpression::Operator::EQ &&
-                rExpr->op() != RelationalExpression::Operator::NE) {
-                auto type = schema->getFieldType(prop).type;
-                if (!dataTypeCheckForRange(type)) {
-                    return Status::SyntaxError("Data type of field %s not support range scan",
-                                               prop.c_str());
-                }
-            }
             break;
         }
         case nebula::Expression::kFunctionCall : {
-            return Status::SyntaxError("Function expressions are not supported yet");
+            auto* fExpr = dynamic_cast<const FunctionCallExpression*>(expr);
+            auto* name = fExpr->name();
+            if (*name == "udf_is_in") {
+                return Status::SyntaxError("Unsupported function ： %s", name->c_str());
+            }
+            break;
         }
         default : {
             return Status::SyntaxError("Syntax error ： %s", expr->toString().c_str());
@@ -249,15 +231,7 @@ Status LookupExecutor::traversalExpr(const Expression *expr, const meta::SchemaP
 }
 
 Status LookupExecutor::checkFilter() {
-    auto *sm = ectx()->schemaManager();
-    auto schema = isEdge_
-                  ? sm->getEdgeSchema(spaceId_, tagOrEdge_)
-                  : sm->getTagSchema(spaceId_, tagOrEdge_);
-    if (schema == nullptr) {
-        return Status::Error("No schema found %s", from_->c_str());
-    }
-
-    auto status = traversalExpr(sentence_->whereClause()->filter(), schema.get());
+    auto status = traversalExpr(sentence_->whereClause()->filter());
     if (!status.ok()) {
         return status;
     }
@@ -783,35 +757,5 @@ bool LookupExecutor::processFinalVertexResult(RpcResponse &rpcResp,
     return true;
 }
 
-Status LookupExecutor::relationalExprCheck(RelationalExpression::Operator op) const {
-    // Compile will fail after added new relational operations.
-    // Need to consider the logic in method 'traversalExpr' after new relational operation added.
-    switch (op) {
-        case RelationalExpression::Operator::EQ :
-        case RelationalExpression::Operator::GE :
-        case RelationalExpression::Operator::GT :
-        case RelationalExpression::Operator::LE :
-        case RelationalExpression::Operator::LT :
-        case RelationalExpression::Operator::NE : {
-            return Status::OK();
-        }
-        case RelationalExpression::Operator::CONTAINS : {
-            return Status::SyntaxError("Unsupported operator '!=' or 'CONTAINS' in where clause");
-        }
-    }
-    return Status::OK();
-}
-
-bool LookupExecutor::dataTypeCheckForRange(nebula::cpp2::SupportedType type) const {
-    switch (type) {
-        case nebula::cpp2::SupportedType::INT:
-        case nebula::cpp2::SupportedType::DOUBLE:
-        case nebula::cpp2::SupportedType::FLOAT:
-        case nebula::cpp2::SupportedType::TIMESTAMP:
-            return true;
-        default:
-            return false;
-    }
-}
 }  // namespace graph
 }  // namespace nebula

@@ -117,6 +117,7 @@ cpp2::ErrorCode IndexExecutor<RESP>::checkReturnColumns(const std::vector<std::s
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
+// TODO (sky) : String range scan was disabled graph layer. it is not support in storage layer.
 template <typename RESP>
 std::pair<std::string, std::string>
 IndexExecutor<RESP>::makeScanPair(PartitionID partId, IndexID indexId) {
@@ -169,12 +170,12 @@ IndexExecutor<RESP>::normalizeScanPair(const nebula::cpp2::ColumnDef& field,
         return std::make_pair(begin, end);
     }
     // normalize begin and end value using ScanItem. for example :
-    // 1 < c1 < 5   --> ScanItem:<true, 1, true, 5> --> {2, 5}
-    // 1 <= c1 <= 5 --> ScanItem:<false, 1, false, 5> --> {1, 6}
-    // c1 > 5 --> ScanItem:<true, 5, false, invalid_V> --> {6, max}
-    // c1 >= 5 --> ScanItem:<false, 5, false, invalid_V> --> {5, max}
-    // c1 < 6 --> ScanItem:<false, invalid_V, true, 6> --> {min, 6}
-    // c1 <= 6 --> ScanItem:<false, invalid_V, false, 6> --> {min, 7}
+    // 1 < c1 < 5   --> ScanItem:{(GT, 1), (LT, 5)} --> {2, 5}
+    // 1 <= c1 <= 5 --> ScanItem:{(GE, 1), (LE, 5)} --> {1, 6}
+    // c1 > 5 --> ScanItem:{(GT, 5), (NULL)} --> {6, max}
+    // c1 >= 5 --> ScanItem:{(GE, 5), (NULL)} --> {5, max}
+    // c1 < 6 --> ScanItem:{(NULL), (LT, 6)} --> {min, 6}
+    // c1 <= 6 --> ScanItem:{(NULL), (LE, 6)} --> {min, 7}
     if (item.beginBound_.rel_ == RelationType::kNull) {
         begin = NebulaKeyUtils::boundVariant(type, NebulaBoundValueType::kMin);
     } else if (item.beginBound_.rel_ == RelationType::kGTRel) {

@@ -49,6 +49,8 @@ bool IndexPolicyMaker::buildPolicy() {
             if (col.get_name() == std::get<0>(*itr)) {
                 /**
                  * TODO sky : drop the sub-exp from root expression tree.
+                 * TODO (sky) : String range scan was disabled on graph layer.
+                 *              it is not support for storage layer .
                  */
                 hintNum++;
                 if (!writeScanItem(col.get_name(), *itr)) {

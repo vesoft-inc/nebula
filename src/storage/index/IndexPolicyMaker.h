@@ -38,9 +38,6 @@ struct Bound {
     Bound() {
         rel_ = RelationType::kNull;
     }
-    explicit Bound(RelationType rel) {
-        rel_ = rel;
-    }
     Bound(RelationType rel, const VariantType& val) {
         rel_ = rel;
         val_ = val;

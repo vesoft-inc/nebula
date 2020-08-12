@@ -236,7 +236,7 @@ TEST_F(LookupTest, VertexConditionScan) {
         auto query = "LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col2 == 100 "
                      "OR lookup_tag_2.col2 == 200";
         auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -392,13 +392,6 @@ TEST_F(LookupTest, EdgeConditionScan) {
             {220, 221, 0}
         };
         ASSERT_TRUE(verifyResult(resp, expected));
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        auto query = "LOOKUP ON lookup_edge_2 WHERE lookup_edge_2.col2 == 100 "
-                     "OR lookup_edge_2.col2 == 200";
-        auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
     }
     {
         cpp2::ExecutionResponse resp;
