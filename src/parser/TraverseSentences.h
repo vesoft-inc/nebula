@@ -79,16 +79,6 @@ private:
 };
 
 
-class MatchSentence final : public Sentence {
-public:
-    MatchSentence() {
-        kind_ = Kind::kMatch;
-    }
-
-    std::string toString() const override;
-};
-
-
 class LookupSentence final : public Sentence {
 public:
     explicit LookupSentence(std::string *from) {

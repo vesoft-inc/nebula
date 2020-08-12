@@ -36,9 +36,6 @@ std::string GoSentence::toString() const {
     return buf;
 }
 
-std::string MatchSentence::toString() const {
-    return "MATCH sentence";
-}
 
 std::string LookupSentence::toString() const {
     std::string buf;

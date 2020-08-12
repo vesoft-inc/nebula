@@ -29,6 +29,7 @@ nebula_add_library(
     UserSentences.cpp
     ProcessControlSentences.cpp
     ExplainSentence.cpp
+    MatchSentence.cpp
 )
 
 nebula_add_subdirectory(test)

@@ -575,3 +575,8 @@ class TestYield(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         expect_result = [[1]]
         self.check_result(resp, expect_result)
+    def test_map(self):
+        query = 'yield {key1: true, key2: "hello"}["key2"]'
+        resp = self.execute_query(query)
+        self.check_resp_succeeded(resp)
+        self.check_result(resp, [['hello']])

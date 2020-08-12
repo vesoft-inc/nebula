@@ -139,7 +139,7 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE(";", TokenType::SEMICOLON),
         CHECK_SEMANTIC_TYPE("+", TokenType::PLUS),
         CHECK_SEMANTIC_TYPE("-", TokenType::MINUS),
-        CHECK_SEMANTIC_TYPE("*", TokenType::MUL),
+        CHECK_SEMANTIC_TYPE("*", TokenType::STAR),
         CHECK_SEMANTIC_TYPE("/", TokenType::DIV),
         CHECK_SEMANTIC_TYPE("%", TokenType::MOD),
         CHECK_SEMANTIC_TYPE("!", TokenType::NOT),

@@ -55,8 +55,8 @@ if("${NEBULA_STORAGE_REPO_TAG}" STREQUAL "")
     SET(NEBULA_STORAGE_REPO_TAG "master")
 endif()
 
+include(FetchModule)
 if(NOT NEBULA_COMMON_SOURCE_DIR)
-    include(FetchModule)
     nebula_fetch_module(
         NAME
             common
