@@ -114,22 +114,17 @@ const HostAddr
 StorageClientBase<ClientType>::getLeader(const meta::PartHosts& partHosts) const {
     loadLeader();
     auto part = std::make_pair(partHosts.spaceId_, partHosts.partId_);
-
-    // Acquire the read lock
-    folly::RWSpinLock::ReadHolder rh(leadersLock_);
-
-    auto it = leaders_.find(part);
-    if (it != leaders_.end()) {
-        return it->second;
-    } else {
+    {
+        folly::RWSpinLock::ReadHolder rh(leadersLock_);
+        auto it = leaders_.find(part);
+        if (it != leaders_.end()) {
+            return it->second;
+        }
+    }
+    {
+        folly::RWSpinLock::WriteHolder wh(leadersLock_);
         VLOG(1) << "No leader exists. Choose one random.";
-
-        // Upgrade the read lock to the write lock
-        folly::RWSpinLock::UpgradedHolder uh(leadersLock_);
-        rh.reset();
-        folly::RWSpinLock::WriteHolder wh(std::move(uh));
-
-        auto& random = partHosts.hosts_[folly::Random::rand32(partHosts.hosts_.size())];
+        const auto& random = partHosts.hosts_[folly::Random::rand32(partHosts.hosts_.size())];
         leaders_[part] = random;
         return random;
     }
