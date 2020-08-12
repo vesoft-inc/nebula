@@ -787,7 +787,7 @@ TEST_F(LookupTest, OptimizerTest) {
             }
         }
     }
-    // tag (c1 , c2, c3)
+    // tag (c1 , c2, c3, c4, c5)
     // i1 on tag (c1, c2)
     // i2 on tag (c2, c1)
     // i3 on tag (c3)

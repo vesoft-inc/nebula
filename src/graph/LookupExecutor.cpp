@@ -312,21 +312,10 @@ Status LookupExecutor::findValidIndex() {
      */
     if (validIndexes.empty()) {
         return Status::IndexNotFound();
-    } else if (validIndexes.size() == 1) {
+    } else {
         // Verify the index again.
         // if the first field does not batch match means the index is invalid.
-        // else return it and ignore conditions for other fields.
-        const auto& fields = validIndexes[0]->get_fields();
-        auto it = std::find_if(filters_.begin(), filters_.end(),
-                               [fields](const auto &filter) {
-                                   return filter.first == fields[0].get_name();
-                               });
-        if (it == filters_.end()) {
-            return Status::IndexNotFound();
-        }
-        index_ = validIndexes[0]->get_index_id();
-        return Status::OK();
-    } else {
+        // else return it and ignore conditions for other fields if only one index .
         bool noHintWithFirstField = true;
         for (const auto& index : validIndexes) {
             const auto& fields = index->get_fields();
@@ -342,10 +331,14 @@ Status LookupExecutor::findValidIndex() {
         if (noHintWithFirstField) {
             return Status::IndexNotFound();
         }
+        if (validIndexes.size() == 1) {
+            index_ = validIndexes[0]->get_index_id();
+            return Status::OK();
+        }
     }
 
     /**
-     * step 3 , Sort the validIndexes for equivalent condition from validIndexes.
+     * step 3 , Sort the validIndexes for equivalent condition of validIndexes.
      * for example :
      * c1 > 1 and c2 == 1 --> index2 should be prioritized because col2 have a equivalent value.
      * c1 == 1 and c2 > 1 --> index1 and index4 should be prioritized.
@@ -370,7 +363,7 @@ Status LookupExecutor::findValidIndex() {
         eqIndexHint.emplace_back(hintCount, index);
     }
     /**
-     * get the first or tied for first from eqIndexHint.
+     * Get the index with the highest hit rate from eqIndexHint.
      */
     std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> priorityIdxs;
     auto comp = [] (std::pair<int32_t, std::shared_ptr<nebula::cpp2::IndexItem>>& lhs,
