@@ -16,7 +16,7 @@ namespace graph {
 std::unique_ptr<cpp2::PlanNodeDescription> InsertVertices::explain() const {
     auto desc = SingleInputNode::explain();
     addDescription("spaceId", folly::to<std::string>(spaceId_), desc.get());
-    addDescription("overwritable", folly::to<std::string>(overwritable_), desc.get());
+    addDescription("overwritable", util::toJson(overwritable_), desc.get());
 
     folly::dynamic tagPropsArr = folly::dynamic::array();
     for (const auto &p : tagPropNames_) {

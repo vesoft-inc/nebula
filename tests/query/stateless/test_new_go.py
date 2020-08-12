@@ -889,8 +889,6 @@ class TestGoQuery(NebulaTestSuite):
         self.check_column_names(resp, expected_data["column_names"])
         self.check_out_of_order_result(resp, expected_data["rows"])
 
-        """
-        # the storage now do not handle the edge types, which lead to the results are less than 1.0
         stmt = "GO FROM 'Tim Duncan' OVER * REVERSELY YIELD like._dst"
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
@@ -913,7 +911,6 @@ class TestGoQuery(NebulaTestSuite):
         }
         self.check_column_names(resp, expected_data["column_names"])
         self.check_out_of_order_result(resp, expected_data["rows"])
-        """
 
     def test_only_id_two_steps(self):
         stmt = "GO 2 STEPS FROM 'Tony Parker' OVER like YIELD like._dst"
@@ -1170,8 +1167,6 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
     def test_bidirect_over_all(self):
-        """
-        # the storage now do not handle the edge types, which lead to the results are less than 1.0
         stmt = '''GO FROM 'Tim Duncan' OVER * bidirect \
             YIELD $^.player.name, serve._dst, $$.team.name, like._dst, $$.player.name'''
         resp = self.execute_query(stmt)
@@ -1179,7 +1174,7 @@ class TestGoQuery(NebulaTestSuite):
         expected_data = {
             "column_names" : ["$^.player.name", "serve._dst", "$$.team.name", "like._dst", "$$.player.name"],
             "rows" : [
-                ["Tim Duncan", "Spurs", "Spurs", T_NULL, ""],
+                ["Tim Duncan", "Spurs", "Spurs", T_NULL, T_NULL],
                 ["Tim Duncan", T_NULL, T_NULL, "Tony Parker", "Tony Parker"],
                 ["Tim Duncan", T_NULL, T_NULL, "Manu Ginobili", "Manu Ginobili"],
                 ["Tim Duncan", T_NULL, T_NULL, "Tony Parker", "Tony Parker"],
@@ -1202,7 +1197,6 @@ class TestGoQuery(NebulaTestSuite):
         }
         self.check_column_names(resp, expected_data["column_names"])
         self.check_out_of_order_result(resp, expected_data["rows"])
-        """
 
         stmt = "GO FROM 'Tim Duncan' OVER * bidirect"
         resp = self.execute_query(stmt)

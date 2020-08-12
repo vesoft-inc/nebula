@@ -15,7 +15,7 @@ namespace graph {
 
 std::unique_ptr<cpp2::PlanNodeDescription> CreateSpace::explain() const {
     auto desc = SingleInputNode::explain();
-    addDescription("ifNotExists", folly::to<std::string>(ifNotExists_), desc.get());
+    addDescription("ifNotExists", util::toJson(ifNotExists_), desc.get());
     addDescription("spaceDesc", folly::toJson(util::toJson(props_)), desc.get());
     return desc;
 }
@@ -23,7 +23,7 @@ std::unique_ptr<cpp2::PlanNodeDescription> CreateSpace::explain() const {
 std::unique_ptr<cpp2::PlanNodeDescription> DropSpace::explain() const {
     auto desc = SingleInputNode::explain();
     addDescription("spaceName", spaceName_, desc.get());
-    addDescription("ifExists", folly::to<std::string>(ifExists_), desc.get());
+    addDescription("ifExists", util::toJson(ifExists_), desc.get());
     return desc;
 }
 

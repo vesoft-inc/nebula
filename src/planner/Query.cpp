@@ -19,7 +19,7 @@ namespace graph {
 std::unique_ptr<cpp2::PlanNodeDescription> Explore::explain() const {
     auto desc = SingleInputNode::explain();
     addDescription("space", folly::to<std::string>(space_), desc.get());
-    addDescription("dedup", folly::to<std::string>(dedup_), desc.get());
+    addDescription("dedup", util::toJson(dedup_), desc.get());
     addDescription("limit", folly::to<std::string>(limit_), desc.get());
     addDescription("filter", filter_, desc.get());
     addDescription("orderBy", folly::toJson(util::toJson(orderBy_)), desc.get());

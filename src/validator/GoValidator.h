@@ -58,6 +58,8 @@ private:
 
     GetNeighbors::EdgeProps buildEdgeDst();
 
+    void buildEdgeProps(GetNeighbors::EdgeProps& edgeProps, bool isInEdge);
+
     Expression* buildNStepLoopCondition(int64_t steps) const;
 
     Project* buildLeftVarForTraceJoin(PlanNode* projectStartVid);

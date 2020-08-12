@@ -40,7 +40,7 @@ std::unique_ptr<cpp2::PlanNodeDescription> DescSchema::explain() const {
 std::unique_ptr<cpp2::PlanNodeDescription> DropSchema::explain() const {
     auto desc = SingleInputNode::explain();
     addDescription("name", name_, desc.get());
-    addDescription("ifExists", folly::to<std::string>(ifExists_), desc.get());
+    addDescription("ifExists", util::toJson(ifExists_), desc.get());
     return desc;
 }
 
