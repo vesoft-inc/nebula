@@ -5,6 +5,7 @@
  */
 
 #include "codec/RowWriterV2.h"
+#include "common/function/TimeFunction.h"
 
 namespace nebula {
 
@@ -531,8 +532,16 @@ WriteResult RowWriterV2::write(ssize_t index, int32_t v) noexcept {
             memcpy(&buf_[offset], reinterpret_cast<void*>(&v), sizeof(int32_t));
             break;
         }
-        case meta::cpp2::PropertyType::TIMESTAMP:
+        case meta::cpp2::PropertyType::TIMESTAMP: {
             // 32-bit timestamp can only support upto 2038-01-19
+            auto ret = TimeFunction::toTimestamp(v);
+            if (!ret.ok()) {
+                return WriteResult::OUT_OF_RANGE;
+            }
+            auto ts = ret.value();
+            memcpy(&buf_[offset], reinterpret_cast<void*>(&ts), sizeof(int64_t));
+            break;
+        }
         case meta::cpp2::PropertyType::INT64: {
             int64_t iv = v;
             memcpy(&buf_[offset], reinterpret_cast<void*>(&iv), sizeof(int64_t));
@@ -596,8 +605,16 @@ WriteResult RowWriterV2::write(ssize_t index, int64_t v) noexcept {
             memcpy(&buf_[offset], reinterpret_cast<void*>(&iv), sizeof(int32_t));
             break;
         }
-        case meta::cpp2::PropertyType::TIMESTAMP:
+        case meta::cpp2::PropertyType::TIMESTAMP: {
             // 64-bit timestamp has way broader time range
+            auto ret = TimeFunction::toTimestamp(v);
+            if (!ret.ok()) {
+                return WriteResult::OUT_OF_RANGE;
+            }
+            auto ts = ret.value();
+            memcpy(&buf_[offset], reinterpret_cast<void*>(&ts), sizeof(int64_t));
+            break;
+        }
         case meta::cpp2::PropertyType::INT64: {
             memcpy(&buf_[offset], reinterpret_cast<void*>(&v), sizeof(int64_t));
             break;
@@ -672,6 +689,17 @@ WriteResult RowWriterV2::write(ssize_t index, folly::StringPiece v) noexcept {
             if (len < field->size()) {
                 memset(&buf_[offset + len], 0, field->size() - len);
             }
+            break;
+        }
+        case meta::cpp2::PropertyType::TIMESTAMP: {
+            // 64-bit timestamp has way broader time range
+            auto ret = TimeFunction::toTimestamp(v);
+            if (!ret.ok()) {
+                return WriteResult::INCORRECT_VALUE;
+            }
+
+            auto ts = ret.value();
+            memcpy(&buf_[offset], reinterpret_cast<void*>(&ts), sizeof(int64_t));
             break;
         }
         default:

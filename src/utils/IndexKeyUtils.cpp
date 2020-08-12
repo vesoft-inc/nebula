@@ -177,7 +177,7 @@ Status IndexKeyUtils::checkValue(const Value& v, bool isNullable) {
             return Status::Error("Out of range");
         }
     }
-    return Status::OK();
+    LOG(FATAL) << "Unknown Null type " << static_cast<int>(v.getNull());
 }
 
 }  // namespace nebula

@@ -36,6 +36,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:common_base_obj>
         $<TARGET_OBJECTS:common_expression_obj>
         $<TARGET_OBJECTS:common_function_manager_obj>
+        $<TARGET_OBJECTS:common_time_function_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}

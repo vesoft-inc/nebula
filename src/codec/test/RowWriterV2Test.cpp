@@ -19,6 +19,8 @@ const float pi = 3.14159265358979;
 const std::string str = "Hello world!";    // NOLINT
 const std::string fixed = "Nebula Graph";  // NOLINT
 const Timestamp now = 1582183355;
+// Convert timestamp now to datetime string
+const std::string nowStr = "2020-02-20 15:22:35";  // NOLINT
 const Date date = {2020, 2, 20};
 const DateTime dt = {2020, 2, 20, 10, 30, 45, -8 * 3600, 0};
 const Value sVal("Hello world!");
@@ -359,6 +361,39 @@ TEST(RowWriterV2, Update) {
     EXPECT_EQ(Value::Type::STRING, v1.type());
     EXPECT_EQ(str, v1.getStr());
     EXPECT_EQ(v1, v2);
+}
+
+TEST(RowWriterV2, Timestamp) {
+    SchemaWriter schema(20 /*Schema version*/);
+    schema.appendCol("Col01", PropertyType::TIMESTAMP);
+    schema.appendCol("Col02", PropertyType::TIMESTAMP);
+
+    RowWriterV2 writer(&schema);
+    EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col01", 1582183355));
+    EXPECT_EQ(WriteResult::SUCCEEDED, writer.set(1, nowStr));
+    ASSERT_EQ(WriteResult::SUCCEEDED, writer.finish());
+
+    std::string encoded1 = writer.moveEncodedStr();
+    auto reader1 = RowReader::getRowReader(&schema, encoded1);
+
+    // Col01
+    Value v1 = reader1->getValueByName("Col01");
+    EXPECT_EQ(Value::Type::INT, v1.type());
+    EXPECT_EQ(now, v1.getInt());
+
+    // Col02
+    v1 = reader1->getValueByName("Col02");
+    EXPECT_EQ(Value::Type::INT, v1.type());
+    EXPECT_EQ(now, v1.getInt());
+
+    // Invalid value test
+    RowWriterV2 writer2(&schema);
+    EXPECT_NE(WriteResult::SUCCEEDED, writer2.set("Col01", 9223372037));
+
+    EXPECT_NE(WriteResult::SUCCEEDED, writer2.set("Col01", -1));
+
+    std::string dateStr = "3220-02-20 15:22:35";  // NOLINT
+    EXPECT_NE(WriteResult::SUCCEEDED, writer2.set(1, dateStr));
 }
 
 TEST(RowWriterV2, EmptyString) {
