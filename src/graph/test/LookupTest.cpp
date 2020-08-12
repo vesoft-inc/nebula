@@ -789,7 +789,7 @@ TEST_F(LookupTest, OptimizerTest) {
     {
         // "LOOKUP on t1 WHERE t1.c1 == 1"; expected i1 or i4
         executor->filters_.emplace_back("c1", RelationalExpression::Operator::EQ);
-        ASSERT_TRUE(executor->findValidIndex().ok());
+        ASSERT_TRUE(executor->findOptimalIndex().ok());
         ASSERT_TRUE(expected["i1"] == executor->index_ ||
                     expected["i4"] == executor->index_ ||
                     expected["i5"] == executor->index_);
@@ -799,7 +799,7 @@ TEST_F(LookupTest, OptimizerTest) {
         // "LOOKUP on t1 WHERE t1.c1 == 1 and c2 > 1"; expected i1 or i4 i4 or i5
         executor->filters_.emplace_back("c1", RelationalExpression::Operator::EQ);
         executor->filters_.emplace_back("c2", RelationalExpression::Operator::GT);
-        ASSERT_TRUE(executor->findValidIndex().ok());
+        ASSERT_TRUE(executor->findOptimalIndex().ok());
         ASSERT_TRUE(expected["i1"] == executor->index_ ||
                     expected["i4"] == executor->index_ ||
                     expected["i5"] == executor->index_);
@@ -809,7 +809,7 @@ TEST_F(LookupTest, OptimizerTest) {
         // "LOOKUP on t1 WHERE t1.c1 > 1 and c2 == 1"; expected i2
         executor->filters_.emplace_back("c1", RelationalExpression::Operator::GT);
         executor->filters_.emplace_back("c2", RelationalExpression::Operator::EQ);
-        ASSERT_TRUE(executor->findValidIndex().ok());
+        ASSERT_TRUE(executor->findOptimalIndex().ok());
         ASSERT_TRUE(expected["i2"] == executor->index_);
         executor->filters_.clear();
     }
@@ -818,14 +818,14 @@ TEST_F(LookupTest, OptimizerTest) {
         executor->filters_.emplace_back("c1", RelationalExpression::Operator::GT);
         executor->filters_.emplace_back("c2", RelationalExpression::Operator::EQ);
         executor->filters_.emplace_back("c3", RelationalExpression::Operator::EQ);
-        ASSERT_TRUE(executor->findValidIndex().ok());
+        ASSERT_TRUE(executor->findOptimalIndex().ok());
         ASSERT_TRUE(expected["i4"] == executor->index_ || expected["i5"] == executor->index_);
         executor->filters_.clear();
     }
     {
         // "LOOKUP on t1 WHERE t1.c3 > 1"; expected i3
         executor->filters_.emplace_back("c3", RelationalExpression::Operator::GT);
-        ASSERT_TRUE(executor->findValidIndex().ok());
+        ASSERT_TRUE(executor->findOptimalIndex().ok());
         ASSERT_TRUE(expected["i3"] == executor->index_);
         executor->filters_.clear();
     }
@@ -833,28 +833,28 @@ TEST_F(LookupTest, OptimizerTest) {
         // "LOOKUP on t1 WHERE t1.c3 > 1 and c1 > 1"; expected i4 or i5.
         executor->filters_.emplace_back("c3", RelationalExpression::Operator::GT);
         executor->filters_.emplace_back("c1", RelationalExpression::Operator::GT);
-        ASSERT_TRUE(executor->findValidIndex().ok());
+        ASSERT_TRUE(executor->findOptimalIndex().ok());
         ASSERT_TRUE(expected["i4"] == executor->index_ || expected["i5"] == executor->index_);
         executor->filters_.clear();
     }
     {
         // "LOOKUP on t1 WHERE t1.c4 > 1"; No invalid index found.
         executor->filters_.emplace_back("c4", RelationalExpression::Operator::GT);
-        ASSERT_FALSE(executor->findValidIndex().ok());
+        ASSERT_FALSE(executor->findOptimalIndex().ok());
         executor->filters_.clear();
     }
     {
         // "LOOKUP on t1 WHERE t1.c2 > 1 and c3 > 1"; No invalid index found.
         executor->filters_.emplace_back("c2", RelationalExpression::Operator::GT);
         executor->filters_.emplace_back("c3", RelationalExpression::Operator::GT);
-        ASSERT_FALSE(executor->findValidIndex().ok());
+        ASSERT_FALSE(executor->findOptimalIndex().ok());
         executor->filters_.clear();
     }
     {
         // "LOOKUP on t1 WHERE t1.c2 > 1 and c1 != 1"; expected i2.
         executor->filters_.emplace_back("c2", RelationalExpression::Operator::GT);
         executor->filters_.emplace_back("c1", RelationalExpression::Operator::NE);
-        ASSERT_TRUE(executor->findValidIndex().ok());
+        ASSERT_TRUE(executor->findOptimalIndex().ok());
         ASSERT_TRUE(expected["i2"] == executor->index_);
         executor->filters_.clear();
     }

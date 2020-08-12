@@ -52,7 +52,15 @@ private:
 
     Status checkFilter();
 
-    Status findValidIndex();
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> findValidIndex();
+
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> findIndexForEqualScan(
+        const std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>& indexes);
+
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> findIndexForRangeScan(
+        const std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>& indexes);
+
+    Status findOptimalIndex();
 
     void lookUp();
 

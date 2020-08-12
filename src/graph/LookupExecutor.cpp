@@ -158,7 +158,7 @@ Status LookupExecutor::optimize() {
         if (!status.ok()) {
             break;
         }
-        status = findValidIndex();
+        status = findOptimalIndex();
         if (!status.ok()) {
             break;
         }
@@ -241,25 +241,31 @@ Status LookupExecutor::checkFilter() {
     return Status::OK();
 }
 
-Status LookupExecutor::findValidIndex() {
-    /**
-     *
-     * tag (c1 , c2, c3)
-     * index1 on tag (c1, c2)
-     * index2 on tag (c2, c1)
-     * index3 on tag (c3)
-     * index4 on tag (c1, c2, c3)
-     */
+Status LookupExecutor::findOptimalIndex() {
+    // The rule of priority is '==' --> '< > <= >=' --> '!='
+    // Step 1 : find out all valid indexes for where condition.
+    auto validIndexes = findValidIndex();
+    if (validIndexes.empty()) {
+        return Status::IndexNotFound();
+    }
+    // Step 2 : find optimal indexes for equal condition.
+    auto indexesEq = findIndexForEqualScan(validIndexes);
+    if (indexesEq.size() == 1) {
+        index_ = indexesEq[0]->get_index_id();
+        return Status::OK();
+    }
+    // Step 3 : find optimal indexes for range condition.
+    auto indexesRange = findIndexForRangeScan(indexesEq);
 
-    /**
-     * step 1 : found out all valid indexes. for example :
-     * c1 > 1 --> index1 , index2, index4 are valid
-     * c2 > 1 --> index2 and index4 are valid
-     * c3 > 1 --> index3 and index4 are valid
-     * c1 > 1 and c2 > 1 index1, index2 and index4 are valid.
-     * c3 > 1 and c2 > 1 index4 is valid.
-     */
+    // At this stage, all the optimizations are done.
+    // Because the storage layer only needs one. So return first one of indexesRange.
+    index_ = indexesRange[0]->get_index_id();
+    return Status::OK();
+}
+
+std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> LookupExecutor::findValidIndex() {
     std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> validIndexes;
+    // Find indexes for match all fields by where condition.
     for (const auto& index : indexes_) {
         bool allColsHint = true;
         const auto& fields = index->get_fields();
@@ -278,47 +284,30 @@ Status LookupExecutor::findValidIndex() {
         }
     }
 
-    /**
-     * step 2 : re-check valid indexes.
-     * Reject lookup scan if have not valid index found.
-     * Reject lookup scan if does not hint first field for all valid indexes.
-     * Direct return if just one valid index found.
-     */
-    if (validIndexes.empty()) {
-        return Status::IndexNotFound();
-    } else {
-        // Verify the index again.
-        // if the first field does not batch match means the index is invalid.
-        // else return it and ignore conditions for other fields if only one index .
-        bool noHintWithFirstField = true;
-        for (const auto& index : validIndexes) {
-            const auto& fields = index->get_fields();
+    // If the first field of the index does not match any condition, the index is invalid.
+    // remove it from validIndexes.
+    if (!validIndexes.empty()) {
+        auto index = validIndexes.begin();
+        while (index != validIndexes.end()) {
+            const auto& fields = index->get()->get_fields();
             auto it = std::find_if(filters_.begin(), filters_.end(),
                                    [fields](const auto &filter) {
                                        return filter.first == fields[0].get_name();
                                    });
-            if (it != filters_.end()) {
-                noHintWithFirstField = false;
-                break;
+            if (it == filters_.end()) {
+                validIndexes.erase(index);
+            } else {
+                index++;
             }
         }
-        if (noHintWithFirstField) {
-            return Status::IndexNotFound();
-        }
-        if (validIndexes.size() == 1) {
-            index_ = validIndexes[0]->get_index_id();
-            return Status::OK();
-        }
     }
+    return validIndexes;
+}
 
-    /**
-     * step 3 , Sort the validIndexes for equivalent condition of validIndexes.
-     * for example :
-     * c1 > 1 and c2 == 1 --> index2 should be prioritized because col2 have a equivalent value.
-     * c1 == 1 and c2 > 1 --> index1 and index4 should be prioritized.
-     */
+std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> LookupExecutor::findIndexForEqualScan(
+    const std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>& indexes) {
     std::vector<std::pair<int32_t, std::shared_ptr<nebula::cpp2::IndexItem>>> eqIndexHint;
-    for (auto& index : validIndexes) {
+    for (auto& index : indexes) {
         int32_t hintCount = 0;
         for (const auto& field : index->get_fields()) {
             auto it = std::find_if(filters_.begin(), filters_.end(),
@@ -336,15 +325,14 @@ Status LookupExecutor::findValidIndex() {
         }
         eqIndexHint.emplace_back(hintCount, index);
     }
-    /**
-     * Get the index with the highest hit rate from eqIndexHint.
-     */
+    // Sort the priorityIdxs for equivalent condition.
     std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> priorityIdxs;
     auto comp = [] (std::pair<int32_t, std::shared_ptr<nebula::cpp2::IndexItem>>& lhs,
                     std::pair<int32_t, std::shared_ptr<nebula::cpp2::IndexItem>>& rhs) {
         return lhs.first > rhs.first;
     };
     std::sort(eqIndexHint.begin(), eqIndexHint.end(), comp);
+    // Get the index with the highest hit rate from eqIndexHint.
     int32_t maxHint = eqIndexHint[0].first;
     for (const auto& hint : eqIndexHint) {
         if (hint.first < maxHint) {
@@ -352,16 +340,13 @@ Status LookupExecutor::findValidIndex() {
         }
         priorityIdxs.emplace_back(hint.second);
     }
-    if (priorityIdxs.size() == 1) {
-        index_ = priorityIdxs.begin()->get()->get_index_id();
-        return Status::OK();
-    }
+    return priorityIdxs;
+}
 
-    /**
-     * step 4 , Find the optimal index for range condition.
-     */
-    std::map<int32_t, IndexID> rangeIndexHint;
-    for (const auto& index : priorityIdxs) {
+std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> LookupExecutor::findIndexForRangeScan(
+    const std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>& indexes) {
+    std::map<int32_t, std::shared_ptr<nebula::cpp2::IndexItem>> rangeIndexHint;
+    for (const auto& index : indexes) {
         int32_t hintCount = 0;
         for (const auto& field : index->get_fields()) {
             auto fi = std::find_if(filters_.begin(), filters_.end(),
@@ -383,14 +368,17 @@ Status LookupExecutor::findValidIndex() {
                 break;
             }
         }
-        rangeIndexHint[hintCount] = index->get_index_id();
+        rangeIndexHint[hintCount] = index;
     }
-    /**
-     * step 5
-     * Because the storage layer only needs one. So return last one of rangeIndexHint.
-     */
-    index_ = rangeIndexHint.rbegin()->second;
-    return Status::OK();
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> priorityIdxs;
+    int32_t maxHint = rangeIndexHint.rbegin()->first;
+    for (auto iter = rangeIndexHint.rbegin(); iter != rangeIndexHint.rend(); iter++) {
+        if (iter->first < maxHint) {
+            break;
+        }
+        priorityIdxs.emplace_back(iter->second);
+    }
+    return priorityIdxs;
 }
 
 void LookupExecutor::lookUp() {
