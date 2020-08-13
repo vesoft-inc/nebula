@@ -1143,7 +1143,8 @@ bool RaftPart::leaderElection() {
                     });
             })
             | gen::as<std::vector>(),
-            hosts.size(),
+            // Number of succeeded required
+            quorum_,
             // Result evaluator
             [hosts] (size_t idx, cpp2::AskForVoteResponse& resp) {
                 return resp.get_error_code() == cpp2::ErrorCode::SUCCEEDED
