@@ -1149,7 +1149,9 @@ TEST(MetaClientTest, HeartbeatTest) {
     FLAGS_heartbeat_interval_secs = 1;
     const nebula::ClusterID kClusterId = 10;
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
-    auto sc = TestUtils::mockMetaServer(10001, rootPath.path(), kClusterId);
+    // Let the system choose an available port for us
+    int32_t localMetaPort = 0;
+    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path(), kClusterId);
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     IPv4 localIp;
@@ -1163,8 +1165,7 @@ TEST(MetaClientTest, HeartbeatTest) {
     options.clusterId_ = kClusterId;
     options.inStoraged_ = true;
     auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{HostAddr(localIp, 10001)},
-                                               options);
+            std::vector<HostAddr>{HostAddr(localIp, sc->port_)}, options);
     client->waitForMetadReady();
     client->registerListener(listener.get());
     {
