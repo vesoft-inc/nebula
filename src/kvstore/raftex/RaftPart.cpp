@@ -219,8 +219,7 @@ RaftPart::RaftPart(ClusterID clusterId,
         , ioThreadPool_{pool}
         , bgWorkers_{workers}
         , executor_(executor)
-        , snapshot_(snapshotMan)
-        , weight_(1) {
+        , snapshot_(snapshotMan) {
     FileBasedWalPolicy policy;
     policy.ttl = FLAGS_wal_ttl;
     policy.fileSize = FLAGS_wal_file_size;
@@ -978,7 +977,7 @@ bool RaftPart::needToStartElection() {
     std::lock_guard<std::mutex> g(raftLock_);
     if (status_ == Status::RUNNING &&
         role_ == Role::FOLLOWER &&
-        (lastMsgRecvDur_.elapsedInMSec() >= weight_ * FLAGS_raft_heartbeat_interval_secs * 1000 ||
+        (lastMsgRecvDur_.elapsedInMSec() >= FLAGS_raft_heartbeat_interval_secs * 1000 ||
          term_ == 0)) {
         LOG(INFO) << idStr_ << "Start leader election, reason: lastMsgDur "
                   << lastMsgRecvDur_.elapsedInMSec()
@@ -1058,11 +1057,13 @@ typename RaftPart::Role RaftPart::processElectionResponses(
         }
         if (r.second.get_error_code() == cpp2::ErrorCode::SUCCEEDED) {
             ++numSucceeded;
-        } else if (r.second.get_error_code() == cpp2::ErrorCode::E_LOG_STALE) {
-            LOG(INFO) << idStr_ << "My last log id is less than " << hosts[r.first]->address()
-                      << ", double my election interval.";
-            uint64_t curWeight = weight_.load();
-            weight_.store(curWeight * 2);
+        } else if (r.second.get_error_code() == cpp2::ErrorCode::E_LOG_STALE ||
+                   r.second.get_error_code() == cpp2::ErrorCode::E_TERM_OUT_OF_DATE) {
+            LOG(INFO) << idStr_ << "AskForVote is explicitly rejected by peer "
+                      << hosts[r.first]->address()
+                      << ", so step down as follower";
+            role_ = Role::FOLLOWER;
+            return role_;
         } else {
             LOG(ERROR) << idStr_ << "Receive response about askForVote from "
                        << hosts[r.first]->address()
@@ -1078,6 +1079,11 @@ typename RaftPart::Role RaftPart::processElectionResponses(
                   << proposedTerm;
         term_ = proposedTerm;
         role_ = Role::LEADER;
+        leader_ = addr_;
+        bgWorkers_->addTask([self = shared_from_this(), term = proposedTerm] {
+            self->onElected(term);
+        });
+        lastMsgAcceptedTime_ = 0;
     }
 
     return role_;
@@ -1121,6 +1127,7 @@ bool RaftPart::leaderElection() {
     if (hosts.empty()) {
         VLOG(2) << idStr_ << "No peer found, I will be the leader";
     } else {
+        // Try to collect response from all peers, if timeout, then check quorum
         auto eb = ioThreadPool_->getEventBase();
         auto futures = collectNSucceeded(
             gen::from(hosts)
@@ -1136,8 +1143,7 @@ bool RaftPart::leaderElection() {
                     });
             })
             | gen::as<std::vector>(),
-            // Number of succeeded required
-            quorum_,
+            hosts.size(),
             // Result evaluator
             [hosts] (size_t idx, cpp2::AskForVoteResponse& resp) {
                 return resp.get_error_code() == cpp2::ErrorCode::SUCCEEDED
@@ -1160,27 +1166,14 @@ bool RaftPart::leaderElection() {
     switch (processElectionResponses(resps, std::move(hosts), proposedTerm)) {
         case Role::LEADER: {
             // Elected
-            LOG(INFO) << idStr_
-                      << "The partition is elected as the leader";
-            {
-                std::lock_guard<std::mutex> g(raftLock_);
-                if (status_ == Status::RUNNING) {
-                    leader_ = addr_;
-                    bgWorkers_->addTask([self = shared_from_this(),
-                                       term = voteReq.get_term()] {
-                        self->onElected(term);
-                    });
-                    lastMsgAcceptedTime_ = 0;
-                }
-            }
-            weight_ = 1;
+            LOG(INFO) << idStr_ << "The partition is elected as the leader";
             sendHeartbeat();
             return true;
         }
         case Role::FOLLOWER: {
-            // Someone was elected
-            LOG(INFO) << idStr_ << "Someone else was elected";
-            return true;
+            // Someone was elected or rejected
+            LOG(INFO) << idStr_ << "Someone else was elected, or is rejected by peers";
+            return false;
         }
         case Role::CANDIDATE: {
             // No one has been elected
@@ -1212,12 +1205,12 @@ void RaftPart::statusPolling(int64_t startTime) {
     size_t delay = FLAGS_raft_heartbeat_interval_secs * 1000 / 3;
     if (needToStartElection()) {
         if (leaderElection()) {
+            // Elected as leader
             VLOG(2) << idStr_ << "Stop the election";
         } else {
-            // No leader has been elected, need to continue
-            // (After sleeping a random period betwen [500ms, 2s])
+            // No leader has been elected, sleep for a while to continue
             VLOG(2) << idStr_ << "Wait for a while and continue the leader election";
-            delay = (folly::Random::rand32(1500) + 500) * weight_;
+            delay = FLAGS_raft_heartbeat_interval_secs * 1000;
         }
     } else if (needToSendHeartbeat()) {
         VLOG(2) << idStr_ << "Need to send heartbeat";
@@ -1323,7 +1316,7 @@ void RaftPart::processAskForVoteRequest(
         return;
     }
 
-    // Check term id
+    // Check candidate's proposed term is greater than current term
     if (req.get_term() <= term_) {
         LOG(INFO) << idStr_
                   << (role_ == Role::CANDIDATE
@@ -1384,7 +1377,6 @@ void RaftPart::processAskForVoteRequest(
 
     // Reset the last message time
     lastMsgRecvDur_.reset();
-    weight_ = 1;
 
     // If the partition used to be a leader, need to fire the callback
     if (oldRole == Role::LEADER) {
@@ -1695,7 +1687,6 @@ cpp2::ErrorCode RaftPart::verifyLeader(
     leader_ = std::make_pair(req.get_leader_ip(),
                              req.get_leader_port());
     term_ = req.get_current_term();
-    weight_ = 1;
     if (oldRole == Role::LEADER) {
         VLOG(2) << idStr_ << "Was a leader, need to do some clean-up";
         if (wal_->lastLogId() > lastLogId_) {
