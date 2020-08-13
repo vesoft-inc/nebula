@@ -31,7 +31,7 @@ cmake_minimum_required(VERSION 3.5.0)
 project("Nebula Graph" C CXX)
 
 option(ENABLE_PACK_ONE "Whether to package into one" ON)
-option(ENABLE_BUILD_STORAGE "Whether to build storage" ON)
+option(ENABLE_BUILD_STORAGE "Whether to build storage" OFF)
 option(ENABLE_MODULE_UPDATE "Automatically update module" OFF)
 
 add_definitions(-DNEBULA_HOME=${CMAKE_SOURCE_DIR})
@@ -112,8 +112,8 @@ if(ENABLE_BUILD_STORAGE)
     config_nebula_storage(
         SOURCE_DIR ${CMAKE_SOURCE_DIR}/modules/storage
         BUILD_DIR ${CMAKE_BINARY_DIR}/modules/storage
-        COMMON_SOURCE_DIR ${CMAKE_SOURCE_DIR}/modules/common
-        COMMON_BUILD_DIR ${CMAKE_BINARY_DIR}/modules/common
+        COMMON_SOURCE_DIR ${nebula_common_source_dir}
+        COMMON_BUILD_DIR ${nebula_common_build_dir}
     )
 endif()
 
