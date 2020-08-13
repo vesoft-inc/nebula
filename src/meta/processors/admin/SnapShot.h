@@ -37,9 +37,7 @@ private:
         executor_.reset(new folly::CPUThreadPoolExecutor(1));
     }
 
-    bool getAllSpaces(std::vector<GraphSpaceID>& spaces, kvstore::ResultCode& retCode);
-
-    std::set<HostAddr> getHostsBySpace(GraphSpaceID space);
+    StatusOr<std::map<GraphSpaceID, std::set<HostAddr>>> getSpacesHosts();
 
 private:
     kvstore::KVStore* kv_{nullptr};
