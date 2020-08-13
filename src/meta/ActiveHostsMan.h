@@ -57,8 +57,6 @@ public:
 
     static bool isLived(kvstore::KVStore* kv, const HostAddr& host);
 
-    static bool spaceExistInHost(kvstore::KVStore* kv, GraphSpaceID space, const HostAddr& host);
-
 protected:
     ActiveHostsMan() = default;
 };

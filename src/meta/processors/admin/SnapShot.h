@@ -32,15 +32,14 @@ public:
 
     cpp2::ErrorCode blockingWrites(storage::cpp2::EngineSignType sign);
 
-    std::unordered_map<HostAddr, std::vector<PartitionID>>
-    getLeaderParts(HostLeaderMap *hostLeaderMap, GraphSpaceID spaceId);
-
 private:
     Snapshot(kvstore::KVStore* kv, AdminClient* client) : kv_(kv), client_(client) {
         executor_.reset(new folly::CPUThreadPoolExecutor(1));
     }
 
     bool getAllSpaces(std::vector<GraphSpaceID>& spaces, kvstore::ResultCode& retCode);
+
+    std::set<HostAddr> getHostsBySpace(GraphSpaceID space);
 
 private:
     kvstore::KVStore* kv_{nullptr};

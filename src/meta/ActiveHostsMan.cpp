@@ -92,27 +92,5 @@ int64_t LastUpdateTimeMan::get(kvstore::KVStore* kv) {
     return 0;
 }
 
-bool ActiveHostsMan::spaceExistInHost(kvstore::KVStore* kv,
-                                      GraphSpaceID space,
-                                      const HostAddr& host) {
-    folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
-    auto prefix = MetaServiceUtils::partPrefix(space);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto kvRet = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (kvRet != kvstore::ResultCode::SUCCEEDED) {
-        return false;
-    }
-    while (iter->valid()) {
-        auto hosts = MetaServiceUtils::parsePartVal(iter->val());
-        for (auto& ph : hosts) {
-            if (host == HostAddr(ph.get_ip(), ph.get_port())) {
-                return true;
-            }
-        }
-        iter->next();
-    }
-    return false;
-}
-
 }  // namespace meta
 }  // namespace nebula

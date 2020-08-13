@@ -21,14 +21,9 @@ cpp2::ErrorCode Snapshot::createSnapshot(const std::string& name) {
                    << static_cast<int32_t>(ret);
         return cpp2::ErrorCode::E_STORE_FAILURE;
     }
-    auto hosts = ActiveHostsMan::getActiveHosts(kv_);
-    for (const auto& host : hosts) {
-        for (auto& space : spaces) {
-            // If the storage node doesn't have this space. Skip this operation.
-            auto spaceExist = ActiveHostsMan::spaceExistInHost(kv_, space, host);
-            if (!spaceExist) {
-                continue;
-            }
+    for (auto& space : spaces) {
+        auto hostsBySpace = getHostsBySpace(space);
+        for (const auto& host : hostsBySpace) {
             auto status = client_->createSnapshot(space, name, host).get();
             if (!status.ok()) {
                 return cpp2::ErrorCode::E_RPC_FAILURE;
@@ -47,16 +42,11 @@ cpp2::ErrorCode Snapshot::dropSnapshot(const std::string& name,
                    << static_cast<int32_t>(ret);
         return cpp2::ErrorCode::E_STORE_FAILURE;
     }
-    // The drop checkpoint will be skip if original host has been lost.
-    auto activeHosts = ActiveHostsMan::getActiveHosts(kv_);
-    for (auto& host : hosts) {
-        if (std::find(activeHosts.begin(), activeHosts.end(), host) != activeHosts.end()) {
-            for (const auto& space : spaces) {
-                // If the storage node doesn't have this space. Skip this operation.
-                auto spaceExist = ActiveHostsMan::spaceExistInHost(kv_, space, host);
-                if (!spaceExist) {
-                    continue;
-                }
+
+    for (const auto& space : spaces) {
+        auto hostsBySpace = getHostsBySpace(space);
+        for (const auto& host : hostsBySpace) {
+            if (std::find(hosts.begin(), hosts.end(), host) != hosts.end()) {
                 auto status = client_->dropSnapshot(space, name, host).get();
                 if (!status.ok()) {
                     auto msg = "failed drop checkpoint : \"%s\". on host %s. error %s";
@@ -98,14 +88,9 @@ cpp2::ErrorCode Snapshot::blockingWrites(storage::cpp2::EngineSignType sign) {
                    << static_cast<int32_t>(ret);
         return cpp2::ErrorCode::E_STORE_FAILURE;
     }
-    auto hosts = ActiveHostsMan::getActiveHosts(kv_);
-    for (const auto& host : hosts) {
-        for (const auto& space : spaces) {
-            // If the storage node doesn't have this space. Skip this operation.
-            auto spaceExist = ActiveHostsMan::spaceExistInHost(kv_, space, host);
-            if (!spaceExist) {
-                continue;
-            }
+    for (auto& space : spaces) {
+        auto hostsBySpace = getHostsBySpace(space);
+        for (const auto& host : hostsBySpace) {
             auto status = client_->blockingWrites(space, sign, host).get();
             if (!status.ok()) {
                 LOG(ERROR) << " Send blocking sign error on host : "
@@ -114,6 +99,25 @@ cpp2::ErrorCode Snapshot::blockingWrites(storage::cpp2::EngineSignType sign) {
         }
     }
     return cpp2::ErrorCode::SUCCEEDED;
+}
+
+std::set<HostAddr> Snapshot::getHostsBySpace(GraphSpaceID space) {
+    folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
+    std::set<HostAddr> hosts;
+    auto prefix = MetaServiceUtils::partPrefix(space);
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto kvRet = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+    if (kvRet != kvstore::ResultCode::SUCCEEDED) {
+        return {};
+    }
+    while (iter->valid()) {
+        auto partHosts = MetaServiceUtils::parsePartVal(iter->val());
+        for (auto& ph : partHosts) {
+            hosts.emplace(HostAddr(ph.get_ip(), ph.get_port()));
+        }
+        iter->next();
+    }
+    return hosts;
 }
 
 }  // namespace meta
