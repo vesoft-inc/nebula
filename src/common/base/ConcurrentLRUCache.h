@@ -221,6 +221,18 @@ public:
         } else {
             // Overwrite the value
             std::get<0>(it->second) = std::move(value);
+
+            // upgrade the position
+            typename list_type::iterator j = std::get<1>(it->second);
+            CHECK(key == *j);
+            if (j != list_.begin()) {
+                // move item to the front of the most recently used list
+                list_.erase(j);
+                list_.push_front(key);
+                // update iterator in map
+                j = list_.begin();
+                std::get<1>(it->second) = j;
+            }
         }
     }
 
@@ -298,9 +310,9 @@ private:
     map_type map_;
     list_type list_;
     size_t capacity_;
-    std::atomic_uint64_t total_{0};
-    std::atomic_uint64_t hits_{0};
-    std::atomic_uint64_t evicts_{0};
+    uint64_t total_{0};
+    uint64_t hits_{0};
+    uint64_t evicts_{0};
 };
 
 }  // namespace nebula

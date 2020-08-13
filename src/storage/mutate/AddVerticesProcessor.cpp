@@ -30,6 +30,9 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
     }
 
     CHECK_NOTNULL(kvstore_);
+    std::unordered_set<std::pair<VertexID, TagID>> uniqueIDs;
+    uniqueIDs.reserve(128);
+
     std::for_each(partVertices.begin(), partVertices.end(), [&](auto& pv) {
         std::vector<kvstore::KV> data;
         data.reserve(128);
@@ -39,9 +42,16 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
         }
         auto partId = pv.first;
         const auto& vertices = pv.second;
-        std::for_each(vertices.begin(), vertices.end(), [&](auto& v) {
+
+        uniqueIDs.clear();
+        std::for_each(vertices.rbegin(), vertices.rend(), [&](auto& v) {
             const auto& tags = v.get_tags();
             std::for_each(tags.begin(), tags.end(), [&](auto& tag) {
+                auto uniqueKey = std::make_pair(v.get_id(), tag.get_tag_id());
+                if (uniqueIDs.find(uniqueKey) != uniqueIDs.end()) {
+                    return;
+                }
+
                 VLOG(3) << "PartitionID: " << partId << ", VertexID: " << v.get_id()
                         << ", TagID: " << tag.get_tag_id() << ", TagVersion: " << version;
                 auto key = NebulaKeyUtils::vertexKey(partId, v.get_id(),
@@ -50,6 +60,7 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
                     cacheData.emplace_back(v.get_id(), tag.get_tag_id(), tag.get_props());
                 }
                 data.emplace_back(std::move(key), std::move(tag.get_props()));
+                uniqueIDs.emplace(uniqueKey);
             });
         });
 

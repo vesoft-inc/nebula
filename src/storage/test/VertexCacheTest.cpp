@@ -142,7 +142,7 @@ TEST(VertexCacheTest, SimpleTest) {
 
     LOG(INFO) << "Insert vertices from 0 to 1000";
     addVertices(kv.get(), schemaMan.get(), indexMan.get(), &cache, 1000);
-    checkCache(&cache, 1000, 500, 2000);
+    checkCache(&cache, 1001, 500, 2000);
 }
 
 }  // namespace storage
