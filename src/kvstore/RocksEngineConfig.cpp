@@ -99,7 +99,7 @@ public:
     }
 
     bool InDomain(const rocksdb::Slice& src) const override {
-    	return src.size() >= prefix_len_ && NebulaKeyUtils::isDataKey(
+        return src.size() >= prefix_len_ && NebulaKeyUtils::isDataKey(
                 folly::StringPiece(src.data(), 1));
     }
 };

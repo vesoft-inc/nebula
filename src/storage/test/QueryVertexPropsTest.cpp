@@ -197,8 +197,8 @@ TEST(QueryVertexPropsTest, PrefixBloomFilterTest) {
     mockData(kv.get(), schemaMng.get(), version);
     testWithVersion(kv.get(), schemaMng.get(), executor.get(), version);
     std::shared_ptr<rocksdb::Statistics> statistics = kvstore::getDBStatistics();
-    ASSERT_TRUE(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_PREFIX_CHECKED) > 0);
-    ASSERT_TRUE(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_PREFIX_USEFUL) > 0);
+    ASSERT_GT(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_PREFIX_CHECKED), 0);
+    ASSERT_GT(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_PREFIX_USEFUL), 0);
 }
 
 TEST(QueryVertexPropsTest, QueryAfterTagAltered) {
