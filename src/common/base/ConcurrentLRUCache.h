@@ -206,15 +206,15 @@ public:
     }
 
     void insert(key_type&& key, value_type&& value) {
-        // insert item into the cache, but first check if it is full
-        if (size() >= capacity_) {
-            VLOG(3) << "Size:" << size() << ", capacity " << capacity_;
-            // cache is full, evict the least recently used item
-            evict();
-        }
-        VLOG(3) << "Insert key " << key << ", val " << value;
         typename map_type::iterator it = map_.find(key);
         if (it == map_.end()) {
+            // insert item into the cache, but first check if it is full
+            if (size() >= capacity_) {
+                VLOG(3) << "Size:" << size() << ", capacity " << capacity_;
+                // cache is full, evict the least recently used item
+                evict();
+            }
+            VLOG(3) << "Insert key " << key << ", val " << value;
             list_.push_front(key);
             map_.emplace(std::forward<key_type>(key),
                          std::make_tuple(std::forward<value_type>(value), list_.begin()));
