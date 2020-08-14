@@ -544,6 +544,19 @@ TEST(IteratorTest, TestHead) {
         GetNeighborsIter iter(std::move(val));
         EXPECT_TRUE(iter.valid_);
     }
+    {
+        DataSet ds;
+        ds.colNames = {kVid,
+                        "_stats",
+                        "_tag:tag1:prop1:prop2",
+                        "_edge:::",
+                        "_expr"};
+        List datasets;
+        datasets.values.emplace_back(std::move(ds));
+        auto val = std::make_shared<Value>(std::move(datasets));
+        GetNeighborsIter iter(std::move(val));
+        EXPECT_FALSE(iter.valid_);
+    }
 }
 
 TEST(IteratorTest, EraseRange) {

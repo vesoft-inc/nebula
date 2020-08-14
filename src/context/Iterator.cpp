@@ -169,8 +169,8 @@ Status GetNeighborsIter::buildPropIndex(const std::string& props,
     std::move(pieces.begin() + 2, pieces.end(), propIdx.propList.begin());
     std::string name = pieces[1];
     if (isEdge) {
-        // The first character of the tag/edge name is +/-.
-        if (UNLIKELY(name.find("+") != 0 && name.find("-") != 0)) {
+        // The first character of the edge name is +/-.
+        if (UNLIKELY(name.empty() || (name[0] != '+' && name[0] != '-'))) {
             return Status::Error("Bad edge name: %s", name.c_str());
         }
         dsIndex->tagEdgeNameIndices.emplace(columnId, name);
