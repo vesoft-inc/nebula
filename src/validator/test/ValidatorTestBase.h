@@ -153,6 +153,7 @@ protected:
                 case PlanNode::Kind::kStart: {
                     break;
                 }
+                case PlanNode::Kind::kShowHosts:
                 case PlanNode::Kind::kGetNeighbors:
                 case PlanNode::Kind::kGetVertices:
                 case PlanNode::Kind::kGetEdges:

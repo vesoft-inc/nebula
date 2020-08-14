@@ -57,7 +57,7 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
                 i = 0;
                 for (const auto &p : host.get_all_parts()) {
                     parts << p.first << ":" << p.second.size();
-                    if (i < host.get_leader_parts().size() - 1) {
+                    if (i < host.get_all_parts().size() - 1) {
                         parts << kPartitionDelimeter;
                     }
                     ++i;

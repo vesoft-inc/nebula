@@ -121,11 +121,50 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
             return std::make_unique<UpdateVertexValidator>(sentence, context);
         case Sentence::Kind::kUpdateEdge:
             return std::make_unique<UpdateEdgeValidator>(sentence, context);
+        case Sentence::Kind::kShowHosts:
+            return std::make_unique<ShowHostsValidator>(sentence, context);
         case Sentence::Kind::kShowParts:
             return std::make_unique<ShowPartsValidator>(sentence, context);
-        default:
-            return std::make_unique<ReportError>(sentence, context);
+        case Sentence::Kind::kUnknown:
+        case Sentence::Kind::kMatch:
+        case Sentence::Kind::kCreateTagIndex:
+        case Sentence::Kind::kShowCreateTagIndex:
+        case Sentence::Kind::kShowTagIndexStatus:
+        case Sentence::Kind::kDescribeTagIndex:
+        case Sentence::Kind::kShowTagIndexes:
+        case Sentence::Kind::kRebuildTagIndex:
+        case Sentence::Kind::kDropTagIndex:
+        case Sentence::Kind::kCreateEdgeIndex:
+        case Sentence::Kind::kShowCreateEdgeIndex:
+        case Sentence::Kind::kShowEdgeIndexStatus:
+        case Sentence::Kind::kDescribeEdgeIndex:
+        case Sentence::Kind::kShowEdgeIndexes:
+        case Sentence::Kind::kRebuildEdgeIndex:
+        case Sentence::Kind::kDropEdgeIndex:
+        case Sentence::Kind::kShowUsers:
+        case Sentence::Kind::kCreateUser:
+        case Sentence::Kind::kDropUser:
+        case Sentence::Kind::kAlterUser:
+        case Sentence::Kind::kGrant:
+        case Sentence::Kind::kRevoke:
+        case Sentence::Kind::kShowRoles:
+        case Sentence::Kind::kChangePassword:
+        case Sentence::Kind::kShowCharset:
+        case Sentence::Kind::kShowCollation:
+        case Sentence::Kind::kLookup:
+        case Sentence::Kind::kDownload:
+        case Sentence::Kind::kIngest:
+        case Sentence::Kind::kBalance:
+        case Sentence::Kind::kConfig:
+        case Sentence::Kind::kFindPath:
+        case Sentence::Kind::kReturn:
+        case Sentence::Kind::kAdmin: {
+            // nothing
+            DLOG(FATAL) << "Unimplemented sentence " << kind;
+        }
     }
+    DLOG(FATAL) << "Unknown sentence " << static_cast<int>(kind);
+    return std::make_unique<ReportError>(sentence, context);
 }
 
 Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {

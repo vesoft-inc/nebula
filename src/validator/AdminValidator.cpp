@@ -202,6 +202,17 @@ Status ShowSnapshotsValidator::toPlan() {
     return Status::OK();
 }
 
+Status ShowHostsValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status ShowHostsValidator::toPlan() {
+    auto *showHosts = ShowHosts::make(qctx_->plan(), nullptr);
+    root_ = showHosts;
+    tail_ = root_;
+    return Status::OK();
+}
+
 Status ShowPartsValidator::validateImpl() {
     return Status::OK();
 }
