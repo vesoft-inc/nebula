@@ -5,10 +5,14 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-from tests.query.stateless.prepare_data import PrepareData
+from tests.common.nebula_test_suite import NebulaTestSuite
 
 
-class TestFindPathQuery(PrepareData):
+class TestFindPathQuery(NebulaTestSuite):
+    @classmethod
+    def prepare(self):
+        self.use_student_space()
+
     def test_shortest(self):
         # FIND SHORTEST PATH OVER b'is_schoolmate'
         cmd = 'FIND SHORTEST PATH FROM 1004 TO 1007 OVER is_schoolmate;'

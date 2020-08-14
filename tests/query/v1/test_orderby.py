@@ -13,7 +13,7 @@ from tests.common.nebula_test_suite import NebulaTestSuite
 class TestOrderBy(NebulaTestSuite):
     @classmethod
     def prepare(self):
-        self.load_data()
+        self.use_nba()
 
     def test_syntax_error(self):
         resp = self.execute_query('ORDER BY')

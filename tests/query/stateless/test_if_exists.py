@@ -10,9 +10,9 @@ import sys
 import pytest
 import time
 
-from graph import ttypes
+from nebula2.graph import ttypes
 
-import nebula.Client
+import nebula2.Client
 from tests.common.nebula_test_suite import NebulaTestSuite
 
 class TestDropSpaceIfExists(NebulaTestSuite):

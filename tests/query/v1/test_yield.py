@@ -16,7 +16,7 @@ from tests.common.nebula_test_suite import NebulaTestSuite
 class TestYield(NebulaTestSuite):
     @classmethod
     def prepare(self):
-        self.load_data()
+        self.use_nba()
 
     def test_base(self):
         query = 'YIELD 1'

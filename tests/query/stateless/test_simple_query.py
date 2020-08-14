@@ -10,8 +10,6 @@ import sys
 import time
 import pytest
 
-from graph import ttypes
-
 from tests.common.nebula_test_suite import NebulaTestSuite
 
 
@@ -32,9 +30,9 @@ class TestSimpleQuery(NebulaTestSuite):
 
         resp = self.execute('CREATE EDGE IF NOT EXISTS like(likeness double)')
         self.check_resp_succeeded(resp)
+        time.sleep(self.delay)
 
     def test_schema(self):
-        time.sleep(self.delay)
         resp = self.execute('USE simplequeryspace')
         self.check_resp_succeeded(resp)
 

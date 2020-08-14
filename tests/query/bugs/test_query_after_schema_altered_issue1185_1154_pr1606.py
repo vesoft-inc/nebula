@@ -7,10 +7,10 @@
 
 import time
 
-from tests.query.stateless.prepare_data import PrepareData
+from tests.common.nebula_test_suite import NebulaTestSuite
 
 
-class TestQuery(PrepareData):
+class TestQuery(NebulaTestSuite):
     def test_add_prop(self):
         cmd = 'FETCH PROP ON person 1004'
         resp = self.execute_query(cmd)

@@ -585,7 +585,7 @@ Status UpdateValidator::getUpdateProps() {
         auto valueExpr = item->value();
         if (valueExpr == nullptr) {
             LOG(ERROR) << "valueExpr is nullptr";
-            return Status::SyntaxError("Empty update item field value");
+            return Status::SyntaxError("Empty update item field value.");
         }
         auto encodeStr = valueExpr->encode();
         auto copyValueExpr = Expression::decode(encodeStr);

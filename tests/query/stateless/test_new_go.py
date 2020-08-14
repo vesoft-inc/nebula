@@ -12,7 +12,7 @@ import pytest
 class TestGoQuery(NebulaTestSuite):
     @classmethod
     def prepare(self):
-        self.load_data()
+        self.use_nba()
 
     def cleanup():
         pass

@@ -195,5 +195,5 @@ class TestSpace(NebulaTestSuite):
 
         resp = self.client.execute_query('SHOW SPACES')
         self.check_resp_succeeded(resp)
-        expect_result = []
-        self.check_result(resp, expect_result)
+        expect_result = [['default_space']]
+        self.search_not_exist(resp, expect_result)

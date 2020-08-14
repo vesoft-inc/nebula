@@ -1,8 +1,4 @@
-import re
-import sys
 import time
-
-from graph import ttypes
 
 from tests.common.nebula_test_suite import NebulaTestSuite
 

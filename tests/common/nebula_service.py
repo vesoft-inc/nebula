@@ -48,10 +48,14 @@ class NebulaService(object):
         shutil.copy(storage_conf_path + '/nebula-metad.conf.default',
                     self.work_dir + '/conf/nebula-metad.conf')
 
-    def _format_nebula_command(self, name, meta_port, ports):
-        param_format = "--meta_server_addrs={} --port={} --ws_http_port={} --ws_h2_port={} -v=4"
+    def _format_nebula_command(self, name, meta_port, ports, debug_log = True):
+        param_format = "--meta_server_addrs={} --port={} --ws_http_port={} --ws_h2_port={} --heartbeat_interval_secs=1"
         param = param_format.format("127.0.0.1:" + str(meta_port), ports[0],
                                     ports[1], ports[2])
+        if name == 'storaged':
+            param = param + ' --raft_heartbeat_interval_secs=30'
+        if debug_log:
+            param = param + ' --v=4'
         command = NEBULA_START_COMMAND_FORMAT.format(name, name, param)
         return command
 
@@ -74,7 +78,7 @@ class NebulaService(object):
             os.mkdir(self.work_dir + '/' + f)
         self._copy_nebula_conf()
 
-    def start(self):
+    def start(self, debug_log = True):
         os.chdir(self.work_dir)
 
         metad_ports = self._find_free_port()
@@ -86,8 +90,10 @@ class NebulaService(object):
                 ports = self._find_free_port()
             else:
                 ports = metad_ports
-            command = self._format_nebula_command(server_name, metad_ports[0],
-                                                  ports)
+            command = self._format_nebula_command(server_name,
+                                                  metad_ports[0],
+                                                  ports,
+                                                  debug_log)
             print("exec: " + command)
             p = subprocess.Popen([command], shell=True, stdout=subprocess.PIPE)
             p.wait()

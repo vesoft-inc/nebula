@@ -13,7 +13,7 @@ from tests.common.nebula_test_suite import NebulaTestSuite
 class TestFetchEdges(NebulaTestSuite):
     @classmethod
     def prepare(self):
-        self.load_data()
+        self.use_nba()
 
     @classmethod
     def cleanup(cls):

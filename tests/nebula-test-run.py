@@ -17,9 +17,10 @@ from pathlib import Path
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 NEBULA_HOME = TEST_DIR + '/../'
 sys.path.insert(0, NEBULA_HOME)
+sys.path.insert(0, TEST_DIR)
 
 from tests.common.nebula_service import NebulaService
-from tests.common.nebula_test_plugin import NebulaTestPlugin
+from tests.common.load_test_data import LoadGlobalData
 
 TEST_LOGS_DIR = os.getenv('NEBULA_TEST_LOGS_DIR')
 if TEST_LOGS_DIR is None or TEST_LOGS_DIR == "":
@@ -43,11 +44,11 @@ class TestExecutor(object):
         self.total_executed = 0
 
     def run_tests(self, args):
-        plugin = NebulaTestPlugin(TEST_DIR)
+        # plugin = NebulaTestPlugin(TEST_DIR)
 
         error_code = 0
         try:
-            error_code = pytest.main(args, plugins=[plugin])
+            error_code = pytest.main(args)
         except Exception:
             sys.stderr.write(
                 "Unexpected exception with pytest {0}".format(args))
@@ -57,7 +58,7 @@ class TestExecutor(object):
             for test in plugin.tests_collected:
                 print(test)
 
-        self.total_executed += len(plugin.tests_executed)
+        #self.total_executed += len(plugin.tests_executed)
         return error_code
 
 
@@ -85,17 +86,37 @@ if __name__ == "__main__":
 
         args.extend(list(commandline_args))
 
+        debug_log = True
+        if '--debug_log' in args:
+            if args[args.index('--debug_log') + 1].lower() == 'false':
+                debug_log = False
+
+        nebula_ip = ''
+        nebula_port = 0
         if '--address' not in args:
             nebula_svc.install()
-            port = nebula_svc.start()
+            port = nebula_svc.start(debug_log)
             args.extend(['--address', '127.0.0.1:' + str(port)])
+            nebula_ip = '127.0.0.1'
+            nebula_port = port
         else:
             stop_nebula = False
+            addr = args[args.index('--address') + 1].split(':')
+            nebula_ip = addr[0]
+            nebula_port = int(addr[1])
+
+        if '--data_dir' not in args:
+            args.extend(['--data_dir', TEST_DIR])
         print("Running TestExecutor with args: {} ".format(args))
+
+        # load nba data
+        load_data = LoadGlobalData(TEST_DIR, nebula_ip, nebula_port)
+        load_data.load_all_test_data()
 
         # Switch to your $src_dir/tests
         os.chdir(TEST_DIR)
         error_code = executor.run_tests(args)
+        load_data.drop_data()
     finally:
         if stop_nebula and pytest.cmdline.stop_nebula.lower() == 'true':
             nebula_svc.stop(pytest.cmdline.rm_dir.lower() == 'true')

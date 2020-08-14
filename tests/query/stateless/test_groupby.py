@@ -8,7 +8,11 @@
 from tests.query.stateless.prepare_data import PrepareData
 
 
-class TestGroupby(PrepareData):
+class TestGroupby(NebulaTestSuite):
+    @classmethod
+    def prepare(self):
+        self.use_student_space()
+
     def test_error(self):
         # group col without input field
         try:

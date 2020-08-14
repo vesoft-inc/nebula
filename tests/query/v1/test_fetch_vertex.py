@@ -15,7 +15,7 @@ from tests.common.nebula_test_suite import T_NULL
 class TestFetchQuery(NebulaTestSuite):
     @classmethod
     def prepare(self):
-        self.load_data()
+        self.use_nba()
 
     @classmethod
     def cleanup(cls):

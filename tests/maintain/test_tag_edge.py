@@ -465,7 +465,7 @@ class TestSchema(NebulaTestSuite):
         resp = self.client.execute_query('SHOW SPACES')
         self.check_resp_succeeded(resp)
         expect_result = [['tag_space']]
-        self.check_result(resp, expect_result)
+        self.search_result(resp, expect_result)
 
         # checkout current session has clear the space info
         assert resp.space_name.decode('utf-8') == ""

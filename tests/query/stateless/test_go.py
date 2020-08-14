@@ -6,10 +6,14 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
 import pytest
-from tests.query.stateless.prepare_data import PrepareData
 
+from tests.common.nebula_test_suite import NebulaTestSuite
 
-class TestGoQuery(PrepareData):
+class TestGoQuery(NebulaTestSuite):
+    @classmethod
+    def prepare(self):
+        self.use_student_space()
+
     def test_1_step(self):
         # 1 step
         cmd = 'GO FROM "2002" OVER is_teacher YIELD $$.person.name as name, $$.student.grade as grade;'

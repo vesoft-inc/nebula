@@ -6,6 +6,7 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
 import time
+import datetime
 from pathlib import Path
 from typing import Pattern, Set
 
@@ -51,6 +52,7 @@ class NebulaTestSuite(object):
     @classmethod
     def setup_class(self):
         address = pytest.cmdline.address.split(':')
+        self.spaces = []
         self.host = address[0]
         self.port = address[1]
         self.user = pytest.cmdline.user
@@ -71,14 +73,14 @@ class NebulaTestSuite(object):
         for path in pathlist:
             print("will open ", path)
             with open(path, 'r') as data_file:
-                space_name = path.name.split('.')[0]
+                space_name = path.name.split('.')[0] + datetime.datetime.now().strftime('%H_%M_%S_%f')
+                self.spaces.append(space_name)
                 resp = self.execute(
-                'CREATE SPACE IF NOT EXISTS {space_name}(partition_num={partition_num}, replica_factor={replica_factor}, vid_size=30)'.format(partition_num=self.partition_num,
+                'CREATE SPACE IF NOT EXISTS {space_name}(partition_num={partition_num}, '
+                'replica_factor={replica_factor}, vid_size=30); USE {space_name};'.format(
+                        partition_num=self.partition_num,
                         replica_factor=self.replica_factor,
                         space_name=space_name))
-                self.check_resp_succeeded(resp)
-                time.sleep(self.delay)
-                resp = self.execute('USE {}'.format(space_name))
                 self.check_resp_succeeded(resp)
 
                 lines = data_file.readlines()
@@ -107,13 +109,22 @@ class NebulaTestSuite(object):
     @classmethod
     def drop_data(self):
         if self.data_loaded:
-            pathlist = Path(self.data_dir).rglob('*.ngql')
             drop_stmt = []
-            for path in pathlist:
-                space_name = path.name.split('.')[0]
-                drop_stmt.append('DROP SPACE {}'.format(space_name))
+            for space in self.spaces:
+                drop_stmt.append('DROP SPACE {}'.format(space))
             resp = self.execute(';'.join(drop_stmt))
             self.check_resp_succeeded(resp)
+
+    @classmethod
+    def use_nba(self):
+        resp = self.execute('USE nba;')
+        self.check_resp_succeeded(resp)
+
+    @classmethod
+    def use_student_space(self):
+        resp = self.execute('USE student_space;')
+        self.check_resp_succeeded(resp)
+
 
     @classmethod
     def create_nebula_clients(self):
@@ -232,41 +243,59 @@ class NebulaTestSuite(object):
 
     @classmethod
     def search_result(self, resp, expect, is_regex = False):
+         ok, msg = self.search(resp, expect, is_regex)
+         assert ok, msg
+
+    @classmethod
+    def search_not_exist(self, resp, expect, is_regex = False):
+        ok, msg = self.search(resp, expect, is_regex)
+        assert not ok, 'expect "{}" has exist'.format(str(expect))
+
+    @classmethod
+    def search(self, resp, expect, is_regex = False):
         if resp.data is None and len(expect) == 0:
-            return
+            return True
 
         if resp.data is None:
-            assert False, 'resp.data is None'
+            return False, 'resp.data is None'
         rows = resp.data.rows
 
-        msg = 'len(rows)[%d] != len(expect)[%d]' % (len(rows), len(expect))
-        assert len(rows) == len(expect), msg
+        msg = 'len(rows)[%d] < len(expect)[%d]' % (len(rows), len(expect))
+        if len(rows) < len(expect):
+            return False, msg
 
         new_expect = expect
         if not is_regex:
             # convert expect to thrift value
             ok, new_expect, msg = self.convert_expect(expect)
             if not ok:
-                assert ok, 'convert expect failed, error msg: {}'.format(msg)
+                return ok, 'convert expect failed, error msg: {}'.format(msg)
 
-        for row in rows:
-            ok = False
-            msg = ""
-            for exp in new_expect:
-                exp_values = []
-                if not is_regex:
-                    exp_values = exp.values
-                else:
-                    exp_values = exp
-                for col, i in zip(row.values, range(0, len(exp_values))):
-                    ok, msg = self.check_value(col, exp_values[i])
+        for exp in new_expect:
+            exp_values = []
+            exp_str = ''
+            if not is_regex:
+                exp_values = exp.values
+                exp_str = self.row_to_string(exp)
+            else:
+                exp_values = exp
+                exp_str = str(exp)
+            has = False
+            for row in rows:
+                ok = True
+                if len(row.values) != len(exp_values):
+                    return False, 'len(row)[%d] != len(exp_values)[%d]' % (len(row.values), len(exp_values))
+                for col1, col2 in zip(row.values, exp_values):
+                    ok, msg = self.check_value(col1, col2)
                     if not ok:
+                        ok = False
                         break
                 if ok:
+                    has = True
                     break
-            assert ok, 'The returned row from nebula could not be found, row: {}, error message: {}'.format(
-                self.row_to_string(row), msg)
-            new_expect.remove(exp)
+            if not has:
+                return has, 'The returned row from nebula could not be found, row: {}'.format(exp_str)
+        return True, ''
 
     @classmethod
     def check_column_names(self, resp, expect):
@@ -416,4 +445,5 @@ class NebulaTestSuite(object):
             if not expect.match(resp.error_msg.decode('utf-8')):
                 assert False, msg
         else:
+            assert resp.error_msg.decode('utf-8') == expect, msg
             assert resp.error_msg.decode('utf-8') == expect, msg
