@@ -180,7 +180,8 @@ Status GetSubgraphValidator::toPlan() {
             std::move(vertexProps),
             std::move(edgeProps),
             std::move(statProps),
-            std::move(exprs));
+            std::move(exprs),
+            true /*subgraph not need duplicate*/);
     gn1->setInputVar(vidsToSave);
 
     auto* columns = new YieldColumns();

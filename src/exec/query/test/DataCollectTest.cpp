@@ -144,8 +144,34 @@ TEST_F(DataCollectTest, CollectSubgraph) {
     auto iter = input.iter();
     auto* gNIter = static_cast<GetNeighborsIter*>(iter.get());
     Row row;
-    row.values.emplace_back(gNIter->getVertices());
-    row.values.emplace_back(gNIter->getEdges());
+    std::unordered_set<std::string> vids;
+    std::unordered_set<std::tuple<std::string, int64_t, int64_t, std::string>> edgeKeys;
+    List vertices;
+    List edges;
+    auto originVertices = gNIter->getVertices();
+    for (auto& v : originVertices.values) {
+        if (!v.isVertex()) {
+            continue;
+        }
+        if (vids.emplace(v.getVertex().vid).second) {
+            vertices.emplace_back(std::move(v));
+        }
+    }
+    auto originEdges = gNIter->getEdges();
+    for (auto& e : originEdges.values) {
+        if (!e.isEdge()) {
+            continue;
+        }
+        auto edgeKey = std::make_tuple(e.getEdge().src,
+                                        e.getEdge().type,
+                                        e.getEdge().ranking,
+                                        e.getEdge().dst);
+        if (edgeKeys.emplace(std::move(edgeKey)).second) {
+            edges.emplace_back(std::move(e));
+        }
+    }
+    row.values.emplace_back(std::move(vertices));
+    row.values.emplace_back(std::move(edges));
     expected.rows.emplace_back(std::move(row));
 
     EXPECT_EQ(result.value().getDataSet(), expected);
