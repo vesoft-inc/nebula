@@ -221,18 +221,8 @@ public:
         } else {
             // Overwrite the value
             std::get<0>(it->second) = std::move(value);
-
-            // upgrade the position
             typename list_type::iterator j = std::get<1>(it->second);
-            CHECK(key == *j);
-            if (j != list_.begin()) {
-                // move item to the front of the most recently used list
-                list_.erase(j);
-                list_.push_front(key);
-                // update iterator in map
-                j = list_.begin();
-                std::get<1>(it->second) = j;
-            }
+            list_.splice(list_.begin(), list_, j);
         }
     }
 
