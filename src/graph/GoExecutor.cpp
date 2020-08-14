@@ -726,7 +726,7 @@ void GoExecutor::finishExecution() {
         }
     }
     if (!warningMsg_.empty()) {
-        ectx()->addWarningMsg(std::move(warningMsg_));
+        ectx()->addWarningMsg(warningMsg_);
     }
 
     if (onResult_) {

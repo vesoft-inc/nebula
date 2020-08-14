@@ -75,7 +75,7 @@ public:
         return charsetInfo_;
     }
 
-    void addWarningMsg(std::string &&msg) {
+    void addWarningMsg(std::string msg) {
         warnMsgs_.emplace_back(std::move(msg));
     }
 
