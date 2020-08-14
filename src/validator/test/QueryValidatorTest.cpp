@@ -769,6 +769,24 @@ TEST_F(QueryValidatorTest, GoOverAll) {
     }
 }
 
+TEST_F(QueryValidatorTest, OutputToAPipe) {
+    {
+        std::string query  =
+            "GO FROM '1' OVER like YIELD like._dst as id "
+            "| ( GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve )";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kStart,
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+}
+
 TEST_F(QueryValidatorTest, GoInvalid) {
     {
         // friend not exist.

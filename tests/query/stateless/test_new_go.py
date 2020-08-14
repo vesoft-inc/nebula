@@ -111,8 +111,6 @@ class TestGoQuery(NebulaTestSuite):
         }
         self.check_out_of_order_result(resp, expected_data["rows"])
 
-    @pytest.mark.skip(reason = 'need pipe support')
-    def test_step(self):
         stmt = '''GO FROM "Boris Diaw" OVER like YIELD like._dst as id \
             | ( GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve )'''
         resp = self.execute_query(stmt)
@@ -120,7 +118,6 @@ class TestGoQuery(NebulaTestSuite):
         expected_data = {
             "column_names" : ["serve._dst"],
             "rows" : [
-                ["Spurs"],
                 ["Spurs"],
                 ["Spurs"],
                 ["Spurs"],
@@ -145,7 +142,6 @@ class TestGoQuery(NebulaTestSuite):
         expected_data = {
             "column_names" : [],
             "rows" : [
-                ["Spurs"],
                 ["Spurs"],
                 ["Spurs"],
                 ["Spurs"],
