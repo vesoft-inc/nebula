@@ -15,7 +15,7 @@ namespace std {
 bool equal_to<const nebula::graph::LogicalRow*>::operator()(
     const nebula::graph::LogicalRow* lhs,
     const nebula::graph::LogicalRow* rhs) const {
-    DCHECK_EQ(lhs->kind(), rhs->kind());
+    DCHECK_EQ(lhs->kind(), rhs->kind()) << lhs->kind() << " vs. " << rhs->kind();
     switch (lhs->kind()) {
         case nebula::graph::LogicalRow::Kind::kSequential:
         case nebula::graph::LogicalRow::Kind::kJoin: {

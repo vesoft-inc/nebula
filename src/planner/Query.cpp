@@ -40,7 +40,7 @@ std::unique_ptr<cpp2::PlanNodeDescription> GetNeighbors::explain() const {
     addDescription(
         "statProps", statProps_ ? folly::toJson(util::toJson(*statProps_)) : "", desc.get());
     addDescription("exprs", exprs_ ? folly::toJson(util::toJson(*exprs_)) : "", desc.get());
-    addDescription("random", folly::to<std::string>(random_), desc.get());
+    addDescription("random", util::toJson(random_), desc.get());
     return desc;
 }
 
@@ -100,7 +100,7 @@ std::unique_ptr<cpp2::PlanNodeDescription> Aggregate::explain() const {
     folly::dynamic itemArr = folly::dynamic::array();
     for (const auto &item : groupItems_) {
         folly::dynamic itemObj = folly::dynamic::object();
-        itemObj.insert("distinct", item.distinct);
+        itemObj.insert("distinct", util::toJson(item.distinct));
         itemObj.insert("funcType", static_cast<uint8_t>(item.func));
         itemObj.insert("expr", item.expr ? item.expr->toString() : "");
         itemArr.push_back(itemObj);

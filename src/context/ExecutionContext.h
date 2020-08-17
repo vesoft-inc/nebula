@@ -35,6 +35,7 @@ public:
     // 1 is the oldest, 2 is the second elder, and so on
     static constexpr int64_t kLatestVersion = 0;
     static constexpr int64_t kOldestVersion = 1;
+    static constexpr int64_t kPreviousOneVersion = -1;
 
     ExecutionContext() = default;
 

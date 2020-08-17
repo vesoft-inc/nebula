@@ -1259,7 +1259,6 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
         """
 
-
         stmt = '''GO FROM 'Boris Diaw' OVER serve WHERE $$.team.name CONTAINS \"Haw\"\
             YIELD $^.player.name, serve.start_year, serve.end_year, $$.team.name'''
         resp = self.execute_query(stmt)
@@ -1316,13 +1315,14 @@ class TestGoQuery(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         self.check_empty_result(resp)
 
-    @pytest.mark.skip(reason = 'm to n not implement')
     def test_with_intermediate_data(self):
         # zero to zero
+        """
         stmt = "GO 0 TO 0 STEPS FROM 'Tony Parker' OVER like YIELD DISTINCT like._dst"
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         self.check_empty_result(resp)
+        """
 
         # simple
         stmt = "GO 1 TO 2 STEPS FROM 'Tony Parker' OVER like YIELD DISTINCT like._dst"
@@ -1497,7 +1497,7 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["serve._src"],
+            "column_names" : ["serve._dst"],
             "rows" : [
                 ["Tim Duncan"],
                 ["Tony Parker"],
@@ -1525,7 +1525,7 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["serve._src"],
+            "column_names" : ["serve._dst"],
             "rows" : [
                 ["Tim Duncan"],
                 ["Tony Parker"],
@@ -1550,7 +1550,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         # bidirectionally
-        stmt = "GO 1 TO 2 STEPS FROM 'Spurs' OVER like BIDIRECT YIELD DISTINCT like._dst"
+        stmt = "GO 1 TO 2 STEPS FROM 'Tony Parker' OVER like BIDIRECT YIELD DISTINCT like._dst"
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
@@ -1611,42 +1611,42 @@ class TestGoQuery(NebulaTestSuite):
         self.check_column_names(resp, expected_data["column_names"])
         self.check_out_of_order_result(resp, expected_data["rows"])
 
-        # over
-        stmt = "GO 1 TO 2 STEPS FROM 'Russell Westbrook' OVER * YIELD DISTINCT serve._dst, like._dst"
+        # over *
+        stmt = "GO 1 TO 2 STEPS FROM 'Russell Westbrook' OVER * YIELD serve._dst, like._dst"
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names" : ["serve._dst", "like._dst"],
             "rows" : [
-                ["Thunders", 0],
-                [0, "Paul George"],
-                [0, "James Harden"],
-                ["Pacers", 0],
-                ["Thunders", 0],
-                [0, "Russell Westbrook"],
-                ["Thunders", 0],
-                ["Rockets", 0],
-                [0, "Russell Westbrook"]
+                ["Thunders", T_NULL],
+                [T_NULL, "Paul George"],
+                [T_NULL, "James Harden"],
+                ["Pacers", T_NULL],
+                ["Thunders", T_NULL],
+                [T_NULL, "Russell Westbrook"],
+                ["Thunders", T_NULL],
+                ["Rockets", T_NULL],
+                [T_NULL, "Russell Westbrook"]
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
         self.check_out_of_order_result(resp, expected_data["rows"])
 
-        stmt = "GO 0 TO 2 STEPS FROM 'Russell Westbrook' OVER * YIELD DISTINCT serve._dst, like._dst"
+        stmt = "GO 0 TO 2 STEPS FROM 'Russell Westbrook' OVER * YIELD serve._dst, like._dst"
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names" : ["serve._dst", "like._dst"],
             "rows" : [
-                ["Thunders", 0],
-                [0, "Paul George"],
-                [0, "James Harden"],
-                ["Pacers", 0],
-                ["Thunders", 0],
-                [0, "Russell Westbrook"],
-                ["Thunders", 0],
-                ["Rockets", 0],
-                [0, "Russell Westbrook"]
+                ["Thunders", T_NULL],
+                [T_NULL, "Paul George"],
+                [T_NULL, "James Harden"],
+                ["Pacers", T_NULL],
+                ["Thunders", T_NULL],
+                [T_NULL, "Russell Westbrook"],
+                ["Thunders", T_NULL],
+                ["Rockets", T_NULL],
+                [T_NULL, "Russell Westbrook"]
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -1660,15 +1660,15 @@ class TestGoQuery(NebulaTestSuite):
         expected_data = {
             "column_names" : ["serve._dst", "like._dst", "serve.start_year", "like.likeness", "$$.player.name"],
             "rows" : [
-                ["Thunders", 0],
-                [0, "Paul George"],
-                [0, "James Harden"],
-                ["Pacers", 0],
-                ["Thunders", 0],
-                [0, "Russell Westbrook"],
-                ["Thunders", 0],
-                ["Rockets", 0],
-                [0, "Russell Westbrook"]
+                ["Thunders", T_NULL, 2008, T_NULL, T_NULL],
+                [T_NULL, "Paul George", T_NULL, 90, "Paul George"],
+                [T_NULL, "James Harden", T_NULL, 90, "James Harden"],
+                ["Pacers", T_NULL, 2010, T_NULL, T_NULL],
+                ["Thunders", T_NULL, 2017, T_NULL, T_NULL],
+                [T_NULL, "Russell Westbrook", T_NULL, 95, "Russell Westbrook"],
+                ["Thunders", T_NULL, 2009, T_NULL, T_NULL],
+                ["Rockets", T_NULL, 2012, T_NULL, T_NULL],
+                [T_NULL, "Russell Westbrook", T_NULL, 80, "Russell Westbrook"]
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -1681,15 +1681,15 @@ class TestGoQuery(NebulaTestSuite):
         expected_data = {
             "column_names" : ["serve._dst", "like._dst", "serve.start_year", "like.likeness", "$$.player.name"],
             "rows" : [
-                ["Thunders", 0, 2008, 0, ""],
-                [0, "Paul George", 0, 90, "Paul George"],
-                [0, "James Harden", 0, 90, "James Harden"],
-                ["Pacers", 0, 2010, 0, ""],
-                ["Thunders", 0, 2017, 0, ""],
-                [0, "Russell Westbrook", 0, 95, "Russell Westbrook"],
-                ["Thunders", 0, 2009, 0, ""],
-                ["Rockets", 0, 2012, 0, ""],
-                [0, "Russell Westbrook", 0, 80, "Russell Westbrook"]
+                ["Thunders", T_NULL, 2008, T_NULL, T_NULL],
+                [T_NULL, "Paul George", T_NULL, 90, "Paul George"],
+                [T_NULL, "James Harden", T_NULL, 90, "James Harden"],
+                ["Pacers", T_NULL, 2010, T_NULL, T_NULL],
+                ["Thunders", T_NULL, 2017, T_NULL, T_NULL],
+                [T_NULL, "Russell Westbrook", T_NULL, 95, "Russell Westbrook"],
+                ["Thunders", T_NULL, 2009, T_NULL, T_NULL],
+                ["Rockets", T_NULL, 2012, T_NULL, T_NULL],
+                [T_NULL, "Russell Westbrook", T_NULL, 80, "Russell Westbrook"]
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -1702,13 +1702,13 @@ class TestGoQuery(NebulaTestSuite):
         expected_data = {
             "column_names" : ["serve._dst", "like._dst"],
             "rows" : [
-                [0, "Dejounte Murray"],
-                [0, "James Harden"],
-                [0, "Paul George"],
-                [0, "Dejounte Murray"],
-                [0, "Russell Westbrook"],
-                [0, "Luka Doncic"],
-                [0, "Russell Westbrook"]
+                [T_NULL, "Dejounte Murray"],
+                [T_NULL, "James Harden"],
+                [T_NULL, "Paul George"],
+                [T_NULL, "Dejounte Murray"],
+                [T_NULL, "Russell Westbrook"],
+                [T_NULL, "Luka Doncic"],
+                [T_NULL, "Russell Westbrook"]
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -1721,13 +1721,13 @@ class TestGoQuery(NebulaTestSuite):
         expected_data = {
             "column_names" : ["serve._dst", "like._dst"],
             "rows" : [
-                [0, "Dejounte Murray"],
-                [0, "James Harden"],
-                [0, "Paul George"],
-                [0, "Dejounte Murray"],
-                [0, "Russell Westbrook"],
-                [0, "Luka Doncic"],
-                [0, "Russell Westbrook"]
+                [T_NULL, "Dejounte Murray"],
+                [T_NULL, "James Harden"],
+                [T_NULL, "Paul George"],
+                [T_NULL, "Dejounte Murray"],
+                [T_NULL, "Russell Westbrook"],
+                [T_NULL, "Luka Doncic"],
+                [T_NULL, "Russell Westbrook"]
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])

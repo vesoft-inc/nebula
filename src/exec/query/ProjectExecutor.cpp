@@ -33,6 +33,7 @@ folly::Future<Status> ProjectExecutor::execute() {
         }
         ds.rows.emplace_back(std::move(row));
     }
+    VLOG(1) << node()->varName() << ":" << ds;
     return finish(ResultBuilder().value(Value(std::move(ds))).finish());
 }
 

@@ -53,8 +53,8 @@ Status GetSubgraphValidator::validateStep(StepClause* step) {
         return Status::Error("Step clause was not declared.");
     }
 
-    if (step->isUpto()) {
-        return Status::Error("Get Subgraph not support upto.");
+    if (step->isMToN()) {
+        return Status::Error("Get Subgraph not support m to n steps.");
     }
     steps_ = step->steps();
     return Status::OK();

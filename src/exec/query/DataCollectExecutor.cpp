@@ -33,6 +33,10 @@ folly::Future<Status> DataCollectExecutor::doCollect() {
             NG_RETURN_IF_ERROR(rowBasedMove(vars));
             break;
         }
+        case DataCollect::CollectKind::kMToN: {
+            NG_RETURN_IF_ERROR(collectMToN(vars, dc->mToN(), dc->distinct()));
+            break;
+        }
         default:
             LOG(FATAL) << "Unknown data collect type: " << static_cast<int64_t>(dc->collectKind());
     }
@@ -101,6 +105,38 @@ Status DataCollectExecutor::rowBasedMove(const std::vector<std::string>& vars) {
             }
         } else {
             return Status::Error("Iterator should be kind of SequentialIter.");
+        }
+    }
+    result_.setDataSet(std::move(ds));
+    return Status::OK();
+}
+
+Status DataCollectExecutor::collectMToN(const std::vector<std::string>& vars,
+                                        StepClause::MToN* mToN,
+                                        bool distinct) {
+    DataSet ds;
+    ds.colNames = std::move(colNames_);
+    DCHECK(!ds.colNames.empty());
+    std::unordered_set<const LogicalRow*> unique;
+    // itersHolder keep life cycle of iters util this method return.
+    std::vector<std::unique_ptr<Iterator>> itersHolder;
+    for (auto& var : vars) {
+        auto& hist = ectx_->getHistory(var);
+        DCHECK_GE(mToN->mSteps, 1);
+        for (auto i = mToN->mSteps - 1; i < mToN->nSteps; ++i) {
+            auto iter = hist[i].iter();
+            if (iter->isSequentialIter()) {
+                auto* seqIter = static_cast<SequentialIter*>(iter.get());
+                for (; seqIter->valid(); seqIter->next()) {
+                    if (distinct && !unique.emplace(seqIter->row()).second) {
+                            continue;
+                    }
+                    ds.rows.emplace_back(seqIter->moveRow());
+                }
+            } else {
+                return Status::Error("Iterator should be kind of SequentialIter.");
+            }
+            itersHolder.emplace_back(std::move(iter));
         }
     }
     result_.setDataSet(std::move(ds));

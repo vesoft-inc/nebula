@@ -10,6 +10,7 @@ namespace nebula {
 namespace graph {
 constexpr int64_t ExecutionContext::kLatestVersion;
 constexpr int64_t ExecutionContext::kOldestVersion;
+constexpr int64_t ExecutionContext::kPreviousOneVersion;
 
 void ExecutionContext::setValue(const std::string& name, Value&& val) {
     ResultBuilder builder;

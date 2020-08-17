@@ -728,8 +728,8 @@ step_clause
     | legal_integer KW_STEPS {
         $$ = new StepClause($1);
     }
-    | KW_UPTO legal_integer KW_STEPS {
-        $$ = new StepClause($2, true);
+    | legal_integer KW_TO legal_integer KW_STEPS {
+        $$ = new StepClause($1, $3);
     }
     ;
 
