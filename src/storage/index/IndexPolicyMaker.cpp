@@ -42,25 +42,26 @@ cpp2::ErrorCode IndexPolicyMaker::decodeExpression(const std::string &filter) {
 }
 
 bool IndexPolicyMaker::buildPolicy() {
-    decltype(operatorList_.size()) hintNum = 0;
+    bool nextCol = true;
     for (auto& col : index_->get_fields()) {
         auto itr = operatorList_.begin();
-        while (itr != operatorList_.end()) {
+        while (nextCol && itr != operatorList_.end()) {
             if (col.get_name() == std::get<0>(*itr)) {
                 /**
                  * TODO sky : drop the sub-exp from root expression tree.
                  * TODO (sky) : String range scan was disabled on graph layer.
                  *              it is not support for storage layer .
                  */
-                hintNum++;
+                if (std::get<2>(*itr) == RelationalExpression::Operator::NE) {
+                    requiredFilter_ = true;
+                    nextCol = false;
+                    break;
+                }
                 if (!writeScanItem(col.get_name(), *itr)) {
                     return false;
                 }
                 // string field still need filter.
                 if (col.get_type().type == nebula::cpp2::SupportedType::STRING) {
-                    requiredFilter_ = true;
-                }
-                if (std::get<2>(*itr) == RelationalExpression::Operator::NE) {
                     requiredFilter_ = true;
                 }
                 // Delete operator item if hint.
@@ -82,7 +83,9 @@ bool IndexPolicyMaker::buildPolicy() {
             break;
         }
     }
-    if (operatorList_.size() > 0) {
+    // re-check operatorList_.
+    // if operatorList_ is not empty, that means there are still fields to filter
+    if (!requiredFilter_ && operatorList_.size() > 0) {
         requiredFilter_ = true;
     }
     return true;

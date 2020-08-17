@@ -139,7 +139,7 @@ IndexExecutor<RESP>::makeScanPair(PartitionID partId, IndexID indexId) {
             suc = NebulaKeyUtils::checkAndCastVariant(field.get_type().type,
                                                       item->second.beginBound_.val_);
         }
-        if (item->second.endBound_.rel_ != RelationType::kNull) {
+        if (suc == true && item->second.endBound_.rel_ != RelationType::kNull) {
             suc = NebulaKeyUtils::checkAndCastVariant(field.get_type().type,
                                                       item->second.endBound_.val_);
         }
