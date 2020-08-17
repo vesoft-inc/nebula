@@ -42,7 +42,6 @@ nebula_add_executable(
         $<TARGET_OBJECTS:common_meta_obj>
         $<TARGET_OBJECTS:common_ws_obj>
         $<TARGET_OBJECTS:common_ws_common_obj>
-        # $<TARGET_OBJECTS:meta_gflags_man_obj>
         $<TARGET_OBJECTS:common_thread_obj>
         $<TARGET_OBJECTS:common_fs_obj>
         $<TARGET_OBJECTS:common_base_obj>
@@ -54,6 +53,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:common_encryption_obj>
         $<TARGET_OBJECTS:common_function_manager_obj>
         $<TARGET_OBJECTS:common_agg_function_obj>
+        $<TARGET_OBJECTS:common_conf_obj>
     LIBRARIES
         proxygenhttpserver
         proxygenlib

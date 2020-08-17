@@ -173,6 +173,54 @@ private:
 
     Status toPlan() override;
 };
+
+class ShowConfigsValidator final : public Validator {
+public:
+    ShowConfigsValidator(Sentence* sentence, QueryContext* context)
+        : Validator(sentence, context) {
+        setNoSpaceRequired();
+    }
+
+private:
+    Status validateImpl() override;
+
+    Status toPlan() override;
+};
+
+class SetConfigValidator final : public Validator {
+public:
+    SetConfigValidator(Sentence* sentence, QueryContext* context)
+        : Validator(sentence, context) {
+        setNoSpaceRequired();
+    }
+
+private:
+    Status validateImpl() override;
+
+    Status toPlan() override;
+
+private:
+    meta::cpp2::ConfigModule                 module_;
+    std::string                              name_;
+    Value                                    value_;
+};
+
+class GetConfigValidator final : public Validator {
+public:
+    GetConfigValidator(Sentence* sentence, QueryContext* context)
+        : Validator(sentence, context) {
+        setNoSpaceRequired();
+    }
+
+private:
+    Status validateImpl() override;
+
+    Status toPlan() override;
+
+private:
+    meta::cpp2::ConfigModule                 module_;
+    std::string                              name_;
+};
 }  // namespace graph
 }  // namespace nebula
 #endif  // VALIDATOR_ADMINVALIDATOR_H_

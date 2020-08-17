@@ -141,11 +141,106 @@ public:
 
 private:
     explicit ShowSpaces(ExecutionPlan* plan, PlanNode* input)
-            : SingleInputNode(plan, Kind::kShowSpaces, input) {}
+        : SingleInputNode(plan, Kind::kShowSpaces, input) {}
 };
 
-class Config final : public SingleInputNode {
+class ShowConfigs final : public SingleInputNode {
 public:
+    static ShowConfigs* make(ExecutionPlan* plan,
+                             PlanNode* input,
+                             meta::cpp2::ConfigModule module) {
+        return new ShowConfigs(plan, input, module);
+    }
+
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+
+    meta::cpp2::ConfigModule getModule() const {
+        return module_;
+    }
+
+private:
+    ShowConfigs(ExecutionPlan* plan,
+                PlanNode* input,
+                meta::cpp2::ConfigModule module)
+        : SingleInputNode(plan, Kind::kShowConfigs, input)
+        , module_(module) {}
+
+private:
+    meta::cpp2::ConfigModule    module_;
+};
+
+class SetConfig final : public SingleInputNode {
+public:
+    static SetConfig* make(ExecutionPlan* plan,
+                           PlanNode* input,
+                           meta::cpp2::ConfigModule module,
+                           std::string name,
+                           Value value) {
+        return new SetConfig(plan, input, module, std::move(name), std::move(value));
+    }
+
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+
+    meta::cpp2::ConfigModule getModule() const {
+        return module_;
+    }
+
+    const std::string& getName() const {
+        return name_;
+    }
+
+    const Value& getValue() const {
+        return value_;
+    }
+
+private:
+    SetConfig(ExecutionPlan* plan,
+              PlanNode* input,
+              meta::cpp2::ConfigModule module,
+              std::string name,
+              Value value)
+        : SingleInputNode(plan, Kind::kSetConfig, input)
+        , module_(module)
+        , name_(std::move(name))
+        , value_(std::move(value)) {}
+
+private:
+    meta::cpp2::ConfigModule       module_;
+    std::string                    name_;
+    Value                          value_;
+};
+
+class GetConfig final : public SingleInputNode {
+public:
+    static GetConfig* make(ExecutionPlan* plan,
+                           PlanNode* input,
+                           meta::cpp2::ConfigModule module,
+                           std::string name) {
+        return new GetConfig(plan, input, module, std::move(name));
+    }
+
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+
+    meta::cpp2::ConfigModule getModule() const {
+        return module_;
+    }
+
+    const std::string& getName() const {
+        return name_;
+    }
+
+private:
+    explicit GetConfig(ExecutionPlan* plan,
+                       PlanNode* input,
+                       meta::cpp2::ConfigModule module,
+                       std::string name)
+        : SingleInputNode(plan, Kind::kGetConfig, input)
+        , module_(module)
+        , name_(std::move(name)) {}
+
+private:
+    meta::cpp2::ConfigModule       module_;
+    std::string                    name_;
 };
 
 class ShowCreateSpace final : public SingleInputNode {
@@ -336,3 +431,4 @@ private:
 }  // namespace graph
 }  // namespace nebula
 #endif  // PLANNER_ADMIN_H_
+

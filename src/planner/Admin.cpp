@@ -51,5 +51,26 @@ std::unique_ptr<cpp2::PlanNodeDescription> ShowParts::explain() const {
     addDescription("partIds", folly::toJson(util::toJson(partIds_)), desc.get());
     return desc;
 }
+
+std::unique_ptr<cpp2::PlanNodeDescription> ShowConfigs::explain() const {
+    auto desc = SingleInputNode::explain();
+    addDescription("module", meta::cpp2::_ConfigModule_VALUES_TO_NAMES.at(module_), desc.get());
+    return desc;
+}
+
+std::unique_ptr<cpp2::PlanNodeDescription> SetConfig::explain() const {
+    auto desc = SingleInputNode::explain();
+    addDescription("module", meta::cpp2::_ConfigModule_VALUES_TO_NAMES.at(module_), desc.get());
+    addDescription("name", name_, desc.get());
+    addDescription("value", value_.toString(), desc.get());
+    return desc;
+}
+
+std::unique_ptr<cpp2::PlanNodeDescription> GetConfig::explain() const {
+    auto desc = SingleInputNode::explain();
+    addDescription("module", meta::cpp2::_ConfigModule_VALUES_TO_NAMES.at(module_), desc.get());
+    addDescription("name", name_, desc.get());
+    return desc;
+}
 }   // namespace graph
 }   // namespace nebula

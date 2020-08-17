@@ -38,6 +38,7 @@ nebula_add_library(
     mutate/InsertExecutor.cpp
     mutate/DeleteExecutor.cpp
     mutate/UpdateExecutor.cpp
+    admin/ConfigExecutor.cpp
 )
 
 nebula_add_subdirectory(query/test)

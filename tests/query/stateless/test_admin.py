@@ -40,10 +40,10 @@ class TestAdmin(NebulaTestSuite):
         # Backup
         resp = self.client.execute_query('GET CONFIGS graph:minloglevel')
         self.check_resp_succeeded(resp)
-        graph_minloglevel = resp.rows[0].columns[4].get_str()
+        graph_minloglevel = resp.data.rows[0].values[4].get_iVal()
         resp = self.client.execute_query('GET CONFIGS storage:minloglevel')
         self.check_resp_succeeded(resp)
-        storage_minloglevel = resp.rows[0].columns[4].get_str()
+        storage_minloglevel = resp.data.rows[0].values[4].get_iVal()
 
         # Set
         minloglevel = 3
@@ -57,14 +57,14 @@ class TestAdmin(NebulaTestSuite):
         # get
         resp = self.client.execute('GET CONFIGS meta:minloglevel')
         self.check_resp_failed(resp)
-        result = [['GRAPH', 'minloglevel', 'INT64', 'MUTABLE', str(minloglevel)]]
+        result = [['GRAPH', 'minloglevel', 'int', 'MUTABLE', minloglevel]]
         resp = self.client.execute_query('GET CONFIGS graph:minloglevel')
         self.check_resp_succeeded(resp)
-        self.check_result(resp.rows, result)
-        result = [['STORAGE', 'minloglevel', 'INT64', 'MUTABLE', str(minloglevel)]]
+        self.check_result(resp, result)
+        result = [['STORAGE', 'minloglevel', 'int', 'MUTABLE', minloglevel]]
         resp = self.client.execute_query('GET CONFIGS storage:minloglevel')
         self.check_resp_succeeded(resp)
-        self.check_result(resp.rows, result)
+        self.check_result(resp, result)
 
         # rollback
         resp = self.client.execute('UPDATE CONFIGS graph:minloglevel={}'.format(int(graph_minloglevel)))

@@ -220,25 +220,60 @@ class NebulaTestSuite(object):
             return False, msg
 
     @classmethod
+    def date_to_string(self, date):
+        return '{}/{}/{}'.format(date.year, date.month, date.day)
+
+    @classmethod
+    def date_time_to_string(self, date_time):
+        zone = '+'
+        if date_time.timezone < 0:
+            zone = '-'
+        return '{}/{}/{} {}:{}:{}.{} {}{}.{}'.format(date_time.year,
+                                                     date_time.month,
+                                                     date_time.day,
+                                                     date_time.hour,
+                                                     date_time.minute,
+                                                     date_time.sec,
+                                                     date_time.microsec,
+                                                     zone,
+                                                     date_time.timezone / 3600,
+                                                     date_time.timezone % 3600)
+    @classmethod
+    def map_to_string(self, map):
+        kvStrs = []
+        if map.kvs is not None:
+            for key in map.kvs:
+                kvStrs.append('"{}":"{}"'.format(key.decode('utf-8'), self.value_to_string(map.kvs[key])))
+            return '{' + ','.join(kvStrs) + '}'
+        return ''
+
+    @classmethod
+    def value_to_string(self, value):
+        if value.getType() == CommonTtypes.Value.__EMPTY__:
+            return '__EMPTY__'
+        elif value.getType() == CommonTtypes.Value.NVAL:
+            return '__NULL__'
+        elif value.getType() == CommonTtypes.Value.BVAL:
+            return str(value.get_bVal())
+        elif value.getType() == CommonTtypes.Value.IVAL:
+            return str(value.get_iVal())
+        elif value.getType() == CommonTtypes.Value.FVAL:
+            return str(value.get_fVal())
+        elif value.getType() == CommonTtypes.Value.SVAL:
+            return value.get_sVal().decode('utf-8')
+        elif value.getType() == CommonTtypes.Value.DVAL:
+            return self.date_time_to_string(value.get_dVal())
+        elif value.getType() == CommonTtypes.Value.TVAL:
+            return self.date_time_to_string(value.get_tVal())
+        elif value.getType() == CommonTtypes.Value.MVAL:
+            return self.map_to_string(value.get_mVal())
+        return 'Unsupported type'
+
+    @classmethod
     def row_to_string(self, row):
         value_list = []
         for col in row.values:
-            if col.getType() == CommonTtypes.Value.__EMPTY__:
-                value_list.append('__EMPTY__')
-            elif col.getType() == CommonTtypes.Value.NVAL:
-                value_list.append('__NULL__')
-            elif col.getType() == CommonTtypes.Value.BVAL:
-                value_list.append(col.get_bVal())
-            elif col.getType() == CommonTtypes.Value.IVAL:
-                value_list.append(col.get_iVal())
-            elif col.getType() == CommonTtypes.Value.FVAL:
-                value_list.append(col.get_fVal())
-            elif col.getType() == CommonTtypes.Value.SVAL:
-                value_list.append(col.get_sVal().decode('utf-8'))
-            elif col.getType() == CommonTtypes.Type.DVAL:
-                value_list.append(col.get_dVal().decode('utf-8'))
-            elif col.getType() == CommonTtypes.Type.DATETIME:
-                value_list.append(col.get_datetime())
+            value_list.append(self.value_to_string(col))
         return str(value_list)
 
     @classmethod
@@ -305,6 +340,30 @@ class NebulaTestSuite(object):
             assert ok, "different column name, expect: {} vs. result: {}".format(expect[i], result)
 
     @classmethod
+    def to_value(self, col):
+        value = CommonTtypes.Value()
+        if isinstance(col, bool):
+            value.set_bVal(col)
+        elif isinstance(col, int):
+            value.set_iVal(col)
+        elif isinstance(col, float):
+            value.set_fVal(col)
+        elif isinstance(col, str):
+            value.set_sVal(col.encode('utf-8'))
+        elif isinstance(col, dict):
+            map_val = CommonTtypes.Map()
+            map_val.kvs = dict()
+            for key in col:
+                ok, temp = self.to_value(col[key])
+                if not ok:
+                    return ok, temp
+                map_val.kvs[key.encode('utf-8')] = temp
+            value.set_mVal(map_val)
+        else:
+            return False, 'Wrong val type'
+        return True, value
+
+    @classmethod
     def convert_expect(self, expect):
         result = []
         for row in expect:
@@ -316,15 +375,9 @@ class NebulaTestSuite(object):
                 if isinstance(col, CommonTtypes.Value):
                     new_row.values.append(col)
                 else:
-                    value = CommonTtypes.Value()
-                    if isinstance(col, bool):
-                        value.set_bVal(col)
-                    elif isinstance(col, int):
-                        value.set_iVal(col)
-                    elif isinstance(col, float):
-                        value.set_fVal(col)
-                    elif isinstance(col, str):
-                        value.set_sVal(col.encode('utf-8'))
+                    ok, value = self.to_value(col)
+                    if not ok:
+                        return ok, value
                     new_row.values.append(value)
             result.append(new_row)
         return True, result, ''

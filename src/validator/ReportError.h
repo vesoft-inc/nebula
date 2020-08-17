@@ -14,7 +14,9 @@ namespace graph {
 class ReportError final : public Validator {
 public:
     ReportError(Sentence* sentence, QueryContext* context)
-        : Validator(sentence, context) {}
+        : Validator(sentence, context) {
+        setNoSpaceRequired();
+    }
 
 private:
     Status validateImpl() override {

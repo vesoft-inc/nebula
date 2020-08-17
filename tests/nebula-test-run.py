@@ -61,7 +61,6 @@ class TestExecutor(object):
         #self.total_executed += len(plugin.tests_executed)
         return error_code
 
-
 if __name__ == "__main__":
     # If the user is just asking for --help, just print the help test and then exit.
     executor = TestExecutor()

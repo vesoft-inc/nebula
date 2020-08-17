@@ -132,6 +132,12 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
             return std::make_unique<ShowCharsetValidator>(sentence, context);
         case Sentence::Kind::kShowCollation:
             return std::make_unique<ShowCollationValidator>(sentence, context);
+        case Sentence::Kind::kGetConfig:
+            return std::make_unique<GetConfigValidator>(sentence, context);
+        case Sentence::Kind::kSetConfig:
+            return std::make_unique<SetConfigValidator>(sentence, context);
+        case Sentence::Kind::kShowConfigs:
+            return std::make_unique<ShowConfigsValidator>(sentence, context);
         case Sentence::Kind::kUnknown:
         case Sentence::Kind::kMatch:
         case Sentence::Kind::kCreateTagIndex:
@@ -160,7 +166,6 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
         case Sentence::Kind::kDownload:
         case Sentence::Kind::kIngest:
         case Sentence::Kind::kBalance:
-        case Sentence::Kind::kConfig:
         case Sentence::Kind::kFindPath:
         case Sentence::Kind::kReturn: {
             // nothing
@@ -215,7 +220,10 @@ Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
         case PlanNode::Kind::kUpdateEdge:
         case PlanNode::Kind::kShowParts:
         case PlanNode::Kind::kShowCharset:
-        case PlanNode::Kind::kShowCollation: {
+        case PlanNode::Kind::kShowCollation:
+        case PlanNode::Kind::kShowConfigs:
+        case PlanNode::Kind::kSetConfig:
+        case PlanNode::Kind::kGetConfig: {
             static_cast<SingleDependencyNode*>(node)->dependsOn(appended);
             break;
         }

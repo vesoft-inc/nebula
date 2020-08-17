@@ -256,5 +256,108 @@ Status ShowCollationValidator::toPlan() {
     tail_ = root_;
     return Status::OK();
 }
+
+Status ShowConfigsValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status ShowConfigsValidator::toPlan() {
+    auto sentence = static_cast<ShowConfigsSentence*>(sentence_);
+    meta::cpp2::ConfigModule module;
+    auto item = sentence->configItem();
+    if (item != nullptr) {
+        module = item->getModule();
+    } else {
+        module = meta::cpp2::ConfigModule::ALL;
+    }
+    auto* plan = qctx_->plan();
+    auto *doNode = ShowConfigs::make(plan, nullptr, module);
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status SetConfigValidator::validateImpl() {
+    auto sentence = static_cast<SetConfigSentence*>(sentence_);
+    auto item = sentence->configItem();
+    if (item == nullptr) {
+        return Status::Error("Empty config item");
+    }
+    if (item->getName() != nullptr) {
+        name_ = *item->getName();
+    }
+    name_ = *item->getName();
+    module_ = item->getModule();
+    auto updateItems = item->getUpdateItems();
+    QueryExpressionContext ctx(nullptr, nullptr);
+    if (updateItems == nullptr) {
+        module_ = item->getModule();
+        if (item->getName() != nullptr) {
+            name_ = *item->getName();
+        }
+
+        if (item->getValue() != nullptr) {
+            value_ = Expression::eval(item->getValue(), ctx);
+        }
+    } else {
+        Map configs;
+        for (auto &updateItem : updateItems->items()) {
+            std::string name;
+            Value value;
+            if (updateItem->getFieldName() == nullptr || updateItem->value() == nullptr) {
+                return Status::Error("Empty item");
+            }
+            name = *updateItem->getFieldName();
+
+            value = Expression::eval(const_cast<Expression*>(updateItem->value()), ctx);
+
+            if (value.isNull() || (!value.isNumeric() && !value.isStr() && !value.isBool())) {
+                return Status::Error("Wrong value: %s", name.c_str());
+            }
+            configs.kvs.emplace(std::move(name), std::move(value));
+        }
+        value_.setMap(std::move(configs));
+    }
+
+    return Status::OK();
+}
+
+Status SetConfigValidator::toPlan() {
+    auto* plan = qctx_->plan();
+    auto *doNode = SetConfig::make(plan,
+                                   nullptr,
+                                   module_,
+                                   std::move(name_),
+                                   std::move(value_));
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status GetConfigValidator::validateImpl() {
+    auto sentence = static_cast<GetConfigSentence*>(sentence_);
+    auto item = sentence->configItem();
+    if (item == nullptr) {
+        return Status::Error("Empty config item");
+    }
+
+    module_ = item->getModule();
+    if (item->getName() != nullptr) {
+        name_ = *item->getName();
+    }
+    name_ = *item->getName();
+    return Status::OK();
+}
+
+Status GetConfigValidator::toPlan() {
+    auto* plan = qctx_->plan();
+    auto *doNode = GetConfig::make(plan,
+                                   nullptr,
+                                   module_,
+                                   std::move(name_));
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
 }  // namespace graph
 }  // namespace nebula

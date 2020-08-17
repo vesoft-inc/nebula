@@ -89,7 +89,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
     nebula::SchemaPropItem                 *alter_schema_prop_item;
     nebula::OrderFactor                    *order_factor;
     nebula::OrderFactors                   *order_factors;
-    nebula::ConfigModule                    config_module;
+    nebula::meta::cpp2::ConfigModule        config_module;
     nebula::ConfigRowItem                  *config_row_item;
     nebula::EdgeKey                        *edge_key;
     nebula::EdgeKeys                       *edge_keys;
@@ -1862,7 +1862,7 @@ show_sentence
         $$ = new ShowRolesSentence($4);
     }
     | KW_SHOW KW_CONFIGS show_config_item {
-        $$ = new ConfigSentence(ConfigSentence::SubType::kShow, $3);
+        $$ = new ShowConfigsSentence($3);
     }
     | KW_SHOW KW_CREATE KW_SPACE name_label {
         $$ = new ShowCreateSpaceSentence($4);
@@ -1897,9 +1897,9 @@ show_sentence
     ;
 
 config_module_enum
-    : KW_GRAPH      { $$ = ConfigModule::GRAPH; }
-    | KW_META       { $$ = ConfigModule::META; }
-    | KW_STORAGE    { $$ = ConfigModule::STORAGE; }
+    : KW_GRAPH      { $$ = meta::cpp2::ConfigModule::GRAPH; }
+    | KW_META       { $$ = meta::cpp2::ConfigModule::META; }
+    | KW_STORAGE    { $$ = meta::cpp2::ConfigModule::STORAGE; }
     ;
 
 get_config_item
@@ -1907,7 +1907,7 @@ get_config_item
         $$ = new ConfigRowItem($1, $3);
     }
     | name_label {
-        $$ = new ConfigRowItem(ConfigModule::ALL, $1);
+        $$ = new ConfigRowItem(meta::cpp2::ConfigModule::ALL, $1);
     }
     ;
 
@@ -1916,13 +1916,13 @@ set_config_item
         $$ = new ConfigRowItem($1, $3, $5);
     }
     | name_label ASSIGN expression {
-        $$ = new ConfigRowItem(ConfigModule::ALL, $1, $3);
+        $$ = new ConfigRowItem(meta::cpp2::ConfigModule::ALL, $1, $3);
     }
     | config_module_enum COLON name_label ASSIGN L_BRACE update_list R_BRACE {
         $$ = new ConfigRowItem($1, $3, $6);
     }
     | name_label ASSIGN L_BRACE update_list R_BRACE {
-        $$ = new ConfigRowItem(ConfigModule::ALL, $1, $4);
+        $$ = new ConfigRowItem(meta::cpp2::ConfigModule::ALL, $1, $4);
     }
     ;
 
@@ -2070,16 +2070,13 @@ revoke_sentence
 
 get_config_sentence
     : KW_GET KW_CONFIGS get_config_item {
-        $$ = new ConfigSentence(ConfigSentence::SubType::kGet, $3);
+        $$ = new GetConfigSentence($3);
     }
     ;
 
 set_config_sentence
     : KW_UPDATE KW_CONFIGS set_config_item {
-        $$ = new ConfigSentence(ConfigSentence::SubType::kSet, $3);
-    }
-    | KW_UPDATE KW_CONFIGS set_config_item KW_FORCE {
-        $$ = new ConfigSentence(ConfigSentence::SubType::kSet, $3, true);
+        $$ = new SetConfigSentence($3);
     }
     ;
 
