@@ -526,18 +526,50 @@ MockMetaServiceHandler::future_getUserRoles(const meta::cpp2::GetUserRolesReq&) 
 }
 
 folly::Future<meta::cpp2::BalanceResp>
-MockMetaServiceHandler::future_balance(const meta::cpp2::BalanceReq&) {
-    folly::Promise<meta::cpp2::BalanceResp> promise;
-    auto future = promise.getFuture();
+MockMetaServiceHandler::future_balance(const meta::cpp2::BalanceReq& req) {
     meta::cpp2::BalanceResp resp;
-    resp.set_code(meta::cpp2::ErrorCode::SUCCEEDED);
-    promise.setValue(std::move(resp));
-    return future;
+    if (req.__isset.id) {
+        // show
+        auto result = MetaCache::instance().showBalance(*req.get_id());
+        if (ok(result)) {
+            resp.set_code(meta::cpp2::ErrorCode::SUCCEEDED);
+            resp.set_tasks(std::move(result).right());
+        } else {
+            resp.set_code(result.left());
+        }
+    } else if (req.__isset.stop) {
+        // stop
+        auto result = MetaCache::instance().balanceStop();
+        if (ok(result)) {
+            resp.set_code(meta::cpp2::ErrorCode::SUCCEEDED);
+            resp.set_id(result.right());
+        } else {
+            resp.set_code(result.left());
+        }
+    } else {
+        ErrorOr<meta::cpp2::ErrorCode, int64_t> result;
+        // submit
+        if (req.__isset.host_del) {
+            result = MetaCache::instance().balanceSubmit(*req.get_host_del());
+        } else {
+            result = MetaCache::instance().balanceSubmit({});
+        }
+        if (ok(result)) {
+            resp.set_code(meta::cpp2::ErrorCode::SUCCEEDED);
+            resp.set_id(result.right());
+        } else {
+            resp.set_code(result.left());
+        }
+    }
+    return resp;
 }
 
 folly::Future<meta::cpp2::ExecResp>
 MockMetaServiceHandler::future_leaderBalance(const meta::cpp2::LeaderBalanceReq&) {
-    RETURN_SUCCESSED();
+    meta::cpp2::ExecResp resp;
+    auto result = MetaCache::instance().balanceLeaders();
+    resp.set_code(result);
+    return resp;
 }
 
 folly::Future<meta::cpp2::ExecResp>

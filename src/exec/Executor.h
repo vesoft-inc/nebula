@@ -18,6 +18,7 @@
 #include "common/cpp/helpers.h"
 #include "common/datatypes/Value.h"
 #include "common/time/Duration.h"
+#include "util/ScopedTimer.h"
 #include "context/ExecutionContext.h"
 
 namespace nebula {

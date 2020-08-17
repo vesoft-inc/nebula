@@ -269,10 +269,6 @@ private:
     std::string           spaceName_;
 };
 
-class Balance final : public SingleInputNode {
-public:
-};
-
 class CreateSnapshot final : public SingleInputNode {
 public:
     static CreateSnapshot* make(ExecutionPlan* plan, PlanNode* input) {
@@ -405,6 +401,82 @@ private:
     meta::cpp2::AdminJobOp         op_;
     meta::cpp2::AdminCmd           cmd_;
     const std::vector<std::string> params_;
+};
+
+class BalanceLeaders final : public SingleDependencyNode {
+public:
+    static BalanceLeaders* make(ExecutionPlan* plan, PlanNode* dep) {
+        return new BalanceLeaders(plan, dep);
+    }
+
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override {
+        LOG(FATAL) << "Unimplemented";
+        return nullptr;
+    }
+
+private:
+    explicit BalanceLeaders(ExecutionPlan* plan, PlanNode* dep)
+        : SingleDependencyNode(plan, Kind::kBalanceLeaders, dep) {}
+};
+
+class Balance final : public SingleDependencyNode {
+public:
+    static Balance* make(ExecutionPlan* plan, PlanNode* dep, std::vector<HostAddr> deleteHosts) {
+        return new Balance(plan, dep, std::move(deleteHosts));
+    }
+
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override {
+        LOG(FATAL) << "Unimplemented";
+        return nullptr;
+    }
+
+    const std::vector<HostAddr> &deleteHosts() const {
+        return deleteHosts_;
+    }
+
+private:
+    Balance(ExecutionPlan* plan, PlanNode* dep, std::vector<HostAddr> deleteHosts)
+        : SingleDependencyNode(plan, Kind::kBalance, dep), deleteHosts_(std::move(deleteHosts)) {}
+
+    std::vector<HostAddr> deleteHosts_;
+};
+
+class StopBalance final : public SingleDependencyNode {
+public:
+    static StopBalance* make(ExecutionPlan* plan, PlanNode* dep) {
+        return new StopBalance(plan, dep);
+    }
+
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override {
+        LOG(FATAL) << "Unimplemented";
+        return nullptr;
+    }
+
+private:
+    explicit StopBalance(ExecutionPlan* plan, PlanNode* dep)
+        : SingleDependencyNode(plan, Kind::kStopBalance, dep) {}
+};
+
+class ShowBalance final : public SingleDependencyNode {
+public:
+    static ShowBalance* make(ExecutionPlan* plan, PlanNode* dep, int64_t id) {
+        return new ShowBalance(plan, dep, id);
+    }
+
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override {
+        LOG(FATAL) << "Unimplemented";
+        return nullptr;
+    }
+
+    int64_t id() const {
+        return id_;
+    }
+
+private:
+    ShowBalance(ExecutionPlan* plan, PlanNode* dep, int64_t id)
+        : SingleDependencyNode(plan, Kind::kShowBalance, dep), id_(id) {}
+
+    int64_t id_;
 };
 
 class ShowCharset final : public SingleInputNode {

@@ -89,6 +89,22 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
+        balance_test
+    SOURCES
+        BalanceTest.cpp
+    OBJECTS
+        ${GRAPH_TEST_LIB}
+    LIBRARIES
+        proxygenhttpserver
+        proxygenlib
+        ${THRIFT_LIBRARIES}
+        wangle
+        gtest
+        gtest_main
+)
+
+nebula_add_test(
+    NAME
         admin_job_test
     SOURCES
         AdminJobTest.cpp
