@@ -290,21 +290,13 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
         stores.back()->init();
     }
     LOG(INFO) << "Waiting for all leaders elected!";
-    int from = 0;
     while (true) {
-        bool allLeaderElected = true;
-        for (int part = from; part < 3; part++) {
-            auto res = stores[0]->partLeader(0, part);
-            CHECK(ok(res));
-            auto leader = value(std::move(res));
-            if (leader == HostAddr(0, 0)) {
-                allLeaderElected = false;
-                from = part;
-                break;
-            }
-            LOG(INFO) << "Leader for part " << part << " is " << leader;
+        int32_t leaderCount = 0;
+        for (int i = 0; i < replicas; i++) {
+            std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
+            leaderCount += stores[i]->allLeader(leaderIds);
         }
-        if (allLeaderElected) {
+        if (leaderCount == 3) {
             break;
         }
         usleep(100000);
@@ -435,21 +427,13 @@ TEST(NebulaStoreTest, TransLeaderTest) {
     }
     sleep(FLAGS_raft_heartbeat_interval_secs);
     LOG(INFO) << "Waiting for all leaders elected!";
-    int from = 0;
     while (true) {
-        bool allLeaderElected = true;
-        for (int part = from; part < 3; part++) {
-            auto res = stores[0]->partLeader(0, part);
-            CHECK(ok(res));
-            auto leader = value(std::move(res));
-            if (leader == HostAddr(0, 0)) {
-                allLeaderElected = false;
-                from = part;
-                break;
-            }
-            LOG(INFO) << "Leader for part " << part << " is " << leader;
+        int32_t leaderCount = 0;
+        for (int i = 0; i < replicas; i++) {
+            std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
+            leaderCount += stores[i]->allLeader(leaderIds);
         }
-        if (allLeaderElected) {
+        if (leaderCount == 3) {
             break;
         }
         usleep(100000);
@@ -631,27 +615,19 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
     };
 
     auto waitLeader = [] (std::vector<std::unique_ptr<NebulaStore>>& stores) {
-        int from = 0;
+        int replicas = 3;
         while (true) {
-            bool allLeaderElected = true;
-            for (int part = from; part < 3; part++) {
-                auto res = stores[0]->partLeader(0, part);
-                CHECK(ok(res));
-                auto leader = value(std::move(res));
-                if (leader == HostAddr(0, 0)) {
-                    allLeaderElected = false;
-                    from = part;
-                    break;
-                }
-                LOG(INFO) << "Leader for part " << part << " is " << leader;
+            int32_t leaderCount = 0;
+            for (int i = 0; i < replicas; i++) {
+                std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
+                leaderCount += stores[i]->allLeader(leaderIds);
             }
-            if (allLeaderElected) {
+            if (leaderCount == 3) {
                 break;
             }
             usleep(100000);
         }
     };
-
 
     int32_t replicas = 3;
     IPv4 ip;
