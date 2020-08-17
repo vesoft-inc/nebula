@@ -51,6 +51,5 @@ std::unique_ptr<cpp2::PlanNodeDescription> ShowParts::explain() const {
     addDescription("partIds", folly::toJson(util::toJson(partIds_)), desc.get());
     return desc;
 }
-
 }   // namespace graph
 }   // namespace nebula

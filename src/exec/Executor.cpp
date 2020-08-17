@@ -18,6 +18,7 @@
 #include "exec/admin/SpaceExecutor.h"
 #include "exec/admin/SwitchSpaceExecutor.h"
 #include "exec/admin/PartExecutor.h"
+#include "exec/admin/CharsetExecutor.h"
 #include "exec/logic/LoopExecutor.h"
 #include "exec/logic/MultiOutputsExecutor.h"
 #include "exec/logic/SelectExecutor.h"
@@ -412,6 +413,20 @@ Executor *Executor::makeExecutor(const PlanNode *node,
             auto showParts = asNode<ShowParts>(node);
             auto input = makeExecutor(showParts->dep(), qctx, visited);
             exec = new ShowPartsExecutor(showParts, qctx);
+            exec->dependsOn(input);
+            break;
+        }
+        case PlanNode::Kind::kShowCharset: {
+            auto showC = asNode<ShowCharset>(node);
+            auto input = makeExecutor(showC->dep(), qctx, visited);
+            exec = new ShowCharsetExecutor(showC, qctx);
+            exec->dependsOn(input);
+            break;
+        }
+        case PlanNode::Kind::kShowCollation: {
+            auto showC = asNode<ShowCollation>(node);
+            auto input = makeExecutor(showC->dep(), qctx, visited);
+            exec = new ShowCollationExecutor(showC, qctx);
             exec->dependsOn(input);
             break;
         }

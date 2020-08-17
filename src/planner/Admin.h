@@ -268,6 +268,27 @@ private:
     std::vector<PartitionID>           partIds_;
 };
 
+class ShowCharset final : public SingleInputNode {
+public:
+    static ShowCharset* make(ExecutionPlan* plan, PlanNode* input) {
+        return new ShowCharset(plan, input);
+    }
+
+private:
+    explicit ShowCharset(ExecutionPlan* plan, PlanNode* input)
+        : SingleInputNode(plan, Kind::kShowCharset, input) {}
+};
+
+class ShowCollation final : public SingleInputNode {
+public:
+    static ShowCollation* make(ExecutionPlan* plan, PlanNode* input) {
+        return new ShowCollation(plan, input);
+    }
+
+private:
+    explicit ShowCollation(ExecutionPlan* plan, PlanNode* input)
+        : SingleInputNode(plan, Kind::kShowCollation, input) {}
+};
 }  // namespace graph
 }  // namespace nebula
 #endif  // PLANNER_ADMIN_H_

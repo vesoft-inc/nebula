@@ -76,6 +76,8 @@ public:
         kUpdateVertex,
         kUpdateEdge,
         kShowParts,
+        kShowCharset,
+        kShowCollation,
     };
 
     PlanNode(ExecutionPlan* plan, Kind kind);
