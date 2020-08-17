@@ -76,6 +76,7 @@ enum NullType {
     ERR_OVERFLOW = 4,
     UNKNOWN_PROP = 5,
     DIV_BY_ZERO = 6,
+    OUT_OF_RANGE = 7,
 } (cpp.enum_strict cpp.type = "nebula::NullType")
 
 

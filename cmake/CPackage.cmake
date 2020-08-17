@@ -1,17 +1,22 @@
-# Used to package into deb or RPM files
+# Copyright (c) 2020 vesoft inc. All rights reserved.
+#
+# This source code is licensed under Apache 2.0 License,
+# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+#
 
-macro(package is_one)
-    message(STATUS "is_one is ${is_one}")
-    set(CPACK_PACKAGE_DESCRIPTION "nebula-graph")
-    set(CPACK_PACKAGE_CONTACT "nebula-graph")
+
+# Used to package into deb or RPM files
+macro(package to_one name home_page scripts_dir)
+    set(CPACK_PACKAGE_DESCRIPTION ${name})
+    set(CPACK_PACKAGE_CONTACT ${name})
     set(CPACK_PACKAGE_VERSION ${NEBULA_BUILD_VERSION})
     set(CPACK_RPM_PACKAGE_LICENSE "Apache 2.0 + Common Clause 1.0")
-    set(CPACK_PACKAGE_NAME nebula-graph)
+    set(CPACK_PACKAGE_NAME ${name})
     # set(CPACK_SET_DESTDIR TRUE)
     set(CPACK_PACKAGE_RELOCATABLE ON)
     set(CPACK_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
     set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
-    if (${is_one})
+    if (${to_one})
         set(CPACK_COMPONENTS_GROUPING ALL_COMPONENTS_IN_ONE)
     else ()
         set(CPACK_COMPONENTS_GROUPING ONE_PER_GROUP)
@@ -19,15 +24,15 @@ macro(package is_one)
 
     set(CPACK_DEB_COMPONENT_INSTALL YES)
     set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
-    set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/vesoft-inc/nebula/releases")
-    set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA ${CMAKE_CURRENT_SOURCE_DIR}/package/postinst)
+    set(CPACK_DEBIAN_PACKAGE_HOMEPAGE ${home_page})
+    set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA ${scripts_dir}/postinst)
 
     set(CPACK_RPM_SPEC_MORE_DEFINE "%define debug_package %{nil}
             %define __os_install_post %{nil}")
     set(CPACK_RPM_COMPONENT_INSTALL YES)
     set(CPACK_RPM_PACKAGE_ARCHITECTURE "x86_64")
-    set(CPACK_RPM_PACKAGE_URL "https://github.com/vesoft-inc/nebula/releases")
-    set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE ${CMAKE_CURRENT_SOURCE_DIR}/package/rpm_postinst)
+    set(CPACK_RPM_PACKAGE_URL ${home_page})
+    set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE ${scripts_dir}/rpm_postinst)
     set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION /usr/local)
     set(CPACK_RPM_PACKAGE_RELOCATABLE ON)
 
