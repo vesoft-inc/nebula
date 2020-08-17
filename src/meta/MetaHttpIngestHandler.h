@@ -37,11 +37,13 @@ public:
 
     void onError(proxygen::ProxygenError error) noexcept override;
 
-    bool ingestSSTFiles(GraphSpaceID space);
+    bool ingestSSTFiles();
 
 private:
     HttpCode err_{HttpCode::SUCCEEDED};
-    GraphSpaceID space_;
+    GraphSpaceID spaceID_;
+    folly::Optional<TagID> tag_;
+    folly::Optional<EdgeType> edge_;
     nebula::kvstore::KVStore *kvstore_;
     nebula::thread::GenericThreadPool *pool_;
 };

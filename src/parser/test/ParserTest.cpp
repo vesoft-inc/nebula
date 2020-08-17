@@ -1536,7 +1536,31 @@ TEST(Parser, DownloadAndIngest) {
     }
     {
         GQLParser parser;
+        std::string query = "DOWNLOAD edge e HDFS \"hdfs://127.0.0.1:9090/data\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DOWNLOAD tag t HDFS \"hdfs://127.0.0.1:9090/data\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
         std::string query = "INGEST";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "INGEST edge e";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "INGEST tag t";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
