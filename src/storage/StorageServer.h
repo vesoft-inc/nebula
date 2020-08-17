@@ -11,7 +11,6 @@
 #include "common/meta/SchemaManager.h"
 #include "common/meta/IndexManager.h"
 #include "common/clients/meta/MetaClient.h"
-#include "common/meta/ClientBasedGflagsManager.h"
 #include "common/hdfs/HdfsHelper.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "kvstore/NebulaStore.h"
@@ -67,7 +66,6 @@ private:
 
     std::unique_ptr<nebula::hdfs::HdfsHelper> hdfsHelper_;
     std::unique_ptr<nebula::thread::GenericThreadPool> webWorkers_;
-    std::unique_ptr<meta::ClientBasedGflagsManager> gFlagsMan_;
     std::unique_ptr<meta::SchemaManager> schemaMan_;
     std::unique_ptr<meta::IndexManager> indexMan_;
     std::unique_ptr<storage::StorageEnv> env_;

@@ -10,7 +10,7 @@
 #include "common/network/NetworkUtils.h"
 #include "common/meta/ServerBasedSchemaManager.h"
 #include "common/meta/GflagsManager.h"
-#include "common/meta/ClientBasedGflagsManager.h"
+#include "common/conf/Configuration.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include "meta/test/TestUtils.h"
@@ -1184,6 +1184,18 @@ TEST(MetaClientTest, RetryUntilLimitTest) {
     }
 }
 
+cpp2::ConfigItem initConfigItem(cpp2::ConfigModule module,
+                                std::string name,
+                                cpp2::ConfigMode mode,
+                                Value value) {
+    cpp2::ConfigItem configItem;
+    configItem.set_module(module);
+    configItem.set_name(name);
+    configItem.set_mode(mode);
+    configItem.set_value(value);
+    return configItem;
+}
+
 TEST(MetaClientTest, Config) {
     FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaClientTest.Config.XXXXXX");
@@ -1217,17 +1229,11 @@ TEST(MetaClientTest, Config) {
     }
     // Set
     {
-        auto resp = client->setConfig(cpp2::ConfigModule::GRAPH, "minloglevel",
-            cpp2::ConfigType::INT64,
-            toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(3))).get();
+        auto resp = client->setConfig(cpp2::ConfigModule::GRAPH, "minloglevel", 3).get();
         EXPECT_TRUE(!resp.ok());
-        resp = client->setConfig(cpp2::ConfigModule::META, "minloglevel",
-            cpp2::ConfigType::INT64,
-            toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(3))).get();
+        resp = client->setConfig(cpp2::ConfigModule::META, "minloglevel", 3).get();
         EXPECT_TRUE(!resp.ok());
-        resp = client->setConfig(cpp2::ConfigModule::STORAGE, "minloglevel",
-            cpp2::ConfigType::INT64,
-            toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(3))).get();
+        resp = client->setConfig(cpp2::ConfigModule::STORAGE, "minloglevel", 3).get();
         EXPECT_TRUE(!resp.ok());
     }
     // Get
@@ -1242,23 +1248,15 @@ TEST(MetaClientTest, Config) {
         EXPECT_TRUE(!resp.ok());
     }
 
-    auto item1 = toThriftConfigItem(
-            cpp2::ConfigModule::GRAPH, "minloglevel", cpp2::ConfigType::INT64,
-            cpp2::ConfigMode::MUTABLE,
-            toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(2)));
-    auto item2 = toThriftConfigItem(
-            cpp2::ConfigModule::META, "minloglevel", cpp2::ConfigType::INT64,
-            cpp2::ConfigMode::MUTABLE,
-            toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(2)));
-    auto item3 = toThriftConfigItem(
-            cpp2::ConfigModule::STORAGE, "minloglevel", cpp2::ConfigType::INT64,
-            cpp2::ConfigMode::MUTABLE,
-            toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(2)));
     // Reg
     {
-        std::vector<cpp2::ConfigItem> configItems {
-            item1, item2, item3,
-        };
+        std::vector<cpp2::ConfigItem> configItems;
+        configItems.emplace_back(initConfigItem(
+                cpp2::ConfigModule::GRAPH, "minloglevel", cpp2::ConfigMode::MUTABLE, 2));
+        configItems.emplace_back(initConfigItem(
+                cpp2::ConfigModule::META, "minloglevel", cpp2::ConfigMode::MUTABLE, 2));
+        configItems.emplace_back(initConfigItem(
+                cpp2::ConfigModule::STORAGE, "minloglevel", cpp2::ConfigMode::MUTABLE, 2));
         auto resp = client->regConfig(configItems).get();
         ASSERT(resp.ok());
     }
@@ -1279,43 +1277,33 @@ TEST(MetaClientTest, Config) {
     }
     // Set
     {
-        auto resp = client->setConfig(cpp2::ConfigModule::GRAPH, "minloglevel",
-            cpp2::ConfigType::INT64,
-            toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(3))).get();
+        auto resp = client->setConfig(cpp2::ConfigModule::GRAPH, "minloglevel", 3).get();
         EXPECT_TRUE(resp.ok());
-        resp = client->setConfig(cpp2::ConfigModule::META, "minloglevel",
-            cpp2::ConfigType::INT64,
-            toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(3))).get();
+        resp = client->setConfig(cpp2::ConfigModule::META, "minloglevel", 3).get();
         EXPECT_TRUE(resp.ok());
-        resp = client->setConfig(cpp2::ConfigModule::STORAGE, "minloglevel",
-            cpp2::ConfigType::INT64,
-            toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(3))).get();
+        resp = client->setConfig(cpp2::ConfigModule::STORAGE, "minloglevel", 3).get();
         EXPECT_TRUE(resp.ok());
     }
     // Get
     {
-        item1.set_value(toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(3)));
         auto resp = client->getConfig(cpp2::ConfigModule::GRAPH, "minloglevel").get();
         EXPECT_TRUE(resp.ok());
-        auto config = std::move(resp).value();
-        EXPECT_EQ(item1, config[0]);
+        auto configs = std::move(resp).value();
+        EXPECT_EQ(configs[0].get_value(), Value(3));
 
-        item2.set_value(toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(3)));
         resp = client->getConfig(cpp2::ConfigModule::META, "minloglevel").get();
         EXPECT_TRUE(resp.ok());
-        config = std::move(resp).value();
-        EXPECT_EQ(item2, config[0]);
+        configs = std::move(resp).value();
+        EXPECT_EQ(configs[0].get_value(), Value(3));
 
-        item3.set_value(toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(3)));
         resp = client->getConfig(cpp2::ConfigModule::STORAGE, "minloglevel").get();
         EXPECT_TRUE(resp.ok());
-        config = std::move(resp).value();
-        EXPECT_EQ(item3, config[0]);
+        configs = std::move(resp).value();
+        EXPECT_EQ(configs[0].get_value(), Value(3));
     }
     // Just avoid memory leak error of clang asan. to waitting asynchronous thread done.
     sleep(FLAGS_heartbeat_interval_secs * 5);
 }
-
 
 TEST(MetaClientTest, RocksdbOptionsTest) {
     FLAGS_heartbeat_interval_secs = 1;
@@ -1334,24 +1322,31 @@ TEST(MetaClientTest, RocksdbOptionsTest) {
 
     auto listener = std::make_unique<TestListener>();
     auto module = cpp2::ConfigModule::STORAGE;
-    auto type = cpp2::ConfigType::NESTED;
     auto mode = meta::cpp2::ConfigMode::MUTABLE;
 
     client->registerListener(listener.get());
     client->gflagsModule_ = module;
 
-    ClientBasedGflagsManager cfgMan(client);
     // mock some rocksdb gflags to meta
     {
+        auto name = "rocksdb_db_options";
         std::vector<cpp2::ConfigItem> configItems;
-        FLAGS_rocksdb_db_options = R"({
-            "disable_auto_compactions":"false",
-            "write_buffer_size":"1048576"
-        })";
-        configItems.emplace_back(toThriftConfigItem(
-            module, "rocksdb_db_options", type,
-            mode, toThriftValueStr(type, FLAGS_rocksdb_db_options)));
-        cfgMan.registerGflags(configItems);
+        FLAGS_rocksdb_db_options = R"({"disable_auto_compactions":"false","write_buffer_size":"1048576"})";
+        Map map;
+        map.kvs.emplace("disable_auto_compactions", "false");
+        map.kvs.emplace("write_buffer_size", "1048576");
+        configItems.emplace_back(initConfigItem(
+            module, name,
+            mode, Value(map)));
+        client->regConfig(configItems);
+
+        // get from meta server
+        auto getRet = client->getConfig(module, name).get();
+        ASSERT_TRUE(getRet.ok());
+        auto item = getRet.value().front();
+
+        sleep(FLAGS_heartbeat_interval_secs + 1);
+        ASSERT_EQ(FLAGS_rocksdb_db_options, GflagsManager::ValueToGflagString(item.get_value()));
     }
     {
         std::vector<HostAddr> hosts = {{"0", 0}};
@@ -1362,20 +1357,21 @@ TEST(MetaClientTest, RocksdbOptionsTest) {
     }
     {
         std::string name = "rocksdb_db_options";
-        std::string updateValue = "disable_auto_compactions=true,"
-                                  "level0_file_num_compaction_trigger=4";
+        Map map;
+        map.kvs.emplace("disable_auto_compactions", "true");
+        map.kvs.emplace("level0_file_num_compaction_trigger", "4");
+
         // update config
-        auto setRet = cfgMan.setConfig(module, name, type, updateValue).get();
+        auto setRet = client->setConfig(module, name, Value(map)).get();
         ASSERT_TRUE(setRet.ok());
 
         // get from meta server
-        auto getRet = cfgMan.getConfig(module, name).get();
+        auto getRet = client->getConfig(module, name).get();
         ASSERT_TRUE(getRet.ok());
         auto item = getRet.value().front();
-        auto value = boost::get<std::string>(item.get_value());
 
         sleep(FLAGS_heartbeat_interval_secs + 1);
-        ASSERT_EQ(FLAGS_rocksdb_db_options, value);
+        ASSERT_EQ(FLAGS_rocksdb_db_options, GflagsManager::ValueToGflagString(item.get_value()));
         ASSERT_EQ(listener->options["disable_auto_compactions"], "true");
         ASSERT_EQ(listener->options["level0_file_num_compaction_trigger"], "4");
     }

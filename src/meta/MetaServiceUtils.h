@@ -204,9 +204,8 @@ public:
 
     static std::string configKeyPrefix(const cpp2::ConfigModule& module);
 
-    static std::string configValue(const cpp2::ConfigType& valueType,
-                                   const cpp2::ConfigMode& valueMode,
-                                   const std::string& config);
+    static std::string configValue(const cpp2::ConfigMode& valueMode,
+                                   const Value& config);
 
     static ConfigName parseConfigKey(folly::StringPiece rawData);
 

@@ -16,16 +16,19 @@ void RegConfigProcessor::process(const cpp2::RegConfigReq& req) {
         for (const auto& item : req.get_items()) {
             auto module = item.get_module();
             auto name = item.get_name();
-            auto type = item.get_type();
             auto mode = item.get_mode();
             auto value = item.get_value();
+            VLOG(1) << "Config name: " << name
+                    << ", mode: " << meta::cpp2::_ConfigMode_VALUES_TO_NAMES.at(mode)
+                    << ", module: " << meta::cpp2::_ConfigModule_VALUES_TO_NAMES.at(module)
+                    << ", value: " << value;
 
             std::string configKey = MetaServiceUtils::configKey(module, name);
             // ignore config which has been registered before
             if (doGet(configKey).ok()) {
                 continue;
             }
-            std::string configValue = MetaServiceUtils::configValue(type, mode, value);
+            std::string configValue = MetaServiceUtils::configValue(mode, value);
             data.emplace_back(std::move(configKey), std::move(configValue));
         }
 

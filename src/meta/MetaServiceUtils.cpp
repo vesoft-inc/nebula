@@ -723,14 +723,13 @@ std::string MetaServiceUtils::configKeyPrefix(const cpp2::ConfigModule& module) 
     return key;
 }
 
-std::string MetaServiceUtils::configValue(const cpp2::ConfigType& valueType,
-                                          const cpp2::ConfigMode& valueMode,
-                                          const std::string& config) {
-    std::string val;
-    val.reserve(sizeof(cpp2::ConfigType) + sizeof(cpp2::ConfigMode) + config.size());
-    val.append(reinterpret_cast<const char*>(&valueType), sizeof(cpp2::ConfigType))
-       .append(reinterpret_cast<const char*>(&valueMode), sizeof(cpp2::ConfigMode))
-       .append(config);
+std::string MetaServiceUtils::configValue(const cpp2::ConfigMode& valueMode,
+                                          const Value& value) {
+    std::string val, cVal;
+    apache::thrift::CompactSerializer::serialize(value, &cVal);
+    val.reserve(sizeof(cpp2::ConfigMode) + cVal.size());
+    val.append(reinterpret_cast<const char*>(&valueMode), sizeof(cpp2::ConfigMode))
+       .append(cVal);
     return val;
 }
 
@@ -747,16 +746,15 @@ ConfigName MetaServiceUtils::parseConfigKey(folly::StringPiece rawKey) {
 
 cpp2::ConfigItem MetaServiceUtils::parseConfigValue(folly::StringPiece rawData) {
     int32_t offset = 0;
-    cpp2::ConfigType type = *reinterpret_cast<const cpp2::ConfigType*>(rawData.data() + offset);
-    offset += sizeof(cpp2::ConfigType);
     cpp2::ConfigMode mode = *reinterpret_cast<const cpp2::ConfigMode*>(rawData.data() + offset);
     offset += sizeof(cpp2::ConfigMode);
-    auto value = rawData.subpiece(offset, rawData.size() - offset);
+    Value value;
+    apache::thrift::CompactSerializer::deserialize(
+            rawData.subpiece(offset, rawData.size() - offset), value);
 
     cpp2::ConfigItem item;
-    item.set_type(type);
     item.set_mode(mode);
-    item.set_value(value.str());
+    item.set_value(value);
     return item;
 }
 

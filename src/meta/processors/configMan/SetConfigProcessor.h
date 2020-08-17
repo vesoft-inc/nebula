@@ -20,13 +20,10 @@ public:
 
     void process(const cpp2::SetConfigReq& req);
 
-    cpp2::ErrorCode setOneConfig(const cpp2::ConfigModule& module, const std::string& name,
-                                 const cpp2::ConfigType& type, const std::string& value,
-                                 std::vector<kvstore::KV>& data);
-
-    cpp2::ErrorCode setNestedConfig(const cpp2::ConfigModule& module, const std::string& name,
-                                    const cpp2::ConfigType& type, const std::string& value,
-                                    std::vector<kvstore::KV>& data);
+    cpp2::ErrorCode setConfig(const cpp2::ConfigModule& module,
+                              const std::string& name,
+                              const Value& value,
+                              std::vector<kvstore::KV>& data);
 
 private:
     explicit SetConfigProcessor(kvstore::KVStore* kvstore)
