@@ -9,7 +9,7 @@
 #include <folly/String.h>
 
 #include "common/interface/gen-cpp2/graph_types.h"
-#include "exec/Executor.h"
+#include "executor/Executor.h"
 #include "planner/Logic.h"
 #include "planner/PlanNode.h"
 #include "planner/Query.h"

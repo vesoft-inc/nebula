@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef EXEC_METACACHE_H_
-#define EXEC_METACACHE_H_
+#ifndef EXECUTOR_METACACHE_H_
+#define EXECUTOR_METACACHE_H_
 
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
@@ -244,4 +244,4 @@ private:
 
 }  // namespace graph
 }  // namespace nebula
-#endif  // EXEC_METACACHE_H_
+#endif  // EXECUTOR_METACACHE_H_

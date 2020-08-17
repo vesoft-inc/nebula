@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef EXEC_STORAGECACHE_H_
-#define EXEC_STORAGECACHE_H_
+#ifndef EXECUTOR_STORAGECACHE_H_
+#define EXECUTOR_STORAGECACHE_H_
 
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
@@ -76,4 +76,4 @@ private:
 
 }  // namespace graph
 }  // namespace nebula
-#endif  // EXEC_STORAGECACHE_H_
+#endif  // EXECUTOR_STORAGECACHE_H_

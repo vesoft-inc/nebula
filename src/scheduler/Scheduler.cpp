@@ -7,11 +7,11 @@
 #include "scheduler/Scheduler.h"
 
 #include "context/QueryContext.h"
-#include "exec/ExecutionError.h"
-#include "exec/Executor.h"
-#include "exec/logic/LoopExecutor.h"
-#include "exec/logic/MultiOutputsExecutor.h"
-#include "exec/logic/SelectExecutor.h"
+#include "executor/ExecutionError.h"
+#include "executor/Executor.h"
+#include "executor/logic/LoopExecutor.h"
+#include "executor/logic/MultiOutputsExecutor.h"
+#include "executor/logic/SelectExecutor.h"
 #include "planner/PlanNode.h"
 
 namespace nebula {

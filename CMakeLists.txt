@@ -45,7 +45,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
 # Submodules
 if("${NEBULA_COMMON_REPO_URL}" STREQUAL "")
-    SET(NEBULA_COMMON_REPO_URL "git@github.com:vesoft-inc-private/nebula-common.git")
+    SET(NEBULA_COMMON_REPO_URL "git@github.com:vesoft-inc/nebula-common.git")
 endif()
 
 if("${NEBULA_COMMON_REPO_TAG}" STREQUAL "")
@@ -53,7 +53,7 @@ if("${NEBULA_COMMON_REPO_TAG}" STREQUAL "")
 endif()
 
 if("${NEBULA_STORAGE_REPO_URL}" STREQUAL "")
-    SET(NEBULA_STORAGE_REPO_URL "git@github.com:vesoft-inc-private/nebula-storage.git")
+    SET(NEBULA_STORAGE_REPO_URL "git@github.com:vesoft-inc/nebula-storage.git")
 endif()
 
 if("${NEBULA_STORAGE_REPO_TAG}" STREQUAL "")
@@ -161,5 +161,3 @@ nebula_add_subdirectory(conf)
 nebula_add_subdirectory(resources)
 nebula_add_subdirectory(scripts)
 nebula_add_subdirectory(tests)
-
-

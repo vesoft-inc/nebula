@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef EXEC_MOCKSERVER_H_
-#define EXEC_MOCKSERVER_H_
+#ifndef EXECUTOR_MOCKSERVER_H_
+#define EXECUTOR_MOCKSERVER_H_
 
 #include "common/base/Base.h"
 #include "common/thread/NamedThread.h"
@@ -102,4 +102,4 @@ private:
 
 }   // namespace graph
 }   // namespace nebula
-#endif  // EXEC_MOCKSERVER_H_
+#endif  // EXECUTOR_MOCKSERVER_H_

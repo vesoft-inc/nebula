@@ -7,8 +7,8 @@
 #include "service/QueryInstance.h"
 
 #include "common/base/Base.h"
-#include "exec/ExecutionError.h"
-#include "exec/Executor.h"
+#include "executor/ExecutionError.h"
+#include "executor/Executor.h"
 #include "parser/ExplainSentence.h"
 #include "planner/ExecutionPlan.h"
 #include "planner/PlanNode.h"

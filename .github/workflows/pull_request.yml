@@ -68,7 +68,6 @@ jobs:
         PYPI_MIRROR: https://mirrors.aliyun.com/pypi/simple/
       volumes:
         - /tmp/ccache/nebula-graph/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula-graph/${{ matrix.os }}-${{ matrix.compiler }}
-        - /run/secrets/GITHUB_PAT:/run/secrets/GITHUB_PAT
       options: --mount type=tmpfs,destination=/tmp/ccache/nebula-graph,tmpfs-size=1073741824 --cap-add=SYS_PTRACE
     steps:
       - uses: actions/checkout@v2
@@ -80,18 +79,17 @@ jobs:
           [ -d build/ ] && rm -rf build/* || mkdir -p build
           pip3 install -U setuptools -i $PYPI_MIRROR
           pip3 install -r tests/requirements.txt -i $PYPI_MIRROR
-          echo "::set-output name=pat::$(cat /run/secrets/GITHUB_PAT)"
       - name: Checkout common
         uses: actions/checkout@v2
         with:
           repository: ${{ github.repository_owner }}/nebula-common
-          token: ${{ steps.prepare.outputs.pat }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           path: modules/common
       - name: Checkout storage
         uses: actions/checkout@v2
         with:
           repository: ${{ github.repository_owner }}/nebula-storage
-          token: ${{ steps.prepare.outputs.pat }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           path: modules/storage
       - name: CMake
         run: |
@@ -136,7 +134,6 @@ jobs:
         run: cmake --build build/ -j $(nproc)
       - name: CTest
         env:
-          ASAN_SYMBOLIZER_PATH: $TOOLSET_DIR/bin/llvm-symbolizer
           ASAN_OPTIONS: fast_unwind_on_malloc=1
         run: ctest -j $(($(nproc)/2+1)) --timeout 400 --output-on-failure
         working-directory: build/

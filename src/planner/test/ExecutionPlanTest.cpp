@@ -11,8 +11,8 @@
 #include <gtest/gtest.h>
 
 #include "context/QueryContext.h"
-#include "exec/ExecutionError.h"
-#include "exec/Executor.h"
+#include "executor/ExecutionError.h"
+#include "executor/Executor.h"
 #include "planner/Query.h"
 #include "scheduler/Scheduler.h"
 

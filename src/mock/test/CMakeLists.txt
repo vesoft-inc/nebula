@@ -14,7 +14,7 @@ set(GRAPH_TEST_LIB
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:validator_obj>
     $<TARGET_OBJECTS:planner_obj>
-    $<TARGET_OBJECTS:exec_obj>
+    $<TARGET_OBJECTS:executor_obj>
     $<TARGET_OBJECTS:scheduler_obj>
     $<TARGET_OBJECTS:idgenerator_obj>
     $<TARGET_OBJECTS:context_obj>

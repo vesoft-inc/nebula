@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef EXEC_MOCKMETASERVICEHANDLER_H_
-#define EXEC_MOCKMETASERVICEHANDLER_H_
+#ifndef EXECUTOR_MOCKMETASERVICEHANDLER_H_
+#define EXECUTOR_MOCKMETASERVICEHANDLER_H_
 
 #include "common/base/Base.h"
 #include "common/interface/gen-cpp2/MetaService.h"
@@ -207,4 +207,4 @@ private:
 };
 }  // namespace graph
 }  // namespace nebula
-#endif  // EXEC_MOCKMETASERVICEHANDLER_H_
+#endif  // EXECUTOR_MOCKMETASERVICEHANDLER_H_

@@ -4,8 +4,8 @@
 * attached with Common Clause Condition 1.0, found in the LICENSES directory.
 */
 
-#ifndef EXEC_MOCKSTORAGESERVICEHANDLER_H_
-#define EXEC_MOCKSTORAGESERVICEHANDLER_H_
+#ifndef EXECUTOR_MOCKSTORAGESERVICEHANDLER_H_
+#define EXECUTOR_MOCKSTORAGESERVICEHANDLER_H_
 
 #include "common/base/Base.h"
 #include "common/interface/gen-cpp2/GraphStorageService.h"
@@ -56,4 +56,4 @@ private:
 };
 }  // namespace graph
 }  // namespace nebula
-#endif  // EXEC_MOCKSTORAGESERVICEHANDLER_H_
+#endif  // EXECUTOR_MOCKSTORAGESERVICEHANDLER_H_
