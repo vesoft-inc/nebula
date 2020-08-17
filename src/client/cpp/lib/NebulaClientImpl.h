@@ -15,6 +15,7 @@
 namespace nebula {
 namespace graph {
 
+using CallbackFun = std::function<void(ExecutionResponse*, ErrorCode)>;
 class NebulaClientImpl final {
 public:
     explicit NebulaClientImpl(const std::string &addr, const uint32_t port)
@@ -53,7 +54,6 @@ private:
     std::string                         addr_;
     uint32_t                            port_;
 };
-
 }  // namespace graph
 }  // namespace nebula
 #endif  // CLIENT_CPP_LIB_NEBULACLIENTIMPL_H_

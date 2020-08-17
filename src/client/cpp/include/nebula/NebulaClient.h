@@ -12,6 +12,9 @@
 
 namespace nebula {
 
+// Compatible with GCC 4.8
+typedef void(*ExecCallback)(ExecutionResponse*, ErrorCode);
+
 class NebulaClient final {
 public:
     explicit NebulaClient(const std::string &addr, const uint32_t port);
@@ -30,7 +33,7 @@ public:
     ErrorCode execute(std::string stmt, ExecutionResponse& resp);
 
     // async interface
-    void asyncExecute(std::string stmt, CallbackFun cb);
+    void asyncExecute(std::string stmt, ExecCallback cb);
 
 private:
     std::unique_ptr<nebula::graph::NebulaClientImpl>           client_;

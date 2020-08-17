@@ -345,7 +345,5 @@ struct ConnectionInfo {
     int32_t     timeout;        // timeout ms
 };
 
-using CallbackFun = std::function<void(ExecutionResponse*, ErrorCode)>;
-
 }  // namespace nebula
 #endif  // CLIENT_CPP_INCLUDE_NEBULA_EXECUTERESPONSE_H_

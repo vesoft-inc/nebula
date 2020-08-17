@@ -39,7 +39,7 @@ ErrorCode NebulaClient::execute(std::string stmt, ExecutionResponse& resp) {
     return client_->doExecute(stmt, resp);
 }
 
-void NebulaClient::asyncExecute(std::string stmt, CallbackFun cb) {
+void NebulaClient::asyncExecute(std::string stmt, ExecCallback cb) {
     return client_->doAsyncExecute(stmt, std::move(cb));
 }
 

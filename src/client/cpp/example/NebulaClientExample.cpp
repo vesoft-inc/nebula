@@ -67,6 +67,17 @@ void printResult(nebula::ExecutionResponse &resp) {
     std::cout << std::endl;
 }
 
+// async execute cmd: show spaces
+void callback(nebula::ExecutionResponse* response, nebula::ErrorCode resultCode) {
+    if (resultCode == nebula::kSucceed) {
+        std::cout << "Async do cmd \" SHOW SPACES \" succeed" << std::endl;
+        printResult(*response);
+    } else {
+        std::cout << "Async do cmd \" SHOW SPACE \" failed, resultCode = "
+                  << response->getErrorCode() << std::endl;
+    }
+}
+
 int main(int argc, char *argv[]) {
     // must call: init arvs
     nebula::NebulaClient::init(argc, argv);
@@ -101,11 +112,12 @@ int main(int argc, char *argv[]) {
             auto cb = [] (nebula::ExecutionResponse* response, nebula::ErrorCode resultCode) {
                 if (resultCode == nebula::kSucceed) {
                     std::cout << "Async do cmd \" SHOW SPACES \" succeed" << std::endl;
+                    printResult(*response);
                 } else {
-                    std::cout << "Async do cmd \" SHOW SPACE \" failed" << std::endl;
+                    std::cout << "Async do cmd \" SHOW SPACE \" failed, resultCode = "
+                            << response->getErrorCode() << std::endl;
                 }
             };
-
             // async execute succeed
             client.asyncExecute("SHOW SPACES", cb);
 
