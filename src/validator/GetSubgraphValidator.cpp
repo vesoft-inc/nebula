@@ -7,6 +7,8 @@
 #include "validator/GetSubgraphValidator.h"
 
 #include "common/expression/UnaryExpression.h"
+
+#include "util/ContainerConv.h"
 #include "common/expression/VariableExpression.h"
 #include "context/QueryExpressionContext.h"
 #include "parser/TraverseSentences.h"
@@ -81,7 +83,9 @@ Status GetSubgraphValidator::validateFrom(FromClause* from) {
 Status GetSubgraphValidator::validateInBound(InBoundClause* in) {
     if (in != nullptr) {
         auto space = vctx_->whichSpace();
-        for (auto* e : in->edges()) {
+        auto edges = in->edges();
+        edgeTypes_.reserve(edgeTypes_.size() + edges.size());
+        for (auto* e : edges) {
             if (e->alias() != nullptr) {
                 return Status::Error("Get Subgraph not support rename edge name.");
             }
@@ -92,7 +96,7 @@ Status GetSubgraphValidator::validateInBound(InBoundClause* in) {
             }
 
             auto v = -et.value();
-            edgeTypes_.emplace_back(v);
+            edgeTypes_.emplace(v);
         }
     }
 
@@ -102,6 +106,8 @@ Status GetSubgraphValidator::validateInBound(InBoundClause* in) {
 Status GetSubgraphValidator::validateOutBound(OutBoundClause* out) {
     if (out != nullptr) {
         auto space = vctx_->whichSpace();
+        auto edges = out->edges();
+        edgeTypes_.reserve(edgeTypes_.size() + edges.size());
         for (auto* e : out->edges()) {
             if (e->alias() != nullptr) {
                 return Status::Error("Get Subgraph not support rename edge name.");
@@ -112,7 +118,7 @@ Status GetSubgraphValidator::validateOutBound(OutBoundClause* out) {
                 return et.status();
             }
 
-            edgeTypes_.emplace_back(et.value());
+            edgeTypes_.emplace(et.value());
         }
     }
 
@@ -122,6 +128,8 @@ Status GetSubgraphValidator::validateOutBound(OutBoundClause* out) {
 Status GetSubgraphValidator::validateBothInOutBound(BothInOutClause* out) {
     if (out != nullptr) {
         auto space = vctx_->whichSpace();
+        auto edges = out->edges();
+        edgeTypes_.reserve(edgeTypes_.size() + edges.size());
         for (auto* e : out->edges()) {
             if (e->alias() != nullptr) {
                 return Status::Error("Get Subgraph not support rename edge name.");
@@ -133,9 +141,9 @@ Status GetSubgraphValidator::validateBothInOutBound(BothInOutClause* out) {
             }
 
             auto v = et.value();
-            edgeTypes_.emplace_back(v);
+            edgeTypes_.emplace(v);
             v = -v;
-            edgeTypes_.emplace_back(v);
+            edgeTypes_.emplace(v);
         }
     }
 
@@ -175,7 +183,7 @@ Status GetSubgraphValidator::toPlan() {
             bodyStart,
             space.id,
             plan->saveObject(vids),
-            std::move(edgeTypes),
+            ContainerConv::to<std::vector>(std::move(edgeTypes_)),
             storage::cpp2::EdgeDirection::BOTH,  // FIXME: make direction right
             std::move(vertexProps),
             std::move(edgeProps),

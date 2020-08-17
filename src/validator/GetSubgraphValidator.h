@@ -37,7 +37,7 @@ private:
     uint32_t                                    steps_{1};
     std::vector<Value>                          starts_;
     Expression*                                 srcRef_{nullptr};
-    std::vector<EdgeType>                       edgeTypes_;
+    std::unordered_set<EdgeType>                edgeTypes_;
 };
 }  // namespace graph
 }  // namespace nebula
