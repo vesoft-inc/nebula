@@ -105,6 +105,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
             return "DropSnapshot";
         case Kind::kShowSnapshots:
             return "ShowSnapshots";
+        case Kind::kSubmitJob:
+            return "SubmitJob";
         case Kind::kDataJoin:
             return "DataJoin";
         case Kind::kDeleteVertices:
@@ -123,6 +125,7 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
             return "ShowCharset";
         case Kind::kShowCollation:
             return "ShowCollation";
+        // no default so the compiler will warning when lack
     }
     LOG(FATAL) << "Impossible kind plan node " << static_cast<int>(kind);
 }

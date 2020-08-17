@@ -101,7 +101,7 @@ public:
         kReturn,
         kCreateSnapshot,
         kDropSnapshot,
-        kAdmin,
+        kAdminJob,
         kGetSubgraph,
     };
 

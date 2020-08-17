@@ -65,6 +65,7 @@ public:
         kDropEdge,
         kInsertVertices,
         kInsertEdges,
+        kSubmitJob,
         kShowHosts,
         kDataCollect,
         kCreateSnapshot,

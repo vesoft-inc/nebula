@@ -10,6 +10,7 @@
 #include "parser/Sentence.h"
 #include "parser/MutateSentences.h"
 #include "common/network/NetworkUtils.h"
+#include "common/interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
 
@@ -482,6 +483,23 @@ public:
 private:
     std::unique_ptr<std::string>    name_;
 };
+
+class AdminJobSentence final : public Sentence {
+public:
+    explicit AdminJobSentence(meta::cpp2::AdminJobOp op) : op_(op) {
+        kind_ = Kind::kAdminJob;
+    }
+
+    void addPara(const std::string& para);
+    std::string toString() const override;
+    meta::cpp2::AdminJobOp getType() const;
+    const std::vector<std::string> &getParas() const;
+
+private:
+    meta::cpp2::AdminJobOp   op_;
+    std::vector<std::string> paras_;
+};
+
 
 }   // namespace nebula
 

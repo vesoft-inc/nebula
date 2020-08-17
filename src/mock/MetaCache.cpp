@@ -323,6 +323,118 @@ std::unordered_map<PartitionID, std::vector<HostAddr>> MetaCache::getParts() {
     return parts;
 }
 
+ErrorOr<meta::cpp2::ErrorCode, meta::cpp2::AdminJobResult>
+MetaCache::runAdminJob(const meta::cpp2::AdminJobReq& req) {
+    meta::cpp2::AdminJobResult result;
+    switch (req.get_op()) {
+        case meta::cpp2::AdminJobOp::ADD: {
+            folly::RWSpinLock::WriteHolder wh(jobLock_);
+            auto jobId = incId();
+            jobs_.emplace(jobId, JobDesc{
+                req.get_cmd(),
+                req.get_paras(),
+                meta::cpp2::JobStatus::QUEUE,
+                0,
+                0
+            });
+            std::vector<TaskDesc> descs;
+            int32_t iTask = 0;
+            for (const auto &host : hostSet_) {
+                descs.reserve(hostSet_.size());
+                descs.emplace_back(TaskDesc{
+                    ++iTask,
+                    host,
+                    meta::cpp2::JobStatus::QUEUE,
+                    0,
+                    0
+                });
+            }
+            tasks_.emplace(jobId, std::move(descs));
+            result.set_job_id(jobId);
+            return result;
+        }
+        case meta::cpp2::AdminJobOp::RECOVER: {
+            uint32_t jobNum = 0;
+            folly::RWSpinLock::WriteHolder wh(jobLock_);
+            for (auto &job : jobs_) {
+                if (job.second.status_ == meta::cpp2::JobStatus::FAILED) {
+                    job.second.status_ = meta::cpp2::JobStatus::QUEUE;
+                    ++jobNum;
+                }
+            }
+            result.set_recovered_job_num(jobNum);
+            return result;
+        }
+        case meta::cpp2::AdminJobOp::SHOW: {
+            folly::RWSpinLock::ReadHolder rh(jobLock_);
+            auto ret = checkJobId(req);
+            if (!ok(ret)) {
+                return error(ret);
+            }
+            auto job = value(ret);
+            result.set_job_id(job->first);
+            std::vector<meta::cpp2::JobDesc> jobsDesc;
+            meta::cpp2::JobDesc jobDesc;
+            jobDesc.set_id(job->first);
+            jobDesc.set_cmd(job->second.cmd_);
+            jobDesc.set_status(job->second.status_);
+            jobDesc.set_start_time(job->second.startTime_);
+            jobDesc.set_stop_time(job->second.stopTime_);
+            jobsDesc.emplace_back(std::move(jobDesc));
+            result.set_job_desc(std::move(jobsDesc));
+
+            // tasks
+            const auto tasks = tasks_.find(job->first);
+            if (tasks == tasks_.end()) {
+                LOG(FATAL) << "Impossible not find tasks of job id " << job->first;
+            }
+            std::vector<meta::cpp2::TaskDesc> tasksDesc;
+            for (const auto &task : tasks->second) {
+                meta::cpp2::TaskDesc taskDesc;
+                taskDesc.set_job_id(job->first);
+                taskDesc.set_task_id(task.iTask_);
+                taskDesc.set_host(task.dest_);
+                taskDesc.set_status(task.status_);
+                taskDesc.set_start_time(task.startTime_);
+                taskDesc.set_stop_time(task.stopTime_);
+                tasksDesc.emplace_back(std::move(taskDesc));
+            }
+            result.set_task_desc(std::move(tasksDesc));
+            return result;
+        }
+        case meta::cpp2::AdminJobOp::SHOW_All: {
+            std::vector<meta::cpp2::JobDesc> jobsDesc;
+            folly::RWSpinLock::ReadHolder rh(jobLock_);
+            for (const auto &job : jobs_) {
+                meta::cpp2::JobDesc jobDesc;
+                jobDesc.set_id(job.first);
+                jobDesc.set_cmd(job.second.cmd_);
+                jobDesc.set_status(job.second.status_);
+                jobDesc.set_start_time(job.second.startTime_);
+                jobDesc.set_stop_time(job.second.stopTime_);
+                jobsDesc.emplace_back(std::move(jobDesc));
+            }
+            result.set_job_desc(std::move(jobsDesc));
+            return result;
+        }
+        case meta::cpp2::AdminJobOp::STOP: {
+            folly::RWSpinLock::WriteHolder wh(jobLock_);
+            auto ret = checkJobId(req);
+            if (!ok(ret)) {
+                return error(ret);
+            }
+            auto job = value(ret);
+            if (job->second.status_ != meta::cpp2::JobStatus::QUEUE &&
+                job->second.status_ != meta::cpp2::JobStatus::RUNNING) {
+                return meta::cpp2::ErrorCode::E_CONFLICT;
+            }
+            job->second.status_ = meta::cpp2::JobStatus::STOPPED;
+            return result;
+        }
+    }
+    return meta::cpp2::ErrorCode::E_INVALID_PARM;
+}
+
 Status MetaCache::alterColumnDefs(meta::cpp2::Schema &schema,
                                   const std::vector<meta::cpp2::AlterSchemaItem> &items) {
     std::vector<meta::cpp2::ColumnDef> columns = schema.columns;
@@ -474,5 +586,6 @@ StatusOr<std::vector<meta::cpp2::Snapshot>> MetaCache::listSnapshots() {
     }
     return snapshots;
 }
+
 }  // namespace graph
 }  // namespace nebula

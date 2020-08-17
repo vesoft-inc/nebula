@@ -26,6 +26,7 @@
 #include "validator/SequentialValidator.h"
 #include "validator/SetValidator.h"
 #include "validator/UseValidator.h"
+#include "validator/AdminJobValidator.h"
 #include "validator/YieldValidator.h"
 #include "validator/GroupByValidator.h"
 #include "common/function/FunctionManager.h"
@@ -103,6 +104,8 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
             return std::make_unique<InsertVerticesValidator>(sentence, context);
         case Sentence::Kind::kInsertEdges:
             return std::make_unique<InsertEdgesValidator>(sentence, context);
+        case Sentence::Kind::kAdminJob:
+            return std::make_unique<AdminJobValidator>(sentence, context);
         case Sentence::Kind::kFetchVertices:
             return std::make_unique<FetchVerticesValidator>(sentence, context);
         case Sentence::Kind::kFetchEdges:
@@ -159,8 +162,7 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
         case Sentence::Kind::kBalance:
         case Sentence::Kind::kConfig:
         case Sentence::Kind::kFindPath:
-        case Sentence::Kind::kReturn:
-        case Sentence::Kind::kAdmin: {
+        case Sentence::Kind::kReturn: {
             // nothing
             DLOG(FATAL) << "Unimplemented sentence " << kind;
         }
@@ -205,6 +207,7 @@ Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
         case PlanNode::Kind::kShowEdges:
         case PlanNode::Kind::kCreateSnapshot:
         case PlanNode::Kind::kDropSnapshot:
+        case PlanNode::Kind::kSubmitJob:
         case PlanNode::Kind::kShowSnapshots:
         case PlanNode::Kind::kDeleteVertices:
         case PlanNode::Kind::kDeleteEdges:

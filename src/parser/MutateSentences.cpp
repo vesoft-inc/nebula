@@ -282,19 +282,4 @@ std::string IngestSentence::toString() const {
     return "INGEST";
 }
 
-std::string AdminSentence::toString() const {
-    return op_;
-}
-
-std::string AdminSentence::getType() const {
-    return op_;
-}
-
-std::vector<std::string> AdminSentence::getParas() const {
-    return paras_;
-}
-
-void AdminSentence::addPara(const std::string& para) {
-    paras_.emplace_back(para);
-}
 }   // namespace nebula

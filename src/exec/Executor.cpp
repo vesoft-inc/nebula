@@ -13,6 +13,7 @@
 #include "context/ExecutionContext.h"
 #include "context/QueryContext.h"
 #include "exec/ExecutionError.h"
+#include "exec/admin/SubmitJobExecutor.h"
 #include "exec/admin/ShowHostsExecutor.h"
 #include "exec/admin/SnapshotExecutor.h"
 #include "exec/admin/SpaceExecutor.h"
@@ -399,6 +400,13 @@ Executor *Executor::makeExecutor(const PlanNode *node,
             auto updateE = asNode<UpdateEdge>(node);
             auto input = makeExecutor(updateE->dep(), qctx, visited);
             exec = new UpdateEdgeExecutor(updateE, qctx);
+            exec->dependsOn(input);
+            break;
+        }
+        case PlanNode::Kind::kSubmitJob: {
+            auto submitJob = asNode<SubmitJob>(node);
+            auto input = makeExecutor(submitJob->dep(), qctx, visited);
+            exec = new SubmitJobExecutor(submitJob, qctx);
             exec->dependsOn(input);
             break;
         }

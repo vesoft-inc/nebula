@@ -74,13 +74,16 @@ MockMetaServiceHandler::future_listSpaces(const meta::cpp2::ListSpacesReq&) {
 }
 
 folly::Future<meta::cpp2::AdminJobResp>
-MockMetaServiceHandler::future_runAdminJob(const meta::cpp2::AdminJobReq&) {
-    folly::Promise<meta::cpp2::AdminJobResp> promise;
-    auto future = promise.getFuture();
+MockMetaServiceHandler::future_runAdminJob(const meta::cpp2::AdminJobReq& req) {
     meta::cpp2::AdminJobResp resp;
+    auto result = MetaCache::instance().runAdminJob(req);
+    if (!ok(result)) {
+        resp.set_code(result.left());
+        return resp;
+    }
     resp.set_code(meta::cpp2::ErrorCode::SUCCEEDED);
-    promise.setValue(std::move(resp));
-    return future;
+    resp.set_result(std::move(result).right());
+    return resp;
 }
 
 folly::Future<meta::cpp2::GetSpaceResp>

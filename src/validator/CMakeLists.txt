@@ -15,6 +15,7 @@ nebula_add_library(
     UseValidator.cpp
     GetSubgraphValidator.cpp
     AdminValidator.cpp
+    AdminJobValidator.cpp
     MaintainValidator.cpp
     MutateValidator.cpp
     FetchEdgesValidator.cpp
