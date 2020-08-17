@@ -1,0 +1,6 @@
+#! /bin/bash
+
+SCRIPT_PATH=$(readlink -f $0)
+SCRIPT_DIR=$(dirname ${SCRIPT_PATH})
+export USAGE_INFO="${0} [-v] [-c /path/to/conf] <start|stop|restart|status|kill>"
+${SCRIPT_DIR}/nebula.service $@ graphd

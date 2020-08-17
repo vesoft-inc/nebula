@@ -23,6 +23,7 @@
 #   ENABLE_JEMALLOC                -- Link jemalloc into all executables
 #   ENABLE_NATIVE                  -- Build native client
 #   ENABLE_TESTING                 -- Build unit test
+#   ENABLE_PACK_ONE                -- Package to one or multi packages
 #
 # CMake version check
 cmake_minimum_required(VERSION 3.5.0)
@@ -33,6 +34,10 @@ project("Nebula Graph" C CXX)
 option(ENABLE_PACK_ONE "Whether to package into one" ON)
 option(ENABLE_BUILD_STORAGE "Whether to build storage" OFF)
 option(ENABLE_MODULE_UPDATE "Automatically update module" OFF)
+
+message(STATUS "ENABLE_PACK_ONE         : ${ENABLE_PACK_ONE}")
+message(STATUS "ENABLE_BUILD_STORAGE    : ${ENABLE_BUILD_STORAGE}")
+message(STATUS "ENABLE_MODULE_UPDATE    : ${ENABLE_MODULE_UPDATE}")
 
 add_definitions(-DNEBULA_HOME=${CMAKE_SOURCE_DIR})
 
@@ -154,29 +159,7 @@ endmacro()
 nebula_add_subdirectory(src)
 nebula_add_subdirectory(conf)
 nebula_add_subdirectory(resources)
+nebula_add_subdirectory(scripts)
 nebula_add_subdirectory(tests)
 
-# package nebula to a deb/rpm file
-set(CPACK_PACKAGE_DESCRIPTION "nebula-graph")
-set(CPACK_PACKAGE_CONTACT "nebula-graph")
-set(CPACK_PACKAGE_VERSION ${NEBULA_BUILD_VERSION})
-set(CPACK_RPM_PACKAGE_LICENSE "Apache 2.0 + Common Clause 1.0")
-set(CPACK_PACKAGE_NAME nebula-graph)
-set(CPACK_SET_DESTDIR TRUE)
-set(CPACK_PACKAGE_RELOCATABLE FALSE)
-set(CPACK_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
 
-set(CPACK_DEB_COMPONENT_INSTALL ON)
-set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
-set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/vesoft-inc/nebula/releases")
-set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA ${CMAKE_CURRENT_SOURCE_DIR}/package/postinst)
-
-set(CPACK_RPM_SPEC_MORE_DEFINE "%define debug_package %{nil}
-        %define __os_install_post %{nil}")
-set(CPACK_RPM_COMPONENT_INSTALL ON)
-set(CPACK_RPM_PACKAGE_ARCHITECTURE "x86_64")
-set(CPACK_RPM_PACKAGE_URL "https://github.com/vesoft-inc/nebula/releases")
-set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE ${CMAKE_CURRENT_SOURCE_DIR}/package/postinst)
-set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION /usr/local)
-
-include(CPack)

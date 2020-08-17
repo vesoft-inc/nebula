@@ -46,7 +46,7 @@ nebula_add_test(
 )
 
 nebula_add_executable(
-    NAME parser_benchmark
+    NAME parser_bm
     SOURCES ParserBenchmark.cpp
     OBJECTS ${PARSER_TEST_LIBS}
     LIBRARIES follybenchmark boost_regex ${THRIFT_LIBRARIES} wangle
