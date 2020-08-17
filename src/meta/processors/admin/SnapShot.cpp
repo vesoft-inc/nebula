@@ -14,17 +14,14 @@
 namespace nebula {
 namespace meta {
 cpp2::ErrorCode Snapshot::createSnapshot(const std::string& name) {
-    std::vector<GraphSpaceID> spaces;
-    kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
-    if (!getAllSpaces(spaces, ret)) {
-        LOG(ERROR) << "Can't access kvstore, ret = d"
-                   << static_cast<int32_t>(ret);
+    auto retSpacesHosts = getSpacesHosts();
+    if (!retSpacesHosts.ok()) {
         return cpp2::ErrorCode::E_STORE_FAILURE;
     }
-    auto hosts = ActiveHostsMan::getActiveHosts(kv_);
-    for (const auto& host : hosts) {
-        for (auto& space : spaces) {
-            auto status = client_->createSnapshot(space, name, host).get();
+    auto spacesHosts = retSpacesHosts.value();
+    for (const auto& spaceHosts : spacesHosts) {
+        for (const auto& host : spaceHosts.second) {
+            auto status = client_->createSnapshot(spaceHosts.first, name, host).get();
             if (!status.ok()) {
                 return cpp2::ErrorCode::E_RPC_FAILURE;
             }
@@ -35,19 +32,15 @@ cpp2::ErrorCode Snapshot::createSnapshot(const std::string& name) {
 
 cpp2::ErrorCode Snapshot::dropSnapshot(const std::string& name,
                                        const std::vector<HostAddr>& hosts) {
-    std::vector<GraphSpaceID> spaces;
-    kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
-    if (!getAllSpaces(spaces, ret)) {
-        LOG(ERROR) << "Can't access kvstore, ret = d"
-                   << static_cast<int32_t>(ret);
+    auto retSpacesHosts = getSpacesHosts();
+    if (!retSpacesHosts.ok()) {
         return cpp2::ErrorCode::E_STORE_FAILURE;
     }
-    // The drop checkpoint will be skip if original host has been lost.
-    auto activeHosts = ActiveHostsMan::getActiveHosts(kv_);
-    for (auto& host : hosts) {
-        if (std::find(activeHosts.begin(), activeHosts.end(), host) != activeHosts.end()) {
-            std::for_each(spaces.begin(), spaces.end(), [name, host, this](auto& space) {
-                auto status = client_->dropSnapshot(space, name, host).get();
+    auto spacesHosts = retSpacesHosts.value();
+    for (const auto& spaceHosts : spacesHosts) {
+        for (const auto& host : spaceHosts.second) {
+            if (std::find(hosts.begin(), hosts.end(), host) != hosts.end()) {
+                auto status = client_->dropSnapshot(spaceHosts.first, name, host).get();
                 if (!status.ok()) {
                     auto msg = "failed drop checkpoint : \"%s\". on host %s. error %s";
                     auto error = folly::stringPrintf(msg,
@@ -56,49 +49,49 @@ cpp2::ErrorCode Snapshot::dropSnapshot(const std::string& name,
                                                      status.toString().c_str());
                     LOG(ERROR) << error;
                 }
-            });
+            }
         }
     }
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
-bool Snapshot::getAllSpaces(std::vector<GraphSpaceID>& spaces, kvstore::ResultCode& retCode) {
-    // Get all spaces
-    folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
-    auto prefix = MetaServiceUtils::spacePrefix();
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        retCode = ret;
-        return false;
-    }
-    while (iter->valid()) {
-        auto spaceId = MetaServiceUtils::spaceId(iter->key());
-        spaces.push_back(spaceId);
-        iter->next();
-    }
-    return true;
-}
-
 cpp2::ErrorCode Snapshot::blockingWrites(storage::cpp2::EngineSignType sign) {
-    std::vector<GraphSpaceID> spaces;
-    kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
-    if (!getAllSpaces(spaces, ret)) {
-        LOG(ERROR) << "Can't access kvstore, ret = d"
-                   << static_cast<int32_t>(ret);
+    auto retSpacesHosts = getSpacesHosts();
+    if (!retSpacesHosts.ok()) {
         return cpp2::ErrorCode::E_STORE_FAILURE;
     }
-    auto hosts = ActiveHostsMan::getActiveHosts(kv_);
-    for (const auto& host : hosts) {
-        std::for_each(spaces.begin(), spaces.end(), [host, sign, this](auto& space) {
-            auto status = client_->blockingWrites(space, sign, host).get();
-            if (!status.ok()) {
-                LOG(ERROR) << " Send blocking sign error on host : "
-                           << network::NetworkUtils::toHosts({host});
-            }
-        });
+    auto spacesHosts = retSpacesHosts.value();
+    for (const auto& spaceHosts : spacesHosts) {
+        for (const auto& host : spaceHosts.second) {
+        auto status = client_->blockingWrites(spaceHosts.first, sign, host).get();
+        if (!status.ok()) {
+            LOG(ERROR) << " Send blocking sign error on host : "
+                       << network::NetworkUtils::toHosts({host});
+        }
+        }
     }
     return cpp2::ErrorCode::SUCCEEDED;
+}
+
+StatusOr<std::map<GraphSpaceID, std::set<HostAddr>>> Snapshot::getSpacesHosts() {
+    folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
+    std::map<GraphSpaceID, std::set<HostAddr>> hostsByspaces;
+    auto prefix = MetaServiceUtils::partPrefix();
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto kvRet = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+    if (kvRet != kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "Get hosts meta data error";
+        return Status::Error("Get hosts meta data error");
+    }
+    while (iter->valid()) {
+        auto partHosts = MetaServiceUtils::parsePartVal(iter->val());
+        auto space = MetaServiceUtils::parsePartKeySpaceId(iter->key());
+        for (auto& ph : partHosts) {
+            hostsByspaces[space].emplace(HostAddr(ph.get_ip(), ph.get_port()));
+        }
+        iter->next();
+    }
+    return hostsByspaces;
 }
 
 }  // namespace meta

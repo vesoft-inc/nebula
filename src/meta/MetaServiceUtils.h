@@ -55,7 +55,7 @@ public:
 
     static std::string partVal(const std::vector<nebula::cpp2::HostAddr>& hosts);
 
-    static const std::string& partPrefix();
+    static std::string partPrefix();
 
     static std::string partPrefix(GraphSpaceID spaceId);
 
