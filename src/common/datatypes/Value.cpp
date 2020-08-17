@@ -402,6 +402,50 @@ Value::Value(DataSet&& v) {
     setG(std::make_unique<DataSet>(std::move(v)));
 }
 
+const std::string& Value::typeName() const {
+    static const std::unordered_map<Type, std::string> typeNames = {
+        { Type::__EMPTY__, "__EMPTY__" },
+        { Type::NULLVALUE, "__NULL__" },
+        { Type::BOOL, "bool" },
+        { Type::INT, "int" },
+        { Type::FLOAT, "float" },
+        { Type::STRING, "string" },
+        { Type::DATE, "date" },
+        { Type::DATETIME, "datetime" },
+        { Type::VERTEX, "vertex" },
+        { Type::EDGE, "edge" },
+        { Type::PATH, "path" },
+        { Type::LIST, "list" },
+        { Type::MAP, "map" },
+        { Type::SET, "set" },
+        { Type::DATASET, "dataset" },
+    };
+
+    static const std::unordered_map<NullType, std::string> nullTypes = {
+        { NullType::__NULL__, "__NULL__" },
+        { NullType::NaN, "NaN"},
+        { NullType::BAD_DATA, "BAD_DATA" },
+        { NullType::BAD_TYPE, "BAD_TYPE" },
+        { NullType::ERR_OVERFLOW, "ERR_OVERFLOW" },
+        { NullType::UNKNOWN_PROP, "UNKNOWN_PROP" },
+        { NullType::DIV_BY_ZERO, "DIV_BY_ZERO" },
+    };
+
+    static const std::string unknownType = "__UNKNOWN__";
+
+    auto find = typeNames.find(type_);
+    if (find == typeNames.end()) {
+        return unknownType;
+    }
+    if (find->first == Type::NULLVALUE) {
+        auto nullFind = nullTypes.find(value_.nVal);
+        if (nullFind == nullTypes.end()) {
+            return unknownType;
+        }
+        return nullFind->second;
+    }
+    return find->second;
+}
 
 void Value::setNull(const NullType& v) {
     clear();

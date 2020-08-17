@@ -7,6 +7,14 @@
 #include "common/base/Base.h"
 #include <gtest/gtest.h>
 #include "common/datatypes/Value.h"
+#include "common/datatypes/Map.h"
+#include "common/datatypes/Set.h"
+#include "common/datatypes/List.h"
+#include "common/datatypes/Date.h"
+#include "common/datatypes/Vertex.h"
+#include "common/datatypes/Edge.h"
+#include "common/datatypes/Path.h"
+#include "common/datatypes/DataSet.h"
 
 namespace nebula {
 
@@ -513,6 +521,29 @@ TEST(Value, Bit) {
         v = vDate1 & vDate2;
         EXPECT_TRUE(v.isNull());
     }
+}
+
+TEST(Value, typeName) {
+    EXPECT_EQ("__EMPTY__", Value::kEmpty.typeName());
+    EXPECT_EQ("bool", Value(false).typeName());
+    EXPECT_EQ("float", Value(10.0).typeName());
+    EXPECT_EQ("string", Value("").typeName());
+    EXPECT_EQ("date", Value(Date()).typeName());
+    EXPECT_EQ("datetime", Value(DateTime()).typeName());
+    EXPECT_EQ("vertex", Value(Vertex()).typeName());
+    EXPECT_EQ("edge", Value(Edge()).typeName());
+    EXPECT_EQ("path", Value(Path()).typeName());
+    EXPECT_EQ("list", Value(List()).typeName());
+    EXPECT_EQ("map", Value(Map()).typeName());
+    EXPECT_EQ("set", Value(Set()).typeName());
+    EXPECT_EQ("dataset", Value(DataSet()).typeName());
+    EXPECT_EQ("__NULL__", Value::kNullValue.typeName());
+    EXPECT_EQ("NaN", Value::kNullNaN.typeName());
+    EXPECT_EQ("BAD_DATA", Value::kNullBadData.typeName());
+    EXPECT_EQ("BAD_TYPE", Value::kNullBadType.typeName());
+    EXPECT_EQ("ERR_OVERFLOW", Value::kNullOverflow.typeName());
+    EXPECT_EQ("UNKNOWN_PROP", Value::kNullUnknownProp.typeName());
+    EXPECT_EQ("DIV_BY_ZERO", Value::kNullDivByZero.typeName());
 }
 }  // namespace nebula
 

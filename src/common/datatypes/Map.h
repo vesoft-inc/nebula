@@ -37,6 +37,7 @@ struct Map {
         kvs.clear();
     }
 
+    // the configs of rocksdb will use the interface, so the value need modify to string
     std::string toString() const {
         std::vector<std::string> value(kvs.size());
         std::transform(kvs.begin(), kvs.end(), value.begin(), [](const auto &iter) -> std::string {

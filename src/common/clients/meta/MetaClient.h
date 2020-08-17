@@ -85,28 +85,6 @@ using UserRolesMap = std::unordered_map<std::string, std::vector<cpp2::RoleItem>
 // get user password by account
 using UserPasswordMap = std::unordered_map<std::string, std::string>;
 
-
-struct ConfigItem {
-    ConfigItem() {}
-
-    ConfigItem(const cpp2::ConfigModule& module, const std::string& name,
-               const cpp2::ConfigType& type, const cpp2::ConfigMode& mode,
-               const VariantType& value)
-        : module_(module)
-        , name_(name)
-        , type_(type)
-        , mode_(mode)
-        , value_(value) {
-    }
-
-    cpp2::ConfigModule  module_;
-    std::string         name_;
-    cpp2::ConfigType    type_;
-    cpp2::ConfigMode    mode_;
-    VariantType         value_;
-};
-
-
 struct SpaceDesc {
     SpaceDesc() {}
 
@@ -134,7 +112,8 @@ struct SpaceDesc {
 
 
 // config cahce, get config via module and name
-using MetaConfigMap = std::unordered_map<std::pair<cpp2::ConfigModule, std::string>, ConfigItem>;
+using MetaConfigMap = std::unordered_map<std::pair<cpp2::ConfigModule, std::string>,
+                                         cpp2::ConfigItem>;
 
 class MetaChangedListener {
 public:
@@ -395,8 +374,7 @@ public:
     getConfig(const cpp2::ConfigModule& module, const std::string& name);
 
     folly::Future<StatusOr<bool>>
-    setConfig(const cpp2::ConfigModule& module, const std::string& name,
-              const cpp2::ConfigType& type, const std::string& value);
+    setConfig(const cpp2::ConfigModule& module, const std::string& name, const Value& value);
 
     folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
     listConfigs(const cpp2::ConfigModule& module);
@@ -514,8 +492,8 @@ protected:
     void heartBeatThreadFunc();
 
     bool registerCfg();
-    void updateGflagsValue(const ConfigItem& item);
-    void updateNestedGflags(const std::string& name);
+    void updateGflagsValue(const cpp2::ConfigItem& item);
+    void updateNestedGflags(const std::unordered_map<std::string, Value> &nameValues);
 
 
     bool loadSchemas(GraphSpaceID spaceId,
@@ -575,8 +553,6 @@ protected:
                      int32_t retryLimit = FLAGS_meta_client_retry_times);
 
     std::vector<SpaceIdName> toSpaceIdName(const std::vector<cpp2::IdName>& tIdNames);
-
-    ConfigItem toConfigItem(const cpp2::ConfigItem& item);
 
     PartsMap doGetPartsMap(const HostAddr& host, const LocalCache& localCache);
 

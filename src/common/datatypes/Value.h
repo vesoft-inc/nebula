@@ -125,6 +125,8 @@ struct Value {
         return type_;
     }
 
+    const std::string& typeName() const;
+
     bool empty() const {
         return type_ == Type::__EMPTY__;
     }

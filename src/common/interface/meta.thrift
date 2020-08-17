@@ -741,14 +741,6 @@ enum ConfigModule {
     STORAGE = 0x04,
 } (cpp.enum_strict)
 
-enum ConfigType {
-    INT64   = 0x00,
-    DOUBLE  = 0x01,
-    BOOL    = 0x02,
-    STRING  = 0x03,
-    NESTED  = 0x04,
-} (cpp.enum_strict)
-
 enum ConfigMode {
     IMMUTABLE   = 0x00,
     REBOOT      = 0x01,
@@ -759,9 +751,8 @@ enum ConfigMode {
 struct ConfigItem {
     1: ConfigModule         module,
     2: binary               name,
-    3: ConfigType           type,
-    4: ConfigMode           mode,
-    5: binary               value,
+    3: ConfigMode           mode,
+    4: common.Value         value,
 }
 
 struct RegConfigReq {
@@ -780,7 +771,6 @@ struct GetConfigResp {
 
 struct SetConfigReq {
     1: ConfigItem           item,
-    2: bool                 force,
 }
 
 struct ListConfigsReq {

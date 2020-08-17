@@ -13,18 +13,36 @@ DEFINE_string(gflags_mode_json, "share/resources/gflags.json", "gflags mode json
 namespace nebula {
 namespace meta {
 
-template <typename ValueType>
-std::string GflagsManager::gflagsValueToThriftValue(const gflags::CommandLineFlagInfo& flag) {
-    std::string ret;
-    auto value = folly::to<ValueType>(flag.current_value);
-    ret.append(reinterpret_cast<const char*>(&value), sizeof(ValueType));
-    return ret;
-}
-
-template <>
-std::string GflagsManager::gflagsValueToThriftValue<std::string>(
-        const gflags::CommandLineFlagInfo& flag) {
-    return flag.current_value;
+Value GflagsManager::gflagsValueToValue(const std::string &type, const std::string &flagValue) {
+    // TODO: all int32/uint32/uint64 gflags are converted to int64 for now
+    if (type == "uint32" || type == "int32" || type == "int64" || type == "uint64") {
+        return Value(folly::to<int64_t>(flagValue));
+    } else if (type == "double") {
+        return Value(folly::to<double>(flagValue));
+    } else if (type == "bool") {
+        return Value(folly::to<bool>(flagValue));
+    } else if (type == "string") {
+        return Value(folly::to<std::string>(flagValue));
+    } else if (type == "map") {
+        auto value = Value(folly::to<std::string>(flagValue));
+        VLOG(1) << "Nested value: " << value;
+        // transform to map value
+        conf::Configuration conf;
+        auto status = conf.parseFromString(value.getStr());
+        if (!status.ok()) {
+            LOG(ERROR) << "Parse value: " << value
+                        << " failed: " << status;
+            return Value::kNullValue;
+        }
+        Map map;
+        conf.forEachItem([&map] (const std::string& key, const folly::dynamic& val) {
+            map.kvs.emplace(key, val.asString());
+        });
+        value.setMap(std::move(map));
+        return value;
+    }
+    LOG(WARNING) << "Unknown type: " << type;
+    return Value::kEmpty;
 }
 
 std::unordered_map<std::string, std::pair<cpp2::ConfigMode, bool>>
@@ -70,43 +88,37 @@ std::vector<cpp2::ConfigItem> GflagsManager::declareGflags(const cpp2::ConfigMod
     gflags::GetAllFlags(&flags);
     for (auto& flag : flags) {
         auto& name = flag.name;
-        auto& type = flag.type;
-        cpp2::ConfigType cType;
-        std::string valueStr;
+        auto type = flag.type;
 
         // We only register mutable configs to meta
         cpp2::ConfigMode mode = cpp2::ConfigMode::MUTABLE;
-        bool isNested = false;
         auto iter = mutableConfig.find(name);
         if (iter != mutableConfig.end()) {
-            isNested = iter->second.second;
-        } else {
-            continue;
-        }
-
-        // TODO: all int32/uint32/uint64 gflags are converted to int64 for now
-        if (type == "uint32" || type == "int32" || type == "int64" || type == "uint64") {
-            cType = cpp2::ConfigType::INT64;
-            valueStr = gflagsValueToThriftValue<int64_t>(flag);
-        } else if (type == "double") {
-            cType = cpp2::ConfigType::DOUBLE;
-            valueStr = gflagsValueToThriftValue<double>(flag);
-        } else if (type == "bool") {
-            cType = cpp2::ConfigType::BOOL;
-            valueStr = gflagsValueToThriftValue<bool>(flag);
-        } else if (type == "string") {
-            cType = cpp2::ConfigType::STRING;
-            valueStr = gflagsValueToThriftValue<std::string>(flag);
-            // only string gflags can be nested
-            if (isNested) {
-                cType = cpp2::ConfigType::NESTED;
+            // isNested
+            if (iter->second.second) {
+                type = "map";
             }
         } else {
-            LOG(INFO) << "Not able to declare " << name << " of " << type;
             continue;
         }
 
-        configItems.emplace_back(toThriftConfigItem(module, name, cType, mode, valueStr));
+        Value value = gflagsValueToValue(type, flag.current_value);
+        if (value.empty()) {
+            LOG(INFO) << "Not able to declare " << name << " of " << flag.type;
+            continue;
+        }
+        if (value.isNull()) {
+            LOG(ERROR) << "Parse gflags: " << name
+                       << ", value: " << flag.current_value
+                       << " failed.";
+            continue;
+        }
+        cpp2::ConfigItem item;
+        item.name = name;
+        item.module = module;
+        item.mode = mode;
+        item.value = std::move(value);
+        configItems.emplace_back(std::move(item));
     }
     LOG(INFO) << "Prepare to register " << configItems.size() << " gflags to meta";
     return configItems;
@@ -131,46 +143,38 @@ void GflagsManager::getGflagsModule(cpp2::ConfigModule& gflagsModule) {
     }
 }
 
-std::string toThriftValueStr(const cpp2::ConfigType& type, const VariantType& value) {
-    std::string valueStr;
-    switch (type) {
-        case cpp2::ConfigType::INT64: {
-            int64_t val = boost::get<int64_t>(value);
-            valueStr.append(reinterpret_cast<const char*>(&val), sizeof(val));
-            break;
+std::string GflagsManager::ValueToGflagString(const Value &val) {
+    switch (val.type()) {
+        case Value::Type::BOOL: {
+            return val.getBool() ? "true" : "false";
         }
-        case cpp2::ConfigType::DOUBLE: {
-            double val = boost::get<double>(value);
-            valueStr.append(reinterpret_cast<const char*>(&val), sizeof(val));
-            break;
+        case Value::Type::INT: {
+            return folly::to<std::string>(val.getInt());
         }
-        case cpp2::ConfigType::BOOL: {
-            bool val = boost::get<bool>(value);
-            valueStr.append(reinterpret_cast<const char*>(&val), sizeof(val));
-            break;
+        case Value::Type::FLOAT: {
+            return folly::to<std::string>(val.getFloat());
         }
-        case cpp2::ConfigType::STRING:
-        case cpp2::ConfigType::NESTED: {
-            valueStr = boost::get<std::string>(value);
-            break;
+        case Value::Type::STRING: {
+            return val.getStr();
+        }
+        case Value::Type::MAP: {
+            auto& kvs = val.getMap().kvs;
+            std::vector<std::string> values(kvs.size());
+            std::transform(kvs.begin(), kvs.end(), values.begin(),
+                    [](const auto &iter) -> std::string {
+                        std::stringstream out;
+                        out << "\"" << iter.first << "\"" << ":" << "\"" << iter.second << "\"";
+                        return out.str();
+                    });
+
+            std::stringstream os;
+            os << "{" << folly::join(",", values) << "}";
+            return os.str();
+        }
+        default: {
+            LOG(FATAL) << "Unsupported type for gflags";
         }
     }
-    return valueStr;
 }
-
-cpp2::ConfigItem toThriftConfigItem(const cpp2::ConfigModule& module,
-                                    const std::string& name,
-                                    const cpp2::ConfigType& type,
-                                    const cpp2::ConfigMode& mode,
-                                    const std::string& value) {
-    cpp2::ConfigItem item;
-    item.set_module(module);
-    item.set_name(name);
-    item.set_type(type);
-    item.set_mode(mode);
-    item.set_value(value);
-    return item;
-}
-
 }   // namespace meta
 }   // namespace nebula

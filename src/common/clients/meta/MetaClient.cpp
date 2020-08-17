@@ -2396,12 +2396,10 @@ MetaClient::getConfig(const cpp2::ConfigModule& module, const std::string& name)
 folly::Future<StatusOr<bool>>
 MetaClient::setConfig(const cpp2::ConfigModule& module,
                       const std::string& name,
-                      const cpp2::ConfigType& type,
-                      const std::string& value) {
+                      const Value& value) {
     cpp2::ConfigItem item;
     item.set_module(module);
     item.set_name(name);
-    item.set_type(type);
     item.set_value(value);
 
     cpp2::SetConfigReq req;
@@ -2508,14 +2506,10 @@ bool MetaClient::loadCfg() {
     auto ret = listConfigs(gflagsModule_).get();
     if (ret.ok()) {
         // if we load config from meta server successfully, update gflags and set configReady_
-        auto tItems = ret.value();
-        std::vector<ConfigItem> items;
-        for (const auto& tItem : tItems) {
-            items.emplace_back(toConfigItem(tItem));
-        }
+        auto items = ret.value();
         MetaConfigMap metaConfigMap;
         for (auto& item : items) {
-            std::pair<cpp2::ConfigModule, std::string> key = {item.module_, item.name_};
+            std::pair<cpp2::ConfigModule, std::string> key = {item.module, item.name};
             metaConfigMap.emplace(std::move(key), std::move(item));
         }
         {
@@ -2525,7 +2519,7 @@ bool MetaClient::loadCfg() {
                 auto& key = entry.first;
                 auto it = metaConfigMap_.find(key);
                 if (it == metaConfigMap_.end() ||
-                    metaConfigMap[key].value_ != it->second.value_) {
+                    metaConfigMap[key].value != it->second.value) {
                     updateGflagsValue(entry.second);
                     metaConfigMap_[key] = entry.second;
                 }
@@ -2539,91 +2533,46 @@ bool MetaClient::loadCfg() {
 }
 
 
-void MetaClient::updateGflagsValue(const ConfigItem& item) {
-    if (item.mode_ != cpp2::ConfigMode::MUTABLE) {
+void MetaClient::updateGflagsValue(const cpp2::ConfigItem& item) {
+    if (item.mode != cpp2::ConfigMode::MUTABLE) {
         return;
     }
-
-    std::string metaValue;
-    switch (item.type_) {
-        case cpp2::ConfigType::INT64:
-            metaValue = folly::to<std::string>(boost::get<int64_t>(item.value_));
-            break;
-        case cpp2::ConfigType::DOUBLE:
-            metaValue = folly::to<std::string>(boost::get<double>(item.value_));
-            break;
-        case cpp2::ConfigType::BOOL:
-            metaValue = boost::get<bool>(item.value_) ? "true" : "false";
-            break;
-        case cpp2::ConfigType::STRING:
-        case cpp2::ConfigType::NESTED:
-            metaValue = boost::get<std::string>(item.value_);
-            break;
-    }
-
+    auto value = item.value;
     std::string curValue;
-    if (!gflags::GetCommandLineOption(item.name_.c_str(), &curValue)) {
+    if (!gflags::GetCommandLineOption(item.name.c_str(), &curValue)) {
         return;
-    } else if (curValue != metaValue) {
-        if (item.type_ == cpp2::ConfigType::NESTED && metaValue.empty()) {
-            // Be compatible with previous configuration
-            metaValue = "{}";
+    } else {
+        auto gflagValue = GflagsManager::gflagsValueToValue(value.typeName(),
+                                                            curValue);
+        if (gflagValue != value) {
+            auto valueStr = GflagsManager::ValueToGflagString(value);
+            if (value.isMap() && value.getMap().kvs.empty()) {
+                // Be compatible with previous configuration
+                valueStr = "{}";
+            }
+            gflags::SetCommandLineOption(item.name.c_str(), valueStr.c_str());
+            // TODO: we simply judge the rocksdb by nested type for now
+            if (listener_ != nullptr && value.isMap()) {
+                updateNestedGflags(value.getMap().kvs);
+            }
+            LOG(INFO) << "Update config " << item.name
+                      << " from " << curValue << " to " << valueStr;
         }
-        gflags::SetCommandLineOption(item.name_.c_str(), metaValue.c_str());
-        // TODO: we simply judge the rocksdb by nested type for now
-        if (listener_ != nullptr && item.type_ == cpp2::ConfigType::NESTED) {
-            updateNestedGflags(item.name_);
-        }
-        LOG(INFO) << "update " << item.name_ << " from " << curValue << " to " << metaValue;
     }
 }
 
 
-void MetaClient::updateNestedGflags(const std::string& name) {
-    std::string json;
-    gflags::GetCommandLineOption(name.c_str(), &json);
-    // generate option string map
-    conf::Configuration conf;
-    auto status = conf.parseFromString(json);
-    if (!status.ok()) {
-        LOG(ERROR) << "Parse nested gflags " << name << " failed";
-        return;
-    }
+void MetaClient::updateNestedGflags(const std::unordered_map<std::string, Value> &nameValues) {
     std::unordered_map<std::string, std::string> optionMap;
-    conf.forEachItem([&optionMap] (const std::string& key, const folly::dynamic& val) {
-        optionMap.emplace(key, val.asString());
-    });
+    for (const auto &value : nameValues) {
+        optionMap.emplace(value.first, value.second.toString());
+    }
+
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     for (const auto& spaceEntry : localCache_) {
         listener_->onSpaceOptionUpdated(spaceEntry.first, optionMap);
     }
 }
-
-
-ConfigItem MetaClient::toConfigItem(const cpp2::ConfigItem& item) {
-    VariantType value;
-    switch (item.get_type()) {
-        case cpp2::ConfigType::INT64:
-            value = *reinterpret_cast<const int64_t*>(item.get_value().data());
-            break;
-        case cpp2::ConfigType::BOOL:
-            value = *reinterpret_cast<const bool*>(item.get_value().data());
-            break;
-        case cpp2::ConfigType::DOUBLE:
-            value = *reinterpret_cast<const double*>(item.get_value().data());
-            break;
-        case cpp2::ConfigType::STRING:
-        case cpp2::ConfigType::NESTED:
-            value = item.get_value();
-            break;
-    }
-    return ConfigItem(item.get_module(),
-                      item.get_name(),
-                      item.get_type(),
-                      item.get_mode(),
-                      value);
-}
-
 
 Status MetaClient::refreshCache() {
     auto ret = bgThread_->addTask(&MetaClient::loadData, this).get();
