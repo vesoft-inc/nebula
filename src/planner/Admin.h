@@ -20,8 +20,35 @@
 namespace nebula {
 namespace graph {
 
-// TODO: All DDLs, DMLs and DQLs could be used in a single query
-// which would make them in a single and big execution plan
+// Some template node such as Create template for the node create something(user,tag...)
+// Fit the conflict create process
+class CreateNode : public SingleDependencyNode {
+protected:
+    CreateNode(ExecutionPlan* plan, Kind kind, PlanNode* input, bool ifNotExist = false)
+        : SingleDependencyNode(plan, kind, input), ifNotExist_(ifNotExist) {}
+
+public:
+    bool ifNotExist() const {
+        return ifNotExist_;
+    }
+
+private:
+    bool ifNotExist_{false};
+};
+
+class DropNode : public SingleDependencyNode {
+protected:
+    DropNode(ExecutionPlan* plan, Kind kind, PlanNode* input, bool ifExist = false)
+        : SingleDependencyNode(plan, kind, input), ifExist_(ifExist) {}
+
+public:
+    bool ifExist() const {
+        return ifExist_;
+    }
+
+private:
+    bool ifExist_{false};
+};
 
 class ShowHosts final : public SingleDependencyNode {
     // TODO(shylock) meta/storage/graph enumerate
@@ -69,8 +96,8 @@ private:
     }
 
 private:
-    meta::SpaceDesc               props_;
-    bool                          ifNotExists_;
+    meta::SpaceDesc     props_;
+    bool                ifNotExists_{false};
 };
 
 class DropSpace final : public SingleInputNode {
@@ -323,6 +350,329 @@ public:
 
 class Ingest final : public SingleInputNode {
 public:
+};
+
+// User related Node
+class CreateUser final : public CreateNode {
+public:
+    static CreateUser* make(ExecutionPlan*     plan,
+                            PlanNode*          dep,
+                            const std::string* username,
+                            const std::string* password,
+                            bool ifNotExists) {
+        return new CreateUser(plan,
+                              dep,
+                              username,
+                              password,
+                              ifNotExists);
+    }
+
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override {
+        LOG(FATAL) << "Unimplemented";
+        return nullptr;
+    }
+
+    const std::string* username() const {
+        return username_;
+    }
+
+    const std::string* password() const {
+        return password_;
+    }
+
+private:
+    CreateUser(ExecutionPlan* plan,
+               PlanNode* dep,
+               const std::string* username,
+               const std::string* password,
+               bool ifNotExists)
+        : CreateNode(plan, Kind::kCreateUser, dep, ifNotExists),
+          username_(username),
+          password_(password) {}
+
+private:
+    const std::string* username_;
+    const std::string* password_;
+};
+
+class DropUser final : public DropNode {
+public:
+    static DropUser* make(ExecutionPlan*     plan,
+                          PlanNode*          dep,
+                          const std::string* username,
+                          bool ifNotExists) {
+        return new DropUser(plan,
+                            dep,
+                            username,
+                            ifNotExists);
+    }
+
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override {
+        LOG(FATAL) << "Unimplemented";
+        return nullptr;
+    }
+
+    const std::string* username() const {
+        return username_;
+    }
+
+private:
+    DropUser(ExecutionPlan* plan, PlanNode* dep, const std::string* username, bool ifNotExists)
+        : DropNode(plan, Kind::kDropUser, dep, ifNotExists),
+          username_(username) {}
+
+private:
+    const std::string* username_;
+};
+
+class UpdateUser final : public SingleDependencyNode {
+public:
+    static UpdateUser* make(ExecutionPlan*     plan,
+                            PlanNode*          dep,
+                            const std::string* username,
+                            const std::string* password) {
+        return new UpdateUser(plan,
+                              dep,
+                              username,
+                              password);
+    }
+
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override {
+        LOG(FATAL) << "Unimplemented";
+        return nullptr;
+    }
+
+    const std::string* username() const {
+        return username_;
+    }
+
+    const std::string* password() const {
+        return password_;
+    }
+
+private:
+    UpdateUser(ExecutionPlan* plan,
+               PlanNode* dep,
+               const std::string* username,
+               const std::string* password)
+        : SingleDependencyNode(plan, Kind::kUpdateUser, dep),
+          username_(username),
+          password_(password) {}
+
+private:
+    const std::string* username_;
+    const std::string* password_;
+};
+
+class GrantRole final : public SingleDependencyNode {
+public:
+    static GrantRole* make(ExecutionPlan* plan,
+                           PlanNode*      dep,
+                           const std::string* username,
+                           const std::string* spaceName,
+                           meta::cpp2::RoleType role) {
+        return new GrantRole(plan,
+                             dep,
+                             username,
+                             spaceName,
+                             role);
+    }
+
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override {
+        LOG(FATAL) << "Unimplemented";
+        return nullptr;
+    }
+
+    const std::string* username() const {
+        return username_;
+    }
+
+    const std::string* spaceName() const {
+        return spaceName_;
+    }
+
+    meta::cpp2::RoleType role() const {
+        return role_;
+    }
+
+private:
+    GrantRole(ExecutionPlan* plan,
+              PlanNode* dep,
+              const std::string* username,
+              const std::string* spaceName,
+              meta::cpp2::RoleType role)
+        : SingleDependencyNode(plan, Kind::kGrantRole, dep),
+          username_(username),
+          spaceName_(spaceName),
+          role_(role) {}
+
+private:
+    const std::string* username_;
+    const std::string* spaceName_;
+    meta::cpp2::RoleType role_;
+};
+
+class RevokeRole final : public SingleDependencyNode {
+public:
+    static RevokeRole* make(ExecutionPlan* plan,
+                            PlanNode*      dep,
+                            const std::string* username,
+                            const std::string* spaceName,
+                            meta::cpp2::RoleType role) {
+        return new RevokeRole(plan,
+                              dep,
+                              username,
+                              spaceName,
+                              role);
+    }
+
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override {
+        LOG(FATAL) << "Unimplemented";
+        return nullptr;
+    }
+
+    const std::string* username() const {
+        return username_;
+    }
+
+    const std::string* spaceName() const {
+        return spaceName_;
+    }
+
+    meta::cpp2::RoleType role() const {
+        return role_;
+    }
+
+private:
+    RevokeRole(ExecutionPlan* plan,
+               PlanNode*      dep,
+               const std::string* username,
+               const std::string* spaceName,
+               meta::cpp2::RoleType role)
+        : SingleDependencyNode(plan, Kind::kRevokeRole, dep),
+          username_(username),
+          spaceName_(spaceName),
+          role_(role) {}
+
+private:
+    const std::string*          username_;
+    const std::string*          spaceName_;
+    meta::cpp2::RoleType role_;
+};
+
+class ChangePassword final : public SingleDependencyNode {
+public:
+    static ChangePassword* make(ExecutionPlan*     plan,
+                                PlanNode*          dep,
+                                const std::string* username,
+                                const std::string* password,
+                                const std::string* newPassword) {
+        return new ChangePassword(plan,
+                                  dep,
+                                  username,
+                                  password,
+                                  newPassword);
+    }
+
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override {
+        LOG(FATAL) << "Unimplemented";
+        return nullptr;
+    }
+
+    const std::string* username() const {
+        return username_;
+    }
+
+    const std::string* password() const {
+        return password_;
+    }
+
+    const std::string* newPassword() const {
+        return newPassword_;
+    }
+
+private:
+    ChangePassword(ExecutionPlan* plan,
+                   PlanNode* dep,
+                   const std::string* username,
+                   const std::string* password,
+                   const std::string* newPassword)
+        : SingleDependencyNode(plan, Kind::kChangePassword, dep),
+          username_(username),
+          password_(password),
+          newPassword_(newPassword) {}
+
+private:
+    const std::string* username_;
+    const std::string* password_;
+    const std::string* newPassword_;
+};
+
+
+class ListUserRoles final : public SingleDependencyNode {
+public:
+    static ListUserRoles* make(ExecutionPlan*     plan,
+                               PlanNode*          dep,
+                               const std::string* username) {
+        return new ListUserRoles(plan,
+                                 dep,
+                                 username);
+    }
+
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override {
+        LOG(FATAL) << "Unimplemented";
+        return nullptr;
+    }
+
+    const std::string* username() const {
+        return username_;
+    }
+
+private:
+    ListUserRoles(ExecutionPlan* plan, PlanNode* dep, const std::string* username)
+        : SingleDependencyNode(plan, Kind::kListUserRoles, dep),
+          username_(username) {}
+
+private:
+    const std::string* username_;
+};
+
+class ListUsers final : public SingleDependencyNode {
+public:
+    static ListUsers* make(ExecutionPlan* plan, PlanNode* dep) {
+        return new ListUsers(plan, dep);
+    }
+
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override {
+        LOG(FATAL) << "Unimplemented";
+        return nullptr;
+    }
+
+private:
+    explicit ListUsers(ExecutionPlan* plan, PlanNode* dep)
+        : SingleDependencyNode(plan, Kind::kListUsers, dep) {}
+};
+
+class ListRoles final : public SingleDependencyNode {
+public:
+    static ListRoles* make(ExecutionPlan* plan, PlanNode* dep, GraphSpaceID space) {
+        return new ListRoles(plan, dep, space);
+    }
+
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override {
+        LOG(FATAL) << "Unimplemented";
+        return nullptr;
+    }
+
+    GraphSpaceID space() const {
+        return space_;
+    }
+
+private:
+    explicit ListRoles(ExecutionPlan* plan, PlanNode* dep, GraphSpaceID space)
+        : SingleDependencyNode(plan, Kind::kListRoles, dep), space_(space) {}
+
+    GraphSpaceID space_{-1};
 };
 
 class ShowParts final : public SingleInputNode {

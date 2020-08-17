@@ -2032,11 +2032,11 @@ change_password_sentence
     ;
 
 role_type_clause
-    : KW_GOD { $$ = new RoleTypeClause(RoleTypeClause::GOD); }
-    | KW_ADMIN { $$ = new RoleTypeClause(RoleTypeClause::ADMIN); }
-    | KW_DBA { $$ = new RoleTypeClause(RoleTypeClause::DBA); }
-    | KW_USER { $$ = new RoleTypeClause(RoleTypeClause::USER); }
-    | KW_GUEST { $$ = new RoleTypeClause(RoleTypeClause::GUEST); }
+    : KW_GOD { $$ = new RoleTypeClause(meta::cpp2::RoleType::GOD); }
+    | KW_ADMIN { $$ = new RoleTypeClause(meta::cpp2::RoleType::ADMIN); }
+    | KW_DBA { $$ = new RoleTypeClause(meta::cpp2::RoleType::DBA); }
+    | KW_USER { $$ = new RoleTypeClause(meta::cpp2::RoleType::USER); }
+    | KW_GUEST { $$ = new RoleTypeClause(meta::cpp2::RoleType::GUEST); }
     ;
 
 acl_item_clause

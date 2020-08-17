@@ -27,6 +27,15 @@ nebula_add_library(
     query/DataCollectExecutor.cpp
     query/DataJoinExecutor.cpp
     admin/SwitchSpaceExecutor.cpp
+    admin/CreateUserExecutor.cpp
+    admin/DropUserExecutor.cpp
+    admin/UpdateUserExecutor.cpp
+    admin/GrantRoleExecutor.cpp
+    admin/RevokeRoleExecutor.cpp
+    admin/ChangePasswordExecutor.cpp
+    admin/ListUserRolesExecutor.cpp
+    admin/ListUsersExecutor.cpp
+    admin/ListRolesExecutor.cpp
     admin/SubmitJobExecutor.cpp
     admin/BalanceExecutor.cpp
     admin/StopBalanceExecutor.cpp

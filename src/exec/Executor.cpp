@@ -13,6 +13,15 @@
 #include "context/ExecutionContext.h"
 #include "context/QueryContext.h"
 #include "exec/ExecutionError.h"
+#include "exec/admin/CreateUserExecutor.h"
+#include "exec/admin/DropUserExecutor.h"
+#include "exec/admin/UpdateUserExecutor.h"
+#include "exec/admin/GrantRoleExecutor.h"
+#include "exec/admin/RevokeRoleExecutor.h"
+#include "exec/admin/ChangePasswordExecutor.h"
+#include "exec/admin/ListUserRolesExecutor.h"
+#include "exec/admin/ListUsersExecutor.h"
+#include "exec/admin/ListRolesExecutor.h"
 #include "exec/admin/BalanceLeadersExecutor.h"
 #include "exec/admin/BalanceExecutor.h"
 #include "exec/admin/StopBalanceExecutor.h"
@@ -405,6 +414,69 @@ Executor *Executor::makeExecutor(const PlanNode *node,
             auto updateE = asNode<UpdateEdge>(node);
             auto input = makeExecutor(updateE->dep(), qctx, visited);
             exec = new UpdateEdgeExecutor(updateE, qctx);
+            exec->dependsOn(input);
+            break;
+        }
+        case PlanNode::Kind::kCreateUser: {
+            auto createUser = asNode<CreateUser>(node);
+            auto input = makeExecutor(createUser->dep(), qctx, visited);
+            exec = new CreateUserExecutor(createUser, qctx);
+            exec->dependsOn(input);
+            break;
+        }
+        case PlanNode::Kind::kDropUser: {
+            auto dropUser = asNode<DropUser>(node);
+            auto input = makeExecutor(dropUser->dep(), qctx, visited);
+            exec = new DropUserExecutor(dropUser, qctx);
+            exec->dependsOn(input);
+            break;
+        }
+        case PlanNode::Kind::kUpdateUser: {
+            auto updateUser = asNode<UpdateUser>(node);
+            auto input = makeExecutor(updateUser->dep(), qctx, visited);
+            exec = new UpdateUserExecutor(updateUser, qctx);
+            exec->dependsOn(input);
+            break;
+        }
+        case PlanNode::Kind::kGrantRole: {
+            auto grantRole = asNode<GrantRole>(node);
+            auto input = makeExecutor(grantRole->dep(), qctx, visited);
+            exec = new GrantRoleExecutor(grantRole, qctx);
+            exec->dependsOn(input);
+            break;
+        }
+        case PlanNode::Kind::kRevokeRole: {
+            auto revokeRole = asNode<RevokeRole>(node);
+            auto input = makeExecutor(revokeRole->dep(), qctx, visited);
+            exec = new RevokeRoleExecutor(revokeRole, qctx);
+            exec->dependsOn(input);
+            break;
+        }
+        case PlanNode::Kind::kChangePassword: {
+            auto changePassword = asNode<ChangePassword>(node);
+            auto input = makeExecutor(changePassword->dep(), qctx, visited);
+            exec = new ChangePasswordExecutor(changePassword, qctx);
+            exec->dependsOn(input);
+            break;
+        }
+        case PlanNode::Kind::kListUserRoles: {
+            auto listUserRoles = asNode<ListUserRoles>(node);
+            auto input = makeExecutor(listUserRoles->dep(), qctx, visited);
+            exec = new ListUserRolesExecutor(listUserRoles, qctx);
+            exec->dependsOn(input);
+            break;
+        }
+        case PlanNode::Kind::kListUsers: {
+            auto listUsers = asNode<ListUsers>(node);
+            auto input = makeExecutor(listUsers->dep(), qctx, visited);
+            exec = new ListUsersExecutor(listUsers, qctx);
+            exec->dependsOn(input);
+            break;
+        }
+        case PlanNode::Kind::kListRoles: {
+            auto listRoles = asNode<ListRoles>(node);
+            auto input = makeExecutor(listRoles->dep(), qctx, visited);
+            exec = new ListRolesExecutor(listRoles, qctx);
             exec->dependsOn(input);
             break;
         }

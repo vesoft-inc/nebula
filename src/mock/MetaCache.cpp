@@ -41,6 +41,7 @@ Status MetaCache::createSpace(const meta::cpp2::CreateSpaceReq &req, GraphSpaceI
             << ", replica_factor: " << space.get_properties().get_replica_factor()
             << ", rvid_size: " << space.get_properties().get_vid_size();
     cache_[spaceId] = SpaceInfoCache();
+    roles_.emplace(spaceId, UserRoles());
     return Status::OK();
 }
 
@@ -87,7 +88,11 @@ Status MetaCache::dropSpace(const meta::cpp2::DropSpaceReq &req) {
     auto id = findIter->second;
     spaces_.erase(id);
     cache_.erase(id);
+<<<<<<< HEAD
+    roles_.erase(id);
+=======
     spaceIndex_.erase(spaceName);
+>>>>>>> 5ef41cc3161e6403d0ac3ef9144f7e6b5a9a8f87
     return Status::OK();
 }
 
@@ -293,10 +298,6 @@ Status MetaCache::heartBeat(const meta::cpp2::HBReq& req) {
     return Status::OK();
 }
 
-Status MetaCache::listUsers(const meta::cpp2::ListUsersReq&) {
-    return Status::OK();
-}
-
 std::vector<meta::cpp2::HostItem> MetaCache::listHosts() {
     folly::RWSpinLock::WriteHolder holder(lock_);
     std::vector<meta::cpp2::HostItem> hosts;
@@ -324,6 +325,199 @@ std::unordered_map<PartitionID, std::vector<HostAddr>> MetaCache::getParts() {
         parts[1].emplace_back(h);
     }
     return parts;
+}
+
+////////////////////////////////////////////// ACL related mock ////////////////////////////////////
+meta::cpp2::ExecResp MetaCache::createUser(const meta::cpp2::CreateUserReq& req) {
+    meta::cpp2::ExecResp resp;
+    folly::RWSpinLock::WriteHolder wh(userLock_);
+    const auto user = users_.find(req.get_account());
+    if (user != users_.end()) {  // already exists
+        resp.set_code(req.get_if_not_exists() ?
+                    meta::cpp2::ErrorCode::SUCCEEDED :
+                    meta::cpp2::ErrorCode::E_EXISTED);
+        return resp;
+    }
+
+    auto result = users_.emplace(req.get_account(), UserInfo{req.get_encoded_pwd()});
+    resp.set_code(result.second ?
+                  meta::cpp2::ErrorCode::SUCCEEDED :
+                  meta::cpp2::ErrorCode::E_UNKNOWN);
+    return resp;
+}
+
+meta::cpp2::ExecResp MetaCache::dropUser(const meta::cpp2::DropUserReq& req) {
+    meta::cpp2::ExecResp resp;
+    folly::RWSpinLock::WriteHolder wh(userLock_);
+    const auto user = users_.find(req.get_account());
+    if (user == users_.end()) {  // not exists
+        resp.set_code(req.get_if_exists() ?
+                    meta::cpp2::ErrorCode::SUCCEEDED :
+                    meta::cpp2::ErrorCode::E_NOT_FOUND);
+        return resp;
+    }
+
+    auto result = users_.erase(req.get_account());
+    resp.set_code(result == 1 ?
+                  meta::cpp2::ErrorCode::SUCCEEDED :
+                  meta::cpp2::ErrorCode::E_UNKNOWN);
+    return resp;
+}
+
+meta::cpp2::ExecResp MetaCache::alterUser(const meta::cpp2::AlterUserReq& req) {
+    meta::cpp2::ExecResp resp;
+    folly::RWSpinLock::WriteHolder wh(userLock_);
+    auto user = users_.find(req.get_account());
+    if (user == users_.end()) {  // not exists
+        resp.set_code(meta::cpp2::ErrorCode::E_NOT_FOUND);
+        return resp;
+    }
+    user->second.password = req.get_encoded_pwd();
+    resp.set_code(meta::cpp2::ErrorCode::SUCCEEDED);
+    return resp;
+}
+
+meta::cpp2::ExecResp MetaCache::grantRole(const meta::cpp2::GrantRoleReq& req) {
+    meta::cpp2::ExecResp resp;
+    const auto &item = req.get_role_item();
+    {
+        folly::RWSpinLock::ReadHolder spaceRH(roleLock_);
+        folly::RWSpinLock::ReadHolder userRH(userLock_);
+        // find space
+        auto space = roles_.find(item.get_space_id());
+        if (space == roles_.end()) {
+            resp.set_code(meta::cpp2::ErrorCode::E_NOT_FOUND);
+            return resp;
+        }
+        // find user
+        auto user = users_.find(item.get_user_id());
+        if (user == users_.end()) {
+            resp.set_code(meta::cpp2::ErrorCode::E_NOT_FOUND);
+            return resp;
+        }
+    }
+    folly::RWSpinLock::WriteHolder roleWH(roleLock_);
+    // space
+    auto space = roles_.find(item.get_space_id());
+    // user
+    auto user = space->second.find(item.get_user_id());
+    if (user == space->second.end()) {
+        space->second.emplace(item.get_user_id(),
+                              std::unordered_set<meta::cpp2::RoleType>{item.get_role_type()});
+    } else {
+        user->second.emplace(item.get_role_type());
+    }
+    resp.set_code(meta::cpp2::ErrorCode::SUCCEEDED);
+    return resp;
+}
+
+meta::cpp2::ExecResp MetaCache::revokeRole(const meta::cpp2::RevokeRoleReq& req) {
+    meta::cpp2::ExecResp resp;
+    const auto &item = req.get_role_item();
+    folly::RWSpinLock::WriteHolder rolesWH(roleLock_);
+    // find space
+    auto space = roles_.find(item.get_space_id());
+    if (space == roles_.end()) {
+        resp.set_code(meta::cpp2::ErrorCode::E_NOT_FOUND);
+        return resp;
+    }
+    // find user
+    auto user = space->second.find(item.get_user_id());
+    if (user == space->second.end()) {
+        resp.set_code(meta::cpp2::ErrorCode::E_NOT_FOUND);
+        return resp;
+    }
+    // find role
+    auto role = user->second.find(item.get_role_type());
+    if (role == user->second.end()) {
+        resp.set_code(meta::cpp2::ErrorCode::E_NOT_FOUND);
+        return resp;
+    }
+    user->second.erase(item.get_role_type());
+    resp.set_code(meta::cpp2::ErrorCode::SUCCEEDED);
+    return resp;
+}
+
+meta::cpp2::ListUsersResp MetaCache::listUsers(const meta::cpp2::ListUsersReq&) {
+    meta::cpp2::ListUsersResp resp;
+    folly::RWSpinLock::ReadHolder rh(userLock_);
+    std::unordered_map<std::string, std::string> users;
+    for (const auto &user : users_) {
+        users.emplace(user.first, user.second.password);
+    }
+    resp.set_code(meta::cpp2::ErrorCode::SUCCEEDED);
+    resp.set_users(std::move(users));
+    return resp;
+}
+
+meta::cpp2::ListRolesResp MetaCache::listRoles(const meta::cpp2::ListRolesReq& req) {
+    meta::cpp2::ListRolesResp resp;
+    folly::RWSpinLock::ReadHolder rh(roleLock_);
+    std::vector<meta::cpp2::RoleItem> items;
+    const auto space = roles_.find(req.get_space_id());
+    if (space == roles_.end()) {
+        resp.set_code(meta::cpp2::ErrorCode::E_NOT_FOUND);
+        return resp;
+    }
+    for (const auto &user : space->second) {
+        for (const auto &role : user.second) {
+            meta::cpp2::RoleItem item;
+            item.set_space_id(space->first);
+            item.set_user_id(user.first);
+            item.set_role_type(role);
+            items.emplace_back(std::move(item));
+        }
+    }
+    resp.set_code(meta::cpp2::ErrorCode::SUCCEEDED);
+    resp.set_roles(std::move(items));
+    return resp;
+}
+
+meta::cpp2::ExecResp MetaCache::changePassword(const meta::cpp2::ChangePasswordReq& req) {
+    meta::cpp2::ExecResp resp;
+    folly::RWSpinLock::WriteHolder wh(userLock_);
+    auto user = users_.find(req.get_account());
+    if (user == users_.end()) {
+        resp.set_code(meta::cpp2::ErrorCode::E_NOT_FOUND);
+        return resp;
+    }
+    if (user->second.password != req.get_old_encoded_pwd()) {
+        resp.set_code(meta::cpp2::ErrorCode::E_INVALID_PASSWORD);
+    }
+    user->second.password = req.get_new_encoded_pwd();
+    resp.set_code(meta::cpp2::ErrorCode::SUCCEEDED);
+    return resp;
+}
+
+meta::cpp2::ListRolesResp MetaCache::getUserRoles(const meta::cpp2::GetUserRolesReq& req) {
+    meta::cpp2::ListRolesResp resp;
+    {
+        folly::RWSpinLock::ReadHolder userRH(userLock_);
+        // find user
+        auto user = users_.find(req.get_account());
+        if (user == users_.end()) {
+            resp.set_code(meta::cpp2::ErrorCode::E_NOT_FOUND);
+            return resp;
+        }
+    }
+
+    folly::RWSpinLock::ReadHolder roleRH(roleLock_);
+    std::vector<meta::cpp2::RoleItem> items;
+    for (const auto& space : roles_) {
+        const auto& user = space.second.find(req.get_account());
+        if (user != space.second.end()) {
+            for (const auto & role : user->second) {
+                meta::cpp2::RoleItem item;
+                item.set_space_id(space.first);
+                item.set_user_id(user->first);
+                item.set_role_type(role);
+                items.emplace_back(std::move(item));
+            }
+        }
+    }
+    resp.set_code(meta::cpp2::ErrorCode::SUCCEEDED);
+    resp.set_roles(std::move(items));
+    return resp;
 }
 
 ErrorOr<meta::cpp2::ErrorCode, int64_t> MetaCache::balanceSubmit(std::vector<HostAddr> dels) {

@@ -144,6 +144,16 @@ protected:
 
     static Status appendPlan(PlanNode* plan, PlanNode* appended);
 
+    // use for simple Plan only contain one node
+    template <typename Node, typename... Args>
+    Status genSingleNodePlan(Args... args) {
+        auto* plan = qctx_->plan();
+        auto *doNode = Node::make(plan, nullptr, std::forward<Args>(args)...);
+        root_ = doNode;
+        tail_ = root_;
+        return Status::OK();
+    }
+
     // Check the variable or input property reference
     // return the input variable
     StatusOr<std::string> checkRef(const Expression *ref, const Value::Type type) const;

@@ -81,6 +81,25 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
             return "InsertEdges";
         case Kind::kDataCollect:
             return "DataCollect";
+        // acl
+        case Kind::kCreateUser:
+            return "CreateUser";
+        case Kind::kDropUser:
+            return "DropUser";
+        case Kind::kUpdateUser:
+            return "UpdateUser";
+        case Kind::kGrantRole:
+            return "GrantRole";
+        case Kind::kRevokeRole:
+            return "RevokeRole";
+        case Kind::kChangePassword:
+            return "ChangePassword";
+        case Kind::kListUserRoles:
+            return "ListUserRoles";
+        case Kind::kListUsers:
+            return "ListUsers";
+        case Kind::kListRoles:
+            return "ListRoles";
         case Kind::kShowCreateSpace:
             return "ShowCreateSpace";
         case Kind::kShowCreateTag:

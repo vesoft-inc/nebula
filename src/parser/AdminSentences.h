@@ -84,7 +84,12 @@ public:
         name_.reset(name);
         kind_ = Kind::kShowRoles;
     }
+
     std::string toString() const override;
+
+    const std::string *name() const {
+        return name_.get();
+    }
 
 private:
     std::unique_ptr<std::string>          name_;

@@ -38,8 +38,6 @@ set(GRAPH_TEST_LIB
     $<TARGET_OBJECTS:common_storage_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:common_meta_obj>
-    $<TARGET_OBJECTS:common_ws_obj>
-    $<TARGET_OBJECTS:common_ws_common_obj>
     $<TARGET_OBJECTS:common_thread_obj>
     $<TARGET_OBJECTS:common_time_obj>
     $<TARGET_OBJECTS:common_fs_obj>
@@ -76,6 +74,22 @@ nebula_add_test(
         schema_test
     SOURCES
         SchemaTest.cpp
+    OBJECTS
+        ${GRAPH_TEST_LIB}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        proxygenhttpserver
+        proxygenlib
+        wangle
+        gtest
+        gtest_main
+)
+
+nebula_add_test(
+    NAME
+        acl_test
+    SOURCES
+        ACLTest.cpp
     OBJECTS
         ${GRAPH_TEST_LIB}
     LIBRARIES
@@ -127,9 +141,9 @@ nebula_add_test(
     OBJECTS
         ${GRAPH_TEST_LIB}
     LIBRARIES
+        ${THRIFT_LIBRARIES}
         proxygenhttpserver
         proxygenlib
-        ${THRIFT_LIBRARIES}
         wangle
         gtest
         gtest_main

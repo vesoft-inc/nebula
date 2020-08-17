@@ -26,6 +26,7 @@
 #include "validator/SequentialValidator.h"
 #include "validator/SetValidator.h"
 #include "validator/UseValidator.h"
+#include "validator/ACLValidator.h"
 #include  "validator/BalanceValidator.h"
 #include "validator/AdminJobValidator.h"
 #include "validator/YieldValidator.h"
@@ -105,6 +106,22 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
             return std::make_unique<InsertVerticesValidator>(sentence, context);
         case Sentence::Kind::kInsertEdges:
             return std::make_unique<InsertEdgesValidator>(sentence, context);
+        case Sentence::Kind::kCreateUser:
+            return std::make_unique<CreateUserValidator>(sentence, context);
+        case Sentence::Kind::kDropUser:
+            return std::make_unique<DropUserValidator>(sentence, context);
+        case Sentence::Kind::kAlterUser:
+            return std::make_unique<UpdateUserValidator>(sentence, context);
+        case Sentence::Kind::kShowUsers:
+            return std::make_unique<ShowUsersValidator>(sentence, context);
+        case Sentence::Kind::kChangePassword:
+            return std::make_unique<ChangePasswordValidator>(sentence, context);
+        case Sentence::Kind::kGrant:
+            return std::make_unique<GrantRoleValidator>(sentence, context);
+        case Sentence::Kind::kRevoke:
+            return std::make_unique<RevokeRoleValidator>(sentence, context);
+        case Sentence::Kind::kShowRoles:
+            return std::make_unique<ShowRolesInSpaceValidator>(sentence, context);
         case Sentence::Kind::kBalance:
             return std::make_unique<BalanceValidator>(sentence, context);
         case Sentence::Kind::kAdminJob:
@@ -157,14 +174,6 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
         case Sentence::Kind::kShowEdgeIndexes:
         case Sentence::Kind::kRebuildEdgeIndex:
         case Sentence::Kind::kDropEdgeIndex:
-        case Sentence::Kind::kShowUsers:
-        case Sentence::Kind::kCreateUser:
-        case Sentence::Kind::kDropUser:
-        case Sentence::Kind::kAlterUser:
-        case Sentence::Kind::kGrant:
-        case Sentence::Kind::kRevoke:
-        case Sentence::Kind::kShowRoles:
-        case Sentence::Kind::kChangePassword:
         case Sentence::Kind::kLookup:
         case Sentence::Kind::kDownload:
         case Sentence::Kind::kIngest:
@@ -188,6 +197,15 @@ Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
         case PlanNode::Kind::kAggregate:
         case PlanNode::Kind::kSelect:
         case PlanNode::Kind::kLoop:
+        case PlanNode::Kind::kCreateUser:
+        case PlanNode::Kind::kDropUser:
+        case PlanNode::Kind::kUpdateUser:
+        case PlanNode::Kind::kGrantRole:
+        case PlanNode::Kind::kRevokeRole:
+        case PlanNode::Kind::kChangePassword:
+        case PlanNode::Kind::kListUserRoles:
+        case PlanNode::Kind::kListUsers:
+        case PlanNode::Kind::kListRoles:
         case PlanNode::Kind::kMultiOutputs:
         case PlanNode::Kind::kSwitchSpace:
         case PlanNode::Kind::kGetEdges:

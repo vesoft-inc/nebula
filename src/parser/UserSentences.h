@@ -8,6 +8,7 @@
 #define PARSER_USERSENTENCES_H_
 
 #include "common/base/Base.h"
+#include "common/interface/gen-cpp2/meta_types.h"
 #include "parser/Clauses.h"
 #include "parser/Sentence.h"
 
@@ -15,17 +16,12 @@ namespace nebula {
 
 class RoleTypeClause final {
 public:
-    enum RoleType : uint8_t {
-        GOD,
-        ADMIN,
-        DBA,
-        USER,
-        GUEST
-    };
+    using RoleType = meta::cpp2::RoleType;
 
     explicit RoleTypeClause(RoleType roleType) {
         roleType_ = roleType;
     }
+
 
     RoleType getRoleType() const {
         return roleType_;
@@ -218,6 +214,10 @@ public:
     }
 
     const AclItemClause* getAclItemClause() const {
+        return aclItemClause_.get();
+    }
+
+    AclItemClause* mutableAclItemClause() {
         return aclItemClause_.get();
     }
 

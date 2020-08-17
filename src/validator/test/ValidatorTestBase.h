@@ -153,6 +153,15 @@ protected:
                 case PlanNode::Kind::kStart: {
                     break;
                 }
+                case PlanNode::Kind::kCreateUser:
+                case PlanNode::Kind::kDropUser:
+                case PlanNode::Kind::kUpdateUser:
+                case PlanNode::Kind::kGrantRole:
+                case PlanNode::Kind::kRevokeRole:
+                case PlanNode::Kind::kChangePassword:
+                case PlanNode::Kind::kListUserRoles:
+                case PlanNode::Kind::kListUsers:
+                case PlanNode::Kind::kListRoles:
                 case PlanNode::Kind::kShowHosts:
                 case PlanNode::Kind::kGetNeighbors:
                 case PlanNode::Kind::kGetVertices:
@@ -192,7 +201,7 @@ protected:
                 case PlanNode::Kind::kDeleteEdges:
                 case PlanNode::Kind::kUpdateVertex:
                 case PlanNode::Kind::kUpdateEdge: {
-                    auto* current = static_cast<const SingleInputNode*>(node);
+                    auto* current = static_cast<const SingleDependencyNode*>(node);
                     queue.emplace(current->dep());
                     break;
                 }

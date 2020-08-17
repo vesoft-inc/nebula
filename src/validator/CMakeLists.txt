@@ -19,6 +19,7 @@ nebula_add_library(
     AdminJobValidator.cpp
     MaintainValidator.cpp
     MutateValidator.cpp
+    ACLValidator.cpp
     FetchEdgesValidator.cpp
     FetchVerticesValidator.cpp
     LimitValidator.cpp

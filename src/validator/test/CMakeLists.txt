@@ -50,15 +50,16 @@ set(VALIDATOR_TEST_LIBS
 nebula_add_test(
     NAME validator_test
     SOURCES
+        ACLValidatorTest.cpp
         FetchVerticesTest.cpp
         FetchEdgesTest.cpp
         MockSchemaManagerTest.cpp
-        ValidatorTestBase.cpp
         QueryValidatorTest.cpp
         AdminValidatorTest.cpp
         MaintainValidatorTest.cpp
         MutateValidatorTest.cpp
         YieldValidatorTest.cpp
+        ValidatorTestBase.cpp
         ExplainValidatorTest.cpp
         GroupByValidatorTest.cpp
     OBJECTS ${VALIDATOR_TEST_LIBS}
