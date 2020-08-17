@@ -67,17 +67,6 @@ void printResult(nebula::ExecutionResponse &resp) {
     std::cout << std::endl;
 }
 
-// async execute cmd: show spaces
-void callback(nebula::ExecutionResponse* response, nebula::ErrorCode resultCode) {
-    if (resultCode == nebula::kSucceed) {
-        std::cout << "Async do cmd \" SHOW SPACES \" succeed" << std::endl;
-        printResult(*response);
-    } else {
-        std::cout << "Async do cmd \" SHOW SPACE \" failed, resultCode = "
-                  << response->getErrorCode() << std::endl;
-    }
-}
-
 int main(int argc, char *argv[]) {
     // must call: init arvs
     nebula::NebulaClient::init(argc, argv);
@@ -109,22 +98,29 @@ int main(int argc, char *argv[]) {
             }
 
             // async execute cmd: show spaces
-            auto cb = [] (nebula::ExecutionResponse* response, nebula::ErrorCode resultCode) {
+            size_t spaceNum = 0u;
+            auto cb = [] (nebula::ExecutionResponse* response,
+                          nebula::ErrorCode resultCode,
+                          void* context) {
                 if (resultCode == nebula::kSucceed) {
                     std::cout << "Async do cmd \" SHOW SPACES \" succeed" << std::endl;
                     printResult(*response);
+                    if (context != nullptr) {
+                        *reinterpret_cast<size_t*>(context) = response->getRows().size();
+                    }
                 } else {
                     std::cout << "Async do cmd \" SHOW SPACE \" failed, resultCode = "
-                            << response->getErrorCode() << std::endl;
+                              << response->getErrorCode() << std::endl;
                 }
             };
             // async execute succeed
-            client.asyncExecute("SHOW SPACES", cb);
+            client.asyncExecute("SHOW SPACES", cb, &spaceNum);
 
             // async execute failed
-            client.asyncExecute("SHOW SPACE", cb);
+            client.asyncExecute("SHOW SPACE", cb, &spaceNum);
             sleep(1);
 
+            std::cout << "`SHOW SPACES` get " << spaceNum << " spaces." << std::endl;
             std::string spaceName = "test" + name;
             nebula::ExecutionResponse resp;
 

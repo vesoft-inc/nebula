@@ -39,8 +39,11 @@ ErrorCode NebulaClient::execute(std::string stmt, ExecutionResponse& resp) {
     return client_->doExecute(stmt, resp);
 }
 
-void NebulaClient::asyncExecute(std::string stmt, ExecCallback cb) {
-    return client_->doAsyncExecute(stmt, std::move(cb));
+void NebulaClient::asyncExecute(std::string stmt, ExecCallback cb, void *context) {
+    auto doCallBack = [=] (ExecutionResponse *resp, ErrorCode code) {
+        cb(resp, code, context);
+    };
+    return client_->doAsyncExecute(stmt, std::move(doCallBack));
 }
 
 }  // namespace nebula
