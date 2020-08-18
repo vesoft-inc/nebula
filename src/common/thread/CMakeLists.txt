@@ -5,4 +5,9 @@ nebula_add_library(
     GenericThreadPool.cpp
 )
 
+nebula_add_library(
+    thread_manager_obj OBJECT
+    ThreadManager.cpp
+)
+
 nebula_add_subdirectory(test)

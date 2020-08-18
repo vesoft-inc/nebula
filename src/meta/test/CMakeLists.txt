@@ -19,6 +19,7 @@ set(meta_test_deps
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:thread_manager_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:kvstore_storage_utils_obj>
 )

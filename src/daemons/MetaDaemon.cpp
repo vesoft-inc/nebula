@@ -18,6 +18,7 @@
 #include "hdfs/HdfsHelper.h"
 #include "hdfs/HdfsCommandHelper.h"
 #include "thread/GenericThreadPool.h"
+#include "thread/ThreadManager.h"
 #include "kvstore/PartManager.h"
 #include "meta/ClusterIdMan.h"
 #include "kvstore/NebulaStore.h"
@@ -41,7 +42,6 @@ DEFINE_string(meta_server_addrs,
 DEFINE_string(local_ip, "", "Local ip specified for NetworkUtils::getLocalIP");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
 DEFINE_int32(meta_http_thread_num, 3, "Number of meta daemon's http thread");
-DEFINE_int32(num_worker_threads, 32, "Number of workers");
 
 DEFINE_string(pid_file, "pids/nebula-metad.pid", "File to hold the process id");
 DEFINE_bool(daemonize, true, "Whether run as a daemon process");
@@ -71,10 +71,7 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
     // folly IOThreadPoolExecutor
     auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
     std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(
-        apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
-                                 FLAGS_num_worker_threads, true /*stats*/));
-    threadManager->setNamePrefix("executor");
-    threadManager->start();
+            nebula::thread::getThreadManager());
     // On metad, we are allowed to read on follower
     FLAGS_check_leader = false;
     nebula::kvstore::KVOptions options;
