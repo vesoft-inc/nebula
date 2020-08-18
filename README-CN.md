@@ -68,8 +68,6 @@
 
 **Nebula Graph** 使用 [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) 许可证，您可以免费下载，修改以及部署源代码。您还可以将 **Nebula Graph** 作为后端服务部署以支持您的 SaaS 部署。
 
-为防止云供应商从项目赢利而不回馈，**Nebula Graph** 在项目中添加了 [Commons Clause 1.0](https://commonsclause.com/) 条款。如上所述，**Nebula Graph** 是一个完全开源的项目，欢迎您就许可模式提出建议，帮助 **Nebula Graph** 社区更好地发展。
-
 ## 如何贡献
 
 **Nebula Graph** 是一个完全开源的项目，欢迎开源爱好者通过以下方式参与到 **Nebula Graph** 社区：

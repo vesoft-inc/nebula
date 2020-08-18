@@ -73,8 +73,6 @@ Visit [Nebula Graph Studio](https://github.com/vesoft-inc/nebula-web-docker) for
 
 **Nebula Graph** is under [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) license. So you can freely download, modify, and deploy the source code to meet your needs. You can also freely deploy **Nebula Graph** as a back-end service to support your SaaS deployment.
 
-In order to prevent cloud providers from monetizing the project without contributing back, we added [Commons Clause 1.0](https://commonsclause.com/) to the project. As mentioned, we are fully committed to the open source community. We would love to hear your thoughts on the licensing model and are willing to make it more suitable for the community.
-
 ## Contributing
 
 Contributions are warmly welcomed and greatly appreciated. Here are a few ways you can contribute:
