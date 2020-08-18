@@ -49,8 +49,10 @@ void mockData(kvstore::KVStore* kv,
                 baton.post();
             });
         baton.wait();
-        kvstore::ResultCode code = kv->flush(0);  // flush per partition
-        EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
+        if (FLAGS_enable_prefix_filtering) {
+            kvstore::ResultCode code = kv->flush(0);  // flush per partition
+            EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
+        }
     }
 }
 

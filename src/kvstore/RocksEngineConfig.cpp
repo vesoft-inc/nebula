@@ -84,22 +84,22 @@ namespace kvstore {
 
 class GraphPrefixTransform : public rocksdb::SliceTransform {
 private:
-    size_t prefix_len_;
+    size_t prefixLen_;
     std::string name_;
 
 public:
-    explicit GraphPrefixTransform(size_t prefix_len)
-        : prefix_len_(prefix_len),
-        name_("nebula.GraphPrefix." + std::to_string(prefix_len_)) {}
+    explicit GraphPrefixTransform(size_t prefixLen)
+        : prefixLen_(prefixLen),
+        name_("nebula.GraphPrefix." + std::to_string(prefixLen_)) {}
 
     const char* Name() const override { return name_.c_str(); }
 
     rocksdb::Slice Transform(const rocksdb::Slice& src) const override {
-        return rocksdb::Slice(src.data(), prefix_len_);
+        return rocksdb::Slice(src.data(), prefixLen_);
     }
 
     bool InDomain(const rocksdb::Slice& src) const override {
-        return src.size() >= prefix_len_ && NebulaKeyUtils::isDataKey(
+        return src.size() >= prefixLen_ && NebulaKeyUtils::isDataKey(
                 folly::StringPiece(src.data(), 1));
     }
 };
