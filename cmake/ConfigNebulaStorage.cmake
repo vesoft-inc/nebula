@@ -35,6 +35,9 @@ macro(config_nebula_storage)
                 -DENABLE_FRAME_POINTER=${ENABLE_FRAME_POINTER}
                 -DNEBULA_COMMON_SOURCE_DIR=${storage_COMMON_SOURCE_DIR}
                 -DNEBULA_COMMON_BUILD_DIR=${storage_COMMON_BUILD_DIR}
+                -DENABLE_PIC=${ENABLE_PIC}
+                -DENABLE_COMPRESSED_DEBUG_INFO=${ENABLE_COMPRESSED_DEBUG_INFO}
+                -DNEBULA_USE_LINKER=${NEBULA_USE_LINKER}
                 ${storage_source_dir}
         WORKING_DIRECTORY ${storage_build_dir}
         RESULT_VARIABLE cmake_status
