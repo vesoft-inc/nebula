@@ -40,9 +40,8 @@ jobs:
           if [[ "${{ github.event_name }}" == "push" ]]; then
             echo "::set-output name=version::$(cut -d/ -f3 <<< ${{ github.ref }})"
           else
-            cd $CPACK_OUTPUT_DIR
-            filename=$(find . -type f \( -iname \*.deb -o -iname \*.rpm \) -exec basename {} \;)
-            echo "::set-output name=filepath::$CPACK_OUTPUT_DIR/$filename"
+            filename=$(find $CPACK_OUTPUT_DIR -type f \( -iname \*.deb -o -iname \*.rpm \))
+            echo "::set-output name=filepath::$filename"
             echo "::set-output name=version::nightly"
           fi
       - name: upload oss
