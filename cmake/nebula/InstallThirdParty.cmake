@@ -4,12 +4,14 @@ if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
     if(NOT ${NEBULA_CLANG_USED_GCC_TOOLCHAIN} STREQUAL "")
         set(cxx_cmd ${NEBULA_CLANG_USED_GCC_TOOLCHAIN}/bin/g++)
     else()
-        set(cxx_cmd g++)
+        set(cxx_cmd ${CMAKE_CXX_COMPILER})
     endif()
+else()
+    set(cxx_cmd ${CMAKE_CXX_COMPILER})
 endif()
 execute_process(
     COMMAND
-        env CXX=${cxx_cmd} ${CMAKE_SOURCE_DIR}/third-party/install-third-party.sh --prefix=${third_party_install_prefix}
+        env CXX=${cxx_cmd} ${nebula_common_source_dir}/third-party/install-third-party.sh --prefix=${third_party_install_prefix}
     WORKING_DIRECTORY
         ${CMAKE_BINARY_DIR}
 )
