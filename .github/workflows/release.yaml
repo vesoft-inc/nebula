@@ -88,5 +88,5 @@ jobs:
           tags: latest
           tag_with_ref: true
           dockerfile: docker/Dockerfile.${{ matrix.service }}
-          cache_froms: vesoft/nebula-dev:centos7
+          cache_froms: vesoft/nebula-dev:centos7,centos:7
           add_git_labels: true

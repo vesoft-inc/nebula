@@ -28,5 +28,5 @@ jobs:
           repository: ${{ secrets.DOCKER_USERNAME }}/nebula-${{ matrix.service }}
           tags: nightly
           dockerfile: docker/Dockerfile.${{ matrix.service }}
-          cache_froms: vesoft/nebula-dev:centos7
+          cache_froms: vesoft/nebula-dev:centos7,centos:7
           add_git_labels: true
