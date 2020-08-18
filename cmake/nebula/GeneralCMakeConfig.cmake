@@ -14,13 +14,12 @@ endif()
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
 endif()
-message(STATUS "CMAKE_BUILD_TYPE        : ${CMAKE_BUILD_TYPE} "
-               "(Options are: Debug, Release, RelWithDebInfo, MinSizeRel)")
+print_config(CMAKE_BUILD_TYPE)
 
 if (${CMAKE_INSTALL_PREFIX} STREQUAL "/usr/local")
     set(CMAKE_INSTALL_PREFIX "/usr/local/nebula")
 endif()
-message(STATUS "CMAKE_INSTALL_PREFIX    : ${CMAKE_INSTALL_PREFIX} ")
+print_config(CMAKE_INSTALL_PREFIX)
 
 
 set(CMAKE_SKIP_RPATH TRUE)

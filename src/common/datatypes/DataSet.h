@@ -74,12 +74,13 @@ struct DataSet {
         if (rowSize() != o.rowSize()) {
             return false;
         }
-        colNames.reserve(colSize() + o.colSize());
+        auto newColSize = colSize() + o.colSize();
+        colNames.reserve(newColSize);
         colNames.insert(colNames.end(),
                         std::make_move_iterator(o.colNames.begin()),
                         std::make_move_iterator(o.colNames.end()));
         for (std::size_t i = 0; i < rowSize(); ++i) {
-            rows[i].values.reserve(colSize());
+            rows[i].values.reserve(newColSize);
             rows[i].values.insert(rows[i].values.begin(),
                                   std::make_move_iterator(o.rows[i].values.begin()),
                                   std::make_move_iterator(o.rows[i].values.end()));

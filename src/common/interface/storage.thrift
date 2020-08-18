@@ -1,4 +1,5 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* vim: ft=proto
+ * Copyright (c) 2018 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -311,7 +312,7 @@ struct GetPropRequest {
     2: list<binary>                             column_names,
     3: map<common.PartitionID, list<common.Row>>
         (cpp.template = "std::unordered_map")   parts,
-    // Based on whether to get the vertex ptroperties or to get the edge properties,
+    // Based on whether to get the vertex properties or to get the edge properties,
     //   One of the following can be set. If an empty list is given then all properties
     //   of the vertex or the edge will be returned
     4: optional list<VertexProp>                vertex_props,

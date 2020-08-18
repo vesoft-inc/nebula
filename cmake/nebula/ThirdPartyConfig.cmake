@@ -18,7 +18,7 @@ if("${NEBULA_THIRDPARTY_ROOT}" STREQUAL "")
 endif()
 
 if(NOT ${NEBULA_THIRDPARTY_ROOT} STREQUAL "")
-    message(STATUS "NEBULA_THIRDPARTY_ROOT  : ${NEBULA_THIRDPARTY_ROOT}")
+    print_config(NEBULA_THIRDPARTY_ROOT)
     list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/include)
     list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/lib)
     list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/lib64)
@@ -43,12 +43,27 @@ if(NOT ${NEBULA_OTHER_ROOT} STREQUAL "")
     endforeach()
 endif()
 
-string(REPLACE ";" ":" INCLUDE_PATH_STR "${CMAKE_INCLUDE_PATH}")
-string(REPLACE ";" ":" LIBRARY_PATH_STR "${CMAKE_LIBRARY_PATH}")
-string(REPLACE ";" ":" PROGRAM_PATH_STR "${CMAKE_PROGRAM_PATH}")
-message(STATUS "CMAKE_INCLUDE_PATH      : ${INCLUDE_PATH_STR}")
-message(STATUS "CMAKE_LIBRARY_PATH      : ${LIBRARY_PATH_STR}")
-message(STATUS "CMAKE_PROGRAM_PATH      : ${PROGRAM_PATH_STR}")
+print_config(CMAKE_INCLUDE_PATH)
+print_config(CMAKE_LIBRARY_PATH)
+print_config(CMAKE_PROGRAM_PATH)
+
+execute_process(
+    COMMAND ldd --version
+    COMMAND head -1
+    COMMAND cut -d ")" -f 2
+    COMMAND cut -d " " -f 2
+    OUTPUT_VARIABLE GLIBC_VERSION
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+print_config(GLIBC_VERSION)
+
+if (GLIBC_VERSION VERSION_LESS "2.17")
+    set(GETTIME_LIB rt)
+else()
+    set(GETTIME_LIB)
+endif()
+
+message("")
 
 find_package(Bzip2 REQUIRED)
 find_package(DoubleConversion REQUIRED)
@@ -112,22 +127,6 @@ if (NOT ENABLE_JEMALLOC OR ENABLE_ASAN OR ENABLE_UBSAN)
     set(JEMALLOC_LIB )
 else()
     set(JEMALLOC_LIB jemalloc)
-endif()
-
-execute_process(
-    COMMAND ldd --version
-    COMMAND head -1
-    COMMAND cut -d ")" -f 2
-    COMMAND cut -d " " -f 2
-    OUTPUT_VARIABLE GLIBC_VERSION
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-message(STATUS "Glibc version is " ${GLIBC_VERSION})
-
-if (GLIBC_VERSION VERSION_LESS "2.17")
-    set(GETTIME_LIB rt)
-else()
-    set(GETTIME_LIB)
 endif()
 
 message(">>>> Configuring third party for '${PROJECT_NAME}' done <<<<")
