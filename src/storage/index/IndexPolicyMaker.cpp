@@ -225,10 +225,8 @@ bool IndexPolicyMaker::writeScanItem(const std::string& prop, const OperatorItem
             }
             break;
         }
-        /**
-         * if col < 1, means the operator is LT. if col <= 1 ,means the opertor is LE.
-         * if operator is LT or LE . the 1 should a end value.
-         **/
+        // if col < 1, means the operator is LT. if col <= 1 ,means the opertor is LE.
+        // if operator is LT or LE . the 1 should a end value.
         case RelationalExpression::Operator::LE :
         case RelationalExpression::Operator::LT : {
             auto v = scanItems_.find(prop);
@@ -255,7 +253,7 @@ bool IndexPolicyMaker::writeScanItem(const std::string& prop, const OperatorItem
             } else {
                 // If this field appears in scanItems_ ,
                 // means that the filter conditions are wrong, for example :
-                // c1 == 1 and c2 == 2
+                // c1 == 1 and c1 == 2
                 VLOG(1) << "Repeated conditional expression for field : " << prop;
                 return false;
             }
