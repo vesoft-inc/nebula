@@ -1516,10 +1516,10 @@ void RaftPart::processAppendLogRequest(
                   << ", my term is " << term_
                   << ", to make the cluster stable i will follow the high term"
                   << " candidate and clenaup my data";
-        reset();
         resp.set_committed_log_id(committedLogId_);
         resp.set_last_log_id(lastLogId_);
         resp.set_last_log_term(lastLogTerm_);
+        return;
     }
 
     // req.get_last_log_id_sent() >= committedLogId_
