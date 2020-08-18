@@ -29,6 +29,8 @@ public:
 
     folly::Future<Status> execute() override;
 
+    Status close() override;
+
 private:
     friend class GetNeighborsTest_BuildRequestDataSet_Test;
     Status buildRequestDataSet();

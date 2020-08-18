@@ -50,6 +50,8 @@ public:
 
     folly::Future<Status> execute() override;
 
+    Status close() override;
+
 private:
     folly::Future<Status> doInnerJoin();
 

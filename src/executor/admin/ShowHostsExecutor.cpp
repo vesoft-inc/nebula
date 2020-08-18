@@ -14,7 +14,7 @@ namespace graph {
 
 folly::Future<Status> ShowHostsExecutor::execute() {
     SCOPED_TIMER(&execTime_);
-    return showHosts().ensure([this]() { UNUSED(this); });
+    return showHosts();
 }
 
 folly::Future<Status> ShowHostsExecutor::showHosts() {

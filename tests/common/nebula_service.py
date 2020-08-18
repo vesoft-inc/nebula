@@ -13,6 +13,7 @@ import shutil
 import socket
 import glob
 import signal
+import psutil
 from contextlib import closing
 
 NEBULA_START_COMMAND_FORMAT = "bin/nebula-{} --flagfile conf/nebula-{}.conf {}"
@@ -123,6 +124,18 @@ class NebulaService(object):
                 os.kill(self.pids[p], signal.SIGTERM)
             except OSError as err:
                 print("nebula stop " + p + " failed: " + str(err))
-        time.sleep(3)
+
+        max_retries = 30
+        while self.check_procs_alive() and max_retries >= 0:
+            time.sleep(1)
+            max_retries = max_retries-1
+
         if cleanup:
             shutil.rmtree(self.work_dir)
+
+    def check_procs_alive(self):
+        pids = psutil.pids()
+        for p in self.pids:
+            if self.pids[p] in pids:
+                return True
+        return False

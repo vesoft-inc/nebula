@@ -591,18 +591,20 @@ Executor::Executor(const std::string &name, const PlanNode *node, QueryContext *
 
 Executor::~Executor() {}
 
-void Executor::startProfiling() {
+Status Executor::open() {
     numRows_ = 0;
     execTime_ = 0;
     totalDuration_.reset();
+    return Status::OK();
 }
 
-void Executor::stopProfiling() {
+Status Executor::close() {
     cpp2::ProfilingStats stats;
     stats.set_total_duration_in_us(totalDuration_.elapsedInUSec());
     stats.set_rows(numRows_);
     stats.set_exec_duration_in_us(execTime_);
     qctx()->addProfilingData(node_->id(), std::move(stats));
+    return Status::OK();
 }
 
 folly::Future<Status> Executor::start(Status status) const {

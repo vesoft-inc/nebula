@@ -63,12 +63,10 @@ private:
     }
 
     void analyze(Executor *executor);
-
-    folly::Future<Status> schedule(Executor *executor);
-
-    folly::Future<Status> schedule(const std::set<Executor *> &dependents);
-
+    folly::Future<Status> doSchedule(Executor *executor);
+    folly::Future<Status> doScheduleParallel(const std::set<Executor *> &dependents);
     folly::Future<Status> iterate(LoopExecutor *loop);
+    folly::Future<Status> execute(Executor *executor);
 
     QueryContext *qctx_{nullptr};
 

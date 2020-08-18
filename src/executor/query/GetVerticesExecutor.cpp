@@ -17,10 +17,7 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> GetVerticesExecutor::execute() {
-    return getVertices().ensure([this]() {
-        // TODO(yee): some cleanup or stats actions
-        UNUSED(this);
-    });
+    return getVertices();
 }
 
 folly::Future<Status> GetVerticesExecutor::getVertices() {

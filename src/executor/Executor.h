@@ -34,16 +34,15 @@ public:
 
     virtual ~Executor();
 
+    // Prepare or initialize executor before each execution
+    virtual Status open();
+
     // Each executor inherited from this class should get input values from ExecutionContext,
-    // execute expression evaluation and save output result back to ExecutionContext after
-    // computation
+    // evaluate expressions and save output result back to ExecutionContext by `finish'
     virtual folly::Future<Status> execute() = 0;
 
-    // Reset all profiling stats
-    void startProfiling();
-
-    // Finish profiling stats and save them to profiling stats container of QueryContext
-    void stopProfiling();
+    // Cleanup or reset executor some states after each execution
+    virtual Status close();
 
     QueryContext *qctx() const {
         return qctx_;

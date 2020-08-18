@@ -14,9 +14,12 @@
 namespace nebula {
 namespace graph {
 folly::Future<Status> DataJoinExecutor::execute() {
-    return doInnerJoin().ensure([this]() {
-        exchange_ = false;
-    });
+    return doInnerJoin();
+}
+
+Status DataJoinExecutor::close() {
+    exchange_ = false;
+    return Executor::close();
 }
 
 folly::Future<Status> DataJoinExecutor::doInnerJoin() {

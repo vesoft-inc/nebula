@@ -26,10 +26,13 @@ folly::Future<Status> GetNeighborsExecutor::execute() {
     if (!status.ok()) {
         return error(std::move(status));
     }
-    return getNeighbors().ensure([this]() {
-        // clear the members
-        reqDs_.rows.clear();
-    });
+    return getNeighbors();
+}
+
+Status GetNeighborsExecutor::close() {
+    // clear the members
+    reqDs_.rows.clear();
+    return Executor::close();
 }
 
 Status GetNeighborsExecutor::buildRequestDataSet() {

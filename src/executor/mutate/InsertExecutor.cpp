@@ -14,7 +14,7 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> InsertVerticesExecutor::execute() {
-    return insertVertices().ensure([this]() { UNUSED(this); });
+    return insertVertices();
 }
 
 folly::Future<Status> InsertVerticesExecutor::insertVertices() {
@@ -37,7 +37,7 @@ folly::Future<Status> InsertVerticesExecutor::insertVertices() {
 }
 
 folly::Future<Status> InsertEdgesExecutor::execute() {
-    return insertEdges().ensure([this]() { UNUSED(this); });
+    return insertEdges();
 }
 
 folly::Future<Status> InsertEdgesExecutor::insertEdges() {
