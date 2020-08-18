@@ -35,10 +35,6 @@ option(ENABLE_PACK_ONE "Whether to package into one" ON)
 option(ENABLE_BUILD_STORAGE "Whether to build storage" OFF)
 option(ENABLE_MODULE_UPDATE "Automatically update module" OFF)
 
-message(STATUS "ENABLE_PACK_ONE         : ${ENABLE_PACK_ONE}")
-message(STATUS "ENABLE_BUILD_STORAGE    : ${ENABLE_BUILD_STORAGE}")
-message(STATUS "ENABLE_MODULE_UPDATE    : ${ENABLE_MODULE_UPDATE}")
-
 add_definitions(-DNEBULA_HOME=${CMAKE_SOURCE_DIR})
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
@@ -103,6 +99,7 @@ config_nebula_common(
     SOURCE_DIR ${nebula_common_source_dir}
     BUILD_DIR ${nebula_common_build_dir}
 )
+
 if(ENABLE_BUILD_STORAGE)
     include(ConfigNebulaStorage)
     nebula_fetch_module(
@@ -127,8 +124,19 @@ add_custom_target(
     clean-modules
     DEPENDS clean-common
 )
+
 if(TARGET clean-storage)
     add_dependencies(clean-modules clean-storage)
+endif()
+
+add_custom_target(
+    install-all
+    COMMAND $(MAKE) install
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+)
+
+if(TARGET install-storage)
+    add_dependencies(install-all install-storage)
 endif()
 
 

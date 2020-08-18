@@ -129,10 +129,10 @@ function package {
         sys_name=`cat /etc/redhat-release | cut -d ' ' -f1`
         if [[ ${sys_name} == "CentOS" ]]; then
             sys_ver=`cat /etc/redhat-release | tr -dc '0-9.' | cut -d \. -f1`
-            sys_ver=.el${sys_ver}.x86
+            sys_ver=.el${sys_ver}.x86_64
         elif [[ ${sys_name} == "Fedora" ]]; then
             sys_ver=`cat /etc/redhat-release | cut -d ' ' -f3`
-            sys_ver=.fc${sys_ver}.x86
+            sys_ver=.fc${sys_ver}.x86_64
         fi
         pType="RPM"
     elif [[ -f "/etc/lsb-release" ]]; then
