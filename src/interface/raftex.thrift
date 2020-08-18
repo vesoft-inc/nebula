@@ -136,9 +136,9 @@ struct SendSnapshotResponse {
 }
 
 service RaftexService {
-    AskForVoteResponse askForVote(1: AskForVoteRequest req);
-    AppendLogResponse appendLog(1: AppendLogRequest req);
-    SendSnapshotResponse  sendSnapshot(1: SendSnapshotRequest req);
+    AskForVoteResponse askForVote(1: AskForVoteRequest req) (priority = "HIGH")
+    AppendLogResponse appendLog(1: AppendLogRequest req) (priority = "HIGH")
+    SendSnapshotResponse  sendSnapshot(1: SendSnapshotRequest req) (priority = "HIGH")
 }
 
 

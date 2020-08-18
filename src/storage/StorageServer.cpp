@@ -24,9 +24,10 @@
 DEFINE_int32(port, 44500, "Storage daemon listening port");
 DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
-DEFINE_int32(num_worker_threads, 32, "Number of workers");
 DEFINE_int32(storage_http_thread_num, 3, "Number of storage daemon's http thread");
 DEFINE_bool(local_config, false, "meta client will not retrieve latest configuration from meta");
+DEFINE_string(num_threads_per_priority, "2:2:16:16:2",
+        "Number of worker threads for each request priority.");
 
 namespace nebula {
 namespace storage {
@@ -96,10 +97,31 @@ bool StorageServer::initWebService() {
     return status.ok();
 }
 
+static std::shared_ptr<apache::thrift::concurrency::ThreadManager> newThreadManager() {
+    std::vector<size_t> threadNums;
+    folly::split(":", FLAGS_num_threads_per_priority, threadNums, false);
+    if (threadNums.size() != apache::thrift::concurrency::N_PRIORITIES) {
+        return nullptr;
+    }
+    return apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
+            {{
+                threadNums[apache::thrift::concurrency::HIGH_IMPORTANT],
+                threadNums[apache::thrift::concurrency::HIGH],
+                threadNums[apache::thrift::concurrency::IMPORTANT],
+                threadNums[apache::thrift::concurrency::NORMAL],
+                threadNums[apache::thrift::concurrency::BEST_EFFORT]
+            }}, true /*stats*/);
+
+}
+
 bool StorageServer::start() {
     ioThreadPool_ = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
-    workers_ = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
-                                 FLAGS_num_worker_threads, true /*stats*/);
+    workers_ = newThreadManager();
+    if (!workers_) {
+        LOG(ERROR) << "num_threads_per_priority declaration error, there must be "
+                << apache::thrift::concurrency::N_PRIORITIES << " priorities!";
+        return false;
+    }
     workers_->setNamePrefix("executor");
     workers_->start();
 

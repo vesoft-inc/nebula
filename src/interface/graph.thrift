@@ -127,9 +127,9 @@ struct AuthResponse {
 
 
 service GraphService {
-    AuthResponse authenticate(1: string username, 2: string password)
+    AuthResponse authenticate(1: string username, 2: string password) (thread = "eb")
 
-    oneway void signout(1: i64 sessionId)
+    oneway void signout(1: i64 sessionId) (thread = "eb")
 
-    ExecutionResponse execute(1: i64 sessionId, 2: string stmt)
+    ExecutionResponse execute(1: i64 sessionId, 2: string stmt) (thread = "eb")
 }

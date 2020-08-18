@@ -81,7 +81,7 @@ add_custom_command(
   COMMAND ${THRIFT1}
     --strict "--allow-neg-enum-vals"
     --templates ${THRIFT_TEMPLATES}
-    --gen "mstch_cpp2:include_prefix=${include_prefix},process_in_event_base,stack_arguments"
+    --gen "mstch_cpp2:include_prefix=${include_prefix},stack_arguments"
     --gen "py"
     --gen "java:hashcode"
     --gen "go:thrift_import=github.com/facebook/fbthrift/thrift/lib/go/thrift,package_prefix=github.com/vesoft-inc/nebula-go/"
