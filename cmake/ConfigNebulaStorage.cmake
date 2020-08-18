@@ -52,6 +52,7 @@ macro(config_nebula_storage)
         storage_project ALL
         COMMAND +${CMAKE_COMMAND} --build ${storage_build_dir}
     )
+    add_dependencies(storage_project common_project)
     add_custom_target(
         install-storage
         COMMAND $(MAKE) install
