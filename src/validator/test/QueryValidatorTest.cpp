@@ -19,18 +19,6 @@ public:
 
 using PK = nebula::graph::PlanNode::Kind;
 
-TEST_F(QueryValidatorTest, Subgraph) {
-    std::vector<PlanNode::Kind> expected = {
-        PK::kDataCollect,
-        PK::kLoop,
-        PK::kStart,
-        PK::kProject,
-        PK::kGetNeighbors,
-        PK::kStart,
-    };
-    EXPECT_TRUE(checkResult("GET SUBGRAPH 3 STEPS FROM \"1\"", expected));
-}
-
 TEST_F(QueryValidatorTest, TestFirstSentence) {
     auto testFirstSentence = [](const std::string &msg) -> bool {
         return msg.find_first_of("SyntaxError: Could not start with the statement") == 0;

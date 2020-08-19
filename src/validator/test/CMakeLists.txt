@@ -59,6 +59,7 @@ nebula_add_test(
         MaintainValidatorTest.cpp
         MutateValidatorTest.cpp
         YieldValidatorTest.cpp
+        GetSubgraphValidatorTest.cpp
         ValidatorTestBase.cpp
         ExplainValidatorTest.cpp
         GroupByValidatorTest.cpp

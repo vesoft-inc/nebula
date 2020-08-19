@@ -8,24 +8,20 @@
 #define VALIDATOR_GETSUBGRAPHVALIDATOR_H_
 
 #include "common/base/Base.h"
-#include "validator/Validator.h"
+#include "validator/TraversalValidator.h"
 #include "parser/Clauses.h"
 
 namespace nebula {
 namespace graph {
-class GetSubgraphValidator final : public Validator {
+class GetSubgraphValidator final : public TraversalValidator {
 public:
     GetSubgraphValidator(Sentence* sentence, QueryContext* context)
-        : Validator(sentence, context) {}
+        : TraversalValidator(sentence, context) {}
 
 private:
     Status validateImpl() override;
 
     Status toPlan() override;
-
-    Status validateStep(StepClause* step);
-
-    Status validateFrom(FromClause* from);
 
     Status validateInBound(InBoundClause* in);
 
@@ -34,9 +30,6 @@ private:
     Status validateBothInOutBound(BothInOutClause* out);
 
 private:
-    uint32_t                                    steps_{1};
-    std::vector<Value>                          starts_;
-    Expression*                                 srcRef_{nullptr};
     std::unordered_set<EdgeType>                edgeTypes_;
 };
 }  // namespace graph
