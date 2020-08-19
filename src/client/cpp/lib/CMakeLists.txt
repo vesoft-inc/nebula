@@ -10,6 +10,10 @@ if (NOT ENABLE_CPPCLIENT_LIB)
     return()
 endif()
 
+if (DISABLE_CXX11_ABI)
+    add_definitions(-DDISABLE_CXX11_ABI=${DISABLE_CXX11_ABI})
+endif()
+
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${NEBULA_THIRDPARTY_ROOT}/lib")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${NEBULA_THIRDPARTY_ROOT}/lib64")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/symbols.map")
@@ -17,20 +21,10 @@ set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--version-script
 nebula_add_library(
     nebula_client SHARED
     $<TARGET_OBJECTS:base_obj>
-    $<TARGET_OBJECTS:thread_obj>
-    $<TARGET_OBJECTS:fs_obj>
-    $<TARGET_OBJECTS:schema_obj>
-    $<TARGET_OBJECTS:network_obj>
-    $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:time_obj>
-    $<TARGET_OBJECTS:stats_obj>
-    $<TARGET_OBJECTS:gflags_man_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:graph_thrift_obj>
-    $<TARGET_OBJECTS:meta_thrift_obj>
-    $<TARGET_OBJECTS:storage_thrift_obj>
-    $<TARGET_OBJECTS:convert_time_type_utils_obj>
     ExecutionResponse.cpp
     NebulaClientImpl.cpp
     NebulaClient.cpp

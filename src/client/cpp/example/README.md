@@ -45,7 +45,7 @@ bash> cmake -DENABLE_CPPCLIENT_LIB=ON ..
 bash> make nebula_client
 ```
 
-If your g++ can't support c++11, you need to do
+If your g++ can't support c++11, you need clean the build dir and do like this
 
 ```bash
 bash> cmake -DDISABLE_CXX11_ABI=ON -DENABLE_CPPCLIENT_LIB=ON ..
@@ -92,7 +92,14 @@ If you want to connect 3 graphd, you can give three graphd's addr and port in in
 Please refer to the [sample code](NebulaClientExample.cpp) on detail usage.
 
 build example code
+If your g++ version is more than 5.0
 
 ```
 g++ -std=c++11 NebulaClientExample.cpp -lnebula_client -lpthread -lglog -o nebula_client_example
+```
+
+If your g++ version is less than 5.0
+
+```
+g++ -std=c++11 NebulaClientExample.cpp -lnebula_client -lpthread -lglog -o nebula_client_example -D ABI_98
 ```

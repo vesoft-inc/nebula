@@ -21,7 +21,7 @@
 #   ENABLE_NATIVE                   -- Build native client
 #   ENABLE_TESTING                  -- Build unit test
 #   ENABLE_PACK_ONE                 -- Package to one or multi packages
-#   ENABLE_CPPCLIENT_LIB           -- Build cpp client lib so
+#   ENABLE_CPPCLIENT_LIB            -- Build cpp client lib so
 #
 # CMake version check
 cmake_minimum_required(VERSION 3.5.0)

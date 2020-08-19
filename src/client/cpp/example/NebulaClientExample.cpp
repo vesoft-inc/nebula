@@ -99,6 +99,7 @@ int main(int argc, char *argv[]) {
 
             // async execute cmd: show spaces
             size_t spaceNum = 0u;
+#if defined(ABI_98)
             auto cb = [] (nebula::ExecutionResponse* response,
                           nebula::ErrorCode resultCode,
                           void* context) {
@@ -113,11 +114,30 @@ int main(int argc, char *argv[]) {
                               << response->getErrorCode() << std::endl;
                 }
             };
+
             // async execute succeed
             client.asyncExecute("SHOW SPACES", cb, &spaceNum);
 
             // async execute failed
-            client.asyncExecute("SHOW SPACE", cb, &spaceNum);
+            client.asyncExecute("SHOW SPACE", cb, nullptr);
+#else
+            auto cb = [&spaceNum] (nebula::ExecutionResponse* response,
+                                   nebula::ErrorCode resultCode) {
+                if (resultCode == nebula::kSucceed) {
+                    std::cout << "Async do cmd \" SHOW SPACES \" succeed" << std::endl;
+                    printResult(*response);
+                        spaceNum = response->getRows().size();
+                } else {
+                    std::cout << "Async do cmd \" SHOW SPACE \" failed, resultCode = "
+                              << response->getErrorCode() << std::endl;
+                }
+            };
+            // async execute succeed
+            client.asyncExecute("SHOW SPACES", cb);
+
+            // async execute failed
+            client.asyncExecute("SHOW SPACE", cb);
+#endif
             sleep(1);
 
             std::cout << "`SHOW SPACES` get " << spaceNum << " spaces." << std::endl;

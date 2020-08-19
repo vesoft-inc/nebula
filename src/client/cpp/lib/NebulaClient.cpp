@@ -39,6 +39,7 @@ ErrorCode NebulaClient::execute(std::string stmt, ExecutionResponse& resp) {
     return client_->doExecute(stmt, resp);
 }
 
+#if defined(DISABLE_CXX11_ABI)
 void NebulaClient::asyncExecute(std::string stmt, ExecCallback cb, void *context) {
     auto doCallBack = [=] (ExecutionResponse *resp, ErrorCode code) {
         cb(resp, code, context);
@@ -46,4 +47,11 @@ void NebulaClient::asyncExecute(std::string stmt, ExecCallback cb, void *context
     return client_->doAsyncExecute(stmt, std::move(doCallBack));
 }
 
+#else
+
+void NebulaClient::asyncExecute(std::string stmt, Callback cb) {
+    return client_->doAsyncExecute(stmt, std::move(cb));
+}
+
+#endif
 }  // namespace nebula
