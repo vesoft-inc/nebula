@@ -16,8 +16,6 @@ jobs:
     name: lint
     if: ${{ contains(github.event.pull_request.labels.*.name, 'ready-for-testing') }}
     runs-on: ubuntu-latest
-    outputs:
-      has_source_files: ${{ steps.filter-source-files.outputs.has_source_files }}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -38,16 +36,10 @@ jobs:
           PYTHON_PYLINT_CONFIG_FILE: ${{ github.workspace }}/tests/.pylintrc
           VALIDATE_PYTHON_FLAKE8: false
           GITHUB_TOKEN: ${{ github.token }}
-      - name: Filter source files
-        id: filter-source-files
-        run: |
-          source_files=$(echo ${{ steps.diff.outputs.all }} | sed 's/ /\n/g' | grep '^src\|^tests\|^CMakeLists.txt\|^cmake\|^.github/workflows' || true)
-          echo "::set-output name=has_source_files::$([[ "$source_files" == "" ]] && echo 0 || echo 1)"
 
   build:
     name: build
     needs: lint
-    if: ${{ needs.lint.outputs.has_source_files != 0 }}
     runs-on: self-hosted
     strategy:
       fail-fast: false
@@ -67,7 +59,6 @@ jobs:
         TOOLSET_DIR: /opt/vesoft/toolset/clang/9.0.0
         CCACHE_DIR: /tmp/ccache/nebula-graph/${{ matrix.os }}-${{ matrix.compiler }}
         CCACHE_MAXSIZE: 1G
-        PYPI_MIRROR: https://mirrors.aliyun.com/pypi/simple/
       volumes:
         - /tmp/ccache/nebula-graph/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula-graph/${{ matrix.os }}-${{ matrix.compiler }}
       options: --mount type=tmpfs,destination=/tmp/ccache/nebula-graph,tmpfs-size=1073741824 --cap-add=SYS_PTRACE
@@ -77,6 +68,8 @@ jobs:
           fetch-depth: 1
       - name: Prepare environment
         id: prepare
+        env:
+          PYPI_MIRROR: https://mirrors.aliyun.com/pypi/simple/
         run: |
           [ -d build/ ] && rm -rf build/* || mkdir -p build
           pip3 install -U setuptools -i $PYPI_MIRROR

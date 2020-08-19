@@ -9,13 +9,14 @@
 #
 # usage: ./package.sh -v <version> -n <ON/OFF> -s <TRUE/FALSE>
 #
-set -ex
+
+set -e
 
 version=""
 package_one=ON
 strip_enable="FALSE"
 usage="Usage: ${0} -v <version> -n <ON/OFF> -s <TRUE/FALSE>"
-project_dir="$(cd "$(dirname "$0")" && pwd)"/../
+project_dir="$(cd "$(dirname "$0")" && pwd)/.."
 build_dir=${project_dir}/build
 enablesanitizer="OFF"
 static_sanitizer="OFF"
@@ -164,4 +165,3 @@ function package {
 # The main
 build $version $enablesanitizer $static_sanitizer $build_type
 package $strip_enable
-
