@@ -16,17 +16,17 @@
 
 ########## networking ##########
 # Meta Server Address
---meta_server_addrs=127.0.0.1:15500
+--meta_server_addrs=127.0.0.1:45500
 # Local ip
 --local_ip=127.0.0.1
 # Meta daemon listening port
---port=15500
+--port=45500
 # HTTP service ip
 --ws_ip=127.0.0.1
 # HTTP service port
---ws_http_port=15600
+--ws_http_port=11000
 # HTTP2 service port
---ws_h2_port=15610
+--ws_h2_port=11002
 
 ########## storage ##########
 # Root data path, here should be only single path for metad
