@@ -72,11 +72,11 @@ DEFINE_int32(num_compaction_threads, 0,
 DEFINE_int32(rate_limit, 0,
             "write limit in bytes per sec. The unit is MB. 0 means unlimited.");
 
-DEFINE_bool(enable_prefix_filtering, false,
+DEFINE_bool(enable_rocksdb_prefix_filtering, false,
             "Whether or not to enable rocksdb's prefix bloom filter.");
-DEFINE_bool(enable_whole_key_filtering, true,
+DEFINE_bool(enable_rocksdb_whole_key_filtering, true,
             "Whether or not to enable the whole key filtering.");
-DEFINE_int32(prefix_length, 12,
+DEFINE_int32(rocksdb_filtering_prefix_length, 12,
             "The prefix length, default value is 12 bytes(PartitionID+VertexID).");
 
 namespace nebula {
@@ -224,10 +224,11 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options &baseOpts) {
         bbtOpts.pin_l0_filter_and_index_blocks_in_cache =
             baseOpts.compaction_style == rocksdb::CompactionStyle::kCompactionStyleLevel;
     }
-    if (FLAGS_enable_prefix_filtering) {
-        baseOpts.prefix_extractor.reset(new GraphPrefixTransform(FLAGS_prefix_length));
+    if (FLAGS_enable_rocksdb_prefix_filtering) {
+        baseOpts.prefix_extractor.reset(
+                new GraphPrefixTransform(FLAGS_rocksdb_filtering_prefix_length));
     }
-    bbtOpts.whole_key_filtering = FLAGS_enable_whole_key_filtering;
+    bbtOpts.whole_key_filtering = FLAGS_enable_rocksdb_whole_key_filtering;
     baseOpts.table_factory.reset(NewBlockBasedTableFactory(bbtOpts));
     baseOpts.create_if_missing = true;
     return s;

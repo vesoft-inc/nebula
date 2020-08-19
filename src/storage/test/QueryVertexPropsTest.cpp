@@ -49,7 +49,7 @@ void mockData(kvstore::KVStore* kv,
                 baton.post();
             });
         baton.wait();
-        if (FLAGS_enable_prefix_filtering) {
+        if (FLAGS_enable_rocksdb_prefix_filtering) {
             kvstore::ResultCode code = kv->flush(0);  // flush per partition
             EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
         }
@@ -188,7 +188,7 @@ TEST(QueryVertexPropsTest, SimpleTest) {
 
 TEST(QueryVertexPropsTest, PrefixBloomFilterTest) {
     FLAGS_enable_rocksdb_statistics = true;
-    FLAGS_enable_prefix_filtering = true;
+    FLAGS_enable_rocksdb_prefix_filtering = true;
     fs::TempDir rootPath("/tmp/QueryVertexPropsTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
 

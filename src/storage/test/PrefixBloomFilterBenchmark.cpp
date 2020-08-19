@@ -74,7 +74,7 @@ BENCHMARK_RELATIVE(PrefixWithFilterOn, n) {
     FLAGS_rocksdb_column_family_options = R"({
         "level0_file_num_compaction_trigger":"100"
     })";
-    FLAGS_enable_prefix_filtering = true;
+    FLAGS_enable_rocksdb_prefix_filtering = true;
     FLAGS_rocksdb_block_cache = 0;
     fs::TempDir rootPath("/tmp/PrefixBloomFilterBenchmark.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(),

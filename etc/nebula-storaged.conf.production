@@ -85,12 +85,12 @@
 --rocksdb_stats_level=kExceptHistogramOrTimers
 
 # Whether or not to enable rocksdb's prefix bloom filter, disabled by default.
---enable_prefix_filtering=false
+--enable_rocksdb_prefix_filtering=false
 # Whether or not to enable the whole key filtering.
---enable_whole_key_filtering=true
+--enable_rocksdb_whole_key_filtering=true
 # The prefix length for each key to use as the filter value.
 # can be 12 bytes(PartitionId + VertexID), or 16 bytes(PartitionId + VertexID + TagID/EdgeType).
---prefix_length=12
+--rocksdb_filtering_prefix_length=12
 
 ############### misc ####################
 --max_handlers_per_req=1
