@@ -321,6 +321,7 @@ void FetchEdgesExecutor::fetchEdges() {
                 LOG(ERROR) << "part: " << error.first
                            << "error code: " << static_cast<int>(error.second);
             }
+            ectx()->addWarningMsg("Fetch edges executor was partially performed");
         }
         processResult(std::move(result));
         return;
