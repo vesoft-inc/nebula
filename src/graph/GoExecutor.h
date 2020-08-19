@@ -77,6 +77,21 @@ private:
         return curStep_ >= recordFrom_ && curStep_ <= steps_;
     }
 
+    bool needJoinInput() const {
+        for (const auto col : yields_) {
+            if (col->expr()->fromVarInput()) {
+                return true;
+            }
+        }
+
+        if (whereWrapper_ != nullptr
+                && whereWrapper_->filter_ != nullptr) {
+            return whereWrapper_->filter_->fromVarInput();
+        } else {
+            return false;
+        }
+    }
+
     /**
      * To obtain the source ids from various places,
      * such as the literal id list, inputs from the pipeline or results of variable.

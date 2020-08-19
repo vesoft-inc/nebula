@@ -132,7 +132,6 @@ TEST_P(GoTest, OneStepOutBound) {
             {teams_["Spurs"].vid()},
             {teams_["Spurs"].vid()},
             {teams_["Spurs"].vid()},
-            {teams_["Spurs"].vid()},
             {teams_["Hornets"].vid()},
             {teams_["Trail Blazers"].vid()},
         };
@@ -154,7 +153,6 @@ TEST_P(GoTest, OneStepOutBound) {
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
         std::vector<std::tuple<int64_t>> expected = {
-            {teams_["Spurs"].vid()},
             {teams_["Spurs"].vid()},
             {teams_["Spurs"].vid()},
             {teams_["Spurs"].vid()},
@@ -673,7 +671,6 @@ TEST_P(GoTest, MULTI_EDGES) {
             {teams_["Spurs"].vid()},
             {teams_["Spurs"].vid()},
             {teams_["Spurs"].vid()},
-            {teams_["Spurs"].vid()},
             {teams_["Hornets"].vid()},
             {teams_["Trail Blazers"].vid()},
         };
@@ -690,7 +687,6 @@ TEST_P(GoTest, MULTI_EDGES) {
         auto code  = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int64_t>> expected = {
-            {teams_["Spurs"].vid()},
             {teams_["Spurs"].vid()},
             {teams_["Spurs"].vid()},
             {teams_["Spurs"].vid()},
@@ -1029,7 +1025,6 @@ TEST_P(GoTest, ReturnTest) {
             {teams_["Spurs"].vid()},
             {teams_["Spurs"].vid()},
             {teams_["Trail Blazers"].vid()},
-            {teams_["Spurs"].vid()},
             {teams_["Spurs"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));

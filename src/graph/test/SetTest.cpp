@@ -247,23 +247,15 @@ TEST_F(SetTest, UnionAllTest) {
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
-        std::vector<std::tuple<std::string, int64_t, std::string>> expected;
-        for (auto &like : tim.likes()) {
-            auto &player = players_[std::get<0>(like)];
-            for (auto &serve : player.serves()) {
-                std::tuple<std::string, int64_t, std::string> record(
-                    player.name(), std::get<1>(serve), std::get<0>(serve));
-                expected.emplace_back(std::move(record));
-            }
-        }
-        for (auto &like : tony.likes()) {
-            auto &player = players_[std::get<0>(like)];
-            for (auto &serve : player.serves()) {
-                std::tuple<std::string, int64_t, std::string> record(
-                    player.name(), std::get<1>(serve), std::get<0>(serve));
-                expected.emplace_back(std::move(record));
-            }
-        }
+        std::vector<std::tuple<std::string, int64_t, std::string>> expected = {
+            { "Manu Ginobili", 2002, "Spurs" },
+            { "Tony Parker", 1999, "Spurs" },
+            { "Tony Parker", 2018, "Hornets" },
+            { "LaMarcus Aldridge", 2015, "Spurs" },
+            { "LaMarcus Aldridge", 2006, "Trail Blazers" },
+            { "Tim Duncan", 1997, "Spurs" },
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -296,6 +288,7 @@ TEST_F(SetTest, UnionAllTest) {
                     folly::to<std::string>(std::get<1>(serve)));
             expected.emplace_back(std::move(record));
         }
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
     {
         cpp2::ExecutionResponse resp;

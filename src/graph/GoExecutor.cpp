@@ -1075,6 +1075,7 @@ void GoExecutor::onEmptyInputs() {
 }
 
 bool GoExecutor::processFinalResult(Callback cb) const {
+    const bool joinInput = needJoinInput();
     auto uniqResult = std::make_unique<std::unordered_set<size_t>>();
     auto spaceId = ectx()->rctx()->session()->space();
     std::vector<SupportedType> colTypes;
@@ -1309,7 +1310,7 @@ bool GoExecutor::processFinalResult(Callback cb) const {
                     return true;
                 };
 
-                if (fromType_ == kInstantExpr) {
+                if (!joinInput) {
                     if (!func()) {
                         return false;
                     }
