@@ -67,4 +67,6 @@ install(
         nebula-graphd
     DESTINATION
         bin
+    COMPONENT
+        graph
 )

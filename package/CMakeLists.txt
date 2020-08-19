@@ -57,7 +57,7 @@ install(
 )
 
 install(
-    FILES 
+    FILES
         ${NEBULA_STORAGE_BINARY_DIR}/bin/nebula-metad
     PERMISSIONS
         OWNER_EXECUTE OWNER_WRITE OWNER_READ
@@ -257,5 +257,5 @@ install(
 include(CPackage)
 package(${ENABLE_PACK_ONE}
         "nebula-graph"
-        "https://github.com/vesoft-inc/nebula/releases"
+        "https://github.com/vesoft-inc/nebula-graph/releases"
         ${CMAKE_SOURCE_DIR})

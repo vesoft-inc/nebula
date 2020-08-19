@@ -9,4 +9,6 @@ install(
         WORLD_READ
     DESTINATION
         etc
+    COMPONENT
+        graph
 )

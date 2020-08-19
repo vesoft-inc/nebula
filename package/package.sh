@@ -97,6 +97,7 @@ function build {
           -DCMAKE_INSTALL_PREFIX=/usr/local/nebula \
           -DENABLE_TESTING=OFF \
           -DENABLE_BUILD_STORAGE=ON \
+          -DENABLE_PACK_ONE=${package_one} \
           $project_dir
 
     if !( make -j$(nproc) ); then
@@ -117,7 +118,11 @@ function package {
         mkdir ${package_dir}
     fi
     pushd ${package_dir}
-    cmake -DNEBULA_BUILD_VERSION=${version} -DENABLE_PACK_ONE=${package_one} ${project_dir}/package/
+    cmake \
+        -DNEBULA_BUILD_VERSION=${version} \
+        -DENABLE_PACK_ONE=${package_one} \
+        -DCMAKE_INSTALL_PREFIX=/usr/local/nebula \
+        ${project_dir}/package/
 
     strip_enable=$1
 
