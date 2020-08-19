@@ -733,14 +733,17 @@ void FileBasedWal::cleanWAL(int32_t ttl) {
         return;
     }
     auto now = time::WallClock::fastNowInSec();
-    // We skip the latest wal file because it is beging written now.
+    // In theory we only need to keep the latest wal file because it is beging written now.
+    // However, sometimes will trigger raft snapshot even only a small amount of logs is missing,
+    // especially when we reboot all storage, so se keep one more wal.
     size_t index = 0;
     auto it = walFiles_.begin();
     auto size = walFiles_.size();
     int count = 0;
     int walTTL = ttl == 0 ? policy_.ttl : ttl;
     while (it != walFiles_.end()) {
-        if (index++ < size - 1 &&  (now - it->second->mtime() > walTTL)) {
+        // keep at least two wal
+        if (index++ < size - 2 && (now - it->second->mtime() > walTTL)) {
             VLOG(1) << "Clean wals, Remove " << it->second->path() << ", now: " << now
                     << ", mtime: " << it->second->mtime();
             unlink(it->second->path());
