@@ -72,5 +72,94 @@ std::unique_ptr<cpp2::PlanNodeDescription> GetConfig::explain() const {
     addDescription("name", name_, desc.get());
     return desc;
 }
+
+std::unique_ptr<cpp2::PlanNodeDescription> CreateNode::explain() const {
+    auto desc = SingleDependencyNode::explain();
+    addDescription("ifNotExist", util::toJson(ifNotExist_), desc.get());
+    return desc;
+}
+
+std::unique_ptr<cpp2::PlanNodeDescription> DropNode::explain() const {
+    auto desc = SingleDependencyNode::explain();
+    addDescription("ifExist", util::toJson(ifExist_), desc.get());
+    return desc;
+}
+
+std::unique_ptr<cpp2::PlanNodeDescription> CreateUser::explain() const {
+    auto desc = CreateNode::explain();
+    addDescription("username", *username_, desc.get());
+    addDescription("password", "******", desc.get());
+    return desc;
+}
+
+std::unique_ptr<cpp2::PlanNodeDescription> DropUser::explain() const {
+    auto desc = DropNode::explain();
+    addDescription("username", *username_, desc.get());
+    return desc;
+}
+
+std::unique_ptr<cpp2::PlanNodeDescription> UpdateUser::explain() const {
+    auto desc = SingleDependencyNode::explain();
+    addDescription("username", *username_, desc.get());
+    addDescription("password", "******", desc.get());
+    return desc;
+}
+
+std::unique_ptr<cpp2::PlanNodeDescription> GrantRole::explain() const {
+    auto desc = SingleDependencyNode::explain();
+    addDescription("username", *username_, desc.get());
+    addDescription("spaceName", *spaceName_, desc.get());
+    addDescription("role", meta::cpp2::_RoleType_VALUES_TO_NAMES.at(role_), desc.get());
+    return desc;
+}
+
+std::unique_ptr<cpp2::PlanNodeDescription> RevokeRole::explain() const {
+    auto desc = SingleDependencyNode::explain();
+    addDescription("username", *username_, desc.get());
+    addDescription("spaceName", *spaceName_, desc.get());
+    addDescription("role", meta::cpp2::_RoleType_VALUES_TO_NAMES.at(role_), desc.get());
+    return desc;
+}
+
+std::unique_ptr<cpp2::PlanNodeDescription> ChangePassword::explain() const {
+    auto desc = SingleDependencyNode::explain();
+    addDescription("username", *username_, desc.get());
+    addDescription("password", "******", desc.get());
+    addDescription("newPassword", "******", desc.get());
+    return desc;
+}
+
+std::unique_ptr<cpp2::PlanNodeDescription> ListUserRoles::explain() const {
+    auto desc = SingleDependencyNode::explain();
+    addDescription("username", *username_, desc.get());
+    return desc;
+}
+
+std::unique_ptr<cpp2::PlanNodeDescription> ListRoles::explain() const {
+    auto desc = SingleDependencyNode::explain();
+    addDescription("space", util::toJson(space_), desc.get());
+    return desc;
+}
+
+std::unique_ptr<cpp2::PlanNodeDescription> SubmitJob::explain() const {
+    auto desc = SingleDependencyNode::explain();
+    addDescription("operation", meta::cpp2::_AdminJobOp_VALUES_TO_NAMES.at(op_), desc.get());
+    addDescription("command", meta::cpp2::_AdminCmd_VALUES_TO_NAMES.at(cmd_), desc.get());
+    addDescription("parameters", folly::toJson(util::toJson(params_)), desc.get());
+    return desc;
+}
+
+std::unique_ptr<cpp2::PlanNodeDescription> Balance::explain() const {
+    auto desc = SingleDependencyNode::explain();
+    addDescription("deleteHosts", folly::toJson(util::toJson(deleteHosts_)), desc.get());
+    return desc;
+}
+
+std::unique_ptr<cpp2::PlanNodeDescription> ShowBalance::explain() const {
+    auto desc = SingleDependencyNode::explain();
+    addDescription("balanceId", util::toJson(id_), desc.get());
+    return desc;
+}
+
 }   // namespace graph
 }   // namespace nebula

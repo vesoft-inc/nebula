@@ -33,6 +33,10 @@ std::string toJson(bool b) {
     return b ? "true" : "false";
 }
 
+std::string toJson(const HostAddr &addr) {
+    return addr.toString();
+}
+
 std::string toJson(const List &list) {
     return list.toString();
 }

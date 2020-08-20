@@ -27,6 +27,8 @@ protected:
     CreateNode(ExecutionPlan* plan, Kind kind, PlanNode* input, bool ifNotExist = false)
         : SingleDependencyNode(plan, kind, input), ifNotExist_(ifNotExist) {}
 
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+
 public:
     bool ifNotExist() const {
         return ifNotExist_;
@@ -40,6 +42,8 @@ class DropNode : public SingleDependencyNode {
 protected:
     DropNode(ExecutionPlan* plan, Kind kind, PlanNode* input, bool ifExist = false)
         : SingleDependencyNode(plan, kind, input), ifExist_(ifExist) {}
+
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
 public:
     bool ifExist() const {
@@ -367,10 +371,7 @@ public:
                               ifNotExists);
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override {
-        LOG(FATAL) << "Unimplemented";
-        return nullptr;
-    }
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
     const std::string* username() const {
         return username_;
@@ -407,10 +408,7 @@ public:
                             ifNotExists);
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override {
-        LOG(FATAL) << "Unimplemented";
-        return nullptr;
-    }
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
     const std::string* username() const {
         return username_;
@@ -437,10 +435,7 @@ public:
                               password);
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override {
-        LOG(FATAL) << "Unimplemented";
-        return nullptr;
-    }
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
     const std::string* username() const {
         return username_;
@@ -478,10 +473,7 @@ public:
                              role);
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override {
-        LOG(FATAL) << "Unimplemented";
-        return nullptr;
-    }
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
     const std::string* username() const {
         return username_;
@@ -526,10 +518,7 @@ public:
                               role);
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override {
-        LOG(FATAL) << "Unimplemented";
-        return nullptr;
-    }
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
     const std::string* username() const {
         return username_;
@@ -574,10 +563,7 @@ public:
                                   newPassword);
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override {
-        LOG(FATAL) << "Unimplemented";
-        return nullptr;
-    }
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
     const std::string* username() const {
         return username_;
@@ -619,10 +605,7 @@ public:
                                  username);
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override {
-        LOG(FATAL) << "Unimplemented";
-        return nullptr;
-    }
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
     const std::string* username() const {
         return username_;
@@ -643,11 +626,6 @@ public:
         return new ListUsers(plan, dep);
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override {
-        LOG(FATAL) << "Unimplemented";
-        return nullptr;
-    }
-
 private:
     explicit ListUsers(ExecutionPlan* plan, PlanNode* dep)
         : SingleDependencyNode(plan, Kind::kListUsers, dep) {}
@@ -659,10 +637,7 @@ public:
         return new ListRoles(plan, dep, space);
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override {
-        LOG(FATAL) << "Unimplemented";
-        return nullptr;
-    }
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
     GraphSpaceID space() const {
         return space_;
@@ -718,11 +693,7 @@ public:
         return new SubmitJob(plan, dep, op, params);
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override {
-        // TODO(shylock)
-        LOG(FATAL) << "Unimplemented";
-        return nullptr;
-    }
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
 public:
     meta::cpp2::AdminJobOp jobOp() const {
@@ -759,11 +730,6 @@ public:
         return new BalanceLeaders(plan, dep);
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override {
-        LOG(FATAL) << "Unimplemented";
-        return nullptr;
-    }
-
 private:
     explicit BalanceLeaders(ExecutionPlan* plan, PlanNode* dep)
         : SingleDependencyNode(plan, Kind::kBalanceLeaders, dep) {}
@@ -775,10 +741,7 @@ public:
         return new Balance(plan, dep, std::move(deleteHosts));
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override {
-        LOG(FATAL) << "Unimplemented";
-        return nullptr;
-    }
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
     const std::vector<HostAddr> &deleteHosts() const {
         return deleteHosts_;
@@ -797,11 +760,6 @@ public:
         return new StopBalance(plan, dep);
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override {
-        LOG(FATAL) << "Unimplemented";
-        return nullptr;
-    }
-
 private:
     explicit StopBalance(ExecutionPlan* plan, PlanNode* dep)
         : SingleDependencyNode(plan, Kind::kStopBalance, dep) {}
@@ -813,10 +771,7 @@ public:
         return new ShowBalance(plan, dep, id);
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override {
-        LOG(FATAL) << "Unimplemented";
-        return nullptr;
-    }
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
     int64_t id() const {
         return id_;

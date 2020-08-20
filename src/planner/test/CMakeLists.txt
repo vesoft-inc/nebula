@@ -53,4 +53,4 @@ nebula_add_test(
         proxygenlib
         ${THRIFT_LIBRARIES}
         wangle
-  )
+)
