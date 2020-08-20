@@ -4,6 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include "validator/test/ValidatorTestBase.h"
+
 #include "common/base/Base.h"
 #include "context/QueryContext.h"
 #include "context/ValidateContext.h"
@@ -14,14 +16,116 @@
 #include "planner/Mutate.h"
 #include "planner/PlanNode.h"
 #include "planner/Query.h"
-#include "validator/ASTValidator.h"
-#include "validator/test/ValidatorTestBase.h"
 
 namespace nebula {
 namespace graph {
 
+// static
+void ValidatorTestBase::bfsTraverse(const PlanNode *root, std::vector<PlanNode::Kind> &result) {
+    std::queue<const PlanNode *> queue;
+    std::unordered_set<int64_t> visited;
+    queue.emplace(root);
+
+    while (!queue.empty()) {
+        auto node = queue.front();
+        VLOG(1) << "node kind: " << node->kind();
+        queue.pop();
+        if (visited.find(node->id()) != visited.end()) {
+            continue;
+        }
+        visited.emplace(node->id());
+        result.emplace_back(node->kind());
+
+        switch (node->kind()) {
+            case PlanNode::Kind::kUnknown:
+                ASSERT_TRUE(false) << "Unknown Plan Node.";
+            case PlanNode::Kind::kStart: {
+                break;
+            }
+            case PlanNode::Kind::kCreateUser:
+            case PlanNode::Kind::kDropUser:
+            case PlanNode::Kind::kUpdateUser:
+            case PlanNode::Kind::kGrantRole:
+            case PlanNode::Kind::kRevokeRole:
+            case PlanNode::Kind::kChangePassword:
+            case PlanNode::Kind::kListUserRoles:
+            case PlanNode::Kind::kListUsers:
+            case PlanNode::Kind::kListRoles:
+            case PlanNode::Kind::kShowHosts:
+            case PlanNode::Kind::kGetNeighbors:
+            case PlanNode::Kind::kGetVertices:
+            case PlanNode::Kind::kGetEdges:
+            case PlanNode::Kind::kIndexScan:
+            case PlanNode::Kind::kFilter:
+            case PlanNode::Kind::kProject:
+            case PlanNode::Kind::kSort:
+            case PlanNode::Kind::kLimit:
+            case PlanNode::Kind::kAggregate:
+            case PlanNode::Kind::kSwitchSpace:
+            case PlanNode::Kind::kMultiOutputs:
+            case PlanNode::Kind::kDedup:
+            case PlanNode::Kind::kDataCollect:
+            case PlanNode::Kind::kCreateSpace:
+            case PlanNode::Kind::kCreateTag:
+            case PlanNode::Kind::kCreateEdge:
+            case PlanNode::Kind::kDescSpace:
+            case PlanNode::Kind::kDescTag:
+            case PlanNode::Kind::kDescEdge:
+            case PlanNode::Kind::kInsertVertices:
+            case PlanNode::Kind::kInsertEdges:
+            case PlanNode::Kind::kShowCreateSpace:
+            case PlanNode::Kind::kShowCreateTag:
+            case PlanNode::Kind::kShowCreateEdge:
+            case PlanNode::Kind::kDropSpace:
+            case PlanNode::Kind::kDropTag:
+            case PlanNode::Kind::kDropEdge:
+            case PlanNode::Kind::kShowSpaces:
+            case PlanNode::Kind::kShowTags:
+            case PlanNode::Kind::kShowEdges:
+            case PlanNode::Kind::kCreateSnapshot:
+            case PlanNode::Kind::kDropSnapshot:
+            case PlanNode::Kind::kShowSnapshots:
+            case PlanNode::Kind::kDataJoin:
+            case PlanNode::Kind::kDeleteVertices:
+            case PlanNode::Kind::kDeleteEdges:
+            case PlanNode::Kind::kUpdateVertex:
+            case PlanNode::Kind::kUpdateEdge: {
+                auto *current = static_cast<const SingleDependencyNode *>(node);
+                queue.emplace(current->dep());
+                break;
+            }
+            case PlanNode::Kind::kUnion:
+            case PlanNode::Kind::kIntersect:
+            case PlanNode::Kind::kMinus: {
+                auto *current = static_cast<const BiInputNode *>(node);
+                queue.emplace(current->left());
+                queue.emplace(current->right());
+                break;
+            }
+            case PlanNode::Kind::kSelect: {
+                auto *current = static_cast<const Select *>(node);
+                queue.emplace(current->dep());
+                queue.emplace(current->then());
+                if (current->otherwise() != nullptr) {
+                    queue.emplace(current->otherwise());
+                }
+                break;
+            }
+            case PlanNode::Kind::kLoop: {
+                auto *current = static_cast<const Loop *>(node);
+                queue.emplace(current->dep());
+                queue.emplace(current->body());
+                break;
+            }
+            default:
+                LOG(FATAL) << "Unknown PlanNode: " << static_cast<int64_t>(node->kind());
+        }
+    }
+}
+
 // Compare the node itself's field in this function
-/*static*/ Status ValidatorTestBase::EqSelf(const PlanNode *l, const PlanNode *r) {
+// static
+Status ValidatorTestBase::EqSelf(const PlanNode *l, const PlanNode *r) {
     if (l != nullptr && r != nullptr) {
         // continue
     } else if (l == nullptr && r == nullptr) {
@@ -213,4 +317,3 @@ int main(int argc, char** argv) {
 
     return RUN_ALL_TESTS();
 }
-

@@ -4,7 +4,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include "planner/Logic.h"
 #include "planner/Query.h"
+#include "util/ObjectPool.h"
 #include "validator/FetchVerticesValidator.h"
 #include "validator/test/ValidatorTestBase.h"
 
@@ -15,35 +17,36 @@ class FetchVerticesValidatorTest : public ValidatorTestBase {};
 
 TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     auto src = std::make_unique<VariablePropertyExpression>(
-        new std::string(qCtx_->vctx()->anonVarGen()->getVar()), new std::string(kVid));
+        new std::string("_VARNAME_"), new std::string(kVid));
     {
-        ASSERT_TRUE(toPlan("FETCH PROP ON person \"1\""));
+        auto plan = toPlan("FETCH PROP ON person \"1\"");
 
-        auto *start = StartNode::make(expectedQueryCtx_->plan());
+        ExecutionPlan expectedPlan(pool_.get());
+        auto *start = StartNode::make(&expectedPlan);
 
-        auto *plan = qCtx_->plan();
         auto tagIdResult = schemaMng_->toTagID(1, "person");
         ASSERT_TRUE(tagIdResult.ok());
         auto tagId = tagIdResult.value();
         storage::cpp2::VertexProp prop;
         prop.set_tag(tagId);
-        auto *gv = GetVertices::make(expectedQueryCtx_->plan(),
+        auto *gv = GetVertices::make(&expectedPlan,
                                      start,
                                      1,
                                      src.get(),
                                      std::vector<storage::cpp2::VertexProp>{std::move(prop)},
                                      {});
         gv->setColNames({kVid, "person.name", "person.age"});
+        expectedPlan.setRoot(gv);
         auto result = Eq(plan->root(), gv);
         ASSERT_TRUE(result.ok()) << result;
     }
     // With YIELD
     {
-        ASSERT_TRUE(toPlan("FETCH PROP ON person \"1\" YIELD person.name, person.age"));
+        auto plan = toPlan("FETCH PROP ON person \"1\" YIELD person.name, person.age");
 
-        auto *start = StartNode::make(expectedQueryCtx_->plan());
+        ExecutionPlan expectedPlan(pool_.get());
+        auto *start = StartNode::make(&expectedPlan);
 
-        auto *plan = qCtx_->plan();
         auto tagIdResult = schemaMng_->toTagID(1, "person");
         ASSERT_TRUE(tagIdResult.ok());
         auto tagId = tagIdResult.value();
@@ -57,7 +60,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
         expr2.set_expr(
             TagPropertyExpression(new std::string("person"), new std::string("age")).encode());
         auto *gv =
-            GetVertices::make(expectedQueryCtx_->plan(),
+            GetVertices::make(&expectedPlan,
                               start,
                               1,
                               src.get(),
@@ -73,19 +76,19 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
             new TagPropertyExpression(new std::string("person"), new std::string("name"))));
         yieldColumns->addColumn(new YieldColumn(
             new TagPropertyExpression(new std::string("person"), new std::string("age"))));
-        auto *project = Project::make(expectedQueryCtx_->plan(), gv, yieldColumns.get());
+        auto *project = Project::make(&expectedPlan, gv, yieldColumns.get());
         project->setColNames({kVid, "person.name", "person.age"});
 
+        expectedPlan.setRoot(project);
         auto result = Eq(plan->root(), project);
         ASSERT_TRUE(result.ok()) << result;
     }
     // With YIELD const expression
     {
-        ASSERT_TRUE(toPlan("FETCH PROP ON person \"1\" YIELD person.name, 1 > 1, person.age"));
+        auto plan = toPlan("FETCH PROP ON person \"1\" YIELD person.name, 1 > 1, person.age");
 
-        auto *start = StartNode::make(expectedQueryCtx_->plan());
-
-        auto *plan = qCtx_->plan();
+        ExecutionPlan expectedPlan(pool_.get());
+        auto *start = StartNode::make(&expectedPlan);
 
         // get vertices
         auto tagIdResult = schemaMng_->toTagID(1, "person");
@@ -101,7 +104,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
         expr2.set_expr(
             TagPropertyExpression(new std::string("person"), new std::string("age")).encode());
         auto *gv =
-            GetVertices::make(expectedQueryCtx_->plan(),
+            GetVertices::make(&expectedPlan,
                               start,
                               1,
                               src.get(),
@@ -119,18 +122,20 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
             Expression::Kind::kRelGT, new ConstantExpression(1), new ConstantExpression(1))));
         yieldColumns->addColumn(new YieldColumn(
             new TagPropertyExpression(new std::string("person"), new std::string("age"))));
-        auto *project = Project::make(expectedQueryCtx_->plan(), gv, yieldColumns.get());
+        auto *project = Project::make(&expectedPlan, gv, yieldColumns.get());
         project->setColNames({kVid, "person.name", "(1>1)", "person.age"});
+
+        expectedPlan.setRoot(project);
 
         auto result = Eq(plan->root(), project);
         ASSERT_TRUE(result.ok()) << result;
     }
     // With YIELD combine properties
     {
-        ASSERT_TRUE(toPlan("FETCH PROP ON person \"1\" YIELD person.name + person.age"));
-        auto *plan = qCtx_->plan();
+        auto plan = toPlan("FETCH PROP ON person \"1\" YIELD person.name + person.age");
 
-        auto *start = StartNode::make(expectedQueryCtx_->plan());
+        ExecutionPlan expectedPlan(pool_.get());
+        auto *start = StartNode::make(&expectedPlan);
 
         auto tagIdResult = schemaMng_->toTagID(1, "person");
         ASSERT_TRUE(tagIdResult.ok());
@@ -146,7 +151,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
                 new TagPropertyExpression(new std::string("person"), new std::string("age")))
                 .encode());
 
-        auto *gv = GetVertices::make(expectedQueryCtx_->plan(),
+        auto *gv = GetVertices::make(&expectedPlan,
                                      start,
                                      1,
                                      src.get(),
@@ -162,19 +167,21 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
             Expression::Kind::kAdd,
             new TagPropertyExpression(new std::string("person"), new std::string("name")),
             new TagPropertyExpression(new std::string("person"), new std::string("age")))));
-        auto *project = Project::make(expectedQueryCtx_->plan(), gv, yieldColumns.get());
+        auto *project = Project::make(&expectedPlan, gv, yieldColumns.get());
         project->setColNames({kVid, "(person.name+person.age)"});
+
+        expectedPlan.setRoot(project);
 
         auto result = Eq(plan->root(), project);
         ASSERT_TRUE(result.ok()) << result;
     }
     // With YIELD distinct
     {
-        ASSERT_TRUE(toPlan("FETCH PROP ON person \"1\" YIELD distinct person.name, person.age"));
+        auto plan = toPlan("FETCH PROP ON person \"1\" YIELD distinct person.name, person.age");
 
-        auto *start = StartNode::make(expectedQueryCtx_->plan());
+        ExecutionPlan expectedPlan(pool_.get());
+        auto *start = StartNode::make(&expectedPlan);
 
-        auto *plan = qCtx_->plan();
         auto tagIdResult = schemaMng_->toTagID(1, "person");
         ASSERT_TRUE(tagIdResult.ok());
         auto tagId = tagIdResult.value();
@@ -188,7 +195,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
         expr2.set_expr(
             TagPropertyExpression(new std::string("person"), new std::string("age")).encode());
         auto *gv =
-            GetVertices::make(expectedQueryCtx_->plan(),
+            GetVertices::make(&expectedPlan,
                               start,
                               1,
                               src.get(),
@@ -206,34 +213,34 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
             new TagPropertyExpression(new std::string("person"), new std::string("name"))));
         yieldColumns->addColumn(new YieldColumn(
             new TagPropertyExpression(new std::string("person"), new std::string("age"))));
-        auto *project = Project::make(expectedQueryCtx_->plan(), gv, yieldColumns.get());
+        auto *project = Project::make(&expectedPlan, gv, yieldColumns.get());
         project->setColNames(colNames);
 
         // dedup
-        auto *dedup = Dedup::make(expectedQueryCtx_->plan(), project);
+        auto *dedup = Dedup::make(&expectedPlan, project);
         dedup->setColNames(colNames);
 
         // data collect
-        auto *dataCollect = DataCollect::make(expectedQueryCtx_->plan(),
-                                              dedup,
-                                              DataCollect::CollectKind::kRowBasedMove,
-                                              {dedup->varName()});
+        auto *dataCollect = DataCollect::make(
+            &expectedPlan, dedup, DataCollect::CollectKind::kRowBasedMove, {dedup->varName()});
         dataCollect->setColNames(colNames);
+
+        expectedPlan.setRoot(dataCollect);
 
         auto result = Eq(plan->root(), dataCollect);
         ASSERT_TRUE(result.ok()) << result;
     }
     // ON *
     {
-        ASSERT_TRUE(toPlan("FETCH PROP ON * \"1\""));
+        auto plan = toPlan("FETCH PROP ON * \"1\"");
 
-        auto *start = StartNode::make(expectedQueryCtx_->plan());
-
-        auto *plan = qCtx_->plan();
+        ExecutionPlan expectedPlan(pool_.get());
+        auto *start = StartNode::make(&expectedPlan);
 
         auto *gv = GetVertices::make(
-            expectedQueryCtx_->plan(), start, 1, src.get(), {}, {});
+            &expectedPlan, start, 1, src.get(), {}, {});
         gv->setColNames({kVid, "person.name", "person.age"});
+        expectedPlan.setRoot(gv);
         auto result = Eq(plan->root(), gv);
         ASSERT_TRUE(result.ok()) << result;
     }
@@ -296,140 +303,40 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesInputOutput) {
 
 TEST_F(FetchVerticesValidatorTest, FetchVerticesPropFailed) {
     // mismatched tag
-    {
-        auto result = GQLParser().parse("FETCH PROP ON tag1 \"1\" YIELD tag2.prop2");
-        ASSERT_TRUE(result.ok());
-        auto sentences = std::move(result).value();
-        ASTValidator validator(sentences.get(), qCtx_.get());
-        auto validateResult = validator.validate();
-        ASSERT_FALSE(validateResult.ok());
-    }
+    ASSERT_FALSE(validate("FETCH PROP ON tag1 \"1\" YIELD tag2.prop2"));
 
     // not exist tag
-    {
-        auto result =
-            GQLParser().parse("FETCH PROP ON not_exist_tag \"1\" YIELD not_exist_tag.prop1");
-        ASSERT_TRUE(result.ok()) << result.status();
-        auto sentences = std::move(result).value();
-        ASTValidator validator(sentences.get(), qCtx_.get());
-        auto validateResult = validator.validate();
-        ASSERT_FALSE(validateResult.ok());
-    }
+    ASSERT_FALSE(validate("FETCH PROP ON not_exist_tag \"1\" YIELD not_exist_tag.prop1"));
 
     // not exist property
-    {
-        auto result =
-            GQLParser().parse("FETCH PROP ON person \"1\" YIELD person.not_exist_property");
-        ASSERT_TRUE(result.ok());
-        auto sentences = std::move(result).value();
-        ASTValidator validator(sentences.get(), qCtx_.get());
-        auto validateResult = validator.validate();
-        ASSERT_FALSE(validateResult.ok());
-    }
+    ASSERT_FALSE(validate("FETCH PROP ON person \"1\" YIELD person.not_exist_property"));
 
     // invalid yield expression
-    {
-        auto result = GQLParser().parse("$a = FETCH PROP ON person \"1\" YIELD person.name AS name;"
-                                        " FETCH PROP ON person \"1\" YIELD $a.name + 1");
-        ASSERT_TRUE(result.ok());
-        auto sentences = std::move(result).value();
-        ASTValidator validator(sentences.get(), qCtx_.get());
-        auto validateResult = validator.validate();
-        ASSERT_FALSE(validateResult.ok());
-    }
-    // invalid yield expression
-    {
-        auto result = GQLParser().parse("FETCH PROP ON person \"1\" YIELD $^.person.name");
-        ASSERT_TRUE(result.ok());
-        auto sentences = std::move(result).value();
-        ASTValidator validator(sentences.get(), qCtx_.get());
-        auto validateResult = validator.validate();
-        ASSERT_FALSE(validateResult.ok());
-    }
-    {
-        auto result = GQLParser().parse("FETCH PROP ON person \"1\" YIELD $$.person.name");
-        ASSERT_TRUE(result.ok());
-        auto sentences = std::move(result).value();
-        ASTValidator validator(sentences.get(), qCtx_.get());
-        auto validateResult = validator.validate();
-        ASSERT_FALSE(validateResult.ok());
-    }
-    {
-        auto result = GQLParser().parse("FETCH PROP ON person \"1\" YIELD person.name AS name | "
-                                        " FETCH PROP ON person \"1\" YIELD $-.name + 1");
-        ASSERT_TRUE(result.ok());
-        auto sentences = std::move(result).value();
-        ASTValidator validator(sentences.get(), qCtx_.get());
-        auto validateResult = validator.validate();
-        ASSERT_FALSE(validateResult.ok());
-    }
-    {
-        auto result = GQLParser().parse("FETCH PROP ON person \"1\" YIELD person._src + 1");
-        ASSERT_TRUE(result.ok());
-        auto sentences = std::move(result).value();
-        ASTValidator validator(sentences.get(), qCtx_.get());
-        auto validateResult = validator.validate();
-        ASSERT_FALSE(validateResult.ok());
-    }
-    {
-        auto result = GQLParser().parse("FETCH PROP ON person \"1\" YIELD person._type");
-        ASSERT_TRUE(result.ok());
-        auto sentences = std::move(result).value();
-        ASTValidator validator(sentences.get(), qCtx_.get());
-        auto validateResult = validator.validate();
-        ASSERT_FALSE(validateResult.ok());
-    }
-    {
-        auto result = GQLParser().parse("FETCH PROP ON person \"1\" YIELD person._rank + 1");
-        ASSERT_TRUE(result.ok());
-        auto sentences = std::move(result).value();
-        ASTValidator validator(sentences.get(), qCtx_.get());
-        auto validateResult = validator.validate();
-        ASSERT_FALSE(validateResult.ok());
-    }
-    {
-        auto result = GQLParser().parse("FETCH PROP ON person \"1\" YIELD person._dst + 1");
-        ASSERT_TRUE(result.ok());
-        auto sentences = std::move(result).value();
-        ASTValidator validator(sentences.get(), qCtx_.get());
-        auto validateResult = validator.validate();
-        ASSERT_FALSE(validateResult.ok());
-    }
+    ASSERT_FALSE(validate("$a = FETCH PROP ON person \"1\" YIELD person.name AS name;"
+                          " FETCH PROP ON person \"1\" YIELD $a.name + 1"));
+
+    ASSERT_FALSE(validate("FETCH PROP ON person \"1\" YIELD $^.person.name"));
+    ASSERT_FALSE(validate("FETCH PROP ON person \"1\" YIELD $$.person.name"));
+    ASSERT_FALSE(validate("FETCH PROP ON person \"1\" YIELD person.name AS name | "
+                          " FETCH PROP ON person \"1\" YIELD $-.name + 1"));
+    ASSERT_FALSE(validate("FETCH PROP ON person \"1\" YIELD person._src + 1"));
+    ASSERT_FALSE(validate("FETCH PROP ON person \"1\" YIELD person._type"));
+    ASSERT_FALSE(validate("FETCH PROP ON person \"1\" YIELD person._rank + 1"));
+    ASSERT_FALSE(validate("FETCH PROP ON person \"1\" YIELD person._dst + 1"));
 }
 
 TEST_F(FetchVerticesValidatorTest, FetchVerticesInputFailed) {
     // mismatched varirable
-    {
-        auto result = GQLParser().parse("$a = FETCH PROP ON person \"1\" YIELD person.name AS name;"
-                                        "FETCH PROP ON person $b.name");
-        ASSERT_TRUE(result.ok());
-        auto sentences = std::move(result).value();
-        ASTValidator validator(sentences.get(), qCtx_.get());
-        auto validateResult = validator.validate();
-        ASSERT_FALSE(validateResult.ok());
-    }
+    ASSERT_FALSE(validate("$a = FETCH PROP ON person \"1\" YIELD person.name AS name;"
+                          "FETCH PROP ON person $b.name"));
 
     // mismatched varirable property
-    {
-        auto result = GQLParser().parse("$a = FETCH PROP ON person \"1\" YIELD person.name AS name;"
-                                        "FETCH PROP ON person $a.not_exist_property");
-        ASSERT_TRUE(result.ok());
-        auto sentences = std::move(result).value();
-        ASTValidator validator(sentences.get(), qCtx_.get());
-        auto validateResult = validator.validate();
-        ASSERT_FALSE(validateResult.ok());
-    }
+    ASSERT_FALSE(validate("$a = FETCH PROP ON person \"1\" YIELD person.name AS name;"
+                          "FETCH PROP ON person $a.not_exist_property"));
 
     // mismatched input property
-    {
-        auto result = GQLParser().parse("FETCH PROP ON person \"1\" YIELD person.name AS name | "
-                                        "FETCH PROP ON person $-.not_exist_property");
-        ASSERT_TRUE(result.ok());
-        auto sentences = std::move(result).value();
-        ASTValidator validator(sentences.get(), qCtx_.get());
-        auto validateResult = validator.validate();
-        ASSERT_FALSE(validateResult.ok());
-    }
+    ASSERT_FALSE(validate("FETCH PROP ON person \"1\" YIELD person.name AS name | "
+                          "FETCH PROP ON person $-.not_exist_property"));
 }
 
 }   // namespace graph

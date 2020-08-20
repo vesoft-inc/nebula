@@ -13,6 +13,7 @@
 #include "planner/ExecutionPlan.h"
 #include "planner/PlanNode.h"
 #include "scheduler/Scheduler.h"
+#include "validator/Validator.h"
 
 namespace nebula {
 namespace graph {
@@ -46,10 +47,9 @@ Status QueryInstance::validateAndOptimize() {
     VLOG(1) << "Parsing query: " << rctx->query();
     auto result = GQLParser().parse(rctx->query());
     NG_RETURN_IF_ERROR(result);
-    sentences_ = std::move(result).value();
+    sentence_ = std::move(result).value();
 
-    validator_ = std::make_unique<ASTValidator>(sentences_.get(), qctx());
-    NG_RETURN_IF_ERROR(validator_->validate());
+    NG_RETURN_IF_ERROR(Validator::validate(sentence_.get(), qctx()));
 
     // TODO: optional optimize for plan.
 
@@ -57,11 +57,11 @@ Status QueryInstance::validateAndOptimize() {
 }
 
 bool QueryInstance::explainOrContinue() {
-    if (sentences_->kind() != Sentence::Kind::kExplain) {
+    if (sentence_->kind() != Sentence::Kind::kExplain) {
         return true;
     }
     qctx_->fillPlanDescription();
-    return static_cast<const ExplainSentence *>(sentences_.get())->isProfile();
+    return static_cast<const ExplainSentence *>(sentence_.get())->isProfile();
 }
 
 void QueryInstance::onFinish() {

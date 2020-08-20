@@ -13,7 +13,6 @@
 #include "context/QueryContext.h"
 #include "parser/GQLParser.h"
 #include "scheduler/Scheduler.h"
-#include "validator/ASTValidator.h"
 
 /**
  * QueryInstance coordinates the execution process,
@@ -57,9 +56,8 @@ private:
     // return true if continue to execute
     bool explainOrContinue();
 
-    std::unique_ptr<Sentence>                   sentences_;
+    std::unique_ptr<Sentence>                   sentence_;
     std::unique_ptr<QueryContext>               qctx_;
-    std::unique_ptr<ASTValidator>               validator_;
     std::unique_ptr<Scheduler>                  scheduler_;
 };
 

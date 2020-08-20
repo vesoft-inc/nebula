@@ -78,9 +78,11 @@ public:
     static std::unique_ptr<Validator> makeValidator(Sentence* sentence,
                                                     QueryContext* context);
 
-    MUST_USE_RESULT Status appendPlan(PlanNode* tail);
+    static Status validate(Sentence* sentence, QueryContext* qctx);
 
     Status validate();
+
+    MUST_USE_RESULT Status appendPlan(PlanNode* tail);
 
     void setInputVarName(std::string name) {
         inputVarName_ = std::move(name);

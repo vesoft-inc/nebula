@@ -22,8 +22,7 @@ TEST_F(ACLValidatorTest, Simple) {
     constexpr char space[] = "test_space";
     // create user
     {
-        ASSERT_TRUE(toPlan(folly::stringPrintf("CREATE USER %s", user)));
-        const ExecutionPlan *plan = qCtx_->plan();
+        const ExecutionPlan *plan = toPlan(folly::stringPrintf("CREATE USER %s", user));
 
         std::vector<PlanNode::Kind> expectedTop {
             PlanNode::Kind::kCreateUser,
@@ -39,8 +38,8 @@ TEST_F(ACLValidatorTest, Simple) {
         ASSERT_EQ(*createUser->password(), "");
     }
     {  // if not exists
-        ASSERT_TRUE(toPlan(folly::stringPrintf("CREATE USER IF NOT EXISTS %s", user)));
-        const ExecutionPlan *plan = qCtx_->plan();
+        const ExecutionPlan *plan =
+            toPlan(folly::stringPrintf("CREATE USER IF NOT EXISTS %s", user));
 
         std::vector<PlanNode::Kind> expectedTop {
             PlanNode::Kind::kCreateUser,
@@ -56,10 +55,8 @@ TEST_F(ACLValidatorTest, Simple) {
         ASSERT_EQ(*createUser->password(), "");
     }
     {  // with password
-        ASSERT_TRUE(toPlan(folly::stringPrintf("CREATE USER %s WITH PASSWORD \"%s\"",
-                                     user,
-                                     password)));
-        const ExecutionPlan *plan = qCtx_->plan();
+        const ExecutionPlan *plan =
+            toPlan(folly::stringPrintf("CREATE USER %s WITH PASSWORD \"%s\"", user, password));
 
         std::vector<PlanNode::Kind> expectedTop {
             PlanNode::Kind::kCreateUser,
@@ -77,9 +74,7 @@ TEST_F(ACLValidatorTest, Simple) {
 
     // drop user
     {
-        ASSERT_TRUE(toPlan(folly::stringPrintf("DROP USER %s",
-                                    user)));
-        const ExecutionPlan *plan = qCtx_->plan();
+        const ExecutionPlan *plan = toPlan(folly::stringPrintf("DROP USER %s", user));
 
         std::vector<PlanNode::Kind> expectedTop {
             PlanNode::Kind::kDropUser,
@@ -94,9 +89,7 @@ TEST_F(ACLValidatorTest, Simple) {
         ASSERT_EQ(*dropUser->username(), user);
     }
     {  // if exits
-        ASSERT_TRUE(toPlan(folly::stringPrintf("DROP USER IF EXISTS %s",
-                                    user)));
-        const ExecutionPlan *plan = qCtx_->plan();
+        const ExecutionPlan *plan = toPlan(folly::stringPrintf("DROP USER IF EXISTS %s", user));
 
         std::vector<PlanNode::Kind> expectedTop {
             PlanNode::Kind::kDropUser,
@@ -113,9 +106,8 @@ TEST_F(ACLValidatorTest, Simple) {
 
     // update user
     {
-        ASSERT_TRUE(toPlan(folly::stringPrintf("ALTER USER %s WITH PASSWORD \"%s\"",
-                                    user, password)));
-        const ExecutionPlan *plan = qCtx_->plan();
+        const ExecutionPlan *plan =
+            toPlan(folly::stringPrintf("ALTER USER %s WITH PASSWORD \"%s\"", user, password));
 
         std::vector<PlanNode::Kind> expectedTop {
             PlanNode::Kind::kUpdateUser,
@@ -132,8 +124,7 @@ TEST_F(ACLValidatorTest, Simple) {
 
     // show users
     {
-        ASSERT_TRUE(toPlan("SHOW USERS"));
-        const ExecutionPlan *plan = qCtx_->plan();
+        const ExecutionPlan *plan = toPlan("SHOW USERS");
 
         std::vector<PlanNode::Kind> expectedTop {
             PlanNode::Kind::kListUsers,
@@ -144,9 +135,8 @@ TEST_F(ACLValidatorTest, Simple) {
 
     // change password
     {
-        ASSERT_TRUE(toPlan(folly::stringPrintf("CHANGE PASSWORD %s FROM \"%s\" TO \"%s\"",
-                                    user, password, newPassword)));
-        const ExecutionPlan *plan = qCtx_->plan();
+        const ExecutionPlan *plan = toPlan(folly::stringPrintf(
+            "CHANGE PASSWORD %s FROM \"%s\" TO \"%s\"", user, password, newPassword));
 
         std::vector<PlanNode::Kind> expectedTop {
             PlanNode::Kind::kChangePassword,
@@ -164,9 +154,8 @@ TEST_F(ACLValidatorTest, Simple) {
 
     // grant role
     {
-        ASSERT_TRUE(toPlan(folly::stringPrintf("GRANT ROLE %s ON %s TO %s",
-                                     roleTypeName, space, user)));
-        const ExecutionPlan *plan = qCtx_->plan();
+        const ExecutionPlan *plan =
+            toPlan(folly::stringPrintf("GRANT ROLE %s ON %s TO %s", roleTypeName, space, user));
 
         std::vector<PlanNode::Kind> expectedTop {
             PlanNode::Kind::kGrantRole,
@@ -184,9 +173,8 @@ TEST_F(ACLValidatorTest, Simple) {
 
     // revoke role
     {
-        ASSERT_TRUE(toPlan(folly::stringPrintf("REVOKE ROLE %s ON %s FROM %s",
-                                    roleTypeName, space, user)));
-        const ExecutionPlan *plan = qCtx_->plan();
+        const ExecutionPlan *plan =
+            toPlan(folly::stringPrintf("REVOKE ROLE %s ON %s FROM %s", roleTypeName, space, user));
 
         std::vector<PlanNode::Kind> expectedTop {
             PlanNode::Kind::kRevokeRole,
@@ -204,9 +192,7 @@ TEST_F(ACLValidatorTest, Simple) {
 
     // show roles in space
     {
-        ASSERT_TRUE(toPlan(folly::stringPrintf("SHOW ROLES IN %s",
-                                    space)));
-        const ExecutionPlan *plan = qCtx_->plan();
+        const ExecutionPlan *plan = toPlan(folly::stringPrintf("SHOW ROLES IN %s", space));
 
         std::vector<PlanNode::Kind> expectedTop {
             PlanNode::Kind::kListRoles,

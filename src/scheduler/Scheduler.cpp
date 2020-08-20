@@ -19,6 +19,9 @@ namespace graph {
 
 Scheduler::Task::Task(const Executor *e) : planId(DCHECK_NOTNULL(e)->node()->id()) {}
 
+Scheduler::MultiOutputsData::MultiOutputsData(int32_t outputs)
+    : promise(std::make_unique<folly::SharedPromise<Status>>()), numOutputs(outputs) {}
+
 Scheduler::Scheduler(QueryContext *qctx) : qctx_(DCHECK_NOTNULL(qctx)) {}
 
 folly::Future<Status> Scheduler::schedule() {

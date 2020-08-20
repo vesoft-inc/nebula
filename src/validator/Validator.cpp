@@ -187,6 +187,28 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
     return std::make_unique<ReportError>(sentence, context);
 }
 
+// static
+Status Validator::validate(Sentence* sentence, QueryContext* qctx) {
+    DCHECK(sentence != nullptr);
+    DCHECK(qctx != nullptr);
+
+    // Check if space chosen from session. if chosen, add it to context.
+    auto session = qctx->rctx()->session();
+    if (session->space() > -1) {
+        qctx->vctx()->switchToSpace(session->spaceName(), session->space());
+    }
+
+    auto validator = makeValidator(sentence, qctx);
+    NG_RETURN_IF_ERROR(validator->validate());
+
+    auto root = validator->root();
+    if (!root) {
+        return Status::Error("Get null plan from sequential validator");
+    }
+    qctx->plan()->setRoot(root);
+    return Status::OK();
+}
+
 Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
     switch (DCHECK_NOTNULL(node)->kind()) {
         case PlanNode::Kind::kShowHosts:
