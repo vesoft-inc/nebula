@@ -594,10 +594,7 @@ public:
         return both_.get();
     }
 
-    std::string toString() const override {
-        // TODO:
-        return "";
-    }
+    std::string toString() const override;
 
 private:
     std::unique_ptr<StepClause>         step_;

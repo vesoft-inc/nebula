@@ -197,4 +197,22 @@ std::string GroupClause::toString() const {
     return groupColumns_->toString();
 }
 
+std::string BoundClause::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    switch (boundType_) {
+        case IN:
+            buf += "IN ";
+            break;
+        case OUT:
+            buf += "OUT ";
+            break;
+        case BOTH:
+            buf += "BOTH ";
+            break;
+    }
+    buf += overEdges_->toString();
+    return buf;
+}
+
 }   // namespace nebula

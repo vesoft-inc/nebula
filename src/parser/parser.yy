@@ -1169,15 +1169,15 @@ group_by_sentence
 
 in_bound_clause
     : %empty { $$ = nullptr; }
-    | KW_IN over_edges { $$ = new InBoundClause($2); }
+    | KW_IN over_edges { $$ = new InBoundClause($2, BoundClause::IN); }
 
 out_bound_clause
     : %empty { $$ = nullptr; }
-    | KW_OUT over_edges { $$ = new OutBoundClause($2); }
+    | KW_OUT over_edges { $$ = new OutBoundClause($2, BoundClause::OUT); }
 
 both_in_out_clause
     : %empty { $$ = nullptr; }
-    | KW_BOTH over_edges { $$ = new BothInOutClause($2); }
+    | KW_BOTH over_edges { $$ = new BothInOutClause($2, BoundClause::BOTH); }
 
 get_subgraph_sentence
     : KW_GET KW_SUBGRAPH step_clause from_clause in_bound_clause out_bound_clause both_in_out_clause {

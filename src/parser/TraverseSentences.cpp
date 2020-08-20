@@ -222,4 +222,30 @@ std::string YieldSentence::toString() const {
     }
     return buf;
 }
+
+std::string GetSubgraphSentence::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += "GET SUBGRAPH ";
+    if (step_ != nullptr) {
+        buf += step_->toString();
+    }
+    if (from_ != nullptr) {
+        buf += " ";
+        buf += from_->toString();
+    }
+    if (in_ != nullptr) {
+        buf += " ";
+        buf += in_->toString();
+    }
+    if (out_ != nullptr) {
+        buf += " ";
+        buf += out_->toString();
+    }
+    if (both_ != nullptr) {
+        buf += " ";
+        buf += both_->toString();
+    }
+    return buf;
+}
 }   // namespace nebula

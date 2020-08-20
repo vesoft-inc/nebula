@@ -1209,6 +1209,69 @@ TEST(Parser, Lookup) {
     }
 }
 
+TEST(Parser, subgraph) {
+    {
+        GQLParser parser;
+        std::string query = "GET SUBGRAPH FROM \"TOM\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GET SUBGRAPH FROM \"TOM\" BOTH like";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GET SUBGRAPH FROM \"TOM\" IN like";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GET SUBGRAPH FROM \"TOM\" OUT like";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GET SUBGRAPH FROM \"TOM\" IN like OUT serve";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GET SUBGRAPH 1 STEPS FROM \"TOM\" IN like OUT serve";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GET SUBGRAPH 2 STEPS FROM \"TOM\" BOTH like";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GET SUBGRAPH 2 STEPS FROM \"TOM\" IN like";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GET SUBGRAPH 4 STEPS FROM \"TOM\" IN like OUT serve BOTH owner";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GET SUBGRAPH 4 STEPS FROM \"TOM\" IN like OUT serve";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
 TEST(Parser, AdminOperation) {
     {
         GQLParser parser;
