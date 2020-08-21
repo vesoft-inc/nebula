@@ -144,9 +144,11 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogs(
 
         // No request is ongoing, let's send a new request
         if (UNLIKELY(lastLogIdSent_ == 0 && lastLogTermSent_ == 0)) {
-            LOG(INFO) << idStr_ << "This is the first time to send the logs to this host";
             lastLogIdSent_ = prevLogId;
             lastLogTermSent_ = prevLogTerm;
+            LOG(INFO) << idStr_ << "This is the first time to send the logs to this host"
+                      << ", lastLogIdSent = " << lastLogIdSent_
+                      << ", lastLogTermSent = " << lastLogTermSent_;
         }
         if (prevLogTerm < lastLogTermSent_ || prevLogId < lastLogIdSent_) {
             LOG(INFO) << idStr_ << "We have sended this log, so go on from id " << lastLogIdSent_
@@ -318,9 +320,9 @@ void Host::appendLogsInternal(folly::EventBase* eb,
                 return;
             }
             case cpp2::ErrorCode::E_WAITING_SNAPSHOT: {
-                VLOG(2) << self->idStr_
-                        << "The host is waiting for the snapshot, so we need to send log from "
-                        << " current committedLogId " << self->committedLogId_;
+                LOG(INFO) << self->idStr_
+                          << "The host is waiting for the snapshot, so we need to send log from "
+                          << " current committedLogId " << self->committedLogId_;
                 std::shared_ptr<cpp2::AppendLogRequest> newReq;
                 {
                     std::lock_guard<std::mutex> g(self->lock_);
