@@ -8,6 +8,7 @@
 #define GRAPH_AGGREGATEFUNCTION_H
 
 #include "base/Base.h"
+#include "base/FlattenList.h"
 
 namespace nebula {
 namespace graph {
@@ -426,69 +427,25 @@ private:
 class CollectList final : public AggFun {
 public:
     void apply(cpp2::ColumnValue &val) override {
-        if (!has_) {
-            has_ = true;
-            type_ = val.getType();
-            switch(type_) {
-                case ColumnType::int_type:
-                case ColumnType::id_type:
-                case ColumnType::timestamp_type:
-                    type_ = VAR_INT64;
-                    break;
-                case ColumnType::bool_type:
-                    type_ = VAR_BOOL;
-                    break;
-                case ColumnType::float_type:
-                case ColumnType::double_type:
-                    type_ = VAR_DOUBLE;
-                    break;
-                    // TODO suppor string
-//                case ColumnType::str_type:
-//                    type_ = VAR_STR;
-//                    break;
-                default:
-                    return;
-            }
-            cord_ << type_;
-        }
-
         switch(val.getType()) {
             case ColumnType::int_type:
-                if (type_ == VAR_INT64) {
-                    cord_ << val.get_integer();
-                }
+                writer_ << val.get_integer();
                 break;
             case ColumnType::id_type:
-                if (type_ == VAR_INT64) {
-                    cord_ << val.get_id();
-                }
+                writer_ << val.get_id();
                 break;
             case ColumnType::timestamp_type:
-                if (type_ == VAR_INT64) {
-                    cord_ << val.get_timestamp();
-                }
+                writer_ << val.get_timestamp();
                 break;
             case ColumnType::bool_type:
-                if (type_ == VAR_BOOL) {
-                    cord_ << val.get_bool_val();
-                }
-                break;
-            case ColumnType::float_type:
-                if (type_ == VAR_DOUBLE) {
-                    cord_ << static_cast<double>(val.get_single_precision());
-                }
+                writer_ << val.get_bool_val();
                 break;
             case ColumnType::double_type:
-                if (type_ == VAR_DOUBLE) {
-                    cord_ << val.get_double_precision();
-                }
+                writer_ << val.get_double_precision();
                 break;
-                // TODO suppor string
-//            case ColumnType::str_type:
-//                if (type_ == VAR_STR) {
-//                    cord_ << val.get_str();
-//                }
-//                break;
+            case ColumnType::str_type:
+                writer_ << val.get_str();
+                break;
             default:
                 return;
         }
@@ -496,43 +453,16 @@ public:
 
     cpp2::ColumnValue getResult() override {
         cpp2::ColumnValue result;
-        result.set_str(cord_.str());
+        result.set_str(writer_.finish());
         return result;
     }
 private:
-    Cord            cord_;
-    bool            has_{false};
-    uint8_t         type_ = 0;
+    FlattenListWriter writer_;
 };
 
 class CollectSet final : public AggFun {
 public:
     void apply(cpp2::ColumnValue &val) override {
-        if (!has_) {
-            has_ = true;
-            type_ = val.getType();
-            switch(type_) {
-                case ColumnType::int_type:
-                case ColumnType::id_type:
-                case ColumnType::timestamp_type:
-                    type_ = VAR_INT64;
-                    break;
-                case ColumnType::bool_type:
-                    type_ = VAR_BOOL;
-                    break;
-                case ColumnType::float_type:
-                case ColumnType::double_type:
-                    type_ = VAR_DOUBLE;
-                    break;
-                case ColumnType::str_type:
-                    type_ = VAR_STR;
-                    break;
-                default:
-                    return;
-            }
-            cord_ << type_;
-        }
-
         switch(val.getType()) {
             case ColumnType::int_type:
                 int_values_.insert(val.get_integer());
@@ -546,61 +476,44 @@ public:
             case ColumnType::bool_type:
                 bool_values_.insert(static_cast<int64_t>(val.get_bool_val()));
                 break;
-            case ColumnType::float_type:
-                double_values_.insert(val.get_single_precision());
-                break;
             case ColumnType::double_type:
                 double_values_.insert(val.get_double_precision());
                 break;
-                // TODO suppor string
-//            case ColumnType::str_type:
-//                str_values_.insert(val.get_str());
-//                break;
+            case ColumnType::str_type:
+                str_values_.insert(val.get_str());
+                break;
             default:
                 return;
         }
     }
 
     cpp2::ColumnValue getResult() override {
-        cpp2::ColumnValue result;
-        if (has_) {
-            switch(type_) {
-                case VAR_INT64:
-                    for (auto v : int_values_) {
-                        cord_ << v;
-                    }
-                    break;
-                case VAR_BOOL:
-                    for (auto v : bool_values_) {
-                        cord_ << v;
-                    }
-                    break;
-                case VAR_DOUBLE:
-                    for (auto v : double_values_) {
-                        cord_ << v;
-                    }
-                    break;
-                    // TODO suppor string
-//                case VAR_STR:
-//                    for (auto& v : str_values_) {
-//                        cord_ << v;
-//                    }
-//                    break;
-                default:
-                    break;
-            }
+        for (auto& item : int_values_) {
+            writer_ << item;
         }
-        result.set_str(cord_.str());
+
+        for (auto& item : bool_values_) {
+            writer_ << item;
+        }
+
+        for (auto& item : double_values_) {
+            writer_ << item;
+        }
+
+        for (auto& item : str_values_) {
+            writer_ << item;
+        }
+
+        cpp2::ColumnValue result;
+        result.set_str(writer_.finish());
         return result;
     }
 private:
-    std::set<int64_t>               int_values_;
-    std::set<bool>                  bool_values_;
-    std::set<double>                double_values_;
-//    std::set<std::string>           str_values_;
-    Cord                            cord_;
-    bool                            has_{false};
-    uint8_t                         type_ = 0;
+    std::set<int64_t>       int_values_;
+    std::set<bool>          bool_values_;
+    std::set<double>        double_values_;
+    std::set<std::string>   str_values_;
+    FlattenListWriter       writer_;
 };
 
 static std::unordered_map<std::string, std::function<std::shared_ptr<AggFun>()>> funVec = {

@@ -176,6 +176,10 @@ public:
         return write(value.data(), value.size());
     }
 
+    ICord<kBlockContentSize>& operator<<(folly::StringPiece value) {
+        return write(value.data(), value.size());
+    }
+
     ICord<kBlockContentSize>& operator<<(const char* value) {
         return write(value, strlen(value));
     }

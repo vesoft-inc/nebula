@@ -293,7 +293,7 @@ TEST_F(GroupByLimitTest, GroupByTest) {
         };
        ASSERT_TRUE(verifyResult(resp, expected));
     }
-    // collect
+    // collect_set
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Marco Belinelli"];
@@ -318,6 +318,28 @@ TEST_F(GroupByLimitTest, GroupByTest) {
             {1, "2009"},
             {1, "2013"},
             {1, "2016"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // collect_list
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld,%ld OVER serve "
+                    "YIELD $$.team.name AS name"
+                    "| GROUP BY $-.name "
+                    "YIELD COUNT($-.name) as cnt, "
+                    "collect_list($-.name) AS names "
+                    "| YIELD $-.cnt as cnt, "
+                    "concat_ws(',', $-.names) AS names";
+        auto query = folly::stringPrintf(
+            fmt,
+            players_["Tim Duncan"].vid(),
+            players_["Tony Parker"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<uint64_t, std::string>> expected = {
+            {2, "Spurs,Spurs"},
+            {1, "Hornets"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }

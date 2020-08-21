@@ -9,6 +9,7 @@
 #include "filter/Expressions.h"
 #include "time/WallClock.h"
 #include "filter/geo/GeoFilter.h"
+#include "base/FlattenList.h"
 
 namespace nebula {
 
@@ -557,69 +558,51 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["concat_ws"];
         attr.minArity_ = 2;
         attr.maxArity_ = 2;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args) -> OptVariantType {
             auto sep   = Expression::asString(args[0]);
-            auto set   = Expression::asString(args[1]);
+            auto encoded   = Expression::asString(args[1]);
 
-            const char *p = set.data();
-            size_t size = set.size();
-            size_t offset = 0;
-            std::string s;
-
-            if (size != 0) {
-                uint8_t type = p[0];
-                offset += sizeof(type);
-                switch(type) {
+            FlattenListReader r(encoded);
+            ICord<> cord;
+            auto iter = r.begin();
+            for (; iter != r.end(); ++iter) {
+                if (!iter->ok()) {
+                    return iter->status();
+                }
+                if (iter != r.begin()) {
+                    cord << sep;
+                }
+                auto value = iter->value();
+                switch (value.which()) {
                     case VAR_INT64:
-                    {
-                        std::vector<int64_t> vec;
-                        vec.reserve((size - offset) / sizeof(int64_t));
-                        while (size - offset >= sizeof(int64_t)) {
-                            int64_t v;
-                            memcpy(&v, p + offset, sizeof(int64_t));
-                            vec.emplace_back(v);
-                            offset += sizeof(int64_t);
-                        }
-                        s = folly::join(sep, vec);
-                    }
+                        cord << folly::to<std::string>(Expression::asInt(value));
                         break;
                     case VAR_BOOL:
-                    {
-                        std::vector<bool> vec;
-                        while (size - offset >= sizeof(bool)) {
-                            bool v;
-                            memcpy(&v, p + offset, sizeof(bool));
-                            vec.emplace_back(v);
-                            offset += sizeof(bool);
-                        }
-                        s = folly::join(sep, vec);
-                    }
+                        cord << folly::to<std::string>(Expression::asBool(value));
                         break;
                     case VAR_DOUBLE:
-                    {
-                        std::vector<double> vec;
-                        vec.reserve((size - offset) / sizeof(double));
-                        while (size - offset >= sizeof(double)) {
-                            double v;
-                            memcpy(&v, p + offset, sizeof(double));
-                            vec.emplace_back(v);
-                            offset += sizeof(double);
-                        }
-                        s = folly::join(sep, vec);
-                    }
+                        cord << folly::to<std::string>(Expression::asDouble(value));
                         break;
                     case VAR_STR:
-                    {
-                        std::vector<std::string> vec;
-                        // TODO suport string.
-                        return folly::join(sep, vec);
-                    }
-                    default:
+                        cord << folly::to<std::string>(Expression::asString(value));
                         break;
+                    default:
+                        return Status::Error("data corrupt.");
                 }
             }
-
-            return s;
+            return cord.str();
+        };
+    }
+    {
+        auto &attr = functions_["collect"];
+        attr.minArity_ = 0;
+        attr.maxArity_ = std::numeric_limits<size_t>::max();
+        attr.body_ = [] (const auto &args) -> OptVariantType {
+            FlattenListWriter w;
+            for (const VariantType& item : args) {
+                w << item;
+            }
+            return w.finish();
         };
     }
 }  // NOLINT
