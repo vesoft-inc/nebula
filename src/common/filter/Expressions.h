@@ -955,7 +955,7 @@ private:
 class RelationalExpression final : public Expression {
 public:
     enum Operator : uint8_t {
-        LT, LE, GT, GE, EQ, NE, CONTAINS
+        LT, LE, GT, GE, EQ, NE, CONTAINS, IN
     };
     static_assert(sizeof(Operator) == sizeof(uint8_t), "");
 

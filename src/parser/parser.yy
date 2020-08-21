@@ -542,6 +542,9 @@ relational_expression
     | relational_expression KW_CONTAINS additive_expression {
         $$ = new RelationalExpression($1, RelationalExpression::CONTAINS, $3);
     }
+    | relational_expression KW_IN additive_expression {
+        $$ = new RelationalExpression($1, RelationalExpression::IN, $3);
+    }
     ;
 
 equality_expression

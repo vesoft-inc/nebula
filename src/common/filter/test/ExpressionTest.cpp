@@ -371,6 +371,12 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
     TEST_EXPR("abcd" CONTAINS "", true)
     TEST_EXPR("" CONTAINS "abcd", false)
     TEST_EXPR("" CONTAINS "", true)
+    TEST_EXPR(1 IN collect(1, 2, 3), true)
+    TEST_EXPR(1 IN collect(2, 3), false)
+    TEST_EXPR("1" IN collect("1", "2", "3"), true)
+    TEST_EXPR("1" IN collect("2", "3"), false)
+    TEST_EXPR("1" IN collect("1", "2", 3), true)
+    TEST_EXPR(1 IN collect("1", "2", "3"), false)
 
     TEST_EXPR(8 % 2 + 1 == 1, true);
     TEST_EXPR(8 % 2 + 1 != 1, false);

@@ -2387,6 +2387,29 @@ TEST_P(GoTest, Contains) {
     }
 }
 
+TEST_P(GoTest, IN) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "WHERE $$.team.name IN collect(\"Suns\", \"Hornets\") "
+                    "YIELD $^.player.name, serve.start_year, serve.end_year, $$.team.name";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$^.player.name"}, {"serve.start_year"}, {"serve.end_year"}, {"$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+        std::vector<std::tuple<std::string, int64_t, int64_t, std::string>> expected = {
+            {player.name(), 2005, 2008, "Suns"},
+            {player.name(), 2008, 2012, "Hornets"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
 TEST_P(GoTest, WithIntermediateData) {
     // zero to zero
     {

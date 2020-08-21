@@ -7,6 +7,7 @@
 
 #include "base/Base.h"
 #include "base/ICord.h"
+#include "base/FlattenList.h"
 #include "filter/Expressions.h"
 #include "filter/FunctionManager.h"
 
@@ -1042,6 +1043,9 @@ std::string RelationalExpression::toString() const {
         case CONTAINS:
             buf += " CONTAINS ";
             break;
+        case IN:
+            buf += " IN ";
+            break;
     }
     buf.append(right_->toString());
     buf += ')';
@@ -1063,9 +1067,11 @@ OptVariantType RelationalExpression::eval(Getters &getters) const {
     auto l = left.value();
     auto r = right.value();
     if (l.which() != r.which()) {
-        auto s = implicitCasting(l, r);
-        if (!s.ok()) {
-            return s;
+        if (op_ != IN) {
+            auto s = implicitCasting(l, r);
+            if (!s.ok()) {
+                return s;
+            }
         }
     }
 
@@ -1098,6 +1104,23 @@ OptVariantType RelationalExpression::eval(Getters &getters) const {
             if (isString(l) && isString(r)) {
                 return OptVariantType(contains(asString(l), asString(r)));
             }
+            break;
+        case IN:
+            if (isString(r)) {
+                FlattenListReader reader(asString(r));
+                auto iter = reader.begin();
+                auto end = reader.end();
+                for (; iter != end; ++iter) {
+                    if (!iter->ok()) {
+                        return OptVariantType(Status::Error("Wrong operator of IN"));
+                    }
+                    if (l == iter->value()) {
+                        return OptVariantType(true);
+                    }
+                }
+                return OptVariantType(false);
+            }
+            break;
     }
 
     return OptVariantType(Status::Error("Wrong operator"));
@@ -1159,7 +1182,7 @@ const char* RelationalExpression::decode(const char *pos, const char *end) {
     op_ = *reinterpret_cast<const Operator*>(pos++);
     DCHECK(op_ == LT || op_ == LE || op_ == GT ||
             op_ == GE || op_ == EQ || op_ == NE ||
-            op_ == CONTAINS);
+            op_ == CONTAINS || op_ == IN);
 
     left_ = makeExpr(*reinterpret_cast<const uint8_t*>(pos++));
     pos = left_->decode(pos, end);
