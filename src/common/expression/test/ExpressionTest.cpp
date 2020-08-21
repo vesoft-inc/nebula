@@ -1393,6 +1393,85 @@ TEST_F(ExpressionTest, NotInMap) {
     }
 }
 
+TEST_F(ExpressionTest, DataSetSubscript) {
+    {
+        // dataset[]
+        // [[0,1,2,3,4],[1,2,3,4,5],[2,3,4,5,6]] [0]
+        DataSet ds;
+        for (int32_t i = 0; i < 3; i++) {
+            std::vector<Value> val;
+            val.reserve(5);
+            for (int32_t j = 0; j < 5; j++) {
+                val.emplace_back(i + j);
+            }
+            ds.rows.emplace_back(List(std::move(val)));
+        }
+        auto *dataset = new ConstantExpression(ds);
+        auto *rowIndex = new ConstantExpression(0);
+        SubscriptExpression expr(dataset, rowIndex);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_TRUE(value.isList());
+        ASSERT_EQ(Value(List({0, 1, 2, 3, 4})), value.getList());
+    }
+    {
+        // dataset[][]
+        // [[0,1,2,3,4],[1,2,3,4,5],[2,3,4,5,6]] [0][1]
+        DataSet ds;
+        for (int32_t i = 0; i < 3; i++) {
+            std::vector<Value> val;
+            val.reserve(5);
+            for (int32_t j = 0; j < 5; j++) {
+                val.emplace_back(i + j);
+            }
+            ds.rows.emplace_back(List(std::move(val)));
+        }
+        auto *dataset = new ConstantExpression(ds);
+        auto *rowIndex = new ConstantExpression(0);
+        auto *colIndex = new ConstantExpression(1);
+        SubscriptExpression expr(new SubscriptExpression(dataset, rowIndex), colIndex);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_TRUE(value.isInt());
+        ASSERT_EQ(1, value.getInt());
+    }
+    {
+        // dataset[]
+        // [[0,1,2,3,4],[1,2,3,4,5],[2,3,4,5,6]] [-1]
+        DataSet ds;
+        for (int32_t i = 0; i < 3; i++) {
+            std::vector<Value> val;
+            val.reserve(5);
+            for (int32_t j = 0; j < 5; j++) {
+                val.emplace_back(i + j);
+            }
+            ds.rows.emplace_back(List(std::move(val)));
+        }
+        auto *dataset = new ConstantExpression(ds);
+        auto *rowIndex = new ConstantExpression(-1);
+        SubscriptExpression expr(dataset, rowIndex);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_TRUE(value.isBadNull());
+    }
+    {
+        // dataset[][]
+        // [[0,1,2,3,4],[1,2,3,4,5],[2,3,4,5,6]] [0][5]
+        DataSet ds;
+        for (int32_t i = 0; i < 3; i++) {
+            std::vector<Value> val;
+            val.reserve(5);
+            for (int32_t j = 0; j < 5; j++) {
+                val.emplace_back(i + j);
+            }
+            ds.rows.emplace_back(List(std::move(val)));
+        }
+        auto *dataset = new ConstantExpression(ds);
+        auto *rowIndex = new ConstantExpression(0);
+        auto *colIndex = new ConstantExpression(5);
+        SubscriptExpression expr(new SubscriptExpression(dataset, rowIndex), colIndex);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_TRUE(value.isBadNull());
+    }
+}
+
 TEST_F(ExpressionTest, ListSubscript) {
     // [1,2,3,4][0]
     {

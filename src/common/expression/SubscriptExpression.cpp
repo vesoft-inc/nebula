@@ -41,6 +41,20 @@ const Value& SubscriptExpression::eval(ExpressionContext &ctx) {
             result_ = lvalue.getMap().at(rvalue.getStr());
             break;
         }
+        if (lvalue.isDataSet()) {
+            if (!rvalue.isInt()) {
+                result_ = Value::kNullBadType;
+                break;
+            }
+            auto size = static_cast<int64_t>(lvalue.getDataSet().rowSize());
+            auto rowIndex = rvalue.getInt();
+            if (rowIndex >= size || rowIndex < 0) {
+                result_ = Value::kNullOutOfRange;
+                break;
+            }
+            result_ = lvalue.getDataSet().rows[rowIndex];
+            break;
+        }
         result_ = Value::kNullBadType;
     } while (false);
 
