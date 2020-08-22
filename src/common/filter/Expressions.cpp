@@ -397,39 +397,40 @@ Status SourcePropertyExpression::prepare() {
 
 std::string PrimaryExpression::toString() const {
     char buf[1024];
-    switch (operand_.which()) {
+    DCHECK(cache_.hasValue());
+    auto& operand = *cache_;
+    switch (operand.which()) {
         case VAR_INT64:
-            snprintf(buf, sizeof(buf), "%ld", boost::get<int64_t>(operand_));
+            snprintf(buf, sizeof(buf), "%ld", boost::get<int64_t>(operand));
             break;
         case VAR_DOUBLE: {
             int digits10 = std::numeric_limits<double>::digits10;
             std::string fmt = folly::sformat("%.{}lf", digits10);
-            snprintf(buf, sizeof(buf), fmt.c_str(), boost::get<double>(operand_));
+            snprintf(buf, sizeof(buf), fmt.c_str(), boost::get<double>(operand));
             break;
         }
         case VAR_BOOL:
-            snprintf(buf, sizeof(buf), "%s", boost::get<bool>(operand_) ? "true" : "false");
+            snprintf(buf, sizeof(buf), "%s", boost::get<bool>(operand) ? "true" : "false");
             break;
         case VAR_STR:
-            return boost::get<std::string>(operand_);
+            return boost::get<std::string>(operand);
     }
     return buf;
 }
 
 OptVariantType PrimaryExpression::eval(Getters &getters) const {
     UNUSED(getters);
-    switch (operand_.which()) {
+    DCHECK(cache_.hasValue());
+    const VariantType& operand = *cache_;
+    switch (operand.which()) {
         case VAR_INT64:
-            return boost::get<int64_t>(operand_);
-            break;
+            return asInt(operand);
         case VAR_DOUBLE:
-            return boost::get<double>(operand_);
-            break;
+            return asDouble(operand);
         case VAR_BOOL:
-            return boost::get<bool>(operand_);
-            break;
+            return asBool(operand);
         case VAR_STR:
-            return boost::get<std::string>(operand_);
+            return asString(operand);
     }
 
     return OptVariantType(Status::Error("Unknown type"));
@@ -450,20 +451,22 @@ Status PrimaryExpression::prepare() {
 
 void PrimaryExpression::encode(ICord<> &cord) const {
     cord << kindToInt(kind());
-    uint8_t which = operand_.which();
+    DCHECK(cache_.hasValue());
+    const VariantType& operand = *cache_;
+    uint8_t which = operand.which();
     cord << which;
     switch (which) {
         case VAR_INT64:
-            cord << boost::get<int64_t>(operand_);
+            cord << boost::get<int64_t>(operand);
             break;
         case VAR_DOUBLE:
-            cord << boost::get<double>(operand_);
+            cord << boost::get<double>(operand);
             break;
         case VAR_BOOL:
-            cord << static_cast<uint8_t>(boost::get<bool>(operand_));
+            cord << static_cast<uint8_t>(boost::get<bool>(operand));
             break;
         case VAR_STR: {
-            auto &str = boost::get<std::string>(operand_);
+            auto &str = boost::get<std::string>(operand);
             cord << static_cast<uint16_t>(str.size());
             cord << str;
             break;
@@ -480,24 +483,24 @@ const char* PrimaryExpression::decode(const char *pos, const char *end) {
     switch (which) {
         case VAR_INT64:
             THROW_IF_NO_SPACE(pos, end, 8UL);
-            operand_ = *reinterpret_cast<const int64_t*>(pos);
+            cache_ = *reinterpret_cast<const int64_t*>(pos);
             pos += 8;
             break;
         case VAR_DOUBLE:
             THROW_IF_NO_SPACE(pos, end, 8UL);
-            operand_ = *reinterpret_cast<const double*>(pos);
+            cache_ = *reinterpret_cast<const double*>(pos);
             pos += 8;
             break;
         case VAR_BOOL:
             THROW_IF_NO_SPACE(pos, end, 1UL);
-            operand_ = *reinterpret_cast<const bool*>(pos++);
+            cache_ = *reinterpret_cast<const bool*>(pos++);
             break;
         case VAR_STR: {
             THROW_IF_NO_SPACE(pos, end, 2UL);
             auto size = *reinterpret_cast<const uint16_t*>(pos);
             pos += 2;
             THROW_IF_NO_SPACE(pos, end, static_cast<uint64_t>(size));
-            operand_ = std::string(pos, size);
+            cache_ = std::string(pos, size);
             pos += size;
             break;
         }
@@ -525,6 +528,9 @@ std::string FunctionCallExpression::toString() const {
 }
 
 OptVariantType FunctionCallExpression::eval(Getters &getters) const {
+    if (cache_.hasValue()) {
+        return *cache_;
+    }
     std::vector<VariantType> args;
 
     for (auto it = args_.cbegin(); it != args_.cend(); ++it) {
@@ -552,7 +558,8 @@ Status FunctionCallExpression::traversal(std::function<void(const Expression*)> 
 }
 
 Status FunctionCallExpression::prepare() {
-    auto result = FunctionManager::get(*name_, args_.size());
+    bool cacheable = false;
+    auto result = FunctionManager::get(*name_, args_.size(), &cacheable);
     if (!result.ok()) {
         return std::move(result).status();
     }
@@ -564,6 +571,16 @@ Status FunctionCallExpression::prepare() {
         status = arg->prepare();
         if (!status.ok()) {
             break;
+        }
+        if (cacheable && !arg->cacheable()) {
+            cacheable = false;
+        }
+    }
+    if (cacheable) {
+        Getters getters;
+        auto cache = eval(getters);
+        if (cache.ok()) {
+            cache_ = std::move(cache).value();
         }
     }
     return status;
@@ -661,6 +678,9 @@ std::string UnaryExpression::toString() const {
 }
 
 OptVariantType UnaryExpression::eval(Getters &getters) const {
+    if (cache_.hasValue()) {
+        return *cache_;
+    }
     auto value = operand_->eval(getters);
     if (value.ok()) {
         if (op_ == PLUS) {
@@ -691,7 +711,18 @@ Status UnaryExpression::traversal(std::function<void(const Expression*)> visitor
 }
 
 Status UnaryExpression::prepare() {
-    return operand_->prepare();
+    auto status = operand_->prepare();
+    if (!status.ok()) {
+        return status;
+    }
+    if (operand_->cacheable()) {
+        Getters getters;
+        auto cache = eval(getters);
+        if (cache.ok()) {
+            cache_ = std::move(cache).value();
+        }
+    }
+    return Status::OK();
 }
 
 
@@ -744,6 +775,9 @@ std::string TypeCastingExpression::toString() const {
 
 
 OptVariantType TypeCastingExpression::eval(Getters &getters) const {
+    if (cache_.hasValue()) {
+        return *cache_;
+    }
     auto result = operand_->eval(getters);
     if (!result.ok()) {
         return result;
@@ -773,7 +807,18 @@ Status TypeCastingExpression::traversal(std::function<void(const Expression*)> v
 }
 
 Status TypeCastingExpression::prepare() {
-    return operand_->prepare();
+    auto status = operand_->prepare();
+    if (!status.ok()) {
+        return status;
+    }
+    if (operand_->cacheable()) {
+        Getters getters;
+        auto cache = eval(getters);
+        if (cache.ok()) {
+            cache_ = std::move(cache).value();
+        }
+    }
+    return Status::OK();
 }
 
 
@@ -824,6 +869,9 @@ std::string ArithmeticExpression::toString() const {
 }
 
 OptVariantType ArithmeticExpression::eval(Getters &getters) const {
+    if (cache_.hasValue()) {
+        return *cache_;
+    }
     auto left = left_->eval(getters);
     auto right = right_->eval(getters);
     if (!left.ok()) {
@@ -990,6 +1038,13 @@ Status ArithmeticExpression::prepare() {
     if (!status.ok()) {
         return status;
     }
+    if (left_->cacheable() && right_->cacheable()) {
+        Getters getters;
+        auto cache = eval(getters);
+        if (cache.ok()) {
+            cache_ = std::move(cache).value();
+        }
+    }
     return Status::OK();
 }
 
@@ -1053,6 +1108,9 @@ std::string RelationalExpression::toString() const {
 }
 
 OptVariantType RelationalExpression::eval(Getters &getters) const {
+    if (cache_.hasValue()) {
+        return *cache_;
+    }
     auto left = left_->eval(getters);
     auto right = right_->eval(getters);
 
@@ -1165,6 +1223,13 @@ Status RelationalExpression::prepare() {
     if (!status.ok()) {
         return status;
     }
+    if (left_->cacheable() && right_->cacheable()) {
+        Getters getters;
+        auto cache = eval(getters);
+        if (cache.ok()) {
+            cache_ = std::move(cache).value();
+        }
+    }
     return Status::OK();
 }
 
@@ -1215,6 +1280,9 @@ std::string LogicalExpression::toString() const {
 }
 
 OptVariantType LogicalExpression::eval(Getters &getters) const {
+    if (cache_.hasValue()) {
+        return *cache_;
+    }
     auto left = left_->eval(getters);
     auto right = right_->eval(getters);
 
@@ -1260,6 +1328,16 @@ Status LogicalExpression::prepare() {
         return status;
     }
     status = right_->prepare();
+    if (!status.ok()) {
+        return status;
+    }
+    if (left_->cacheable() && right_->cacheable()) {
+        Getters getters;
+        auto cache = eval(getters);
+        if (cache.ok()) {
+            cache_ = std::move(cache).value();
+        }
+    }
     return Status::OK();
 }
 

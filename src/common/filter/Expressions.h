@@ -12,6 +12,7 @@
 #include "base/ICord.h"
 #include "storage/client/StorageClient.h"
 #include "filter/FunctionManager.h"
+#include <utility>
 #include <boost/variant.hpp>
 #include <folly/futures/Future.h>
 
@@ -412,6 +413,8 @@ public:
         return kind_;
     }
 
+    bool cacheable() const { return cache_.hasValue(); }
+
 protected:
     static uint8_t kindToInt(Kind kind) {
         return static_cast<uint8_t>(kind);
@@ -454,6 +457,7 @@ private:
 protected:
     ExpressionContext                          *context_{nullptr};
     Kind                                        kind_{kUnknown};
+    folly::Optional<VariantType>                cache_;
 };
 
 // Alias.any_prop_name, i.e. EdgeName.any_prop_name
@@ -663,22 +667,22 @@ public:
 
     explicit PrimaryExpression(bool val) {
         kind_ = kPrimary;
-        operand_ = val;
+        cache_.assign(val);
     }
 
     explicit PrimaryExpression(int64_t val) {
         kind_ = kPrimary;
-        operand_ = val;
+        cache_.assign(val);
     }
 
     explicit PrimaryExpression(double val) {
         kind_ = kPrimary;
-        operand_ = val;
+        cache_.assign(val);
     }
 
     explicit PrimaryExpression(std::string val) {
         kind_ = kPrimary;
-        operand_ = std::move(val);
+        cache_.assign(std::move(val));
     }
 
     std::string toString() const override;
@@ -693,9 +697,6 @@ private:
     void encode(ICord<> &cord) const override;
 
     const char* decode(const char *pos, const char *end) override;
-
-private:
-    VariantType                                 operand_;
 };
 
 
@@ -733,7 +734,7 @@ public:
         return name_.get();
     }
 
-    const std::vector<Expression*> args() const {
+    std::vector<Expression*> args() const {
         std::vector<Expression*> args;
         std::transform(args_.begin(), args_.end(), std::back_inserter(args),
                 [] (auto &e) { return e.get(); } );
@@ -756,7 +757,7 @@ public:
     }
 
     void setFunc(FunctionManager::Function func) {
-        function_ = func;
+        function_ = std::move(func);
     }
 
 private:

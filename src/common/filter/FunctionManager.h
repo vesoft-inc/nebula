@@ -28,7 +28,8 @@ public:
     /**
      * To obtain a function named `func', with the actual arity.
      */
-    static StatusOr<Function> get(const std::string &func, size_t arity);
+    static StatusOr<Function> get(
+        const std::string &func, size_t arity, bool* cacheable = nullptr);
 
     /**
      * To load a set of functions from a shared object dynamically.
@@ -48,7 +49,8 @@ private:
 
     static FunctionManager& instance();
 
-    StatusOr<Function> getInternal(const std::string &func, size_t arity) const;
+    StatusOr<Function> getInternal(
+        const std::string &func, size_t arity, bool* cacheable = nullptr) const;
 
     Status loadInternal(const std::string &soname, const std::vector<std::string> &funcs);
 
@@ -57,6 +59,7 @@ private:
     struct FunctionAttributes final {
         size_t                  minArity_{0};
         size_t                  maxArity_{0};
+        bool                    cacheable_{false};
         Function                body_;
     };
 

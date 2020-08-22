@@ -106,11 +106,13 @@ protected:
         Getters getters;
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
+        auto status = expr->prepare();
+        ASSERT_TRUE(status.ok());
         auto decoded = Expression::decode(Expression::encode(expr));
         ASSERT_TRUE(decoded.ok()) << decoded.status();
         auto ctx = std::make_unique<ExpressionContext>();
         decoded.value()->setContext(ctx.get());
-        auto status = decoded.value()->prepare();
+        status = decoded.value()->prepare();
         ASSERT_TRUE(status.ok()) << status;
         auto value = decoded.value()->eval(getters);
         ASSERT_TRUE(!value.ok());
@@ -168,6 +170,8 @@ TEST_F(ExpressionTest, LiteralConstants) {
         Getters getters;
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
+        auto status = expr->prepare();
+        ASSERT_TRUE(status.ok());
         auto value = expr->eval(getters);
         ASSERT_TRUE(value.ok());
         auto v = value.value();
@@ -252,6 +256,8 @@ TEST_F(ExpressionTest, LiteralContantsArithmetic) {
         Getters getters;
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
+        auto status = expr->prepare();
+        ASSERT_TRUE(status.ok());
         auto value = expr->eval(getters);
         ASSERT_TRUE(value.ok());
         auto v = value.value();
@@ -397,6 +403,8 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
         Getters getters;
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
+        auto status = expr->prepare();
+        ASSERT_TRUE(status.ok());
         auto value = expr->eval(getters);
         ASSERT_TRUE(value.ok());
         auto v = value.value();
@@ -417,6 +425,8 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
         Getters getters;
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
+        auto status = expr->prepare();
+        ASSERT_TRUE(status.ok());
         auto value = expr->eval(getters);
         ASSERT_TRUE(value.ok());
         auto v = value.value();
@@ -510,6 +520,8 @@ TEST_F(ExpressionTest, InputReference) {
             }
         };
         expr->setContext(ctx.get());
+        auto status = expr->prepare();
+        ASSERT_TRUE(status.ok());
         auto value = expr->eval(getters);
         ASSERT_TRUE(value.ok());
         auto v = value.value();
@@ -532,6 +544,8 @@ TEST_F(ExpressionTest, InputReference) {
             }
         };
         expr->setContext(ctx.get());
+        auto status = expr->prepare();
+        ASSERT_TRUE(status.ok());
         auto value = expr->eval(getters);
         ASSERT_TRUE(value.ok());
         auto v = value.value();
@@ -557,6 +571,8 @@ TEST_F(ExpressionTest, SourceTagReference) {
             return std::string("nobody");
         };
         expr->setContext(ctx.get());
+        auto status = expr->prepare();
+        ASSERT_TRUE(status.ok());
         auto value = expr->eval(getters);
         ASSERT_TRUE(value.ok());
         auto v = value.value();
@@ -590,6 +606,8 @@ TEST_F(ExpressionTest, EdgeReference) {
             return 2L;
         };
         expr->setContext(ctx.get());
+        auto status = expr->prepare();
+        ASSERT_TRUE(status.ok());
         auto value = expr->eval(getters);
         ASSERT_TRUE(value.ok());
         auto v = value.value();
@@ -598,6 +616,30 @@ TEST_F(ExpressionTest, EdgeReference) {
     }
 }
 
+TEST_F(ExpressionTest, Cacheable) {
+    {
+        std::string query = "GO FROM 1 OVER follow WHERE 1 in collect(1, 2, \"3\")";
+        auto parsed = parser_->parse(query);
+        ASSERT_TRUE(parsed.ok());
+        auto *expr = getFilterExpr(parsed.value().get());
+        auto ctx = std::make_unique<ExpressionContext>();
+        expr->setContext(ctx.get());
+        ASSERT_NE(nullptr, expr);
+        auto status = expr->prepare();
+        ASSERT_TRUE(status.ok());
+        ASSERT_TRUE(expr->cacheable());
+    }
+    {
+        std::string query = "GO FROM 1 OVER follow WHERE 1 in collect(rand32(), 2, \"3\")";
+        auto parsed = parser_->parse(query);
+        ASSERT_TRUE(parsed.ok());
+        auto *expr = getFilterExpr(parsed.value().get());
+        ASSERT_NE(nullptr, expr);
+        auto status = expr->prepare();
+        ASSERT_TRUE(status.ok());
+        ASSERT_FALSE(expr->cacheable());
+    }
+}
 
 TEST_F(ExpressionTest, FunctionCall) {
     TEST_EXPR(abs(5), 5.0);
