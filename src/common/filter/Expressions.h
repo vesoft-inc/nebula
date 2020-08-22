@@ -1005,9 +1005,10 @@ private:
     Status implicitCasting(VariantType &lhs, VariantType &rhs) const;
 
 private:
-    Operator                                    op_;
-    std::unique_ptr<Expression>                 left_;
-    std::unique_ptr<Expression>                 right_;
+    Operator                                            op_;
+    std::unique_ptr<Expression>                         left_;
+    std::unique_ptr<Expression>                         right_;
+    folly::Optional<std::unordered_set<VariantType>>    set_;
 };
 
 

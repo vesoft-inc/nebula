@@ -882,8 +882,8 @@ OptVariantType ArithmeticExpression::eval(Getters &getters) const {
         return right;
     }
 
-    auto l = left.value();
-    auto r = right.value();
+    auto& l = left.value();
+    auto& r = right.value();
 
     static constexpr int64_t maxInt = std::numeric_limits<int64_t>::max();
     static constexpr int64_t minInt = std::numeric_limits<int64_t>::min();
@@ -1122,8 +1122,8 @@ OptVariantType RelationalExpression::eval(Getters &getters) const {
         return right;
     }
 
-    auto l = left.value();
-    auto r = right.value();
+    auto& l = left.value();
+    auto& r = right.value();
     if (l.which() != r.which()) {
         if (op_ != IN) {
             auto s = implicitCasting(l, r);
@@ -1164,6 +1164,10 @@ OptVariantType RelationalExpression::eval(Getters &getters) const {
             }
             break;
         case IN:
+            if (set_.hasValue()) {
+                auto& set = set_.value();
+                return OptVariantType(set.find(l) != set.end());
+            }
             if (isString(r)) {
                 FlattenListReader reader(asString(r));
                 auto iter = reader.begin();
@@ -1222,6 +1226,28 @@ Status RelationalExpression::prepare() {
     status = right_->prepare();
     if (!status.ok()) {
         return status;
+    }
+    if (right_->cacheable() && op_ == IN) {
+        Getters getters;
+        auto right = right_->eval(getters);
+        if (!right.ok()) {
+            return right.status();
+        }
+        auto& r = right.value();
+        if (!isString(r)) {
+            return Status::Error("Wrong operator");
+        }
+        FlattenListReader reader(asString(r));
+        auto iter = reader.begin();
+        auto end = reader.end();
+        std::unordered_set<VariantType> set;
+        for (; iter != end; ++iter) {
+            if (!iter->ok()) {
+                return Status::Error("Wrong operator of IN");
+            }
+            set.insert(std::move(*iter).value());
+        }
+        set_ = std::move(set);
     }
     if (left_->cacheable() && right_->cacheable()) {
         Getters getters;

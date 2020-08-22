@@ -465,22 +465,22 @@ public:
     void apply(cpp2::ColumnValue &val) override {
         switch(val.getType()) {
             case ColumnType::int_type:
-                int_values_.insert(val.get_integer());
+                set_.insert(val.get_integer());
                 break;
             case ColumnType::id_type:
-                int_values_.insert(val.get_id());
+                set_.insert(val.get_id());
                 break;
             case ColumnType::timestamp_type:
-                int_values_.insert(val.get_timestamp());
+                set_.insert(val.get_timestamp());
                 break;
             case ColumnType::bool_type:
-                bool_values_.insert(static_cast<int64_t>(val.get_bool_val()));
+                set_.insert(val.get_bool_val());
                 break;
             case ColumnType::double_type:
-                double_values_.insert(val.get_double_precision());
+                set_.insert(val.get_double_precision());
                 break;
             case ColumnType::str_type:
-                str_values_.insert(val.get_str());
+                set_.insert(val.get_str());
                 break;
             default:
                 return;
@@ -488,32 +488,16 @@ public:
     }
 
     cpp2::ColumnValue getResult() override {
-        for (auto& item : int_values_) {
+        for (auto& item : set_) {
             writer_ << item;
         }
-
-        for (auto& item : bool_values_) {
-            writer_ << item;
-        }
-
-        for (auto& item : double_values_) {
-            writer_ << item;
-        }
-
-        for (auto& item : str_values_) {
-            writer_ << item;
-        }
-
         cpp2::ColumnValue result;
         result.set_str(writer_.finish());
         return result;
     }
 private:
-    std::set<int64_t>       int_values_;
-    std::set<bool>          bool_values_;
-    std::set<double>        double_values_;
-    std::set<std::string>   str_values_;
-    FlattenListWriter       writer_;
+    std::unordered_set<VariantType> set_;
+    FlattenListWriter               writer_;
 };
 
 static std::unordered_map<std::string, std::function<std::shared_ptr<AggFun>()>> funVec = {
