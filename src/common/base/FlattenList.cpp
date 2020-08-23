@@ -123,6 +123,26 @@ const StatusOr<VariantType>& FlattenListReader::Iterator::operator*() const {
     return v_;
 }
 
+StatusOr<folly::StringPiece> FlattenListReader::Iterator::raw() const {
+    load();
+    if (!v_.ok()) {
+        return v_.status();
+    }
+    switch (v_.value().which()) {
+        case VAR_INT64:
+            return s_.subpiece(offset_ + sizeof(uint8_t), size_ - sizeof(uint8_t));
+        case VAR_DOUBLE:
+            return s_.subpiece(offset_ + sizeof(uint8_t), size_ - sizeof(uint8_t));
+        case VAR_BOOL:
+            return s_.subpiece(offset_ + sizeof(uint8_t), size_ - sizeof(uint8_t));
+        case VAR_STR:
+            return s_.subpiece(offset_ + sizeof(uint8_t) + sizeof(uint32_t),
+                               size_ - sizeof(uint8_t) - sizeof(uint32_t));
+        default:
+            return Status::Error("unknown type.");
+    }
+}
+
 FlattenListReader::Iterator::Iterator(const FlattenListReader& r, bool end) {
     auto s = r.s_;
     if (s.size() < sizeof(FlattenListBeginMagic) + sizeof(FlattenListEndMagic)) {

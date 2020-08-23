@@ -383,6 +383,16 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
     TEST_EXPR("1" IN collect("2", "3"), false)
     TEST_EXPR("1" IN collect("1", "2", 3), true)
     TEST_EXPR(1 IN collect("1", "2", "3"), false)
+    TEST_EXPR(base64_decode(base64_encode("1")), "1")
+    TEST_EXPR(base64_decode(base64_encode("12")), "12")
+    TEST_EXPR(base64_decode(base64_encode("123")), "123")
+    TEST_EXPR(base64_decode(base64_encode("true")), "true")
+    TEST_EXPR(bloom_key_may_match(
+                  1, bloom_create_filter(collect(1, 2, 3))),true)
+    TEST_EXPR(bloom_key_may_match(
+                  4, bloom_create_filter(collect(1, 2, 3))),false)
+    TEST_EXPR(bloom_key_may_match(
+                  1, base64_decode(base64_encode(bloom_create_filter(collect(1, 2, 3))))),true)
 
     TEST_EXPR(8 % 2 + 1 == 1, true);
     TEST_EXPR(8 % 2 + 1 != 1, false);
@@ -638,6 +648,23 @@ TEST_F(ExpressionTest, Cacheable) {
         auto status = expr->prepare();
         ASSERT_TRUE(status.ok());
         ASSERT_FALSE(expr->cacheable());
+    }
+    {
+        std::string query = "GO FROM 1 OVER follow WHERE "
+                            "bloom_key_may_match("
+                            "1, base64_decode("
+                            "base64_encode("
+                            "bloom_create_filter("
+                            "collect(1, 2, 3)))))";
+        auto parsed = parser_->parse(query);
+        ASSERT_TRUE(parsed.ok());
+        auto *expr = getFilterExpr(parsed.value().get());
+        auto ctx = std::make_unique<ExpressionContext>();
+        expr->setContext(ctx.get());
+        ASSERT_NE(nullptr, expr);
+        auto status = expr->prepare();
+        ASSERT_TRUE(status.ok());
+        ASSERT_TRUE(expr->cacheable());
     }
 }
 

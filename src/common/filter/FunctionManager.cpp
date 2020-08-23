@@ -10,6 +10,8 @@
 #include "time/WallClock.h"
 #include "filter/geo/GeoFilter.h"
 #include "base/FlattenList.h"
+#include <proxygen/lib/utils/Base64.h>
+#include <rocksdb/filter_policy.h>
 
 namespace nebula {
 
@@ -19,6 +21,8 @@ FunctionManager& FunctionManager::instance() {
     return instance;
 }
 
+static std::unique_ptr<const rocksdb::FilterPolicy>
+    filter_policy_(rocksdb::NewBloomFilterPolicy(10, true));
 
 FunctionManager::FunctionManager() {
     {
@@ -326,7 +330,7 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
-            auto value = Expression::asString(args[0]);
+            auto& value = Expression::asString(args[0]);
             return static_cast<int64_t>(value.length());
         };
     }
@@ -370,7 +374,7 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 2;
         attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
-            auto value = Expression::asString(args[0]);
+            auto& value = Expression::asString(args[0]);
             auto length = Expression::asInt(args[1]);
             if (length <= 0) {
                 return std::string();
@@ -384,7 +388,7 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 2;
         attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
-            auto value  = Expression::asString(args[0]);
+            auto& value  = Expression::asString(args[0]);
             auto length = Expression::asInt(args[1]);
             if (length <= 0) {
                 return std::string();
@@ -401,7 +405,7 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 3;
         attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
-            auto value = Expression::asString(args[0]);
+            auto& value = Expression::asString(args[0]);
             size_t size  = Expression::asInt(args[1]);
 
             if (size == 0) {
@@ -428,7 +432,7 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 3;
         attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
-            auto value = Expression::asString(args[0]);
+            auto& value = Expression::asString(args[0]);
             size_t size  = Expression::asInt(args[1]);
             if (size == 0) {
                 return std::string("");
@@ -454,7 +458,7 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 3;
         attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
-            auto value   = Expression::asString(args[0]);
+            auto& value   = Expression::asString(args[0]);
             auto start   = Expression::asInt(args[1]);
             auto length  = Expression::asInt(args[2]);
             if (static_cast<size_t>(std::abs(start)) > value.size() ||
@@ -535,7 +539,7 @@ FunctionManager::FunctionManager() {
                     return !ret.second;
                 }
                 case VAR_STR: {
-                    auto v = Expression::asString(cmp);
+                    auto& v = Expression::asString(cmp);
                     std::unordered_set<std::string> vals;
                     for (auto iter = (args.begin() + 1); iter < args.end(); ++iter) {
                         vals.emplace(Expression::toString(*iter));
@@ -598,8 +602,8 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 2;
         attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) -> OptVariantType {
-            auto sep   = Expression::asString(args[0]);
-            auto encoded   = Expression::asString(args[1]);
+            auto& sep   = Expression::asString(args[0]);
+            auto& encoded   = Expression::asString(args[1]);
 
             FlattenListReader r(encoded);
             ICord<> cord;
@@ -643,6 +647,86 @@ FunctionManager::FunctionManager() {
                 w << item;
             }
             return w.finish();
+        };
+    }
+    {
+        auto &attr = functions_["base64_encode"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.cacheable_ = true;
+        attr.body_ = [] (const auto &args) -> OptVariantType {
+            auto& s = Expression::asString(args[0]);
+            return proxygen::Base64::urlEncode(folly::StringPiece(s));
+        };
+    }
+    {
+        auto &attr = functions_["base64_decode"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.cacheable_ = true;
+        attr.body_ = [] (const auto &args) -> OptVariantType {
+            auto& s = Expression::asString(args[0]);
+            return proxygen::Base64::urlDecode(s);
+        };
+    }
+    {
+        auto &attr = functions_["bloom_create_filter"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.cacheable_ = true;
+        attr.body_ = [] (const auto &args) -> OptVariantType {
+            auto& encoded   = Expression::asString(args[0]);
+
+            std::vector<rocksdb::Slice> keys;
+            FlattenListReader r(encoded);
+            auto iter = r.begin();
+            for (; iter != r.end(); ++iter) {
+                if (!iter->ok()) {
+                    return iter->status();
+                }
+                auto status = iter.raw();
+                if (!status.ok()) {
+                    return status.status();
+                }
+                auto key = status.value();
+                keys.emplace_back(rocksdb::Slice(key.data(), key.size()));
+            }
+
+            std::string filter;
+            filter_policy_->CreateFilter(keys.data(), keys.size(), &filter);
+            return OptVariantType(std::move(filter));
+        };
+    }
+    {
+        auto &attr = functions_["bloom_key_may_match"];
+        attr.minArity_ = 2;
+        attr.maxArity_ = 2;
+        attr.cacheable_ = true;
+        attr.body_ = [] (const auto &args) -> OptVariantType {
+            auto& filter   = Expression::asString(args[1]);
+            switch (args[0].which()) {
+                case VAR_INT64: {
+                    auto v = Expression::asInt(args[0]);
+                    rocksdb::Slice key(reinterpret_cast<const char *>(&v), sizeof(v));
+                    return filter_policy_->KeyMayMatch(key, filter);
+                }
+                case VAR_DOUBLE: {
+                    auto v = Expression::asDouble(args[0]);
+                    rocksdb::Slice key(reinterpret_cast<const char *>(&v), sizeof(v));
+                    return filter_policy_->KeyMayMatch(key, filter);
+                }
+                case VAR_BOOL: {
+                    auto v = Expression::asBool(args[0]);
+                    rocksdb::Slice key(reinterpret_cast<const char *>(&v), sizeof(v));
+                    return filter_policy_->KeyMayMatch(key, filter);
+                }
+                case VAR_STR: {
+                    auto &key = Expression::asString(args[0]);
+                    return filter_policy_->KeyMayMatch(key, filter);
+                }
+                default:
+                    return Status::Error("Unkown type.");
+            }
         };
     }
 }  // NOLINT

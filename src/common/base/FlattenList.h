@@ -43,9 +43,10 @@ public:
         bool operator!=(const Iterator& rhs) const noexcept {
             return !this->operator==(rhs);
         }
+        StatusOr<folly::StringPiece> raw() const;
     private:
         friend class FlattenListReader;
-        Iterator(const FlattenListReader& r, bool end = false);
+        explicit Iterator(const FlattenListReader& r, bool end = false);
         size_t remain() const;
         void load() const;
 
