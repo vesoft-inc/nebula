@@ -107,15 +107,23 @@ protected:
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
         auto status = expr->prepare();
-        ASSERT_TRUE(status.ok());
-        auto decoded = Expression::decode(Expression::encode(expr));
-        ASSERT_TRUE(decoded.ok()) << decoded.status();
-        auto ctx = std::make_unique<ExpressionContext>();
-        decoded.value()->setContext(ctx.get());
-        status = decoded.value()->prepare();
-        ASSERT_TRUE(status.ok()) << status;
-        auto value = decoded.value()->eval(getters);
-        ASSERT_TRUE(!value.ok());
+        if (status.ok()) {
+            auto decoded = Expression::decode(Expression::encode(expr));
+            ASSERT_TRUE(decoded.ok()) << decoded.status();
+            auto ctx = std::make_unique<ExpressionContext>();
+            decoded.value()->setContext(ctx.get());
+            status = decoded.value()->prepare();
+            ASSERT_TRUE(status.ok()) << status;
+            auto value = decoded.value()->eval(getters);
+            ASSERT_TRUE(!value.ok());
+        } else {
+            auto decoded = Expression::decode(Expression::encode(expr));
+            ASSERT_TRUE(decoded.ok()) << decoded.status();
+            auto ctx = std::make_unique<ExpressionContext>();
+            decoded.value()->setContext(ctx.get());
+            status = decoded.value()->prepare();
+            ASSERT_FALSE(status.ok()) << status;
+        }
     }
 
     std::unique_ptr<GQLParser> parser_{nullptr};

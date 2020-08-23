@@ -93,7 +93,12 @@ std::unique_ptr<Expression> Expression::makeExpr(uint8_t kind) {
 // static
 std::string Expression::encode(Expression *expr) noexcept {
     ICord<> cord;
-    expr->encode(cord);
+    if (expr->cacheable()) {
+        PrimaryExpression e(*expr->cache());
+        dynamic_cast<Expression*>(&e)->encode(cord);
+    } else {
+        expr->encode(cord);
+    }
     return cord.str();
 }
 
@@ -579,9 +584,10 @@ Status FunctionCallExpression::prepare() {
     if (cacheable) {
         Getters getters;
         auto cache = eval(getters);
-        if (cache.ok()) {
-            cache_ = std::move(cache).value();
+        if (!cache.ok()) {
+            return cache.status();
         }
+        cache_ = std::move(cache).value();
     }
     return status;
 }
@@ -718,9 +724,10 @@ Status UnaryExpression::prepare() {
     if (operand_->cacheable()) {
         Getters getters;
         auto cache = eval(getters);
-        if (cache.ok()) {
-            cache_ = std::move(cache).value();
+        if (!cache.ok()) {
+            return cache.status();
         }
+        cache_ = std::move(cache).value();
     }
     return Status::OK();
 }
@@ -814,9 +821,10 @@ Status TypeCastingExpression::prepare() {
     if (operand_->cacheable()) {
         Getters getters;
         auto cache = eval(getters);
-        if (cache.ok()) {
-            cache_ = std::move(cache).value();
+        if (!cache.ok()) {
+            return cache.status();
         }
+        cache_ = std::move(cache).value();
     }
     return Status::OK();
 }
@@ -1041,9 +1049,10 @@ Status ArithmeticExpression::prepare() {
     if (left_->cacheable() && right_->cacheable()) {
         Getters getters;
         auto cache = eval(getters);
-        if (cache.ok()) {
-            cache_ = std::move(cache).value();
+        if (!cache.ok()) {
+            return cache.status();
         }
+        cache_ = std::move(cache).value();
     }
     return Status::OK();
 }
@@ -1228,12 +1237,7 @@ Status RelationalExpression::prepare() {
         return status;
     }
     if (right_->cacheable() && op_ == IN) {
-        Getters getters;
-        auto right = right_->eval(getters);
-        if (!right.ok()) {
-            return right.status();
-        }
-        auto& r = right.value();
+        auto& r = *right_->cache();
         if (!isString(r)) {
             return Status::Error("Wrong operator");
         }
@@ -1252,9 +1256,10 @@ Status RelationalExpression::prepare() {
     if (left_->cacheable() && right_->cacheable()) {
         Getters getters;
         auto cache = eval(getters);
-        if (cache.ok()) {
-            cache_ = std::move(cache).value();
+        if (!cache.ok()) {
+            return cache.status();
         }
+        cache_ = std::move(cache).value();
     }
     return Status::OK();
 }
@@ -1360,9 +1365,10 @@ Status LogicalExpression::prepare() {
     if (left_->cacheable() && right_->cacheable()) {
         Getters getters;
         auto cache = eval(getters);
-        if (cache.ok()) {
-            cache_ = std::move(cache).value();
+        if (!cache.ok()) {
+            return cache.status();
         }
+        cache_ = std::move(cache).value();
     }
     return Status::OK();
 }

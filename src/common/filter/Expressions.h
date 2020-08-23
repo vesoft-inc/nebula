@@ -415,6 +415,8 @@ public:
 
     bool cacheable() const { return cache_.hasValue(); }
 
+    const folly::Optional<VariantType>& cache() const { return cache_; }
+
 protected:
     static uint8_t kindToInt(Kind kind) {
         return static_cast<uint8_t>(kind);
@@ -681,6 +683,11 @@ public:
     }
 
     explicit PrimaryExpression(std::string val) {
+        kind_ = kPrimary;
+        cache_.assign(std::move(val));
+    }
+
+    explicit PrimaryExpression(VariantType val) {
         kind_ = kPrimary;
         cache_.assign(std::move(val));
     }
