@@ -64,6 +64,9 @@ jobs:
           [ -d build/ ] && rm -rf build/* || mkdir -p build
           pip3 install -U setuptools -i $PYPI_MIRROR
           pip3 install -r tests/requirements.txt -i $PYPI_MIRROR
+          git clone -b v2.0 https://github.com/vesoft-inc/nebula-python.git
+          cd nebula-python
+          python3 setup.py install
       - name: Checkout common
         uses: actions/checkout@v2
         with:
