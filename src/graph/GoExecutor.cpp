@@ -1384,17 +1384,13 @@ void GoExecutor::VertexHolder::add(const storage::cpp2::QueryResponse &resp) {
     if (vertexSchema == nullptr) {
         return;
     }
-    std::unordered_map<nebula::cpp2::TagID, std::shared_ptr<ResultSchemaProvider>> tagSchemaPtrs;
-    for (auto &it : *vertexSchema) {
-        tagSchemaPtrs[it.first] = std::make_shared<ResultSchemaProvider>(it.second);
-    }
     for (auto &vdata : *vertices) {
         std::unordered_map<TagID, VData> m;
         for (auto &td : vdata.tag_data) {
             DCHECK(td.__isset.data);
-            auto it = tagSchemaPtrs.find(td.tag_id);
-            DCHECK(it != tagSchemaPtrs.end());
-            m[td.tag_id] = {it->second, td.data};
+            auto it = vertexSchema->find(td.tag_id);
+            DCHECK(it != vertexSchema->end());
+            m[td.tag_id] = {std::make_shared<ResultSchemaProvider>(it->second), td.data};
         }
         data_[vdata.vertex_id] = std::move(m);
     }
