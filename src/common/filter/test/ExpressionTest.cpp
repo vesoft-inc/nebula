@@ -401,6 +401,8 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
                   4, bloom_create_filter(collect(1, 2, 3))),false)
     TEST_EXPR(bloom_key_may_match(
                   1, base64_decode(base64_encode(bloom_create_filter(collect(1, 2, 3))))),true)
+    TEST_EXPR(bloom_key_may_match(
+        1, base64_decode(base64_encode(bloom_create_filter(range(1, 500000))))),true)
 
     TEST_EXPR(8 % 2 + 1 == 1, true);
     TEST_EXPR(8 % 2 + 1 != 1, false);

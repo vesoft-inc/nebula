@@ -729,6 +729,26 @@ FunctionManager::FunctionManager() {
             }
         };
     }
+    {
+        auto &attr = functions_["range"];
+        attr.minArity_ = 2;
+        attr.maxArity_ = 3;
+        attr.cacheable_ = true;
+        attr.body_ = [] (const auto &args) -> OptVariantType {
+            auto start = Expression::asInt(args[0]);
+            auto end = Expression::asInt(args[1]);
+            int64_t step = 1;
+            if (args.size() > 2) {
+                step = Expression::asInt(args[2]);
+            }
+
+            FlattenListWriter w;
+            for (int64_t i = start; i <= end; i += step) {
+                w << i;
+            }
+            return OptVariantType(w.finish());
+        };
+    }
 }  // NOLINT
 
 

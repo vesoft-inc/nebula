@@ -472,7 +472,13 @@ void PrimaryExpression::encode(ICord<> &cord) const {
             break;
         case VAR_STR: {
             auto &str = boost::get<std::string>(operand);
-            cord << static_cast<uint16_t>(str.size());
+            size_t size = str.size();
+            if (size <= (1UL << 15)) {
+                cord << static_cast<uint16_t>(str.size());
+            } else {
+                cord << static_cast<uint16_t>((size & ((1UL << 15) - 1)) | (1UL << 15));
+                cord << static_cast<uint16_t>(size >> 15);
+            }
             cord << str;
             break;
         }
@@ -502,9 +508,16 @@ const char* PrimaryExpression::decode(const char *pos, const char *end) {
             break;
         case VAR_STR: {
             THROW_IF_NO_SPACE(pos, end, 2UL);
-            auto size = *reinterpret_cast<const uint16_t*>(pos);
+            size_t size_l = *reinterpret_cast<const uint16_t*>(pos);
+            size_t size_h = 0;
             pos += 2;
-            THROW_IF_NO_SPACE(pos, end, static_cast<uint64_t>(size));
+            if (size_l & (1UL << 15)) {
+                THROW_IF_NO_SPACE(pos, end, 2UL);
+                size_h = *reinterpret_cast<const uint16_t*>(pos);
+                pos += 2;
+            }
+            size_t size = (size_h << 15) | (size_l & ~(1UL << 15));
+            THROW_IF_NO_SPACE(pos, end, size);
             cache_ = std::string(pos, size);
             pos += size;
             break;
