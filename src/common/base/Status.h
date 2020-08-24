@@ -104,6 +104,7 @@ public:
     // Graph engine errors
     STATUS_GENERATOR(SyntaxError);
     STATUS_GENERATOR(MalformedRequest);
+    STATUS_GENERATOR(PartiallyFailed);
     // Nothing is executed When command is comment
     STATUS_GENERATOR(StatementEmpty);
 
@@ -124,9 +125,6 @@ public:
 
     // User or permission errors
     STATUS_GENERATOR(PermissionError);
-
-    // Temporary error code, may be replaced in higher version.
-    STATUS_GENERATOR(PartiallyFailed);
 
 #undef STATUS_GENERATOR
 
