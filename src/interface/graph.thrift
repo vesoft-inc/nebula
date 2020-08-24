@@ -33,6 +33,7 @@ enum ErrorCode {
     // User and permission error
     E_USER_NOT_FOUND = -10,
     E_BAD_PERMISSION = -11,
+    E_PARTIALLY_FAILED = -12,
 
 } (cpp.enum_strict)
 

@@ -125,6 +125,9 @@ public:
     // User or permission errors
     STATUS_GENERATOR(PermissionError);
 
+    // Temporary error code, may be replaced in higher version.
+    STATUS_GENERATOR(PartiallyFailed);
+
 #undef STATUS_GENERATOR
 
     std::string toString() const;
@@ -148,6 +151,7 @@ public:
         kSyntaxError      = 201,
         kStatementEmpty   = 202,
         kMalformedRequest = 203,
+        kPartiallyFailed  = 204,
         // 3xx, for storage engine errors
         kKeyNotFound      = 301,
         // 4xx, for meta service errors

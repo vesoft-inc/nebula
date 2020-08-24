@@ -313,7 +313,7 @@ void FetchEdgesExecutor::fetchEdges() {
     auto cb = [this] (RpcResponse &&result) mutable {
         auto completeness = result.completeness();
         if (completeness == 0) {
-            doError(Status::Error("Get edge `%s' props failed", labelName_->c_str()));
+            doError(Status::Error("Get edge '%s' props failed", labelName_->c_str()));
             return;
         } else if (completeness != 100) {
             LOG(INFO) << "Get edges partially failed: "  << completeness << "%";
@@ -321,12 +321,16 @@ void FetchEdgesExecutor::fetchEdges() {
                 LOG(ERROR) << "part: " << error.first
                            << "error code: " << static_cast<int>(error.second);
             }
+            doError(Status::PartiallyFailed(folly::stringPrintf(
+                    "Get edge '%s' props partially failed",
+                    labelName_->c_str())));
+            return;
         }
         processResult(std::move(result));
         return;
     };
     auto error = [this] (auto &&e) {
-        auto msg = folly::stringPrintf("Get edge `%s' props faield: %s.",
+        auto msg = folly::stringPrintf("Get edge '%s' props faield: %s.",
                 labelName_->c_str(), e.what().c_str());
         LOG(ERROR) << msg;
         doError(Status::Error(std::move(msg)));
