@@ -1568,6 +1568,18 @@ download_sentence
         sentence->setUrl($3);
         $$ = sentence;
     }
+    | KW_DOWNLOAD KW_EDGE name_label KW_HDFS STRING {
+        auto sentence = new DownloadSentence();
+        sentence->setEdge($3);
+        sentence->setUrl($5);
+        $$ = sentence;
+    }
+    | KW_DOWNLOAD KW_TAG name_label KW_HDFS STRING {
+        auto sentence = new DownloadSentence();
+        sentence->setTag($3);
+        sentence->setUrl($5);
+        $$ = sentence;
+    }
     ;
 
 delete_edge_sentence
@@ -1580,6 +1592,16 @@ delete_edge_sentence
 ingest_sentence
     : KW_INGEST {
         auto sentence = new IngestSentence();
+        $$ = sentence;
+    }
+    | KW_INGEST KW_EDGE name_label {
+        auto sentence = new IngestSentence();
+        sentence->setEdge($3);
+        $$ = sentence;
+    }
+    | KW_INGEST KW_TAG name_label {
+        auto sentence = new IngestSentence();
+        sentence->setTag($3);
         $$ = sentence;
     }
     ;

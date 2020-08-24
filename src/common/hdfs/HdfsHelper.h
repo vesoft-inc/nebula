@@ -26,6 +26,15 @@ public:
                                               const std::string& hdfsPath,
                                               const std::string& localPath) = 0;
 
+    virtual StatusOr<bool> exist(const std::string& hdfsHost,
+                                 int32_t hdfsPort,
+                                 const std::string& hdfsPath) {
+        UNUSED(hdfsHost);
+        UNUSED(hdfsPort);
+        UNUSED(hdfsPath);
+        return true;
+    }
+
     virtual bool checkHadoopPath() = 0;
 };
 

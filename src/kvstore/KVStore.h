@@ -162,6 +162,10 @@ public:
 
     virtual ResultCode ingest(GraphSpaceID spaceId) = 0;
 
+    virtual ResultCode ingestTag(GraphSpaceID spaceId, TagID tagId) = 0;
+
+    virtual ResultCode ingestEdge(GraphSpaceID spaceId, EdgeType edgeType) = 0;
+
     virtual int32_t allLeader(std::unordered_map<GraphSpaceID,
                               std::vector<PartitionID>>& leaderIds) = 0;
 

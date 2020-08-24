@@ -113,6 +113,13 @@ std::string MetaServiceUtils::partPrefix(GraphSpaceID spaceId) {
     return prefix;
 }
 
+std::string MetaServiceUtils::partPrefix() {
+    std::string prefix;
+    prefix.reserve(kPartsTable.size() + sizeof(GraphSpaceID));
+    prefix.append(kPartsTable.data(), kPartsTable.size());
+    return prefix;
+}
+
 std::vector<nebula::cpp2::HostAddr> MetaServiceUtils::parsePartVal(folly::StringPiece val) {
     std::vector<nebula::cpp2::HostAddr> hosts;
     static const size_t unitSize = sizeof(int32_t) * 2;
@@ -363,6 +370,13 @@ std::string MetaServiceUtils::rebuildIndexStatusPrefix(GraphSpaceID space,
     key.append(kIndexStatusTable.data(), kIndexStatusTable.size())
        .append(reinterpret_cast<const char*>(&space), sizeof(GraphSpaceID))
        .append(1, type);
+    return key;
+}
+
+std::string MetaServiceUtils::rebuildIndexStatusPrefix() {
+    std::string key;
+    key.reserve(kIndexStatusTable.size());
+    key.append(kIndexStatusTable.data(), kIndexStatusTable.size());
     return key;
 }
 

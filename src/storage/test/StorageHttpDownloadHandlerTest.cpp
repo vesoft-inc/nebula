@@ -79,6 +79,22 @@ TEST(StorageHttpDownloadHandlerTest, StorageDownloadTest) {
         ASSERT_EQ("SSTFile download successfully", resp.value());
     }
     {
+        auto url = "/download?host=127.0.0.1&port=9000&path=/data&parts=1&space=0&edge=1";
+        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
+                                           FLAGS_ws_http_port, url);
+        auto resp = http::HttpClient::get(request);
+        ASSERT_TRUE(resp.ok());
+        ASSERT_EQ("SSTFile download successfully", resp.value());
+    }
+    {
+        auto url = "/download?host=127.0.0.1&port=9000&path=/data&parts=1&space=0&tag=1";
+        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
+                                           FLAGS_ws_http_port, url);
+        auto resp = http::HttpClient::get(request);
+        ASSERT_TRUE(resp.ok());
+        ASSERT_EQ("SSTFile download successfully", resp.value());
+    }
+    {
         auto url = "/download?host=127.0.0.1&port=9000&path=/data&parts=illegal-part&space=0";
         auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
                                            FLAGS_ws_http_port, url);

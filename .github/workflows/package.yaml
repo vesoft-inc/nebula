@@ -3,13 +3,10 @@ name: package
 on:
   schedule:
     - cron: '0 18 * * *'
-  push:
-    # Releases are all branch based, and the branch package here is for testing.
-    branches:
-      - 'v[0-9]+.*'
-    paths-ignore:
-      - 'docs/**'
-      - '**.md'
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
   package:
@@ -28,25 +25,16 @@ jobs:
       - uses: actions/checkout@v1
       - name: Package
         run: ./package/package.sh
-        shell: bash
-      - name: Compute version
-        id: version
-        env:
-          CPACK_OUTPUT_DIR: build/cpack_output
+      - name: Upload oss
         run: |
-          [[ "${{ github.event_name }}" == "push" ]] && \
-            echo "::set-output name=version::$(cut -d/ -f3 <<< ${{ github.ref }})" || \
-            (echo "::set-output name=version::nightly"
-              cd $CPACK_OUTPUT_DIR && \
-              filename=$(find . -type f \( -iname \*.deb -o -iname \*.rpm \) -exec basename {} \;)
-              echo "::set-output name=filepath::$CPACK_OUTPUT_DIR/$filename")
-        shell: bash
-      - name: upload oss
-        if: github.event_name != 'push'
-        run: |
-          ./ci/scripts/upload-oss.sh OSS_ENDPOINT=${{ secrets.OSS_ENDPOINT }} OSS_ID=${{ secrets.OSS_ID }} OSS_SECRET=${{ secrets.OSS_SECRET }} filepath=${{ steps.version.outputs.filepath }} nightly=true
-        shell: bash
+          filepath=$(find build/cpack_output -type f \( -iname \*.deb -o -iname \*.rpm \))
+          ./ci/scripts/upload-oss.sh \
+            OSS_ENDPOINT=${{ secrets.OSS_ENDPOINT }} \
+            OSS_ID=${{ secrets.OSS_ID }} \
+            OSS_SECRET=${{ secrets.OSS_SECRET }} \
+            filepath=$filepath \
+            nightly=true
       - uses: actions/upload-artifact@v1
         with:
-          name: ${{ matrix.os }}-${{ steps.version.outputs.version }}
+          name: ${{ matrix.os }}-nightly
           path: build/cpack_output

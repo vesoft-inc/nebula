@@ -2887,14 +2887,6 @@ TEST_P(GoTest, issue2087_go_cover_input) {
              "Tim Duncan", "Tony Parker"},
             {players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid(),
              "Tim Duncan", "Manu Ginobili"},
-            {players_["Tim Duncan"].vid(), players_["Tony Parker"].vid(),
-             "Tim Duncan", "Tony Parker"},
-            {players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid(),
-             "Tim Duncan", "Manu Ginobili"},
-            {players_["Tim Duncan"].vid(), players_["Tony Parker"].vid(),
-             "Tim Duncan", "Tony Parker"},
-            {players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid(),
-             "Tim Duncan", "Manu Ginobili"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -2908,10 +2900,6 @@ TEST_P(GoTest, issue2087_go_cover_input) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {players_["Tim Duncan"].vid(), players_["Tony Parker"].vid()},
-            {players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid()},
-            {players_["Tim Duncan"].vid(), players_["Tony Parker"].vid()},
-            {players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid()},
             {players_["Tim Duncan"].vid(), players_["Tony Parker"].vid()},
             {players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid()},
             {players_["Tim Duncan"].vid(), players_["Tony Parker"].vid()},
@@ -2936,19 +2924,7 @@ TEST_P(GoTest, issue2087_go_cover_input) {
             {players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid()},
             {players_["Tim Duncan"].vid(), players_["Tony Parker"].vid()},
             {players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid()},
-            {players_["Tim Duncan"].vid(), players_["Tony Parker"].vid()},
-            {players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid()},
-            {players_["Tim Duncan"].vid(), players_["Tony Parker"].vid()},
-            {players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid()},
 
-            {players_["Tim Duncan"].vid(), players_["Tim Duncan"].vid()},
-            {players_["Tim Duncan"].vid(), players_["Tim Duncan"].vid()},
-            {players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid()},
-            {players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid()},
-            {players_["Tim Duncan"].vid(), players_["LaMarcus Aldridge"].vid()},
-            {players_["Tim Duncan"].vid(), players_["LaMarcus Aldridge"].vid()},
-            {players_["Tim Duncan"].vid(), players_["Tim Duncan"].vid()},
-            {players_["Tim Duncan"].vid(), players_["Tim Duncan"].vid()},
             {players_["Tim Duncan"].vid(), players_["Tim Duncan"].vid()},
             {players_["Tim Duncan"].vid(), players_["Tim Duncan"].vid()},
             {players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid()},
@@ -2976,26 +2952,14 @@ TEST_P(GoTest, issue2087_go_cover_input) {
             {players_["Tim Duncan"].vid(), players_["Tony Parker"].vid(), players_["Manu Ginobili"].vid(), 95},  // NOLINT
             {players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid(), players_["Tony Parker"].vid(), 95},  // NOLINT
             {players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid(), players_["Manu Ginobili"].vid(), 95},  // NOLINT
-            {players_["Tim Duncan"].vid(), players_["Tony Parker"].vid(), players_["Tony Parker"].vid(), 95},  // NOLINT
-            {players_["Tim Duncan"].vid(), players_["Tony Parker"].vid(), players_["Manu Ginobili"].vid(), 95},  // NOLINT
-            {players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid(), players_["Tony Parker"].vid(), 95},  // NOLINT
-            {players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid(), players_["Manu Ginobili"].vid(), 95},  // NOLINT
 
             {players_["Tim Duncan"].vid(), players_["Tony Parker"].vid(), players_["Tim Duncan"].vid(), 95},  // NOLINT
-            {players_["Tim Duncan"].vid(), players_["Tony Parker"].vid(), players_["Tim Duncan"].vid(), 95},  // NOLINT
-            {players_["Tim Duncan"].vid(), players_["Tony Parker"].vid(), players_["Manu Ginobili"].vid(), 95},  // NOLINT
             {players_["Tim Duncan"].vid(), players_["Tony Parker"].vid(), players_["Manu Ginobili"].vid(), 95},  // NOLINT
             {players_["Tim Duncan"].vid(), players_["Tony Parker"].vid(), players_["LaMarcus Aldridge"].vid(), 90},  // NOLINT
-            {players_["Tim Duncan"].vid(), players_["Tony Parker"].vid(), players_["LaMarcus Aldridge"].vid(), 90},  // NOLINT
-            {players_["Tim Duncan"].vid(), players_["Tony Parker"].vid(), players_["Tim Duncan"].vid(), 90},  // NOLINT
             {players_["Tim Duncan"].vid(), players_["Tony Parker"].vid(), players_["Tim Duncan"].vid(), 90},  // NOLINT
             {players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid(), players_["Tim Duncan"].vid(), 95},  // NOLINT
-            {players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid(), players_["Tim Duncan"].vid(), 95},  // NOLINT
-            {players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid(), players_["Manu Ginobili"].vid(), 95},  // NOLINT
             {players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid(), players_["Manu Ginobili"].vid(), 95},  // NOLINT
             {players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid(), players_["LaMarcus Aldridge"].vid(), 90},  // NOLINT
-            {players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid(), players_["LaMarcus Aldridge"].vid(), 90},  // NOLINT
-            {players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid(), players_["Tim Duncan"].vid(), 90},  // NOLINT
             {players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid(), players_["Tim Duncan"].vid(), 90},  // NOLINT
         };
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -3046,54 +3010,22 @@ TEST_P(GoTest, issueBackTrackOverlap) {
     // In total , one src is anthoer one's dst
     {
         std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t>> expected = {
-            {players_["Tony Parker"].vid(), players_["Tim Duncan"].vid(), players_["Tim Duncan"].vid(), players_["Tony Parker"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["Manu Ginobili"].vid(), players_["Tim Duncan"].vid(), players_["Tony Parker"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Tim Duncan"].vid(), players_["Tony Parker"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["Tim Duncan"].vid(), players_["Tim Duncan"].vid(), players_["Tony Parker"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["Manu Ginobili"].vid(), players_["Tim Duncan"].vid(), players_["Tony Parker"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Tim Duncan"].vid(), players_["Tony Parker"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["Tim Duncan"].vid(), players_["Tim Duncan"].vid(), players_["Tony Parker"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["Manu Ginobili"].vid(), players_["Tim Duncan"].vid(), players_["Tony Parker"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Tim Duncan"].vid(), players_["Tony Parker"].vid()},  // NOLINT
-
             {players_["Tony Parker"].vid(), players_["Tim Duncan"].vid(), players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["Manu Ginobili"].vid(), players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["Tim Duncan"].vid(), players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["Manu Ginobili"].vid(), players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["Tim Duncan"].vid(), players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["Manu Ginobili"].vid(), players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid()},  // NOLINT
-
-            {players_["Tony Parker"].vid(), players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid(), players_["Tim Duncan"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["Manu Ginobili"].vid(), players_["Manu Ginobili"].vid(), players_["Tim Duncan"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Manu Ginobili"].vid(), players_["Tim Duncan"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid(), players_["Tim Duncan"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["Manu Ginobili"].vid(), players_["Manu Ginobili"].vid(), players_["Tim Duncan"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Manu Ginobili"].vid(), players_["Tim Duncan"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid(), players_["Tim Duncan"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["Manu Ginobili"].vid(), players_["Manu Ginobili"].vid(), players_["Tim Duncan"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Manu Ginobili"].vid(), players_["Tim Duncan"].vid()},  // NOLINT
-
+            {players_["Tony Parker"].vid(), players_["Tim Duncan"].vid(), players_["Tim Duncan"].vid(), players_["Tony Parker"].vid()},  // NOLINT
             {players_["Tony Parker"].vid(), players_["Tim Duncan"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Tony Parker"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["Manu Ginobili"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Tony Parker"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["LaMarcus Aldridge"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Tony Parker"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["Tim Duncan"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Tony Parker"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["Manu Ginobili"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Tony Parker"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["LaMarcus Aldridge"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Tony Parker"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["Tim Duncan"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Tony Parker"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["Manu Ginobili"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Tony Parker"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["LaMarcus Aldridge"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Tony Parker"].vid()},  // NOLINT
+            {players_["Tony Parker"].vid(), players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid(), players_["Tim Duncan"].vid()},  // NOLINT
+            {players_["Tony Parker"].vid(), players_["Tim Duncan"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Tim Duncan"].vid()},  // NOLINT
 
-            {players_["Tony Parker"].vid(), players_["Tim Duncan"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Tim Duncan"].vid()},  // NOLINT
+            {players_["Tony Parker"].vid(), players_["Manu Ginobili"].vid(), players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid()},  // NOLINT
+            {players_["Tony Parker"].vid(), players_["Manu Ginobili"].vid(), players_["Tim Duncan"].vid(), players_["Tony Parker"].vid()},  // NOLINT
+            {players_["Tony Parker"].vid(), players_["Manu Ginobili"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Tony Parker"].vid()},  // NOLINT
+            {players_["Tony Parker"].vid(), players_["Manu Ginobili"].vid(), players_["Manu Ginobili"].vid(), players_["Tim Duncan"].vid()},  // NOLINT
             {players_["Tony Parker"].vid(), players_["Manu Ginobili"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Tim Duncan"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["LaMarcus Aldridge"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Tim Duncan"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["Tim Duncan"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Tim Duncan"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["Manu Ginobili"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Tim Duncan"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["LaMarcus Aldridge"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Tim Duncan"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["Tim Duncan"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Tim Duncan"].vid()},  // NOLINT
-            {players_["Tony Parker"].vid(), players_["Manu Ginobili"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Tim Duncan"].vid()},  // NOLINT
+
+            {players_["Tony Parker"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Tim Duncan"].vid(), players_["Manu Ginobili"].vid()},  // NOLINT
+            {players_["Tony Parker"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Tim Duncan"].vid(), players_["Tony Parker"].vid()},  // NOLINT
+            {players_["Tony Parker"].vid(), players_["LaMarcus Aldridge"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Tony Parker"].vid()},  // NOLINT
+            {players_["Tony Parker"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Manu Ginobili"].vid(), players_["Tim Duncan"].vid()},  // NOLINT
             {players_["Tony Parker"].vid(), players_["LaMarcus Aldridge"].vid(), players_["LaMarcus Aldridge"].vid(), players_["Tim Duncan"].vid()},  // NOLINT
         };
         {

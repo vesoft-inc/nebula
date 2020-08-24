@@ -611,16 +611,18 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
 
 template<typename REQ, typename RESP>
 folly::Future<std::vector<OneVertexResp>>
-QueryBaseProcessor<REQ, RESP>::asyncProcessBucket(Bucket bucket) {
+QueryBaseProcessor<REQ, RESP>::asyncProcessBucket(
+    BucketIdx bucketIdx, Bucket bucket) {
     folly::Promise<std::vector<OneVertexResp>> pro;
     auto f = pro.getFuture();
-    executor_->add([this, p = std::move(pro), b = std::move(bucket)] () mutable {
+    executor_->add([this, p = std::move(pro), bucketIdx, b = std::move(bucket)] () mutable {
         std::vector<OneVertexResp> codes;
         codes.reserve(b.vertices_.size());
         for (auto& pv : b.vertices_) {
-            codes.emplace_back(pv.first,
-                               pv.second,
-                               processVertex(pv.first, pv.second));
+            codes.emplace_back(
+                pv.first,
+                pv.second,
+                processVertex(bucketIdx, pv.first, pv.second));
         }
         p.setValue(std::move(codes));
     });
@@ -821,9 +823,10 @@ void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req
 
     // const auto& filter = req.get_filter();
     auto buckets = genBuckets(req);
+    beforeProcess(buckets);
     std::vector<folly::Future<std::vector<OneVertexResp>>> results;
-    for (auto& bucket : buckets) {
-        results.emplace_back(asyncProcessBucket(std::move(bucket)));
+    for (unsigned i = 0; i < buckets.size(); i++) {
+        results.emplace_back(asyncProcessBucket(i, std::move(buckets[i])));
     }
     folly::collectAll(results).via(executor_).thenTry([
                      this,

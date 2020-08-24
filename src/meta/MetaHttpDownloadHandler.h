@@ -40,9 +40,7 @@ public:
     void onError(proxygen::ProxygenError error) noexcept override;
 
 private:
-    bool dispatchSSTFiles(const std::string& host,
-                          int32_t port,
-                          const std::string& path);
+    bool dispatchSSTFiles();
 
 private:
     HttpCode err_{HttpCode::SUCCEEDED};
@@ -50,6 +48,8 @@ private:
     int32_t hdfsPort_;
     std::string hdfsPath_;
     GraphSpaceID spaceID_;
+    folly::Optional<TagID> tag_;
+    folly::Optional<EdgeType> edge_;
     nebula::kvstore::KVStore *kvstore_;
     nebula::hdfs::HdfsHelper *helper_;
     nebula::thread::GenericThreadPool *pool_;

@@ -39,8 +39,8 @@ private:
             , indexMan_(indexMan)
             , vertexCache_(cache) {}
 
-    std::string addVertices(int64_t version, PartitionID partId,
-                            const std::vector<cpp2::Vertex>& vertices);
+    std::string addVerticesWithIndex(PartitionID partId,
+                                     std::vector<kvstore::KV>&& data);
 
     std::string findObsoleteIndex(PartitionID partId,
                                   VertexID vId,

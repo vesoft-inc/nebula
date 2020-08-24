@@ -28,19 +28,16 @@ public:
 
     cpp2::ErrorCode createSnapshot(const std::string& name);
 
-    cpp2::ErrorCode dropSnapshot(const std::string& name, const std::vector<HostAddr> hosts);
+    cpp2::ErrorCode dropSnapshot(const std::string& name, const std::vector<HostAddr>& hosts);
 
     cpp2::ErrorCode blockingWrites(storage::cpp2::EngineSignType sign);
-
-    std::unordered_map<HostAddr, std::vector<PartitionID>>
-    getLeaderParts(HostLeaderMap *hostLeaderMap, GraphSpaceID spaceId);
 
 private:
     Snapshot(kvstore::KVStore* kv, AdminClient* client) : kv_(kv), client_(client) {
         executor_.reset(new folly::CPUThreadPoolExecutor(1));
     }
 
-    bool getAllSpaces(std::vector<GraphSpaceID>& spaces, kvstore::ResultCode& retCode);
+    StatusOr<std::map<GraphSpaceID, std::set<HostAddr>>> getSpacesHosts();
 
 private:
     kvstore::KVStore* kv_{nullptr};

@@ -144,7 +144,7 @@ pid_t ProcessUtils::maxPid() {
 StatusOr<std::string> ProcessUtils::runCommand(const char* command) {
     FILE* f = popen(command, "re");
     if (f == nullptr) {
-        return Status::Error("Failed to execute the command \"%s\"", command);
+        return Status::Error("Failed to execute the command [%s]", command);
     }
 
     Cord out;
@@ -160,10 +160,19 @@ StatusOr<std::string> ProcessUtils::runCommand(const char* command) {
     if (ferror(f)) {
         // Something is wrong
         fclose(f);
-        return Status::Error("Failed to read the output of the command");
+        return Status::Error("Failed to read the output of the command. [%s]", command);
     }
 
-    pclose(f);
+    int st = pclose(f);
+    if (!WIFEXITED(st)) {
+        return Status::Error("Cmd Exist unexcepted. command: [%s]", command);
+    }
+
+    if (WEXITSTATUS(st)) {
+        return folly::stringPrintf(
+            "ERR: [%d], output: [%s], command: [%s]",
+            WEXITSTATUS(st), out.str().c_str(), command);
+    }
     return out.str();
 }
 

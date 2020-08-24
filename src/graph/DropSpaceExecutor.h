@@ -25,8 +25,6 @@ public:
 
     void execute() override;
 
-    void setupResponse(cpp2::ExecutionResponse &resp) override;
-
 private:
     DropSpaceSentence       *sentence_{nullptr};
     const std::string       *spaceName_{nullptr};
