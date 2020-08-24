@@ -401,7 +401,7 @@ void RaftPart::preProcessTransLeader(const HostAddr& target) {
                         self->role_ = Role::CANDIDATE;
                         self->leader_ = HostAddr(0, 0);
                     }
-                    self->leaderElection();
+                    self->leaderElection(false);
                 });
             }
             break;
@@ -992,7 +992,8 @@ bool RaftPart::needToStartElection() {
 
 bool RaftPart::prepareElectionRequest(
         cpp2::AskForVoteRequest& req,
-        std::vector<std::shared_ptr<Host>>& hosts) {
+        std::vector<std::shared_ptr<Host>>& hosts,
+        bool isPreVote) {
     std::lock_guard<std::mutex> g(raftLock_);
 
     // Make sure the partition is running
@@ -1011,9 +1012,14 @@ bool RaftPart::prepareElectionRequest(
     req.set_part(partId_);
     req.set_candidate_ip(addr_.first);
     req.set_candidate_port(addr_.second);
-    req.set_term(term_ + 1);
+    if (isPreVote) {
+        req.set_term(term_ + 1);
+    } else {
+        req.set_term(++term_);
+    }
     req.set_last_log_id(lastLogId_);
     req.set_last_log_term(lastLogTerm_);
+    req.set_is_pre_vote(isPreVote);
 
     hosts = followers();
 
@@ -1021,38 +1027,42 @@ bool RaftPart::prepareElectionRequest(
 }
 
 
-typename RaftPart::Role RaftPart::processElectionResponses(
-        const RaftPart::ElectionResponses& results,
-        std::vector<std::shared_ptr<Host>> hosts,
-        TermID proposedTerm) {
+bool RaftPart::processElectionResponses(const RaftPart::ElectionResponses& results,
+                                        std::vector<std::shared_ptr<Host>> hosts,
+                                        TermID proposedTerm,
+                                        bool isPreVote) {
     std::lock_guard<std::mutex> g(raftLock_);
 
     if (UNLIKELY(status_ == Status::STOPPED)) {
         LOG(INFO) << idStr_
                   << "The part has been stopped, skip the request";
-        return role_;
+        return false;
     }
 
     if (UNLIKELY(status_ == Status::STARTING)) {
         LOG(INFO) << idStr_ << "The partition is still starting";
-        return role_;
+        return false;
     }
 
     if (UNLIKELY(status_ == Status::WAITING_SNAPSHOT)) {
         LOG(INFO) << idStr_ << "The partition is still waitiong snapshot";
-        return role_;
+        return false;
     }
 
     if (role_ != Role::CANDIDATE) {
         LOG(INFO) << idStr_ << "Partition's role has changed to "
                   << roleStr(role_)
                   << " during the election, so discard the results";
-        return role_;
+        return false;
     }
 
     size_t numSucceeded = 0;
     for (auto& r : results) {
-        if (r.second.get_current_term() != proposedTerm) {
+        if (!isPreVote && r.second.get_current_term() != proposedTerm) {
+            LOG(WARNING) << idStr_ << "Term in AskForVote " << proposedTerm
+                         << " is different from resp " << r.second.get_current_term()
+                         << " of " << hosts[r.first]->address()
+                         << ", just ignore it";
             continue;
         }
         if (r.second.get_error_code() == cpp2::ErrorCode::SUCCEEDED) {
@@ -1063,7 +1073,7 @@ typename RaftPart::Role RaftPart::processElectionResponses(
                       << hosts[r.first]->address()
                       << ", so step down as follower";
             role_ = Role::FOLLOWER;
-            return role_;
+            return false;
         } else {
             LOG(ERROR) << idStr_ << "Receive response about askForVote from "
                        << hosts[r.first]->address()
@@ -1072,8 +1082,17 @@ typename RaftPart::Role RaftPart::processElectionResponses(
     }
 
     CHECK(role_ == Role::CANDIDATE);
-
     if (numSucceeded >= quorum_) {
+        if (isPreVote) {
+            LOG(INFO) << idStr_ << "Partition win pre vote, start election";
+            return true;
+        }
+        if (proposedTerm != term_) {
+            LOG(INFO) << idStr_ << "Partition's term has changed during election, "
+                      << "so just ignore the respsonses, "
+                      << "expected " << proposedTerm << ", actual " << term_;
+            return false;
+        }
         LOG(INFO) << idStr_
                   << "Partition is elected as the new leader for term "
                   << proposedTerm;
@@ -1084,19 +1103,21 @@ typename RaftPart::Role RaftPart::processElectionResponses(
             self->onElected(term);
         });
         lastMsgAcceptedTime_ = 0;
+        return true;
     }
-
-    return role_;
+    LOG(ERROR) << idStr_ << "Did not get enough votes from election of term " << proposedTerm
+               << ", isPreVote = " << isPreVote;
+    return false;
 }
 
 
-bool RaftPart::leaderElection() {
+bool RaftPart::leaderElection(bool isPreVote) {
     VLOG(2) << idStr_ << "Start leader election...";
     using namespace folly;  // NOLINT since the fancy overload of | operator
 
     cpp2::AskForVoteRequest voteReq;
     decltype(hosts_) hosts;
-    if (!prepareElectionRequest(voteReq, hosts)) {
+    if (!prepareElectionRequest(voteReq, hosts, isPreVote)) {
         // Suppose we have three replicas A(leader), B, C, after A crashed,
         // B, C will begin the election. B win, and send hb, C has gap with B
         // and need the snapshot from B. Meanwhile C begin the election,
@@ -1120,6 +1141,7 @@ bool RaftPart::leaderElection() {
               << ", candidateIP = "
               << NetworkUtils::intToIPv4(voteReq.get_candidate_ip())
               << ", candidatePort = " << voteReq.get_candidate_port()
+              << ", isPreVote = " << isPreVote
               << ")";
 
     auto proposedTerm = voteReq.get_term();
@@ -1164,32 +1186,7 @@ bool RaftPart::leaderElection() {
     }
 
     // Process the responses
-    switch (processElectionResponses(resps, std::move(hosts), proposedTerm)) {
-        case Role::LEADER: {
-            // Elected
-            LOG(INFO) << idStr_ << "The partition is elected as the leader";
-            sendHeartbeat();
-            return true;
-        }
-        case Role::FOLLOWER: {
-            // Someone was elected or rejected
-            LOG(INFO) << idStr_ << "Someone else was elected, or is rejected by peers";
-            return false;
-        }
-        case Role::CANDIDATE: {
-            // No one has been elected
-            LOG(INFO) << idStr_
-                      << "No one is elected, continue the election";
-            return false;
-        }
-        case Role::LEARNER: {
-            LOG(FATAL) << idStr_ << " Impossible! There must be some bugs!";
-            return false;
-        }
-    }
-
-    LOG(FATAL) << "Should not reach here";
-    return false;
+    return processElectionResponses(resps, std::move(hosts), proposedTerm, isPreVote);
 }
 
 
@@ -1203,15 +1200,16 @@ void RaftPart::statusPolling(int64_t startTime) {
             return;
         }
     }
-    size_t delay = FLAGS_raft_heartbeat_interval_secs * 1000 / 3;
+    size_t delay = FLAGS_raft_heartbeat_interval_secs * 1000 / 3 + folly::Random::rand32(500);
     if (needToStartElection()) {
-        if (leaderElection()) {
+        if (leaderElection(true) && leaderElection(false)) {
             // Elected as leader
-            VLOG(2) << idStr_ << "Stop the election";
+            VLOG(2) << idStr_ << "Elected as leader, send heartbeat";
+            sendHeartbeat();
         } else {
             // No leader has been elected, sleep for a while to continue
             VLOG(2) << idStr_ << "Wait for a while and continue the leader election";
-            delay = FLAGS_raft_heartbeat_interval_secs * 1000;
+            delay = FLAGS_raft_heartbeat_interval_secs * 1000 + folly::Random::rand32(500);
         }
     } else if (needToSendHeartbeat()) {
         VLOG(2) << idStr_ << "Need to send heartbeat";
@@ -1273,7 +1271,8 @@ void RaftPart::processAskForVoteRequest(
               << req.get_candidate_port()
               << ", term = " << req.get_term()
               << ", lastLogId = " << req.get_last_log_id()
-              << ", lastLogTerm = " << req.get_last_log_term();
+              << ", lastLogTerm = " << req.get_last_log_term()
+              << ", isPreVote = " << req.get_is_pre_vote();
 
     std::lock_guard<std::mutex> g(raftLock_);
 
@@ -1364,7 +1363,14 @@ void RaftPart::processAskForVoteRequest(
         return;
     }
     // Ok, no reason to refuse, we will vote for the candidate
-    LOG(INFO) << idStr_ << "The partition will vote for the candidate";
+    LOG(INFO) << idStr_ << "The partition will vote for the candidate"
+              << ", isPreVote = " << req.get_is_pre_vote();
+    resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
+
+    // return succeed if it is pre vote, do not change any state
+    if (req.get_is_pre_vote()) {
+        return;
+    }
 
     Role oldRole = role_;
     TermID oldTerm = term_;
@@ -1373,7 +1379,6 @@ void RaftPart::processAskForVoteRequest(
     leader_ = std::make_pair(req.get_candidate_ip(),
                              req.get_candidate_port());
 
-    resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
     resp.set_current_term(term_);
 
     // Reset the last message time

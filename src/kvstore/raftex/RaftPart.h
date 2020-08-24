@@ -336,19 +336,20 @@ private:
 
     // The method sends out AskForVote request
     // It return true if a leader is elected, otherwise returns false
-    bool leaderElection();
+    bool leaderElection(bool isPreVote);
 
     // The method will fill up the request object and return TRUE
     // if the election should continue. Otherwise the method will
     // return FALSE
-    bool prepareElectionRequest(
-        cpp2::AskForVoteRequest& req,
-        std::vector<std::shared_ptr<Host>>& hosts);
+    bool prepareElectionRequest(cpp2::AskForVoteRequest& req,
+                                std::vector<std::shared_ptr<Host>>& hosts,
+                                bool isPreVote);
 
-    // The method returns the partition's role after the election
-    Role processElectionResponses(const ElectionResponses& results,
+    // The method returns how many votes we are granted
+    bool processElectionResponses(const ElectionResponses& results,
                                   std::vector<std::shared_ptr<Host>> hosts,
-                                  TermID proposedTerm);
+                                  TermID proposedTerm,
+                                  bool isPreVote);
 
     // Check whether new logs can be appended
     // Pre-condition: The caller needs to hold the raftLock_
