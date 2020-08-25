@@ -22,13 +22,13 @@ protected:
     Status validateStep(const StepClause* step);
     Status validateFrom(const FromClause* from);
 
-    Project* projectDstVidsFromGN(PlanNode* gn, const std::string& outputVar);
+    PlanNode* projectDstVidsFromGN(PlanNode* gn, const std::string& outputVar);
     std::string buildConstantInput();
     PlanNode* buildRuntimeInput();
     Expression* buildNStepLoopCondition(uint32_t steps) const;
 
     enum FromType {
-        kConstantExpr,
+        kInstantExpr,
         kVariable,
         kPipe,
     };
@@ -37,13 +37,14 @@ protected:
     StepClause::MToN*     mToN_{nullptr};
     uint32_t              steps_{1};
     std::string           srcVidColName_;
-    FromType              fromType_{kConstantExpr};
+    FromType              fromType_{kInstantExpr};
     Expression*           srcRef_{nullptr};
     Expression*           src_{nullptr};
     std::vector<Value>    starts_;
     std::string           firstBeginningSrcVidColName_;
     std::string           userDefinedVarName_;
     ExpressionProps       exprProps_;
+    PlanNode*             projectStartVid_{nullptr};
 };
 
 }  // namespace graph

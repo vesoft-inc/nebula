@@ -281,8 +281,8 @@ Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
     return Status::OK();
 }
 
-Status Validator::appendPlan(PlanNode* tail) {
-    return appendPlan(tail_, DCHECK_NOTNULL(tail));
+Status Validator::appendPlan(PlanNode* root) {
+    return appendPlan(tail_, DCHECK_NOTNULL(root));
 }
 
 Status Validator::validate() {

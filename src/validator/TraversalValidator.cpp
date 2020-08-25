@@ -89,7 +89,7 @@ Status TraversalValidator::validateFrom(const FromClause* from) {
 }
 
 
-Project* TraversalValidator::projectDstVidsFromGN(PlanNode* gn, const std::string& outputVar) {
+PlanNode* TraversalValidator::projectDstVidsFromGN(PlanNode* gn, const std::string& outputVar) {
     Project* project = nullptr;
     auto* plan = qctx_->plan();
     auto* columns = new YieldColumns();
@@ -108,11 +108,14 @@ Project* TraversalValidator::projectDstVidsFromGN(PlanNode* gn, const std::strin
 
     project = Project::make(plan, gn, plan->saveObject(columns));
     project->setInputVar(gn->varName());
-    project->setOutputVar(outputVar);
     project->setColNames(deduceColNames(columns));
     VLOG(1) << project->varName();
 
-    return project;
+    auto* dedupDstVids = Dedup::make(plan, project);
+    dedupDstVids->setInputVar(project->varName());
+    dedupDstVids->setOutputVar(outputVar);
+    dedupDstVids->setColNames(project->colNames());
+    return dedupDstVids;
 }
 
 std::string TraversalValidator::buildConstantInput() {
@@ -147,7 +150,13 @@ PlanNode* TraversalValidator::buildRuntimeInput() {
     project->setColNames({ kVid });
     VLOG(1) << project->varName() << " input: " << project->inputVar();
     src_ = plan->saveObject(new InputPropertyExpression(new std::string(kVid)));
-    return project;
+
+    auto* dedupVids = Dedup::make(plan, project);
+    dedupVids->setInputVar(project->varName());
+    dedupVids->setColNames(project->colNames());
+
+    projectStartVid_ = project;
+    return dedupVids;
 }
 
 Expression* TraversalValidator::buildNStepLoopCondition(uint32_t steps) const {
