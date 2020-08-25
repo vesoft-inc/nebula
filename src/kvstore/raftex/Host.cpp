@@ -125,8 +125,7 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogs(
                                               committedLogId);
                 return cachingPromise_.getFuture();
             } else {
-                PLOG_EVERY_N(INFO, 200) << idStr_
-                          << "Too many requests are waiting, return error";
+                LOG_EVERY_N(INFO, 200) << idStr_ << "Too many requests are waiting, return error";
                 cpp2::AppendLogResponse r;
                 r.set_error_code(cpp2::ErrorCode::E_TOO_MANY_REQUESTS);
                 return r;
@@ -386,7 +385,7 @@ void Host::appendLogsInternal(folly::EventBase* eb,
                 return;
             }
             default: {
-                PLOG_EVERY_N(ERROR, 100)
+                LOG_EVERY_N(ERROR, 100)
                            << self->idStr_
                            << "Failed to append logs to the host (Err: "
                            << static_cast<int32_t>(resp.get_error_code())
@@ -463,7 +462,7 @@ Host::prepareAppendLogRequest() {
                 self->sendingSnapshot_ = false;
             });
         } else {
-            PLOG_EVERY_N(INFO, 30) << idStr_
+            LOG_EVERY_N(INFO, 30) << idStr_
                                    << "The snapshot req is in queue, please wait for a moment";
         }
     }
