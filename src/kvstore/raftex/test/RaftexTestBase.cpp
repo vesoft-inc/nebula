@@ -296,7 +296,7 @@ void checkConsensus(std::vector<std::shared_ptr<test::TestShard>>& copies,
                     size_t start, size_t end,
                     std::vector<std::string>& msgs) {
     // Sleep a while to make sure the last log has been committed on followers
-    sleep(FLAGS_raft_heartbeat_interval_secs);
+    sleep(FLAGS_raft_heartbeat_interval_secs + 1);
 
     // Check every copy
     for (auto& c : copies) {
