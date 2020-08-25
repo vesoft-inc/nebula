@@ -562,7 +562,7 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
     auto retFuture = folly::Future<AppendLogResult>::makeEmpty();
 
     if (bufferOverFlow_) {
-        PLOG_EVERY_N(WARNING, 30) << idStr_
+        PLOG_EVERY_N(WARNING, 100) << idStr_
                      << "The appendLog buffer is full."
                         " Please slow down the log appending rate."
                      << "replicatingLogs_ :" << replicatingLogs_;
@@ -1163,6 +1163,9 @@ bool RaftPart::leaderElection() {
                 std::lock_guard<std::mutex> g(raftLock_);
                 if (status_ == Status::RUNNING) {
                     leader_ = addr_;
+                    for (auto& host : hosts_) {
+                        host->reset();
+                    }
                     bgWorkers_->addTask([self = shared_from_this(),
                                        term = voteReq.get_term()] {
                         self->onElected(term);

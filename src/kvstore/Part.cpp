@@ -431,6 +431,9 @@ ResultCode Part::toResultCode(raftex::AppendLogResult res) {
             return ResultCode::ERR_WRITE_BLOCK_ERROR;
         case raftex::AppendLogResult::E_ATOMIC_OP_FAILURE:
             return ResultCode::ERR_ATOMIC_OP_FAILED;
+        case raftex::AppendLogResult::E_BUFFER_OVERFLOW:
+            PLOG_EVERY_N(ERROR, 100) << idStr_ << "RaftPart buffer is full";
+            return ResultCode::ERR_CONSENSUS_ERROR;
         default:
             LOG(ERROR) << idStr_ << "Consensus error "
                        << static_cast<int32_t>(res);
