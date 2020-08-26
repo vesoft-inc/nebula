@@ -101,14 +101,17 @@ public:
 
     folly::Future<Status> getLeaderDist(HostLeaderMap* result);
 
-    folly::Future<Status> createSnapshot(GraphSpaceID spaceId, const std::string& name);
+    folly::Future<Status> createSnapshot(GraphSpaceID spaceId,
+                                         const std::string& name,
+                                         const HostAddr& host);
 
     folly::Future<Status> dropSnapshot(GraphSpaceID spaceId,
                                        const std::string& name,
-                                       const std::vector<HostAddr>& hosts);
+                                       const HostAddr& host);
 
     folly::Future<Status> blockingWrites(GraphSpaceID spaceId,
-                                         storage::cpp2::EngineSignType sign);
+                                         storage::cpp2::EngineSignType sign,
+                                         const HostAddr& host);
 
     folly::Future<Status> rebuildTagIndex(const HostAddr& address,
                                           GraphSpaceID spaceId,

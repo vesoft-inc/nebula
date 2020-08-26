@@ -19,15 +19,10 @@ namespace storage {
 
 class StorageHttpIngestHandlerTestEnv : public ::testing::Environment {
 public:
-    void SetUp() override {
-        FLAGS_ws_http_port = 0;
-        FLAGS_ws_h2_port = 0;
-        VLOG(1) << "Starting web service...";
-
-        rootPath_ = std::make_unique<fs::TempDir>("/tmp/StorageHttpIngestHandler.XXXXXX");
-        kv_ = TestUtils::initKV(rootPath_->path(), 1);
-
-        auto partPath = folly::stringPrintf("%s/disk1/nebula/0/download/0", rootPath_->path());
+    void init(std::string path) {
+        auto partPath = folly::stringPrintf(
+            "%s/disk1/nebula/0/download/%s/0",
+            rootPath_->path(), path.c_str());
         ASSERT_TRUE(nebula::fs::FileUtils::makeDir(partPath));
 
         auto options = rocksdb::Options();
@@ -45,7 +40,17 @@ public:
         }
         status = writer.Finish();
         ASSERT_EQ(rocksdb::Status::OK(), status);
+    }
 
+    void SetUp() override {
+        FLAGS_ws_http_port = 0;
+        FLAGS_ws_h2_port = 0;
+        VLOG(1) << "Starting web service...";
+        rootPath_ = std::make_unique<fs::TempDir>("/tmp/StorageHttpIngestHandler.XXXXXX");
+        kv_ = TestUtils::initKV(rootPath_->path(), 1);
+        init("general");
+        init("edge/1");
+        init("tag/1");
         webSvc_ = std::make_unique<WebService>();
         auto& router = webSvc_->router();
         router.get("/ingest").handler([this](nebula::web::PathParams&&) {
@@ -80,12 +85,44 @@ TEST(StorageHttpIngestHandlerTest, StorageIngestTest) {
         ASSERT_EQ("SSTFile ingest successfully", resp.value());
     }
     {
+        auto url = "/ingest?space=0&edge=1";
+        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
+                                           FLAGS_ws_http_port, url);
+        auto resp = http::HttpClient::get(request);
+        ASSERT_TRUE(resp.ok());
+        ASSERT_EQ("SSTFile ingest successfully", resp.value());
+    }
+    {
+        auto url = "/ingest?space=0&tag=1";
+        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
+                                           FLAGS_ws_http_port, url);
+        auto resp = http::HttpClient::get(request);
+        ASSERT_TRUE(resp.ok());
+        ASSERT_EQ("SSTFile ingest successfully", resp.value());
+    }
+    {
         auto url = "/ingest?space=1";
         auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
                                            FLAGS_ws_http_port, url);
         auto resp = http::HttpClient::get(request);
         ASSERT_TRUE(resp.ok());
         ASSERT_EQ("SSTFile ingest failed", resp.value());
+    }
+    {
+        auto url = "/ingest?space=0&edge=2";
+        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
+                                           FLAGS_ws_http_port, url);
+        auto resp = http::HttpClient::get(request);
+        ASSERT_TRUE(resp.ok());
+        ASSERT_EQ("SSTFile ingest successfully", resp.value());
+    }
+    {
+        auto url = "/ingest?space=0&tag=2";
+        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
+                                           FLAGS_ws_http_port, url);
+        auto resp = http::HttpClient::get(request);
+        ASSERT_TRUE(resp.ok());
+        ASSERT_EQ("SSTFile ingest successfully", resp.value());
     }
 }
 

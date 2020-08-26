@@ -586,12 +586,13 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
     return future;
 }
 
-folly::Future<Status> AdminClient::createSnapshot(GraphSpaceID spaceId, const std::string& name) {
+folly::Future<Status> AdminClient::createSnapshot(GraphSpaceID spaceId,
+                                                  const std::string& name,
+                                                  const HostAddr& host) {
     if (injector_) {
         return injector_->createSnapshot();
     }
 
-    auto allHosts = ActiveHostsMan::getActiveHosts(kv_);
     storage::cpp2::CreateCPRequest req;
     req.set_space_id(spaceId);
     req.set_name(name);
@@ -603,7 +604,7 @@ folly::Future<Status> AdminClient::createSnapshot(GraphSpaceID spaceId, const st
      * Don't need retry.
      * Because existing checkpoint directories leads to fail again.
      **/
-    getResponse(std::move(allHosts), 0, std::move(req), [] (auto client, auto request) {
+    getResponse({host}, 0, std::move(req), [] (auto client, auto request) {
         return client->future_createCheckpoint(request);
     }, 0, std::move(pro), 0);
     return f;
@@ -611,7 +612,7 @@ folly::Future<Status> AdminClient::createSnapshot(GraphSpaceID spaceId, const st
 
 folly::Future<Status> AdminClient::dropSnapshot(GraphSpaceID spaceId,
                                                 const std::string& name,
-                                                const std::vector<HostAddr>& hosts) {
+                                                const HostAddr& host) {
     if (injector_) {
         return injector_->dropSnapshot();
     }
@@ -622,21 +623,22 @@ folly::Future<Status> AdminClient::dropSnapshot(GraphSpaceID spaceId,
 
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
-    getResponse(std::move(hosts), 0, std::move(req), [] (auto client, auto request) {
+    getResponse({host}, 0, std::move(req), [] (auto client, auto request) {
         return client->future_dropCheckpoint(request);
     }, 0, std::move(pro), 1 /*The snapshot operation only needs to be retried twice*/);
     return f;
 }
 
 folly::Future<Status> AdminClient::blockingWrites(GraphSpaceID spaceId,
-                                                  storage::cpp2::EngineSignType sign) {
+                                                  storage::cpp2::EngineSignType sign,
+                                                  const HostAddr& host) {
     auto allHosts = ActiveHostsMan::getActiveHosts(kv_);
     storage::cpp2::BlockingSignRequest req;
     req.set_space_id(spaceId);
     req.set_sign(sign);
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
-    getResponse(std::move(allHosts), 0, std::move(req), [] (auto client, auto request) {
+    getResponse({host}, 0, std::move(req), [] (auto client, auto request) {
         return client->future_blockingWrites(request);
     }, 0, std::move(pro), 1 /*The blocking needs to be retried twice*/);
     return f;

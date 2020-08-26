@@ -13,9 +13,9 @@
 #include "rocksdb/utilities/options_util.h"
 #include "rocksdb/slice_transform.h"
 #include "rocksdb/filter_policy.h"
-#include "base/Configuration.h"
 #include "rocksdb/concurrent_task_limiter.h"
 #include "rocksdb/rate_limiter.h"
+#include "base/Configuration.h"
 
 // [WAL]
 DEFINE_bool(rocksdb_disable_wal,

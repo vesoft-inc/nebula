@@ -23,6 +23,10 @@ public:
                                       const std::string& hdfsPath,
                                       const std::string& localPath) override;
 
+    StatusOr<bool> exist(const std::string& hdfsHost,
+                         int32_t hdfsPort,
+                         const std::string& hdfsPath) override;
+
     bool checkHadoopPath() override;
 };
 

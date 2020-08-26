@@ -40,7 +40,7 @@ private:
                                           std::vector<PropContext>& props,
                                           RowSetWriter& rsWriter);
 
-    kvstore::ResultCode processVertex(PartitionID, VertexID) override {
+    kvstore::ResultCode processVertex(BucketIdx, PartitionID, VertexID) override {
         LOG(FATAL) << "Unimplement!";
         return kvstore::ResultCode::SUCCEEDED;
     }

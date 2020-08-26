@@ -13,6 +13,25 @@ namespace nebula {
 namespace meta {
 
 void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
+    folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
+    // check the index rebuild. not allowed to create snapshot when index rebuilding.
+    auto prefix = MetaServiceUtils::rebuildIndexStatusPrefix();
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        handleErrorCode(MetaCommon::to(ret));
+        onFinished();
+        return;
+    }
+    while (iter->valid()) {
+        if (iter->val() == "RUNNING") {
+            LOG(ERROR) << "Index is rebuilding, not allowed to block write.";
+            handleErrorCode(cpp2::ErrorCode::E_SNAPSHOT_FAILURE);
+            onFinished();
+            return;
+        }
+        iter->next();
+    }
     auto snapshot = genSnapshotName();
     folly::SharedMutex::WriteHolder wHolder(LockUtils::snapshotLock());
 

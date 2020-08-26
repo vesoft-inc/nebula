@@ -75,6 +75,14 @@ public:
         return charsetInfo_;
     }
 
+    void addWarningMsg(std::string msg) {
+        warnMsgs_.emplace_back(std::move(msg));
+    }
+
+    const std::vector<std::string>& getWarningMsg() const {
+        return warnMsgs_;
+    }
+
 private:
     RequestContextPtr                           rctx_;
     meta::SchemaManager                        *sm_{nullptr};
@@ -83,6 +91,7 @@ private:
     meta::MetaClient                           *metaClient_{nullptr};
     std::unique_ptr<VariableHolder>             variableHolder_;
     CharsetInfo                                *charsetInfo_{nullptr};
+    std::vector<std::string>                    warnMsgs_;
 };
 
 }   // namespace graph

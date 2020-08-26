@@ -37,7 +37,8 @@ private:
                                                        executor,
                                                        cache) {}
 
-    kvstore::ResultCode processVertex(PartitionID partId, VertexID vId) override;
+    kvstore::ResultCode processVertex(
+        BucketIdx bucketIdx, PartitionID partId, VertexID vId) override;
 
     void onProcessFinished(int32_t retNum) override;
 

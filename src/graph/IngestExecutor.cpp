@@ -35,11 +35,37 @@ void IngestExecutor::execute() {
     auto  metaHost = network::NetworkUtils::intToIPv4(addresses[0].first);
     auto  spaceId = ectx()->rctx()->session()->space();
 
-    auto func = [metaHost, spaceId]() {
-        static const char *tmp = "http://%s:%d/%s?space=%d";
-        auto url = folly::stringPrintf(tmp, metaHost.c_str(),
-                                       FLAGS_ws_meta_http_port,
-                                       "ingest-dispatch", spaceId);
+    std::string url;
+
+    if (sentence_->edge()) {
+        auto edgeStatus = ectx()->schemaManager()->toEdgeType(
+            spaceId, *sentence_->edge());
+        if (!edgeStatus.ok()) {
+            doError(Status::Error("edge not found."));
+            return;
+        }
+        auto edgeType = edgeStatus.value();
+        url = folly::stringPrintf(
+            "http://%s:%d/ingest-dispatch?space=%d&edge=%d",
+            metaHost.c_str(), FLAGS_ws_meta_http_port, spaceId, edgeType);
+    } else if (sentence_->tag()) {
+        auto tagStatus = ectx()->schemaManager()->toTagID(
+            spaceId, *sentence_->tag());
+        if (!tagStatus.ok()) {
+            doError(Status::Error("tag not found."));
+            return;
+        }
+        auto tagType = tagStatus.value();
+        url = folly::stringPrintf(
+            "http://%s:%d/ingest-dispatch?space=%d&tag=%d",
+            metaHost.c_str(), FLAGS_ws_meta_http_port, spaceId, tagType);
+    } else {
+        url = folly::stringPrintf(
+            "http://%s:%d/ingest-dispatch?space=%d",
+            metaHost.c_str(), FLAGS_ws_meta_http_port, spaceId);
+    }
+
+    auto func = [url] {
         auto result = http::HttpClient::get(url);
         if (result.ok() && result.value() == "SSTFile ingest successfully") {
             LOG(INFO) << "Ingest Successfully";

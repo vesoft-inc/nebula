@@ -66,8 +66,9 @@ void QueryStatsProcessor::calcResult(std::vector<PropContext>&& props) {
 }
 
 
-kvstore::ResultCode QueryStatsProcessor::processVertex(PartitionID partId,
-                                                       VertexID vId) {
+kvstore::ResultCode QueryStatsProcessor::processVertex(
+    BucketIdx bucketIdx, PartitionID partId, VertexID vId) {
+    UNUSED(bucketIdx);
     FilterContext fcontext;
     for (auto& tc : tagContexts_) {
         auto ret = this->collectVertexProps(partId,
