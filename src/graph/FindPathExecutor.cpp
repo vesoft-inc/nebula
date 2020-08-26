@@ -203,7 +203,7 @@ void FindPathExecutor::getNeighborsAndFindPath() {
         if (!fStatus_.ok() || !tStatus_.ok()) {
             std::string msg = fStatus_.toString() + " " + tStatus_.toString();
             if (fStatus_ == Status::PartiallyFailed()
-                && tStatus_ == Status::PartiallyFailed()) {
+                || tStatus_ == Status::PartiallyFailed()) {
                 // client can retry
                 doError(Status::PartiallyFailed(std::move(msg)));
                 return;
