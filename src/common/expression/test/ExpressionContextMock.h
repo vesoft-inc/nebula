@@ -109,6 +109,14 @@ public:
         }
     }
 
+    Value getVertex() const override {
+        return Value();
+    }
+
+    Value getEdge() const override {
+        return Value();
+    }
+
     void setVar(const std::string& var, Value val) override {
         UNUSED(var);
         UNUSED(val);

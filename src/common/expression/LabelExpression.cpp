@@ -7,8 +7,10 @@
 #include "common/expression/LabelExpression.h"
 
 namespace nebula {
+
 const Value& LabelExpression::eval(ExpressionContext&) {
-    LOG(FATAL) << "Couldn't use directly";
+    result_.setStr(*name_);
+    return result_;
 }
 
 std::string LabelExpression::toString() const {

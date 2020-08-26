@@ -8,7 +8,7 @@
 #include "common/expression/test/ExpressionContextMock.h"
 #include "common/expression/ArithmeticExpression.h"
 #include "common/expression/ConstantExpression.h"
-#include "common/expression/SymbolPropertyExpression.h"
+#include "common/expression/PropertyExpression.h"
 #include "common/expression/RelationalExpression.h"
 
 nebula::ExpressionContextMock gExpCtxt;

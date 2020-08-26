@@ -4,22 +4,22 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "common/expression/SymbolPropertyExpression.h"
+#include "common/expression/PropertyExpression.h"
 
 namespace nebula {
 
 
-bool SymbolPropertyExpression::operator==(const Expression& rhs) const {
+bool PropertyExpression::operator==(const Expression& rhs) const {
     if (kind_ != rhs.kind()) {
         return false;
     }
 
-    const auto& r = dynamic_cast<const SymbolPropertyExpression&>(rhs);
+    const auto& r = dynamic_cast<const PropertyExpression&>(rhs);
     return *ref_ == *(r.ref_) && *sym_ == *(r.sym_) && *prop_ == *(r.prop_);
 }
 
 
-void SymbolPropertyExpression::writeTo(Encoder& encoder) const {
+void PropertyExpression::writeTo(Encoder& encoder) const {
     // kind_
     encoder << kind_;
 
@@ -34,7 +34,7 @@ void SymbolPropertyExpression::writeTo(Encoder& encoder) const {
 }
 
 
-void SymbolPropertyExpression::resetFrom(Decoder& decoder) {
+void PropertyExpression::resetFrom(Decoder& decoder) {
     // Read ref_
     ref_ = decoder.readStr();
 
@@ -45,7 +45,7 @@ void SymbolPropertyExpression::resetFrom(Decoder& decoder) {
     prop_ = decoder.readStr();
 }
 
-const Value& SymbolPropertyExpression::eval(ExpressionContext& ctx) {
+const Value& PropertyExpression::eval(ExpressionContext& ctx) {
     // TODO maybe cypher need it.
     UNUSED(ctx);
     LOG(FATAL) << "Unimplemented";
@@ -106,7 +106,7 @@ const Value& EdgeDstIdExpression::eval(ExpressionContext& ctx) {
     return result_;
 }
 
-std::string SymbolPropertyExpression::toString() const {
+std::string PropertyExpression::toString() const {
     std::string buf;
     buf.reserve(64);
 

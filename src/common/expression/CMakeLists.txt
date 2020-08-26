@@ -14,12 +14,16 @@ nebula_add_library(
     LogicalExpression.cpp
     TypeCastingExpression.cpp
     FunctionCallExpression.cpp
-    SymbolPropertyExpression.cpp
+    PropertyExpression.cpp
     UUIDExpression.cpp
     VariableExpression.cpp
     ContainerExpression.cpp
     SubscriptExpression.cpp
+    AttributeExpression.cpp
+    LabelAttributeExpression.cpp
     LabelExpression.cpp
+    VertexExpression.cpp
+    EdgeExpression.cpp
 )
 
 nebula_add_subdirectory(test)

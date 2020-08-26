@@ -7,19 +7,23 @@
 #include "common/expression/Expression.h"
 #include <thrift/lib/cpp2/protocol/Serializer.h>
 #include "common/datatypes/ValueOps.h"
-#include "common/expression/SymbolPropertyExpression.h"
+#include "common/expression/PropertyExpression.h"
 #include "common/expression/ArithmeticExpression.h"
 #include "common/expression/ConstantExpression.h"
 #include "common/expression/FunctionCallExpression.h"
 #include "common/expression/LogicalExpression.h"
 #include "common/expression/RelationalExpression.h"
 #include "common/expression/SubscriptExpression.h"
+#include "common/expression/AttributeExpression.h"
+#include "common/expression/LabelAttributeExpression.h"
 #include "common/expression/TypeCastingExpression.h"
 #include "common/expression/UUIDExpression.h"
 #include "common/expression/UnaryExpression.h"
 #include "common/expression/VariableExpression.h"
 #include "common/expression/ContainerExpression.h"
 #include "common/expression/LabelExpression.h"
+#include "common/expression/VertexExpression.h"
+#include "common/expression/EdgeExpression.h"
 
 namespace nebula {
 
@@ -297,6 +301,16 @@ std::unique_ptr<Expression> Expression::decode(Expression::Decoder& decoder) {
             exp->resetFrom(decoder);
             return exp;
         }
+        case Expression::Kind::kAttribute: {
+            exp = std::make_unique<AttributeExpression>();
+            exp->resetFrom(decoder);
+            return exp;
+        }
+        case Expression::Kind::kLabelAttribute: {
+            exp = std::make_unique<LabelAttributeExpression>();
+            exp->resetFrom(decoder);
+            return exp;
+        }
         case Expression::Kind::kLogicalAnd: {
             exp = std::make_unique<LogicalExpression>(Expression::Kind::kLogicalAnd);
             exp->resetFrom(decoder);
@@ -319,11 +333,6 @@ std::unique_ptr<Expression> Expression::decode(Expression::Decoder& decoder) {
         }
         case Expression::Kind::kFunctionCall: {
             exp = std::make_unique<FunctionCallExpression>();
-            exp->resetFrom(decoder);
-            return exp;
-        }
-        case Expression::Kind::kSymProperty: {
-            exp = std::make_unique<SymbolPropertyExpression>();
             exp->resetFrom(decoder);
             return exp;
         }
@@ -374,6 +383,16 @@ std::unique_ptr<Expression> Expression::decode(Expression::Decoder& decoder) {
         }
         case Expression::Kind::kEdgeDst: {
             exp = std::make_unique<EdgeDstIdExpression>();
+            exp->resetFrom(decoder);
+            return exp;
+        }
+        case Expression::Kind::kVertex: {
+            exp = std::make_unique<VertexExpression>();
+            exp->resetFrom(decoder);
+            return exp;
+        }
+        case Expression::Kind::kEdge: {
+            exp = std::make_unique<EdgeExpression>();
             exp->resetFrom(decoder);
             return exp;
         }
@@ -480,6 +499,12 @@ std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
         case Expression::Kind::kSubscript:
             os << "Subscript";
             break;
+        case Expression::Kind::kAttribute:
+            os << "Attribute";
+            break;
+        case Expression::Kind::kLabelAttribute:
+            os << "LabelAttribute";
+            break;
         case Expression::Kind::kLogicalAnd:
             os << "LogicalAnd";
             break;
@@ -494,9 +519,6 @@ std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
             break;
         case Expression::Kind::kFunctionCall:
             os << "FunctionCall";
-            break;
-        case Expression::Kind::kSymProperty:
-            os << "SymbolProp";
             break;
         case Expression::Kind::kEdgeProperty:
             os << "EdgeProp";
@@ -527,6 +549,12 @@ std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
             break;
         case Expression::Kind::kEdgeDst:
             os << "EdgeDst";
+            break;
+        case Expression::Kind::kVertex:
+            os << "Vertex";
+            break;
+        case Expression::Kind::kEdge:
+            os << "Edge";
             break;
         case Expression::Kind::kUUID:
             os << "UUID";

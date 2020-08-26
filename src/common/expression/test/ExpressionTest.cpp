@@ -16,9 +16,10 @@
 #include "common/expression/test/ExpressionContextMock.h"
 #include "common/expression/ArithmeticExpression.h"
 #include "common/expression/ConstantExpression.h"
-#include "common/expression/SymbolPropertyExpression.h"
+#include "common/expression/PropertyExpression.h"
 #include "common/expression/RelationalExpression.h"
 #include "common/expression/SubscriptExpression.h"
+#include "common/expression/AttributeExpression.h"
 #include "common/expression/UnaryExpression.h"
 #include "common/expression/VariableExpression.h"
 #include "common/expression/LogicalExpression.h"
@@ -1044,17 +1045,8 @@ TEST_F(ExpressionTest, FunctionCallToStringTest) {
 
 TEST_F(ExpressionTest, PropertyToStringTest) {
     {
-        SymbolPropertyExpression ep(Expression::Kind::kSymProperty,
-                                    nullptr,
-                                    new std::string("like"),
-                                    new std::string("likeness"));
-        EXPECT_EQ(ep.toString(), "like.likeness");
-    }
-    {
-        SymbolPropertyExpression ep(Expression::Kind::kSymProperty,
-                                    new std::string("$$"),
-                                    new std::string("like"),
-                                    new std::string("likeness"));
+        DestPropertyExpression ep(new std::string("like"),
+                                  new std::string("likeness"));
         EXPECT_EQ(ep.toString(), "$$.like.likeness");
     }
     {
@@ -1620,6 +1612,77 @@ TEST_F(ExpressionTest, MapSubscript) {
     }
 }
 
+TEST_F(ExpressionTest, MapAttribute) {
+    // {"key1":1, "key2":2, "key3":3}.key1
+    {
+        auto *items = new MapItemList();
+        (*items).add(new std::string("key1"), new ConstantExpression(1))
+                .add(new std::string("key2"), new ConstantExpression(2))
+                .add(new std::string("key3"), new ConstantExpression(3));
+        auto *map = new MapExpression(items);
+        auto *key = new LabelExpression(new std::string("key1"));
+        AttributeExpression expr(map, key);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_TRUE(value.isInt());
+        ASSERT_EQ(1, value.getInt());
+    }
+}
+
+TEST_F(ExpressionTest, EdgeAttribute) {
+    {
+        Edge edge;
+        edge.props = {
+            {"Magill", "Nancy"},
+            {"Gideon", "Bible"},
+            {"Rocky", "Raccoon"},
+        };
+        auto *left = new ConstantExpression(Value(std::move(edge)));
+        auto *right = new LabelExpression(new std::string("Rocky"));
+        AttributeExpression expr(left, right);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_TRUE(value.isStr());
+        ASSERT_EQ("Raccoon", value.getStr());
+    }
+}
+
+TEST_F(ExpressionTest, VertexAttribute) {
+    Vertex vertex;
+    vertex.tags.resize(2);
+    vertex.tags[0].props = {
+        {"Venus", "Mars"},
+        {"Mull", "Kintyre"},
+    };
+    vertex.tags[1].props = {
+        {"Bip", "Bop"},
+        {"Tug", "War"},
+        {"Venus", "RocksShow"},
+    };
+    {
+        auto *left = new ConstantExpression(Value(vertex));
+        auto *right = new LabelExpression(new std::string("Mull"));
+        AttributeExpression expr(left, right);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_TRUE(value.isStr());
+        ASSERT_EQ("Kintyre", value.getStr());
+    }
+    {
+        auto *left = new ConstantExpression(Value(vertex));
+        auto *right = new LabelExpression(new std::string("Bip"));
+        AttributeExpression expr(left, right);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_TRUE(value.isStr());
+        ASSERT_EQ("Bop", value.getStr());
+    }
+    {
+        auto *left = new ConstantExpression(Value(vertex));
+        auto *right = new LabelExpression(new std::string("Venus"));
+        AttributeExpression expr(left, right);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_TRUE(value.isStr());
+        ASSERT_EQ("Mars", value.getStr());
+    }
+}
+
 TEST_F(ExpressionTest, TypeCastTest) {
     {
         TypeCastingExpression typeCast(Value::Type::INT, new ConstantExpression(1));
@@ -1812,6 +1875,14 @@ TEST_F(ExpressionTest, LabelExprToString) {
     LabelExpression expr(new std::string("name"));
     ASSERT_EQ("name", expr.toString());
 }
+
+TEST_F(ExpressionTest, LabelEvaluate) {
+    LabelExpression expr(new std::string("name"));
+    auto value = Expression::eval(&expr, gExpCtxt);
+    ASSERT_TRUE(value.isStr());
+    ASSERT_EQ("name", value.getStr());
+}
+
 }  // namespace nebula
 
 int main(int argc, char** argv) {

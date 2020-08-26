@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef COMMON_EXPRESSION_SYMBOLPROPERTYEXPRESSION_H_
-#define COMMON_EXPRESSION_SYMBOLPROPERTYEXPRESSION_H_
+#ifndef COMMON_EXPRESSION_PROPERTYEXPRESSION_H_
+#define COMMON_EXPRESSION_PROPERTYEXPRESSION_H_
 
 #include "common/expression/Expression.h"
 
@@ -22,23 +22,12 @@ constexpr char const kDstRef[] = "$$";
 // 2. symbol, a symbol name, e.g. tag_name, edge_name, variable_name,
 // 3. property, property name.
 //
-// The SymbolPropertyExpression will only be used in parser to indicate
+// The PropertyExpression will only be used in parser to indicate
 // the form of symbol.prop, it will be transform to a proper expression
 // in a parse rule.
-class SymbolPropertyExpression: public Expression {
+class PropertyExpression: public Expression {
     friend class Expression;
 public:
-    SymbolPropertyExpression() : Expression(Kind::kSymProperty) {}
-    SymbolPropertyExpression(Kind kind,
-                             std::string* ref,
-                             std::string* sym,
-                             std::string* prop)
-        : Expression(kind) {
-        ref_.reset(ref);
-        sym_.reset(sym);
-        prop_.reset(prop);
-    }
-
     bool operator==(const Expression& rhs) const override;
 
     const Value& eval(ExpressionContext& ctx) override;
@@ -58,6 +47,16 @@ public:
     std::string toString() const override;
 
 protected:
+    PropertyExpression(Kind kind,
+                       std::string* ref,
+                       std::string* sym,
+                       std::string* prop)
+        : Expression(kind) {
+        ref_.reset(ref);
+        sym_.reset(sym);
+        prop_.reset(prop);
+    }
+
     void writeTo(Encoder& encoder) const override;
 
     void resetFrom(Decoder& decoder) override;
@@ -68,14 +67,14 @@ protected:
 };
 
 // edge_name.any_prop_name
-class EdgePropertyExpression final : public SymbolPropertyExpression {
+class EdgePropertyExpression final : public PropertyExpression {
 public:
     EdgePropertyExpression(std::string* edge = nullptr,
                            std::string* prop = nullptr)
-        : SymbolPropertyExpression(Kind::kEdgeProperty,
-                                   new std::string(""),
-                                   edge,
-                                   prop) {}
+        : PropertyExpression(Kind::kEdgeProperty,
+                             new std::string(""),
+                             edge,
+                             prop) {}
 
     const Value& eval(ExpressionContext& ctx) override;
 
@@ -87,14 +86,14 @@ private:
 
 
 // tag_name.any_prop_name
-class TagPropertyExpression final : public SymbolPropertyExpression {
+class TagPropertyExpression final : public PropertyExpression {
 public:
     TagPropertyExpression(std::string* tag = nullptr,
                           std::string* prop = nullptr)
-        : SymbolPropertyExpression(Kind::kTagProperty,
-                                   new std::string(""),
-                                   tag,
-                                   prop) {}
+        : PropertyExpression(Kind::kTagProperty,
+                             new std::string(""),
+                             tag,
+                             prop) {}
 
     const Value& eval(ExpressionContext& ctx) override;
 
@@ -104,13 +103,13 @@ private:
 };
 
 // $-.any_prop_name
-class InputPropertyExpression final : public SymbolPropertyExpression {
+class InputPropertyExpression final : public PropertyExpression {
 public:
     explicit InputPropertyExpression(std::string* prop = nullptr)
-        : SymbolPropertyExpression(Kind::kInputProperty,
-                                   new std::string(kInputRef),
-                                   new std::string(""),
-                                   prop) {}
+        : PropertyExpression(Kind::kInputProperty,
+                             new std::string(kInputRef),
+                             new std::string(""),
+                             prop) {}
 
     const Value& eval(ExpressionContext& ctx) override;
 
@@ -118,14 +117,14 @@ public:
 };
 
 // $VarName.any_prop_name
-class VariablePropertyExpression final : public SymbolPropertyExpression {
+class VariablePropertyExpression final : public PropertyExpression {
 public:
     VariablePropertyExpression(std::string* var = nullptr,
                                std::string* prop = nullptr)
-        : SymbolPropertyExpression(Kind::kVarProperty,
-                                   new std::string(kVarRef),
-                                   var,
-                                   prop) {}
+        : PropertyExpression(Kind::kVarProperty,
+                             new std::string(kVarRef),
+                             var,
+                             prop) {}
 
     const Value& eval(ExpressionContext& ctx) override;
 
@@ -133,14 +132,14 @@ public:
 };
 
 // $^.TagName.any_prop_name
-class SourcePropertyExpression final : public SymbolPropertyExpression {
+class SourcePropertyExpression final : public PropertyExpression {
 public:
     SourcePropertyExpression(std::string* tag = nullptr,
                              std::string* prop = nullptr)
-        : SymbolPropertyExpression(Kind::kSrcProperty,
-                                   new std::string(kSrcRef),
-                                   tag,
-                                   prop) {}
+        : PropertyExpression(Kind::kSrcProperty,
+                             new std::string(kSrcRef),
+                             tag,
+                             prop) {}
 
     const Value& eval(ExpressionContext& ctx) override;
 
@@ -151,14 +150,14 @@ private:
 };
 
 // $$.TagName.any_prop_name
-class DestPropertyExpression final : public SymbolPropertyExpression {
+class DestPropertyExpression final : public PropertyExpression {
 public:
     DestPropertyExpression(std::string* tag = nullptr,
                            std::string* prop = nullptr)
-        : SymbolPropertyExpression(Kind::kDstProperty,
-                                   new std::string(kDstRef),
-                                   tag,
-                                   prop) {}
+        : PropertyExpression(Kind::kDstProperty,
+                             new std::string(kDstRef),
+                             tag,
+                             prop) {}
 
     const Value& eval(ExpressionContext& ctx) override;
 
@@ -166,13 +165,13 @@ public:
 };
 
 // EdgeName._src
-class EdgeSrcIdExpression final : public SymbolPropertyExpression {
+class EdgeSrcIdExpression final : public PropertyExpression {
 public:
     explicit EdgeSrcIdExpression(std::string* edge = nullptr)
-        : SymbolPropertyExpression(Kind::kEdgeSrc,
-                                   new std::string(""),
-                                   edge,
-                                   new std::string(kSrc)) {}
+        : PropertyExpression(Kind::kEdgeSrc,
+                             new std::string(""),
+                             edge,
+                             new std::string(kSrc)) {}
 
     const Value& eval(ExpressionContext& ctx) override;
 
@@ -183,13 +182,13 @@ private:
 };
 
 // EdgeName._type
-class EdgeTypeExpression final : public SymbolPropertyExpression {
+class EdgeTypeExpression final : public PropertyExpression {
 public:
     explicit EdgeTypeExpression(std::string* edge = nullptr)
-        : SymbolPropertyExpression(Kind::kEdgeType,
-                                   new std::string(""),
-                                   edge,
-                                   new std::string(kType)) {}
+        : PropertyExpression(Kind::kEdgeType,
+                             new std::string(""),
+                             edge,
+                             new std::string(kType)) {}
 
     const Value& eval(ExpressionContext& ctx) override;
 
@@ -200,13 +199,13 @@ private:
 };
 
 // EdgeName._rank
-class EdgeRankExpression final : public SymbolPropertyExpression {
+class EdgeRankExpression final : public PropertyExpression {
 public:
     explicit EdgeRankExpression(std::string* edge = nullptr)
-        : SymbolPropertyExpression(Kind::kEdgeRank,
-                                   new std::string(""),
-                                   edge,
-                                   new std::string(kRank)) {}
+        : PropertyExpression(Kind::kEdgeRank,
+                             new std::string(""),
+                             edge,
+                             new std::string(kRank)) {}
 
     const Value& eval(ExpressionContext& ctx) override;
 
@@ -217,13 +216,13 @@ private:
 };
 
 // EdgeName._dst
-class EdgeDstIdExpression final : public SymbolPropertyExpression {
+class EdgeDstIdExpression final : public PropertyExpression {
 public:
     explicit EdgeDstIdExpression(std::string* edge = nullptr)
-        : SymbolPropertyExpression(Kind::kEdgeDst,
-                                   new std::string(""),
-                                   edge,
-                                   new std::string(kDst)) {}
+        : PropertyExpression(Kind::kEdgeDst,
+                             new std::string(""),
+                             edge,
+                             new std::string(kDst)) {}
 
     const Value& eval(ExpressionContext& ctx) override;
 

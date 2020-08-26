@@ -40,6 +40,8 @@ public:
         kRelNotIn,
         kContains,
         kSubscript,
+        kAttribute,
+        kLabelAttribute,
 
         kLogicalAnd,
         kLogicalOr,
@@ -49,7 +51,6 @@ public:
 
         kFunctionCall,
 
-        kSymProperty,
         kTagProperty,
         kEdgeProperty,
         kInputProperty,
@@ -60,6 +61,8 @@ public:
         kEdgeType,
         kEdgeRank,
         kEdgeDst,
+        kVertex,
+        kEdge,
 
         kUUID,
 

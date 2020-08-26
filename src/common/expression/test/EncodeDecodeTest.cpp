@@ -6,7 +6,7 @@
 
 #include "common/base/Base.h"
 #include <gtest/gtest.h>
-#include "common/expression/SymbolPropertyExpression.h"
+#include "common/expression/PropertyExpression.h"
 #include "common/expression/ArithmeticExpression.h"
 #include "common/expression/ConstantExpression.h"
 #include "common/expression/FunctionCallExpression.h"
@@ -46,17 +46,9 @@ TEST(ExpressionEncodeDecode, ConstantExpression) {
 
 
 TEST(ExpressionEncodeDecode, SymbolPropertyExpression) {
-    SymbolPropertyExpression symbolExpr(Expression::Kind::kSymProperty,
-                                        new std::string(""),
-                                        new std::string("symbol"),
-                                        new std::string("prop"));
-    std::string encoded = Expression::encode(symbolExpr);
-    auto decoded = Expression::decode(encoded);
-    EXPECT_EQ(symbolExpr, *decoded);
-
     InputPropertyExpression inputEx(new std::string("prop"));
-    encoded = Expression::encode(inputEx);
-    decoded = Expression::decode(folly::StringPiece(encoded.data(), encoded.size()));
+    auto encoded = Expression::encode(inputEx);
+    auto decoded = Expression::decode(folly::StringPiece(encoded.data(), encoded.size()));
     EXPECT_EQ(inputEx, *decoded);
 
     VariablePropertyExpression varEx(new std::string("var"), new std::string("prop"));
