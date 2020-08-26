@@ -450,9 +450,7 @@ Host::prepareAppendLogRequest() {
         req->set_sending_snapshot(true);
         if (!sendingSnapshot_) {
             LOG(INFO) << idStr_ << "Can't find log " << lastLogIdSent_ + 1
-                      << " in wal, send the snapshot"
-                      << ", logIdToSend = " << logIdToSend_
-                      << ", lastLogId in wal = " << part_->wal()->lastLogId();
+                      << " in wal, send the snapshot";
             sendingSnapshot_ = true;
             part_->snapshot_->sendSnapshot(part_, addr_)
                 .thenValue([self = shared_from_this()] (Status&& status) {
