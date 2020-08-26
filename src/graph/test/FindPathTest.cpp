@@ -559,6 +559,25 @@ TEST_F(FindPathTest, UseUUID) {
         ASSERT_TRUE(resp.get_rows() != nullptr);
         ASSERT_EQ(resp.get_rows()->size(), 1);
     }
+    {
+        // without use space
+        auto client = gEnv->getClient();
+        cpp2::ExecutionResponse resp;
+        auto query = "FIND SHORTEST PATH FROM UUID(\"Tim Duncan\") TO UUID(\"Tony Parker\") "
+                     "OVER like UPTO 5 STEPS";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ("Please choose a graph space with `USE spaceName' firstly",
+                  *(resp.get_error_msg()));
+
+        // multi sentences
+        query = "USE nba; FIND SHORTEST PATH FROM UUID(\"Tim Duncan\") TO UUID(\"Tony Parker\") "
+                "OVER like UPTO 5 STEPS";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        ASSERT_TRUE(resp.get_rows() != nullptr);
+        ASSERT_EQ(resp.get_rows()->size(), 1);
+    }
 }
 }  // namespace graph
 }  // namespace nebula
