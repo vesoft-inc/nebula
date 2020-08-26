@@ -795,6 +795,8 @@ ResultCode NebulaStore::setWriteBlocking(GraphSpaceID spaceId, bool sign) {
             }
             auto p = nebula::value(partRet);
             if (p->isLeader()) {
+                LOG(INFO) << "Begin write block for space : " << spaceId
+                          << ", part : " << p->partitionId();
                 auto ret = ResultCode::SUCCEEDED;
                 p->setBlocking(sign);
                 if (sign) {
@@ -811,6 +813,8 @@ ResultCode NebulaStore::setWriteBlocking(GraphSpaceID spaceId, bool sign) {
                     LOG(ERROR) << "Part sync failed. space : " << spaceId << " Part : " << part;
                     return ret;
                 }
+                LOG(INFO) << "End write block for space : " << spaceId
+                          << ", part : " << p->partitionId();
             }
         }
     }
