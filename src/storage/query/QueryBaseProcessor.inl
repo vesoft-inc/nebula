@@ -363,7 +363,7 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp,
         case Expression::Kind::kEdgeSrc:
         case Expression::Kind::kEdgeType:
         case Expression::Kind::kEdgeProperty: {
-            auto* edgeExp = static_cast<const SymbolPropertyExpression*>(exp);
+            auto* edgeExp = static_cast<const PropertyExpression*>(exp);
             const auto* edgeName = edgeExp->sym();
             const auto* propName = edgeExp->prop();
             auto edgeRet = this->env_->schemaMan_->toEdgeType(spaceId_, *edgeName);

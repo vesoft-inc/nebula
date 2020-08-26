@@ -273,7 +273,7 @@ cpp2::ErrorCode GetNeighborsProcessor::handleEdgeStatProps(
         switch (exp->kind()) {
             case Expression::Kind::kEdgeRank:
             case Expression::Kind::kEdgeProperty: {
-                auto* edgeExp = static_cast<const SymbolPropertyExpression*>(exp.get());
+                auto* edgeExp = static_cast<const PropertyExpression*>(exp.get());
                 const auto* edgeName = edgeExp->sym();
                 const auto* propName = edgeExp->prop();
                 auto edgeRet = this->env_->schemaMan_->toEdgeType(spaceId_, *edgeName);

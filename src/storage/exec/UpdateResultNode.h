@@ -45,7 +45,7 @@ public:
 
         for (auto& retExp : returnPropsExp_) {
             auto& val = retExp->eval(*expCtx_);
-            auto exp = dynamic_cast<const SymbolPropertyExpression*>(retExp);
+            auto exp = dynamic_cast<const PropertyExpression*>(retExp);
             if (exp) {
                 result_->colNames.emplace_back(folly::stringPrintf("%s:%s",
                                                exp->sym()->c_str(),

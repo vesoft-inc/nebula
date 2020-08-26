@@ -77,6 +77,14 @@ public:
 
     void setVar(const std::string&, Value) override {}
 
+    Value getVertex() const override {
+        LOG(FATAL) << "Unimplemented";
+    }
+
+    Value getEdge() const override {
+        LOG(FATAL) << "Unimplemented";
+    }
+
     // isEdge_ set in ctor
     void reset(RowReader* reader,
                folly::StringPiece key) {

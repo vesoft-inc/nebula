@@ -9,7 +9,7 @@
 
 #include "common/base/Base.h"
 #include "common/expression/Expression.h"
-#include "common/expression/SymbolPropertyExpression.h"
+#include "common/expression/PropertyExpression.h"
 #include "mock/MockCluster.h"
 #include "mock/MockData.h"
 #include "codec/RowWriterV2.h"
