@@ -12,6 +12,7 @@
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
 #include "meta/NebulaSchemaProvider.h"
+#include "storage/StorageFlags.h"
 
 DEFINE_int32(max_scan_block_size, 4 * 1024 * 1024, "Max size of a respsonse block");
 
@@ -67,7 +68,7 @@ void ScanEdgeProcessor::process(const cpp2::ScanEdgeRequest& req) {
         // only return data within time range [start, end)
         EdgeVersion version = folly::Endian::big(NebulaKeyUtils::getVersion(key));
         int64_t ts = std::numeric_limits<int64_t>::max() - version;
-        if (ts < startTime || ts >= endTime) {
+        if (FLAGS_enable_multi_versions && (ts < startTime || ts >= endTime)) {
             continue;
         }
 
