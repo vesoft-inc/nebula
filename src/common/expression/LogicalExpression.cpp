@@ -37,7 +37,7 @@ std::string LogicalExpression::toString() const {
             op = "||";
             break;
         case Kind::kLogicalXor:
-            op = "^";
+            op = "XOR";
             break;
         default:
             op = "illegal symbol ";

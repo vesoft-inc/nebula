@@ -44,12 +44,19 @@ public:
     std::string toString() const override;
 
 private:
-    void writeTo(Encoder&) const override {
-        LOG(FATAL) << "LabelAttributeExpression cannot be encoded";
+    void writeTo(Encoder &encoder) const override {
+        encoder << kind_;
+        encoder << *lhs_;
+        encoder << *rhs_;
     }
 
-    void resetFrom(Decoder&) override {
-        LOG(FATAL) << "LabelAttributeExpression cannot be decoded";
+    void resetFrom(Decoder &decoder) override {
+        auto *lhs = decoder.readExpression().release();
+        auto *rhs = decoder.readExpression().release();
+        DCHECK(lhs->kind() == Kind::kLabel);
+        DCHECK(rhs->kind() == Kind::kLabel);
+        lhs_.reset(static_cast<LabelExpression*>(lhs));
+        rhs_.reset(static_cast<LabelExpression*>(rhs));
     }
 
 private:
