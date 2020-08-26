@@ -53,6 +53,8 @@ public:
     cpp2::RowValue buildPathRow(const Path &path);
 
 private:
+    Status prepareClauses();
+
     // Do some prepare work that can not do in prepare()
     Status beforeExecute();
 
