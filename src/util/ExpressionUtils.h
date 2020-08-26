@@ -10,10 +10,11 @@
 #include "common/expression/BinaryExpression.h"
 #include "common/expression/Expression.h"
 #include "common/expression/FunctionCallExpression.h"
-#include "common/expression/SymbolPropertyExpression.h"
+#include "common/expression/PropertyExpression.h"
 #include "common/expression/TypeCastingExpression.h"
 #include "common/expression/UnaryExpression.h"
 #include "common/expression/LabelExpression.h"
+#include "common/expression/LabelAttributeExpression.h"
 
 namespace nebula {
 namespace graph {
@@ -46,10 +47,12 @@ public:
             case Expression::Kind::kEdgeDst:
             case Expression::Kind::kInputProperty:
             case Expression::Kind::kVarProperty:
+            case Expression::Kind::kVertex:
+            case Expression::Kind::kEdge:
             case Expression::Kind::kUUID:
             case Expression::Kind::kVar:
             case Expression::Kind::kVersionedVar:
-            case Expression::Kind::kSymProperty:
+            case Expression::Kind::kLabelAttribute:
             case Expression::Kind::kConstant: {
                 return true;
             }
@@ -105,6 +108,7 @@ public:
             case Expression::Kind::kSet:
             case Expression::Kind::kMap:
             case Expression::Kind::kSubscript:
+            case Expression::Kind::kAttribute:
             case Expression::Kind::kLabel: {
                 return false;
             }
@@ -164,28 +168,30 @@ public:
     // require data from graph storage
     static const Expression* findStorage(const Expression* expr) {
         return findAnyKind(expr,
-                           {Expression::Kind::kSymProperty,
-                            Expression::Kind::kTagProperty,
+                           {Expression::Kind::kTagProperty,
                             Expression::Kind::kEdgeProperty,
                             Expression::Kind::kDstProperty,
                             Expression::Kind::kSrcProperty,
                             Expression::Kind::kEdgeSrc,
                             Expression::Kind::kEdgeType,
                             Expression::Kind::kEdgeRank,
-                            Expression::Kind::kEdgeDst});
+                            Expression::Kind::kEdgeDst,
+                            Expression::Kind::kVertex,
+                            Expression::Kind::kEdge});
     }
 
     static std::vector<const Expression*> findAllStorage(const Expression* expr) {
         return findAnyKindInAll(expr,
-                                {Expression::Kind::kSymProperty,
-                                 Expression::Kind::kTagProperty,
+                                {Expression::Kind::kTagProperty,
                                  Expression::Kind::kEdgeProperty,
                                  Expression::Kind::kDstProperty,
                                  Expression::Kind::kSrcProperty,
                                  Expression::Kind::kEdgeSrc,
                                  Expression::Kind::kEdgeType,
                                  Expression::Kind::kEdgeRank,
-                                 Expression::Kind::kEdgeDst});
+                                 Expression::Kind::kEdgeDst,
+                                 Expression::Kind::kVertex,
+                                 Expression::Kind::kEdge});
     }
 
     static std::vector<const Expression*> findAllInputVariableProp(const Expression* expr) {
@@ -199,15 +205,16 @@ public:
 
     static bool isStorage(const Expression* expr) {
         return isKindOf(expr,
-                        {Expression::Kind::kSymProperty,
-                         Expression::Kind::kTagProperty,
+                        {Expression::Kind::kTagProperty,
                          Expression::Kind::kEdgeProperty,
                          Expression::Kind::kDstProperty,
                          Expression::Kind::kSrcProperty,
                          Expression::Kind::kEdgeSrc,
                          Expression::Kind::kEdgeType,
                          Expression::Kind::kEdgeRank,
-                         Expression::Kind::kEdgeDst});
+                         Expression::Kind::kEdgeDst,
+                         Expression::Kind::kVertex,
+                         Expression::Kind::kEdge});
     }
 
     static bool isConstExpr(const Expression* expr) {
@@ -217,7 +224,7 @@ public:
                             Expression::Kind::kVar,
                             Expression::Kind::kVersionedVar,
 
-                            Expression::Kind::kSymProperty,
+                            Expression::Kind::kLabelAttribute,
                             Expression::Kind::kTagProperty,
                             Expression::Kind::kEdgeProperty,
                             Expression::Kind::kDstProperty,
@@ -225,7 +232,9 @@ public:
                             Expression::Kind::kEdgeSrc,
                             Expression::Kind::kEdgeType,
                             Expression::Kind::kEdgeRank,
-                            Expression::Kind::kEdgeDst});
+                            Expression::Kind::kEdgeDst,
+                            Expression::Kind::kVertex,
+                            Expression::Kind::kEdge});
     }
 
     // clone expression
@@ -241,18 +250,20 @@ public:
     template <typename To,
               typename = std::enable_if_t<std::is_same<To, EdgePropertyExpression>::value ||
                                           std::is_same<To, TagPropertyExpression>::value>>
-    static void transAllSymbolPropertyExpr(Expression* expr) {
+    static void rewriteLabelAttribute(Expression* expr) {
         traverse(expr, [](Expression* current) -> bool {
             switch (current->kind()) {
                 case Expression::Kind::kDstProperty:
                 case Expression::Kind::kSrcProperty:
-                case Expression::Kind::kSymProperty:
+                case Expression::Kind::kLabelAttribute:
                 case Expression::Kind::kTagProperty:
                 case Expression::Kind::kEdgeProperty:
                 case Expression::Kind::kEdgeSrc:
                 case Expression::Kind::kEdgeType:
                 case Expression::Kind::kEdgeRank:
                 case Expression::Kind::kEdgeDst:
+                case Expression::Kind::kVertex:
+                case Expression::Kind::kEdge:
                 case Expression::Kind::kInputProperty:
                 case Expression::Kind::kVarProperty:
                 case Expression::Kind::kUUID:
@@ -279,13 +290,13 @@ public:
                 case Expression::Kind::kLogicalOr:
                 case Expression::Kind::kLogicalXor: {
                     auto* biExpr = static_cast<BinaryExpression*>(current);
-                    if (biExpr->left()->kind() == Expression::Kind::kSymProperty) {
-                        auto* symbolExpr = static_cast<SymbolPropertyExpression*>(biExpr->left());
-                        biExpr->setLeft(transSymbolPropertyExpression<To>(symbolExpr));
+                    if (biExpr->left()->kind() == Expression::Kind::kLabelAttribute) {
+                        auto* laExpr = static_cast<LabelAttributeExpression*>(biExpr->left());
+                        biExpr->setLeft(rewriteLabelAttribute<To>(laExpr));
                     }
-                    if (biExpr->right()->kind() == Expression::Kind::kSymProperty) {
-                        auto* symbolExpr = static_cast<SymbolPropertyExpression*>(biExpr->right());
-                        biExpr->setRight(transSymbolPropertyExpression<To>(symbolExpr));
+                    if (biExpr->right()->kind() == Expression::Kind::kLabelAttribute) {
+                        auto* laExpr = static_cast<LabelAttributeExpression*>(biExpr->right());
+                        biExpr->setRight(rewriteLabelAttribute<To>(laExpr));
                     }
                     return true;
                 }
@@ -295,28 +306,28 @@ public:
                 case Expression::Kind::kUnaryNegate:
                 case Expression::Kind::kUnaryNot: {
                     auto* unaryExpr = static_cast<UnaryExpression*>(current);
-                    if (unaryExpr->operand()->kind() == Expression::Kind::kSymProperty) {
-                        auto* symbolExpr =
-                            static_cast<SymbolPropertyExpression*>(unaryExpr->operand());
-                        unaryExpr->setOperand(transSymbolPropertyExpression<To>(symbolExpr));
+                    if (unaryExpr->operand()->kind() == Expression::Kind::kLabelAttribute) {
+                        auto* laExpr =
+                            static_cast<LabelAttributeExpression*>(unaryExpr->operand());
+                        unaryExpr->setOperand(rewriteLabelAttribute<To>(laExpr));
                     }
                     return true;
                 }
                 case Expression::Kind::kTypeCasting: {
                     auto* typeCastingExpr = static_cast<TypeCastingExpression*>(current);
-                    if (typeCastingExpr->operand()->kind() == Expression::Kind::kSymProperty) {
-                        auto* symbolExpr =
-                            static_cast<SymbolPropertyExpression*>(typeCastingExpr->operand());
-                        typeCastingExpr->setOperand(transSymbolPropertyExpression<To>(symbolExpr));
+                    if (typeCastingExpr->operand()->kind() == Expression::Kind::kLabelAttribute) {
+                        auto* laExpr =
+                            static_cast<LabelAttributeExpression*>(typeCastingExpr->operand());
+                        typeCastingExpr->setOperand(rewriteLabelAttribute<To>(laExpr));
                     }
                     return true;
                 }
                 case Expression::Kind::kFunctionCall: {
                     auto* funcExpr = static_cast<FunctionCallExpression*>(current);
                     for (auto& arg : funcExpr->args()->args()) {
-                        if (arg->kind() == Expression::Kind::kSymProperty) {
-                            auto* symbolExpr = static_cast<SymbolPropertyExpression*>(arg.get());
-                            arg.reset(transSymbolPropertyExpression<To>(symbolExpr));
+                        if (arg->kind() == Expression::Kind::kLabelAttribute) {
+                            auto* laExpr = static_cast<LabelAttributeExpression*>(arg.get());
+                            arg.reset(rewriteLabelAttribute<To>(laExpr));
                         }
                     }
                     return true;
@@ -325,6 +336,7 @@ public:
                 case Expression::Kind::kSet:
                 case Expression::Kind::kMap:
                 case Expression::Kind::kSubscript:
+                case Expression::Kind::kAttribute:
                 case Expression::Kind::kLabel: {
                     return false;
                 }
@@ -337,9 +349,9 @@ public:
     template <typename To,
               typename = std::enable_if_t<std::is_same<To, EdgePropertyExpression>::value ||
                                           std::is_same<To, TagPropertyExpression>::value>>
-    static To* transSymbolPropertyExpression(SymbolPropertyExpression* expr) {
-        return new To(new std::string(std::move(*expr->sym())),
-                      new std::string(std::move(*expr->prop())));
+    static To* rewriteLabelAttribute(LabelAttributeExpression* expr) {
+        return new To(new std::string(std::move(*expr->left()->name())),
+                      new std::string(std::move(*expr->right()->name())));
     }
 
 private:

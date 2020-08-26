@@ -79,6 +79,22 @@ const Value& QueryExpressionContext::getInputProp(const std::string& prop) const
     }
 }
 
+Value QueryExpressionContext::getVertex() const {
+    if (iter_ != nullptr) {
+        return iter_->getVertex();
+    } else {
+        return Value::kEmpty;
+    }
+}
+
+Value QueryExpressionContext::getEdge() const {
+    if (iter_ != nullptr) {
+        return iter_->getEdge();
+    } else {
+        return Value::kEmpty;
+    }
+}
+
 void QueryExpressionContext::setVar(const std::string& var, Value val) {
     if (ectx_ == nullptr) {
         LOG(ERROR) << "Execution context was not provided.";
@@ -86,5 +102,6 @@ void QueryExpressionContext::setVar(const std::string& var, Value val) {
     }
     ectx_->setValue(var, std::move(val));
 }
+
 }  // namespace graph
 }  // namespace nebula

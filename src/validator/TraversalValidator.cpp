@@ -64,11 +64,11 @@ Status TraversalValidator::validateFrom(const FromClause* from) {
                 return Status::Error(ss.str());
             }
             srcRef_ = src;
-            auto* symPropExpr = static_cast<SymbolPropertyExpression*>(src);
+            auto* propExpr = static_cast<PropertyExpression*>(src);
             if (fromType_ == kVariable) {
-                userDefinedVarName_ = *(symPropExpr->sym());
+                userDefinedVarName_ = *(propExpr->sym());
             }
-            firstBeginningSrcVidColName_ = *(symPropExpr->prop());
+            firstBeginningSrcVidColName_ = *(propExpr->prop());
         }
     } else {
         auto vidList = from->vidList();

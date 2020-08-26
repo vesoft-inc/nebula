@@ -343,7 +343,7 @@ Status DeleteVerticesValidator::toPlan() {
     if (!vertices_.empty() && vidRef_ == nullptr) {
         vidVar = buildVIds();
     } else if (vidRef_ != nullptr && vidRef_->kind() == Expression::Kind::kVarProperty) {
-        vidVar = *static_cast<SymbolPropertyExpression*>(vidRef_)->sym();
+        vidVar = *static_cast<PropertyExpression*>(vidRef_)->sym();
     }
 
     std::vector<storage::cpp2::EdgeProp> edgeProps;
@@ -498,7 +498,7 @@ Status DeleteEdgesValidator::checkInput() {
     NG_RETURN_IF_ERROR(status);
 
     if (edgeKeyRef->srcid()->kind() == Expression::Kind::kVarProperty) {
-        edgeKeyVar_ = *static_cast<SymbolPropertyExpression*>(edgeKeyRef->srcid())->sym();
+        edgeKeyVar_ = *static_cast<PropertyExpression*>(edgeKeyRef->srcid())->sym();
     }
     return Status::OK();
 }
@@ -576,11 +576,11 @@ Status UpdateValidator::getUpdateProps() {
             symNames.emplace(name_);
         }
         if (item->getFieldExpr() != nullptr) {
-            DCHECK(item->getFieldExpr()->kind() == Expression::Kind::kSymProperty);
-            auto symExpr = static_cast<const SymbolPropertyExpression*>(item->getFieldExpr());
-            symNames.emplace(*symExpr->sym());
-            symName = symExpr->sym();
-            fieldName = *symExpr->prop();
+            DCHECK(item->getFieldExpr()->kind() == Expression::Kind::kLabelAttribute);
+            auto laExpr = static_cast<const LabelAttributeExpression*>(item->getFieldExpr());
+            symNames.emplace(*laExpr->left()->name());
+            symName = laExpr->left()->name();
+            fieldName = *laExpr->right()->name();
         }
         auto valueExpr = item->value();
         if (valueExpr == nullptr) {
@@ -630,6 +630,8 @@ std::unique_ptr<Expression> UpdateValidator::rewriteSymExpr(Expression* expr,
                                                             bool &hasWrongType,
                                                             bool isEdge) {
     switch (expr->kind()) {
+        case Expression::Kind::kVertex:
+        case Expression::Kind::kEdge:
         case Expression::Kind::kConstant: {
             break;
         }
@@ -692,11 +694,12 @@ std::unique_ptr<Expression> UpdateValidator::rewriteSymExpr(Expression* expr,
             }
             break;
         }
-        case Expression::Kind::kSymProperty: {
-            auto symExpr = static_cast<SymbolPropertyExpression*>(expr);
+        case Expression::Kind::kLabelAttribute: {
+            auto laExpr = static_cast<LabelAttributeExpression*>(expr);
             if (isEdge) {
                 return std::make_unique<EdgePropertyExpression>(
-                        new std::string(sym), new std::string(*symExpr->prop()));
+                        new std::string(*laExpr->left()->name()),
+                        new std::string(*laExpr->right()->name()));
             } else {
                 hasWrongType = true;
                 return nullptr;
@@ -740,6 +743,7 @@ std::unique_ptr<Expression> UpdateValidator::rewriteSymExpr(Expression* expr,
         case Expression::Kind::kList:   // FIXME(dutor)
         case Expression::Kind::kSet:
         case Expression::Kind::kMap:
+        case Expression::Kind::kAttribute:
         case Expression::Kind::kSubscript: {
             hasWrongType = true;
             break;

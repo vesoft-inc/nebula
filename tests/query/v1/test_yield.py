@@ -88,7 +88,7 @@ class TestYield(NebulaTestSuite):
         query = 'YIELD NOT FALSE || FALSE AND FALSE XOR FALSE'
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = ["((!(false)||(false&&false))^false)"]
+        columns = ["((!(false)||(false&&false)) XOR false)"]
         self.check_column_names(resp, columns)
         expect_result = [[True]]
         self.check_result(resp, expect_result)
@@ -96,7 +96,7 @@ class TestYield(NebulaTestSuite):
         query = 'YIELD !false OR false && false XOR true'
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = ["((!(false)||(false&&false))^true)"]
+        columns = ["((!(false)||(false&&false)) XOR true)"]
         self.check_column_names(resp, columns)
         expect_result = [[False]]
         self.check_result(resp, expect_result)
@@ -104,7 +104,7 @@ class TestYield(NebulaTestSuite):
         query = 'YIELD (NOT false || false) AND false XOR true'
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = ["(((!(false)||false)&&false)^true)"]
+        columns = ["(((!(false)||false)&&false) XOR true)"]
         self.check_column_names(resp, columns)
         expect_result = [[True]]
         self.check_result(resp, expect_result)
@@ -114,7 +114,7 @@ class TestYield(NebulaTestSuite):
         query = 'YIELD NOT 0 || 0 AND 0 XOR 0'
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = ["((!(0)||(0&&0))XOR0)"]
+        columns = ["((!(0)||(0&&0)) XOR 0)"]
         self.check_column_names(resp, columns)
         expect_result = [[True]]
         self.check_result(resp, expect_result)
@@ -122,7 +122,7 @@ class TestYield(NebulaTestSuite):
         query = 'YIELD !0 OR 0 && 0 XOR 1'
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = ["((!(0)||(0&&0))XOR1)"]
+        columns = ["((!(0)||(0&&0)) XOR 1)"]
         self.check_column_names(resp, columns)
         expect_result = [[False]]
         self.check_result(resp, expect_result)
@@ -130,23 +130,23 @@ class TestYield(NebulaTestSuite):
         query = 'YIELD (NOT 0 || 0) AND 0 XOR 1'
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = ["(((!(0)||0)&&0)XOR1)"]
+        columns = ["(((!(0)||0)&&0) XOR 1)"]
         self.check_column_names(resp, columns)
         expect_result = [[True]]
         self.check_result(resp, expect_result)
 
-        query = 'YIELD 2.5 % 1.2 ^ 1.6'
+        query = 'YIELD 2.5 % 1.2 XOR 1.6'
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = ["(2.500000000000000%(1.200000000000000^1.600000000000000))"]
+        columns = ["(2.500000000000000%(1.200000000000000 XOR 1.600000000000000))"]
         self.check_column_names(resp, columns)
         expect_result = [[2.5]]
         self.check_result(resp, expect_result)
 
-        query = 'YIELD (5 % 3) ^ 1'
+        query = 'YIELD (5 % 3) XOR 1'
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = ["((5%3)^1)"]
+        columns = ["((5%3) XOR 1)"]
         self.check_column_names(resp, columns)
         expect_result = [[3]]
         self.check_result(resp, expect_result)

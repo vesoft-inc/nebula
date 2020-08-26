@@ -51,6 +51,14 @@ public:
         return query_;
     }
 
+    void setUnaryMinus(bool v) {
+        hasUnaryMinus_ = v;
+    }
+
+    bool hasUnaryMinus() const {
+        return hasUnaryMinus_;
+    }
+
 protected:
     // Called when YY_INPUT is invoked
     int LexerInput(char *buf, int maxSize) override {
@@ -80,11 +88,11 @@ protected:
         return sbuf_.get();
     }
 
-
 private:
     friend class Scanner_Basic_Test;
     int yylex() override;
 
+    bool                                hasUnaryMinus_{false};
     nebula::GraphParser::semantic_type *yylval{nullptr};
     nebula::GraphParser::location_type *yylloc{nullptr};
     std::unique_ptr<char[]>             sbuf_{nullptr};

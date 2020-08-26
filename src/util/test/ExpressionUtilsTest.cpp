@@ -156,7 +156,7 @@ TEST_F(ExpressionUtilsTest, CheckComponent) {
         ASSERT_TRUE(ExpressionUtils::isKindOf(
             root.get(), {Expression::Kind::kTypeCasting, Expression::Kind::kAdd}));
         ASSERT_TRUE(ExpressionUtils::hasAnyKind(
-            root.get(), {Expression::Kind::kSymProperty, Expression::Kind::kDivision}));
+            root.get(), {Expression::Kind::kLabelAttribute, Expression::Kind::kDivision}));
 
         ASSERT_FALSE(ExpressionUtils::isKindOf(root.get(), {Expression::Kind::kConstant}));
         ASSERT_FALSE(ExpressionUtils::hasAnyKind(root.get(), {Expression::Kind::kFunctionCall}));

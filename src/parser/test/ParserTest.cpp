@@ -1980,6 +1980,12 @@ TEST(Parser, ErrorMsg) {
     }
     {
         GQLParser parser;
+        std::string query = "INSERT VERTEX person(id) VALUES \"100\":(-(1+9223372036854775808)) ";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
         std::string query = "INSERT VERTEX person(id) VALUES \"100\":(-9223372036854775809) ";
         auto result = parser.parse(query);
         ASSERT_FALSE(result.ok());

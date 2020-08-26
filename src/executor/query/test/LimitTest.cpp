@@ -32,12 +32,12 @@ class LimitTest : public QueryTestBase {
                 "YIELD study._dst AS name, study.start_year AS start");                   \
         auto columns = yieldSentence->columns();                                          \
         for (auto& col : columns) {                                                       \
-            if (col->expr()->kind() == Expression::Kind::kSymProperty) {                  \
-                auto symbolExpr = static_cast<SymbolPropertyExpression*>(col->expr());    \
+            if (col->expr()->kind() == Expression::Kind::kLabelAttribute) {               \
+                auto laExpr = static_cast<LabelAttributeExpression*>(col->expr());        \
                 col->setExpr(ExpressionUtils                                              \
-                    ::transSymbolPropertyExpression<EdgePropertyExpression>(symbolExpr)); \
+                    ::rewriteLabelAttribute<EdgePropertyExpression>(laExpr));             \
             } else {                                                                      \
-                ExpressionUtils::transAllSymbolPropertyExpr<EdgePropertyExpression>(      \
+                ExpressionUtils::rewriteLabelAttribute<EdgePropertyExpression>(           \
                     col->expr());                                                         \
             }                                                                             \
         }                                                                                 \

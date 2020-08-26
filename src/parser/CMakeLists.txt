@@ -6,7 +6,12 @@
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-bison_target(Parser parser.yy ${CMAKE_CURRENT_BINARY_DIR}/GraphParser.cpp COMPILE_FLAGS "-Werror")
+if(ENABLE_VERBOSE_BISON)
+    set(bison_flags "-Werror -v")
+else()
+    set(bison_flags "-Werror")
+endif()
+bison_target(Parser parser.yy ${CMAKE_CURRENT_BINARY_DIR}/GraphParser.cpp COMPILE_FLAGS ${bison_flags})
 flex_target(Scanner scanner.lex ${CMAKE_CURRENT_BINARY_DIR}/GraphScanner.cpp)
 
 add_custom_target(parser_target DEPENDS ${FLEX_Scanner_OUTPUTS} ${BISON_Parser_OUTPUTS})

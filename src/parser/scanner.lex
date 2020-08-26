@@ -354,7 +354,6 @@ FORMAT                      ([Ff][Oo][Rr][Mm][Aa][Tt])
 "/"                         { return TokenType::DIV; }
 "%"                         { return TokenType::MOD; }
 "!"                         { return TokenType::NOT; }
-"^"                         { return TokenType::XOR; }
 
 "<"                         { return TokenType::LT; }
 "<="                        { return TokenType::LE; }
@@ -428,6 +427,9 @@ FORMAT                      ([Ff][Oo][Rr][Mm][Aa][Tt])
                                 if (val > MAX_ABS_INTEGER) {
                                     throw GraphParser::syntax_error(*yylloc, "Out of range:");
                                 }
+                                if (val == MAX_ABS_INTEGER && !hasUnaryMinus()) {
+                                    throw GraphParser::syntax_error(*yylloc, "Out of range:");
+                                }
                                 yylval->intval = static_cast<int64_t>(val);
                                 return TokenType::INTEGER;
                             }
@@ -447,6 +449,9 @@ FORMAT                      ([Ff][Oo][Rr][Mm][Aa][Tt])
                                 if (val > MAX_ABS_INTEGER) {
                                     throw GraphParser::syntax_error(*yylloc, "Out of range:");
                                 }
+                                if (val == MAX_ABS_INTEGER && !hasUnaryMinus()) {
+                                    throw GraphParser::syntax_error(*yylloc, "Out of range:");
+                                }
                                 yylval->intval = static_cast<int64_t>(val);
                                 return TokenType::INTEGER;
                             }
@@ -455,6 +460,9 @@ FORMAT                      ([Ff][Oo][Rr][Mm][Aa][Tt])
                                     folly::StringPiece text(yytext, yyleng);
                                     uint64_t val = folly::to<uint64_t>(text);
                                     if (val > MAX_ABS_INTEGER) {
+                                        throw GraphParser::syntax_error(*yylloc, "Out of range:");
+                                    }
+                                    if (val == MAX_ABS_INTEGER && !hasUnaryMinus()) {
                                         throw GraphParser::syntax_error(*yylloc, "Out of range:");
                                     }
                                     yylval->intval = val;

@@ -170,12 +170,12 @@ Status FetchEdgesValidator::prepareProperties() {
         propsName.reserve(newYield_->columns().size());
         dedup_ = newYield_->isDistinct();
         for (auto col : newYield_->columns()) {
-            if (col->expr()->kind() == Expression::Kind::kSymProperty) {
-                auto symbolExpr = static_cast<SymbolPropertyExpression *>(col->expr());
-                col->setExpr(ExpressionUtils::transSymbolPropertyExpression<EdgePropertyExpression>(
-                    symbolExpr));
+            if (col->expr()->kind() == Expression::Kind::kLabelAttribute) {
+                auto laExpr = static_cast<LabelAttributeExpression*>(col->expr());
+                col->setExpr(ExpressionUtils::rewriteLabelAttribute<EdgePropertyExpression>(
+                    laExpr));
             } else {
-                ExpressionUtils::transAllSymbolPropertyExpr<EdgePropertyExpression>(col->expr());
+                ExpressionUtils::rewriteLabelAttribute<EdgePropertyExpression>(col->expr());
             }
             const auto *invalidExpr = findInvalidYieldExpression(col->expr());
             if (invalidExpr != nullptr) {
@@ -186,7 +186,7 @@ Status FetchEdgesValidator::prepareProperties() {
             // The other will be computed in Project Executor
             const auto storageExprs = ExpressionUtils::findAllStorage(col->expr());
             for (const auto &storageExpr : storageExprs) {
-                const auto *expr = static_cast<const SymbolPropertyExpression *>(storageExpr);
+                const auto *expr = static_cast<const PropertyExpression *>(storageExpr);
                 if (*expr->sym() != edgeTypeName_) {
                     return Status::Error("Mismatched edge type name");
                 }

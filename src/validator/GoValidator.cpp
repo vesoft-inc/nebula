@@ -90,12 +90,12 @@ Status GoValidator::validateWhere(WhereClause* where) {
 
     filter_ = where->filter();
 
-    if (filter_->kind() == Expression::Kind::kSymProperty) {
-        auto symbolExpr = static_cast<SymbolPropertyExpression*>(filter_);
-        where->setFilter(ExpressionUtils::transSymbolPropertyExpression<EdgePropertyExpression>(
-            symbolExpr));
+    if (filter_->kind() == Expression::Kind::kLabelAttribute) {
+        auto laExpr = static_cast<LabelAttributeExpression*>(filter_);
+        where->setFilter(ExpressionUtils::rewriteLabelAttribute<EdgePropertyExpression>(
+            laExpr));
     } else {
-        ExpressionUtils::transAllSymbolPropertyExpr<EdgePropertyExpression>(filter_);
+        ExpressionUtils::rewriteLabelAttribute<EdgePropertyExpression>(filter_);
     }
 
     auto typeStatus = deduceExprType(filter_);
@@ -142,12 +142,12 @@ Status GoValidator::validateYield(YieldClause* yield) {
         yields_ = newCols;
     } else {
         for (auto col : cols) {
-            if (col->expr()->kind() == Expression::Kind::kSymProperty) {
-                auto symbolExpr = static_cast<SymbolPropertyExpression*>(col->expr());
-                col->setExpr(ExpressionUtils::transSymbolPropertyExpression<EdgePropertyExpression>(
-                    symbolExpr));
+            if (col->expr()->kind() == Expression::Kind::kLabelAttribute) {
+                auto laExpr = static_cast<LabelAttributeExpression*>(col->expr());
+                col->setExpr(ExpressionUtils::rewriteLabelAttribute<EdgePropertyExpression>(
+                    laExpr));
             } else {
-                ExpressionUtils::transAllSymbolPropertyExpr<EdgePropertyExpression>(col->expr());
+                ExpressionUtils::rewriteLabelAttribute<EdgePropertyExpression>(col->expr());
             }
 
             if (!col->getAggFunName().empty()) {
@@ -792,6 +792,8 @@ GetNeighbors::EdgeProps GoValidator::buildEdgeDst() {
 
 void GoValidator::extractPropExprs(const Expression* expr) {
     switch (expr->kind()) {
+        case Expression::Kind::kVertex:
+        case Expression::Kind::kEdge:
         case Expression::Kind::kConstant: {
             break;
         }
@@ -867,13 +869,13 @@ void GoValidator::extractPropExprs(const Expression* expr) {
         }
         case Expression::Kind::kInputProperty:
         case Expression::Kind::kVarProperty: {
-            auto* symPropExpr = static_cast<const SymbolPropertyExpression*>(expr);
+            auto* propExpr = static_cast<const PropertyExpression*>(expr);
             auto found = propExprColMap_.find(expr->toString());
             if (found == propExprColMap_.end()) {
                 auto encode = expr->encode();
                 auto newExpr = Expression::decode(encode);
                 auto col = new YieldColumn(
-                    newExpr.release(), new std::string(*symPropExpr->prop()));
+                    newExpr.release(), new std::string(*propExpr->prop()));
                 propExprColMap_.emplace(expr->toString(), col);
                 inputPropCols_->addColumn(col);
             }
@@ -882,13 +884,14 @@ void GoValidator::extractPropExprs(const Expression* expr) {
         case Expression::Kind::kUUID:
         case Expression::Kind::kVar:
         case Expression::Kind::kVersionedVar:
-        case Expression::Kind::kSymProperty:
         case Expression::Kind::kUnaryIncr:
         case Expression::Kind::kUnaryDecr:
         case Expression::Kind::kList:   // FIXME(dutor)
         case Expression::Kind::kSet:
         case Expression::Kind::kMap:
         case Expression::Kind::kSubscript:
+        case Expression::Kind::kAttribute:
+        case Expression::Kind::kLabelAttribute:
         case Expression::Kind::kLabel:
         case Expression::Kind::kRelIn:
         case Expression::Kind::kRelNotIn: {
@@ -900,6 +903,8 @@ void GoValidator::extractPropExprs(const Expression* expr) {
 
 std::unique_ptr<Expression> GoValidator::rewriteToInputProp(Expression* expr) {
     switch (expr->kind()) {
+        case Expression::Kind::kVertex:
+        case Expression::Kind::kEdge:
         case Expression::Kind::kConstant: {
             break;
         }
@@ -982,12 +987,13 @@ std::unique_ptr<Expression> GoValidator::rewriteToInputProp(Expression* expr) {
         case Expression::Kind::kUUID:
         case Expression::Kind::kVar:
         case Expression::Kind::kVersionedVar:
-        case Expression::Kind::kSymProperty:
+        case Expression::Kind::kLabelAttribute:
         case Expression::Kind::kUnaryIncr:
         case Expression::Kind::kUnaryDecr:
         case Expression::Kind::kList:   // FIXME(dutor)
         case Expression::Kind::kSet:
         case Expression::Kind::kMap:
+        case Expression::Kind::kAttribute:
         case Expression::Kind::kSubscript:
         case Expression::Kind::kLabel:
         case Expression::Kind::kRelIn:
