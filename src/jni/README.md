@@ -15,7 +15,7 @@ To build this project, you must have:
 
 ## Steps
  * mkdir build && cd build
- * cmake .. -DNEBULA_HOME=${nebula project root dir} -DNEBULA_THIRDPARTY_ROOT=${dependencies root dir}
+ * cmake ..
  * make
  * cd ../java && mvn clean package
 
