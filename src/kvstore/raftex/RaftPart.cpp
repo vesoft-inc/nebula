@@ -1516,6 +1516,7 @@ void RaftPart::processAppendLogRequest(
                   << ", my term is " << term_
                   << ", to make the cluster stable i will follow the high term"
                   << " candidate and clenaup my data";
+        reset();
         resp.set_committed_log_id(committedLogId_);
         resp.set_last_log_id(lastLogId_);
         resp.set_last_log_term(lastLogTerm_);
@@ -1565,7 +1566,9 @@ void RaftPart::processAppendLogRequest(
                             req.get_log_term(),
                             req.get_log_str_list());
     if (wal_->appendLogs(iter)) {
-        CHECK_EQ(firstId + numLogs - 1, wal_->lastLogId()) << "First Id is " << firstId;
+        if (numLogs != 0) {
+            CHECK_EQ(firstId + numLogs - 1, wal_->lastLogId()) << "First Id is " << firstId;
+        }
         lastLogId_ = wal_->lastLogId();
         lastLogTerm_ = wal_->lastLogTerm();
         resp.set_last_log_id(lastLogId_);
