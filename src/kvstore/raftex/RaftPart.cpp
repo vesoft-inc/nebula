@@ -362,7 +362,7 @@ AppendLogResult RaftPart::canAppendLogs() {
         return AppendLogResult::E_STOPPED;
     }
     if (role_ != Role::LEADER) {
-        PLOG_EVERY_N(ERROR, 100) << idStr_ << "The partition is not a leader";
+        LOG_EVERY_N(ERROR, 100) << idStr_ << "The partition is not a leader";
         return AppendLogResult::E_NOT_A_LEADER;
     }
 
@@ -562,7 +562,7 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
     auto retFuture = folly::Future<AppendLogResult>::makeEmpty();
 
     if (bufferOverFlow_) {
-        PLOG_EVERY_N(WARNING, 30) << idStr_
+        LOG_EVERY_N(WARNING, 100) << idStr_
                      << "The appendLog buffer is full."
                         " Please slow down the log appending rate."
                      << "replicatingLogs_ :" << replicatingLogs_;
@@ -630,7 +630,7 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
 
     if (!checkAppendLogResult(res)) {
         // Mosy likely failed because the parttion is not leader
-        PLOG_EVERY_N(ERROR, 100) << idStr_ << "Cannot append logs, clean the buffer";
+        LOG_EVERY_N(ERROR, 100) << idStr_ << "Cannot append logs, clean the buffer";
         return res;
     }
     // Replicate buffered logs to all followers
@@ -952,8 +952,8 @@ void RaftPart::processAppendLogResponses(
         this->appendLogsInternal(std::move(iter), currTerm);
     } else {
         // Not enough hosts accepted the log, re-try
-        LOG(WARNING) << idStr_ << "Only " << numSucceeded
-                     << " hosts succeeded, Need to try again";
+        LOG_EVERY_N(WARNING, 100) << idStr_ << "Only " << numSucceeded
+                                  << " hosts succeeded, Need to try again";
         replicateLogs(eb,
                       std::move(iter),
                       currTerm,
@@ -1163,6 +1163,9 @@ bool RaftPart::leaderElection() {
                 std::lock_guard<std::mutex> g(raftLock_);
                 if (status_ == Status::RUNNING) {
                     leader_ = addr_;
+                    for (auto& host : hosts_) {
+                        host->reset();
+                    }
                     bgWorkers_->addTask([self = shared_from_this(),
                                        term = voteReq.get_term()] {
                         self->onElected(term);
@@ -1661,10 +1664,10 @@ cpp2::ErrorCode RaftPart::verifyLeader(
 
     // Make sure the remote term is greater than local's
     if (req.get_current_term() < term_) {
-        PLOG_EVERY_N(ERROR, 100) << idStr_
-                                 << "The current role is " << roleStr(role_)
-                                 << ". The local term is " << term_
-                                 << ". The remote term is not newer";
+        LOG_EVERY_N(ERROR, 100) << idStr_
+                                << "The current role is " << roleStr(role_)
+                                << ". The local term is " << term_
+                                << ". The remote term is not newer";
         return cpp2::ErrorCode::E_TERM_OUT_OF_DATE;
     }
     if (role_ == Role::FOLLOWER || role_ == Role::LEARNER) {
