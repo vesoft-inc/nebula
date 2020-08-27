@@ -9,7 +9,6 @@
 #   CMAKE_C_COMPILER               -- Specify the compiler for C language
 #   CMAKE_CXX_COMPILER             -- Specify the compiler for C++ language
 #
-#   NEBULA_HOME                    -- Specify the root directory for nebula project
 #   NEBULA_THIRDPARTY_ROOT         -- Specify the third-party root dir.
 #   ENABLE_TESTING                 -- Build unit test
 #
