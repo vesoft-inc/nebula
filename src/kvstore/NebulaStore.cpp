@@ -880,8 +880,10 @@ void NebulaStore::cleanWAL() {
                                  this);
     };
     for (const auto& spaceEntry : spaces_) {
-        for (const auto& engine : spaceEntry.second->engines_) {
-            engine->flush();
+        if (rocksdb_disable_wal) {
+            for (const auto& engine : spaceEntry.second->engines_) {
+                engine->flush();
+            }
         }
         for (const auto& partEntry : spaceEntry.second->parts_) {
             auto& part = partEntry.second;
