@@ -62,7 +62,7 @@ void ValidatorTestBase::bfsTraverse(const PlanNode *root, std::vector<PlanNode::
             case PlanNode::Kind::kLimit:
             case PlanNode::Kind::kAggregate:
             case PlanNode::Kind::kSwitchSpace:
-            case PlanNode::Kind::kMultiOutputs:
+            case PlanNode::Kind::kPassThrough:
             case PlanNode::Kind::kDedup:
             case PlanNode::Kind::kDataCollect:
             case PlanNode::Kind::kCreateSpace:

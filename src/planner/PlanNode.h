@@ -45,7 +45,7 @@ public:
         kLoop,
         kSwitchSpace,
         kDedup,
-        kMultiOutputs,
+        kPassThrough,
         kCreateSpace,
         kCreateTag,
         kCreateEdge,

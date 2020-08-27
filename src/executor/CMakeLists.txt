@@ -7,7 +7,7 @@ nebula_add_library(
     executor_obj OBJECT
     Executor.cpp
     logic/LoopExecutor.cpp
-    logic/MultiOutputsExecutor.cpp
+    logic/PassThroughExecutor.cpp
     logic/StartExecutor.cpp
     logic/SelectExecutor.cpp
     query/AggregateExecutor.cpp

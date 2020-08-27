@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "executor/logic/MultiOutputsExecutor.h"
+#include "executor/logic/PassThroughExecutor.h"
 
 #include "planner/Query.h"
 #include "util/ScopedTimer.h"
@@ -12,10 +12,12 @@
 namespace nebula {
 namespace graph {
 
-folly::Future<Status> MultiOutputsExecutor::execute() {
+folly::Future<Status> PassThroughExecutor::execute() {
     SCOPED_TIMER(&execTime_);
 
-    return Status::OK();
+    DataSet ds;
+    ds.colNames = node()->colNames();
+    return finish(ResultBuilder().value(Value(std::move(ds))).finish());
 }
 
 }   // namespace graph

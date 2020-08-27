@@ -1366,12 +1366,10 @@ class TestGoQuery(NebulaTestSuite):
 
     def test_with_intermediate_data(self):
         # zero to zero
-        """
         stmt = "GO 0 TO 0 STEPS FROM 'Tony Parker' OVER like YIELD DISTINCT like._dst"
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         self.check_empty_result(resp)
-        """
 
         # simple
         stmt = "GO 1 TO 2 STEPS FROM 'Tony Parker' OVER like YIELD DISTINCT like._dst"
@@ -1794,7 +1792,6 @@ class TestGoQuery(NebulaTestSuite):
         }
         self.check_out_of_order_result(resp, expected_data["rows"])
 
-    @pytest.mark.skip(reason = 'not support zero step now')
     def test_zero_step(self):
         stmt = "GO 0 STEPS FROM 'Tim Duncan' OVER serve BIDIRECT"
         resp = self.execute_query(stmt)
@@ -1802,6 +1799,12 @@ class TestGoQuery(NebulaTestSuite):
         self.check_empty_result(resp)
 
         stmt = "GO 0 STEPS FROM 'Tim Duncan' OVER serve"
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        self.check_empty_result(resp)
+
+        stmt = "GO 0 STEPS FROM 'Tim Duncan' OVER like YIELD like._dst as id \
+                | GO FROM $-.id OVER serve"
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         self.check_empty_result(resp)

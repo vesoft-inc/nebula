@@ -77,7 +77,7 @@ Status SetValidator::toPlan() {
     bNode->setLeftVar(lRoot->varName());
     bNode->setRightVar(rRoot->varName());
 
-    tail_ = MultiOutputsNode::make(plan, nullptr);
+    tail_ = PassThroughNode::make(plan, nullptr);
     NG_RETURN_IF_ERROR(lValidator_->appendPlan(tail_));
     NG_RETURN_IF_ERROR(rValidator_->appendPlan(tail_));
     return Status::OK();

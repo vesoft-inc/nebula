@@ -18,6 +18,11 @@ Status TraversalValidator::validateStep(const StepClause* step) {
         auto* mToN = qctx_->objPool()->makeAndAdd<StepClause::MToN>();
         mToN->mSteps = step->mToN()->mSteps;
         mToN->nSteps = step->mToN()->nSteps;
+
+        if (mToN->mSteps == 0 && mToN->nSteps == 0) {
+            steps_ = 0;
+            return Status::OK();
+        }
         if (mToN->mSteps == 0) {
             mToN->mSteps = 1;
         }
@@ -32,9 +37,6 @@ Status TraversalValidator::validateStep(const StepClause* step) {
         mToN_ = mToN;
     } else {
         auto steps = step->steps();
-        if (steps == 0) {
-            return Status::Error("Only accpet positive number steps.");
-        }
         steps_ = steps;
     }
     return Status::OK();

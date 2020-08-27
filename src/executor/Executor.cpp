@@ -35,7 +35,7 @@
 #include "executor/admin/SwitchSpaceExecutor.h"
 #include "executor/admin/UpdateUserExecutor.h"
 #include "executor/logic/LoopExecutor.h"
-#include "executor/logic/MultiOutputsExecutor.h"
+#include "executor/logic/PassThroughExecutor.h"
 #include "executor/logic/SelectExecutor.h"
 #include "executor/logic/StartExecutor.h"
 #include "executor/maintain/EdgeExecutor.h"
@@ -92,10 +92,10 @@ Executor *Executor::makeExecutor(const PlanNode *node,
     Executor *exec = nullptr;
 
     switch (node->kind()) {
-        case PlanNode::Kind::kMultiOutputs: {
-            auto mout = asNode<MultiOutputsNode>(node);
+        case PlanNode::Kind::kPassThrough: {
+            auto mout = asNode<PassThroughNode>(node);
             auto dep = makeExecutor(mout->dep(), qctx, visited);
-            exec = new MultiOutputsExecutor(mout, qctx);
+            exec = new PassThroughExecutor(mout, qctx);
             exec->dependsOn(dep);
             break;
         }

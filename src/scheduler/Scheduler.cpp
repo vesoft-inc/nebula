@@ -10,7 +10,7 @@
 #include "executor/ExecutionError.h"
 #include "executor/Executor.h"
 #include "executor/logic/LoopExecutor.h"
-#include "executor/logic/MultiOutputsExecutor.h"
+#include "executor/logic/PassThroughExecutor.h"
 #include "executor/logic/SelectExecutor.h"
 #include "planner/PlanNode.h"
 
@@ -19,7 +19,7 @@ namespace graph {
 
 Scheduler::Task::Task(const Executor *e) : planId(DCHECK_NOTNULL(e)->node()->id()) {}
 
-Scheduler::MultiOutputsData::MultiOutputsData(int32_t outputs)
+Scheduler::PassThroughData::PassThroughData(int32_t outputs)
     : promise(std::make_unique<folly::SharedPromise<Status>>()), numOutputs(outputs) {}
 
 Scheduler::Scheduler(QueryContext *qctx) : qctx_(DCHECK_NOTNULL(qctx)) {}
@@ -32,12 +32,12 @@ folly::Future<Status> Scheduler::schedule() {
 
 void Scheduler::analyze(Executor *executor) {
     switch (executor->node()->kind()) {
-        case PlanNode::Kind::kMultiOutputs: {
+        case PlanNode::Kind::kPassThrough: {
             const auto &name = executor->node()->varName();
-            auto it = multiOutputPromiseMap_.find(name);
-            if (it == multiOutputPromiseMap_.end()) {
-                MultiOutputsData data(executor->successors().size());
-                multiOutputPromiseMap_.emplace(name, std::move(data));
+            auto it = passThroughPromiseMap_.find(name);
+            if (it == passThroughPromiseMap_.end()) {
+                PassThroughData data(executor->successors().size());
+                passThroughPromiseMap_.emplace(name, std::move(data));
             }
             break;
         }
@@ -86,10 +86,10 @@ folly::Future<Status> Scheduler::doSchedule(Executor *executor) {
                 return iterate(loop);
             }));
         }
-        case PlanNode::Kind::kMultiOutputs: {
-            auto mout = static_cast<MultiOutputsExecutor *>(executor);
-            auto it = multiOutputPromiseMap_.find(mout->node()->varName());
-            CHECK(it != multiOutputPromiseMap_.end());
+        case PlanNode::Kind::kPassThrough: {
+            auto mout = static_cast<PassThroughExecutor *>(executor);
+            auto it = passThroughPromiseMap_.find(mout->node()->varName());
+            CHECK(it != passThroughPromiseMap_.end());
 
             auto &data = it->second;
 

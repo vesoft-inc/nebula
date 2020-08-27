@@ -97,17 +97,17 @@ private:
 };
 
 /**
- * This operator is used for multi output situation.
+ * This operator is used for pass through situation.
  */
-class MultiOutputsNode final : public SingleInputNode {
+class PassThroughNode final : public SingleInputNode {
 public:
-    static MultiOutputsNode* make(ExecutionPlan* plan, PlanNode* input) {
-        return new MultiOutputsNode(input, plan);
+    static PassThroughNode* make(ExecutionPlan* plan, PlanNode* input) {
+        return new PassThroughNode(input, plan);
     }
 
 private:
-    MultiOutputsNode(PlanNode* input, ExecutionPlan* plan)
-        : SingleInputNode(plan, Kind::kMultiOutputs, input) {}
+    PassThroughNode(PlanNode* input, ExecutionPlan* plan)
+        : SingleInputNode(plan, Kind::kPassThrough, input) {}
 };
 
 }   // namespace graph

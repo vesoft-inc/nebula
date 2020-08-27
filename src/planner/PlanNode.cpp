@@ -55,8 +55,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
             return "Loop";
         case Kind::kDedup:
             return "Dedup";
-        case Kind::kMultiOutputs:
-            return "MultiOutputs";
+        case Kind::kPassThrough:
+            return "PassThrough";
         case Kind::kSwitchSpace:
             return "RegisterSpaceToSession";
         case Kind::kCreateSpace:

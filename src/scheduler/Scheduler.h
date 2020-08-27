@@ -68,16 +68,16 @@ private:
     folly::Future<Status> iterate(LoopExecutor *loop);
     folly::Future<Status> execute(Executor *executor);
 
-    struct MultiOutputsData {
+    struct PassThroughData {
         folly::SpinLock lock;
         std::unique_ptr<folly::SharedPromise<Status>> promise;
         int32_t numOutputs;
 
-        explicit MultiOutputsData(int32_t outputs);
+        explicit PassThroughData(int32_t outputs);
     };
 
     QueryContext *qctx_{nullptr};
-    std::unordered_map<std::string, MultiOutputsData> multiOutputPromiseMap_;
+    std::unordered_map<std::string, PassThroughData> passThroughPromiseMap_;
 };
 
 }   // namespace graph

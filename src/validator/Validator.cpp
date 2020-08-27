@@ -27,7 +27,7 @@
 #include "validator/SetValidator.h"
 #include "validator/UseValidator.h"
 #include "validator/ACLValidator.h"
-#include  "validator/BalanceValidator.h"
+#include "validator/BalanceValidator.h"
 #include "validator/AdminJobValidator.h"
 #include "validator/YieldValidator.h"
 #include "validator/GroupByValidator.h"
@@ -228,7 +228,7 @@ Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
         case PlanNode::Kind::kListUserRoles:
         case PlanNode::Kind::kListUsers:
         case PlanNode::Kind::kListRoles:
-        case PlanNode::Kind::kMultiOutputs:
+        case PlanNode::Kind::kPassThrough:
         case PlanNode::Kind::kSwitchSpace:
         case PlanNode::Kind::kGetEdges:
         case PlanNode::Kind::kGetVertices:
