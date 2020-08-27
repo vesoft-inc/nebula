@@ -22,6 +22,8 @@ DEFINE_int32(num_workers, 4, "Number of worker threads");
 DEFINE_bool(check_leader, true, "Check leader or not");
 DEFINE_int32(clean_wal_interval_secs, 600, "inerval to trigger clean expired wal");
 
+DECLARE_bool(rocksdb_disable_wal);
+
 namespace nebula {
 namespace kvstore {
 
@@ -880,7 +882,7 @@ void NebulaStore::cleanWAL() {
                                  this);
     };
     for (const auto& spaceEntry : spaces_) {
-        if (rocksdb_disable_wal) {
+        if (FLAGS_rocksdb_disable_wal) {
             for (const auto& engine : spaceEntry.second->engines_) {
                 engine->flush();
             }
