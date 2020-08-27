@@ -122,13 +122,12 @@ Status GetSubgraphValidator::validateBothInOutBound(BothInOutClause* out) {
 }
 
 Status GetSubgraphValidator::toPlan() {
-    auto* plan = qctx_->plan();
     auto& space = vctx_->whichSpace();
 
     //                           bodyStart->gn->project(dst)
     //                                            |
     // start [->previous] [-> project(input)] -> loop -> collect
-    auto* bodyStart = StartNode::make(plan);
+    auto* bodyStart = StartNode::make(qctx_);
 
     auto vertexProps = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
     auto edgeProps = std::make_unique<std::vector<storage::cpp2::EdgeProp>>();
@@ -145,7 +144,7 @@ Status GetSubgraphValidator::toPlan() {
     }
 
     auto* gn1 = GetNeighbors::make(
-            plan,
+            qctx_,
             bodyStart,
             space.id,
             src_,
@@ -165,16 +164,16 @@ Status GetSubgraphValidator::toPlan() {
     // TODO(shylock) add condition when gn get empty result
     auto* condition = buildNStepLoopCondition(steps_);
     // The input of loop will set by father validator.
-    auto* loop = Loop::make(plan, nullptr, projectVids, condition);
+    auto* loop = Loop::make(qctx_, nullptr, projectVids, condition);
 
     /*
     // selector -> loop
     // selector -> filter -> gn2 -> ifStrart
-    auto* ifStart = StartNode::make(plan);
+    auto* ifStart = StartNode::make(qctx_);
 
     std::vector<Row> starts;
     auto* gn2 = GetNeighbors::make(
-            plan,
+            qctx_,
             ifStart,
             space.id,
             std::move(starts),
@@ -187,7 +186,7 @@ Status GetSubgraphValidator::toPlan() {
 
     // collect(gn2._vids) as listofvids
     auto& listOfVids = varGen_->getVar();
-    columns = new YieldColumns();
+    columns = qctx_->objPool()->add(new YieldColumns());
     column = new YieldColumn(
             new VariablePropertyExpression(
                 new std::string(gn2->varGenerated()),
@@ -195,14 +194,14 @@ Status GetSubgraphValidator::toPlan() {
             new std::string(listOfVids));
     column->setFunction(new std::string("collect"));
     columns->addColumn(column);
-    auto* group = Aggregate::make(plan, gn2, plan->saveObject(columns));
+    auto* group = Aggregate::make(qctx_, gn2, columns);
 
     auto* filter = Filter::make(
-                        plan,
+                        qctx_,
                         group,
                         nullptr// TODO: build IN condition.
                         );
-    auto* selector = Selector::make(plan, loop, filter, nullptr, nullptr);
+    auto* selector = Selector::make(qctx_, loop, filter, nullptr, nullptr);
 
     // TODO: A data collector.
 
@@ -210,7 +209,7 @@ Status GetSubgraphValidator::toPlan() {
     tail_ = loop;
     */
     std::vector<std::string> collects = {gn1->varName()};
-    auto* dc = DataCollect::make(plan, loop,
+    auto* dc = DataCollect::make(qctx_, loop,
             DataCollect::CollectKind::kSubgraph, std::move(collects));
     dc->setColNames({"_vertices", "_edges"});
     root_ = dc;

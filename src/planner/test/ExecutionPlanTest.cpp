@@ -52,25 +52,25 @@ protected:
 };
 
 TEST_F(ExecutionPlanTest, TestSimplePlan) {
-    auto start = StartNode::make(plan_);
+    auto start = StartNode::make(qctx_.get());
     Expression* expr = nullptr;
-    auto filter = Filter::make(plan_, start, expr);
-    auto dedup = Dedup::make(plan_, filter, nullptr);
+    auto filter = Filter::make(qctx_.get(), start, expr);
+    auto dedup = Dedup::make(qctx_.get(), filter, nullptr);
     YieldColumns* cols = nullptr;
-    auto proj = Project::make(plan_, dedup, cols);
+    auto proj = Project::make(qctx_.get(), dedup, cols);
     plan_->setRoot(proj);
 
     run();
 }
 
 TEST_F(ExecutionPlanTest, TestSelect) {
-    auto start = StartNode::make(plan_);
-    auto thenStart = StartNode::make(plan_);
-    auto filter = Filter::make(plan_, thenStart, nullptr);
-    auto elseStart = StartNode::make(plan_);
-    auto project = Project::make(plan_, elseStart, nullptr);
-    auto select = Selector::make(plan_, start, filter, project, nullptr);
-    auto output = Project::make(plan_, select, nullptr);
+    auto start = StartNode::make(qctx_.get());
+    auto thenStart = StartNode::make(qctx_.get());
+    auto filter = Filter::make(qctx_.get(), thenStart, nullptr);
+    auto elseStart = StartNode::make(qctx_.get());
+    auto project = Project::make(qctx_.get(), elseStart, nullptr);
+    auto select = Selector::make(qctx_.get(), start, filter, project, nullptr);
+    auto output = Project::make(qctx_.get(), select, nullptr);
 
     plan_->setRoot(output);
 
@@ -78,11 +78,11 @@ TEST_F(ExecutionPlanTest, TestSelect) {
 }
 
 TEST_F(ExecutionPlanTest, TestLoopPlan) {
-    auto start = StartNode::make(plan_);
-    auto bodyStart = StartNode::make(plan_);
-    auto filter = Filter::make(plan_, bodyStart, nullptr);
-    auto loop = Loop::make(plan_, start, filter, nullptr);
-    auto project = Project::make(plan_, loop, nullptr);
+    auto start = StartNode::make(qctx_.get());
+    auto bodyStart = StartNode::make(qctx_.get());
+    auto filter = Filter::make(qctx_.get(), bodyStart, nullptr);
+    auto loop = Loop::make(qctx_.get(), start, filter, nullptr);
+    auto project = Project::make(qctx_.get(), loop, nullptr);
 
     plan_->setRoot(project);
 
@@ -90,12 +90,12 @@ TEST_F(ExecutionPlanTest, TestLoopPlan) {
 }
 
 TEST_F(ExecutionPlanTest, TestMultiOutputs) {
-    auto start = StartNode::make(plan_);
-    auto mout = MultiOutputsNode::make(plan_, start);
-    auto filter = Filter::make(plan_, mout, nullptr);
-    auto project = Project::make(plan_, mout, nullptr);
-    auto uni = Union::make(plan_, filter, project);
-    auto output = Project::make(plan_, uni, nullptr);
+    auto start = StartNode::make(qctx_.get());
+    auto mout = MultiOutputsNode::make(qctx_.get(), start);
+    auto filter = Filter::make(qctx_.get(), mout, nullptr);
+    auto project = Project::make(qctx_.get(), mout, nullptr);
+    auto uni = Union::make(qctx_.get(), filter, project);
+    auto output = Project::make(qctx_.get(), uni, nullptr);
 
     plan_->setRoot(output);
 
@@ -103,15 +103,15 @@ TEST_F(ExecutionPlanTest, TestMultiOutputs) {
 }
 
 TEST_F(ExecutionPlanTest, TestMultiOutputsInLoop) {
-    auto loopStart = StartNode::make(plan_);
-    auto mout = MultiOutputsNode::make(plan_, loopStart);
-    auto filter = Filter::make(plan_, mout, nullptr);
-    auto project = Project::make(plan_, mout, nullptr);
-    auto uni = Union::make(plan_, filter, project);
-    auto loopEnd = Project::make(plan_, uni, nullptr);
-    auto start = StartNode::make(plan_);
-    auto loop = Loop::make(plan_, start, loopEnd, nullptr);
-    auto end = Project::make(plan_, loop, nullptr);
+    auto loopStart = StartNode::make(qctx_.get());
+    auto mout = MultiOutputsNode::make(qctx_.get(), loopStart);
+    auto filter = Filter::make(qctx_.get(), mout, nullptr);
+    auto project = Project::make(qctx_.get(), mout, nullptr);
+    auto uni = Union::make(qctx_.get(), filter, project);
+    auto loopEnd = Project::make(qctx_.get(), uni, nullptr);
+    auto start = StartNode::make(qctx_.get());
+    auto loop = Loop::make(qctx_.get(), start, loopEnd, nullptr);
+    auto end = Project::make(qctx_.get(), loop, nullptr);
 
     plan_->setRoot(end);
 

@@ -18,8 +18,8 @@
 #include "common/cpp/helpers.h"
 #include "common/datatypes/Value.h"
 #include "common/time/Duration.h"
-#include "util/ScopedTimer.h"
 #include "context/ExecutionContext.h"
+#include "util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
@@ -30,7 +30,7 @@ class QueryContext;
 class Executor : private cpp::NonCopyable, private cpp::NonMovable {
 public:
     // Create executor according to plan node
-    static Executor *makeExecutor(const PlanNode *node, QueryContext *qctx);
+    static Executor *create(const PlanNode *node, QueryContext *qctx);
 
     virtual ~Executor();
 

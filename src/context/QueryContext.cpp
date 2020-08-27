@@ -11,6 +11,31 @@
 namespace nebula {
 namespace graph {
 
+QueryContext::QueryContext(RequestContextPtr rctx,
+                           meta::SchemaManager* sm,
+                           storage::GraphStorageClient* storage,
+                           meta::MetaClient* metaClient,
+                           CharsetInfo* charsetInfo)
+    : rctx_(std::move(rctx)),
+      sm_(DCHECK_NOTNULL(sm)),
+      storageClient_(DCHECK_NOTNULL(storage)),
+      metaClient_(DCHECK_NOTNULL(metaClient)),
+      charsetInfo_(DCHECK_NOTNULL(charsetInfo)) {
+    init();
+}
+
+QueryContext::QueryContext() {
+    init();
+}
+
+void QueryContext::init() {
+    objPool_ = std::make_unique<ObjectPool>();
+    ep_ = std::make_unique<ExecutionPlan>();
+    vctx_ = std::make_unique<ValidateContext>();
+    ectx_ = std::make_unique<ExecutionContext>();
+    idGen_ = std::make_unique<IdGenerator>(0);
+}
+
 void QueryContext::addProfilingData(int64_t planNodeId, cpp2::ProfilingStats&& profilingStats) {
     // return directly if not enable profile
     if (!planDescription_) return;

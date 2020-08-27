@@ -27,7 +27,7 @@ Status LimitValidator::validateImpl() {
 
 Status LimitValidator::toPlan() {
     auto* plan = qctx_->plan();
-    auto *limitNode = Limit::make(plan, plan->root(), offset_, count_);
+    auto *limitNode = Limit::make(qctx_, plan->root(), offset_, count_);
     std::vector<std::string> colNames;
     for (auto &col : outputs_) {
         colNames.emplace_back(col.first);

@@ -89,8 +89,7 @@ struct RowCmp {
         std::make_unique<InputPropertyExpression>(new std::string("col1")); \
     Aggregate::GroupItem item(expr.get(), FUN, DISTINCT);                   \
     groupItems.emplace_back(std::move(item));                               \
-    auto* plan = qctx_->plan();                                             \
-    auto* agg = Aggregate::make(plan, nullptr, std::move(groupKeys),        \
+    auto* agg = Aggregate::make(qctx_.get(), nullptr, std::move(groupKeys), \
                                 std::move(groupItems));                     \
     agg->setInputVar(*input_);                                              \
     agg->setColNames(std::vector<std::string>{COL});                        \
@@ -111,8 +110,7 @@ struct RowCmp {
     groupKeys.emplace_back(expr.get());                                     \
     Aggregate::GroupItem item(expr.get(), FUN, DISTINCT);                   \
     groupItems.emplace_back(std::move(item));                               \
-    auto* plan = qctx_->plan();                                             \
-    auto* agg = Aggregate::make(plan, nullptr, std::move(groupKeys),        \
+    auto* agg = Aggregate::make(qctx_.get(), nullptr, std::move(groupKeys), \
                                 std::move(groupItems));                     \
     agg->setInputVar(*input_);                                              \
     agg->setColNames(std::vector<std::string>{COL});                        \
@@ -140,8 +138,7 @@ struct RowCmp {
     groupKeys.emplace_back(expr1.get());                                    \
     Aggregate::GroupItem item1(expr1.get(), FUN, DISTINCT);                 \
     groupItems.emplace_back(std::move(item1));                              \
-    auto* plan = qctx_->plan();                                             \
-    auto* agg = Aggregate::make(plan, nullptr, std::move(groupKeys),        \
+    auto* agg = Aggregate::make(qctx_.get(), nullptr, std::move(groupKeys), \
                                 std::move(groupItems));                     \
     agg->setInputVar(*input_);                                              \
     agg->setColNames(std::vector<std::string>{"col2", COL});                \
@@ -162,8 +159,7 @@ struct RowCmp {
     auto expr = std::make_unique<ConstantExpression>(1);                    \
     Aggregate::GroupItem item(expr.get(), FUN, DISTINCT);                   \
     groupItems.emplace_back(std::move(item));                               \
-    auto* plan = qctx_->plan();                                             \
-    auto* agg = Aggregate::make(plan, nullptr, std::move(groupKeys),        \
+    auto* agg = Aggregate::make(qctx_.get(), nullptr, std::move(groupKeys), \
                                 std::move(groupItems));                     \
     agg->setInputVar(*input_);                                              \
     agg->setColNames(std::vector<std::string>{COL});                        \
@@ -310,8 +306,7 @@ TEST_F(AggregateTest, Collect) {
         groupKeys.emplace_back(expr.get());
         Aggregate::GroupItem item(expr.get(), AggFun::Function::kCollect, false);
         groupItems.emplace_back(std::move(item));
-        auto* plan = qctx_->plan();
-        auto* agg = Aggregate::make(plan, nullptr, std::move(groupKeys),
+        auto* agg = Aggregate::make(qctx_.get(), nullptr, std::move(groupKeys),
                                     std::move(groupItems));
         agg->setInputVar(*input_);
         agg->setColNames(std::vector<std::string>{"list"});
@@ -417,8 +412,7 @@ TEST_F(AggregateTest, Collect) {
             std::make_unique<InputPropertyExpression>(new std::string("col1"));
         Aggregate::GroupItem item(expr.get(), AggFun::Function::kCollect, true);
         groupItems.emplace_back(std::move(item));
-        auto* plan = qctx_->plan();
-        auto* agg = Aggregate::make(plan, nullptr, std::move(groupKeys),
+        auto* agg = Aggregate::make(qctx_.get(), nullptr, std::move(groupKeys),
                                     std::move(groupItems));
         agg->setInputVar(*input_);
         agg->setColNames(std::vector<std::string>{"list"});
@@ -480,8 +474,7 @@ TEST_F(AggregateTest, Collect) {
         groupKeys.emplace_back(expr.get());
         Aggregate::GroupItem item(expr.get(), AggFun::Function::kCollect, true);
         groupItems.emplace_back(std::move(item));
-        auto* plan = qctx_->plan();
-        auto* agg = Aggregate::make(plan, nullptr, std::move(groupKeys),
+        auto* agg = Aggregate::make(qctx_.get(), nullptr, std::move(groupKeys),
                                     std::move(groupItems));
         agg->setInputVar(*input_);
         agg->setColNames(std::vector<std::string>{"list"});

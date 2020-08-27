@@ -13,25 +13,24 @@ namespace nebula {
 namespace graph {
 
 Status BalanceValidator::toPlan() {
-    auto* plan = qctx_->plan();
     PlanNode *current = nullptr;
     BalanceSentence *sentence = static_cast<BalanceSentence*>(sentence_);
     switch (sentence->subType()) {
     case BalanceSentence::SubType::kLeader:
-        current = BalanceLeaders::make(plan, nullptr);
+        current = BalanceLeaders::make(qctx_, nullptr);
         break;
     case BalanceSentence::SubType::kData:
-        current = Balance::make(plan,
+        current = Balance::make(qctx_,
                                 nullptr,
                                 sentence->hostDel() == nullptr
                                     ? std::vector<HostAddr>()
                                     : sentence->hostDel()->hosts());
         break;
     case BalanceSentence::SubType::kDataStop:
-        current = StopBalance::make(plan, nullptr);
+        current = StopBalance::make(qctx_, nullptr);
         break;
     case BalanceSentence::SubType::kShowBalancePlan:
-        current = ShowBalance::make(plan, nullptr, sentence->balanceId());
+        current = ShowBalance::make(qctx_, nullptr, sentence->balanceId());
         break;
     case BalanceSentence::SubType::kUnknown:
         // fallthrough

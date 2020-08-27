@@ -35,13 +35,7 @@ protected:
         pool_ = std::make_unique<ObjectPool>();
     }
 
-    ExecutionPlan* toPlan(const std::string& query) {
-        auto planStatus = validate(query);
-        EXPECT_TRUE(planStatus);
-        return std::move(planStatus).value();
-    }
-
-    StatusOr<ExecutionPlan*> validate(const std::string& query) {
+    StatusOr<QueryContext*> validate(const std::string& query) {
         VLOG(1) << "query: " << query;
         auto result = GQLParser().parse(query);
         if (!result.ok()) {
@@ -50,14 +44,14 @@ protected:
         auto sentences = pool_->add(std::move(result).value().release());
         auto qctx = buildContext();
         NG_RETURN_IF_ERROR(Validator::validate(sentences, qctx));
-        return qctx->plan();
+        return qctx;
     }
 
     QueryContext* buildContext() {
         auto rctx = std::make_unique<RequestContext<cpp2::ExecutionResponse>>();
         rctx->setSession(session_);
         auto qctx = pool_->add(new QueryContext());
-        qctx->setRctx(std::move(rctx));
+        qctx->setRCtx(std::move(rctx));
         qctx->setSchemaManager(schemaMng_.get());
         qctx->setCharsetInfo(CharsetInfo::instance());
         return qctx;
@@ -70,17 +64,18 @@ protected:
     ::testing::AssertionResult checkResult(const std::string& query,
                                            const std::vector<PlanNode::Kind>& expected = {},
                                            const std::vector<std::string> &rootColumns = {}) {
-        auto planStatus = validate(query);
-        if (!planStatus) {
-            return ::testing::AssertionFailure() << std::move(planStatus).status().toString();
+        auto status = validate(query);
+        if (!status) {
+            return ::testing::AssertionFailure() << std::move(status).status().toString();
         }
-        auto plan = std::move(planStatus).value();
-        if (plan == nullptr) {
-            return ::testing::AssertionFailure() << "plan is nullptr";
+        auto qctx = std::move(status).value();
+        if (qctx == nullptr) {
+            return ::testing::AssertionFailure() << "qctx is nullptr";
         }
         if (expected.empty()) {
             return ::testing::AssertionSuccess();
         }
+        auto plan = qctx->plan();
         auto assertResult = verifyPlan(plan->root(), expected);
         if (!assertResult) {
             return assertResult;

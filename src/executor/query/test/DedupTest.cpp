@@ -21,37 +21,34 @@ public:
     }
 };
 
-#define DEDUP_RESUTL_CHECK(inputName, outputName, sentence, expected)          \
-    do {                                                                       \
-        auto* plan = qctx_->plan();                                            \
-        auto yieldSentence = getYieldSentence(sentence);                       \
-        auto* dedupNode = Dedup::make(plan, nullptr);                          \
-        dedupNode->setInputVar(inputName);                                     \
-        dedupNode->setOutputVar(outputName);                                   \
-        auto dedupExec =                                                       \
-            std::make_unique<DedupExecutor>(dedupNode, qctx_.get());           \
-        if (!expected.colNames.empty()) {                                      \
-            EXPECT_TRUE(dedupExec->execute().get().ok());                      \
-        } else {                                                               \
-            EXPECT_FALSE(dedupExec->execute().get().ok());                     \
-            return;                                                            \
-        }                                                                      \
-        auto& dedupResult = qctx_->ectx()->getResult(dedupNode->varName());    \
-        EXPECT_EQ(dedupResult.state(), Result::State::kSuccess);               \
-                                                                               \
-        dedupNode->setInputVar(outputName);                                    \
-        auto* project =                                                        \
-            Project::make(plan, nullptr, yieldSentence->yieldColumns());       \
-        project->setInputVar(dedupNode->varName());                            \
-        auto colNames = expected.colNames;                                     \
-        project->setColNames(std::move(colNames));                             \
-                                                                               \
-        auto proExe = std::make_unique<ProjectExecutor>(project, qctx_.get()); \
-        EXPECT_TRUE(proExe->execute().get().ok());                             \
-        auto& proSesult = qctx_->ectx()->getResult(project->varName());        \
-                                                                               \
-        EXPECT_EQ(proSesult.value().getDataSet(), expected);                   \
-        EXPECT_EQ(proSesult.state(), Result::State::kSuccess);                 \
+#define DEDUP_RESUTL_CHECK(inputName, outputName, sentence, expected)                              \
+    do {                                                                                           \
+        auto yieldSentence = getYieldSentence(sentence);                                           \
+        auto* dedupNode = Dedup::make(qctx_.get(), nullptr);                                       \
+        dedupNode->setInputVar(inputName);                                                         \
+        dedupNode->setOutputVar(outputName);                                                       \
+        auto dedupExec = std::make_unique<DedupExecutor>(dedupNode, qctx_.get());                  \
+        if (!expected.colNames.empty()) {                                                          \
+            EXPECT_TRUE(dedupExec->execute().get().ok());                                          \
+        } else {                                                                                   \
+            EXPECT_FALSE(dedupExec->execute().get().ok());                                         \
+            return;                                                                                \
+        }                                                                                          \
+        auto& dedupResult = qctx_->ectx()->getResult(dedupNode->varName());                        \
+        EXPECT_EQ(dedupResult.state(), Result::State::kSuccess);                                   \
+                                                                                                   \
+        dedupNode->setInputVar(outputName);                                                        \
+        auto* project = Project::make(qctx_.get(), nullptr, yieldSentence->yieldColumns());        \
+        project->setInputVar(dedupNode->varName());                                                \
+        auto colNames = expected.colNames;                                                         \
+        project->setColNames(std::move(colNames));                                                 \
+                                                                                                   \
+        auto proExe = std::make_unique<ProjectExecutor>(project, qctx_.get());                     \
+        EXPECT_TRUE(proExe->execute().get().ok());                                                 \
+        auto& proSesult = qctx_->ectx()->getResult(project->varName());                            \
+                                                                                                   \
+        EXPECT_EQ(proSesult.value().getDataSet(), expected);                                       \
+        EXPECT_EQ(proSesult.state(), Result::State::kSuccess);                                     \
     } while (false)
 
 TEST_F(DedupTest, TestSequential) {

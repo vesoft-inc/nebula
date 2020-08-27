@@ -7,47 +7,47 @@
 #include <gtest/gtest.h>
 
 #include "context/QueryContext.h"
-#include "planner/Query.h"
-#include "executor/query/SortExecutor.h"
 #include "executor/query/ProjectExecutor.h"
+#include "executor/query/SortExecutor.h"
 #include "executor/query/test/QueryTestBase.h"
+#include "planner/Logic.h"
+#include "planner/Query.h"
 
 namespace nebula {
 namespace graph {
-class SortTest : public QueryTestBase {
-};
 
-#define SORT_RESUTL_CHECK(input_name, outputName, multi, factors, expected)           \
-    do {                                                                              \
-        auto* plan = qctx_->plan();                                                   \
-        auto* sortNode = Sort::make(plan, nullptr, factors);                          \
-        sortNode->setInputVar(input_name);                                            \
-        sortNode->setOutputVar(outputName);                                           \
-        auto sortExec = std::make_unique<SortExecutor>(sortNode, qctx_.get());        \
-        EXPECT_TRUE(sortExec->execute().get().ok());                                  \
-        auto& sortResult = qctx_->ectx()->getResult(sortNode->varName());             \
-        EXPECT_EQ(sortResult.state(), Result::State::kSuccess);                       \
-        std::string sentence;                                                         \
-        std::vector<std::string> colNames;                                            \
-        if (multi) {                                                                  \
-            sentence = "YIELD $-.v_age AS age, $-.e_start_year AS start_year";        \
-            colNames.emplace_back("age");                                             \
-            colNames.emplace_back("start_year");                                      \
-        } else {                                                                      \
-            sentence = "YIELD $-.v_age AS age";                                       \
-            colNames.emplace_back("age");                                             \
-        }                                                                             \
-        auto yieldSentence = getYieldSentence(sentence);                              \
-        auto* project = Project::make(plan, nullptr, yieldSentence->yieldColumns());  \
-        project->setInputVar(sortNode->varName());                                    \
-        project->setColNames(std::move(colNames));                                    \
-        auto proExe = std::make_unique<ProjectExecutor>(project, qctx_.get());        \
-        EXPECT_TRUE(proExe->execute().get().ok());                                    \
-        auto& proResult = qctx_->ectx()->getResult(project->varName());               \
-        EXPECT_EQ(proResult.value().getDataSet(), expected);                          \
-        EXPECT_EQ(proResult.state(), Result::State::kSuccess);                        \
+class SortTest : public QueryTestBase {};
+
+#define SORT_RESUTL_CHECK(input_name, outputName, multi, factors, expected)                        \
+    do {                                                                                           \
+        auto start = StartNode::make(qctx_.get());                                                 \
+        auto* sortNode = Sort::make(qctx_.get(), start, factors);                                  \
+        sortNode->setInputVar(input_name);                                                         \
+        sortNode->setOutputVar(outputName);                                                        \
+        auto sortExec = Executor::create(sortNode, qctx_.get());                                   \
+        EXPECT_TRUE(sortExec->execute().get().ok());                                               \
+        auto& sortResult = qctx_->ectx()->getResult(sortNode->varName());                          \
+        EXPECT_EQ(sortResult.state(), Result::State::kSuccess);                                    \
+        std::string sentence;                                                                      \
+        std::vector<std::string> colNames;                                                         \
+        if (multi) {                                                                               \
+            sentence = "YIELD $-.v_age AS age, $-.e_start_year AS start_year";                     \
+            colNames.emplace_back("age");                                                          \
+            colNames.emplace_back("start_year");                                                   \
+        } else {                                                                                   \
+            sentence = "YIELD $-.v_age AS age";                                                    \
+            colNames.emplace_back("age");                                                          \
+        }                                                                                          \
+        auto yieldSentence = getYieldSentence(sentence);                                           \
+        auto* project = Project::make(qctx_.get(), start, yieldSentence->yieldColumns());          \
+        project->setInputVar(sortNode->varName());                                                 \
+        project->setColNames(std::move(colNames));                                                 \
+        auto proExe = Executor::create(project, qctx_.get());                                      \
+        EXPECT_TRUE(proExe->execute().get().ok());                                                 \
+        auto& proResult = qctx_->ectx()->getResult(project->varName());                            \
+        EXPECT_EQ(proResult.value().getDataSet(), expected);                                       \
+        EXPECT_EQ(proResult.state(), Result::State::kSuccess);                                     \
     } while (false)
-
 
 TEST_F(SortTest, sortOneColAsc) {
     DataSet expected({"age"});
@@ -130,5 +130,5 @@ TEST_F(SortTest, sortTwoColDesDes_union) {
     factors.emplace_back(std::make_pair("e_start_year", OrderFactor::OrderType::DESCEND));
     SORT_RESUTL_CHECK("union_sequential", "union_sort_two_cols_des_des", true, factors, expected);
 }
-}  // namespace graph
-}  // namespace nebula
+}   // namespace graph
+}   // namespace nebula

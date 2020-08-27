@@ -17,8 +17,8 @@ std::unique_ptr<cpp2::PlanNodeDescription> BinarySelect::explain() const {
     return desc;
 }
 
-Loop::Loop(ExecutionPlan* plan, PlanNode* input, PlanNode* body, Expression* condition)
-    : BinarySelect(plan, Kind::kLoop, input, condition), body_(body) {}
+Loop::Loop(int64_t id, PlanNode* input, PlanNode* body, Expression* condition)
+    : BinarySelect(id, Kind::kLoop, input, condition), body_(body) {}
 
 }   // namespace graph
 }   // namespace nebula

@@ -28,12 +28,9 @@ Status FetchEdgesValidator::validateImpl() {
 
 Status FetchEdgesValidator::toPlan() {
     // Start [-> some input] -> GetEdges [-> Project] [-> Dedup] [-> next stage] -> End
-
-    auto *plan = qctx_->plan();
-
     std::string edgeKeysVar = (srcRef_ == nullptr ? buildConstantInput() : buildRuntimeInput());
 
-    auto *getEdgesNode = GetEdges::make(plan,
+    auto *getEdgesNode = GetEdges::make(qctx_,
                                         nullptr,
                                         spaceId_,
                                         src_,
@@ -53,14 +50,14 @@ Status FetchEdgesValidator::toPlan() {
     PlanNode *current = getEdgesNode;
 
     if (withProject_) {
-        auto *projectNode = Project::make(plan, current, newYield_->yields());
+        auto *projectNode = Project::make(qctx_, current, newYield_->yields());
         projectNode->setInputVar(current->varName());
         projectNode->setColNames(colNames_);
         current = projectNode;
     }
     // Project select the properties then dedup
     if (dedup_) {
-        auto *dedupNode = Dedup::make(plan, current);
+        auto *dedupNode = Dedup::make(qctx_, current);
         dedupNode->setInputVar(current->varName());
         dedupNode->setColNames(colNames_);
         current = dedupNode;
@@ -249,25 +246,25 @@ const Expression *FetchEdgesValidator::findInvalidYieldExpression(const Expressi
 
 // TODO(shylock) optimize dedup input when distinct given
 std::string FetchEdgesValidator::buildConstantInput() {
-    auto plan = qctx_->plan();
+    auto pool = qctx_->objPool();
     auto input = vctx_->anonVarGen()->getVar();
     qctx_->ectx()->setResult(input, ResultBuilder().value(Value(std::move(edgeKeys_))).finish());
 
-    src_ = plan->makeAndSave<VariablePropertyExpression>(new std::string(input),
-                                                         new std::string(kSrc));
-    type_ = plan->makeAndSave<VariablePropertyExpression>(new std::string(input),
-                                                          new std::string(kType));
-    rank_ = plan->makeAndSave<VariablePropertyExpression>(new std::string(input),
-                                                          new std::string(kRank));
-    dst_ = plan->makeAndSave<VariablePropertyExpression>(new std::string(input),
-                                                         new std::string(kDst));
+    src_ = pool->makeAndAdd<VariablePropertyExpression>(new std::string(input),
+                                                        new std::string(kSrc));
+    type_ = pool->makeAndAdd<VariablePropertyExpression>(new std::string(input),
+                                                         new std::string(kType));
+    rank_ = pool->makeAndAdd<VariablePropertyExpression>(new std::string(input),
+                                                         new std::string(kRank));
+    dst_ = pool->makeAndAdd<VariablePropertyExpression>(new std::string(input),
+                                                        new std::string(kDst));
     return input;
 }
 
 std::string FetchEdgesValidator::buildRuntimeInput() {
-    auto plan = qctx_->plan();
+    auto pool = qctx_->objPool();
     src_ = DCHECK_NOTNULL(srcRef_);
-    type_ = plan->makeAndSave<ConstantExpression>(edgeType_);
+    type_ = pool->makeAndAdd<ConstantExpression>(edgeType_);
     rank_ = DCHECK_NOTNULL(rankRef_);
     dst_ = DCHECK_NOTNULL(dstRef_);
     return inputVar_;

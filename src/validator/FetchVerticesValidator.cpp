@@ -21,9 +21,7 @@ Status FetchVerticesValidator::validateImpl() {
 Status FetchVerticesValidator::toPlan() {
     // Start [-> some input] -> GetVertices [-> Project] [-> Dedup] [-> next stage] -> End
     std::string vidsVar = (srcRef_ == nullptr ? buildConstantInput() : buildRuntimeInput());
-
-    auto *plan = qctx_->plan();
-    auto *getVerticesNode = GetVertices::make(plan,
+    auto *getVerticesNode = GetVertices::make(qctx_,
                                               nullptr,
                                               spaceId_,
                                               src_,
@@ -40,14 +38,14 @@ Status FetchVerticesValidator::toPlan() {
     PlanNode *current = getVerticesNode;
 
     if (withProject_) {
-        auto *projectNode = Project::make(plan, current, newYieldColumns_);
+        auto *projectNode = Project::make(qctx_, current, newYieldColumns_);
         projectNode->setInputVar(current->varName());
         projectNode->setColNames(colNames_);
         current = projectNode;
     }
     // Project select properties then dedup
     if (dedup_) {
-        auto *dedupNode = Dedup::make(plan, current);
+        auto *dedupNode = Dedup::make(qctx_, current);
         dedupNode->setInputVar(current->varName());
         dedupNode->setColNames(colNames_);
         current = dedupNode;
@@ -244,8 +242,8 @@ std::string FetchVerticesValidator::buildConstantInput() {
     auto input = vctx_->anonVarGen()->getVar();
     qctx_->ectx()->setResult(input, ResultBuilder().value(Value(std::move(srcVids_))).finish());
 
-    src_ = qctx_->plan()->makeAndSave<VariablePropertyExpression>(new std::string(input),
-                                                                  new std::string(kVid));
+    src_ = qctx_->objPool()->makeAndAdd<VariablePropertyExpression>(new std::string(input),
+                                                                    new std::string(kVid));
     return input;
 }
 

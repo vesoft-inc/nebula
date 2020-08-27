@@ -27,8 +27,7 @@ Status InsertVerticesValidator::validateImpl() {
 }
 
 Status InsertVerticesValidator::toPlan() {
-    auto *plan = qctx_->plan();
-    auto doNode = InsertVertices::make(plan,
+    auto doNode = InsertVertices::make(qctx_,
                                        nullptr,
                                        spaceId_,
                                        std::move(vertices_),
@@ -161,8 +160,7 @@ Status InsertEdgesValidator::validateImpl() {
 }
 
 Status InsertEdgesValidator::toPlan() {
-    auto *plan = qctx_->plan();
-    auto doNode = InsertEdges::make(plan,
+    auto doNode = InsertEdges::make(qctx_,
                                     nullptr,
                                     spaceId_,
                                     std::move(edges_),
@@ -332,13 +330,12 @@ std::string DeleteVerticesValidator::buildVIds() {
     auto* vIds = new VariablePropertyExpression(
             new std::string(input),
             new std::string(kVid));
-    qctx_->plan()->saveObject(vIds);
+    qctx_->objPool()->add(vIds);
     vidRef_ = vIds;
     return input;
 }
 
 Status DeleteVerticesValidator::toPlan() {
-    auto plan = qctx_->plan();
     std::string vidVar;
     if (!vertices_.empty() && vidRef_ == nullptr) {
         vidVar = buildVIds();
@@ -356,7 +353,7 @@ Status DeleteVerticesValidator::toPlan() {
                 new EdgeDstIdExpression(new std::string(name)),
                 new EdgeRankExpression(new std::string(name)));
         edgeKeyRef->setType(new EdgeTypeExpression(new std::string(name)));
-        qctx_->plan()->saveObject(edgeKeyRef);
+        qctx_->objPool()->add(edgeKeyRef);
         edgeKeyRefs_.emplace_back(edgeKeyRef);
 
         storage::cpp2::EdgeProp edgeProp;
@@ -376,7 +373,7 @@ Status DeleteVerticesValidator::toPlan() {
     auto edgePropsPtr = std::make_unique<std::vector<storage::cpp2::EdgeProp>>(edgeProps);
     auto statPropsPtr = std::make_unique<std::vector<storage::cpp2::StatProp>>();
     auto exprPtr = std::make_unique<std::vector<storage::cpp2::Expr>>();
-    auto* getNeighbors = GetNeighbors::make(plan,
+    auto* getNeighbors = GetNeighbors::make(qctx_,
                                             nullptr,
                                             spaceId_,
                                             vidRef_,
@@ -389,14 +386,14 @@ Status DeleteVerticesValidator::toPlan() {
     getNeighbors->setInputVar(vidVar);
 
     // create deleteEdges node
-    auto *deNode = DeleteEdges::make(plan,
+    auto *deNode = DeleteEdges::make(qctx_,
                                      getNeighbors,
                                      spaceId_,
                                      std::move(edgeKeyRefs_));
 
     deNode->setInputVar(getNeighbors->varName());
 
-    auto *dvNode = DeleteVertices::make(plan,
+    auto *dvNode = DeleteVertices::make(qctx_,
                                         deNode,
                                         spaceId_,
                                         vidRef_);
@@ -462,7 +459,7 @@ Status DeleteEdgesValidator::buildEdgeKeyRef(const std::vector<EdgeKey*> &edgeKe
     auto* dstIdExpr = new InputPropertyExpression(new std::string(kDst));
     auto* edgeKeyRef = new EdgeKeyRef(srcIdExpr, dstIdExpr, rankExpr);
     edgeKeyRef->setType(typeExpr);
-    qctx_->plan()->saveObject(edgeKeyRef);
+    qctx_->objPool()->add(edgeKeyRef);
 
     edgeKeyRefs_.emplace_back(edgeKeyRef);
     return Status::OK();
@@ -504,8 +501,7 @@ Status DeleteEdgesValidator::checkInput() {
 }
 
 Status DeleteEdgesValidator::toPlan() {
-    auto* plan = qctx_->plan();
-    auto *doNode = DeleteEdges::make(plan,
+    auto *doNode = DeleteEdges::make(qctx_,
                                      nullptr,
                                      vctx_->whichSpace().id,
                                      edgeKeyRefs_);
@@ -772,8 +768,7 @@ Status UpdateVertexValidator::validateImpl() {
 }
 
 Status UpdateVertexValidator::toPlan() {
-    auto* plan = qctx_->plan();
-    auto *update = UpdateVertex::make(plan,
+    auto *update = UpdateVertex::make(qctx_,
                                       nullptr,
                                       spaceId_,
                                       std::move(name_),
@@ -815,8 +810,7 @@ Status UpdateEdgeValidator::validateImpl() {
 }
 
 Status UpdateEdgeValidator::toPlan() {
-    auto* plan = qctx_->plan();
-    auto *outNode = UpdateEdge::make(plan,
+    auto *outNode = UpdateEdge::make(qctx_,
                                      nullptr,
                                      spaceId_,
                                      name_,
@@ -830,7 +824,7 @@ Status UpdateEdgeValidator::toPlan() {
                                      condition_,
                                      {});
 
-    auto *inNode = UpdateEdge::make(plan,
+    auto *inNode = UpdateEdge::make(qctx_,
                                     outNode,
                                     spaceId_,
                                     std::move(name_),

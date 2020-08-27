@@ -149,8 +149,7 @@ protected:
     // use for simple Plan only contain one node
     template <typename Node, typename... Args>
     Status genSingleNodePlan(Args... args) {
-        auto* plan = qctx_->plan();
-        auto *doNode = Node::make(plan, nullptr, std::forward<Args>(args)...);
+        auto *doNode = Node::make(qctx_, nullptr, std::forward<Args>(args)...);
         root_ = doNode;
         tail_ = root_;
         return Status::OK();

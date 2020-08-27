@@ -73,7 +73,7 @@ namespace nebula {
 namespace graph {
 
 // static
-Executor *Executor::makeExecutor(const PlanNode *node, QueryContext *qctx) {
+Executor *Executor::create(const PlanNode *node, QueryContext *qctx) {
     std::unordered_map<int64_t, Executor *> visited;
     return makeExecutor(node, qctx, &visited);
 }

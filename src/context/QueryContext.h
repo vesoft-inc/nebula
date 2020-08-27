@@ -18,6 +18,7 @@
 #include "context/ValidateContext.h"
 #include "parser/SequentialSentences.h"
 #include "service/RequestContext.h"
+#include "util/IdGenerator.h"
 #include "util/ObjectPool.h"
 
 namespace nebula {
@@ -45,32 +46,16 @@ class QueryContext {
 public:
     using RequestContextPtr = std::unique_ptr<RequestContext<cpp2::ExecutionResponse>>;
 
+    QueryContext();
     QueryContext(RequestContextPtr rctx,
                  meta::SchemaManager* sm,
                  storage::GraphStorageClient* storage,
                  meta::MetaClient* metaClient,
-                 CharsetInfo* charsetInfo)
-        : rctx_(std::move(rctx)),
-          sm_(DCHECK_NOTNULL(sm)),
-          storageClient_(DCHECK_NOTNULL(storage)),
-          metaClient_(DCHECK_NOTNULL(metaClient)),
-          charsetInfo_(DCHECK_NOTNULL(charsetInfo)) {
-        objPool_ = std::make_unique<ObjectPool>();
-        ep_ = std::make_unique<ExecutionPlan>(objPool_.get());
-        vctx_ = std::make_unique<ValidateContext>();
-        ectx_ = std::make_unique<ExecutionContext>();
-    }
-
-    QueryContext() {
-        objPool_ = std::make_unique<ObjectPool>();
-        ep_ = std::make_unique<ExecutionPlan>(objPool_.get());
-        vctx_ = std::make_unique<ValidateContext>();
-        ectx_ = std::make_unique<ExecutionContext>();
-    }
+                 CharsetInfo* charsetInfo);
 
     virtual ~QueryContext() = default;
 
-    void setRctx(RequestContextPtr rctx) {
+    void setRCtx(RequestContextPtr rctx) {
         rctx_ = std::move(rctx);
     }
 
@@ -126,6 +111,10 @@ public:
         return objPool_.get();
     }
 
+    int64_t genId() const {
+        return idGen_->id();
+    }
+
     void addProfilingData(int64_t planNodeId, cpp2::ProfilingStats&& profilingStats);
 
     cpp2::PlanDescription* planDescription() const {
@@ -139,6 +128,8 @@ public:
     void fillPlanDescription();
 
 private:
+    void init();
+
     RequestContextPtr                                       rctx_;
     std::unique_ptr<ValidateContext>                        vctx_;
     std::unique_ptr<ExecutionContext>                       ectx_;
@@ -154,6 +145,7 @@ private:
 
     // plan description for explain and profile query
     std::unique_ptr<cpp2::PlanDescription>                  planDescription_;
+    std::unique_ptr<IdGenerator>                            idGen_;
 };
 
 }   // namespace graph

@@ -25,7 +25,7 @@ Scheduler::PassThroughData::PassThroughData(int32_t outputs)
 Scheduler::Scheduler(QueryContext *qctx) : qctx_(DCHECK_NOTNULL(qctx)) {}
 
 folly::Future<Status> Scheduler::schedule() {
-    auto executor = Executor::makeExecutor(qctx_->plan()->root(), qctx_);
+    auto executor = Executor::create(qctx_->plan()->root(), qctx_);
     analyze(executor);
     return doSchedule(executor);
 }

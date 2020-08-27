@@ -30,7 +30,7 @@ Status OrderByValidator::validateImpl() {
 
 Status OrderByValidator::toPlan() {
     auto* plan = qctx_->plan();
-    auto *sortNode = Sort::make(plan, plan->root(), std::move(colOrderTypes_));
+    auto *sortNode = Sort::make(qctx_, plan->root(), std::move(colOrderTypes_));
     std::vector<std::string> colNames;
     for (auto &col : outputs_) {
         colNames.emplace_back(col.first);

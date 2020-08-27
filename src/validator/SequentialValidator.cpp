@@ -61,13 +61,12 @@ Status SequentialValidator::validateImpl() {
 }
 
 Status SequentialValidator::toPlan() {
-    auto* plan = qctx_->plan();
     root_ = validators_.back()->root();
     ifBuildDataCollectForRoot(root_);
     for (auto iter = validators_.begin(); iter < validators_.end() - 1; ++iter) {
         NG_RETURN_IF_ERROR((iter + 1)->get()->appendPlan(iter->get()->root()));
     }
-    tail_ = StartNode::make(plan);
+    tail_ = StartNode::make(qctx_);
     NG_RETURN_IF_ERROR(validators_.front()->appendPlan(tail_));
     VLOG(1) << "root: " << root_->kind() << " tail: " << tail_->kind();
     return Status::OK();
@@ -89,8 +88,8 @@ void SequentialValidator::ifBuildDataCollectForRoot(PlanNode* root) {
         case PlanNode::Kind::kUnion:
         case PlanNode::Kind::kIntersect:
         case PlanNode::Kind::kMinus: {
-            auto* dc = DataCollect::make(qctx_->plan(), root,
-                DataCollect::CollectKind::kRowBasedMove, {root->varName()});
+            auto* dc = DataCollect::make(
+                qctx_, root, DataCollect::CollectKind::kRowBasedMove, {root->varName()});
             dc->setColNames(root->colNames());
             root_ = dc;
             break;

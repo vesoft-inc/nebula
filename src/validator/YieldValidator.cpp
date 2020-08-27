@@ -178,11 +178,10 @@ Status YieldValidator::validateWhere(const WhereClause *clause) {
 
 Status YieldValidator::toPlan() {
     auto yield = static_cast<const YieldSentence *>(sentence_);
-    auto plan = qctx_->plan();
 
     Filter *filter = nullptr;
     if (yield->where()) {
-        filter = Filter::make(plan, nullptr, yield->where()->filter());
+        filter = Filter::make(qctx_, nullptr, yield->where()->filter());
         std::vector<std::string> colNames(inputs_.size());
         std::transform(
             inputs_.cbegin(), inputs_.cend(), colNames.begin(), [](auto &in) { return in.first; });
@@ -191,10 +190,10 @@ Status YieldValidator::toPlan() {
 
     SingleInputNode *dedupDep = nullptr;
     if (!hasAggFun_) {
-        dedupDep = Project::make(plan, filter, columns_);
+        dedupDep = Project::make(qctx_, filter, columns_);
     } else {
         // We do not use group items later, so move it is safe
-        dedupDep = Aggregate::make(plan, filter, {}, std::move(groupItems_));
+        dedupDep = Aggregate::make(qctx_, filter, {}, std::move(groupItems_));
     }
 
     dedupDep->setColNames(std::move(outputColumnNames_));
@@ -212,7 +211,7 @@ Status YieldValidator::toPlan() {
     }
 
     if (yield->yield()->isDistinct()) {
-        auto dedup = Dedup::make(plan, dedupDep);
+        auto dedup = Dedup::make(qctx_, dedupDep);
         dedup->setColNames(dedupDep->colNames());
         dedup->setInputVar(dedupDep->varName());
         root_ = dedup;

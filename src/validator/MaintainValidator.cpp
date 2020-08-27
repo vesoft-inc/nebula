@@ -51,7 +51,7 @@ Status CreateTagValidator::validateImpl() {
 
 Status CreateTagValidator::toPlan() {
     auto *plan = qctx_->plan();
-    auto doNode = CreateTag::make(plan,
+    auto doNode = CreateTag::make(qctx_,
             plan->root(), std::move(name_), std::move(schema_), ifNotExist_);
     root_ = doNode;
     tail_ = root_;
@@ -94,7 +94,7 @@ Status CreateEdgeValidator::validateImpl() {
 
 Status CreateEdgeValidator::toPlan() {
     auto *plan = qctx_->plan();
-    auto doNode = CreateEdge::make(plan,
+    auto doNode = CreateEdge::make(qctx_,
             plan->root(), std::move(name_), std::move(schema_), ifNotExist_);
     root_ = doNode;
     tail_ = root_;
@@ -108,8 +108,7 @@ Status DescTagValidator::validateImpl() {
 Status DescTagValidator::toPlan() {
     auto sentence = static_cast<DescribeTagSentence*>(sentence_);
     auto name = *sentence->name();
-    auto *plan = qctx_->plan();
-    auto doNode = DescTag::make(plan, nullptr, std::move(name));
+    auto doNode = DescTag::make(qctx_, nullptr, std::move(name));
     root_ = doNode;
     tail_ = root_;
     return Status::OK();
@@ -122,8 +121,7 @@ Status DescEdgeValidator::validateImpl() {
 Status DescEdgeValidator::toPlan() {
     auto sentence = static_cast<DescribeEdgeSentence*>(sentence_);
     auto name = *sentence->name();
-    auto *plan = qctx_->plan();
-    auto doNode = DescEdge::make(plan, nullptr, std::move(name));
+    auto doNode = DescEdge::make(qctx_, nullptr, std::move(name));
     root_ = doNode;
     tail_ = root_;
     return Status::OK();
@@ -202,8 +200,7 @@ Status AlterTagValidator::validateImpl() {
 }
 
 Status AlterTagValidator::toPlan() {
-    auto* plan = qctx_->plan();
-    auto *doNode = AlterTag::make(plan,
+    auto *doNode = AlterTag::make(qctx_,
                                   nullptr,
                                   vctx_->whichSpace().id,
                                   std::move(name_),
@@ -221,8 +218,7 @@ Status AlterEdgeValidator::validateImpl() {
 }
 
 Status AlterEdgeValidator::toPlan() {
-    auto* plan = qctx_->plan();
-    auto *doNode = AlterEdge::make(plan,
+    auto *doNode = AlterEdge::make(qctx_,
                                    nullptr,
                                    vctx_->whichSpace().id,
                                    std::move(name_),
@@ -238,8 +234,7 @@ Status ShowTagsValidator::validateImpl() {
 }
 
 Status ShowTagsValidator::toPlan() {
-    auto* plan = qctx_->plan();
-    auto *doNode = ShowTags::make(plan, nullptr);
+    auto *doNode = ShowTags::make(qctx_, nullptr);
     root_ = doNode;
     tail_ = root_;
     return Status::OK();
@@ -250,8 +245,7 @@ Status ShowEdgesValidator::validateImpl() {
 }
 
 Status ShowEdgesValidator::toPlan() {
-    auto* plan = qctx_->plan();
-    auto *doNode = ShowEdges::make(plan, nullptr);
+    auto *doNode = ShowEdges::make(qctx_, nullptr);
     root_ = doNode;
     tail_ = root_;
     return Status::OK();
@@ -263,8 +257,7 @@ Status ShowCreateTagValidator::validateImpl() {
 
 Status ShowCreateTagValidator::toPlan() {
     auto sentence = static_cast<ShowCreateTagSentence*>(sentence_);
-    auto* plan = qctx_->plan();
-    auto *doNode = ShowCreateTag::make(plan,
+    auto *doNode = ShowCreateTag::make(qctx_,
                                        nullptr,
                                       *sentence->name());
     root_ = doNode;
@@ -278,8 +271,7 @@ Status ShowCreateEdgeValidator::validateImpl() {
 
 Status ShowCreateEdgeValidator::toPlan() {
     auto sentence = static_cast<ShowCreateEdgeSentence*>(sentence_);
-    auto* plan = qctx_->plan();
-    auto *doNode = ShowCreateEdge::make(plan,
+    auto *doNode = ShowCreateEdge::make(qctx_,
                                         nullptr,
                                        *sentence->name());
     root_ = doNode;
@@ -293,8 +285,7 @@ Status DropTagValidator::validateImpl() {
 
 Status DropTagValidator::toPlan() {
     auto sentence = static_cast<DropTagSentence*>(sentence_);
-    auto* plan = qctx_->plan();
-    auto *doNode = DropTag::make(plan,
+    auto *doNode = DropTag::make(qctx_,
                                  nullptr,
                                 *sentence->name(),
                                  sentence->isIfExists());
@@ -309,8 +300,7 @@ Status DropEdgeValidator::validateImpl() {
 
 Status DropEdgeValidator::toPlan() {
     auto sentence = static_cast<DropEdgeSentence*>(sentence_);
-    auto* plan = qctx_->plan();
-    auto *doNode = DropEdge::make(plan,
+    auto *doNode = DropEdge::make(qctx_,
                                   nullptr,
                                  *sentence->name(),
                                   sentence->isIfExists());

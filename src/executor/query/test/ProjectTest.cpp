@@ -7,16 +7,19 @@
 #include <gtest/gtest.h>
 
 #include "context/QueryContext.h"
-#include "planner/Query.h"
 #include "executor/query/ProjectExecutor.h"
 #include "executor/query/test/QueryTestBase.h"
+#include "planner/Logic.h"
+#include "planner/Query.h"
 
 namespace nebula {
 namespace graph {
+
 class ProjectTest : public QueryTestBase {
 protected:
-    static void SetUpTestCase() {
+    void SetUp() override {
         qctx_ = std::make_unique<QueryContext>();
+        start_ = StartNode::make(qctx_.get());
 
         {
             DataSet ds;
@@ -41,21 +44,19 @@ protected:
     }
 
 protected:
-    static std::unique_ptr<QueryContext> qctx_;
+    std::unique_ptr<QueryContext> qctx_;
+    StartNode* start_;
 };
-
-std::unique_ptr<QueryContext> ProjectTest::qctx_;
 
 TEST_F(ProjectTest, Project1Col) {
     std::string input = "input_project";
     auto yieldColumns = getYieldColumns("YIELD $input_project.vid AS vid");
 
-    auto* plan = qctx_->plan();
-    auto* project = Project::make(plan, nullptr, yieldColumns);
+    auto* project = Project::make(qctx_.get(), start_, yieldColumns);
     project->setInputVar(input);
     project->setColNames(std::vector<std::string>{"vid"});
 
-    auto proExe = std::make_unique<ProjectExecutor>(project, qctx_.get());
+    auto proExe = Executor::create(project, qctx_.get());
     auto future = proExe->execute();
     auto status = std::move(future).get();
     EXPECT_TRUE(status.ok());
@@ -76,12 +77,11 @@ TEST_F(ProjectTest, Project2Col) {
     std::string input = "input_project";
     auto yieldColumns = getYieldColumns(
             "YIELD $input_project.vid AS vid, $input_project.col2 AS num");
-    auto* plan = qctx_->plan();
-    auto* project = Project::make(plan, nullptr, yieldColumns);
+    auto* project = Project::make(qctx_.get(), start_, yieldColumns);
     project->setInputVar(input);
     project->setColNames(std::vector<std::string>{"vid", "num"});
 
-    auto proExe = std::make_unique<ProjectExecutor>(project, qctx_.get());
+    auto proExe = Executor::create(project, qctx_.get());
     auto future = proExe->execute();
     auto status = std::move(future).get();
     EXPECT_TRUE(status.ok());
@@ -102,12 +102,11 @@ TEST_F(ProjectTest, Project2Col) {
 TEST_F(ProjectTest, EmptyInput) {
     std::string input = "empty";
     auto yieldColumns = getYieldColumns("YIELD $input_project.vid AS vid");
-    auto* plan = qctx_->plan();
-    auto* project = Project::make(plan, nullptr, std::move(yieldColumns));
+    auto* project = Project::make(qctx_.get(), start_, std::move(yieldColumns));
     project->setInputVar(input);
     project->setColNames(std::vector<std::string>{"vid"});
 
-    auto proExe = std::make_unique<ProjectExecutor>(project, qctx_.get());
+    auto proExe = Executor::create(project, qctx_.get());
     auto future = proExe->execute();
     auto status = std::move(future).get();
     EXPECT_TRUE(status.ok());

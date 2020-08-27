@@ -6,33 +6,18 @@
 
 #include "planner/ExecutionPlan.h"
 
-#include <folly/String.h>
-
 #include "common/interface/gen-cpp2/graph_types.h"
-#include "executor/Executor.h"
 #include "planner/Logic.h"
 #include "planner/PlanNode.h"
 #include "planner/Query.h"
-#include "scheduler/Scheduler.h"
 #include "util/IdGenerator.h"
-#include "util/ObjectPool.h"
-
-using folly::stringPrintf;
 
 namespace nebula {
 namespace graph {
 
-ExecutionPlan::ExecutionPlan(ObjectPool* objectPool)
-    : id_(EPIdGenerator::instance().id()),
-      objPool_(objectPool),
-      nodeIdGen_(std::make_unique<IdGenerator>(0)) {}
+ExecutionPlan::ExecutionPlan() : id_(EPIdGenerator::instance().id()) {}
 
 ExecutionPlan::~ExecutionPlan() {}
-
-PlanNode* ExecutionPlan::addPlanNode(PlanNode* node) {
-    node->setId(nodeIdGen_->id());
-    return objPool_->add(node);
-}
 
 static size_t makePlanNodeDesc(const PlanNode* node, cpp2::PlanDescription* planDesc) {
     auto found = planDesc->node_index_map.find(node->id());

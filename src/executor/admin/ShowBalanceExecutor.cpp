@@ -17,7 +17,7 @@ folly::Future<Status> ShowBalanceExecutor::execute() {
 
 folly::Future<Status> ShowBalanceExecutor::showBalance() {
     auto *sbNode = asNode<ShowBalance>(node());
-    return qctx()->getMetaClient()->showBalance(sbNode->id())
+    return qctx()->getMetaClient()->showBalance(sbNode->jobId())
         .via(runner())
         .then([this](StatusOr<std::vector<meta::cpp2::BalanceTask>> resp) {
             SCOPED_TIMER(&execTime_);

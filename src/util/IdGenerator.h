@@ -11,6 +11,7 @@
 
 namespace nebula {
 namespace graph {
+
 class IdGenerator {
 public:
     explicit IdGenerator(int64_t init = 0) : counter_(init) {
@@ -42,6 +43,7 @@ private:
 private:
     static EPIdGenerator instance_;
 };
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // PLANNER_IDGENERATOR_H_

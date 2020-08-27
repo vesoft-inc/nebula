@@ -143,9 +143,7 @@ Status GroupByValidator::validateGroup(const GroupClause *groupClause) {
 }
 
 Status GroupByValidator::toPlan() {
-    auto *plan = qctx_->plan();
-    auto *groupBy =
-        Aggregate::make(plan, nullptr, std::move(groupKeys_), std::move(groupItems_));
+    auto *groupBy = Aggregate::make(qctx_, nullptr, std::move(groupKeys_), std::move(groupItems_));
     groupBy->setColNames(std::vector<std::string>(outputColumnNames_));
     root_ = groupBy;
     tail_ = groupBy;

@@ -15,7 +15,7 @@ namespace nebula {
 namespace graph {
 class DataJoinTest : public QueryTestBase {
 protected:
-    static void SetUpTestCase() {
+    void SetUp() override {
         qctx_ = std::make_unique<QueryContext>();
         {
             DataSet ds;
@@ -71,14 +71,11 @@ protected:
         }
     }
 
-    static void testJoin(std::string left, std::string right,
-                         DataSet& expected, int64_t line);
+    void testJoin(std::string left, std::string right, DataSet& expected, int64_t line);
 
-   protected:
-    static std::unique_ptr<QueryContext> qctx_;
+protected:
+    std::unique_ptr<QueryContext> qctx_;
 };
-
-std::unique_ptr<QueryContext> DataJoinTest::qctx_;
 
 void DataJoinTest::testJoin(std::string left, std::string right,
                             DataSet& expected, int64_t line) {
@@ -89,9 +86,8 @@ void DataJoinTest::testJoin(std::string left, std::string right,
                                      new std::string("_vid"));
     std::vector<Expression*> probeKeys = {&probe};
 
-    auto* plan = qctx_->plan();
     auto* dataJoin =
-        DataJoin::make(plan, nullptr, {left, 0}, {right, 0}, std::move(hashKeys),
+        DataJoin::make(qctx_.get(), nullptr, {left, 0}, {right, 0}, std::move(hashKeys),
                        std::move(probeKeys));
     dataJoin->setColNames(std::vector<std::string>{
         "src", "dst", kVid, "tag_prop", "edge_prop", kDst});
@@ -161,9 +157,8 @@ TEST_F(DataJoinTest, JoinTwice) {
                                         new std::string("_vid"));
         std::vector<Expression*> probeKeys = {&probe};
 
-        auto* plan = qctx_->plan();
         auto* dataJoin =
-            DataJoin::make(plan, nullptr, {left, 0}, {right, 0}, std::move(hashKeys),
+            DataJoin::make(qctx_.get(), nullptr, {left, 0}, {right, 0}, std::move(hashKeys),
                         std::move(probeKeys));
         dataJoin->setColNames(std::vector<std::string>{
             "src", "dst", kVid, "tag_prop", "edge_prop", kDst});
@@ -184,9 +179,8 @@ TEST_F(DataJoinTest, JoinTwice) {
                                     new std::string("col1"));
     std::vector<Expression*> probeKeys = {&probe};
 
-    auto* plan = qctx_->plan();
     auto* dataJoin =
-        DataJoin::make(plan, nullptr, {left, 0}, {right, 0}, std::move(hashKeys),
+        DataJoin::make(qctx_.get(), nullptr, {left, 0}, {right, 0}, std::move(hashKeys),
                     std::move(probeKeys));
     dataJoin->setColNames(std::vector<std::string>{
         "src", "dst", kVid, "tag_prop", "edge_prop", kDst, "col1"});

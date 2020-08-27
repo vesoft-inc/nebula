@@ -14,7 +14,7 @@ namespace nebula {
 namespace graph {
 class GetNeighborsTest : public testing::Test {
 protected:
-    static void SetUpTestCase() {
+    void SetUp() override {
         qctx_ = std::make_unique<QueryContext>();
         {
             DataSet ds;
@@ -32,24 +32,23 @@ protected:
     }
 
 protected:
-    static std::unique_ptr<QueryContext> qctx_;
+    std::unique_ptr<QueryContext> qctx_;
 };
 
-std::unique_ptr<QueryContext> GetNeighborsTest::qctx_;
 
 TEST_F(GetNeighborsTest, BuildRequestDataSet) {
-    auto* plan = qctx_->plan();
+    auto* pool = qctx_->objPool();
     std::vector<EdgeType> edgeTypes;
     auto vertexProps = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
     auto edgeProps = std::make_unique<std::vector<storage::cpp2::EdgeProp>>();
     auto statProps = std::make_unique<std::vector<storage::cpp2::StatProp>>();
     auto exprs = std::make_unique<std::vector<storage::cpp2::Expr>>();
-    auto* vids = new InputPropertyExpression(new std::string("id"));
+    auto* vids = pool->add(new InputPropertyExpression(new std::string("id")));
     auto* gn = GetNeighbors::make(
-            plan,
+            qctx_.get(),
             nullptr,
             0,
-            plan->saveObject(vids),
+            vids,
             std::move(edgeTypes),
             storage::cpp2::EdgeDirection::BOTH,
             std::move(vertexProps),

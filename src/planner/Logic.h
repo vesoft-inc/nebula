@@ -7,6 +7,7 @@
 #ifndef PLANNER_LOGIC_H_
 #define PLANNER_LOGIC_H_
 
+#include "context/QueryContext.h"
 #include "planner/PlanNode.h"
 
 namespace nebula {
@@ -14,12 +15,12 @@ namespace graph {
 
 class StartNode final : public PlanNode {
 public:
-    static StartNode* make(ExecutionPlan* plan) {
-        return new StartNode(plan);
+    static StartNode* make(QueryContext* qctx) {
+        return qctx->objPool()->add(new StartNode(qctx->genId()));
     }
 
 private:
-    explicit StartNode(ExecutionPlan* plan) : PlanNode(plan, Kind::kStart) {}
+    explicit StartNode(int64_t id) : PlanNode(id, Kind::kStart) {}
 };
 
 class BinarySelect : public SingleInputNode {
@@ -31,20 +32,22 @@ public:
     std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
 protected:
-    BinarySelect(ExecutionPlan* plan, Kind kind, PlanNode* input, Expression* condition)
-        : SingleInputNode(plan, kind, input), condition_(condition) {}
+    BinarySelect(int64_t id, Kind kind, PlanNode* input, Expression* condition)
+        : SingleInputNode(id, kind, input), condition_(condition) {}
 
     Expression* condition_{nullptr};
 };
 
 class Select final : public BinarySelect {
 public:
-    static Select* make(ExecutionPlan* plan,
+    static Select* make(QueryContext* qctx,
                         PlanNode* input,
                         PlanNode* ifBranch,
                         PlanNode* elseBranch,
+
                         Expression* condition) {
-        return new Select(plan, input, ifBranch, elseBranch, condition);
+        return qctx->objPool()->add(
+            new Select(qctx->genId(), input, ifBranch, elseBranch, condition));
     }
 
     void setIf(PlanNode* ifBranch) {
@@ -64,12 +67,12 @@ public:
     }
 
 private:
-    Select(ExecutionPlan* plan,
+    Select(int64_t id,
            PlanNode* input,
            PlanNode* ifBranch,
            PlanNode* elseBranch,
            Expression* condition)
-        : BinarySelect(plan, Kind::kSelect, input, condition), if_(ifBranch), else_(elseBranch) {}
+        : BinarySelect(id, Kind::kSelect, input, condition), if_(ifBranch), else_(elseBranch) {}
 
 private:
     PlanNode* if_{nullptr};
@@ -78,8 +81,8 @@ private:
 
 class Loop final : public BinarySelect {
 public:
-    static Loop* make(ExecutionPlan* plan, PlanNode* input, PlanNode* body, Expression* condition) {
-        return new Loop(plan, input, body, condition);
+    static Loop* make(QueryContext* qctx, PlanNode* input, PlanNode* body, Expression* condition) {
+        return qctx->objPool()->add(new Loop(qctx->genId(), input, body, condition));
     }
 
     void setBody(PlanNode* body) {
@@ -91,7 +94,7 @@ public:
     }
 
 private:
-    Loop(ExecutionPlan* plan, PlanNode* input, PlanNode* body, Expression* condition);
+    Loop(int64_t id, PlanNode* input, PlanNode* body, Expression* condition);
 
     PlanNode* body_{nullptr};
 };
@@ -101,13 +104,12 @@ private:
  */
 class PassThroughNode final : public SingleInputNode {
 public:
-    static PassThroughNode* make(ExecutionPlan* plan, PlanNode* input) {
-        return new PassThroughNode(input, plan);
+    static PassThroughNode* make(QueryContext* qctx, PlanNode* input) {
+        return qctx->objPool()->add(new PassThroughNode(qctx->genId(), input));
     }
 
 private:
-    PassThroughNode(PlanNode* input, ExecutionPlan* plan)
-        : SingleInputNode(plan, Kind::kPassThrough, input) {}
+    PassThroughNode(int64_t id, PlanNode* input) : SingleInputNode(id, Kind::kPassThrough, input) {}
 };
 
 }   // namespace graph

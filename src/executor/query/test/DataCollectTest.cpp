@@ -14,7 +14,7 @@ namespace nebula {
 namespace graph {
 class DataCollectTest : public testing::Test {
 protected:
-    static void SetUpTestCase() {
+    void SetUp() override {
         qctx_ = std::make_unique<QueryContext>();
         {
             DataSet ds1;
@@ -121,14 +121,11 @@ protected:
     }
 
 protected:
-    static std::unique_ptr<QueryContext> qctx_;
+    std::unique_ptr<QueryContext> qctx_;
 };
 
-std::unique_ptr<QueryContext> DataCollectTest::qctx_;
-
 TEST_F(DataCollectTest, CollectSubgraph) {
-    auto* plan = qctx_->plan();
-    auto* dc = DataCollect::make(plan, nullptr,
+    auto* dc = DataCollect::make(qctx_.get(), nullptr,
             DataCollect::CollectKind::kSubgraph, {"input_datasets"});
     dc->setColNames(std::vector<std::string>{"_vertices", "_edges"});
 
@@ -179,8 +176,7 @@ TEST_F(DataCollectTest, CollectSubgraph) {
 }
 
 TEST_F(DataCollectTest, RowBasedMove) {
-    auto* plan = qctx_->plan();
-    auto* dc = DataCollect::make(plan, nullptr,
+    auto* dc = DataCollect::make(qctx_.get(), nullptr,
             DataCollect::CollectKind::kRowBasedMove, {"input_sequential"});
     dc->setColNames(std::vector<std::string>{"col1", "col2"});
 
@@ -199,8 +195,7 @@ TEST_F(DataCollectTest, RowBasedMove) {
 }
 
 TEST_F(DataCollectTest, EmptyResult) {
-    auto* plan = qctx_->plan();
-    auto* dc = DataCollect::make(plan, nullptr,
+    auto* dc = DataCollect::make(qctx_.get(), nullptr,
             DataCollect::CollectKind::kSubgraph, {"empty_get_neighbors"});
     dc->setColNames(std::vector<std::string>{"_vertices", "_edges"});
 

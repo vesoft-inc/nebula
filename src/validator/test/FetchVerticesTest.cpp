@@ -13,39 +13,43 @@
 namespace nebula {
 namespace graph {
 
-class FetchVerticesValidatorTest : public ValidatorTestBase {};
+class FetchVerticesValidatorTest : public ValidatorTestBase {
+protected:
+    QueryContext *getQCtx(const std::string &query) {
+        auto status = validate(query);
+        EXPECT_TRUE(status);
+        return std::move(status).value();
+    }
+};
 
 TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     auto src = std::make_unique<VariablePropertyExpression>(
         new std::string("_VARNAME_"), new std::string(kVid));
     {
-        auto plan = toPlan("FETCH PROP ON person \"1\"");
+        auto qctx = getQCtx("FETCH PROP ON person \"1\"");
 
-        ExecutionPlan expectedPlan(pool_.get());
-        auto *start = StartNode::make(&expectedPlan);
+        auto *start = StartNode::make(qctx);
 
         auto tagIdResult = schemaMng_->toTagID(1, "person");
         ASSERT_TRUE(tagIdResult.ok());
         auto tagId = tagIdResult.value();
         storage::cpp2::VertexProp prop;
         prop.set_tag(tagId);
-        auto *gv = GetVertices::make(&expectedPlan,
+        auto *gv = GetVertices::make(qctx,
                                      start,
                                      1,
                                      src.get(),
                                      std::vector<storage::cpp2::VertexProp>{std::move(prop)},
                                      {});
         gv->setColNames({kVid, "person.name", "person.age"});
-        expectedPlan.setRoot(gv);
-        auto result = Eq(plan->root(), gv);
+        auto result = Eq(qctx->plan()->root(), gv);
         ASSERT_TRUE(result.ok()) << result;
     }
     // With YIELD
     {
-        auto plan = toPlan("FETCH PROP ON person \"1\" YIELD person.name, person.age");
+        auto qctx = getQCtx("FETCH PROP ON person \"1\" YIELD person.name, person.age");
 
-        ExecutionPlan expectedPlan(pool_.get());
-        auto *start = StartNode::make(&expectedPlan);
+        auto *start = StartNode::make(qctx);
 
         auto tagIdResult = schemaMng_->toTagID(1, "person");
         ASSERT_TRUE(tagIdResult.ok());
@@ -60,7 +64,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
         expr2.set_expr(
             TagPropertyExpression(new std::string("person"), new std::string("age")).encode());
         auto *gv =
-            GetVertices::make(&expectedPlan,
+            GetVertices::make(qctx,
                               start,
                               1,
                               src.get(),
@@ -76,19 +80,17 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
             new TagPropertyExpression(new std::string("person"), new std::string("name"))));
         yieldColumns->addColumn(new YieldColumn(
             new TagPropertyExpression(new std::string("person"), new std::string("age"))));
-        auto *project = Project::make(&expectedPlan, gv, yieldColumns.get());
+        auto *project = Project::make(qctx, gv, yieldColumns.get());
         project->setColNames({kVid, "person.name", "person.age"});
 
-        expectedPlan.setRoot(project);
-        auto result = Eq(plan->root(), project);
+        auto result = Eq(qctx->plan()->root(), project);
         ASSERT_TRUE(result.ok()) << result;
     }
     // With YIELD const expression
     {
-        auto plan = toPlan("FETCH PROP ON person \"1\" YIELD person.name, 1 > 1, person.age");
+        auto qctx = getQCtx("FETCH PROP ON person \"1\" YIELD person.name, 1 > 1, person.age");
 
-        ExecutionPlan expectedPlan(pool_.get());
-        auto *start = StartNode::make(&expectedPlan);
+        auto *start = StartNode::make(qctx);
 
         // get vertices
         auto tagIdResult = schemaMng_->toTagID(1, "person");
@@ -104,7 +106,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
         expr2.set_expr(
             TagPropertyExpression(new std::string("person"), new std::string("age")).encode());
         auto *gv =
-            GetVertices::make(&expectedPlan,
+            GetVertices::make(qctx,
                               start,
                               1,
                               src.get(),
@@ -122,20 +124,17 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
             Expression::Kind::kRelGT, new ConstantExpression(1), new ConstantExpression(1))));
         yieldColumns->addColumn(new YieldColumn(
             new TagPropertyExpression(new std::string("person"), new std::string("age"))));
-        auto *project = Project::make(&expectedPlan, gv, yieldColumns.get());
+        auto *project = Project::make(qctx, gv, yieldColumns.get());
         project->setColNames({kVid, "person.name", "(1>1)", "person.age"});
 
-        expectedPlan.setRoot(project);
-
-        auto result = Eq(plan->root(), project);
+        auto result = Eq(qctx->plan()->root(), project);
         ASSERT_TRUE(result.ok()) << result;
     }
     // With YIELD combine properties
     {
-        auto plan = toPlan("FETCH PROP ON person \"1\" YIELD person.name + person.age");
+        auto qctx = getQCtx("FETCH PROP ON person \"1\" YIELD person.name + person.age");
 
-        ExecutionPlan expectedPlan(pool_.get());
-        auto *start = StartNode::make(&expectedPlan);
+        auto *start = StartNode::make(qctx);
 
         auto tagIdResult = schemaMng_->toTagID(1, "person");
         ASSERT_TRUE(tagIdResult.ok());
@@ -151,7 +150,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
                 new TagPropertyExpression(new std::string("person"), new std::string("age")))
                 .encode());
 
-        auto *gv = GetVertices::make(&expectedPlan,
+        auto *gv = GetVertices::make(qctx,
                                      start,
                                      1,
                                      src.get(),
@@ -167,20 +166,17 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
             Expression::Kind::kAdd,
             new TagPropertyExpression(new std::string("person"), new std::string("name")),
             new TagPropertyExpression(new std::string("person"), new std::string("age")))));
-        auto *project = Project::make(&expectedPlan, gv, yieldColumns.get());
+        auto *project = Project::make(qctx, gv, yieldColumns.get());
         project->setColNames({kVid, "(person.name+person.age)"});
 
-        expectedPlan.setRoot(project);
-
-        auto result = Eq(plan->root(), project);
+        auto result = Eq(qctx->plan()->root(), project);
         ASSERT_TRUE(result.ok()) << result;
     }
     // With YIELD distinct
     {
-        auto plan = toPlan("FETCH PROP ON person \"1\" YIELD distinct person.name, person.age");
+        auto qctx = getQCtx("FETCH PROP ON person \"1\" YIELD distinct person.name, person.age");
 
-        ExecutionPlan expectedPlan(pool_.get());
-        auto *start = StartNode::make(&expectedPlan);
+        auto *start = StartNode::make(qctx);
 
         auto tagIdResult = schemaMng_->toTagID(1, "person");
         ASSERT_TRUE(tagIdResult.ok());
@@ -195,7 +191,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
         expr2.set_expr(
             TagPropertyExpression(new std::string("person"), new std::string("age")).encode());
         auto *gv =
-            GetVertices::make(&expectedPlan,
+            GetVertices::make(qctx,
                               start,
                               1,
                               src.get(),
@@ -213,35 +209,31 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
             new TagPropertyExpression(new std::string("person"), new std::string("name"))));
         yieldColumns->addColumn(new YieldColumn(
             new TagPropertyExpression(new std::string("person"), new std::string("age"))));
-        auto *project = Project::make(&expectedPlan, gv, yieldColumns.get());
+        auto *project = Project::make(qctx, gv, yieldColumns.get());
         project->setColNames(colNames);
 
         // dedup
-        auto *dedup = Dedup::make(&expectedPlan, project);
+        auto *dedup = Dedup::make(qctx, project);
         dedup->setColNames(colNames);
 
         // data collect
         auto *dataCollect = DataCollect::make(
-            &expectedPlan, dedup, DataCollect::CollectKind::kRowBasedMove, {dedup->varName()});
+            qctx, dedup, DataCollect::CollectKind::kRowBasedMove, {dedup->varName()});
         dataCollect->setColNames(colNames);
 
-        expectedPlan.setRoot(dataCollect);
-
-        auto result = Eq(plan->root(), dataCollect);
+        auto result = Eq(qctx->plan()->root(), dataCollect);
         ASSERT_TRUE(result.ok()) << result;
     }
     // ON *
     {
-        auto plan = toPlan("FETCH PROP ON * \"1\"");
+        auto qctx = getQCtx("FETCH PROP ON * \"1\"");
 
-        ExecutionPlan expectedPlan(pool_.get());
-        auto *start = StartNode::make(&expectedPlan);
+        auto *start = StartNode::make(qctx);
 
         auto *gv = GetVertices::make(
-            &expectedPlan, start, 1, src.get(), {}, {});
+            qctx, start, 1, src.get(), {}, {});
         gv->setColNames({kVid, "person.name", "person.age"});
-        expectedPlan.setRoot(gv);
-        auto result = Eq(plan->root(), gv);
+        auto result = Eq(qctx->plan()->root(), gv);
         ASSERT_TRUE(result.ok()) << result;
     }
 }
