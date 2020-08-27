@@ -24,19 +24,22 @@ public:
     const Value& eval(ExpressionContext& ctx) override;
 
     bool operator==(const Expression& rhs) const override {
-        UNUSED(rhs);
-        return false;
+        if (kind() != rhs.kind()) {
+            return false;
+        }
+        return var() == static_cast<const VariableExpression&>(rhs).var();
     }
 
     std::string toString() const override;
 
 private:
     void writeTo(Encoder& encoder) const override {
-        UNUSED(encoder);
+        encoder << kind();
+        encoder << var_.get();
     }
 
     void resetFrom(Decoder& decoder) override {
-        UNUSED(decoder);
+        var_ = decoder.readStr();
     }
 
     std::unique_ptr<std::string>                 var_;
@@ -61,19 +64,30 @@ public:
     const Value& eval(ExpressionContext& ctx) override;
 
     bool operator==(const Expression& rhs) const override {
-        UNUSED(rhs);
-        return false;
+        if (kind() != rhs.kind()) {
+            return false;
+        }
+
+        auto &vve = static_cast<const VersionedVariableExpression&>(rhs);
+        if (var() != vve.var()) {
+            return false;
+        }
+
+        return *version_ == *vve.version_;
     }
 
     std::string toString() const override;
 
 private:
     void writeTo(Encoder& encoder) const override {
-        UNUSED(encoder);
+        encoder << kind();
+        encoder << var_.get();
+        encoder << *version_;
     }
 
     void resetFrom(Decoder& decoder) override {
-        UNUSED(decoder);
+        var_ = decoder.readStr();
+        version_ = decoder.readExpression();
     }
 
     std::unique_ptr<std::string>                 var_;
