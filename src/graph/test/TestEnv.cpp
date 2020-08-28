@@ -60,7 +60,11 @@ void TestEnv::SetUp() {
     mClient_ = std::make_unique<meta::MetaClient>(threadPool,
                                                   std::move(addrsRet.value()),
                                                   options);
-    mClient_->waitForMetadReady();
+    auto ready = mClient_->waitForMetadReady(3);
+    if (!ready) {
+        // Resort to retrying in the background
+        LOG(WARNING) << "Failed to synchronously wait for meta service ready";
+    }
     gflagsManager_ = std::make_unique<meta::ClientBasedGflagsManager>(mClient_.get());
 
     IPv4 localIp;
@@ -84,7 +88,6 @@ void TestEnv::TearDown() {
     storageServer_.reset();
     mClient_.reset();
     metaServer_.reset();
-    mClient_.reset();
 }
 
 uint16_t TestEnv::graphServerPort() const {
