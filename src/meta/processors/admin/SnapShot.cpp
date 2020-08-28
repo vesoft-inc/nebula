@@ -21,10 +21,16 @@ cpp2::ErrorCode Snapshot::createSnapshot(const std::string& name) {
     auto spacesHosts = retSpacesHosts.value();
     for (const auto& spaceHosts : spacesHosts) {
         for (const auto& host : spaceHosts.second) {
+            LOG(INFO) << "Begin create snapshot on "
+                      << network::NetworkUtils::toHosts({host}).c_str()
+                      << ", Space " << spaceHosts.first;
             auto status = client_->createSnapshot(spaceHosts.first, name, host).get();
             if (!status.ok()) {
                 return cpp2::ErrorCode::E_RPC_FAILURE;
             }
+            LOG(INFO) << "End create snapshot on "
+                      << network::NetworkUtils::toHosts({host}).c_str()
+                      << ", Space " << spaceHosts.first;
         }
     }
     return cpp2::ErrorCode::SUCCEEDED;
@@ -40,6 +46,9 @@ cpp2::ErrorCode Snapshot::dropSnapshot(const std::string& name,
     for (const auto& spaceHosts : spacesHosts) {
         for (const auto& host : spaceHosts.second) {
             if (std::find(hosts.begin(), hosts.end(), host) != hosts.end()) {
+                LOG(INFO) << "Begin drop snapshot on "
+                          << network::NetworkUtils::toHosts({host}).c_str()
+                          << ", Space " << spaceHosts.first;
                 auto status = client_->dropSnapshot(spaceHosts.first, name, host).get();
                 if (!status.ok()) {
                     auto msg = "failed drop checkpoint : \"%s\". on host %s. error %s";
@@ -49,6 +58,9 @@ cpp2::ErrorCode Snapshot::dropSnapshot(const std::string& name,
                                                      status.toString().c_str());
                     LOG(ERROR) << error;
                 }
+                LOG(INFO) << "End drop snapshot on "
+                          << network::NetworkUtils::toHosts({host}).c_str()
+                          << ", Space " << spaceHosts.first;
             }
         }
     }
@@ -63,11 +75,17 @@ cpp2::ErrorCode Snapshot::blockingWrites(storage::cpp2::EngineSignType sign) {
     auto spacesHosts = retSpacesHosts.value();
     for (const auto& spaceHosts : spacesHosts) {
         for (const auto& host : spaceHosts.second) {
-        auto status = client_->blockingWrites(spaceHosts.first, sign, host).get();
-        if (!status.ok()) {
-            LOG(ERROR) << " Send blocking sign error on host : "
-                       << network::NetworkUtils::toHosts({host});
-        }
+            LOG(INFO) << "Begin blocking write on "
+                      << network::NetworkUtils::toHosts({host}).c_str()
+                      << ", Space " << spaceHosts.first;
+            auto status = client_->blockingWrites(spaceHosts.first, sign, host).get();
+            if (!status.ok()) {
+                LOG(ERROR) << " Send blocking sign error on host : "
+                           << network::NetworkUtils::toHosts({host});
+            }
+            LOG(INFO) << "End blocking write on "
+                      << network::NetworkUtils::toHosts({host}).c_str()
+                      << ", Space " << spaceHosts.first;
         }
     }
     return cpp2::ErrorCode::SUCCEEDED;
