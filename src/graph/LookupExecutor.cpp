@@ -231,7 +231,7 @@ Status LookupExecutor::traversalExpr(const Expression *expr, const meta::SchemaP
             if (rExpr->op() != RelationalExpression::Operator::EQ &&
                 rExpr->op() != RelationalExpression::Operator::NE) {
                 auto type = schema->getFieldType(prop).type;
-                if (!dataTypeCheckForRange(type)) {
+                if (!supportedDataTypeForRange(type)) {
                     return Status::SyntaxError("Data type of field %s not support range scan",
                                                prop.c_str());
                 }
@@ -871,7 +871,7 @@ Status LookupExecutor::relationalExprCheck(RelationalExpression::Operator op) co
     return Status::OK();
 }
 
-bool LookupExecutor::dataTypeCheckForRange(nebula::cpp2::SupportedType type) const {
+bool LookupExecutor::supportedDataTypeForRange(nebula::cpp2::SupportedType type) const {
     switch (type) {
         case nebula::cpp2::SupportedType::INT:
         case nebula::cpp2::SupportedType::DOUBLE:

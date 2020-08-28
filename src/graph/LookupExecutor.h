@@ -87,7 +87,7 @@ private:
 
     Status relationalExprCheck(RelationalExpression::Operator op) const;
 
-    bool dataTypeCheckForRange(nebula::cpp2::SupportedType type) const;
+    bool supportedDataTypeForRange(nebula::cpp2::SupportedType type) const;
 
 private:
     using FilterItem = std::pair<std::string, RelationalExpression::Operator>;
