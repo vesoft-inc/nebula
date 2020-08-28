@@ -59,7 +59,7 @@ bool NebulaStore::init() {
             auto rootPath = folly::stringPrintf("%s/nebula", path.c_str());
             auto dirs = fs::FileUtils::listAllDirsInDir(rootPath.c_str());
             for (auto& dir : dirs) {
-                LOG(INFO) << "Scan path \"" << path << "/" << dir << "\"";
+                LOG(INFO) << "Scan path \"" << path << "/nebula/" << dir << "\"";
                 try {
                     GraphSpaceID spaceId;
                     try {
@@ -250,12 +250,20 @@ void NebulaStore::addSpace(GraphSpaceID spaceId) {
 }
 
 
-void NebulaStore::addPart(GraphSpaceID spaceId, PartitionID partId, bool asLearner) {
+void NebulaStore::addPart(GraphSpaceID spaceId,
+                          PartitionID partId,
+                          bool asLearner,
+                          const std::vector<HostAddr>& peers) {
     folly::RWSpinLock::WriteHolder wh(&lock_);
     auto spaceIt = this->spaces_.find(spaceId);
     CHECK(spaceIt != this->spaces_.end()) << "Space should exist!";
-    if (spaceIt->second->parts_.find(partId) != spaceIt->second->parts_.end()) {
-        LOG(INFO) << "[" << spaceId << "," << partId << "] has existed!";
+    auto partIt = spaceIt->second->parts_.find(partId);
+    if (partIt != spaceIt->second->parts_.end()) {
+        LOG(INFO) << "[Space: " << spaceId << ", Part: " << partId << "] has existed!";
+        if (!peers.empty()) {
+            LOG(INFO) << "[Space: " << spaceId << ", Part: " << partId << "] check peers...";
+            partIt->second->checkAndResetPeers(peers);
+        }
         return;
     }
 
@@ -277,7 +285,7 @@ void NebulaStore::addPart(GraphSpaceID spaceId, PartitionID partId, bool asLearn
     targetEngine->addPart(partId);
     spaceIt->second->parts_.emplace(
         partId,
-        newPart(spaceId, partId, targetEngine.get(), asLearner));
+        newPart(spaceId, partId, targetEngine.get(), asLearner, peers));
     LOG(INFO) << "Space " << spaceId << ", part " << partId
               << " has been added, asLearner " << asLearner;
 }
@@ -285,7 +293,8 @@ void NebulaStore::addPart(GraphSpaceID spaceId, PartitionID partId, bool asLearn
 std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
                                            PartitionID partId,
                                            KVEngine* engine,
-                                           bool asLearner) {
+                                           bool asLearner,
+                                           const std::vector<HostAddr>& defaultPeers) {
     auto part = std::make_shared<Part>(spaceId,
                                        partId,
                                        raftAddr_,
@@ -297,20 +306,29 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
                                        bgWorkers_,
                                        workers_,
                                        snapshot_);
-    auto metaStatus = options_.partMan_->partMeta(spaceId, partId);
-    if (!metaStatus.ok()) {
-        LOG(ERROR) << "options_.partMan_->partMeta(spaceId, partId); error: "
-                   << metaStatus.status().toString()
-                   << " spaceId: " << spaceId << ", partId: " << partId;
-        return nullptr;
-    }
-
-    auto partMeta = metaStatus.value();
     std::vector<HostAddr> peers;
-    for (auto& h : partMeta.peers_) {
-        if (h != storeSvcAddr_) {
-            peers.emplace_back(getRaftAddr(h));
-            VLOG(1) << "Add peer " << peers.back();
+    if (defaultPeers.empty()) {
+        // pull the information from meta
+        auto metaStatus = options_.partMan_->partMeta(spaceId, partId);
+        if (!metaStatus.ok()) {
+            LOG(ERROR) << "options_.partMan_->partMeta(spaceId, partId); error: "
+                       << metaStatus.status().toString()
+                       << " spaceId: " << spaceId << ", partId: " << partId;
+            return nullptr;
+        }
+
+        auto partMeta = metaStatus.value();
+        for (auto& h : partMeta.peers_) {
+            if (h != storeSvcAddr_) {
+                peers.emplace_back(getRaftAddr(h));
+                VLOG(1) << "Add peer " << peers.back();
+            }
+        }
+    } else {
+        for (auto& h : defaultPeers) {
+            if (h != raftAddr_) {
+                peers.emplace_back(h);
+            }
         }
     }
     raftService_->addPartition(part);
@@ -565,35 +583,63 @@ ErrorOr<ResultCode, std::shared_ptr<Part>> NebulaStore::part(GraphSpaceID spaceI
 }
 
 ResultCode NebulaStore::ingest(GraphSpaceID spaceId) {
+    return ingest(spaceId, "general");
+}
+
+ResultCode NebulaStore::ingestTag(GraphSpaceID spaceId, TagID tagId) {
+    return ingest(spaceId, folly::stringPrintf("tag/%d", tagId));
+}
+
+ResultCode NebulaStore::ingestEdge(GraphSpaceID spaceId, EdgeType edgeType) {
+    return ingest(spaceId, folly::stringPrintf("edge/%d", edgeType));
+}
+
+ResultCode NebulaStore::ingest(GraphSpaceID spaceId, const std::string& subdir) {
     auto spaceRet = space(spaceId);
     if (!ok(spaceRet)) {
+        LOG(INFO) << "Space not found: " << spaceId;
         return error(spaceRet);
     }
     auto space = nebula::value(spaceRet);
+
     for (auto& engine : space->engines_) {
         auto parts = engine->allParts();
         for (auto part : parts) {
-            auto ret = this->engine(spaceId, part);
-            if (!ok(ret)) {
-                return error(ret);
-            }
-
-            auto path = folly::stringPrintf("%s/download/%d", value(ret)->getDataRoot(), part);
+            auto path = folly::stringPrintf(
+                "%s/download/%s/%d",
+                engine->getDataRoot(), subdir.c_str(), part);
             if (!fs::FileUtils::exist(path)) {
-                LOG(INFO) << path << " not existed";
+                LOG(INFO) << "Ingest ignore: "
+                          << "part[" << part << "], "
+                          << "not exist dir[" << path << "]";
                 continue;
             }
 
             auto files = nebula::fs::FileUtils::listAllFilesInDir(path.c_str(), true, "*.sst");
-            for (auto file : files) {
-                LOG(INFO) << "Ingesting extra file: " << file;
-                auto code = engine->ingest(std::vector<std::string>({file}));
-                if (code != ResultCode::SUCCEEDED) {
-                    return code;
-                }
+            if (files.empty()) {
+                LOG(INFO) << "Ingest ignore: "
+                          << "part[" << part << "], "
+                          << "empty dir[" << path << "]";
+                continue;
+            }
+
+            auto code = engine->ingest(files);
+            if (code != ResultCode::SUCCEEDED) {
+                LOG(ERROR) << "Ingest failed: "
+                           << "part[" << part << "], "
+                           << "code[" << code << "], "
+                           << "dir[" << path << "], "
+                           << "files[" << folly::join(",", files) << "]";
+                return code;
+            } else {
+                LOG(INFO) << "Ingest success: "
+                          << "part[" << part << "], "
+                          << "dir[" << path << "], "
+                          << "files[" << folly::join(",", files) << "]";
             }
         }
     }
+
     return ResultCode::SUCCEEDED;
 }
 

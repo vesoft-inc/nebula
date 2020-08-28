@@ -77,15 +77,6 @@ private:
         return curStep_ >= recordFrom_ && curStep_ <= steps_;
     }
 
-    bool yieldInput() const {
-        for (const auto col : yields_) {
-            if (col->expr()->fromVarInput()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     /**
      * To obtain the source ids from various places,
      * such as the literal id list, inputs from the pipeline or results of variable.
@@ -178,13 +169,12 @@ private:
         explicit VertexHolder(ExecutionContext* ectx) : ectx_(ectx) { }
         OptVariantType getDefaultProp(TagID tid, const std::string &prop) const;
         OptVariantType get(VertexID id, TagID tid, const std::string &prop) const;
-        void add(const storage::cpp2::QueryResponse &resp);
-        nebula::cpp2::SupportedType getDefaultPropType(TagID tid, const std::string &prop) const;
-        nebula::cpp2::SupportedType getType(VertexID id, TagID tid, const std::string &prop);
+        void add(const std::vector<storage::cpp2::QueryResponse> &responses);
 
     private:
-        using VData = std::tuple<std::shared_ptr<ResultSchemaProvider>, std::string>;
-        std::unordered_map<VertexID, std::unordered_map<TagID, VData>> data_;
+        std::unordered_map<std::pair<VertexID, TagID>, RowReader> data_;
+        mutable std::unordered_map<
+            TagID, std::shared_ptr<const meta::SchemaProviderIf>> tagSchemaMap_;
         ExecutionContext* ectx_{nullptr};
     };
 
@@ -256,6 +246,7 @@ private:
     std::vector<RpcResponse>                    records_;
     // The name of Tag or Edge, index of prop in data
     using SchemaPropIndex = std::unordered_map<std::pair<std::string, std::string>, int64_t>;
+    std::string                                  warningMsg_;
 };
 
 }   // namespace graph

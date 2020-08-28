@@ -12,6 +12,8 @@
 #include "kvstore/RocksEngineConfig.h"
 #include <rocksdb/convenience.h>
 
+DEFINE_bool(enable_auto_repair, false, "True for auto repair db.");
+
 namespace nebula {
 namespace kvstore {
 
@@ -100,7 +102,19 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
         options.compaction_filter_factory = cfFactory;
     }
     status = rocksdb::DB::Open(options, path, &db);
-    CHECK(status.ok()) << status.ToString();
+    if (status.IsNoSpace()) {
+        LOG(WARNING) << status.ToString();
+    } else if (status.IsCorruption() || status.IsIncomplete() || status.IsTryAgain()) {
+        if (FLAGS_enable_auto_repair && !status.ok()) {
+            LOG(ERROR) << "try repair db. [" << status.ToString() << "] -> ["
+                       << rocksdb::RepairDB(path, options).ToString() << "]";
+            status = rocksdb::DB::Open(options, path, &db);
+        }
+        CHECK(status.ok()) << status.ToString();
+    } else {
+        CHECK(status.ok()) << status.ToString();
+    }
+
     db_.reset(db);
     partsNum_ = allParts().size();
     LOG(INFO) << "open rocksdb on " << path;
@@ -340,6 +354,13 @@ int32_t RocksEngine::totalPartsNum() {
 
 ResultCode RocksEngine::ingest(const std::vector<std::string>& files) {
     rocksdb::IngestExternalFileOptions options;
+    options.move_files = true;
+    options.failed_move_fall_back_to_copy = true;
+    options.verify_checksums_before_ingest = true;
+    options.verify_checksums_readahead_size = 2U << 20;
+    options.write_global_seqno = false;
+    options.snapshot_consistency = true;
+    options.allow_global_seqno = true;
     rocksdb::Status status = db_->IngestExternalFile(files, options);
     if (status.ok()) {
         return ResultCode::SUCCEEDED;

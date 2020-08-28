@@ -169,6 +169,10 @@ public:
 
     ResultCode ingest(GraphSpaceID spaceId) override;
 
+    ResultCode ingestTag(GraphSpaceID spaceId, TagID tagId) override;
+
+    ResultCode ingestEdge(GraphSpaceID spaceId, EdgeType edgeType) override;
+
     int32_t allLeader(std::unordered_map<GraphSpaceID,
                                          std::vector<PartitionID>>& leaderIds) override;
 

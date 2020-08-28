@@ -48,17 +48,46 @@ void DownloadExecutor::execute() {
         return;
     }
 
-    auto func = [metaHost, hdfsHost, hdfsPort, hdfsPath, spaceId]() {
-        static const char *tmp = "http://%s:%d/%s?host=%s&port=%d&path=%s&space=%d";
-        auto url = folly::stringPrintf(tmp, metaHost.c_str(), FLAGS_ws_meta_http_port,
-                                       "download-dispatch", hdfsHost->c_str(),
-                                       hdfsPort, hdfsPath->c_str(), spaceId);
+    std::string url;
+
+    if (sentence_->edge()) {
+        auto edgeStatus = ectx()->schemaManager()->toEdgeType(
+            spaceId, *sentence_->edge());
+        if (!edgeStatus.ok()) {
+            doError(Status::Error("edge not found."));
+            return;
+        }
+        auto edgeType = edgeStatus.value();
+        url = folly::stringPrintf(
+            "http://%s:%d/download-dispatch?host=%s&port=%d&path=%s&space=%d&edge=%d",
+            metaHost.c_str(), FLAGS_ws_meta_http_port,
+            hdfsHost->c_str(), hdfsPort, hdfsPath->c_str(), spaceId, edgeType);
+    } else if (sentence_->tag()) {
+        auto tagStatus = ectx()->schemaManager()->toTagID(
+            spaceId, *sentence_->tag());
+        if (!tagStatus.ok()) {
+            doError(Status::Error("tag not found."));
+            return;
+        }
+        auto tagType = tagStatus.value();
+        url = folly::stringPrintf(
+            "http://%s:%d/download-dispatch?host=%s&port=%d&path=%s&space=%d&tag=%d",
+            metaHost.c_str(), FLAGS_ws_meta_http_port,
+            hdfsHost->c_str(), hdfsPort, hdfsPath->c_str(), spaceId, tagType);
+    } else {
+        url = folly::stringPrintf(
+            "http://%s:%d/download-dispatch?host=%s&port=%d&path=%s&space=%d",
+            metaHost.c_str(), FLAGS_ws_meta_http_port,
+            hdfsHost->c_str(), hdfsPort, hdfsPath->c_str(), spaceId);
+    }
+
+    auto func = [url] {
         auto result = http::HttpClient::get(url);
         if (result.ok() && result.value() == "SSTFile dispatch successfully") {
             LOG(INFO) << "Download Successfully";
             return true;
         } else {
-            LOG(ERROR) << "Download Failed ";
+            LOG(ERROR) << "Download Failed: " << result.value();
             return false;
         }
     };

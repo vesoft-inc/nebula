@@ -37,12 +37,15 @@ protected:
         : QueryBaseProcessor<cpp2::GetNeighborsRequest,
                              cpp2::QueryResponse>(kvstore, schemaMan, stats, executor, cache) {}
 
-    kvstore::ResultCode processVertex(PartitionID partId, VertexID vId) override;
+    void beforeProcess(const std::vector<Bucket>& buckets) override;
+
+    kvstore::ResultCode processVertex(
+        BucketIdx bucketIdx, PartitionID partId, VertexID vId) override;
 
     void onProcessFinished(int32_t retNum) override;
 
 private:
-    std::vector<cpp2::VertexData> vertices_;
+    std::vector<std::vector<cpp2::VertexData>> bucketVertices_;
 
     kvstore::ResultCode processEdge(PartitionID partId, VertexID vId, FilterContext &fcontext,
                                     cpp2::VertexData& vdata);
@@ -59,7 +62,7 @@ private:
 protected:
     // Indicate the request only get vertex props.
     bool onlyVertexProps_ = false;
-    int32_t totalEdges_ = 0;
+    std::atomic<int32_t> totalEdges_{0};
 };
 
 }  // namespace storage

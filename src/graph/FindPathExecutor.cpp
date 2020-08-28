@@ -16,6 +16,10 @@ FindPathExecutor::FindPathExecutor(Sentence *sentence, ExecutionContext *exct)
 }
 
 Status FindPathExecutor::prepare() {
+    return Status::OK();
+}
+
+Status FindPathExecutor::prepareClauses() {
     spaceId_ = ectx()->rctx()->session()->space();
     Status status;
     expCtx_ = std::make_unique<ExpressionContext>();
@@ -69,6 +73,11 @@ Status FindPathExecutor::beforeExecute() {
         status = checkIfGraphSpaceChosen();
         if (!status.ok()) {
             break;;
+        }
+
+        status = prepareClauses();
+        if (!status.ok()) {
+            break;
         }
 
         status = prepareOver();
@@ -520,6 +529,7 @@ void FindPathExecutor::getToFrontiers(
                 LOG(ERROR) << "part: " << error.first
                            << "error code: " << static_cast<int>(error.second);
             }
+            ectx()->addWarningMsg("Find path executor was partially performed");
         }
         auto status = doFilter(std::move(result), where_.filter_, false, frontiers);
         if (!status.ok()) {

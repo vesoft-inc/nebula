@@ -362,7 +362,7 @@ AppendLogResult RaftPart::canAppendLogs() {
         return AppendLogResult::E_STOPPED;
     }
     if (role_ != Role::LEADER) {
-        PLOG_EVERY_N(ERROR, 100) << idStr_ << "The partition is not a leader";
+        LOG_EVERY_N(ERROR, 100) << idStr_ << "The partition is not a leader";
         return AppendLogResult::E_NOT_A_LEADER;
     }
 
@@ -562,7 +562,7 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
     auto retFuture = folly::Future<AppendLogResult>::makeEmpty();
 
     if (bufferOverFlow_) {
-        PLOG_EVERY_N(WARNING, 30) << idStr_
+        LOG_EVERY_N(WARNING, 100) << idStr_
                      << "The appendLog buffer is full."
                         " Please slow down the log appending rate."
                      << "replicatingLogs_ :" << replicatingLogs_;
@@ -630,7 +630,7 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
 
     if (!checkAppendLogResult(res)) {
         // Mosy likely failed because the parttion is not leader
-        PLOG_EVERY_N(ERROR, 100) << idStr_ << "Cannot append logs, clean the buffer";
+        LOG_EVERY_N(ERROR, 100) << idStr_ << "Cannot append logs, clean the buffer";
         return res;
     }
     // Replicate buffered logs to all followers
@@ -952,8 +952,8 @@ void RaftPart::processAppendLogResponses(
         this->appendLogsInternal(std::move(iter), currTerm);
     } else {
         // Not enough hosts accepted the log, re-try
-        LOG(WARNING) << idStr_ << "Only " << numSucceeded
-                     << " hosts succeeded, Need to try again";
+        LOG_EVERY_N(WARNING, 100) << idStr_ << "Only " << numSucceeded
+                                  << " hosts succeeded, Need to try again";
         replicateLogs(eb,
                       std::move(iter),
                       currTerm,
@@ -1060,6 +1060,10 @@ typename RaftPart::Role RaftPart::processElectionResponses(
                       << ", double my election interval.";
             uint64_t curWeight = weight_.load();
             weight_.store(curWeight * 2);
+        } else {
+            LOG(ERROR) << idStr_ << "Receive response about askForVote from "
+                       << hosts[r.first]->address()
+                       << ", error code is " << static_cast<int32_t>(r.second.get_error_code());
         }
     }
 
@@ -1159,6 +1163,9 @@ bool RaftPart::leaderElection() {
                 std::lock_guard<std::mutex> g(raftLock_);
                 if (status_ == Status::RUNNING) {
                     leader_ = addr_;
+                    for (auto& host : hosts_) {
+                        host->reset();
+                    }
                     bgWorkers_->addTask([self = shared_from_this(),
                                        term = voteReq.get_term()] {
                         self->onElected(term);
@@ -1617,7 +1624,7 @@ cpp2::ErrorCode RaftPart::verifyLeader(
                 return h->address() == candidate;
             });
     if (it == hosts.end()) {
-        VLOG(2) << idStr_ << "The candidate leader " << candidate << " is not my peers";
+        LOG(INFO) << idStr_ << "The candidate leader " << candidate << " is not my peers";
         return cpp2::ErrorCode::E_WRONG_LEADER;
     }
 
@@ -1655,10 +1662,10 @@ cpp2::ErrorCode RaftPart::verifyLeader(
 
     // Make sure the remote term is greater than local's
     if (req.get_current_term() < term_) {
-        PLOG_EVERY_N(ERROR, 100) << idStr_
-                                 << "The current role is " << roleStr(role_)
-                                 << ". The local term is " << term_
-                                 << ". The remote term is not newer";
+        LOG_EVERY_N(ERROR, 100) << idStr_
+                                << "The current role is " << roleStr(role_)
+                                << ". The local term is " << term_
+                                << ". The remote term is not newer";
         return cpp2::ErrorCode::E_TERM_OUT_OF_DATE;
     }
     if (role_ == Role::FOLLOWER || role_ == Role::LEARNER) {
@@ -1831,7 +1838,8 @@ AppendLogResult RaftPart::isCatchedUp(const HostAddr& peer) {
     }
     for (auto& host : hosts_) {
         if (host->addr_ == peer) {
-            if (host->followerCommittedLogId_ < wal_->firstLogId()) {
+            if (host->followerCommittedLogId_ == 0
+                    || host->followerCommittedLogId_ < wal_->firstLogId()) {
                 LOG(INFO) << idStr_ << "The committed log id of peer is "
                           << host->followerCommittedLogId_
                           << ", which is invalid or less than my first wal log id";
@@ -1869,6 +1877,10 @@ void RaftPart::checkAndResetPeers(const std::vector<HostAddr>& peers) {
 }
 
 bool RaftPart::leaseValid() {
+    std::lock_guard<std::mutex> g(raftLock_);
+    if (hosts_.empty()) {
+        return true;
+    }
     // When majority has accepted a log, leader obtains a lease which last for heartbeat.
     // However, we need to take off the net io time. On the left side of the inequality is
     // the time duration since last time leader send a log (the log has been accepted as well)

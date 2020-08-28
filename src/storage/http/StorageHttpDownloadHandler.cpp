@@ -47,29 +47,73 @@ void StorageHttpDownloadHandler::onRequest(std::unique_ptr<HTTPMessage> headers)
         err_ = HttpCode::E_UNSUPPORTED_METHOD;
         return;
     }
+    if (!headers->hasQueryParam("host") ||
+        !headers->hasQueryParam("port") ||
+        !headers->hasQueryParam("path") ||
+        !headers->hasQueryParam("parts") ||
+        !headers->hasQueryParam("space")) {
+        LOG(ERROR) << "Illegal Argument";
+        err_ = HttpCode::E_ILLEGAL_ARGUMENT;
+        return;
+    }
+    hdfsHost_ = headers->getQueryParam("host");
+    hdfsPort_ = headers->getIntQueryParam("port");
+    hdfsPath_ = headers->getQueryParam("path");
+    auto existStatus = helper_->exist(hdfsHost_, hdfsPort_, hdfsPath_);
+    if (!existStatus.ok()) {
+        LOG(ERROR) << "Run Hdfs Test failed. " << existStatus.status().toString();
+        err_ = HttpCode::E_ILLEGAL_ARGUMENT;
+    }
+    bool exist = existStatus.value();
+    if (!exist) {
+        LOG(ERROR) << "Hdfs non exist. hdfs://" << hdfsHost_ << ":" << hdfsPort_ << hdfsPath_;
+        err_ = HttpCode::E_ILLEGAL_ARGUMENT;
+        return;
+    }
+    spaceID_ = headers->getIntQueryParam("space");
+    auto partitions = headers->getQueryParam("parts");
+    folly::split(",", partitions, parts_, true);
+    if (parts_.empty()) {
+        LOG(ERROR) << "Partitions should be not empty";
+        err_ = HttpCode::E_ILLEGAL_ARGUMENT;
+        return;
+    }
+    try {
+        if (headers->hasQueryParam("tag")) {
+            auto& tag = headers->getQueryParam("tag");
+            tag_.assign(folly::to<TagID>(tag));
+        }
+        if (headers->hasQueryParam("edge")) {
+            auto& edge = headers->getQueryParam("edge");
+            edge_.assign(folly::to<EdgeType>(edge));
+        }
+    } catch (std::exception& e) {
+        LOG(ERROR) << "Parse tag/edge error. " << e.what();
+        err_ = HttpCode::E_ILLEGAL_ARGUMENT;
+        return;
+    }
+    for (auto &path : paths_) {
+        std::string downloadRootPath = folly::stringPrintf(
+            "%s/nebula/%d/download", path.c_str(), spaceID_);
+        std::string downloadRootPathEdge = downloadRootPath + "/edge";
+        std::string downloadRootPathTag = downloadRootPath + "/tag";
+        std::string downloadRootPathGeneral = downloadRootPath + "/general";
 
-     if (!headers->hasQueryParam("host") ||
-         !headers->hasQueryParam("port") ||
-         !headers->hasQueryParam("path") ||
-         !headers->hasQueryParam("parts") ||
-         !headers->hasQueryParam("space")) {
-         LOG(ERROR) << "Illegal Argument";
-         err_ = HttpCode::E_ILLEGAL_ARGUMENT;
-         return;
-     }
-
-     hdfsHost_ = headers->getQueryParam("host");
-     hdfsPort_ = headers->getIntQueryParam("port");
-     hdfsPath_ = headers->getQueryParam("path");
-     partitions_ = headers->getQueryParam("parts");
-     spaceID_ = headers->getIntQueryParam("space");
-
-     for (auto &path : paths_) {
-         auto downloadPath = folly::stringPrintf("%s/nebula/%d/download", path.c_str(), spaceID_);
-         if (fs::FileUtils::fileType(downloadPath.c_str()) == fs::FileType::NOTEXIST) {
-             fs::FileUtils::makeDir(downloadPath);
-         }
-     }
+        std::string downloadPath;
+        if (edge_.has_value()) {
+            downloadPath = folly::stringPrintf(
+                "%s/%d",
+                downloadRootPathEdge.c_str(), edge_.value());
+        } else if (tag_.has_value()) {
+            downloadPath = folly::stringPrintf(
+                "%s/%d",
+                downloadRootPathTag.c_str(), tag_.value());
+        } else {
+            downloadPath = downloadRootPathGeneral;
+        }
+        fs::FileUtils::remove(downloadPath.c_str(), true);
+        fs::FileUtils::makeDir(downloadPath);
+    }
 }
 
 
@@ -97,16 +141,7 @@ void StorageHttpDownloadHandler::onEOM() noexcept {
     }
 
     if (helper_->checkHadoopPath()) {
-        std::vector<std::string> parts;
-        folly::split(",", partitions_, parts, true);
-        if (parts.size() == 0) {
-            ResponseBuilder(downstream_)
-                .status(400, "SSTFile download failed")
-                .body("Partitions should be not empty")
-                .sendWithEOM();
-        }
-
-        if (downloadSSTFiles(hdfsHost_, hdfsPort_, hdfsPath_, parts)) {
+        if (downloadSSTFiles()) {
             ResponseBuilder(downstream_)
                 .status(WebServiceUtils::to(HttpStatusCode::OK),
                         WebServiceUtils::toString(HttpStatusCode::OK))
@@ -144,46 +179,59 @@ void StorageHttpDownloadHandler::onError(ProxygenError error) noexcept {
                << proxygen::getErrorString(error);
 }
 
-bool StorageHttpDownloadHandler::downloadSSTFiles(const std::string& hdfsHost,
-                                                  int32_t hdfsPort,
-                                                  const std::string& hdfsPath,
-                                                  const std::vector<std::string>& parts) {
-    static std::atomic_flag isRunning = ATOMIC_FLAG_INIT;
-    if (isRunning.test_and_set()) {
-        LOG(ERROR) << "Download is not completed";
-        return false;
-    }
-
+bool StorageHttpDownloadHandler::downloadSSTFiles() {
     std::vector<folly::SemiFuture<bool>> futures;
-
-    for (auto& part : parts) {
+    for (auto& part : parts_) {
         PartitionID partId;
         try {
             partId = folly::to<PartitionID>(part);
         } catch (const std::exception& ex) {
-            isRunning.clear();
             LOG(ERROR) << "Invalid part: \"" << part << "\"" << ", error: " << ex.what();
             return false;
         }
-
-        auto downloader = [hdfsHost, hdfsPort, hdfsPath, partId, this]() {
-            auto hdfsPartPath = folly::stringPrintf("%s/%d", hdfsPath.c_str(), partId);
-            auto partResult = kvstore_->part(spaceID_, partId);
-            if (!ok(partResult)) {
-                LOG(ERROR) << "Can't found space: " << spaceID_ << ", part: " << partId;
+        auto hdfsPartPath = folly::stringPrintf("%s/%d", hdfsPath_.c_str(), partId);
+        auto existStatus = helper_->exist(hdfsHost_, hdfsPort_, hdfsPartPath);
+        if (!existStatus.ok()) {
+            LOG(ERROR) << "Run Hdfs Test failed. " << existStatus.status().toString();
+            return false;
+        }
+        bool exist = existStatus.value();
+        if (!exist) {
+            LOG(WARNING) << "Hdfs path non exist. hdfs://"
+                         << hdfsHost_ << ":" << hdfsPort_ << hdfsPartPath;
+            continue;
+        }
+        auto partResult = kvstore_->part(spaceID_, partId);
+        if (!ok(partResult)) {
+            LOG(ERROR) << "Can't found space: " << spaceID_ << ", part: " << partId;
+            return false;
+        }
+        auto partDataRoot = value(partResult)->engine()->getDataRoot();
+        std::string localPath;
+        if (edge_.has_value()) {
+            localPath = folly::stringPrintf(
+                "%s/download/edge/%d", partDataRoot, edge_.value());
+        } else if (tag_.has_value()) {
+            localPath = folly::stringPrintf(
+                "%s/download/tag/%d", partDataRoot, tag_.value());
+        } else {
+            localPath = folly::stringPrintf(
+                "%s/download/general", partDataRoot);
+        }
+        auto downloader = [this, hdfsPartPath, localPath] {
+            auto resultStatus = this->helper_->copyToLocal(
+                hdfsHost_, hdfsPort_, hdfsPartPath, localPath);
+            if (!resultStatus.ok()) {
+                LOG(ERROR) << "Run Hdfs CopyToLocal failed. "
+                           << resultStatus.status().toString();
                 return false;
             }
-
-            auto localPath = folly::stringPrintf("%s/download/",
-                                                 value(partResult)->engine()->getDataRoot());
-            auto result = this->helper_->copyToLocal(hdfsHost, hdfsPort,
-                                                     hdfsPartPath, localPath);
-            return result.ok() && result.value().empty();
+            auto result = std::move(resultStatus).value();
+            return result.empty();
         };
         auto future = pool_->addTask(downloader);
         futures.push_back(std::move(future));
     }
-
     bool successfully{true};
     folly::collectAll(futures).thenValue([&](const std::vector<folly::Try<bool>>& tries) {
         for (const auto& t : tries) {
@@ -199,7 +247,6 @@ bool StorageHttpDownloadHandler::downloadSSTFiles(const std::string& hdfsHost,
         }
     }).wait();
     LOG(INFO) << "Download tasks have finished";
-    isRunning.clear();
     return successfully;
 }
 
