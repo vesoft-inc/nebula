@@ -474,6 +474,7 @@ ResultCode RocksEngine::createCheckpoint(const std::string& name) {
         LOG(ERROR) << "Create checkpoint Failed: " << status.ToString();
         return ResultCode::ERR_CHECKPOINT_ERROR;
     }
+    LOG(INFO) << "End checkpoint : " << dataPath_;
     return ResultCode::SUCCEEDED;
 }
 

@@ -730,6 +730,7 @@ ResultCode NebulaStore::createCheckpoint(GraphSpaceID spaceId, const std::string
 
     auto space = nebula::value(spaceRet);
     for (auto& engine : space->engines_) {
+        LOG(INFO) << "Begin checkpoint for engine : " << engine->getDataRoot();
         auto code = engine->createCheckpoint(name);
         if (code != ResultCode::SUCCEEDED) {
             return code;
@@ -749,6 +750,7 @@ ResultCode NebulaStore::createCheckpoint(GraphSpaceID spaceId, const std::string
                 return ResultCode::ERR_CHECKPOINT_ERROR;
             }
         }
+        LOG(INFO) << "End checkpoint for engine : " << engine->getDataRoot();
     }
     return ResultCode::SUCCEEDED;
 }
