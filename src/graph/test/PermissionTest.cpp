@@ -57,15 +57,8 @@ TEST_F(PermissionTest, SimpleTest) {
 
         query = "USE my_space; CREATE TAG person(name string)";
         code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_BAD_PERMISSION, code);
-
-        query = "USE my_space";
-        code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
-        query = "CREATE TAG person(name string)";
-        code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         client->disconnect();
     }
     /*
