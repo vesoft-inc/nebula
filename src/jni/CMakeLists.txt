@@ -54,3 +54,10 @@ add_compile_options(-Wunused-parameter)
 
 add_subdirectory(src)
 
+add_custom_target(
+    java_lib
+    COMMAND mvn clean package
+    COMMAND mv target ${CMAKE_CURRENT_BINARY_DIR}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/java
+    DEPENDS nebula_codec
+)
