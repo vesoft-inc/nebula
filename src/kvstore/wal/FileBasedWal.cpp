@@ -739,6 +739,9 @@ void FileBasedWal::cleanWAL(int32_t ttl) {
     size_t index = 0;
     auto it = walFiles_.begin();
     auto size = walFiles_.size();
+    if (size < 2) {
+        return;
+    }
     int count = 0;
     int walTTL = ttl == 0 ? policy_.ttl : ttl;
     while (it != walFiles_.end()) {
