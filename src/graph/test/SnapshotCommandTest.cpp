@@ -46,6 +46,7 @@ TEST_F(SnapshotCommandTest, TestSnapshot) {
         auto code = client->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
     std::string sname;
     ASSERT_NE(nullptr, client);
     {
