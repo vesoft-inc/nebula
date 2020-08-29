@@ -11,6 +11,9 @@
 #include "interface/gen-cpp2/common_types.h"
 
 namespace nebula {
+namespace graph {
+class GlobalVariableHolder;
+}
 namespace session {
 
 enum class Role : char {
@@ -25,6 +28,7 @@ enum class Role : char {
 class Session final {
 public:
     static std::shared_ptr<Session> create(int64_t id);
+    ~Session();
 
     int64_t id() const {
         return id_;
@@ -106,6 +110,10 @@ public:
 
     void charge();
 
+    void setGlobalVariableHolder(std::unique_ptr<graph::GlobalVariableHolder> holder);
+
+    graph::GlobalVariableHolder* globalVariableHolder();
+
 private:
     Session() = default;
     explicit Session(int64_t id);
@@ -123,6 +131,7 @@ private:
      * But a user has only one role in one space
      */
     std::unordered_map<GraphSpaceID, Role> roles_;
+    std::unique_ptr<graph::GlobalVariableHolder> holder_;
 };
 
 }  // namespace session

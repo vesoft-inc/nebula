@@ -126,6 +126,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_ROLES
 %token KW_GOD KW_ADMIN KW_DBA KW_GUEST KW_GRANT KW_REVOKE KW_ON
 %token KW_CONTAINS
+%token KW_GLOBAL
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -1324,7 +1325,10 @@ set_sentence
 
 assignment_sentence
     : VARIABLE ASSIGN set_sentence {
-        $$ = new AssignmentSentence($1, $3);
+        $$ = new AssignmentSentence($1, $3, false);
+    }
+    | KW_GLOBAL VARIABLE ASSIGN set_sentence {
+        $$ = new AssignmentSentence($2, $4, true);
     }
     ;
 

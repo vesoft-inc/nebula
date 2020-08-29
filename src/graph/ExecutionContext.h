@@ -41,7 +41,7 @@ public:
         gflagsManager_ = gflagsManager;
         storageClient_ = storage;
         metaClient_ = metaClient;
-        variableHolder_ = std::make_unique<VariableHolder>();
+        variableHolder_ = std::make_unique<VariableHolder>(rctx_->session());
         charsetInfo_ = charsetInfo;
     }
 

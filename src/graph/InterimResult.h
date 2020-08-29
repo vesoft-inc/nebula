@@ -19,7 +19,7 @@ namespace graph {
 /**
  * The intermediate form of execution result, used in pipeline and variable.
  */
-class InterimResult final {
+class InterimResult final : public std::enable_shared_from_this<InterimResult> {
 public:
     InterimResult() = default;
     ~InterimResult() = default;

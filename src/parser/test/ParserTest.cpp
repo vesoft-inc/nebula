@@ -1022,6 +1022,13 @@ TEST(Parser, FetchVertex) {
     }
     {
         GQLParser parser;
+        std::string query = "GLOBAL $var = GO FROM 1 over e1; "
+                            "FETCH PROP ON person $var.id YIELD person.name, person.age";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
         std::string query = "FETCH PROP ON person 1,2,3 "
                             "YIELD DISTINCT person.name, person.age";
         auto result = parser.parse(query);
