@@ -309,6 +309,7 @@ bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
             return true;
         }
         case Expression::kVariableProp:
+        case Expression::kVariableVariant:
         case Expression::kDestProp:
         case Expression::kInputProp: {
             return false;

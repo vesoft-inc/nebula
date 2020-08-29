@@ -32,6 +32,7 @@ void DeleteVerticesExecutor::execute() {
     expCtx_ = std::make_unique<ExpressionContext>();
     expCtx_->setSpace(space_);
     expCtx_->setStorageClient(ectx()->getStorageClient());
+    expCtx_->setOnVariableVariantGet(onVariableVariantGet_);
 
     auto vidList = sentence_->vidList();
     vidList->setContext(expCtx_.get());

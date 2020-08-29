@@ -269,6 +269,7 @@ Status FetchVerticesExecutor::prepareClauses() {
     expCtx_ = std::make_unique<ExpressionContext>();
     expCtx_->setStorageClient(ectx()->getStorageClient());
     expCtx_->setSpace(spaceId_);
+    expCtx_->setOnVariableVariantGet(onVariableVariantGet_);
 
     Status status;
     do {

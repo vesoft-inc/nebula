@@ -28,12 +28,7 @@ namespace graph {
 
 class Executor : public cpp::NonCopyable, public cpp::NonMovable {
 public:
-    explicit Executor(ExecutionContext *ectx, const std::string &statsName = "") {
-        ectx_ = ectx;
-        if (!statsName.empty()) {
-            stats_ = std::make_unique<stats::Stats>("graph", statsName);
-        }
-    }
+    explicit Executor(ExecutionContext *ectx, const std::string &statsName = "");
 
     virtual ~Executor() {}
 
@@ -113,11 +108,12 @@ protected:
     void doFinish(ProcessControl pro, uint32_t count = 1) const;
 
 protected:
-    ExecutionContext                           *ectx_;
-    std::function<void(ProcessControl)>         onFinish_;
-    std::function<void(Status)>                 onError_;
-    time::Duration                              duration_;
-    std::unique_ptr<stats::Stats>               stats_;
+    ExecutionContext                                    *ectx_;
+    std::function<void(ProcessControl)>                 onFinish_;
+    std::function<void(Status)>                         onError_;
+    time::Duration                                      duration_;
+    std::unique_ptr<stats::Stats>                       stats_;
+    std::function<OptVariantType(const std::string&)>   onVariableVariantGet_;
 };
 
 }   // namespace graph

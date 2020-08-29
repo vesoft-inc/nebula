@@ -21,6 +21,12 @@ TEST(Parser, Go) {
     }
     {
         GQLParser parser;
+        std::string query = "GO 0 STEPS FROM $var OVER friend";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
         std::string query = "GO -1 STEPS FROM 1 OVER friend";
         auto result = parser.parse(query);
         ASSERT_FALSE(result.ok()) << result.status();
@@ -1884,15 +1890,6 @@ TEST(Parser, Return) {
 }
 
 TEST(Parser, ErrorMsg) {
-    {
-        GQLParser parser;
-        std::string query = "CREATE SPACE " + std::string(4097, 'A');
-        auto result = parser.parse(query);
-        ASSERT_FALSE(result.ok());
-        auto error = "SyntaxError: Out of range of the LABEL length, "
-                     "the  max length of LABEL is 4096: near `" + std::string(80, 'A') + "'";
-        ASSERT_EQ(error, result.status().toString());
-    }
     {
         GQLParser parser;
         std::string query = "INSERT VERTEX person(id) VALUES 100:(9223372036854775809) ";

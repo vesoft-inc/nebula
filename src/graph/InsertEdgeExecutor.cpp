@@ -24,6 +24,7 @@ InsertEdgeExecutor::InsertEdgeExecutor(Sentence *sentence,
 Status InsertEdgeExecutor::prepare() {
     expCtx_ = std::make_unique<ExpressionContext>();
     expCtx_->setStorageClient(ectx()->getStorageClient());
+    expCtx_->setOnVariableVariantGet(onVariableVariantGet_);
     return Status::OK();
 }
 
@@ -95,6 +96,7 @@ Status InsertEdgeExecutor::check() {
 StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
     expCtx_ = std::make_unique<ExpressionContext>();
     expCtx_->setStorageClient(ectx()->getStorageClient());
+    expCtx_->setOnVariableVariantGet(onVariableVariantGet_);
 
     auto space = ectx()->rctx()->session()->space();
     expCtx_->setSpace(space);

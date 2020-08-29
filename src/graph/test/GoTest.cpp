@@ -52,6 +52,23 @@ TEST_P(GoTest, OneStepOutBound) {
     }
     {
         cpp2::ExecutionResponse resp;
+        auto *fmt = "$var = YIELD %ld as id; GO FROM $var OVER serve";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {teams_["Spurs"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
         auto *fmt = "YIELD %ld as vid | GO FROM $-.vid OVER serve";
         auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
         auto code = client_->execute(query, resp);
@@ -1568,8 +1585,8 @@ TEST_P(GoTest, FilterPushdown) {
         auto result = GQLParser().parse(query);                                         \
         ASSERT_TRUE(result.ok());                                                       \
         auto sentences = result.value()->sentences();                                   \
-        ASSERT_EQ(sentences.size(), 1);                                                 \
-        auto goSentence = static_cast<GoSentence*>(sentences[0]);                       \
+        ASSERT_GE(sentences.size(), 1);                                                 \
+        auto goSentence = static_cast<GoSentence*>(sentences.back());                   \
         auto whereWrapper = std::make_unique<WhereWrapper>(goSentence->whereClause());  \
         auto filter = whereWrapper->filter_;                                            \
         ASSERT_NE(filter, nullptr);                                                     \
@@ -1591,6 +1608,32 @@ TEST_P(GoTest, FilterPushdown) {
         TEST_FILTER_PUSHDOWN_REWRITE(
                 true,
                 "((serve.start_year>2013)&&(serve.end_year<2018))");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {teams_["Mavericks"].vid()},
+            {teams_["Kings"].vid()},
+            {teams_["Bulls"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        // Filter pushdown: ((serve.start_year>2013)&&(serve.end_year<$var))
+        auto *fmt = "$var = YIELD 2018; GO FROM %ld OVER serve "
+                    "WHERE serve.start_year > 2013 && serve.end_year < $var";
+        auto query = folly::stringPrintf(fmt, players_["Rajon Rondo"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+            true,
+            "((serve.start_year>2013)&&(serve.end_year<$var))");
 
         cpp2::ExecutionResponse resp;
         auto code = client_->execute(query, resp);

@@ -33,6 +33,7 @@ Status UpdateVertexExecutor::prepareData() {
     expCtx_ = std::make_unique<ExpressionContext>();
     expCtx_->setSpace(spaceId_);
     expCtx_->setStorageClient(ectx()->getStorageClient());
+    expCtx_->setOnVariableVariantGet(onVariableVariantGet_);
 
     Status status = Status::OK();
     do {

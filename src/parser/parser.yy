@@ -369,6 +369,9 @@ base_expression
     | var_ref_expression {
         $$ = $1;
     }
+    | VARIABLE {
+        $$ = new VariableVariantExpression($1);
+    }
     | alias_ref_expression {
         $$ = $1;
     }
@@ -408,9 +411,6 @@ dst_ref_expression
 var_ref_expression
     : VARIABLE DOT name_label {
         $$ = new VariablePropertyExpression($1, $3);
-    }
-    | VARIABLE {
-        $$ = new VariablePropertyExpression($1, new std::string("id"));
     }
     | VARIABLE DOT MUL {
         $$ = new VariablePropertyExpression($1, new std::string("*"));
@@ -645,6 +645,9 @@ vid_list
 vid
     : unary_integer {
         $$ = new PrimaryExpression($1);
+    }
+    | VARIABLE {
+        $$ = new VariableVariantExpression($1);
     }
     | function_call_expression {
         $$ = $1;

@@ -89,6 +89,7 @@ nebula::cpp2::SupportedType TraverseExecutor::calculateExprType(Expression* exp)
     auto spaceId = ectx()->rctx()->session()->space();
     switch (exp->kind()) {
         case Expression::kPrimary:
+        case Expression::kVariableVariant:
         case Expression::kFunctionCall:
         case Expression::kUnary:
         case Expression::kArithmetic: {
@@ -490,6 +491,7 @@ bool WhereWrapper::rewrite(Expression *expr) const {
             return canPushdown(expr);
         }
         case Expression::kPrimary:
+        case Expression::kVariableVariant:
         case Expression::kSourceProp:
         case Expression::kEdgeRank:
         case Expression::kEdgeDstId:

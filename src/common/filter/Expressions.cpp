@@ -79,6 +79,8 @@ std::unique_ptr<Expression> Expression::makeExpr(uint8_t kind) {
             return std::make_unique<AliasPropertyExpression>();
         case kVariableProp:
             return std::make_unique<VariablePropertyExpression>();
+        case kVariableVariant:
+            return std::make_unique<VariableVariantExpression>();
         case kDestProp:
             return std::make_unique<DestPropertyExpression>();
         case kInputProp:
@@ -88,6 +90,14 @@ std::unique_ptr<Expression> Expression::makeExpr(uint8_t kind) {
     }
 }
 
+bool Expression::encodeCache(ICord<> &cord) const {
+    if (cacheable()) {
+        PrimaryExpression e(*cache());
+        dynamic_cast<Expression*>(&e)->encode(cord);
+        return true;
+    }
+    return false;
+}
 
 // static
 std::string Expression::encode(Expression *expr) noexcept {
@@ -157,6 +167,8 @@ Status AliasPropertyExpression::prepare() {
 }
 
 void AliasPropertyExpression::encode(ICord<> &cord) const {
+    if (encodeCache(cord)) return;
+
     cord << kindToInt(kind());
     cord << static_cast<uint16_t>(ref_->size());
     cord << *ref_;
@@ -276,6 +288,69 @@ Status VariablePropertyExpression::traversal(std::function<void(const Expression
     visitor(this);
     return Status::OK();
 }
+
+
+VariableVariantExpression::VariableVariantExpression(std::string *var) {
+    kind_ = kVariableVariant;
+    var_.reset(var);
+}
+
+std::string VariableVariantExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+    buf += VAR_REF;
+    buf += *var_;
+    return buf;
+}
+
+Status VariableVariantExpression::prepare() {
+    auto status = context_->getVariableVariant(*var_);
+    if (status.ok()) {
+        cache_ = std::move(status).value();
+    }
+    return Status::OK();
+}
+
+OptVariantType VariableVariantExpression::eval(Getters &getters) const {
+    UNUSED(getters);
+    if (cache_.hasValue()) {
+        return *cache_;
+    }
+    auto status = context_->getVariableVariant(*var_);
+    if (!status.ok()) {
+        return status.status();
+    }
+    return std::move(status).value();
+}
+
+Status VariableVariantExpression::traversal(std::function<void(const Expression*)> visitor) const {
+    if (!visitor) {
+        return Status::Error("Null visitor.");
+    }
+    visitor(this);
+    return Status::OK();
+}
+
+void VariableVariantExpression::encode(ICord<> &cord) const {
+    if (encodeCache(cord)) return;
+
+    cord << kindToInt(kind());
+    cord << static_cast<uint16_t>(var_->size());
+    cord << *var_;
+}
+
+const char* VariableVariantExpression::decode(const char *pos, const char *end) {
+    THROW_IF_NO_SPACE(pos, end, 2UL);
+    auto size = *reinterpret_cast<const uint16_t*>(pos);
+    pos += 2;
+
+    THROW_IF_NO_SPACE(pos, end, static_cast<uint64_t>(size));
+    var_ = std::make_unique<std::string>(pos, size);
+    pos += size;
+
+    return pos;
+}
+
 
 Status VariablePropertyExpression::prepare() {
     context_->addVariableProp(*alias_, *prop_);
@@ -570,6 +645,8 @@ Status FunctionCallExpression::prepare() {
 
 
 void FunctionCallExpression::encode(ICord<> &cord) const {
+    if (encodeCache(cord)) return;
+
     cord << kindToInt(kind());
 
     cord << static_cast<uint16_t>(name_->size());
@@ -695,6 +772,8 @@ Status UnaryExpression::prepare() {
 
 
 void UnaryExpression::encode(ICord<> &cord) const {
+    if (encodeCache(cord)) return;
+
     cord << kindToInt(kind());
     cord << static_cast<uint8_t>(op_);
     operand_->encode(cord);
@@ -777,6 +856,8 @@ Status TypeCastingExpression::prepare() {
 
 
 void TypeCastingExpression::encode(ICord<> &cord) const {
+    if (encodeCache(cord)) return;
+
     cord << kindToInt(kind());
     cord << static_cast<uint8_t>(type_);
     operand_->encode(cord);
@@ -994,6 +1075,8 @@ Status ArithmeticExpression::prepare() {
 
 
 void ArithmeticExpression::encode(ICord<> &cord) const {
+    if (encodeCache(cord)) return;
+
     cord << kindToInt(kind());
     cord << static_cast<uint8_t>(op_);
     left_->encode(cord);
@@ -1147,6 +1230,8 @@ Status RelationalExpression::prepare() {
 
 
 void RelationalExpression::encode(ICord<> &cord) const {
+    if (encodeCache(cord)) return;
+
     cord << kindToInt(kind());
     cord << static_cast<uint8_t>(op_);
     left_->encode(cord);
@@ -1241,6 +1326,8 @@ Status LogicalExpression::prepare() {
 }
 
 void LogicalExpression::encode(ICord<> &cord) const {
+    if (encodeCache(cord)) return;
+
     cord << kindToInt(kind());
     cord << static_cast<uint8_t>(op_);
     left_->encode(cord);

@@ -24,6 +24,7 @@ InsertVertexExecutor::InsertVertexExecutor(Sentence *sentence,
 Status InsertVertexExecutor::prepare() {
     expCtx_ = std::make_unique<ExpressionContext>();
     expCtx_->setStorageClient(ectx()->getStorageClient());
+    expCtx_->setOnVariableVariantGet(onVariableVariantGet_);
     return Status::OK();
 }
 

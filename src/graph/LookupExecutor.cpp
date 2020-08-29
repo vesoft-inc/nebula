@@ -101,6 +101,7 @@ Status LookupExecutor::prepareWhere() {
     }
     expCtx_ = std::make_unique<ExpressionContext>();
     expCtx_->setStorageClient(ectx()->getStorageClient());
+    expCtx_->setOnVariableVariantGet(onVariableVariantGet_);
     expCtx_->setSpace(spaceId_);
     return Status::OK();
 }

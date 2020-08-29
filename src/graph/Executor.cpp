@@ -65,6 +65,58 @@
 namespace nebula {
 namespace graph {
 
+Executor::Executor(ExecutionContext *ectx, const std::string &statsName) {
+    ectx_ = ectx;
+    if (!statsName.empty()) {
+        stats_ = std::make_unique<stats::Stats>("graph", statsName);
+    }
+
+    onVariableVariantGet_ = [this] (const std::string& var) -> OptVariantType {
+        if (ectx_ == nullptr || ectx_->variableHolder() == nullptr) {
+            return Status::Error( "var %s not defined.", var.c_str());
+        }
+        const InterimResult* interim = ectx_->variableHolder()->get(var);
+        if (interim == nullptr) {
+            return Status::Error( "var %s not defined.", var.c_str());
+        }
+        auto status = interim->getRows();
+        if (!status.ok()) {
+            return status.status();
+        }
+        std::vector<cpp2::RowValue> rows = std::move(status).value();
+        if (rows.size() != 1) {
+            return Status::Error(
+                "var %s row_size: %zu != 1",
+                var.c_str(), rows.size());
+        }
+        auto& row = rows[0];
+        if (row.get_columns().size() != 1) {
+            return Status::Error(
+                "var %s col_size: %zu != 1",
+                var.c_str(), row.get_columns().size());
+        }
+        auto& value = row.get_columns().front();
+
+        switch (value.getType()) {
+            case cpp2::ColumnValue::Type::id:
+                return value.get_id();
+            case cpp2::ColumnValue::Type::integer:
+                return value.get_integer();
+            case cpp2::ColumnValue::Type::double_precision:
+                return value.get_double_precision();
+            case cpp2::ColumnValue::Type::bool_val:
+                return value.get_bool_val();
+            case cpp2::ColumnValue::Type::str:
+                return value.get_str();
+            case cpp2::ColumnValue::Type::timestamp:
+                return value.get_timestamp();
+            default:
+                LOG(ERROR) << "Not Support type: " << value.getType();
+                return Status::Error("Not Support type: %d", static_cast<int>(value.getType()));
+        }
+    };
+}
+
 std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
     auto kind = sentence->kind();
     std::unique_ptr<Executor> executor;
