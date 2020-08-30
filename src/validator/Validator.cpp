@@ -210,79 +210,18 @@ Status Validator::validate(Sentence* sentence, QueryContext* qctx) {
 }
 
 Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
-    switch (DCHECK_NOTNULL(node)->kind()) {
-        case PlanNode::Kind::kShowHosts:
-        case PlanNode::Kind::kFilter:
-        case PlanNode::Kind::kProject:
-        case PlanNode::Kind::kSort:
-        case PlanNode::Kind::kLimit:
-        case PlanNode::Kind::kAggregate:
-        case PlanNode::Kind::kSelect:
-        case PlanNode::Kind::kLoop:
-        case PlanNode::Kind::kCreateUser:
-        case PlanNode::Kind::kDropUser:
-        case PlanNode::Kind::kUpdateUser:
-        case PlanNode::Kind::kGrantRole:
-        case PlanNode::Kind::kRevokeRole:
-        case PlanNode::Kind::kChangePassword:
-        case PlanNode::Kind::kListUserRoles:
-        case PlanNode::Kind::kListUsers:
-        case PlanNode::Kind::kListRoles:
-        case PlanNode::Kind::kPassThrough:
-        case PlanNode::Kind::kSwitchSpace:
-        case PlanNode::Kind::kGetEdges:
-        case PlanNode::Kind::kGetVertices:
-        case PlanNode::Kind::kCreateSpace:
-        case PlanNode::Kind::kCreateTag:
-        case PlanNode::Kind::kCreateEdge:
-        case PlanNode::Kind::kDescSpace:
-        case PlanNode::Kind::kDescTag:
-        case PlanNode::Kind::kDescEdge:
-        case PlanNode::Kind::kInsertVertices:
-        case PlanNode::Kind::kInsertEdges:
-        case PlanNode::Kind::kGetNeighbors:
-        case PlanNode::Kind::kAlterTag:
-        case PlanNode::Kind::kAlterEdge:
-        case PlanNode::Kind::kShowCreateSpace:
-        case PlanNode::Kind::kShowCreateTag:
-        case PlanNode::Kind::kShowCreateEdge:
-        case PlanNode::Kind::kDropSpace:
-        case PlanNode::Kind::kDropTag:
-        case PlanNode::Kind::kDropEdge:
-        case PlanNode::Kind::kShowSpaces:
-        case PlanNode::Kind::kShowTags:
-        case PlanNode::Kind::kShowEdges:
-        case PlanNode::Kind::kCreateSnapshot:
-        case PlanNode::Kind::kDropSnapshot:
-        case PlanNode::Kind::kSubmitJob:
-        case PlanNode::Kind::kShowSnapshots:
-        case PlanNode::Kind::kBalanceLeaders:
-        case PlanNode::Kind::kBalance:
-        case PlanNode::Kind::kStopBalance:
-        case PlanNode::Kind::kShowBalance:
-        case PlanNode::Kind::kDeleteVertices:
-        case PlanNode::Kind::kDeleteEdges:
-        case PlanNode::Kind::kUpdateVertex:
-        case PlanNode::Kind::kUpdateEdge:
-        case PlanNode::Kind::kShowParts:
-        case PlanNode::Kind::kShowCharset:
-        case PlanNode::Kind::kShowCollation:
-        case PlanNode::Kind::kShowConfigs:
-        case PlanNode::Kind::kSetConfig:
-        case PlanNode::Kind::kGetConfig: {
-            static_cast<SingleDependencyNode*>(node)->dependsOn(appended);
-            break;
-        }
-        default: {
-            return Status::SemanticError("%s not support to append an input.",
-                                         PlanNode::toString(node->kind()));
-        }
+    DCHECK(node != nullptr);
+    DCHECK(appended != nullptr);
+    if (node->dependencies().size() != 1) {
+        return Status::SemanticError("%s not support to append an input.",
+                                     PlanNode::toString(node->kind()));
     }
+    static_cast<SingleDependencyNode*>(node)->dependsOn(appended);
     return Status::OK();
 }
 
 Status Validator::appendPlan(PlanNode* root) {
-    return appendPlan(tail_, DCHECK_NOTNULL(root));
+    return appendPlan(tail_, root);
 }
 
 Status Validator::validate() {
@@ -1021,4 +960,3 @@ void ExpressionProps::unionProps(ExpressionProps exprProps) {
 }
 }   // namespace graph
 }   // namespace nebula
-

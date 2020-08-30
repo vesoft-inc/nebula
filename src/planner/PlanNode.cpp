@@ -191,7 +191,7 @@ std::ostream& operator<<(std::ostream& os, PlanNode::Kind kind) {
 std::unique_ptr<cpp2::PlanNodeDescription> SingleDependencyNode::explain() const {
     auto desc = PlanNode::explain();
     DCHECK(!desc->__isset.dependencies);
-    desc->set_dependencies({dependency_->id()});
+    desc->set_dependencies({dep()->id()});
     return desc;
 }
 
@@ -204,7 +204,7 @@ std::unique_ptr<cpp2::PlanNodeDescription> SingleInputNode::explain() const {
 std::unique_ptr<cpp2::PlanNodeDescription> BiInputNode::explain() const {
     auto desc = PlanNode::explain();
     DCHECK(!desc->__isset.dependencies);
-    desc->set_dependencies({left_->id(), right_->id()});
+    desc->set_dependencies({left()->id(), right()->id()});
     addDescription("leftVar", leftVar_, desc.get());
     addDescription("rightVar", rightVar_, desc.get());
     return desc;
