@@ -17,7 +17,7 @@
 
 
 DEFINE_int32(heartbeat_interval_secs, 3, "Heartbeat interval");
-DEFINE_int32(meta_client_retry_times, 3, "meta client retry times, 0 means no retry");
+DEFINE_int32(meta_client_retry_times, 5, "meta client retry times, 0 means no retry");
 DEFINE_int32(meta_client_retry_interval_secs, 1, "meta client sleep interval between retry");
 DEFINE_int32(meta_client_timeout_ms, 60 * 1000, "meta client timeout");
 DEFINE_string(cluster_id_path, "cluster.id", "file path saved clusterId");

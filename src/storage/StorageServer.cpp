@@ -112,7 +112,7 @@ bool StorageServer::start() {
     metaClient_ = std::make_unique<meta::MetaClient>(ioThreadPool_,
                                                      metaAddrs_,
                                                      options);
-    if (!metaClient_->waitForMetadReady()) {
+    if (!metaClient_->waitForMetadReady(FLAGS_meta_client_retry_times)) {
         LOG(ERROR) << "waitForMetadReady error!";
         return false;
     }
