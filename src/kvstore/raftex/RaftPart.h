@@ -493,23 +493,26 @@ protected:
     HostAddr leader_;
 
     // After voted for somebody, it will not be empty anymore.
+    // And it will be reset to empty after current election finished.
     HostAddr votedAddr_{0, 0};
-    // TODO(heng) We should persist it on the disk in the future
-    // Otherwise, after restart the whole cluster, maybe the stale
-    // leader still has the unsend log with larger term, and after other
-    // replicas elected the new leader, the stale one will not join in the
-    // Raft group any more.
-    TermID   votedTerm_{0};
 
     // The current term id
-    //
-    // When the partition voted for someone, termId will be set to
     // the term id proposed by that candidate
     TermID term_{0};
     // During normal operation, proposedTerm_ is equal to term_,
     // when the partition becomes a candidate, proposedTerm_ will be
     // bumped up by 1 every time when sending out the AskForVote
     // Request
+
+    // If voted for somebody, the proposeTerm will be reset to the candidate
+    // propose term. So we could use it to prevent revote if someone else ask for
+    // vote for current proposedTerm.
+
+    // TODO(heng) We should persist it on the disk in the future
+    // Otherwise, after restart the whole cluster, maybe the stale
+    // leader still has the unsend log with larger term, and after other
+    // replicas elected the new leader, the stale one will not join in the
+    // Raft group any more.
     TermID proposedTerm_{0};
 
     // The id and term of the last-sent log

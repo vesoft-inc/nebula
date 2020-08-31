@@ -1008,6 +1008,9 @@ bool RaftPart::prepareElectionRequest(
         return false;
     }
 
+    // Before start a new election, reset the votedAddr
+    votedAddr_ = std::make_pair(0, 0);
+
     req.set_space(spaceId_);
     req.set_part(partId_);
     req.set_candidate_ip(addr_.first);
@@ -1352,10 +1355,10 @@ void RaftPart::processAskForVoteRequest(
         }
     }
 
-    // If we have voted for somebody, we will reject other candidates under the votedTerm.
-    if (votedAddr_ != std::make_pair(0, 0) && votedTerm_ >= req.get_term()) {
+    // If we have voted for somebody, we will reject other candidates under the proposedTerm.
+    if (votedAddr_ != std::make_pair(0, 0) && proposedTerm_ >= req.get_term()) {
         LOG(INFO) << idStr_
-                  << "We have voted " << votedAddr_ << " on term " << votedTerm_
+                  << "We have voted " << votedAddr_ << " on term " << proposedTerm_
                   << ", so we should reject the candidate " << candidate
                   << " request on term " << req.get_term();
         resp.set_error_code(cpp2::ErrorCode::E_TERM_OUT_OF_DATE);
@@ -1377,7 +1380,7 @@ void RaftPart::processAskForVoteRequest(
 
     role_ = Role::FOLLOWER;
     votedAddr_ = candidate;
-    votedTerm_ = req.get_term();
+    proposedTerm_ = req.get_term();
     leader_ = std::make_pair(0, 0);
 
     // Reset the last message time
@@ -1666,7 +1669,6 @@ cpp2::ErrorCode RaftPart::verifyLeader(
     leader_ = candidate;
     term_ = proposedTerm_ = req.get_current_term();
     votedAddr_ = std::make_pair(0, 0);
-    votedTerm_ = 0;
     weight_ = 1;
     if (oldRole == Role::LEADER) {
         VLOG(2) << idStr_ << "Was a leader, need to do some clean-up";
