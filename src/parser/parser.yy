@@ -19,6 +19,7 @@
 #include "parser/ColumnTypeDef.h"
 #include "common/interface/gen-cpp2/meta_types.h"
 #include "common/expression/AttributeExpression.h"
+#include "common/expression/VariableExpression.h"
 #include "util/SchemaUtil.h"
 
 namespace nebula {
@@ -288,7 +289,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 
 %left OR KW_OR KW_XOR
 %left AND KW_AND
-%left EQ NE LT LE GT GE KW_IN KW_CONTAINS
+%left EQ NE LT LE GT GE KW_IN KW_NOT_IN KW_CONTAINS KW_NOT_CONTAINS
 %left PLUS MINUS
 %left STAR DIV MOD
 %right NOT KW_NOT
@@ -367,6 +368,7 @@ unreserved_keyword
     | KW_ALL                { $$ = new std::string("all"); }
     | KW_SHORTEST           { $$ = new std::string("shortest"); }
     | KW_COUNT_DISTINCT     { $$ = new std::string("count_distinct"); }
+    | KW_NOT_CONTAINS           { $$ = new std::string("contains"); }
     | KW_CONTAINS           { $$ = new std::string("contains"); }
     ;
 
@@ -399,6 +401,9 @@ expression
     }
     | name_label {
         $$ = new LabelExpression($1);
+    }
+    | VARIABLE {
+        $$ = new VariableExpression($1);
     }
     | INTEGER {
         $$ = new ConstantExpression($1);
@@ -454,6 +459,9 @@ expression
     }
     | expression KW_IN expression {
         $$ = new RelationalExpression(Expression::Kind::kRelIn, $1, $3);
+    }
+    | expression KW_NOT_IN expression {
+        $$ = new RelationalExpression(Expression::Kind::kRelNotIn, $1, $3);
     }
     | expression KW_CONTAINS expression {
         $$ = new RelationalExpression(Expression::Kind::kContains, $1, $3);
@@ -518,7 +526,13 @@ property_expression
     ;
 
 subscript_expression
-    : compound_expression L_BRACKET expression R_BRACKET {
+    : name_label L_BRACKET expression R_BRACKET {
+        $$ = new SubscriptExpression(new LabelExpression($1), $3);
+    }
+    | VARIABLE L_BRACKET expression R_BRACKET {
+        $$ = new SubscriptExpression(new VariableExpression($1), $3);
+    }
+    | compound_expression L_BRACKET expression R_BRACKET {
         $$ = new SubscriptExpression($1, $3);
     }
     ;

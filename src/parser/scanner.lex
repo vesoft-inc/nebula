@@ -23,6 +23,7 @@ static constexpr size_t MAX_STRING = 4096;
 %x SQ_STR
 %x COMMENT
 
+blanks                      ([ \t\n]+)
 GO                          ([Gg][Oo])
 AS                          ([Aa][Ss])
 TO                          ([Tt][Oo])
@@ -114,6 +115,7 @@ ON                          ([Oo][Nn])
 ROLES                       ([Rr][Oo][Ll][Ee][Ss])
 BY                          ([Bb][Yy])
 IN                          ([Ii][Nn])
+NOT_IN                      ({NOT}{blanks}{IN})
 TTL_DURATION                ([Tt][Tt][Ll][_][Dd][Uu][Rr][Aa][Tt][Ii][Oo][Nn])
 TTL_COL                     ([Tt][Tt][Ll][_][Cc][Oo][Ll])
 DOWNLOAD                    ([Dd][Oo][Ww][Nn][Ll][Oo][Aa][Dd])
@@ -168,6 +170,7 @@ OUT                         ([Oo][Uu][Tt])
 BOTH                        ([Bb][Oo][Tt][Hh])
 SUBGRAPH                    ([Ss][Uu][Bb][Gg][Rr][Aa][Pp][Hh])
 CONTAINS                    ([Cc][Oo][Nn][Tt][Aa][Ii][Nn][Ss])
+NOT_CONTAINS                ({NOT}{blanks}{CONTAINS})
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -254,6 +257,7 @@ FORMAT                      ([Ff][Oo][Rr][Mm][Aa][Tt])
 {ON}                        { return TokenType::KW_ON; }
 {BY}                        { return TokenType::KW_BY; }
 {IN}                        { return TokenType::KW_IN; }
+{NOT_IN}                    { return TokenType::KW_NOT_IN; }
 {DOWNLOAD}                  { return TokenType::KW_DOWNLOAD; }
 {GET}                       { return TokenType::KW_GET; }
 {OF}                        { return TokenType::KW_OF; }
@@ -337,6 +341,7 @@ FORMAT                      ([Ff][Oo][Rr][Mm][Aa][Tt])
 {BOTH}                      { return TokenType::KW_BOTH; }
 {SUBGRAPH}                  { return TokenType::KW_SUBGRAPH; }
 {CONTAINS}                  { return TokenType::KW_CONTAINS; }
+{NOT_CONTAINS}              { return TokenType::KW_NOT_CONTAINS; }
 
 
 {TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }

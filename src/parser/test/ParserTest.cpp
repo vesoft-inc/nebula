@@ -8,8 +8,6 @@
 #include "common/base/Base.h"
 #include "parser/GQLParser.h"
 
-// TODO(dutor) Inspect the internal structures to check on the syntax and semantics
-
 namespace nebula {
 
 TEST(Parser, TestSchemaCreation) {

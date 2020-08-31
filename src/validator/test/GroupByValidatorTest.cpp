@@ -160,13 +160,6 @@ TEST_F(GroupByValidatorTest, InvalidTest) {
         EXPECT_EQ(std::string(result.message()), "SemanticError: Group `(1+1)` invalid");
     }
     {
-        // src
-        std::string query = "GO FROM \"1\" OVER like YIELD like._dst AS id, $^.person.age AS age "
-                            "| GROUP BY $-.age YIELD COUNT($var)";
-        auto result = checkResult(query);
-        EXPECT_EQ(std::string(result.message()), "SyntaxError: syntax error near `)'");
-    }
-    {
         // use dst
         std::string query = "GO FROM \"1\" OVER like YIELD like._dst AS id, $^.person.age AS age "
                             "| GROUP BY $-.age YIELD COUNT($$.person.name)";

@@ -37,21 +37,28 @@ nebula_add_test(
     NAME parser_test
     SOURCES ParserTest.cpp
     OBJECTS ${PARSER_TEST_LIBS}
-    LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} wangle
+    LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES}
 )
 
 nebula_add_test(
     NAME scanner_test
     SOURCES ScannerTest.cpp
     OBJECTS ${PARSER_TEST_LIBS}
-    LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} wangle
+    LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES}
 )
 
 nebula_add_executable(
     NAME parser_bm
     SOURCES ParserBenchmark.cpp
     OBJECTS ${PARSER_TEST_LIBS}
-    LIBRARIES follybenchmark boost_regex ${THRIFT_LIBRARIES} wangle
+    LIBRARIES follybenchmark boost_regex ${THRIFT_LIBRARIES}
+)
+
+nebula_add_test(
+    NAME expression_parsing_test
+    SOURCES ExpressionParsingTest.cpp
+    OBJECTS ${PARSER_TEST_LIBS}
+    LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES}
 )
 
 if(ENABLE_FUZZ_TEST)
