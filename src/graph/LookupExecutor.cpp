@@ -865,7 +865,7 @@ Status LookupExecutor::relationalExprCheck(RelationalExpression::Operator op) co
             return Status::OK();
         }
         case RelationalExpression::Operator::CONTAINS : {
-            return Status::SyntaxError("Unsupported operator '!=' or 'CONTAINS' in where clause");
+            return Status::SyntaxError("Unsupported 'CONTAINS' in where clause");
         }
     }
     return Status::OK();
