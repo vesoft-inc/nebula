@@ -6,10 +6,15 @@
 
 #include "common/expression/VariableExpression.h"
 #include "common/datatypes/List.h"
+#include "common/expression/ExprVisitor.h"
 
 namespace nebula {
 const Value& VariableExpression::eval(ExpressionContext& ctx) {
     return ctx.getVar(*var_);
+}
+
+void VariableExpression::accept(ExprVisitor* visitor) {
+    visitor->visit(this);
 }
 
 const Value& VersionedVariableExpression::eval(ExpressionContext& ctx) {
@@ -48,4 +53,8 @@ std::string VersionedVariableExpression::toString() const {
     return out.str();
 }
 
-}  // namespace nebula
+void VersionedVariableExpression::accept(ExprVisitor* visitor) {
+    visitor->visit(this);
+}
+
+}   // namespace nebula

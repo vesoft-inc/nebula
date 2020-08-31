@@ -81,6 +81,8 @@ public:
 
     std::string toString() const override;
 
+    void accept(ExprVisitor *visitor) override;
+
 private:
     void writeTo(Encoder &encoder) const override;
 
@@ -124,6 +126,8 @@ public:
     bool operator==(const Expression &rhs) const override;
 
     std::string toString() const override;
+
+    void accept(ExprVisitor* visitor) override;
 
 private:
     void writeTo(Encoder &encoder) const override;
@@ -169,6 +173,8 @@ public:
     bool operator==(const Expression &rhs) const override;
 
     std::string toString() const override;
+
+    void accept(ExprVisitor* visitor) override;
 
 private:
     void writeTo(Encoder &encoder) const override;

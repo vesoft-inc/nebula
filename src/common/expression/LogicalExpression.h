@@ -21,6 +21,8 @@ public:
 
     std::string toString() const override;
 
+    void accept(ExprVisitor* visitor) override;
+
 private:
     Value                                       result_;
 };

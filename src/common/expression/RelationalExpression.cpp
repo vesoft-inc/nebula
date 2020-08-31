@@ -8,6 +8,7 @@
 #include "common/datatypes/List.h"
 #include "common/datatypes/Set.h"
 #include "common/datatypes/Map.h"
+#include "common/expression/ExprVisitor.h"
 
 namespace nebula {
 const Value& RelationalExpression::eval(ExpressionContext& ctx) {
@@ -114,6 +115,10 @@ std::string RelationalExpression::toString() const {
     std::stringstream out;
     out << "(" << lhs_->toString() << op << rhs_->toString() << ")";
     return out.str();
+}
+
+void RelationalExpression::accept(ExprVisitor* visitor) {
+    visitor->visit(this);
 }
 
 }  // namespace nebula

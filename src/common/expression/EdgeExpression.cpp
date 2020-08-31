@@ -6,11 +6,17 @@
 
 #include "common/expression/EdgeExpression.h"
 
+#include "common/expression/ExprVisitor.h"
+
 namespace nebula {
 
 const Value& EdgeExpression::eval(ExpressionContext &ctx) {
     result_ = ctx.getEdge();
     return result_;
+}
+
+void EdgeExpression::accept(ExprVisitor *visitor) {
+    visitor->visit(this);
 }
 
 }   // namespace nebula

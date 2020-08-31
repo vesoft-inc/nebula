@@ -5,6 +5,7 @@
  */
 #include "common/function/FunctionManager.h"
 #include "common/expression/FunctionCallExpression.h"
+#include "common/expression/ExprVisitor.h"
 
 namespace nebula {
 
@@ -90,6 +91,10 @@ std::string FunctionCallExpression::toString() const {
     std::stringstream out;
     out << *name_ << "(" << folly::join(",", args) << ")";
     return out.str();
+}
+
+void FunctionCallExpression::accept(ExprVisitor* visitor) {
+    visitor->visit(this);
 }
 
 }  // namespace nebula

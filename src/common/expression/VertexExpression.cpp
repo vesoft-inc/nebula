@@ -6,11 +6,17 @@
 
 #include "common/expression/VertexExpression.h"
 
+#include "common/expression/ExprVisitor.h"
+
 namespace nebula {
 
 const Value& VertexExpression::eval(ExpressionContext &ctx) {
     result_ = ctx.getVertex();
     return result_;
+}
+
+void VertexExpression::accept(ExprVisitor *visitor) {
+    visitor->visit(this);
 }
 
 }   // namespace nebula

@@ -6,6 +6,8 @@
 
 #include "common/expression/ConstantExpression.h"
 
+#include "common/expression/ExprVisitor.h"
+
 namespace nebula {
 
 bool ConstantExpression::operator==(const Expression& rhs) const {
@@ -31,6 +33,10 @@ void ConstantExpression::writeTo(Encoder& encoder) const {
 void ConstantExpression::resetFrom(Decoder& decoder) {
     // Deserialize val_
     val_ = decoder.readValue();
+}
+
+void ConstantExpression::accept(ExprVisitor* visitor) {
+    visitor->visit(this);
 }
 
 std::string ConstantExpression::toString() const {

@@ -6,6 +6,7 @@
 
 #include "common/expression/UnaryExpression.h"
 #include "common/expression/VariableExpression.h"
+#include "common/expression/ExprVisitor.h"
 
 namespace nebula {
 
@@ -104,6 +105,10 @@ std::string UnaryExpression::toString() const {
     std::stringstream out;
     out << op << "(" << operand_->toString() << ")";
     return out.str();
+}
+
+void UnaryExpression::accept(ExprVisitor* visitor) {
+    visitor->visit(this);
 }
 
 }  // namespace nebula

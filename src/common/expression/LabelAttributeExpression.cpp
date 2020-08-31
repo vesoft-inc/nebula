@@ -6,10 +6,16 @@
 
 #include "common/expression/LabelAttributeExpression.h"
 
+#include "common/expression/ExprVisitor.h"
+
 namespace nebula {
 
 std::string LabelAttributeExpression::toString() const {
     return left()->toString() + "." + right()->toString();
+}
+
+void LabelAttributeExpression::accept(ExprVisitor *visitor) {
+    visitor->visit(this);
 }
 
 }   // namespace nebula

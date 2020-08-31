@@ -5,9 +5,10 @@
  */
 
 #include "common/expression/AttributeExpression.h"
-#include "common/datatypes/Map.h"
 #include "common/datatypes/Edge.h"
+#include "common/datatypes/Map.h"
 #include "common/datatypes/Vertex.h"
+#include "common/expression/ExprVisitor.h"
 
 namespace nebula {
 
@@ -38,6 +39,9 @@ const Value& AttributeExpression::eval(ExpressionContext &ctx) {
     return Value::kNullBadType;
 }
 
+void AttributeExpression::accept(ExprVisitor *visitor) {
+    visitor->visit(this);
+}
 
 std::string AttributeExpression::toString() const {
     CHECK(right()->kind() == Kind::kLabel || right()->kind() == Kind::kConstant);

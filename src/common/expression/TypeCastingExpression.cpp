@@ -5,6 +5,7 @@
  */
 
 #include "common/expression/TypeCastingExpression.h"
+#include "common/expression/ExprVisitor.h"
 
 namespace nebula {
 
@@ -135,6 +136,10 @@ std::string TypeCastingExpression::toString() const {
     std::stringstream out;
     out << "(" << vType_ << ")" << operand_->toString();
     return out.str();
+}
+
+void TypeCastingExpression::accept(ExprVisitor* visitor) {
+    visitor->visit(this);
 }
 
 }  // namespace nebula

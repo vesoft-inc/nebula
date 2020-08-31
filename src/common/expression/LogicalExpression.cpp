@@ -5,6 +5,7 @@
  */
 
 #include "common/expression/LogicalExpression.h"
+#include "common/expression/ExprVisitor.h"
 
 namespace nebula {
 const Value& LogicalExpression::eval(ExpressionContext& ctx) {
@@ -45,6 +46,10 @@ std::string LogicalExpression::toString() const {
     std::stringstream out;
     out << "(" << lhs_->toString() << op << rhs_->toString() << ")";
     return out.str();
+}
+
+void LogicalExpression::accept(ExprVisitor* visitor) {
+    visitor->visit(this);
 }
 
 }  // namespace nebula

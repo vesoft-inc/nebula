@@ -5,6 +5,7 @@
  */
 
 #include "common/expression/LabelExpression.h"
+#include "common/expression/ExprVisitor.h"
 
 namespace nebula {
 
@@ -39,4 +40,9 @@ void LabelExpression::resetFrom(Decoder& decoder) {
     // Read name_
     name_ = decoder.readStr();
 }
+
+void LabelExpression::accept(ExprVisitor* visitor) {
+    visitor->visit(this);
+}
+
 }  // namespace nebula

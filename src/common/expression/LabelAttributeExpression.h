@@ -33,6 +33,8 @@ public:
         LOG(FATAL) << "LabelAttributeExpression has to be rewritten";
     }
 
+    void accept(ExprVisitor *visitor) override;
+
     const LabelExpression* left() const {
         return lhs_.get();
     }

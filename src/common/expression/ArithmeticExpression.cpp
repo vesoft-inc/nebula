@@ -6,6 +6,8 @@
 
 #include "common/expression/ArithmeticExpression.h"
 
+#include "common/expression/ExprVisitor.h"
+
 namespace nebula {
 
 const Value& ArithmeticExpression::eval(ExpressionContext& ctx) {
@@ -58,6 +60,10 @@ std::string ArithmeticExpression::toString() const {
     std::stringstream out;
     out << "(" << lhs_->toString() << op << rhs_->toString() << ")";
     return out.str();
+}
+
+void ArithmeticExpression::accept(ExprVisitor* visitor) {
+    visitor->visit(this);
 }
 
 }  // namespace nebula

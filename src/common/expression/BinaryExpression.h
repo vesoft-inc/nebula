@@ -60,4 +60,3 @@ protected:
 
 }  // namespace nebula
 #endif  // COMMON_EXPRESSION_BINARYEXPRESSION_H_
-
