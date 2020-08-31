@@ -1620,7 +1620,7 @@ cpp2::ErrorCode RaftPart::verifyLeader(
     } else if (req.get_current_term() > term_) {
         // Leader stickness, no matter the term in Request is larger or not.
         // TODO(heng) Maybe we should reconsider the logic
-        if (leader_ != candidate
+        if (leader_ !=  std::make_pair(0, 0) && leader_ != candidate
                 && lastMsgRecvDur_.elapsedInMSec()
                         < FLAGS_raft_heartbeat_interval_secs * 1000) {
             LOG_EVERY_N(INFO, 100) << idStr_ << "I believe the leader " << leader_ << " exists. "
