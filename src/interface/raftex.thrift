@@ -103,6 +103,7 @@ struct AppendLogRequest {
     11: list<LogEntry> log_str_list;
 
     12: bool sending_snapshot;
+    13: bool keep_alive;
 }
 
 

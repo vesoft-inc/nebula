@@ -92,6 +92,8 @@ public:
         return addr_;
     }
 
+    void keepAlive(folly::EventBase* eb, TermID term, LogID lastLogId, TermID lastLogTerm);
+
 private:
     cpp2::ErrorCode checkStatus() const;
 

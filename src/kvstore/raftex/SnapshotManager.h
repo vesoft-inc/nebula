@@ -39,7 +39,8 @@ public:
 
     // Send snapshot for spaceId, partId to host dst.
     folly::Future<Status> sendSnapshot(std::shared_ptr<RaftPart> part,
-                                       const HostAddr& dst);
+                                       const HostAddr& dst,
+                                       std::pair<LogID, TermID> commitLogIdAndTerm);
 
 private:
     folly::Future<raftex::cpp2::SendSnapshotResponse> send(

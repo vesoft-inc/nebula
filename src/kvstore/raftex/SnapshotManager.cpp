@@ -11,6 +11,7 @@ DEFINE_int32(snapshot_worker_threads, 4, "Threads number for snapshot");
 DEFINE_int32(snapshot_io_threads, 4, "Threads number for snapshot");
 DEFINE_int32(snapshot_send_retry_times, 3, "Retry times if send failed");
 DEFINE_int32(snapshot_send_timeout_ms, 60000, "Rpc timeout for sending snapshot");
+DEFINE_int32(snapshot_task_delay_ms, 5000, "Delay sending time ms");
 
 namespace nebula {
 namespace raftex {
@@ -21,16 +22,16 @@ SnapshotManager::SnapshotManager() {
 }
 
 folly::Future<Status> SnapshotManager::sendSnapshot(std::shared_ptr<RaftPart> part,
-                                                    const HostAddr& dst) {
+                                                    const HostAddr& dst,
+                                                    std::pair<LogID, TermID> commitLogIdAndTerm) {
     folly::Promise<Status> p;
     auto fut = p.getFuture();
-    executor_->add([this, p = std::move(p), part, dst] () mutable {
+    auto task  = [this, p = std::move(p), part, dst, commitLogIdAndTerm] () mutable {
         auto spaceId = part->spaceId_;
         auto partId = part->partId_;
         auto termId = part->term_;
         // TODO(heng):  maybe the committedLogId is less than the real one in the snapshot.
         // It will not loss the data, but maybe some record will be committed twice.
-        auto commitLogIdAndTerm = part->lastCommittedLogId();
         const auto& localhost = part->address();
         std::vector<folly::Future<raftex::cpp2::SendSnapshotResponse>> results;
         LOG(INFO) << part->idStr_ << "Begin to send the snapshot"
@@ -90,6 +91,11 @@ folly::Future<Status> SnapshotManager::sendSnapshot(std::shared_ptr<RaftPart> pa
             p.setValue(Status::Error("Send snapshot failed!"));
             return false;
         });
+    };
+
+    folly::via(executor_.get(), [this, task = std::move(task)] () mutable {
+        auto* evb = executor_->getEventBase();
+        evb->runAfterDelay(std::move(task), FLAGS_snapshot_task_delay_ms);
     });
     return fut;
 }

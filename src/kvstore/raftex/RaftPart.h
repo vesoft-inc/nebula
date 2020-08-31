@@ -16,6 +16,7 @@
 #include "thread/GenericThreadPool.h"
 #include "base/LogIterator.h"
 #include "kvstore/raftex/SnapshotManager.h"
+#include <folly/Synchronized.h>
 
 namespace folly {
 class IOThreadPoolExecutor;
@@ -58,6 +59,7 @@ enum class LogType {
          share one promise with the normal logs before it.
      * */
     COMMAND     = 0x02,
+    KEEP_ALIVE  = 0x03,
 };
 
 class Host;
@@ -213,6 +215,10 @@ public:
 
     bool needToCleanWal();
 
+    void regHBThreads(std::shared_ptr<folly::IOThreadPoolExecutor> hbThreads) {
+        hbThreads_ = hbThreads;
+    }
+
 protected:
     // Protected constructor to prevent from instantiating directly
     RaftPart(ClusterID clusterId,
@@ -271,6 +277,8 @@ protected:
 
     void removePeer(const HostAddr& peer);
 
+    void keepAlive(TermID term, LogID lastLogId, TermID lastLogTerm);
+
 private:
     enum class Status {
         STARTING = 0,   // The part is starting, not ready for service
@@ -317,7 +325,7 @@ private:
      * Asynchronously send a heartbeat (An empty log entry)
      *
      ****************************************************************/
-    folly::Future<AppendLogResult> sendHeartbeat();
+    folly::Future<AppendLogResult> sendHeartbeat(bool keepAlive = false);
 
     /****************************************************
      *
@@ -326,9 +334,13 @@ private:
      ***************************************************/
     bool needToSendHeartbeat();
 
+    bool needToSyncWithFollower();
+
     bool needToStartElection();
 
     void statusPolling(int64_t startTime);
+
+    void heartBeatFunc();
 
     bool needToCleanupSnapshot();
 
@@ -471,7 +483,6 @@ protected:
     const GraphSpaceID spaceId_;
     const PartitionID partId_;
     const HostAddr addr_;
-    std::vector<std::shared_ptr<Host>> hosts_;
     size_t quorum_{0};
 
     // The lock is used to protect logs_ and cachingPromise_
@@ -486,19 +497,12 @@ protected:
 
     PromiseSet<AppendLogResult> sendingPromise_;
 
-    Status status_;
-    Role role_;
 
-    // When the partition is the leader, the leader_ is same as addr_
-    HostAddr leader_;
 
     // After voted for somebody, it will not be empty anymore.
     // And it will be reset to empty after current election finished.
     HostAddr votedAddr_{0, 0};
 
-    // The current term id
-    // the term id proposed by that candidate
-    TermID term_{0};
     // During normal operation, proposedTerm_ is equal to term_,
     // when the partition becomes a candidate, proposedTerm_ will be
     // bumped up by 1 every time when sending out the AskForVote
@@ -515,28 +519,48 @@ protected:
     // Raft group any more.
     TermID proposedTerm_{0};
 
+    //***************************************************
+    // variables readed on keep-alive path, to avoid raftLock, we make them thread-safe
+    //
+    // The current term id
+    //
+    // When the partition voted for someone, termId will be set to
+    // the term id proposed by that candidate
+    TermID term_{0};
+    // When the partition is the leader, the leader_ is same as addr_
+    HostAddr leader_;
+    Status status_;
+    Role role_;
     // The id and term of the last-sent log
     LogID lastLogId_{0};
     TermID lastLogTerm_{0};
-    // The id for the last globally committed log (from the leader)
-    LogID committedLogId_{0};
-
+    folly::Synchronized<std::vector<std::shared_ptr<Host>>> hosts_;
     // To record how long ago when the last leader message received
-    time::Duration lastMsgRecvDur_;
+    int64_t lastMsgRecvMs_{0};
+    //******************************************************
+
+    LogID committedLogId_{0};
     // To record how long ago when the last log message or heartbeat was sent
     time::Duration lastMsgSentDur_;
+
+    int64_t lastHeartBeatMs_{0};
+
     // To record when the last message was accepted by majority peers
-    uint64_t lastMsgAcceptedTime_{0};
+    int64_t lastMsgAcceptedTime_{0};
     // How long between last message was sent and was accepted by majority peers
-    uint64_t lastMsgAcceptedCostMs_{0};
+    int64_t lastMsgAcceptedCostMs_{0};
 
     // Write-ahead Log
     std::shared_ptr<wal::FileBasedWal> wal_;
 
     // IO Thread pool
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
+
     // Shared worker thread pool
     std::shared_ptr<thread::GenericThreadPool> bgWorkers_;
+
+    std::shared_ptr<folly::IOThreadPoolExecutor> hbThreads_;
+
     // Workers pool
     std::shared_ptr<folly::Executor> executor_;
 
@@ -553,6 +577,7 @@ protected:
     std::atomic<uint64_t> weight_;
 
     bool blocking_{false};
+    int32_t retryNum_ = 0;
 };
 
 }  // namespace raftex

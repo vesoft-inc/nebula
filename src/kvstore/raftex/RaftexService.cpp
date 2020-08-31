@@ -9,6 +9,9 @@
 #include <folly/ScopeGuard.h>
 #include "kvstore/raftex/RaftPart.h"
 
+
+DEFINE_int32(raft_hb_threads, 4, "Threads number for heartbeat");
+
 namespace nebula {
 namespace raftex {
 
@@ -29,6 +32,7 @@ std::shared_ptr<RaftexService> RaftexService::createService(
     svc->server_->setInterface(svc);
 
     svc->initThriftServer(pool, workers, port);
+
     return svc;
 }
 
@@ -38,6 +42,10 @@ RaftexService::~RaftexService() {
 
 
 bool RaftexService::start() {
+    hbThreads_ = std::make_shared<folly::IOThreadPoolExecutor>(
+                                    FLAGS_raft_hb_threads,
+                                    std::make_shared<folly::NamedThreadFactory>("hb_threads"));
+
     serverThread_.reset(new std::thread([&] {serve();}));
 
     waitUntilReady();
@@ -157,6 +165,7 @@ void RaftexService::waitUntilStop() {
 
 void RaftexService::addPartition(std::shared_ptr<RaftPart> part) {
     folly::RWSpinLock::WriteHolder wh(partsLock_);
+    part->regHBThreads(hbThreads_);
     parts_.emplace(std::make_pair(part->spaceId(), part->partitionId()),
                    part);
 }

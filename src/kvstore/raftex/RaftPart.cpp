@@ -34,6 +34,8 @@ DEFINE_int32(wal_buffer_size, 8 * 1024 * 1024, "Default wal buffer size");
 DEFINE_int32(wal_buffer_num, 2, "Default wal buffer number");
 DEFINE_bool(wal_sync, false, "Whether fsync needs to be called every write");
 DEFINE_bool(trace_raft, false, "Enable trace one raft request");
+DEFINE_bool(enable_sync_with_follower, false, "Disable sync request to follower");
+DEFINE_int32(sync_with_follower_interval_ms, 60 * 1000, "sync interval");
 
 namespace nebula {
 namespace raftex {
@@ -213,9 +215,9 @@ RaftPart::RaftPart(ClusterID clusterId,
         , spaceId_{spaceId}
         , partId_{partId}
         , addr_{localAddr}
+        , leader_{0, 0}
         , status_{Status::STARTING}
         , role_{Role::FOLLOWER}
-        , leader_{0, 0}
         , ioThreadPool_{pool}
         , bgWorkers_{workers}
         , executor_(executor)
@@ -301,11 +303,12 @@ void RaftPart::start(std::vector<HostAddr>&& peers, bool asLearner) {
                         << ", committedLogId " << committedLogId_
                         << ", term " << term_;
 
+    auto hosts = hosts_.contextualLock();
     // Start all peer hosts
     for (auto& addr : peers) {
         LOG(INFO) << idStr_ << "Add peer " << addr;
         auto hostPtr = std::make_shared<Host>(addr, shared_from_this());
-        hosts_.emplace_back(hostPtr);
+        hosts->emplace_back(hostPtr);
     }
 
     // Change the status
@@ -319,20 +322,26 @@ void RaftPart::start(std::vector<HostAddr>&& peers, bool asLearner) {
     bgWorkers_->addDelayTask(delayMS, [self = shared_from_this(), startTime = startTimeMs_] {
         self->statusPolling(startTime);
     });
+
+    CHECK(hbThreads_ != nullptr);
+    auto* evb = hbThreads_->getEventBase();
+    folly::via(evb, [evb, self = shared_from_this()]() {
+        evb->runAfterDelay([self] () {
+            self->heartBeatFunc();
+         }, 50);
+    });
 }
 
 
 void RaftPart::stop() {
     VLOG(2) << idStr_ << "Stopping the partition";
 
-    decltype(hosts_) hosts;
+    auto hosts = hosts_.copy();
     {
         std::unique_lock<std::mutex> lck(raftLock_);
         status_ = Status::STOPPED;
         leader_ = {0, 0};
         role_ = Role::FOLLOWER;
-
-        hosts = std::move(hosts_);
     }
 
     for (auto& h : hosts) {
@@ -375,16 +384,18 @@ void RaftPart::addLearner(const HostAddr& addr) {
         LOG(INFO) << idStr_ << "I am learner!";
         return;
     }
-    auto it = std::find_if(hosts_.begin(), hosts_.end(), [&addr] (const auto& h) {
-                return h->address() == addr;
-            });
-    if (it == hosts_.end()) {
-        hosts_.emplace_back(std::make_shared<Host>(addr, shared_from_this(), true));
-        LOG(INFO) << idStr_ << "Add learner " << addr;
-    } else {
-        LOG(INFO) << idStr_ << "The host " << addr << " has been existed as "
-                  << ((*it)->isLearner() ? " learner " : " group member");
-    }
+    hosts_.withWLock([this, addr](auto& hosts) {
+        auto it = std::find_if(hosts.begin(), hosts.end(), [&addr] (const auto& h) {
+                    return h->address() == addr;
+                });
+        if (it == hosts.end()) {
+            hosts.emplace_back(std::make_shared<Host>(addr, shared_from_this(), true));
+            LOG(INFO) << idStr_ << "Add learner " << addr;
+        } else {
+            LOG(INFO) << idStr_ << "The host " << addr << " has been existed as "
+                      << ((*it)->isLearner() ? " learner " : " group member");
+        }
+    });
 }
 
 void RaftPart::preProcessTransLeader(const HostAddr& target) {
@@ -420,12 +431,13 @@ void RaftPart::commitTransLeader(const HostAddr& target) {
     LOG(INFO) << idStr_ << "Commit transfer leader to " << target;
     switch (role_) {
         case Role::LEADER: {
-            if (target != addr_ && !hosts_.empty()) {
-                auto iter = std::find_if(hosts_.begin(), hosts_.end(), [] (const auto& h) {
+            auto hosts = hosts_.copy();
+            if (target != addr_ && !hosts.empty()) {
+                auto iter = std::find_if(hosts.begin(), hosts.end(), [] (const auto& h) {
                     return !h->isLearner();
                 });
-                if (iter != hosts_.end()) {
-                    lastMsgRecvDur_.reset();
+                if (iter != hosts.end()) {
+                    lastMsgRecvMs_ = time::WallClock::fastNowInMilliSec();
                     role_ = Role::FOLLOWER;
                     leader_ = HostAddr(0, 0);
                     LOG(INFO) << idStr_ << "Give up my leadership!";
@@ -450,7 +462,8 @@ void RaftPart::commitTransLeader(const HostAddr& target) {
 void RaftPart::updateQuorum() {
     CHECK(!raftLock_.try_lock());
     int32_t total = 0;
-    for (auto& h : hosts_) {
+    auto hosts = hosts_.copy();
+    for (auto& h : hosts) {
         if (!h->isLearner()) {
             total++;
         }
@@ -470,22 +483,28 @@ void RaftPart::addPeer(const HostAddr& peer) {
         }
         return;
     }
-    auto it = std::find_if(hosts_.begin(), hosts_.end(), [&peer] (const auto& h) {
-                return h->address() == peer;
-            });
-    if (it == hosts_.end()) {
-        hosts_.emplace_back(std::make_shared<Host>(peer, shared_from_this()));
-        updateQuorum();
-        LOG(INFO) << idStr_ << "Add peer " << peer;
-    } else {
-        if ((*it)->isLearner()) {
-            LOG(INFO) << idStr_ << "The host " << peer
-                      << " has been existed as learner, promote it!";
-            (*it)->setLearner(false);
-            updateQuorum();
+    bool needUpdateQuorum = false;
+    hosts_.withWLock([this, peer, &needUpdateQuorum](auto& hosts) {
+        auto it = std::find_if(hosts.begin(), hosts.end(), [&peer] (const auto& h) {
+                    return h->address() == peer;
+                });
+        if (it == hosts.end()) {
+            hosts.emplace_back(std::make_shared<Host>(peer, shared_from_this()));
+            needUpdateQuorum = true;
+            LOG(INFO) << idStr_ << "Add peer " << peer;
         } else {
-            LOG(INFO) << idStr_ << "The host " << peer << " has been existed as follower!";
+            if ((*it)->isLearner()) {
+                LOG(INFO) << idStr_ << "The host " << peer
+                          << " has been existed as learner, promote it!";
+                (*it)->setLearner(false);
+                needUpdateQuorum = true;
+            } else {
+                LOG(INFO) << idStr_ << "The host " << peer << " has been existed as follower!";
+            }
         }
+    });
+    if (needUpdateQuorum) {
+        updateQuorum();
     }
 }
 
@@ -496,20 +515,26 @@ void RaftPart::removePeer(const HostAddr& peer) {
         LOG(INFO) << idStr_ << "Remove myself from the raft group.";
         return;
     }
-    auto it = std::find_if(hosts_.begin(), hosts_.end(), [&peer] (const auto& h) {
-                  return h->address() == peer;
-              });
-    if (it == hosts_.end()) {
-        LOG(INFO) << idStr_ << "The peer " << peer << " not exist!";
-    } else {
-        if ((*it)->isLearner()) {
-            LOG(INFO) << idStr_ << "The peer is learner, remove it directly!";
-            hosts_.erase(it);
-            return;
+    bool needUpdateQuorum = false;
+    hosts_.withWLock([this, peer, &needUpdateQuorum](auto& hosts) {
+        auto it = std::find_if(hosts.begin(), hosts.end(), [&peer] (const auto& h) {
+                      return h->address() == peer;
+                  });
+        if (it == hosts.end()) {
+            LOG(INFO) << idStr_ << "The peer " << peer << " not exist!";
+        } else {
+            if ((*it)->isLearner()) {
+                LOG(INFO) << idStr_ << "The peer is learner, remove it directly!";
+                hosts.erase(it);
+            } else {
+                hosts.erase(it);
+                needUpdateQuorum = true;
+                LOG(INFO) << idStr_ << "Remove peer " << peer;
+            }
         }
-        hosts_.erase(it);
+    });
+    if (needUpdateQuorum) {
         updateQuorum();
-        LOG(INFO) << idStr_ << "Remove peer " << peer;
     }
 }
 
@@ -554,6 +579,12 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
                                                         LogType logType,
                                                         std::string log,
                                                         AtomicOp op) {
+    if (logType == LogType::KEEP_ALIVE) {
+        // Maybe the term_, lastLogId_, lastLogTerm_ is inconsitent.
+        // But it is ok for keep alive
+        keepAlive(term_, lastLogId_, lastLogTerm_);
+        return folly::Future<AppendLogResult>::makeEmpty();
+    }
     if (blocking_) {
         // No need to block heartbeats and empty log.
         if ((logType == LogType::NORMAL && !log.empty()) || logType == LogType::ATOMIC_OP) {
@@ -599,6 +630,9 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
                 break;
             case LogType::NORMAL:
                 retFuture = cachingPromise_.getSharedFuture();
+                break;
+            default:
+                LOG(FATAL) << idStr_ << "Unknown log type " << static_cast<int32_t>(logType);
                 break;
         }
 
@@ -656,6 +690,15 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
     appendLogsInternal(std::move(it), termId);
 
     return retFuture;
+}
+
+void RaftPart::keepAlive(TermID term, LogID lastLogId, TermID lastLogTerm) {
+    auto* eb = ioThreadPool_->getEventBase();
+    auto hosts = hosts_.copy();
+    lastHeartBeatMs_ = time::WallClock::fastNowInMilliSec();
+    for (auto host : hosts) {
+        host->keepAlive(eb, term, lastLogId, lastLogTerm);
+    }
 }
 
 void RaftPart::appendLogsInternal(AppendLogsIterator iter, TermID termId) {
@@ -741,7 +784,6 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
                              LogID prevLogId) {
     using namespace folly;  // NOLINT since the fancy overload of | operator
 
-    decltype(hosts_) hosts;
     AppendLogResult res = AppendLogResult::SUCCEEDED;
     do {
         std::lock_guard<std::mutex> g(raftLock_);
@@ -760,7 +802,11 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
             break;
         }
 
-        hosts = hosts_;
+        if (currTerm != term_) {
+            LOG(INFO) << idStr_ << "Reset the sending term " << currTerm
+                      << " to the new one " << term_;
+            currTerm = term_;
+        }
     } while (false);
 
     if (!checkAppendLogResult(res)) {
@@ -770,6 +816,7 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
 
     VLOG(2) << idStr_ << "About to replicate logs to all peer hosts";
 
+    auto hosts = hosts_.copy();
     lastMsgSentDur_.reset();
     SlowOpTracker tracker;
     collectNSucceeded(
@@ -856,7 +903,7 @@ void RaftPart::processAppendLogResponses(
         // Majority have succeeded
         VLOG(2) << idStr_ << numSucceeded
                 << " hosts have accepted the logs";
-
+        retryNum_ = 0;
         LogID firstLogId = 0;
         AppendLogResult res = AppendLogResult::SUCCEEDED;
         do {
@@ -954,36 +1001,73 @@ void RaftPart::processAppendLogResponses(
         this->appendLogsInternal(std::move(iter), currTerm);
     } else {
         // Not enough hosts accepted the log, re-try
-        LOG_EVERY_N(WARNING, 100) << idStr_ << "Only " << numSucceeded
-                                  << " hosts succeeded, Need to try again";
-        replicateLogs(eb,
-                      std::move(iter),
-                      currTerm,
-                      lastLogId,
-                      committedId,
-                      prevLogTerm,
-                      prevLogId);
+        retryNum_++;
+        std::stringstream ss;
+        for (auto& res : resps) {
+            ss << "[" << hosts[res.first] << "] err code is "
+               << static_cast<int32_t>(res.second.get_error_code())
+               << ", ";
+        }
+        LOG(WARNING) << idStr_ << "Only " << numSucceeded
+                               << " hosts succeeded, Need to try again after "
+                               << retryNum_ << "ms"
+                               << ", errMsg " << ss.str();
+
+        auto task = [self = shared_from_this(),
+                     iter = std::move(iter),
+                     eb,
+                     currTerm,
+                     lastLogId,
+                     committedId,
+                     prevLogTerm,
+                     prevLogId] () mutable {
+            self->replicateLogs(eb,
+                                std::move(iter),
+                                currTerm,
+                                lastLogId,
+                                committedId,
+                                prevLogTerm,
+                                prevLogId);
+        };
+
+        folly::via(eb, [eb,
+                        retryNum = retryNum_,
+                        task = std::move(task)] () mutable {
+            eb->runAfterDelay(std::move(task), retryNum);
+        });
     }
 }
 
-
 bool RaftPart::needToSendHeartbeat() {
+    /**
+     * Avoid raftLock, maybe we use stale information, but it is ok for heartbeat.
+     * */
+    return status_ == Status::RUNNING &&
+           role_ == Role::LEADER &&
+           time::WallClock::fastNowInMilliSec() - lastHeartBeatMs_ >=
+               FLAGS_raft_heartbeat_interval_secs * 1000 * 2 / 5;
+}
+
+bool RaftPart::needToSyncWithFollower() {
+    if (!FLAGS_enable_sync_with_follower) {
+        return false;
+    }
     std::lock_guard<std::mutex> g(raftLock_);
     return status_ == Status::RUNNING &&
            role_ == Role::LEADER &&
            time::WallClock::fastNowInMilliSec() - lastMsgAcceptedTime_ >=
-               FLAGS_raft_heartbeat_interval_secs * 1000 * 2 / 5;
+               FLAGS_sync_with_follower_interval_ms;
 }
-
 
 bool RaftPart::needToStartElection() {
     std::lock_guard<std::mutex> g(raftLock_);
     if (status_ == Status::RUNNING &&
         role_ == Role::FOLLOWER &&
-        (lastMsgRecvDur_.elapsedInMSec() >= weight_ * FLAGS_raft_heartbeat_interval_secs * 1000 ||
+        (time::WallClock::fastNowInMilliSec() - lastMsgRecvMs_
+                >= (int64_t)weight_ * FLAGS_raft_heartbeat_interval_secs * 1000 ||
          term_ == 0)) {
-        LOG(INFO) << idStr_ << "Start leader election, reason: lastMsgDur "
-                  << lastMsgRecvDur_.elapsedInMSec()
+        LOG(INFO) << idStr_ << "Start leader election, reason: lastMsgRecvMs_ "
+                  << lastMsgRecvMs_
                   << ", term " << term_;
         role_ = Role::CANDIDATE;
         leader_ = HostAddr(0, 0);
@@ -1091,7 +1175,7 @@ bool RaftPart::leaderElection() {
     using namespace folly;  // NOLINT since the fancy overload of | operator
 
     cpp2::AskForVoteRequest voteReq;
-    decltype(hosts_) hosts;
+    std::vector<std::shared_ptr<Host>> hosts;
     if (!prepareElectionRequest(voteReq, hosts)) {
         // Suppose we have three replicas A(leader), B, C, after A crashed,
         // B, C will begin the election. B win, and send hb, C has gap with B
@@ -1168,7 +1252,8 @@ bool RaftPart::leaderElection() {
                 std::lock_guard<std::mutex> g(raftLock_);
                 if (status_ == Status::RUNNING) {
                     leader_ = addr_;
-                    for (auto& host : hosts_) {
+                    auto hs = hosts_.copy();
+                    for (auto& host : hs) {
                         host->reset();
                     }
                     bgWorkers_->addTask([self = shared_from_this(),
@@ -1203,6 +1288,17 @@ bool RaftPart::leaderElection() {
     return false;
 }
 
+void RaftPart::heartBeatFunc() {
+    if (needToSendHeartbeat()) {
+        sendHeartbeat(true);
+    }
+    if (status_ == Status::RUNNING || status_ == Status::WAITING_SNAPSHOT) {
+        auto* evb = hbThreads_->getEventBase();
+        evb->runAfterDelay([self = shared_from_this()] () {
+                    self->heartBeatFunc();
+        }, FLAGS_raft_heartbeat_interval_secs * 1000 / 3);
+    }
+}
 
 void RaftPart::statusPolling(int64_t startTime) {
     {
@@ -1224,14 +1320,18 @@ void RaftPart::statusPolling(int64_t startTime) {
             VLOG(2) << idStr_ << "Wait for a while and continue the leader election";
             delay = (folly::Random::rand32(1500) + 500) * weight_;
         }
-    } else if (needToSendHeartbeat()) {
-        VLOG(2) << idStr_ << "Need to send heartbeat";
-        sendHeartbeat();
     }
+
+    if (needToSyncWithFollower()) {
+        VLOG(2) << idStr_ << "Send an empty log to sync with follower";
+        sendHeartbeat(false);
+    }
+
     if (needToCleanupSnapshot()) {
         LOG(INFO) << idStr_ << "Clean up the snapshot";
         cleanupSnapshot();
     }
+
     {
         std::lock_guard<std::mutex> g(raftLock_);
         if (status_ == Status::RUNNING || status_ == Status::WAITING_SNAPSHOT) {
@@ -1264,7 +1364,8 @@ bool RaftPart::needToCleanWal() {
     if (status_ == Status::STARTING || status_ == Status::WAITING_SNAPSHOT) {
         return false;
     }
-    for (auto& host : hosts_) {
+    auto hosts = hosts_.copy();
+    for (auto& host : hosts) {
         if (host->sendingSnapshot_) {
             return false;
         }
@@ -1319,8 +1420,9 @@ void RaftPart::processAskForVoteRequest(
     }
 
     auto candidate = HostAddr(req.get_candidate_ip(), req.get_candidate_port());
+
     // Check term id
-    auto term = term_;
+    auto term =  term_;
     if (req.get_term() <= term) {
         LOG(INFO) << idStr_
                   << (role_ == Role::CANDIDATE
@@ -1386,7 +1488,7 @@ void RaftPart::processAskForVoteRequest(
     leader_ = std::make_pair(0, 0);
 
     // Reset the last message time
-    lastMsgRecvDur_.reset();
+    lastMsgRecvMs_ = time::WallClock::fastNowInMilliSec();
     weight_ = 1;
     return;
 }
@@ -1415,10 +1517,25 @@ void RaftPart::processAppendLogRequest(
                   << ", local lastLogId = " << lastLogId_
                   << ", local lastLogTerm = " << lastLogTerm_
                   << ", local committedLogId = " << committedLogId_
-                  << ", local current term = " << term_;
+                  << ", local current term = " << term_
+                  << ", keep alive = " << req.get_keep_alive();
+    }
+    // To avoid raftLock, we check the leader information firstly
+    // If accept it, return direclty.
+    // Maybe the information is stale, but it is ok for normal case
+    // if reject the leader keep-alive heartbeat, we will double check it
+    // under raftLock again, it is a rare case.
+    if (req.get_keep_alive()) {
+        if (role_ == Role::FOLLOWER &&
+                req.get_current_term() == term_ &&
+                req.get_leader_ip() == leader_.first &&
+                req.get_leader_port() == leader_.second) {
+            // Because leader don't care the response, just return
+            lastMsgRecvMs_ = time::WallClock::fastNowInMilliSec();
+            return;
+         }
     }
     std::lock_guard<std::mutex> g(raftLock_);
-
     resp.set_current_term(term_);
     resp.set_leader_ip(leader_.first);
     resp.set_leader_port(leader_.second);
@@ -1448,13 +1565,20 @@ void RaftPart::processAppendLogRequest(
     }
 
     // Reset the timeout timer
-    lastMsgRecvDur_.reset();
+    lastMsgRecvMs_ = time::WallClock::fastNowInMilliSec();
+    if (req.get_keep_alive()) {
+        resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
+        return;
+    }
 
     if (req.get_sending_snapshot() && status_ != Status::WAITING_SNAPSHOT) {
         LOG(INFO) << idStr_ << "Begin to wait for the snapshot"
                   << " " << req.get_committed_log_id();
         reset();
         status_ = Status::WAITING_SNAPSHOT;
+        resp.set_committed_log_id(committedLogId_);
+        resp.set_last_log_id(lastLogId_);
+        resp.set_last_log_term(lastLogTerm_);
         resp.set_error_code(cpp2::ErrorCode::E_WAITING_SNAPSHOT);
         return;
     }
@@ -1626,7 +1750,7 @@ cpp2::ErrorCode RaftPart::verifyLeader(
         // Leader stickness, no matter the term in Request is larger or not.
         // TODO(heng) Maybe we should reconsider the logic
         if (leader_ !=  std::make_pair(0, 0) && leader_ != candidate
-                && lastMsgRecvDur_.elapsedInMSec()
+                && time::WallClock::fastNowInMilliSec() - lastMsgRecvMs_
                         < FLAGS_raft_heartbeat_interval_secs * 1000) {
             LOG_EVERY_N(INFO, 100) << idStr_ << "I believe the leader " << leader_ << " exists. "
                                    << "Refuse to append logs of " << candidate;
@@ -1761,18 +1885,21 @@ void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
     return;
 }
 
-folly::Future<AppendLogResult> RaftPart::sendHeartbeat() {
+folly::Future<AppendLogResult> RaftPart::sendHeartbeat(bool keepAlive) {
     VLOG(2) << idStr_ << "Send heartbeat";
     std::string log = "";
-    return appendLogAsync(clusterId_, LogType::NORMAL, std::move(log));
+    return appendLogAsync(clusterId_,
+                          keepAlive ? LogType::KEEP_ALIVE : LogType::NORMAL,
+                          std::move(log));
 }
 
 std::vector<std::shared_ptr<Host>> RaftPart::followers() const {
     CHECK(!raftLock_.try_lock());
-    decltype(hosts_) hosts;
-    for (auto& h : hosts_) {
+    auto hosts = hosts_.copy();
+    std::vector<std::shared_ptr<Host>> followers;
+    for (auto& h : hosts) {
         if (!h->isLearner()) {
-            hosts.emplace_back(h);
+            followers.emplace_back(h);
         }
     }
     return hosts;
@@ -1815,7 +1942,8 @@ AppendLogResult RaftPart::isCatchedUp(const HostAddr& peer) {
         LOG(INFO) << idStr_ << "I am the leader";
         return AppendLogResult::SUCCEEDED;
     }
-    for (auto& host : hosts_) {
+    auto hosts = hosts_.copy();
+    for (auto& host : hosts) {
         if (host->addr_ == peer) {
             if (host->followerCommittedLogId_ == 0
                     || host->followerCommittedLogId_ < wal_->firstLogId()) {
@@ -1840,7 +1968,7 @@ bool RaftPart::linkCurrentWAL(const char* newPath) {
 void RaftPart::checkAndResetPeers(const std::vector<HostAddr>& peers) {
     std::lock_guard<std::mutex> lck(raftLock_);
     // To avoid the iterator invalid, we use another container for it.
-    decltype(hosts_) hosts = hosts_;
+    auto hosts = hosts_.copy();
     for (auto& h : hosts) {
         LOG(INFO) << idStr_ << "Check host " << h->addr_;
         auto it = std::find(peers.begin(), peers.end(), h->addr_);
@@ -1856,8 +1984,11 @@ void RaftPart::checkAndResetPeers(const std::vector<HostAddr>& peers) {
 }
 
 bool RaftPart::leaseValid() {
-    std::lock_guard<std::mutex> g(raftLock_);
-    if (hosts_.empty()) {
+    if (!FLAGS_enable_sync_with_follower) {
+        return true;
+    }
+    auto hostsPtr = hosts_.contextualLock();
+    if (hostsPtr->empty()) {
         return true;
     }
     // When majority has accepted a log, leader obtains a lease which last for heartbeat.

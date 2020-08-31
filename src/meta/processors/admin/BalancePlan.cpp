@@ -50,8 +50,10 @@ void BalancePlan::invoke() {
     dispatchTasks();
     for (size_t i = 0; i < buckets_.size(); i++) {
         for (size_t j = 0; j < buckets_[i].size(); j++) {
+            LOG(INFO) << "Bucket index " << i << ", total tasks in bucket " << buckets_[i].size();
             auto taskIndex = buckets_[i][j];
             tasks_[taskIndex].onFinished_ = [this, i, j]() {
+                LOG(INFO) << "The " << j << " task in bucket " << i << " finished!";
                 bool finished = false;
                 bool stopped = false;
                 {
@@ -77,10 +79,12 @@ void BalancePlan::invoke() {
                     if (stopped) {
                         task.ret_ = BalanceTask::Result::INVALID;
                     }
+                    LOG(INFO) << "Schedule the " << j + 1 << " task in bucket " << i;
                     task.invoke();
                 }
             };  // onFinished
             tasks_[taskIndex].onError_ = [this, i, j, taskIndex]() {
+                LOG(INFO) << "The " << j << " task in bucket " << i << " finished!";
                 bool finished = false;
                 bool stopped = false;
                 {
@@ -109,6 +113,7 @@ void BalancePlan::invoke() {
                     if (stopped) {
                         task.ret_ = BalanceTask::Result::INVALID;
                     }
+                    LOG(INFO) << "Schedule the " << j + 1 << " task in bucket " << i;
                     task.invoke();
                 }
             };  // onError
