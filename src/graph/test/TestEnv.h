@@ -50,6 +50,10 @@ public:
         return storageRootPath_.path();
     }
 
+    meta::SchemaManager* schemaManager() {
+        return storageServer_->schemaMan_.get();
+    }
+
 private:
     nebula::fs::TempDir                             metaRootPath_{"/tmp/MetaTest.XXXXXX"};
     nebula::fs::TempDir                             storageRootPath_{"/tmp/StorageTest.XXXXXX"};

@@ -60,10 +60,6 @@ bool IndexPolicyMaker::buildPolicy() {
                 if (!writeScanItem(col.get_name(), *itr)) {
                     return false;
                 }
-                // string field still need filter.
-                if (col.get_type().type == nebula::cpp2::SupportedType::STRING) {
-                    requiredFilter_ = true;
-                }
                 // Delete operator item if hint.
                 operatorList_.erase(itr);
             } else {

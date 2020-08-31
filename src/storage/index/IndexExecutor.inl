@@ -124,6 +124,7 @@ IndexExecutor<RESP>::makeScanPair(PartitionID partId, IndexID indexId) {
     std::string beginStr = NebulaKeyUtils::indexPrefix(partId, indexId);
     std::string endStr = NebulaKeyUtils::indexPrefix(partId, indexId);
     const auto& fields = index_->get_fields();
+    std::vector<int32_t> colsLen;
     for (const auto& field : fields) {
         auto item = scanItems_.find(field.get_name());
         if (item == scanItems_.end()) {
@@ -148,8 +149,19 @@ IndexExecutor<RESP>::makeScanPair(PartitionID partId, IndexID indexId) {
             return {};
         }
         auto pair = normalizeScanPair(field, (*item).second);
+        if (field.get_type().type == nebula::cpp2::SupportedType::STRING) {
+            if (pair.first != pair.second) {
+                VLOG(1) << "String type field does not allow range scan : " << field.get_name();
+                return {};
+            }
+            colsLen.emplace_back(pair.first.size());
+        }
         beginStr.append(pair.first);
         endStr.append(pair.second);
+    }
+    for (auto len : colsLen) {
+        beginStr.append(reinterpret_cast<const char*>(&len), sizeof(int32_t));
+        endStr.append(reinterpret_cast<const char*>(&len), sizeof(int32_t));
     }
     return std::make_pair(beginStr, endStr);
 }

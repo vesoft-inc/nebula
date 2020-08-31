@@ -246,6 +246,7 @@ Status LookupExecutor::findOptimalIndex() {
     // Step 1 : find out all valid indexes for where condition.
     auto validIndexes = findValidIndex();
     if (validIndexes.empty()) {
+        LOG(ERROR) << "No valid index found";
         return Status::IndexNotFound();
     }
     // Step 2 : find optimal indexes for equal condition.
@@ -264,23 +265,82 @@ Status LookupExecutor::findOptimalIndex() {
 }
 
 std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> LookupExecutor::findValidIndex() {
+    // Check contains string type field from where condition
     std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> validIndexes;
-    // Find indexes for match all fields by where condition.
-    for (const auto& index : indexes_) {
-        bool allColsHint = true;
-        const auto& fields = index->get_fields();
-        for (const auto& filter : filters_) {
-            auto it = std::find_if(fields.begin(), fields.end(),
-                                   [filter](const auto &field) {
-                                       return field.get_name() == filter.first;
-                                   });
-            if (it == fields.end()) {
-                allColsHint = false;
-                break;
+    auto *sm = ectx()->schemaManager();
+    auto schema = isEdge_
+                  ? sm->getEdgeSchema(spaceId_, tagOrEdge_)
+                  : sm->getTagSchema(spaceId_, tagOrEdge_);
+    if (schema == nullptr) {
+        LOG(ERROR) << "No schema found : " << from_;
+        return validIndexes;
+    }
+
+    bool hasStringCol = false;
+    for (const auto filter : filters_) {
+        auto type = schema->getFieldType(filter.first);
+        if (type.get_type() == nebula::cpp2::SupportedType::STRING) {
+            hasStringCol = true;
+            break;
+        }
+    }
+
+    if (hasStringCol) {
+        // Because the string type is a variable-length field,
+        // All fields need to be involved in index scan and the length byte should be appended
+
+        // Maybe there are duplicate fields in the WHERE condition,
+        // so need to using std::set remove duplicate field at here, for example :
+        // where col1 > 1 and col1 < 5, the field col1 will appear twice in filters_.
+        std::set<std::string> cols;
+        for (const auto filter : filters_) {
+            cols.emplace(filter.first);
+        }
+        for (const auto& index : indexes_) {
+            if (index->get_fields().size() != cols.size()) {
+                continue;
+            }
+            bool allColsHint = true;
+            for (const auto& field : index->get_fields()) {
+                auto it = std::find_if(cols.begin(), cols.end(),
+                                       [field](const auto &col) {
+                                           return field.get_name() == col;
+                                       });
+                if (it == cols.end()) {
+                    allColsHint = false;
+                    break;
+                }
+            }
+            if (allColsHint) {
+                validIndexes.emplace_back(index);
             }
         }
-        if (allColsHint) {
-            validIndexes.emplace_back(index);
+    } else {
+        // Find indexes for match all fields by where condition.
+        // Non-string type fields do not need to involve all fields
+        for (const auto& index : indexes_) {
+            bool allColsHint = true;
+            const auto& fields = index->get_fields();
+            // If index including string type fields, skip this index.
+            auto stringField = std::find_if(fields.begin(), fields.end(), [](const auto &f) {
+                return f.get_type().get_type() == nebula::cpp2::SupportedType::STRING;
+            });
+            if (stringField != fields.end()) {
+                continue;
+            }
+            for (const auto& filter : filters_) {
+                auto it = std::find_if(fields.begin(), fields.end(),
+                                       [filter](const auto &field) {
+                                           return field.get_name() == filter.first;
+                                       });
+                if (it == fields.end()) {
+                    allColsHint = false;
+                    break;
+                }
+            }
+            if (allColsHint) {
+                validIndexes.emplace_back(index);
+            }
         }
     }
 
