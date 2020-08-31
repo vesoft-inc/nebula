@@ -492,6 +492,15 @@ protected:
     // When the partition is the leader, the leader_ is same as addr_
     HostAddr leader_;
 
+    // After voted for somebody, it will not be empty anymore.
+    HostAddr votedAddr_{0, 0};
+    // TODO(heng) We should persist it on the disk in the future
+    // Otherwise, after restart the whole cluster, maybe the stale
+    // leader still has the unsend log with larger term, and after other
+    // replicas elected the new leader, the stale one will not join in the
+    // Raft group any more.
+    TermID   votedTerm_{0};
+
     // The current term id
     //
     // When the partition voted for someone, termId will be set to

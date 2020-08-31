@@ -1314,16 +1314,8 @@ void RaftPart::processAskForVoteRequest(
     }
 
     auto candidate = HostAddr(req.get_candidate_ip(), req.get_candidate_port());
-    if (role_ == Role::FOLLOWER && leader_ != std::make_pair(0, 0) && leader_ != candidate &&
-        lastMsgRecvDur_.elapsedInMSec() < FLAGS_raft_heartbeat_interval_secs * 1000) {
-        LOG(INFO) << idStr_ << "I believe the leader exists. "
-                  << "Refuse to vote for " << candidate;
-        resp.set_error_code(cpp2::ErrorCode::E_WRONG_LEADER);
-        return;
-    }
-
     // Check term id
-    auto term = role_ == Role::CANDIDATE ? proposedTerm_ : term_;
+    auto term = term_;
     if (req.get_term() <= term) {
         LOG(INFO) << idStr_
                   << (role_ == Role::CANDIDATE
@@ -1360,6 +1352,16 @@ void RaftPart::processAskForVoteRequest(
         }
     }
 
+    // If we have voted for somebody, we will reject other candidates under the votedTerm.
+    if (votedAddr_ != std::make_pair(0, 0) && votedTerm_ >= req.get_term()) {
+        LOG(INFO) << idStr_
+                  << "We have voted " << votedAddr_ << " on term " << votedTerm_
+                  << ", so we should reject the candidate " << candidate
+                  << " request on term " << req.get_term();
+        resp.set_error_code(cpp2::ErrorCode::E_TERM_OUT_OF_DATE);
+        return;
+    }
+
     auto hosts = followers();
     auto it = std::find_if(hosts.begin(), hosts.end(), [&candidate] (const auto& h){
                 return h->address() == candidate;
@@ -1373,37 +1375,14 @@ void RaftPart::processAskForVoteRequest(
     LOG(INFO) << idStr_ << "The partition will vote for the candidate";
     resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
 
-    Role oldRole = role_;
-    TermID oldTerm = term_;
     role_ = Role::FOLLOWER;
-    term_ = proposedTerm_ = req.get_term();
-    leader_ = std::make_pair(req.get_candidate_ip(),
-                             req.get_candidate_port());
+    votedAddr_ = candidate;
+    votedTerm_ = req.get_term();
+    leader_ = std::make_pair(0, 0);
 
     // Reset the last message time
     lastMsgRecvDur_.reset();
     weight_ = 1;
-
-    // If the partition used to be a leader, need to fire the callback
-    if (oldRole == Role::LEADER) {
-        LOG(INFO) << idStr_ << "Was a leader, need to do some clean-up";
-        if (wal_->lastLogId() > lastLogId_) {
-            LOG(INFO) << idStr_ << "There is one log " << wal_->lastLogId()
-                      << " i did not commit when i was leader, rollback to " << lastLogId_;
-            wal_->rollbackToLog(lastLogId_);
-        }
-        // Need to invoke the onLostLeadership callback
-        bgWorkers_->addTask(
-            [self = shared_from_this(), oldTerm] {
-                self->onLostLeadership(oldTerm);
-            });
-    }
-
-    LOG(INFO) << idStr_ << "I was " << roleStr(oldRole)
-              << ", discover the new leader " << leader_;
-    bgWorkers_->addTask([self = shared_from_this()] {
-        self->onDiscoverNewLeader(self->leader_);
-    });
     return;
 }
 
@@ -1630,54 +1609,48 @@ cpp2::ErrorCode RaftPart::verifyLeader(
         return cpp2::ErrorCode::E_WRONG_LEADER;
     }
 
-    if (role_ == Role::FOLLOWER && leader_ != std::make_pair(0, 0) && leader_ != candidate &&
-        lastMsgRecvDur_.elapsedInMSec() < FLAGS_raft_heartbeat_interval_secs * 1000) {
-        LOG(INFO) << idStr_ << "I believe the leader " << leader_ << " exists. "
-                  << "Refuse to append logs of " << candidate;
-        return cpp2::ErrorCode::E_WRONG_LEADER;
-    }
-
     VLOG(2) << idStr_ << "The current role is " << roleStr(role_);
-    switch (role_) {
-        case Role::LEARNER:
-        case Role::FOLLOWER: {
-            if (req.get_current_term() == term_ &&
-                req.get_leader_ip() == leader_.first &&
-                req.get_leader_port() == leader_.second) {
-                VLOG(3) << idStr_ << "Same leader";
-                return cpp2::ErrorCode::SUCCEEDED;
-            }
-            break;
-        }
-        case Role::LEADER: {
-            // In this case, the remote term has to be newer
-            // TODO optimize the case that the current partition is
-            // isolated and the term keeps going up
-            break;
-        }
-        case Role::CANDIDATE: {
-            // Since the current partition is a candidate, the remote
-            // term has to be newer so that it can be accepted
-            break;
-        }
-    }
-
     // Make sure the remote term is greater than local's
     if (req.get_current_term() < term_) {
-        LOG_EVERY_N(ERROR, 100) << idStr_
-                                << "The current role is " << roleStr(role_)
-                                << ". The local term is " << term_
-                                << ". The remote term is not newer";
+        LOG_EVERY_N(INFO, 100) << idStr_
+                               << "The current role is " << roleStr(role_)
+                               << ". The local term is " << term_
+                               << ". The remote term is not newer";
         return cpp2::ErrorCode::E_TERM_OUT_OF_DATE;
-    }
-    if (role_ == Role::FOLLOWER || role_ == Role::LEARNER) {
-        if (req.get_current_term() == term_ && leader_ != std::make_pair(0, 0)) {
-            LOG(ERROR) << idStr_ << "The local term is same as remote term " << term_
-                       << ". But I believe leader exists.";
-            return cpp2::ErrorCode::E_TERM_OUT_OF_DATE;
+    } else if (req.get_current_term() > term_) {
+        // Leader stickness, no matter the term in Request is larger or not.
+        // TODO(heng) Maybe we should reconsider the logic
+        if (leader_ != candidate
+                && lastMsgRecvDur_.elapsedInMSec()
+                        < FLAGS_raft_heartbeat_interval_secs * 1000) {
+            LOG_EVERY_N(INFO, 100) << idStr_ << "I believe the leader " << leader_ << " exists. "
+                                   << "Refuse to append logs of " << candidate;
+            return cpp2::ErrorCode::E_WRONG_LEADER;
         }
+    } else {
+        // req.get_current_term() == term_
+        do {
+            if (role_ != Role::LEADER
+                    && leader_ == std::make_pair(0, 0)) {
+                LOG_EVERY_N(INFO, 100) << idStr_
+                                       << "I dont know who is leader for current term " << term_
+                                       << ", so accept the candidate " << candidate;
+                break;
+            }
+            // Same leader
+            if (role_ != Role::LEADER
+                    && candidate == leader_)  {
+                return cpp2::ErrorCode::SUCCEEDED;
+            } else {
+                LOG_EVERY_N(INFO, 100) << idStr_
+                                       << "The local term is same as remote term " << term_
+                                       << ", my role is " << roleStr(role_) << ", reject it!";
+                return cpp2::ErrorCode::E_TERM_OUT_OF_DATE;
+            }
+        } while (false);
     }
 
+    // Update my state.
     Role oldRole = role_;
     TermID oldTerm = term_;
     // Ok, no reason to refuse, just follow the leader
@@ -1690,9 +1663,10 @@ cpp2::ErrorCode RaftPart::verifyLeader(
     if (role_ != Role::LEARNER) {
         role_ = Role::FOLLOWER;
     }
-    leader_ = std::make_pair(req.get_leader_ip(),
-                             req.get_leader_port());
+    leader_ = candidate;
     term_ = proposedTerm_ = req.get_current_term();
+    votedAddr_ = std::make_pair(0, 0);
+    votedTerm_ = 0;
     weight_ = 1;
     if (oldRole == Role::LEADER) {
         VLOG(2) << idStr_ << "Was a leader, need to do some clean-up";
