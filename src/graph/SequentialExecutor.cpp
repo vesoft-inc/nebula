@@ -71,6 +71,7 @@ Status SequentialExecutor::prepare() {
                 }
                 case Executor::ProcessControl::kNext:
                 default: {
+                    executors_[current].reset();
                     executeSub(next);
                     break;
                 }

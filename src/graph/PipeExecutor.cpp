@@ -42,6 +42,7 @@ Status PipeExecutor::prepare() {
         auto onFinish = [this] (Executor::ProcessControl ctr) {
             UNUSED(ctr);
             // Start executing `right_' when `left_' is finished.
+            left_.reset();
             right_->execute();
         };
         left_->setOnFinish(onFinish);
