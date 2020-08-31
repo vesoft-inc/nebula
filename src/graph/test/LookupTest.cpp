@@ -660,7 +660,7 @@ TEST_F(LookupTest, FunctionExprTest) {
         cpp2::ExecutionResponse resp;
         auto query = "LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col2 != lookup_tag_2.col3";
         auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
     }
     {
         cpp2::ExecutionResponse resp;

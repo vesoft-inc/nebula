@@ -204,10 +204,10 @@ Status LookupExecutor::traversalExpr(const Expression *expr, const meta::SchemaP
             }
             auto* left = rExpr->left();
             auto* right = rExpr->right();
-            /**
-             *  TODO (sky) : Does not support left expr and right expr are both kAliasProp.
-             */
-            if (left->kind() == nebula::Expression::kAliasProp) {
+            if (left->kind() == nebula::Expression::kAliasProp &&
+                right->kind() == nebula::Expression::kAliasProp) {
+                return Status::SyntaxError("Does not support left and right are both property");  
+            } else if (left->kind() == nebula::Expression::kAliasProp) {
                 auto* aExpr = dynamic_cast<const AliasPropertyExpression*>(left);
                 auto st = checkAliasProperty(aExpr);
                 if (!st.ok()) {
