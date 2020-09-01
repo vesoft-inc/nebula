@@ -51,8 +51,21 @@ TEST_F(PermissionTest, SimpleTest) {
         auto client = gEnv->getClient();
         ASSERT_NE(nullptr, client);
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE SPACE my_space(partition_num=1, replica_factor=1)";
+
+        std::string query = "YIELD 1;";
         auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        query = "$var = YIELD 1;";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        query = "YIELD 1 as a | GROUP BY $-.a YIELD MAX($-.a) as a | ORDER BY $-.a;";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        query = "CREATE SPACE my_space(partition_num=1, replica_factor=1)";
+        code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         query = "USE my_space; CREATE TAG person(name string)";
