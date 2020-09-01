@@ -16,6 +16,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:graph_flags_obj>
         $<TARGET_OBJECTS:parser_obj>
         $<TARGET_OBJECTS:validator_obj>
+        $<TARGET_OBJECTS:expr_visitor_obj>
         $<TARGET_OBJECTS:planner_obj>
         $<TARGET_OBJECTS:executor_obj>
         $<TARGET_OBJECTS:scheduler_obj>

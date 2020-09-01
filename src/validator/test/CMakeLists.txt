@@ -12,6 +12,7 @@ set(VALIDATOR_TEST_LIBS
     $<TARGET_OBJECTS:mock_schema_obj>
     $<TARGET_OBJECTS:util_obj>
     $<TARGET_OBJECTS:validator_obj>
+    $<TARGET_OBJECTS:expr_visitor_obj>
     $<TARGET_OBJECTS:planner_obj>
     $<TARGET_OBJECTS:session_obj>
     $<TARGET_OBJECTS:graph_flags_obj>

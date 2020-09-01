@@ -30,6 +30,8 @@ SET(EXEC_LOGIC_TEST_LIBS
     $<TARGET_OBJECTS:common_charset_obj>
     $<TARGET_OBJECTS:common_function_manager_obj>
     $<TARGET_OBJECTS:common_agg_function_obj>
+    $<TARGET_OBJECTS:common_encryption_obj>
+    $<TARGET_OBJECTS:common_http_client_obj>
     $<TARGET_OBJECTS:session_obj>
     $<TARGET_OBJECTS:graph_flags_obj>
     $<TARGET_OBJECTS:parser_obj>
@@ -41,8 +43,7 @@ SET(EXEC_LOGIC_TEST_LIBS
     $<TARGET_OBJECTS:idgenerator_obj>
     $<TARGET_OBJECTS:context_obj>
     $<TARGET_OBJECTS:graph_auth_obj>
-    $<TARGET_OBJECTS:common_encryption_obj>
-    $<TARGET_OBJECTS:common_http_client_obj>
+    $<TARGET_OBJECTS:expr_visitor_obj>
 )
 
 nebula_add_test(

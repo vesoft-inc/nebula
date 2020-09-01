@@ -13,7 +13,6 @@ import shutil
 import socket
 import glob
 import signal
-import psutil
 from contextlib import closing
 
 NEBULA_START_COMMAND_FORMAT = "bin/nebula-{} --flagfile conf/nebula-{}.conf {}"
@@ -131,11 +130,14 @@ class NebulaService(object):
             max_retries = max_retries-1
 
         if cleanup:
-            shutil.rmtree(self.work_dir)
+            shutil.rmtree(self.work_dir, ignore_errors=True)
 
     def check_procs_alive(self):
-        pids = psutil.pids()
-        for p in self.pids:
-            if self.pids[p] in pids:
-                return True
+        process = subprocess.Popen(['ps', '-eo' ,'pid,args'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout = process.communicate()
+        for line in bytes.decode(stdout[0]).splitlines():
+            pid = line.lstrip().split(' ', 1)[0]
+            for p in self.pids:
+                if str(self.pids[p]) == str(pid):
+                    return True
         return False
