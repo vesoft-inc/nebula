@@ -9,11 +9,10 @@
 #   CMAKE_C_COMPILER               -- Specify the compiler for C language
 #   CMAKE_CXX_COMPILER             -- Specify the compiler for C++ language
 #
-#   NEBULA_HOME                    -- Specify the root directory for nebula project
 #   NEBULA_THIRDPARTY_ROOT         -- Specify the third-party root dir.
 #   ENABLE_TESTING                 -- Build unit test
 #
-cmake_minimum_required(VERSION 3.5.0)
+cmake_minimum_required(VERSION 3.0.0)
 
 project("Nebula Graph codec" C CXX)
 
@@ -24,15 +23,14 @@ option(ENABLE_TESTING "Whether to compile unit test ON or OFF" OFF)
 
 message(STATUS "CMAKE_CURRENT_BINARY_DIR:" ${CMAKE_CURRENT_BINARY_DIR})
 message(STATUS "CMAKE_CURRENT_SOURCE_DIR:" ${CMAKE_CURRENT_SOURCE_DIR})
-message(STATUS "NEBULA_HOME:" ${NEBULA_HOME})
 message(STATUS "NEBULA_THIRDPARTY_ROOT:" ${NEBULA_THIRDPARTY_ROOT})
 
 # locate jni header
 include_directories($ENV{JAVA_HOME}/include
                     $ENV{JAVA_HOME}/include/linux)
-include_directories(AFTER ${NEBULA_HOME}/src)
-include_directories(AFTER ${NEBULA_HOME}/src/common)
-include_directories(AFTER ${NEBULA_HOME}/src/jni/src)
+include_directories(AFTER ${CMAKE_CURRENT_SOURCE_DIR}/../)
+include_directories(AFTER ${CMAKE_CURRENT_SOURCE_DIR}/../common)
+include_directories(AFTER ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 include_directories(SYSTEM ${NEBULA_THIRDPARTY_ROOT}/include)
 link_directories(
@@ -56,3 +54,10 @@ add_compile_options(-Wunused-parameter)
 
 add_subdirectory(src)
 
+add_custom_target(
+    java_lib
+    COMMAND mvn clean package
+    COMMAND mv target ${CMAKE_CURRENT_BINARY_DIR}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/java
+    DEPENDS nebula_codec
+)
