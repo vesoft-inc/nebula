@@ -403,15 +403,98 @@ private:
  */
 class IndexScan final : public Explore {
 public:
-    static IndexScan* make(QueryContext* qctx, PlanNode* input, GraphSpaceID space) {
-        return qctx->objPool()->add(new IndexScan(qctx->genId(), input, space));
+    using IndexQueryCtx = std::unique_ptr<std::vector<storage::cpp2::IndexQueryContext>>;
+    using IndexReturnCols = std::unique_ptr<std::vector<std::string>>;
+
+    static IndexScan* make(QueryContext* qctx,
+                           PlanNode* input,
+                           GraphSpaceID space,
+                           IndexQueryCtx&& contexts,
+                           IndexReturnCols&& returnCols,
+                           bool isEdge,
+                           int32_t schemaId,
+                           bool dedup = false,
+                           std::vector<storage::cpp2::OrderBy> orderBy = {},
+                           int64_t limit = std::numeric_limits<int64_t>::max(),
+                           std::string filter = "") {
+        return qctx->objPool()->add(new IndexScan(qctx->genId(),
+                                                  input,
+                                                  space,
+                                                  std::move(contexts),
+                                                  std::move(returnCols),
+                                                  isEdge,
+                                                  schemaId,
+                                                  dedup,
+                                                  std::move(orderBy),
+                                                  limit,
+                                                  std::move(filter)));
     }
 
     std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
+    const std::vector<storage::cpp2::IndexQueryContext>* queryContext() const {
+        return contexts_.get();
+    }
+
+    const std::vector<std::string>* returnColumns() const {
+        return returnCols_.get();
+    }
+
+    bool isEdge() const {
+        return isEdge_;
+    }
+
+    int32_t schemaId() const {
+        return schemaId_;
+    }
+
+    void setQueryContext(IndexQueryCtx contexts) {
+        contexts_ = std::move(contexts);
+    }
+
+    void setReturnCols(IndexReturnCols cols) {
+        returnCols_ = std::move(cols);
+    }
+
+    void setIsEdge(bool isEdge) {
+        isEdge_ = isEdge;
+    }
+
+    void setSchemaId(int32_t schema) {
+        schemaId_ = schema;
+    }
+
 private:
-    IndexScan(int64_t id, PlanNode* input, GraphSpaceID space)
-        : Explore(id, Kind::kIndexScan, input, space) {}
+    IndexScan(int64_t id,
+              PlanNode* input,
+              GraphSpaceID space,
+              IndexQueryCtx&& contexts,
+              IndexReturnCols&& returnCols,
+              bool isEdge,
+              int32_t schemaId,
+              bool dedup,
+              std::vector<storage::cpp2::OrderBy> orderBy,
+              int64_t limit,
+              std::string filter)
+    : Explore(id,
+              Kind::kIndexScan,
+              input,
+              space,
+              dedup,
+              limit,
+              std::move(filter),
+              std::move(orderBy)) {
+        contexts_ = std::move(contexts);
+        returnCols_ = std::move(returnCols);
+        isEdge_ = isEdge;
+        schemaId_ = schemaId;
+    }
+
+private:
+    IndexQueryCtx                                 contexts_;
+    IndexReturnCols                               returnCols_;
+    bool                                          isEdge_;
+    int32_t                                       schemaId_;
 };
 
 /**
