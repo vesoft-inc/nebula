@@ -196,6 +196,33 @@ class TestFetchQuery(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         self.check_out_of_order_result(resp, expect_result)
 
+        # multi vertices
+        query = 'FETCH PROP ON * "Tim Duncan", "Boris Diaw"'
+        resp = self.execute_query(query)
+        expect_column_names = ['_vid', 'player.name', 'player.age', 'team.name', 'bachelor.name', 'bachelor.speciality']
+        expect_result = [['Tim Duncan', 'Tim Duncan', 42, T_NULL, "Tim Duncan", "psychology"],
+                         ['Boris Diaw', 'Boris Diaw', 36, T_NULL, T_NULL, T_NULL]]
+        self.check_resp_succeeded(resp)
+        self.check_out_of_order_result(resp, expect_result)
+
+        # from input
+        query = '''GO FROM "Boris Diaw" over like YIELD like._dst as id
+            | FETCH PROP ON * $-.id'''
+        resp = self.execute_query(query)
+        expect_column_names = ['_vid', 'player.name', 'player.age', 'team.name', 'bachelor.name', 'bachelor.speciality']
+        expect_result = [
+            ['Tony Parker', 'Tony Parker', 36, T_NULL, T_NULL, T_NULL],
+            ['Tim Duncan', 'Tim Duncan', 42, T_NULL, "Tim Duncan", "psychology"]
+        ]
+        self.check_resp_succeeded(resp)
+        self.check_out_of_order_result(resp, expect_result)
+
+        # from var
+        query = '''$a = GO FROM "Boris Diaw" over like YIELD like._dst as id
+            | FETCH PROP ON * $a.id'''
+        self.check_resp_succeeded(resp)
+        self.check_out_of_order_result(resp, expect_result)
+
     def test_fetch_vertex_duplicate_column_names(self):
         query = 'FETCH PROP ON player "Boris Diaw" YIELD player.name, player.name'
         resp = self.execute_query(query)

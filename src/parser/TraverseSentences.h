@@ -307,11 +307,16 @@ public:
         yieldClause_.reset(clause);
     }
 
-    explicit FetchVerticesSentence(Expression *vid) {
+    explicit FetchVerticesSentence(Expression *ref) {
         kind_ = Kind::kFetchVertices;
         tag_ = std::make_unique<std::string>("*");
-        vidList_ = std::make_unique<VertexIDList>();
-        vidList_->add(vid);
+        vidRef_.reset(ref);
+    }
+
+    explicit FetchVerticesSentence(VertexIDList *vidList) {
+        kind_ = Kind::kFetchVertices;
+        tag_ = std::make_unique<std::string>("*");
+        vidList_.reset(vidList);
     }
 
     bool isAllTagProps() {
