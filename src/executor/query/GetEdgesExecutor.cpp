@@ -33,12 +33,12 @@ folly::Future<Status> GetEdgesExecutor::getEdges() {
         ge->dst() != nullptr) {
         // Accept Table such as | $a | $b | $c | $d |... which indicate src, ranking or dst
         auto valueIter = ectx_->getResult(ge->inputVar()).iter();
-        auto expCtx = QueryExpressionContext(qctx()->ectx(), valueIter.get());
+        auto expCtx = QueryExpressionContext(qctx()->ectx());
         for (; valueIter->valid(); valueIter->next()) {
-            auto src = ge->src()->eval(expCtx);
-            auto type = ge->type()->eval(expCtx);
-            auto ranking = ge->ranking()->eval(expCtx);
-            auto dst = ge->dst()->eval(expCtx);
+            auto src = ge->src()->eval(expCtx(valueIter.get()));
+            auto type = ge->type()->eval(expCtx(valueIter.get()));
+            auto ranking = ge->ranking()->eval(expCtx(valueIter.get()));
+            auto dst = ge->dst()->eval(expCtx(valueIter.get()));
             if (!src.isStr() || !type.isInt() || !ranking.isInt() || !dst.isStr()) {
                 LOG(WARNING) << "Mismatched edge key type";
                 continue;

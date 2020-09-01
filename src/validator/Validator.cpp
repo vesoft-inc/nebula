@@ -452,9 +452,9 @@ StatusOr<Value::Type> Validator::deduceExprType(const Expression* expr) const {
                     << castExpr->type();
                 return Status::Error(out.str());
             }
-            QueryExpressionContext ctx(nullptr, nullptr);
+            QueryExpressionContext ctx;
             auto* typeCastExpr = const_cast<TypeCastingExpression*>(castExpr);
-            auto val = typeCastExpr->eval(ctx);
+            auto val = typeCastExpr->eval(ctx(nullptr));
             if (val.isNull()) {
                 return Status::SemanticError("`%s` is not a valid expression ",
                                              expr->toString().c_str());
@@ -540,9 +540,9 @@ StatusOr<Value::Type> Validator::deduceExprType(const Expression* expr) const {
             return Status::SemanticError("LabelExpression can not be instantiated.");
         }
         case Expression::Kind::kConstant: {
-            QueryExpressionContext ctx(nullptr, nullptr);
+            QueryExpressionContext ctx;
             auto* mutableExpr = const_cast<Expression*>(expr);
-            return mutableExpr->eval(ctx).type();
+            return mutableExpr->eval(ctx(nullptr)).type();
         }
         case Expression::Kind::kEdgeSrc: {
             return Value::Type::STRING;

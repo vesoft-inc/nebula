@@ -17,9 +17,8 @@ namespace graph {
 
 class QueryExpressionContext final : public ExpressionContext {
 public:
-    explicit QueryExpressionContext(ExecutionContext* ectx, Iterator* iter = nullptr) {
+    explicit QueryExpressionContext(ExecutionContext* ectx = nullptr) {
         ectx_ = ectx;
-        iter_ = iter;
     }
 
     // Get the latest version value for the given variable name, such as $a, $b
@@ -60,13 +59,17 @@ public:
 
     void setVar(const std::string&, Value val) override;
 
-    void setIter(Iterator* iter) {
+    QueryExpressionContext& operator()(Iterator* iter) {
         iter_ = iter;
+        return *this;
     }
 
 private:
-    ExecutionContext*                 ectx_;
-    Iterator*                         iter_;
+    // ExecutionContext and Iterator are used for getting runtime results,
+    // and nullptr is acceptable for these two members if the expressions
+    // could be evaluated as constant value.
+    ExecutionContext*                 ectx_{nullptr};
+    Iterator*                         iter_{nullptr};
 };
 
 }  // namespace graph

@@ -41,14 +41,14 @@ Status GetNeighborsExecutor::buildRequestDataSet() {
     VLOG(1) << node()->varName() << " : " << inputVar;
     auto& inputResult = ectx_->getResult(inputVar);
     auto iter = inputResult.iter();
-    QueryExpressionContext ctx(ectx_, iter.get());
+    QueryExpressionContext ctx(ectx_);
     DataSet input;
     reqDs_.colNames = {kVid};
     reqDs_.rows.reserve(iter->size());
     auto* src = gn_->src();
     std::unordered_set<Value> uniqueVid;
     for (; iter->valid(); iter->next()) {
-        auto val = Expression::eval(src, ctx);
+        auto val = Expression::eval(src, ctx(iter.get()));
         if (!val.isStr()) {
             continue;
         }

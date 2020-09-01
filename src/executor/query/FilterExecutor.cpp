@@ -25,10 +25,10 @@ folly::Future<Status> FilterExecutor::execute() {
     }
     ResultBuilder builder;
     builder.value(iter->valuePtr());
-    QueryExpressionContext ctx(ectx_, iter.get());
+    QueryExpressionContext ctx(ectx_);
     auto condition = filter->condition();
     while (iter->valid()) {
-        auto val = condition->eval(ctx);
+        auto val = condition->eval(ctx(iter.get()));
         if (!val.isBool() && !val.isNull()) {
             return Status::Error("Internal Error: Wrong type result, "
                                  "should be NULL type or BOOL type");

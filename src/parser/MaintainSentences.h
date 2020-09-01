@@ -53,7 +53,7 @@ public:
     }
 
     Value getDefaultValue() const {
-        graph::QueryExpressionContext ctx(nullptr, nullptr);
+        graph::QueryExpressionContext ctx(nullptr);
         return defaultValue_->eval(ctx);
     }
 

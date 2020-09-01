@@ -38,9 +38,9 @@ folly::Future<Status> DeleteVerticesExecutor::deleteVertices() {
         auto& inputResult = ectx_->getResult(inputVar);
         auto iter = inputResult.iter();
         vertices.reserve(iter->size());
-        QueryExpressionContext ctx(ectx_, iter.get());
+        QueryExpressionContext ctx(ectx_);
         for (; iter->valid(); iter->next()) {
-            auto val = Expression::eval(vidRef, ctx);
+            auto val = Expression::eval(vidRef, ctx(iter.get()));
             if (val.isNull() || val.empty()) {
                 VLOG(3) << "NULL or EMPTY vid";
                 continue;
@@ -90,11 +90,11 @@ folly::Future<Status> DeleteEdgesExecutor::deleteEdges() {
             return Status::OK();
         }
         edgeKeys.reserve(iter->size());
-        QueryExpressionContext ctx(ectx_, iter.get());
+        QueryExpressionContext ctx(ectx_);
         for (; iter->valid(); iter->next()) {
             for (auto &edgeKeyRef : edgeKeyRefs) {
                 storage::cpp2::EdgeKey edgeKey;
-                auto srcId = Expression::eval(edgeKeyRef->srcid(), ctx);
+                auto srcId = Expression::eval(edgeKeyRef->srcid(), ctx(iter.get()));
                 if (srcId.isNull() || srcId.empty()) {
                     VLOG(3) << "NULL or EMPTY vid";
                     continue;
@@ -105,14 +105,14 @@ folly::Future<Status> DeleteEdgesExecutor::deleteEdges() {
                        << "`, value `" << srcId.toString() << "'";
                     return Status::Error(ss.str());
                 }
-                auto dstId = Expression::eval(edgeKeyRef->dstid(), ctx);
+                auto dstId = Expression::eval(edgeKeyRef->dstid(), ctx(iter.get()));
                 if (!dstId.isStr()) {
                     std::stringstream ss;
                     ss << "Wrong dstId type `" << dstId.type()
                        << "', value `" << dstId.toString() << "'";
                     return Status::Error(ss.str());
                 }
-                auto rank = Expression::eval(edgeKeyRef->rank(), ctx);
+                auto rank = Expression::eval(edgeKeyRef->rank(), ctx(iter.get()));
                 if (!rank.isInt()) {
                     std::stringstream ss;
                     ss << "Wrong rank type `" << rank.type()
@@ -120,7 +120,7 @@ folly::Future<Status> DeleteEdgesExecutor::deleteEdges() {
                     return Status::Error(ss.str());
                 }
                 DCHECK(edgeKeyRef->type());
-                auto type = Expression::eval(edgeKeyRef->type(), ctx);
+                auto type = Expression::eval(edgeKeyRef->type(), ctx(iter.get()));
                 if (!type.isInt()) {
                     std::stringstream ss;
                     ss << "Wrong edge type `" << type.type()

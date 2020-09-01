@@ -5,7 +5,6 @@
  */
 
 #include "executor/query/LimitExecutor.h"
-#include "context/QueryExpressionContext.h"
 #include "planner/Query.h"
 #include "util/ScopedTimer.h"
 
@@ -19,7 +18,6 @@ folly::Future<Status> LimitExecutor::execute() {
     auto iter = ectx_->getResult(limit->inputVar()).iter();
     ResultBuilder builder;
     builder.value(iter->valuePtr());
-    QueryExpressionContext ctx(ectx_, iter.get());
     auto offset = limit->offset();
     auto count = limit->count();
     auto size = iter->size();

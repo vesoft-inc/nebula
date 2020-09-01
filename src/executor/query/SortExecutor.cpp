@@ -5,7 +5,6 @@
  */
 
 #include "executor/query/SortExecutor.h"
-#include "context/QueryExpressionContext.h"
 #include "planner/Query.h"
 #include "util/ScopedTimer.h"
 

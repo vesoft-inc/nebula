@@ -277,7 +277,7 @@ Status SetConfigValidator::validateImpl() {
     name_ = *item->getName();
     module_ = item->getModule();
     auto updateItems = item->getUpdateItems();
-    QueryExpressionContext ctx(nullptr, nullptr);
+    QueryExpressionContext ctx;
     if (updateItems == nullptr) {
         module_ = item->getModule();
         if (item->getName() != nullptr) {
@@ -285,7 +285,7 @@ Status SetConfigValidator::validateImpl() {
         }
 
         if (item->getValue() != nullptr) {
-            value_ = Expression::eval(item->getValue(), ctx);
+            value_ = Expression::eval(item->getValue(), ctx(nullptr));
         }
     } else {
         Map configs;
@@ -297,7 +297,7 @@ Status SetConfigValidator::validateImpl() {
             }
             name = *updateItem->getFieldName();
 
-            value = Expression::eval(const_cast<Expression*>(updateItem->value()), ctx);
+            value = Expression::eval(const_cast<Expression*>(updateItem->value()), ctx(nullptr));
 
             if (value.isNull() || (!value.isNumeric() && !value.isStr() && !value.isBool())) {
                 return Status::Error("Wrong value: %s", name.c_str());

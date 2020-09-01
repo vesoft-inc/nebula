@@ -188,8 +188,8 @@ Status SchemaUtil::setTTLCol(SchemaPropItem* schemaProp, meta::cpp2::Schema& sch
 
 // static
 StatusOr<VertexID> SchemaUtil::toVertexID(Expression *expr) {
-    QueryExpressionContext ctx(nullptr, nullptr);
-    auto vertexId = expr->eval(ctx);
+    QueryExpressionContext ctx;
+    auto vertexId = expr->eval(ctx(nullptr));
     if (vertexId.type() != Value::Type::STRING) {
         LOG(ERROR) << "Wrong vertex id type";
         return Status::Error("Wrong vertex id type");
@@ -202,9 +202,9 @@ StatusOr<std::vector<Value>>
 SchemaUtil::toValueVec(std::vector<Expression*> exprs) {
     std::vector<Value> values;
     values.reserve(exprs.size());
-    QueryExpressionContext ctx(nullptr, nullptr);
+    QueryExpressionContext ctx;
     for (auto *expr : exprs) {
-        auto value = expr->eval(ctx);
+        auto value = expr->eval(ctx(nullptr));
          if (value.isNull() && value.getNull() != NullType::__NULL__) {
             LOG(ERROR) << "Wrong value type: " << value.type();;
             return Status::Error("Wrong value type");

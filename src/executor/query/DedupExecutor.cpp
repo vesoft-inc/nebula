@@ -28,7 +28,6 @@ folly::Future<Status> DedupExecutor::execute() {
     }
     ResultBuilder builder;
     builder.value(iter->valuePtr());
-    QueryExpressionContext ctx(ectx_, iter.get());
     std::unordered_set<const LogicalRow*> unique;
     while (iter->valid()) {
         if (unique.find(iter->row()) != unique.end()) {

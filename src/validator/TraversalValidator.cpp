@@ -74,13 +74,13 @@ Status TraversalValidator::validateFrom(const FromClause* from) {
         }
     } else {
         auto vidList = from->vidList();
-        QueryExpressionContext ctx(qctx_->ectx(), nullptr);
+        QueryExpressionContext ctx;
         for (auto* expr : vidList) {
             if (!evaluableExpr(expr)) {
                 return Status::Error("`%s' is not an evaluable expression.",
                         expr->toString().c_str());
             }
-            auto vid = expr->eval(ctx);
+            auto vid = expr->eval(ctx(nullptr));
             if (!vid.isStr()) {
                 return Status::Error("Vid should be a string.");
             }

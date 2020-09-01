@@ -20,7 +20,7 @@ folly::Future<Status> ProjectExecutor::execute() {
     auto columns = project->columns()->columns();
     auto iter = ectx_->getResult(project->inputVar()).iter();
     DCHECK(!!iter);
-    QueryExpressionContext ctx(ectx_, iter.get());
+    QueryExpressionContext ctx(ectx_);
 
     VLOG(1) << "input: " << project->inputVar();
     DataSet ds;
@@ -28,7 +28,7 @@ folly::Future<Status> ProjectExecutor::execute() {
     for (; iter->valid(); iter->next()) {
         Row row;
         for (auto& col : columns) {
-            Value val = col->expr()->eval(ctx);
+            Value val = col->expr()->eval(ctx(iter.get()));
             row.values.emplace_back(std::move(val));
         }
         ds.rows.emplace_back(std::move(row));
