@@ -760,6 +760,13 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
             break;
         }
 
+        if (term_ != currTerm) {
+            VLOG(2) << idStr_ << "Term has been updated, previous "
+                    << currTerm << ", current " << term_;
+            currTerm = term_;
+            break;
+        }
+
         hosts = hosts_;
     } while (false);
 
@@ -1089,6 +1096,14 @@ typename RaftPart::Role RaftPart::processElectionResponses(
 bool RaftPart::leaderElection() {
     VLOG(2) << idStr_ << "Start leader election...";
     using namespace folly;  // NOLINT since the fancy overload of | operator
+
+    bool expected = false;
+    if (!inElection_.compare_exchange_strong(expected, true)) {
+        return true;
+    }
+    SCOPE_EXIT {
+        inElection_ = false;
+    };
 
     cpp2::AskForVoteRequest voteReq;
     decltype(hosts_) hosts;
