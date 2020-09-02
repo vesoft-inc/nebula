@@ -264,86 +264,72 @@ Status LookupExecutor::findOptimalIndex() {
     return Status::OK();
 }
 
-std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> LookupExecutor::findValidIndex() {
-    // Check contains string type field from where condition
+std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> LookupExecutor::findValidIndexWithStr() {
     std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> validIndexes;
-    auto *sm = ectx()->schemaManager();
-    auto schema = isEdge_
-                  ? sm->getEdgeSchema(spaceId_, tagOrEdge_)
-                  : sm->getTagSchema(spaceId_, tagOrEdge_);
-    if (schema == nullptr) {
-        LOG(ERROR) << "No schema found : " << from_;
-        return validIndexes;
+    // Because the string type is a variable-length field,
+    // the WHERE condition must cover all fields in index for performance.
+
+    // Maybe there are duplicate fields in the WHERE condition,
+    // so need to using std::set remove duplicate field at here, for example :
+    // where col1 > 1 and col1 < 5, the field col1 will appear twice in filters_.
+    std::set<std::string> cols;
+    for (const auto& filter : filters_) {
+        cols.emplace(filter.first);
     }
-
-    bool hasStringCol = false;
-    for (const auto filter : filters_) {
-        auto type = schema->getFieldType(filter.first);
-        if (type.get_type() == nebula::cpp2::SupportedType::STRING) {
-            hasStringCol = true;
-            break;
+    for (const auto& index : indexes_) {
+        if (index->get_fields().size() != cols.size()) {
+            continue;
         }
-    }
-
-    if (hasStringCol) {
-        // Because the string type is a variable-length field,
-        // All fields need to be involved in index scan and the length byte should be appended
-
-        // Maybe there are duplicate fields in the WHERE condition,
-        // so need to using std::set remove duplicate field at here, for example :
-        // where col1 > 1 and col1 < 5, the field col1 will appear twice in filters_.
-        std::set<std::string> cols;
-        for (const auto filter : filters_) {
-            cols.emplace(filter.first);
-        }
-        for (const auto& index : indexes_) {
-            if (index->get_fields().size() != cols.size()) {
-                continue;
-            }
-            bool allColsHint = true;
-            for (const auto& field : index->get_fields()) {
-                auto it = std::find_if(cols.begin(), cols.end(),
-                                       [field](const auto &col) {
-                                           return field.get_name() == col;
-                                       });
-                if (it == cols.end()) {
-                    allColsHint = false;
-                    break;
-                }
-            }
-            if (allColsHint) {
-                validIndexes.emplace_back(index);
+        bool allColsHint = true;
+        for (const auto& field : index->get_fields()) {
+            auto it = std::find_if(cols.begin(), cols.end(),
+                                   [field](const auto &col) {
+                                       return field.get_name() == col;
+                                   });
+            if (it == cols.end()) {
+                allColsHint = false;
+                break;
             }
         }
-    } else {
-        // Find indexes for match all fields by where condition.
-        // Non-string type fields do not need to involve all fields
-        for (const auto& index : indexes_) {
-            bool allColsHint = true;
-            const auto& fields = index->get_fields();
-            // If index including string type fields, skip this index.
-            auto stringField = std::find_if(fields.begin(), fields.end(), [](const auto &f) {
-                return f.get_type().get_type() == nebula::cpp2::SupportedType::STRING;
-            });
-            if (stringField != fields.end()) {
-                continue;
-            }
-            for (const auto& filter : filters_) {
-                auto it = std::find_if(fields.begin(), fields.end(),
-                                       [filter](const auto &field) {
-                                           return field.get_name() == filter.first;
-                                       });
-                if (it == fields.end()) {
-                    allColsHint = false;
-                    break;
-                }
-            }
-            if (allColsHint) {
-                validIndexes.emplace_back(index);
-            }
+        if (allColsHint) {
+            validIndexes.emplace_back(index);
         }
     }
+    if (validIndexes.empty()) {
+        LOG(WARNING) << "The WHERE condition contains fields of string type, "
+                     << "So the WHERE condition must cover all fields in index.";
+    }
+    return validIndexes;
+}
 
+std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> LookupExecutor::findValidIndexNoStr() {
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> validIndexes;
+    // Find indexes for match all fields by where condition.
+    // Non-string type fields do not need to involve all fields
+    for (const auto& index : indexes_) {
+        bool allColsHint = true;
+        const auto& fields = index->get_fields();
+        // If index including string type fields, skip this index.
+        auto stringField = std::find_if(fields.begin(), fields.end(), [](const auto &f) {
+            return f.get_type().get_type() == nebula::cpp2::SupportedType::STRING;
+        });
+        if (stringField != fields.end()) {
+            continue;
+        }
+        for (const auto& filter : filters_) {
+            auto it = std::find_if(fields.begin(), fields.end(),
+                                   [filter](const auto &field) {
+                                       return field.get_name() == filter.first;
+                                   });
+            if (it == fields.end()) {
+                allColsHint = false;
+                break;
+            }
+        }
+        if (allColsHint) {
+            validIndexes.emplace_back(index);
+        }
+    }
     // If the first field of the index does not match any condition, the index is invalid.
     // remove it from validIndexes.
     if (!validIndexes.empty()) {
@@ -362,6 +348,28 @@ std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> LookupExecutor::findValidI
         }
     }
     return validIndexes;
+}
+
+std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> LookupExecutor::findValidIndex() {
+    // Check contains string type field from where condition
+    auto *sm = ectx()->schemaManager();
+    auto schema = isEdge_
+                  ? sm->getEdgeSchema(spaceId_, tagOrEdge_)
+                  : sm->getTagSchema(spaceId_, tagOrEdge_);
+    if (schema == nullptr) {
+        LOG(ERROR) << "No schema found : " << from_;
+        return {};
+    }
+
+    bool hasStringCol = false;
+    for (const auto& filter : filters_) {
+        auto type = schema->getFieldType(filter.first);
+        if (type.get_type() == nebula::cpp2::SupportedType::STRING) {
+            hasStringCol = true;
+            break;
+        }
+    }
+    return hasStringCol ? findValidIndexWithStr() : findValidIndexNoStr();
 }
 
 std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> LookupExecutor::findIndexForEqualScan(

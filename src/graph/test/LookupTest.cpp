@@ -882,7 +882,246 @@ TEST_F(LookupTest, OptimizerTest) {
         ASSERT_TRUE(expected["i2"] == executor->index_);
         executor->filters_.clear();
     }
+    {
+        for (int8_t i = 1; i <= 5; i++) {
+            cpp2::ExecutionResponse resp;
+            auto stmt = folly::stringPrintf("DROP TAG INDEX i%d", i);
+            auto code = client_->execute(stmt, resp);
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        }
+    }
 }
 
+TEST_F(LookupTest, OptimizerWithStringFieldTest) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto stmt = "CREATE TAG t1_str(c1 int, c2 int, c3 string, c4 string)";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto stmt = "CREATE TAG INDEX i1_str ON t1_str(c1, c2)";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto stmt = "CREATE TAG INDEX i2_str ON t1_str(c4)";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto stmt = "CREATE TAG INDEX i3_str ON t1_str(c3, c1)";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto stmt = "CREATE TAG INDEX i4_str ON t1_str(c3, c4)";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto stmt = "CREATE TAG INDEX i5_str ON t1_str(c1, c2, c3, c4)";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+
+    auto mc = gEnv->metaClient();
+    auto indexes = mc->getTagIndexesFromCache(1);
+    ASSERT_TRUE(indexes.ok());
+    auto ectx = std::make_unique<ExecutionContext>(nullptr,
+                                                   gEnv->schemaManager(),
+                                                   nullptr,
+                                                   nullptr,
+                                                   nullptr,
+                                                   nullptr);
+    auto executor = std::make_unique<LookupExecutor>(nullptr, ectx.get());
+    std::map<std::string, IndexID> expected;
+    {
+        executor->indexes_ = indexes.value();
+        executor->spaceId_ = 1;
+        auto tagID = mc->getTagIDByNameFromCache(1, "t1_str");
+        ASSERT_TRUE(tagID.ok());
+        executor->tagOrEdge_ = tagID.value();
+        for (int8_t i = 1; i <= 5; i++) {
+            auto indexName = folly::stringPrintf("i%d_str", i);
+            auto index = std::find_if(executor->indexes_.begin(), executor->indexes_.end(),
+                                      [indexName](const auto &idx) {
+                                          return idx->get_index_name() == indexName;
+                                      });
+            if (index != executor->indexes_.end()) {
+                expected[index->get()->get_index_name()] = index->get()->get_index_id();
+            }
+        }
+    }
+    {
+        // "LOOKUP on t1_str WHERE c1 == 1"; expected i1_str
+        executor->filters_.emplace_back("c1", RelationalExpression::Operator::EQ);
+        ASSERT_TRUE(executor->findOptimalIndex().ok());
+        LOG(INFO) << "index is : " << executor->index_;
+        ASSERT_TRUE(expected["i1_str"] == executor->index_ );
+        executor->filters_.clear();
+    }
+    {
+        // "LOOKUP on t1_str WHERE c1 == 1 and tc2 > 1"; expected i1_str
+        executor->filters_.emplace_back("c1", RelationalExpression::Operator::EQ);
+        executor->filters_.emplace_back("c2", RelationalExpression::Operator::GT);
+        ASSERT_TRUE(executor->findOptimalIndex().ok());
+        ASSERT_TRUE(expected["i1_str"] == executor->index_);
+        executor->filters_.clear();
+    }
+    {
+        // "LOOKUP on t1 WHERE c3 == "a". No invalid index found.
+        executor->filters_.emplace_back("c3", RelationalExpression::Operator::EQ);
+        ASSERT_FALSE(executor->findOptimalIndex().ok());
+        executor->filters_.clear();
+    }
+    {
+        // "LOOKUP on t1 WHERE c4 == "a". expected i2_str
+        executor->filters_.emplace_back("c4", RelationalExpression::Operator::EQ);
+        ASSERT_TRUE(executor->findOptimalIndex().ok());
+        ASSERT_TRUE(expected["i2_str"] == executor->index_);
+        executor->filters_.clear();
+    }
+    {
+        // "LOOKUP on t1 WHERE c3 == "a" and c4 == "a". expected i4_str
+        executor->filters_.emplace_back("c3", RelationalExpression::Operator::EQ);
+        executor->filters_.emplace_back("c4", RelationalExpression::Operator::EQ);
+        ASSERT_TRUE(executor->findOptimalIndex().ok());
+        ASSERT_TRUE(expected["i4_str"] == executor->index_);
+        executor->filters_.clear();
+    }
+    {
+        // "LOOKUP on t1 WHERE c3 == "a" and c1 == 1. expected i3_str
+        executor->filters_.emplace_back("c3", RelationalExpression::Operator::EQ);
+        executor->filters_.emplace_back("c1", RelationalExpression::Operator::EQ);
+        ASSERT_TRUE(executor->findOptimalIndex().ok());
+        ASSERT_TRUE(expected["i3_str"] == executor->index_);
+        executor->filters_.clear();
+    }
+    {
+        // "LOOKUP on t1 WHERE c3 == "a" and c2 == 1 and c1 == 1. No invalid index found.
+        executor->filters_.emplace_back("c3", RelationalExpression::Operator::EQ);
+        executor->filters_.emplace_back("c2", RelationalExpression::Operator::EQ);
+        executor->filters_.emplace_back("c1", RelationalExpression::Operator::EQ);
+        ASSERT_FALSE(executor->findOptimalIndex().ok());
+    }
+    {
+        // "LOOKUP on t1 WHERE
+        // c4 == "a" and c3 == "a" and c2 == 1 and c1 == 1. No invalid index found.
+        executor->filters_.emplace_back("c4", RelationalExpression::Operator::EQ);
+        executor->filters_.emplace_back("c3", RelationalExpression::Operator::EQ);
+        executor->filters_.emplace_back("c2", RelationalExpression::Operator::EQ);
+        executor->filters_.emplace_back("c1", RelationalExpression::Operator::EQ);
+        ASSERT_TRUE(executor->findOptimalIndex().ok());
+        ASSERT_TRUE(expected["i5_str"] == executor->index_);
+        executor->filters_.clear();
+    }
+    {
+        for (int8_t i = 1; i <= 5; i++) {
+            cpp2::ExecutionResponse resp;
+            auto stmt = folly::stringPrintf("DROP TAG INDEX i%d_str", i);
+            auto code = client_->execute(stmt, resp);
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        }
+    }
+}
+
+TEST_F(LookupTest, StringFieldTest) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto stmt = "CREATE TAG tag_with_str(c1 int, c2 string, c3 string)";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto stmt = "CREATE TAG INDEX i1_with_str ON tag_with_str(c1, c2)";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto stmt = "CREATE TAG INDEX i2_with_str ON tag_with_str(c2, c3)";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto stmt = "CREATE TAG INDEX i3_with_str ON tag_with_str(c1, c2, c3)";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "INSERT VERTEX tag_with_str(c1, c2, c3) VALUES "
+                     "1:(1, \"c1_row1\", \"c2_row1\"), "
+                     "2:(2, \"c1_row2\", \"c2_row2\"), "
+                     "3:(3, \"abc\", \"abc\"), "
+                     "4:(4, \"abc\", \"abc\"), "
+                     "5:(5, \"ab\", \"cabc\"), "
+                     "6:(5, \"abca\", \"bc\")";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // No valid index found, the where condition need refer to all index fields.
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON tag_with_str WHERE tag_with_str.c1 == 1";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON tag_with_str WHERE "
+                     "tag_with_str.c1 == 1 and tag_with_str.c2 == \"ccc\"";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(!resp.__isset.rows || resp.get_rows()->size() == 0);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON tag_with_str WHERE "
+                     "tag_with_str.c1 == 1 and tag_with_str.c2 == \"c1_row1\"";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID>> expected = {{1}};
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON tag_with_str WHERE "
+                     "tag_with_str.c1 == 5 and tag_with_str.c2 == \"ab\"";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID>> expected = {{5}};
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON tag_with_str WHERE "
+                     "tag_with_str.c2 == \"abc\" and tag_with_str.c3 == \"abc\"";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID>> expected = {{3}, {4}};
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON tag_with_str WHERE "
+                     "tag_with_str.c1 == 5 and tag_with_str.c2 == \"abca\" "
+                     "and tag_with_str.c3 == \"bc\"";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID>> expected = {{6}};
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
 }   // namespace graph
 }   // namespace nebula
