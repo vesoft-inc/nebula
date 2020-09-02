@@ -13,7 +13,10 @@
 #include "kvstore/Common.h"
 #include "webservice/WebService.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wkeyword-macro"
 #define private public
+#pragma clang diagnostic pop
 
 #include "meta/processors/jobMan/JobUtils.h"
 #include "meta/processors/jobMan/TaskDescription.h"
