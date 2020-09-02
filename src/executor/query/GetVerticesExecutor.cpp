@@ -63,9 +63,9 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
         .ensure([getPropsTime]() {
             VLOG(1) << "Get props time: " << getPropsTime.elapsedInUSec() << "us";
         })
-        .then([this](StorageRpcResponse<GetPropResponse> &&rpcResp) {
+        .then([this, gv](StorageRpcResponse<GetPropResponse> &&rpcResp) {
             SCOPED_TIMER(&execTime_);
-            return handleResp(std::move(rpcResp));
+            return handleResp(std::move(rpcResp), gv->colNamesRef());
         });
 }
 

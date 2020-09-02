@@ -32,8 +32,7 @@ Status FetchVerticesValidator::toPlan() {
                                               limit_,
                                               std::move(filter_));
     getVerticesNode->setInputVar(vidsVar);
-    // TODO(shylock) split the getVertices column names with project
-    getVerticesNode->setColNames(colNames_);
+    getVerticesNode->setColNames(std::move(gvColNames_));
     // pipe will set the input variable
     PlanNode *current = getVerticesNode;
 
@@ -95,7 +94,6 @@ Status FetchVerticesValidator::prepareVertices() {
     auto vids = sentence->vidList();
     srcVids_.rows.reserve(vids.size());
     for (const auto vid : vids) {
-        // TODO(shylock) Add a new value type VID to semantic this
         DCHECK(ExpressionUtils::isConstExpr(vid));
         auto v = vid->eval(dummy);
         if (!v.isStr()) {   // string as vid
@@ -108,6 +106,7 @@ Status FetchVerticesValidator::prepareVertices() {
 
 // TODO(shylock) select _vid property instead of return always.
 Status FetchVerticesValidator::prepareProperties() {
+    static constexpr char VertexID[] = "VertexID";
     auto *sentence = static_cast<FetchVerticesSentence*>(sentence_);
     auto *yield = sentence->yieldClause();
     if (yield == nullptr) {
@@ -119,12 +118,14 @@ Status FetchVerticesValidator::prepareProperties() {
             prop.set_tag(tagId_.value());
             // empty for all
             props_.emplace_back(std::move(prop));
-            outputs_.emplace_back(kVid, Value::Type::STRING);
-            colNames_.emplace_back(kVid);
+            outputs_.emplace_back(VertexID, Value::Type::STRING);
+            colNames_.emplace_back(VertexID);
+            gvColNames_.emplace_back(VertexID);  // keep compatible with 1.0
             for (std::size_t i = 0; i < schema_->getNumFields(); ++i) {
                 outputs_.emplace_back(schema_->getFieldName(i),
                                       SchemaUtil::propTypeToValueType(schema_->getFieldType(i)));
                 colNames_.emplace_back(tagName_ + '.' + schema_->getFieldName(i));
+                gvColNames_.emplace_back(colNames_.back());
             }
         } else {
             // all schema properties
@@ -140,8 +141,9 @@ Status FetchVerticesValidator::prepareProperties() {
             std::sort(allTagsSchema.begin(), allTagsSchema.end(), [](const auto &a, const auto &b) {
                 return a.first < b.first;
             });
-            outputs_.emplace_back(kVid, Value::Type::STRING);
-            colNames_.emplace_back(kVid);
+            outputs_.emplace_back(VertexID, Value::Type::STRING);
+            colNames_.emplace_back(VertexID);
+            gvColNames_.emplace_back(colNames_.back());
             for (const auto &tagSchema : allTagsSchema) {
                 auto tagNameResult = qctx_->schemaMng()->toTagName(spaceId_, tagSchema.first);
                 NG_RETURN_IF_ERROR(tagNameResult);
@@ -151,6 +153,7 @@ Status FetchVerticesValidator::prepareProperties() {
                         tagSchema.second->getFieldName(i),
                         SchemaUtil::propTypeToValueType(tagSchema.second->getFieldType(i)));
                     colNames_.emplace_back(tagName + "." + tagSchema.second->getFieldName(i));
+                    gvColNames_.emplace_back(colNames_.back());
                 }
             }
         }
@@ -161,8 +164,9 @@ Status FetchVerticesValidator::prepareProperties() {
         auto yieldSize = yield->columns().size();
         colNames_.reserve(yieldSize + 1);
         outputs_.reserve(yieldSize + 1);
-        colNames_.emplace_back(kVid);
-        outputs_.emplace_back(kVid, Value::Type::STRING);  // kVid
+        colNames_.emplace_back(VertexID);
+        gvColNames_.emplace_back(colNames_.back());
+        outputs_.emplace_back(VertexID, Value::Type::STRING);  // kVid
 
         dedup_ = yield->isDistinct();
         storage::cpp2::VertexProp prop;
@@ -199,6 +203,7 @@ Status FetchVerticesValidator::prepareProperties() {
                                             tagName_.c_str());
                 }
                 propsName.emplace_back(*expr->prop());
+                gvColNames_.emplace_back(*expr->sym() + "." + *expr->prop());
             }
             colNames_.emplace_back(deduceColName(col));
             auto typeResult = deduceExprType(col->expr());
@@ -214,8 +219,8 @@ Status FetchVerticesValidator::prepareProperties() {
         newYieldColumns_ = qctx_->objPool()->add(new YieldColumns());
         // note eval vid by input expression
         newYieldColumns_->addColumn(
-            new YieldColumn(new InputPropertyExpression(new std::string(kVid)),
-                            new std::string(kVid)));
+            new YieldColumn(new InputPropertyExpression(new std::string(VertexID)),
+                            new std::string(VertexID)));
         for (auto col : yield->columns()) {
             newYieldColumns_->addColumn(col->clone().release());
         }

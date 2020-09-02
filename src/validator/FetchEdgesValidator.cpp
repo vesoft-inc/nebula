@@ -44,8 +44,7 @@ Status FetchEdgesValidator::toPlan() {
                                         std::move(orderBy_),
                                         std::move(filter_));
     getEdgesNode->setInputVar(edgeKeysVar);
-    // TODO(shylock) split the getEdges column names with project
-    getEdgesNode->setColNames(colNames_);
+    getEdgesNode->setColNames(std::move(geColNames_));
     // the pipe will set the input variable
     PlanNode *current = getEdgesNode;
 
@@ -120,7 +119,6 @@ Status FetchEdgesValidator::prepareEdges() {
         edgeKeys_.rows.reserve(keys.size());
         for (const auto &key : keys) {
             DCHECK(ExpressionUtils::isConstExpr(key->srcid()));
-            // TODO(shylock) Add new value type EDGE_ID to semantic and simplify this
             auto src = key->srcid()->eval(dummy);
             if (!src.isStr()) {   // string as vid
                 return Status::NotSupported("src is not a vertex id");
@@ -197,6 +195,7 @@ Status FetchEdgesValidator::prepareProperties() {
                                             edgeTypeName_.c_str());
                 }
                 propsName.emplace_back(*expr->prop());
+                geColNames_.emplace_back(*expr->sym() + "." + *expr->prop());
             }
             colNames_.emplace_back(deduceColName(col));
             auto typeResult = deduceExprType(col->expr());
@@ -211,22 +210,27 @@ Status FetchEdgesValidator::prepareProperties() {
         propNames.reserve(3 + schema_->getNumFields());
         outputs_.reserve(3 + schema_->getNumFields());
         colNames_.reserve(3 + schema_->getNumFields());
+        geColNames_.reserve(3 + schema_->getNumFields());
         // insert the reserved properties be compatible with 1.0
         propNames.emplace_back(kSrc);
         outputs_.emplace_back(edgeTypeName_ + "." + kSrc, Value::Type::STRING);
         colNames_.emplace_back(edgeTypeName_ + "." + kSrc);
+        geColNames_.emplace_back(colNames_.back());
         propNames.emplace_back(kDst);
         outputs_.emplace_back(edgeTypeName_ + "." + kDst, Value::Type::STRING);
         colNames_.emplace_back(edgeTypeName_ + "." + kDst);
+        geColNames_.emplace_back(colNames_.back());
         propNames.emplace_back(kRank);
         outputs_.emplace_back(edgeTypeName_ + "." + kRank, Value::Type::INT);
         colNames_.emplace_back(edgeTypeName_ + "." + kRank);
+        geColNames_.emplace_back(colNames_.back());
 
         for (std::size_t i = 0; i < schema_->getNumFields(); ++i) {
             propNames.emplace_back(schema_->getFieldName(i));
             outputs_.emplace_back(schema_->getFieldName(i),
                                   SchemaUtil::propTypeToValueType(schema_->getFieldType(i)));
             colNames_.emplace_back(edgeTypeName_ + "." + schema_->getFieldName(i));
+            geColNames_.emplace_back(colNames_.back());
         }
         prop.set_props(std::move(propNames));
     }

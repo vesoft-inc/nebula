@@ -44,6 +44,8 @@ private:
     Status oneStep(PlanNode* dependencyForGn, const std::string& inputVarNameForGN,
                    PlanNode* projectFromJoin);
 
+    std::vector<std::string> buildDstVertexColNames();
+
     GetNeighbors::VertexProps buildSrcVertexProps();
 
     std::vector<storage::cpp2::VertexProp> buildDstVertexProps();

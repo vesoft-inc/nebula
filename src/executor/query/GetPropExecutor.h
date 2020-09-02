@@ -18,7 +18,8 @@ protected:
     GetPropExecutor(const std::string &name, const PlanNode *node, QueryContext *qctx)
         : Executor(name, node, qctx) {}
 
-    Status handleResp(storage::StorageRpcResponse<storage::cpp2::GetPropResponse> &&rpcResp) {
+    Status handleResp(storage::StorageRpcResponse<storage::cpp2::GetPropResponse> &&rpcResp,
+                      const std::vector<std::string> &colNames) {
         auto result = handleCompleteness(rpcResp);
         NG_RETURN_IF_ERROR(result);
         auto state = std::move(result).value();
@@ -35,8 +36,13 @@ protected:
                 state = Result::State::kPartialSuccess;
             }
         }
-        for (auto &colName : v.colNames) {
-            std::replace(colName.begin(), colName.end(), ':', '.');
+        if (!colNames.empty()) {
+            DCHECK_EQ(colNames.size(), v.colSize());
+            v.colNames = colNames;
+        } else {
+            for (auto &colName : v.colNames) {
+                std::replace(colName.begin(), colName.end(), ':', '.');
+            }
         }
         VLOG(1) << "Resp: " << v;
         return finish(ResultBuilder()

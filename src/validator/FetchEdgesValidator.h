@@ -63,6 +63,7 @@ private:
     bool withProject_{false};
     // outputs
     std::vector<std::string> colNames_;
+    std::vector<std::string> geColNames_;
     // new yield to inject reserved properties for compatible with 1.0
     YieldClause* newYield_{nullptr};
     // input

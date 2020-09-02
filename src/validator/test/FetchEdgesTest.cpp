@@ -153,8 +153,7 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
                          std::string("like.") + kDst,
                          std::string("like.") + kRank,
                          "like.start",
-                         "(1+1)",
-                         "like.end"});  // TODO(shylock) fix
+                         "like.end"});
 
         // Project
         auto yieldColumns = std::make_unique<YieldColumns>();
@@ -213,7 +212,8 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
         ge->setColNames({std::string("like.") + kSrc,
                          std::string("like.") + kDst,
                          std::string("like.") + kRank,
-                         "(like.start>like.end)"});  // TODO(shylock) fix
+                         "like.start",
+                         "like.end"});
 
         // project, TODO(shylock) it's could push-down to storage if it supported
         auto yieldColumns = std::make_unique<YieldColumns>();

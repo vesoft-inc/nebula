@@ -69,9 +69,9 @@ folly::Future<Status> GetEdgesExecutor::getEdges() {
         .ensure([getPropsTime]() {
             VLOG(1) << "Get Props Time: " << getPropsTime.elapsedInUSec() << "us";
         })
-        .then([this](StorageRpcResponse<GetPropResponse> &&rpcResp) {
+        .then([this, ge](StorageRpcResponse<GetPropResponse> &&rpcResp) {
             SCOPED_TIMER(&execTime_);
-            return handleResp(std::move(rpcResp));
+            return handleResp(std::move(rpcResp), ge->colNamesRef());
         });
 }
 
