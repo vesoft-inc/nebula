@@ -37,6 +37,12 @@ public:
     ~JobManager();
     static JobManager* getInstance();
 
+    enum class Status {
+        NOT_START,
+        RUNNING,
+        STOPPED,
+    };
+
     bool init(nebula::kvstore::KVStore* store);
 
     void shutDown();
@@ -62,7 +68,8 @@ private:
     std::unique_ptr<folly::UMPSCQueue<int32_t, true>> queue_;
     std::unique_ptr<thread::GenericWorker> bgThread_;
 
-    bool shutDown_{false};
+    std::mutex  statusGuard_;
+    Status status_{Status::NOT_START};
     nebula::kvstore::KVStore* kvStore_{nullptr};
     std::unique_ptr<nebula::thread::GenericThreadPool> pool_{nullptr};
 };
