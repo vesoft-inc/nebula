@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef VALIDATOR_VISITOR_EVALUABLEEXPRVISITOR_H_
-#define VALIDATOR_VISITOR_EVALUABLEEXPRVISITOR_H_
+#ifndef VISITOR_EVALUABLEEXPRVISITOR_H_
+#define VISITOR_EVALUABLEEXPRVISITOR_H_
 
 #include "visitor/ExprVisitorImpl.h"
 
@@ -95,4 +95,4 @@ private:
 }   // namespace graph
 }   // namespace nebula
 
-#endif   // VALIDATOR_VISITOR_EVALUABLEEXPRVISITOR_H_
+#endif   // VISITOR_EVALUABLEEXPRVISITOR_H_

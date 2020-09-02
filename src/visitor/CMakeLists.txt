@@ -6,4 +6,6 @@
 nebula_add_library(
     expr_visitor_obj OBJECT
     ExprVisitorImpl.cpp
+    DeducePropsVisitor.cpp
+    DeduceTypeVisitor.cpp
 )
