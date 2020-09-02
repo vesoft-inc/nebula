@@ -1670,19 +1670,18 @@ cpp2::ErrorCode RaftPart::verifyLeader(
     term_ = proposedTerm_ = req.get_current_term();
     votedAddr_ = std::make_pair(0, 0);
     weight_ = 1;
+    // Before accept the logs from the new leader, check the logs locally.
+    if (wal_->lastLogId() > lastLogId_) {
+        LOG(INFO) << idStr_ << "There is one log " << wal_->lastLogId()
+                  << " i did not commit when i was leader, rollback to " << lastLogId_;
+        wal_->rollbackToLog(lastLogId_);
+    }
     if (oldRole == Role::LEADER) {
-        VLOG(2) << idStr_ << "Was a leader, need to do some clean-up";
-        if (wal_->lastLogId() > lastLogId_) {
-            LOG(INFO) << idStr_ << "There is one log " << wal_->lastLogId()
-                      << " i did not commit when i was leader, rollback to " << lastLogId_;
-            wal_->rollbackToLog(lastLogId_);
-        }
         // Need to invoke onLostLeadership callback
         bgWorkers_->addTask([self = shared_from_this(), oldTerm] {
             self->onLostLeadership(oldTerm);
         });
     }
-
     bgWorkers_->addTask([self = shared_from_this()] {
         self->onDiscoverNewLeader(self->leader_);
     });
