@@ -22,12 +22,12 @@ Status GetSubgraphValidator::validateImpl() {
     Status status;
     auto* gsSentence = static_cast<GetSubgraphSentence*>(sentence_);
     do {
-        status = validateStep(gsSentence->step());
+        status = validateStep(gsSentence->step(), steps_);
         if (!status.ok()) {
             break;
         }
 
-        status = validateFrom(gsSentence->from());
+        status = validateStarts(gsSentence->from(), from_);
         if (!status.ok()) {
             return status;
         }
@@ -136,7 +136,7 @@ Status GetSubgraphValidator::toPlan() {
 
     std::string startVidsVar;
     PlanNode* projectStartVid = nullptr;
-    if (!starts_.empty() && srcRef_ == nullptr) {
+    if (!from_.vids.empty() && from_.srcRef == nullptr) {
         startVidsVar = buildConstantInput();
     } else {
         projectStartVid = buildRuntimeInput();
@@ -162,7 +162,7 @@ Status GetSubgraphValidator::toPlan() {
 
     // ++counter{0} <= steps
     // TODO(shylock) add condition when gn get empty result
-    auto* condition = buildNStepLoopCondition(steps_);
+    auto* condition = buildNStepLoopCondition(steps_.steps);
     // The input of loop will set by father validator.
     auto* loop = Loop::make(qctx_, nullptr, projectVids, condition);
 

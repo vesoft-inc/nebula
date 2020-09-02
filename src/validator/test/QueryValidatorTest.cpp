@@ -1122,102 +1122,103 @@ TEST_F(QueryValidatorTest, OrderByAndLimt) {
 }
 
 TEST_F(QueryValidatorTest, TestSetValidator) {
-  // UNION ALL
-  {
-      std::string query =
-          "GO FROM \"1\" OVER like YIELD like.start AS start UNION ALL GO FROM \"2\" "
-          "OVER like YIELD like.start AS start";
-      std::vector<PlanNode::Kind> expected = {
-          PK::kDataCollect,
-          PK::kUnion,
-          PK::kProject,
-          PK::kProject,
-          PK::kGetNeighbors,
-          PK::kGetNeighbors,
-          PK::kPassThrough,
-          PK::kStart,
-      };
-      EXPECT_TRUE(checkResult(query, expected));
-  }
-  // UNION DISTINCT twice
-  {
-      std::string query = "GO FROM \"1\" OVER like YIELD like.start AS start UNION GO FROM \"2\" "
-                          "OVER like YIELD like.start AS start UNION GO FROM \"3\" OVER like YIELD "
-                          "like.start AS start";
-      std::vector<PlanNode::Kind> expected = {
-          PK::kDataCollect,
-          PK::kDedup,
-          PK::kUnion,
-          PK::kDedup,
-          PK::kProject,
-          PK::kUnion,
-          PK::kGetNeighbors,
-          PK::kProject,
-          PK::kProject,
-          PK::kPassThrough,
-          PK::kGetNeighbors,
-          PK::kGetNeighbors,
-          PK::kStart,
-          PK::kPassThrough,
-      };
-      EXPECT_TRUE(checkResult(query, expected));
-  }
-  // UNION DISTINCT
-  {
-      std::string query =
-          "GO FROM \"1\" OVER like YIELD like.start AS start UNION DISTINCT GO FROM \"2\" "
-          "OVER like YIELD like.start AS start";
-      std::vector<PlanNode::Kind> expected = {
-          PK::kDataCollect,
-          PK::kDedup,
-          PK::kUnion,
-          PK::kProject,
-          PK::kProject,
-          PK::kGetNeighbors,
-          PK::kGetNeighbors,
-          PK::kPassThrough,
-          PK::kStart,
-      };
-      EXPECT_TRUE(checkResult(query, expected));
-  }
-  // INVALID UNION ALL
-  {
-      std::string query = "GO FROM \"1\" OVER like YIELD like.start AS start, $^.person.name AS "
-                          "name UNION GO FROM \"2\" OVER like YIELD like.start AS start";
-      EXPECT_FALSE(checkResult(query));
-  }
-  // INTERSECT
-  {
-      std::string query = "GO FROM \"1\" OVER like YIELD like.start AS start INTERSECT GO FROM "
-                          "\"2\" OVER like YIELD like.start AS start";
-      std::vector<PlanNode::Kind> expected = {
-          PK::kDataCollect,
-          PK::kIntersect,
-          PK::kProject,
-          PK::kProject,
-          PK::kGetNeighbors,
-          PK::kGetNeighbors,
-          PK::kPassThrough,
-          PK::kStart,
-      };
-      EXPECT_TRUE(checkResult(query, expected));
-  }
-  // MINUS
-  {
-      std::string query = "GO FROM \"1\" OVER like YIELD like.start AS start MINUS GO FROM "
-                          "\"2\" OVER like YIELD like.start AS start";
-      std::vector<PlanNode::Kind> expected = {
-          PK::kDataCollect,
-          PK::kMinus,
-          PK::kProject,
-          PK::kProject,
-          PK::kGetNeighbors,
-          PK::kGetNeighbors,
-          PK::kPassThrough,
-          PK::kStart,
-      };
-      EXPECT_TRUE(checkResult(query, expected));
-  }
+    // UNION ALL
+    {
+        std::string query =
+            "GO FROM \"1\" OVER like YIELD like.start AS start UNION ALL GO FROM \"2\" "
+            "OVER like YIELD like.start AS start";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kDataCollect,
+            PK::kUnion,
+            PK::kProject,
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kGetNeighbors,
+            PK::kPassThrough,
+            PK::kStart,
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+    // UNION DISTINCT twice
+    {
+        std::string query =
+            "GO FROM \"1\" OVER like YIELD like.start AS start UNION GO FROM \"2\" "
+            "OVER like YIELD like.start AS start UNION GO FROM \"3\" OVER like YIELD "
+            "like.start AS start";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kDataCollect,
+            PK::kDedup,
+            PK::kUnion,
+            PK::kDedup,
+            PK::kProject,
+            PK::kUnion,
+            PK::kGetNeighbors,
+            PK::kProject,
+            PK::kProject,
+            PK::kPassThrough,
+            PK::kGetNeighbors,
+            PK::kGetNeighbors,
+            PK::kStart,
+            PK::kPassThrough,
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+    // UNION DISTINCT
+    {
+        std::string query =
+            "GO FROM \"1\" OVER like YIELD like.start AS start UNION DISTINCT GO FROM \"2\" "
+            "OVER like YIELD like.start AS start";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kDataCollect,
+            PK::kDedup,
+            PK::kUnion,
+            PK::kProject,
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kGetNeighbors,
+            PK::kPassThrough,
+            PK::kStart,
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+    // INVALID UNION ALL
+    {
+        std::string query = "GO FROM \"1\" OVER like YIELD like.start AS start, $^.person.name AS "
+                            "name UNION GO FROM \"2\" OVER like YIELD like.start AS start";
+        EXPECT_FALSE(checkResult(query));
+    }
+    // INTERSECT
+    {
+        std::string query = "GO FROM \"1\" OVER like YIELD like.start AS start INTERSECT GO FROM "
+                            "\"2\" OVER like YIELD like.start AS start";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kDataCollect,
+            PK::kIntersect,
+            PK::kProject,
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kGetNeighbors,
+            PK::kPassThrough,
+            PK::kStart,
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+    // MINUS
+    {
+        std::string query = "GO FROM \"1\" OVER like YIELD like.start AS start MINUS GO FROM "
+                            "\"2\" OVER like YIELD like.start AS start";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kDataCollect,
+            PK::kMinus,
+            PK::kProject,
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kGetNeighbors,
+            PK::kPassThrough,
+            PK::kStart,
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
 }
 
 TEST_F(QueryValidatorTest, TestMaxAllowedStatements) {
@@ -1237,5 +1238,74 @@ TEST_F(QueryValidatorTest, TestMaxAllowedStatements) {
               "SemanticError: The maximum number of statements allowed has been exceeded");
 }
 
+TEST_F(QueryValidatorTest, FindPath) {
+    // TODO: Implement the plan.
+    // shortest
+    {
+        std::string query = "FIND SHORTEST PATH FROM \"1\" TO \"2\" OVER like UPTO 5 STEPS";
+        std::vector<PlanNode::Kind> expected = {
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+    {
+        std::string query = "FIND SHORTEST PATH FROM \"1\" TO \"2\",\"3\" OVER like UPTO 5 STEPS";
+        std::vector<PlanNode::Kind> expected = {
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+    {
+        std::string query =
+            "FIND SHORTEST PATH FROM \"1\",\"2\" TO \"3\",\"4\" OVER like UPTO 5 STEPS";
+        std::vector<PlanNode::Kind> expected = {};
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+    {
+        std::string query = "FIND SHORTEST PATH FROM \"1\" TO \"2\" OVER like, serve UPTO 5 STEPS";
+        std::vector<PlanNode::Kind> expected = {
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+    {
+        std::string query =
+            "YIELD \"1\" AS src, \"2\" AS dst"
+            " | FIND SHORTEST PATH FROM $-.src TO $-.dst OVER like, serve UPTO 5 STEPS";
+        std::vector<PlanNode::Kind> expected = {
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+
+    // all
+    {
+        std::string query = "FIND ALL PATH FROM \"1\" TO \"2\" OVER like UPTO 5 STEPS";
+        std::vector<PlanNode::Kind> expected = {
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+    {
+        std::string query = "FIND ALL PATH FROM \"1\" TO \"2\",\"3\" OVER like UPTO 5 STEPS";
+        std::vector<PlanNode::Kind> expected = {
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+    {
+        std::string query = "FIND ALL PATH FROM \"1\",\"2\" TO \"3\",\"4\" OVER like UPTO 5 STEPS";
+        std::vector<PlanNode::Kind> expected = {
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+    {
+        std::string query = "FIND ALL PATH FROM \"1\" TO \"2\" OVER like, serve UPTO 5 STEPS";
+        std::vector<PlanNode::Kind> expected = {
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+    {
+        std::string query = "YIELD \"1\" AS src, \"2\" AS dst"
+                            " | FIND ALL PATH FROM $-.src TO $-.dst OVER like, serve UPTO 5 STEPS";
+        std::vector<PlanNode::Kind> expected = {
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+}
 }  // namespace graph
 }  // namespace nebula

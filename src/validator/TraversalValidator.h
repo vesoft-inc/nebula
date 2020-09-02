@@ -17,32 +17,54 @@ namespace graph {
 // some utils for the validator to traverse the graph
 class TraversalValidator : public Validator {
 protected:
-    TraversalValidator(Sentence* sentence, QueryContext* qctx) : Validator(sentence, qctx) {}
-
-    Status validateStep(const StepClause* step);
-    Status validateFrom(const FromClause* from);
-
-    PlanNode* projectDstVidsFromGN(PlanNode* gn, const std::string& outputVar);
-    std::string buildConstantInput();
-    PlanNode* buildRuntimeInput();
-    Expression* buildNStepLoopCondition(uint32_t steps) const;
-
     enum FromType {
         kInstantExpr,
         kVariable,
         kPipe,
     };
 
+    struct Starts {
+        FromType                fromType{kInstantExpr};
+        Expression*             srcRef{nullptr};
+        std::string             userDefinedVarName;
+        std::string             firstBeginningSrcVidColName;
+        std::vector<Value>      vids;
+    };
+
+    struct Over {
+        bool                            isOverAll{false};
+        std::vector<EdgeType>           edgeTypes;
+        storage::cpp2::EdgeDirection    direction;
+        std::vector<std::string>        allEdges;
+    };
+
+    struct Steps {
+        StepClause::MToN*     mToN{nullptr};
+        uint32_t              steps{1};
+    };
+
 protected:
-    StepClause::MToN*     mToN_{nullptr};
-    uint32_t              steps_{1};
+    TraversalValidator(Sentence* sentence, QueryContext* qctx) : Validator(sentence, qctx) {}
+
+    Status validateStarts(const VerticesClause* clause, Starts& starts);
+
+    Status validateOver(const OverClause* clause, Over& over);
+
+    Status validateStep(const StepClause* clause, Steps& step);
+
+    PlanNode* projectDstVidsFromGN(PlanNode* gn, const std::string& outputVar);
+
+    std::string buildConstantInput();
+
+    PlanNode* buildRuntimeInput();
+
+    Expression* buildNStepLoopCondition(uint32_t steps) const;
+
+protected:
+    Starts                from_;
+    Steps                 steps_;
     std::string           srcVidColName_;
-    FromType              fromType_{kInstantExpr};
-    Expression*           srcRef_{nullptr};
     Expression*           src_{nullptr};
-    std::vector<Value>    starts_;
-    std::string           firstBeginningSrcVidColName_;
-    std::string           userDefinedVarName_;
     ExpressionProps       exprProps_;
     PlanNode*             projectStartVid_{nullptr};
 };

@@ -23,8 +23,6 @@ private:
 
     Status toPlan() override;
 
-    Status validateOver(const OverClause* over);
-
     Status validateWhere(WhereClause* where);
 
     Status validateYield(YieldClause* yield);
@@ -68,9 +66,7 @@ private:
     PlanNode* buildJoinDstProps(PlanNode* projectSrcDstProps);
 
 private:
-    bool                                                    isOverAll_{false};
-    std::vector<EdgeType>                                   edgeTypes_;
-    storage::cpp2::EdgeDirection                            direction_;
+    Over                                                    over_;
     Expression*                                             filter_{nullptr};
     std::vector<std::string>                                colNames_;
     YieldColumns*                                           yields_{nullptr};
@@ -88,7 +84,6 @@ private:
     std::string                                             dstVidColName_;
     // Used for get dst props
     std::string                                             joinDstVidColName_;
-    std::vector<std::string>                                allEdges_;
 };
 }  // namespace graph
 }  // namespace nebula

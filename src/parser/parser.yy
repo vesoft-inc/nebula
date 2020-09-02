@@ -1133,9 +1133,9 @@ find_path_sentence
     ;
 
 find_path_upto_clause
-    : %empty { $$ = new StepClause(5, true); }
+    : %empty { $$ = new StepClause(5); }
     | KW_UPTO legal_integer KW_STEPS {
-        $$ = new StepClause($2, true);
+        $$ = new StepClause($2);
     }
     ;
 
