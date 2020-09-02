@@ -96,14 +96,13 @@ DeleteVerticesProcessor::deleteVertices(GraphSpaceID spaceId,
         while (iter->valid()) {
             auto key = iter->key();
             if (!NebulaKeyUtils::isVertex(key)) {
-                break;  // there isn't any version of curr vertex, go to next
+                iter->next();
+                continue;
             }
             auto tagId = NebulaKeyUtils::getTagId(key);
             if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
-                if (NebulaKeyUtils::isVertex(key)) {
-                    VLOG(3) << "Evict vertex cache for vertex ID " << vertex << ", tagId " << tagId;
-                    vertexCache_->evict(std::make_pair(vertex, tagId));
-                }
+                VLOG(3) << "Evict vertex cache for vertex ID " << vertex << ", tagId " << tagId;
+                vertexCache_->evict(std::make_pair(vertex, tagId));
             }
 
             /**
