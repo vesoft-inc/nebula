@@ -8,7 +8,7 @@
 #include "context/QueryContext.h"
 #include "planner/Query.h"
 #include "executor/query/DedupExecutor.h"
-#include "executor/query/test/QueryTestBase.h"
+#include "executor/test/QueryTestBase.h"
 #include "executor/query/ProjectExecutor.h"
 
 namespace nebula {

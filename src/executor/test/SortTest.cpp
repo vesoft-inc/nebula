@@ -9,7 +9,7 @@
 #include "context/QueryContext.h"
 #include "executor/query/ProjectExecutor.h"
 #include "executor/query/SortExecutor.h"
-#include "executor/query/test/QueryTestBase.h"
+#include "executor/test/QueryTestBase.h"
 #include "planner/Logic.h"
 #include "planner/Query.h"
 

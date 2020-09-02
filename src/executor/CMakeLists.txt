@@ -55,5 +55,4 @@ nebula_add_library(
     admin/ConfigExecutor.cpp
 )
 
-nebula_add_subdirectory(query/test)
-nebula_add_subdirectory(logic/test)
+nebula_add_subdirectory(test)

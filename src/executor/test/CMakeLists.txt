@@ -4,7 +4,6 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
 SET(EXEC_QUERY_TEST_OBJS
-    $<TARGET_OBJECTS:common_time_function_obj>
     $<TARGET_OBJECTS:common_expression_obj>
     $<TARGET_OBJECTS:common_network_obj>
     $<TARGET_OBJECTS:common_process_obj>
@@ -15,12 +14,12 @@ SET(EXEC_QUERY_TEST_OBJS
     $<TARGET_OBJECTS:common_meta_client_obj>
     $<TARGET_OBJECTS:common_stats_obj>
     $<TARGET_OBJECTS:common_time_obj>
+    $<TARGET_OBJECTS:common_time_function_obj>
     $<TARGET_OBJECTS:common_meta_thrift_obj>
     $<TARGET_OBJECTS:common_common_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:common_meta_obj>
     $<TARGET_OBJECTS:common_thread_obj>
-    $<TARGET_OBJECTS:common_time_obj>
     $<TARGET_OBJECTS:common_fs_obj>
     $<TARGET_OBJECTS:common_base_obj>
     $<TARGET_OBJECTS:common_concurrent_obj>
@@ -57,8 +56,9 @@ SET(EXEC_QUERY_TEST_LIBS
 
 nebula_add_test(
     NAME
-        query_executors_test
+        executor_test
     SOURCES
+        LogicExecutorsTest.cpp
         ProjectTest.cpp
         GetNeighborsTest.cpp
         DataCollectTest.cpp
