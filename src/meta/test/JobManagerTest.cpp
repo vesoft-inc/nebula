@@ -13,6 +13,8 @@
 #include "kvstore/Common.h"
 #include "webservice/WebService.h"
 
+#define private public
+
 #include "meta/processors/jobMan/JobUtils.h"
 #include "meta/processors/jobMan/TaskDescription.h"
 #include "meta/processors/jobMan/JobManager.h"
@@ -34,6 +36,7 @@ protected:
         TestUtils::createSomeHosts(kv_.get());
         TestUtils::assembleSpace(kv_.get(), 1, 1);
         jobMgr = JobManager::getInstance();
+        jobMgr->status_ = JobManager::Status::NOT_START;
         jobMgr->init(kv_.get());
         LOG(INFO) << "exit" << __func__;
     }

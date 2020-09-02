@@ -23,14 +23,6 @@ namespace nebula {
 namespace meta {
 
 class JobManager : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovable {
-    FRIEND_TEST(JobManagerTest, reserveJobId);
-    FRIEND_TEST(JobManagerTest, buildJobDescription);
-    FRIEND_TEST(JobManagerTest, addJob);
-    FRIEND_TEST(JobManagerTest, loadJobDescription);
-    FRIEND_TEST(JobManagerTest, showJobs);
-    FRIEND_TEST(JobManagerTest, showJob);
-    FRIEND_TEST(JobManagerTest, recoverJob);
-
     using ResultCode = nebula::kvstore::ResultCode;
 
 public:
