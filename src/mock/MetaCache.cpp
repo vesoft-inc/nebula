@@ -88,11 +88,8 @@ Status MetaCache::dropSpace(const meta::cpp2::DropSpaceReq &req) {
     auto id = findIter->second;
     spaces_.erase(id);
     cache_.erase(id);
-<<<<<<< HEAD
     roles_.erase(id);
-=======
     spaceIndex_.erase(spaceName);
->>>>>>> 5ef41cc3161e6403d0ac3ef9144f7e6b5a9a8f87
     return Status::OK();
 }
 

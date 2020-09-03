@@ -8,6 +8,7 @@
 import pytest
 import os
 import logging
+from tests.common.configs import all_configs
 
 DOCKER_GRAPHD_DIGESTS = os.getenv('NEBULA_GRAPHD_DIGESTS')
 if DOCKER_GRAPHD_DIGESTS is None:
@@ -42,44 +43,11 @@ def pytest_runtest_logreport(report):
         tests_executed.add(report.nodeid)
 
 def pytest_addoption(parser):
-    parser.addoption('--address',
-                         dest='address',
-                         default="127.0.0.1:3699",
-                         help="address of the Nebula")
-    parser.addoption('--user',
-                        dest='user',
-                        default='user',
-                        help='the user of Nebula')
-    parser.addoption('--password',
-                        dest='password',
-                        default='password',
-                        help='the password of Nebula')
-    parser.addoption('--partition_num',
-                        dest='partition_num',
-                        default=10,
-                        help='the partition_num of Nebula\'s space')
-    parser.addoption('--replica_factor',
-                        dest='replica_factor',
-                        default=1,
-                        help='the replica_factor of Nebula\'s space')
-    parser.addoption('--data_dir',
-                        dest='data_dir',
-                        help='Data Preload Directory for Nebula')
-
-    parser.addoption('--stop_nebula',
-                        dest='stop_nebula',
-                        default='true',
-                        help='Stop the nebula services')
-
-    parser.addoption('--rm_dir',
-                        dest='rm_dir',
-                        default='true',
-                        help='Remove the temp test dir')
-
-    parser.addoption('--debug_log',
-                         dest='debug_log',
-                         default='true',
-                         help='set nebula service --v=4')
+    for config in all_configs:
+        parser.addoption(config,
+                         dest=all_configs[config][0],
+                         default=all_configs[config][1],
+                         help=all_configs[config][2])
 
 def pytest_configure(config):
     pytest.cmdline.address = config.getoption("address")

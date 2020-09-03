@@ -20,7 +20,7 @@ class TestParts(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         # Wait for leader info
-        time.sleep(self.delay + 5)
+        time.sleep(self.delay)
 
     @classmethod
     def cleanup(self):
@@ -33,11 +33,11 @@ class TestParts(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         expected_col_names = ["Partition ID", "Leader", "Peers", "Losts"]
         self.check_column_names(resp, expected_col_names)
-        expected_result = [[re.compile(r'1'), re.compile(r'127.0.0.1:.*'), re.compile(r'127.0.0.1:.*'), re.compile(r'')],
-                           [re.compile(r'2'), re.compile(r'127.0.0.1:.*'), re.compile(r'127.0.0.1:.*'), re.compile(r'')],
-                           [re.compile(r'3'), re.compile(r'127.0.0.1:.*'), re.compile(r'127.0.0.1:.*'), re.compile(r'')],
-                           [re.compile(r'4'), re.compile(r'127.0.0.1:.*'), re.compile(r'127.0.0.1:.*'), re.compile(r'')],
-                           [re.compile(r'5'), re.compile(r'127.0.0.1:.*'), re.compile(r'127.0.0.1:.*'), re.compile(r'')]]
+        expected_result = [[re.compile(r'1'), re.compile(r'127.0.0.1:.*|^$'), re.compile(r'127.0.0.1:.*'), re.compile(r'')],
+                           [re.compile(r'2'), re.compile(r'127.0.0.1:.*|^$'), re.compile(r'127.0.0.1:.*'), re.compile(r'')],
+                           [re.compile(r'3'), re.compile(r'127.0.0.1:.*|^$'), re.compile(r'127.0.0.1:.*'), re.compile(r'')],
+                           [re.compile(r'4'), re.compile(r'127.0.0.1:.*|^$'), re.compile(r'127.0.0.1:.*'), re.compile(r'')],
+                           [re.compile(r'5'), re.compile(r'127.0.0.1:.*|^$'), re.compile(r'127.0.0.1:.*'), re.compile(r'')]]
         self.check_result(resp, expected_result, is_regex = True)
 
         # Specify the part id
@@ -45,7 +45,7 @@ class TestParts(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         expected_col_names = ["Partition ID", "Leader", "Peers", "Losts"]
         self.check_column_names(resp, expected_col_names)
-        expected_result = [[re.compile(r'3'), re.compile(r'127.0.0.1:.*'), re.compile(r'127.0.0.1:.*'), re.compile(r'')]]
+        expected_result = [[re.compile(r'3'), re.compile(r'127.0.0.1:.*|^$'), re.compile(r'127.0.0.1:.*'), re.compile(r'')]]
         self.check_result(resp, expected_result, is_regex = True)
 
         # Not exist part id

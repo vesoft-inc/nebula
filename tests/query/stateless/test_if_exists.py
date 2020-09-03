@@ -28,11 +28,9 @@ class TestDropSpaceIfExists(NebulaTestSuite):
 
         resp = self.execute('CREATE SPACE shakespaces(partition_num=1024)')
         self.check_resp_succeeded(resp)
-        time.sleep(self.storage_delay)
 
         resp = self.execute('CREATE SPACE IF NOT EXISTS shakespaces(partition_num=1024)')
         self.check_resp_succeeded(resp)
-        time.sleep(self.storage_delay)
 
         cmd = 'drop space shakespaces'
         resp = self.execute_query(cmd)
@@ -44,11 +42,10 @@ class TestDropSpaceIfExists(NebulaTestSuite):
 
         resp = self.execute('CREATE SPACE IF NOT EXISTS shakespaces(partition_num=1024)')
         self.check_resp_succeeded(resp)
-        time.sleep(self.storage_delay)
 
+        time.sleep(self.delay)
         resp = self.execute('use shakespaces')
         self.check_resp_succeeded(resp)
-        time.sleep(self.storage_delay)
 
         resp = self.execute('CREATE TAG person(name string, age int, gender string);')
         self.check_resp_succeeded(resp)

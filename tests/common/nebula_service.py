@@ -74,6 +74,12 @@ class NebulaService(object):
                 ports.append(s.getsockname()[1])
         return ports
 
+    def _telnet_port(self, port):
+        sk = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sk.settimeout(1)
+        result = sk.connect_ex(('127.0.0.1', port))
+        return result == 0
+
     def install(self):
         os.mkdir(self.work_dir)
         print("work directory: " + self.work_dir)
@@ -83,18 +89,41 @@ class NebulaService(object):
             os.mkdir(self.work_dir + '/' + f)
         self._copy_nebula_conf()
 
+    def _check_servers_status(self, ports):
+        ports_status = {}
+        for port in ports:
+            ports_status[port] = False
+
+        for i in range(0, 30):
+            for port in ports_status:
+                if ports_status[port]:
+                    continue
+                if self._telnet_port(port):
+                    ports_status[port] = True
+            is_ok = True
+            for port in ports_status:
+                if not ports_status[port]:
+                    is_ok = False
+            if is_ok:
+                return True
+            time.sleep(1)
+        return False
+
+
     def start(self, debug_log=True):
         os.chdir(self.work_dir)
 
         metad_ports = self._find_free_port()
         command = ''
         graph_port = 0
+        server_ports = []
         for server_name in ['metad', 'storaged', 'graphd']:
             ports = []
             if server_name != 'metad':
                 ports = self._find_free_port()
             else:
                 ports = metad_ports
+            server_ports.append(ports[0])
             command = self._format_nebula_command(server_name,
                                                   metad_ports[0],
                                                   ports,
@@ -108,7 +137,11 @@ class NebulaService(object):
                 graph_port = ports[0]
 
         # wait nebula start
-        time.sleep(8)
+        start_time = time.time()
+        if not self._check_servers_status(server_ports):
+            raise Exception('nebula servers not ready in {}s'.format(time.time() - start_time))
+        print('nebula servers start ready in {}s'.format(time.time() - start_time))
+
         for pf in glob.glob(self.work_dir + '/pids/*.pid'):
             with open(pf) as f:
                 pid = int(f.readline())

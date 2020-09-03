@@ -10,9 +10,7 @@ import sys
 import pytest
 import time
 
-from graph import ttypes
-
-import nebula.Client
+from nebula2.graph import ttypes
 from tests.common.nebula_test_suite import NebulaTestSuite
 
 class TestReservedKeyword(NebulaTestSuite):
@@ -25,12 +23,11 @@ class TestReservedKeyword(NebulaTestSuite):
         resp = self.execute(
             'CREATE SPACE IF NOT EXISTS test(partition_num=1024)')
         self.check_resp_succeeded(resp)
-        time.sleep(self.storage_delay)
+        time.sleep(self.delay)
 
         # issue 447
         resp = self.execute('use test')
         self.check_resp_succeeded(resp)
-        time.sleep(self.storage_delay)
         cmd = 'create tag x0 (firstname string)'
         resp = self.execute_query(cmd)
         self.check_resp_succeeded(resp)
@@ -307,11 +304,10 @@ class TestReservedKeyword(NebulaTestSuite):
         resp = self.execute(
             'CREATE SPACE IF NOT EXISTS test(partition_num=1024)')
         self.check_resp_succeeded(resp)
-        time.sleep(self.storage_delay)
+        time.sleep(self.delay)
 
         resp = self.execute('use test')
         self.check_resp_succeeded(resp)
-        time.sleep(self.storage_delay)
 
         try:
             cmd = 'create tag x1 (go string)'
@@ -908,12 +904,11 @@ class TestReservedKeyword(NebulaTestSuite):
         resp = self.execute(
             'CREATE SPACE IF NOT EXISTS test(partition_num=10)')
         self.check_resp_succeeded(resp)
-        time.sleep(self.storage_delay)
+        time.sleep(self.delay)
 
         # issue 447
         resp = self.execute('use test')
         self.check_resp_succeeded(resp)
-        time.sleep(self.storage_delay)
 
         try:
             cmd = 'create tag `TAG` (`tag` string)'

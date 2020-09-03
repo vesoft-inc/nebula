@@ -15,6 +15,7 @@ from nebula2.Client import GraphClient
 from nebula2.common import ttypes as CommonTtypes
 from nebula2.ConnectionPool import ConnectionPool
 from nebula2.graph import ttypes
+from tests.common.configs import get_delay_time
 
 
 T_EMPTY = CommonTtypes.Value()
@@ -34,20 +35,7 @@ T_NULL_UNKNOWN_DIV_BY_ZERO.set_nVal(CommonTtypes.NullType.DIV_BY_ZERO)
 class NebulaTestSuite(object):
     @classmethod
     def set_delay(self):
-        # resp = self.client.execute_query(
-        #     'get configs GRAPH:heartbeat_interval_secs')
-        # self.check_resp_succeeded(resp)
-        # assert len(resp.rows) == 1, "invalid row size: {}".format(resp.rows)
-        # self.graph_delay = int(resp.rows[0].values[4].get_sVal()) + 1
-        self.graph_delay = 3
-
-        # resp = self.client.execute_query(
-        #     'get configs STORAGE:heartbeat_interval_secs')
-        # self.check_resp_succeeded(resp)
-        # assert len(resp.rows) == 1, "invalid row size: {}".format(resp.rows)
-        # self.storage_delay = int(resp.rows[0].values[4].get_sVal()) + 1
-        self.storage_delay = 3
-        self.delay = max(self.graph_delay, self.storage_delay) * 2
+        self.delay = get_delay_time(self.client)
 
     @classmethod
     def setup_class(self):

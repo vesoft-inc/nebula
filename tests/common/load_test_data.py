@@ -11,16 +11,19 @@ from nebula2.Client import AuthException, ExecutionException, GraphClient
 from nebula2.Common import *
 from nebula2.ConnectionPool import ConnectionPool
 from nebula2.graph import ttypes
+from tests.common.configs import get_delay_time
 
 
 class LoadGlobalData(object):
-    def __init__(self, data_dir, ip, port):
+    def __init__(self, data_dir, ip, port, user, password):
         self.data_dir = data_dir
         self.ip = ip
         self.port = port
         self.client_pool = ConnectionPool(ip = self.ip, port = self.port, network_timeout = 0)
         self.client = GraphClient(self.client_pool)
-        self.client.authenticate("user", "password")
+        self.user = user
+        self.password = password
+        self.client.authenticate(self.user, self.password)
 
     def load_all_test_data(self):
         if self.client is None:
@@ -50,8 +53,7 @@ class LoadGlobalData(object):
                         ddl = True
                     elif comment == 'END':
                         if ddl:
-                            # TODO: update the time when config can use
-                            time.sleep(3)
+                            time.sleep(get_delay_time(self.client))
                             ddl = False
                 else:
                     line = line.rstrip()
@@ -88,7 +90,7 @@ class LoadGlobalData(object):
         resp = self.client.execute('CREATE EDGE IF NOT EXISTS is_colleagues(start_year int, end_year int);')
         assert resp.error_code == ttypes.ErrorCode.SUCCEEDED, resp.error_msg
         # TODO: update the time when config can use
-        time.sleep(3)
+        time.sleep(get_delay_time(self.client))
 
         resp = self.client.execute('INSERT VERTEX person(name, age, gender), teacher(grade, subject) VALUES \
                                 "2001":("Mary", 25, "female", 5, "Math"), \
