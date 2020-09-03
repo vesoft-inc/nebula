@@ -484,48 +484,6 @@ void AdminClient::getResponse(
     });  // via
 }
 
-
-template<typename Request,
-    typename RemoteFunc,
-    typename RespGenerator>
-folly::Future<Status> AdminClient::getResponseNoPart(const HostAddr& host,
-                                                     Request req,
-                                                     RemoteFunc remoteFunc,
-                                                     RespGenerator respGen) {
-    folly::Promise<Status> pro;
-    auto f = pro.getFuture();
-    auto* evb = ioThreadPool_->getEventBase();
-    folly::via(evb, [evb, pro = std::move(pro), host, req = std::move(req),
-        remoteFunc = std::move(remoteFunc), respGen = std::move(respGen),
-        this] () mutable {
-        auto client = clientsMan_->client(host, evb);
-        remoteFunc(client, std::move(req)).via(evb)
-            .then([p = std::move(pro), respGen = std::move(respGen), host](
-                folly::Try<storage::cpp2::AdminExecResp>&& t) mutable {
-                // exception occurred during RPC
-                auto hostStr = network::NetworkUtils::intToIPv4(host.first);
-                if (t.hasException()) {
-                    p.setValue(Status::Error(folly::stringPrintf(
-                        "[%s:%d] RPC failure in AdminClient: %s",
-                        hostStr.c_str(),
-                        host.second,
-                        t.exception().what().c_str())));
-                    return;
-                }
-                auto&& result = std::move(t).value().get_result();
-                if (result.get_failed_codes().empty()) {
-                    storage::cpp2::ResultCode resultCode;
-                    resultCode.set_code(storage::cpp2::ErrorCode::SUCCEEDED);
-                    p.setValue(respGen(resultCode));
-                } else {
-                    auto resp = result.get_failed_codes().front();
-                    p.setValue(respGen(std::move(resp)));
-                }
-            });
-    });
-    return f;
-}
-
 nebula::cpp2::HostAddr AdminClient::toThriftHost(const HostAddr& addr) {
     nebula::cpp2::HostAddr thriftAddr;
     thriftAddr.set_ip(addr.first);
@@ -639,16 +597,13 @@ folly::Future<Status> AdminClient::createSnapshot(GraphSpaceID spaceId,
     req.set_space_id(spaceId);
     req.set_name(name);
 
-    return getResponseNoPart(host, std::move(req), [] (auto client, auto request) {
+    folly::Promise<Status> pro;
+    auto f = pro.getFuture();
+
+    getResponse({host}, 0, std::move(req), [] (auto client, auto request) {
         return client->future_createCheckpoint(request);
-    }, [] (auto&& resp) -> Status {
-        if (resp.get_code() == storage::cpp2::ErrorCode::SUCCEEDED) {
-            return Status::OK();
-        } else {
-            return Status::Error("Create snapshot failed! code=%d",
-                                 static_cast<int32_t>(resp.get_code()));
-        }
-    });
+    }, 0, std::move(pro), 3 /*The snapshot operation need to retry 3 times*/);
+    return f;
 }
 
 folly::Future<Status> AdminClient::dropSnapshot(GraphSpaceID spaceId,
@@ -666,7 +621,7 @@ folly::Future<Status> AdminClient::dropSnapshot(GraphSpaceID spaceId,
     auto f = pro.getFuture();
     getResponse({host}, 0, std::move(req), [] (auto client, auto request) {
         return client->future_dropCheckpoint(request);
-    }, 0, std::move(pro), 1 /*The snapshot operation only needs to be retried twice*/);
+    }, 0, std::move(pro), 3 /*The snapshot operation need to retry 3 times*/);
     return f;
 }
 
@@ -681,7 +636,7 @@ folly::Future<Status> AdminClient::blockingWrites(GraphSpaceID spaceId,
     auto f = pro.getFuture();
     getResponse({host}, 0, std::move(req), [] (auto client, auto request) {
         return client->future_blockingWrites(request);
-    }, 0, std::move(pro), 1 /*The blocking needs to be retried twice*/);
+    }, 0, std::move(pro), 32 /*The blocking need to retry 32 times*/);
     return f;
 }
 

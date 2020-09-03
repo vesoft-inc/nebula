@@ -46,7 +46,6 @@ TEST_F(SnapshotCommandTest, TestSnapshot) {
         auto code = client->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    sleep(FLAGS_heartbeat_interval_secs + 1);
     std::string sname;
     ASSERT_NE(nullptr, client);
     {
@@ -84,7 +83,7 @@ TEST_F(SnapshotCommandTest, TestSnapshot) {
         auto code = client->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    sleep(FLAGS_heartbeat_interval_secs + 1);
+
     {
         std::vector<std::string> checkpoints;
         checkpoints.emplace_back(folly::stringPrintf("%s/disk1/nebula/1/checkpoints/%s",

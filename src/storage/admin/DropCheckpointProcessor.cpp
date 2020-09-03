@@ -11,7 +11,6 @@ namespace storage {
 
 void DropCheckpointProcessor::process(const cpp2::DropCPRequest& req) {
     CHECK_NOTNULL(kvstore_);
-    LOG(INFO) << "Begin drop checkpoint for space " << req.get_space_id();
     auto spaceId = req.get_space_id();
     auto& name = req.get_name();
     auto retCode = kvstore_->dropCheckpoint(spaceId, std::move(name));

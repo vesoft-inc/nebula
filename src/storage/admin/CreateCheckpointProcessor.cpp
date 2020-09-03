@@ -11,7 +11,6 @@ namespace storage {
 
 void CreateCheckpointProcessor::process(const cpp2::CreateCPRequest& req) {
     CHECK_NOTNULL(kvstore_);
-    LOG(INFO) << "Begin create checkpoint for space " << req.get_space_id();
     auto spaceId = req.get_space_id();
     auto& name = req.get_name();
     auto retCode = kvstore_->createCheckpoint(spaceId, std::move(name));

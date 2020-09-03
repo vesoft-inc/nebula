@@ -730,7 +730,6 @@ ResultCode NebulaStore::createCheckpoint(GraphSpaceID spaceId, const std::string
 
     auto space = nebula::value(spaceRet);
     for (auto& engine : space->engines_) {
-        LOG(INFO) << "Begin checkpoint for engine : " << engine->getDataRoot();
         auto code = engine->createCheckpoint(name);
         if (code != ResultCode::SUCCEEDED) {
             return code;
@@ -750,7 +749,6 @@ ResultCode NebulaStore::createCheckpoint(GraphSpaceID spaceId, const std::string
                 return ResultCode::ERR_CHECKPOINT_ERROR;
             }
         }
-        LOG(INFO) << "End checkpoint for engine : " << engine->getDataRoot();
     }
     return ResultCode::SUCCEEDED;
 }
@@ -796,27 +794,21 @@ ResultCode NebulaStore::setWriteBlocking(GraphSpaceID spaceId, bool sign) {
                 return error(partRet);
             }
             auto p = nebula::value(partRet);
-            if (p->isLeader()) {
-                LOG(INFO) << "Begin write block for space : " << spaceId
-                          << ", part : " << p->partitionId();
-                auto ret = ResultCode::SUCCEEDED;
-                p->setBlocking(sign);
-                if (sign) {
-                    folly::Baton<true, std::atomic> baton;
-                    p->sync([&ret, &baton] (kvstore::ResultCode code) {
-                        if (kvstore::ResultCode::SUCCEEDED != code) {
-                            ret = code;
-                        }
-                        baton.post();
-                    });
-                    baton.wait();
-                }
-                if (ret != ResultCode::SUCCEEDED) {
-                    LOG(ERROR) << "Part sync failed. space : " << spaceId << " Part : " << part;
-                    return ret;
-                }
-                LOG(INFO) << "End write block for space : " << spaceId
-                          << ", part : " << p->partitionId();
+            auto ret = ResultCode::SUCCEEDED;
+            p->setBlocking(sign);
+            if (sign) {
+                folly::Baton<true, std::atomic> baton;
+                p->sync([&ret, &baton] (kvstore::ResultCode code) {
+                    if (kvstore::ResultCode::SUCCEEDED != code) {
+                        ret = code;
+                    }
+                    baton.post();
+                });
+                baton.wait();
+            }
+            if (ret != ResultCode::SUCCEEDED) {
+                LOG(ERROR) << "Part sync failed. space : " << spaceId << " Part : " << part;
+                return ret;
             }
         }
     }
