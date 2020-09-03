@@ -760,14 +760,13 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
             break;
         }
 
+        hosts = hosts_;
+
         if (term_ != currTerm) {
             VLOG(2) << idStr_ << "Term has been updated, previous "
                     << currTerm << ", current " << term_;
             currTerm = term_;
-            break;
         }
-
-        hosts = hosts_;
     } while (false);
 
     if (!checkAppendLogResult(res)) {
