@@ -137,6 +137,13 @@ private:
                                       Request req,
                                       RemoteFunc remoteFunc,
                                       RespGenerator respGen);
+    template<class Request,
+            class RemoteFunc,
+            class RespGenerator>
+    folly::Future<Status> getResponseNoPart(const HostAddr& host,
+                                            Request req,
+                                            RemoteFunc remoteFunc,
+                                            RespGenerator respGen);
 
     template<typename Request, typename RemoteFunc>
     void getResponse(std::vector<HostAddr> hosts,
