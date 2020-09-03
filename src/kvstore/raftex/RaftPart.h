@@ -497,6 +497,11 @@ protected:
     // When the partition voted for someone, termId will be set to
     // the term id proposed by that candidate
     TermID term_{0};
+    // During normal operation, proposedTerm_ is equal to term_,
+    // when the partition becomes a candidate, proposedTerm_ will be
+    // bumped up by 1 every time when sending out the AskForVote
+    // Request
+    TermID proposedTerm_{0};
 
     // The id and term of the last-sent log
     LogID lastLogId_{0};

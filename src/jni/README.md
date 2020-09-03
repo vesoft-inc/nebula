@@ -15,8 +15,7 @@ To build this project, you must have:
 
 ## Steps
  * mkdir build && cd build
- * cmake .. -DNEBULA_HOME=${nebula project root dir} -DNEBULA_THIRDPARTY_ROOT=${dependencies root dir}
- * make
- * cd ../java && mvn clean package
+ * cmake ..
+ * make java_lib
 
-You could find the jni java package nebula-utils-1.0.0-beta.jar under java/target dir
+You could find the jni java package nebula-utils-1.0.0-beta.jar under build/target dir
