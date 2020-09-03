@@ -5,3 +5,4 @@ pytest-reportlog==0.1.0
 pytest-xdist==1.31.0
 pytest-benchmark==v3.2.3
 pytest-metadata==1.8.0
+pytest-drop-dup-tests==0.3.0

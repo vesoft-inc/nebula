@@ -307,21 +307,19 @@ bool Validator::evaluableExpr(const Expression* expr) const {
 
 // static
 Status Validator::checkPropNonexistOrDuplicate(const ColsDef& cols,
-                                               const folly::StringPiece& prop,
-                                               const std::string& validatorName) {
+                                               folly::StringPiece prop,
+                                               const std::string& validator) {
     auto eq = [&](const ColDef& col) { return col.first == prop.str(); };
     auto iter = std::find_if(cols.cbegin(), cols.cend(), eq);
     if (iter == cols.cend()) {
-        return Status::SemanticError("%s: prop `%s' not exists",
-                                      validatorName.c_str(),
-                                      prop.str().c_str());
+        return Status::SemanticError(
+            "%s: prop `%s' not exists", validator.c_str(), prop.str().c_str());
     }
 
     iter = std::find_if(iter + 1, cols.cend(), eq);
     if (iter != cols.cend()) {
-        return Status::SemanticError("%s: duplicate prop `%s'",
-                                      validatorName.c_str(),
-                                      prop.str().c_str());
+        return Status::SemanticError(
+            "%s: duplicate prop `%s'", validator.c_str(), prop.str().c_str());
     }
 
     return Status::OK();

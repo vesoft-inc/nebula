@@ -10,6 +10,10 @@ import re
 
 from tests.common.nebula_test_suite import NebulaTestSuite
 
+leader_pattern = re.compile(r'127.0.0.1:.*|^$')
+peers_pattern = re.compile(r'127.0.0.1:.*')
+losts_pattern = re.compile(r'')
+
 
 class TestParts(NebulaTestSuite):
 
@@ -33,20 +37,26 @@ class TestParts(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         expected_col_names = ["Partition ID", "Leader", "Peers", "Losts"]
         self.check_column_names(resp, expected_col_names)
-        expected_result = [[re.compile(r'1'), re.compile(r'127.0.0.1:.*|^$'), re.compile(r'127.0.0.1:.*'), re.compile(r'')],
-                           [re.compile(r'2'), re.compile(r'127.0.0.1:.*|^$'), re.compile(r'127.0.0.1:.*'), re.compile(r'')],
-                           [re.compile(r'3'), re.compile(r'127.0.0.1:.*|^$'), re.compile(r'127.0.0.1:.*'), re.compile(r'')],
-                           [re.compile(r'4'), re.compile(r'127.0.0.1:.*|^$'), re.compile(r'127.0.0.1:.*'), re.compile(r'')],
-                           [re.compile(r'5'), re.compile(r'127.0.0.1:.*|^$'), re.compile(r'127.0.0.1:.*'), re.compile(r'')]]
-        self.check_result(resp, expected_result, is_regex = True)
+        expected_result = [
+            [re.compile(r'{}'.format(i)),
+             leader_pattern,
+             peers_pattern,
+             losts_pattern]
+            for i in range(1, 6)
+        ]
+        self.check_result(resp, expected_result, is_regex=True)
+
 
         # Specify the part id
         resp = self.client.execute_query('SHOW PART 3')
         self.check_resp_succeeded(resp)
         expected_col_names = ["Partition ID", "Leader", "Peers", "Losts"]
         self.check_column_names(resp, expected_col_names)
-        expected_result = [[re.compile(r'3'), re.compile(r'127.0.0.1:.*|^$'), re.compile(r'127.0.0.1:.*'), re.compile(r'')]]
-        self.check_result(resp, expected_result, is_regex = True)
+        expected_result = [[re.compile(r'3'),
+                            leader_pattern,
+                            peers_pattern,
+                            losts_pattern]]
+        self.check_result(resp, expected_result, is_regex=True)
 
         # Not exist part id
         resp = self.client.execute_query('SHOW PART 10')

@@ -135,12 +135,14 @@ class NebulaTestSuite(object):
             self.close_nebula_clients()
 
     @classmethod
-    def execute(self, ngql):
-        return self.client.execute(ngql)
+    def execute(self, ngql, profile=True):
+        return self.client.execute(
+            'PROFILE {{{}}}'.format(ngql) if profile else ngql)
 
     @classmethod
-    def execute_query(self, ngql):
-        return self.client.execute_query(ngql)
+    def execute_query(self, ngql, profile=True):
+        return self.client.execute_query(
+            'PROFILE {{{}}}'.format(ngql) if profile else ngql)
 
     @classmethod
     def prepare(cls):
@@ -155,7 +157,8 @@ class NebulaTestSuite(object):
     @classmethod
     def check_resp_succeeded(self, resp):
         assert resp.error_code == ttypes.ErrorCode.SUCCEEDED \
-               or resp.error_code == ttypes.ErrorCode.E_STATEMENT_EMTPY, resp.error_msg
+               or resp.error_code == ttypes.ErrorCode.E_STATEMENT_EMTPY, \
+               bytes.decode(resp.error_msg)
 
     @classmethod
     def check_resp_failed(self, resp, error_code: ttypes.ErrorCode = ttypes.ErrorCode.SUCCEEDED):
@@ -163,12 +166,12 @@ class NebulaTestSuite(object):
             assert resp.error_code != error_code, '{} == {}, {}'.format(
                 ttypes.ErrorCode._VALUES_TO_NAMES[resp.error_code],
                 ttypes.ErrorCode._VALUES_TO_NAMES[error_code],
-                resp.error_msg)
+                bytes.decode(resp.error_msg))
         else:
             assert resp.error_code == error_code, '{} != {}, {}'.format(
                 ttypes.ErrorCode._VALUES_TO_NAMES[resp.error_code],
                 ttypes.ErrorCode._VALUES_TO_NAMES[error_code],
-                resp.error_msg)
+                bytes.decode(resp.error_msg))
 
     @classmethod
     def check_value(self, col, expect):

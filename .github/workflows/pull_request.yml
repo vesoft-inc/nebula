@@ -52,30 +52,31 @@ jobs:
       options: --mount type=tmpfs,destination=/tmp/ccache/nebula-graph,tmpfs-size=1073741824 --cap-add=SYS_PTRACE
     steps:
       - uses: actions/checkout@v2
+      - name: Checkout nebula-python
+        uses: actions/checkout@v2
         with:
-          fetch-depth: 1
+          repository: ${{ github.repository_owner }}/nebula-python
+          ref: 'v2.0'
+          path: modules/nebula-python
       - name: Prepare environment
         id: prepare
         env:
           PYPI_MIRROR: https://mirrors.aliyun.com/pypi/simple/
         run: |
           [ -d build/ ] && rm -rf build/* || mkdir -p build
-          pip3 install -U setuptools -i $PYPI_MIRROR
-          pip3 install -r tests/requirements.txt -i $PYPI_MIRROR
-          git clone -b v2.0 https://github.com/vesoft-inc/nebula-python.git
-          cd nebula-python
+          pip3 install --user -U setuptools -i $PYPI_MIRROR
+          pip3 install --user -r tests/requirements.txt -i $PYPI_MIRROR
+          cd modules/nebula-python
           python3 setup.py install --user
       - name: Checkout common
         uses: actions/checkout@v2
         with:
           repository: ${{ github.repository_owner }}/nebula-common
-          token: ${{ github.token }}
           path: modules/common
       - name: Checkout storage
         uses: actions/checkout@v2
         with:
           repository: ${{ github.repository_owner }}/nebula-storage
-          token: ${{ github.token }}
           path: modules/storage
       - name: CMake
         run: |
@@ -126,9 +127,9 @@ jobs:
         timeout-minutes: 15
       - name: Pytest
         env:
-          NEBULA_TEST_LOGS_DIR: ${{ github.workspace }}/build/results
+          NEBULA_TEST_LOGS_DIR: ${{ github.workspace }}/build
         run: ./ci/test.sh test
         timeout-minutes: 25
       - name: Cleanup
         if: ${{ always() }}
-        run: rm -rf build modules/common modules/storage
+        run: rm -rf build modules

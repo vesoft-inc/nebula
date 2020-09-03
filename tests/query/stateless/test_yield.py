@@ -8,6 +8,7 @@ import time
 
 from tests.common.nebula_test_suite import NebulaTestSuite
 
+
 class TestYield(NebulaTestSuite):
     @classmethod
     def prepare(self):

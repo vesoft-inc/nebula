@@ -24,6 +24,7 @@ static const std::vector<std::string> kAllowedFmtType = {"row", "dot", "dot:stru
 ExplainValidator::ExplainValidator(Sentence* sentence, QueryContext* context)
     : Validator(sentence, context) {
     DCHECK_EQ(sentence->kind(), Sentence::Kind::kExplain);
+    setNoSpaceRequired();
 }
 
 static StatusOr<std::string> toExplainFormatType(const std::string& formatType) {

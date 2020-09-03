@@ -90,8 +90,8 @@ protected:
     bool evaluableExpr(const Expression* expr) const;
 
     static Status checkPropNonexistOrDuplicate(const ColsDef& cols,
-                                               const folly::StringPiece& prop,
-                                               const std::string &validatorName);
+                                               folly::StringPiece prop,
+                                               const std::string& validator);
 
     static Status appendPlan(PlanNode* plan, PlanNode* appended);
 

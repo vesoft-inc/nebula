@@ -11,6 +11,15 @@ from nebula2.graph import ttypes
 from tests.common.nebula_test_suite import NebulaTestSuite
 
 
+FORMAT = [
+    ('', None),
+    ('FORMAT="row"', None),
+    ('FORMAT="dot"', None),
+    ('FORMAT="dot:struct"', None),
+    ('FORMAT="unknown"', ttypes.ErrorCode.E_SEMANTIC_ERROR),
+]
+
+
 class TestExplain(NebulaTestSuite):
     @classmethod
     def prepare(cls):
@@ -29,96 +38,29 @@ class TestExplain(NebulaTestSuite):
         resp = cls.execute('DROP SPACE IF EXISTS explain_test')
         cls.check_resp_succeeded(resp)
 
-    def test_explain(self):
-        query = 'EXPLAIN YIELD 1 AS id;'
-        resp = self.execute_query(query)
-        self.check_resp_succeeded(resp)
+    def check(self, query, err):
+        resp = self.execute_query(query, profile=False)
+        if err is None:
+            self.check_resp_succeeded(resp)
+        else:
+            self.check_resp_failed(resp, err)
 
-        query = 'EXPLAIN FORMAT="row" YIELD 1;'
-        resp = self.execute_query(query)
-        self.check_resp_succeeded(resp)
+    @pytest.mark.parametrize('keyword', ['EXPLAIN', 'PROFILE'])
+    @pytest.mark.parametrize('fmt,err', FORMAT)
+    def test_success_cases(self, keyword, fmt, err):
+        query = '{} {} YIELD 1;'.format(keyword, fmt)
+        self.check(query, err)
 
-        query = 'EXPLAIN FORMAT="dot" YIELD 1;'
-        resp = self.execute_query(query)
-        self.check_resp_succeeded(resp)
+        query = '{} {} {{$var = YIELD 1 AS a; YIELD $var.*;}};'.format(keyword, fmt)
+        self.check(query, err)
 
-        query = 'EXPLAIN FORMAT="dot:struct" YIELD 1;'
-        resp = self.execute_query(query)
-        self.check_resp_succeeded(resp)
+        query = '{} {} {{YIELD 1 AS a;}};'.format(keyword, fmt)
+        self.check(query, err)
 
-        query = 'EXPLAIN FORMAT="unknown" YIELD 1;'
-        resp = self.execute_query(query)
-        self.check_resp_failed(resp, ttypes.ErrorCode.E_SEMANTIC_ERROR)
+    @pytest.mark.parametrize('keyword', ['PROFILE', 'EXPLAIN'])
+    def test_failure_cases(self, keyword):
+        query = '{} EXPLAIN YIELD 1'.format(keyword)
+        self.check(query, ttypes.ErrorCode.E_SYNTAX_ERROR)
 
-    def test_explain_stmts_block(self):
-        query = 'EXPLAIN {$var = YIELD 1 AS a; YIELD $var.*;};'
-        resp = self.execute_query(query)
-        self.check_resp_succeeded(resp)
-
-        query = 'EXPLAIN FORMAT="row" {$var = YIELD 1 AS a; YIELD $var.*;};'
-        resp = self.execute_query(query)
-        self.check_resp_succeeded(resp)
-
-        query = 'EXPLAIN FORMAT="dot" {$var = YIELD 1 AS a; YIELD $var.*;};'
-        resp = self.execute_query(query)
-        self.check_resp_succeeded(resp)
-
-        query = 'EXPLAIN FORMAT="dot:struct" {$var = YIELD 1 AS a; YIELD $var.*;};'
-        resp = self.execute_query(query)
-        self.check_resp_succeeded(resp)
-
-        query = 'EXPLAIN FORMAT="dot" {YIELD 1 AS a;};'
-        resp = self.execute_query(query)
-        self.check_resp_succeeded(resp)
-
-        query = '''EXPLAIN FORMAT="unknown" \
-            {$var = YIELD 1 AS a; YIELD $var.*;};'''
-        resp = self.execute_query(query)
-        self.check_resp_failed(resp, ttypes.ErrorCode.E_SEMANTIC_ERROR)
-
-    def test_profile(self):
-        query = 'PROFILE YIELD 1 AS id;'
-        resp = self.execute_query(query)
-        self.check_resp_succeeded(resp)
-
-        query = 'PROFILE FORMAT="row" YIELD 1;'
-        resp = self.execute_query(query)
-        self.check_resp_succeeded(resp)
-
-        query = 'PROFILE FORMAT="dot" YIELD 1;'
-        resp = self.execute_query(query)
-        self.check_resp_succeeded(resp)
-
-        query = 'PROFILE FORMAT="dot:struct" YIELD 1;'
-        resp = self.execute_query(query)
-        self.check_resp_succeeded(resp)
-
-        query = 'PROFILE FORMAT="unknown" YIELD 1;'
-        resp = self.execute_query(query)
-        self.check_resp_failed(resp, ttypes.ErrorCode.E_SEMANTIC_ERROR)
-
-    def test_profile_stmts_block(self):
-        query = 'PROFILE {$var = YIELD 1 AS a; YIELD $var.*;};'
-        resp = self.execute_query(query)
-        self.check_resp_succeeded(resp)
-
-        query = 'PROFILE FORMAT="row" {$var = YIELD 1 AS a; YIELD $var.*;};'
-        resp = self.execute_query(query)
-        self.check_resp_succeeded(resp)
-
-        query = 'PROFILE FORMAT="dot" {$var = YIELD 1 AS a; YIELD $var.*;};'
-        resp = self.execute_query(query)
-        self.check_resp_succeeded(resp)
-
-        query = 'PROFILE FORMAT="dot:struct" {$var = YIELD 1 AS a; YIELD $var.*;};'
-        resp = self.execute_query(query)
-        self.check_resp_succeeded(resp)
-
-        query = 'PROFILE FORMAT="dot" { YIELD 1 AS a };'
-        resp = self.execute_query(query)
-        self.check_resp_succeeded(resp)
-
-        query = '''PROFILE FORMAT="unknown" \
-            {$var = YIELD 1 AS a; YIELD $var.*;};'''
-        resp = self.execute_query(query)
-        self.check_resp_failed(resp, ttypes.ErrorCode.E_SEMANTIC_ERROR)
+        query = '{} PROFILE YIELD 1'.format(keyword)
+        self.check(query, ttypes.ErrorCode.E_SYNTAX_ERROR)
