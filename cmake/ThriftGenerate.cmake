@@ -98,6 +98,12 @@ add_library(
   OBJECT
   ${${file_name}-cpp2-SOURCES}
 )
+
+set_target_properties(
+    "${file_name}_thrift_obj"
+    PROPERTIES CXX_CLANG_TIDY ""
+)
+
 target_compile_options(${file_name}_thrift_obj PRIVATE "-Wno-pedantic")
 target_compile_options(${file_name}_thrift_obj PRIVATE "-Wno-extra")
 export(
