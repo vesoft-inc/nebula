@@ -13,7 +13,6 @@ from nebula2.ConnectionPool import ConnectionPool
 from nebula2.graph import ttypes
 from tests.common.configs import get_delay_time
 
-
 class LoadGlobalData(object):
     def __init__(self, data_dir, ip, port, user, password):
         self.data_dir = data_dir

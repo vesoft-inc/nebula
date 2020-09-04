@@ -293,17 +293,28 @@ Value GetNeighborsIter::getEdge() const {
     Edge edge;
     auto edgeName = currentEdgeName().substr(1, std::string::npos);
     edge.name = edgeName;
+
+    auto type = getEdgeProp(edgeName, kType);
+    if (!type.isInt()) {
+        return Value::kNullBadType;
+    }
+
     auto& src = getColumn(kVid);
     if (!src.isStr()) {
         return Value::kNullBadType;
     }
-    edge.src = src.getStr();
 
     auto& dst = getEdgeProp(edgeName, kDst);
     if (!dst.isStr()) {
         return Value::kNullBadType;
     }
-    edge.dst = dst.getStr();
+    if (type.getInt() > 0) {
+        edge.src = src.getStr();
+        edge.dst = dst.getStr();
+    } else {
+        edge.src = dst.getStr();
+        edge.dst = src.getStr();
+    }
 
     auto& rank = getEdgeProp(edgeName, kRank);
     if (!rank.isInt()) {

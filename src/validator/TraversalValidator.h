@@ -44,7 +44,9 @@ protected:
     };
 
 protected:
-    TraversalValidator(Sentence* sentence, QueryContext* qctx) : Validator(sentence, qctx) {}
+    TraversalValidator(Sentence* sentence, QueryContext* qctx) : Validator(sentence, qctx) {
+        startVidList_.reset(new ExpressionList());
+    }
 
     Status validateStarts(const VerticesClause* clause, Starts& starts);
 
@@ -67,6 +69,9 @@ protected:
     Expression*           src_{nullptr};
     ExpressionProps       exprProps_;
     PlanNode*             projectStartVid_{nullptr};
+
+
+    std::unique_ptr<ExpressionList>  startVidList_;
 };
 
 }  // namespace graph

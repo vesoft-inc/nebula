@@ -7,8 +7,6 @@
 #include "validator/GetSubgraphValidator.h"
 
 #include "common/expression/UnaryExpression.h"
-
-#include "util/ContainerConv.h"
 #include "common/expression/VariableExpression.h"
 #include "context/QueryExpressionContext.h"
 #include "parser/TraverseSentences.h"
@@ -21,32 +19,31 @@ namespace graph {
 Status GetSubgraphValidator::validateImpl() {
     Status status;
     auto* gsSentence = static_cast<GetSubgraphSentence*>(sentence_);
-    do {
-        status = validateStep(gsSentence->step(), steps_);
-        if (!status.ok()) {
-            break;
-        }
 
-        status = validateStarts(gsSentence->from(), from_);
-        if (!status.ok()) {
-            return status;
-        }
+    status = validateStep(gsSentence->step(), steps_);
+    if (!status.ok()) {
+        return status;
+    }
 
-        status = validateInBound(gsSentence->in());
-        if (!status.ok()) {
-            return status;
-        }
+    status = validateStarts(gsSentence->from(), from_);
+    if (!status.ok()) {
+        return status;
+    }
 
-        status = validateOutBound(gsSentence->out());
-        if (!status.ok()) {
-            return status;
-        }
+    status = validateInBound(gsSentence->in());
+    if (!status.ok()) {
+        return status;
+    }
 
-        status = validateBothInOutBound(gsSentence->both());
-        if (!status.ok()) {
-            return status;
-        }
-    } while (false);
+    status = validateOutBound(gsSentence->out());
+    if (!status.ok()) {
+        return status;
+    }
+
+    status = validateBothInOutBound(gsSentence->both());
+    if (!status.ok()) {
+        return status;
+    }
 
     return Status::OK();
 }
@@ -121,99 +118,163 @@ Status GetSubgraphValidator::validateBothInOutBound(BothInOutClause* out) {
     return Status::OK();
 }
 
+/*
+ * 1 steps   history: collectVid{0}
+ * 2 steps   history: collectVid{-1} collectVid{0}
+ * 3 steps   history: collectVid{-2} collectVid{-1} collectVid{0}
+ * ...
+ * n steps   history: collectVid{-n+1} ...  collectVid{-1} collectVid{0}
+ */
+Expression* GetSubgraphValidator::buildFilterCondition(int64_t step) {
+    // where *._dst IN startVids(*._dst IN runtimeStartVar_) OR *._dst IN collectVid{0}[0][0] OR
+    // *._dst IN collectVid{-1}[0][0] OR ... *._dst IN collectVid{-step+1}[0][0]
+    if (step == 1) {
+        Expression* left = nullptr;
+        if (!runtimeStartVar_.empty()) {
+            auto* startDataSet = new VersionedVariableExpression(new std::string(runtimeStartVar_),
+                                                                 new ConstantExpression(0));
+            auto* runtimeStartList = new SubscriptExpression(
+                new SubscriptExpression(startDataSet, new ConstantExpression(0)),
+                new ConstantExpression(0));
+            left = new RelationalExpression(Expression::Kind::kRelIn,
+                                            new EdgeDstIdExpression(new std::string("*")),
+                                            runtimeStartList);
+        } else {
+            left = new RelationalExpression(Expression::Kind::kRelIn,
+                                            new EdgeDstIdExpression(new std::string("*")),
+                                            new ListExpression(startVidList_.release()));
+        }
+        auto* lastestVidsDataSet = new VersionedVariableExpression(new std::string(collectVar_),
+                                                                   new ConstantExpression(0));
+        auto* lastestVidsList = new SubscriptExpression(
+            new SubscriptExpression(lastestVidsDataSet, new ConstantExpression(0)),
+            new ConstantExpression(0));
+        auto* right = new RelationalExpression(Expression::Kind::kRelIn,
+                                               new EdgeDstIdExpression(new std::string("*")),
+                                               lastestVidsList);
+        return new LogicalExpression(Expression::Kind::kLogicalOr, left, right);
+    }
+    auto* historyVidsDataSet = new VersionedVariableExpression(new std::string(collectVar_),
+                                                               new ConstantExpression(1 - step));
+    auto* historyVidsList = new SubscriptExpression(
+        new SubscriptExpression(historyVidsDataSet, new ConstantExpression(0)),
+        new ConstantExpression(0));
+    auto* left = new RelationalExpression(
+        Expression::Kind::kRelIn, new EdgeDstIdExpression(new std::string("*")), historyVidsList);
+    auto* right = buildFilterCondition(step - 1);
+    auto* result = new LogicalExpression(Expression::Kind::kLogicalOr, left, right);
+    return result;
+}
+
+GetNeighbors::EdgeProps GetSubgraphValidator::buildEdgeProps() {
+    GetNeighbors::EdgeProps edgeProps = std::make_unique<std::vector<storage::cpp2::EdgeProp>>();
+    if (edgeTypes_.empty()) {
+        return edgeProps;
+    }
+    edgeProps->reserve(edgeTypes_.size());
+    for (auto& e : edgeTypes_) {
+        storage::cpp2::EdgeProp ep;
+        ep.set_type(e);
+        edgeProps->emplace_back(std::move(ep));
+    }
+    return edgeProps;
+}
+
 Status GetSubgraphValidator::toPlan() {
     auto& space = vctx_->whichSpace();
-
-    //                           bodyStart->gn->project(dst)
-    //                                            |
-    // start [->previous] [-> project(input)] -> loop -> collect
+    // gn <- filter <- DataCollect
+    //  |
+    // loop(step) -> Agg(collect) -> project -> gn -> bodyStart
     auto* bodyStart = StartNode::make(qctx_);
 
-    auto vertexProps = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
-    auto edgeProps = std::make_unique<std::vector<storage::cpp2::EdgeProp>>();
-    auto statProps = std::make_unique<std::vector<storage::cpp2::StatProp>>();
-    auto exprs = std::make_unique<std::vector<storage::cpp2::Expr>>();
-
     std::string startVidsVar;
-    PlanNode* projectStartVid = nullptr;
+    SingleInputNode* collectRunTimeStartVids = nullptr;
     if (!from_.vids.empty() && from_.srcRef == nullptr) {
         startVidsVar = buildConstantInput();
     } else {
-        projectStartVid = buildRuntimeInput();
-        startVidsVar = projectStartVid->varName();
+        PlanNode* dedupStartVid = buildRuntimeInput();
+        startVidsVar = dedupStartVid->varName();
+        // collect runtime startVids
+        auto var = vctx_->anonVarGen()->getVar();
+        auto* column = new YieldColumn(
+            new VariablePropertyExpression(new std::string(var), new std::string(kVid)),
+            new std::string(kVid));
+        qctx_->objPool()->add(column);
+        column->setAggFunction(new std::string("COLLECT"));
+        auto fun = column->getAggFunName();
+        collectRunTimeStartVids =
+            Aggregate::make(qctx_,
+                            dedupStartVid,
+                            {},
+                            {Aggregate::GroupItem(column->expr(), AggFun::nameIdMap_[fun], true)});
+        collectRunTimeStartVids->setInputVar(dedupStartVid->varName());
+        collectRunTimeStartVids->setColNames({kVid});
+        runtimeStartVar_ = collectRunTimeStartVids->varName();
     }
 
-    auto* gn1 = GetNeighbors::make(
-            qctx_,
-            bodyStart,
-            space.id,
-            src_,
-            ContainerConv::to<std::vector>(std::move(edgeTypes_)),
-            // TODO(shylock) add syntax like `BOTH *`, `OUT *` ...
-            storage::cpp2::EdgeDirection::OUT_EDGE,  // FIXME: make direction right
-            std::move(vertexProps),
-            std::move(edgeProps),
-            std::move(statProps),
-            std::move(exprs),
-            true /*subgraph not need duplicate*/);
-    gn1->setInputVar(startVidsVar);
+    if (steps_.steps == 0) {
+        std::vector<storage::cpp2::Expr> exprs;
+        std::vector<storage::cpp2::VertexProp> vertexProps;
+        auto* getVertexProps = GetVertices::make(
+            qctx_, bodyStart, space.id, src_, std::move(vertexProps), std::move(exprs), true);
+        getVertexProps->setInputVar(startVidsVar);
+        root_ = getVertexProps;
+        tail_ = root_;
+        return Status::OK();
+    }
 
-    auto *projectVids = projectDstVidsFromGN(gn1, startVidsVar);
+    auto vertexProps = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
+    auto* gn = GetNeighbors::make(qctx_, bodyStart, space.id);
+    gn->setSrc(src_);
+    gn->setVertexProps(std::move(vertexProps));
+    gn->setEdgeProps(buildEdgeProps());
+    gn->setEdgeDirection(storage::cpp2::EdgeDirection::BOTH);
+    gn->setInputVar(startVidsVar);
 
-    // ++counter{0} <= steps
-    // TODO(shylock) add condition when gn get empty result
+    auto* projectVids = projectDstVidsFromGN(gn, startVidsVar);
+
+    auto var = vctx_->anonVarGen()->getVar();
+    auto* column = new YieldColumn(
+        new VariablePropertyExpression(new std::string(var), new std::string(kVid)),
+        new std::string(kVid));
+    qctx_->objPool()->add(column);
+    column->setAggFunction(new std::string("COLLECT"));
+    auto fun = column->getAggFunName();
+    auto* collect =
+        Aggregate::make(qctx_,
+                        projectVids,
+                        {},
+                        {Aggregate::GroupItem(column->expr(), AggFun::nameIdMap_[fun], true)});
+    collect->setInputVar(projectVids->varName());
+    collect->setColNames({kVid});
+    collectVar_ = collect->varName();
+
+    // TODO(jmq) add condition when gn get empty result
     auto* condition = buildNStepLoopCondition(steps_.steps);
-    // The input of loop will set by father validator.
-    auto* loop = Loop::make(qctx_, nullptr, projectVids, condition);
+    auto* loop = Loop::make(qctx_, collectRunTimeStartVids, collect, condition);
 
-    /*
-    // selector -> loop
-    // selector -> filter -> gn2 -> ifStrart
-    auto* ifStart = StartNode::make(qctx_);
+    vertexProps = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
+    auto edgeProps = std::make_unique<std::vector<storage::cpp2::EdgeProp>>();
+    auto* gn1 = GetNeighbors::make(qctx_, loop, space.id);
+    gn1->setSrc(src_);
+    gn1->setVertexProps(std::move(vertexProps));
+    gn1->setEdgeProps(std::move(edgeProps));
+    gn1->setEdgeDirection(storage::cpp2::EdgeDirection::BOTH);
+    gn1->setInputVar(projectVids->varName());
 
-    std::vector<Row> starts;
-    auto* gn2 = GetNeighbors::make(
-            qctx_,
-            ifStart,
-            space.id,
-            std::move(starts),
-            vids1,
-            std::move(edgeTypes),
-            storage::cpp2::EdgeDirection::BOTH,  // FIXME: make edge direction right
-            std::move(vertexProps),
-            std::move(edgeProps),
-            std::move(statProps));
+    auto* filter =
+        Filter::make(qctx_, gn1, qctx_->objPool()->add(buildFilterCondition(steps_.steps)));
+    filter->setInputVar(gn1->varName());
+    filter->setColNames({kVid});
 
-    // collect(gn2._vids) as listofvids
-    auto& listOfVids = varGen_->getVar();
-    columns = qctx_->objPool()->add(new YieldColumns());
-    column = new YieldColumn(
-            new VariablePropertyExpression(
-                new std::string(gn2->varGenerated()),
-                new std::string(kVid)),
-            new std::string(listOfVids));
-    column->setFunction(new std::string("collect"));
-    columns->addColumn(column);
-    auto* group = Aggregate::make(qctx_, gn2, columns);
-
-    auto* filter = Filter::make(
-                        qctx_,
-                        group,
-                        nullptr// TODO: build IN condition.
-                        );
-    auto* selector = Selector::make(qctx_, loop, filter, nullptr, nullptr);
-
-    // TODO: A data collector.
-
-    root_ = selector;
-    tail_ = loop;
-    */
-    std::vector<std::string> collects = {gn1->varName()};
-    auto* dc = DataCollect::make(qctx_, loop,
-            DataCollect::CollectKind::kSubgraph, std::move(collects));
+    // datacollect
+    std::vector<std::string> collects = {gn->varName(), filter->varName()};
+    auto* dc =
+        DataCollect::make(qctx_, filter, DataCollect::CollectKind::kSubgraph, std::move(collects));
+    dc->setInputVar(filter->varName());
     dc->setColNames({"_vertices", "_edges"});
     root_ = dc;
-    tail_ = loop;
+    tail_ = projectStartVid_ != nullptr ? projectStartVid_ : loop;
     return Status::OK();
 }
 

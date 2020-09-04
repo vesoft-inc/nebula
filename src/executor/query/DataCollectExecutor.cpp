@@ -50,7 +50,7 @@ Status DataCollectExecutor::collectSubgraph(const std::vector<std::string>& vars
     ds.colNames = std::move(colNames_);
     // the subgraph not need duplicate vertices or edges, so dedup here directly
     std::unordered_set<std::string> vids;
-    std::unordered_set<std::tuple<std::string, int64_t, int64_t, std::string>> edgeKeys;
+    std::unordered_set<std::tuple<std::string, std::string, int64_t, std::string>> edgeKeys;
     for (auto& var : vars) {
         auto& hist = ectx_->getHistory(var);
         for (auto& result : hist) {
@@ -74,7 +74,7 @@ Status DataCollectExecutor::collectSubgraph(const std::vector<std::string>& vars
                         continue;
                     }
                     auto edgeKey = std::make_tuple(e.getEdge().src,
-                                                   e.getEdge().type,
+                                                   e.getEdge().name,
                                                    e.getEdge().ranking,
                                                    e.getEdge().dst);
                     if (edgeKeys.emplace(std::move(edgeKey)).second) {

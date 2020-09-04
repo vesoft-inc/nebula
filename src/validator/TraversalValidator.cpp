@@ -53,6 +53,9 @@ Status TraversalValidator::validateStarts(const VerticesClause* clause, Starts& 
                 return Status::Error("Vid should be a string.");
             }
             starts.vids.emplace_back(std::move(vid));
+            auto encode = expr->encode();
+            auto decode = Expression::decode(encode);
+            startVidList_->add(decode.release());
         }
     }
     return Status::OK();

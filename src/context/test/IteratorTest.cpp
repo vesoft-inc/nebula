@@ -84,7 +84,7 @@ TEST(IteratorTest, GetNeighbor) {
     ds1.colNames = {kVid,
                     "_stats",
                     "_tag:tag1:prop1:prop2",
-                    "_edge:+edge1:prop1:prop2:_dst:_rank",
+                    "_edge:+edge1:prop1:prop2:_dst:_type:_rank",
                     "_expr"};
     for (auto i = 0; i < 10; ++i) {
         Row row;
@@ -105,6 +105,7 @@ TEST(IteratorTest, GetNeighbor) {
                 edge.values.emplace_back(k);
             }
             edge.values.emplace_back("2");
+            edge.values.emplace_back(1);
             edge.values.emplace_back(j);
             edges.values.emplace_back(std::move(edge));
         }
@@ -118,7 +119,7 @@ TEST(IteratorTest, GetNeighbor) {
     ds2.colNames = {kVid,
                     "_stats",
                     "_tag:tag2:prop1:prop2",
-                    "_edge:-edge2:prop1:prop2:_dst:_rank",
+                    "_edge:-edge2:prop1:prop2:_dst:_type:_rank",
                     "_expr"};
     for (auto i = 10; i < 20; ++i) {
         Row row;
@@ -139,6 +140,7 @@ TEST(IteratorTest, GetNeighbor) {
                 edge.values.emplace_back(k);
             }
             edge.values.emplace_back("2");
+            edge.values.emplace_back(2);
             edge.values.emplace_back(j);
             edges.values.emplace_back(std::move(edge));
         }

@@ -1031,24 +1031,33 @@ class TestGoQuery(NebulaTestSuite):
         expected_data = {
             "column_names" : ["$^.team.name", "$$.player.name"],
             "rows" : [
-                ["Cavaliers", "Kyrie Irving"],
-                ["Cavaliers", "Dwyane Wade"],
-                ["Cavaliers", "Shaquile O'Neal"],
                 ["Cavaliers", "Danny Green"],
+                ["Cavaliers", "Danny Green"],
+                ["Cavaliers", "Dwyane Wade"],
+                ["Cavaliers", "Dwyane Wade"],
+                ["Cavaliers", "Kyrie Irving"],
+                ["Cavaliers", "Kyrie Irving"],
                 ["Cavaliers", "LeBron James"],
+                ["Cavaliers", "LeBron James"],
+                ["Cavaliers", "Shaquile O'Neal"],
+                ["Cavaliers", "Shaquile O'Neal"],
+                ["Cavaliers", "LeBron James"],
+                ["Cavaliers", "LeBron James"],
+
+                ["Heat", "Amar'e Stoudemire"],
                 ["Heat", "Dwyane Wade"],
                 ["Heat", "LeBron James"],
                 ["Heat", "Ray Allen"],
                 ["Heat", "Shaquile O'Neal"],
-                ["Heat", "Amar'e Stoudemire"],
+                ["Heat", "Dwyane Wade"],
+                ["Lakers", "Dwight Howard"],
+                ["Lakers", "JaVale McGee"],
                 ["Lakers", "Kobe Bryant"],
                 ["Lakers", "LeBron James"],
-                ["Lakers", "Rajon Rondo"],
-                ["Lakers", "Steve Nash"],
                 ["Lakers", "Paul Gasol"],
+                ["Lakers", "Rajon Rondo"],
                 ["Lakers", "Shaquile O'Neal"],
-                ["Lakers", "JaVale McGee"],
-                ["Lakers", "Dwight Howard"]
+                ["Lakers", "Steve Nash"]
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -1062,21 +1071,29 @@ class TestGoQuery(NebulaTestSuite):
         expected_data = {
             "column_names" : ["$^.team.name", "$$.player.name"],
             "rows" : [
-                ["Cavaliers", "Kyrie Irving"],
-                ["Cavaliers", "Dwyane Wade"],
-                ["Cavaliers", "Shaquile O'Neal"],
                 ["Cavaliers", "Danny Green"],
+                ["Cavaliers", "Danny Green"],
+                ["Cavaliers", "Dwyane Wade"],
+                ["Cavaliers", "Dwyane Wade"],
+                ["Cavaliers", "Kyrie Irving"],
+                ["Cavaliers", "Kyrie Irving"],
+                ["Cavaliers", "Shaquile O'Neal"],
+                ["Cavaliers", "Shaquile O'Neal"],
+
+                ["Heat", "Amar'e Stoudemire"],
+
                 ["Heat", "Dwyane Wade"],
                 ["Heat", "Ray Allen"],
                 ["Heat", "Shaquile O'Neal"],
-                ["Heat", "Amar'e Stoudemire"],
-                ["Lakers", "Kobe Bryant"],
-                ["Lakers", "Rajon Rondo"],
-                ["Lakers", "Steve Nash"],
-                ["Lakers", "Paul Gasol"],
-                ["Lakers", "Shaquile O'Neal"],
+                ["Heat", "Dwyane Wade"],
+
+                ["Lakers", "Dwight Howard"],
                 ["Lakers", "JaVale McGee"],
-                ["Lakers", "Dwight Howard"]
+                ["Lakers", "Kobe Bryant"],
+                ["Lakers", "Paul Gasol"],
+                ["Lakers", "Rajon Rondo"],
+                ["Lakers", "Shaquile O'Neal"],
+                ["Lakers", "Steve Nash"]
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -1562,7 +1579,8 @@ class TestGoQuery(NebulaTestSuite):
                 ["Jonathon Simmons"],
                 ["Dejounte Murray"],
                 ["Tracy McGrady"],
-                ["Paul Gasol"]
+                ["Paul Gasol"],
+                ["Marco Belinelli"]
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -1590,7 +1608,8 @@ class TestGoQuery(NebulaTestSuite):
                 ["Jonathon Simmons"],
                 ["Dejounte Murray"],
                 ["Tracy McGrady"],
-                ["Paul Gasol"]
+                ["Paul Gasol"],
+                ["Marco Belinelli"]
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])

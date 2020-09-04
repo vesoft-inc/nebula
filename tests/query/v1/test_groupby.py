@@ -130,7 +130,9 @@ class TestGroupBy(NebulaTestSuite):
                 [1, 2009, 2010.0],
                 [1, 2007, 2009.0],
                 [1, 2012, 2013.0],
-                [1, 2015, 2016.0]
+                [1, 2013, 2015.0],
+                [1, 2015, 2016.0],
+                [1, 2010, 2012.0]
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
