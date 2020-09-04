@@ -29,6 +29,8 @@ private:
 
     Status prepareEdges();
 
+    Status preparePropertiesWithYield(const YieldClause *yield);
+    Status preparePropertiesWithoutYield();
     Status prepareProperties();
 
     static const Expression* findInvalidYieldExpression(const Expression* root);
