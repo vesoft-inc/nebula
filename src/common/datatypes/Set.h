@@ -56,6 +56,10 @@ struct Set {
     bool contains(const Value &value) const {
         return values.count(value) != 0;
     }
+
+    size_t size() const {
+        return values.size();
+    }
 };
 
 inline std::ostream &operator<<(std::ostream& os, const Set& s) {

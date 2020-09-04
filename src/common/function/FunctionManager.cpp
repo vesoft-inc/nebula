@@ -8,6 +8,10 @@
 #include "common/base/Base.h"
 #include "common/expression/Expression.h"
 #include "common/time/WallClock.h"
+#include "common/datatypes/List.h"
+#include "common/datatypes/Map.h"
+#include "common/datatypes/Set.h"
+#include "common/datatypes/DataSet.h"
 
 namespace nebula {
 
@@ -118,7 +122,15 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
               TypeSignature({Value::Type::PATH}, Value::Type::INT),
               TypeSignature({Value::Type::VERTEX}, Value::Type::INT),
               TypeSignature({Value::Type::EDGE}, Value::Type::INT),
-              TypeSignature({Value::Type::LIST}, Value::Type::INT)}}
+              TypeSignature({Value::Type::LIST}, Value::Type::INT)}},
+    {"size", {TypeSignature({Value::Type::STRING}, Value::Type::INT),
+              TypeSignature({Value::Type::NULLVALUE}, Value::Type::NULLVALUE),
+              TypeSignature({Value::Type::__EMPTY__}, Value::Type::__EMPTY__),
+              TypeSignature({Value::Type::LIST}, Value::Type::INT),
+              TypeSignature({Value::Type::MAP}, Value::Type::INT),
+              TypeSignature({Value::Type::SET}, Value::Type::INT),
+              TypeSignature({Value::Type::DATASET}, Value::Type::INT),
+             }},
 };
 
 // static
@@ -722,6 +734,40 @@ FunctionManager::FunctionManager() {
                 return static_cast<double>(-2);
             } else {
                 return s1 / (std::sqrt(s2) * std::sqrt(s3));
+            }
+        };
+    }
+    {
+        auto &attr = functions_["size"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.body_ = [](const auto &args) -> Value {
+            switch (args[0].type()) {
+                case Value::Type::NULLVALUE:
+                    return Value::kNullValue;
+                case Value::Type::__EMPTY__:
+                    return Value::kEmpty;
+                case Value::Type::STRING:
+                    return static_cast<int64_t>(args[0].getStr().size());
+                case Value::Type::LIST:
+                    return static_cast<int64_t>(args[0].getList().size());
+                case Value::Type::MAP:
+                    return static_cast<int64_t>(args[0].getMap().size());
+                case Value::Type::SET:
+                    return static_cast<int64_t>(args[0].getSet().size());
+                case Value::Type::DATASET:
+                    return static_cast<int64_t>(args[0].getDataSet().size());
+                case Value::Type::INT:
+                case Value::Type::FLOAT:
+                case Value::Type::BOOL:
+                case Value::Type::DATE:
+                case Value::Type::DATETIME:
+                case Value::Type::VERTEX:
+                case Value::Type::EDGE:
+                case Value::Type::PATH:
+                default:
+                    LOG(ERROR) << "size() has not been implemented for " << args[0].type();
+                    return Value::kNullBadType;
             }
         };
     }

@@ -7,6 +7,10 @@
 
 #include <gtest/gtest.h>
 #include "common/function/FunctionManager.h"
+#include "common/datatypes/List.h"
+#include "common/datatypes/Map.h"
+#include "common/datatypes/Set.h"
+#include "common/datatypes/DataSet.h"
 
 namespace nebula {
 
@@ -143,6 +147,58 @@ TEST_F(FunctionManagerTest, functionCall) {
         ASSERT_TRUE(result.ok());
         auto res = std::move(result).value()({false});
         EXPECT_EQ(res, 0);
+    }
+    {
+        auto result = FunctionManager::get("size", 1);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({List({123})});
+        EXPECT_EQ(res, 1);
+    }
+    {
+        auto result = FunctionManager::get("size", 1);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Set({123})});
+        EXPECT_EQ(res, 1);
+    }
+    {
+        DataSet ds;
+        ds.rows.emplace_back(Row({123}));
+        auto result = FunctionManager::get("size", 1);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({std::move(ds)});
+        EXPECT_EQ(res, 1);
+    }
+    {
+        Map map;
+        map.kvs.emplace("123", 456);
+        auto result = FunctionManager::get("size", 1);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({std::move(map)});
+        EXPECT_EQ(res, 1);
+    }
+    {
+        auto result = FunctionManager::get("size", 1);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({"123"});
+        EXPECT_EQ(res, 3);
+    }
+    {
+        auto result = FunctionManager::get("size", 1);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Value::kNullValue});
+        EXPECT_EQ(res, Value::kNullValue);
+    }
+    {
+        auto result = FunctionManager::get("size", 1);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Value::kEmpty});
+        EXPECT_EQ(res, Value::kEmpty);
+    }
+    {
+        auto result = FunctionManager::get("size", 1);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({true});
+        EXPECT_EQ(res, Value::kNullBadType);
     }
 }
 
@@ -428,6 +484,54 @@ TEST_F(FunctionManagerTest, returnType) {
             FunctionManager::getReturnType("noexist", {Value::Type::INT});
         ASSERT_FALSE(result.ok());
         EXPECT_EQ(result.status().toString(), "Function `noexist' not defined");
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("size", {Value::Type::STRING});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::INT);
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("size", {Value::Type::LIST});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::INT);
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("size", {Value::Type::MAP});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::INT);
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("size", {Value::Type::SET});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::INT);
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("size", {Value::Type::DATASET});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::INT);
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("size", {Value::Type::__EMPTY__});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::__EMPTY__);
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("size", {Value::Type::NULLVALUE});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::NULLVALUE);
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("size", {Value::Type::BOOL});
+        ASSERT_FALSE(result.ok());
+        EXPECT_EQ(result.status().toString(), "Parameter's type error");
     }
 }
 
