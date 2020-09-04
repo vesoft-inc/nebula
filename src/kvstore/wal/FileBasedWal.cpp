@@ -620,6 +620,13 @@ bool FileBasedWal::linkCurrentWAL(const char* newPath) {
         LOG(INFO) << idStr_ << "No wal files found, skip link";
         return true;
     }
+
+    if (fs::FileUtils::exist(newPath) &&
+        !fs::FileUtils::remove(newPath, true)) {
+        LOG(ERROR) << "Remove exist dir failed of wal : " << newPath;
+        return false;
+    }
+
     if (!fs::FileUtils::makeDir(newPath)) {
         LOG(INFO) << idStr_ << "Link file parent dir make failed : " << newPath;
         return false;
