@@ -169,6 +169,10 @@ std::unique_ptr<Expression> Expression::Decoder::readExpression() noexcept {
  *  class Expression
  *
  ***************************************/
+std::unique_ptr<Expression> Expression::clone() const {
+    return decode(encode());
+}
+
 // static
 std::string Expression::encode(const Expression& exp) {
     return exp.encode();

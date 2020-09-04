@@ -1883,6 +1883,21 @@ TEST_F(ExpressionTest, LabelEvaluate) {
     ASSERT_EQ("name", value.getStr());
 }
 
+TEST_F(ExpressionTest, TestExprClone) {
+    ConstantExpression expr(1);
+    auto clone = expr.clone();
+    ASSERT_NE(clone.get(), &expr);
+    ASSERT_EQ(clone->kind(), expr.kind());
+    ASSERT_EQ(static_cast<ConstantExpression *>(clone.get())->toString(), expr.toString());
+
+    ArithmeticExpression aexpr(
+        Expression::Kind::kAdd, new ConstantExpression(1), new ConstantExpression(1));
+    auto aclone = aexpr.clone();
+    ASSERT_NE(aclone.get(), &aexpr);
+    ASSERT_EQ(aclone->kind(), aexpr.kind());
+    ASSERT_EQ(static_cast<ArithmeticExpression *>(aclone.get())->toString(), aexpr.toString());
+}
+
 }  // namespace nebula
 
 int main(int argc, char** argv) {
