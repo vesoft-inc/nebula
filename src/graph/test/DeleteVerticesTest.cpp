@@ -77,7 +77,7 @@ TEST_F(DeleteVerticesTest, Base) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
-            {player.vid(), team.vid(), 0, std::get<1>(serve), std::get<2>(serve)},
+            {player.vid(), team.vid(), std::get<1>(serve), std::get<2>(serve), std::get<3>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -232,7 +232,7 @@ TEST_F(DeleteVerticesTest, DeleteWithHash) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
-            {player.vid(), team.vid(), 0, std::get<1>(serve), std::get<2>(serve)},
+            {player.vid(), team.vid(), std::get<1>(serve), std::get<2>(serve), std::get<3>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -352,7 +352,7 @@ TEST_F(DeleteVerticesTest, DeleteWithUUID) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {std::get<1>(serve), std::get<2>(serve)},
+            {std::get<2>(serve), std::get<3>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected, true, {0, 1, 2}));
     }
