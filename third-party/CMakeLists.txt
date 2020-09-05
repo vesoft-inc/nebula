@@ -88,6 +88,18 @@ set(common_configure_envs
     "ACLOCAL_PATH=${ACLOCAL_PATH}"
 )
 
+macro(configure_append new_name target_configure match_regex to_append)
+    list(APPEND ${new_name} "")
+    foreach(env IN LISTS "${target_configure}")
+        string(REGEX MATCH ${match_regex} condition ${env})
+        if(condition)
+            list(APPEND ${new_name} "${env} ${to_append}")
+        else()
+            list(APPEND ${new_name} "${env}")
+        endif()
+    endforeach(env)
+endmacro()
+
 set(ALL_TARGETS
     libunwind
     openssl
