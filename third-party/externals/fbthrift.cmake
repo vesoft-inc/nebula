@@ -20,6 +20,9 @@ ExternalProject_Add(
     CMAKE_ARGS
         ${common_cmake_args}
         "-DCMAKE_EXE_LINKER_FLAGS=-static-libstdc++ -static-libgcc"
+        -DBoost_NO_BOOST_CMAKE=ON
+        -DBoost_NO_SYSTEM_PATHS=TRUE
+        -DBOOST_ROOT=${CMAKE_INSTALL_PREFIX}
         -D_OPENSSL_LIBDIR=${CMAKE_INSTALL_PREFIX}/lib64
     BUILD_COMMAND make -s -j${BUILDING_JOBS_NUM}
     BUILD_IN_SOURCE 1

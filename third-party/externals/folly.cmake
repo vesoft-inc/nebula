@@ -15,9 +15,13 @@ ExternalProject_Add(
     STAMP_DIR ${BUILD_INFO_DIR}
     DOWNLOAD_DIR ${DOWNLOAD_DIR}
     SOURCE_DIR ${source_dir}
+    PATCH_COMMAND patch -p1 < ${CMAKE_SOURCE_DIR}/patches/folly-2018.08.20.00.path
     CMAKE_ARGS
         ${common_cmake_args}
         -DCMAKE_BUILD_TYPE=Release
+        -DBoost_NO_BOOST_CMAKE=ON
+        -DBoost_NO_SYSTEM_PATHS=TRUE
+        -DBOOST_ROOT=${CMAKE_INSTALL_PREFIX}
         "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -fPIC -DFOLLY_HAVE_CLOCK_GETTIME -D__USE_POSIX199309 ${extra_cpp_flags}"
         -DFOLLY_CXX_FLAGS=-Wno-error
 
