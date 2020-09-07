@@ -125,8 +125,8 @@ void ShowExecutor::showHosts() {
             return a.get_status() < b.get_status();
         });
 
-        std::unordered_map<std::string, int32_t> allPartsCount;
-        std::unordered_map<std::string, int32_t> leaderPartsCount;
+        std::map<std::string, int32_t> allPartsCount;
+        std::map<std::string, int32_t> leaderPartsCount;
         for (auto& item : hostItems) {
             std::vector<cpp2::ColumnValue> row;
             row.resize(6);
@@ -144,24 +144,33 @@ void ShowExecutor::showHosts() {
             }
 
             int32_t leaderCount = 0;
-            std::string leaders;
+            std::map<std::string, int32_t> hostLeaderCount;
             for (auto& spaceEntry : item.get_leader_parts()) {
                 leaderCount += spaceEntry.second.size();
-                leaders += spaceEntry.first + ": " +
-                           folly::to<std::string>(spaceEntry.second.size()) + ", ";
+                hostLeaderCount[spaceEntry.first] = spaceEntry.second.size();
                 leaderPartsCount[spaceEntry.first] += spaceEntry.second.size();
+            }
+            row[3].set_integer(leaderCount);
+
+            std::string leaders;
+            for (auto& spaceEntry : hostLeaderCount) {
+                leaders += spaceEntry.first + ": " +
+                           folly::to<std::string>(spaceEntry.second) + ", ";
             }
             if (!leaders.empty()) {
                 leaders.resize(leaders.size() - 2);
             }
 
-            row[3].set_integer(leaderCount);
+            std::map<std::string, int32_t> hostPartsCount;
+            for (auto& spaceEntry : item.get_all_parts()) {
+                hostPartsCount[spaceEntry.first] += spaceEntry.second.size();
+                allPartsCount[spaceEntry.first] += spaceEntry.second.size();
+            }
 
             std::string parts;
-            for (auto& spaceEntry : item.get_all_parts()) {
+            for (auto& spaceEntry : hostPartsCount) {
                 parts += spaceEntry.first + ": " +
-                         folly::to<std::string>(spaceEntry.second.size()) + ", ";
-                allPartsCount[spaceEntry.first] += spaceEntry.second.size();
+                         folly::to<std::string>(spaceEntry.second) + ", ";
             }
             if (!parts.empty()) {
                 parts.resize(parts.size() - 2);

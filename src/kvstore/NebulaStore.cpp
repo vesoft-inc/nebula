@@ -794,23 +794,21 @@ ResultCode NebulaStore::setWriteBlocking(GraphSpaceID spaceId, bool sign) {
                 return error(partRet);
             }
             auto p = nebula::value(partRet);
-            if (p->isLeader()) {
-                auto ret = ResultCode::SUCCEEDED;
-                p->setBlocking(sign);
-                if (sign) {
-                    folly::Baton<true, std::atomic> baton;
-                    p->sync([&ret, &baton] (kvstore::ResultCode code) {
-                        if (kvstore::ResultCode::SUCCEEDED != code) {
-                            ret = code;
-                        }
-                        baton.post();
-                    });
-                    baton.wait();
-                }
-                if (ret != ResultCode::SUCCEEDED) {
-                    LOG(ERROR) << "Part sync failed. space : " << spaceId << " Part : " << part;
-                    return ret;
-                }
+            auto ret = ResultCode::SUCCEEDED;
+            p->setBlocking(sign);
+            if (sign) {
+                folly::Baton<true, std::atomic> baton;
+                p->sync([&ret, &baton] (kvstore::ResultCode code) {
+                    if (kvstore::ResultCode::SUCCEEDED != code) {
+                        ret = code;
+                    }
+                    baton.post();
+                });
+                baton.wait();
+            }
+            if (ret != ResultCode::SUCCEEDED) {
+                LOG(ERROR) << "Part sync failed. space : " << spaceId << " Part : " << part;
+                return ret;
             }
         }
     }
