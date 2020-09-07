@@ -9,6 +9,7 @@
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
+#include "kvstore/RocksEngineConfig.h"
 #include "storage/test/TestUtils.h"
 #include "storage/query/QueryVertexPropsProcessor.h"
 #include "dataman/RowSetReader.h"
@@ -48,6 +49,10 @@ void mockData(kvstore::KVStore* kv,
                 baton.post();
             });
         baton.wait();
+        if (FLAGS_enable_rocksdb_prefix_filtering) {
+            kvstore::ResultCode code = kv->flush(0);  // flush per partition
+            EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
+        }
     }
 }
 
@@ -179,6 +184,23 @@ TEST(QueryVertexPropsTest, SimpleTest) {
     version = 0;
     mockData(kv.get(), schemaMng.get(), version);
     testWithVersion(kv.get(), schemaMng.get(), executor.get(), version);
+}
+
+TEST(QueryVertexPropsTest, PrefixBloomFilterTest) {
+    FLAGS_enable_rocksdb_statistics = true;
+    FLAGS_enable_rocksdb_prefix_filtering = true;
+    fs::TempDir rootPath("/tmp/QueryVertexPropsTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+
+    LOG(INFO) << "Prepare meta...";
+    auto schemaMng = TestUtils::mockSchemaMan();
+    auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
+    TagVersion version = 1;
+    mockData(kv.get(), schemaMng.get(), version);
+    testWithVersion(kv.get(), schemaMng.get(), executor.get(), version);
+    std::shared_ptr<rocksdb::Statistics> statistics = kvstore::getDBStatistics();
+    ASSERT_GT(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_PREFIX_CHECKED), 0);
+    ASSERT_GT(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_PREFIX_USEFUL), 0);
 }
 
 TEST(QueryVertexPropsTest, QueryAfterTagAltered) {
