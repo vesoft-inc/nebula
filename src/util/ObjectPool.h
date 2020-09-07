@@ -20,22 +20,17 @@ class ObjectPool final : private cpp::NonCopyable, private cpp::NonMovable {
 public:
     ObjectPool() {}
 
-    ~ObjectPool() {
-        clear();
-    }
+    ~ObjectPool() = default;
 
     void clear() {
         folly::SpinLockGuard g(lock_);
-        for (auto &e : objects_) {
-            e.deleteFn(e.obj);
-        }
         objects_.clear();
     }
 
     template <typename T>
     T *add(T *obj) {
         folly::SpinLockGuard g(lock_);
-        objects_.emplace_back(Element{obj, [](void *p) { delete reinterpret_cast<T *>(p); }});
+        objects_.emplace_back(obj);
         return obj;
     }
 
@@ -49,12 +44,23 @@ public:
     }
 
 private:
-    struct Element {
-        void *obj;
-        std::function<void(void *)> deleteFn;
+    // Holder the ownership of the any object
+    class OwnershipHolder {
+    public:
+        template <typename T>
+        explicit OwnershipHolder(T *obj)
+            : obj_(obj), deleteFn_([](void *p) { delete reinterpret_cast<T *>(p); }) {}
+
+        ~OwnershipHolder() {
+            deleteFn_(obj_);
+        }
+
+    private:
+        void *obj_;
+        std::function<void(void *)> deleteFn_;
     };
 
-    std::list<Element> objects_;
+    std::list<OwnershipHolder> objects_;
 
     folly::SpinLock lock_;
 };
