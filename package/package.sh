@@ -100,7 +100,11 @@ function package {
         sys_name=`cat /etc/redhat-release | cut -d ' ' -f1`
         if [[ ${sys_name} == "CentOS" ]]; then
             sys_ver=`cat /etc/redhat-release | tr -dc '0-9.' | cut -d \. -f1`
-            sys_ver=.el${sys_ver}.x86_64
+            if [[ ${sys_ver} == 7 ]] || [[ ${sys_ver} == 6 ]]; then
+                sys_ver=.el${sys_ver}-5.x86_64
+            else
+                sys_ver=.el${sys_ver}.x86_64
+            fi
         elif [[ ${sys_name} == "Fedora" ]]; then
             sys_ver=`cat /etc/redhat-release | cut -d ' ' -f3`
             sys_ver=.fc${sys_ver}.x86_64
