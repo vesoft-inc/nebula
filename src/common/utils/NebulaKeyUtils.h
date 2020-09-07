@@ -137,11 +137,8 @@ public:
             msg << " rawKey.size() != kVertexLen."
                 << "\nrawKey.size()=" << rawKey.size()
                 << "\nkVertexLen=" << kVertexLen
-                << "\nrawkey string format=" << rawKey
-                << "\nrawkey dec format:";
-            for (auto i = 0U; i != rawKey.size(); ++i) {
-                msg << "\nrawKey[" << i << "]=" << static_cast<int>(rawKey[i]);
-            }
+                << "\nhexDump:\n"
+                << folly::hexDump(rawKey.data(), rawKey.size());
             LOG(FATAL) << msg.str();
         }
         auto offset = sizeof(PartitionID) + sizeof(VertexID);

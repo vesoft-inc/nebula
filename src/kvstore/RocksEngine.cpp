@@ -192,6 +192,7 @@ ResultCode RocksEngine::range(const std::string& start,
                               const std::string& end,
                               std::unique_ptr<KVIterator>* storageIter) {
     rocksdb::ReadOptions options;
+    options.total_order_seek = true;
     rocksdb::Iterator* iter = db_->NewIterator(options);
     if (iter) {
         iter->Seek(rocksdb::Slice(start));
@@ -204,6 +205,7 @@ ResultCode RocksEngine::range(const std::string& start,
 ResultCode RocksEngine::prefix(const std::string& prefix,
                                std::unique_ptr<KVIterator>* storageIter) {
     rocksdb::ReadOptions options;
+    options.prefix_same_as_start = true;
     rocksdb::Iterator* iter = db_->NewIterator(options);
     if (iter) {
         iter->Seek(rocksdb::Slice(prefix));
@@ -217,6 +219,7 @@ ResultCode RocksEngine::rangeWithPrefix(const std::string& start,
                                         const std::string& prefix,
                                         std::unique_ptr<KVIterator>* storageIter) {
     rocksdb::ReadOptions options;
+    options.prefix_same_as_start = true;
     rocksdb::Iterator* iter = db_->NewIterator(options);
     if (iter) {
         iter->Seek(rocksdb::Slice(start));
@@ -449,9 +452,10 @@ ResultCode RocksEngine::createCheckpoint(const std::string& name) {
     auto checkpointPath = folly::stringPrintf("%s/checkpoints/%s/data",
                                               dataPath_.c_str(), name.c_str());
     LOG(INFO) << "Target checkpoint path : " << checkpointPath;
-    if (fs::FileUtils::exist(checkpointPath)) {
-        LOG(ERROR) << "The snapshot file already exists: " << checkpointPath;
-        return ResultCode::ERR_CHECKPOINT_ERROR;
+    if (fs::FileUtils::exist(checkpointPath) &&
+        !fs::FileUtils::remove(checkpointPath.data(), true)) {
+            LOG(ERROR) << "Remove exist dir failed of checkpoint : " << checkpointPath;
+            return ResultCode::ERR_IO_ERROR;
     }
 
     auto parent = checkpointPath.substr(0, checkpointPath.rfind('/'));

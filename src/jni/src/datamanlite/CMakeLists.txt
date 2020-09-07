@@ -1,7 +1,7 @@
 
 add_library(nebula_codec_obj
             OBJECT
-            ${NEBULA_HOME}/src/common/base/Cord.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/../../../common/base/Cord.cpp
             Slice.cpp
             DataCommon.cpp
             SchemaProviderIf.cpp
