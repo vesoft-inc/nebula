@@ -197,6 +197,8 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    ProcessUtils::bgRunCommand();
+
     auto result = nebula::network::NetworkUtils::getLocalIP(FLAGS_local_ip);
     if (!result.ok()) {
         LOG(ERROR) << "Get local ip failed! status:" << result.status();
