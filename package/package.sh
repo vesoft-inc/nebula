@@ -94,30 +94,38 @@ function package {
     args=""
     [[ $strip_enable == TRUE ]] && args="-D CPACK_STRIP_FILES=TRUE -D CPACK_RPM_SPEC_MORE_DEFINE="
 
-    tagetPackageName=""
+    sys_ver=""
     pType="RPM"
-
     if [[ -f "/etc/redhat-release" ]]; then
-        # TODO: update minor version according to OS
-        centosMajorVersion=`cat /etc/redhat-release | tr -dc '0-9.' | cut -d \. -f1`
-        [[ "$centosMajorVersion" == "7" ]] && tagetPackageName="nebula-${version}.el7-5.x86_64.rpm"
-        [[ "$centosMajorVersion" == "6" ]] && tagetPackageName="nebula-${version}.el6-5.x86_64.rpm"
+        sys_name=`cat /etc/redhat-release | cut -d ' ' -f1`
+        if [[ ${sys_name} == "CentOS" ]]; then
+            sys_ver=`cat /etc/redhat-release | tr -dc '0-9.' | cut -d \. -f1`
+            sys_ver=.el${sys_ver}.x86_64
+        elif [[ ${sys_name} == "Fedora" ]]; then
+            sys_ver=`cat /etc/redhat-release | cut -d ' ' -f3`
+            sys_ver=.fc${sys_ver}.x86_64
+        fi
+        pType="RPM"
     elif [[ -f "/etc/lsb-release" ]]; then
-        ubuntuVersion=`cat /etc/lsb-release | grep DISTRIB_RELEASE | cut -d "=" -f 2 | sed 's/\.//'`
-        tagetPackageName="nebula-${version}.ubuntu${ubuntuVersion}.amd64.deb"
+        sys_ver=`cat /etc/lsb-release | grep DISTRIB_RELEASE | cut -d "=" -f 2 | sed 's/\.//'`
+        sys_ver=.ubuntu${sys_ver}.amd64
         pType="DEB"
     fi
 
     if !( cpack -G ${pType} --verbose $args ); then
         echo ">>> package nebula failed <<<"
         exit -1
-    elif [[ "$tagetPackageName" != "" && $package_one == ON ]]; then
+    else
         # rename package file
-        pkgName=`ls | grep nebula-graph | grep ${version}`
-        outputDir=$PROJECT_DIR/build/cpack_output
+        pkg_names=`ls | grep nebula | grep ${version}`
+        outputDir=$build_dir/cpack_output
         mkdir -p ${outputDir}
-        mv ${pkgName} ${outputDir}/${tagetPackageName}
-        echo "####### taget package file is ${outputDir}/${tagetPackageName}"
+        for pkg_name in ${pkg_names[@]};
+        do
+            new_pkg_name=${pkg_name/\-Linux/${sys_ver}}
+            mv ${pkg_name} ${outputDir}/${new_pkg_name}
+            echo "####### taget package file is ${outputDir}/${new_pkg_name}"
+        done
     fi
 
     popd
