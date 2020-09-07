@@ -52,7 +52,7 @@ std::vector<HostAddr> ActiveHostsMan::getActiveHosts(kvstore::KVStore* kv,
     auto now = time::WallClock::fastNowInMilliSec();
     while (iter->valid()) {
         auto host = MetaServiceUtils::parseHostKey(iter->key());
-        HostInfo info = HostInfo::decodeV2(iter->val());
+        HostInfo info = HostInfo::decode(iter->val());
         if (info.role_ != role) {
             iter->next();
             continue;
