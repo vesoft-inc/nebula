@@ -256,7 +256,7 @@ TEST_F(YieldTest, YieldPipe) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
         std::vector<std::tuple<std::string>> expected;
         for (auto &serve : player.serves()) {
-            if (std::get<1>(serve) <= 2005) {
+            if (std::get<2>(serve) <= 2005) {
                 continue;
             }
             std::tuple<std::string> result(std::get<0>(serve));
@@ -274,7 +274,7 @@ TEST_F(YieldTest, YieldPipe) {
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &serve : player.serves()) {
             std::tuple<std::string, int64_t, std::string> result(
-                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                    player.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(result));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -288,11 +288,11 @@ TEST_F(YieldTest, YieldPipe) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &serve : player.serves()) {
-            if (std::get<1>(serve) <= 2005) {
+            if (std::get<2>(serve) <= 2005) {
                 continue;
             }
             std::tuple<std::string, int64_t, std::string> result(
-                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                    player.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(result));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -306,11 +306,11 @@ TEST_F(YieldTest, YieldPipe) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
         std::vector<std::tuple<std::string, int64_t, std::string, int64_t>> expected;
         for (auto &serve : player.serves()) {
-            if (std::get<1>(serve) <= 2005) {
+            if (std::get<2>(serve) <= 2005) {
                 continue;
             }
             std::tuple<std::string, int64_t, std::string, int64_t> result(
-                    player.name(), std::get<1>(serve),
+                    player.name(), std::get<2>(serve),
                     std::get<0>(serve), std::hash<int32_t>{}(123));
             expected.emplace_back(std::move(result));
         }
@@ -358,7 +358,7 @@ TEST_F(YieldTest, YieldVar) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
         std::vector<std::tuple<std::string>> expected;
         for (auto &serve : player.serves()) {
-            if (std::get<1>(serve) <= 2005) {
+            if (std::get<2>(serve) <= 2005) {
                 continue;
             }
             std::tuple<std::string> result(std::get<0>(serve));
@@ -376,7 +376,7 @@ TEST_F(YieldTest, YieldVar) {
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &serve : player.serves()) {
             std::tuple<std::string, int64_t, std::string> result(
-                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                    player.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(result));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -390,11 +390,11 @@ TEST_F(YieldTest, YieldVar) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &serve : player.serves()) {
-            if (std::get<1>(serve) <= 2005) {
+            if (std::get<2>(serve) <= 2005) {
                 continue;
             }
             std::tuple<std::string, int64_t, std::string> result(
-                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                    player.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(result));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -408,11 +408,11 @@ TEST_F(YieldTest, YieldVar) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
         std::vector<std::tuple<std::string, int64_t, std::string, int64_t>> expected;
         for (auto &serve : player.serves()) {
-            if (std::get<1>(serve) <= 2005) {
+            if (std::get<2>(serve) <= 2005) {
                 continue;
             }
             std::tuple<std::string, int64_t, std::string, int64_t> result(
-                    player.name(), std::get<1>(serve),
+                    player.name(), std::get<2>(serve),
                     std::get<0>(serve), std::hash<int32_t>{}(123));
             expected.emplace_back(std::move(result));
         }
