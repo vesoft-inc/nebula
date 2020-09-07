@@ -251,11 +251,11 @@ Status FetchEdgesValidator::preparePropertiesWithoutYield() {
 
 /*static*/
 const Expression *FetchEdgesValidator::findInvalidYieldExpression(const Expression *root) {
-    return ExpressionUtils::findAnyKind(root,
-                                        {Expression::Kind::kInputProperty,
-                                         Expression::Kind::kVarProperty,
-                                         Expression::Kind::kSrcProperty,
-                                         Expression::Kind::kDstProperty});
+    return ExpressionUtils::findAny(root,
+                                    {Expression::Kind::kInputProperty,
+                                     Expression::Kind::kVarProperty,
+                                     Expression::Kind::kSrcProperty,
+                                     Expression::Kind::kDstProperty});
 }
 
 // TODO(shylock) optimize dedup input when distinct given

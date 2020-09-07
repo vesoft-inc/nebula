@@ -236,15 +236,15 @@ Status FetchVerticesValidator::preparePropertiesWithoutYield() {
 
 /*static*/
 const Expression *FetchVerticesValidator::findInvalidYieldExpression(const Expression *root) {
-    return ExpressionUtils::findAnyKind(root,
-                                        {Expression::Kind::kInputProperty,
-                                         Expression::Kind::kVarProperty,
-                                         Expression::Kind::kSrcProperty,
-                                         Expression::Kind::kDstProperty,
-                                         Expression::Kind::kEdgeSrc,
-                                         Expression::Kind::kEdgeType,
-                                         Expression::Kind::kEdgeRank,
-                                         Expression::Kind::kEdgeDst});
+    return ExpressionUtils::findAny(root,
+                                    {Expression::Kind::kInputProperty,
+                                     Expression::Kind::kVarProperty,
+                                     Expression::Kind::kSrcProperty,
+                                     Expression::Kind::kDstProperty,
+                                     Expression::Kind::kEdgeSrc,
+                                     Expression::Kind::kEdgeType,
+                                     Expression::Kind::kEdgeRank,
+                                     Expression::Kind::kEdgeDst});
 }
 
 // TODO(shylock) optimize dedup input when distinct given
