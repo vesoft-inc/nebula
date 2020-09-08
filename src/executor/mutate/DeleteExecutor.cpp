@@ -66,7 +66,8 @@ folly::Future<Status> DeleteVerticesExecutor::deleteVertices() {
         })
         .then([this](storage::StorageRpcResponse<storage::cpp2::ExecResponse> resp) {
             SCOPED_TIMER(&execTime_);
-            return handleResponse(resp, "Delete vertices");
+            NG_RETURN_IF_ERROR(handleCompleteness(resp, true));
+            return Status::OK();
         });
 }
 
@@ -158,7 +159,8 @@ folly::Future<Status> DeleteEdgesExecutor::deleteEdges() {
             })
             .then([this](storage::StorageRpcResponse<storage::cpp2::ExecResponse> resp) {
                 SCOPED_TIMER(&execTime_);
-                return handleResponse(resp, "Delete edges");
+                NG_RETURN_IF_ERROR(handleCompleteness(resp, true));
+                return Status::OK();
             });
 }
 }   // namespace graph

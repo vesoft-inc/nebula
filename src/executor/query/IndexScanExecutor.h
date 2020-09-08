@@ -9,16 +9,16 @@
 
 #include "common/interface/gen-cpp2/storage_types.h"
 #include "common/clients/storage/GraphStorageClient.h"
-#include "executor/Executor.h"
+#include "executor/QueryStorageExecutor.h"
 #include "planner/Query.h"
 
 namespace nebula {
 namespace graph {
 
-class IndexScanExecutor final : public Executor {
+class IndexScanExecutor final : public QueryStorageExecutor {
 public:
     IndexScanExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("IndexScanExecutor", node, qctx) {
+        : QueryStorageExecutor("IndexScanExecutor", node, qctx) {
         gn_ = asNode<IndexScan>(node);
     }
 
@@ -29,12 +29,6 @@ private:
 
     template <typename Resp>
     Status handleResp(storage::StorageRpcResponse<Resp> &&rpcResp);
-
-    template <typename Resp>
-    StatusOr<Result::State>
-    handleCompleteness(const storage::StorageRpcResponse<Resp> &rpcResp) const;
-
-    void checkResponseResult(const storage::cpp2::ResponseCommon& result) const;
 
 private:
     const IndexScan *   gn_;

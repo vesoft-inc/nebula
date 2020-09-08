@@ -36,14 +36,13 @@ folly::Future<Status> IndexScanExecutor::indexScan() {
 
 template <typename Resp>
 Status IndexScanExecutor::handleResp(storage::StorageRpcResponse<Resp> &&rpcResp) {
-    auto completeness = handleCompleteness(rpcResp);
+    auto completeness = handleCompleteness(rpcResp, false);
     if (!completeness.ok()) {
         return std::move(completeness).status();
     }
     auto state = std::move(completeness).value();
     nebula::DataSet v;
     for (auto &resp : rpcResp.responses()) {
-        checkResponseResult(resp.get_result());
         if (resp.__isset.data) {
             nebula::DataSet* data = resp.get_data();
             // TODO : convert the column name to alias.
@@ -60,38 +59,6 @@ Status IndexScanExecutor::handleResp(storage::StorageRpcResponse<Resp> &&rpcResp
                       .iter(Iterator::Kind::kSequential)
                       .state(state)
                       .finish());
-}
-
-template <typename Resp>
-StatusOr<Result::State>
-IndexScanExecutor::handleCompleteness(const storage::StorageRpcResponse<Resp> &rpcResp) const {
-    auto completeness = rpcResp.completeness();
-    if (completeness != 100) {
-        const auto &failedCodes = rpcResp.failedParts();
-        for (auto it = failedCodes.begin(); it != failedCodes.end(); it++) {
-            LOG(ERROR) << name_ << " failed, error "
-                       << storage::cpp2::_ErrorCode_VALUES_TO_NAMES.at(it->second) << ", part "
-                       << it->first;
-        }
-        if (completeness == 0) {
-            return Status::Error("IndexScan from storage failed in executor.");
-        }
-        return Result::State::kPartialSuccess;
-    }
-    return Result::State::kSuccess;
-}
-
-void IndexScanExecutor::checkResponseResult(const storage::cpp2::ResponseCommon& result) const {
-    auto failedParts = result.get_failed_parts();
-    if (!failedParts.empty()) {
-        std::stringstream ss;
-        for (auto& part : failedParts) {
-            ss << "error code: " << storage::cpp2::_ErrorCode_VALUES_TO_NAMES.at(part.get_code())
-               << ", leader: " << part.get_leader()->host << ":" << part.get_leader()->port
-               << ", part id: " << part.get_part_id() << "; ";
-        }
-        LOG(ERROR) << ss.str();
-    }
 }
 
 }   // namespace graph

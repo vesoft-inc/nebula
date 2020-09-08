@@ -7,15 +7,15 @@
 #ifndef EXECUTOR_MUTATE_DELETEVERTICESEXECUTOR_H_
 #define EXECUTOR_MUTATE_DELETEVERTICESEXECUTOR_H_
 
-#include "executor/mutate/MutateExecutor.h"
+#include "executor/QueryStorageExecutor.h"
 
 namespace nebula {
 namespace graph {
 
-class DeleteVerticesExecutor final : public MutateExecutor {
+class DeleteVerticesExecutor final : public QueryStorageExecutor {
 public:
     DeleteVerticesExecutor(const PlanNode *node, QueryContext *qctx)
-        : MutateExecutor("DeleteVerticesExecutor", node, qctx) {}
+        : QueryStorageExecutor("DeleteVerticesExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 
@@ -23,10 +23,10 @@ private:
     folly::Future<Status> deleteVertices();
 };
 
-class DeleteEdgesExecutor final : public MutateExecutor {
+class DeleteEdgesExecutor final : public QueryStorageExecutor {
 public:
     DeleteEdgesExecutor(const PlanNode *node, QueryContext *qctx)
-        : MutateExecutor("DeleteEdgesExecutor", node, qctx) {}
+        : QueryStorageExecutor("DeleteEdgesExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 

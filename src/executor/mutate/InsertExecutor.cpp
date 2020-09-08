@@ -32,7 +32,8 @@ folly::Future<Status> InsertVerticesExecutor::insertVertices() {
         })
         .then([this](storage::StorageRpcResponse<storage::cpp2::ExecResponse> resp) {
             SCOPED_TIMER(&execTime_);
-            return handleResponse(resp, "Insert vertices");
+            NG_RETURN_IF_ERROR(handleCompleteness(resp, true));
+            return Status::OK();
         });
 }
 
@@ -55,7 +56,8 @@ folly::Future<Status> InsertEdgesExecutor::insertEdges() {
             })
             .then([this](storage::StorageRpcResponse<storage::cpp2::ExecResponse> resp) {
                 SCOPED_TIMER(&execTime_);
-                return handleResponse(resp, "Insert edges");
+                NG_RETURN_IF_ERROR(handleCompleteness(resp, true));
+                return Status::OK();
             });
 }
 }   // namespace graph

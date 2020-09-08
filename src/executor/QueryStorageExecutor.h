@@ -4,46 +4,42 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef EXECUTOR_MUTATE_MUTATEEXECUTOR_H_
-#define EXECUTOR_MUTATE_MUTATEEXECUTOR_H_
-
-#include "common/interface/gen-cpp2/storage_types.h"
-#include "common/clients/storage/GraphStorageClient.h"
+#ifndef EXECUTOR_QUERYSTORAGEEXECUTOR_H_
+#define EXECUTOR_QUERYSTORAGEEXECUTOR_H_
 
 #include "executor/Executor.h"
+#include "common/clients/storage/StorageClientBase.h"
 
 namespace nebula {
 namespace graph {
 
-class MutateExecutor : public Executor {
-public:
-    MutateExecutor(const std::string &name, const PlanNode *node, QueryContext *qctx)
+// It's used for data write/update/query
+class QueryStorageExecutor : public Executor {
+protected:
+    QueryStorageExecutor(const std::string &name, const PlanNode *node, QueryContext *qctx)
         : Executor(name, node, qctx) {}
 
-protected:
-    using RpcResponse = nebula::storage::StorageRpcResponse<nebula::storage::cpp2::ExecResponse>;
-    Status handleResponse(const RpcResponse &resp, const std::string &executorName) {
-        auto completeness = resp.completeness();
-        Status status;
+    // parameter isCompleteRequire to specify is return error when partial succeeded
+    template <typename Resp>
+    StatusOr<Result::State>
+    handleCompleteness(const storage::StorageRpcResponse<Resp> &rpcResp,
+                       bool isCompleteRequire) const {
+        auto completeness = rpcResp.completeness();
+        // TODO(shylock) Maybe add option to treat the partial failed as error
         if (completeness != 100) {
-            const auto& failedCodes = resp.failedParts();
-            std::vector<std::string> errorMsgs;
+            const auto &failedCodes = rpcResp.failedParts();
             for (auto it = failedCodes.begin(); it != failedCodes.end(); it++) {
-                LOG(ERROR) << executorName << " failed, error "
-                           << storage::cpp2::_ErrorCode_VALUES_TO_NAMES.at(it->second)
-                           << ", part " << it->first;
-                status = handleErrorCode(it->second, it->first);
-                if (status.ok()) {
-                    continue;
-                }
-                errorMsgs.emplace_back(status.toString());
+                LOG(ERROR) << name_ << " failed, error "
+                           << storage::cpp2::_ErrorCode_VALUES_TO_NAMES.at(it->second) << ", part "
+                           << it->first;
             }
-            return Status::Error("%s not complete, completeness: %d, error: %s",
-                                 executorName.c_str(),
-                                 completeness,
-                                 folly::join(", ", errorMsgs).c_str());
+            if (completeness == 0 || isCompleteRequire) {
+                LOG(ERROR) << "Request to storage failed in executor `" << name_ << "'";
+                return Status::Error("Request to storage failed in executor.");
+            }
+            return Result::State::kPartialSuccess;
         }
-        return Status::OK();
+        return Result::State::kSuccess;
     }
 
     Status handleErrorCode(nebula::storage::cpp2::ErrorCode code, PartitionID partId) {
@@ -88,7 +84,8 @@ protected:
         return Status::OK();
     }
 };
+
 }   // namespace graph
 }   // namespace nebula
 
-#endif   // EXECUTOR_MUTATE_MUTATEEXECUTOR_H_
+#endif  // EXECUTOR_QUERYSTORAGEEXECUTOR_H_

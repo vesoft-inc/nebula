@@ -7,20 +7,20 @@
 #ifndef _EXEC_QUERY_GET_PROP_EXECUTOR_H_
 #define _EXEC_QUERY_GET_PROP_EXECUTOR_H_
 
-#include "executor/Executor.h"
+#include "executor/QueryStorageExecutor.h"
 #include "common/clients/storage/StorageClientBase.h"
 
 namespace nebula {
 namespace graph {
 
-class GetPropExecutor : public Executor {
+class GetPropExecutor : public QueryStorageExecutor {
 protected:
     GetPropExecutor(const std::string &name, const PlanNode *node, QueryContext *qctx)
-        : Executor(name, node, qctx) {}
+        : QueryStorageExecutor(name, node, qctx) {}
 
     Status handleResp(storage::StorageRpcResponse<storage::cpp2::GetPropResponse> &&rpcResp,
                       const std::vector<std::string> &colNames) {
-        auto result = handleCompleteness(rpcResp);
+        auto result = handleCompleteness(rpcResp, false);
         NG_RETURN_IF_ERROR(result);
         auto state = std::move(result).value();
         // Ok, merge DataSets to one
@@ -50,27 +50,6 @@ protected:
                       .iter(Iterator::Kind::kSequential)
                       .state(state)
                       .finish());
-    }
-
-    // TODO(shylock) only used for storage fetch executor, will modify other executors to use it
-    template <typename Resp>
-    StatusOr<Result::State>
-    handleCompleteness(const storage::StorageRpcResponse<Resp> &rpcResp) const {
-        auto completeness = rpcResp.completeness();
-        if (completeness != 100) {
-            const auto &failedCodes = rpcResp.failedParts();
-            for (auto it = failedCodes.begin(); it != failedCodes.end(); it++) {
-                LOG(ERROR) << name_ << " failed, error "
-                           << storage::cpp2::_ErrorCode_VALUES_TO_NAMES.at(it->second) << ", part "
-                           << it->first;
-            }
-            if (completeness == 0) {
-                LOG(ERROR) << "Get data from storage failed in executor " << name_;
-                return Status::Error(" Get data from storage failed in executor.");
-            }
-            return Result::State::kPartialSuccess;
-        }
-        return Result::State::kSuccess;
     }
 };
 

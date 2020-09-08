@@ -98,23 +98,15 @@ folly::Future<Status> GetNeighborsExecutor::getNeighbors() {
 }
 
 Status GetNeighborsExecutor::handleResponse(RpcResponse& resps) {
-    auto completeness = resps.completeness();
-    if (UNLIKELY(completeness == 0)) {
-        return Status::Error("Get neighbors failed");
-    }
-
+    auto result = handleCompleteness(resps, false);
+    NG_RETURN_IF_ERROR(result);
     ResultBuilder builder;
-    if (UNLIKELY(completeness != 100)) {
-        builder.state(Result::State::kPartialSuccess)
-            .msg(folly::stringPrintf("Get neighbors partially failed: %d %%", completeness));
-    }
+    builder.state(result.value());
 
     auto& responses = resps.responses();
     VLOG(1) << "Resp size: " << responses.size();
     List list;
     for (auto& resp : responses) {
-        checkResponseResult(resp.get_result());
-
         auto dataset = resp.get_vertices();
         if (dataset == nullptr) {
             LOG(INFO) << "Empty dataset in response";
@@ -126,19 +118,6 @@ Status GetNeighborsExecutor::handleResponse(RpcResponse& resps) {
     }
     builder.value(Value(std::move(list)));
     return finish(builder.iter(Iterator::Kind::kGetNeighbors).finish());
-}
-
-void GetNeighborsExecutor::checkResponseResult(const storage::cpp2::ResponseCommon& result) const {
-    auto failedParts = result.get_failed_parts();
-    if (!failedParts.empty()) {
-        std::stringstream ss;
-        for (auto& part : failedParts) {
-            ss << "error code: " << storage::cpp2::_ErrorCode_VALUES_TO_NAMES.at(part.get_code())
-               << ", leader: " << part.get_leader()->host << ":" << part.get_leader()->port
-               << ", part id: " << part.get_part_id() << "; ";
-        }
-        LOG(ERROR) << ss.str();
-    }
 }
 
 }   // namespace graph
