@@ -53,9 +53,7 @@ Status TraversalValidator::validateStarts(const VerticesClause* clause, Starts& 
                 return Status::Error("Vid should be a string.");
             }
             starts.vids.emplace_back(std::move(vid));
-            auto encode = expr->encode();
-            auto decode = Expression::decode(encode);
-            startVidList_->add(decode.release());
+            startVidList_->add(expr->clone().release());
         }
     }
     return Status::OK();
@@ -184,9 +182,7 @@ std::string TraversalValidator::buildConstantInput() {
 PlanNode* TraversalValidator::buildRuntimeInput() {
     auto pool = qctx_->objPool();
     auto* columns = pool->add(new YieldColumns());
-    auto encode = from_.srcRef->encode();
-    auto decode = Expression::decode(encode);
-    auto* column = new YieldColumn(decode.release(), new std::string(kVid));
+    auto* column = new YieldColumn(from_.srcRef->clone().release(), new std::string(kVid));
     columns->addColumn(column);
     auto* project = Project::make(qctx_, nullptr, columns);
     if (from_.fromType == kVariable) {

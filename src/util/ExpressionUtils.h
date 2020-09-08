@@ -132,15 +132,6 @@ public:
                         Expression::Kind::kEdge});
     }
 
-    // clone expression
-    static std::unique_ptr<Expression> clone(const Expression* expr) {
-        // TODO(shylock) optimize
-        if (expr == nullptr) {
-            return nullptr;
-        }
-        return CHECK_NOTNULL(Expression::decode(expr->encode()));
-    }
-
     // determine the detail about symbol property expression
     template <typename To,
               typename = std::enable_if_t<std::is_same<To, EdgePropertyExpression>::value ||

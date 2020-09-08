@@ -76,7 +76,7 @@ void RewriteLabelAttrVisitor::visit(MapExpression* expr) {
             auto symExpr = static_cast<const LabelAttributeExpression*>(pair.second);
             newItem.second.reset(createExpr(symExpr));
         } else {
-            newItem.second = Expression::decode(pair.second->encode());
+            newItem.second = pair.second->clone();
             newItem.second->accept(this);
         }
         newItems.emplace_back(std::move(newItem));
@@ -117,7 +117,7 @@ std::vector<std::unique_ptr<Expression>> RewriteLabelAttrVisitor::rewriteExprLis
             auto symExpr = static_cast<const LabelAttributeExpression*>(item);
             newExprs.emplace_back(createExpr(symExpr));
         } else {
-            auto newExpr = Expression::decode(item->encode());
+            auto newExpr = item->clone();
             newExpr->accept(this);
             newExprs.emplace_back(std::move(newExpr));
         }

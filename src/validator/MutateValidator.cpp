@@ -4,9 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 #include "validator/MutateValidator.h"
-#include "util/SchemaUtil.h"
+
+#include "common/expression/LabelAttributeExpression.h"
 #include "planner/Mutate.h"
 #include "planner/Query.h"
+#include "util/SchemaUtil.h"
 
 namespace nebula {
 namespace graph {

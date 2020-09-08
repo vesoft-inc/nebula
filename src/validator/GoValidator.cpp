@@ -567,13 +567,10 @@ PlanNode* GoValidator::buildLeftVarForTraceJoin(PlanNode* dedupStartVid) {
     auto* pool = qctx_->objPool();
     dstVidColName_ = vctx_->anonColGen()->getCol();
     auto* columns = pool->add(new YieldColumns());
-    auto* column =
-        new YieldColumn(Expression::decode(from_.srcRef->encode()).release(),
-                        new std::string(from_.firstBeginningSrcVidColName));
+    auto* column = new YieldColumn(from_.srcRef->clone().release(),
+                                   new std::string(from_.firstBeginningSrcVidColName));
     columns->addColumn(column);
-    column =
-        new YieldColumn(Expression::decode(from_.srcRef->encode()).release(),
-                        new std::string(dstVidColName_));
+    column = new YieldColumn(from_.srcRef->clone().release(), new std::string(dstVidColName_));
     columns->addColumn(column);
     // dedupStartVid could be nullptr, that means no input for this project.
     auto* projectLeftVarForJoin = Project::make(qctx_, dedupStartVid, columns);
@@ -783,8 +780,7 @@ void GoValidator::extractPropExprs(const Expression* expr) {
         case Expression::Kind::kDstProperty: {
             auto found = propExprColMap_.find(expr->toString());
             if (found == propExprColMap_.end()) {
-                auto encode = expr->encode();
-                auto newExpr = Expression::decode(encode);
+                auto newExpr = expr->clone();
                 auto col = new YieldColumn(
                     newExpr.release(), new std::string(vctx_->anonColGen()->getCol()));
                 propExprColMap_.emplace(expr->toString(), col);
@@ -801,8 +797,7 @@ void GoValidator::extractPropExprs(const Expression* expr) {
         case Expression::Kind::kEdgeDst: {
             auto found = propExprColMap_.find(expr->toString());
             if (found == propExprColMap_.end()) {
-                auto encode = expr->encode();
-                auto newExpr = Expression::decode(encode);
+                auto newExpr = expr->clone();
                 auto col = new YieldColumn(
                     newExpr.release(), new std::string(vctx_->anonColGen()->getCol()));
                 propExprColMap_.emplace(expr->toString(), col);
@@ -815,8 +810,7 @@ void GoValidator::extractPropExprs(const Expression* expr) {
             auto* propExpr = static_cast<const PropertyExpression*>(expr);
             auto found = propExprColMap_.find(expr->toString());
             if (found == propExprColMap_.end()) {
-                auto encode = expr->encode();
-                auto newExpr = Expression::decode(encode);
+                auto newExpr = expr->clone();
                 auto col = new YieldColumn(
                     newExpr.release(), new std::string(*propExpr->prop()));
                 propExprColMap_.emplace(expr->toString(), col);
@@ -970,7 +964,7 @@ Status GoValidator::buildColumns() {
 
     if (filter_ != nullptr) {
         extractPropExprs(filter_);
-        auto newFilter = Expression::decode(filter_->encode());
+        auto newFilter = filter_->clone();
         auto rewriteFilter = rewriteToInputProp(newFilter.get());
         if (rewriteFilter != nullptr) {
             newFilter_ = rewriteFilter.release();
@@ -983,7 +977,7 @@ Status GoValidator::buildColumns() {
     newYieldCols_ = pool->add(new YieldColumns());
     for (auto* yield : yields_->columns()) {
         extractPropExprs(yield->expr());
-        auto newCol = Expression::decode(yield->expr()->encode());
+        auto newCol = yield->expr()->clone();
         auto rewriteCol = rewriteToInputProp(newCol.get());
         auto alias = yield->alias() == nullptr
                          ? nullptr

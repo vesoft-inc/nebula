@@ -19,6 +19,7 @@
 #include "parser/ColumnTypeDef.h"
 #include "common/interface/gen-cpp2/meta_types.h"
 #include "common/expression/AttributeExpression.h"
+#include "common/expression/LabelAttributeExpression.h"
 #include "common/expression/VariableExpression.h"
 #include "util/SchemaUtil.h"
 

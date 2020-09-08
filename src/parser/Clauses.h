@@ -9,7 +9,6 @@
 #include "common/base/Base.h"
 #include "common/expression/Expression.h"
 #include "common/interface/gen-cpp2/storage_types.h"
-#include "util/ExpressionUtils.h"
 
 namespace nebula {
 class StepClause final {
@@ -237,8 +236,7 @@ public:
     }
 
     std::unique_ptr<YieldColumn> clone() const {
-        auto col = std::make_unique<YieldColumn>(
-            graph::ExpressionUtils::clone(expr_.get()).release());
+        auto col = std::make_unique<YieldColumn>(expr_->clone().release());
         if (alias_ != nullptr) {
             col->setAlias(new std::string(*alias_));
         }
