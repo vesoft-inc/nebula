@@ -956,6 +956,54 @@ TEST_F(IndexTest, RebuildEdgeIndexStatusInfo) {
     }
 }
 
+TEST_F(IndexTest, AlterSchemaTest) {
+    auto client = gEnv->getClient();
+    ASSERT_NE(nullptr, client);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE SPACE alter_space(partition_num=1, replica_factor=1)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        query = "USE alter_space";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        query = "CREATE TAG alter_tag(id int)";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG INDEX alter_index ON alter_tag(id)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "INSERT VERTEX alter_tag(id) VALUES "
+                     "100:(1), 200:(2)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "ALTER TAG alter_tag ADD (type int)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON alter_tag WHERE alter_tag.id == 1 YIELD alter_tag.type";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+}
+
 }   // namespace graph
 }   // namespace nebula
 
