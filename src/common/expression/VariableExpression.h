@@ -12,7 +12,7 @@
 namespace nebula {
 class VariableExpression final : public Expression {
 public:
-    explicit VariableExpression(std::string* var)
+    explicit VariableExpression(std::string* var = nullptr)
         : Expression(Kind::kVar) {
         var_.reset(var);
     }
@@ -53,7 +53,7 @@ private:
  */
 class VersionedVariableExpression final : public Expression {
 public:
-    VersionedVariableExpression(std::string* var, Expression* version)
+    explicit VersionedVariableExpression(std::string* var = nullptr, Expression* version = nullptr)
         : Expression(Kind::kVersionedVar) {
         var_.reset(var);
         version_.reset(version);

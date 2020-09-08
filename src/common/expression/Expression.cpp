@@ -401,9 +401,13 @@ std::unique_ptr<Expression> Expression::decode(Expression::Decoder& decoder) {
             return exp;
         }
         case Expression::Kind::kVar: {
+            exp = std::make_unique<VariableExpression>();
+            exp->resetFrom(decoder);
             return exp;
         }
         case Expression::Kind::kVersionedVar: {
+            exp = std::make_unique<VersionedVariableExpression>();
+            exp->resetFrom(decoder);
             return exp;
         }
         case Expression::Kind::kUUID: {

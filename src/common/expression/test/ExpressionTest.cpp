@@ -1896,6 +1896,17 @@ TEST_F(ExpressionTest, TestExprClone) {
     ASSERT_NE(aclone.get(), &aexpr);
     ASSERT_EQ(aclone->kind(), aexpr.kind());
     ASSERT_EQ(static_cast<ArithmeticExpression *>(aclone.get())->toString(), aexpr.toString());
+
+    VariableExpression varExpr(new std::string("VARNAME"));
+    auto varExprClone = varExpr.clone();
+    ASSERT_EQ(varExpr.kind(), varExprClone->kind());
+    ASSERT_EQ(static_cast<VariableExpression *>(varExprClone.get())->var(), varExpr.var());
+
+    VersionedVariableExpression verVarExpr(new std::string("VARNAME"), new ConstantExpression(0));
+    auto verVarExprClone = verVarExpr.clone();
+    ASSERT_EQ(verVarExprClone->kind(), verVarExpr.kind());
+    auto verVarExprClonePtr = static_cast<VersionedVariableExpression *>(verVarExprClone.get());
+    ASSERT_EQ(*verVarExprClonePtr, verVarExpr);
 }
 
 }  // namespace nebula
