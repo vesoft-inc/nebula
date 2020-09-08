@@ -1225,10 +1225,18 @@ TEST_P(GoTest, ReverselyWithPipe) {
         client_->execute(query, resp);
         std::vector<std::tuple<std::string, std::string>> expected = {
             { "Cavaliers", "Kyrie Irving" },
+            { "Cavaliers", "Kyrie Irving" },
+            { "Cavaliers", "Dwyane Wade" },
             { "Cavaliers", "Dwyane Wade" },
             { "Cavaliers", "Shaquile O'Neal" },
+            { "Cavaliers", "Shaquile O'Neal" },
+            { "Cavaliers", "Danny Green" },
             { "Cavaliers", "Danny Green" },
             { "Cavaliers", "LeBron James" },
+            { "Cavaliers", "LeBron James" },
+            { "Cavaliers", "LeBron James" },
+            { "Cavaliers", "LeBron James" },
+            { "Heat", "Dwyane Wade" },
             { "Heat", "Dwyane Wade" },
             { "Heat", "LeBron James" },
             { "Heat", "Ray Allen" },
@@ -1259,6 +1267,11 @@ TEST_P(GoTest, ReverselyWithPipe) {
             { "Cavaliers", "Dwyane Wade" },
             { "Cavaliers", "Shaquile O'Neal" },
             { "Cavaliers", "Danny Green" },
+            { "Cavaliers", "Kyrie Irving" },
+            { "Cavaliers", "Dwyane Wade" },
+            { "Cavaliers", "Shaquile O'Neal" },
+            { "Cavaliers", "Danny Green" },
+            { "Heat", "Dwyane Wade" },
             { "Heat", "Dwyane Wade" },
             { "Heat", "Ray Allen" },
             { "Heat", "Shaquile O'Neal" },
@@ -2610,6 +2623,7 @@ TEST_P(GoTest, WithIntermediateData) {
             players_["Dejounte Murray"].vid(),
             players_["Tracy McGrady"].vid(),
             players_["Paul Gasol"].vid(),
+            players_["Marco Belinelli"].vid(),
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -2638,6 +2652,7 @@ TEST_P(GoTest, WithIntermediateData) {
             players_["Dejounte Murray"].vid(),
             players_["Tracy McGrady"].vid(),
             players_["Paul Gasol"].vid(),
+            players_["Marco Belinelli"].vid(),
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }

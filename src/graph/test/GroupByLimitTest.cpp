@@ -184,7 +184,7 @@ TEST_F(GroupByLimitTest, LimitTest) {
                 {"Bulls"},
                 {"Hawks"},
                 {"Hornets"},
-                {"Kings"},
+                {"Hornets"},
         };
         ASSERT_TRUE(verifyResult(resp, expected, false));
     }
@@ -290,6 +290,8 @@ TEST_F(GroupByLimitTest, GroupByTest) {
                 {1, 2007, 2009.0},
                 {1, 2012, 2013.0},
                 {1, 2015, 2016.0},
+                {1, 2010, 2012.0},
+                {1, 2013, 2015.0},
         };
        ASSERT_TRUE(verifyResult(resp, expected));
     }
