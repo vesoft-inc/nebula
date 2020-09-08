@@ -41,13 +41,15 @@ private:
     Status checkInputProps() const;
     Status checkAggFunAndBuildGroupItems(const YieldClause *clause);
     Status makeOutputColumn(YieldColumn *column);
+    void genConstantExprValues();
 
+private:
     bool hasAggFun_{false};
-
     YieldColumns *columns_{nullptr};
     std::vector<std::string> outputColumnNames_;
     std::vector<Aggregate::GroupItem> groupItems_;
     ExpressionProps  exprProps_;
+    std::string constantExprVar_;
 };
 
 }   // namespace graph

@@ -18,11 +18,15 @@ folly::Future<Status> FilterExecutor::execute() {
     SCOPED_TIMER(&execTime_);
     auto* filter = asNode<Filter>(node());
     auto iter = ectx_->getResult(filter->inputVar()).iter();
-
-    if (iter == nullptr) {
-        LOG(ERROR) << "Internal Error: iterator is nullptr";
-        return Status::Error("Internal Error: iterator is nullptr");
+    if (iter == nullptr || iter->isDefaultIter()) {
+        LOG(ERROR) << "Internal Error: iterator is nullptr or DefaultIter";
+        return Status::Error("Internal Error: iterator is nullptr or DefaultIter");
     }
+
+    VLOG(2) << "Get input var: " << filter->inputVar()
+            << ", iterator type: " << static_cast<int16_t>(iter->kind())
+            << ", input data size: " << iter->size();
+
     ResultBuilder builder;
     builder.value(iter->valuePtr());
     QueryExpressionContext ctx(ectx_);

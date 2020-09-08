@@ -44,6 +44,11 @@ Status YieldValidator::validateImpl() {
         NG_RETURN_IF_ERROR(checkAggFunAndBuildGroupItems(yield->yield()));
     }
 
+    if (exprProps_.inputProps().empty() && exprProps_.varProps().empty()) {
+        // generate constant expression result into querycontext
+        genConstantExprValues();
+    }
+
     return Status::OK();
 }
 
@@ -110,6 +115,20 @@ Status YieldValidator::makeOutputColumn(YieldColumn *column) {
     return Status::OK();
 }
 
+void YieldValidator::genConstantExprValues() {
+    constantExprVar_ = vctx_->anonVarGen()->getVar();
+    DataSet ds;
+    ds.colNames = outputColumnNames_;
+    QueryExpressionContext ctx;
+    Row row;
+    for (auto& column : columns_->columns()) {
+        row.values.emplace_back(Expression::eval(column->expr(), ctx(nullptr)));
+    }
+    ds.emplace_back(std::move(row));
+    qctx_->ectx()->setResult(constantExprVar_,
+                             ResultBuilder().value(Value(std::move(ds))).finish());
+}
+
 Status YieldValidator::validateYieldAndBuildOutputs(const YieldClause *clause) {
     auto columns = clause->columns();
     columns_ = qctx_->objPool()->add(new YieldColumns);
@@ -162,6 +181,7 @@ Status YieldValidator::validateYieldAndBuildOutputs(const YieldClause *clause) {
 
         NG_RETURN_IF_ERROR(makeOutputColumn(column->clone().release()));
     }
+
     return Status::OK();
 }
 
@@ -186,6 +206,9 @@ Status YieldValidator::toPlan() {
         std::transform(
             inputs_.cbegin(), inputs_.cend(), colNames.begin(), [](auto &in) { return in.first; });
         filter->setColNames(std::move(colNames));
+        if (!constantExprVar_.empty()) {
+            filter->setInputVar(constantExprVar_);
+        }
     }
 
     SingleInputNode *dedupDep = nullptr;
@@ -224,3 +247,4 @@ Status YieldValidator::toPlan() {
 
 }   // namespace graph
 }   // namespace nebula
+
