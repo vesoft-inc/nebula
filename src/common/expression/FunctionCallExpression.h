@@ -13,6 +13,11 @@ namespace nebula {
 
 class ArgumentList final {
 public:
+    ArgumentList() = default;
+    explicit ArgumentList(size_t sz) {
+        args_.reserve(sz);
+    }
+
     void addArgument(std::unique_ptr<Expression> arg) {
         CHECK(!!arg);
         args_.emplace_back(std::move(arg));
@@ -68,6 +73,14 @@ public:
     std::string toString() const override;
 
     void accept(ExprVisitor* visitor) override;
+
+    std::unique_ptr<Expression> clone() const override {
+        auto arguments = new ArgumentList(args_->numArgs());
+        for (auto& arg : args_->args()) {
+            arguments->addArgument(arg->clone());
+        }
+        return std::make_unique<FunctionCallExpression>(new std::string(*name_), arguments);
+    }
 
     const std::string* name() const {
         return name_.get();

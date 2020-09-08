@@ -46,19 +46,9 @@ TEST(ExpressionEncodeDecode, ConstantExpression) {
 
 
 TEST(ExpressionEncodeDecode, SymbolPropertyExpression) {
-    InputPropertyExpression inputEx(new std::string("prop"));
-    auto encoded = Expression::encode(inputEx);
-    auto decoded = Expression::decode(folly::StringPiece(encoded.data(), encoded.size()));
-    EXPECT_EQ(inputEx, *decoded);
-
-    VariablePropertyExpression varEx(new std::string("var"), new std::string("prop"));
-    encoded = Expression::encode(varEx);
-    decoded = Expression::decode(folly::StringPiece(encoded.data(), encoded.size()));
-    EXPECT_EQ(varEx, *decoded);
-
     SourcePropertyExpression spEx(new std::string("tag"), new std::string("prop"));
-    encoded = Expression::encode(spEx);
-    decoded = Expression::decode(folly::StringPiece(encoded.data(), encoded.size()));
+    auto encoded = Expression::encode(spEx);
+    auto decoded = Expression::decode(folly::StringPiece(encoded.data(), encoded.size()));
     EXPECT_EQ(spEx, *decoded);
 
     DestPropertyExpression dpEx(new std::string("tag"), new std::string("prop"));
@@ -330,4 +320,3 @@ int main(int argc, char** argv) {
 
     return RUN_ALL_TESTS();
 }
-

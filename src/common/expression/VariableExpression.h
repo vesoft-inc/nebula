@@ -34,6 +34,10 @@ public:
 
     void accept(ExprVisitor* visitor) override;
 
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<VariableExpression>(new std::string(var()));
+    }
+
 private:
     void writeTo(Encoder& encoder) const override {
         encoder << kind();
@@ -81,6 +85,11 @@ public:
     std::string toString() const override;
 
     void accept(ExprVisitor* visitor) override;
+
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<VersionedVariableExpression>(new std::string(var()),
+                                                             version_->clone().release());
+    }
 
 private:
     void writeTo(Encoder& encoder) const override {

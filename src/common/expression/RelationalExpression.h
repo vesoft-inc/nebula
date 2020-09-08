@@ -23,6 +23,11 @@ public:
 
     void accept(ExprVisitor* visitor) override;
 
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<RelationalExpression>(
+            kind(), left()->clone().release(), right()->clone().release());
+    }
+
 private:
     Value                                       result_;
 };

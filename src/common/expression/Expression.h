@@ -102,7 +102,7 @@ public:
     virtual void accept(ExprVisitor* visitor) = 0;
 
     // Deep copy
-    std::unique_ptr<Expression> clone() const;
+    virtual std::unique_ptr<Expression> clone() const = 0;
 
     std::string encode() const;
 

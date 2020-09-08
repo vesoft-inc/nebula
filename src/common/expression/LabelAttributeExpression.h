@@ -35,6 +35,12 @@ public:
 
     void accept(ExprVisitor *visitor) override;
 
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<LabelAttributeExpression>(
+            static_cast<LabelExpression *>(left()->clone().release()),
+            static_cast<LabelExpression *>(right()->clone().release()));
+    }
+
     const LabelExpression* left() const {
         return lhs_.get();
     }

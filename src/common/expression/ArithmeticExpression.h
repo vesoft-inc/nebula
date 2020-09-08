@@ -24,6 +24,11 @@ public:
 
     std::string toString() const override;
 
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<ArithmeticExpression>(
+            kind(), left()->clone().release(), right()->clone().release());
+    }
+
 private:
     Value                       result_;
 };

@@ -169,10 +169,6 @@ std::unique_ptr<Expression> Expression::Decoder::readExpression() noexcept {
  *  class Expression
  *
  ***************************************/
-std::unique_ptr<Expression> Expression::clone() const {
-    return decode(encode());
-}
-
 // static
 std::string Expression::encode(const Expression& exp) {
     return exp.encode();
@@ -341,13 +337,11 @@ std::unique_ptr<Expression> Expression::decode(Expression::Decoder& decoder) {
             return exp;
         }
         case Expression::Kind::kInputProperty: {
-            exp = std::make_unique<InputPropertyExpression>();
-            exp->resetFrom(decoder);
+            LOG(FATAL) << "Should not decode input property expression";
             return exp;
         }
         case Expression::Kind::kVarProperty: {
-            exp = std::make_unique<VariablePropertyExpression>();
-            exp->resetFrom(decoder);
+            LOG(FATAL) << "Should not decode variable property expression";
             return exp;
         }
         case Expression::Kind::kDstProperty: {
@@ -401,13 +395,11 @@ std::unique_ptr<Expression> Expression::decode(Expression::Decoder& decoder) {
             return exp;
         }
         case Expression::Kind::kVar: {
-            exp = std::make_unique<VariableExpression>();
-            exp->resetFrom(decoder);
+            LOG(FATAL) << "Should not decode variable expression";
             return exp;
         }
         case Expression::Kind::kVersionedVar: {
-            exp = std::make_unique<VersionedVariableExpression>();
-            exp->resetFrom(decoder);
+            LOG(FATAL) << "Should not decode version variable expression";
             return exp;
         }
         case Expression::Kind::kUUID: {

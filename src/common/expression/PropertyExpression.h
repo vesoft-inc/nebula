@@ -82,6 +82,11 @@ public:
 
     void accept(ExprVisitor* visitor) override;
 
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<EdgePropertyExpression>(new std::string(*sym()),
+                                                        new std::string(*prop()));
+    }
+
 private:
     Value                           result_;
 };
@@ -103,6 +108,11 @@ public:
 
     void accept(ExprVisitor* visitor) override;
 
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<TagPropertyExpression>(new std::string(*sym()),
+                                                       new std::string(*prop()));
+    }
+
 private:
     Value result_;
 };
@@ -121,6 +131,10 @@ public:
     std::string toString() const override;
 
     void accept(ExprVisitor* visitor) override;
+
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<InputPropertyExpression>(new std::string(*prop()));
+    }
 };
 
 // $VarName.any_prop_name
@@ -138,6 +152,11 @@ public:
     std::string toString() const override;
 
     void accept(ExprVisitor* visitor) override;
+
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<VariablePropertyExpression>(new std::string(*sym()),
+                                                            new std::string(*prop()));
+    }
 };
 
 // $^.TagName.any_prop_name
@@ -155,6 +174,11 @@ public:
     std::string toString() const override;
 
     void accept(ExprVisitor* visitor) override;
+
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<SourcePropertyExpression>(new std::string(*sym()),
+                                                          new std::string(*prop()));
+    }
 
 private:
     Value                           result_;
@@ -175,6 +199,11 @@ public:
     std::string toString() const override;
 
     void accept(ExprVisitor* visitor) override;
+
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<DestPropertyExpression>(new std::string(*sym()),
+                                                        new std::string(*prop()));
+    }
 };
 
 // EdgeName._src
@@ -191,6 +220,10 @@ public:
     std::string toString() const override;
 
     void accept(ExprVisitor* visitor) override;
+
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<EdgeSrcIdExpression>(new std::string(*sym()));
+    }
 
 private:
     Value                           result_;
@@ -211,6 +244,10 @@ public:
 
     void accept(ExprVisitor* visitor) override;
 
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<EdgeTypeExpression>(new std::string(*sym()));
+    }
+
 private:
     Value                           result_;
 };
@@ -230,6 +267,10 @@ public:
 
     void accept(ExprVisitor* visitor) override;
 
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<EdgeRankExpression>(new std::string(*sym()));
+    }
+
 private:
     Value                           result_;
 };
@@ -248,6 +289,10 @@ public:
     std::string toString() const override;
 
     void accept(ExprVisitor* visitor) override;
+
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<EdgeDstIdExpression>(new std::string(*sym()));
+    }
 
 private:
     Value                           result_;

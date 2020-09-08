@@ -25,6 +25,10 @@ public:
 
     void accept(ExprVisitor *visitor) override;
 
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<VertexExpression>();
+    }
+
     std::string toString() const override {
         return "VERTEX";
     }

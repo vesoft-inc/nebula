@@ -23,6 +23,11 @@ public:
     void accept(ExprVisitor *visitor) override;
 
     std::string toString() const override;
+
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<AttributeExpression>(left()->clone().release(),
+                                                     right()->clone().release());
+    }
 };
 
 }   // namespace nebula

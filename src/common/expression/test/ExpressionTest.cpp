@@ -4,29 +4,32 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-
 #include <gtest/gtest.h>
 #include <boost/algorithm/string.hpp>
+#include "common/datatypes/DataSet.h"
+#include "common/datatypes/Edge.h"
 #include "common/datatypes/List.h"
 #include "common/datatypes/Map.h"
 #include "common/datatypes/Set.h"
-#include "common/datatypes/DataSet.h"
-#include "common/datatypes/Edge.h"
 #include "common/datatypes/Vertex.h"
-#include "common/expression/test/ExpressionContextMock.h"
 #include "common/expression/ArithmeticExpression.h"
+#include "common/expression/AttributeExpression.h"
 #include "common/expression/ConstantExpression.h"
+#include "common/expression/ContainerExpression.h"
+#include "common/expression/EdgeExpression.h"
+#include "common/expression/FunctionCallExpression.h"
+#include "common/expression/LabelAttributeExpression.h"
+#include "common/expression/LabelExpression.h"
+#include "common/expression/LogicalExpression.h"
 #include "common/expression/PropertyExpression.h"
 #include "common/expression/RelationalExpression.h"
 #include "common/expression/SubscriptExpression.h"
-#include "common/expression/AttributeExpression.h"
+#include "common/expression/TypeCastingExpression.h"
+#include "common/expression/UUIDExpression.h"
 #include "common/expression/UnaryExpression.h"
 #include "common/expression/VariableExpression.h"
-#include "common/expression/LogicalExpression.h"
-#include "common/expression/FunctionCallExpression.h"
-#include "common/expression/TypeCastingExpression.h"
-#include "common/expression/ContainerExpression.h"
-#include "common/expression/LabelExpression.h"
+#include "common/expression/VertexExpression.h"
+#include "common/expression/test/ExpressionContextMock.h"
 
 nebula::ExpressionContextMock gExpCtxt;
 
@@ -1886,27 +1889,87 @@ TEST_F(ExpressionTest, LabelEvaluate) {
 TEST_F(ExpressionTest, TestExprClone) {
     ConstantExpression expr(1);
     auto clone = expr.clone();
-    ASSERT_NE(clone.get(), &expr);
-    ASSERT_EQ(clone->kind(), expr.kind());
-    ASSERT_EQ(static_cast<ConstantExpression *>(clone.get())->toString(), expr.toString());
+    ASSERT_EQ(*clone, expr);
 
     ArithmeticExpression aexpr(
         Expression::Kind::kAdd, new ConstantExpression(1), new ConstantExpression(1));
     auto aclone = aexpr.clone();
-    ASSERT_NE(aclone.get(), &aexpr);
-    ASSERT_EQ(aclone->kind(), aexpr.kind());
-    ASSERT_EQ(static_cast<ArithmeticExpression *>(aclone.get())->toString(), aexpr.toString());
+    ASSERT_EQ(*aclone, aexpr);
+
+    EdgeExpression edgeExpr;
+    ASSERT_EQ(edgeExpr, *edgeExpr.clone());
+
+    VertexExpression vertExpr;
+    ASSERT_EQ(vertExpr, *vertExpr.clone());
+
+    LabelExpression labelExpr(new std::string("label"));
+    ASSERT_EQ(labelExpr, *labelExpr.clone());
+
+    AttributeExpression attrExpr(new LabelExpression("label"), new LabelExpression("label"));
+    ASSERT_EQ(attrExpr, *attrExpr.clone());
+
+    LabelAttributeExpression labelAttrExpr(new LabelExpression(new std::string("label")),
+                                           new LabelExpression(new std::string("prop")));
+    ASSERT_EQ(labelAttrExpr, *labelAttrExpr.clone());
+
+    TypeCastingExpression typeCastExpr(Value::Type::STRING, new ConstantExpression(100));
+    ASSERT_EQ(typeCastExpr, *typeCastExpr.clone());
+
+    FunctionCallExpression fnCallExpr(new std::string("count"), new ArgumentList);
+    ASSERT_EQ(fnCallExpr, *fnCallExpr.clone());
+
+    UUIDExpression uuidExpr(new std::string("hello"));
+    ASSERT_EQ(uuidExpr, *uuidExpr.clone());
+
+    SubscriptExpression subExpr(new VariableExpression(new std::string("var")),
+                                new ConstantExpression(0));
+    ASSERT_EQ(subExpr, *subExpr.clone());
+
+    ListExpression listExpr;
+    ASSERT_EQ(listExpr, *listExpr.clone());
+
+    SetExpression setExpr;
+    ASSERT_EQ(setExpr, *setExpr.clone());
+
+    MapExpression mapExpr;
+    ASSERT_EQ(mapExpr, *mapExpr.clone());
+
+    EdgePropertyExpression edgePropExpr(new std::string("edge"), new std::string("prop"));
+    ASSERT_EQ(edgePropExpr, *edgePropExpr.clone());
+
+    TagPropertyExpression tagPropExpr(new std::string("tag"), new std::string("prop"));
+    ASSERT_EQ(tagPropExpr, *tagPropExpr.clone());
+
+    InputPropertyExpression inputPropExpr(new std::string("input"));
+    ASSERT_EQ(inputPropExpr, *inputPropExpr.clone());
+
+    VariablePropertyExpression varPropExpr(new std::string("var"), new std::string("prop"));
+    ASSERT_EQ(varPropExpr, *varPropExpr.clone());
+
+    SourcePropertyExpression srcPropExpr(new std::string("tag"), new std::string("prop"));
+    ASSERT_EQ(srcPropExpr, *srcPropExpr.clone());
+
+    DestPropertyExpression dstPropExpr(new std::string("tag"), new std::string("prop"));
+    ASSERT_EQ(dstPropExpr, *dstPropExpr.clone());
+
+    EdgeSrcIdExpression edgeSrcIdExpr(new std::string("edge"));
+    ASSERT_EQ(edgeSrcIdExpr, *edgeSrcIdExpr.clone());
+
+    EdgeTypeExpression edgeTypeExpr(new std::string("edge"));
+    ASSERT_EQ(edgeTypeExpr, *edgeTypeExpr.clone());
+
+    EdgeRankExpression edgeRankExpr(new std::string("edge"));
+    ASSERT_EQ(edgeRankExpr, *edgeRankExpr.clone());
+
+    EdgeDstIdExpression edgeDstIdExpr(new std::string("edge"));
+    ASSERT_EQ(edgeDstIdExpr, *edgeDstIdExpr.clone());
 
     VariableExpression varExpr(new std::string("VARNAME"));
     auto varExprClone = varExpr.clone();
-    ASSERT_EQ(varExpr.kind(), varExprClone->kind());
-    ASSERT_EQ(static_cast<VariableExpression *>(varExprClone.get())->var(), varExpr.var());
+    ASSERT_EQ(varExpr, *varExprClone);
 
     VersionedVariableExpression verVarExpr(new std::string("VARNAME"), new ConstantExpression(0));
-    auto verVarExprClone = verVarExpr.clone();
-    ASSERT_EQ(verVarExprClone->kind(), verVarExpr.kind());
-    auto verVarExprClonePtr = static_cast<VersionedVariableExpression *>(verVarExprClone.get());
-    ASSERT_EQ(*verVarExprClonePtr, verVarExpr);
+    ASSERT_EQ(*verVarExpr.clone(), verVarExpr);
 }
 
 }  // namespace nebula

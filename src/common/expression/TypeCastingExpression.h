@@ -29,6 +29,10 @@ public:
 
     void accept(ExprVisitor* visitor) override;
 
+    std::unique_ptr<Expression> clone() const override {
+        return std::make_unique<TypeCastingExpression>(type(), operand()->clone().release());
+    }
+
     const Expression* operand() const {
         return operand_.get();
     }
