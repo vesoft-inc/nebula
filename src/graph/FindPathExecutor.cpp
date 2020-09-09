@@ -211,6 +211,12 @@ void FindPathExecutor::getNeighborsAndFindPath() {
         UNUSED(result);
         if (!fStatus_.ok() || !tStatus_.ok()) {
             std::string msg = fStatus_.toString() + " " + tStatus_.toString();
+            if (fStatus_ == Status::PartiallyFailed()
+                || tStatus_ == Status::PartiallyFailed()) {
+                // client can retry
+                doError(Status::PartiallyFailed(std::move(msg)));
+                return;
+            }
             doError(Status::Error(std::move(msg)));
             return;
         }
@@ -491,6 +497,9 @@ void FindPathExecutor::getFromFrontiers(
                 LOG(ERROR) << "part: " << error.first
                            << "error code: " << static_cast<int>(error.second);
             }
+            fStatus_ = Status::PartiallyFailed("Get neighbors partially failed");
+            fPro_->setValue();
+            return;
         }
         auto status = doFilter(std::move(result), where_.filter_, true, frontiers);
         if (!status.ok()) {
@@ -529,7 +538,9 @@ void FindPathExecutor::getToFrontiers(
                 LOG(ERROR) << "part: " << error.first
                            << "error code: " << static_cast<int>(error.second);
             }
-            ectx()->addWarningMsg("Find path executor was partially performed");
+            tStatus_ = Status::PartiallyFailed("Get neighbors partially failed");
+            tPro_->setValue();
+            return;
         }
         auto status = doFilter(std::move(result), where_.filter_, false, frontiers);
         if (!status.ok()) {

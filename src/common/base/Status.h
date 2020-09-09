@@ -104,6 +104,7 @@ public:
     // Graph engine errors
     STATUS_GENERATOR(SyntaxError);
     STATUS_GENERATOR(MalformedRequest);
+    STATUS_GENERATOR(PartiallyFailed);
     // Nothing is executed When command is comment
     STATUS_GENERATOR(StatementEmpty);
 
@@ -148,6 +149,7 @@ public:
         kSyntaxError      = 201,
         kStatementEmpty   = 202,
         kMalformedRequest = 203,
+        kPartiallyFailed  = 204,
         // 3xx, for storage engine errors
         kKeyNotFound      = 301,
         // 4xx, for meta service errors

@@ -341,7 +341,8 @@ void FetchVerticesExecutor::fetchVertices() {
                 LOG(ERROR) << "part: " << error.first
                            << "error code: " << static_cast<int>(error.second);
             }
-            ectx()->addWarningMsg("Fetch vertices executor was partially performed");
+            doError(Status::PartiallyFailed("Get tag's props partially failed"));
+            return;
         }
         processResult(std::move(result));
    };

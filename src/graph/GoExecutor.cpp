@@ -554,7 +554,8 @@ void GoExecutor::stepOut() {
                 LOG(ERROR) << "part: " << error.first
                            << "error code: " << static_cast<int>(error.second);
             }
-            warningMsg_ = "Go executor was partially performed";
+            doError(Status::PartiallyFailed("Get neighbors partially failed"));
+            return;
         }
         if (FLAGS_trace_go) {
             LOG(INFO) << "Step:" << curStep_
@@ -950,7 +951,8 @@ void GoExecutor::fetchVertexProps(std::vector<VertexID> ids) {
                 LOG(ERROR) << "part: " << error.first
                            << "error code: " << static_cast<int>(error.second);
             }
-            warningMsg_ = "Go executor was partially performed";
+            doError(Status::PartiallyFailed("Get vertex props partially failed"));
+            return;
         }
         if (vertexHolder_ == nullptr) {
             vertexHolder_ = std::make_unique<VertexHolder>(ectx);

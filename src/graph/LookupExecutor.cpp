@@ -329,7 +329,8 @@ void LookupExecutor::lookUp() {
                 LOG(ERROR) << "part: " << error.first
                            << "error code: " << static_cast<int>(error.second);
             }
-            ectx()->addWarningMsg("Lookup executor was partially performed");
+            doError(Status::PartiallyFailed("Lookup vertices partially failed"));
+            return;
         }
         finishExecution(std::forward<decltype(result)>(result));
     };
