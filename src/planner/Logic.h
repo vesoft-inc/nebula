@@ -44,7 +44,6 @@ public:
                         PlanNode* input,
                         PlanNode* ifBranch,
                         PlanNode* elseBranch,
-
                         Expression* condition) {
         return qctx->objPool()->add(
             new Select(qctx->genId(), input, ifBranch, elseBranch, condition));

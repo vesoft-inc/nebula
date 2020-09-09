@@ -14,13 +14,8 @@
 namespace nebula {
 namespace graph {
 
-SelectExecutor::SelectExecutor(const PlanNode* node,
-                               QueryContext* qctx,
-                               Executor* then,
-                               Executor* els)
-    : Executor("SelectExecutor", node, qctx),
-      then_(DCHECK_NOTNULL(then)),
-      else_(DCHECK_NOTNULL(els)) {}
+SelectExecutor::SelectExecutor(const PlanNode* node, QueryContext* qctx)
+    : Executor("SelectExecutor", node, qctx) {}
 
 folly::Future<Status> SelectExecutor::execute() {
     SCOPED_TIMER(&execTime_);

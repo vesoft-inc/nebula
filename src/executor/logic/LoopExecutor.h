@@ -14,9 +14,13 @@ namespace graph {
 
 class LoopExecutor final : public Executor {
 public:
-    LoopExecutor(const PlanNode *node, QueryContext *qctx, Executor *body);
+    LoopExecutor(const PlanNode *node, QueryContext *qctx);
 
     folly::Future<Status> execute() override;
+
+    void setLoopBody(Executor *body) {
+        body_ = DCHECK_NOTNULL(body);
+    }
 
     Executor *loopBody() const {
         return body_;

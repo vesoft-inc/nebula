@@ -14,9 +14,17 @@ namespace graph {
 
 class SelectExecutor final : public Executor {
 public:
-    SelectExecutor(const PlanNode* node, QueryContext* qctx, Executor* then, Executor* els);
+    SelectExecutor(const PlanNode* node, QueryContext* qctx);
 
     folly::Future<Status> execute() override;
+
+    void setThenBody(Executor* then) {
+        then_ = DCHECK_NOTNULL(then);
+    }
+
+    void setElseBody(Executor* els) {
+        else_ = DCHECK_NOTNULL(els);
+    }
 
     Executor* thenBody() const {
         return then_;

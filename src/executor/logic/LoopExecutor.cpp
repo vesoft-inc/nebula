@@ -19,8 +19,8 @@ using folly::stringPrintf;
 namespace nebula {
 namespace graph {
 
-LoopExecutor::LoopExecutor(const PlanNode *node, QueryContext *qctx, Executor *body)
-    : Executor("LoopExecutor", node, qctx), body_(DCHECK_NOTNULL(body)) {}
+LoopExecutor::LoopExecutor(const PlanNode *node, QueryContext *qctx)
+    : Executor("LoopExecutor", node, qctx) {}
 
 folly::Future<Status> LoopExecutor::execute() {
     SCOPED_TIMER(&execTime_);

@@ -89,491 +89,258 @@ Executor *Executor::makeExecutor(const PlanNode *node,
         return iter->second;
     }
 
-    Executor *exec = nullptr;
-
-    switch (node->kind()) {
-        case PlanNode::Kind::kPassThrough: {
-            auto mout = asNode<PassThroughNode>(node);
-            auto dep = makeExecutor(mout->dep(), qctx, visited);
-            exec = new PassThroughExecutor(mout, qctx);
+    Executor *exec = makeExecutor(qctx, node);
+    switch (node->dependencies().size()) {
+        case 0: {
+            // Do nothing
+            break;
+        }
+        case 1: {
+            if (node->kind() == PlanNode::Kind::kSelect) {
+                auto select = asNode<Select>(node);
+                auto thenBody = makeExecutor(select->then(), qctx, visited);
+                auto elseBody = makeExecutor(select->otherwise(), qctx, visited);
+                auto selectExecutor = static_cast<SelectExecutor *>(exec);
+                selectExecutor->setThenBody(thenBody);
+                selectExecutor->setElseBody(elseBody);
+            } else if (node->kind() == PlanNode::Kind::kLoop) {
+                auto loop = asNode<Loop>(node);
+                auto body = makeExecutor(loop->body(), qctx, visited);
+                auto loopExecutor = static_cast<LoopExecutor *>(exec);
+                loopExecutor->setLoopBody(body);
+            }
+            auto dep = makeExecutor(node->dep(0), qctx, visited);
             exec->dependsOn(dep);
             break;
         }
-        case PlanNode::Kind::kAggregate: {
-            auto agg = asNode<Aggregate>(node);
-            auto dep = makeExecutor(agg->dep(), qctx, visited);
-            exec = new AggregateExecutor(agg, qctx);
-            exec->dependsOn(dep);
-            break;
-        }
-        case PlanNode::Kind::kSort: {
-            auto sort = asNode<Sort>(node);
-            auto dep = makeExecutor(sort->dep(), qctx, visited);
-            exec = new SortExecutor(sort, qctx);
-            exec->dependsOn(dep);
-            break;
-        }
-        case PlanNode::Kind::kFilter: {
-            auto filter = asNode<Filter>(node);
-            auto dep = makeExecutor(filter->dep(), qctx, visited);
-            exec = new FilterExecutor(filter, qctx);
-            exec->dependsOn(dep);
-            break;
-        }
-        case PlanNode::Kind::kGetEdges: {
-            auto ge = asNode<GetEdges>(node);
-            auto dep = makeExecutor(ge->dep(), qctx, visited);
-            exec = new GetEdgesExecutor(ge, qctx);
-            exec->dependsOn(dep);
-            break;
-        }
-        case PlanNode::Kind::kGetVertices: {
-            auto gv = asNode<GetVertices>(node);
-            auto dep = makeExecutor(gv->dep(), qctx, visited);
-            exec = new GetVerticesExecutor(gv, qctx);
-            exec->dependsOn(dep);
-            break;
-        }
-        case PlanNode::Kind::kGetNeighbors: {
-            auto gn = asNode<GetNeighbors>(node);
-            auto dep = makeExecutor(gn->dep(), qctx, visited);
-            exec = new GetNeighborsExecutor(gn, qctx);
-            exec->dependsOn(dep);
-            break;
-        }
-        case PlanNode::Kind::kLimit: {
-            auto limit = asNode<Limit>(node);
-            auto dep = makeExecutor(limit->dep(), qctx, visited);
-            exec = new LimitExecutor(limit, qctx);
-            exec->dependsOn(dep);
-            break;
-        }
-        case PlanNode::Kind::kProject: {
-            auto project = asNode<Project>(node);
-            auto dep = makeExecutor(project->dep(), qctx, visited);
-            exec = new ProjectExecutor(project, qctx);
-            exec->dependsOn(dep);
-            break;
-        }
-        case PlanNode::Kind::kIndexScan: {
-            auto indexScan = asNode<IndexScan>(node);
-            auto dep = makeExecutor(indexScan->dep(), qctx, visited);
-            exec = new IndexScanExecutor(indexScan, qctx);
-            exec->dependsOn(dep);
-            break;
-        }
-        case PlanNode::Kind::kStart: {
-            exec = new StartExecutor(node, qctx);
-            break;
-        }
-        case PlanNode::Kind::kUnion: {
-            auto uni = asNode<Union>(node);
-            auto left = makeExecutor(uni->left(), qctx, visited);
-            auto right = makeExecutor(uni->right(), qctx, visited);
-            exec = new UnionExecutor(uni, qctx);
+        case 2: {
+            auto left = makeExecutor(node->dep(0), qctx, visited);
+            auto right = makeExecutor(node->dep(1), qctx, visited);
             exec->dependsOn(left)->dependsOn(right);
             break;
         }
-        case PlanNode::Kind::kIntersect: {
-            auto intersect = asNode<Intersect>(node);
-            auto left = makeExecutor(intersect->left(), qctx, visited);
-            auto right = makeExecutor(intersect->right(), qctx, visited);
-            exec = new IntersectExecutor(intersect, qctx);
-            exec->dependsOn(left)->dependsOn(right);
+        default: {
+            LOG(FATAL) << "Unsupported plan node type which has dependencies: "
+                       << node->dependencies().size();
             break;
         }
-        case PlanNode::Kind::kMinus: {
-            auto minus = asNode<Minus>(node);
-            auto left = makeExecutor(minus->left(), qctx, visited);
-            auto right = makeExecutor(minus->right(), qctx, visited);
-            exec = new MinusExecutor(minus, qctx);
-            exec->dependsOn(left)->dependsOn(right);
-            break;
-        }
-        case PlanNode::Kind::kLoop: {
-            auto loop = asNode<Loop>(node);
-            auto dep = makeExecutor(loop->dep(), qctx, visited);
-            auto body = makeExecutor(loop->body(), qctx, visited);
-            exec = new LoopExecutor(loop, qctx, body);
-            exec->dependsOn(dep);
-            break;
-        }
-        case PlanNode::Kind::kSelect: {
-            auto select = asNode<Select>(node);
-            auto dep = makeExecutor(select->dep(), qctx, visited);
-            auto then = makeExecutor(select->then(), qctx, visited);
-            auto els = makeExecutor(select->otherwise(), qctx, visited);
-            exec = new SelectExecutor(select, qctx, then, els);
-            exec->dependsOn(dep);
-            break;
-        }
-        case PlanNode::Kind::kDedup: {
-            auto dedup = asNode<Dedup>(node);
-            auto dep = makeExecutor(dedup->dep(), qctx, visited);
-            exec = new DedupExecutor(dedup, qctx);
-            exec->dependsOn(dep);
-            break;
-        }
-        case PlanNode::Kind::kSwitchSpace: {
-            auto switchSpace = asNode<SwitchSpace>(node);
-            auto dep = makeExecutor(switchSpace->dep(), qctx, visited);
-            exec = new SwitchSpaceExecutor(switchSpace, qctx);
-            exec->dependsOn(dep);
-            break;
-        }
-        case PlanNode::Kind::kCreateSpace: {
-            auto createSpace = asNode<CreateSpace>(node);
-            auto dep = makeExecutor(createSpace->dep(), qctx, visited);
-            exec = new CreateSpaceExecutor(createSpace, qctx);
-            exec->dependsOn(dep);
-            break;
-        }
-        case PlanNode::Kind::kDescSpace: {
-            auto descSpace = asNode<DescSpace>(node);
-            auto dep = makeExecutor(descSpace->dep(), qctx, visited);
-            exec = new DescSpaceExecutor(descSpace, qctx);
-            exec->dependsOn(dep);
-            break;
-        }
-        case PlanNode::Kind::kShowSpaces: {
-            auto showSpaces = asNode<ShowSpaces>(node);
-            auto input = makeExecutor(showSpaces->dep(), qctx, visited);
-            exec = new ShowSpacesExecutor(showSpaces, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kDropSpace: {
-            auto dropSpace = asNode<DropSpace>(node);
-            auto input = makeExecutor(dropSpace->dep(), qctx, visited);
-            exec = new DropSpaceExecutor(dropSpace, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kShowCreateSpace: {
-            auto showCreateSpace = asNode<ShowCreateSpace>(node);
-            auto input = makeExecutor(showCreateSpace->dep(), qctx, visited);
-            exec = new ShowCreateSpaceExecutor(showCreateSpace, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kCreateTag: {
-            auto createTag = asNode<CreateTag>(node);
-            auto dep = makeExecutor(createTag->dep(), qctx, visited);
-            exec = new CreateTagExecutor(createTag, qctx);
-            exec->dependsOn(dep);
-            break;
-        }
-        case PlanNode::Kind::kDescTag: {
-            auto descTag = asNode<DescTag>(node);
-            auto dep = makeExecutor(descTag->dep(), qctx, visited);
-            exec = new DescTagExecutor(descTag, qctx);
-            exec->dependsOn(dep);
-            break;
-        }
-        case PlanNode::Kind::kAlterTag: {
-            auto alterTag = asNode<AlterTag>(node);
-            auto dep = makeExecutor(alterTag->dep(), qctx, visited);
-            exec = new AlterTagExecutor(alterTag, qctx);
-            exec->dependsOn(dep);
-            break;
-        }
-        case PlanNode::Kind::kCreateEdge: {
-            auto createEdge = asNode<CreateEdge>(node);
-            auto dep = makeExecutor(createEdge->dep(), qctx, visited);
-            exec = new CreateEdgeExecutor(createEdge, qctx);
-            exec->dependsOn(dep);
-            break;
-        }
-        case PlanNode::Kind::kDescEdge: {
-            auto descEdge = asNode<DescEdge>(node);
-            auto dep = makeExecutor(descEdge->dep(), qctx, visited);
-            exec = new DescEdgeExecutor(descEdge, qctx);
-            exec->dependsOn(dep);
-            break;
-        }
-        case PlanNode::Kind::kAlterEdge: {
-            auto alterEdge = asNode<AlterEdge>(node);
-            auto dep = makeExecutor(alterEdge->dep(), qctx, visited);
-            exec = new AlterEdgeExecutor(alterEdge, qctx);
-            exec->dependsOn(dep);
-            break;
-        }
-        case PlanNode::Kind::kShowTags: {
-            auto showTags = asNode<ShowTags>(node);
-            auto input = makeExecutor(showTags->dep(), qctx, visited);
-            exec = new ShowTagsExecutor(showTags, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kShowEdges: {
-            auto showEdges = asNode<ShowEdges>(node);
-            auto input = makeExecutor(showEdges->dep(), qctx, visited);
-            exec = new ShowEdgesExecutor(showEdges, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kDropTag: {
-            auto dropTag = asNode<DropTag>(node);
-            auto input = makeExecutor(dropTag->dep(), qctx, visited);
-            exec = new DropTagExecutor(dropTag, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kDropEdge: {
-            auto dropEdge = asNode<DropEdge>(node);
-            auto input = makeExecutor(dropEdge->dep(), qctx, visited);
-            exec = new DropEdgeExecutor(dropEdge, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kShowCreateTag: {
-            auto showCreateTag = asNode<ShowCreateTag>(node);
-            auto input = makeExecutor(showCreateTag->dep(), qctx, visited);
-            exec = new ShowCreateTagExecutor(showCreateTag, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kShowCreateEdge: {
-            auto showCreateEdge = asNode<ShowCreateEdge>(node);
-            auto input = makeExecutor(showCreateEdge->dep(), qctx, visited);
-            exec = new ShowCreateEdgeExecutor(showCreateEdge, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kInsertVertices: {
-            auto insertV = asNode<InsertVertices>(node);
-            auto dep = makeExecutor(insertV->dep(), qctx, visited);
-            exec = new InsertVerticesExecutor(insertV, qctx);
-            exec->dependsOn(dep);
-            break;
-        }
-        case PlanNode::Kind::kInsertEdges: {
-            auto insertE = asNode<InsertEdges>(node);
-            auto dep = makeExecutor(insertE->dep(), qctx, visited);
-            exec = new InsertEdgesExecutor(insertE, qctx);
-            exec->dependsOn(dep);
-            break;
-        }
-        case PlanNode::Kind::kDataCollect: {
-            auto dc = asNode<DataCollect>(node);
-            auto dep = makeExecutor(dc->dep(), qctx, visited);
-            exec = new DataCollectExecutor(dc, qctx);
-            exec->dependsOn(dep);
-            break;
-        }
-        case PlanNode::Kind::kCreateSnapshot: {
-            auto createSnapshot = asNode<CreateSnapshot>(node);
-            auto input = makeExecutor(createSnapshot->dep(), qctx, visited);
-            exec = new CreateSnapshotExecutor(createSnapshot, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kDropSnapshot: {
-            auto dropSnapshot = asNode<DropSnapshot>(node);
-            auto input = makeExecutor(dropSnapshot->dep(), qctx, visited);
-            exec = new DropSnapshotExecutor(dropSnapshot, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kShowSnapshots: {
-            auto showSnapshots = asNode<ShowSnapshots>(node);
-            auto input = makeExecutor(showSnapshots->dep(), qctx, visited);
-            exec = new ShowSnapshotsExecutor(showSnapshots, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kDataJoin: {
-            auto dataJoin = asNode<DataJoin>(node);
-            auto input = makeExecutor(dataJoin->dep(), qctx, visited);
-            exec = new DataJoinExecutor(dataJoin, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kDeleteVertices: {
-            auto deleteV = asNode<DeleteVertices>(node);
-            auto input = makeExecutor(deleteV->dep(), qctx, visited);
-            exec = new DeleteVerticesExecutor(deleteV, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kDeleteEdges: {
-            auto deleteE = asNode<DeleteEdges>(node);
-            auto input = makeExecutor(deleteE->dep(), qctx, visited);
-            exec = new DeleteEdgesExecutor(deleteE, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kUpdateVertex: {
-            auto updateV = asNode<UpdateVertex>(node);
-            auto input = makeExecutor(updateV->dep(), qctx, visited);
-            exec = new UpdateVertexExecutor(updateV, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kUpdateEdge: {
-            auto updateE = asNode<UpdateEdge>(node);
-            auto input = makeExecutor(updateE->dep(), qctx, visited);
-            exec = new UpdateEdgeExecutor(updateE, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kCreateUser: {
-            auto createUser = asNode<CreateUser>(node);
-            auto input = makeExecutor(createUser->dep(), qctx, visited);
-            exec = new CreateUserExecutor(createUser, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kDropUser: {
-            auto dropUser = asNode<DropUser>(node);
-            auto input = makeExecutor(dropUser->dep(), qctx, visited);
-            exec = new DropUserExecutor(dropUser, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kUpdateUser: {
-            auto updateUser = asNode<UpdateUser>(node);
-            auto input = makeExecutor(updateUser->dep(), qctx, visited);
-            exec = new UpdateUserExecutor(updateUser, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kGrantRole: {
-            auto grantRole = asNode<GrantRole>(node);
-            auto input = makeExecutor(grantRole->dep(), qctx, visited);
-            exec = new GrantRoleExecutor(grantRole, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kRevokeRole: {
-            auto revokeRole = asNode<RevokeRole>(node);
-            auto input = makeExecutor(revokeRole->dep(), qctx, visited);
-            exec = new RevokeRoleExecutor(revokeRole, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kChangePassword: {
-            auto changePassword = asNode<ChangePassword>(node);
-            auto input = makeExecutor(changePassword->dep(), qctx, visited);
-            exec = new ChangePasswordExecutor(changePassword, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kListUserRoles: {
-            auto listUserRoles = asNode<ListUserRoles>(node);
-            auto input = makeExecutor(listUserRoles->dep(), qctx, visited);
-            exec = new ListUserRolesExecutor(listUserRoles, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kListUsers: {
-            auto listUsers = asNode<ListUsers>(node);
-            auto input = makeExecutor(listUsers->dep(), qctx, visited);
-            exec = new ListUsersExecutor(listUsers, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kListRoles: {
-            auto listRoles = asNode<ListRoles>(node);
-            auto input = makeExecutor(listRoles->dep(), qctx, visited);
-            exec = new ListRolesExecutor(listRoles, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kBalanceLeaders: {
-            auto balanceLeaders = asNode<BalanceLeaders>(node);
-            auto dep = makeExecutor(balanceLeaders->dep(), qctx, visited);
-            exec = new BalanceLeadersExecutor(balanceLeaders, qctx);
-            exec->dependsOn(dep);
-            break;
-        }
-        case PlanNode::Kind::kBalance: {
-            auto balance = asNode<Balance>(node);
-            auto dep = makeExecutor(balance->dep(), qctx, visited);
-            exec = new BalanceExecutor(balance, qctx);
-            exec->dependsOn(dep);
-            break;
-        }
-        case PlanNode::Kind::kStopBalance: {
-            auto stopBalance = asNode<Balance>(node);
-            auto dep = makeExecutor(stopBalance->dep(), qctx, visited);
-            exec = new StopBalanceExecutor(stopBalance, qctx);
-            exec->dependsOn(dep);
-            break;
-        }
-        case PlanNode::Kind::kShowBalance: {
-            auto showBalance = asNode<ShowBalance>(node);
-            auto dep = makeExecutor(showBalance->dep(), qctx, visited);
-            exec = new ShowBalanceExecutor(showBalance, qctx);
-            exec->dependsOn(dep);
-            break;
-        }
-        case PlanNode::Kind::kShowConfigs: {
-            auto showConfigs = asNode<ShowConfigs>(node);
-            auto input = makeExecutor(showConfigs->dep(), qctx, visited);
-            exec = new ShowConfigsExecutor(showConfigs, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kSetConfig: {
-            auto setConfig = asNode<SetConfig>(node);
-            auto input = makeExecutor(setConfig->dep(), qctx, visited);
-            exec = new SetConfigExecutor(setConfig, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kGetConfig: {
-            auto getConfig = asNode<GetConfig>(node);
-            auto input = makeExecutor(getConfig->dep(), qctx, visited);
-            exec = new GetConfigExecutor(getConfig, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kSubmitJob: {
-            auto submitJob = asNode<SubmitJob>(node);
-            auto input = makeExecutor(submitJob->dep(), qctx, visited);
-            exec = new SubmitJobExecutor(submitJob, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kShowHosts: {
-            auto showHosts = asNode<ShowHosts>(node);
-            auto input = makeExecutor(showHosts->dep(), qctx, visited);
-            exec = new ShowHostsExecutor(showHosts, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kShowParts: {
-            auto showParts = asNode<ShowParts>(node);
-            auto input = makeExecutor(showParts->dep(), qctx, visited);
-            exec = new ShowPartsExecutor(showParts, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kShowCharset: {
-            auto showC = asNode<ShowCharset>(node);
-            auto input = makeExecutor(showC->dep(), qctx, visited);
-            exec = new ShowCharsetExecutor(showC, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kShowCollation: {
-            auto showC = asNode<ShowCollation>(node);
-            auto input = makeExecutor(showC->dep(), qctx, visited);
-            exec = new ShowCollationExecutor(showC, qctx);
-            exec->dependsOn(input);
-            break;
-        }
-        case PlanNode::Kind::kUnknown:
-        default:
-            LOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());
-            break;
     }
 
-    DCHECK(!!exec);
-
     visited->insert({node->id(), exec});
-    return qctx->objPool()->add(exec);
+    return exec;
+}
+
+// static
+Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
+    auto pool = qctx->objPool();
+    switch (node->kind()) {
+        case PlanNode::Kind::kPassThrough: {
+            return pool->add(new PassThroughExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kAggregate: {
+            return pool->add(new AggregateExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kSort: {
+            return pool->add(new SortExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kFilter: {
+            return pool->add(new FilterExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kGetEdges: {
+            return pool->add(new GetEdgesExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kGetVertices: {
+            return pool->add(new GetVerticesExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kGetNeighbors: {
+            return pool->add(new GetNeighborsExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kLimit: {
+            return pool->add(new LimitExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kProject: {
+            return pool->add(new ProjectExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kIndexScan: {
+            return pool->add(new IndexScanExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kStart: {
+            return pool->add(new StartExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kUnion: {
+            return pool->add(new UnionExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kIntersect: {
+            return pool->add(new IntersectExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kMinus: {
+            return pool->add(new MinusExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kLoop: {
+            return pool->add(new LoopExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kSelect: {
+            return pool->add(new SelectExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kDedup: {
+            return pool->add(new DedupExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kSwitchSpace: {
+            return pool->add(new SwitchSpaceExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kCreateSpace: {
+            return pool->add(new CreateSpaceExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kDescSpace: {
+            return pool->add(new DescSpaceExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kShowSpaces: {
+            return pool->add(new ShowSpacesExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kDropSpace: {
+            return pool->add(new DropSpaceExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kShowCreateSpace: {
+            return pool->add(new ShowCreateSpaceExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kCreateTag: {
+            return pool->add(new CreateTagExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kDescTag: {
+            return pool->add(new DescTagExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kAlterTag: {
+            return pool->add(new AlterTagExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kCreateEdge: {
+            return pool->add(new CreateEdgeExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kDescEdge: {
+            return pool->add(new DescEdgeExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kAlterEdge: {
+            return pool->add(new AlterEdgeExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kShowTags: {
+            return pool->add(new ShowTagsExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kShowEdges: {
+            return pool->add(new ShowEdgesExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kDropTag: {
+            return pool->add(new DropTagExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kDropEdge: {
+            return pool->add(new DropEdgeExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kShowCreateTag: {
+            return pool->add(new ShowCreateTagExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kShowCreateEdge: {
+            return pool->add(new ShowCreateEdgeExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kInsertVertices: {
+            return pool->add(new InsertVerticesExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kInsertEdges: {
+            return pool->add(new InsertEdgesExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kDataCollect: {
+            return pool->add(new DataCollectExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kCreateSnapshot: {
+            return pool->add(new CreateSnapshotExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kDropSnapshot: {
+            return pool->add(new DropSnapshotExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kShowSnapshots: {
+            return pool->add(new ShowSnapshotsExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kDataJoin: {
+            return pool->add(new DataJoinExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kDeleteVertices: {
+            return pool->add(new DeleteVerticesExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kDeleteEdges: {
+            return pool->add(new DeleteEdgesExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kUpdateVertex: {
+            return pool->add(new UpdateVertexExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kUpdateEdge: {
+            return pool->add(new UpdateEdgeExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kCreateUser: {
+            return pool->add(new CreateUserExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kDropUser: {
+            return pool->add(new DropUserExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kUpdateUser: {
+            return pool->add(new UpdateUserExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kGrantRole: {
+            return pool->add(new GrantRoleExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kRevokeRole: {
+            return pool->add(new RevokeRoleExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kChangePassword: {
+            return pool->add(new ChangePasswordExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kListUserRoles: {
+            return pool->add(new ListUserRolesExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kListUsers: {
+            return pool->add(new ListUsersExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kListRoles: {
+            return pool->add(new ListRolesExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kBalanceLeaders: {
+            return pool->add(new BalanceLeadersExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kBalance: {
+            return pool->add(new BalanceExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kStopBalance: {
+            return pool->add(new StopBalanceExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kShowBalance: {
+            return pool->add(new ShowBalanceExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kShowConfigs: {
+            return pool->add(new ShowConfigsExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kSetConfig: {
+            return pool->add(new SetConfigExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kGetConfig: {
+            return pool->add(new GetConfigExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kSubmitJob: {
+            return pool->add(new SubmitJobExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kShowHosts: {
+            return pool->add(new ShowHostsExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kShowParts: {
+            return pool->add(new ShowPartsExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kShowCharset: {
+            return pool->add(new ShowCharsetExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kShowCollation: {
+            return pool->add(new ShowCollationExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kUnknown: {
+            break;
+        }
+    }
+    LOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());
+    return nullptr;
 }
 
 Executor::Executor(const std::string &name, const PlanNode *node, QueryContext *qctx)

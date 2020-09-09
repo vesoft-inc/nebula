@@ -88,6 +88,8 @@ protected:
                                   QueryContext *qctx,
                                   std::unordered_map<int64_t, Executor *> *visited);
 
+    static Executor *makeExecutor(QueryContext *qctx, const PlanNode *node);
+
     // Only allow derived executor to construct
     Executor(const std::string &name, const PlanNode *node, QueryContext *qctx);
 
