@@ -252,7 +252,7 @@ public:
                     ASSERT_EQ(expect[i], actual[i]);
                 }
             } else {
-                ASSERT_EQ(NullType::__NULL__, row.values[1].getNull());
+                ASSERT_EQ(Value::Type::__EMPTY__, row.values[1].type());
             }
             checkRowProps(row, dataSet.colNames, tags, edges);
         }
@@ -272,9 +272,9 @@ public:
             auto iter = std::find(vertices.begin(), vertices.end(), vId);
             ASSERT_TRUE(iter != vertices.end());
             // the second column is stats
-            ASSERT_EQ(NullType::__NULL__, row.values[1].getNull());
+            ASSERT_EQ(Value::Type::__EMPTY__, row.values[1].type());
             // the last column is yeild expression
-            ASSERT_EQ(NullType::__NULL__, row.values[expectColumnCount - 1].getNull());
+            ASSERT_EQ(Value::Type::__EMPTY__, row.values[expectColumnCount - 1].type());
             checkRowProps(row, dataSet.colNames, {}, {});
         }
     }
@@ -609,7 +609,7 @@ public:
                         auto tagCell = row.values[i].getList();
                         checkPlayer(props, *iter, tagCell.values);
                     } else {
-                        ASSERT_EQ(NullType::__NULL__, row.values[i].getNull());
+                        ASSERT_EQ(Value::Type::__EMPTY__, row.values[i].type());
                     }
                     break;
                 }
@@ -623,7 +623,7 @@ public:
                         ASSERT_EQ(1, tagCell.values.size());
                         ASSERT_EQ(*iter, tagCell.values[0].getStr());
                     } else {
-                        ASSERT_EQ(NullType::__NULL__, row.values[i].getNull());
+                        ASSERT_EQ(Value::Type::__EMPTY__, row.values[i].type());
                     }
                     break;
                 }
@@ -638,7 +638,7 @@ public:
                             checkOutServe(entryId, props, iter->second, values);
                         }
                     } else {
-                        ASSERT_EQ(NullType::__NULL__, row.values[i].getNull());
+                        ASSERT_EQ(Value::Type::__EMPTY__, row.values[i].type());
                     }
                     break;
                 }
@@ -653,7 +653,7 @@ public:
                             checkInServe(entryId, props, iter->second, values);
                         }
                     } else {
-                        ASSERT_EQ(NullType::__NULL__, row.values[i].getNull());
+                        ASSERT_EQ(Value::Type::__EMPTY__, row.values[i].type());
                     }
                     break;
                 }
@@ -672,7 +672,7 @@ public:
                             checkTeammate(entryId, props, values);
                         }
                     } else {
-                        ASSERT_EQ(NullType::__NULL__, row.values[i].getNull());
+                        ASSERT_EQ(Value::Type::__EMPTY__, row.values[i].type());
                     }
                     break;
                 }

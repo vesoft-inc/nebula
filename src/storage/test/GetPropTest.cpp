@@ -254,7 +254,7 @@ TEST(GetPropTest, AllPropertyInAllSchemaTest) {
             std::vector<Value> values {  // player
                 "Tim Duncan", "Tim Duncan", 44, false, 19, 1997, 2016, 1392, 19.0, 1, "America", 5};
             for (size_t i = 0; i < 1 + 11; i++) {  // team and tag3
-                values.emplace_back(NullType::__NULL__);
+                values.emplace_back(Value());
             }
             row.values = std::move(values);
             expected.emplace_back(std::move(row));
@@ -288,11 +288,11 @@ TEST(GetPropTest, AllPropertyInAllSchemaTest) {
             std::vector<Value> values;
             // -teammate
             for (size_t i = 0; i < 5 + 4; i++) {
-                values.emplace_back(NullType::__NULL__);
+                values.emplace_back(Value());
             }
             // -serve
             for (size_t i = 0; i < 9 + 4; i++) {
-                values.emplace_back(NullType::__NULL__);
+                values.emplace_back(Value());
             }
             // serve
             values.emplace_back("Tim Duncan");    // src
@@ -310,7 +310,7 @@ TEST(GetPropTest, AllPropertyInAllSchemaTest) {
             values.emplace_back(5);
             // teammate
             for (size_t i = 0; i < 5 + 4; i++) {
-                values.emplace_back(NullType::__NULL__);
+                values.emplace_back(Value());
             }
             row.values = std::move(values);
             expected.emplace_back(std::move(row));
@@ -336,7 +336,7 @@ TEST(GetPropTest, AllPropertyInAllSchemaTest) {
             std::vector<Value> values;
             values.emplace_back("Not existed");
             for (size_t i = 0; i < 1 + 11 + 11; i++) {
-                values.emplace_back(NullType::__NULL__);
+                values.emplace_back(Value());
             }
             row.values = std::move(values);
             expected.emplace_back(std::move(row));

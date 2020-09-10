@@ -581,7 +581,7 @@ TEST(GetNeighborsTest, LimitSampleTest) {
         ASSERT_EQ(1, resp.vertices.rows.size());
         ASSERT_EQ(6, resp.vertices.rows[0].values.size());
         ASSERT_EQ(4, resp.vertices.rows[0].values[3].getList().values.size());
-        ASSERT_EQ(NullType::__NULL__, resp.vertices.rows[0].values[4].getNull());
+        ASSERT_EQ(Value::Type::__EMPTY__, resp.vertices.rows[0].values[4].type());
     }
     {
         LOG(INFO) << "SingleEdgeTypeSample";
@@ -791,10 +791,10 @@ TEST(GetNeighborsTest, TtlTest) {
         // vId, stat, player, serve, expr
         ASSERT_EQ(5, resp.vertices.rows[0].values.size());
         ASSERT_EQ("Tim Duncan", resp.vertices.rows[0].values[0].getStr());
-        ASSERT_EQ(NullType::__NULL__, resp.vertices.rows[0].values[1].getNull());
-        ASSERT_EQ(NullType::__NULL__, resp.vertices.rows[0].values[2].getNull());
-        ASSERT_EQ(NullType::__NULL__, resp.vertices.rows[0].values[3].getNull());
-        ASSERT_EQ(NullType::__NULL__, resp.vertices.rows[0].values[4].getNull());
+        ASSERT_EQ(Value::Type::__EMPTY__, resp.vertices.rows[0].values[1].type());
+        ASSERT_EQ(Value::Type::__EMPTY__, resp.vertices.rows[0].values[2].type());
+        ASSERT_EQ(Value::Type::__EMPTY__, resp.vertices.rows[0].values[3].type());
+        ASSERT_EQ(Value::Type::__EMPTY__, resp.vertices.rows[0].values[4].type());
     }
     {
         LOG(INFO) << "GoFromPlayerOverAll";
@@ -815,15 +815,15 @@ TEST(GetNeighborsTest, TtlTest) {
         ASSERT_EQ(1, resp.vertices.rows.size());
         ASSERT_EQ(10, resp.vertices.rows[0].values.size());
         ASSERT_EQ("Tim Duncan", resp.vertices.rows[0].values[0].getStr());
-        ASSERT_TRUE(resp.vertices.rows[0].values[1].isNull());     // stat
-        ASSERT_TRUE(resp.vertices.rows[0].values[2].isNull());     // player expired
-        ASSERT_TRUE(resp.vertices.rows[0].values[3].isNull());     // team not exists
-        ASSERT_TRUE(resp.vertices.rows[0].values[4].isNull());     // general tag not exists
+        ASSERT_TRUE(resp.vertices.rows[0].values[1].empty());      // stat
+        ASSERT_TRUE(resp.vertices.rows[0].values[2].empty());      // player expired
+        ASSERT_TRUE(resp.vertices.rows[0].values[3].empty());      // team not exists
+        ASSERT_TRUE(resp.vertices.rows[0].values[4].empty());      // general tag not exists
         ASSERT_TRUE(resp.vertices.rows[0].values[5].isList());     // - teammate valid
-        ASSERT_TRUE(resp.vertices.rows[0].values[6].isNull());     // - serve expired
-        ASSERT_TRUE(resp.vertices.rows[0].values[7].isNull());     // + serve expired
+        ASSERT_TRUE(resp.vertices.rows[0].values[6].empty());      // - serve expired
+        ASSERT_TRUE(resp.vertices.rows[0].values[7].empty());      // + serve expired
         ASSERT_TRUE(resp.vertices.rows[0].values[8].isList());     // + teammate valid
-        ASSERT_TRUE(resp.vertices.rows[0].values[9].isNull());     // expr
+        ASSERT_TRUE(resp.vertices.rows[0].values[9].empty());      // expr
     }
     FLAGS_mock_ttl_col = false;
 }
@@ -1182,11 +1182,11 @@ TEST(GetNeighborsTest, FilterTest) {
                              "_edge:+101:teamName:startYear:endYear",
                              "_expr"};
         nebula::Row row({"Tracy McGrady",
-                         NullType::__NULL__,
+                         Value(),
                          nebula::List({"Tracy McGrady", 41, 19.6}),
                          nebula::List({nebula::List({"Magic", 2000, 2004}),
                                        nebula::List({"Rockets", 2004, 2010})}),
-                         NullType::__NULL__});
+                         Value()});
         expected.rows.emplace_back(std::move(row));
         ASSERT_EQ(expected, resp.vertices);
     }
@@ -1230,10 +1230,10 @@ TEST(GetNeighborsTest, FilterTest) {
         auto serveEdges = nebula::List();
         serveEdges.values.emplace_back(nebula::List({"Rockets", 2004, 2010}));
         nebula::Row row({"Tracy McGrady",
-                         NullType::__NULL__,
+                         Value(),
                          nebula::List({"Tracy McGrady", 41, 19.6}),
                          serveEdges,
-                         NullType::__NULL__});
+                         Value()});
         expected.rows.emplace_back(std::move(row));
         ASSERT_EQ(expected, resp.vertices);
     }
@@ -1282,10 +1282,10 @@ TEST(GetNeighborsTest, FilterTest) {
         auto serveEdges = nebula::List();
         serveEdges.values.emplace_back(nebula::List({"Magic", 2000, 2004}));
         nebula::Row row({"Tracy McGrady",
-                         NullType::__NULL__,
+                         Value(),
                          nebula::List({"Tracy McGrady", 41, 19.6}),
                          serveEdges,
-                         NullType::__NULL__});
+                         Value()});
         expected.rows.emplace_back(std::move(row));
         ASSERT_EQ(expected, resp.vertices);
     }
@@ -1331,11 +1331,11 @@ TEST(GetNeighborsTest, FilterTest) {
                              "_edge:+101:teamName:startYear:endYear",
                              "_expr"};
         nebula::Row row({"Tracy McGrady",
-                         NullType::__NULL__,
+                         Value(),
                          nebula::List({"Tracy McGrady", 41, 19.6}),
                          nebula::List({nebula::List({"Magic", 2000, 2004}),
                                        nebula::List({"Rockets", 2004, 2010})}),
-                         NullType::__NULL__});
+                         Value()});
         expected.rows.emplace_back(std::move(row));
         ASSERT_EQ(expected, resp.vertices);
     }
@@ -1385,11 +1385,11 @@ TEST(GetNeighborsTest, FilterTest) {
         ASSERT_EQ(4, resp.vertices.rows.size());
         {
             nebula::Row row({"Tracy McGrady",
-                            NullType::__NULL__,
+                            Value(),
                             nebula::List({"Tracy McGrady", 41, 19.6}),
                             nebula::List({nebula::List({"Magic", 2000, 2004}),
                                           nebula::List({"Rockets", 2004, 2010})}),
-                            NullType::__NULL__});
+                            Value()});
             for (size_t i = 0; i < 4; i++) {
                 if (resp.vertices.rows[i].values[0].getStr() == "Tracy McGrady") {
                     ASSERT_EQ(row, resp.vertices.rows[i]);
@@ -1401,10 +1401,10 @@ TEST(GetNeighborsTest, FilterTest) {
             auto serveEdges = nebula::List();
             serveEdges.values.emplace_back(nebula::List({"Spurs", 1997, 2016}));
             nebula::Row row({"Tim Duncan",
-                            NullType::__NULL__,
+                            Value(),
                             nebula::List({"Tim Duncan", 44, 19.0}),
                             serveEdges,
-                            NullType::__NULL__});
+                            Value()});
             for (size_t i = 0; i < 4; i++) {
                 if (resp.vertices.rows[i].values[0].getStr() == "Tim Duncan") {
                     ASSERT_EQ(row, resp.vertices.rows[i]);
@@ -1416,10 +1416,10 @@ TEST(GetNeighborsTest, FilterTest) {
             // same as 1.0, tag data is returned even if can't pass the filter.
             // no edge satisfies the filter
             nebula::Row row({"Tony Parker",
-                            NullType::__NULL__,
+                            Value(),
                             nebula::List({"Tony Parker", 38, 15.5}),
-                            NullType::__NULL__,
-                            NullType::__NULL__});
+                            Value(),
+                            Value()});
             for (size_t i = 0; i < 4; i++) {
                 if (resp.vertices.rows[i].values[0].getStr() == "Tony Parker") {
                     ASSERT_EQ(row, resp.vertices.rows[i]);
@@ -1431,10 +1431,10 @@ TEST(GetNeighborsTest, FilterTest) {
             // same as 1.0, tag data is returned even if can't pass the filter.
             // no edge satisfies the filter
             nebula::Row row({"Manu Ginobili",
-                            NullType::__NULL__,
+                            Value(),
                             nebula::List({"Manu Ginobili", 42, 13.3}),
-                            NullType::__NULL__,
-                            NullType::__NULL__});
+                            Value(),
+                            Value()});
             for (size_t i = 0; i < 4; i++) {
                 if (resp.vertices.rows[i].values[0].getStr() == "Manu Ginobili") {
                     ASSERT_EQ(row, resp.vertices.rows[i]);
@@ -1483,11 +1483,11 @@ TEST(GetNeighborsTest, FilterTest) {
         // This will only get the edge of serve, which does not make sense
         // see https://github.com/vesoft-inc/nebula/issues/2166
         nebula::Row row({"Tim Duncan",
-                         NullType::__NULL__,
+                         Value(),
                          nebula::List({"Tim Duncan", 44, 19.0}),
                          serveEdges,
-                         NullType::__NULL__,
-                         NullType::__NULL__});
+                         Value(),
+                         Value()});
         expected.rows.emplace_back(std::move(row));
         ASSERT_EQ(expected, resp.vertices);
     }
@@ -1529,12 +1529,12 @@ TEST(GetNeighborsTest, FilterTest) {
             "_expr"};
         nebula::Row row({
             "Spurs",
-            NullType::__NULL__,
+            Value(),
             nebula::List({"Spurs"}),
             nebula::List({nebula::List({"Spurs", 1997, 2016, "Spurs", "Tim Duncan"}),
                             nebula::List({"Spurs", 2001, 2018, "Spurs", "Tony Parker"}),
                             nebula::List({"Spurs", 2015, 2020, "Spurs", "LaMarcus Aldridge"})}),
-            NullType::__NULL__});
+            Value()});
         expected.rows.emplace_back(std::move(row));
         ASSERT_EQ(expected, resp.vertices);
     }
@@ -1580,12 +1580,12 @@ TEST(GetNeighborsTest, FilterTest) {
             "_expr"};
         nebula::Row row({
             "Tim Duncan",
-            NullType::__NULL__,
+            Value(),
             nebula::List({"Tim Duncan", 44, 19.0}),
             nebula::List(nebula::List({"Tim Duncan", 102, "Tony Parker", "Spurs", 2001, 2016})),
             nebula::List(nebula::List({"Tim Duncan", -102, "Tony Parker", "Spurs", 2001, 2016})),
-            NullType::__NULL__,
-            NullType::__NULL__});
+            Value(),
+            Value()});
     }
 }
 

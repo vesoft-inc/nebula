@@ -49,7 +49,7 @@ public:
         // vertexId is the first column
         row.emplace_back(vId);
         // second column is reserved for stat
-        row.emplace_back(NullType::__NULL__);
+        row.emplace_back(Value());
 
         auto tagResult = hashJoinNode_->result().getList();
         for (auto& value : tagResult.values) {
@@ -57,8 +57,7 @@ public:
         }
 
         // add default null for each edge node and the last column of yield expression
-        row.resize(row.size() + edgeContext_->propContexts_.size() + 1,
-                   NullType::__NULL__);
+        row.resize(row.size() + edgeContext_->propContexts_.size() + 1, Value());
 
         ret = iterateEdges(row);
         if (ret != kvstore::ResultCode::SUCCEEDED) {
@@ -103,7 +102,7 @@ protected:
             }
 
             // add edge prop value to the target column
-            if (row[columnIdx].type() == Value::Type::NULLVALUE) {
+            if (row[columnIdx].empty()) {
                 row[columnIdx].setList(nebula::List());
             }
             auto& cell = row[columnIdx].mutableList();
@@ -155,7 +154,7 @@ private:
         for (auto& sample : samples) {
             auto columnIdx = std::get<4>(sample);
             // add edge prop value to the target column
-            if (row[columnIdx].type() == Value::Type::NULLVALUE) {
+            if (row[columnIdx].empty()) {
                 row[columnIdx].setList(nebula::List());
             }
 

@@ -50,7 +50,7 @@ public:
         if (edgeContext_->statCount_ > 0) {
             initStatValue(edgeContext_);
         }
-        this->result_ = NullType::__NULL__;
+        this->result_ = Value();
         return kvstore::ResultCode::SUCCEEDED;
     }
 

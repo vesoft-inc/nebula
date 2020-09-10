@@ -19,7 +19,7 @@ namespace storage {
 // HashJoinNode has input of serveral TagNode and EdgeNode, the EdgeNode is several
 // SingleEdgeNode of different edge types all edges of a vertex.
 // The output would be the result of tag, it is a List, each cell save a list of property values,
-// if tag not found, it will be a NullType::__NULL__.
+// if tag not found, it will be a empty value.
 // Also it will return a iterator of edges which can pass ttl check and ready to be read.
 class HashJoinNode : public IterateNode<VertexID> {
 public:
@@ -58,7 +58,7 @@ public:
             const auto& tagName = tagNode->getTagName();
             ret = tagNode->collectTagPropsIfValid(
                 [&result] (const std::vector<PropContext>*) -> kvstore::ResultCode {
-                    result.values.emplace_back(NullType::__NULL__);
+                    result.values.emplace_back(Value());
                     return kvstore::ResultCode::SUCCEEDED;
                 },
                 [this, &result, &tagName] (TagID tagId,
