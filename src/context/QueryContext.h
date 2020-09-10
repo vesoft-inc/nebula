@@ -91,6 +91,10 @@ public:
         return ep_.get();
     }
 
+    void setPlan(std::unique_ptr<ExecutionPlan> plan) {
+        ep_ = std::move(plan);
+    }
+
     meta::SchemaManager* schemaMng() const {
         return sm_;
     }

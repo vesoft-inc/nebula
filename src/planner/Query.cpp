@@ -21,7 +21,8 @@ std::unique_ptr<cpp2::PlanNodeDescription> Explore::explain() const {
     addDescription("space", folly::to<std::string>(space_), desc.get());
     addDescription("dedup", util::toJson(dedup_), desc.get());
     addDescription("limit", folly::to<std::string>(limit_), desc.get());
-    addDescription("filter", filter_, desc.get());
+    auto filter = filter_.empty() ? filter_ : Expression::decode(filter_)->toString();
+    addDescription("filter", filter, desc.get());
     addDescription("orderBy", folly::toJson(util::toJson(orderBy_)), desc.get());
     return desc;
 }

@@ -11,6 +11,7 @@
 #include "common/base/Status.h"
 #include "common/cpp/helpers.h"
 #include "context/QueryContext.h"
+#include "optimizer/Optimizer.h"
 #include "parser/GQLParser.h"
 #include "scheduler/Scheduler.h"
 
@@ -25,11 +26,7 @@ namespace graph {
 
 class QueryInstance final : public cpp::NonCopyable, public cpp::NonMovable {
 public:
-    explicit QueryInstance(std::unique_ptr<QueryContext> qctx) {
-        qctx_ = std::move(qctx);
-        scheduler_ = std::make_unique<Scheduler>(qctx_.get());
-    }
-
+    explicit QueryInstance(std::unique_ptr<QueryContext> qctx);
     ~QueryInstance() = default;
 
     void execute();
@@ -59,6 +56,7 @@ private:
     std::unique_ptr<Sentence>                   sentence_;
     std::unique_ptr<QueryContext>               qctx_;
     std::unique_ptr<Scheduler>                  scheduler_;
+    std::unique_ptr<opt::Optimizer>             optimizer_;
 };
 
 }   // namespace graph

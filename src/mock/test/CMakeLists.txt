@@ -20,8 +20,8 @@ set(GRAPH_TEST_LIB
     $<TARGET_OBJECTS:idgenerator_obj>
     $<TARGET_OBJECTS:context_obj>
     $<TARGET_OBJECTS:graph_auth_obj>
+    $<TARGET_OBJECTS:optimizer_obj>
     $<TARGET_OBJECTS:common_time_function_obj>
-    $<TARGET_OBJECTS:common_graph_client_obj>
     $<TARGET_OBJECTS:common_expression_obj>
     $<TARGET_OBJECTS:common_http_client_obj>
     $<TARGET_OBJECTS:common_network_obj>
@@ -29,10 +29,8 @@ set(GRAPH_TEST_LIB
     $<TARGET_OBJECTS:common_graph_client_obj>
     $<TARGET_OBJECTS:common_storage_client_base_obj>
     $<TARGET_OBJECTS:common_graph_storage_client_obj>
-    $<TARGET_OBJECTS:common_storage_client_base_obj>
     $<TARGET_OBJECTS:common_meta_client_obj>
     $<TARGET_OBJECTS:common_stats_obj>
-    $<TARGET_OBJECTS:common_time_obj>
     $<TARGET_OBJECTS:common_meta_thrift_obj>
     $<TARGET_OBJECTS:common_graph_thrift_obj>
     $<TARGET_OBJECTS:common_common_thrift_obj>

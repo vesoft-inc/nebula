@@ -3,6 +3,8 @@
 --daemonize=true
 # The file to host the process id
 --pid_file=pids/nebula-graphd.pid
+# Whether to enable optimizer
+--enable_optimizer=false
 
 ########## logging ##########
 # The directory to host logging files, which must already exists

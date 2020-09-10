@@ -102,6 +102,8 @@ public:
     // Describe plan node
     virtual std::unique_ptr<cpp2::PlanNodeDescription> explain() const;
 
+    virtual void calcCost();
+
     Kind kind() const {
         return kind_;
     }
@@ -154,11 +156,16 @@ public:
 
     static const char* toString(Kind kind);
 
+    double cost() const {
+        return cost_;
+    }
+
 protected:
     static void addDescription(std::string key, std::string value, cpp2::PlanNodeDescription* desc);
 
     Kind                                     kind_{Kind::kUnknown};
     int64_t                                  id_{-1};
+    double                                   cost_{0.0};
     std::string                              outputVar_;
     std::vector<std::string>                 colNames_;
     std::vector<const PlanNode*>             dependencies_;

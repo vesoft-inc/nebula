@@ -20,7 +20,7 @@ class PlanNode;
 
 class ExecutionPlan final {
 public:
-    ExecutionPlan();
+    explicit ExecutionPlan(PlanNode* root = nullptr);
     ~ExecutionPlan();
 
     void setRoot(PlanNode* root) {

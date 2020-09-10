@@ -9,14 +9,30 @@
 #include "common/base/Base.h"
 #include "executor/ExecutionError.h"
 #include "executor/Executor.h"
+#include "optimizer/OptRule.h"
 #include "parser/ExplainSentence.h"
 #include "planner/ExecutionPlan.h"
 #include "planner/PlanNode.h"
 #include "scheduler/Scheduler.h"
+#include "service/GraphFlags.h"
 #include "validator/Validator.h"
+
+using nebula::opt::Optimizer;
+using nebula::opt::OptRule;
+using nebula::opt::RuleSet;
 
 namespace nebula {
 namespace graph {
+
+QueryInstance::QueryInstance(std::unique_ptr<QueryContext> qctx) {
+    qctx_ = std::move(qctx);
+    scheduler_ = std::make_unique<Scheduler>(qctx_.get());
+    std::vector<const RuleSet *> rulesets{&RuleSet::defaultRules()};
+    if (FLAGS_enable_optimizer) {
+        rulesets.emplace_back(&RuleSet::queryRules());
+    }
+    optimizer_ = std::make_unique<Optimizer>(qctx_.get(), std::move(rulesets));
+}
 
 void QueryInstance::execute() {
     Status status = validateAndOptimize();
@@ -51,7 +67,10 @@ Status QueryInstance::validateAndOptimize() {
 
     NG_RETURN_IF_ERROR(Validator::validate(sentence_.get(), qctx()));
 
-    // TODO: optional optimize for plan.
+    auto rootStatus = optimizer_->findBestPlan(qctx_->plan()->root());
+    NG_RETURN_IF_ERROR(rootStatus);
+    auto newRoot = std::move(rootStatus).value();
+    qctx_->setPlan(std::make_unique<ExecutionPlan>(const_cast<PlanNode *>(newRoot)));
 
     return Status::OK();
 }

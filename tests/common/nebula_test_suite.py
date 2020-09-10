@@ -33,6 +33,7 @@ T_NULL_BAD_TYPE.set_nVal(CommonTtypes.NullType.UNKNOWN_PROP)
 T_NULL_UNKNOWN_DIV_BY_ZERO = CommonTtypes.Value()
 T_NULL_UNKNOWN_DIV_BY_ZERO.set_nVal(CommonTtypes.NullType.DIV_BY_ZERO)
 
+
 class NebulaTestSuite(object):
     @classmethod
     def set_delay(self):
@@ -87,7 +88,7 @@ class NebulaTestSuite(object):
         self.data_loaded = True
         pathlist = Path(self.data_dir).rglob('*.ngql')
         for path in pathlist:
-            print("will open ", path)
+            print("open: ", path)
             with open(path, 'r') as data_file:
                 space_name = path.name.split('.')[0] + datetime.datetime.now().strftime('%H_%M_%S_%f')
                 self.spaces.append(space_name)
@@ -141,7 +142,6 @@ class NebulaTestSuite(object):
         resp = self.execute('USE student_space;')
         self.check_resp_succeeded(resp)
 
-
     @classmethod
     def create_nebula_clients(self):
         self.client_pool = ConnectionPool(ip=self.host,
@@ -184,9 +184,10 @@ class NebulaTestSuite(object):
 
     @classmethod
     def check_resp_succeeded(self, resp):
-        assert resp.error_code == ttypes.ErrorCode.SUCCEEDED \
-               or resp.error_code == ttypes.ErrorCode.E_STATEMENT_EMTPY, \
-               bytes.decode(resp.error_msg)
+        assert (
+            resp.error_code == ttypes.ErrorCode.SUCCEEDED
+            or resp.error_code == ttypes.ErrorCode.E_STATEMENT_EMTPY
+        ), bytes.decode(resp.error_msg) if resp.error_msg is not None else ''
 
     @classmethod
     def check_resp_failed(self, resp, error_code: ttypes.ErrorCode = ttypes.ErrorCode.SUCCEEDED):
@@ -194,12 +195,14 @@ class NebulaTestSuite(object):
             assert resp.error_code != error_code, '{} == {}, {}'.format(
                 ttypes.ErrorCode._VALUES_TO_NAMES[resp.error_code],
                 ttypes.ErrorCode._VALUES_TO_NAMES[error_code],
-                bytes.decode(resp.error_msg))
+                bytes.decode(resp.error_msg) if resp.error_msg is not None else ''
+            )
         else:
             assert resp.error_code == error_code, '{} != {}, {}'.format(
                 ttypes.ErrorCode._VALUES_TO_NAMES[resp.error_code],
                 ttypes.ErrorCode._VALUES_TO_NAMES[error_code],
-                bytes.decode(resp.error_msg))
+                bytes.decode(resp.error_msg) if resp.error_msg is not None else ''
+            )
 
     @classmethod
     def check_value(self, col, expect):
@@ -296,17 +299,17 @@ class NebulaTestSuite(object):
         return str(value_list)
 
     @classmethod
-    def search_result(self, resp, expect, is_regex = False):
-         ok, msg = self.search(resp, expect, is_regex)
-         assert ok, msg
+    def search_result(self, resp, expect, is_regex=False):
+        ok, msg = self.search(resp, expect, is_regex)
+        assert ok, msg
 
     @classmethod
-    def search_not_exist(self, resp, expect, is_regex = False):
+    def search_not_exist(self, resp, expect, is_regex=False):
         ok, msg = self.search(resp, expect, is_regex)
         assert not ok, 'expect "{}" has exist'.format(str(expect))
 
     @classmethod
-    def search(self, resp, expect, is_regex = False):
+    def search(self, resp, expect, is_regex=False):
         if resp.data is None and len(expect) == 0:
             return True
 
@@ -406,7 +409,7 @@ class NebulaTestSuite(object):
         return True, result, ''
 
     @classmethod
-    def check_result(self, resp, expect, ignore_col: Set[int] = set(), is_regex = False):
+    def check_result(self, resp, expect, ignore_col: Set[int] = set(), is_regex=False):
         if resp.data is None and len(expect) == 0:
             return
 
@@ -425,7 +428,8 @@ class NebulaTestSuite(object):
                 assert ok, 'convert expect failed, error msg: {}'.format(msg)
         for row, i in zip(rows, range(0, len(new_expect))):
             if isinstance(new_expect[i], CommonTtypes.Row):
-                assert len(row.values) - len(ignore_col) == len(new_expect[i].values), '{}, {}, {}'.format(len(row.values), len(ignore_col), len(new_expect[i].values))
+                assert len(row.values) - len(ignore_col) == len(new_expect[i].values), \
+                    '{}, {}, {}'.format(len(row.values), len(ignore_col), len(new_expect[i].values))
             else:
                 assert len(row.values) - len(ignore_col) == len(new_expect[i])
             ignored_col_count = 0
@@ -446,7 +450,7 @@ class NebulaTestSuite(object):
                         self.row_to_string(row), expect_to_string, msg)
 
     @classmethod
-    def check_out_of_order_result(self, resp, expect, ignore_col: Set[int] = set()):
+    def check_out_of_order_result(self, resp, expect, ignore_col: Set[int]=set()):
         if resp.data is None and len(expect) == 0:
             return
 
@@ -489,8 +493,8 @@ class NebulaTestSuite(object):
                     pathEntry.set_vertex(vertex)
                     path.entry_list.append(pathEntry)
                 else:
-                    assert len(
-                        ecol) == 2, "invalid values size in expect result"
+                    assert len(ecol) == 2, \
+                        "invalid values size in expect result"
                     pathEntry = ttypes.PathEntry()
                     edge = ttypes.Edge()
                     edge.type = ecol[0]
@@ -499,12 +503,10 @@ class NebulaTestSuite(object):
                     path.entry_list.append(pathEntry)
             find = False
             for row in rows:
-                assert len(
-                    row.values
-                ) == 1, "invalid values size in rows: {}".format(row)
-                assert row.values[0].getType()(
-                ) == ttypes.Value.PATH, "invalid column path type: {}".format(
-                    row.values[0].getType()())
+                assert len(row.values) == 1, \
+                    "invalid values size in rows: {}".format(row)
+                assert row.values[0].getType()() == ttypes.Value.PATH, \
+                    "invalid column path type: {}".format(row.values[0].getType()())
                 if row.values[0].get_path() == path:
                     find = True
                     break
@@ -516,12 +518,11 @@ class NebulaTestSuite(object):
     def check_error_msg(self, resp, expect):
         self.check_resp_failed(resp)
         msg = self.check_format_str.format(resp.error_msg, expect)
+        err_msg = resp.error_msg.decode('utf-8')
         if isinstance(expect, Pattern):
-            if not expect.match(resp.error_msg.decode('utf-8')):
-                assert False, msg
+            assert expect.match(err_msg), msg
         else:
-            assert resp.error_msg.decode('utf-8') == expect, msg
-            assert resp.error_msg.decode('utf-8') == expect, msg
+            assert err_msg == expect, msg
 
     @classmethod
     def parse_line(self, line, dataType):
@@ -720,3 +721,37 @@ class NebulaTestSuite(object):
         props[bytes('end_year', encoding = 'utf-8')] = end_year
         edge.props = props
         return edge
+
+    @classmethod
+    def check_exec_plan(cls, resp, expect):
+        cls.check_resp_succeeded(resp)
+        if resp.plan_desc is None:
+            return
+        cls.diff_plan_node(resp.plan_desc, 0, expect, 0)
+
+    @classmethod
+    def diff_plan_node(cls, plan_desc, line_num, expect, expect_idx):
+        plan_node_desc = plan_desc.plan_node_descs[line_num]
+        expect_node = expect[expect_idx]
+        name = bytes.decode(plan_node_desc.name)
+
+        assert name.lower().startswith(expect_node[0].lower()), \
+            "Different plan node: {} vs. {}".format(name, expect_node[0])
+
+        if len(expect_node) > 2:
+            descs = {bytes.decode(pair.value) for pair in plan_node_desc.description}
+            assert set(expect_node[2]).issubset(descs), \
+                'Invalid descriptions, expect: {} vs. resp: {}'.format(
+                    '; '.join(map(str, expect_node[2])),
+                    '; '.join(map(str, descs)))
+
+        if plan_node_desc.dependencies is None:
+            return
+
+        assert len(expect_node[1]) == len(plan_node_desc.dependencies), \
+            "Different plan node dependencies: {} vs. {}".format(
+                len(plan_node_desc.dependencies), len(expect_node[1]))
+
+        for i in range(len(plan_node_desc.dependencies)):
+            line_num = plan_desc.node_index_map[plan_node_desc.dependencies[i]]
+            cls.diff_plan_node(plan_desc, line_num, expect, expect_node[1][i])

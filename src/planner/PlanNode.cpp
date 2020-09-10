@@ -81,7 +81,7 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
             return "InsertEdges";
         case Kind::kDataCollect:
             return "DataCollect";
-        // acl
+        // ACL
         case Kind::kCreateUser:
             return "CreateUser";
         case Kind::kDropUser:
@@ -172,6 +172,10 @@ void PlanNode::addDescription(std::string key, std::string value, cpp2::PlanNode
     kv.set_key(std::move(key));
     kv.set_value(std::move(value));
     desc->get_description()->emplace_back(std::move(kv));
+}
+
+void PlanNode::calcCost() {
+    VLOG(1) << "unimplemented cost calculation.";
 }
 
 std::unique_ptr<cpp2::PlanNodeDescription> PlanNode::explain() const {

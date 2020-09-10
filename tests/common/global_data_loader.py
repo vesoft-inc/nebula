@@ -7,18 +7,19 @@
 
 
 import time
-from nebula2.Client import AuthException, ExecutionException, GraphClient
-from nebula2.Common import *
+
+from nebula2.Client import GraphClient
 from nebula2.ConnectionPool import ConnectionPool
 from nebula2.graph import ttypes
 from tests.common.configs import get_delay_time
 
-class LoadGlobalData(object):
+
+class GlobalDataLoader(object):
     def __init__(self, data_dir, ip, port, user, password):
         self.data_dir = data_dir
         self.ip = ip
         self.port = port
-        self.client_pool = ConnectionPool(ip = self.ip, port = self.port, network_timeout = 0)
+        self.client_pool = ConnectionPool(ip=self.ip, port=self.port, network_timeout=0)
         self.client = GraphClient(self.client_pool)
         self.user = user
         self.password = password
@@ -33,7 +34,7 @@ class LoadGlobalData(object):
     # The whole test will load once, for the only read tests
     def load_nba(self):
         nba_file = self.data_dir + '/data/nba.ngql'
-        print("will open ", nba_file)
+        print("open: ", nba_file)
         with open(nba_file, 'r') as data_file:
             resp = self.client.execute(
                 'CREATE SPACE IF NOT EXISTS nba(partition_num=10, replica_factor=1, vid_size=30);USE nba;')

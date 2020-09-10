@@ -4,8 +4,13 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
 nebula_add_library(
-    optimizer_obj OBJECT
+    optimizer_obj
+    OBJECT
     OptimizerUtils.cpp
+    Optimizer.cpp
+    OptGroup.cpp
+    OptRule.cpp
+    rule/PushFilterDownGetNbrsRule.cpp
 )
 
 nebula_add_subdirectory(test)

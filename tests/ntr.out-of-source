@@ -4,4 +4,4 @@ import os, sys
 os.environ['NEBULA_BUILD_DIR'] = '@CMAKE_BINARY_DIR@'
 os.environ['NEBULA_SOURCE_DIR'] = '@CMAKE_SOURCE_DIR@'
 os.chdir('@CMAKE_SOURCE_DIR@/tests')
-exec(open("nebula-test-run.py").read())
+exec(open("@CMAKE_SOURCE_DIR@/tests/nebula-test-run.py").read())

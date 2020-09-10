@@ -57,6 +57,8 @@ class NebulaService(object):
         param_format = "--meta_server_addrs={} --port={} --ws_http_port={} --ws_h2_port={} --heartbeat_interval_secs=1"
         param = param_format.format("127.0.0.1:" + str(meta_port), ports[0],
                                     ports[1], ports[2])
+        if name == 'graphd':
+            param += ' --enable_optimizer=true'
         if name == 'storaged':
             param += ' --raft_heartbeat_interval_secs=30'
         if debug_log:
@@ -132,7 +134,7 @@ class NebulaService(object):
             p = subprocess.Popen([command], shell=True, stdout=subprocess.PIPE)
             p.wait()
             if p.returncode != 0:
-                print("error: " + p.communicate()[0])
+                print("error: " + bytes.decode(p.communicate()[0]))
             else:
                 graph_port = ports[0]
 
@@ -144,8 +146,7 @@ class NebulaService(object):
 
         for pf in glob.glob(self.work_dir + '/pids/*.pid'):
             with open(pf) as f:
-                pid = int(f.readline())
-                self.pids[f.name] = pid
+                self.pids[f.name] = int(f.readline())
 
         return graph_port
 
@@ -155,7 +156,7 @@ class NebulaService(object):
             try:
                 os.kill(self.pids[p], signal.SIGTERM)
             except OSError as err:
-                print("nebula stop " + p + " failed: " + str(err))
+                print("nebula stop {} failed: {}".format(p, str(err)))
 
         max_retries = 30
         while self.check_procs_alive() and max_retries >= 0:
