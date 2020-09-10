@@ -726,7 +726,9 @@ void GoExecutor::finishExecution() {
             yc.emplace_back(std::move(ptr));
         }
     }
-
+    if (!warningMsg_.empty()) {
+        ectx()->addWarningMsg(warningMsg_);
+    }
 
     if (onResult_) {
         std::unique_ptr<InterimResult> outputs;
