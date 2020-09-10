@@ -6,7 +6,7 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
 from tests.common.nebula_test_suite import NebulaTestSuite
-from tests.common.nebula_test_suite import T_EMPTY, T_NULL
+from tests.common.nebula_test_suite import T_NULL, T_EMPTY
 import pytest
 
 class TestSubGraph(NebulaTestSuite):
@@ -54,7 +54,7 @@ class TestSubGraph(NebulaTestSuite):
         expected_data = {
             "column_names" : ['_vid', 'player.name', 'player.age', 'team.name', 'bachelor.name', 'bachelor.speciality'],
             "rows" : [
-                ['Tim Duncan', 'Tim Duncan', 42, T_NULL, 'Tim Duncan', 'psychology']
+                ['Tim Duncan', 'Tim Duncan', 42, T_EMPTY, 'Tim Duncan', 'psychology']
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -66,8 +66,8 @@ class TestSubGraph(NebulaTestSuite):
         expected_data = {
             "column_names" : ['_vid', 'player.name', 'player.age', 'team.name', 'bachelor.name', 'bachelor.speciality'],
             "rows" : [
-                ['Tim Duncan', 'Tim Duncan', 42, T_NULL, 'Tim Duncan', 'psychology'],
-                ['Spurs', T_NULL, T_NULL, 'Spurs', T_NULL, T_NULL]
+                ['Tim Duncan', 'Tim Duncan', 42, T_EMPTY, 'Tim Duncan', 'psychology'],
+                ['Spurs', T_EMPTY, T_EMPTY, 'Spurs', T_EMPTY, T_EMPTY]
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -79,9 +79,9 @@ class TestSubGraph(NebulaTestSuite):
         expected_data = {
             "column_names" : ['_vid', 'player.name', 'player.age', 'team.name', 'bachelor.name', 'bachelor.speciality'],
             "rows" : [
-                ['Tim Duncan', 'Tim Duncan', 42, T_NULL, 'Tim Duncan', 'psychology'],
-                ['Tony Parker', 'Tony Parker', 36, T_NULL, T_NULL, T_NULL],
-                ['Spurs', T_NULL, T_NULL, 'Spurs', T_NULL, T_NULL]
+                ['Tim Duncan', 'Tim Duncan', 42, T_EMPTY, 'Tim Duncan', 'psychology'],
+                ['Tony Parker', 'Tony Parker', 36, T_EMPTY, T_EMPTY, T_EMPTY],
+                ['Spurs', T_EMPTY, T_EMPTY, 'Spurs', T_EMPTY, T_EMPTY]
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])

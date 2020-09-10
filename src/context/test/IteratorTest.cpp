@@ -173,7 +173,7 @@ TEST(IteratorTest, GetNeighbor) {
         GetNeighborsIter iter(val);
         std::vector<Value> expected;
         expected.insert(expected.end(), 20, 0);
-        expected.insert(expected.end(), 20, Value(NullType::__NULL__));
+        expected.insert(expected.end(), 20, Value());
         std::vector<Value> result;
         for (; iter.valid(); iter.next()) {
             result.emplace_back(iter.getTagProp("tag1", "prop1"));
@@ -185,7 +185,7 @@ TEST(IteratorTest, GetNeighbor) {
     {
         GetNeighborsIter iter(val);
         std::vector<Value> expected;
-        expected.insert(expected.end(), 20, Value(NullType::__NULL__));
+        expected.insert(expected.end(), 20, Value());
         expected.insert(expected.end(), 20, 0);
         std::vector<Value> result;
         for (; iter.valid(); iter.next()) {
@@ -199,7 +199,7 @@ TEST(IteratorTest, GetNeighbor) {
         GetNeighborsIter iter(val);
         std::vector<Value> expected;
         expected.insert(expected.end(), 20, 0);
-        expected.insert(expected.end(), 20, Value(NullType::__NULL__));
+        expected.insert(expected.end(), 20, Value());
         std::vector<Value> result;
         for (; iter.valid(); iter.next()) {
             result.emplace_back(iter.getEdgeProp("edge1", "prop1"));
@@ -210,7 +210,7 @@ TEST(IteratorTest, GetNeighbor) {
     {
         GetNeighborsIter iter(val);
         std::vector<Value> expected;
-        expected.insert(expected.end(), 20, Value(NullType::__NULL__));
+        expected.insert(expected.end(), 20, Value());
         expected.insert(expected.end(), 20, 0);
         std::vector<Value> result;
         for (; iter.valid(); iter.next()) {
@@ -224,7 +224,7 @@ TEST(IteratorTest, GetNeighbor) {
         auto copyIter1 = iter.copy();
         auto copyIter2 = copyIter1->copy();
         std::vector<Value> expected;
-        expected.insert(expected.end(), 20, Value(NullType::__NULL__));
+        expected.insert(expected.end(), 20, Value());
         expected.insert(expected.end(), 20, 0);
         std::vector<Value> result;
         for (; copyIter2->valid(); copyIter2->next()) {

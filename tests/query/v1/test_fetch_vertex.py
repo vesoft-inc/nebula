@@ -9,7 +9,7 @@ import pytest
 
 from nebula2.graph import ttypes
 from tests.common.nebula_test_suite import NebulaTestSuite
-from tests.common.nebula_test_suite import T_NULL
+from tests.common.nebula_test_suite import T_NULL, T_EMPTY
 
 class TestFetchQuery(NebulaTestSuite):
     @classmethod
@@ -175,7 +175,7 @@ class TestFetchQuery(NebulaTestSuite):
         query = 'FETCH PROP ON * "Boris Diaw"'
         resp = self.execute_query(query)
         expect_column_names = ['VertexID', 'player.name', 'player.age', 'team.name', 'bachelor.name', 'bachelor.speciality']
-        expect_result = [['Boris Diaw', 'Boris Diaw', 36, T_NULL, T_NULL, T_NULL]]
+        expect_result = [['Boris Diaw', 'Boris Diaw', 36, T_EMPTY, T_EMPTY, T_EMPTY]]
         self.check_resp_succeeded(resp)
         self.check_column_names(resp, expect_column_names)
         self.check_out_of_order_result(resp, expect_result)
@@ -191,7 +191,7 @@ class TestFetchQuery(NebulaTestSuite):
         query = 'FETCH PROP ON * "Tim Duncan" '
         resp = self.execute_query(query)
         expect_column_names = ['VertexID', 'player.name', 'player.age', 'team.name', 'bachelor.name', 'bachelor.speciality']
-        expect_result = [['Tim Duncan', 'Tim Duncan', 42, T_NULL, "Tim Duncan", "psychology"]]
+        expect_result = [['Tim Duncan', 'Tim Duncan', 42, T_EMPTY, "Tim Duncan", "psychology"]]
         self.check_resp_succeeded(resp)
         self.check_out_of_order_result(resp, expect_result)
 
@@ -199,8 +199,8 @@ class TestFetchQuery(NebulaTestSuite):
         query = 'FETCH PROP ON * "Tim Duncan", "Boris Diaw"'
         resp = self.execute_query(query)
         expect_column_names = ['_vid', 'player.name', 'player.age', 'team.name', 'bachelor.name', 'bachelor.speciality']
-        expect_result = [['Tim Duncan', 'Tim Duncan', 42, T_NULL, "Tim Duncan", "psychology"],
-                         ['Boris Diaw', 'Boris Diaw', 36, T_NULL, T_NULL, T_NULL]]
+        expect_result = [['Tim Duncan', 'Tim Duncan', 42, T_EMPTY, "Tim Duncan", "psychology"],
+                         ['Boris Diaw', 'Boris Diaw', 36, T_EMPTY, T_EMPTY, T_EMPTY]]
         self.check_resp_succeeded(resp)
         self.check_out_of_order_result(resp, expect_result)
 
@@ -210,8 +210,8 @@ class TestFetchQuery(NebulaTestSuite):
         resp = self.execute_query(query)
         expect_column_names = ['_vid', 'player.name', 'player.age', 'team.name', 'bachelor.name', 'bachelor.speciality']
         expect_result = [
-            ['Tony Parker', 'Tony Parker', 36, T_NULL, T_NULL, T_NULL],
-            ['Tim Duncan', 'Tim Duncan', 42, T_NULL, "Tim Duncan", "psychology"]
+            ['Tony Parker', 'Tony Parker', 36, T_EMPTY, T_EMPTY, T_EMPTY],
+            ['Tim Duncan', 'Tim Duncan', 42, T_EMPTY, "Tim Duncan", "psychology"]
         ]
         self.check_resp_succeeded(resp)
         self.check_out_of_order_result(resp, expect_result)

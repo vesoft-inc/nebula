@@ -8,7 +8,7 @@
 import time
 import pytest
 
-from tests.common.nebula_test_suite import NebulaTestSuite, T_NULL
+from tests.common.nebula_test_suite import NebulaTestSuite, T_NULL, T_EMPTY
 
 
 class TestDeleteVertices(NebulaTestSuite):
@@ -210,5 +210,5 @@ class TestDeleteVertices(NebulaTestSuite):
         resp = self.execute_query('FETCH PROP ON person "101" yield person.name, person.age')
         # 2.0: when vertex not exist, return NULL
         self.check_resp_succeeded(resp)
-        expect_result = [['101', T_NULL, T_NULL]]
+        expect_result = [['101', T_EMPTY, T_EMPTY]]
         self.check_out_of_order_result(resp, expect_result)

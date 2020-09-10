@@ -191,7 +191,7 @@ const Value& GetNeighborsIter::getColumn(const std::string& col) const {
     auto& index = dsIndices_[segment].colIndices;
     auto found = index.find(col);
     if (found == index.end()) {
-        return Value::kNullValue;
+        return Value::kEmpty;
     }
     return iter_->row_->values[found->second];
 }
@@ -206,11 +206,11 @@ const Value& GetNeighborsIter::getTagProp(const std::string& tag,
     auto &tagPropIndices = dsIndices_[segment].tagPropsMap;
     auto index = tagPropIndices.find(tag);
     if (index == tagPropIndices.end()) {
-        return Value::kNullValue;
+        return Value::kEmpty;
     }
     auto propIndex = index->second.propIndices.find(prop);
     if (propIndex == index->second.propIndices.end()) {
-        return Value::kNullValue;
+        return Value::kEmpty;
     }
     auto colId = index->second.colIdx;
     auto& row = *(iter_->row_);
@@ -232,19 +232,19 @@ const Value& GetNeighborsIter::getEdgeProp(const std::string& edge,
     if (edge != "*" &&
             (currentEdge.compare(1, std::string::npos, edge) != 0)) {
         VLOG(1) << "Current edge: " << currentEdgeName() << " Wanted: " << edge;
-        return Value::kNullValue;
+        return Value::kEmpty;
     }
     auto segment = currentSeg();
     auto index = dsIndices_[segment].edgePropsMap.find(currentEdge);
     if (index == dsIndices_[segment].edgePropsMap.end()) {
         VLOG(1) << "No edge found: " << edge;
         VLOG(1) << "Current edge: " << currentEdge;
-        return Value::kNullValue;
+        return Value::kEmpty;
     }
     auto propIndex = index->second.propIndices.find(prop);
     if (propIndex == index->second.propIndices.end()) {
         VLOG(1) << "No edge prop found: " << prop;
-        return Value::kNullValue;
+        return Value::kEmpty;
     }
     auto* list = currentEdgeProps();
     return list->values[propIndex->second];
