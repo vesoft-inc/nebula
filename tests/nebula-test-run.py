@@ -15,6 +15,7 @@ from time import localtime, strftime
 CURR_PATH = os.path.dirname(os.path.abspath(__file__))
 NEBULA_HOME = os.getenv('NEBULA_SOURCE_DIR', os.path.join(CURR_PATH, '..'))
 TEST_DIR = os.path.join(NEBULA_HOME, 'tests')
+sys.path.insert(0, NEBULA_HOME)
 sys.path.insert(0, TEST_DIR)
 
 import pytest
