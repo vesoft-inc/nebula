@@ -337,18 +337,18 @@ StatusOr<std::string> Validator::checkRef(const Expression* ref, Value::Type typ
     } else if (ref->kind() == Expression::Kind::kVarProperty) {
         const auto* propExpr = static_cast<const PropertyExpression*>(ref);
         ColDef col(*propExpr->prop(), type);
-        const auto &varName = *propExpr->sym();
-        const auto &var = vctx_->getVar(varName);
+        const auto &outputVar = *propExpr->sym();
+        const auto &var = vctx_->getVar(outputVar);
         if (var.empty()) {
-            return Status::Error("No variable %s", varName.c_str());
+            return Status::Error("No variable %s", outputVar.c_str());
         }
         const auto find = std::find(var.begin(), var.end(), col);
         if (find == var.end()) {
             return Status::Error("No property %s in variable %s",
                                  propExpr->prop()->c_str(),
-                                 varName.c_str());
+                                 outputVar.c_str());
         }
-        return varName;
+        return outputVar;
     } else {
         // it's guranteed by parser
         DLOG(FATAL) << "Unexpected expression " << ref->kind();

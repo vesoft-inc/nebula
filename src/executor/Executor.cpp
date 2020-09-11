@@ -351,8 +351,8 @@ Executor::Executor(const std::string &name, const PlanNode *node, QueryContext *
       ectx_(DCHECK_NOTNULL(qctx->ectx())) {
     // Initialize the position in ExecutionContext for each executor before execution plan
     // starting to run. This will avoid lock something for thread safety in real execution
-    if (!ectx_->exist(node->varName())) {
-        ectx_->initVar(node->varName());
+    if (!ectx_->exist(node->outputVar())) {
+        ectx_->initVar(node->outputVar());
     }
 }
 
@@ -384,7 +384,7 @@ folly::Future<Status> Executor::error(Status status) const {
 
 Status Executor::finish(Result &&result) {
     numRows_ = result.size();
-    ectx_->setResult(node()->varName(), std::move(result));
+    ectx_->setResult(node()->outputVar(), std::move(result));
     return Status::OK();
 }
 

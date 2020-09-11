@@ -49,7 +49,7 @@ Status SetValidator::toPlan() {
             bNode->setColNames(std::move(colNames));
             if (setSentence->distinct()) {
                 auto dedup = Dedup::make(qctx_, bNode);
-                dedup->setInputVar(bNode->varName());
+                dedup->setInputVar(bNode->outputVar());
                 dedup->setColNames(bNode->colNames());
                 root_ = dedup;
             } else {
@@ -73,8 +73,8 @@ Status SetValidator::toPlan() {
             return Status::Error("Unknown operator: %ld", static_cast<int64_t>(setSentence->op()));
     }
 
-    bNode->setLeftVar(lRoot->varName());
-    bNode->setRightVar(rRoot->varName());
+    bNode->setLeftVar(lRoot->outputVar());
+    bNode->setRightVar(rRoot->outputVar());
 
     tail_ = PassThroughNode::make(qctx_, nullptr);
     NG_RETURN_IF_ERROR(lValidator_->appendPlan(tail_));

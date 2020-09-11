@@ -53,7 +53,7 @@ TEST_F(LogicExecutorsTest, Loop) {
         auto f = loopExe->execute();
         auto status = std::move(f).get();
         EXPECT_TRUE(status.ok());
-        auto& result = qctx_->ectx()->getResult(loop->varName());
+        auto& result = qctx_->ectx()->getResult(loop->outputVar());
         auto& value = result.value();
         EXPECT_TRUE(value.isBool());
         EXPECT_TRUE(value.getBool());
@@ -62,7 +62,7 @@ TEST_F(LogicExecutorsTest, Loop) {
     auto f = loopExe->execute();
     auto status = std::move(f).get();
     EXPECT_TRUE(status.ok());
-    auto& result = qctx_->ectx()->getResult(loop->varName());
+    auto& result = qctx_->ectx()->getResult(loop->outputVar());
     auto& value = result.value();
     EXPECT_TRUE(value.isBool());
     EXPECT_FALSE(value.getBool());
@@ -79,7 +79,7 @@ TEST_F(LogicExecutorsTest, Select) {
         auto f = selectExe->execute();
         auto status = std::move(f).get();
         EXPECT_TRUE(status.ok());
-        auto& result = qctx_->ectx()->getResult(select->varName());
+        auto& result = qctx_->ectx()->getResult(select->outputVar());
         auto& value = result.value();
         EXPECT_TRUE(value.isBool());
         EXPECT_TRUE(value.getBool());
@@ -94,7 +94,7 @@ TEST_F(LogicExecutorsTest, Select) {
         auto f = selectExe->execute();
         auto status = std::move(f).get();
         EXPECT_TRUE(status.ok());
-        auto& result = qctx_->ectx()->getResult(select->varName());
+        auto& result = qctx_->ectx()->getResult(select->outputVar());
         auto& value = result.value();
         EXPECT_TRUE(value.isBool());
         EXPECT_FALSE(value.getBool());

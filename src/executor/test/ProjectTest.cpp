@@ -60,7 +60,7 @@ TEST_F(ProjectTest, Project1Col) {
     auto future = proExe->execute();
     auto status = std::move(future).get();
     EXPECT_TRUE(status.ok());
-    auto& result = qctx_->ectx()->getResult(project->varName());
+    auto& result = qctx_->ectx()->getResult(project->outputVar());
 
     DataSet expected;
     expected.colNames = {"vid"};
@@ -85,7 +85,7 @@ TEST_F(ProjectTest, Project2Col) {
     auto future = proExe->execute();
     auto status = std::move(future).get();
     EXPECT_TRUE(status.ok());
-    auto& result = qctx_->ectx()->getResult(project->varName());
+    auto& result = qctx_->ectx()->getResult(project->outputVar());
 
     DataSet expected;
     expected.colNames = {"vid", "num"};
@@ -110,7 +110,7 @@ TEST_F(ProjectTest, EmptyInput) {
     auto future = proExe->execute();
     auto status = std::move(future).get();
     EXPECT_TRUE(status.ok());
-    auto& result = qctx_->ectx()->getResult(project->varName());
+    auto& result = qctx_->ectx()->getResult(project->outputVar());
 
     DataSet expected;
     expected.colNames.emplace_back("vid");

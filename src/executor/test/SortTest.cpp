@@ -26,7 +26,7 @@ class SortTest : public QueryTestBase {};
         sortNode->setOutputVar(outputName);                                                        \
         auto sortExec = Executor::create(sortNode, qctx_.get());                                   \
         EXPECT_TRUE(sortExec->execute().get().ok());                                               \
-        auto& sortResult = qctx_->ectx()->getResult(sortNode->varName());                          \
+        auto& sortResult = qctx_->ectx()->getResult(sortNode->outputVar());                        \
         EXPECT_EQ(sortResult.state(), Result::State::kSuccess);                                    \
         std::string sentence;                                                                      \
         std::vector<std::string> colNames;                                                         \
@@ -40,11 +40,11 @@ class SortTest : public QueryTestBase {};
         }                                                                                          \
         auto yieldSentence = getYieldSentence(sentence);                                           \
         auto* project = Project::make(qctx_.get(), start, yieldSentence->yieldColumns());          \
-        project->setInputVar(sortNode->varName());                                                 \
+        project->setInputVar(sortNode->outputVar());                                               \
         project->setColNames(std::move(colNames));                                                 \
         auto proExe = Executor::create(project, qctx_.get());                                      \
         EXPECT_TRUE(proExe->execute().get().ok());                                                 \
-        auto& proResult = qctx_->ectx()->getResult(project->varName());                            \
+        auto& proResult = qctx_->ectx()->getResult(project->outputVar());                          \
         EXPECT_EQ(proResult.value().getDataSet(), expected);                                       \
         EXPECT_EQ(proResult.state(), Result::State::kSuccess);                                     \
     } while (false)

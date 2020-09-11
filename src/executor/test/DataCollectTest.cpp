@@ -133,7 +133,7 @@ TEST_F(DataCollectTest, CollectSubgraph) {
     auto future = dcExe->execute();
     auto status = std::move(future).get();
     EXPECT_TRUE(status.ok());
-    auto& result = qctx_->ectx()->getResult(dc->varName());
+    auto& result = qctx_->ectx()->getResult(dc->outputVar());
 
     DataSet expected;
     expected.colNames = {"_vertices", "_edges"};
@@ -188,7 +188,7 @@ TEST_F(DataCollectTest, RowBasedMove) {
     auto future = dcExe->execute();
     auto status = std::move(future).get();
     EXPECT_TRUE(status.ok());
-    auto& result = qctx_->ectx()->getResult(dc->varName());
+    auto& result = qctx_->ectx()->getResult(dc->outputVar());
 
     EXPECT_EQ(result.value().getDataSet(), expected);
     EXPECT_EQ(result.state(), Result::State::kSuccess);
@@ -203,7 +203,7 @@ TEST_F(DataCollectTest, EmptyResult) {
     auto future = dcExe->execute();
     auto status = std::move(future).get();
     EXPECT_TRUE(status.ok());
-    auto& result = qctx_->ectx()->getResult(dc->varName());
+    auto& result = qctx_->ectx()->getResult(dc->outputVar());
 
     DataSet expected;
     expected.colNames = {"_vertices", "_edges"};

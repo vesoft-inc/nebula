@@ -34,18 +34,18 @@ public:
             EXPECT_FALSE(dedupExec->execute().get().ok());                                         \
             return;                                                                                \
         }                                                                                          \
-        auto& dedupResult = qctx_->ectx()->getResult(dedupNode->varName());                        \
+        auto& dedupResult = qctx_->ectx()->getResult(dedupNode->outputVar());                      \
         EXPECT_EQ(dedupResult.state(), Result::State::kSuccess);                                   \
                                                                                                    \
         dedupNode->setInputVar(outputName);                                                        \
         auto* project = Project::make(qctx_.get(), nullptr, yieldSentence->yieldColumns());        \
-        project->setInputVar(dedupNode->varName());                                                \
+        project->setInputVar(dedupNode->outputVar());                                              \
         auto colNames = expected.colNames;                                                         \
         project->setColNames(std::move(colNames));                                                 \
                                                                                                    \
         auto proExe = std::make_unique<ProjectExecutor>(project, qctx_.get());                     \
         EXPECT_TRUE(proExe->execute().get().ok());                                                 \
-        auto& proSesult = qctx_->ectx()->getResult(project->varName());                            \
+        auto& proSesult = qctx_->ectx()->getResult(project->outputVar());                          \
                                                                                                    \
         EXPECT_EQ(proSesult.value().getDataSet(), expected);                                       \
         EXPECT_EQ(proSesult.state(), Result::State::kSuccess);                                     \

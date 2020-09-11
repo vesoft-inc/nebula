@@ -91,7 +91,7 @@ void QueryInstance::onFinish() {
     rctx->resp().set_latency_in_us(latency);
     auto &spaceName = rctx->session()->spaceName();
     rctx->resp().set_space_name(spaceName);
-    auto name = qctx()->plan()->root()->varName();
+    auto name = qctx()->plan()->root()->outputVar();
     if (ectx->exist(name)) {
         auto &&value = ectx->moveValue(name);
         if (value.type() == Value::Type::DATASET) {

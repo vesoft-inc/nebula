@@ -9,8 +9,8 @@
 namespace nebula {
 namespace graph {
 
-void ExpressionProps::insertVarProp(const std::string& varName, folly::StringPiece prop) {
-    auto& props = varProps_[varName];
+void ExpressionProps::insertVarProp(const std::string& outputVar, folly::StringPiece prop) {
+    auto& props = varProps_[outputVar];
     props.emplace(prop);
 }
 

@@ -47,7 +47,7 @@ public:
     }
 
     void insertInputProp(folly::StringPiece prop);
-    void insertVarProp(const std::string& varName, folly::StringPiece prop);
+    void insertVarProp(const std::string& outputVar, folly::StringPiece prop);
     void insertSrcTagProp(TagID tagId, folly::StringPiece prop);
     void insertDstTagProp(TagID tagId, folly::StringPiece prop);
     void insertEdgeProp(EdgeType edgeType, folly::StringPiece prop);

@@ -116,14 +116,27 @@ std::unique_ptr<cpp2::PlanNodeDescription> SwitchSpace::explain() const {
 }
 
 std::unique_ptr<cpp2::PlanNodeDescription> DataCollect::explain() const {
-    auto desc = SingleInputNode::explain();
-    addDescription("vars", folly::toJson(util::toJson(vars_)), desc.get());
-    addDescription("kind", collectKind_ == CollectKind::kSubgraph ? "subgraph" : "row", desc.get());
+    auto desc = SingleDependencyNode::explain();
+    addDescription("inputVars", folly::toJson(util::toJson(inputVars_)), desc.get());
+    switch (collectKind_) {
+        case CollectKind::kSubgraph: {
+            addDescription("kind", "subgraph", desc.get());
+            break;
+        }
+        case CollectKind::kRowBasedMove: {
+            addDescription("kind", "row", desc.get());
+            break;
+        }
+        case CollectKind::kMToN: {
+            addDescription("kind", "m to n", desc.get());
+            break;
+        }
+    }
     return desc;
 }
 
 std::unique_ptr<cpp2::PlanNodeDescription> DataJoin::explain() const {
-    auto desc = SingleInputNode::explain();
+    auto desc = SingleDependencyNode::explain();
     addDescription("leftVar", folly::toJson(util::toJson(leftVar_)), desc.get());
     addDescription("rightVar", folly::toJson(util::toJson(rightVar_)), desc.get());
     addDescription("hashKeys", folly::toJson(util::toJson(hashKeys_)), desc.get());

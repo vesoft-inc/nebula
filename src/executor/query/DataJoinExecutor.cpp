@@ -115,7 +115,7 @@ void DataJoinExecutor::probe(const std::vector<Expression*>& probeKeys,
             size_t size = row->size() + probeIter->row()->size();
             JoinIter::JoinLogicalRow newRow(std::move(values), size,
                                         &resultIter->getColIdxIndices());
-            VLOG(1) << node()->varName() << " : " << newRow;
+            VLOG(1) << node()->outputVar() << " : " << newRow;
             resultIter->addRow(std::move(newRow));
         }
     }

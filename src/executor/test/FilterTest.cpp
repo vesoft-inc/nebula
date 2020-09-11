@@ -50,17 +50,17 @@ public:
         filterNode->setOutputVar(outputName);                                                      \
         auto filterExec = std::make_unique<FilterExecutor>(filterNode, qctx_.get());               \
         EXPECT_TRUE(filterExec->execute().get().ok());                                             \
-        auto& filterResult = qctx_->ectx()->getResult(filterNode->varName());                      \
+        auto& filterResult = qctx_->ectx()->getResult(filterNode->outputVar());                    \
         EXPECT_EQ(filterResult.state(), Result::State::kSuccess);                                  \
                                                                                                    \
         filterNode->setInputVar(outputName);                                                       \
         auto* project = Project::make(qctx_.get(), nullptr, yieldSentence->yieldColumns());        \
-        project->setInputVar(filterNode->varName());                                               \
+        project->setInputVar(filterNode->outputVar());                                             \
         project->setColNames(std::vector<std::string>{"name"});                                    \
                                                                                                    \
         auto proExe = std::make_unique<ProjectExecutor>(project, qctx_.get());                     \
         EXPECT_TRUE(proExe->execute().get().ok());                                                 \
-        auto& proSesult = qctx_->ectx()->getResult(project->varName());                            \
+        auto& proSesult = qctx_->ectx()->getResult(project->outputVar());                          \
                                                                                                    \
         EXPECT_EQ(proSesult.value().getDataSet(), expected);                                       \
         EXPECT_EQ(proSesult.state(), Result::State::kSuccess);                                     \

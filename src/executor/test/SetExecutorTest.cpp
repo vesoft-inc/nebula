@@ -55,20 +55,20 @@ TEST_F(SetExecutorTest, TestUnionAll) {
         auto left = StartNode::make(qctx_.get());
         auto right = StartNode::make(qctx_.get());
         auto unionNode = Union::make(qctx_.get(), left, right);
-        unionNode->setLeftVar(left->varName());
-        unionNode->setRightVar(right->varName());
+        unionNode->setLeftVar(left->outputVar());
+        unionNode->setRightVar(right->outputVar());
 
         auto unionExecutor = Executor::create(unionNode, qctx_.get());
         ResultBuilder lb, rb;
         lb.value(Value(lds)).iter(Iterator::Kind::kSequential);
         rb.value(Value(rds)).iter(Iterator::Kind::kSequential);
         // Must save the values after constructing executors
-        qctx_->ectx()->setResult(left->varName(), lb.finish());
-        qctx_->ectx()->setResult(right->varName(), rb.finish());
+        qctx_->ectx()->setResult(left->outputVar(), lb.finish());
+        qctx_->ectx()->setResult(right->outputVar(), rb.finish());
         auto future = unionExecutor->execute();
         EXPECT_TRUE(std::move(future).get().ok());
 
-        auto& result = qctx_->ectx()->getResult(unionNode->varName());
+        auto& result = qctx_->ectx()->getResult(unionNode->outputVar());
         EXPECT_TRUE(result.value().isDataSet());
 
         DataSet resultDS;
@@ -174,8 +174,8 @@ TEST_F(SetExecutorTest, TestGetNeighobrsIterator) {
     auto left = StartNode::make(qctx_.get());
     auto right = StartNode::make(qctx_.get());
     auto unionNode = Union::make(qctx_.get(), left, right);
-    unionNode->setLeftVar(left->varName());
-    unionNode->setRightVar(right->varName());
+    unionNode->setLeftVar(left->outputVar());
+    unionNode->setRightVar(right->outputVar());
 
     auto unionExecutor = Executor::create(unionNode, qctx_.get());
 
@@ -188,8 +188,8 @@ TEST_F(SetExecutorTest, TestGetNeighobrsIterator) {
     ResultBuilder lrb, rrb;
     auto& lRes = lrb.value(Value(std::move(lds))).iter(Iterator::Kind::kGetNeighbors);
     auto& rRes = rrb.value(Value(std::move(rds)));
-    qctx_->ectx()->setResult(left->varName(), lRes.finish());
-    qctx_->ectx()->setResult(right->varName(), rRes.finish());
+    qctx_->ectx()->setResult(left->outputVar(), lRes.finish());
+    qctx_->ectx()->setResult(right->outputVar(), rRes.finish());
     auto future = unionExecutor->execute();
     auto status = std::move(future).get();
 
@@ -203,8 +203,8 @@ TEST_F(SetExecutorTest, TestUnionDifferentColumns) {
     auto left = StartNode::make(qctx_.get());
     auto right = StartNode::make(qctx_.get());
     auto unionNode = Union::make(qctx_.get(), left, right);
-    unionNode->setLeftVar(left->varName());
-    unionNode->setRightVar(right->varName());
+    unionNode->setLeftVar(left->outputVar());
+    unionNode->setRightVar(right->outputVar());
 
     auto unionExecutor = Executor::create(unionNode, qctx_.get());
 
@@ -214,8 +214,8 @@ TEST_F(SetExecutorTest, TestUnionDifferentColumns) {
     rds.colNames = {"col1", "col2"};
 
     // Must save the values after constructing executors
-    qctx_->ectx()->setValue(left->varName(), Value(lds));
-    qctx_->ectx()->setValue(right->varName(), Value(rds));
+    qctx_->ectx()->setValue(left->outputVar(), Value(lds));
+    qctx_->ectx()->setValue(right->outputVar(), Value(rds));
     auto future = unionExecutor->execute();
     auto status = std::move(future).get();
 
@@ -229,8 +229,8 @@ TEST_F(SetExecutorTest, TestUnionDifferentValueType) {
     auto left = StartNode::make(qctx_.get());
     auto right = StartNode::make(qctx_.get());
     auto unionNode = Union::make(qctx_.get(), left, right);
-    unionNode->setLeftVar(left->varName());
-    unionNode->setRightVar(right->varName());
+    unionNode->setLeftVar(left->outputVar());
+    unionNode->setRightVar(right->outputVar());
 
     auto unionExecutor = Executor::create(unionNode, qctx_.get());
 
@@ -238,8 +238,8 @@ TEST_F(SetExecutorTest, TestUnionDifferentValueType) {
     DataSet rds;
 
     // Must save the values after constructing executors
-    qctx_->ectx()->setValue(left->varName(), Value(lst));
-    qctx_->ectx()->setValue(right->varName(), Value(rds));
+    qctx_->ectx()->setValue(left->outputVar(), Value(lst));
+    qctx_->ectx()->setValue(right->outputVar(), Value(rds));
     auto future = unionExecutor->execute();
     auto status = std::move(future).get();
 
@@ -256,21 +256,21 @@ TEST_F(SetExecutorTest, TestIntersect) {
         auto left = StartNode::make(qctx_.get());
         auto right = StartNode::make(qctx_.get());
         auto intersect = Intersect::make(qctx_.get(), left, right);
-        intersect->setLeftVar(left->varName());
-        intersect->setRightVar(right->varName());
+        intersect->setLeftVar(left->outputVar());
+        intersect->setRightVar(right->outputVar());
 
         ResultBuilder lb, rb;
         lb.value(Value(lds)).iter(Iterator::Kind::kSequential);
         rb.value(Value(rds)).iter(Iterator::Kind::kSequential);
         auto executor = Executor::create(intersect, qctx_.get());
-        qctx_->ectx()->setResult(left->varName(), lb.finish());
-        qctx_->ectx()->setResult(right->varName(), rb.finish());
+        qctx_->ectx()->setResult(left->outputVar(), lb.finish());
+        qctx_->ectx()->setResult(right->outputVar(), rb.finish());
 
         auto fut = executor->execute();
         auto status = std::move(fut).get();
         EXPECT_TRUE(status.ok());
 
-        auto& result = qctx_->ectx()->getResult(intersect->varName());
+        auto& result = qctx_->ectx()->getResult(intersect->outputVar());
         EXPECT_TRUE(result.value().isDataSet());
 
         DataSet ds;
@@ -363,21 +363,21 @@ TEST_F(SetExecutorTest, TestMinus) {
         auto left = StartNode::make(qctx_.get());
         auto right = StartNode::make(qctx_.get());
         auto minus = Minus::make(qctx_.get(), left, right);
-        minus->setLeftVar(left->varName());
-        minus->setRightVar(right->varName());
+        minus->setLeftVar(left->outputVar());
+        minus->setRightVar(right->outputVar());
 
         ResultBuilder lb, rb;
         lb.value(Value(lds)).iter(Iterator::Kind::kSequential);
         rb.value(Value(rds)).iter(Iterator::Kind::kSequential);
         auto executor = Executor::create(minus, qctx_.get());
-        qctx_->ectx()->setResult(left->varName(), lb.finish());
-        qctx_->ectx()->setResult(right->varName(), rb.finish());
+        qctx_->ectx()->setResult(left->outputVar(), lb.finish());
+        qctx_->ectx()->setResult(right->outputVar(), rb.finish());
 
         auto fut = executor->execute();
         auto status = std::move(fut).get();
         EXPECT_TRUE(status.ok());
 
-        auto& result = qctx_->ectx()->getResult(minus->varName());
+        auto& result = qctx_->ectx()->getResult(minus->outputVar());
         EXPECT_TRUE(result.value().isDataSet());
 
         DataSet ds;

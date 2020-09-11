@@ -754,7 +754,7 @@ private:
     }
 };
 
-class DataCollect final : public SingleInputNode {
+class DataCollect final : public SingleDependencyNode {
 public:
     enum class CollectKind : uint8_t {
         kSubgraph,
@@ -783,7 +783,7 @@ public:
     }
 
     const std::vector<std::string>& vars() const {
-        return vars_;
+        return inputVars_;
     }
 
     StepClause::MToN* mToN() const {
@@ -801,14 +801,13 @@ private:
                 PlanNode* input,
                 CollectKind collectKind,
                 std::vector<std::string> vars)
-        : SingleInputNode(id, Kind::kDataCollect, input) {
+        : SingleDependencyNode(id, Kind::kDataCollect, input) {
         collectKind_ = collectKind;
-        vars_ = std::move(vars);
+        inputVars_ = std::move(vars);
     }
 
 private:
     CollectKind                 collectKind_;
-    std::vector<std::string>    vars_;
     // using for m to n steps
     StepClause::MToN*           mToN_{nullptr};
     bool                        distinct_{false};
@@ -817,7 +816,7 @@ private:
 /**
  * An implementation of inner join which join two given variable.
  */
-class DataJoin final : public SingleInputNode {
+class DataJoin final : public SingleDependencyNode {
 public:
     static DataJoin* make(QueryContext* qctx,
                           PlanNode* input,
@@ -856,7 +855,7 @@ private:
              std::pair<std::string, int64_t> leftVar,
              std::pair<std::string, int64_t> rightVar,
              std::vector<Expression*> hashKeys, std::vector<Expression*> probeKeys)
-        : SingleInputNode(id, Kind::kDataJoin, input),
+        : SingleDependencyNode(id, Kind::kDataJoin, input),
         leftVar_(std::move(leftVar)),
         rightVar_(std::move(rightVar)),
         hashKeys_(std::move(hashKeys)),

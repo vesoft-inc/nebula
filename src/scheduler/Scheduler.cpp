@@ -33,7 +33,7 @@ folly::Future<Status> Scheduler::schedule() {
 void Scheduler::analyze(Executor *executor) {
     switch (executor->node()->kind()) {
         case PlanNode::Kind::kPassThrough: {
-            const auto &name = executor->node()->varName();
+            const auto &name = executor->node()->outputVar();
             auto it = passThroughPromiseMap_.find(name);
             if (it == passThroughPromiseMap_.end()) {
                 PassThroughData data(executor->successors().size());
@@ -74,7 +74,7 @@ folly::Future<Status> Scheduler::doSchedule(Executor *executor) {
                 .then(task(sel, [sel, this](Status status) {
                     if (!status.ok()) return sel->error(std::move(status));
 
-                    auto val = qctx_->ectx()->getValue(sel->node()->varName());
+                    auto val = qctx_->ectx()->getValue(sel->node()->outputVar());
                     auto cond = val.moveBool();
                     return doSchedule(cond ? sel->thenBody() : sel->elseBody());
                 }));
@@ -88,7 +88,7 @@ folly::Future<Status> Scheduler::doSchedule(Executor *executor) {
         }
         case PlanNode::Kind::kPassThrough: {
             auto mout = static_cast<PassThroughExecutor *>(executor);
-            auto it = passThroughPromiseMap_.find(mout->node()->varName());
+            auto it = passThroughPromiseMap_.find(mout->node()->outputVar());
             CHECK(it != passThroughPromiseMap_.end());
 
             auto &data = it->second;
@@ -147,7 +147,7 @@ folly::Future<Status> Scheduler::iterate(LoopExecutor *loop) {
     return execute(loop).then(task(loop, [loop, this](Status status) {
         if (!status.ok()) return loop->error(std::move(status));
 
-        auto val = qctx_->ectx()->getValue(loop->node()->varName());
+        auto val = qctx_->ectx()->getValue(loop->node()->outputVar());
         if (!val.isBool()) {
             std::stringstream ss;
             ss << "Loop produces a bad condition result: " << val << " type: " << val.type();

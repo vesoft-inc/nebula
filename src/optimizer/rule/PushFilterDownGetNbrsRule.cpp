@@ -85,7 +85,7 @@ Status PushFilterDownGetNbrsRule::transform(QueryContext *qctx,
     } else {
         // Filter(A)->GetNeighbors(C) => GetNeighbors(A&&C)
         newGroupExpr = OptGroupExpr::create(qctx, newGN, groupExpr->group());
-        newGN->setOutputVar(filter->varName());
+        newGN->setOutputVar(filter->outputVar());
     }
 
     for (auto dep : pair.second->dependencies()) {

@@ -27,7 +27,7 @@ class LimitTest : public QueryTestBase {
         limitNode->setOutputVar(outputName);                                                       \
         auto limitExec = Executor::create(limitNode, qctx_.get());                                 \
         EXPECT_TRUE(limitExec->execute().get().ok());                                              \
-        auto& limitResult = qctx_->ectx()->getResult(limitNode->varName());                        \
+        auto& limitResult = qctx_->ectx()->getResult(limitNode->outputVar());                      \
         EXPECT_EQ(limitResult.state(), Result::State::kSuccess);                                   \
         auto yieldSentence =                                                                       \
             getYieldSentence("YIELD study._dst AS name, study.start_year AS start");               \
@@ -42,11 +42,11 @@ class LimitTest : public QueryTestBase {
             }                                                                                      \
         }                                                                                          \
         auto* project = Project::make(qctx_.get(), start, yieldSentence->yieldColumns());          \
-        project->setInputVar(limitNode->varName());                                                \
+        project->setInputVar(limitNode->outputVar());                                              \
         project->setColNames(std::vector<std::string>{"name", "start"});                           \
         auto proExe = Executor::create(project, qctx_.get());                                      \
         EXPECT_TRUE(proExe->execute().get().ok());                                                 \
-        auto& proResult = qctx_->ectx()->getResult(project->varName());                            \
+        auto& proResult = qctx_->ectx()->getResult(project->outputVar());                          \
         EXPECT_EQ(proResult.value().getDataSet(), expected);                                       \
         EXPECT_EQ(proResult.state(), Result::State::kSuccess);                                     \
     } while (false)

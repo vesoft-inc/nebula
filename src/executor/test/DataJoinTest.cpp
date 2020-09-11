@@ -97,7 +97,7 @@ void DataJoinTest::testJoin(std::string left, std::string right,
     auto future = dataJoinExe->execute();
     auto status = std::move(future).get();
     EXPECT_TRUE(status.ok()) << "LINE: " << line;
-    auto& result = qctx_->ectx()->getResult(dataJoin->varName());
+    auto& result = qctx_->ectx()->getResult(dataJoin->outputVar());
 
     DataSet resultDs;
     resultDs.colNames = {
@@ -167,7 +167,7 @@ TEST_F(DataJoinTest, JoinTwice) {
             std::make_unique<DataJoinExecutor>(dataJoin, qctx_.get());
         auto future = dataJoinExe->execute();
 
-        join = dataJoin->varName();
+        join = dataJoin->outputVar();
     }
 
     std::string left = join;
@@ -190,7 +190,7 @@ TEST_F(DataJoinTest, JoinTwice) {
     auto future = dataJoinExe->execute();
     auto status = std::move(future).get();
     EXPECT_TRUE(status.ok());
-    auto& result = qctx_->ectx()->getResult(dataJoin->varName());
+    auto& result = qctx_->ectx()->getResult(dataJoin->outputVar());
 
     DataSet resultDs;
     resultDs.colNames = {

@@ -193,7 +193,7 @@ Status GetSubgraphValidator::toPlan() {
         startVidsVar = buildConstantInput();
     } else {
         PlanNode* dedupStartVid = buildRuntimeInput();
-        startVidsVar = dedupStartVid->varName();
+        startVidsVar = dedupStartVid->outputVar();
         // collect runtime startVids
         auto var = vctx_->anonVarGen()->getVar();
         auto* column = new YieldColumn(
@@ -207,9 +207,9 @@ Status GetSubgraphValidator::toPlan() {
                             dedupStartVid,
                             {},
                             {Aggregate::GroupItem(column->expr(), AggFun::nameIdMap_[fun], true)});
-        collectRunTimeStartVids->setInputVar(dedupStartVid->varName());
+        collectRunTimeStartVids->setInputVar(dedupStartVid->outputVar());
         collectRunTimeStartVids->setColNames({kVid});
-        runtimeStartVar_ = collectRunTimeStartVids->varName();
+        runtimeStartVar_ = collectRunTimeStartVids->outputVar();
     }
 
     if (steps_.steps == 0) {
@@ -245,9 +245,9 @@ Status GetSubgraphValidator::toPlan() {
                         projectVids,
                         {},
                         {Aggregate::GroupItem(column->expr(), AggFun::nameIdMap_[fun], true)});
-    collect->setInputVar(projectVids->varName());
+    collect->setInputVar(projectVids->outputVar());
     collect->setColNames({kVid});
-    collectVar_ = collect->varName();
+    collectVar_ = collect->outputVar();
 
     // TODO(jmq) add condition when gn get empty result
     auto* condition = buildNStepLoopCondition(steps_.steps);
@@ -260,18 +260,17 @@ Status GetSubgraphValidator::toPlan() {
     gn1->setVertexProps(std::move(vertexProps));
     gn1->setEdgeProps(std::move(edgeProps));
     gn1->setEdgeDirection(storage::cpp2::EdgeDirection::BOTH);
-    gn1->setInputVar(projectVids->varName());
+    gn1->setInputVar(projectVids->outputVar());
 
     auto* filter =
         Filter::make(qctx_, gn1, qctx_->objPool()->add(buildFilterCondition(steps_.steps)));
-    filter->setInputVar(gn1->varName());
+    filter->setInputVar(gn1->outputVar());
     filter->setColNames({kVid});
 
     // datacollect
-    std::vector<std::string> collects = {gn->varName(), filter->varName()};
+    std::vector<std::string> collects = {gn->outputVar(), filter->outputVar()};
     auto* dc =
         DataCollect::make(qctx_, filter, DataCollect::CollectKind::kSubgraph, std::move(collects));
-    dc->setInputVar(filter->varName());
     dc->setColNames({"_vertices", "_edges"});
     root_ = dc;
     tail_ = projectStartVid_ != nullptr ? projectStartVid_ : loop;

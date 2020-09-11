@@ -50,14 +50,14 @@ Status FetchEdgesValidator::toPlan() {
 
     if (withProject_) {
         auto *projectNode = Project::make(qctx_, current, newYield_->yields());
-        projectNode->setInputVar(current->varName());
+        projectNode->setInputVar(current->outputVar());
         projectNode->setColNames(colNames_);
         current = projectNode;
     }
     // Project select the properties then dedup
     if (dedup_) {
         auto *dedupNode = Dedup::make(qctx_, current);
-        dedupNode->setInputVar(current->varName());
+        dedupNode->setInputVar(current->outputVar());
         dedupNode->setColNames(colNames_);
         current = dedupNode;
 

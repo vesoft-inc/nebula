@@ -98,7 +98,7 @@ struct RowCmp {
     auto future = aggExe->execute();                                        \
     auto status = std::move(future).get();                                  \
     EXPECT_TRUE(status.ok());                                               \
-    auto& result = qctx_->ectx()->getResult(agg->varName());                \
+    auto& result = qctx_->ectx()->getResult(agg->outputVar());              \
     EXPECT_EQ(result.value().getDataSet(), expected);                       \
     EXPECT_EQ(result.state(), Result::State::kSuccess);
 
@@ -119,7 +119,7 @@ struct RowCmp {
     auto future = aggExe->execute();                                        \
     auto status = std::move(future).get();                                  \
     EXPECT_TRUE(status.ok());                                               \
-    auto& result = qctx_->ectx()->getResult(agg->varName());                \
+    auto& result = qctx_->ectx()->getResult(agg->outputVar());              \
     DataSet sortedDs = result.value().getDataSet();                         \
     std::sort(sortedDs.rows.begin(), sortedDs.rows.end(), RowCmp());        \
     EXPECT_EQ(sortedDs, expected);                                          \
@@ -147,7 +147,7 @@ struct RowCmp {
     auto future = aggExe->execute();                                        \
     auto status = std::move(future).get();                                  \
     EXPECT_TRUE(status.ok());                                               \
-    auto& result = qctx_->ectx()->getResult(agg->varName());                \
+    auto& result = qctx_->ectx()->getResult(agg->outputVar());              \
     DataSet sortedDs = result.value().getDataSet();                         \
     std::sort(sortedDs.rows.begin(), sortedDs.rows.end(), RowCmp());        \
     EXPECT_EQ(sortedDs, expected);                                          \
@@ -168,7 +168,7 @@ struct RowCmp {
     auto future = aggExe->execute();                                        \
     auto status = std::move(future).get();                                  \
     EXPECT_TRUE(status.ok());                                               \
-    auto& result = qctx_->ectx()->getResult(agg->varName());                \
+    auto& result = qctx_->ectx()->getResult(agg->outputVar());              \
     EXPECT_EQ(result.value().getDataSet(), expected);                       \
     EXPECT_EQ(result.state(), Result::State::kSuccess);
 
@@ -315,7 +315,7 @@ TEST_F(AggregateTest, Collect) {
         auto future = aggExe->execute();
         auto status = std::move(future).get();
         EXPECT_TRUE(status.ok());
-        auto& result = qctx_->ectx()->getResult(agg->varName());
+        auto& result = qctx_->ectx()->getResult(agg->outputVar());
         auto& ds = result.value().getDataSet();
         std::vector<Value> vals;
         for (auto& r : ds.rows) {
@@ -421,7 +421,7 @@ TEST_F(AggregateTest, Collect) {
         auto future = aggExe->execute();
         auto status = std::move(future).get();
         EXPECT_TRUE(status.ok());
-        auto& result = qctx_->ectx()->getResult(agg->varName());
+        auto& result = qctx_->ectx()->getResult(agg->outputVar());
         EXPECT_EQ(result.value().getDataSet().rows.size(), 1);
         EXPECT_EQ(result.value().getDataSet().rows[0].values[0].isList(), true);
         auto resultList = result.value().getDataSet().rows[0].values[0].getList();
@@ -483,7 +483,7 @@ TEST_F(AggregateTest, Collect) {
         auto future = aggExe->execute();
         auto status = std::move(future).get();
         EXPECT_TRUE(status.ok());
-        auto& result = qctx_->ectx()->getResult(agg->varName());
+        auto& result = qctx_->ectx()->getResult(agg->outputVar());
         auto& ds = result.value().getDataSet();
         std::vector<Value> vals;
         for (auto& r : ds.rows) {

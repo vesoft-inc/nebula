@@ -74,15 +74,15 @@ Status ValidatorTestBase::EqSelf(const PlanNode *l, const PlanNode *r) {
     } else if (l == nullptr && r == nullptr) {
         return Status::OK();
     } else {
-        return Status::Error("%s.this != %s.this", l->varName().c_str(), r->varName().c_str());
+        return Status::Error("%s.this != %s.this", l->outputVar().c_str(), r->outputVar().c_str());
     }
     if (l->kind() != r->kind()) {
         return Status::Error(
-            "%s.kind_ != %s.kind_", l->varName().c_str(), r->varName().c_str());
+            "%s.kind_ != %s.kind_", l->outputVar().c_str(), r->outputVar().c_str());
     }
     if (l->colNamesRef() != r->colNamesRef()) {
         return Status::Error(
-            "%s.colNames_ != %s.colNames_", l->varName().c_str(), r->varName().c_str());
+            "%s.colNames_ != %s.colNames_", l->outputVar().c_str(), r->outputVar().c_str());
     }
     switch (l->kind()) {
         case PlanNode::Kind::kUnknown:
@@ -96,7 +96,7 @@ Status ValidatorTestBase::EqSelf(const PlanNode *l, const PlanNode *r) {
             if (lDC->collectKind() != rDC->collectKind()) {
                 return Status::Error(
                     "%s.collectKind_ != %s.collectKind_",
-                    l->varName().c_str(), r->varName().c_str());
+                    l->outputVar().c_str(), r->outputVar().c_str());
             }
             return Status::OK();
         }
@@ -108,16 +108,16 @@ Status ValidatorTestBase::EqSelf(const PlanNode *l, const PlanNode *r) {
                 // TODO(shylock) check more about the anno variable
                 if (lGV->src()->kind() != rGV->src()->kind()) {
                     return Status::Error(
-                        "%s.src_ != %s.src_", l->varName().c_str(), r->varName().c_str());
+                        "%s.src_ != %s.src_", l->outputVar().c_str(), r->outputVar().c_str());
                 }
             } else if (lGV->src() != rGV->src()) {
                     return Status::Error(
-                        "%s.src_ != %s.src_", l->varName().c_str(), r->varName().c_str());
+                        "%s.src_ != %s.src_", l->outputVar().c_str(), r->outputVar().c_str());
             }
             // props
             if (lGV->props() != rGV->props()) {
                 return Status::Error(
-                    "%s.props_ != %s.props_", l->varName().c_str(), r->varName().c_str());
+                    "%s.props_ != %s.props_", l->outputVar().c_str(), r->outputVar().c_str());
             }
             return Status::OK();
         }
@@ -129,38 +129,38 @@ Status ValidatorTestBase::EqSelf(const PlanNode *l, const PlanNode *r) {
                 // TODO(shylock) check more about the anno variable
                 if (lGE->src()->kind() != rGE->src()->kind()) {
                     return Status::Error(
-                        "%s.src_ != %s.src_", l->varName().c_str(), r->varName().c_str());
+                        "%s.src_ != %s.src_", l->outputVar().c_str(), r->outputVar().c_str());
                 }
             } else if (lGE->src() != rGE->src()) {
                     return Status::Error(
-                        "%s.src_ != %s.src_", l->varName().c_str(), r->varName().c_str());
+                        "%s.src_ != %s.src_", l->outputVar().c_str(), r->outputVar().c_str());
             }
             // dst
             if (lGE->dst() != nullptr && rGE->dst() != nullptr) {
                 if (lGE->dst()->kind() != rGE->dst()->kind()) {
                     return Status::Error(
-                        "%s.dst_ != %s.dst_", l->varName().c_str(), r->varName().c_str());
+                        "%s.dst_ != %s.dst_", l->outputVar().c_str(), r->outputVar().c_str());
                 }
             } else if (lGE->dst() != rGE->dst()) {
                     return Status::Error(
-                        "%s.dst_ != %s.dst_", l->varName().c_str(), r->varName().c_str());
+                        "%s.dst_ != %s.dst_", l->outputVar().c_str(), r->outputVar().c_str());
             }
             // ranking
             if (lGE->ranking() != nullptr && rGE->ranking() != nullptr) {
                 if (lGE->ranking()->kind() != lGE->ranking()->kind()) {
                     return Status::Error(
                         "%s.ranking_ != %s.ranking_",
-                        l->varName().c_str(), r->varName().c_str());
+                        l->outputVar().c_str(), r->outputVar().c_str());
                 }
             } else if (lGE->ranking() != rGE->ranking()) {
                     return Status::Error(
                         "%s.ranking_ != %s.ranking_",
-                        l->varName().c_str(), r->varName().c_str());
+                        l->outputVar().c_str(), r->outputVar().c_str());
             }
             // props
             if (lGE->props() != rGE->props()) {
                 return Status::Error(
-                    "%s.props_ != %s.props_", l->varName().c_str(), r->varName().c_str());
+                    "%s.props_ != %s.props_", l->outputVar().c_str(), r->outputVar().c_str());
             }
             return Status::OK();
         }
@@ -173,19 +173,19 @@ Status ValidatorTestBase::EqSelf(const PlanNode *l, const PlanNode *r) {
                 auto rCols = rp->columns()->columns();
                 if (lCols.size() != rCols.size()) {
                     return Status::Error("%s.columns_ != %s.columns_",
-                                         l->varName().c_str(),
-                                         r->varName().c_str());
+                                         l->outputVar().c_str(),
+                                         r->outputVar().c_str());
                 }
                 for (std::size_t i = 0; i < lCols.size(); ++i) {
                     if (*lCols[i] != *rCols[i]) {
                         return Status::Error("%s.columns_ != %s.columns_",
-                                             l->varName().c_str(),
-                                             r->varName().c_str());
+                                             l->outputVar().c_str(),
+                                             r->outputVar().c_str());
                     }
                 }
             } else {
                 return Status::Error(
-                    "%s.columns_ != %s.columns_", l->varName().c_str(), r->varName().c_str());
+                    "%s.columns_ != %s.columns_", l->outputVar().c_str(), r->outputVar().c_str());
             }
             return Status::OK();
         }

@@ -214,7 +214,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
 
         // data collect
         auto *dataCollect = DataCollect::make(
-            qctx, dedup, DataCollect::CollectKind::kRowBasedMove, {dedup->varName()});
+            qctx, dedup, DataCollect::CollectKind::kRowBasedMove, {dedup->outputVar()});
         dataCollect->setColNames(colNames);
 
         auto result = Eq(qctx->plan()->root(), dataCollect);

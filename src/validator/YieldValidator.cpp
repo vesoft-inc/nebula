@@ -221,7 +221,7 @@ Status YieldValidator::toPlan() {
 
     dedupDep->setColNames(std::move(outputColumnNames_));
     if (filter != nullptr) {
-        dedupDep->setInputVar(filter->varName());
+        dedupDep->setInputVar(filter->outputVar());
         tail_ = filter;
     } else {
         tail_ = dedupDep;
@@ -236,7 +236,7 @@ Status YieldValidator::toPlan() {
     if (yield->yield()->isDistinct()) {
         auto dedup = Dedup::make(qctx_, dedupDep);
         dedup->setColNames(dedupDep->colNames());
-        dedup->setInputVar(dedupDep->varName());
+        dedup->setInputVar(dedupDep->outputVar());
         root_ = dedup;
     } else {
         root_ = dedupDep;
