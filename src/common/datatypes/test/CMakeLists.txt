@@ -40,3 +40,16 @@ nebula_add_test(
     LIBRARIES
         gtest
 )
+
+
+nebula_add_test(
+    NAME
+        path_test
+    SOURCES
+        PathTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
+    LIBRARIES
+        gtest
+)

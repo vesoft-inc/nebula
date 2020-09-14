@@ -33,6 +33,12 @@ struct Step {
         , name(std::move(s.name))
         , ranking(std::move(s.ranking))
         , props(std::move(s.props)) {}
+    Step(Vertex d,
+         EdgeType t,
+         std::string n,
+         EdgeRanking r,
+         std::unordered_map<std::string, Value> p) noexcept
+        : dst(std::move(d)), type(t), name(std::move(n)), ranking(r), props(std::move(p)) {}
 
     void clear() {
         dst.clear();
@@ -52,6 +58,28 @@ struct Step {
             os << prop.first << ":" << prop.second << ",";
         }
         return os.str();
+    }
+
+    Step& operator=(Step&& rhs) noexcept {
+        if (&rhs != this) {
+            dst = std::move(rhs.dst);
+            type = std::move(rhs.type);
+            name = std::move(rhs.name);
+            ranking = std::move(rhs.ranking);
+            props = std::move(rhs.props);
+        }
+        return *this;
+    }
+
+    Step& operator=(Step& rhs) noexcept {
+        if (&rhs != this) {
+            dst = rhs.dst;
+            type = rhs.type;
+            name = rhs.name;
+            ranking = rhs.ranking;
+            props = rhs.props;
+        }
+        return *this;
     }
 
     bool operator==(const Step& rhs) const {
@@ -92,7 +120,23 @@ struct Path {
         return src == rhs.src &&
                steps == rhs.steps;
     }
+
+    void addStep(Step step) {
+        steps.emplace_back(std::move(step));
+    }
+
+    void reverse();
+
+    // Append a path to another one.
+    // 5->4>3 appended by 3->2->1 => 5->4->3->2->1
+    bool append(Path path);
 };
+
+inline void swap(Step& a, Step& b) {
+    auto tmp = std::move(a);
+    a = std::move(b);
+    b = std::move(tmp);
+}
 
 inline std::ostream &operator<<(std::ostream& os, const Path& p) {
     return os << p.toString();

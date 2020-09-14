@@ -37,11 +37,11 @@ struct Edge {
         , name(v.name)
         , ranking(v.ranking)
         , props(v.props) {}
-    Edge(VertexID&& s,
-         VertexID&& d,
-         EdgeType&& t,
-         std::string&& n,
-         EdgeRanking&& r,
+    Edge(VertexID s,
+         VertexID d,
+         EdgeType t,
+         std::string n,
+         EdgeRanking r,
          std::unordered_map<std::string, Value>&& p)
         : src(std::move(s))
         , dst(std::move(d))
