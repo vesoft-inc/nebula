@@ -33,6 +33,8 @@ private:
 
     GetNeighbors::EdgeProps buildEdgeProps();
 
+    Status zeroStep(PlanNode* depend, const std::string& inputVar);
+
 private:
     std::unordered_set<EdgeType>                edgeTypes_;
     std::string                                 collectVar_;

@@ -48,13 +48,20 @@ class TestSubGraph(NebulaTestSuite):
         # self.check_resp_failed(resp)
 
     def test_zero_step(self):
+        VERTEXS = self.VERTEXS
+        EDGES = self.EDGES
+
         stmt = 'GET SUBGRAPH 0 STEPS FROM "Tim Duncan"'
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
+        vertices = [
+                    VERTEXS['Tim Duncan']
+                   ]
+
         expected_data = {
-            "column_names" : ['_vid', 'player.name', 'player.age', 'team.name', 'bachelor.name', 'bachelor.speciality'],
+            "column_names" : ['_vertices'],
             "rows" : [
-                ['Tim Duncan', 'Tim Duncan', 42, T_EMPTY, 'Tim Duncan', 'psychology']
+                [vertices]
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -63,11 +70,14 @@ class TestSubGraph(NebulaTestSuite):
         stmt = 'GET SUBGRAPH 0 STEPS FROM "Tim Duncan", "Spurs"'
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
+        vertices = [
+                    VERTEXS['Spurs'],
+                    VERTEXS['Tim Duncan']
+                   ]
         expected_data = {
-            "column_names" : ['_vid', 'player.name', 'player.age', 'team.name', 'bachelor.name', 'bachelor.speciality'],
+            "column_names" : ['_vertices'],
             "rows" : [
-                ['Tim Duncan', 'Tim Duncan', 42, T_EMPTY, 'Tim Duncan', 'psychology'],
-                ['Spurs', T_EMPTY, T_EMPTY, 'Spurs', T_EMPTY, T_EMPTY]
+                [vertices]
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -76,12 +86,83 @@ class TestSubGraph(NebulaTestSuite):
         stmt = 'GET SUBGRAPH 0 STEPS FROM "Tim Duncan", "Tony Parker", "Spurs"'
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
+        vertices = [
+                    VERTEXS['Spurs'],
+                    VERTEXS['Tim Duncan'],
+                    VERTEXS['Tony Parker'],
+                   ]
         expected_data = {
-            "column_names" : ['_vid', 'player.name', 'player.age', 'team.name', 'bachelor.name', 'bachelor.speciality'],
+            "column_names" : ['_vertices'],
             "rows" : [
-                ['Tim Duncan', 'Tim Duncan', 42, T_EMPTY, 'Tim Duncan', 'psychology'],
-                ['Tony Parker', 'Tony Parker', 36, T_EMPTY, T_EMPTY, T_EMPTY],
-                ['Spurs', T_EMPTY, T_EMPTY, 'Spurs', T_EMPTY, T_EMPTY]
+                [vertices]
+            ]
+        }
+        self.check_column_names(resp, expected_data["column_names"])
+        self.check_out_of_order_result(resp, expected_data["rows"])
+
+        stmt = "GO FROM 'Tim Duncan' over serve YIELD serve._dst AS id | GET SUBGRAPH 0 STEPS FROM $-.id"
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        vertices = [
+                    VERTEXS['Spurs']
+                   ]
+
+        expected_data = {
+            "column_names" : ['_vertices'],
+            "rows" : [
+                [vertices]
+            ]
+        }
+        self.check_column_names(resp, expected_data["column_names"])
+        self.check_out_of_order_result(resp, expected_data["rows"])
+
+        stmt = "GO FROM 'Tim Duncan' over like YIELD like._dst AS id | GET SUBGRAPH 0 STEPS FROM $-.id"
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        vertices = [
+                    VERTEXS['Tony Parker'],
+                    VERTEXS['Manu Ginobili'],
+                   ]
+
+        expected_data = {
+            "column_names" : ['_vertices'],
+            "rows" : [
+                [vertices]
+            ]
+        }
+        self.check_column_names(resp, expected_data["column_names"])
+        self.check_out_of_order_result(resp, expected_data["rows"])
+
+        stmt = '''$a = GO FROM 'Tim Duncan' over serve YIELD serve._dst AS id;
+                  GET SUBGRAPH 0 STEPS FROM $a.id'''
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        vertices = [
+                    VERTEXS['Spurs']
+                   ]
+
+        expected_data = {
+            "column_names" : ['_vertices'],
+            "rows" : [
+                [vertices]
+            ]
+        }
+        self.check_column_names(resp, expected_data["column_names"])
+        self.check_out_of_order_result(resp, expected_data["rows"])
+
+        stmt = '''$a = GO FROM 'Tim Duncan' over like YIELD like._dst AS id;
+                  GET SUBGRAPH 0 STEPS FROM $a.id'''
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        vertices = [
+                    VERTEXS['Tony Parker'],
+                    VERTEXS['Manu Ginobili'],
+                   ]
+
+        expected_data = {
+            "column_names" : ['_vertices'],
+            "rows" : [
+                [vertices]
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])

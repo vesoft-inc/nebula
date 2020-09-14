@@ -8,6 +8,7 @@
 
 #include "common/expression/UnaryExpression.h"
 #include "common/expression/VariableExpression.h"
+#include "common/expression/VertexExpression.h"
 #include "context/QueryExpressionContext.h"
 #include "parser/TraverseSentences.h"
 #include "planner/Logic.h"
@@ -180,6 +181,32 @@ GetNeighbors::EdgeProps GetSubgraphValidator::buildEdgeProps() {
     return edgeProps;
 }
 
+Status GetSubgraphValidator::zeroStep(PlanNode* depend, const std::string& inputVar) {
+    auto& space = vctx_->whichSpace();
+    std::vector<storage::cpp2::Expr> exprs;
+    std::vector<storage::cpp2::VertexProp> vertexProps;
+    auto* getVertex = GetVertices::make(
+        qctx_, depend, space.id, src_, std::move(vertexProps), std::move(exprs), true);
+    getVertex->setInputVar(inputVar);
+
+    auto var = vctx_->anonVarGen()->getVar();
+    auto* column = new YieldColumn(new VertexExpression(), new std::string("_vertices"));
+    qctx_->objPool()->add(column);
+    column->setAggFunction(new std::string("COLLECT"));
+    auto fun = column->getAggFunName();
+    auto* collectVertex =
+        Aggregate::make(qctx_,
+                        getVertex,
+                        {},
+                        {Aggregate::GroupItem(column->expr(), AggFun::nameIdMap_[fun], true)});
+    collectVertex->setInputVar(getVertex->outputVar());
+    collectVertex->setColNames({"_vertices"});
+
+    root_ = collectVertex;
+    tail_ = projectStartVid_ != nullptr ? projectStartVid_ : getVertex;
+    return Status::OK();
+}
+
 Status GetSubgraphValidator::toPlan() {
     auto& space = vctx_->whichSpace();
     // gn <- filter <- DataCollect
@@ -213,14 +240,10 @@ Status GetSubgraphValidator::toPlan() {
     }
 
     if (steps_.steps == 0) {
-        std::vector<storage::cpp2::Expr> exprs;
-        std::vector<storage::cpp2::VertexProp> vertexProps;
-        auto* getVertexProps = GetVertices::make(
-            qctx_, bodyStart, space.id, src_, std::move(vertexProps), std::move(exprs), true);
-        getVertexProps->setInputVar(startVidsVar);
-        root_ = getVertexProps;
-        tail_ = root_;
-        return Status::OK();
+        if (collectRunTimeStartVids == nullptr) {
+            return zeroStep(bodyStart, startVidsVar);
+        }
+        return zeroStep(collectRunTimeStartVids, startVidsVar);
     }
 
     auto vertexProps = std::make_unique<std::vector<storage::cpp2::VertexProp>>();

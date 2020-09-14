@@ -820,7 +820,6 @@ TEST(IteratorTest, EdgeProp) {
         row.values.emplace_back("world");
         row.values.emplace_back(Value());
         row.values.emplace_back(Value());
-
         ds.rows.emplace_back(std::move(row));
     }
     auto val = std::make_shared<Value>(std::move(ds));
