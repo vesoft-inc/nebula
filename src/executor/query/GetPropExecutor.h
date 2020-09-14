@@ -47,7 +47,7 @@ protected:
         VLOG(1) << "Resp: " << v;
         return finish(ResultBuilder()
                       .value(std::move(v))
-                      .iter(Iterator::Kind::kSequential)
+                      .iter(Iterator::Kind::kProp)
                       .state(state)
                       .finish());
     }

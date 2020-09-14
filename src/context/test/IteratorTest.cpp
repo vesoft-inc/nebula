@@ -746,6 +746,118 @@ TEST(IteratorTest, Join) {
         }
     }
 }
+
+TEST(IteratorTest, VertexProp) {
+    DataSet ds;
+    ds.colNames = {kVid, "tag1.prop1", "tag2.prop1", "tag2.prop2", "tag3.prop1", "tag3.prop2"};
+    for (auto i = 0; i < 10; ++i) {
+        Row row;
+        // _vid
+        row.values.emplace_back(folly::to<std::string>(i));
+
+        row.values.emplace_back(11);
+        row.values.emplace_back(Value());
+        row.values.emplace_back(Value());
+        row.values.emplace_back(31);
+        row.values.emplace_back(32);
+
+        ds.rows.emplace_back(std::move(row));
+    }
+    auto val = std::make_shared<Value>(std::move(ds));
+    {
+        PropIter iter(val);
+        std::vector<Value> expected =
+            {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
+        std::vector<Value> result;
+        for (; iter.valid(); iter.next()) {
+            result.emplace_back(iter.getColumn(kVid));
+        }
+        EXPECT_EQ(expected, result);
+    }
+    {
+        PropIter iter(val);
+        std::vector<Value> expected;
+        for (size_t i = 0; i < 10; ++i) {
+            Vertex vertex;
+            vertex.vid = folly::to<std::string>(i);
+            Tag tag1;
+            tag1.name = "tag1";
+            tag1.props = {{"prop1", 11}};
+            Tag tag3;
+            tag3.name = "tag3";
+            tag3.props = {{"prop1", 31}, {"prop2", 32}};
+            vertex.tags.emplace_back(tag3);
+            vertex.tags.emplace_back(tag1);
+            expected.emplace_back(std::move(vertex));
+        }
+        std::vector<Value> result;
+        for (; iter.valid(); iter.next()) {
+            auto v = iter.getVertex();
+            result.emplace_back(std::move(v));
+        }
+        EXPECT_EQ(result.size(), 10);
+        EXPECT_EQ(result, expected);
+    }
+}
+
+TEST(IteratorTest, EdgeProp) {
+    DataSet ds;
+    ds.colNames = {"like._src",
+                   "like._type",
+                   "like._rank",
+                   "like._dst",
+                   "like.prop1",
+                   "like.prop2",
+                   "serve.prop1",
+                   "serve.prop2"};
+    for (auto i = 0; i < 10; ++i) {
+        Row row;
+        row.values.emplace_back(folly::to<std::string>(i));
+        row.values.emplace_back(2);
+        row.values.emplace_back(0);
+        row.values.emplace_back(folly::to<std::string>(i * 2 + 3));
+        row.values.emplace_back("hello");
+        row.values.emplace_back("world");
+        row.values.emplace_back(Value());
+        row.values.emplace_back(Value());
+
+        ds.rows.emplace_back(std::move(row));
+    }
+    auto val = std::make_shared<Value>(std::move(ds));
+    {
+        PropIter iter(val);
+        std::vector<Value> expected =
+            {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
+        std::vector<Value> result;
+        for (; iter.valid(); iter.next()) {
+            result.emplace_back(iter.getEdgeProp("like", kSrc));
+        }
+        EXPECT_EQ(expected, result);
+    }
+    {
+        PropIter iter(val);
+        std::vector<Value> expected;
+        for (size_t i = 0; i < 10; ++i) {
+            Edge edge;
+            edge.src = folly::to<std::string>(i);
+            edge.dst = folly::to<std::string>(i * 2 + 3);
+            edge.type = 0;
+            edge.ranking = 0;
+            edge.name = "like";
+            edge.props = {{"prop1", "hello"}, {"prop2", "world"}};
+            expected.emplace_back(std::move(edge));
+        }
+        std::vector<Value> result;
+        for (; iter.valid(); iter.next()) {
+            auto v = iter.getEdge();
+            result.emplace_back(std::move(v));
+        }
+        EXPECT_EQ(result.size(), 10);
+        EXPECT_EQ(result, expected);
+    }
+}
+
+
 }  // namespace graph
 }  // namespace nebula
 

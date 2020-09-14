@@ -388,6 +388,203 @@ size_t JoinIter::buildIndexFromJoinIter(const JoinIter* iter, size_t segIdx) {
     return nextSeg + 1;
 }
 
+PropIter::PropIter(std::shared_ptr<Value> value) : Iterator(value, Kind::kProp) {
+    DCHECK(value->isDataSet());
+    auto& ds = value->getDataSet();
+    auto status = makeDataSetIndex(ds);
+    if (UNLIKELY(!status.ok())) {
+        LOG(ERROR) << status;
+        clear();
+        return;
+    }
+    for (auto& row : ds.rows) {
+        rows_.emplace_back(&row);
+    }
+    iter_ = rows_.begin();
+}
+
+Status PropIter::makeDataSetIndex(const DataSet& ds) {
+    dsIndex_.ds = &ds;
+    auto& colNames = ds.colNames;
+    for (size_t i = 0; i < colNames.size(); ++i) {
+        dsIndex_.colIndices.emplace(colNames[i], i);
+        auto& colName = colNames[i];
+        if (colName.find(".") != std::string::npos) {
+            NG_RETURN_IF_ERROR(buildPropIndex(colName, i));
+        }
+    }
+    return Status::OK();
+}
+
+Status PropIter::buildPropIndex(const std::string& props, size_t columnId) {
+    std::vector<std::string> pieces;
+    folly::split(".", props, pieces);
+    if (UNLIKELY(pieces.size() != 2)) {
+        return Status::Error("Bad column name format: %s", props.c_str());
+    }
+    std::string name = pieces[0];
+    auto& propsMap = dsIndex_.propsMap;
+    if (propsMap.find(name) != propsMap.end()) {
+        propsMap[name].emplace(pieces[1], columnId);
+    } else {
+        std::unordered_map<std::string, size_t> propIndices;
+        propIndices.emplace(pieces[1], columnId);
+        propsMap.emplace(name, std::move(propIndices));
+    }
+    return Status::OK();
+}
+
+const Value& PropIter::getColumn(const std::string& col) const {
+    if (!valid()) {
+        return Value::kNullValue;
+    }
+
+    auto& logicalRow = *iter_;
+    auto index = dsIndex_.colIndices.find(col);
+    if (index == dsIndex_.colIndices.end()) {
+        return Value::kNullValue;
+    }
+    DCHECK_LT(index->second, logicalRow.row_->values.size());
+    return logicalRow.row_->values[index->second];
+}
+
+const Value& PropIter::getProp(const std::string& name, const std::string& prop) const {
+    if (!valid()) {
+        return Value::kNullValue;
+    }
+    auto& row = *(iter_->row_);
+    auto& propsMap = dsIndex_.propsMap;
+    auto index = propsMap.find(name);
+    if (index == propsMap.end()) {
+        return Value::kEmpty;
+    }
+
+    auto propIndex = index->second.find(prop);
+    if (propIndex == index->second.end()) {
+        VLOG(1) << "No prop found : " << prop;
+        return Value::kNullValue;
+    }
+    auto colId = propIndex->second;
+    DCHECK_GT(row.size(), colId);
+    return row[colId];
+}
+
+Value PropIter::getVertex() const {
+    if (!valid()) {
+        return Value::kNullValue;
+    }
+
+    auto vidVal = getColumn(nebula::kVid);
+    if (!vidVal.isStr()) {
+        return Value::kNullValue;
+    }
+    Vertex vertex;
+    vertex.vid = vidVal.getStr();
+    auto& tagPropsMap = dsIndex_.propsMap;
+    bool isVertexProps = true;
+    auto& row = *(iter_->row_);
+    for (auto& tagProp : tagPropsMap) {
+        for (auto& propIndex : tagProp.second) {
+            if (row[propIndex.second].empty()) {
+                // Not current vertex's prop
+                isVertexProps = false;
+                break;
+            }
+        }
+        if (!isVertexProps) {
+            isVertexProps = true;
+            continue;
+        }
+        Tag tag;
+        tag.name = tagProp.first;
+        for (auto& propIndex : tagProp.second) {
+            tag.props.emplace(propIndex.first, row[propIndex.second]);
+        }
+        vertex.tags.emplace_back(std::move(tag));
+    }
+    return Value(std::move(vertex));
+}
+
+Value PropIter::getEdge() const {
+    if (!valid()) {
+        return Value::kNullValue;
+    }
+    Edge edge;
+    auto& edgePropsMap = dsIndex_.propsMap;
+    bool isEdgeProps = true;
+    auto row = *(iter_->row_);
+    for (auto& edgeProp : edgePropsMap) {
+        for (auto& propIndex : edgeProp.second) {
+            if (row[propIndex.second].empty()) {
+                // Not current edge's prop
+                isEdgeProps = false;
+                break;
+            }
+        }
+        if (!isEdgeProps) {
+            isEdgeProps = true;
+            continue;
+        }
+        auto edgeName = edgeProp.first;
+        edge.name = edgeProp.first;
+        auto type = getEdgeProp(edgeName, kType);
+        if (!type.isInt()) {
+            return Value::kNullBadType;
+        }
+        auto& src = getEdgeProp(edgeName, kSrc);
+        if (!src.isStr()) {
+            return Value::kNullBadType;
+        }
+        auto& dst = getEdgeProp(edgeName, kDst);
+        if (!dst.isStr()) {
+            return Value::kNullBadType;
+        }
+        if (type.getInt() > 0) {
+            edge.src = src.getStr();
+            edge.dst = dst.getStr();
+        } else {
+            edge.src = dst.getStr();
+            edge.dst = src.getStr();
+        }
+        auto rank = getEdgeProp(edgeName, kRank);
+        if (!rank.isInt()) {
+            return Value::kNullBadType;
+        }
+        edge.ranking = rank.getInt();
+        edge.type = 0;
+
+        for (auto& propIndex : edgeProp.second) {
+            if (propIndex.first == kSrc || propIndex.first == kDst ||
+                propIndex.first == kType || propIndex.first == kRank) {
+                continue;
+            }
+            edge.props.emplace(propIndex.first, row[propIndex.second]);
+        }
+        return Value(std::move(edge));
+    }
+    return Value::kNullValue;
+}
+
+List PropIter::getVertices() {
+    DCHECK(iter_ == rows_.begin());
+    List vertices;
+    for (; valid(); next()) {
+        vertices.values.emplace_back(getVertex());
+    }
+    reset();
+    return vertices;
+}
+
+List PropIter::getEdges() {
+    DCHECK(iter_ == rows_.begin());
+    List edges;
+    for (; valid(); next()) {
+        edges.values.emplace_back(getEdge());
+    }
+    reset();
+    return edges;
+}
+
 std::ostream& operator<<(std::ostream& os, Iterator::Kind kind) {
     switch (kind) {
         case Iterator::Kind::kDefault:
@@ -401,6 +598,9 @@ std::ostream& operator<<(std::ostream& os, Iterator::Kind kind) {
             break;
         case Iterator::Kind::kJoin:
             os << "join";
+            break;
+        case Iterator::Kind::kProp:
+            os << "Prop";
             break;
     }
     os << " iterator";
@@ -417,6 +617,9 @@ std::ostream& operator<<(std::ostream& os, LogicalRow::Kind kind) {
             break;
         case LogicalRow::Kind::kJoin:
             os << "join row";
+            break;
+        case LogicalRow::Kind::kProp:
+            os << "prop row";
             break;
     }
     return os;

@@ -25,6 +25,7 @@ public:
         kGetNeighbors,
         kSequential,
         kJoin,
+        kProp,
     };
 
     virtual ~LogicalRow() {}
@@ -46,6 +47,7 @@ public:
         kGetNeighbors,
         kSequential,
         kJoin,
+        kProp,
     };
 
     explicit Iterator(std::shared_ptr<Value> value, Kind kind)
@@ -108,6 +110,10 @@ public:
 
     bool isJoinIter() const {
         return kind_ == Kind::kJoin;
+    }
+
+    bool isPropIter() const {
+        return kind_ == Kind::kProp;
     }
 
     // The derived class should rewrite get prop if the Value is kind of dataset.
@@ -687,6 +693,144 @@ private:
     // colIdx -> segIdx, currentSegColIdx
     std::unordered_map<size_t, std::pair<size_t, size_t>>          colIdxIndices_;
 };
+
+class PropIter final : public Iterator {
+public:
+    class PropLogicalRow final : public LogicalRow {
+    public:
+        explicit PropLogicalRow(const Row* row) : row_(row) {}
+
+        const Value& operator[](size_t idx) const override {
+            if (idx < row_->size()) {
+                return row_->values[idx];
+            } else {
+                return Value::kEmpty;
+            }
+        }
+
+        size_t size() const override {
+            return row_->size();
+        }
+
+        LogicalRow::Kind kind() const override {
+            return Kind::kProp;
+        }
+
+        std::vector<const Row*> segments() const override {
+            return { row_ };
+        }
+
+    private:
+        friend class PropIter;
+        const Row* row_;
+    };
+
+    explicit PropIter(std::shared_ptr<Value> value);
+
+    Status makeDataSetIndex(const DataSet& ds);
+
+    std::unique_ptr<Iterator> copy() const override {
+        auto copy = std::make_unique<PropIter>(*this);
+        copy->reset();
+        return copy;
+    }
+
+    bool valid() const override {
+        return iter_ < rows_.end();
+    }
+
+    void next() override {
+        if (valid()) {
+            ++iter_;
+        }
+    }
+
+    void erase() override {
+        iter_ = rows_.erase(iter_);
+    }
+
+    void eraseRange(size_t first, size_t last) override {
+        if (first >= last || first >= size()) {
+            return;
+        }
+        if (last > size()) {
+            rows_.erase(rows_.begin() + first, rows_.end());
+        } else {
+            rows_.erase(rows_.begin() + first, rows_.begin() + last);
+        }
+        reset();
+    }
+
+    void clear() override {
+        rows_.clear();
+        reset();
+    }
+
+    RowsIter<PropLogicalRow> begin() {
+        return rows_.begin();
+    }
+
+    RowsIter<PropLogicalRow> end() {
+        return rows_.end();
+    }
+
+    size_t size() const override {
+        return rows_.size();
+    }
+
+    const LogicalRow* row() const override {
+        if (!valid()) {
+            return nullptr;
+        }
+        return &*iter_;
+    }
+
+    const Value& getColumn(const std::string& col) const override;
+
+    Value getVertex() const override;
+
+    Value getEdge() const override;
+
+    List getVertices();
+
+    List getEdges();
+
+    const Value& getProp(const std::string& name, const std::string& prop) const;
+
+    const Value& getTagProp(const std::string& tag, const std::string& prop) const override {
+        return getProp(tag, prop);
+    }
+
+    const Value& getEdgeProp(const std::string& edge, const std::string& prop) const override {
+        return getProp(edge, prop);
+    }
+
+    Status buildPropIndex(const std::string& props, size_t columnIdx);
+
+private:
+    void doReset(size_t pos) override {
+        iter_ = rows_.begin() + pos;
+    }
+
+    struct DataSetIndex {
+        const DataSet* ds;
+        // vertex | _vid | tag1.prop1 | tag1.prop2 | tag2,prop1 | tag2,prop2 | ...
+        //        |_vid : 0 | tag1.prop1 : 1 | tag1.prop2 : 2 | tag2.prop1 : 3 |...
+        // edge   |_src | _type| _ranking | _dst | edge1.prop1 | edge1.prop2 |...
+        //        |_src : 0 | _type : 1| _ranking : 2 | _dst : 3| edge1.prop1 : 4|...
+        std::unordered_map<std::string, size_t> colIndices;
+        // {tag1 : {prop1 : 1, prop2 : 2}
+        // {edge1 : {prop1 : 4, prop2 : 5}
+        std::unordered_map<std::string, std::unordered_map<std::string, size_t> > propsMap;
+    };
+
+private:
+    RowsType<PropLogicalRow>                                       rows_;
+    RowsIter<PropLogicalRow>                                       iter_;
+    DataSetIndex                                                   dsIndex_;
+};
+
+
 
 std::ostream& operator<<(std::ostream& os, Iterator::Kind kind);
 std::ostream& operator<<(std::ostream& os, LogicalRow::Kind kind);

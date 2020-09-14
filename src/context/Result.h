@@ -108,6 +108,8 @@ public:
                 return iter(std::make_unique<SequentialIter>(core_.value));
             case Iterator::Kind::kGetNeighbors:
                 return iter(std::make_unique<GetNeighborsIter>(core_.value));
+            case Iterator::Kind::kProp:
+                return iter(std::make_unique<PropIter>(core_.value));
             default:
                 LOG(FATAL) << "Invalid Iterator kind" << static_cast<uint8_t>(kind);
         }
