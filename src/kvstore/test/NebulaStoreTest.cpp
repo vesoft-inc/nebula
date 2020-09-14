@@ -465,12 +465,7 @@ TEST(NebulaStoreTest, TransLeaderTest) {
         auto partRet = stores[index]->part(spaceId, partId);
         CHECK(ok(partRet));
         auto part = value(partRet);
-        part->asyncTransferLeader(targetAddr, [&] (kvstore::ResultCode code) {
-            if (code == ResultCode::ERR_LEADER_CHANGED) {
-                ASSERT_EQ(targetAddr, part->leader());
-            } else {
-                ASSERT_EQ(ResultCode::SUCCEEDED, code);
-            }
+        part->asyncTransferLeader(targetAddr, [&] (kvstore::ResultCode) {
             baton.post();
         });
         baton.wait();
@@ -492,12 +487,7 @@ TEST(NebulaStoreTest, TransLeaderTest) {
         CHECK(ok(ret));
         auto part = nebula::value(ret);
         LOG(INFO) << "Transfer part " << partId << " leader to " << targetAddr;
-        part->asyncTransferLeader(targetAddr, [&] (kvstore::ResultCode code) {
-            if (code == ResultCode::ERR_LEADER_CHANGED) {
-                ASSERT_EQ(targetAddr, part->leader());
-            } else {
-                ASSERT_EQ(ResultCode::SUCCEEDED, code);
-            }
+        part->asyncTransferLeader(targetAddr, [&] (kvstore::ResultCode) {
             baton.post();
         });
         baton.wait();
