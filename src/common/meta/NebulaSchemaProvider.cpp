@@ -159,8 +159,7 @@ void NebulaSchemaProvider::addField(folly::StringPiece name,
                    sizeof(int8_t) +     // hour
                    sizeof(int8_t) +     // minute
                    sizeof(int8_t) +     // sec
-                   sizeof(int32_t) +    // microsec
-                   sizeof(int32_t);     // timezone
+                   sizeof(int32_t);     // microsec
             break;
         default:
             LOG(FATAL) << "Incorrect field type";
