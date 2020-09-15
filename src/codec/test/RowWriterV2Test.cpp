@@ -22,7 +22,7 @@ const Timestamp now = 1582183355;
 // Convert timestamp now to datetime string
 const std::string nowStr = "2020-02-20 15:22:35";  // NOLINT
 const Date date = {2020, 2, 20};
-const DateTime dt = {2020, 2, 20, 10, 30, 45, 0, -8 * 3600};
+const DateTime dt = {2020, 2, 20, 10, 30, 45, 0};
 const Value sVal("Hello world!");
 const Value iVal(64);
 

@@ -63,7 +63,7 @@ TEST(IndexTest, SimpleVerticesTest) {
             nebula::storage::cpp2::NewTag newTag;
             newTag.set_tag_id(3);
             const Date date = {2020, 2, 20};
-            const DateTime dt = {2020, 2, 20, 10, 30, 45, 0, -8 * 3600};
+            const DateTime dt = {2020, 2, 20, 10, 30, 45, 0};
             std::vector<Value>  props;
             props.emplace_back(Value(true));
             props.emplace_back(Value(1L));
@@ -447,7 +447,7 @@ TEST(IndexTest, AlterTagIndexTest) {
             nebula::storage::cpp2::NewTag newTag;
             newTag.set_tag_id(tagId);
             const Date date = {2020, 2, 20};
-            const DateTime dt = {2020, 2, 20, 10, 30, 45, 0, -8 * 3600};
+            const DateTime dt = {2020, 2, 20, 10, 30, 45, 0};
             std::vector<Value>  props;
             props.emplace_back(Value(true));
             props.emplace_back(Value(1L));

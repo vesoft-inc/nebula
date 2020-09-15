@@ -70,7 +70,7 @@ SchemaWriter& SchemaWriter::appendCol(folly::StringPiece name,
             size = sizeof(int16_t) + 2 * sizeof(int8_t);
             break;
         case PropertyType::DATETIME:
-            size = sizeof(int16_t) + 5 * sizeof(int8_t) + 2 * sizeof(int32_t);
+            size = sizeof(int16_t) + 5 * sizeof(int8_t) + sizeof(int32_t);
             break;
         default:
             LOG(FATAL) << "Unknown column type";

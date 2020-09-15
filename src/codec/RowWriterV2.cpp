@@ -760,9 +760,6 @@ WriteResult RowWriterV2::write(ssize_t index, const DateTime& v) noexcept {
             memcpy(&buf_[offset + sizeof(int16_t) + 5 * sizeof(int8_t)],
                    reinterpret_cast<const void*>(&v.microsec),
                    sizeof(int32_t));
-            memcpy(&buf_[offset + sizeof(int16_t) + 5 * sizeof(int8_t) + sizeof(int32_t)],
-                   reinterpret_cast<const void*>(&v.timezone),
-                   sizeof(int32_t));
             break;
         default:
             return WriteResult::TYPE_MISMATCH;

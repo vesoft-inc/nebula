@@ -159,9 +159,6 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const noexcept {
             memcpy(reinterpret_cast<void*>(&dt.microsec),
                    &data_[offset + sizeof(int16_t) + 5 * sizeof(int8_t)],
                    sizeof(int32_t));
-            memcpy(reinterpret_cast<void*>(&dt.timezone),
-                   &data_[offset + sizeof(int16_t) + 5 * sizeof(int8_t) + sizeof(int32_t)],
-                   sizeof(int32_t));
             return dt;
         }
         default:

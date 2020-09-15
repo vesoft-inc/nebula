@@ -151,7 +151,6 @@ TEST(RowReaderV2, encodedData) {
     int8_t minute = 30;
     int8_t sec = 45;
     int32_t microsec = 54321;
-    int32_t timezone = -8 * 3600;
     encoded.append(reinterpret_cast<char*>(&year), sizeof(int16_t));
     encoded.append(reinterpret_cast<char*>(&month), sizeof(int8_t));
     encoded.append(reinterpret_cast<char*>(&day), sizeof(int8_t));
@@ -159,7 +158,6 @@ TEST(RowReaderV2, encodedData) {
     encoded.append(reinterpret_cast<char*>(&minute), sizeof(int8_t));
     encoded.append(reinterpret_cast<char*>(&sec), sizeof(int8_t));
     encoded.append(reinterpret_cast<char*>(&microsec), sizeof(int32_t));
-    encoded.append(reinterpret_cast<char*>(&timezone), sizeof(int32_t));
 
     // Append the Col5's string content
     encoded.append(str2, strlen(str2));
@@ -286,7 +284,6 @@ TEST(RowReaderV2, encodedData) {
     dt.minute = 30;
     dt.sec = 45;
     dt.microsec = 54321;
-    dt.timezone = -8 * 3600;
     val = reader->getValueByIndex(11);
     EXPECT_EQ(Value::Type::DATETIME, val.type());
     EXPECT_EQ(dt, val.getDateTime());

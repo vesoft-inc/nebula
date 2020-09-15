@@ -114,7 +114,7 @@ public:
             }
             case Value::Type::DATETIME : {
                 std::string buf;
-                buf.reserve(sizeof(int32_t) * 2 + sizeof(int16_t) + sizeof(int8_t) * 5);
+                buf.reserve(sizeof(int32_t) + sizeof(int16_t) + sizeof(int8_t) * 5);
                 auto dt = v.getDateTime();
                 buf.append(reinterpret_cast<const char*>(&dt.year), sizeof(int16_t))
                    .append(reinterpret_cast<const char*>(&dt.month), sizeof(int8_t))
@@ -122,8 +122,7 @@ public:
                    .append(reinterpret_cast<const char*>(&dt.hour), sizeof(int8_t))
                    .append(reinterpret_cast<const char*>(&dt.minute), sizeof(int8_t))
                    .append(reinterpret_cast<const char*>(&dt.sec), sizeof(int8_t))
-                   .append(reinterpret_cast<const char*>(&dt.microsec), sizeof(int32_t))
-                   .append(reinterpret_cast<const char*>(&dt.timezone), sizeof(int32_t));
+                   .append(reinterpret_cast<const char*>(&dt.microsec), sizeof(int32_t));
                 return buf;
             }
             default :
@@ -250,9 +249,6 @@ public:
                        sizeof(int8_t));
                 memcpy(reinterpret_cast<void*>(&dt.microsec),
                        &raw[sizeof(int16_t) + 5 * sizeof(int8_t)],
-                       sizeof(int32_t));
-                memcpy(reinterpret_cast<void*>(&dt.timezone),
-                       &raw[sizeof(int16_t) + 5 * sizeof(int8_t) + sizeof(int32_t)],
                        sizeof(int32_t));
                 v.setDateTime(dt);
                 break;

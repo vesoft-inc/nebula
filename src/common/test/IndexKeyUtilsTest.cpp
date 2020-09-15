@@ -25,7 +25,7 @@ std::vector<Value> getIndexValues() {
     Date d = {2020, 1, 20};
     values.emplace_back(Value(std::move(d)));
 
-    DateTime dt = {2020, 4, 11, 12, 30, 22, 1111, 2222};
+    DateTime dt = {2020, 4, 11, 12, 30, 22, 1111};
     values.emplace_back(std::move(dt));
     return values;
 }
@@ -113,7 +113,6 @@ TEST(IndexKeyUtilsTest, encodeValue) {
     dt.minute = 30;
     dt.sec = 22;
     dt.microsec = 1111;
-    dt.timezone = 2222;
     EXPECT_TRUE(evalDateTime(dt));
 }
 
@@ -239,7 +238,7 @@ TEST(IndexKeyUtilsTest, nullableValue) {
             mockValues[Value::Type::STRING] = Value("str");
             Date d = {2020, 1, 20};
             mockValues[Value::Type::DATE] = Value(d);
-            DateTime dt = {2020, 4, 11, 12, 30, 22, 1111, 2222};
+            DateTime dt = {2020, 4, 11, 12, 30, 22, 1111};
             mockValues[Value::Type::DATETIME] = Value(dt);
         }
         std::vector<Value::Type> colsType;
@@ -310,7 +309,7 @@ TEST(IndexKeyUtilsTest, getValueFromIndexKeyTest) {
     PartitionID partId = 1;
     IndexID indexId = 1;
     Date d = {2020, 1, 20};
-    DateTime dt = {2020, 4, 11, 12, 30, 22, 1111, 2222};
+    DateTime dt = {2020, 4, 11, 12, 30, 22, 1111};
     auto null = Value(NullType::__NULL__);
     std::vector<Value::Type> valueTypes = {
         Value::Type::BOOL,
