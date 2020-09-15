@@ -529,6 +529,8 @@ protected:
     uint64_t lastMsgAcceptedTime_{0};
     // How long between last message was sent and was accepted by majority peers
     uint64_t lastMsgAcceptedCostMs_{0};
+    // Make sure only one election is in progress
+    std::atomic_bool inElection_{false};
 
     // Write-ahead Log
     std::shared_ptr<wal::FileBasedWal> wal_;

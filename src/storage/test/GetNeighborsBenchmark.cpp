@@ -18,7 +18,7 @@
 #include "common/filter/Expressions.h"
 
 DEFINE_int64(max_rank, 1000, "max rank of each edge");
-DEFINE_double(filter_ratio, 0.5, "ratio of data would pass filter");
+DEFINE_double(filter_ratio, 0.1, "ratio of data would pass filter");
 
 std::unique_ptr<nebula::kvstore::KVStore> gKV;
 std::unique_ptr<nebula::storage::AdHocSchemaManager> gSchemaMan;
@@ -215,6 +215,31 @@ cpp2::GetNeighborsRequest buildRequest(const std::vector<VertexID> vIds,
 }  // namespace storage
 }  // namespace nebula
 
+std::string encode(const nebula::storage::cpp2::QueryResponse &resp) {
+    std::string val;
+    apache::thrift::CompactSerializer::serialize(resp, &val);
+    return val;
+}
+
+void encodeBench(int32_t iters,
+                 const std::vector<nebula::VertexID> vIds,
+                 const std::vector<std::string>& playerProps,
+                 const std::vector<std::string>& serveProps) {
+    nebula::storage::cpp2::QueryResponse resp;
+    BENCHMARK_SUSPEND {
+        auto req = nebula::storage::buildRequest(vIds, playerProps, serveProps);
+        auto* processor = nebula::storage::QueryBoundProcessor::instance(
+            gKV.get(), gSchemaMan.get(), nullptr, gExecutor.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        resp = std::move(f).get();
+    }
+    for (decltype(iters) i = 0; i < iters; i++) {
+        auto encoded = encode(resp);
+        folly::doNotOptimizeAway(encoded);
+    }
+}
+
 void go(int32_t iters,
         const std::vector<nebula::VertexID> vIds,
         const std::vector<std::string>& playerProps,
@@ -229,7 +254,8 @@ void go(int32_t iters,
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        folly::doNotOptimizeAway(resp);
+        auto encoded = encode(resp);
+        folly::doNotOptimizeAway(encoded);
     }
 }
 
@@ -237,18 +263,39 @@ void goFilter(int32_t iters,
               const std::vector<nebula::VertexID> vIds,
               const std::vector<std::string>& playerProps,
               const std::vector<std::string>& serveProps,
-              int64_t value = FLAGS_max_rank * FLAGS_filter_ratio) {
+              int64_t value = FLAGS_max_rank * FLAGS_filter_ratio,
+              bool oneFilter = true) {
     nebula::storage::cpp2::GetNeighborsRequest req;
     BENCHMARK_SUSPEND {
         req = nebula::storage::buildRequest(vIds, playerProps, serveProps);
-        // where serve.startYear < value
-        auto* edgeProp = new std::string("startYear");
-        auto* alias = new std::string("101");
-        auto* edgeExp = new nebula::AliasPropertyExpression(new std::string(""), alias, edgeProp);
-        auto* priExp = new nebula::PrimaryExpression(value);
-        auto relExp = std::make_unique<nebula::RelationalExpression>(
-            edgeExp, nebula::RelationalExpression::Operator::LT, priExp);
-        req.set_filter(nebula::Expression::encode(relExp.get()));
+        if (oneFilter) {
+            // where serve.startYear < value
+            auto* edgeProp = new std::string("startYear");
+            auto* alias = new std::string("101");
+            auto* edgeExp = new nebula::AliasPropertyExpression(
+                new std::string(""), alias, edgeProp);
+            auto* priExp = new nebula::PrimaryExpression(value);
+            auto relExp = std::make_unique<nebula::RelationalExpression>(
+                edgeExp, nebula::RelationalExpression::Operator::LT, priExp);
+            req.set_filter(nebula::Expression::encode(relExp.get()));
+        } else {
+            // where serve.startYear < value && serve.endYear < value
+            // since startYear always equal to endYear, the data of which can pass filter is same,
+            // just to test perf of multiple filter
+            auto exp = std::make_unique<nebula::LogicalExpression>(
+                new nebula::RelationalExpression(
+                    new nebula::AliasPropertyExpression(
+                        new std::string(""), new std::string("101"), new std::string("startYear")),
+                    nebula::RelationalExpression::Operator::LT,
+                    new nebula::PrimaryExpression(value)),
+                nebula::LogicalExpression::AND,
+                new nebula::RelationalExpression(
+                    new nebula::AliasPropertyExpression(
+                        new std::string(""), new std::string("101"), new std::string("endYear")),
+                    nebula::RelationalExpression::Operator::LT,
+                    new nebula::PrimaryExpression(value)));
+            req.set_filter(nebula::Expression::encode(exp.get()));
+        }
     }
     for (decltype(iters) i = 0; i < iters; i++) {
         auto* processor = nebula::storage::QueryBoundProcessor::instance(
@@ -256,22 +303,78 @@ void goFilter(int32_t iters,
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        folly::doNotOptimizeAway(resp);
+        auto encoded = encode(resp);
+        folly::doNotOptimizeAway(encoded);
     }
 }
+
+BENCHMARK(EncodeOneProperty, iters) {
+    encodeBench(iters, {1}, {"name"}, {"playerName"});
+}
+BENCHMARK_RELATIVE(EncodeThreeProperty, iters) {
+    encodeBench(iters, {1}, {"name"}, {"playerName", "teamName", "startYear"});
+}
+BENCHMARK_RELATIVE(EncodeFiveProperty, iters) {
+    encodeBench(iters, {1}, {"name"},
+                {"playerName", "teamName", "startYear", "endYear", "teamCareer"});
+}
+BENCHMARK_DRAW_LINE();
 
 BENCHMARK(OneVertexOneProperty, iters) {
     go(iters, {1}, {"name"}, {"teamName"});
 }
-BENCHMARK_RELATIVE(OneVertexOnePropertyWithFilter, iters) {
-    goFilter(iters, {1}, {"name"}, {"teamName"});
+BENCHMARK_RELATIVE(OneVertexOnlyId, iters) {
+    go(iters, {1}, {"name"}, {"_dst"});
 }
+BENCHMARK_RELATIVE(OneVertexThreeProperty, iters) {
+    go(iters, {1}, {"name"}, {"playerName", "teamName", "startYear"});
+}
+BENCHMARK_RELATIVE(OneVertexFiveProperty, iters) {
+    go(iters, {1}, {"name"}, {"playerName", "teamName", "startYear", "endYear", "teamCareer"});
+}
+BENCHMARK_DRAW_LINE();
+
+BENCHMARK(NoFilter, iters) {
+    go(iters, {1}, {"name"}, {"teamName"});
+}
+BENCHMARK_RELATIVE(OneFilterNonePass, iters) {
+    goFilter(iters, {1}, {"name"}, {"teamName"}, FLAGS_max_rank * 0);
+}
+BENCHMARK_RELATIVE(OneFilterFewPass, iters) {
+    goFilter(iters, {1}, {"name"}, {"teamName"}, FLAGS_max_rank * 0.1);
+}
+BENCHMARK_RELATIVE(OneFilterHalfPass, iters) {
+    goFilter(iters, {1}, {"name"}, {"teamName"}, FLAGS_max_rank * 0.5);
+}
+BENCHMARK_RELATIVE(OneFilterAllPass, iters) {
+    goFilter(iters, {1}, {"name"}, {"teamName"}, FLAGS_max_rank * 1);
+}
+BENCHMARK_RELATIVE(TwoFilterNonePass, iters) {
+    goFilter(iters, {1}, {"name"}, {"teamName"}, FLAGS_max_rank * 0, false);
+}
+BENCHMARK_RELATIVE(TwoFilterFewPass, iters) {
+    goFilter(iters, {1}, {"name"}, {"teamName"}, FLAGS_max_rank * 0.1, false);
+}
+BENCHMARK_RELATIVE(TwoFilterHalfPass, iters) {
+    goFilter(iters, {1}, {"name"}, {"teamName"}, FLAGS_max_rank * 0.5, false);
+}
+BENCHMARK_RELATIVE(TwoFilterAllPass, iters) {
+    goFilter(iters, {1}, {"name"}, {"teamName"}, FLAGS_max_rank * 1, false);
+}
+BENCHMARK_DRAW_LINE();
 
 BENCHMARK(TenVertexOneProperty, iters) {
     go(iters, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, {"name"}, {"teamName"});
 }
-BENCHMARK_RELATIVE(TenVertexOnePropertyWithFilter, iters) {
-    goFilter(iters, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, {"name"}, {"teamName"});
+BENCHMARK_RELATIVE(TenVertexOnlyId, iters) {
+    go(iters, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, {"name"}, {"_dst"});
+}
+BENCHMARK_RELATIVE(TenVertexThreeProperty, iters) {
+    go(iters, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, {"name"}, {"playerName", "teamName", "startYear"});
+}
+BENCHMARK_RELATIVE(TenVertexFiveProperty, iters) {
+    go(iters, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+       {"name"}, {"playerName", "teamName", "startYear", "endYear", "teamCareer"});
 }
 
 int main(int argc, char** argv) {
@@ -288,33 +391,32 @@ int main(int argc, char** argv) {
 40 processors, Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz.
 release
 
---max_rank=1000 --filter_ratio=0.1
+--max_rank=1000
 ============================================================================
 GetNeighborsBenchmark.cpprelative                         time/iter  iters/s
 ============================================================================
-OneVertexOneProperty                                       624.38us    1.60K
-OneVertexOnePropertyWithFilter                    88.79%   703.23us    1.42K
-TenVertexOneProperty                                         6.00ms   166.76
-TenVertexOnePropertyWithFilter                    89.82%     6.68ms   149.78
-============================================================================
-
---max_rank=1000 --filter_ratio=0.5
-============================================================================
-GetNeighborsBenchmark.cpprelative                         time/iter  iters/s
-============================================================================
-OneVertexOneProperty                                       629.54us    1.59K
-OneVertexOnePropertyWithFilter                    72.33%   870.39us    1.15K
-TenVertexOneProperty                                         6.02ms   166.09
-TenVertexOnePropertyWithFilter                    71.40%     8.43ms   118.58
-============================================================================
-
---max_rank=1000 --filter_ratio=1
-============================================================================
-GetNeighborsBenchmark.cpprelative                         time/iter  iters/s
-============================================================================
-OneVertexOneProperty                                       624.29us    1.60K
-OneVertexOnePropertyWithFilter                    57.67%     1.08ms   923.84
-TenVertexOneProperty                                         5.95ms   168.17
-TenVertexOnePropertyWithFilter                    56.89%    10.45ms    95.67
+EncodeOneProperty                                           29.64us   33.74K
+EncodeThreeProperty                               96.18%    30.81us   32.45K
+EncodeFiveProperty                                93.43%    31.72us   31.53K
+----------------------------------------------------------------------------
+OneVertexOneProperty                                       660.73us    1.51K
+OneVertexOnlyId                                  348.60%   189.54us    5.28K
+OneVertexThreeProperty                            59.34%     1.11ms   898.08
+OneVertexFiveProperty                             42.89%     1.54ms   649.15
+----------------------------------------------------------------------------
+NoFilter                                                   656.47us    1.52K
+OneFilterNonePass                                 92.77%   707.64us    1.41K
+OneFilterFewPass                                  85.99%   763.42us    1.31K
+OneFilterHalfPass                                 68.93%   952.34us    1.05K
+OneFilterAllPass                                  56.61%     1.16ms   862.36
+TwoFilterNonePass                                 62.03%     1.06ms   944.86
+TwoFilterFewPass                                  58.74%     1.12ms   894.76
+TwoFilterHalfPass                                 49.72%     1.32ms   757.37
+TwoFilterAllPass                                  42.52%     1.54ms   647.76
+----------------------------------------------------------------------------
+TenVertexOneProperty                                         6.36ms   157.26
+TenVertexOnlyId                                  372.16%     1.71ms   585.26
+TenVertexThreeProperty                            58.76%    10.82ms    92.41
+TenVertexFiveProperty                             41.77%    15.22ms    65.69
 ============================================================================
 */
