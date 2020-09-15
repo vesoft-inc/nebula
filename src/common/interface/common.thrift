@@ -96,7 +96,7 @@ union Value {
     4: double                                   fVal;
     5: binary                                   sVal;
     6: Date                                     dVal;
-    7: Time                                     tmVal;
+    7: Time                                     tVal;
     8: DateTime                                 dtVal;
     9: Vertex (cpp.type = "nebula::Vertex")     vVal (cpp.ref_type = "unique");
     10: Edge (cpp.type = "nebula::Edge")        eVal (cpp.ref_type = "unique");
