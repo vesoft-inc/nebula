@@ -304,6 +304,16 @@ TEST_F(ExpressionTest, Constant) {
         EXPECT_EQ(eval, Date(1234));
     }
     {
+        Time time;
+        time.hour = 3;
+        time.minute = 33;
+        time.sec = 3;
+        ConstantExpression timeExpr(time);
+        auto eval = Expression::eval(&timeExpr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::TIME);
+        EXPECT_EQ(eval, time);
+    }
+    {
         DateTime dateTime;
         dateTime.year = 1900;
         dateTime.month = 2;

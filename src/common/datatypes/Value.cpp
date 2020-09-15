@@ -40,6 +40,9 @@ std::size_t hash<nebula::Value>::operator()(const nebula::Value& v) const noexce
         case nebula::Value::Type::DATE: {
             return hash<nebula::Date>()(v.getDate());
         }
+        case nebula::Value::Type::TIME: {
+            return hash<nebula::Time>()(v.getTime());
+        }
         case nebula::Value::Type::DATETIME: {
             return hash<nebula::DateTime>()(v.getDateTime());
         }
@@ -122,9 +125,14 @@ Value::Value(Value&& rhs) noexcept : type_(Value::Type::__EMPTY__) {
             setD(std::move(rhs.value_.dVal));
             break;
         }
-        case Type::DATETIME:
+        case Type::TIME:
         {
             setT(std::move(rhs.value_.tVal));
+            break;
+        }
+        case Type::DATETIME:
+        {
+            setDT(std::move(rhs.value_.dtVal));
             break;
         }
         case Type::VERTEX:
@@ -206,9 +214,14 @@ Value::Value(const Value& rhs) : type_(Value::Type::__EMPTY__) {
             setD(rhs.value_.dVal);
             break;
         }
-        case Type::DATETIME:
+        case Type::TIME:
         {
             setT(rhs.value_.tVal);
+            break;
+        }
+        case Type::DATETIME:
+        {
+            setDT(rhs.value_.dtVal);
             break;
         }
         case Type::VERTEX:
@@ -334,12 +347,20 @@ Value::Value(Date&& v) {
     setD(std::move(v));
 }
 
-Value::Value(const DateTime& v) {
+Value::Value(const Time& v) {
     setT(v);
 }
 
-Value::Value(DateTime&& v) {
+Value::Value(Time&& v) {
     setT(std::move(v));
+}
+
+Value::Value(const DateTime& v) {
+    setDT(v);
+}
+
+Value::Value(DateTime&& v) {
+    setDT(std::move(v));
 }
 
 Value::Value(const Vertex& v) {
@@ -411,6 +432,7 @@ const std::string& Value::typeName() const {
         { Type::FLOAT, "float" },
         { Type::STRING, "string" },
         { Type::DATE, "date" },
+        { Type::TIME, "time" },
         { Type::DATETIME, "datetime" },
         { Type::VERTEX, "vertex" },
         { Type::EDGE, "edge" },
@@ -547,14 +569,24 @@ void Value::setDate(Date&& v) {
     setD(std::move(v));
 }
 
-void Value::setDateTime(const DateTime& v) {
+void Value::setTime(const Time& v) {
     clear();
     setT(v);
 }
 
-void Value::setDateTime(DateTime&& v) {
+void Value::setTime(Time&& v) {
     clear();
     setT(std::move(v));
+}
+
+void Value::setDateTime(const DateTime& v) {
+    clear();
+    setDT(v);
+}
+
+void Value::setDateTime(DateTime&& v) {
+    clear();
+    setDT(std::move(v));
 }
 
 void Value::setVertex(const Vertex& v) {
@@ -693,9 +725,14 @@ const Date& Value::getDate() const {
     return value_.dVal;
 }
 
+const Time& Value::getTime() const {
+    CHECK_EQ(type_, Type::TIME);
+    return value_.tVal;
+}
+
 const DateTime& Value::getDateTime() const {
     CHECK_EQ(type_, Type::DATETIME);
-    return value_.tVal;
+    return value_.dtVal;
 }
 
 const Vertex& Value::getVertex() const {
@@ -799,9 +836,14 @@ Date& Value::mutableDate() {
     return value_.dVal;
 }
 
+Time& Value::mutableTime() {
+    CHECK_EQ(type_, Type::TIME);
+    return value_.tVal;
+}
+
 DateTime& Value::mutableDateTime() {
     CHECK_EQ(type_, Type::DATETIME);
-    return value_.tVal;
+    return value_.dtVal;
 }
 
 Vertex& Value::mutableVertex() {
@@ -882,9 +924,16 @@ Date Value::moveDate() {
     return v;
 }
 
+Time Value::moveTime() {
+    CHECK_EQ(type_, Type::TIME);
+    Time v = std::move(value_.tVal);
+    clear();
+    return v;
+}
+
 DateTime Value::moveDateTime() {
     CHECK_EQ(type_, Type::DATETIME);
-    DateTime v = std::move(value_.tVal);
+    DateTime v = std::move(value_.dtVal);
     clear();
     return v;
 }
@@ -974,9 +1023,14 @@ void Value::clear() {
             destruct(value_.dVal);
             break;
         }
-        case Type::DATETIME:
+        case Type::TIME:
         {
             destruct(value_.tVal);
+            break;
+        }
+        case Type::DATETIME:
+        {
+            destruct(value_.dtVal);
             break;
         }
         case Type::VERTEX:
@@ -1054,9 +1108,14 @@ Value& Value::operator=(Value&& rhs) noexcept {
             setD(std::move(rhs.value_.dVal));
             break;
         }
-        case Type::DATETIME:
+        case Type::TIME:
         {
             setT(std::move(rhs.value_.tVal));
+            break;
+        }
+        case Type::DATETIME:
+        {
+            setDT(std::move(rhs.value_.dtVal));
             break;
         }
         case Type::VERTEX:
@@ -1140,9 +1199,14 @@ Value& Value::operator=(const Value& rhs) {
             setD(rhs.value_.dVal);
             break;
         }
-        case Type::DATETIME:
+        case Type::TIME:
         {
             setT(rhs.value_.tVal);
+            break;
+        }
+        case Type::DATETIME:
+        {
+            setDT(rhs.value_.dtVal);
             break;
         }
         case Type::VERTEX:
@@ -1261,14 +1325,24 @@ void Value::setD(Date&& v) {
     new (std::addressof(value_.dVal)) Date(std::move(v));
 }
 
-void Value::setT(const DateTime& v) {
-    type_ = Type::DATETIME;
-    new (std::addressof(value_.tVal)) DateTime(v);
+void Value::setT(const Time& v) {
+    type_ = Type::TIME;
+    new (std::addressof(value_.tVal)) Time(v);
 }
 
-void Value::setT(DateTime&& v) {
+void Value::setT(Time&& v) {
+    type_ = Type::TIME;
+    new (std::addressof(value_.tVal)) Time(std::move(v));
+}
+
+void Value::setDT(const DateTime& v) {
     type_ = Type::DATETIME;
-    new (std::addressof(value_.tVal)) DateTime(std::move(v));
+    new (std::addressof(value_.dtVal)) DateTime(v);
+}
+
+void Value::setDT(DateTime&& v) {
+    type_ = Type::DATETIME;
+    new (std::addressof(value_.dtVal)) DateTime(std::move(v));
 }
 
 void Value::setV(const std::unique_ptr<Vertex>& v) {
@@ -1452,6 +1526,9 @@ std::string Value::toString() const {
         case Value::Type::DATE: {
             return getDate().toString();
         }
+        case Value::Type::TIME: {
+            return getTime().toString();
+        }
         case Value::Type::DATETIME: {
             return getDateTime().toString();
         }
@@ -1601,6 +1678,10 @@ std::ostream& operator<<(std::ostream& os, const Value::Type& type) {
             os << "DATE";
             break;
         }
+        case Value::Type::TIME: {
+            os << "TIME";
+            break;
+        }
         case Value::Type::DATETIME: {
             os << "DATETIME";
             break;
@@ -1726,6 +1807,9 @@ Value operator+(const Value& lhs, const Value& rhs) {
                 case Value::Type::DATE: {
                     return lhs.getStr() + rhs.getDate().toString();
                 }
+                case Value::Type::TIME: {
+                    return lhs.getStr() + rhs.getTime().toString();
+                }
                 case Value::Type::DATETIME: {
                     return lhs.getStr() + rhs.getDateTime().toString();
                 }
@@ -1741,6 +1825,16 @@ Value operator+(const Value& lhs, const Value& rhs) {
                 }
                 case Value::Type::STRING: {
                     return lhs.getDate().toString() + rhs.getStr();
+                }
+                default: {
+                    return Value::kNullBadType;
+                }
+            }
+        }
+        case Value::Type::TIME: {
+            switch (rhs.type()) {
+                case Value::Type::STRING: {
+                    return lhs.getTime().toString() + rhs.getStr();
                 }
                 default: {
                     return Value::kNullBadType;
@@ -2066,6 +2160,7 @@ bool operator<(const Value& lhs, const Value& rhs) {
         case Value::Type::DATE: {
             return lhs.getDate() < rhs.getDate();
         }
+        case Value::Type::TIME:
         case Value::Type::DATETIME:
         case Value::Type::VERTEX:
         case Value::Type::EDGE:
@@ -2077,10 +2172,13 @@ bool operator<(const Value& lhs, const Value& rhs) {
             // TODO:
             return false;
         }
-        default: {
+        case Value::Type::NULLVALUE:
+        case Value::Type::__EMPTY__: {
             return false;
         }
     }
+    DLOG(FATAL) << "Unknown type " << static_cast<int>(lType);
+    return false;
 }
 
 bool operator==(const Value& lhs, const Value& rhs) {
@@ -2129,7 +2227,12 @@ bool operator==(const Value& lhs, const Value& rhs) {
         case Value::Type::DATE: {
             return lhs.getDate() == rhs.getDate();
         }
+        case Value::Type::TIME: {
+            // TODO(shylock) convert to UTC then compare
+            return lhs.getTime() == rhs.getTime();
+        }
         case Value::Type::DATETIME: {
+            // TODO(shylock) convert to UTC then compare
             return lhs.getDateTime() == rhs.getDateTime();
         }
         case Value::Type::VERTEX: {
@@ -2153,10 +2256,13 @@ bool operator==(const Value& lhs, const Value& rhs) {
         case Value::Type::DATASET: {
             return lhs.getDataSet() == rhs.getDataSet();
         }
-        default: {
+        case Value::Type::NULLVALUE:
+        case Value::Type::__EMPTY__: {
             return false;
         }
     }
+    DLOG(FATAL) << "Unknown type " << static_cast<int>(lhs.type());
+    return false;
 }
 
 bool operator!=(const Value& lhs, const Value& rhs) {

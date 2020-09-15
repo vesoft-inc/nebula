@@ -3,9 +3,10 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
+#include <thrift/lib/cpp2/protocol/Serializer.h>
+#include <gtest/gtest.h>
 
 #include "common/base/Base.h"
-#include <gtest/gtest.h>
 #include "common/datatypes/Value.h"
 #include "common/datatypes/Map.h"
 #include "common/datatypes/Set.h"
@@ -529,6 +530,7 @@ TEST(Value, typeName) {
     EXPECT_EQ("float", Value(10.0).typeName());
     EXPECT_EQ("string", Value("").typeName());
     EXPECT_EQ("date", Value(Date()).typeName());
+    EXPECT_EQ("time", Value(Time()).typeName());
     EXPECT_EQ("datetime", Value(DateTime()).typeName());
     EXPECT_EQ("vertex", Value(Vertex()).typeName());
     EXPECT_EQ("edge", Value(Edge()).typeName());
@@ -545,6 +547,84 @@ TEST(Value, typeName) {
     EXPECT_EQ("UNKNOWN_PROP", Value::kNullUnknownProp.typeName());
     EXPECT_EQ("DIV_BY_ZERO", Value::kNullDivByZero.typeName());
 }
+
+using serializer = apache::thrift::CompactSerializer;
+
+TEST(Value, DecodeEncode) {
+    std::vector<Value> values {
+        // empty
+        Value(),
+
+        // null
+        Value(NullType::__NULL__),
+        Value(NullType::DIV_BY_ZERO),
+        Value(NullType::BAD_DATA),
+        Value(NullType::ERR_OVERFLOW),
+        Value(NullType::OUT_OF_RANGE),
+        Value(NullType::UNKNOWN_PROP),
+
+        // int
+        Value(0),
+        Value(1),
+        Value(2),
+
+        // float
+        Value(3.14),
+        Value(2.67),
+
+        // string
+        Value("Hello "),
+        Value("World"),
+
+        // bool
+        Value(false),
+        Value(true),
+
+        // date
+        Value(Date(2020, 1, 1)),
+        Value(Date(2019, 12, 1)),
+
+        // time
+        Value(Time{1, 2, 3, 4}),
+
+        // datatime
+        Value(DateTime{1, 2, 3, 4, 5, 6, 7}),
+
+        // vertex
+        Value(Vertex({"Vid", {
+            Tag("tagName", {{"prop", Value(2)}}),
+            Tag("tagName1", {{"prop1", Value(2)}, {"prop2", Value(NullType::__NULL__)}}),
+        }})),
+
+        // edge
+        Value(Edge("Src", "Dst", 3, "Edge", 233, {{"prop1", Value(233)}, {"prop2", Value(2.3)}})),
+
+        // Path
+        Value(Path()),
+
+        // List
+        Value(List({Value(2), Value(true), Value(2.33)})),
+
+        // Set
+        Value(Set({Value(2), Value(true), Value(2.33)})),
+
+        // Map
+        Value(Map({{"Key1", Value(2)}, {"Key2", Value(true)}, {"Key3", Value(2.33)}})),
+
+        // DataSet
+        Value(DataSet({"col1", "col2"})),
+    };
+    for (const auto& val : values) {
+        std::string buf;
+        buf.reserve(128);
+        serializer::serialize(val, &buf);
+        Value valCopy;
+        std::size_t s = serializer::deserialize(buf, valCopy);
+        ASSERT_EQ(s, buf.size());
+        EXPECT_EQ(val, valCopy);
+    }
+}
+
 }  // namespace nebula
 
 

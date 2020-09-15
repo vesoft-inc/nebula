@@ -36,9 +36,13 @@ nebula_add_test(
         ValueTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:expression_obj>
         $<TARGET_OBJECTS:datatypes_obj>
+        $<TARGET_OBJECTS:function_manager_obj>
+        $<TARGET_OBJECTS:time_obj>
     LIBRARIES
         gtest
+        ${THRIFT_LIBRARIES}
 )
 
 
