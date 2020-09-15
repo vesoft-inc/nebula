@@ -126,10 +126,10 @@ public:
         }
         prefix_ = NebulaKeyUtils::edgePrefix(planContext_->vIdLen_,
                                              partId,
-                                             edgeKey.src,
+                                             edgeKey.src.getStr(),
                                              edgeKey.edge_type,
                                              edgeKey.ranking,
-                                             edgeKey.dst);
+                                             edgeKey.dst.getStr());
         std::unique_ptr<kvstore::KVIterator> iter;
         ret = planContext_->env_->kvstore_->prefix(planContext_->spaceId_, partId, prefix_, &iter);
         if (ret == kvstore::ResultCode::SUCCEEDED && iter && iter->valid()) {

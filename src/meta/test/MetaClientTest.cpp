@@ -53,7 +53,12 @@ TEST(MetaClientTest, InterfacesTest) {
     {
         // Test createSpace, listSpaces, getPartsAlloc.
         {
-            SpaceDesc spaceDesc("default_space", 8, 3, "utf8", "utf8_bin");
+            meta::cpp2::SpaceDesc spaceDesc;
+            spaceDesc.set_space_name("default_space");
+            spaceDesc.set_partition_num(8);
+            spaceDesc.set_replica_factor(3);
+            spaceDesc.set_charset_name("utf8");
+            spaceDesc.set_collate_name("utf8_bin");
             auto ret = client->createSpace(spaceDesc).get();
             ASSERT_TRUE(ret.ok()) << ret.status();
             spaceId = ret.value();
@@ -62,19 +67,22 @@ TEST(MetaClientTest, InterfacesTest) {
             ASSERT_TRUE(ret.ok()) << ret.status();
         }
         {
-            SpaceDesc spaceDesc("default_space", 8, 3);
+            meta::cpp2::SpaceDesc spaceDesc;
+            spaceDesc.set_space_name("default_space");
+            spaceDesc.set_partition_num(8);
+            spaceDesc.set_replica_factor(3);
             auto ret = client->createSpace(spaceDesc).get();
             ASSERT_FALSE(ret.ok());
         }
         {
             auto ret = client->getSpace("default_space").get();
             ASSERT_TRUE(ret.ok()) << ret.status();
-            meta::cpp2::SpaceProperties properties = ret.value().get_properties();
-            ASSERT_EQ("default_space", properties.space_name);
-            ASSERT_EQ(8, properties.partition_num);
-            ASSERT_EQ(3, properties.replica_factor);
-            ASSERT_EQ("utf8", properties.charset_name);
-            ASSERT_EQ("utf8_bin", properties.collate_name);
+            meta::cpp2::SpaceDesc spaceDesc = ret.value().get_properties();
+            ASSERT_EQ("default_space", spaceDesc.space_name);
+            ASSERT_EQ(8, spaceDesc.partition_num);
+            ASSERT_EQ(3, spaceDesc.replica_factor);
+            ASSERT_EQ("utf8", spaceDesc.charset_name);
+            ASSERT_EQ("utf8_bin", spaceDesc.collate_name);
         }
         {
             auto ret = client->listSpaces().get();
@@ -348,7 +356,10 @@ TEST(MetaClientTest, TagTest) {
 
     std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
     TestUtils::registerHB(kv, hosts);
-    SpaceDesc spaceDesc("default", 9, 3);
+    meta::cpp2::SpaceDesc spaceDesc;
+    spaceDesc.set_space_name("default");
+    spaceDesc.set_partition_num(9);
+    spaceDesc.set_replica_factor(3);
     auto ret = client->createSpace(spaceDesc).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     GraphSpaceID spaceId = ret.value();
@@ -454,7 +465,10 @@ TEST(MetaClientTest, EdgeTest) {
 
     std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
     TestUtils::registerHB(kv, hosts);
-    SpaceDesc spaceDesc("default_space", 9, 3);
+    meta::cpp2::SpaceDesc spaceDesc;
+    spaceDesc.set_space_name("default_space");
+    spaceDesc.set_partition_num(9);
+    spaceDesc.set_replica_factor(3);
     auto ret = client->createSpace(spaceDesc).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     GraphSpaceID space = ret.value();
@@ -564,7 +578,10 @@ TEST(MetaClientTest, TagIndexTest) {
 
     std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
     TestUtils::registerHB(kv, hosts);
-    SpaceDesc spaceDesc("default_space", 8, 3);
+    meta::cpp2::SpaceDesc spaceDesc;
+    spaceDesc.set_space_name("default_space");
+    spaceDesc.set_partition_num(8);
+    spaceDesc.set_replica_factor(3);
     auto ret = client->createSpace(spaceDesc).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     GraphSpaceID space = ret.value();
@@ -667,7 +684,7 @@ TEST(MetaClientTest, TagIndexTest) {
         }
     }
     sleep(FLAGS_heartbeat_interval_secs * 5);
-    // Test Tag Index Properties Cache
+    // Test Tag Index spaceDesc Cache
     {
         auto tagSingleFieldResult = client->getTagIndexFromCache(space, singleFieldIndexID);
         ASSERT_TRUE(tagSingleFieldResult.ok());
@@ -724,7 +741,10 @@ TEST(MetaClientTest, EdgeIndexTest) {
 
     std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
     TestUtils::registerHB(kv, hosts);
-    SpaceDesc spaceDesc("default_space", 8, 3);
+    meta::cpp2::SpaceDesc spaceDesc;
+    spaceDesc.set_space_name("default_space");
+    spaceDesc.set_partition_num(8);
+    spaceDesc.set_replica_factor(3);
     auto ret = client->createSpace(spaceDesc).get();
     GraphSpaceID space = ret.value();
     IndexID singleFieldIndexID;
@@ -826,7 +846,7 @@ TEST(MetaClientTest, EdgeIndexTest) {
         }
     }
     sleep(FLAGS_heartbeat_interval_secs * 5);
-    // Test Edge Index Properties Cache
+    // Test Edge Index spaceDesc Cache
     {
         auto checkEdgeIndexed = client->checkEdgeIndexed(space, singleFieldIndexID);
         ASSERT_EQ(Status::OK(), checkEdgeIndexed);
@@ -955,7 +975,10 @@ TEST(MetaClientTest, DiffTest) {
     }
     {
         // Test Create Space and List Spaces
-        SpaceDesc spaceDesc("default_space", 9, 1);
+        meta::cpp2::SpaceDesc spaceDesc;
+        spaceDesc.set_space_name("default_space");
+        spaceDesc.set_partition_num(9);
+        spaceDesc.set_replica_factor(1);
         auto ret = client->createSpace(spaceDesc).get();
         ASSERT_TRUE(ret.ok()) << ret.status();
     }
@@ -963,7 +986,10 @@ TEST(MetaClientTest, DiffTest) {
     ASSERT_EQ(1, listener->spaceNum);
     ASSERT_EQ(9, listener->partNum);
     {
-        SpaceDesc spaceDesc("default_space_1", 5, 1);
+        meta::cpp2::SpaceDesc spaceDesc;
+        spaceDesc.set_space_name("default_space_1");
+        spaceDesc.set_partition_num(5);
+        spaceDesc.set_replica_factor(1);
         auto ret = client->createSpace(spaceDesc).get();
         ASSERT_TRUE(ret.ok()) << ret.status();
     }
@@ -1351,7 +1377,10 @@ TEST(MetaClientTest, RocksdbOptionsTest) {
     {
         std::vector<HostAddr> hosts = {{"0", 0}};
         TestUtils::registerHB(cluster.metaKV_.get(), hosts);
-        SpaceDesc spaceDesc("default_space", 9, 1);
+        meta::cpp2::SpaceDesc spaceDesc;
+        spaceDesc.set_space_name("default_space");
+        spaceDesc.set_partition_num(9);
+        spaceDesc.set_replica_factor(1);
         client->createSpace(spaceDesc).get();
         sleep(FLAGS_heartbeat_interval_secs + 1);
     }

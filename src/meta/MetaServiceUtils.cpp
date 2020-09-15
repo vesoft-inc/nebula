@@ -55,16 +55,16 @@ std::string MetaServiceUtils::spaceKey(GraphSpaceID spaceId) {
     return key;
 }
 
-std::string MetaServiceUtils::spaceVal(const cpp2::SpaceProperties &properties) {
+std::string MetaServiceUtils::spaceVal(const cpp2::SpaceDesc &spaceDesc) {
     std::string val;
-    apache::thrift::CompactSerializer::serialize(properties, &val);
+    apache::thrift::CompactSerializer::serialize(spaceDesc, &val);
     return val;
 }
 
-cpp2::SpaceProperties MetaServiceUtils::parseSpace(folly::StringPiece rawData) {
-    cpp2::SpaceProperties properties;
-    apache::thrift::CompactSerializer::deserialize(rawData, properties);
-    return properties;
+cpp2::SpaceDesc MetaServiceUtils::parseSpace(folly::StringPiece rawData) {
+    cpp2::SpaceDesc spaceDesc;
+    apache::thrift::CompactSerializer::deserialize(rawData, spaceDesc);
+    return spaceDesc;
 }
 
 const std::string& MetaServiceUtils::spacePrefix() {

@@ -111,7 +111,12 @@ void MockCluster::initStorageKV(const char* dataPath,
     kvstore::KVOptions options;
     if (metaClient_ != nullptr) {
         LOG(INFO) << "Pull meta information from meta server";
-        nebula::meta::SpaceDesc spaceDesc("test_space", 6, 1, "utf8", "utf8_bin");
+        nebula::meta::cpp2::SpaceDesc spaceDesc;
+        spaceDesc.space_name = "test_space";
+        spaceDesc.partition_num = 6;
+        spaceDesc.replica_factor = 1;
+        spaceDesc.charset_name = "utf8";
+        spaceDesc.collate_name = "utf8_bin";
         auto ret = metaClient_->createSpace(spaceDesc).get();
         if (!ret.ok()) {
             LOG(FATAL) << "can't create space";

@@ -32,7 +32,7 @@ void UpdateVertexProcessor::process(const cpp2::UpdateVertexRequest& req) {
         return;
     }
 
-    if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vId)) {
+    if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vId.getStr())) {
         LOG(ERROR) << "Space " << spaceId_ << ", vertex length invalid, "
                    << " space vid len: " << spaceVidLen_ << ",  vid is " << vId;
         pushResultCode(cpp2::ErrorCode::E_INVALID_VID, partId);
@@ -58,7 +58,7 @@ void UpdateVertexProcessor::process(const cpp2::UpdateVertexRequest& req) {
     VLOG(3) << "Update vertex, spaceId: " << spaceId_
             << ", partId: " << partId << ", vId: " << vId;
     auto plan = buildPlan(&resultDataSet_);
-    auto ret = plan.go(partId, vId);
+    auto ret = plan.go(partId, vId.getStr());
 
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         handleErrorCode(ret, spaceId_, partId);
@@ -174,7 +174,7 @@ UpdateVertexProcessor::buildTagContext(const cpp2::UpdateVertexRequest& req) {
     // update, evict the old elements
     if (FLAGS_enable_vertex_cache && tagContext_.vertexCache_ != nullptr) {
         VLOG(1) << "Evict cache for vId " << vId << ", tagId " << tagId_;
-        tagContext_.vertexCache_->evict(std::make_pair(vId, tagId_), partId);
+        tagContext_.vertexCache_->evict(std::make_pair(vId.getStr(), tagId_), partId);
     }
 
     for (auto& prop : updatedProps_) {

@@ -491,10 +491,10 @@ public:
         version = folly::Endian::big(version);
         key_ = NebulaKeyUtils::edgeKey(planContext_->vIdLen_,
                                        partId,
-                                       edgeKey.src,
+                                       edgeKey.src.getStr(),
                                        edgeKey.edge_type,
                                        edgeKey.ranking,
-                                       edgeKey.dst,
+                                       edgeKey.dst.getStr(),
                                        version);
         rowWriter_ = std::make_unique<RowWriterV2>(schema_);
 
@@ -661,9 +661,9 @@ public:
         return IndexKeyUtils::edgeIndexKey(planContext_->vIdLen_,
                                            partId,
                                            index->get_index_id(),
-                                           edgeKey.get_src(),
+                                           edgeKey.get_src().getStr(),
                                            edgeKey.get_ranking(),
-                                           edgeKey.get_dst(),
+                                           edgeKey.get_dst().getStr(),
                                            values.value(),
                                            colsType);
     }

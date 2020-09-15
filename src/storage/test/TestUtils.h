@@ -41,7 +41,8 @@ void checkAddVerticesData(cpp2::AddVerticesRequest req,
 
             for (auto& newTag : newTagVec) {
                 auto tagId = newTag.tag_id;
-                auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vid, tagId);
+                auto prefix =
+                    NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vid.getStr(), tagId);
                 std::unique_ptr<kvstore::KVIterator> iter;
                 EXPECT_EQ(kvstore::ResultCode::SUCCEEDED,
                           env->kvstore_->prefix(spaceId, partId, prefix, &iter));
@@ -144,7 +145,7 @@ void checkAddVerticesData(cpp2::AddVerticesRequest req,
 
 void checkVerticesData(int32_t spaceVidLen,
                        GraphSpaceID spaceId,
-                       std::unordered_map<PartitionID, std::vector<VertexID>> parts,
+                       std::unordered_map<PartitionID, std::vector<Value>> parts,
                        StorageEnv* env,
                        int expectNum) {
     int totalCount = 0;
@@ -152,7 +153,7 @@ void checkVerticesData(int32_t spaceVidLen,
         auto partId = part.first;
         auto deleteVidVec = part.second;
         for (auto& vid : deleteVidVec) {
-            auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vid);
+            auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vid.getStr());
             std::unique_ptr<kvstore::KVIterator> iter;
             EXPECT_EQ(kvstore::ResultCode::SUCCEEDED,
                       env->kvstore_->prefix(spaceId, partId, prefix, &iter));
@@ -187,10 +188,10 @@ void checkAddEdgesData(cpp2::AddEdgesRequest req,
 
             auto prefix = NebulaKeyUtils::edgePrefix(spaceVidLen,
                                                      partId,
-                                                     edgekey.src,
+                                                     edgekey.src.getStr(),
                                                      edgekey.edge_type,
                                                      edgekey.ranking,
-                                                     edgekey.dst);
+                                                     edgekey.dst.getStr());
             std::unique_ptr<kvstore::KVIterator> iter;
             EXPECT_EQ(kvstore::ResultCode::SUCCEEDED,
                       env->kvstore_->prefix(spaceId, partId, prefix, &iter));
@@ -265,10 +266,10 @@ void checkEdgesData(int32_t spaceVidLen,
         for (auto& edgeKey : deleteEdgeKeyVec) {
             auto prefix = NebulaKeyUtils::edgePrefix(spaceVidLen,
                                                      partId,
-                                                     edgeKey.src,
+                                                     edgeKey.src.getStr(),
                                                      edgeKey.edge_type,
                                                      edgeKey.ranking,
-                                                     edgeKey.dst);
+                                                     edgeKey.dst.getStr());
             std::unique_ptr<kvstore::KVIterator> iter;
             EXPECT_EQ(kvstore::ResultCode::SUCCEEDED,
                       env->kvstore_->prefix(spaceId, partId, prefix, &iter));

@@ -50,7 +50,6 @@ cpp2::GetPropRequest buildEdgeRequest(
         int32_t totalParts,
         const std::vector<cpp2::EdgeKey>& edgeKeys,
         const std::vector<std::pair<EdgeType, std::vector<std::string>>>& edges) {
-    std::hash<std::string> hash;
     cpp2::GetPropRequest req;
     req.space_id = 1;
     req.column_names.emplace_back(kSrc);
@@ -58,7 +57,7 @@ cpp2::GetPropRequest buildEdgeRequest(
     req.column_names.emplace_back(kRank);
     req.column_names.emplace_back(kDst);
     for (const auto& edge : edgeKeys) {
-        PartitionID partId = (hash(edge.src) % totalParts) + 1;
+        PartitionID partId = (std::hash<Value>()(edge.src) % totalParts) + 1;
         nebula::Row row;
         row.values.emplace_back(edge.src);
         row.values.emplace_back(edge.edge_type);

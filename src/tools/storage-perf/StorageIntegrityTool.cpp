@@ -85,7 +85,10 @@ private:
         auto spaceResult = mClient_->getSpaceIdByNameFromCache(FLAGS_space_name);
         if (!spaceResult.ok()) {
             LOG(ERROR) << "Get spaceId failed, try to create one";
-            meta::SpaceDesc spaceDesc(FLAGS_space_name, FLAGS_partition_num, 1);
+            meta::cpp2::SpaceDesc spaceDesc;
+            spaceDesc.space_name = FLAGS_space_name;
+            spaceDesc.partition_num = FLAGS_partition_num;
+            spaceDesc.replica_factor = 1;
             auto ret = mClient_->createSpace(spaceDesc).get();
             if (!ret.ok()) {
                 LOG(ERROR) << "Create space failed: " << ret.status();

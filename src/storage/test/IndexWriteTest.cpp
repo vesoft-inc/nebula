@@ -110,8 +110,8 @@ TEST(IndexTest, SimpleVerticesTest) {
         cpp2::DeleteVerticesRequest req;
         req.set_space_id(1);
         for (auto partId = 1; partId <= 6; partId++) {
-            std::vector<VertexID> vertices;
-            vertices.emplace_back(convertVertexId(vIdLen, partId));
+            std::vector<Value> vertices;
+            vertices.emplace_back(Value(convertVertexId(vIdLen, partId)));
             req.parts[partId] = std::move(vertices);
         }
         auto fut = processor->getFuture();

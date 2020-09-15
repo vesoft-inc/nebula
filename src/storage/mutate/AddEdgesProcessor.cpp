@@ -61,10 +61,11 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
                     << edgeKey.ranking << ", VertexID: "
                     << edgeKey.dst << ", EdgeVersion: " << version;
 
-            if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, edgeKey.src, edgeKey.dst)) {
+            if (!NebulaKeyUtils::isValidVidLen(
+                    spaceVidLen_, edgeKey.src.getStr(), edgeKey.dst.getStr())) {
                 LOG(ERROR) << "Space " << spaceId_ << " vertex length invalid, "
-                            << "space vid len: " << spaceVidLen_ << ", edge srcVid: "
-                            << edgeKey.src << " dstVid: " << edgeKey.dst;
+                           << "space vid len: " << spaceVidLen_ << ", edge srcVid: " << edgeKey.src
+                           << " dstVid: " << edgeKey.dst;
                 pushResultCode(cpp2::ErrorCode::E_INVALID_VID, partId);
                 onFinished();
                 return;
@@ -72,10 +73,10 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
 
             auto key = NebulaKeyUtils::edgeKey(spaceVidLen_,
                                                 partId,
-                                                edgeKey.src,
+                                                edgeKey.src.getStr(),
                                                 edgeKey.edge_type,
                                                 edgeKey.ranking,
-                                                edgeKey.dst,
+                                                edgeKey.dst.getStr(),
                                                 version);
             auto schema = env_->schemaMan_->getEdgeSchema(spaceId_,
                                                           std::abs(edgeKey.edge_type));

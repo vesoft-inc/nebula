@@ -269,7 +269,7 @@ TEST(ProcessorTest, SpaceTest) {
     auto hostsNum = TestUtils::createSomeHosts(kv.get());
 
     {
-        cpp2::SpaceProperties properties;
+        cpp2::SpaceDesc properties;
         properties.set_space_name("default_space");
         properties.set_partition_num(8);
         properties.set_replica_factor(3);
@@ -365,7 +365,7 @@ TEST(ProcessorTest, SpaceTest) {
     {
         constexpr char spaceName[] = "exist_space";
         cpp2::CreateSpaceReq req;
-        cpp2::SpaceProperties properties;
+        cpp2::SpaceDesc properties;
         properties.set_space_name(spaceName);
         req.set_properties(std::move(properties));
         auto* processor = CreateSpaceProcessor::instance(kv.get());
@@ -385,7 +385,7 @@ TEST(ProcessorTest, SpaceTest) {
     }
     // Test default value
     {
-        cpp2::SpaceProperties properties;
+        cpp2::SpaceDesc properties;
         properties.set_space_name("space_with_no_option");
         cpp2::CreateSpaceReq creq;
         creq.set_properties(std::move(properties));
@@ -425,7 +425,7 @@ TEST(ProcessorTest, CreateTagTest) {
     TestUtils::createSomeHosts(kv.get());
 
     {
-        cpp2::SpaceProperties properties;
+        cpp2::SpaceDesc properties;
         properties.set_space_name("first_space");
         properties.set_partition_num(9);
         properties.set_replica_factor(1);
@@ -440,7 +440,7 @@ TEST(ProcessorTest, CreateTagTest) {
         ASSERT_EQ(1, resp.get_id().get_space_id());
     }
     {
-        cpp2::SpaceProperties properties;
+        cpp2::SpaceDesc properties;
         properties.set_space_name("second_space");
         properties.set_partition_num(9);
         properties.set_replica_factor(1);
@@ -623,7 +623,7 @@ TEST(ProcessorTest, CreateEdgeTest) {
     TestUtils::createSomeHosts(kv.get());
 
     {
-        cpp2::SpaceProperties properties;
+        cpp2::SpaceDesc properties;
         properties.set_space_name("default_space");
         properties.set_partition_num(9);
         properties.set_replica_factor(3);
@@ -639,7 +639,7 @@ TEST(ProcessorTest, CreateEdgeTest) {
    }
    {
         // Create another space
-        cpp2::SpaceProperties properties;
+        cpp2::SpaceDesc properties;
         properties.set_space_name("another_space");
         properties.set_partition_num(9);
         properties.set_replica_factor(3);
@@ -808,7 +808,7 @@ TEST(ProcessorTest, KVOperationTest) {
     TestUtils::createSomeHosts(kv.get());
 
     {
-        cpp2::SpaceProperties properties;
+        cpp2::SpaceDesc properties;
         properties.set_space_name("default_space");
         properties.set_partition_num(9);
         properties.set_replica_factor(3);
@@ -2023,7 +2023,7 @@ TEST(ProcessorTest, SameNameTagsTest) {
     TestUtils::createSomeHosts(kv.get());
 
     {
-        cpp2::SpaceProperties properties;
+        cpp2::SpaceDesc properties;
         properties.set_space_name("default_space");
         properties.set_partition_num(9);
         properties.set_replica_factor(3);
@@ -2037,7 +2037,7 @@ TEST(ProcessorTest, SameNameTagsTest) {
         ASSERT_EQ(1, resp.get_id().get_space_id());
     }
     {
-        cpp2::SpaceProperties properties;
+        cpp2::SpaceDesc properties;
         properties.set_space_name("second_space");
         properties.set_partition_num(9);
         properties.set_replica_factor(1);

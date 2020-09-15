@@ -169,7 +169,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     GraphSpaceID space1, space2;
     // create space1
     {
-        cpp2::SpaceProperties properties;
+        cpp2::SpaceDesc properties;
         properties.set_space_name("space1");
         properties.set_partition_num(1);
         properties.set_replica_factor(3);
@@ -186,7 +186,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     }
     // create space2
     {
-        cpp2::SpaceProperties properties;
+        cpp2::SpaceDesc properties;
         properties.set_space_name("space2");
         properties.set_partition_num(1);
         properties.set_replica_factor(3);

@@ -45,27 +45,28 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
             auto partId = part.first;
             keys.clear();
             for (auto& edgeKey : part.second) {
-                if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, edgeKey.src, edgeKey.dst)) {
+                if (!NebulaKeyUtils::isValidVidLen(
+                        spaceVidLen_, edgeKey.src.getStr(), edgeKey.dst.getStr())) {
                     LOG(ERROR) << "Space " << spaceId_ << " vertex length invalid, "
-                               << "space vid len: " << spaceVidLen_ << ", edge srcVid: "
-                               << edgeKey.src << " dstVid: " << edgeKey.dst;
+                               << "space vid len: " << spaceVidLen_
+                               << ", edge srcVid: " << edgeKey.src << " dstVid: " << edgeKey.dst;
                     pushResultCode(cpp2::ErrorCode::E_INVALID_VID, partId);
                     onFinished();
                     return;
                 }
                 auto start = NebulaKeyUtils::edgeKey(spaceVidLen_,
                                                      partId,
-                                                     edgeKey.src,
+                                                     edgeKey.src.getStr(),
                                                      edgeKey.edge_type,
                                                      edgeKey.ranking,
-                                                     edgeKey.dst,
+                                                     edgeKey.dst.getStr(),
                                                      0);
                 auto end = NebulaKeyUtils::edgeKey(spaceVidLen_,
                                                    partId,
-                                                   edgeKey.src,
+                                                   edgeKey.src.getStr(),
                                                    edgeKey.edge_type,
                                                    edgeKey.ranking,
-                                                   edgeKey.dst,
+                                                   edgeKey.dst.getStr(),
                                                    std::numeric_limits<int64_t>::max());
                 std::unique_ptr<kvstore::KVIterator> iter;
                 auto retRes = env_->kvstore_->range(spaceId_, partId, start, end, &iter);
@@ -108,9 +109,9 @@ DeleteEdgesProcessor::deleteEdges(PartitionID partId,
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
     for (auto& edge : edges) {
         auto type = edge.edge_type;
-        auto srcId = edge.src;
+        auto srcId = edge.src.getStr();
         auto rank = edge.ranking;
-        auto dstId = edge.dst;
+        auto dstId = edge.dst.getStr();
         auto prefix = NebulaKeyUtils::edgePrefix(spaceVidLen_, partId, srcId, type, rank, dstId);
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = env_->kvstore_->prefix(spaceId_, partId, prefix, &iter);

@@ -31,7 +31,8 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
         return;
     }
 
-    if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, edgeKey_.src, edgeKey_.dst)) {
+    if (!NebulaKeyUtils::isValidVidLen(
+            spaceVidLen_, edgeKey_.src.getStr(), edgeKey_.dst.getStr())) {
         LOG(ERROR) << "Space " << spaceId_ << ", vertex length invalid, "
                    << " space vid len: " << spaceVidLen_ << ",  edge srcVid: " << edgeKey_.src
                    << " dstVid: " << edgeKey_.dst;

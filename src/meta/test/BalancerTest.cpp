@@ -364,7 +364,7 @@ TEST(BalanceTest, NormalTest) {
     FLAGS_expired_threshold_sec = 1;
     TestUtils::createSomeHosts(kv.get());
     {
-        cpp2::SpaceProperties properties;
+        cpp2::SpaceDesc properties;
         properties.set_space_name("default_space");
         properties.set_partition_num(8);
         properties.set_replica_factor(3);
@@ -449,7 +449,7 @@ TEST(BalanceTest, SpecifyHostTest) {
     FLAGS_expired_threshold_sec = 1;
     TestUtils::createSomeHosts(kv.get(), {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}});
     {
-        cpp2::SpaceProperties properties;
+        cpp2::SpaceDesc properties;
         properties.set_space_name("default_space");
         properties.set_partition_num(8);
         properties.set_replica_factor(3);
@@ -533,7 +533,7 @@ TEST(BalanceTest, SpecifyMultiHostTest) {
     TestUtils::createSomeHosts(kv.get(), {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}, {"4", 4},
                                          {"5", 5}});
     {
-        cpp2::SpaceProperties properties;
+        cpp2::SpaceDesc properties;
         properties.set_space_name("default_space");
         properties.set_partition_num(12);
         properties.set_replica_factor(3);
@@ -634,7 +634,7 @@ TEST(BalanceTest, MockReplaceMachineTest) {
     FLAGS_expired_threshold_sec = 1;
     TestUtils::createSomeHosts(kv.get(), {{"0", 0}, {"1", 1}, {"2", 2}});
     {
-        cpp2::SpaceProperties properties;
+        cpp2::SpaceDesc properties;
         properties.set_space_name("default_space");
         properties.set_partition_num(12);
         properties.set_replica_factor(3);
@@ -722,7 +722,7 @@ TEST(BalanceTest, SingleReplicaTest) {
     TestUtils::createSomeHosts(kv.get(), {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}, {"4", 4},
                                           {"5", 5}});
     {
-        cpp2::SpaceProperties properties;
+        cpp2::SpaceDesc properties;
         properties.set_space_name("default_space");
         properties.set_partition_num(12);
         properties.set_replica_factor(1);
@@ -817,7 +817,7 @@ TEST(BalanceTest, RecoveryTest) {
     FLAGS_expired_threshold_sec = 1;
     TestUtils::createSomeHosts(kv.get());
     {
-        cpp2::SpaceProperties properties;
+        cpp2::SpaceDesc properties;
         properties.set_space_name("default_space");
         properties.set_partition_num(8);
         properties.set_replica_factor(3);
@@ -965,7 +965,7 @@ TEST(BalanceTest, StopBalanceDataTest) {
     FLAGS_expired_threshold_sec = 1;
     TestUtils::createSomeHosts(kv.get());
     {
-        cpp2::SpaceProperties properties;
+        cpp2::SpaceDesc properties;
         properties.set_space_name("default_space");
         properties.set_partition_num(8);
         properties.set_replica_factor(3);
@@ -1278,7 +1278,7 @@ TEST(BalanceTest, LeaderBalanceTest) {
     TestUtils::createSomeHosts(kv.get(), hosts);
     TestUtils::assembleSpace(kv.get(), 1, 9, 3, 3);
     {
-        cpp2::SpaceProperties properties;
+        cpp2::SpaceDesc properties;
         properties.set_space_name("default_space");
         properties.set_partition_num(9);
         properties.set_replica_factor(3);

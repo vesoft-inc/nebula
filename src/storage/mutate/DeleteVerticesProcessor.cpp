@@ -47,7 +47,7 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
             keys.clear();
 
             for (auto& vid : vertexIds) {
-                if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vid)) {
+                if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vid.getStr())) {
                     LOG(ERROR) << "Space " << spaceId_ << ", vertex length invalid, "
                                << " space vid len: " << spaceVidLen_ << ",  vid is " << vid;
                     pushResultCode(cpp2::ErrorCode::E_INVALID_VID, partId);
@@ -55,7 +55,7 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
                     return;
                 }
 
-                auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vid);
+                auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vid.getStr());
                 std::unique_ptr<kvstore::KVIterator> iter;
                 auto retRes = env_->kvstore_->prefix(spaceId_, partId, prefix, &iter);
                 if (retRes != kvstore::ResultCode::SUCCEEDED) {
@@ -73,7 +73,7 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
                         if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
                             VLOG(3) << "Evict vertex cache for VID " << vid
                                     << ", TagID " << tagId;
-                            vertexCache_->evict(std::make_pair(vid, tagId), partId);
+                            vertexCache_->evict(std::make_pair(vid.getStr(), tagId), partId);
                         }
                         keys.emplace_back(key.str());
                     }
@@ -102,11 +102,11 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
 
 folly::Optional<std::string>
 DeleteVerticesProcessor::deleteVertices(PartitionID partId,
-                                        const std::vector<VertexID>& vertices) {
+                                        const std::vector<Value>& vertices) {
     env_->onFlyingRequest_.fetch_add(1);
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
     for (auto& vertex : vertices) {
-        auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vertex);
+        auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vertex.getStr());
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = env_->kvstore_->prefix(spaceId_, partId, prefix, &iter);
         if (ret != kvstore::ResultCode::SUCCEEDED) {
@@ -121,7 +121,7 @@ DeleteVerticesProcessor::deleteVertices(PartitionID partId,
             if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
                 if (NebulaKeyUtils::isVertex(spaceVidLen_, key)) {
                     VLOG(3) << "Evict vertex cache for vertex ID " << vertex << ", tagId " << tagId;
-                    vertexCache_->evict(std::make_pair(vertex, tagId), partId);
+                    vertexCache_->evict(std::make_pair(vertex.getStr(), tagId), partId);
                 }
             }
 
@@ -166,7 +166,7 @@ DeleteVerticesProcessor::deleteVertices(PartitionID partId,
                         }
                         auto indexKey = IndexKeyUtils::vertexIndexKey(spaceVidLen_, partId,
                                                                       indexId,
-                                                                      vertex,
+                                                                      vertex.getStr(),
                                                                       valuesRet.value(),
                                                                       colsType);
 

@@ -52,15 +52,16 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     auto spaceName = properties.get_space_name();
     auto partitionNum = properties.get_partition_num();
     auto replicaFactor = properties.get_replica_factor();
-    auto vidSize = properties.get_vid_size();
     auto charsetName = properties.get_charset_name();
     auto collateName = properties.get_collate_name();
+    auto vidSize = properties.get_vid_size();
+    auto vidType = properties.get_vid_type();
 
     // Use default values or values from meta's configuration file
     if (partitionNum == 0) {
         partitionNum = FLAGS_default_parts_num;
         if (partitionNum <= 0) {
-            LOG(ERROR) << "Create Space Failed : partition_num is illegal!";
+            LOG(ERROR) << "Create Space Failed : partition_num is illegal: " << partitionNum;
               resp_.set_code(cpp2::ErrorCode::E_INVALID_PARM);
               onFinished();
               return;
@@ -71,16 +72,30 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     if (replicaFactor == 0) {
         replicaFactor = FLAGS_default_replica_factor;
         if (replicaFactor <= 0) {
-            LOG(ERROR) << "Create Space Failed : replicaFactor is illegal!";
-              resp_.set_code(cpp2::ErrorCode::E_INVALID_PARM);
-              onFinished();
-              return;
+            LOG(ERROR) << "Create Space Failed : replicaFactor is illegal: " << replicaFactor;
+            resp_.set_code(cpp2::ErrorCode::E_INVALID_PARM);
+            onFinished();
+            return;
         }
         // Set the default value back to the struct, which will be written to storage
         properties.set_replica_factor(replicaFactor);
     }
-    if (vidSize <= 0 && vidSize > std::numeric_limits<int32_t>::max()) {
-        LOG(ERROR) << "Create Space Failed : vid_size is illegal!";
+    if (vidSize == 0) {
+        LOG(ERROR) << "Create Space Failed : vid_size is illegal: " << vidSize;
+        resp_.set_code(cpp2::ErrorCode::E_INVALID_PARM);
+        onFinished();
+        return;
+    }
+    if (vidType != cpp2::PropertyType::INT64 && vidType != cpp2::PropertyType::FIXED_STRING) {
+        LOG(ERROR) << "Create Space Failed : vid_type is illegal: "
+                   << meta::cpp2::_PropertyType_VALUES_TO_NAMES.at(vidType);
+        resp_.set_code(cpp2::ErrorCode::E_INVALID_PARM);
+        onFinished();
+        return;
+    }
+    if (vidType == cpp2::PropertyType::INT64 && vidSize != 8) {
+        LOG(ERROR) << "Create Space Failed : vid_size should be 8 if vid type is interger: "
+                   << vidSize;
         resp_.set_code(cpp2::ErrorCode::E_INVALID_PARM);
         onFinished();
         return;

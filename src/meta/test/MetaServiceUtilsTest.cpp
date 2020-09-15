@@ -19,11 +19,11 @@ TEST(MetaServiceUtilsTest, SpaceKeyTest) {
     ASSERT_EQ("__spaces__", prefix);
     auto spaceKey = MetaServiceUtils::spaceKey(101);
     ASSERT_EQ(101, MetaServiceUtils::spaceId(spaceKey));
-    cpp2::SpaceProperties properties;
-    properties.set_space_name("default");
-    properties.set_partition_num(100);
-    properties.set_replica_factor(3);
-    auto spaceVal = MetaServiceUtils::spaceVal(properties);
+    cpp2::SpaceDesc spaceDesc;
+    spaceDesc.set_space_name("default");
+    spaceDesc.set_partition_num(100);
+    spaceDesc.set_replica_factor(3);
+    auto spaceVal = MetaServiceUtils::spaceVal(spaceDesc);
     ASSERT_EQ("default", MetaServiceUtils::spaceName(spaceVal));
     ASSERT_EQ(100, MetaServiceUtils::parseSpace(spaceVal).get_partition_num());
     ASSERT_EQ(3, MetaServiceUtils::parseSpace(spaceVal).get_replica_factor());

@@ -178,7 +178,7 @@ public:
                               int32_t replica = 1, int32_t totalHost = 1) {
         // mock the part distribution like create space
         bool ret = false;
-        cpp2::SpaceProperties properties;
+        cpp2::SpaceDesc properties;
         properties.set_space_name("test_space");
         properties.set_partition_num(partitionNum);
         properties.set_replica_factor(replica);

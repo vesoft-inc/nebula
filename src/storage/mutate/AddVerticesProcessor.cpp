@@ -59,7 +59,7 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
             auto vid = vertex.get_id();
             const auto& newTags = vertex.get_tags();
 
-            if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vid)) {
+            if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vid.getStr())) {
                 LOG(ERROR) << "Space " << spaceId_ << ", vertex length invalid, "
                            << " space vid len: " << spaceVidLen_ << ",  vid is " << vid;
                 pushResultCode(cpp2::ErrorCode::E_INVALID_VID, partId);
@@ -72,7 +72,7 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
                 VLOG(3) << "PartitionID: " << partId << ", VertexID: " << vid
                         << ", TagID: " << tagId << ", TagVersion: " << version;
 
-                auto key = NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid,
+                auto key = NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid.getStr(),
                                                      tagId, version);
                 auto schema = env_->schemaMan_->getTagSchema(spaceId_, tagId);
                 if (!schema) {
@@ -99,7 +99,7 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
                 data.emplace_back(std::move(key), std::move(retEnc.value()));
 
                 if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
-                    vertexCache_->evict(std::make_pair(vid, tagId), partId);
+                    vertexCache_->evict(std::make_pair(vid.getStr(), tagId), partId);
                     VLOG(3) << "Evict cache for vId " << vid
                             << ", tagId " << tagId;
                 }
