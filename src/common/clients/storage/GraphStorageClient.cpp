@@ -26,13 +26,13 @@ GraphStorageClient::getNeighbors(GraphSpaceID space,
                                  int64_t limit,
                                  std::string filter,
                                  folly::EventBase* evb) {
-    auto status = clusterIdsToHosts(
-        space, vertices, [](const Row& r) -> const VertexID& {
-            // The first column has to be the vid
-            DCHECK_EQ(Value::Type::STRING, r.values[0].type());
-            return r.values[0].getStr();
-        });
+    auto cbStatus = getIdFromRow(space);
+    if (!cbStatus.ok()) {
+        return folly::makeFuture<StorageRpcResponse<cpp2::GetNeighborsResponse>>(
+            std::runtime_error(cbStatus.status().toString()));
+    }
 
+    auto status = clusterIdsToHosts(space, vertices, std::move(cbStatus).value());
     if (!status.ok()) {
         return folly::makeFuture<StorageRpcResponse<cpp2::GetNeighborsResponse>>(
             std::runtime_error(status.status().toString()));
@@ -94,12 +94,13 @@ GraphStorageClient::addVertices(GraphSpaceID space,
                                 std::unordered_map<TagID, std::vector<std::string>> propNames,
                                 bool overwritable,
                                 folly::EventBase* evb) {
-    auto status = clusterIdsToHosts(space,
-                                    std::move(vertices),
-                                    [](const cpp2::NewVertex& v) -> const VertexID& {
-        return v.get_id();
-    });
+    auto cbStatus = getIdFromNewVertex(space);
+    if (!cbStatus.ok()) {
+        return folly::makeFuture<StorageRpcResponse<cpp2::ExecResponse>>(
+            std::runtime_error(cbStatus.status().toString()));
+    }
 
+    auto status = clusterIdsToHosts(space, std::move(vertices), std::move(cbStatus).value());
     if (!status.ok()) {
         return folly::makeFuture<StorageRpcResponse<cpp2::ExecResponse>>(
             std::runtime_error(status.status().toString()));
@@ -136,12 +137,13 @@ GraphStorageClient::addEdges(GraphSpaceID space,
                              std::vector<std::string> propNames,
                              bool overwritable,
                              folly::EventBase* evb) {
-    auto status = clusterIdsToHosts(space,
-                                    std::move(edges),
-                                    [](const cpp2::NewEdge& e) -> const VertexID& {
-        return e.get_key().get_src();
-    });
+    auto cbStatus = getIdFromNewEdge(space);
+    if (!cbStatus.ok()) {
+        return folly::makeFuture<StorageRpcResponse<cpp2::ExecResponse>>(
+            std::runtime_error(cbStatus.status().toString()));
+    }
 
+    auto status = clusterIdsToHosts(space, std::move(edges), std::move(cbStatus).value());
     if (!status.ok()) {
         return folly::makeFuture<StorageRpcResponse<cpp2::ExecResponse>>(
             std::runtime_error(status.status().toString()));
@@ -182,13 +184,13 @@ GraphStorageClient::getProps(GraphSpaceID space,
                              int64_t limit,
                              std::string filter,
                              folly::EventBase* evb) {
-    auto status = clusterIdsToHosts(space,
-                                    input.rows,
-                                    [](const Row& r) -> const VertexID& {
-        DCHECK_EQ(Value::Type::STRING, r.values[0].type());
-        return r.values[0].getStr();
-    });
+    auto cbStatus = getIdFromRow(space);
+    if (!cbStatus.ok()) {
+        return folly::makeFuture<StorageRpcResponse<cpp2::GetPropResponse>>(
+            std::runtime_error(cbStatus.status().toString()));
+    }
 
+    auto status = clusterIdsToHosts(space, input.rows, std::move(cbStatus).value());
     if (!status.ok()) {
         return folly::makeFuture<StorageRpcResponse<cpp2::GetPropResponse>>(
             std::runtime_error(status.status().toString()));
@@ -240,12 +242,13 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>>
 GraphStorageClient::deleteEdges(GraphSpaceID space,
                                 std::vector<cpp2::EdgeKey> edges,
                                 folly::EventBase* evb) {
-    auto status = clusterIdsToHosts(space,
-                                    std::move(edges),
-                                    [](const cpp2::EdgeKey& v) -> const VertexID& {
-        return v.get_src();
-    });
+    auto cbStatus = getIdFromEdgeKey(space);
+    if (!cbStatus.ok()) {
+        return folly::makeFuture<StorageRpcResponse<cpp2::ExecResponse>>(
+            std::runtime_error(cbStatus.status().toString()));
+    }
 
+    auto status = clusterIdsToHosts(space, std::move(edges), std::move(cbStatus).value());
     if (!status.ok()) {
         return folly::makeFuture<StorageRpcResponse<cpp2::ExecResponse>>(
             std::runtime_error(status.status().toString()));
@@ -275,14 +278,15 @@ GraphStorageClient::deleteEdges(GraphSpaceID space,
 
 folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>>
 GraphStorageClient::deleteVertices(GraphSpaceID space,
-                                   std::vector<VertexID> ids,
+                                   std::vector<Value> ids,
                                    folly::EventBase* evb) {
-    auto status = clusterIdsToHosts(space,
-                                    std::move(ids),
-                                    [](const VertexID& v) -> const VertexID& {
-        return v;
-    });
+    auto cbStatus = getIdFromValue(space);
+    if (!cbStatus.ok()) {
+        return folly::makeFuture<StorageRpcResponse<cpp2::ExecResponse>>(
+            std::runtime_error(cbStatus.status().toString()));
+    }
 
+    auto status = clusterIdsToHosts(space, std::move(ids), std::move(cbStatus).value());
     if (!status.ok()) {
         return folly::makeFuture<StorageRpcResponse<cpp2::ExecResponse>>(
             std::runtime_error(status.status().toString()));
@@ -304,7 +308,7 @@ GraphStorageClient::deleteVertices(GraphSpaceID space,
             const cpp2::DeleteVerticesRequest& r) {
             return client->future_deleteVertices(r);
         },
-        [] (const std::pair<const PartitionID, std::vector<VertexID>>& p) {
+        [] (const std::pair<const PartitionID, std::vector<Value>>& p) {
             return p.first;
         });
 }
@@ -312,17 +316,22 @@ GraphStorageClient::deleteVertices(GraphSpaceID space,
 
 folly::Future<StatusOr<storage::cpp2::UpdateResponse>>
 GraphStorageClient::updateVertex(GraphSpaceID space,
-                                 VertexID vertexId,
+                                 Value vertexId,
                                  TagID tagId,
                                  std::vector<cpp2::UpdatedProp> updatedProps,
                                  bool insertable,
                                  std::vector<std::string> returnProps,
                                  std::string condition,
                                  folly::EventBase* evb) {
+    auto cbStatus = getIdFromValue(space);
+    if (!cbStatus.ok()) {
+        return folly::makeFuture<StatusOr<storage::cpp2::UpdateResponse>>(cbStatus.status());
+    }
+
     std::pair<HostAddr, cpp2::UpdateVertexRequest> request;
 
     DCHECK(!!metaClient_);
-    auto status = metaClient_->partId(space, vertexId);
+    auto status = metaClient_->partId(space, std::move(cbStatus).value()(vertexId));
     if (!status.ok()) {
         return folly::makeFuture<StatusOr<storage::cpp2::UpdateResponse>>(status.status());
     }
@@ -367,10 +376,15 @@ GraphStorageClient::updateEdge(GraphSpaceID space,
                                std::vector<std::string> returnProps,
                                std::string condition,
                                folly::EventBase* evb) {
+    auto cbStatus = getIdFromEdgeKey(space);
+    if (!cbStatus.ok()) {
+        return folly::makeFuture<StatusOr<storage::cpp2::UpdateResponse>>(cbStatus.status());
+    }
+
     std::pair<HostAddr, cpp2::UpdateEdgeRequest> request;
 
     DCHECK(!!metaClient_);
-    auto status = metaClient_->partId(space, edgeKey.get_src());
+    auto status = metaClient_->partId(space, std::move(cbStatus).value()(edgeKey));
     if (!status.ok()) {
         return folly::makeFuture<StatusOr<storage::cpp2::UpdateResponse>>(status.status());
     }
@@ -515,5 +529,155 @@ GraphStorageClient::lookupAndTraverse(GraphSpaceID space,
                            });
 }
 
+StatusOr<std::function<const VertexID&(const Row&)>> GraphStorageClient::getIdFromRow(
+    GraphSpaceID space) const {
+    auto vidTypeStatus = metaClient_->getSpaceVidType(space);
+    if (!vidTypeStatus) {
+        return vidTypeStatus.status();
+    }
+    auto vidType = std::move(vidTypeStatus).value();
+
+    std::function<const VertexID&(const Row&)> cb;
+    if (vidType == meta::cpp2::PropertyType::INT64) {
+        cb = [](const Row& r) -> const VertexID& {
+                // The first column has to be the vid
+                DCHECK_EQ(Value::Type::INT, r.values[0].type());
+                auto& mutableR = const_cast<Row&>(r);
+                mutableR.values[0] = Value(
+                        std::string(reinterpret_cast<const char*>(&r.values[0].getInt()), 8));
+                return mutableR.values[0].getStr();
+            };
+    } else if (vidType == meta::cpp2::PropertyType::FIXED_STRING) {
+        cb = [](const Row& r) -> const VertexID& {
+                // The first column has to be the vid
+                DCHECK_EQ(Value::Type::STRING, r.values[0].type());
+                return r.values[0].getStr();
+            };
+    } else {
+        return Status::Error("Only support integer/string type vid.");
+    }
+
+    return cb;
+}
+
+StatusOr<std::function<const VertexID&(const cpp2::NewVertex&)>>
+GraphStorageClient::getIdFromNewVertex(GraphSpaceID space) const {
+    auto vidTypeStatus = metaClient_->getSpaceVidType(space);
+    if (!vidTypeStatus) {
+        return vidTypeStatus.status();
+    }
+    auto vidType = std::move(vidTypeStatus).value();
+
+    std::function<const VertexID&(const cpp2::NewVertex&)> cb;
+    if (vidType == meta::cpp2::PropertyType::INT64) {
+        cb = [](const cpp2::NewVertex& v) -> const VertexID& {
+                DCHECK_EQ(Value::Type::INT, v.id.type());
+                auto& mutableV = const_cast<cpp2::NewVertex&>(v);
+                mutableV.id = Value(
+                        std::string(reinterpret_cast<const char*>(&v.id.getInt()), 8));
+                return mutableV.id.getStr();
+            };
+    } else if (vidType == meta::cpp2::PropertyType::FIXED_STRING) {
+        cb = [](const cpp2::NewVertex& v) -> const VertexID& {
+                DCHECK_EQ(Value::Type::STRING, v.id.type());
+                return v.id.getStr();
+            };
+    } else {
+        return Status::Error("Only support integer/string type vid.");
+    }
+    return cb;
+}
+
+StatusOr<std::function<const VertexID&(const cpp2::NewEdge&)>> GraphStorageClient::getIdFromNewEdge(
+    GraphSpaceID space) const {
+    auto vidTypeStatus = metaClient_->getSpaceVidType(space);
+    if (!vidTypeStatus) {
+        return vidTypeStatus.status();
+    }
+    auto vidType = std::move(vidTypeStatus).value();
+
+    std::function<const VertexID&(const cpp2::NewEdge&)> cb;
+    if (vidType == meta::cpp2::PropertyType::INT64) {
+        cb = [](const cpp2::NewEdge& e) -> const VertexID& {
+                DCHECK_EQ(Value::Type::INT, e.key.src.type());
+                DCHECK_EQ(Value::Type::INT, e.key.dst.type());
+                auto& mutableE = const_cast<cpp2::NewEdge&>(e);
+                mutableE.key.src = Value(
+                        std::string(reinterpret_cast<const char*>(&e.key.src.getInt()), 8));
+                mutableE.key.dst = Value(
+                        std::string(reinterpret_cast<const char*>(&e.key.dst.getInt()), 8));
+                return mutableE.key.src.getStr();
+            };
+    } else if (vidType == meta::cpp2::PropertyType::FIXED_STRING) {
+        cb = [](const cpp2::NewEdge& e) -> const VertexID& {
+                DCHECK_EQ(Value::Type::STRING, e.key.src.type());
+                DCHECK_EQ(Value::Type::STRING, e.key.dst.type());
+                return e.key.src.getStr();
+            };
+    } else {
+        return Status::Error("Only support integer/string type vid.");
+    }
+    return cb;
+}
+
+StatusOr<std::function<const VertexID&(const cpp2::EdgeKey&)>> GraphStorageClient::getIdFromEdgeKey(
+    GraphSpaceID space) const {
+    auto vidTypeStatus = metaClient_->getSpaceVidType(space);
+    if (!vidTypeStatus) {
+        return vidTypeStatus.status();
+    }
+    auto vidType = std::move(vidTypeStatus).value();
+
+    std::function<const VertexID&(const cpp2::EdgeKey&)> cb;
+    if (vidType == meta::cpp2::PropertyType::INT64) {
+        cb = [](const cpp2::EdgeKey& eKey) -> const VertexID& {
+                DCHECK_EQ(Value::Type::INT, eKey.src.type());
+                DCHECK_EQ(Value::Type::INT, eKey.dst.type());
+                auto& mutableEK = const_cast<cpp2::EdgeKey&>(eKey);
+                mutableEK.src = Value(
+                        std::string(reinterpret_cast<const char*>(&eKey.src.getInt()), 8));
+                mutableEK.dst = Value(
+                        std::string(reinterpret_cast<const char*>(&eKey.dst.getInt()), 8));
+                return mutableEK.src.getStr();
+            };
+    } else if (vidType == meta::cpp2::PropertyType::FIXED_STRING) {
+        cb = [](const cpp2::EdgeKey& eKey) -> const VertexID& {
+                DCHECK_EQ(Value::Type::STRING, eKey.src.type());
+                DCHECK_EQ(Value::Type::STRING, eKey.dst.type());
+                return eKey.src.getStr();
+            };
+    } else {
+        return Status::Error("Only support integer/string type vid.");
+    }
+    return cb;
+}
+
+StatusOr<std::function<const VertexID&(const Value&)>> GraphStorageClient::getIdFromValue(
+    GraphSpaceID space) const {
+    auto vidTypeStatus = metaClient_->getSpaceVidType(space);
+    if (!vidTypeStatus) {
+        return vidTypeStatus.status();
+    }
+    auto vidType = std::move(vidTypeStatus).value();
+
+    std::function<const VertexID&(const Value&)> cb;
+    if (vidType == meta::cpp2::PropertyType::INT64) {
+        cb = [](const Value& v) -> const VertexID& {
+                DCHECK_EQ(Value::Type::INT, v.type());
+                auto& mutableV = const_cast<Value&>(v);
+                mutableV = Value(
+                        std::string(reinterpret_cast<const char*>(&v.getInt()), 8));
+                return mutableV.getStr();
+            };
+    } else if (vidType == meta::cpp2::PropertyType::FIXED_STRING) {
+        cb = [](const Value& v) -> const VertexID& {
+                DCHECK_EQ(Value::Type::STRING, v.type());
+                return v.getStr();
+            };
+    } else {
+        return Status::Error("Only support integer/string type vid.");
+    }
+    return cb;
+}
 }   // namespace storage
 }   // namespace nebula

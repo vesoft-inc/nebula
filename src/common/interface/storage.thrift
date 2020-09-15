@@ -371,18 +371,18 @@ struct NewTag {
 
 
 struct NewVertex {
-    1: common.VertexID id,
+    1: common.Value id,
     2: list<NewTag> tags,
 }
 
 
 struct EdgeKey {
-    1: common.VertexID      src,
+    1: common.Value         src,
     // When edge_type > 0, it's an out-edge, otherwise, it's an in-edge
     // When query edge props, the field could be unset.
     2: common.EdgeType      edge_type,
     3: common.EdgeRanking   ranking,
-    4: common.VertexID      dst,
+    4: common.Value         dst,
 }
 
 
@@ -428,7 +428,7 @@ struct AddEdgesRequest {
 struct DeleteVerticesRequest {
     1: common.GraphSpaceID                              space_id,
     // partId => vertexId
-    2: map<common.PartitionID, list<common.VertexID>>
+    2: map<common.PartitionID, list<common.Value>>
         (cpp.template = "std::unordered_map")           parts,
 }
 
@@ -468,7 +468,7 @@ struct UpdatedProp {
 struct UpdateVertexRequest {
     1: common.GraphSpaceID          space_id,
     2: common.PartitionID           part_id,
-    3: common.VertexID              vertex_id,
+    3: common.Value                 vertex_id,
     4: required common.TagID        tag_id
     5: list<UpdatedProp>            updated_props,
     6: optional bool                insertable = false,

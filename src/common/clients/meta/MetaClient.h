@@ -47,14 +47,13 @@ using NameIndexMap = std::unordered_map<std::pair<GraphSpaceID, std::string>, In
 using Indexes = std::unordered_map<IndexID, std::shared_ptr<cpp2::IndexItem>>;
 
 struct SpaceInfoCache {
-    std::string spaceName;
+    cpp2::SpaceDesc spaceDesc_;
     PartsAlloc partsAlloc_;
     std::unordered_map<HostAddr, std::vector<PartitionID>> partsOnHost_;
     TagSchemas tagSchemas_;
     EdgeSchemas edgeSchemas_;
     Indexes tagIndexes_;
     Indexes edgeIndexes_;
-    int32_t vertexIdLen_ = -1;
 };
 
 using LocalCache = std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceInfoCache>>;
@@ -84,32 +83,6 @@ using IndexStatus = std::tuple<std::string, std::string, std::string>;
 using UserRolesMap = std::unordered_map<std::string, std::vector<cpp2::RoleItem>>;
 // get user password by account
 using UserPasswordMap = std::unordered_map<std::string, std::string>;
-
-struct SpaceDesc {
-    SpaceDesc() {}
-
-    SpaceDesc(const std::string& spaceName,
-              int32_t partNum,
-              int32_t replicaFactor,
-              const std::string& charsetName = "",
-              const std::string& collationName = "",
-              int32_t vidSize = 8)
-        : spaceName_(spaceName)
-        , partNum_(partNum)
-        , replicaFactor_(replicaFactor)
-        , charsetName_(charsetName)
-        , collationName_(collationName)
-        , vidSize_(vidSize) {
-    }
-
-    std::string  spaceName_;
-    int32_t      partNum_{0};
-    int32_t      replicaFactor_{0};
-    std::string  charsetName_;
-    std::string  collationName_;
-    int32_t      vidSize_{8};
-};
-
 
 // config cahce, get config via module and name
 using MetaConfigMap = std::unordered_map<std::pair<cpp2::ConfigModule, std::string>,
@@ -198,7 +171,7 @@ public:
     submitJob(cpp2::AdminJobOp op, cpp2::AdminCmd cmd, std::vector<std::string> paras);
 
     // Operations for parts
-    folly::Future<StatusOr<GraphSpaceID>> createSpace(SpaceDesc spaceDesc,
+    folly::Future<StatusOr<GraphSpaceID>> createSpace(meta::cpp2::SpaceDesc spaceDesc,
                                                       bool ifNotExists = false);
 
     folly::Future<StatusOr<std::vector<SpaceIdName>>>
@@ -389,6 +362,10 @@ public:
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
 
     StatusOr<int32_t> getSpaceVidLen(const GraphSpaceID& space);
+
+    StatusOr<cpp2::PropertyType> getSpaceVidType(const GraphSpaceID& space);
+
+    StatusOr<meta::cpp2::SpaceDesc> getSpaceDesc(const GraphSpaceID& space);
 
     StatusOr<TagID> getTagIDByNameFromCache(const GraphSpaceID& space,
                                             const std::string& name);

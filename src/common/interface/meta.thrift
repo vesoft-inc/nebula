@@ -163,18 +163,19 @@ struct IdName {
     2: binary name,
 }
 
-struct SpaceProperties {
+struct SpaceDesc {
     1: binary               space_name,
-    2: i32                  partition_num,
-    3: i32                  replica_factor,
-    4: i32                  vid_size = 8,
-    5: binary               charset_name,
-    6: binary               collate_name,
+    2: i32                  partition_num = 0,
+    3: i32                  replica_factor = 0,
+    4: binary               charset_name,
+    5: binary               collate_name,
+    6: i16                  vid_size = 8,
+    7: PropertyType         vid_type = PropertyType.FIXED_STRING,
 }
 
 struct SpaceItem {
     1: common.GraphSpaceID  space_id,
-    2: SpaceProperties      properties,
+    2: SpaceDesc            properties,
 }
 
 struct TagItem {
@@ -332,7 +333,7 @@ struct AdminJobResp {
 
 // Graph space related operations.
 struct CreateSpaceReq {
-    1: SpaceProperties  properties,
+    1: SpaceDesc        properties,
     2: bool             if_not_exists,
 }
 

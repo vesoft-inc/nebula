@@ -83,12 +83,12 @@ public:
 
     folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> deleteVertices(
         GraphSpaceID space,
-        std::vector<VertexID> ids,
+        std::vector<Value> ids,
         folly::EventBase* evb = nullptr);
 
     folly::Future<StatusOr<storage::cpp2::UpdateResponse>> updateVertex(
         GraphSpaceID space,
-        VertexID vertexId,
+        Value vertexId,
         TagID tagId,
         std::vector<cpp2::UpdatedProp> updatedProps,
         bool insertable,
@@ -123,6 +123,22 @@ public:
         cpp2::IndexSpec indexSpec,
         cpp2::TraverseSpec traverseSpec,
         folly::EventBase* evb = nullptr);
+
+private:
+    StatusOr<std::function<const VertexID&(const Row&)>>
+        getIdFromRow(GraphSpaceID space) const;
+
+    StatusOr<std::function<const VertexID&(const cpp2::NewVertex&)>>
+        getIdFromNewVertex(GraphSpaceID space) const;
+
+    StatusOr<std::function<const VertexID&(const cpp2::NewEdge&)>>
+        getIdFromNewEdge(GraphSpaceID space) const;
+
+    StatusOr<std::function<const VertexID&(const cpp2::EdgeKey&)>>
+        getIdFromEdgeKey(GraphSpaceID space) const;
+
+    StatusOr<std::function<const VertexID&(const Value&)>>
+        getIdFromValue(GraphSpaceID space) const;
 };
 
 }   // namespace storage
