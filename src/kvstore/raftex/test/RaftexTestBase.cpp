@@ -86,7 +86,24 @@ void waitUntilLeaderElected(
     if (isLearner.empty()) {
         isLearner.resize(copies.size(), false);
     }
+    auto checkLeader = [&] () -> bool {
+        int32_t index = 0;
+        for (auto& c : copies) {
+            // if a copy in abnormal state, its leader is (0, 0)
+            VLOG(3) << c->address() << " , leader address "
+                    << c->leader() << ", elected one "
+                    << leader->address();
+            if (!isLearner[index] && c != nullptr && leader != c && c->isRunning()) {
+                if (leader->address() != c->leader()) {
+                    return false;
+                }
+            }
+            index++;
+        }
+        return true;
+    };
     while (true) {
+        bool sameLeader = false;
         {
             std::unique_lock<std::mutex> lock(leaderMutex);
             leaderCV.wait(lock, [&leader] {
@@ -99,23 +116,12 @@ void waitUntilLeaderElected(
 
             // Sleep some time to wait until resp of heartbeat has come back when elected as leader
             usleep(50000);
-
-            bool sameLeader = true;
-            int32_t index = 0;
-            for (auto& c : copies) {
-                // if a copy in abnormal state, its leader is (0, 0)
-                VLOG(3) << c->address() << " , leader address "
-                        << c->leader() << ", elected one "
-                        << leader->address();
-                if (!isLearner[index] && c != nullptr && leader != c && c->isRunning()) {
-                    if (leader->address() != c->leader()) {
-                        sameLeader = false;
-                        break;
-                    }
-                }
-                index++;
-            }
-            if (sameLeader) {
+            sameLeader = checkLeader();
+        }
+        if (sameLeader) {
+            // Sleep a while in case concurrent leader election occurs
+            sleep(1);
+            if (checkLeader()) {
                 break;
             }
         }
