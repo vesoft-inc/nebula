@@ -85,6 +85,19 @@ struct Edge {
                ranking == rhs.ranking &&
                props == rhs.props;
     }
+
+    void format() {
+        if (type < 0) {
+            reverse();
+        }
+    }
+
+    void reverse() {
+        type = -type;
+        auto tmp = std::move(src);
+        src = std::move(dst);
+        dst = std::move(tmp);
+    }
 };
 
 inline std::ostream &operator<<(std::ostream& os, const Edge& v) {

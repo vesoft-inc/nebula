@@ -48,9 +48,10 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
-        path_test
+        structral_value_test
     SOURCES
         PathTest.cpp
+        EdgeTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:datatypes_obj>
