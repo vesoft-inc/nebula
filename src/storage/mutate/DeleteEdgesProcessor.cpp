@@ -6,8 +6,9 @@
 
 #include "storage/mutate/DeleteEdgesProcessor.h"
 #include <algorithm>
-#include "utils/NebulaKeyUtils.h"
 #include "utils/IndexKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
+#include "utils/OperationKeyUtils.h"
 
 namespace nebula {
 namespace storage {
@@ -71,8 +72,8 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
                 if (retRes != kvstore::ResultCode::SUCCEEDED) {
                     VLOG(3) << "Error! ret = " << static_cast<int32_t>(retRes)
                             << ", spaceID " << spaceId_;
-                    this->handleErrorCode(retRes, spaceId_, partId);
-                    this->onFinished();
+                    handleErrorCode(retRes, spaceId_, partId);
+                    onFinished();
                     return;
                 }
                 while (iter && iter->valid()) {
@@ -90,10 +91,11 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
                           -> folly::Optional<std::string> {
                 return deleteEdges(partId, edges);
             };
+
             auto callback = [partId, this](kvstore::ResultCode code) {
                 handleAsync(spaceId_, partId, code);
             };
-            this->env_->kvstore_->asyncAtomicOp(spaceId_, partId, atomic, callback);
+            env_->kvstore_->asyncAtomicOp(spaceId_, partId, atomic, callback);
         });
     }
 }
@@ -102,6 +104,7 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
 folly::Optional<std::string>
 DeleteEdgesProcessor::deleteEdges(PartitionID partId,
                                   const std::vector<cpp2::EdgeKey>& edges) {
+    env_->onFlyingRequest_.fetch_add(1);
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
     for (auto& edge : edges) {
         auto type = edge.edge_type;
@@ -110,55 +113,69 @@ DeleteEdgesProcessor::deleteEdges(PartitionID partId,
         auto dstId = edge.dst;
         auto prefix = NebulaKeyUtils::edgePrefix(spaceVidLen_, partId, srcId, type, rank, dstId);
         std::unique_ptr<kvstore::KVIterator> iter;
-        auto ret = this->env_->kvstore_->prefix(spaceId_, partId, prefix, &iter);
+        auto ret = env_->kvstore_->prefix(spaceId_, partId, prefix, &iter);
         if (ret != kvstore::ResultCode::SUCCEEDED) {
             VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret)
                     << ", spaceId " << spaceId_;
             return folly::none;
         }
-        bool isLatestVE = true;
-        while (iter->valid()) {
+
+        if (iter->valid()) {
             /**
              * just get the latest version edge for index.
              */
-            if (isLatestVE) {
-                std::unique_ptr<RowReader> reader;
-                for (auto& index : indexes_) {
+            std::unique_ptr<RowReader> reader;
+            for (auto& index : indexes_) {
+                if (type == index->get_schema_id().get_edge_type()) {
                     auto indexId = index->get_index_id();
-                    if (type == index->get_schema_id().get_edge_type()) {
+
+                    if (reader == nullptr) {
+                        reader = RowReader::getEdgePropReader(env_->schemaMan_,
+                                                              spaceId_,
+                                                              type,
+                                                              iter->val());
                         if (reader == nullptr) {
-                            reader = RowReader::getEdgePropReader(this->env_->schemaMan_,
-                                                                  spaceId_,
-                                                                  type,
-                                                                  iter->val());
-                            if (reader == nullptr) {
-                                LOG(WARNING) << "Bad format row!";
-                                return folly::none;
-                            }
+                            LOG(WARNING) << "Bad format row!";
+                            return folly::none;
                         }
-                        std::vector<Value::Type> colsType;
-                        auto values = IndexKeyUtils::collectIndexValues(reader.get(),
-                                                                        index->get_fields(),
-                                                                        colsType);
-                        if (!values.ok()) {
-                            continue;
-                        }
-                        auto indexKey = IndexKeyUtils::edgeIndexKey(spaceVidLen_, partId,
-                                                                    indexId,
-                                                                    srcId,
-                                                                    rank,
-                                                                    dstId,
-                                                                    values.value(),
-                                                                    colsType);
+                    }
+                    std::vector<Value::Type> colsType;
+                    auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(),
+                                                                       index->get_fields(),
+                                                                       colsType);
+                    if (!valuesRet.ok()) {
+                        continue;
+                    }
+                    auto indexKey = IndexKeyUtils::edgeIndexKey(spaceVidLen_, partId,
+                                                                indexId,
+                                                                srcId,
+                                                                rank,
+                                                                dstId,
+                                                                valuesRet.value(),
+                                                                colsType);
+
+                    if (env_->checkRebuilding(spaceId_, partId, indexId)) {
+                        auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
+                        batchHolder->put(std::move(deleteOpKey), std::move(indexKey));
+                    } else if (env_->checkIndexLocked(spaceId_, partId, indexId)) {
+                        LOG(ERROR) << "The index has been locked: " << index->get_index_name();
+                        return folly::none;
+                    } else {
                         batchHolder->remove(std::move(indexKey));
                     }
                 }
-                isLatestVE = false;
             }
+
+            batchHolder->remove(iter->key().str());
+            iter->next();
+        }
+
+        while (iter->valid()) {
             batchHolder->remove(iter->key().str());
             iter->next();
         }
     }
+
     return encodeBatchValue(batchHolder->getBatch());
 }
 

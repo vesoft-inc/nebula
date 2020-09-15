@@ -22,9 +22,8 @@ folly::Future<Status>
 RebuildEdgeIndexProcessor::caller(const HostAddr& address,
                                   GraphSpaceID space,
                                   IndexID indexID,
-                                  std::vector<PartitionID> parts,
-                                  bool isOffline) {
-    return adminClient_->rebuildEdgeIndex(address, space, indexID, std::move(parts), isOffline);
+                                  std::vector<PartitionID> parts) {
+    return adminClient_->rebuildEdgeIndex(address, space, indexID, std::move(parts));
 }
 
 }  // namespace meta

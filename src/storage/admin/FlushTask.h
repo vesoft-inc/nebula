@@ -17,7 +17,7 @@ namespace storage {
 
 class FlushTask : public AdminTask {
 public:
-    explicit FlushTask(TaskContext&& ctx) : AdminTask(std::move(ctx)) {}
+    FlushTask(StorageEnv* env, TaskContext&& ctx) : AdminTask(env, std::move(ctx)) {}
 
     ErrorOr<cpp2::ErrorCode, std::vector<AdminSubTask>> genSubTasks() override;
 };

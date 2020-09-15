@@ -147,6 +147,7 @@ bool StorageServer::start() {
     env_->kvstore_ = kvstore_.get();
     env_->indexMan_ = indexMan_.get();
     env_->schemaMan_ = schemaMan_.get();
+    env_->rebuildIndexGuard_ = std::make_unique<IndexGuard>();
 
     storageThread_.reset(new std::thread([this] {
         try {

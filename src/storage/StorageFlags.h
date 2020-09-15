@@ -21,6 +21,8 @@ DECLARE_int32(waiting_new_leader_interval_in_secs);
 
 DECLARE_int32(rebuild_index_batch_num);
 
+DECLARE_int32(rebuild_index_locked_threshold);
+
 DECLARE_int32(vertex_cache_num);
 
 DECLARE_int32(vertex_cache_bucket_exp);

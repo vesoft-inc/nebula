@@ -21,13 +21,13 @@ public:
     ~AdHocIndexManager() = default;
 
     void addTagIndex(GraphSpaceID space,
-                     IndexID indexID,
                      TagID tagID,
+                     IndexID indexID,
                      std::vector<nebula::meta::cpp2::ColumnDef>&& fields);
 
     void addEdgeIndex(GraphSpaceID space,
-                      IndexID indexID,
                       EdgeType edgeType,
+                      IndexID indexID,
                       std::vector<nebula::meta::cpp2::ColumnDef>&& fields);
 
     StatusOr<std::shared_ptr<IndexItem>>

@@ -10,8 +10,8 @@ namespace nebula {
 namespace mock {
 
 void AdHocIndexManager::addTagIndex(GraphSpaceID space,
-                                    IndexID indexID,
                                     TagID tagID,
+                                    IndexID indexID,
                                     std::vector<nebula::meta::cpp2::ColumnDef>&& fields) {
     folly::RWSpinLock::WriteHolder wh(tagIndexLock_);
     IndexItem item;
@@ -34,8 +34,8 @@ void AdHocIndexManager::addTagIndex(GraphSpaceID space,
 }
 
 void AdHocIndexManager::addEdgeIndex(GraphSpaceID space,
-                                     IndexID indexID,
                                      EdgeType edgeType,
+                                     IndexID indexID,
                                      std::vector<nebula::meta::cpp2::ColumnDef>&& fields) {
     folly::RWSpinLock::WriteHolder wh(edgeIndexLock_);
     IndexItem item;

@@ -32,7 +32,8 @@ private:
         , vertexCache_(cache) {}
 
     folly::Optional<std::string>
-    addVertices(PartitionID partId, const std::vector<kvstore::KV>& vertices);
+    addVertices(PartitionID partId,
+                const std::vector<kvstore::KV>& vertices);
 
     folly::Optional<std::string> findObsoleteIndex(PartitionID partId, VertexID vId, TagID tagId);
 

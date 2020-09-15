@@ -75,9 +75,15 @@ public:
 
     static std::shared_ptr<meta::NebulaSchemaProvider> mockTeamTagSchema(SchemaVer ver = 0);
 
-    static std::shared_ptr<meta::NebulaSchemaProvider> mockServeSchema(SchemaVer ver = 0);
+    static std::shared_ptr<meta::NebulaSchemaProvider> mockServeEdgeSchema(SchemaVer ver = 0);
 
-    static std::shared_ptr<meta::NebulaSchemaProvider> mockTeammateSchema(SchemaVer ver = 0);
+    static std::shared_ptr<meta::NebulaSchemaProvider> mockTeammateEdgeSchema(SchemaVer ver = 0);
+
+    static std::vector<nebula::meta::cpp2::ColumnDef> mockPlayerTagIndex();
+
+    static std::vector<nebula::meta::cpp2::ColumnDef> mockServeEdgeIndex();
+
+    static std::vector<nebula::meta::cpp2::ColumnDef> mockTeammateEdgeIndex();
 
     static std::vector<nebula::meta::cpp2::ColumnDef> mockGeneralTagIndexColumns();
 
@@ -98,10 +104,15 @@ public:
      */
     // Construct data in the order of schema
     // generate player and team tag
-    static std::vector<VertexData> mockVertices();
+    static std::vector<VertexData> mockVertices(bool upper = false);
+
+    static std::vector<std::pair<PartitionID, std::string>>
+    mockPlayerIndexKeys(bool upper = false);
 
     // generate serve edge
-    static std::vector<EdgeData> mockEdges();
+    static std::vector<EdgeData> mockEdges(bool upper = false);
+
+    static std::vector<std::pair<PartitionID, std::string>> mockServeIndexKeys();
 
     // generate serve and teammate edge
     static std::vector<EdgeData> mockMultiEdges();
@@ -151,10 +162,10 @@ public:
      * Mock request
      */
     static nebula::storage::cpp2::AddVerticesRequest
-    mockAddVerticesReq(int32_t parts = 6);
+    mockAddVerticesReq(bool upper = false, int32_t parts = 6);
 
     static nebula::storage::cpp2::AddEdgesRequest
-    mockAddEdgesReq(int32_t parts = 6);
+    mockAddEdgesReq(bool upper = false, int32_t parts = 6);
 
     static nebula::storage::cpp2::DeleteVerticesRequest
     mockDeleteVerticesReq(int32_t parts = 6);

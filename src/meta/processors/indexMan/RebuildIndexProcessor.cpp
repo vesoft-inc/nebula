@@ -19,6 +19,7 @@ void RebuildIndexProcessor::processInternal(const cpp2::RebuildIndexReq& req) {
     const auto &indexName = req.get_index_name();
 
     LOG(INFO) << "Rebuild Index Space " << space << ", Index Name " << indexName;
+
     const auto& hostPrefix = MetaServiceUtils::leaderPrefix();
     std::unique_ptr<kvstore::KVIterator> leaderIter;
     auto leaderRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, hostPrefix, &leaderIter);
@@ -60,7 +61,7 @@ void RebuildIndexProcessor::processInternal(const cpp2::RebuildIndexReq& req) {
         if (std::find(activeHosts.begin(), activeHosts.end(), hostAddr) != activeHosts.end()) {
             auto leaderParts = MetaServiceUtils::parseLeaderVal(leaderIter->val());
             auto& partIds = leaderParts[space];
-            auto future = caller(hostAddr, space, indexID, std::move(partIds), true);
+            auto future = caller(hostAddr, space, indexID, std::move(partIds));
             results.emplace_back(std::move(future));
         }
         leaderIter->next();

@@ -52,6 +52,20 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
+        rebuild_index_test
+    SOURCES
+        RebuildIndexTest.cpp
+    OBJECTS
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
         add_vertices_test
     SOURCES
         AddVerticesTest.cpp
@@ -438,6 +452,7 @@ nebula_add_executable(
 #        wangle
 #        gtest
 #)
+
 #
 #nebula_add_test(
 #    NAME

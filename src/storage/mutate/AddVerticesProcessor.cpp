@@ -4,13 +4,14 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "storage/mutate/AddVerticesProcessor.h"
-#include "utils/NebulaKeyUtils.h"
-#include "utils/IndexKeyUtils.h"
 #include <algorithm>
 #include "common/time/WallClock.h"
 #include "codec/RowWriterV2.h"
+#include "utils/IndexKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
+#include "utils/OperationKeyUtils.h"
 #include "storage/StorageFlags.h"
+#include "storage/mutate/AddVerticesProcessor.h"
 
 DECLARE_bool(enable_vertex_cache);
 
@@ -18,6 +19,7 @@ namespace nebula {
 namespace storage {
 
 void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
+    CHECK_NOTNULL(env_->kvstore_);
     auto version =
         std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec();
     // Switch version to big-endian, make sure the key is in ordered.
@@ -59,7 +61,7 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
 
             if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vid)) {
                 LOG(ERROR) << "Space " << spaceId_ << ", vertex length invalid, "
-                            << " space vid len: " << spaceVidLen_ << ",  vid is " << vid;
+                           << " space vid len: " << spaceVidLen_ << ",  vid is " << vid;
                 pushResultCode(cpp2::ErrorCode::E_INVALID_VID, partId);
                 onFinished();
                 return;
@@ -110,10 +112,11 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
                           -> folly::Optional<std::string> {
                 return addVertices(partId, vertices);
             };
+
             auto callback = [partId, this](kvstore::ResultCode code) {
                 handleAsync(spaceId_, partId, code);
             };
-            this->env_->kvstore_->asyncAtomicOp(spaceId_, partId, atomic, callback);
+            env_->kvstore_->asyncAtomicOp(spaceId_, partId, atomic, callback);
         }
     }
 }
@@ -121,6 +124,7 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
 folly::Optional<std::string>
 AddVerticesProcessor::addVertices(PartitionID partId,
                                   const std::vector<kvstore::KV>& vertices) {
+    env_->onFlyingRequest_.fetch_add(1);
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
     /*
      * Define the map newIndexes to avoid inserting duplicate vertex.
@@ -147,6 +151,8 @@ AddVerticesProcessor::addVertices(PartitionID partId,
         auto vId = NebulaKeyUtils::getVertexId(spaceVidLen_, v.first);
         for (auto& index : indexes_) {
             if (tagId == index->get_schema_id().get_tag_id()) {
+                auto indexId = index->get_index_id();
+
                 /*
                  * step 1 , Delete old version index if exists.
                  */
@@ -157,8 +163,9 @@ AddVerticesProcessor::addVertices(PartitionID partId,
                     }
                     val = std::move(obsIdx).value();
                 }
+
                 if (!val.empty()) {
-                    auto reader = RowReader::getTagPropReader(this->env_->schemaMan_,
+                    auto reader = RowReader::getTagPropReader(env_->schemaMan_,
                                                               spaceId_,
                                                               tagId,
                                                               val);
@@ -168,14 +175,23 @@ AddVerticesProcessor::addVertices(PartitionID partId,
                     }
                     auto oi = indexKey(partId, vId.str(), reader.get(), index);
                     if (!oi.empty()) {
-                        batchHolder->remove(std::move(oi));
+                        // Check the index is building for the specified partition or not.
+                        if (env_->checkRebuilding(spaceId_, partId, indexId)) {
+                            auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
+                            batchHolder->put(std::move(deleteOpKey), std::move(oi));
+                        } else if (env_->checkIndexLocked(spaceId_, partId, indexId)) {
+                            LOG(ERROR) << "The index has been locked: " << index->get_index_name();
+                            return folly::none;
+                        } else {
+                            batchHolder->remove(std::move(oi));
+                        }
                     }
                 }
                 /*
                  * step 2 , Insert new vertex index
                  */
                 if (nReader == nullptr) {
-                    nReader = RowReader::getTagPropReader(this->env_->schemaMan_,
+                    nReader = RowReader::getTagPropReader(env_->schemaMan_,
                                                           spaceId_,
                                                           tagId,
                                                           v.second);
@@ -186,7 +202,16 @@ AddVerticesProcessor::addVertices(PartitionID partId,
                 }
                 auto ni = indexKey(partId, vId.str(), nReader.get(), index);
                 if (!ni.empty()) {
-                    batchHolder->put(std::move(ni), "");
+                    // Check the index is building for the specified partition or not.
+                    if (env_->checkRebuilding(spaceId_, partId, indexId)) {
+                        auto modifyOpKey = OperationKeyUtils::modifyOperationKey(partId, ni);
+                        batchHolder->put(std::move(modifyOpKey), "");
+                    } else if (env_->checkIndexLocked(spaceId_, partId, indexId)) {
+                        LOG(ERROR) << "The index has been locked: " << index->get_index_name();
+                        return folly::none;
+                    } else {
+                        batchHolder->put(std::move(ni), "");
+                    }
                 }
             }
         }
@@ -197,6 +222,7 @@ AddVerticesProcessor::addVertices(PartitionID partId,
         auto prop = v.second;
         batchHolder->put(std::move(key), std::move(prop));
     }
+
     return encodeBatchValue(batchHolder->getBatch());
 }
 
@@ -204,10 +230,10 @@ folly::Optional<std::string>
 AddVerticesProcessor::findObsoleteIndex(PartitionID partId, VertexID vId, TagID tagId) {
     auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vId, tagId);
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = this->env_->kvstore_->prefix(this->spaceId_, partId, prefix, &iter);
+    auto ret = env_->kvstore_->prefix(spaceId_, partId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "Error! ret = " << static_cast<int32_t>(ret)
-                   << ", spaceId " << this->spaceId_;
+                   << ", spaceId " << spaceId_;
         return folly::none;
     }
     if (iter && iter->valid()) {
@@ -225,6 +251,7 @@ std::string AddVerticesProcessor::indexKey(PartitionID partId,
     if (!values.ok()) {
         return "";
     }
+
     return IndexKeyUtils::vertexIndexKey(spaceVidLen_, partId,
                                          index->get_index_id(),
                                          vId, values.value(),

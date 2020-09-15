@@ -10,6 +10,7 @@
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
 #include "common/interface/gen-cpp2/meta_types.h"
+#include "codec/RowReader.h"
 #include "utils/Types.h"
 #include "codec/RowReader.h"
 
@@ -410,10 +411,10 @@ public:
                        const std::vector<nebula::meta::cpp2::ColumnDef>& cols,
                        std::vector<Value::Type>& colsType);
 
-    static Status checkValue(const Value& v, bool isNullable);
-
 private:
     IndexKeyUtils() = delete;
+
+    static Status checkValue(const Value& v, bool isNullable);
 };
 
 }  // namespace nebula

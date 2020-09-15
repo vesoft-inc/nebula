@@ -38,6 +38,10 @@ cpp2::ErrorCode BaseProcessor<RESP>::to(kvstore::ResultCode code) {
         return cpp2::ErrorCode::E_TAG_NOT_FOUND;
     case kvstore::ResultCode::ERR_INVALID_DATA:
         return cpp2::ErrorCode::E_INVALID_DATA;
+    case kvstore::ResultCode::ERR_BUILD_INDEX_FAILED:
+        return cpp2::ErrorCode::E_REBUILD_INDEX_FAILED;
+    case kvstore::ResultCode::ERR_INVALID_OPERATION:
+        return cpp2::ErrorCode::E_INVALID_OPERATION;
     default:
         return cpp2::ErrorCode::E_UNKNOWN;
     }
@@ -46,7 +50,8 @@ cpp2::ErrorCode BaseProcessor<RESP>::to(kvstore::ResultCode code) {
 template <typename RESP>
 void BaseProcessor<RESP>::handleAsync(GraphSpaceID spaceId,
                                       PartitionID partId,
-                                      kvstore::ResultCode code) {
+                                      kvstore::ResultCode code,
+                                      bool processFlyingRequest) {
     VLOG(3) << "partId:" << partId << ", code:" << static_cast<int32_t>(code);
 
     bool finished = false;
@@ -58,6 +63,11 @@ void BaseProcessor<RESP>::handleAsync(GraphSpaceID spaceId,
             finished = true;
         }
     }
+
+    if (processFlyingRequest) {
+        env_->onFlyingRequest_.fetch_sub(1);
+    }
+
     if (finished) {
         this->onFinished();
     }
@@ -128,7 +138,7 @@ void BaseProcessor<RESP>::doPut(GraphSpaceID spaceId,
                                 std::vector<kvstore::KV> data) {
     this->env_->kvstore_->asyncMultiPut(
         spaceId, partId, std::move(data), [spaceId, partId, this](kvstore::ResultCode code) {
-            handleAsync(spaceId, partId, code);
+            handleAsync(spaceId, partId, code, false);
     });
 }
 
@@ -137,11 +147,11 @@ kvstore::ResultCode BaseProcessor<RESP>::doSyncPut(GraphSpaceID spaceId,
                                                    PartitionID partId,
                                                    std::vector<kvstore::KV> data) {
     folly::Baton<true, std::atomic> baton;
-    auto ret = kvstore::ResultCode::SUCCEEDED;
+    kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
     env_->kvstore_->asyncMultiPut(spaceId,
-                            partId,
-                            std::move(data),
-                            [&ret, &baton] (kvstore::ResultCode code) {
+                                  partId,
+                                  std::move(data),
+                                  [&ret, &baton] (kvstore::ResultCode code) {
         if (kvstore::ResultCode::SUCCEEDED != code) {
             ret = code;
         }
@@ -157,7 +167,7 @@ void BaseProcessor<RESP>::doRemove(GraphSpaceID spaceId,
                                    std::vector<std::string> keys) {
     this->env_->kvstore_->asyncMultiRemove(
         spaceId, partId, std::move(keys), [spaceId, partId, this](kvstore::ResultCode code) {
-        handleAsync(spaceId, partId, code);
+        handleAsync(spaceId, partId, code, false);
     });
 }
 

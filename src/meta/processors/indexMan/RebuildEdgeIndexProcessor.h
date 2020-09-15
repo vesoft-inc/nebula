@@ -26,8 +26,7 @@ protected:
     folly::Future<Status> caller(const HostAddr& address,
                                  GraphSpaceID spaceId,
                                  IndexID indexID,
-                                 std::vector<PartitionID> parts,
-                                 bool isOffline) override;
+                                 std::vector<PartitionID> parts) override;
 
 private:
     explicit RebuildEdgeIndexProcessor(kvstore::KVStore* kvstore,

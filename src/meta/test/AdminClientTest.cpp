@@ -354,13 +354,13 @@ TEST(AdminClientTest, RebuildIndexTest) {
     {
         LOG(INFO) << "Test Rebuild Tag Index...";
         std::vector<PartitionID> parts{1, 2, 3};
-        auto status = client->rebuildTagIndex(address, 1, 1, std::move(parts), false).get();
+        auto status = client->rebuildTagIndex(address, 1, 1, std::move(parts)).get();
         ASSERT_TRUE(status.ok());
     }
     {
         LOG(INFO) << "Test Rebuild Edge Index...";
         std::vector<PartitionID> parts{1, 2, 3};
-        auto status = client->rebuildEdgeIndex(address, 1, 1, std::move(parts), false).get();
+        auto status = client->rebuildEdgeIndex(address, 1, 1, std::move(parts)).get();
         ASSERT_TRUE(status.ok());
     }
     {

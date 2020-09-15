@@ -18,8 +18,7 @@ class StorageEnv;
 class StorageAdminServiceHandler final : public cpp2::StorageAdminServiceSvIf {
 public:
     explicit StorageAdminServiceHandler(StorageEnv* env)
-        : env_(env) {
-    }
+        : env_(env) {}
 
     folly::Future<cpp2::AdminExecResp>
     future_transLeader(const cpp2::TransLeaderReq& req) override;

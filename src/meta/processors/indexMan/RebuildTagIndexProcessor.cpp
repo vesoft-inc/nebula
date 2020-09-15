@@ -22,9 +22,8 @@ folly::Future<Status>
 RebuildTagIndexProcessor::caller(const HostAddr& address,
                                  GraphSpaceID space,
                                  IndexID indexID,
-                                 std::vector<PartitionID> parts,
-                                 bool isOffline) {
-    return adminClient_->rebuildTagIndex(address, space, indexID, std::move(parts), isOffline);
+                                 std::vector<PartitionID> parts) {
+    return adminClient_->rebuildTagIndex(address, space, indexID, std::move(parts));
 }
 
 }  // namespace meta

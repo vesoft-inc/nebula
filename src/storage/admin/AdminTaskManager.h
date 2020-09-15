@@ -16,7 +16,6 @@
 #include "kvstore/NebulaStore.h"
 #include "storage/admin/AdminTask.h"
 
-
 namespace nebula {
 namespace storage {
 
@@ -41,12 +40,14 @@ public:
 
     void invoke();
 
-    cpp2::ErrorCode cancelJob(int jobId);
-    cpp2::ErrorCode cancelTask(int jobId, int taskId = -1);
+    cpp2::ErrorCode cancelJob(JobID jobId);
+    cpp2::ErrorCode cancelTask(JobID jobId, TaskID taskId = -1);
 
     bool init();
 
     void shutdown();
+
+    bool isFinished(JobID jobID, TaskID taskID);
 
 private:
     void schedule();

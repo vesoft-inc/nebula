@@ -9,11 +9,12 @@
 
 #include "common/base/Base.h"
 #include "common/meta/NebulaSchemaProvider.h"
-#include "utils/NebulaKeyUtils.h"
-#include "utils/IndexKeyUtils.h"
 #include "codec/RowReader.h"
 #include "kvstore/CompactionFilter.h"
 #include "storage/CommonUtils.h"
+#include "utils/NebulaKeyUtils.h"
+#include "utils/IndexKeyUtils.h"
+#include "utils/OperationKeyUtils.h"
 
 DEFINE_bool(storage_kv_mode, false, "True for kv mode");
 
@@ -100,16 +101,17 @@ public:
                   const folly::StringPiece& val) const {
         if (NebulaKeyUtils::isVertex(vIdLen_, key)) {
             auto tagId = NebulaKeyUtils::getTagId(vIdLen_, key);
-            auto schema = this->schemaMan_->getTagSchema(spaceId, tagId);
+            auto schema = schemaMan_->getTagSchema(spaceId, tagId);
             if (!schema) {
                 VLOG(3) << "Space " << spaceId << ", Tag " << tagId << " invalid";
                 return false;
             }
-            auto reader = nebula::RowReader::getTagPropReader(schemaMan_, spaceId, tagId, val);
+            auto reader = nebula::RowReader::getTagPropReader(schemaMan_, spaceId,
+                                                              tagId, val);
             return checkDataTtlValid(schema.get(), reader.get());
         } else if (NebulaKeyUtils::isEdge(vIdLen_, key)) {
             auto edgeType = NebulaKeyUtils::getEdgeType(vIdLen_, key);
-            auto schema = this->schemaMan_->getEdgeSchema(spaceId, std::abs(edgeType));
+            auto schema = schemaMan_->getEdgeSchema(spaceId, std::abs(edgeType));
             if (!schema) {
                 VLOG(3) << "Space " << spaceId << ", EdgeType " << edgeType << " invalid";
                 return false;
@@ -161,11 +163,11 @@ public:
 
     bool indexValid(GraphSpaceID spaceId, const folly::StringPiece& key) const {
         auto indexId = IndexKeyUtils::getIndexId(key);
-        auto eRet = this->indexMan_->getEdgeIndex(spaceId, indexId);
+        auto eRet = indexMan_->getEdgeIndex(spaceId, indexId);
         if (eRet.ok()) {
             return true;
         }
-        auto tRet = this->indexMan_->getTagIndex(spaceId, indexId);
+        auto tRet = indexMan_->getTagIndex(spaceId, indexId);
         if (tRet.ok()) {
             return true;
         }
@@ -193,7 +195,8 @@ public:
         vIdLen_(vIdLen) {}
 
     std::unique_ptr<kvstore::KVFilter> createKVFilter() override {
-        return std::make_unique<StorageCompactionFilter>(schemaMan_, indexMan_, vIdLen_); }
+        return std::make_unique<StorageCompactionFilter>(schemaMan_, indexMan_, vIdLen_);
+    }
 
     const char* Name() const override {
         return "StorageCompactionFilterFactory";

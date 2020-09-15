@@ -14,11 +14,23 @@
 #include "common/interface/gen-cpp2/storage_types.h"
 #include "codec/RowReader.h"
 #include "kvstore/KVStore.h"
+#include <folly/concurrency/ConcurrentHashMap.h>
 
 namespace nebula {
 namespace storage {
 
+enum class IndexState {
+    STARTING,  // The part is begin to build index.
+    BUILDING,  // The part is building index.
+    LOCKED,    // When the minor table is less than threshold.
+               // we will refuse the write operation.
+    FINISHED,  // The part is building index successfully.
+};
+
 using VertexCache = ConcurrentLRUCache<std::pair<VertexID, TagID>, std::string>;
+using IndexKey    = std::tuple<GraphSpaceID, IndexID, PartitionID>;
+using IndexGuard  = folly::ConcurrentHashMap<IndexKey, IndexState>;
+
 
 // unify TagID, EdgeType
 using SchemaID = TagID;
@@ -29,6 +41,20 @@ public:
     kvstore::KVStore*                               kvstore_{nullptr};
     meta::SchemaManager*                            schemaMan_{nullptr};
     meta::IndexManager*                             indexMan_{nullptr};
+    std::atomic<int32_t>                            onFlyingRequest_{0};
+    std::unique_ptr<IndexGuard>                     rebuildIndexGuard_{nullptr};
+
+    bool checkRebuilding(GraphSpaceID space, PartitionID part, IndexID indexID) {
+        auto key = std::make_tuple(space, indexID, part);
+        auto iter = rebuildIndexGuard_->find(key);
+        return iter != rebuildIndexGuard_->cend() && iter->second == IndexState::BUILDING;
+    }
+
+    bool checkIndexLocked(GraphSpaceID space, PartitionID part, IndexID indexID) {
+        auto key = std::make_tuple(space, indexID, part);
+        auto iter = rebuildIndexGuard_->find(key);
+        return iter != rebuildIndexGuard_->cend() && iter->second == IndexState::LOCKED;
+    }
 };
 
 enum class ResultStatus {

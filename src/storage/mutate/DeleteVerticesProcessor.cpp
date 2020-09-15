@@ -4,10 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "storage/mutate/DeleteVerticesProcessor.h"
-#include "utils/NebulaKeyUtils.h"
-#include "utils/IndexKeyUtils.h"
 #include "storage/StorageFlags.h"
+#include "storage/mutate/DeleteVerticesProcessor.h"
+#include "utils/IndexKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
+#include "utils/OperationKeyUtils.h"
 
 namespace nebula {
 namespace storage {
@@ -60,8 +61,8 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
                 if (retRes != kvstore::ResultCode::SUCCEEDED) {
                     VLOG(3) << "Error! ret = " << static_cast<int32_t>(retRes)
                             << ", spaceID " << spaceId_;
-                    this->handleErrorCode(retRes, spaceId_, partId);
-                    this->onFinished();
+                    handleErrorCode(retRes, spaceId_, partId);
+                    onFinished();
                     return;
                 }
                 while (iter->valid()) {
@@ -93,7 +94,7 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
                 VLOG(3) << "partId:" << partId << ", code:" << static_cast<int32_t>(code);
                 handleAsync(spaceId_, partId, code);
             };
-            this->env_->kvstore_->asyncAtomicOp(spaceId_, partId, atomic, callback);
+            env_->kvstore_->asyncAtomicOp(spaceId_, partId, atomic, callback);
         });
     }
 }
@@ -102,11 +103,12 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
 folly::Optional<std::string>
 DeleteVerticesProcessor::deleteVertices(PartitionID partId,
                                         const std::vector<VertexID>& vertices) {
+    env_->onFlyingRequest_.fetch_add(1);
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
     for (auto& vertex : vertices) {
         auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vertex);
         std::unique_ptr<kvstore::KVIterator> iter;
-        auto ret = this->env_->kvstore_->prefix(this->spaceId_, partId, prefix, &iter);
+        auto ret = env_->kvstore_->prefix(spaceId_, partId, prefix, &iter);
         if (ret != kvstore::ResultCode::SUCCEEDED) {
             VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret)
                     << ", spaceId " << spaceId_;
@@ -141,10 +143,11 @@ DeleteVerticesProcessor::deleteVertices(PartitionID partId,
             if (latestVVId != tagId) {
                 std::unique_ptr<RowReader> reader;
                 for (auto& index : indexes_) {
-                    auto indexId = index->get_index_id();
                     if (index->get_schema_id().get_tag_id() == tagId) {
+                        auto indexId = index->get_index_id();
+
                         if (reader == nullptr) {
-                            reader = RowReader::getTagPropReader(this->env_->schemaMan_,
+                            reader = RowReader::getTagPropReader(env_->schemaMan_,
                                                                  spaceId_,
                                                                  tagId,
                                                                  iter->val());
@@ -155,17 +158,28 @@ DeleteVerticesProcessor::deleteVertices(PartitionID partId,
                         }
                         std::vector<Value::Type> colsType;
                         const auto& cols = index->get_fields();
-                        auto values = IndexKeyUtils::collectIndexValues(reader.get(),
-                                                                        cols, colsType);
-                        if (!values.ok()) {
+                        auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(),
+                                                                           cols,
+                                                                           colsType);
+                        if (!valuesRet.ok()) {
                             continue;
                         }
                         auto indexKey = IndexKeyUtils::vertexIndexKey(spaceVidLen_, partId,
                                                                       indexId,
                                                                       vertex,
-                                                                      values.value(),
+                                                                      valuesRet.value(),
                                                                       colsType);
-                        batchHolder->remove(std::move(indexKey));
+
+                        // Check the index is building for the specified partition or not
+                        if (env_->checkRebuilding(spaceId_, partId, indexId)) {
+                            auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
+                            batchHolder->put(std::move(deleteOpKey), std::move(indexKey));
+                        } else if (env_->checkIndexLocked(spaceId_, partId, indexId)) {
+                            LOG(ERROR) << "The index has been locked: " << index->get_index_name();
+                            return folly::none;
+                        } else {
+                            batchHolder->remove(std::move(indexKey));
+                        }
                     }
                 }
                 latestVVId = tagId;
@@ -174,6 +188,7 @@ DeleteVerticesProcessor::deleteVertices(PartitionID partId,
             iter->next();
         }
     }
+
     return encodeBatchValue(batchHolder->getBatch());
 }
 

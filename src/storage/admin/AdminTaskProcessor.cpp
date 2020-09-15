@@ -16,7 +16,6 @@ void AdminTaskProcessor::process(const cpp2::AddAdminTaskRequest& req) {
     auto rc = cpp2::ErrorCode::SUCCEEDED;
     auto taskManager = AdminTaskManager::instance();
 
-    auto* store = dynamic_cast<kvstore::KVStore*>(env_->kvstore_);
     auto cb = [&](cpp2::ErrorCode ret) {
         if (ret != cpp2::ErrorCode::SUCCEEDED) {
             cpp2::PartitionResult thriftRet;
@@ -26,8 +25,8 @@ void AdminTaskProcessor::process(const cpp2::AddAdminTaskRequest& req) {
         onFinished();
     };
 
-    TaskContext ctx(req, store, cb);
-    auto task = AdminTaskFactory::createAdminTask(std::move(ctx));
+    TaskContext ctx(req, cb);
+    auto task = AdminTaskFactory::createAdminTask(env_, std::move(ctx));
     if (task) {
         runDirectly = false;
         taskManager->addAsyncTask(task);

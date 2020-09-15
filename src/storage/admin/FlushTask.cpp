@@ -13,20 +13,19 @@ namespace storage {
 ErrorOr<cpp2::ErrorCode, std::vector<AdminSubTask>>
 FlushTask::genSubTasks() {
     std::vector<AdminSubTask> ret;
-    if (!ctx_.store_) {
+    if (!env_->kvstore_) {
         return ret;
     }
 
-    auto* store = dynamic_cast<kvstore::NebulaStore*>(ctx_.store_);
-    CHECK_NOTNULL(store);
-    auto errOrSpace = store->space(ctx_.spaceId_);
+    auto* store = dynamic_cast<kvstore::NebulaStore*>(env_->kvstore_);
+    auto errOrSpace = store->space(ctx_.parameters_.space_id);
     if (!ok(errOrSpace)) {
         return error(errOrSpace);
     }
 
     auto space = nebula::value(errOrSpace);
 
-    ret.emplace_back([space = space](){
+    ret.emplace_back([space = space]() {
         for (auto& engine : space->engines_) {
             auto code = engine->flush();
             if (code != kvstore::ResultCode::SUCCEEDED) {

@@ -623,8 +623,7 @@ folly::Future<Status> AdminClient::blockingWrites(GraphSpaceID spaceId,
 folly::Future<Status> AdminClient::rebuildTagIndex(const HostAddr& address,
                                                    GraphSpaceID spaceId,
                                                    IndexID indexID,
-                                                   std::vector<PartitionID> parts,
-                                                   bool isOffline) {
+                                                   std::vector<PartitionID> parts) {
     if (injector_) {
         return injector_->rebuildTagIndex();
     }
@@ -634,7 +633,6 @@ folly::Future<Status> AdminClient::rebuildTagIndex(const HostAddr& address,
     req.set_space_id(spaceId);
     req.set_index_id(indexID);
     req.set_parts(std::move(parts));
-    req.set_is_offline(isOffline);
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
     getResponse(std::move(hosts), 0, std::move(req), [] (auto client, auto request) {
@@ -646,8 +644,7 @@ folly::Future<Status> AdminClient::rebuildTagIndex(const HostAddr& address,
 folly::Future<Status> AdminClient::rebuildEdgeIndex(const HostAddr& address,
                                                     GraphSpaceID spaceId,
                                                     IndexID indexID,
-                                                    std::vector<PartitionID> parts,
-                                                    bool isOffline) {
+                                                    std::vector<PartitionID> parts) {
     if (injector_) {
         return injector_->rebuildEdgeIndex();
     }
@@ -657,7 +654,6 @@ folly::Future<Status> AdminClient::rebuildEdgeIndex(const HostAddr& address,
     req.set_space_id(spaceId);
     req.set_index_id(indexID);
     req.set_parts(std::move(parts));
-    req.set_is_offline(isOffline);
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
     getResponse(std::move(hosts), 0, std::move(req), [] (auto client, auto request) {

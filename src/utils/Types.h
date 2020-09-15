@@ -17,11 +17,17 @@ enum class NebulaKeyType : uint32_t {
     kIndex             = 0x00000002,
     kUUID              = 0x00000003,
     kSystem            = 0x00000004,
+    kOperation         = 0x00000005,
 };
 
 enum class NebulaSystemKeyType : uint32_t {
     kSystemCommit      = 0x00000001,
     kSystemPart        = 0x00000002,
+};
+
+enum class NebulaOperationType : uint32_t {
+    kModify            = 0x00000001,
+    kDelete            = 0x00000002,
 };
 
 using VertexIDSlice = folly::StringPiece;

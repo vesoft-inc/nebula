@@ -4,12 +4,15 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "storage/mutate/AddEdgesProcessor.h"
 #include "common/time/WallClock.h"
 #include "utils/NebulaKeyUtils.h"
 #include "utils/IndexKeyUtils.h"
 #include <algorithm>
 #include "codec/RowWriterV2.h"
+#include "utils/IndexKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
+#include "utils/OperationKeyUtils.h"
+#include "storage/mutate/AddEdgesProcessor.h"
 
 namespace nebula {
 namespace storage {
@@ -98,14 +101,15 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
         if (indexes_.empty()) {
             doPut(spaceId_, partId, std::move(data));
         } else {
-             auto atomic = [partId, edges = std::move(data), this]()
+            auto atomic = [partId, edges = std::move(data), this]()
                           -> folly::Optional<std::string> {
                 return addEdges(partId, edges);
             };
+
             auto callback = [partId, this](kvstore::ResultCode code) {
                 handleAsync(spaceId_, partId, code);
             };
-            this->env_->kvstore_->asyncAtomicOp(spaceId_, partId, atomic, callback);
+            env_->kvstore_->asyncAtomicOp(spaceId_, partId, atomic, callback);
         }
     }
 }
@@ -113,6 +117,7 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
 folly::Optional<std::string>
 AddEdgesProcessor::addEdges(PartitionID partId,
                             const std::vector<kvstore::KV>& edges) {
+    env_->onFlyingRequest_.fetch_add(1);
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
 
     /*
@@ -139,6 +144,8 @@ AddEdgesProcessor::addEdges(PartitionID partId,
         auto edgeType = NebulaKeyUtils::getEdgeType(spaceVidLen_, e.first);
         for (auto& index : indexes_) {
             if (edgeType == index->get_schema_id().get_edge_type()) {
+                auto indexId = index->get_index_id();
+
                 /*
                  * step 1 , Delete old version index if exists.
                  */
@@ -149,8 +156,9 @@ AddEdgesProcessor::addEdges(PartitionID partId,
                     }
                     val = std::move(obsIdx).value();
                 }
+
                 if (!val.empty()) {
-                    auto reader = RowReader::getEdgePropReader(this->env_->schemaMan_,
+                    auto reader = RowReader::getEdgePropReader(env_->schemaMan_,
                                                                spaceId_,
                                                                edgeType,
                                                                val);
@@ -160,14 +168,24 @@ AddEdgesProcessor::addEdges(PartitionID partId,
                     }
                     auto oi = indexKey(partId, reader.get(), e.first, index);
                     if (!oi.empty()) {
-                        batchHolder->remove(std::move(oi));
+                        // Check the index is building for the specified partition or not.
+                        if (env_->checkRebuilding(spaceId_, partId, indexId)) {
+                            auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
+                            batchHolder->put(std::move(deleteOpKey), std::move(oi));
+                        } else if (env_->checkIndexLocked(spaceId_, partId, indexId)) {
+                            LOG(ERROR) << "The index has been locked: " << index->get_index_name();
+                            return folly::none;
+                        } else {
+                            batchHolder->remove(std::move(oi));
+                        }
                     }
                 }
+
                 /*
                  * step 2 , Insert new edge index
                  */
                 if (nReader == nullptr) {
-                    nReader = RowReader::getEdgePropReader(this->env_->schemaMan_,
+                    nReader = RowReader::getEdgePropReader(env_->schemaMan_,
                                                            spaceId_,
                                                            edgeType,
                                                            e.second);
@@ -176,9 +194,20 @@ AddEdgesProcessor::addEdges(PartitionID partId,
                         return folly::none;
                     }
                 }
+
                 auto ni = indexKey(partId, nReader.get(), e.first, index);
                 if (!ni.empty()) {
-                    batchHolder->put(std::move(ni), "");
+                    // Check the index is building for the specified partition or not.
+                    if (env_->checkRebuilding(spaceId_, partId, indexId)) {
+                        auto modifyOpKey = OperationKeyUtils::modifyOperationKey(partId,
+                                                                                 std::move(ni));
+                        batchHolder->put(std::move(modifyOpKey), "");
+                    } else if (env_->checkIndexLocked(spaceId_, partId, indexId)) {
+                        LOG(ERROR) << "The index has been locked: " << index->get_index_name();
+                        return folly::none;
+                    } else {
+                        batchHolder->put(std::move(ni), "");
+                    }
                 }
             }
         }
@@ -189,7 +218,6 @@ AddEdgesProcessor::addEdges(PartitionID partId,
         auto prop = e.second;
         batchHolder->put(std::move(key), std::move(prop));
     }
-
     return encodeBatchValue(batchHolder->getBatch());
 }
 
@@ -202,10 +230,10 @@ AddEdgesProcessor::findObsoleteIndex(PartitionID partId, const folly::StringPiec
                                              NebulaKeyUtils::getRank(spaceVidLen_, rawKey),
                                              NebulaKeyUtils::getDstId(spaceVidLen_, rawKey).str());
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = this->env_->kvstore_->prefix(this->spaceId_, partId, prefix, &iter);
+    auto ret = env_->kvstore_->prefix(spaceId_, partId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "Error! ret = " << static_cast<int32_t>(ret)
-                   << ", spaceId " << this->spaceId_;
+                   << ", spaceId " << spaceId_;
         return folly::none;
     }
     if (iter && iter->valid()) {
