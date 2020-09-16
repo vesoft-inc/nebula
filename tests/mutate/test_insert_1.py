@@ -15,7 +15,7 @@ class TestInsert1(NebulaTestSuite):
     @classmethod
     def prepare(self):
         resp = self.execute(
-            'CREATE SPACE IF NOT EXISTS mySpace(partition_num=1, vid_size=20)')
+            'CREATE SPACE IF NOT EXISTS mySpace(partition_num=1, vid_type=FIXED_STRING(20))')
         self.check_resp_succeeded(resp)
 
         # 2.0 use space get from cache

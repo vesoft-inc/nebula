@@ -32,7 +32,7 @@ class TestSpace(NebulaTestSuite):
 
         # check result
         resp = self.client.execute_query('DESC SPACE space_with_default_options')
-        expect_result = [['space_with_default_options', 100, 1, 8, 'utf8', 'utf8_bin']]
+        expect_result = [['space_with_default_options', 100, 1, 'utf8', 'utf8_bin', 'FIXED_STRING(8)']]
         self.check_result(resp, expect_result, {0})
 
         # drop space
@@ -51,7 +51,7 @@ class TestSpace(NebulaTestSuite):
         # desc space
         resp = self.client.execute_query('DESC SPACE default_space')
         self.check_resp_succeeded(resp)
-        expect_result = [['default_space', 9, 1, 8, 'utf8', 'utf8_bin']]
+        expect_result = [['default_space', 9, 1, 'utf8', 'utf8_bin', 'FIXED_STRING(8)']]
         self.check_result(resp, expect_result, {0})
 
         # show create space
@@ -61,9 +61,9 @@ class TestSpace(NebulaTestSuite):
         create_space_str = 'CREATE SPACE `default_space` ('\
                            'partition_num = 9, '\
                            'replica_factor = 1, '\
-                           'vid_size = 8, '\
                            'charset = utf8, '\
-                           'collate = utf8_bin)';
+                           'collate = utf8_bin, '\
+                           'vid_type = FIXED_STRING(8))';
 
         expect_result = [['default_space', create_space_str]]
         self.check_result(resp, expect_result)
@@ -91,7 +91,7 @@ class TestSpace(NebulaTestSuite):
 
         resp = self.client.execute_query('DESC SPACE space_charset_collate')
         self.check_resp_succeeded(resp)
-        expect_result = [['space_charset_collate', 9, 1, 8, 'utf8', 'utf8_bin']]
+        expect_result = [['space_charset_collate', 9, 1, 'utf8', 'utf8_bin', 'FIXED_STRING(8)']]
         self.check_result(resp, expect_result, {0})
 
         # drop space
@@ -104,7 +104,7 @@ class TestSpace(NebulaTestSuite):
 
         resp = self.client.execute_query('DESC SPACE space_charset')
         self.check_resp_succeeded(resp)
-        expect_result = [['space_charset', 9, 1, 8, 'utf8', 'utf8_bin']]
+        expect_result = [['space_charset', 9, 1, 'utf8', 'utf8_bin', 'FIXED_STRING(8)']]
         self.check_result(resp, expect_result, {0})
 
         # drop space
@@ -117,7 +117,7 @@ class TestSpace(NebulaTestSuite):
 
         resp = self.client.execute_query('DESC SPACE space_collate')
         self.check_resp_succeeded(resp)
-        expect_result = [['space_collate', 9, 1, 8, 'utf8', 'utf8_bin']]
+        expect_result = [['space_collate', 9, 1, 'utf8', 'utf8_bin', 'FIXED_STRING(8)']]
         self.check_result(resp, expect_result, {0})
 
         # drop space
@@ -154,7 +154,7 @@ class TestSpace(NebulaTestSuite):
 
         resp = self.client.execute_query('DESC SPACE space_capital')
         self.check_resp_succeeded(resp)
-        expect_result = [['space_capital', 9, 1, 8, 'utf8', 'utf8_bin']]
+        expect_result = [['space_capital', 9, 1, 'utf8', 'utf8_bin', 'FIXED_STRING(8)']]
         self.check_result(resp, expect_result, {0})
 
         # drop space
@@ -197,3 +197,25 @@ class TestSpace(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         expect_result = [['default_space']]
         self.search_not_exist(resp, expect_result)
+
+    def test_create_space_with_string_vid(self):
+        resp = self.client.execute('CREATE SPACE space_string_vid (partition_num=9, '
+                                   'replica_factor=1, charset=utf8, collate=utf8_bin, '
+                                   'vid_type = fixed_string(30))')
+        self.check_resp_succeeded(resp)
+
+        resp = self.client.execute_query('DESC SPACE space_string_vid')
+        self.check_resp_succeeded(resp)
+        expect_result = [['space_string_vid', 9, 1, 'utf8', 'utf8_bin', 'FIXED_STRING(30)']]
+        self.check_result(resp, expect_result, {0})
+
+    def test_create_space_with_int_vid(self):
+        resp = self.client.execute('CREATE SPACE space_int_vid (partition_num=9, '
+                                   'replica_factor=1, charset=utf8, collate=utf8_bin, '
+                                   'vid_type = int64)')
+        self.check_resp_succeeded(resp)
+
+        resp = self.client.execute_query('DESC SPACE space_int_vid')
+        self.check_resp_succeeded(resp)
+        expect_result = [['space_int_vid', 9, 1, 'utf8', 'utf8_bin', 'INT64']]
+        self.check_result(resp, expect_result, {0})

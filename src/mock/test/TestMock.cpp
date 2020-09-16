@@ -34,13 +34,19 @@ TEST_F(MockServerTest, TestMeta) {
     {
         // Create space
         std::string spaceName1 = "TEST_SPACE1";
-        meta::SpaceDesc spaceDesc1(spaceName1, 10, 1, "", "", 8);
+        meta::cpp2::SpaceDesc spaceDesc1;
+        spaceDesc1.set_space_name(spaceName1);
+        spaceDesc1.set_partition_num(10);
+        spaceDesc1.set_replica_factor(1);
         bool ifNotExists = true;
         auto status = metaClient->createSpace(spaceDesc1, ifNotExists).get();
         spaceId1 = status.value();
 
         std::string spaceName2 = "TEST_SPACE2";
-        meta::SpaceDesc spaceDesc2(spaceName2, 100, 3, "", "", 8);
+        meta::cpp2::SpaceDesc spaceDesc2;
+        spaceDesc2.set_space_name(spaceName2);
+        spaceDesc2.set_partition_num(100);
+        spaceDesc2.set_replica_factor(3);
         status = metaClient->createSpace(spaceDesc2, ifNotExists).get();
         spaceId2 = status.value();
 

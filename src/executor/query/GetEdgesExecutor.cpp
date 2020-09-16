@@ -5,8 +5,9 @@
  */
 
 #include "executor/query/GetEdgesExecutor.h"
-#include "planner/Query.h"
 #include "context/QueryContext.h"
+#include "planner/Query.h"
+#include "util/SchemaUtil.h"
 #include "util/ScopedTimer.h"
 
 using nebula::storage::GraphStorageClient;
@@ -27,6 +28,7 @@ folly::Future<Status> GetEdgesExecutor::getEdges() {
 
     auto *ge = asNode<GetEdges>(node());
     nebula::DataSet edges({kSrc, kType, kRank, kDst});
+    const auto& spaceInfo = qctx()->rctx()->session()->space();
     if (ge->src() != nullptr &&
         ge->type() != nullptr &&
         ge->ranking() != nullptr &&
@@ -39,7 +41,9 @@ folly::Future<Status> GetEdgesExecutor::getEdges() {
             auto type = ge->type()->eval(expCtx(valueIter.get()));
             auto ranking = ge->ranking()->eval(expCtx(valueIter.get()));
             auto dst = ge->dst()->eval(expCtx(valueIter.get()));
-            if (!src.isStr() || !type.isInt() || !ranking.isInt() || !dst.isStr()) {
+            if (!SchemaUtil::isValidVid(src, spaceInfo.spaceDesc.vid_type)
+                    || !SchemaUtil::isValidVid(dst, spaceInfo.spaceDesc.vid_type)
+                    || !type.isInt() || !ranking.isInt()) {
                 LOG(WARNING) << "Mismatched edge key type";
                 continue;
             }

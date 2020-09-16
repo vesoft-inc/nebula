@@ -7,6 +7,7 @@
 #define PARSER_ADMINSENTENCES_H_
 
 #include "parser/Clauses.h"
+#include "parser/ColumnTypeDef.h"
 #include "parser/Sentence.h"
 #include "parser/MutateSentences.h"
 #include "common/network/NetworkUtils.h"
@@ -121,12 +122,12 @@ public:
 
 class SpaceOptItem final {
 public:
-    using Value = boost::variant<int64_t, std::string>;
+    using Value = boost::variant<int64_t, std::string, ColumnTypeDef>;
 
     enum OptionType : uint8_t {
         PARTITION_NUM,
         REPLICA_FACTOR,
-        VID_SIZE,
+        VID_TYPE,
         CHARSET,
         COLLATE
     };
@@ -141,6 +142,11 @@ public:
         optValue_ = val;
     }
 
+    SpaceOptItem(OptionType op, ColumnTypeDef val) {
+        optType_ = op;
+        optValue_ = std::move(val);
+    }
+
     int64_t asInt() const {
         return boost::get<int64_t>(optValue_);
     }
@@ -149,12 +155,20 @@ public:
         return boost::get<std::string>(optValue_);
     }
 
+    const ColumnTypeDef& asTypeDef() const {
+        return boost::get<ColumnTypeDef>(optValue_);
+    }
+
     bool isInt() const {
         return optValue_.which() == 0;
     }
 
     bool isString() const {
         return optValue_.which() == 1;
+    }
+
+    bool isTypeDef() const {
+        return optValue_.which() == 2;
     }
 
     int64_t getPartitionNum() const {
@@ -175,12 +189,12 @@ public:
         }
     }
 
-    int32_t getVidSize() const {
-        if (isInt()) {
-            return asInt();
+    ColumnTypeDef getVidType() const {
+        if (isTypeDef()) {
+            return asTypeDef();
         } else {
-            LOG(ERROR) << "vid size illegal.";
-            return 0;
+            LOG(ERROR) << "vid type illegal.";
+            return ColumnTypeDef(meta::cpp2::PropertyType::UNKNOWN);
         }
     }
 

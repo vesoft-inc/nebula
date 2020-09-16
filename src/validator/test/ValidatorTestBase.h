@@ -30,7 +30,11 @@ class ValidatorTestBase : public ::testing::Test {
 protected:
     void SetUp() override {
         session_ = Session::create(0);
-        session_->setSpace("test_space", 1);
+        SpaceInfo spaceInfo;
+        spaceInfo.name = "test_space";
+        spaceInfo.id = 1;
+        spaceInfo.spaceDesc.space_name = "test_space";
+        session_->setSpace(std::move(spaceInfo));
         schemaMng_ = CHECK_NOTNULL(MockSchemaManager::makeUnique());
         pool_ = std::make_unique<ObjectPool>();
     }

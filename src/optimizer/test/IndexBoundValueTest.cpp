@@ -193,7 +193,6 @@ TEST(IndexBoundValueTest, DateTimeTest) {
         maxDT.day = 31;
         maxDT.month = 12;
         maxDT.year = std::numeric_limits<int16_t>::max();
-        maxDT.timezone = std::numeric_limits<int32_t>::max();
     }
 
     DateTime minDT = DateTime();
@@ -211,7 +210,6 @@ TEST(IndexBoundValueTest, DateTimeTest) {
         actual.day = 31;
         actual.month = 12;
         actual.year = 2020;
-        actual.timezone = 1;
 
         expect.microsec = 1;
         expect.sec = 1;
@@ -220,7 +218,6 @@ TEST(IndexBoundValueTest, DateTimeTest) {
         expect.day = 1;
         expect.month = 1;
         expect.year = 2021;
-        expect.timezone = 1;
         EXPECT_EQ(expect,
                   OptimizerUtils::boundValue(col, OP::GREATER_THAN, Value(actual)).getDateTime());
     }
@@ -233,7 +230,6 @@ TEST(IndexBoundValueTest, DateTimeTest) {
         actual.day = 31;
         actual.month = 12;
         actual.year = 2020;
-        actual.timezone = 1;
 
         expect.microsec = 1;
         expect.sec = 35;
@@ -242,7 +238,6 @@ TEST(IndexBoundValueTest, DateTimeTest) {
         expect.day = 31;
         expect.month = 12;
         expect.year = 2020;
-        expect.timezone = 1;
         EXPECT_EQ(expect,
                   OptimizerUtils::boundValue(col, OP::GREATER_THAN, Value(actual)).getDateTime());
     }
@@ -259,7 +254,6 @@ TEST(IndexBoundValueTest, DateTimeTest) {
         actual.day = 31;
         actual.month = 12;
         actual.year = 2020;
-        actual.timezone = 1;
 
         expect.microsec = std::numeric_limits<int32_t>::max() - 1;
         expect.sec = 34;
@@ -268,7 +262,6 @@ TEST(IndexBoundValueTest, DateTimeTest) {
         expect.day = 31;
         expect.month = 12;
         expect.year = 2020;
-        expect.timezone = 1;
         EXPECT_EQ(expect,
                   OptimizerUtils::boundValue(col, OP::LESS_THAN, Value(actual)).getDateTime());
     }

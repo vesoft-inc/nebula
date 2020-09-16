@@ -7,11 +7,21 @@
 #define COMMON_SESSION_H_
 
 #include "common/base/Base.h"
-#include "common/time/Duration.h"
+#include "common/clients/meta/MetaClient.h"
 #include "common/interface/gen-cpp2/meta_types.h"
+#include "common/time/Duration.h"
 
 namespace nebula {
 namespace graph {
+
+constexpr int64_t kInvalidSpaceID = -1;
+constexpr int64_t kInvalidSessionID = 0;
+
+struct SpaceInfo {
+    std::string name;
+    GraphSpaceID id = kInvalidSpaceID;
+    meta::cpp2::SpaceDesc spaceDesc;
+};
 
 class Session final {
 public:
@@ -25,17 +35,12 @@ public:
         id_ = id;
     }
 
-    GraphSpaceID space() const {
+    const SpaceInfo& space() const {
         return space_;
     }
 
-    void setSpace(const std::string &name, GraphSpaceID space) {
-        spaceName_ = name;
-        space_ = space;
-    }
-
-    const std::string& spaceName() const {
-        return spaceName_;
+    void setSpace(SpaceInfo space) {
+        space_ = std::move(space);
     }
 
     const std::string& user() const {
@@ -79,9 +84,8 @@ private:
 
 
 private:
-    int64_t           id_{0};
-    GraphSpaceID      space_{-1};
-    std::string       spaceName_;
+    int64_t           id_{kInvalidSessionID};
+    SpaceInfo         space_;
     std::string       account_;
     time::Duration    idleDuration_;
     /*

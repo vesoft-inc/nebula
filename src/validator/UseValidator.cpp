@@ -14,19 +14,28 @@ namespace graph {
 Status UseValidator::validateImpl() {
     auto useSentence = static_cast<UseSentence*>(sentence_);
     spaceName_ = useSentence->space();
+    SpaceInfo spaceInfo;
+    spaceInfo.name = *spaceName_;
     // firstly get from validate context
     if (!vctx_->hasSpace(*spaceName_)) {
         // secondly get from cache
-        auto ret = qctx_->schemaMng()->toGraphSpaceID(*spaceName_);
-        if (!ret.ok()) {
+        auto spaceId = qctx_->schemaMng()->toGraphSpaceID(*spaceName_);
+        if (!spaceId.ok()) {
             LOG(ERROR) << "Unknown space: " << *spaceName_;
-            return ret.status();
+            return spaceId.status();
         }
-        vctx_->switchToSpace(*spaceName_, ret.value());
+        auto spaceDesc = qctx_->getMetaClient()->getSpaceDesc(spaceId.value());
+        if (!spaceDesc.ok()) {
+            return spaceDesc.status();
+        }
+        spaceInfo.id = spaceId.value();
+        spaceInfo.spaceDesc = std::move(spaceDesc).value();
+        vctx_->switchToSpace(std::move(spaceInfo));
         return Status::OK();
     }
 
-    vctx_->switchToSpace(*spaceName_, -1);
+    spaceInfo.id = -1;
+    vctx_->switchToSpace(std::move(spaceInfo));
     return Status::OK();
 }
 

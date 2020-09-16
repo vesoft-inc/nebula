@@ -13,17 +13,13 @@
 #include "planner/ExecutionPlan.h"
 #include "util/AnonVarGenerator.h"
 #include "util/AnonColGenerator.h"
+#include "service/Session.h"
 
 namespace nebula {
 namespace graph {
 
 using ColDef = std::pair<std::string, Value::Type>;
 using ColsDef = std::vector<ColDef>;
-
-struct SpaceDescription {
-    std::string name;
-    GraphSpaceID id;
-};
 
 class ValidateContext final {
 public:
@@ -32,10 +28,7 @@ public:
         anonColGen_ = std::make_unique<AnonColGenerator>();
     }
 
-    void switchToSpace(std::string spaceName, GraphSpaceID spaceId) {
-        SpaceDescription space;
-        space.name = std::move(spaceName);
-        space.id = spaceId;
+    void switchToSpace(SpaceInfo space) {
         spaces_.emplace_back(std::move(space));
     }
 
@@ -67,7 +60,7 @@ public:
         return !spaces_.empty();
     }
 
-    const SpaceDescription& whichSpace() const {
+    const SpaceInfo& whichSpace() const {
         return spaces_.back();
     }
 
@@ -94,7 +87,7 @@ public:
 
 private:
     // spaces_ is the trace of space switch
-    std::vector<SpaceDescription>                       spaces_;
+    std::vector<SpaceInfo>                              spaces_;
     // vars_ saves all named variable
     std::unordered_map<std::string, ColsDef>            vars_;
     std::unique_ptr<AnonVarGenerator>                   anonVarGen_;

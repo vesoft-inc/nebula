@@ -15,7 +15,11 @@ nebula_add_test(
         $<TARGET_OBJECTS:common_time_obj>
         $<TARGET_OBJECTS:graph_flags_obj>
         $<TARGET_OBJECTS:session_obj>
+        $<TARGET_OBJECTS:common_meta_thrift_obj>
+        $<TARGET_OBJECTS:common_common_thrift_obj>
+        $<TARGET_OBJECTS:common_thrift_obj>
     LIBRARIES
+        ${THRIFT_LIBRARIES}
         wangle
         gtest
         gtest_main

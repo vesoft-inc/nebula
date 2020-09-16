@@ -19,10 +19,10 @@ namespace graph {
 struct EdgeHasher {
     std::size_t operator()(const storage::cpp2::EdgeKey& k) const {
         std::size_t hash_val = 0;
-        hash_val ^= ((std::hash<std::string>()(k.get_src())) << 1);
+        hash_val ^= ((std::hash<Value>()(k.get_src())) << 1);
         hash_val ^= ((std::hash<int32_t>()(k.get_edge_type())) << 1);
         hash_val ^= ((std::hash<int64_t>()(k.get_ranking())) << 1);
-        hash_val ^= ((std::hash<std::string>()(k.get_dst())) << 1);
+        hash_val ^= ((std::hash<Value>()(k.get_dst())) << 1);
         return hash_val;
     }
 };

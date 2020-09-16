@@ -38,7 +38,7 @@ bool PermissionManager::canReadSpace(Session *session, GraphSpaceID spaceId) {
 
 // static
 bool PermissionManager::canReadSchemaOrData(Session *session) {
-    if (session->space() == -1) {
+    if (session->space().id == -1) {
         LOG(ERROR) << "The space name is not set";
         return false;
     }
@@ -46,7 +46,7 @@ bool PermissionManager::canReadSchemaOrData(Session *session) {
         return true;
     }
     bool havePermission = false;
-    auto roleResult = session->roleWithSpace(session->space());
+    auto roleResult = session->roleWithSpace(session->space().id);
     if (!roleResult.ok()) {
         return havePermission;
     }
@@ -71,7 +71,7 @@ bool PermissionManager::canWriteSpace(Session *session) {
 
 // static
 bool PermissionManager::canWriteSchema(Session *session) {
-    if (session->space() == -1) {
+    if (session->space().id == -1) {
         LOG(ERROR) << "The space name is not set";
         return false;
     }
@@ -79,7 +79,7 @@ bool PermissionManager::canWriteSchema(Session *session) {
         return true;
     }
     bool havePermission = false;
-    auto roleResult = session->roleWithSpace(session->space());
+    auto roleResult = session->roleWithSpace(session->space().id);
     if (!roleResult.ok()) {
         return havePermission;
     }
@@ -144,7 +144,7 @@ bool PermissionManager::canWriteRole(Session *session,
 
 // static
 bool PermissionManager::canWriteData(Session *session) {
-    if (session->space() == -1) {
+    if (session->space().id == -1) {
         LOG(ERROR) << "The space name is not set";
         return false;
     }
@@ -152,7 +152,7 @@ bool PermissionManager::canWriteData(Session *session) {
         return true;
     }
     bool havePermission = false;
-    auto roleResult = session->roleWithSpace(session->space());
+    auto roleResult = session->roleWithSpace(session->space().id);
     if (!roleResult.ok()) {
         return havePermission;
     }

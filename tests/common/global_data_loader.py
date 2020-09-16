@@ -37,7 +37,7 @@ class GlobalDataLoader(object):
         print("open: ", nba_file)
         with open(nba_file, 'r') as data_file:
             resp = self.client.execute(
-                'CREATE SPACE IF NOT EXISTS nba(partition_num=10, replica_factor=1, vid_size=30);USE nba;')
+                'CREATE SPACE IF NOT EXISTS nba(partition_num=10, replica_factor=1, vid_type = fixed_string(30));USE nba;')
             assert resp.error_code == ttypes.ErrorCode.SUCCEEDED, resp.error_msg
 
             lines = data_file.readlines()
@@ -66,7 +66,7 @@ class GlobalDataLoader(object):
     # The whole test will load once, for the only read tests
     def load_student(self):
         resp = self.client.execute(
-            'CREATE SPACE IF NOT EXISTS student_space(partition_num=10, replica_factor=1); USE student_space;')
+            'CREATE SPACE IF NOT EXISTS student_space(partition_num=10, replica_factor=1, vid_type = fixed_string(8)); USE student_space;')
         assert resp.error_code == ttypes.ErrorCode.SUCCEEDED, resp.error_msg
 
         resp = self.client.execute('CREATE TAG IF NOT EXISTS person(name string, age int, gender string);')

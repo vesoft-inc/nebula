@@ -28,7 +28,7 @@ private:
     Status toPlan() override;
 
 private:
-    meta::SpaceDesc                    spaceDesc_;
+    meta::cpp2::SpaceDesc              spaceDesc_;
     bool                               ifNotExist_;
 };
 

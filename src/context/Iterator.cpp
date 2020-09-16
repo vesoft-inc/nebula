@@ -9,6 +9,7 @@
 #include "common/datatypes/Vertex.h"
 #include "common/datatypes/Edge.h"
 #include "common/interface/gen-cpp2/common_types.h"
+#include "util/SchemaUtil.h"
 
 namespace std {
 
@@ -257,7 +258,7 @@ Value GetNeighborsIter::getVertex() const {
 
     auto segment = currentSeg();
     auto vidVal = getColumn(nebula::kVid);
-    if (!vidVal.isStr()) {
+    if (!SchemaUtil::isValidVid(vidVal)) {
         return Value::kNullBadType;
     }
     Vertex vertex;
@@ -300,12 +301,12 @@ Value GetNeighborsIter::getEdge() const {
     }
 
     auto& src = getColumn(kVid);
-    if (!src.isStr()) {
+    if (!SchemaUtil::isValidVid(src)) {
         return Value::kNullBadType;
     }
 
     auto& dst = getEdgeProp(edgeName, kDst);
-    if (!dst.isStr()) {
+    if (!SchemaUtil::isValidVid(dst)) {
         return Value::kNullBadType;
     }
     if (type.getInt() > 0) {
@@ -475,7 +476,7 @@ Value PropIter::getVertex() const {
     }
 
     auto vidVal = getColumn(nebula::kVid);
-    if (!vidVal.isStr()) {
+    if (!SchemaUtil::isValidVid(vidVal)) {
         return Value::kNullValue;
     }
     Vertex vertex;
@@ -532,11 +533,11 @@ Value PropIter::getEdge() const {
             return Value::kNullBadType;
         }
         auto& src = getEdgeProp(edgeName, kSrc);
-        if (!src.isStr()) {
+        if (!SchemaUtil::isValidVid(src)) {
             return Value::kNullBadType;
         }
         auto& dst = getEdgeProp(edgeName, kDst);
-        if (!dst.isStr()) {
+        if (!SchemaUtil::isValidVid(dst)) {
             return Value::kNullBadType;
         }
         if (type.getInt() > 0) {

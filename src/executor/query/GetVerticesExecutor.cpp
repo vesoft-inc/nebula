@@ -7,6 +7,7 @@
 #include "executor/query/GetVerticesExecutor.h"
 #include "planner/Query.h"
 #include "context/QueryContext.h"
+#include "util/SchemaUtil.h"
 #include "util/ScopedTimer.h"
 
 using nebula::storage::GraphStorageClient;
@@ -27,6 +28,7 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
 
     GraphStorageClient *storageClient = qctx()->getStorageClient();
     nebula::DataSet vertices({kVid});
+    const auto& spaceInfo = qctx()->rctx()->session()->space();
     if (gv->src() != nullptr) {
         // Accept Table such as | $a | $b | $c |... as input which one column indicate src
         auto valueIter = ectx_->getResult(gv->inputVar()).iter();
@@ -35,7 +37,7 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
         for (; valueIter->valid(); valueIter->next()) {
             auto src = gv->src()->eval(expCtx(valueIter.get()));
             VLOG(1) << "src vid: " << src;
-            if (!src.isStr()) {
+            if (!SchemaUtil::isValidVid(src, spaceInfo.spaceDesc.vid_type)) {
                 LOG(WARNING) << "Mismatched vid type: " << src.type();
                 continue;
             }

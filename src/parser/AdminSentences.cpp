@@ -50,8 +50,10 @@ std::string SpaceOptItem::toString() const {
             return folly::stringPrintf("partition_num = %ld", boost::get<int64_t>(optValue_));
         case REPLICA_FACTOR:
             return folly::stringPrintf("replica_factor = %ld", boost::get<int64_t>(optValue_));
-        case VID_SIZE:
-            return folly::stringPrintf("vid_size = %ld", boost::get<int64_t>(optValue_));
+        case VID_TYPE: {
+            return folly::stringPrintf("vid_type = %s",
+                                       boost::get<ColumnTypeDef>(optValue_).toString().c_str());
+        }
         case CHARSET:
             return folly::stringPrintf("charset = %s", boost::get<std::string>(optValue_).c_str());
         case COLLATE:

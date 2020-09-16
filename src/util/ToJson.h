@@ -22,8 +22,8 @@ struct Value;
 struct HostAddr;
 
 namespace meta {
-struct SpaceDesc;
 namespace cpp2 {
+class SpaceDesc;
 class AlterSchemaItem;
 class ColumnDef;
 class Schema;
@@ -61,7 +61,7 @@ std::string toJson(const List &list);
 std::string toJson(const Value &value);
 std::string toJson(const EdgeKeyRef *ref);
 std::string toJson(const Expression *expr);
-folly::dynamic toJson(const meta::SpaceDesc &desc);
+folly::dynamic toJson(const meta::cpp2::SpaceDesc &desc);
 folly::dynamic toJson(const meta::cpp2::ColumnDef &column);
 folly::dynamic toJson(const meta::cpp2::Schema &schema);
 folly::dynamic toJson(const meta::cpp2::SchemaProp &prop);

@@ -12,6 +12,7 @@
 #include "common/datatypes/List.h"
 #include "common/datatypes/Vertex.h"
 #include "context/QueryContext.h"
+#include "util/SchemaUtil.h"
 #include "util/ScopedTimer.h"
 
 using nebula::storage::StorageRpcResponse;
@@ -47,9 +48,10 @@ Status GetNeighborsExecutor::buildRequestDataSet() {
     reqDs_.rows.reserve(iter->size());
     auto* src = gn_->src();
     std::unordered_set<Value> uniqueVid;
+    const auto& spaceInfo = qctx()->rctx()->session()->space();
     for (; iter->valid(); iter->next()) {
         auto val = Expression::eval(src, ctx(iter.get()));
-        if (!val.isStr()) {
+        if (!SchemaUtil::isValidVid(val, spaceInfo.spaceDesc.vid_type)) {
             continue;
         }
         auto ret = uniqueVid.emplace(val);

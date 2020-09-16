@@ -9,10 +9,10 @@
 #include "common/clients/meta/MetaClient.h"
 #include "common/datatypes/Value.h"
 #include "common/expression/Expression.h"
-#include "parser/EdgeKey.h"
-
 #include "common/interface/gen-cpp2/meta_types.h"
 #include "common/interface/gen-cpp2/storage_types.h"
+#include "parser/ColumnTypeDef.h"
+#include "parser/EdgeKey.h"
 
 namespace nebula {
 namespace util {
@@ -53,14 +53,14 @@ std::string toJson(const Expression *expr) {
     return expr->toString();
 }
 
-folly::dynamic toJson(const meta::SpaceDesc &desc) {
+folly::dynamic toJson(const meta::cpp2::SpaceDesc &desc) {
     folly::dynamic obj = folly::dynamic::object();
-    obj.insert("name", desc.spaceName_);
-    obj.insert("partNum", desc.partNum_);
-    obj.insert("replicaFactor", desc.replicaFactor_);
-    obj.insert("charset", desc.charsetName_);
-    obj.insert("collate", desc.collationName_);
-    obj.insert("vidSize", desc.vidSize_);
+    obj.insert("name", desc.space_name);
+    obj.insert("partNum", desc.partition_num);
+    obj.insert("replicaFactor", desc.replica_factor);
+    obj.insert("charset", desc.charset_name);
+    obj.insert("collate", desc.collate_name);
+    obj.insert("vidType", ColumnTypeDef(desc.vid_type, desc.vid_size).toString());
     return obj;
 }
 
@@ -116,10 +116,10 @@ folly::dynamic toJson(const meta::cpp2::AlterSchemaItem &item) {
 folly::dynamic toJson(const storage::cpp2::EdgeKey &edgeKey) {
     folly::dynamic edgeKeyObj = folly::dynamic::object();
     if (edgeKey.__isset.src) {
-        edgeKeyObj.insert("src", edgeKey.get_src());
+        edgeKeyObj.insert("src", toJson(edgeKey.get_src()));
     }
     if (edgeKey.__isset.dst) {
-        edgeKeyObj.insert("dst", edgeKey.get_dst());
+        edgeKeyObj.insert("dst", toJson(edgeKey.get_dst()));
     }
     if (edgeKey.__isset.edge_type) {
         edgeKeyObj.insert("edgeType", edgeKey.get_edge_type());
@@ -144,7 +144,7 @@ folly::dynamic toJson(const storage::cpp2::NewTag &tag) {
 folly::dynamic toJson(const storage::cpp2::NewVertex &vert) {
     folly::dynamic vertObj = folly::dynamic::object();
     if (vert.__isset.id) {
-        vertObj.insert("id", vert.get_id());
+        vertObj.insert("id", toJson(vert.get_id()));
     }
     if (vert.__isset.tags) {
         vertObj.insert("tags", util::toJson(vert.get_tags()));

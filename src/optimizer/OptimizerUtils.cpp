@@ -283,7 +283,6 @@ Value OptimizerUtils::boundValueWithMax(const meta::cpp2::ColumnDef& col, const 
             dt.minute = 60;
             dt.sec = 60;
             dt.microsec = std::numeric_limits<int32_t>::max();
-            dt.timezone = std::numeric_limits<int32_t>::max();
             return Value(dt);
         }
         default :

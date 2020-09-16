@@ -70,17 +70,17 @@ class CreateSpace final : public SingleInputNode {
 public:
     static CreateSpace* make(QueryContext* qctx,
                              PlanNode* input,
-                             meta::SpaceDesc props,
+                             meta::cpp2::SpaceDesc spaceDesc,
                              bool ifNotExists) {
         return qctx->objPool()->add(new CreateSpace(
-            qctx->genId(), input, std::move(props), ifNotExists));
+            qctx->genId(), input, std::move(spaceDesc), ifNotExists));
     }
 
     std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
 public:
-    const meta::SpaceDesc& getSpaceDesc() const {
-        return props_;
+    const meta::cpp2::SpaceDesc& getSpaceDesc() const {
+        return spaceDesc_;
     }
 
     bool getIfNotExists() const {
@@ -90,16 +90,16 @@ public:
 private:
     CreateSpace(int64_t id,
                 PlanNode* input,
-                meta::SpaceDesc props,
+                meta::cpp2::SpaceDesc spaceDesc,
                 bool ifNotExists)
         : SingleInputNode(id, Kind::kCreateSpace, input) {
-        props_ = std::move(props);
+        spaceDesc_ = std::move(spaceDesc);
         ifNotExists_ = ifNotExists;
     }
 
 private:
-    meta::SpaceDesc     props_;
-    bool                ifNotExists_{false};
+    meta::cpp2::SpaceDesc     spaceDesc_;
+    bool                      ifNotExists_{false};
 };
 
 class DropSpace final : public SingleInputNode {

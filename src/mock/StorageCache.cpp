@@ -45,14 +45,14 @@ Status StorageCache::addVertices(const storage::cpp2::AddVerticesRequest& req) {
     for (auto &part : parts) {
         for (auto &vertex : part.second) {
             auto vId = vertex.get_id();
-            auto findV = spaceDataInfo->vertices.find(vId);
+            auto findV = spaceDataInfo->vertices.find(vId.getStr());
             std::unordered_map<TagID,
                                std::unordered_map<std::string, Value>> *vertexInfo = nullptr;
             if (findV != spaceDataInfo->vertices.end()) {
                 vertexInfo = &findV->second;
             } else {
-                spaceDataInfo->vertices[vId] = {};
-                vertexInfo = &spaceDataInfo->vertices[vId];
+                spaceDataInfo->vertices[vId.getStr()] = {};
+                vertexInfo = &spaceDataInfo->vertices[vId.getStr()];
             }
 
             for (auto &tag : vertex.get_tags()) {

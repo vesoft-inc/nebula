@@ -6,8 +6,10 @@
 
 #include "executor/admin/SwitchSpaceExecutor.h"
 
-#include "planner/Query.h"
+#include "common/clients/meta/MetaClient.h"
+#include "common/interface/gen-cpp2/meta_types.h"
 #include "context/QueryContext.h"
+#include "planner/Query.h"
 #include "util/ScopedTimer.h"
 
 namespace nebula {
@@ -25,9 +27,16 @@ folly::Future<Status> SwitchSpaceExecutor::execute() {
                     LOG(ERROR) << resp.status();
                     return resp.status();
                 }
+
                 auto spaceId = resp.value().get_space_id();
-                qctx_->rctx()->session()->setSpace(spaceName, spaceId);
-                LOG(INFO) << "Graph space switched to `" << spaceName
+                const auto& properties = resp.value().get_properties();
+
+                SpaceInfo spaceInfo;
+                spaceInfo.id = spaceId;
+                spaceInfo.name = spaceName;
+                spaceInfo.spaceDesc = std::move(properties);
+                qctx_->rctx()->session()->setSpace(std::move(spaceInfo));
+                LOG(INFO) << "Graph switched to `" << spaceName
                           << "', space id: " << spaceId;
                 return Status::OK();
             });

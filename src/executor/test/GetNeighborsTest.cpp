@@ -29,6 +29,16 @@ protected:
             builder.value(Value(std::move(ds)));
             qctx_->ectx()->setResult("input_gn", builder.finish());
         }
+
+        auto session = Session::create(0);
+        SpaceInfo spaceInfo;
+        spaceInfo.name = "test_space";
+        spaceInfo.id = 1;
+        spaceInfo.spaceDesc.space_name = "test_space";
+        session->setSpace(std::move(spaceInfo));
+        auto rctx = std::make_unique<RequestContext<cpp2::ExecutionResponse>>();
+        rctx->setSession(std::move(session));
+        qctx_->setRCtx(std::move(rctx));
     }
 
 protected:

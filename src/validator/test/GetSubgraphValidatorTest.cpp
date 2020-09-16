@@ -197,14 +197,14 @@ TEST_F(GetSubgraphValidatorTest, RefNotExist) {
             "GO FROM \"1\" OVER like YIELD $$.person.age AS id | GET SUBGRAPH FROM $-.id";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                  "SemanticError: `$-.id', the srcs should be type of string, but was`INT'");
+                  "SemanticError: `$-.id', the srcs should be type of FIXED_STRING, but was`INT'");
     }
     {
         std::string query =
             "$a = GO FROM \"1\" OVER like YIELD $$.person.age AS ID; GET SUBGRAPH FROM $a.ID";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                  "SemanticError: `$a.ID', the srcs should be type of string, but was`INT'");
+                  "SemanticError: `$a.ID', the srcs should be type of FIXED_STRING, but was`INT'");
     }
     {
         std::string query =

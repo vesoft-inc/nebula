@@ -49,8 +49,8 @@ TEST_F(SchemaTest, TestSpace) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE SPACE space_set_vid_size(partition_num=9, "
-                            "replica_factor=1, vid_size=20);";
+        std::string query = "CREATE SPACE space_set_vid_type(partition_num=9, "
+                            "replica_factor=1, vid_type=FIXED_STRING(20));";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -60,16 +60,16 @@ TEST_F(SchemaTest, TestSpace) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::string> colNames = {"ID", "Name", "Partition Number", "Replica Factor",
-                                             "Vid Size", "Charset", "Collate"};
+                                             "Charset", "Collate", "Vid Type"};
         ASSERT_TRUE(verifyColNames(resp, colNames));
         std::vector<Value> values = {1, "space_for_default", 9,
-                                     1, 8, "utf8", "utf8_bin"};
+                                     1, "utf8", "utf8_bin", "FIXED_STRING(8)"};
         ASSERT_TRUE(verifyValues(resp, values));
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE SPACE space_2("
-                            "partition_num=9, replica_factor=1, vid_size=20);";
+                            "partition_num=9, replica_factor=1, vid_type=FIXED_STRING(20));";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -83,7 +83,7 @@ TEST_F(SchemaTest, TestSpace) {
         std::vector<std::vector<Value>> values = {
             {"space_2"},
             {"space_for_default"},
-            {"space_set_vid_size"}
+            {"space_set_vid_type"}
         };
         ASSERT_TRUE(verifyValues(resp, values));
     }
@@ -97,9 +97,9 @@ TEST_F(SchemaTest, TestSpace) {
         createSpaceStr = "CREATE SPACE `space_2` ("
                          "partition_num = 9, "
                          "replica_factor = 1, "
-                         "vid_size = 20, "
                          "charset = utf8, "
-                         "collate = utf8_bin)";
+                         "collate = utf8_bin, "
+                         "vid_type = FIXED_STRING(20))";
         std::vector<std::string> colNames = {"Space", "Create Space"};
         ASSERT_TRUE(verifyColNames(resp, colNames));
         std::vector<Value> values = {"space_2", createSpaceStr};
@@ -119,7 +119,7 @@ TEST_F(SchemaTest, TestSpace) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::string> colNames = {"Name"};
         ASSERT_TRUE(verifyColNames(resp, colNames));
-        std::vector<std::vector<Value>> values = {{"space_for_default"}, {"space_set_vid_size"}};
+        std::vector<std::vector<Value>> values = {{"space_for_default"}, {"space_set_vid_type"}};
         ASSERT_TRUE(verifyValues(resp, values));
     }
     // use show create space result
@@ -136,7 +136,7 @@ TEST_F(SchemaTest, TestSpace) {
         std::vector<std::vector<Value>> values = {
             {"space_2"},
             {"space_for_default"},
-            {"space_set_vid_size"}
+            {"space_set_vid_type"}
         };
         ASSERT_TRUE(verifyValues(resp, values));
     }
