@@ -173,8 +173,8 @@ IndexExecutor<RESP>::normalizeScanPair(const nebula::cpp2::ColumnDef& field,
     std::string begin, end;
     auto type = field.get_type().type;
     // if begin == end, means the scan is equivalent scan.
-    if (item.beginBound_.rel_ != RelationType::kGTRel &&
-        item.endBound_.rel_ != RelationType::kGTRel &&
+    if (item.beginBound_.rel_ == RelationType::kEQRel &&
+        item.endBound_.rel_ == RelationType::kEQRel &&
         item.beginBound_.rel_ != RelationType::kNull &&
         item.endBound_.rel_ != RelationType::kNull &&
         item.beginBound_.val_ == item.endBound_.val_) {

@@ -170,8 +170,6 @@ RelationType IndexPolicyMaker::toRel(RelationalExpression::Operator op) {
             return RelationType::kGERel;
         case RelationalExpression::Operator::EQ :
             return RelationType::kEQRel;
-        case RelationalExpression::Operator::NE :
-            return RelationType::kNERel;
         default :
             return RelationType::kNull;
     }
@@ -217,6 +215,12 @@ bool IndexPolicyMaker::writeScanItem(const std::string& prop, const OperatorItem
                 } else if (v->second.beginBound_.val_ < std::get<1>(item)) {
                     // This might be the case where c1 > 1 and c1 > 5 , so the 5 should be save.
                     v->second.beginBound_.val_ = std::get<1>(item);
+                } else if (v->second.beginBound_.rel_ == RelationType::kEQRel) {
+                    // If this field appears in scanItems_ ,
+                    // means that the filter conditions are wrong, for example :
+                    // c1 == 1 and c1 > 2
+                    VLOG(1) << "Repeated conditional expression for field : " << prop;
+                    return false;
                 }
             }
             break;
@@ -234,14 +238,17 @@ bool IndexPolicyMaker::writeScanItem(const std::string& prop, const OperatorItem
                 } else if (v->second.endBound_.val_ > std::get<1>(item)) {
                     // This might be the case where c1 < 1 and c1 < 5 , so the 1 should be save.
                     v->second.endBound_.val_ = std::get<1>(item);
+                } else if (v->second.endBound_.rel_ == RelationType::kEQRel) {
+                    // If this field appears in scanItems_ ,
+                    // means that the filter conditions are wrong, for example :
+                    // c1 == 1 and c1 < 2
+                    VLOG(1) << "Repeated conditional expression for field : " << prop;
+                    return false;
                 }
             }
             break;
         }
-        case RelationalExpression::Operator::NE : {
-            break;
-        }
-        default : {
+        case RelationalExpression::Operator::EQ: {
             auto v = scanItems_.find(prop);
             if (v == scanItems_.end()) {
                 scanItems_[prop] = ScanBound(Bound(toRel(op), std::get<1>(item)),
@@ -253,6 +260,13 @@ bool IndexPolicyMaker::writeScanItem(const std::string& prop, const OperatorItem
                 VLOG(1) << "Repeated conditional expression for field : " << prop;
                 return false;
             }
+        }
+        case RelationalExpression::Operator::NE : {
+            break;
+        }
+        default : {
+            VLOG(1) << "Unknown operation of RelationalExpression. column : " << prop;
+            return false;
         }
     }
     return true;

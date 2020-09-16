@@ -28,7 +28,6 @@ enum RelationType : uint8_t {
     kLTRel,
     kLERel,
     kEQRel,
-    kNERel,
     kNull,
 };
 
