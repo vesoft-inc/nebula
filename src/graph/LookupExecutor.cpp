@@ -361,6 +361,19 @@ std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> LookupExecutor::findValidI
         return {};
     }
 
+    // Check conditions whether contains string type for where condition.
+    // Different optimization rules：
+    // Contains string type : Conditions need to match all the index columns. for example
+    //                         where c1 == 'a' and c2 == 'b'
+    //                         index1 (c1, c2) is valid
+    //                         index2 (c1, c2, c3) is invalid.
+    //                         so index1 should be hit.
+    //
+    // Not contains string type : Conditions only needs to match the first N columns of the index.
+    //                            for example : where c1 == 1 and c2 == 2
+    //                            index1 (c1, c2) is valid.
+    //                            index2 (c1, c2, c3) is valid too.
+    //                            so index1 and index2 should be hit.
     bool hasStringCol = false;
     for (const auto& filter : filters_) {
         auto type = schema->getFieldType(filter.first);

@@ -261,14 +261,10 @@ public:
                                     const VariantType& v = 0L) {
         switch (op) {
             case NebulaBoundValueType::kMax : {
-                std::vector<unsigned char> bytes = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-                return std::string(bytes.begin(), bytes.end());
+                return std::string(8, '\377');
             }
             case NebulaBoundValueType::kMin : {
-                std::string str;
-                str.reserve(sizeof(int64_t));
-                str.append(sizeof(int64_t), '\0');
-                return str;
+                return std::string(8, '\0');
             }
             case NebulaBoundValueType::kSubtraction : {
                 std::string str;
@@ -278,10 +274,12 @@ public:
                     str = encodeDouble(boost::get<double>(v));
                 }
                 std::vector<unsigned char> bytes(str.begin(), str.end());
-                for (size_t i = bytes.size(); i > 0; i--) {
-                    if (bytes[i-1] > 0) {
-                        bytes[i-1] -= 1;
-                        break;
+
+                for (size_t i = bytes.size();; i--) {
+                    if (i > 0) {
+                        if (bytes[i-1]-- != 0) break;
+                    } else {
+                        return std::string(bytes.size(), '\0');
                     }
                 }
                 return std::string(bytes.begin(), bytes.end());
@@ -294,10 +292,11 @@ public:
                     str = encodeDouble(boost::get<double>(v));
                 }
                 std::vector<unsigned char> bytes(str.begin(), str.end());
-                for (size_t i = bytes.size(); i > 0; i--) {
-                    if (bytes[i-1] < 255) {
-                        bytes[i-1] += 1;
-                        break;
+                for (size_t i = bytes.size();; i--) {
+                    if (i > 0) {
+                        if (bytes[i-1]++ != 255) break;
+                    } else {
+                        return std::string(bytes.size(), '\377');
                     }
                 }
                 return std::string(bytes.begin(), bytes.end());
