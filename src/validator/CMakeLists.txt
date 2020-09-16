@@ -29,6 +29,7 @@ nebula_add_library(
     ExplainValidator.cpp
     GroupByValidator.cpp
     FindPathValidator.cpp
+    IndexScanValidator.cpp
 )
 
 nebula_add_subdirectory(test)
