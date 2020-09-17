@@ -140,7 +140,7 @@ TEST(IteratorTest, GetNeighbor) {
                 edge.values.emplace_back(k);
             }
             edge.values.emplace_back("2");
-            edge.values.emplace_back(2);
+            edge.values.emplace_back(-2);
             edge.values.emplace_back(j);
             edges.values.emplace_back(std::move(edge));
         }
@@ -302,7 +302,7 @@ TEST(IteratorTest, GetNeighbor) {
                 EdgeRanking ranking = static_cast<int64_t>(j);
                 Edge edge;
                 edge.name = "edge1";
-                edge.type = 0;
+                edge.type = 1;
                 edge.src = folly::to<std::string>(i);
                 edge.dst = "2";
                 edge.ranking = ranking;
@@ -315,7 +315,7 @@ TEST(IteratorTest, GetNeighbor) {
                 EdgeRanking ranking = static_cast<int64_t>(j);
                 Edge edge;
                 edge.name = "edge2";
-                edge.type = 0;
+                edge.type = -2;
                 edge.src = folly::to<std::string>(i);
                 edge.dst = "2";
                 edge.ranking = ranking;
@@ -370,7 +370,7 @@ TEST(IteratorTest, GetNeighbor) {
                 EdgeRanking ranking = static_cast<int64_t>(j);
                 Edge edge;
                 edge.name = "edge1";
-                edge.type = 0;
+                edge.type = 1;
                 edge.src = folly::to<std::string>(i);
                 edge.dst = "2";
                 edge.ranking = ranking;
@@ -383,9 +383,9 @@ TEST(IteratorTest, GetNeighbor) {
                 EdgeRanking ranking = static_cast<int64_t>(j);
                 Edge edge;
                 edge.name = "edge2";
-                edge.type = 0;
-                edge.src = folly::to<std::string>(i);
-                edge.dst = "2";
+                edge.type = 2;
+                edge.src = "2";
+                edge.dst = folly::to<std::string>(i);
                 edge.ranking = ranking;
                 edge.props = {{"prop1", 0}, {"prop2", 1}};
                 expected.emplace_back(std::move(edge));
@@ -840,7 +840,7 @@ TEST(IteratorTest, EdgeProp) {
             Edge edge;
             edge.src = folly::to<std::string>(i);
             edge.dst = folly::to<std::string>(i * 2 + 3);
-            edge.type = 0;
+            edge.type = 2;
             edge.ranking = 0;
             edge.name = "like";
             edge.props = {{"prop1", "hello"}, {"prop2", "world"}};

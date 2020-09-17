@@ -262,6 +262,7 @@ public:
     List getVertices() {
         DCHECK(iter_ == logicalRows_.begin());
         List vertices;
+        vertices.values.reserve(size());
         for (; valid(); next()) {
             vertices.values.emplace_back(getVertex());
         }
@@ -273,8 +274,13 @@ public:
     List getEdges() {
         DCHECK(iter_ == logicalRows_.begin());
         List edges;
+        edges.values.reserve(size());
         for (; valid(); next()) {
-            edges.values.emplace_back(getEdge());
+            auto edge = getEdge();
+            if (edge.isEdge()) {
+                const_cast<Edge&>(edge.getEdge()).format();
+            }
+            edges.values.emplace_back(std::move(edge));
         }
         reset();
         return edges;

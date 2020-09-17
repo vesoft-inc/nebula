@@ -64,7 +64,7 @@ if __name__ == "__main__":
         sys.exit(0)
     nebula_svc = NebulaService(NEBULA_BUILD_DIR, NEBULA_SOURCE_DIR)
     stop_nebula = True
-    error_code = 0
+    error_code = 1
     configs = None
     try:
         # Init args

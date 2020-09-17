@@ -299,30 +299,25 @@ Value GetNeighborsIter::getEdge() const {
     if (!type.isInt()) {
         return Value::kNullBadType;
     }
+    edge.type = type.getInt();
 
     auto& src = getColumn(kVid);
     if (!SchemaUtil::isValidVid(src)) {
         return Value::kNullBadType;
     }
+    edge.src = src.getStr();
 
     auto& dst = getEdgeProp(edgeName, kDst);
     if (!SchemaUtil::isValidVid(dst)) {
         return Value::kNullBadType;
     }
-    if (type.getInt() > 0) {
-        edge.src = src.getStr();
-        edge.dst = dst.getStr();
-    } else {
-        edge.src = dst.getStr();
-        edge.dst = src.getStr();
-    }
+    edge.dst = dst.getStr();
 
     auto& rank = getEdgeProp(edgeName, kRank);
     if (!rank.isInt()) {
         return Value::kNullBadType;
     }
     edge.ranking = rank.getInt();
-    edge.type = 0;
 
     auto& edgePropMap = dsIndices_[segment].edgePropsMap;
     auto edgeProp = edgePropMap.find(currentEdgeName());
@@ -528,31 +523,30 @@ Value PropIter::getEdge() const {
         }
         auto edgeName = edgeProp.first;
         edge.name = edgeProp.first;
+
         auto type = getEdgeProp(edgeName, kType);
         if (!type.isInt()) {
             return Value::kNullBadType;
         }
+        edge.type = type.getInt();
+
         auto& src = getEdgeProp(edgeName, kSrc);
         if (!SchemaUtil::isValidVid(src)) {
             return Value::kNullBadType;
         }
+        edge.src = src.getStr();
+
         auto& dst = getEdgeProp(edgeName, kDst);
         if (!SchemaUtil::isValidVid(dst)) {
             return Value::kNullBadType;
         }
-        if (type.getInt() > 0) {
-            edge.src = src.getStr();
-            edge.dst = dst.getStr();
-        } else {
-            edge.src = dst.getStr();
-            edge.dst = src.getStr();
-        }
+        edge.dst = dst.getStr();
+
         auto rank = getEdgeProp(edgeName, kRank);
         if (!rank.isInt()) {
             return Value::kNullBadType;
         }
         edge.ranking = rank.getInt();
-        edge.type = 0;
 
         for (auto& propIndex : edgeProp.second) {
             if (propIndex.first == kSrc || propIndex.first == kDst ||
@@ -569,6 +563,7 @@ Value PropIter::getEdge() const {
 List PropIter::getVertices() {
     DCHECK(iter_ == rows_.begin());
     List vertices;
+    vertices.values.reserve(size());
     for (; valid(); next()) {
         vertices.values.emplace_back(getVertex());
     }
@@ -579,8 +574,13 @@ List PropIter::getVertices() {
 List PropIter::getEdges() {
     DCHECK(iter_ == rows_.begin());
     List edges;
+    edges.values.reserve(size());
     for (; valid(); next()) {
-        edges.values.emplace_back(getEdge());
+        auto edge = getEdge();
+        if (edge.isEdge()) {
+            const_cast<Edge&>(edge.getEdge()).format();
+        }
+        edges.values.emplace_back(std::move(edge));
     }
     reset();
     return edges;

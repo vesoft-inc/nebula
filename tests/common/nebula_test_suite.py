@@ -261,11 +261,16 @@ class NebulaTestSuite(object):
     @classmethod
     def map_to_string(self, map):
         kvStrs = []
-        if map.kvs is not None:
-            for key in map.kvs:
-                kvStrs.append('"{}":"{}"'.format(key.decode('utf-8'), self.value_to_string(map.kvs[key])))
-            return '{' + ','.join(kvStrs) + '}'
-        return ''
+        for key in map.kvs:
+            kvStrs.append('"{}":"{}"'.format(key.decode('utf-8'), self.value_to_string(map.kvs[key])))
+        return '{' + ','.join(kvStrs) + '}'
+
+    @classmethod
+    def list_to_string(self, list):
+        values = []
+        for val in list.values:
+            values.append('{}'.format(self.value_to_string(val)));
+        return '[' + ','.join(values) + ']'
 
     @classmethod
     def value_to_string(self, value):
@@ -289,14 +294,15 @@ class NebulaTestSuite(object):
             return self.date_time_to_string(value.get_dtVal())
         elif value.getType() == CommonTtypes.Value.MVAL:
             return self.map_to_string(value.get_mVal())
-        return 'Unsupported type'
+        else:
+            return value.__repr__();
 
     @classmethod
     def row_to_string(self, row):
         value_list = []
         for col in row.values:
             value_list.append(self.value_to_string(col))
-        return str(value_list)
+        return '[' + ','.join(value_list) + ']'
 
     @classmethod
     def search_result(self, resp, expect, is_regex=False):
@@ -672,7 +678,7 @@ class NebulaTestSuite(object):
         else:
             edge.dst = bytes(line[1], encoding = 'utf-8')
             edge.ranking = 0
-        edge.type = 0
+        edge.type = 1
         edge.name = bytes('serve', encoding = 'utf-8')
         props = dict()
         start_year = CommonTtypes.Value()
@@ -692,7 +698,7 @@ class NebulaTestSuite(object):
 
         edge.src = bytes(line[0], encoding = 'utf-8')
         edge.dst = bytes(line[1], encoding = 'utf-8')
-        edge.type = 0
+        edge.type = 1
         edge.ranking = 0
         edge.name = bytes('like', encoding = 'utf-8')
         props = dict()
@@ -709,7 +715,7 @@ class NebulaTestSuite(object):
         edge = CommonTtypes.Edge()
         edge.src = bytes(line[0], encoding = 'utf-8')
         edge.dst = bytes(line[1], encoding = 'utf-8')
-        edge.type = 0
+        edge.type = 1
         edge.ranking = 0
         edge.name = bytes('teammate', encoding = 'utf-8')
         props = dict()
@@ -755,3 +761,4 @@ class NebulaTestSuite(object):
         for i in range(len(plan_node_desc.dependencies)):
             line_num = plan_desc.node_index_map[plan_node_desc.dependencies[i]]
             cls.diff_plan_node(plan_desc, line_num, expect, expect_node[1][i])
+
