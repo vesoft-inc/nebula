@@ -349,12 +349,19 @@ TEST(UpdateVertexTest, Insertable_Test) {
     LOG(INFO) << "Build updated props...";
     std::vector<cpp2::UpdatedProp> updatedProps;
     // string: player.name= "Brandon Ingram"
-    cpp2::UpdatedProp uProp;
-    uProp.set_name("name");
+    cpp2::UpdatedProp uProp1;
+    uProp1.set_name("name");
     std::string colnew("Brandon Ingram");
-    ConstantExpression uVal(colnew);
-    uProp.set_value(Expression::encode(uVal));
-    updatedProps.emplace_back(uProp);
+    ConstantExpression val1(colnew);
+    uProp1.set_value(Expression::encode(val1));
+    updatedProps.emplace_back(uProp1);
+
+    // int: player.age = 20
+    cpp2::UpdatedProp uProp2;
+    uProp2.set_name("age");
+    ConstantExpression val2(20L);
+    uProp2.set_value(Expression::encode(val2));
+    updatedProps.emplace_back(uProp2);
     req.set_updated_props(std::move(updatedProps));
 
     LOG(INFO) << "Build yield...";
@@ -397,7 +404,7 @@ TEST(UpdateVertexTest, Insertable_Test) {
     EXPECT_EQ(1, resp.props.rows.size());
     EXPECT_EQ(true, resp.props.rows[0].values[0].getBool());
     EXPECT_EQ("Brandon Ingram", resp.props.rows[0].values[1].getStr());
-    EXPECT_EQ(18, resp.props.rows[0].values[2].getInt());
+    EXPECT_EQ(20, resp.props.rows[0].values[2].getInt());
     EXPECT_EQ("America", resp.props.rows[0].values[3].getStr());
 
     // get player from kvstore directly
@@ -411,7 +418,7 @@ TEST(UpdateVertexTest, Insertable_Test) {
     auto val = reader->getValueByName("name");
     EXPECT_EQ("Brandon Ingram", val.getStr());
     val = reader->getValueByName("age");
-    EXPECT_EQ(18, val.getInt());
+    EXPECT_EQ(20, val.getInt());
     val = reader->getValueByName("country");
     EXPECT_EQ("America", val.getStr());
 }
@@ -645,12 +652,19 @@ TEST(UpdateVertexTest, Insertable_Filter_Value_Test) {
     LOG(INFO) << "Build updated props...";
     std::vector<cpp2::UpdatedProp> updatedProps;
     // string: player.name= "Brandon Ingram"
-    cpp2::UpdatedProp uProp;
-    uProp.set_name("name");
+    cpp2::UpdatedProp uProp1;
+    uProp1.set_name("name");
     std::string colnew("Brandon Ingram");
-    ConstantExpression uVal(colnew);
-    uProp.set_value(Expression::encode(uVal));
-    updatedProps.emplace_back(uProp);
+    ConstantExpression val1(colnew);
+    uProp1.set_value(Expression::encode(val1));
+    updatedProps.emplace_back(uProp1);
+
+    // int: player.age = 20
+    cpp2::UpdatedProp uProp2;
+    uProp2.set_name("age");
+    ConstantExpression val2(20L);
+    uProp2.set_value(Expression::encode(val2));
+    updatedProps.emplace_back(uProp2);
     req.set_updated_props(std::move(updatedProps));
 
     LOG(INFO) << "Build filter...";
@@ -718,7 +732,7 @@ TEST(UpdateVertexTest, Insertable_Filter_Value_Test) {
     EXPECT_EQ(1, resp.props.rows.size());
     EXPECT_EQ(true, resp.props.rows[0].values[0].getBool());
     EXPECT_EQ("Brandon Ingram", resp.props.rows[0].values[1].getStr());
-    EXPECT_EQ(18, resp.props.rows[0].values[2].getInt());
+    EXPECT_EQ(20, resp.props.rows[0].values[2].getInt());
     EXPECT_EQ("America", resp.props.rows[0].values[3].getStr());
 
     // get player from kvstore directly
@@ -732,7 +746,7 @@ TEST(UpdateVertexTest, Insertable_Filter_Value_Test) {
     auto val = reader->getValueByName("name");
     EXPECT_EQ("Brandon Ingram", val.getStr());
     val = reader->getValueByName("age");
-    EXPECT_EQ(18, val.getInt());
+    EXPECT_EQ(20, val.getInt());
     val = reader->getValueByName("country");
     EXPECT_EQ("America", val.getStr());
 }
@@ -924,6 +938,13 @@ TEST(UpdateVertexTest, TTL_Insert_No_Exist_Test) {
     ConstantExpression uVal1(col1new);
     uProp1.set_value(Expression::encode(uVal1));
     updatedProps.emplace_back(uProp1);
+
+    // int: player.age = 20
+    cpp2::UpdatedProp uProp2;
+    uProp2.set_name("age");
+    ConstantExpression uVal2(20L);
+    uProp2.set_value(Expression::encode(uVal2));
+    updatedProps.emplace_back(uProp2);
     req.set_updated_props(std::move(updatedProps));
 
     LOG(INFO) << "Build yield...";
@@ -970,7 +991,7 @@ TEST(UpdateVertexTest, TTL_Insert_No_Exist_Test) {
 
     EXPECT_EQ(true, resp.props.rows[0].values[0].getBool());
     EXPECT_EQ("Tim", resp.props.rows[0].values[1].getStr());
-    EXPECT_EQ(18, resp.props.rows[0].values[2].getInt());
+    EXPECT_EQ(20, resp.props.rows[0].values[2].getInt());
     EXPECT_EQ("America", resp.props.rows[0].values[3].getStr());
 
     // get player from kvstore directly
@@ -984,7 +1005,7 @@ TEST(UpdateVertexTest, TTL_Insert_No_Exist_Test) {
     auto val = reader->getValueByName("name");
     EXPECT_EQ("Tim", val.getStr());
     val = reader->getValueByName("age");
-    EXPECT_EQ(18, val.getInt());
+    EXPECT_EQ(20, val.getInt());
     val = reader->getValueByName("country");
     EXPECT_EQ("America", val.getStr());
 }
@@ -1130,6 +1151,166 @@ TEST(UpdateVertexTest, TTL_Insert_Test) {
         count++;
     }
     EXPECT_EQ(2, count);
+}
+
+// upsert, insert faild
+// age filed has not default value and not nullable, not in set clause
+TEST(UpdateVertexTest, Insertable_No_Defalut_Test) {
+    fs::TempDir rootPath("/tmp/UpdateVertexTest.XXXXXX");
+    mock::MockCluster cluster;
+    cluster.initStorageKV(rootPath.path());
+    auto* env = cluster.storageEnv_.get();
+    auto parts = cluster.getTotalParts();
+
+    GraphSpaceID spaceId = 1;
+    TagID tagId = 1;
+    auto status = env->schemaMan_->getSpaceVidLen(spaceId);
+    ASSERT_TRUE(status.ok());
+    auto spaceVidLen = status.value();
+    EXPECT_TRUE(mockVertexData(env, parts, spaceVidLen));
+
+    LOG(INFO) << "Build UpdateVertexRequest...";
+    cpp2::UpdateVertexRequest req;
+
+    req.set_space_id(spaceId);
+    auto partId = std::hash<std::string>()("Brandon Ingram") % parts + 1;
+    VertexID vertexId("Brandon Ingram");
+    req.set_part_id(partId);
+    req.set_vertex_id(vertexId);
+    req.set_tag_id(tagId);
+
+    LOG(INFO) << "Build updated props...";
+    std::vector<cpp2::UpdatedProp> updatedProps;
+    // string: player.name= "Brandon Ingram"
+    cpp2::UpdatedProp uProp1;
+    uProp1.set_name("name");
+    std::string colnew("Brandon Ingram");
+    ConstantExpression val1(colnew);
+    uProp1.set_value(Expression::encode(val1));
+    updatedProps.emplace_back(uProp1);
+
+    LOG(INFO) << "Build yield...";
+    // Return player props: name, age
+    {
+        decltype(req.return_props) tmpProps;
+        auto* yTag1 = new std::string("1");
+        auto* yProp1 = new std::string("name");
+        SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
+        tmpProps.emplace_back(Expression::encode(sourcePropExp1));
+
+        auto* yTag2 = new std::string("1");
+        auto* yProp2 = new std::string("age");
+        SourcePropertyExpression sourcePropExp2(yTag2, yProp2);
+        tmpProps.emplace_back(Expression::encode(sourcePropExp2));
+
+        req.set_return_props(std::move(tmpProps));
+        req.set_insertable(true);
+    }
+
+    LOG(INFO) << "Test UpdateVertexRequest...";
+    auto* processor = UpdateVertexProcessor::instance(env, nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    LOG(INFO) << "Check the results...";
+    EXPECT_EQ(1, resp.result.failed_parts.size());
+}
+
+// upsert, insert success
+// age filed has not default value and not nullable, but in set clause
+TEST(UpdateVertexTest, Insertable_In_Set_Test) {
+    fs::TempDir rootPath("/tmp/UpdateVertexTest.XXXXXX");
+    mock::MockCluster cluster;
+    cluster.initStorageKV(rootPath.path());
+    auto* env = cluster.storageEnv_.get();
+    auto parts = cluster.getTotalParts();
+
+    GraphSpaceID spaceId = 1;
+    TagID tagId = 1;
+    auto status = env->schemaMan_->getSpaceVidLen(spaceId);
+    ASSERT_TRUE(status.ok());
+    auto spaceVidLen = status.value();
+    EXPECT_TRUE(mockVertexData(env, parts, spaceVidLen));
+
+    LOG(INFO) << "Build UpdateVertexRequest...";
+    cpp2::UpdateVertexRequest req;
+
+    req.set_space_id(spaceId);
+    auto partId = std::hash<std::string>()("Brandon Ingram") % parts + 1;
+    VertexID vertexId("Brandon Ingram");
+    req.set_part_id(partId);
+    req.set_vertex_id(vertexId);
+    req.set_tag_id(tagId);
+
+    LOG(INFO) << "Build updated props...";
+    std::vector<cpp2::UpdatedProp> updatedProps;
+    // string: player.name= "Brandon Ingram"
+    cpp2::UpdatedProp uProp1;
+    uProp1.set_name("name");
+    std::string colnew("Brandon Ingram");
+    ConstantExpression val1(colnew);
+    uProp1.set_value(Expression::encode(val1));
+    updatedProps.emplace_back(uProp1);
+
+    // int: player.age = $^.player.career
+    cpp2::UpdatedProp uProp2;
+    uProp2.set_name("age");
+    auto* uTag = new std::string("1");
+    auto* uProp = new std::string("career");
+    SourcePropertyExpression val2(uTag, uProp);
+    uProp2.set_value(Expression::encode(val2));
+    updatedProps.emplace_back(uProp2);
+    req.set_updated_props(std::move(updatedProps));
+
+    LOG(INFO) << "Build yield...";
+    // Return player props: name, age
+    {
+        decltype(req.return_props) tmpProps;
+        auto* yTag1 = new std::string("1");
+        auto* yProp1 = new std::string("name");
+        SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
+        tmpProps.emplace_back(Expression::encode(sourcePropExp1));
+
+        auto* yTag2 = new std::string("1");
+        auto* yProp2 = new std::string("age");
+        SourcePropertyExpression sourcePropExp2(yTag2, yProp2);
+        tmpProps.emplace_back(Expression::encode(sourcePropExp2));
+
+        req.set_return_props(std::move(tmpProps));
+        req.set_insertable(true);
+    }
+
+    LOG(INFO) << "Test UpdateVertexRequest...";
+    auto* processor = UpdateVertexProcessor::instance(env, nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    LOG(INFO) << "Check the results...";
+    EXPECT_EQ(0, resp.result.failed_parts.size());
+    EXPECT_EQ(3, resp.props.colNames.size());
+    EXPECT_EQ("_inserted", resp.props.colNames[0]);
+    EXPECT_EQ("1:name", resp.props.colNames[1]);
+    EXPECT_EQ("1:age", resp.props.colNames[2]);
+
+    EXPECT_EQ(1, resp.props.rows.size());
+    EXPECT_EQ(true, resp.props.rows[0].values[0].getBool());
+    EXPECT_EQ("Brandon Ingram", resp.props.rows[0].values[1].getStr());
+    EXPECT_EQ(10, resp.props.rows[0].values[2].getInt());
+
+    // get player from kvstore directly
+    auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
+    EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
+    EXPECT_TRUE(iter && iter->valid());
+
+    auto reader = RowReader::getTagPropReader(env->schemaMan_, spaceId, tagId, iter->val());
+    auto val = reader->getValueByName("name");
+    EXPECT_EQ("Brandon Ingram", val.getStr());
+    val = reader->getValueByName("age");
+    EXPECT_EQ(10, val.getInt());
 }
 
 }  // namespace storage

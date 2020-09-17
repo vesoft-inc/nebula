@@ -158,7 +158,8 @@ protected:
     std::vector<cpp2::VertexProp> buildAllTagProps();
     std::vector<cpp2::EdgeProp> buildAllEdgeProps(const cpp2::EdgeDirection& direction);
 
-    cpp2::ErrorCode checkExp(const Expression* exp, bool returned, bool filtered);
+    cpp2::ErrorCode checkExp(const Expression* exp, bool returned, bool filtered,
+                             bool updated = false);
 
     void addReturnPropContext(std::vector<PropContext>& ctxs,
                               const char* propName,
@@ -182,6 +183,9 @@ protected:
     TagContext                                          tagContext_;
     EdgeContext                                         edgeContext_;
     std::unique_ptr<Expression>                         filter_;
+
+    // Collect prop in value expression in upsert set clause
+    std::unordered_set<std::string>                     valueProps_;
 
     nebula::DataSet                                     resultDataSet_;
 };

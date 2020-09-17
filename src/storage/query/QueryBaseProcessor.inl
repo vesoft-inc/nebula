@@ -267,7 +267,8 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::getSpaceEdgeSchema() {
 template <typename REQ, typename RESP>
 cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp,
                                                         bool returned,
-                                                        bool filtered) {
+                                                        bool filtered,
+                                                        bool updated) {
     switch (exp->kind()) {
         case Expression::Kind::kConstant:
             return cpp2::ErrorCode::SUCCEEDED;
@@ -277,11 +278,11 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp,
         case Expression::Kind::kDivision:
         case Expression::Kind::kMod: {
             auto* ariExp = static_cast<const ArithmeticExpression*>(exp);
-            auto ret = checkExp(ariExp->left(), returned, filtered);
+            auto ret = checkExp(ariExp->left(), returned, filtered, updated);
             if (ret != cpp2::ErrorCode::SUCCEEDED) {
                 return ret;
             }
-            return checkExp(ariExp->right(), returned, filtered);
+            return checkExp(ariExp->right(), returned, filtered, updated);
         }
         case Expression::Kind::kUnaryPlus:
         case Expression::Kind::kUnaryNegate:
@@ -289,7 +290,7 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp,
         case Expression::Kind::kUnaryIncr:
         case Expression::Kind::kUnaryDecr: {
             auto* unaExp = static_cast<const UnaryExpression*>(exp);
-            return checkExp(unaExp->operand(), returned, filtered);
+            return checkExp(unaExp->operand(), returned, filtered, updated);
         }
         case Expression::Kind::kRelEQ:
         case Expression::Kind::kRelNE:
@@ -299,25 +300,25 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp,
         case Expression::Kind::kRelGE:
         case Expression::Kind::kRelIn: {
             auto* relExp = static_cast<const RelationalExpression*>(exp);
-            auto ret = checkExp(relExp->left(), returned, filtered);
+            auto ret = checkExp(relExp->left(), returned, filtered, updated);
             if (ret != cpp2::ErrorCode::SUCCEEDED) {
                 return ret;
             }
-            return checkExp(relExp->right(), returned, filtered);
+            return checkExp(relExp->right(), returned, filtered, updated);
         }
         case Expression::Kind::kLogicalAnd:
         case Expression::Kind::kLogicalOr:
         case Expression::Kind::kLogicalXor: {
             auto* logExp = static_cast<const LogicalExpression*>(exp);
-            auto ret = checkExp(logExp->left(), returned, filtered);
+            auto ret = checkExp(logExp->left(), returned, filtered, updated);
             if (ret != cpp2::ErrorCode::SUCCEEDED) {
                 return ret;
             }
-            return checkExp(logExp->right(), returned, filtered);
+            return checkExp(logExp->right(), returned, filtered, updated);
         }
         case Expression::Kind::kTypeCasting: {
             auto* typExp = static_cast<const TypeCastingExpression*>(exp);
-            return checkExp(typExp->operand(), returned, filtered);
+            return checkExp(typExp->operand(), returned, filtered, updated);
         }
         case Expression::Kind::kFunctionCall: {
             return cpp2::ErrorCode::E_INVALID_FILTER;
@@ -356,6 +357,9 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp,
                                       field,
                                       returned,
                                       filtered);
+            if (updated) {
+                valueProps_.emplace(*propName);
+            }
             return cpp2::ErrorCode::SUCCEEDED;
         }
         case Expression::Kind::kEdgeRank:
@@ -416,6 +420,9 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp,
                                           field,
                                           returned,
                                           filtered);
+            }
+            if (updated) {
+                valueProps_.emplace(*propName);
             }
             return cpp2::ErrorCode::SUCCEEDED;
         }

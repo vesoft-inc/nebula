@@ -53,23 +53,26 @@ private:
     }
 
 private:
-    bool                                                            insertable_{false};
+    bool                                                                 insertable_{false};
 
     // update tagId
-    TagID                                                           tagId_;
+    TagID                                                                tagId_;
 
-    std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>>     indexes_;
+    std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>>          indexes_;
 
-    std::unique_ptr<StorageExpressionContext>                       expCtx_;
+    std::unique_ptr<StorageExpressionContext>                            expCtx_;
 
     // update <prop name, new value expression>
-    std::vector<storage::cpp2::UpdatedProp>                         updatedProps_;
+    std::vector<storage::cpp2::UpdatedProp>                              updatedProps_;
 
     // return props expression
-    std::vector<std::unique_ptr<Expression>>                        returnPropsExp_;
+    std::vector<std::unique_ptr<Expression>>                             returnPropsExp_;
 
     // condition expression
-    std::unique_ptr<Expression>                                     filterExp_;
+    std::unique_ptr<Expression>                                          filterExp_;
+
+    // updatedProps_ dependent props in value expression
+    std::vector<std::pair<std::string, std::unordered_set<std::string>>> depPropMap_;
 };
 
 }  // namespace storage

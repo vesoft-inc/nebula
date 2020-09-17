@@ -128,12 +128,13 @@ StoragePlan<cpp2::EdgeKey> UpdateEdgeProcessor::buildPlan(nebula::DataSet* resul
     filterNode->addDependency(edgeUpdate.get());
 
     auto updateNode = std::make_unique<UpdateEdgeNode>(planContext_.get(),
-                                                       &edgeContext_,
                                                        indexes_,
                                                        updatedProps_,
                                                        filterNode.get(),
                                                        insertable_,
-                                                       expCtx_.get());
+                                                       depPropMap_,
+                                                       expCtx_.get(),
+                                                       &edgeContext_);
     updateNode->addDependency(filterNode.get());
 
     auto resultNode = std::make_unique<UpdateResNode<cpp2::EdgeKey>>(planContext_.get(),
@@ -192,9 +193,14 @@ UpdateEdgeProcessor::buildEdgeContext(const cpp2::UpdateEdgeRequest& req) {
             VLOG(1) << "Can't decode the prop's value " << edgeProp.get_value();
             return cpp2::ErrorCode::E_INVALID_UPDATER;
         }
-        retCode = checkExp(updateExp.get(), false, false);
+
+        valueProps_.clear();
+        retCode = checkExp(updateExp.get(), false, false, insertable_);
         if (retCode != cpp2::ErrorCode::SUCCEEDED) {
             return retCode;
+        }
+        if (insertable_) {
+            depPropMap_.emplace_back(std::make_pair(edgeProp.get_name(), valueProps_));
         }
     }
 

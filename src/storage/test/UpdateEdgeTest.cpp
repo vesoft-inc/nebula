@@ -526,6 +526,13 @@ TEST(UpdateEdgeTest, Insertable_Test) {
     ConstantExpression val3(2016L);
     uProp3.set_value(Expression::encode(val3));
     props.emplace_back(uProp3);
+
+    // int: 101.teamCareer = 1
+    cpp2::UpdatedProp uProp4;
+    uProp4.set_name("teamCareer");
+    ConstantExpression val4(1L);
+    uProp4.set_value(Expression::encode(val4));
+    props.emplace_back(uProp4);
     req.set_updated_props(std::move(props));
 
     LOG(INFO) << "Build yield...";
@@ -893,6 +900,12 @@ TEST(UpdateEdgeTest, Insertable_Filter_value_Test) {
     uProp3.set_value(Expression::encode(val3));
     props.emplace_back(uProp3);
 
+    // int: 101.teamCareer = 1
+    cpp2::UpdatedProp uProp4;
+    uProp4.set_name("teamCareer");
+    ConstantExpression val4(1L);
+    uProp4.set_value(Expression::encode(val4));
+    props.emplace_back(uProp4);
     req.set_updated_props(std::move(props));
 
     LOG(INFO) << "Build filter...";
@@ -1216,6 +1229,13 @@ TEST(UpdateEdgeTest, TTL_Insert_No_Exist_Test) {
     ConstantExpression val2(col2new);
     uProp2.set_value(Expression::encode(val2));
     props.emplace_back(uProp2);
+
+    // int: 101.teamCareer = 1
+    cpp2::UpdatedProp uProp3;
+    uProp3.set_name("teamCareer");
+    ConstantExpression val3(1);
+    uProp3.set_value(Expression::encode(val3));
+    props.emplace_back(uProp3);
 
     req.set_updated_props(std::move(props));
 
@@ -1705,6 +1725,224 @@ TEST(UpdateEdgeTest, Yield_Illegal_Key_Test) {
     EXPECT_EQ(19, val.getInt());
     val = edgeReader->getValueByName("type");
     EXPECT_EQ("zzzzz", val.getStr());
+}
+
+// Upsert, insert faild
+// teamCareer filed has not default value and not nullable, not in set clause
+TEST(UpdateEdgeTest, Insertable_No_Default_Test) {
+    fs::TempDir rootPath("/tmp/UpdateEdgeTest.XXXXXX");
+    mock::MockCluster cluster;
+    cluster.initStorageKV(rootPath.path());
+    auto* env = cluster.storageEnv_.get();
+    auto parts = cluster.getTotalParts();
+
+    GraphSpaceID spaceId = 1;
+    auto status = env->schemaMan_->getSpaceVidLen(spaceId);
+    ASSERT_TRUE(status.ok());
+    auto spaceVidLen = status.value();
+    EXPECT_TRUE(mockEdgeData(env, parts, spaceVidLen));
+
+    LOG(INFO) << "Build UpdateEdgeRequest...";
+    cpp2::UpdateEdgeRequest req;
+
+    auto partId = std::hash<std::string>()("Brandon Ingram") % parts + 1;
+    req.set_space_id(spaceId);
+    req.set_part_id(partId);
+    VertexID srcId = "Brandon Ingram";
+    VertexID dstId = "Lakers";
+    EdgeRanking rank = 2016;
+    EdgeType edgeType = 101;
+    // src = Brandon Ingram, edge_type = 101, ranking = 2016, dst = Lakers
+    storage::cpp2::EdgeKey edgeKey;
+    edgeKey.set_src(srcId);
+    edgeKey.set_edge_type(edgeType);
+    edgeKey.set_ranking(rank);
+    edgeKey.set_dst(dstId);
+    req.set_edge_key(edgeKey);
+
+    LOG(INFO) << "Build updated props...";
+    std::vector<cpp2::UpdatedProp> props;
+
+    // string: 101.playerName = Brandon Ingram
+    cpp2::UpdatedProp uProp1;
+    uProp1.set_name("playerName");
+    std::string col1new("Brandon Ingram");
+    ConstantExpression val1(col1new);
+    uProp1.set_value(Expression::encode(val1));
+    props.emplace_back(uProp1);
+
+    // string: 101.teamName = Lakers
+    cpp2::UpdatedProp uProp2;
+    uProp2.set_name("teamName");
+    std::string col2new("Lakers");
+    ConstantExpression val2(col2new);
+    uProp2.set_value(Expression::encode(val2));
+    props.emplace_back(uProp2);
+
+    // int: 101.startYear = 2016
+    cpp2::UpdatedProp uProp3;
+    uProp3.set_name("startYear");
+    ConstantExpression val3(2016L);
+    uProp3.set_value(Expression::encode(val3));
+    props.emplace_back(uProp3);
+
+    LOG(INFO) << "Build yield...";
+    // Return serve props: playerName, teamName, teamCareer
+    decltype(req.return_props) tmpProps;
+    auto* yEdge1 = new std::string("101");
+    auto* yProp1 = new std::string("playerName");
+    EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
+    tmpProps.emplace_back(Expression::encode(edgePropExp1));
+
+    auto* yEdge2 = new std::string("101");
+    auto* yProp2 = new std::string("teamName");
+    EdgePropertyExpression edgePropExp2(yEdge2, yProp2);
+    tmpProps.emplace_back(Expression::encode(edgePropExp2));
+
+    auto* yEdge3 = new std::string("101");
+    auto* yProp3 = new std::string("teamCareer");
+    EdgePropertyExpression edgePropExp3(yEdge3, yProp3);
+    tmpProps.emplace_back(Expression::encode(edgePropExp3));
+
+    req.set_return_props(std::move(tmpProps));
+    req.set_insertable(true);
+
+    LOG(INFO) << "Test UpdateEdgeRequest...";
+    auto* processor = UpdateEdgeProcessor::instance(env, nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    LOG(INFO) << "Check the results...";
+    EXPECT_EQ(1, resp.result.failed_parts.size());
+}
+
+// Upsert, insert success
+// teamCareer filed has not default value and not nullable, but in set clause
+TEST(UpdateEdgeTest, Insertable_In_Set_Test) {
+    fs::TempDir rootPath("/tmp/UpdateEdgeTest.XXXXXX");
+    mock::MockCluster cluster;
+    cluster.initStorageKV(rootPath.path());
+    auto* env = cluster.storageEnv_.get();
+    auto parts = cluster.getTotalParts();
+
+    GraphSpaceID spaceId = 1;
+    auto status = env->schemaMan_->getSpaceVidLen(spaceId);
+    ASSERT_TRUE(status.ok());
+    auto spaceVidLen = status.value();
+    EXPECT_TRUE(mockEdgeData(env, parts, spaceVidLen));
+
+    LOG(INFO) << "Build UpdateEdgeRequest...";
+    cpp2::UpdateEdgeRequest req;
+
+    auto partId = std::hash<std::string>()("Brandon Ingram") % parts + 1;
+    req.set_space_id(spaceId);
+    req.set_part_id(partId);
+    VertexID srcId = "Brandon Ingram";
+    VertexID dstId = "Lakers";
+    EdgeRanking rank = 2016;
+    EdgeType edgeType = 101;
+    // src = Brandon Ingram, edge_type = 101, ranking = 2016, dst = Lakers
+    storage::cpp2::EdgeKey edgeKey;
+    edgeKey.set_src(srcId);
+    edgeKey.set_edge_type(edgeType);
+    edgeKey.set_ranking(rank);
+    edgeKey.set_dst(dstId);
+    req.set_edge_key(edgeKey);
+
+    LOG(INFO) << "Build updated props...";
+    std::vector<cpp2::UpdatedProp> props;
+
+    // string: 101.playerName = Brandon Ingram
+    cpp2::UpdatedProp uProp1;
+    uProp1.set_name("playerName");
+    std::string col1new("Brandon Ingram");
+    ConstantExpression val1(col1new);
+    uProp1.set_value(Expression::encode(val1));
+    props.emplace_back(uProp1);
+
+    // string: 101.teamName = Lakers
+    cpp2::UpdatedProp uProp2;
+    uProp2.set_name("teamName");
+    std::string col2new("Lakers");
+    ConstantExpression val2(col2new);
+    uProp2.set_value(Expression::encode(val2));
+    props.emplace_back(uProp2);
+
+    // int: 101.startYear = 2016
+    cpp2::UpdatedProp uProp3;
+    uProp3.set_name("startYear");
+    ConstantExpression val3(2016L);
+    uProp3.set_value(Expression::encode(val3));
+    props.emplace_back(uProp3);
+
+    // int: 101.teamCareer = 1
+    cpp2::UpdatedProp uProp4;
+    uProp4.set_name("teamCareer");
+    ConstantExpression val4(1L);
+    uProp4.set_value(Expression::encode(val4));
+    props.emplace_back(uProp4);
+    req.set_updated_props(std::move(props));
+
+    LOG(INFO) << "Build yield...";
+    // Return serve props: playerName, teamName, teamCareer
+    decltype(req.return_props) tmpProps;
+    auto* yEdge1 = new std::string("101");
+    auto* yProp1 = new std::string("playerName");
+    EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
+    tmpProps.emplace_back(Expression::encode(edgePropExp1));
+
+    auto* yEdge2 = new std::string("101");
+    auto* yProp2 = new std::string("teamName");
+    EdgePropertyExpression edgePropExp2(yEdge2, yProp2);
+    tmpProps.emplace_back(Expression::encode(edgePropExp2));
+
+    auto* yEdge3 = new std::string("101");
+    auto* yProp3 = new std::string("teamCareer");
+    EdgePropertyExpression edgePropExp3(yEdge3, yProp3);
+    tmpProps.emplace_back(Expression::encode(edgePropExp3));
+
+    req.set_return_props(std::move(tmpProps));
+    req.set_insertable(true);
+
+    LOG(INFO) << "Test UpdateEdgeRequest...";
+    auto* processor = UpdateEdgeProcessor::instance(env, nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    LOG(INFO) << "Check the results...";
+    EXPECT_EQ(0, resp.result.failed_parts.size());
+    EXPECT_EQ(4, resp.props.colNames.size());
+    EXPECT_EQ("_inserted", resp.props.colNames[0]);
+    EXPECT_EQ("101:playerName", resp.props.colNames[1]);
+    EXPECT_EQ("101:teamName", resp.props.colNames[2]);
+    EXPECT_EQ("101:teamCareer", resp.props.colNames[3]);
+
+    EXPECT_EQ(1, resp.props.rows.size());
+    EXPECT_EQ(4, resp.props.rows[0].values.size());
+    EXPECT_EQ(true, resp.props.rows[0].values[0].getBool());
+    EXPECT_EQ("Brandon Ingram", resp.props.rows[0].values[1].getStr());
+    EXPECT_EQ("Lakers", resp.props.rows[0].values[2].getStr());
+    EXPECT_EQ(1, resp.props.rows[0].values[3].getInt());
+
+    // get serve from kvstore directly
+    auto prefix = NebulaKeyUtils::edgePrefix(spaceVidLen, partId, srcId, edgeType, rank, dstId);
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
+    EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
+    EXPECT_TRUE(iter && iter->valid());
+
+    auto reader = RowReader::getEdgePropReader(env->schemaMan_,
+                                               spaceId,
+                                               std::abs(edgeType),
+                                               iter->val());
+    auto val = reader->getValueByName("playerName");
+    EXPECT_EQ("Brandon Ingram", val.getStr());
+    val = reader->getValueByName("teamName");
+    EXPECT_EQ("Lakers", val.getStr());
+    val = reader->getValueByName("teamCareer");
+    EXPECT_EQ(1, val.getInt());
 }
 
 }  // namespace storage

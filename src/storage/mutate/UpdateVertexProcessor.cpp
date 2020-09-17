@@ -124,12 +124,13 @@ StoragePlan<VertexID> UpdateVertexProcessor::buildPlan(nebula::DataSet* result) 
     filterNode->addDependency(tagUpdate.get());
 
     auto updateNode = std::make_unique<UpdateTagNode>(planContext_.get(),
-                                                      &tagContext_,
                                                       indexes_,
                                                       updatedProps_,
                                                       filterNode.get(),
                                                       insertable_,
-                                                      expCtx_.get());
+                                                      depPropMap_,
+                                                      expCtx_.get(),
+                                                      &tagContext_);
     updateNode->addDependency(filterNode.get());
 
     auto resultNode = std::make_unique<UpdateResNode<VertexID>>(planContext_.get(),
@@ -191,9 +192,14 @@ UpdateVertexProcessor::buildTagContext(const cpp2::UpdateVertexRequest& req) {
             VLOG(1) << "Can't decode the prop's value " << prop.get_value();
             return cpp2::ErrorCode::E_INVALID_UPDATER;
         }
-        retCode = checkExp(updateExp.get(), false, false);
+
+        valueProps_.clear();
+        retCode = checkExp(updateExp.get(), false, false, insertable_);
         if (retCode != cpp2::ErrorCode::SUCCEEDED) {
             return retCode;
+        }
+        if (insertable_) {
+            depPropMap_.emplace_back(std::make_pair(prop.get_name(), valueProps_));
         }
     }
 
