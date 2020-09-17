@@ -162,7 +162,6 @@ NULL                        ([Nn][Uu][Ll][Ll])
 SNAPSHOT                    ([Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt])
 SNAPSHOTS                   ([Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt][Ss])
 FORCE                       ([Ff][Oo][Rr][Cc][Ee])
-OFFLINE                     ([Oo][Ff][Ff][Ll][Ii][Nn][Ee])
 BIDIRECT                    ([Bb][Ii][Dd][Ii][Rr][Ee][Cc][Tt])
 ACCOUNT                     ([Aa][Cc][Cc][Oo][Uu][Nn][Tt])
 DBA                         ([Dd][Bb][Aa])
@@ -308,7 +307,6 @@ FORMAT                      ([Ff][Oo][Rr][Mm][Aa][Tt])
 {DATA}                      { return TokenType::KW_DATA; }
 {SNAPSHOT}                  { return TokenType::KW_SNAPSHOT; }
 {SNAPSHOTS}                 { return TokenType::KW_SNAPSHOTS; }
-{OFFLINE}                   { return TokenType::KW_OFFLINE; }
 {ACCOUNT}                   { return TokenType::KW_ACCOUNT; }
 {JOBS}                      { return TokenType::KW_JOBS; }
 {JOB}                       { return TokenType::KW_JOB; }

@@ -123,7 +123,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_BOOL KW_INT8 KW_INT16 KW_INT32 KW_INT64 KW_INT KW_FLOAT KW_DOUBLE
 %token KW_STRING KW_FIXED_STRING KW_TIMESTAMP KW_DATE KW_DATETIME
 %token KW_GO KW_AS KW_TO KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
-%token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_OFFLINE
+%token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX
 %token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND KW_REBUILD
 %token KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_PART KW_PARTS KW_ADD
@@ -345,7 +345,6 @@ unreserved_keyword
     | KW_JOB                { $$ = new std::string("job"); }
     | KW_JOBS               { $$ = new std::string("jobs"); }
     | KW_BIDIRECT           { $$ = new std::string("bidirect"); }
-    | KW_OFFLINE            { $$ = new std::string("offline"); }
     | KW_FORCE              { $$ = new std::string("force"); }
     | KW_STATUS             { $$ = new std::string("status"); }
     | KW_PART               { $$ = new std::string("part"); }
@@ -1469,17 +1468,11 @@ rebuild_tag_index_sentence
     : KW_REBUILD KW_TAG KW_INDEX name_label {
         $$ = new RebuildTagIndexSentence($4, false);
     }
-    | KW_REBUILD KW_TAG KW_INDEX name_label KW_OFFLINE {
-        $$ = new RebuildTagIndexSentence($4, true);
-    }
     ;
 
 rebuild_edge_index_sentence
     : KW_REBUILD KW_EDGE KW_INDEX name_label {
         $$ = new RebuildEdgeIndexSentence($4, false);
-    }
-    | KW_REBUILD KW_EDGE KW_INDEX name_label KW_OFFLINE {
-        $$ = new RebuildEdgeIndexSentence($4, true);
     }
     ;
 

@@ -536,19 +536,7 @@ TEST(Parser, IndexOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "REBUILD TAG INDEX name_index OFFLINE";
-        auto result = parser.parse(query);
-        ASSERT_TRUE(result.ok()) << result.status();
-    }
-    {
-        GQLParser parser;
         std::string query = "REBUILD EDGE INDEX like_index";
-        auto result = parser.parse(query);
-        ASSERT_TRUE(result.ok()) << result.status();
-    }
-    {
-        GQLParser parser;
-        std::string query = "REBUILD EDGE INDEX like_index OFFLINE";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
