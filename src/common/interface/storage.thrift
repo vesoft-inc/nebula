@@ -738,8 +738,8 @@ struct GetLeaderPartsResp {
 
 
 struct CheckPeersReq {
-    1: common.GraphSpaceID space_id,
-    2: common.PartitionID  part_id,
+    1: common.GraphSpaceID   space_id,
+    2: common.PartitionID    part_id,
     3: list<common.HostAddr> peers,
 }
 
@@ -748,7 +748,6 @@ struct RebuildIndexRequest {
     1: common.GraphSpaceID          space_id,
     2: list<common.PartitionID>     parts,
     3: common.IndexID               index_id,
-    4: bool                         is_offline,
 }
 
 
