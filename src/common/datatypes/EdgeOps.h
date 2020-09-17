@@ -78,8 +78,11 @@ uint32_t Cpp2Ops<nebula::Edge>::write(Protocol* proto, nebula::Edge const* obj) 
     xfer += proto->writeFieldEnd();
 
     xfer += proto->writeFieldBegin("type", apache::thrift::protocol::T_I32, 3);
+    // NOTICE: The original id will be transformed to +1/-1, to indicate the edge direction.
+    auto type = obj->type;
+    (type != 0 && type > 0) ? type = 1 : type = -1;
     xfer += detail::pm::protocol_methods<type_class::integral, nebula::EdgeType>
-        ::write(*proto, obj->type);
+        ::write(*proto, type);
     xfer += proto->writeFieldEnd();
 
     xfer += proto->writeFieldBegin("name", apache::thrift::protocol::T_STRING, 4);

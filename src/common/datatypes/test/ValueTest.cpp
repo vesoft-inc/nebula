@@ -597,7 +597,7 @@ TEST(Value, DecodeEncode) {
         }})),
 
         // edge
-        Value(Edge("Src", "Dst", 3, "Edge", 233, {{"prop1", Value(233)}, {"prop2", Value(2.3)}})),
+        Value(Edge("Src", "Dst", 1, "Edge", 233, {{"prop1", Value(233)}, {"prop2", Value(2.3)}})),
 
         // Path
         Value(Path()),

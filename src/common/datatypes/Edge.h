@@ -62,7 +62,7 @@ struct Edge {
     std::string toString() const {
         std::stringstream os;
         os << "(" << src << ")"
-            << "-" << "[" << name << "]" << "->"
+            << "-" << "[" << name << "(" << type << ")]" << "->"
             << "(" << dst << ")"
             << "@" << ranking;
         if (!props.empty()) {

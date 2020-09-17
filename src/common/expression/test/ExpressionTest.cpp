@@ -979,7 +979,7 @@ TEST_F(ExpressionTest, toStringTest) {
     }
     {
         ConstantExpression ep(Edge("100", "102", 2, "like", 3, {{"likeness", 95}}));
-        EXPECT_EQ(ep.toString(), "(100)-[like]->(102)@3 likeness:95");
+        EXPECT_EQ(ep.toString(), "(100)-[like(2)]->(102)@3 likeness:95");
     }
     {
         ConstantExpression ep(Vertex("100", {Tag("player", {{"name", "jame"}})}));
