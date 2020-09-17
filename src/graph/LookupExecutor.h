@@ -16,6 +16,9 @@ namespace graph {
 using RpcResponse = storage::StorageRpcResponse<storage::cpp2::LookUpIndexResp>;
 
 class LookupExecutor final : public TraverseExecutor {
+    FRIEND_TEST(LookupTest, OptimizerTest);
+    FRIEND_TEST(LookupTest, OptimizerWithStringFieldTest);
+
 public:
     LookupExecutor(Sentence *sentence, ExecutionContext *ectx);
 
@@ -50,7 +53,19 @@ private:
 
     Status checkFilter();
 
-    Status findValidIndex();
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> findValidIndexWithStr();
+
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> findValidIndexNoStr();
+
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> findValidIndex();
+
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> findIndexForEqualScan(
+        const std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>& indexes);
+
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> findIndexForRangeScan(
+        const std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>& indexes);
+
+    Status findOptimalIndex();
 
     void lookUp();
 
