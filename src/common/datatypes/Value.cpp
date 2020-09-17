@@ -1539,7 +1539,7 @@ std::string Value::toString() const {
             return getVertex().toString();
         }
         case Value::Type::PATH: {
-            return getVertex().toString();
+            return getPath().toString();
         }
         case Value::Type::LIST: {
             return getList().toString();
