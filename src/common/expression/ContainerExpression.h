@@ -75,6 +75,11 @@ public:
         return items;
     }
 
+    void setItem(size_t index, Expression *item) {
+        DCHECK_LT(index, items_.size());
+        items_[index].reset(item);
+    }
+
     void setItems(std::vector<std::unique_ptr<Expression>> items) {
         items_ = std::move(items);
     }
@@ -127,6 +132,11 @@ public:
             items.emplace_back(item.get());
         }
         return items;
+    }
+
+    void setItem(size_t index, Expression *item) {
+        DCHECK_LT(index, items_.size());
+        items_[index].reset(item);
     }
 
     void setItems(std::vector<std::unique_ptr<Expression>> items) {
@@ -186,6 +196,11 @@ public:
     using Item = std::pair<std::unique_ptr<std::string>, std::unique_ptr<Expression>>;
     void setItems(std::vector<Item> items) {
         items_ = std::move(items);
+    }
+
+    void setItem(size_t index, Item item) {
+        DCHECK_LT(index, items_.size());
+        items_[index] = std::move(item);
     }
 
     size_t size() const {
