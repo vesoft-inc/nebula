@@ -19,18 +19,21 @@ public:
         vals4_ = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9};
         vals4_.emplace_back(Value(NullType::__NULL__));
         vals4_.emplace_back(Value());
+        vals5_ = {7, 3, 2, 3, 4, 1, 6, 7, 8, 5, 9, 0, 1};
     }
 protected:
     static std::vector<Value>  vals1_;
     static std::vector<Value>  vals2_;
     static std::vector<Value>  vals3_;
     static std::vector<Value>  vals4_;
+    static std::vector<Value>  vals5_;
 };
 
 std::vector<Value>  AggregateFunctionTest::vals1_;
 std::vector<Value>  AggregateFunctionTest::vals2_;
 std::vector<Value>  AggregateFunctionTest::vals3_;
 std::vector<Value>  AggregateFunctionTest::vals4_;
+std::vector<Value>  AggregateFunctionTest::vals5_;
 
 TEST_F(AggregateFunctionTest, Group) {
     auto group = AggFun::aggFunMap_[AggFun::Function::kNone](false);
@@ -567,6 +570,69 @@ TEST_F(AggregateFunctionTest, Collect) {
         List result = collect->getResult().getList();
         std::sort(result.values.begin(), result.values.end());
         List expected = List(vals1_);
+        EXPECT_EQ(result, expected);
+    }
+}
+
+TEST_F(AggregateFunctionTest, CollectSet) {
+    std::unordered_set<Value> vals1(vals1_.begin(), vals1_.end());
+    {
+        auto collectSet = AggFun::aggFunMap_[AggFun::Function::kCollectSet](false);
+        for (auto& val : vals1_) {
+            collectSet->apply(val);
+        }
+        Value expected = Value(Set(vals1));
+        EXPECT_EQ(collectSet->getResult(), expected);
+    }
+    {
+        auto collectSet = AggFun::aggFunMap_[AggFun::Function::kCollectSet](false);
+        for (auto& val : vals2_) {
+            collectSet->apply(val);
+        }
+        Value expected = Value(Set(vals1));
+        EXPECT_EQ(collectSet->getResult(), expected);
+    }
+    {
+        auto collectSet = AggFun::aggFunMap_[AggFun::Function::kCollectSet](false);
+        for (auto& val : vals3_) {
+            collectSet->apply(val);
+        }
+        Value expected = Value(Set());
+        EXPECT_EQ(collectSet->getResult(), expected);
+    }
+    {
+        auto collectSet = AggFun::aggFunMap_[AggFun::Function::kCollectSet](false);
+        for (auto& val : vals1_) {
+            collectSet->apply(val);
+        }
+        Set result = collectSet->getResult().getSet();
+        Set expected = Set(vals1);
+        EXPECT_EQ(result, expected);
+    }
+    {
+        auto collectSet = AggFun::aggFunMap_[AggFun::Function::kCollectSet](false);
+        for (auto& val : vals2_) {
+            collectSet->apply(val);
+        }
+        Set result = collectSet->getResult().getSet();
+        Set expected = Set(vals1);
+        EXPECT_EQ(result, expected);
+    }
+    {
+        auto collectSet = AggFun::aggFunMap_[AggFun::Function::kCollectSet](false);
+        for (auto& val : vals5_) {
+            collectSet->apply(val);
+        }
+        Value expected = Value(Set(vals1));
+        EXPECT_EQ(collectSet->getResult(), expected);
+    }
+    {
+        auto collectSet = AggFun::aggFunMap_[AggFun::Function::kCollectSet](false);
+        for (auto& val : vals5_) {
+            collectSet->apply(val);
+        }
+        Set result = collectSet->getResult().getSet();
+        Set expected = Set(vals1);
         EXPECT_EQ(result, expected);
     }
 }

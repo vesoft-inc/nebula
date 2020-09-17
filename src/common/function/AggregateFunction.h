@@ -9,6 +9,7 @@
 
 #include "common/base/Base.h"
 #include "common/datatypes/List.h"
+#include "common/datatypes/Set.h"
 
 namespace nebula {
 
@@ -25,7 +26,8 @@ public:
         kBitAnd,
         kBitOr,
         kBitXor,
-        kCollect
+        kCollect,
+        kCollectSet,
     };
     explicit AggFun(const bool distinct) : distinct_(distinct) {}
     virtual ~AggFun() {}
@@ -453,6 +455,25 @@ public:
 
 private:
     List    list_;
+};
+
+class CollectSet final : public AggFun {
+public:
+    explicit CollectSet(bool distinct) : AggFun(distinct) {}
+
+    void apply(const Value &val) override {
+        if (val.isNull() || val.empty()) {
+            return;
+        }
+        result_.values.emplace(val);
+    }
+
+    Value getResult() override {
+        return Value(std::move(result_));
+    }
+
+private:
+    Set    result_;
 };
 
 }  // namespace nebula

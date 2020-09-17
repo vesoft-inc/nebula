@@ -33,6 +33,8 @@ std::unordered_map<AggFun::Function,
         [](bool distinct) -> auto { return std::make_unique<BitXor>(distinct);} },
     { AggFun::Function::kCollect,
         [](bool distinct) -> auto { return std::make_unique<Collect>(distinct);} },
+    { AggFun::Function::kCollectSet,
+        [](bool distinct) -> auto { return std::make_unique<CollectSet>(distinct);} },
 };
 
 std::unordered_map<std::string, AggFun::Function> AggFun::nameIdMap_ = {
@@ -47,5 +49,6 @@ std::unordered_map<std::string, AggFun::Function> AggFun::nameIdMap_ = {
     {"BIT_OR", AggFun::Function::kBitOr},
     {"BIT_XOR", AggFun::Function::kBitXor},
     {"COLLECT", AggFun::Function::kCollect},
+    {"COLLECT_SET", AggFun::Function::kCollectSet},
 };
 }  // namespace nebula
