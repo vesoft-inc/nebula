@@ -49,7 +49,7 @@ private:
 
     Status optimize();
 
-    Status traversalExpr(const Expression *expr);
+    Status traversalExpr(const Expression *expr, const meta::SchemaProviderIf* schema);
 
     Status checkFilter();
 
@@ -85,6 +85,9 @@ private:
 
     bool processFinalVertexResult(RpcResponse &rpcResp, const Callback& cb) const;
 
+    Status relationalExprCheck(RelationalExpression::Operator op) const;
+
+    bool supportedDataTypeForRange(nebula::cpp2::SupportedType type) const;
 
 private:
     using FilterItem = std::pair<std::string, RelationalExpression::Operator>;
