@@ -136,6 +136,7 @@ enum PropertyType {
     TIMESTAMP = 21,
     DATE = 24,
     DATETIME = 25,
+    TIME = 26,
 } (cpp.enum_strict)
 
 
