@@ -61,6 +61,11 @@ public:
     // get all version of all edge schema
     virtual StatusOr<EdgeSchemas> getAllVerEdgeSchema(GraphSpaceID space) = 0;
 
+    // Get the TagID or EdgeType by the name.
+    // The first one is a bool which is used to distinguish the type.
+    // When the result is an edge, it's true, otherwise it's false.
+    StatusOr<std::pair<bool, int32_t>>
+    getSchemaIDByName(GraphSpaceID space, folly::StringPiece schemaName);
 
 protected:
     SchemaManager() = default;
