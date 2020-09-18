@@ -258,6 +258,7 @@ class NebulaTestSuite(object):
                                              date_time.minute,
                                              date_time.sec,
                                              date_time.microsec)
+
     @classmethod
     def map_to_string(self, map):
         kvStrs = []

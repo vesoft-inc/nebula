@@ -95,6 +95,31 @@ Value OptimizerUtils::boundValueWithGT(const meta::cpp2::ColumnDef& col, const V
             }
             return Value(d);
         }
+        case Value::Type::TIME : {
+            auto t = v.getTime();
+            // Ignore the time zone.
+            if (t.microsec < std::numeric_limits<int32_t>::max()) {
+                t.microsec = t.microsec + 1;
+            } else {
+                t.microsec = 1;
+                if (t.sec < 60) {
+                    t.sec += 1;
+                } else {
+                    t.sec = 1;
+                    if (t.minute < 60) {
+                        t.minute += 1;
+                    } else {
+                        t.minute = 1;
+                        if (t.hour < 24) {
+                            t.hour += 1;
+                        } else {
+                            return v.getTime();
+                        }
+                    }
+                }
+            }
+            return Value(t);
+        }
         case Value::Type::DATETIME : {
             auto dt = v.getDateTime();
             // Ignore the time zone.
@@ -135,10 +160,22 @@ Value OptimizerUtils::boundValueWithGT(const meta::cpp2::ColumnDef& col, const V
             }
             return Value(dt);
         }
-        default : {
+        case Value::Type::__EMPTY__:
+        case Value::Type::NULLVALUE:
+        case Value::Type::VERTEX:
+        case Value::Type::EDGE:
+        case Value::Type::LIST:
+        case Value::Type::SET:
+        case Value::Type::MAP:
+        case Value::Type::DATASET:
+        case Value::Type::PATH: {
+            DLOG(FATAL) << "Not supported value type " << type
+                        << "for index.";
             return Value(NullType::BAD_TYPE);
         }
     }
+    DLOG(FATAL) << "Unknown value type " << static_cast<int>(type);
+    return Value(NullType::BAD_TYPE);
 }
 
 Value OptimizerUtils::boundValueWithLT(const meta::cpp2::ColumnDef& col, const Value& v) {
@@ -203,6 +240,33 @@ Value OptimizerUtils::boundValueWithLT(const meta::cpp2::ColumnDef& col, const V
             }
             return Value(d);
         }
+        case Value::Type::TIME : {
+            if (Time() == v.getTime()) {
+                return v.getTime();
+            }
+            auto t = v.getTime();
+            if (t.microsec > 1) {
+                t.microsec -= 1;
+            } else {
+                t.microsec = std::numeric_limits<int32_t>::max();
+                if (t.sec > 1) {
+                    t.sec -= 1;
+                } else {
+                    t.sec = 60;
+                    if (t.minute > 1) {
+                        t.minute -= 1;
+                    } else {
+                        t.minute = 60;
+                        if (t.hour > 1) {
+                            t.hour -= 1;
+                        } else {
+                            return v.getTime();
+                        }
+                    }
+                }
+            }
+            return Value(t);
+        }
         case Value::Type::DATETIME : {
             if (DateTime() == v.getDateTime()) {
                 return v.getDateTime();
@@ -245,9 +309,22 @@ Value OptimizerUtils::boundValueWithLT(const meta::cpp2::ColumnDef& col, const V
             }
             return Value(dt);
         }
-        default :
+        case Value::Type::__EMPTY__:
+        case Value::Type::NULLVALUE:
+        case Value::Type::VERTEX:
+        case Value::Type::EDGE:
+        case Value::Type::LIST:
+        case Value::Type::SET:
+        case Value::Type::MAP:
+        case Value::Type::DATASET:
+        case Value::Type::PATH: {
+            DLOG(FATAL) << "Not supported value type " << type
+                        << "for index.";
             return Value(NullType::BAD_TYPE);
+        }
     }
+    DLOG(FATAL) << "Unknown value type " << static_cast<int>(type);
+    return Value(NullType::BAD_TYPE);
 }
 
 Value OptimizerUtils::boundValueWithMax(const meta::cpp2::ColumnDef& col, const Value& v) {
@@ -275,7 +352,15 @@ Value OptimizerUtils::boundValueWithMax(const meta::cpp2::ColumnDef& col, const 
             d.day = 31;
             return Value(d);
         }
-        case Value::Type::DATETIME : {
+        case Value::Type::TIME: {
+            Time dt;
+            dt.hour = 24;
+            dt.minute = 60;
+            dt.sec = 60;
+            dt.microsec = std::numeric_limits<int32_t>::max();
+            return Value(dt);
+        }
+        case Value::Type::DATETIME: {
             DateTime dt;
             dt.year = std::numeric_limits<int16_t>::max();
             dt.month = 12;
@@ -286,9 +371,22 @@ Value OptimizerUtils::boundValueWithMax(const meta::cpp2::ColumnDef& col, const 
             dt.microsec = std::numeric_limits<int32_t>::max();
             return Value(dt);
         }
-        default :
+        case Value::Type::__EMPTY__:
+        case Value::Type::NULLVALUE:
+        case Value::Type::VERTEX:
+        case Value::Type::EDGE:
+        case Value::Type::LIST:
+        case Value::Type::SET:
+        case Value::Type::MAP:
+        case Value::Type::DATASET:
+        case Value::Type::PATH: {
+            DLOG(FATAL) << "Not supported value type " << type
+                        << "for index.";
             return Value(NullType::BAD_TYPE);
+        }
     }
+    DLOG(FATAL) << "Unknown value type " << static_cast<int>(type);
+    return Value(NullType::BAD_TYPE);
 }
 
 Value OptimizerUtils::boundValueWithMin(const meta::cpp2::ColumnDef& col, const Value& v) {
@@ -312,12 +410,28 @@ Value OptimizerUtils::boundValueWithMin(const meta::cpp2::ColumnDef& col, const 
         case Value::Type::DATE : {
             return Value(Date());
         }
+        case Value::Type::TIME: {
+            return Value(Time());
+        }
         case Value::Type::DATETIME : {
             return Value(DateTime());
         }
-        default :
+        case Value::Type::__EMPTY__:
+        case Value::Type::NULLVALUE:
+        case Value::Type::VERTEX:
+        case Value::Type::EDGE:
+        case Value::Type::LIST:
+        case Value::Type::SET:
+        case Value::Type::MAP:
+        case Value::Type::DATASET:
+        case Value::Type::PATH: {
+            DLOG(FATAL) << "Not supported value type " << type
+                        << "for index.";
             return Value(NullType::BAD_TYPE);
+        }
     }
+    DLOG(FATAL) << "Unknown value type " << static_cast<int>(type);
+    return Value(NullType::BAD_TYPE);
 }
 
 }  // namespace graph
