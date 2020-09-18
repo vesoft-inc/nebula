@@ -27,27 +27,29 @@ public:
 
     static Value::Type toValueType(PropertyType type) {
         switch (type) {
-            case PropertyType::BOOL :
+            case PropertyType::BOOL:
                 return Value::Type::BOOL;
-            case PropertyType::INT64 :
-            case PropertyType::INT32 :
-            case PropertyType::INT16 :
-            case PropertyType::INT8 :
-            case PropertyType::TIMESTAMP :
+            case PropertyType::INT64:
+            case PropertyType::INT32:
+            case PropertyType::INT16:
+            case PropertyType::INT8:
+            case PropertyType::TIMESTAMP:
                 return Value::Type::INT;
-            case PropertyType::VID :
+            case PropertyType::VID:
                 return Value::Type::VERTEX;
-            case PropertyType::FLOAT :
-            case PropertyType::DOUBLE :
+            case PropertyType::FLOAT:
+            case PropertyType::DOUBLE:
                 return Value::Type::FLOAT;
-            case PropertyType::STRING :
-            case PropertyType::FIXED_STRING :
+            case PropertyType::STRING:
+            case PropertyType::FIXED_STRING:
                 return Value::Type::STRING;
-            case PropertyType::DATE :
+            case PropertyType::DATE:
                 return Value::Type::DATE;
-            case PropertyType::DATETIME :
+            case PropertyType::TIME:
+                return Value::Type::TIME;
+            case PropertyType::DATETIME:
                 return Value::Type::DATETIME;
-            case PropertyType::UNKNOWN :
+            case PropertyType::UNKNOWN:
                 return Value::Type::__EMPTY__;
         }
         return Value::Type::__EMPTY__;
@@ -56,11 +58,11 @@ public:
     static std::string encodeNullValue(Value::Type type) {
         size_t len = 0;
         switch (type) {
-            case Value::Type::INT : {
+            case Value::Type::INT: {
                 len = sizeof(int64_t);
                 break;
             }
-            case Value::Type::FLOAT : {
+            case Value::Type::FLOAT: {
                 len = sizeof(double);
                 break;
             }
@@ -68,15 +70,19 @@ public:
                 len = sizeof(bool);
                 break;
             }
-            case Value::Type::STRING : {
+            case Value::Type::STRING: {
                 len = 1;
                 break;
             }
-            case Value::Type::DATE : {
+            case Value::Type::TIME: {
+                len = sizeof(int32_t) + sizeof(int8_t) * 3;
+                break;
+            }
+            case Value::Type::DATE: {
                 len = sizeof(int8_t) * 2 + sizeof(int16_t);
                 break;
             }
-            case Value::Type::DATETIME : {
+            case Value::Type::DATETIME: {
                 len = sizeof(int32_t) * 2 + sizeof(int16_t) + sizeof(int8_t) * 5;
                 break;
             }
@@ -91,9 +97,9 @@ public:
 
     static std::string encodeValue(const Value& v) {
         switch (v.type()) {
-            case Value::Type::INT :
+            case Value::Type::INT:
                 return encodeInt64(v.getInt());
-            case Value::Type::FLOAT :
+            case Value::Type::FLOAT:
                 return encodeDouble(v.getFloat());
             case Value::Type::BOOL: {
                 auto val = v.getBool();
@@ -102,12 +108,14 @@ public:
                 raw.append(reinterpret_cast<const char*>(&val), sizeof(bool));
                 return raw;
             }
-            case Value::Type::STRING :
+            case Value::Type::STRING:
                 return v.getStr();
-            case Value::Type::DATE : {
+            case Value::Type::TIME:
+                return encodeTime(v.getTime());
+            case Value::Type::DATE: {
                 return encodeDate(v.getDate());
             }
-            case Value::Type::DATETIME : {
+            case Value::Type::DATETIME: {
                 return encodeDateTime(v.getDateTime());
             }
             default :
@@ -183,6 +191,34 @@ public:
         return val;
     }
 
+    static std::string encodeTime(const nebula::Time& t) {
+        auto hour = folly::Endian::big8(t.hour);
+        auto minute = folly::Endian::big8(t.minute);
+        auto sec = folly::Endian::big8(t.sec);
+        auto microsec = folly::Endian::big32(t.microsec);
+        std::string buf;
+        buf.reserve(sizeof(int32_t) + sizeof(int8_t) * 3);
+        buf.append(reinterpret_cast<const char*>(&hour), sizeof(int8_t))
+           .append(reinterpret_cast<const char*>(&minute), sizeof(int8_t))
+           .append(reinterpret_cast<const char*>(&sec), sizeof(int8_t))
+           .append(reinterpret_cast<const char*>(&microsec), sizeof(int32_t));
+        return buf;
+    }
+
+    static nebula::Time decodeTime(const folly::StringPiece& raw) {
+        int8_t hour = *reinterpret_cast<const int8_t *>(raw.data());
+        int8_t minute = *reinterpret_cast<const int8_t *>(raw.data() + sizeof(int8_t));
+        int8_t sec = *reinterpret_cast<const int8_t *>(raw.data() + 2 * sizeof(int8_t));
+        int32_t microsec = *reinterpret_cast<const int32_t *>(raw.data() + 3 * sizeof(int8_t));
+
+        nebula::Time t;
+        t.hour = folly::Endian::big8(hour);
+        t.minute = folly::Endian::big8(minute);
+        t.sec = folly::Endian::big8(sec);
+        t.microsec = folly::Endian::big32(microsec);
+        return t;
+    }
+
     static std::string encodeDate(const nebula::Date& d) {
         auto year = folly::Endian::big16(d.year);
         auto month = folly::Endian::big8(d.month);
@@ -190,8 +226,8 @@ public:
         std::string buf;
         buf.reserve(sizeof(int8_t) * 2 + sizeof(int16_t));
         buf.append(reinterpret_cast<const char*>(&year), sizeof(int16_t))
-            .append(reinterpret_cast<const char*>(&month), sizeof(int8_t))
-            .append(reinterpret_cast<const char*>(&day), sizeof(int8_t));
+           .append(reinterpret_cast<const char*>(&month), sizeof(int8_t))
+           .append(reinterpret_cast<const char*>(&day), sizeof(int8_t));
         return buf;
     }
 
@@ -216,12 +252,12 @@ public:
         std::string buf;
         buf.reserve(sizeof(int32_t) + sizeof(int16_t) + sizeof(int8_t) * 5);
         buf.append(reinterpret_cast<const char*>(&year), sizeof(int16_t))
-            .append(reinterpret_cast<const char*>(&month), sizeof(int8_t))
-            .append(reinterpret_cast<const char*>(&day), sizeof(int8_t))
-            .append(reinterpret_cast<const char*>(&hour), sizeof(int8_t))
-            .append(reinterpret_cast<const char*>(&minute), sizeof(int8_t))
-            .append(reinterpret_cast<const char*>(&sec), sizeof(int8_t))
-            .append(reinterpret_cast<const char*>(&microsec), sizeof(int32_t));
+           .append(reinterpret_cast<const char*>(&month), sizeof(int8_t))
+           .append(reinterpret_cast<const char*>(&day), sizeof(int8_t))
+           .append(reinterpret_cast<const char*>(&hour), sizeof(int8_t))
+           .append(reinterpret_cast<const char*>(&minute), sizeof(int8_t))
+           .append(reinterpret_cast<const char*>(&sec), sizeof(int8_t))
+           .append(reinterpret_cast<const char*>(&microsec), sizeof(int32_t));
         return buf;
     }
 
@@ -253,20 +289,24 @@ public:
     static Value decodeValue(const folly::StringPiece& raw, Value::Type type) {
         Value v;
         switch (type) {
-            case Value::Type::INT : {
+            case Value::Type::INT: {
                 v.setInt(decodeInt64(raw));
                 break;
             }
-            case Value::Type::FLOAT : {
+            case Value::Type::FLOAT: {
                 v.setFloat(decodeDouble(raw));
                 break;
             }
-            case Value::Type::BOOL : {
+            case Value::Type::BOOL: {
                 v.setBool(*reinterpret_cast<const bool*>(raw.data()));
                 break;
             }
-            case Value::Type::STRING : {
+            case Value::Type::STRING: {
                 v.setStr(raw.str());
+                break;
+            }
+            case Value::Type::TIME: {
+                v.setTime(decodeTime(raw));
                 break;
             }
             case Value::Type::DATE: {
@@ -314,7 +354,7 @@ public:
 
         for (const auto& col : cols) {
             if (hasNullableCol && col.first == prop && nullableBit.test(nullableColPosit)) {
-                    return Value(NullType::__NULL__);
+                return Value(NullType::__NULL__);
             }
             switch (col.second) {
                 case Value::Type::BOOL: {
@@ -335,11 +375,15 @@ public:
                     --vCount;
                     break;
                 }
-                case Value::Type::DATE : {
+                case Value::Type::TIME: {
+                    len = sizeof(int8_t) * 3 + sizeof(int32_t);
+                    break;
+                }
+                case Value::Type::DATE: {
                     len = sizeof(int8_t) * 2 + sizeof(int16_t);
                     break;
                 }
-                case Value::Type::DATETIME : {
+                case Value::Type::DATETIME: {
                     len = sizeof(int32_t) * 2 + sizeof(int16_t) + sizeof(int8_t) * 5;
                     break;
                 }

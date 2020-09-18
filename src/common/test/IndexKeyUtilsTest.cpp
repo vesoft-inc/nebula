@@ -67,6 +67,15 @@ bool evalString(std::string val) {
     return val == res.getStr();
 }
 
+bool evalTime(nebula::Time val) {
+    Value v(val);
+    auto str = IndexKeyUtils::encodeValue(v);
+    auto res = IndexKeyUtils::decodeValue(str, Value::Type::TIME);
+    EXPECT_EQ(Value::Type::TIME, res.type());
+    EXPECT_EQ(v, res);
+    return val == res.getTime();
+}
+
 bool evalDate(nebula::Date val) {
     Value v(val);
     auto str = IndexKeyUtils::encodeValue(v);
@@ -99,6 +108,14 @@ TEST(IndexKeyUtilsTest, encodeValue) {
     EXPECT_TRUE(evalBool(true));
     EXPECT_TRUE(evalBool(false));
     EXPECT_TRUE(evalString("test"));
+
+    nebula::Time t;
+    t.hour = 12;
+    t.minute = 30;
+    t.sec = 22;
+    t.microsec = 1111;
+    EXPECT_TRUE(evalTime(t));
+
     nebula::Date d;
     d.year = 2020;
     d.month = 4;
