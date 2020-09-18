@@ -53,30 +53,6 @@ public:
         return findAny(expr, expected) != nullptr;
     }
 
-    // Require data from input/variable
-    static bool hasInput(const Expression* expr) {
-        return hasAny(expr,
-                      {Expression::Kind::kInputProperty,
-                       Expression::Kind::kVarProperty,
-                       Expression::Kind::kVar,
-                       Expression::Kind::kVersionedVar});
-    }
-
-    // require data from graph storage
-    static const Expression* findStorage(const Expression* expr) {
-        return findAny(expr,
-                       {Expression::Kind::kTagProperty,
-                        Expression::Kind::kEdgeProperty,
-                        Expression::Kind::kDstProperty,
-                        Expression::Kind::kSrcProperty,
-                        Expression::Kind::kEdgeSrc,
-                        Expression::Kind::kEdgeType,
-                        Expression::Kind::kEdgeRank,
-                        Expression::Kind::kEdgeDst,
-                        Expression::Kind::kVertex,
-                        Expression::Kind::kEdge});
-    }
-
     static std::vector<const Expression*> findAllStorage(const Expression* expr) {
         return collectAll(expr,
                           {Expression::Kind::kTagProperty,
@@ -93,24 +69,6 @@ public:
 
     static std::vector<const Expression*> findAllInputVariableProp(const Expression* expr) {
         return collectAll(expr, {Expression::Kind::kInputProperty, Expression::Kind::kVarProperty});
-    }
-
-    static bool hasStorage(const Expression* expr) {
-        return findStorage(expr) != nullptr;
-    }
-
-    static bool isStorage(const Expression* expr) {
-        return isKindOf(expr,
-                        {Expression::Kind::kTagProperty,
-                         Expression::Kind::kEdgeProperty,
-                         Expression::Kind::kDstProperty,
-                         Expression::Kind::kSrcProperty,
-                         Expression::Kind::kEdgeSrc,
-                         Expression::Kind::kEdgeType,
-                         Expression::Kind::kEdgeRank,
-                         Expression::Kind::kEdgeDst,
-                         Expression::Kind::kVertex,
-                         Expression::Kind::kEdge});
     }
 
     static bool isConstExpr(const Expression* expr) {
@@ -148,6 +106,9 @@ public:
         return new To(new std::string(std::move(*expr->left()->name())),
                       new std::string(std::move(*expr->right()->name())));
     }
+
+    // Clone and fold constant expression
+    static std::unique_ptr<Expression> foldConstantExpr(const Expression* expr);
 };
 
 }   // namespace graph

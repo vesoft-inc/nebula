@@ -11,6 +11,8 @@
 #include "parser/Clauses.h"
 #include "parser/TraverseSentences.h"
 #include "planner/Query.h"
+#include "util/ExpressionUtils.h"
+#include "visitor/FoldConstantExprVisitor.h"
 
 namespace nebula {
 namespace graph {
@@ -70,7 +72,7 @@ Status YieldValidator::checkAggFunAndBuildGroupItems(const YieldClause *clause) 
 }
 
 Status YieldValidator::checkInputProps() const {
-    auto& inputProps = const_cast<ExpressionProps*>(&exprProps_)->inputProps();
+    auto &inputProps = const_cast<ExpressionProps *>(&exprProps_)->inputProps();
     if (inputs_.empty() && !inputProps.empty()) {
         return Status::SemanticError("no inputs for yield columns.");
     }
@@ -82,7 +84,7 @@ Status YieldValidator::checkInputProps() const {
 }
 
 Status YieldValidator::checkVarProps() const {
-    auto& varProps = const_cast<ExpressionProps*>(&exprProps_)->varProps();
+    auto &varProps = const_cast<ExpressionProps *>(&exprProps_)->varProps();
     for (auto &pair : varProps) {
         auto &var = pair.first;
         if (!vctx_->existVar(var)) {
@@ -102,6 +104,7 @@ Status YieldValidator::makeOutputColumn(YieldColumn *column) {
 
     auto expr = column->expr();
     DCHECK(expr != nullptr);
+
     NG_RETURN_IF_ERROR(deduceProps(expr, exprProps_));
 
     auto status = deduceExprType(expr);
@@ -110,6 +113,13 @@ Status YieldValidator::makeOutputColumn(YieldColumn *column) {
 
     auto name = deduceColName(column);
     outputColumnNames_.emplace_back(name);
+
+    // Constant expression folding must be after type deduction
+    FoldConstantExprVisitor visitor;
+    expr->accept(&visitor);
+    if (visitor.canBeFolded()) {
+        column->setExpr(visitor.fold(expr));
+    }
 
     outputs_.emplace_back(name, type);
     return Status::OK();
@@ -121,7 +131,7 @@ void YieldValidator::genConstantExprValues() {
     ds.colNames = outputColumnNames_;
     QueryExpressionContext ctx;
     Row row;
-    for (auto& column : columns_->columns()) {
+    for (auto &column : columns_->columns()) {
         row.values.emplace_back(Expression::eval(column->expr(), ctx(nullptr)));
     }
     ds.emplace_back(std::move(row));
@@ -192,6 +202,8 @@ Status YieldValidator::validateWhere(const WhereClause *clause) {
     }
     if (filter != nullptr) {
         NG_RETURN_IF_ERROR(deduceProps(filter, exprProps_));
+        auto newFilter = ExpressionUtils::foldConstantExpr(filter);
+        filterCondition_ = qctx_->objPool()->add(newFilter.release());
     }
     return Status::OK();
 }
@@ -201,7 +213,7 @@ Status YieldValidator::toPlan() {
 
     Filter *filter = nullptr;
     if (yield->where()) {
-        filter = Filter::make(qctx_, nullptr, yield->where()->filter());
+        filter = Filter::make(qctx_, nullptr, filterCondition_);
         std::vector<std::string> colNames(inputs_.size());
         std::transform(
             inputs_.cbegin(), inputs_.cend(), colNames.begin(), [](auto &in) { return in.first; });
@@ -247,4 +259,3 @@ Status YieldValidator::toPlan() {
 
 }   // namespace graph
 }   // namespace nebula
-

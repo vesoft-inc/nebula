@@ -11,5 +11,8 @@ nebula_add_library(
     DeduceTypeVisitor.cpp
     ExtractFilterExprVisitor.cpp
     FindAnyExprVisitor.cpp
+    FoldConstantExprVisitor.cpp
     RewriteLabelAttrVisitor.cpp
 )
+
+nebula_add_subdirectory(test)

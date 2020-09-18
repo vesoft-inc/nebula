@@ -45,3 +45,4 @@ cmake-build-release/
 *.pot
 *.py[co]
 __pycache__
+venv/
