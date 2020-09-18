@@ -24,7 +24,9 @@ namespace storage {
 
 class QueryTestUtils {
 public:
-    static bool mockVertexData(storage::StorageEnv* env, int32_t totalParts) {
+    static bool mockVertexData(storage::StorageEnv* env,
+                               int32_t totalParts,
+                               bool enableIndex = false) {
         GraphSpaceID spaceId = 1;
         auto status = env->schemaMan_->getSpaceVidLen(spaceId);
         if (!status.ok()) {
@@ -48,6 +50,18 @@ public:
                 return false;
             }
             EXPECT_TRUE(encode(schema.get(), key, vertex.props_, data));
+            if (enableIndex) {
+                if (tagId == 1 || tagId == 2) {
+                    std::vector<Value::Type> colsType({});
+                    encodeTagIndex(spaceVidLen,
+                                   partId,
+                                   vertex.vId_,
+                                   tagId,
+                                   vertex.props_,
+                                   tagId == 1 ? 3 : 1,
+                                   colsType, data);
+                }
+            }
             env->kvstore_->asyncMultiPut(spaceId, partId, std::move(data),
                                         [&](kvstore::ResultCode code) {
                                             EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
@@ -63,7 +77,8 @@ public:
 
     static bool mockEdgeData(storage::StorageEnv* env,
                              int32_t totalParts,
-                             EdgeVersion maxVersions = 1) {
+                             EdgeVersion maxVersions = 1,
+                             bool enableIndex = false) {
         GraphSpaceID spaceId = 1;
         auto status = env->schemaMan_->getSpaceVidLen(spaceId);
         if (!status.ok()) {
@@ -87,6 +102,21 @@ public:
                     return false;
                 }
                 EXPECT_TRUE(encode(schema.get(), key, edge.props_, data));
+                if (enableIndex) {
+                    if (edge.type_ == 102 || edge.type_ == 101) {
+                        std::vector<Value::Type> colsType({});
+                        encodeEdgeIndex(spaceVidLen,
+                                        partId,
+                                        edge.srcId_,
+                                        edge.dstId_,
+                                        edge.rank_,
+                                        edge.type_,
+                                        edge.props_,
+                                        3,
+                                        colsType,
+                                        data);
+                    }
+                }
                 env->kvstore_->asyncMultiPut(spaceId, partId, std::move(data),
                                             [&](kvstore::ResultCode code) {
                                                 EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
@@ -163,6 +193,54 @@ public:
         auto encode = std::move(writer).moveEncodedStr();
         data.emplace_back(std::move(key), std::move(encode));
         return true;
+    }
+
+    static void encodeTagIndex(size_t spaceVidLen,
+                               PartitionID partId,
+                               VertexID vId,
+                               IndexID indexId,
+                               const std::vector<Value>& values,
+                               int32_t count,
+                               const std::vector<Value::Type>& colsType,
+                               std::vector<kvstore::KV>& data) {
+        std::vector<Value> row;
+        for (auto i = 0; i < count; i++) {
+            auto v = values[i];
+            row.emplace_back(std::move(v));
+        }
+        auto index = IndexKeyUtils::vertexIndexKey(spaceVidLen,
+                                                   partId,
+                                                   indexId,
+                                                   vId,
+                                                   row,
+                                                   colsType);
+        data.emplace_back(std::move(index), "");
+    }
+
+    static void encodeEdgeIndex(size_t spaceVidLen,
+                               PartitionID partId,
+                               VertexID srcId,
+                               VertexID dstId,
+                               EdgeRanking rank,
+                               IndexID indexId,
+                               const std::vector<Value>& values,
+                               int32_t count,
+                               const std::vector<Value::Type>& colsType,
+                               std::vector<kvstore::KV>& data) {
+        std::vector<Value> row;
+        for (auto i = 0; i < count; i++) {
+            auto v = values[i];
+            row.emplace_back(std::move(v));
+        }
+        auto index = IndexKeyUtils::edgeIndexKey(spaceVidLen,
+                                                 partId,
+                                                 indexId,
+                                                 srcId,
+                                                 rank,
+                                                 dstId,
+                                                 row,
+                                                 colsType);
+        data.emplace_back(std::move(index), "");
     }
 
     static cpp2::GetNeighborsRequest buildRequest(
@@ -277,6 +355,32 @@ public:
             ASSERT_EQ(Value::Type::__EMPTY__, row.values[expectColumnCount - 1].type());
             checkRowProps(row, dataSet.colNames, {}, {});
         }
+    }
+
+    static void checkResponse(const cpp2::LookupIndexResp& resp,
+                              const std::vector<std::string>& expectCols,
+                              std::vector<Row> expectRows) {
+        EXPECT_EQ(0, resp.result.failed_parts.size());
+        auto columns = resp.get_data()->colNames;
+        EXPECT_EQ(expectCols, columns);
+        EXPECT_EQ(expectRows.size(), resp.get_data()->rows.size());
+        auto actualRows = resp.get_data()->rows;
+        struct Descending {
+            bool operator()(const Row& r1, const Row& r2) {
+                if (r1.size() != r2.size()) {
+                    return r1.size() < r2.size();
+                }
+                for (size_t i = 0; i < r1.size(); i++) {
+                    if (r1[i] != r2[i]) {
+                        return r1[i] < r2[i];
+                    }
+                }
+                return true;
+            }
+        };
+        std::sort(actualRows.begin(), actualRows.end(), Descending());
+        std::sort(expectRows.begin(), expectRows.end(), Descending());
+        EXPECT_EQ(expectRows, actualRows);
     }
 
     static void checkColNames(

@@ -52,10 +52,10 @@ public:
 
     storage::GeneralStorageClient* initGeneralStorageClient();
 
-    // Default spaceId is 1
-    std::unique_ptr<meta::SchemaManager> memSchemaMan(SchemaVer schemaVerCount = 1);
+    std::unique_ptr<meta::SchemaManager> memSchemaMan(SchemaVer schemaVerCount = 1,
+                                                      GraphSpaceID spaceId = 1);
 
-    std::unique_ptr<meta::IndexManager> memIndexMan();
+    std::unique_ptr<meta::IndexManager> memIndexMan(GraphSpaceID spaceId = 1);
 
     static void waitUntilAllElected(kvstore::NebulaStore* kvstore,
                                     GraphSpaceID spaceId,

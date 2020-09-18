@@ -147,6 +147,8 @@ protected:
 // Update records, write to kvstore
 class UpdateTagNode : public UpdateNode<VertexID> {
 public:
+    using RelNode<VertexID>::execute;
+
     UpdateTagNode(PlanContext* planCtx,
                   std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes,
                   std::vector<storage::cpp2::UpdatedProp>& updatedProps,
@@ -436,6 +438,8 @@ private:
 // Update records, write to kvstore
 class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
 public:
+    using RelNode<cpp2::EdgeKey>::execute;
+
     UpdateEdgeNode(PlanContext* planCtx,
                    std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes,
                    std::vector<storage::cpp2::UpdatedProp>& updatedProps,

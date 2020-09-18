@@ -177,37 +177,38 @@ void MockCluster::startStorage(HostAddr addr,
 }
 
 std::unique_ptr<meta::SchemaManager>
-MockCluster::memSchemaMan(SchemaVer schemaVerCount) {
+MockCluster::memSchemaMan(SchemaVer schemaVerCount, GraphSpaceID spaceId) {
     auto schemaMan = std::make_unique<AdHocSchemaManager>();
     // if have multi version schema, need to add from oldest to newest
     for (SchemaVer ver = 0; ver < schemaVerCount; ver++) {
         // Vertex has two tags: players and teams
         // When tagId is 1, use players data
-        schemaMan->addTagSchema(1, 1, MockData::mockPlayerTagSchema(ver));
+        schemaMan->addTagSchema(spaceId, 1, MockData::mockPlayerTagSchema(ver));
         // When tagId is 2, use teams data
-        schemaMan->addTagSchema(1, 2, MockData::mockTeamTagSchema(ver));
+        schemaMan->addTagSchema(spaceId, 2, MockData::mockTeamTagSchema(ver));
 
         // Edge has two type: serve and teammate
         // When edgeType is 101, use serve data
-        schemaMan->addEdgeSchema(1, 101, MockData::mockServeEdgeSchema(ver));
+        schemaMan->addEdgeSchema(spaceId, 101, MockData::mockServeEdgeSchema(ver));
         // When edgeType is 102, use teammate data
-        schemaMan->addEdgeSchema(1, 102, MockData::mockTeammateEdgeSchema(ver));
+        schemaMan->addEdgeSchema(spaceId, 102, MockData::mockTeammateEdgeSchema(ver));
     }
 
-    schemaMan->addTagSchema(1, 3, MockData::mockGeneralTagSchemaV1());
+    schemaMan->addTagSchema(spaceId, 3, MockData::mockGeneralTagSchemaV1());
 
-    schemaMan->addTagSchema(1, 3, MockData::mockGeneralTagSchemaV2());
+    schemaMan->addTagSchema(spaceId, 3, MockData::mockGeneralTagSchemaV2());
 
     return schemaMan;
 }
 
 std::unique_ptr<meta::IndexManager>
-MockCluster::memIndexMan() {
+MockCluster::memIndexMan(GraphSpaceID spaceId) {
     auto indexMan = std::make_unique<AdHocIndexManager>();
-    indexMan->addTagIndex(1,  3,   3,  MockData::mockGeneralTagIndexColumns());
-    indexMan->addTagIndex(1,  1,   11, MockData::mockPlayerTagIndex());
-    indexMan->addEdgeIndex(1, 101, 12, MockData::mockServeEdgeIndex());
-    indexMan->addEdgeIndex(1, 102, 13, MockData::mockTeammateEdgeIndex());
+    indexMan->addTagIndex(spaceId, 1, 1, MockData::mockPlayerTagIndexColumns());
+    indexMan->addTagIndex(spaceId, 2, 2, MockData::mockTeamTagIndexColumns());
+    indexMan->addTagIndex(spaceId, 3, 3, MockData::mockGeneralTagIndexColumns());
+    indexMan->addEdgeIndex(spaceId, 101, 101, MockData::mockServeEdgeIndexColumns());
+    indexMan->addEdgeIndex(spaceId, 102, 102, MockData::mockTeammateEdgeIndexColumns());
     return indexMan;
 }
 

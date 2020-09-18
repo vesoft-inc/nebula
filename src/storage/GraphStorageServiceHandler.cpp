@@ -13,6 +13,7 @@
 #include "storage/mutate/UpdateEdgeProcessor.h"
 #include "storage/query/GetNeighborsProcessor.h"
 #include "storage/query/GetPropProcessor.h"
+#include "storage/index/LookupProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -74,5 +75,10 @@ GraphStorageServiceHandler::future_getProps(const cpp2::GetPropRequest& req) {
     RETURN_FUTURE(processor);
 }
 
+folly::Future<cpp2::LookupIndexResp>
+GraphStorageServiceHandler::future_lookupIndex(const cpp2::LookupIndexRequest& req) {
+    auto* processor = LookupProcessor::instance(env_, &lookupQpsStat_, &vertexCache_);
+    RETURN_FUTURE(processor);
+}
 }  // namespace storage
 }  // namespace nebula

@@ -277,7 +277,6 @@ nebula_add_test(
         gtest
 )
 
-
 nebula_add_executable(
     NAME
         add_update_vertex_edge_bm
@@ -295,6 +294,20 @@ nebula_add_executable(
         boost_regex
 )
 
+nebula_add_test(
+        NAME
+        lookup_index_test
+        SOURCES
+        LookupIndexTest.cpp
+        ../../codec/test/RowWriterV1.cpp
+        OBJECTS
+        ${storage_test_deps}
+        LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        wangle
+        gtest
+)
 
 #nebula_add_test(
 #    NAME
@@ -494,20 +507,6 @@ nebula_add_executable(
 #        ${THRIFT_LIBRARIES}
 #        follybenchmark
 #        boost_regex
-#        wangle
-#        gtest
-#)
-#
-#nebula_add_test(
-#    NAME
-#        index_scan_test
-#    SOURCES
-#        IndexScanTest.cpp
-#    OBJECTS
-#        ${storage_test_deps}
-#    LIBRARIES
-#        ${ROCKSDB_LIBRARIES}
-#        ${THRIFT_LIBRARIES}
 #        wangle
 #        gtest
 #)

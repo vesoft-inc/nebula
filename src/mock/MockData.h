@@ -79,17 +79,17 @@ public:
 
     static std::shared_ptr<meta::NebulaSchemaProvider> mockTeammateEdgeSchema(SchemaVer ver = 0);
 
-    static std::vector<nebula::meta::cpp2::ColumnDef> mockPlayerTagIndex();
-
-    static std::vector<nebula::meta::cpp2::ColumnDef> mockServeEdgeIndex();
-
-    static std::vector<nebula::meta::cpp2::ColumnDef> mockTeammateEdgeIndex();
-
     static std::vector<nebula::meta::cpp2::ColumnDef> mockGeneralTagIndexColumns();
+
+    static std::vector<nebula::meta::cpp2::ColumnDef> mockPlayerTagIndexColumns();
+
+    static std::vector<nebula::meta::cpp2::ColumnDef> mockTeamTagIndexColumns();
 
     static std::vector<nebula::meta::cpp2::ColumnDef> mockSimpleTagIndexColumns();
 
-    static std::vector<nebula::meta::cpp2::ColumnDef> mockEdgeIndexColumns();
+    static std::vector<nebula::meta::cpp2::ColumnDef> mockServeEdgeIndexColumns();
+
+    static std::vector<nebula::meta::cpp2::ColumnDef> mockTeammateEdgeIndexColumns();
 
     static std::shared_ptr<meta::NebulaSchemaProvider> mockGeneralTagSchemaV1();
 
@@ -140,8 +140,6 @@ public:
         }
         return result;
     }
-
-    static nebula::storage::cpp2::AddVerticesRequest mockAddVertices(int32_t parts = 6);
 
     // Only has EdgeKey data, not props
     static std::vector<EdgeData> mockEdgeKeys();

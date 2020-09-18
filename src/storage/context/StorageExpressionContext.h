@@ -37,6 +37,16 @@ public:
         , schema_(schema)
         , isEdge_(isEdge) {}
 
+    StorageExpressionContext(size_t vIdLen, int32_t vColNum,
+                             bool hasNullableCol,
+                             const std::vector<std::pair<std::string, Value::Type>>& indexCols)
+        : vIdLen_(vIdLen)
+        , vColNum_(vColNum)
+        , hasNullableCol_(hasNullableCol)
+        , indexCols_(indexCols) {
+        isIndex_ = true;
+    }
+
     // Get the latest version value for the given variable name, such as $a, $b
     const Value& getVar(const std::string&) const override {
         return Value::kNullValue;
@@ -64,9 +74,7 @@ public:
     }
 
     // Get the specified property from the tag, such as tag.prop_name
-    Value getTagProp(const std::string&, const std::string&) const override {
-        return Value::kNullValue;
-    }
+    Value getTagProp(const std::string& tagName, const std::string& prop) const override;
 
     // Get the specified property from the edge, such as edgename.prop_name
     Value getEdgeProp(const std::string& edgeName, const std::string& prop) const override;
@@ -74,6 +82,22 @@ public:
     // Get the specified property of tagName from the source vertex,
     // such as $^.tagName.prop_name
     Value getSrcProp(const std::string& tagName, const std::string& prop) const override;
+
+    size_t vIdLen() const {
+        return vIdLen_;
+    }
+
+    int32_t vColNum() const {
+        return vColNum_;
+    }
+
+    bool hasNullableCol() const {
+        return hasNullableCol_;
+    }
+
+    const std::vector<std::pair<std::string, Value::Type>>& indexCols() const {
+        return indexCols_;
+    }
 
     void setVar(const std::string&, Value) override {}
 
@@ -85,9 +109,15 @@ public:
         LOG(FATAL) << "Unimplemented";
     }
 
+
+    // index key
+    void reset(const std::string& key) {
+        key_ = key;
+    }
+
     // isEdge_ set in ctor
     void reset(RowReader* reader,
-               folly::StringPiece key) {
+               const std::string& key) {
         reader_ = reader;
         key_ = key;
     }
@@ -126,22 +156,32 @@ public:
 
     Value readValue(const std::string& propName) const;
 
+    Value getIndexValue(const std::string& prop, bool isEdge) const;
+
 private:
     size_t                             vIdLen_;
 
     RowReader                         *reader_;
-    folly::StringPiece                 key_;
+    std::string                        key_;
     // tag or edge name
     std::string                        name_;
     // tag or edge latest schema
     const meta::NebulaSchemaProvider  *schema_;
     bool                               isEdge_;
 
+    // index
+    bool isIndex_ = false;
+    int32_t vColNum_ = 0;
+    bool hasNullableCol_ = false;
+
     // <tagName, property> -> value
     std::unordered_map<std::pair<std::string, std::string>, nebula::Value> tagFilters_;
 
     // <edgeName, property> -> value
     std::unordered_map<std::pair<std::string, std::string>, nebula::Value> edgeFilters_;
+
+    // Index Columns
+    std::vector<std::pair<std::string, Value::Type>>  indexCols_{};
 };
 
 }  // namespace storage

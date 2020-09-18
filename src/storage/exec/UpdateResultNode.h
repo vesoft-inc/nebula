@@ -17,6 +17,8 @@ namespace storage {
 template<typename T>
 class UpdateResNode : public RelNode<T>  {
 public:
+    using RelNode<T>::execute;
+
     UpdateResNode(PlanContext* planCtx,
                   RelNode<T>* updateNode,
                   std::vector<Expression*> returnPropsExp,

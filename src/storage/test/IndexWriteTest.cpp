@@ -185,7 +185,7 @@ TEST(IndexTest, SimpleEdgesTest) {
 
         LOG(INFO) << "Check insert index...";
         for (auto partId = 1; partId <= 6; partId++) {
-            auto prefix = IndexKeyUtils::indexPrefix(partId, 12);
+            auto prefix = IndexKeyUtils::indexPrefix(partId, 101);
             auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
             EXPECT_EQ(1, retNum);
         }

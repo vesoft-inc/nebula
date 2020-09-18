@@ -17,6 +17,8 @@ namespace storage {
 // TagNode will return a DataSet of specified props of tagId
 class TagNode final : public IterateNode<VertexID> {
 public:
+    using RelNode::execute;
+
     TagNode(PlanContext* planCtx,
             TagContext* ctx,
             TagID tagId,

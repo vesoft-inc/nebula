@@ -22,6 +22,8 @@ class GetNeighborsNode : public QueryNode<VertexID> {
     FRIEND_TEST(ScanEdgePropBench, ProcessEdgeProps);
 
 public:
+    using RelNode::execute;
+
     GetNeighborsNode(PlanContext* planCtx,
                      HashJoinNode* hashJoinNode,
                      AggregateNode<VertexID>* aggregateNode,

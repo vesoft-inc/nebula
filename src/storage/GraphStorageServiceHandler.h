@@ -62,6 +62,9 @@ public:
     folly::Future<cpp2::GetPropResponse>
     future_getProps(const cpp2::GetPropRequest& req) override;
 
+    folly::Future<cpp2::LookupIndexResp>
+    future_lookupIndex(const cpp2::LookupIndexRequest& req) override;
+
 private:
     StorageEnv*                                     env_{nullptr};
     VertexCache                                     vertexCache_;
@@ -75,6 +78,7 @@ private:
     stats::Stats                                    updateEdgeQpsStat_;
     stats::Stats                                    getNeighborsQpsStat_;
     stats::Stats                                    getPropQpsStat_;
+    stats::Stats                                    lookupQpsStat_;
 };
 
 }  // namespace storage

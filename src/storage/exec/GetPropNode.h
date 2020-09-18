@@ -16,6 +16,8 @@ namespace storage {
 
 class GetTagPropNode : public QueryNode<VertexID> {
 public:
+    using RelNode<VertexID>::execute;
+
     explicit GetTagPropNode(std::vector<TagNode*> tagNodes,
                             nebula::DataSet* resultDataSet)
         : tagNodes_(std::move(tagNodes))
@@ -74,6 +76,8 @@ private:
 
 class GetEdgePropNode : public QueryNode<cpp2::EdgeKey> {
 public:
+    using RelNode::execute;
+
     GetEdgePropNode(std::vector<EdgeNode<cpp2::EdgeKey>*> edgeNodes,
                     size_t vIdLen,
                     nebula::DataSet* resultDataSet)

@@ -104,6 +104,8 @@ protected:
 // FetchEdgeNode is used to fetch a single edge
 class FetchEdgeNode final : public EdgeNode<cpp2::EdgeKey> {
 public:
+    using RelNode::execute;
+
     FetchEdgeNode(PlanContext* planCtx,
                   EdgeContext* ctx,
                   EdgeType edgeType,
@@ -145,6 +147,7 @@ public:
 // SingleEdgeNode is used to scan all edges of a specified edgeType of the same srcId
 class SingleEdgeNode final : public EdgeNode<VertexID> {
 public:
+    using RelNode::execute;
     SingleEdgeNode(PlanContext* planCtx,
                    EdgeContext* ctx,
                    EdgeType edgeType,

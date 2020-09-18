@@ -23,6 +23,8 @@ namespace storage {
 // Also it will return a iterator of edges which can pass ttl check and ready to be read.
 class HashJoinNode : public IterateNode<VertexID> {
 public:
+    using RelNode::execute;
+
     HashJoinNode(PlanContext* planCtx,
                  const std::vector<TagNode*>& tagNodes,
                  const std::vector<EdgeNode<VertexID>*>& edgeNodes,

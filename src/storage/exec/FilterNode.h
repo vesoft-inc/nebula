@@ -28,6 +28,8 @@ By that means, it can check the filter of tag + edge.
 template<typename T>
 class FilterNode : public IterateNode<T> {
 public:
+    using RelNode<T>::execute;
+
     FilterNode(PlanContext* planCtx,
                IterateNode<T>* upstream,
                StorageExpressionContext* expCtx = nullptr,
@@ -61,7 +63,7 @@ private:
     // return true when the value iter points to a value which can filter
     bool check() override {
         if (filterExp_ != nullptr) {
-            expCtx_->reset(this->reader(), this->key());
+            expCtx_->reset(this->reader(), this->key().str());
             // result is false when filter out
             auto result = filterExp_->eval(*expCtx_);
             // NULL is always false

@@ -48,6 +48,16 @@ public:
         return kvstore::ResultCode::SUCCEEDED;
     }
 
+    virtual kvstore::ResultCode execute(PartitionID partId) {
+        for (auto* dependency : dependencies_) {
+            auto ret = dependency->execute(partId);
+            if (ret != kvstore::ResultCode::SUCCEEDED) {
+                return ret;
+            }
+        }
+        return kvstore::ResultCode::SUCCEEDED;
+    }
+
     void addDependency(RelNode<T>* dep) {
         dependencies_.emplace_back(dep);
         dep->hasDependents_ = true;

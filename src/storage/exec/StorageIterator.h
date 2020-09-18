@@ -282,6 +282,86 @@ private:
     size_t curIter_ = 0;
 };
 
+class IndexIterator : public StorageIterator {
+public:
+    explicit IndexIterator(std::unique_ptr<kvstore::KVIterator> iter)
+    : iter_(std::move(iter)) {}
+
+    virtual IndexID indexId() const = 0;
+
+    bool valid() const override {
+        return !!iter_ && iter_->valid();
+    }
+
+    void next() override {
+        iter_->next();
+    }
+
+    folly::StringPiece key() const override {
+        return iter_->key();
+    }
+
+    folly::StringPiece val() const override {
+        return iter_->val();
+    }
+
+protected:
+    std::unique_ptr<kvstore::KVIterator> iter_;
+};
+
+class VertexIndexIterator : public IndexIterator {
+public:
+    VertexIndexIterator(std::unique_ptr<kvstore::KVIterator> iter, size_t vIdLen)
+        : IndexIterator(std::move(iter))
+        , vIdLen_(vIdLen) {}
+
+    RowReader* reader() const override {
+        return nullptr;
+    }
+
+    IndexID indexId() const override {
+        return IndexKeyUtils::getIndexId(iter_->key());
+    }
+
+    VertexID vId() const {
+        return IndexKeyUtils::getIndexVertexID(vIdLen_, iter_->key()).str();
+    }
+
+protected:
+    size_t vIdLen_;
+};
+
+class EdgeIndexIterator : public IndexIterator {
+public:
+    EdgeIndexIterator(std::unique_ptr<kvstore::KVIterator> iter, size_t vIdLen)
+        : IndexIterator(std::move(iter))
+        , vIdLen_(vIdLen) {}
+
+    RowReader* reader() const override {
+        return nullptr;
+    }
+
+    IndexID indexId() const override {
+        return IndexKeyUtils::getIndexId(iter_->key());
+    }
+
+    VertexID srcId() const {
+        return IndexKeyUtils::getIndexSrcId(vIdLen_, iter_->key()).str();
+    }
+
+    VertexID dstId() const {
+        return IndexKeyUtils::getIndexDstId(vIdLen_, iter_->key()).str();
+    }
+
+    EdgeRanking ranking() const {
+        return IndexKeyUtils::getIndexRank(vIdLen_, iter_->key());
+    }
+
+
+protected:
+    size_t vIdLen_;
+};
+
 }  // namespace storage
 }  // namespace nebula
 

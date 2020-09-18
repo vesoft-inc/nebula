@@ -52,6 +52,24 @@ public:
         return nodes_[outputIdx_]->execute(partId, input);
     }
 
+    kvstore::ResultCode go(PartitionID partId) {
+        // find all leaf nodes, and a dummy output node depends on all leaf node.
+        if (firstLoop_) {
+            auto output = std::make_unique<RelNode<T>>();
+            for (const auto& node : nodes_) {
+                if (!node->hasDependents_) {
+                    // add dependency of output node
+                    output->addDependency(node.get());
+                }
+            }
+            outputIdx_ = addNode(std::move(output));
+            firstLoop_ = false;
+        }
+        CHECK_GE(outputIdx_, 0);
+        CHECK_LT(outputIdx_, nodes_.size());
+        return nodes_[outputIdx_]->execute(partId);
+    }
+
     int32_t addNode(std::unique_ptr<RelNode<T>> node) {
         nodes_.emplace_back(std::move(node));
         return nodes_.size() - 1;

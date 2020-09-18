@@ -324,24 +324,6 @@ std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockPlayerTagSchema(Schema
     return schema;
 }
 
-// Create index on [name, age, playing]
-std::vector<nebula::meta::cpp2::ColumnDef> MockData::mockPlayerTagIndex() {
-    std::vector<meta::cpp2::ColumnDef> fields;
-    meta::cpp2::ColumnDef col;
-    col.name = "name";
-    col.type = meta::cpp2::PropertyType::STRING;
-    fields.emplace_back(std::move(col));
-
-    col.name = "age";
-    col.type = meta::cpp2::PropertyType::INT64;
-    fields.emplace_back(std::move(col));
-
-    col.name = "playing";
-    col.type = meta::cpp2::PropertyType::BOOL;
-    fields.emplace_back(std::move(col));
-    return fields;
-}
-
 std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockTeamTagSchema(SchemaVer ver) {
     std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(ver));
     schema->addField("name", meta::cpp2::PropertyType::STRING);
@@ -374,20 +356,6 @@ std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockServeEdgeSchema(Schema
     // Use nullable
     schema->addField("champions", meta::cpp2::PropertyType::INT64, 0, true);
     return schema;
-}
-
-// Create index on [playerName, teamName]
-std::vector<nebula::meta::cpp2::ColumnDef> MockData::MockData::mockServeEdgeIndex() {
-    std::vector<meta::cpp2::ColumnDef> fields;
-    meta::cpp2::ColumnDef col;
-    col.name = "playerName";
-    col.type = meta::cpp2::PropertyType::STRING;
-    fields.emplace_back(std::move(col));
-
-    col.name = "teamName";
-    col.type = meta::cpp2::PropertyType::STRING;
-    fields.emplace_back(std::move(col));
-    return fields;
 }
 
 std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockTeammateEdgeSchema(SchemaVer ver) {
@@ -427,6 +395,34 @@ MockData::mockGeneralTagIndexColumns() {
 }
 
 std::vector<nebula::meta::cpp2::ColumnDef>
+MockData::mockPlayerTagIndexColumns() {
+    std::vector<nebula::meta::cpp2::ColumnDef> cols;
+    meta::cpp2::ColumnDef col;
+    col.name = "name";
+    col.type = meta::cpp2::PropertyType::STRING;
+    cols.emplace_back(std::move(col));
+
+    col.name = "age";
+    col.type = meta::cpp2::PropertyType::INT64;
+    cols.emplace_back(std::move(col));
+
+    col.name = "playing";
+    col.type = meta::cpp2::PropertyType::BOOL;
+    cols.emplace_back(std::move(col));
+    return cols;
+}
+
+std::vector<nebula::meta::cpp2::ColumnDef>
+MockData::mockTeamTagIndexColumns() {
+    std::vector<nebula::meta::cpp2::ColumnDef> cols;
+    meta::cpp2::ColumnDef col;
+    col.name = "name";
+    col.type = meta::cpp2::PropertyType::STRING;
+    cols.emplace_back(std::move(col));
+    return cols;
+}
+
+std::vector<nebula::meta::cpp2::ColumnDef>
 MockData::mockSimpleTagIndexColumns() {
     std::vector<nebula::meta::cpp2::ColumnDef> cols;
     meta::cpp2::ColumnDef col;
@@ -437,7 +433,7 @@ MockData::mockSimpleTagIndexColumns() {
 }
 
 std::vector<nebula::meta::cpp2::ColumnDef>
-MockData::mockEdgeIndexColumns() {
+MockData::mockServeEdgeIndexColumns() {
     std::vector<nebula::meta::cpp2::ColumnDef> cols;
     meta::cpp2::ColumnDef col;
     col.name = "playerName";
@@ -454,6 +450,23 @@ MockData::mockEdgeIndexColumns() {
     return cols;
 }
 
+std::vector<nebula::meta::cpp2::ColumnDef>
+MockData::mockTeammateEdgeIndexColumns() {
+    std::vector<nebula::meta::cpp2::ColumnDef> cols;
+    meta::cpp2::ColumnDef col;
+    col.name = "player1";
+    col.type = meta::cpp2::PropertyType::STRING;
+    cols.emplace_back(std::move(col));
+
+    col.name = "player2";
+    col.type = meta::cpp2::PropertyType::STRING;
+    cols.emplace_back(std::move(col));
+
+    col.name = "teamName";
+    col.type = meta::cpp2::PropertyType::STRING;
+    cols.emplace_back(std::move(col));
+    return cols;
+}
 std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockGeneralTagSchemaV1() {
     std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(0));
     schema->addField("col_bool",   meta::cpp2::PropertyType::BOOL);
@@ -567,20 +580,6 @@ MockData::mockTypicaIndexColumns() {
     return cols;
 }
 
-// Create index on [player1, player2]
-std::vector<nebula::meta::cpp2::ColumnDef> MockData::MockData::mockTeammateEdgeIndex() {
-    std::vector<meta::cpp2::ColumnDef> fields;
-    meta::cpp2::ColumnDef col;
-    col.name = "player1";
-    col.type = meta::cpp2::PropertyType::STRING;
-    fields.emplace_back(std::move(col));
-
-    col.name = "player2";
-    col.type = meta::cpp2::PropertyType::STRING;
-    fields.emplace_back(std::move(col));
-    return fields;
-}
-
 // Mock data
 std::vector<VertexData> MockData::mockVertices(bool upper) {
     std::vector<VertexData> ret;
@@ -658,7 +657,7 @@ std::vector<std::pair<PartitionID, std::string>> MockData::mockPlayerIndexKeys(b
         values.emplace_back(player.age_);
         values.emplace_back(player.playing_);
         std::vector<Value::Type> colsType;
-        auto key = IndexKeyUtils::vertexIndexKey(32, part, 11, name, values, colsType);
+        auto key = IndexKeyUtils::vertexIndexKey(32, part, 1, name, values, colsType);
         auto pair = std::make_pair(part, std::move(key));
         keys.emplace_back(std::move(pair));
     }
@@ -750,8 +749,9 @@ std::vector<std::pair<PartitionID, std::string>> MockData::mockServeIndexKeys() 
         std::vector<Value> values;
         values.emplace_back(serve.playerName_);
         values.emplace_back(serve.teamName_);
+        values.emplace_back(serve.startYear_);
         std::vector<Value::Type> colsType;
-        auto key = IndexKeyUtils::edgeIndexKey(32, part, 12,
+        auto key = IndexKeyUtils::edgeIndexKey(32, part, 101,
                                                serve.playerName_,
                                                serve.startYear_,
                                                serve.teamName_,
