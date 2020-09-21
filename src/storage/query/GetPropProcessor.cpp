@@ -38,6 +38,15 @@ void GetPropProcessor::process(const cpp2::GetPropRequest& req) {
             auto partId = partEntry.first;
             for (const auto& row : partEntry.second) {
                 auto vId = row.values[0].getStr();
+
+                if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vId)) {
+                    LOG(ERROR) << "Space " << spaceId_ << ", vertex length invalid, "
+                               << " space vid len: " << spaceVidLen_ << ",  vid is " << vId;
+                    pushResultCode(cpp2::ErrorCode::E_INVALID_VID, partId);
+                    onFinished();
+                    return;
+                }
+
                 auto ret = plan.go(partId, vId);
                 if (ret != kvstore::ResultCode::SUCCEEDED &&
                     failedParts.find(partId) == failedParts.end()) {
@@ -56,6 +65,18 @@ void GetPropProcessor::process(const cpp2::GetPropRequest& req) {
                 edgeKey.edge_type = row.values[1].getInt();
                 edgeKey.ranking = row.values[2].getInt();
                 edgeKey.dst = row.values[3].getStr();
+
+                if (!NebulaKeyUtils::isValidVidLen(
+                        spaceVidLen_, edgeKey.src.getStr(), edgeKey.dst.getStr())) {
+                    LOG(ERROR) << "Space " << spaceId_ << " vertex length invalid, "
+                               << "space vid len: " << spaceVidLen_
+                               << ", edge srcVid: " << edgeKey.src
+                               << ", dstVid: " << edgeKey.dst;
+                    pushResultCode(cpp2::ErrorCode::E_INVALID_VID, partId);
+                    onFinished();
+                    return;
+                }
+
                 auto ret = plan.go(partId, edgeKey);
                 if (ret != kvstore::ResultCode::SUCCEEDED &&
                     failedParts.find(partId) == failedParts.end()) {

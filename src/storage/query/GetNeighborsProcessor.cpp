@@ -55,6 +55,14 @@ void GetNeighborsProcessor::process(const cpp2::GetNeighborsRequest& req) {
             CHECK_GE(row.values.size(), 1);
             auto vId = row.values[0].getStr();
 
+            if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vId)) {
+                LOG(ERROR) << "Space " << spaceId_ << ", vertex length invalid, "
+                           << " space vid len: " << spaceVidLen_ << ",  vid is " << vId;
+                pushResultCode(cpp2::ErrorCode::E_INVALID_VID, partId);
+                onFinished();
+                return;
+            }
+
             // the first column of each row would be the vertex id
             auto ret = plan.go(partId, vId);
             if (ret != kvstore::ResultCode::SUCCEEDED) {

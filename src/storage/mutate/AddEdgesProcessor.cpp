@@ -65,7 +65,7 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
                     spaceVidLen_, edgeKey.src.getStr(), edgeKey.dst.getStr())) {
                 LOG(ERROR) << "Space " << spaceId_ << " vertex length invalid, "
                            << "space vid len: " << spaceVidLen_ << ", edge srcVid: " << edgeKey.src
-                           << " dstVid: " << edgeKey.dst;
+                           << ", dstVid: " << edgeKey.dst;
                 pushResultCode(cpp2::ErrorCode::E_INVALID_VID, partId);
                 onFinished();
                 return;
