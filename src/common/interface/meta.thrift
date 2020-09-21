@@ -139,14 +139,17 @@ enum PropertyType {
     TIME = 26,
 } (cpp.enum_strict)
 
+struct ColumnTypeDef {
+    1: required PropertyType    type,
+    // type_length is valid for fixed_string type
+    2: optional i16             type_length = 0,
+}
 
 struct ColumnDef {
     1: required binary          name,
-    2: required PropertyType    type,
+    2: required ColumnTypeDef   type,
     3: optional common.Value    default_value,
-    // type_length is valid for fixed_string type
-    4: optional i16             type_length = 0,
-    5: optional bool            nullable = false,
+    4: optional bool            nullable = false,
 }
 
 struct SchemaProp {
@@ -893,4 +896,3 @@ service MetaService {
 
     AdminJobResp runAdminJob(1: AdminJobReq req);
 }
-
