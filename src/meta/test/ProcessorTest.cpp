@@ -548,7 +548,7 @@ TEST(ProcessorTest, CreateTagTest) {
 
         cpp2::ColumnDef columnWithDefault;
         columnWithDefault.set_name(folly::stringPrintf("col_type_mismatch"));
-        columnWithDefault.set_type(PropertyType::BOOL);
+        columnWithDefault.type.set_type(PropertyType::BOOL);
         nebula::Value defaultValue;
         defaultValue.setStr("default value");
         columnWithDefault.set_default_value(std::move(defaultValue));
@@ -573,7 +573,7 @@ TEST(ProcessorTest, CreateTagTest) {
 
         cpp2::ColumnDef columnWithDefault;
         columnWithDefault.set_name(folly::stringPrintf("col_value_mismatch"));
-        columnWithDefault.set_type(PropertyType::INT8);
+        columnWithDefault.type.set_type(PropertyType::INT8);
         nebula::Value defaultValue;
         defaultValue.setInt(256);
         columnWithDefault.set_default_value(std::move(defaultValue));
@@ -973,7 +973,7 @@ TEST(ProcessorTest, ListOrGetTagsTest) {
         for (auto i = 0; i < 2; i++) {
             ASSERT_EQ(folly::stringPrintf("tag_%d_col_%d", 0, i), cols[i].get_name());
             ASSERT_EQ((i < 1 ? PropertyType::INT64 : PropertyType::STRING),
-                      cols[i].get_type());
+                      cols[i].get_type().get_type());
         }
     }
 
@@ -995,7 +995,7 @@ TEST(ProcessorTest, ListOrGetTagsTest) {
         for (auto i = 0; i < 2; i++) {
             ASSERT_EQ(folly::stringPrintf("tag_%d_col_%d", 0, i), cols[i].get_name());
             ASSERT_EQ((i < 1 ? PropertyType::INT64 : PropertyType::STRING),
-                      cols[i].get_type());
+                      cols[i].get_type().get_type());
         }
     }
 }
@@ -1048,7 +1048,7 @@ TEST(ProcessorTest, ListOrGetEdgesTest) {
             for (auto i = 0; i < 2; i++) {
                 ASSERT_EQ(folly::stringPrintf("edge_%d_col_%d", t, i), cols[i].get_name());
                 ASSERT_EQ((i < 1 ? PropertyType::INT64 : PropertyType::STRING),
-                cols[i].get_type());
+                          cols[i].get_type().get_type());
             }
         }
     }
@@ -1071,7 +1071,7 @@ TEST(ProcessorTest, ListOrGetEdgesTest) {
         for (auto i = 0; i < 2; i++) {
             ASSERT_EQ(folly::stringPrintf("edge_%d_col_%d", 0, i), cols[i].get_name());
             ASSERT_EQ((i < 1 ? PropertyType::INT64 : PropertyType::STRING),
-                      cols[i].get_type());
+                      cols[i].get_type().get_type());
         }
     }
 }
@@ -1269,14 +1269,14 @@ TEST(ProcessorTest, AlterTagTest) {
         for (auto i = 0; i < 2; i++) {
             cpp2::ColumnDef column;
             column.name = folly::stringPrintf("tag_0_col_%d", i + 10);
-            column.type = i < 1 ? PropertyType::INT64 : PropertyType::STRING;
+            column.type.set_type(i < 1 ? PropertyType::INT64 : PropertyType::STRING);
             addSch.columns.emplace_back(std::move(column));
         }
         cpp2::Schema changeSch;
         for (auto i = 0; i < 2; i++) {
             cpp2::ColumnDef column;
             column.name = folly::stringPrintf("tag_0_col_%d", i);
-            column.type = i < 1 ? PropertyType::BOOL : PropertyType::DOUBLE;
+            column.type.set_type(i < 1 ? PropertyType::BOOL : PropertyType::DOUBLE);
             changeSch.columns.emplace_back(std::move(column));
         }
         cpp2::Schema dropSch;
@@ -1325,15 +1325,15 @@ TEST(ProcessorTest, AlterTagTest) {
 
         cpp2::ColumnDef column;
         column.name = "tag_0_col_1";
-        column.type = PropertyType::DOUBLE;
+        column.type.set_type(PropertyType::DOUBLE);
         cols.emplace_back(std::move(column));
 
         column.name = "tag_0_col_10";
-        column.type = PropertyType::INT64;
+        column.type.set_type(PropertyType::INT64);
         cols.emplace_back(std::move(column));
 
         column.name = "tag_0_col_11";
-        column.type = PropertyType::STRING;
+        column.type.set_type(PropertyType::STRING);
         cols.emplace_back(std::move(column));
 
         schema.set_columns(std::move(cols));
@@ -1395,15 +1395,15 @@ TEST(ProcessorTest, AlterTagTest) {
 
         cpp2::ColumnDef column;
         column.name = "tag_0_col_1";
-        column.type = PropertyType::DOUBLE;
+        column.type.set_type(PropertyType::DOUBLE);
         cols.emplace_back(std::move(column));
 
         column.name = "tag_0_col_10";
-        column.type = PropertyType::INT64;
+        column.type.set_type(PropertyType::INT64);
         cols.emplace_back(std::move(column));
 
         column.name = "tag_0_col_11";
-        column.type = PropertyType::STRING;
+        column.type.set_type(PropertyType::STRING);
         cols.emplace_back(std::move(column));
 
         schema.set_columns(std::move(cols));
@@ -1425,7 +1425,7 @@ TEST(ProcessorTest, AlterTagTest) {
         cpp2::Schema changeSch;
         cpp2::ColumnDef column;
         column.name = "tag_0_col_10";
-        column.type = PropertyType::DOUBLE;
+        column.type.set_type(PropertyType::DOUBLE);
         changeSch.columns.emplace_back(std::move(column));
 
         items.emplace_back();
@@ -1508,11 +1508,11 @@ TEST(ProcessorTest, AlterTagTest) {
 
         cpp2::ColumnDef column;
         column.name = "tag_0_col_1";
-        column.type = PropertyType::DOUBLE;
+        column.type.set_type(PropertyType::DOUBLE);
         cols.emplace_back(std::move(column));
 
         column.name = "tag_0_col_11";
-        column.type = PropertyType::STRING;
+        column.type.set_type(PropertyType::STRING);
         cols.emplace_back(std::move(column));
 
         schema.set_columns(std::move(cols));
@@ -1534,7 +1534,7 @@ TEST(ProcessorTest, AlterTagTest) {
         cpp2::Schema addSch;
         cpp2::ColumnDef column;
         column.name = "tag_0_col_1";
-        column.type = PropertyType::INT64;
+        column.type.set_type(PropertyType::INT64);
         addSch.columns.emplace_back(std::move(column));
 
         items.emplace_back();
@@ -1556,7 +1556,7 @@ TEST(ProcessorTest, AlterTagTest) {
         cpp2::Schema changeSch;
         cpp2::ColumnDef column;
         column.name = "tag_0_col_2";
-        column.type = PropertyType::INT64;
+        column.type.set_type(PropertyType::INT64);
         changeSch.columns.emplace_back(std::move(column));
 
         items.emplace_back();
@@ -1578,7 +1578,7 @@ TEST(ProcessorTest, AlterTagTest) {
         cpp2::Schema dropSch;
         cpp2::ColumnDef column;
         column.name = "tag_0_col_0";
-        column.type = PropertyType::INT64;
+        column.type.set_type(PropertyType::INT64);
         dropSch.columns.emplace_back(std::move(column));
 
         items.emplace_back();
@@ -1648,7 +1648,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
         for (int32_t i = 0; i < 2; i++) {
             cpp2::ColumnDef column;
             column.name = folly::stringPrintf("edge_0_col_%d", i);
-            column.type = i < 1 ? PropertyType::INT64 : PropertyType::STRING;
+            column.type.set_type(i < 1 ? PropertyType::INT64 : PropertyType::STRING);
             addSch.columns.emplace_back(std::move(column));
         }
 
@@ -1671,14 +1671,14 @@ TEST(ProcessorTest, AlterEdgeTest) {
         for (auto i = 0; i < 2; i++) {
             cpp2::ColumnDef column;
             column.name = folly::stringPrintf("edge_%d_col_%d", 0, i + 10);
-            column.type = i < 1 ? PropertyType::INT64 : PropertyType::STRING;
+            column.type.set_type(i < 1 ? PropertyType::INT64 : PropertyType::STRING);
             addSch.columns.emplace_back(std::move(column));
         }
         cpp2::Schema changeSch;
         for (auto i = 0; i < 2; i++) {
             cpp2::ColumnDef column;
             column.name = folly::stringPrintf("edge_%d_col_%d", 0, i);
-            column.type = i < 1 ? PropertyType::BOOL : PropertyType::DOUBLE;
+            column.type.set_type(i < 1 ? PropertyType::BOOL : PropertyType::DOUBLE);
             changeSch.columns.emplace_back(std::move(column));
         }
         cpp2::Schema dropSch;
@@ -1737,15 +1737,15 @@ TEST(ProcessorTest, AlterEdgeTest) {
 
         cpp2::ColumnDef column;
         column.name = "edge_0_col_1";
-        column.type = PropertyType::DOUBLE;
+        column.type.set_type(PropertyType::DOUBLE);
         cols.emplace_back(std::move(column));
 
         column.name = "edge_0_col_10";
-        column.type = PropertyType::INT64;
+        column.type.set_type(PropertyType::INT64);
         cols.emplace_back(std::move(column));
 
         column.name = "edge_0_col_11";
-        column.type = PropertyType::STRING;
+        column.type.set_type(PropertyType::STRING);
         cols.emplace_back(std::move(column));
         schema.set_columns(std::move(cols));
         EXPECT_EQ(schema, edge.get_schema());
@@ -1813,15 +1813,15 @@ TEST(ProcessorTest, AlterEdgeTest) {
 
         cpp2::ColumnDef column;
         column.name = "edge_0_col_1";
-        column.type = PropertyType::DOUBLE;
+        column.type.set_type(PropertyType::DOUBLE);
         cols.emplace_back(std::move(column));
 
         column.name = "edge_0_col_10";
-        column.type = PropertyType::INT64;
+        column.type.set_type(PropertyType::INT64);
         cols.emplace_back(std::move(column));
 
         column.name = "edge_0_col_11";
-        column.type = PropertyType::STRING;
+        column.type.set_type(PropertyType::STRING);
         cols.emplace_back(std::move(column));
 
         schema.set_columns(std::move(cols));
@@ -1843,7 +1843,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
         cpp2::Schema changeSch;
         cpp2::ColumnDef column;
         column.name = "edge_0_col_10";
-        column.type = PropertyType::DOUBLE;
+        column.type.set_type(PropertyType::DOUBLE);
         changeSch.columns.emplace_back(std::move(column));
 
         items.emplace_back();
@@ -1927,11 +1927,11 @@ TEST(ProcessorTest, AlterEdgeTest) {
 
         cpp2::ColumnDef column;
         column.name = "edge_0_col_1";
-        column.type = PropertyType::DOUBLE;
+        column.type.set_type(PropertyType::DOUBLE);
         cols.emplace_back(std::move(column));
 
         column.name = "edge_0_col_11";
-        column.type = PropertyType::STRING;
+        column.type.set_type(PropertyType::STRING);
         cols.emplace_back(std::move(column));
 
         schema.set_columns(std::move(cols));
@@ -1953,7 +1953,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
         cpp2::Schema addSch;
         cpp2::ColumnDef column;
         column.name = "edge_0_col_1";
-        column.type = PropertyType::INT64;
+        column.type.set_type(PropertyType::INT64);
         addSch.columns.emplace_back(std::move(column));
 
         items.emplace_back();
@@ -1976,7 +1976,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
         cpp2::Schema changeSch;
         cpp2::ColumnDef column;
         column.name = "edge_0_col_2";
-        column.type = PropertyType::INT64;
+        column.type.set_type(PropertyType::INT64);
         changeSch.columns.emplace_back(std::move(column));
 
         items.emplace_back();
@@ -1999,7 +1999,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
         cpp2::Schema dropSch;
         cpp2::ColumnDef column;
         column.name = "edge_0_col_2";
-        column.type = PropertyType::INT64;
+        column.type.set_type(PropertyType::INT64);
         dropSch.columns.emplace_back(std::move(column));
 
         items.emplace_back();
@@ -2276,7 +2276,7 @@ TEST(ProcessorTest, TagIndexTest) {
         {
             cpp2::ColumnDef column;
             column.set_name("tag_0_col_0");
-            column.set_type(PropertyType::INT64);
+            column.type.set_type(PropertyType::INT64);
             std::vector<cpp2::ColumnDef> columns;
             columns.emplace_back(std::move(column));
 
@@ -2290,12 +2290,12 @@ TEST(ProcessorTest, TagIndexTest) {
             std::vector<cpp2::ColumnDef> columns;
             cpp2::ColumnDef intColumn;
             intColumn.set_name("tag_0_col_0");
-            intColumn.set_type(PropertyType::INT64);
+            intColumn.type.set_type(PropertyType::INT64);
             columns.emplace_back(std::move(intColumn));
 
             cpp2::ColumnDef stringColumn;
             stringColumn.set_name("tag_0_col_1");
-            stringColumn.set_type(PropertyType::STRING);
+            stringColumn.type.set_type(PropertyType::STRING);
             columns.emplace_back(std::move(stringColumn));
 
             auto multiItem = items[1];
@@ -2307,11 +2307,11 @@ TEST(ProcessorTest, TagIndexTest) {
             std::vector<cpp2::ColumnDef> columns;
             cpp2::ColumnDef stringColumn;
             stringColumn.set_name("tag_0_col_1");
-            stringColumn.set_type(PropertyType::STRING);
+            stringColumn.type.set_type(PropertyType::STRING);
             columns.emplace_back(std::move(stringColumn));
             cpp2::ColumnDef intColumn;
             intColumn.set_name("tag_0_col_0");
-            intColumn.set_type(PropertyType::INT64);
+            intColumn.type.set_type(PropertyType::INT64);
             columns.emplace_back(std::move(intColumn));
 
             auto disorderItem = items[2];
@@ -2336,7 +2336,7 @@ TEST(ProcessorTest, TagIndexTest) {
 
         cpp2::ColumnDef column;
         column.set_name("tag_0_col_0");
-        column.set_type(PropertyType::INT64);
+        column.type.set_type(PropertyType::INT64);
         std::vector<cpp2::ColumnDef> columns;
         columns.emplace_back(std::move(column));
 
@@ -2412,7 +2412,7 @@ TEST(ProcessorTest, TagIndexTestV2) {
 
         cpp2::ColumnDef column;
         column.set_name("tag_0_col_0");
-        column.set_type(PropertyType::INT64);
+        column.type.set_type(PropertyType::INT64);
         column.set_nullable(true);
         std::vector<cpp2::ColumnDef> columns;
         columns.emplace_back(std::move(column));
@@ -2571,7 +2571,7 @@ TEST(ProcessorTest, EdgeIndexTest) {
         {
             cpp2::ColumnDef column;
             column.set_name("edge_0_col_0");
-            column.set_type(PropertyType::INT64);
+            column.type.set_type(PropertyType::INT64);
             std::vector<cpp2::ColumnDef> columns;
             columns.emplace_back(std::move(column));
 
@@ -2584,12 +2584,12 @@ TEST(ProcessorTest, EdgeIndexTest) {
             std::vector<cpp2::ColumnDef> columns;
             cpp2::ColumnDef intColumn;
             intColumn.set_name("edge_0_col_0");
-            intColumn.set_type(PropertyType::INT64);
+            intColumn.type.set_type(PropertyType::INT64);
             columns.emplace_back(std::move(intColumn));
 
             cpp2::ColumnDef stringColumn;
             stringColumn.set_name("edge_0_col_1");
-            stringColumn.set_type(PropertyType::STRING);
+            stringColumn.type.set_type(PropertyType::STRING);
             columns.emplace_back(std::move(stringColumn));
 
             auto multiItem = items[1];
@@ -2601,11 +2601,11 @@ TEST(ProcessorTest, EdgeIndexTest) {
             std::vector<cpp2::ColumnDef> columns;
             cpp2::ColumnDef stringColumn;
             stringColumn.set_name("edge_0_col_1");
-            stringColumn.set_type(PropertyType::STRING);
+            stringColumn.type.set_type(PropertyType::STRING);
             columns.emplace_back(std::move(stringColumn));
             cpp2::ColumnDef intColumn;
             intColumn.set_name("edge_0_col_0");
-            intColumn.set_type(PropertyType::INT64);
+            intColumn.type.set_type(PropertyType::INT64);
             columns.emplace_back(std::move(intColumn));
 
             auto disorderItem = items[2];
@@ -2728,7 +2728,7 @@ TEST(ProcessorTest, EdgeIndexTestV2) {
 
         cpp2::ColumnDef column;
         column.set_name("edge_0_col_0");
-        column.set_type(PropertyType::INT64);
+        column.type.set_type(PropertyType::INT64);
         column.set_nullable(true);
         std::vector<cpp2::ColumnDef> columns;
         columns.emplace_back(std::move(column));
@@ -2782,7 +2782,7 @@ TEST(ProcessorTest, IndexCheckAlterEdgeTest) {
         cpp2::Schema changeSch;
         cpp2::ColumnDef column;
         column.name = "edge_0_col_2";
-        column.type = PropertyType::INT64;
+        column.type.set_type(PropertyType::INT64);
         changeSch.columns.emplace_back(std::move(column));
 
         items.emplace_back();
@@ -2805,7 +2805,7 @@ TEST(ProcessorTest, IndexCheckAlterEdgeTest) {
         cpp2::Schema dropSch;
         cpp2::ColumnDef column;
         column.name = "edge_0_col_3";
-        column.type = PropertyType::INT64;
+        column.type.set_type(PropertyType::INT64);
         dropSch.columns.emplace_back(std::move(column));
 
         items.emplace_back();
@@ -2828,7 +2828,7 @@ TEST(ProcessorTest, IndexCheckAlterEdgeTest) {
         cpp2::Schema changeSch;
         cpp2::ColumnDef column;
         column.name = "edge_0_col_0";
-        column.type = PropertyType::INT64;
+        column.type.set_type(PropertyType::INT64);
         changeSch.columns.emplace_back(std::move(column));
 
         items.emplace_back();
@@ -2851,7 +2851,7 @@ TEST(ProcessorTest, IndexCheckAlterEdgeTest) {
         cpp2::Schema dropSch;
         cpp2::ColumnDef column;
         column.name = "edge_0_col_0";
-        column.type = PropertyType::INT64;
+        column.type.set_type(PropertyType::INT64);
         dropSch.columns.emplace_back(std::move(column));
 
         items.emplace_back();
@@ -2894,7 +2894,7 @@ TEST(ProcessorTest, IndexCheckAlterTagTest) {
         cpp2::Schema addSch;
         cpp2::ColumnDef column;
         column.name = "tag_0_col_2";
-        column.type = PropertyType::INT64;
+        column.type.set_type(PropertyType::INT64);
         addSch.columns.emplace_back(std::move(column));
 
         items.emplace_back();
@@ -2915,7 +2915,7 @@ TEST(ProcessorTest, IndexCheckAlterTagTest) {
         cpp2::Schema changeSch;
         cpp2::ColumnDef column;
         column.name = "tag_0_col_2";
-        column.type = PropertyType::INT64;
+        column.type.set_type(PropertyType::INT64);
         changeSch.columns.emplace_back(std::move(column));
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::CHANGE);
@@ -2935,7 +2935,7 @@ TEST(ProcessorTest, IndexCheckAlterTagTest) {
         cpp2::Schema dropSch;
         cpp2::ColumnDef column;
         column.name = "tag_0_col_2";
-        column.type = PropertyType::INT64;
+        column.type.set_type(PropertyType::INT64);
         dropSch.columns.emplace_back(std::move(column));
 
         items.emplace_back();
@@ -2956,7 +2956,7 @@ TEST(ProcessorTest, IndexCheckAlterTagTest) {
         cpp2::Schema changeSch;
         cpp2::ColumnDef column;
         column.name = "tag_0_col_0";
-        column.type = PropertyType::INT64;
+        column.type.set_type(PropertyType::INT64);
         changeSch.columns.emplace_back(std::move(column));
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::CHANGE);
@@ -2976,7 +2976,7 @@ TEST(ProcessorTest, IndexCheckAlterTagTest) {
         cpp2::Schema dropSch;
         cpp2::ColumnDef column;
         column.name = "tag_0_col_0";
-        column.type = PropertyType::INT64;
+        column.type.set_type(PropertyType::INT64);
         dropSch.columns.emplace_back(std::move(column));
 
         items.emplace_back();
@@ -3083,7 +3083,7 @@ TEST(ProcessorTest, IndexTTLTagTest) {
         for (auto i = 0; i < 2; i++) {
             cpp2::ColumnDef column;
             column.name = folly::stringPrintf("tag_0_col_%d", i + 10);
-            column.type = i < 1 ? PropertyType::INT64 : PropertyType::STRING;
+            column.type.set_type(i < 1 ? PropertyType::INT64 : PropertyType::STRING);
             addSch.columns.emplace_back(std::move(column));
         }
         items.emplace_back();
@@ -3284,7 +3284,7 @@ TEST(ProcessorTest, IndexTTLEdgeTest) {
         for (auto i = 0; i < 2; i++) {
             cpp2::ColumnDef column;
             column.name = folly::stringPrintf("edge_0_col_%d", i + 10);
-            column.type = i < 1 ? PropertyType::INT64 : PropertyType::STRING;
+            column.type.set_type(i < 1 ? PropertyType::INT64 : PropertyType::STRING);
             addSch.columns.emplace_back(std::move(column));
         }
         items.emplace_back();
@@ -3470,6 +3470,3 @@ int main(int argc, char** argv) {
     google::SetStderrLogging(google::INFO);
     return RUN_ALL_TESTS();
 }
-
-
-

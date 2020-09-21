@@ -128,14 +128,16 @@ public:
             Value defaultValue = Value(), bool isNull = true, int16_t typeLen = 0) {
         cpp2::ColumnDef column;
         column.set_name(folly::stringPrintf("col_%d", index));
-        column.set_type(type);
         if (!defaultValue.empty()) {
             column.set_default_value(std::move(defaultValue));
         }
         column.set_nullable(isNull);
+        cpp2::ColumnTypeDef typeDef;
+        typeDef.set_type(type);
         if (type == PropertyType::FIXED_STRING) {
-            column.set_type_length(typeLen);
+            typeDef.set_type_length(typeLen);
         }
+        column.set_type(std::move(typeDef));
         return column;
     }
 
@@ -220,7 +222,7 @@ public:
             for (auto i = 0; i < 2; i++) {
                 cpp2::ColumnDef column;
                 column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
-                column.type = i < 1 ? PropertyType::INT64 : PropertyType::STRING;
+                column.type.set_type(i < 1 ? PropertyType::INT64 : PropertyType::STRING);
                 if (nullable) {
                     column.set_nullable(nullable);
                 }
@@ -251,7 +253,7 @@ public:
             for (auto i = 0; i < 2; i++) {
                 cpp2::ColumnDef column;
                 column.name = folly::stringPrintf("edge_%d_col_%d", edgeType, i);
-                column.type = i < 1 ? PropertyType::INT64 : PropertyType::STRING;
+                column.type.set_type(i < 1 ? PropertyType::INT64 : PropertyType::STRING);
                 if (nullable) {
                     column.set_nullable(nullable);
                 }
@@ -307,63 +309,63 @@ public:
     static void checkSchemaWithAllType(const cpp2::Schema &schema) {
         ASSERT_EQ(schema.columns.size(), 12);
         ASSERT_EQ(schema.columns[0].get_name(), "col_0");
-        ASSERT_EQ(schema.columns[0].get_type(), PropertyType::BOOL);
+        ASSERT_EQ(schema.columns[0].get_type().get_type(), PropertyType::BOOL);
         ASSERT_EQ(*schema.columns[0].get_default_value(), Value(true));
         ASSERT_EQ(*schema.columns[0].get_nullable(), false);
 
         ASSERT_EQ(schema.columns[1].get_name(), "col_1");
-        ASSERT_EQ(schema.columns[1].get_type(), PropertyType::INT8);
+        ASSERT_EQ(schema.columns[1].get_type().get_type(), PropertyType::INT8);
         ASSERT_EQ(*schema.columns[1].get_default_value(), Value(NullType::__NULL__));
         ASSERT_EQ(*schema.columns[1].get_nullable(), true);
 
         ASSERT_EQ(schema.columns[2].get_name(), "col_2");
-        ASSERT_EQ(schema.columns[2].get_type(), PropertyType::INT16);
+        ASSERT_EQ(schema.columns[2].get_type().get_type(), PropertyType::INT16);
         ASSERT_EQ(*schema.columns[2].get_default_value(), Value(20));
         ASSERT_EQ(*schema.columns[2].get_nullable(), false);
 
         ASSERT_EQ(schema.columns[3].get_name(), "col_3");
-        ASSERT_EQ(schema.columns[3].get_type(), PropertyType::INT32);
+        ASSERT_EQ(schema.columns[3].get_type().get_type(), PropertyType::INT32);
         ASSERT_EQ(*schema.columns[3].get_default_value(), Value(200));
         ASSERT_EQ(*schema.columns[3].get_nullable(), false);
 
         ASSERT_EQ(schema.columns[4].get_name(), "col_4");
-        ASSERT_EQ(schema.columns[4].get_type(), PropertyType::INT64);
+        ASSERT_EQ(schema.columns[4].get_type().get_type(), PropertyType::INT64);
         ASSERT_EQ(*schema.columns[4].get_default_value(), Value(2000));
         ASSERT_EQ(*schema.columns[4].get_nullable(), false);
 
         ASSERT_EQ(schema.columns[5].get_name(), "col_5");
-        ASSERT_EQ(schema.columns[5].get_type(), PropertyType::FLOAT);
+        ASSERT_EQ(schema.columns[5].get_type().get_type(), PropertyType::FLOAT);
         ASSERT_EQ(*schema.columns[5].get_default_value(), Value(10.0));
         ASSERT_EQ(*schema.columns[5].get_nullable(), false);
 
         ASSERT_EQ(schema.columns[6].get_name(), "col_6");
-        ASSERT_EQ(schema.columns[6].get_type(), PropertyType::DOUBLE);
+        ASSERT_EQ(schema.columns[6].get_type().get_type(), PropertyType::DOUBLE);
         ASSERT_EQ(*schema.columns[6].get_default_value(), Value(20.0));
         ASSERT_EQ(*schema.columns[6].get_nullable(), false);
 
         ASSERT_EQ(schema.columns[7].get_name(), "col_7");
-        ASSERT_EQ(schema.columns[7].get_type(), PropertyType::STRING);
+        ASSERT_EQ(schema.columns[7].get_type().get_type(), PropertyType::STRING);
         ASSERT_EQ(*schema.columns[7].get_default_value(), Value("string"));
         ASSERT_EQ(*schema.columns[7].get_nullable(), false);
 
         ASSERT_EQ(schema.columns[8].get_name(), "col_8");
-        ASSERT_EQ(schema.columns[8].get_type(), PropertyType::FIXED_STRING);
+        ASSERT_EQ(schema.columns[8].get_type().get_type(), PropertyType::FIXED_STRING);
         ASSERT_EQ(*schema.columns[8].get_default_value(), Value("longlongst"));
         ASSERT_EQ(*schema.columns[8].get_nullable(), false);
-        ASSERT_EQ(*schema.columns[8].get_type_length(), 10);
+        ASSERT_EQ(*schema.columns[8].get_type().get_type_length(), 10);
 
         ASSERT_EQ(schema.columns[9].get_name(), "col_9");
-        ASSERT_EQ(schema.columns[9].get_type(), PropertyType::TIMESTAMP);
+        ASSERT_EQ(schema.columns[9].get_type().get_type(), PropertyType::TIMESTAMP);
         ASSERT_EQ(*schema.columns[9].get_default_value(), Value(123456));
         ASSERT_EQ(*schema.columns[9].get_nullable(), true);
 
         ASSERT_EQ(schema.columns[10].get_name(), "col_10");
-        ASSERT_EQ(schema.columns[10].get_type(), PropertyType::DATE);
+        ASSERT_EQ(schema.columns[10].get_type().get_type(), PropertyType::DATE);
         ASSERT_EQ(*schema.columns[10].get_default_value(), Value(Date()));
         ASSERT_EQ(*schema.columns[10].get_nullable(), true);
 
         ASSERT_EQ(schema.columns[11].get_name(), "col_11");
-        ASSERT_EQ(schema.columns[11].get_type(), PropertyType::DATETIME);
+        ASSERT_EQ(schema.columns[11].get_type().get_type(), PropertyType::DATETIME);
         ASSERT_EQ(*schema.columns[11].get_default_value(), Value(DateTime()));
         ASSERT_EQ(*schema.columns[11].get_nullable(), true);
     }
@@ -482,4 +484,3 @@ public:
 }  // namespace nebula
 
 #endif  // META_TEST_TESTUTILS_H_
-

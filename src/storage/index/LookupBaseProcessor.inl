@@ -145,8 +145,9 @@ StatusOr<StoragePlan<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPlan() {
         int32_t vColNum = 0;
         std::vector<std::pair<std::string, Value::Type>> indexCols;
         for (const auto& col : index.value()->get_fields()) {
-            indexCols.emplace_back(col.get_name(), IndexKeyUtils::toValueType(col.get_type()));
-            if (IndexKeyUtils::toValueType(col.get_type()) == Value::Type::STRING) {
+            auto& colType = col.get_type();
+            indexCols.emplace_back(col.get_name(), IndexKeyUtils::toValueType(colType.get_type()));
+            if (IndexKeyUtils::toValueType(colType.get_type()) == Value::Type::STRING) {
                 vColNum++;
             }
             if (!hasNullableCol && col.get_nullable()) {

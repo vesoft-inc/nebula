@@ -106,7 +106,7 @@ private:
             nebula::meta::cpp2::Schema schema;
             nebula::meta::cpp2::ColumnDef column;
             column.name = FLAGS_prop_name;
-            column.type = meta::cpp2::PropertyType::INT64;
+            column.type.set_type(meta::cpp2::PropertyType::INT64);
             schema.columns.emplace_back(std::move(column));
             auto ret = mClient_->createTagSchema(spaceId_, FLAGS_tag_name, schema).get();
             if (!ret.ok()) {
@@ -284,4 +284,3 @@ int main(int argc, char *argv[]) {
     nebula::storage::IntegrityTest integrity;
     return integrity.run();
 }
-

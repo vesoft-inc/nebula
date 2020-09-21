@@ -158,19 +158,19 @@ TEST(MetaServiceUtilsTest, TagTest) {
     for (auto i = 1; i <= 3; i++) {
         cpp2::ColumnDef column;
         column.set_name(folly::stringPrintf("col_%d", i));
-        column.set_type(cpp2::PropertyType::INT64);
+        column.type.set_type(cpp2::PropertyType::INT64);
         cols.emplace_back(std::move(column));
     }
     for (auto i = 4; i <= 6; i++) {
         cpp2::ColumnDef column;
         column.set_name(folly::stringPrintf("col_%d", i));
-        column.set_type(cpp2::PropertyType::FLOAT);
+        column.type.set_type(cpp2::PropertyType::FLOAT);
         cols.emplace_back(std::move(column));
     }
     for (auto i = 7; i < 10; i++) {
         cpp2::ColumnDef column;
         column.set_name(folly::stringPrintf("col_%d", i));
-        column.set_type(cpp2::PropertyType::STRING);
+        column.type.set_type(cpp2::PropertyType::STRING);
         cols.emplace_back(std::move(column));
     }
     schema.set_columns(std::move(cols));
@@ -189,4 +189,3 @@ int main(int argc, char** argv) {
     google::SetStderrLogging(google::INFO);
     return RUN_ALL_TESTS();
 }
-

@@ -105,7 +105,7 @@ TEST(MetaClientTest, InterfacesTest) {
             for (auto i = 0 ; i < 5; i++) {
                 cpp2::ColumnDef column;
                 column.name = "tagItem" + std::to_string(i);
-                column.type = PropertyType::STRING;
+                column.type.set_type(PropertyType::STRING);
                 schema.columns.emplace_back(std::move(column));
             }
             auto ret = client->createTagSchema(spaceId, "tagName", schema).get();
@@ -120,7 +120,7 @@ TEST(MetaClientTest, InterfacesTest) {
             for (auto i = 0 ; i < 5; i++) {
                 cpp2::ColumnDef column;
                 column.name = "tagItem" + std::to_string(i);
-                column.type = PropertyType::STRING;
+                column.type.set_type(PropertyType::STRING);
                 nebula::Value defaultValue;
                 defaultValue.setStr(std::to_string(i));
                 column.default_value = defaultValue;
@@ -135,7 +135,7 @@ TEST(MetaClientTest, InterfacesTest) {
             for (auto i = 0 ; i < 5; i++) {
                 cpp2::ColumnDef column;
                 column.name = "edgeItem" + std::to_string(i);
-                column.type = PropertyType::STRING;
+                column.type.set_type(PropertyType::STRING);
                 schema.columns.emplace_back(std::move(column));
             }
             auto ret = client->createEdgeSchema(spaceId, "edgeName", schema).get();
@@ -149,7 +149,7 @@ TEST(MetaClientTest, InterfacesTest) {
             for (auto i = 0 ; i < 5; i++) {
                 cpp2::ColumnDef column;
                 column.name = "edgeItem" + std::to_string(i);
-                column.type = PropertyType::STRING;
+                column.type.set_type(PropertyType::STRING);
                 nebula::Value defaultValue;
                 defaultValue.setStr(std::to_string(i));
                 column.default_value = defaultValue;
@@ -373,19 +373,19 @@ TEST(MetaClientTest, TagTest) {
         columns.emplace_back();
         columns.back().set_name("column_i");
         columns.back().set_default_value(defaultValue);
-        columns.back().set_type(PropertyType::INT64);
+        columns.back().type.set_type(PropertyType::INT64);
 
         defaultValue.setFloat(3.14);
         columns.emplace_back();
         columns.back().set_default_value(defaultValue);
         columns.back().set_name("column_d");
-        columns.back().set_type(PropertyType::DOUBLE);
+        columns.back().type.set_type(PropertyType::DOUBLE);
 
         defaultValue.setStr("test");
         columns.emplace_back();
         columns.back().set_default_value(defaultValue);
         columns.back().set_name("column_s");
-        columns.back().set_type(PropertyType::STRING);
+        columns.back().type.set_type(PropertyType::STRING);
 
         cpp2::Schema schema;
         schema.set_columns(std::move(columns));
@@ -397,7 +397,7 @@ TEST(MetaClientTest, TagTest) {
         std::vector<cpp2::ColumnDef> columns;
         cpp2::ColumnDef intColumn;
         intColumn.set_name("column_i");
-        intColumn.set_type(PropertyType::INT64);
+        intColumn.type.set_type(PropertyType::INT64);
         nebula::Value intValue;
         intValue.setInt(0);
         intColumn.set_default_value(intValue);
@@ -405,7 +405,7 @@ TEST(MetaClientTest, TagTest) {
 
         cpp2::ColumnDef doubleColumn;
         doubleColumn.set_name("column_d");
-        doubleColumn.set_type(PropertyType::STRING);
+        doubleColumn.type.set_type(PropertyType::STRING);
         nebula::Value doubleValue;
         doubleValue.setFloat(3.14);
         doubleColumn.set_default_value(doubleValue);
@@ -480,7 +480,7 @@ TEST(MetaClientTest, EdgeTest) {
 
         cpp2::ColumnDef intColumn;
         intColumn.set_name("column_i");
-        intColumn.set_type(PropertyType::INT64);
+        intColumn.type.set_type(PropertyType::INT64);
         nebula::Value intValue;
         intValue.setInt(0);
         intColumn.set_default_value(intValue);
@@ -488,7 +488,7 @@ TEST(MetaClientTest, EdgeTest) {
 
         cpp2::ColumnDef doubleColumn;
         doubleColumn.set_name("column_d");
-        doubleColumn.set_type(PropertyType::DOUBLE);
+        doubleColumn.type.set_type(PropertyType::DOUBLE);
         nebula::Value doubleValue;
         doubleValue.setFloat(3.14);
         doubleColumn.set_default_value(doubleValue);
@@ -496,7 +496,7 @@ TEST(MetaClientTest, EdgeTest) {
 
         cpp2::ColumnDef stringColumn;
         stringColumn.set_name("column_s");
-        stringColumn.set_type(PropertyType::STRING);
+        stringColumn.type.set_type(PropertyType::STRING);
         nebula::Value stringValue;
         stringValue.setStr("test");
         stringColumn.set_default_value(stringValue);
@@ -512,7 +512,7 @@ TEST(MetaClientTest, EdgeTest) {
         std::vector<cpp2::ColumnDef> columns;
         cpp2::ColumnDef intColumn;
         intColumn.set_name("column_i");
-        intColumn.set_type(PropertyType::INT64);
+        intColumn.type.set_type(PropertyType::INT64);
         nebula::Value intValue;
         intValue.setInt(0);
         intColumn.set_default_value(intValue);
@@ -520,7 +520,7 @@ TEST(MetaClientTest, EdgeTest) {
 
         cpp2::ColumnDef doubleColumn;
         doubleColumn.set_name("column_d");
-        doubleColumn.set_type(PropertyType::STRING);
+        doubleColumn.type.set_type(PropertyType::STRING);
         nebula::Value doubleValue;
         doubleValue.setFloat(3.14);
         doubleColumn.set_default_value(doubleValue);
@@ -592,12 +592,12 @@ TEST(MetaClientTest, TagIndexTest) {
             std::vector<cpp2::ColumnDef> columns;
             cpp2::ColumnDef column0;
             column0.set_name(folly::stringPrintf("tag_%d_col_0", i));
-            column0.set_type(PropertyType::INT64);
+            column0.type.set_type(PropertyType::INT64);
             columns.emplace_back(std::move(column0));
 
             cpp2::ColumnDef column1;
             column1.set_name(folly::stringPrintf("tag_%d_col_1", i));
-            column1.set_type(PropertyType::STRING);
+            column1.type.set_type(PropertyType::STRING);
             columns.emplace_back(std::move(column1));
 
             cpp2::Schema schema;
@@ -660,7 +660,7 @@ TEST(MetaClientTest, TagIndexTest) {
         {
             cpp2::ColumnDef singleColumn;
             singleColumn.set_name("tag_0_col_0");
-            singleColumn.set_type(PropertyType::INT64);
+            singleColumn.type.set_type(PropertyType::INT64);
             std::vector<cpp2::ColumnDef> columns;
             columns.emplace_back(std::move(singleColumn));
             auto singleFieldResult = values[0].get_fields();
@@ -671,12 +671,12 @@ TEST(MetaClientTest, TagIndexTest) {
             std::vector<cpp2::ColumnDef> columns;
             cpp2::ColumnDef intColumn;
             intColumn.set_name("tag_0_col_0");
-            intColumn.set_type(PropertyType::INT64);
+            intColumn.type.set_type(PropertyType::INT64);
             columns.emplace_back(std::move(intColumn));
 
             cpp2::ColumnDef stringColumn;
             stringColumn.set_name("tag_0_col_1");
-            stringColumn.set_type(PropertyType::STRING);
+            stringColumn.type.set_type(PropertyType::STRING);
             columns.emplace_back(std::move(stringColumn));
 
             auto multiFieldResult = values[1].get_fields();
@@ -754,12 +754,12 @@ TEST(MetaClientTest, EdgeIndexTest) {
             std::vector<cpp2::ColumnDef> columns;
             cpp2::ColumnDef column0;
             column0.set_name(folly::stringPrintf("edge_%d_col_0", i));
-            column0.set_type(PropertyType::INT64);
+            column0.type.set_type(PropertyType::INT64);
             columns.emplace_back(std::move(column0));
 
             cpp2::ColumnDef column1;
             column1.set_name(folly::stringPrintf("edge_%d_col_1", i));
-            column1.set_type(PropertyType::STRING);
+            column1.type.set_type(PropertyType::STRING);
             columns.emplace_back(std::move(column1));
 
             cpp2::Schema schema;
@@ -823,7 +823,7 @@ TEST(MetaClientTest, EdgeIndexTest) {
         {
             cpp2::ColumnDef column;
             column.set_name("edge_0_col_0");
-            column.set_type(PropertyType::INT64);
+            column.type.set_type(PropertyType::INT64);
             std::vector<cpp2::ColumnDef> columns;
             columns.emplace_back(std::move(column));
 
@@ -835,11 +835,11 @@ TEST(MetaClientTest, EdgeIndexTest) {
             std::vector<cpp2::ColumnDef> columns;
             cpp2::ColumnDef intColumn;
             intColumn.set_name("edge_0_col_0");
-            intColumn.set_type(PropertyType::INT64);
+            intColumn.type.set_type(PropertyType::INT64);
             columns.emplace_back(std::move(intColumn));
             cpp2::ColumnDef stringColumn;
             stringColumn.set_name("edge_0_col_1");
-            stringColumn.set_type(PropertyType::STRING);
+            stringColumn.type.set_type(PropertyType::STRING);
             columns.emplace_back(std::move(stringColumn));
             auto multiFieldResult = values[1].get_fields();
             ASSERT_TRUE(TestUtils::verifyResult(columns, multiFieldResult));
