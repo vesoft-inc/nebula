@@ -67,9 +67,9 @@ folly::dynamic toJson(const meta::cpp2::SpaceDesc &desc) {
 folly::dynamic toJson(const meta::cpp2::ColumnDef &column) {
     folly::dynamic obj = folly::dynamic::object();
     obj.insert("name", column.get_name());
-    obj.insert("type", meta::cpp2::_PropertyType_VALUES_TO_NAMES.at(column.get_type()));
-    if (column.__isset.type_length) {
-        obj.insert("typeLength", folly::to<std::string>(*column.get_type_length()));
+    obj.insert("type", meta::cpp2::_PropertyType_VALUES_TO_NAMES.at(column.get_type().get_type()));
+    if (column.type.__isset.type_length) {
+        obj.insert("typeLength", folly::to<std::string>(*column.get_type().get_type_length()));
     }
     if (column.__isset.nullable) {
         obj.insert("nullable", folly::to<std::string>(*column.get_nullable()));

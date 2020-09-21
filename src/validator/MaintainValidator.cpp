@@ -147,12 +147,14 @@ Status AlterValidator::alterSchema(const std::vector<AlterSchemaOptItem*>& schem
                 for (auto& spec : specs) {
                     meta::cpp2::ColumnDef column;
                     column.name = *spec->name();
-                    column.type = spec->type();
+                    meta::cpp2::ColumnTypeDef typeDef;
+                    typeDef.set_type(spec->type());
+                    column.type = typeDef;
                     if (spec->hasDefaultValue()) {
                         column.set_default_value(spec->getDefaultValue());
                     }
                     if (spec->type() == meta::cpp2::PropertyType::FIXED_STRING) {
-                        column.set_type_length(spec->typeLen());
+                        column.type.set_type_length(spec->typeLen());
                     }
                     if (spec->isNull()) {
                         column.set_nullable(true);

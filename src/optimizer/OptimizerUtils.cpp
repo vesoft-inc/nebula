@@ -30,7 +30,7 @@ Value OptimizerUtils::boundValue(const meta::cpp2::ColumnDef& col,
 }
 
 Value OptimizerUtils::boundValueWithGT(const meta::cpp2::ColumnDef& col, const Value& v) {
-    auto type = SchemaUtil::propTypeToValueType(col.get_type());
+    auto type = SchemaUtil::propTypeToValueType(col.get_type().get_type());
     switch (type) {
         case Value::Type::INT : {
             if (v.getInt() == std::numeric_limits<int64_t>::max()) {
@@ -57,16 +57,17 @@ Value OptimizerUtils::boundValueWithGT(const meta::cpp2::ColumnDef& col, const V
             return v;
         }
         case Value::Type::STRING : {
-            if (!col.__isset.type_length || col.get_type_length() == nullptr) {
+            if (!col.type.__isset.type_length ||
+                col.get_type().get_type_length() == nullptr) {
                 return Value(NullType::BAD_TYPE);
             }
             std::vector<unsigned char> bytes(v.getStr().begin(), v.getStr().end());
-            bytes.resize(*col.get_type_length());
+            bytes.resize(*col.get_type().get_type_length());
             for (size_t i = bytes.size();; i--) {
                 if (i > 0) {
                     if (bytes[i-1]++ != 255) break;
                 } else {
-                    return Value(std::string(*col.get_type_length(), '\377'));
+                    return Value(std::string(*col.get_type().get_type_length(), '\377'));
                 }
             }
             return Value(std::string(bytes.begin(), bytes.end()));
@@ -179,7 +180,7 @@ Value OptimizerUtils::boundValueWithGT(const meta::cpp2::ColumnDef& col, const V
 }
 
 Value OptimizerUtils::boundValueWithLT(const meta::cpp2::ColumnDef& col, const Value& v) {
-    auto type = SchemaUtil::propTypeToValueType(col.get_type());
+    auto type = SchemaUtil::propTypeToValueType(col.get_type().get_type());
     switch (type) {
         case Value::Type::INT : {
             if (v.getInt() == std::numeric_limits<int64_t>::min()) {
@@ -204,16 +205,16 @@ Value OptimizerUtils::boundValueWithLT(const meta::cpp2::ColumnDef& col, const V
             return v;
         }
         case Value::Type::STRING : {
-            if (!col.__isset.type_length || col.get_type_length() == nullptr) {
+            if (!col.type.__isset.type_length || col.get_type().get_type_length() == nullptr) {
                 return Value(NullType::BAD_TYPE);
             }
             std::vector<unsigned char> bytes(v.getStr().begin(), v.getStr().end());
-            bytes.resize(*col.get_type_length());
+            bytes.resize(*col.get_type().get_type_length());
             for (size_t i = bytes.size();; i--) {
                 if (i > 0) {
                     if (bytes[i-1]-- != 0) break;
                 } else {
-                    return Value(std::string(*col.get_type_length(), '\0'));
+                    return Value(std::string(*col.get_type().get_type_length(), '\0'));
                 }
             }
             return Value(std::string(bytes.begin(), bytes.end()));
@@ -328,7 +329,7 @@ Value OptimizerUtils::boundValueWithLT(const meta::cpp2::ColumnDef& col, const V
 }
 
 Value OptimizerUtils::boundValueWithMax(const meta::cpp2::ColumnDef& col, const Value& v) {
-    auto type = SchemaUtil::propTypeToValueType(col.get_type());
+    auto type = SchemaUtil::propTypeToValueType(col.get_type().get_type());
     switch (type) {
         case Value::Type::INT : {
             return Value(std::numeric_limits<int64_t>::max());
@@ -340,10 +341,11 @@ Value OptimizerUtils::boundValueWithMax(const meta::cpp2::ColumnDef& col, const 
             return v;
         }
         case Value::Type::STRING : {
-            if (!col.__isset.type_length || col.get_type_length() == nullptr) {
+            if (!col.type.__isset.type_length ||
+                col.get_type().get_type_length() == nullptr) {
                 return Value(NullType::BAD_TYPE);
             }
-            return Value(std::string(*col.get_type_length(), '\377'));
+            return Value(std::string(*col.get_type().get_type_length(), '\377'));
         }
         case Value::Type::DATE : {
             Date d;
@@ -390,7 +392,7 @@ Value OptimizerUtils::boundValueWithMax(const meta::cpp2::ColumnDef& col, const 
 }
 
 Value OptimizerUtils::boundValueWithMin(const meta::cpp2::ColumnDef& col, const Value& v) {
-    auto type = SchemaUtil::propTypeToValueType(col.get_type());
+    auto type = SchemaUtil::propTypeToValueType(col.get_type().get_type());
     switch (type) {
         case Value::Type::INT : {
             return Value(std::numeric_limits<int64_t>::min());
@@ -402,10 +404,11 @@ Value OptimizerUtils::boundValueWithMin(const meta::cpp2::ColumnDef& col, const 
             return v;
         }
         case Value::Type::STRING : {
-            if (!col.__isset.type_length || col.get_type_length() == nullptr) {
+            if (!col.type.__isset.type_length ||
+                col.get_type().get_type_length() == nullptr) {
                 return Value(NullType::BAD_TYPE);
             }
-            return Value(std::string(*col.get_type_length(), '\0'));
+            return Value(std::string(*col.get_type().get_type_length(), '\0'));
         }
         case Value::Type::DATE : {
             return Value(Date());

@@ -23,12 +23,14 @@ Status SchemaUtil::validateColumns(const std::vector<ColumnSpecification*> &colu
         }
         nameSet.emplace(*spec->name());
         meta::cpp2::ColumnDef column;
-        auto type = spec->type();
         column.set_name(*spec->name());
-        column.set_type(type);
+        auto type = spec->type();
+        meta::cpp2::ColumnTypeDef typeDef;
+        typeDef.set_type(type);
+        column.set_type(std::move(typeDef));
         column.set_nullable(spec->isNull());
         if (meta::cpp2::PropertyType::FIXED_STRING == type) {
-            column.set_type_length(spec->typeLen());
+            column.type.set_type_length(spec->typeLen());
         }
 
         if (spec->hasDefaultValue()) {
@@ -87,8 +89,8 @@ SchemaUtil::generateSchemaProvider(const SchemaVer ver, const meta::cpp2::Schema
     for (auto col : schema.get_columns()) {
         bool hasDef = col.__isset.default_value;
         schemaPtr->addField(col.get_name(),
-                            col.get_type(),
-                            col.__isset.type_length ? *col.get_type_length() : 0,
+                            col.get_type().get_type(),
+                            col.type.__isset.type_length ? *col.get_type().get_type_length() : 0,
                             col.__isset.nullable ? *col.get_nullable() : false,
                             hasDef ? *col.get_default_value() : Value());
     }
@@ -175,8 +177,8 @@ Status SchemaUtil::setTTLCol(SchemaPropItem* schemaProp, meta::cpp2::Schema& sch
         if (col.name == ttlColName) {
             // Only integer columns and timestamp columns can be used as ttl_col
             // TODO(YT) Ttl_duration supports datetime type
-            if (col.type != meta::cpp2::PropertyType::INT64 &&
-                col.type != meta::cpp2::PropertyType::TIMESTAMP) {
+            if (col.type.type != meta::cpp2::PropertyType::INT64 &&
+                col.type.type != meta::cpp2::PropertyType::TIMESTAMP) {
                 return Status::Error("Ttl column type illegal");
             }
             schema.schema_prop.set_ttl_col(ttlColName);
@@ -289,7 +291,7 @@ StatusOr<DataSet> SchemaUtil::toShowCreateSchema(bool isTag,
 }
 
 std::string SchemaUtil::typeToString(const meta::cpp2::ColumnDef &col) {
-    switch (col.get_type()) {
+    switch (col.get_type().get_type()) {
         case meta::cpp2::PropertyType::BOOL:
             return "bool";
         case meta::cpp2::PropertyType::INT8:
@@ -309,7 +311,7 @@ std::string SchemaUtil::typeToString(const meta::cpp2::ColumnDef &col) {
         case meta::cpp2::PropertyType::STRING:
             return "string";
         case meta::cpp2::PropertyType::FIXED_STRING: {
-            auto typeLen = col.__isset.type_length ? *col.get_type_length() : 0;
+            auto typeLen = col.type.__isset.type_length ? *col.get_type().get_type_length() : 0;
             return folly::stringPrintf("fixed_string(%d)", typeLen);
         }
         case meta::cpp2::PropertyType::TIMESTAMP:

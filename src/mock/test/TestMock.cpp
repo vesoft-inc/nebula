@@ -84,7 +84,7 @@ TEST_F(MockServerTest, TestMeta) {
             meta::cpp2::Schema tagSchema;
             meta::cpp2::ColumnDef col;
             col.set_name(folly::stringPrintf("col_%d", i));
-            col.set_type(meta::cpp2::PropertyType::STRING);
+            col.type.set_type(meta::cpp2::PropertyType::STRING);
             col.set_default_value(nebula::Value("NULL"));
             std::vector<meta::cpp2::ColumnDef> cols;
             cols.emplace_back(col);
@@ -102,7 +102,8 @@ TEST_F(MockServerTest, TestMeta) {
             auto schema = status.value();
             ASSERT_EQ(1, schema.get_columns().size());
             ASSERT_EQ(folly::stringPrintf("col_%d", i), schema.get_columns()[0].get_name());
-            ASSERT_EQ(meta::cpp2::PropertyType::STRING, schema.get_columns()[0].get_type());
+            ASSERT_EQ(meta::cpp2::PropertyType::STRING,
+                      schema.get_columns()[0].get_type().get_type());
             ASSERT_EQ("NULL", schema.get_columns()[0].get_default_value()->getStr());
         }
 
@@ -131,7 +132,9 @@ TEST_F(MockServerTest, TestMeta) {
             meta::cpp2::Schema edgeSchema;
             meta::cpp2::ColumnDef col;
             col.set_name(folly::stringPrintf("col_%d", i));
-            col.set_type(meta::cpp2::PropertyType::STRING);
+            meta::cpp2::ColumnTypeDef typeDef;
+            typeDef.set_type(meta::cpp2::PropertyType::STRING);
+            col.set_type(std::move(typeDef));
             col.set_default_value(nebula::Value("NULL"));
             std::vector<meta::cpp2::ColumnDef> cols;
             cols.emplace_back(col);
@@ -149,7 +152,8 @@ TEST_F(MockServerTest, TestMeta) {
             auto schema = status.value();
             ASSERT_EQ(1, schema.get_columns().size());
             ASSERT_EQ(folly::stringPrintf("col_%d", i), schema.get_columns()[0].get_name());
-            ASSERT_EQ(meta::cpp2::PropertyType::STRING, schema.get_columns()[0].get_type());
+            ASSERT_EQ(meta::cpp2::PropertyType::STRING,
+                      schema.get_columns()[0].get_type().get_type());
             ASSERT_EQ("NULL", schema.get_columns()[0].get_default_value()->getStr());
         }
 

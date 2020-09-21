@@ -785,9 +785,9 @@ Status MetaCache::alterSchemaProp(meta::cpp2::Schema &schema,
         for (auto& col : schema.columns) {
             if (col.get_name() == ttlCol) {
                 // Only integer and timestamp columns can be used as ttl_col
-                if (col.type != meta::cpp2::PropertyType::INT32 &&
-                    col.type != meta::cpp2::PropertyType::INT64 &&
-                    col.type != meta::cpp2::PropertyType::TIMESTAMP) {
+                if (col.type.type != meta::cpp2::PropertyType::INT32 &&
+                    col.type.type != meta::cpp2::PropertyType::INT64 &&
+                    col.type.type != meta::cpp2::PropertyType::TIMESTAMP) {
                     return Status::Error("TTL column type illegal");
                 }
                 existed = true;

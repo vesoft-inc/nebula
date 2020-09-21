@@ -15,8 +15,10 @@ using OP = OptimizerUtils::BoundValueOperator;
 TEST(IndexBoundValueTest, StringTest) {
     meta::cpp2::ColumnDef col;
     {
-        col.set_type(meta::cpp2::PropertyType::FIXED_STRING);
-        col.set_type_length(8);
+        meta::cpp2::ColumnTypeDef typeDef;
+        typeDef.set_type(meta::cpp2::PropertyType::FIXED_STRING);
+        typeDef.set_type_length(8);
+        col.set_type(std::move(typeDef));
     }
     std::vector<unsigned char> max = {255, 255, 255, 255, 255, 255, 255, 255};
     std::vector<unsigned char> min = {'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0'};
@@ -72,7 +74,9 @@ TEST(IndexBoundValueTest, StringTest) {
 TEST(IndexBoundValueTest, BoolTest) {
     meta::cpp2::ColumnDef col;
     {
-        col.set_type(meta::cpp2::PropertyType::BOOL);
+        meta::cpp2::ColumnTypeDef typeDef;
+        typeDef.set_type(meta::cpp2::PropertyType::BOOL);
+        col.set_type(std::move(typeDef));
     }
     EXPECT_TRUE(OptimizerUtils::boundValue(col, OP::MIN, Value(true)).getBool());
     EXPECT_TRUE(OptimizerUtils::boundValue(col, OP::MAX, Value(true)).getBool());
@@ -94,7 +98,9 @@ TEST(IndexBoundValueTest, BoolTest) {
 TEST(IndexBoundValueTest, IntTest) {
     meta::cpp2::ColumnDef col;
     {
-        col.set_type(meta::cpp2::PropertyType::INT64);
+        meta::cpp2::ColumnTypeDef typeDef;
+        typeDef.set_type(meta::cpp2::PropertyType::INT64);
+        col.set_type(std::move(typeDef));
     }
     auto maxInt = std::numeric_limits<int64_t>::max();
     auto minInt = std::numeric_limits<int64_t>::min();
@@ -120,7 +126,9 @@ TEST(IndexBoundValueTest, IntTest) {
 TEST(IndexBoundValueTest, DoubleTest) {
     meta::cpp2::ColumnDef col;
     {
-        col.set_type(meta::cpp2::PropertyType::DOUBLE);
+        meta::cpp2::ColumnTypeDef typeDef;
+        typeDef.set_type(meta::cpp2::PropertyType::DOUBLE);
+        col.set_type(std::move(typeDef));
     }
     auto maxDouble = std::numeric_limits<double_t>::max();
     auto minDouble = std::numeric_limits<double_t>::min();
@@ -158,7 +166,9 @@ TEST(IndexBoundValueTest, DoubleTest) {
 TEST(IndexBoundValueTest, DateTest) {
     meta::cpp2::ColumnDef col;
     {
-        col.set_type(meta::cpp2::PropertyType::DATE);
+        meta::cpp2::ColumnTypeDef typeDef;
+        typeDef.set_type(meta::cpp2::PropertyType::DATE);
+        col.set_type(std::move(typeDef));
     }
     auto maxYear = std::numeric_limits<int16_t>::max();
     EXPECT_EQ(Date(maxYear, 12, 31),
@@ -182,7 +192,9 @@ TEST(IndexBoundValueTest, DateTest) {
 TEST(IndexBoundValueTest, DateTimeTest) {
     meta::cpp2::ColumnDef col;
     {
-        col.set_type(meta::cpp2::PropertyType::DATETIME);
+        meta::cpp2::ColumnTypeDef typeDef;
+        typeDef.set_type(meta::cpp2::PropertyType::DATETIME);
+        col.set_type(std::move(typeDef));
     }
     DateTime maxDT;
     {
