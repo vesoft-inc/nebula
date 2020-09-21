@@ -85,6 +85,14 @@ public:
         return find->second;
     }
 
+    void addIndex(const std::string &indexName) {
+        indexs_.emplace(indexName);
+    }
+
+    bool hasIndex(const std::string &indexName) {
+        return indexs_.find(indexName) != indexs_.end();
+    }
+
 private:
     // spaces_ is the trace of space switch
     std::vector<SpaceInfo>                              spaces_;
@@ -96,6 +104,7 @@ private:
           std::shared_ptr<const meta::NebulaSchemaProvider>>;
     Schemas                                             schemas_;
     std::unordered_set<std::string>                     createSpaces_;
+    std::unordered_set<std::string>                     indexs_;
 };
 }  // namespace graph
 }  // namespace nebula

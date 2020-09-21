@@ -13,11 +13,13 @@ namespace graph {
 
 QueryContext::QueryContext(RequestContextPtr rctx,
                            meta::SchemaManager* sm,
+                           meta::IndexManager* im,
                            storage::GraphStorageClient* storage,
                            meta::MetaClient* metaClient,
                            CharsetInfo* charsetInfo)
     : rctx_(std::move(rctx)),
       sm_(DCHECK_NOTNULL(sm)),
+      im_(DCHECK_NOTNULL(im)),
       storageClient_(DCHECK_NOTNULL(storage)),
       metaClient_(DCHECK_NOTNULL(metaClient)),
       charsetInfo_(DCHECK_NOTNULL(charsetInfo)) {

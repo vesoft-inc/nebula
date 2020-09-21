@@ -26,7 +26,7 @@ private:
 class DescEdgeExecutor final : public Executor {
 public:
     DescEdgeExecutor(const PlanNode *node, QueryContext *ectx)
-            : Executor("DescEdgeExecutor", node, ectx) {}
+        : Executor("DescEdgeExecutor", node, ectx) {}
 
     folly::Future<Status> execute() override;
 
@@ -37,7 +37,7 @@ private:
 class DropEdgeExecutor final : public Executor {
 public:
     DropEdgeExecutor(const PlanNode *node, QueryContext *ectx)
-            : Executor("DropEdgeExecutor", node, ectx) {}
+        : Executor("DropEdgeExecutor", node, ectx) {}
 
     folly::Future<Status> execute() override;
 };
@@ -45,7 +45,7 @@ public:
 class ShowEdgesExecutor final : public Executor {
 public:
     ShowEdgesExecutor(const PlanNode *node, QueryContext *ectx)
-            : Executor("ShowEdgesExecutor", node, ectx) {}
+        : Executor("ShowEdgesExecutor", node, ectx) {}
 
     folly::Future<Status> execute() override;
 };
@@ -53,7 +53,7 @@ public:
 class ShowCreateEdgeExecutor final : public Executor {
 public:
     ShowCreateEdgeExecutor(const PlanNode *node, QueryContext *ectx)
-            : Executor("ShowCreateEdgeExecutor", node, ectx) {}
+        : Executor("ShowCreateEdgeExecutor", node, ectx) {}
 
     folly::Future<Status> execute() override;
 };
@@ -61,7 +61,7 @@ public:
 class AlterEdgeExecutor final : public Executor {
 public:
     AlterEdgeExecutor(const PlanNode *node, QueryContext *qctx)
-            : Executor("AlterEdgeExecutor", node, qctx) {}
+        : Executor("AlterEdgeExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 };

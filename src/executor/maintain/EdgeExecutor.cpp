@@ -21,7 +21,7 @@ folly::Future<Status> CreateEdgeExecutor::execute() {
     return qctx()->getMetaClient()->createEdgeSchema(spaceId,
             ceNode->getName(), ceNode->getSchema(), ceNode->getIfNotExists())
             .via(runner())
-            .then([ceNode, spaceId](StatusOr<bool> resp) {
+            .then([ceNode, spaceId](StatusOr<EdgeType> resp) {
                 if (!resp.ok()) {
                     LOG(ERROR) << "SpaceId: " << spaceId
                                << ", Create edge `" << ceNode->getName()
@@ -148,7 +148,7 @@ folly::Future<Status> AlterEdgeExecutor::execute() {
                                                     aeNode->getSchemaItems(),
                                                     aeNode->getSchemaProp())
             .via(runner())
-            .then([this, aeNode](StatusOr<EdgeType> resp) {
+            .then([this, aeNode](StatusOr<bool> resp) {
                 if (!resp.ok()) {
                     LOG(ERROR) << "SpaceId: " << aeNode->space()
                                << ", Alter edge `" << aeNode->getName()

@@ -21,6 +21,7 @@ struct ColumnTypeDef {
             case meta::cpp2::PropertyType::INT32:
             case meta::cpp2::PropertyType::INT64:
             case meta::cpp2::PropertyType::TIMESTAMP:
+            case meta::cpp2::PropertyType::TIME:
             case meta::cpp2::PropertyType::VID:
             case meta::cpp2::PropertyType::FLOAT:
             case meta::cpp2::PropertyType::DOUBLE:

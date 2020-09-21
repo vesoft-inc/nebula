@@ -167,19 +167,29 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
         case Sentence::Kind::kMatch:
         case Sentence::Kind::kUnknown:
         case Sentence::Kind::kCreateTagIndex:
+            return std::make_unique<CreateTagIndexValidator>(sentence, context);
         case Sentence::Kind::kShowCreateTagIndex:
-        case Sentence::Kind::kShowTagIndexStatus:
+            return std::make_unique<ShowCreateTagIndexValidator>(sentence, context);
         case Sentence::Kind::kDescribeTagIndex:
+            return std::make_unique<DescribeTagIndexValidator>(sentence, context);
         case Sentence::Kind::kShowTagIndexes:
+            return std::make_unique<ShowTagIndexesValidator>(sentence, context);
         case Sentence::Kind::kRebuildTagIndex:
+            return std::make_unique<RebuildTagIndexValidator>(sentence, context);
         case Sentence::Kind::kDropTagIndex:
+            return std::make_unique<DropTagIndexValidator>(sentence, context);
         case Sentence::Kind::kCreateEdgeIndex:
+            return std::make_unique<CreateEdgeIndexValidator>(sentence, context);
         case Sentence::Kind::kShowCreateEdgeIndex:
-        case Sentence::Kind::kShowEdgeIndexStatus:
+            return std::make_unique<ShowCreateEdgeIndexValidator>(sentence, context);
         case Sentence::Kind::kDescribeEdgeIndex:
+            return std::make_unique<DescribeEdgeIndexValidator>(sentence, context);
         case Sentence::Kind::kShowEdgeIndexes:
+            return std::make_unique<ShowEdgeIndexesValidator>(sentence, context);
         case Sentence::Kind::kRebuildEdgeIndex:
+            return std::make_unique<RebuildEdgeIndexValidator>(sentence, context);
         case Sentence::Kind::kDropEdgeIndex:
+            return std::make_unique<DropEdgeIndexValidator>(sentence, context);
         case Sentence::Kind::kLookup:
         case Sentence::Kind::kDownload:
         case Sentence::Kind::kIngest:

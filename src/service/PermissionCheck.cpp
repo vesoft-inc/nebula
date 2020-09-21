@@ -130,9 +130,7 @@ bool PermissionCheck::permissionCheck(Session *session,
         case Sentence::Kind::kShowCreateTag:
         case Sentence::Kind::kShowCreateEdge:
         case Sentence::Kind::kShowCreateTagIndex:
-        case Sentence::Kind::kShowCreateEdgeIndex:
-        case Sentence::Kind::kShowTagIndexStatus:
-        case Sentence::Kind::kShowEdgeIndexStatus: {
+        case Sentence::Kind::kShowCreateEdgeIndex: {
             /**
              * Above operations can get the space id via session,
              * so the permission same with canReadSchemaOrData.

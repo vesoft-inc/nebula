@@ -43,6 +43,7 @@ public:
         kSwitchSpace,
         kDedup,
         kPassThrough,
+        // schema related
         kCreateSpace,
         kCreateTag,
         kCreateEdge,
@@ -60,6 +61,15 @@ public:
         kDropSpace,
         kDropTag,
         kDropEdge,
+        // index related
+        kCreateTagIndex,
+        kCreateEdgeIndex,
+        kDropTagIndex,
+        kDropEdgeIndex,
+        kDescTagIndex,
+        kDescEdgeIndex,
+        kRebuildTagIndex,
+        kRebuildEdgeIndex,
         kInsertVertices,
         kInsertEdges,
         kBalanceLeaders,

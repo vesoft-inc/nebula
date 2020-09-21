@@ -23,7 +23,7 @@ public:
 class DescTagExecutor final : public Executor {
 public:
     DescTagExecutor(const PlanNode *node, QueryContext *ectx)
-            : Executor("DescTagExecutor", node, ectx) {}
+        : Executor("DescTagExecutor", node, ectx) {}
 
     folly::Future<Status> execute() override;
 
@@ -34,7 +34,7 @@ private:
 class DropTagExecutor final : public Executor {
 public:
     DropTagExecutor(const PlanNode *node, QueryContext *ectx)
-            : Executor("DropTagExecutor", node, ectx) {}
+        : Executor("DropTagExecutor", node, ectx) {}
 
     folly::Future<Status> execute() override;
 };
@@ -42,7 +42,7 @@ public:
 class ShowTagsExecutor final : public Executor {
 public:
     ShowTagsExecutor(const PlanNode *node, QueryContext *ectx)
-            : Executor("ShowTagsExecutor", node, ectx) {}
+        : Executor("ShowTagsExecutor", node, ectx) {}
 
     folly::Future<Status> execute() override;
 };
@@ -50,7 +50,7 @@ public:
 class ShowCreateTagExecutor final : public Executor {
 public:
     ShowCreateTagExecutor(const PlanNode *node, QueryContext *ectx)
-            : Executor("ShowTagsExecutor", node, ectx) {}
+        : Executor("ShowTagsExecutor", node, ectx) {}
 
     folly::Future<Status> execute() override;
 };
@@ -58,7 +58,7 @@ public:
 class AlterTagExecutor final : public Executor {
 public:
     AlterTagExecutor(const PlanNode *node, QueryContext *qctx)
-            : Executor("AlterTagExecutor", node, qctx) {}
+        : Executor("AlterTagExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 };

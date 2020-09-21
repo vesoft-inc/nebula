@@ -239,7 +239,7 @@ std::string CreateTagIndexSentence::toString() const {
     buf += *tagName_;
     buf += " (";
     std::string columns;
-    folly::join(", ", this->names(), columns);
+    folly::join(", ", this->columns(), columns);
     buf += columns;
     buf += ")";
     return buf;
@@ -255,7 +255,7 @@ std::string CreateEdgeIndexSentence::toString() const {
     buf += *edgeName_;
     buf += " (";
     std::string columns;
-    folly::join(", ", this->names(), columns);
+    folly::join(", ", this->columns(), columns);
     buf += columns;
     buf += ")";
     return buf;
@@ -316,18 +316,11 @@ std::string ShowEdgeIndexesSentence::toString() const {
 }
 
 std::string ShowCreateTagIndexSentence::toString() const {
-    return folly::stringPrintf("SHOW CREATE TAG INDEX %s", name_.get()->c_str());
+    return folly::stringPrintf("SHOW CREATE TAG INDEX %s", indexName_.get()->c_str());
 }
 
 std::string ShowCreateEdgeIndexSentence::toString() const {
-    return folly::stringPrintf("SHOW CREATE EDGE INDEX %s", name_.get()->c_str());
+    return folly::stringPrintf("SHOW CREATE EDGE INDEX %s", indexName_.get()->c_str());
 }
 
-std::string ShowTagIndexStatusSentence::toString() const {
-    return folly::stringPrintf("SHOW TAG INDEX STATUS");
-}
-
-std::string ShowEdgeIndexStatusSentence::toString() const {
-    return folly::stringPrintf("SHOW EDGE INDEX STATUS");
-}
 }   // namespace nebula

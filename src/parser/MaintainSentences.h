@@ -507,7 +507,7 @@ public:
         return tagName_.get();
     }
 
-    std::vector<std::string> names() const {
+    std::vector<std::string> columns() const {
         std::vector<std::string> result;
         auto columnNames = columns_->columnNames();
         result.resize(columnNames.size());
@@ -546,7 +546,7 @@ public:
         return edgeName_.get();
     }
 
-    std::vector<std::string> names() const {
+    std::vector<std::string> columns() const {
         std::vector<std::string> result;
         auto columnNames = columns_->columnNames();
         result.resize(columnNames.size());
@@ -753,46 +753,36 @@ public:
 
 class ShowCreateTagIndexSentence : public Sentence {
 public:
-    explicit ShowCreateTagIndexSentence(std::string *name) {
-        name_.reset(name);
+    explicit ShowCreateTagIndexSentence(std::string *indexName) {
+        indexName_.reset(indexName);
         kind_ = Kind::kShowCreateTagIndex;
     }
 
     std::string toString() const override;
 
+    const std::string* indexName() const {
+        return indexName_.get();
+    }
+
 private:
-    std::unique_ptr<std::string>                name_;
+    std::unique_ptr<std::string>                indexName_;
 };
 
 class ShowCreateEdgeIndexSentence : public Sentence {
 public:
-    explicit ShowCreateEdgeIndexSentence(std::string *name) {
-        name_.reset(name);
+    explicit ShowCreateEdgeIndexSentence(std::string *indexName) {
+        indexName_.reset(indexName);
         kind_ = Kind::kShowCreateEdgeIndex;
     }
 
     std::string toString() const override;
 
+    const std::string* indexName() const {
+        return indexName_.get();
+    }
+
 private:
-    std::unique_ptr<std::string>                name_;
-};
-
-class ShowTagIndexStatusSentence : public Sentence {
-public:
-    ShowTagIndexStatusSentence() {
-        kind_ = Kind::kShowTagIndexStatus;
-    }
-
-    std::string toString() const override;
-};
-
-class ShowEdgeIndexStatusSentence : public Sentence {
-public:
-    ShowEdgeIndexStatusSentence() {
-        kind_ = Kind::kShowEdgeIndexStatus;
-    }
-
-    std::string toString() const override;
+    std::unique_ptr<std::string>                indexName_;
 };
 
 }   // namespace nebula

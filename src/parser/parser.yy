@@ -1880,10 +1880,10 @@ show_sentence
         $$ = new ShowCreateEdgeIndexSentence($5);
     }
     | KW_SHOW KW_TAG KW_INDEX KW_STATUS {
-        $$ = new ShowTagIndexStatusSentence();
+        $$ = new ShowTagIndexesSentence();
     }
     | KW_SHOW KW_EDGE KW_INDEX KW_STATUS {
-        $$ = new ShowEdgeIndexStatusSentence();
+        $$ = new ShowEdgeIndexesSentence();
     }
     | KW_SHOW KW_SNAPSHOTS {
         $$ = new ShowSnapshotsSentence();

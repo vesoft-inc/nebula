@@ -21,7 +21,7 @@ folly::Future<Status> CreateTagExecutor::execute() {
     return qctx()->getMetaClient()->createTagSchema(spaceId,
             ctNode->getName(), ctNode->getSchema(), ctNode->getIfNotExists())
             .via(runner())
-            .then([ctNode, spaceId](StatusOr<bool> resp) {
+            .then([ctNode, spaceId](StatusOr<TagID> resp) {
                 if (!resp.ok()) {
                     LOG(ERROR) << "SpaceId: " << spaceId
                                << ", Create tag `" << ctNode->getName()
@@ -146,7 +146,7 @@ folly::Future<Status> AlterTagExecutor::execute() {
                                                    aeNode->getSchemaItems(),
                                                    aeNode->getSchemaProp())
             .via(runner())
-            .then([aeNode](StatusOr<TagID> resp) {
+            .then([aeNode](StatusOr<bool> resp) {
                 if (!resp.ok()) {
                     LOG(ERROR) << "SpaceId: " << aeNode->space()
                                << ", Alter tag `" << aeNode->getName()

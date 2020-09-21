@@ -43,6 +43,8 @@ Status QueryEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor
     }
 
     schemaManager_ = meta::SchemaManager::create(metaClient_.get());
+    indexManager_ = meta::IndexManager::create();
+    indexManager_->init(metaClient_.get());
 
     // gflagsManager_ = std::make_unique<meta::ClientBasedGflagsManager>(metaClient_.get());
 
@@ -56,6 +58,7 @@ Status QueryEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor
 void QueryEngine::execute(RequestContextPtr rctx) {
     auto ectx = std::make_unique<QueryContext>(std::move(rctx),
                                                schemaManager_.get(),
+                                               indexManager_.get(),
                                                storage_.get(),
                                                metaClient_.get(),
                                                charsetInfo_);

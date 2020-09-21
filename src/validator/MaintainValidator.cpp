@@ -8,6 +8,7 @@
 #include "common/charset/Charset.h"
 
 #include "util/SchemaUtil.h"
+#include "util/IndexUtil.h"
 #include "parser/MaintainSentences.h"
 #include "service/GraphFlags.h"
 #include "planner/Maintain.h"
@@ -51,8 +52,8 @@ Status CreateTagValidator::validateImpl() {
 
 Status CreateTagValidator::toPlan() {
     auto *plan = qctx_->plan();
-    auto doNode = CreateTag::make(qctx_,
-            plan->root(), std::move(name_), std::move(schema_), ifNotExist_);
+    auto doNode = CreateTag::make(qctx_, plan->root(), std::move(name_),
+                                  std::move(schema_), ifNotExist_);
     root_ = doNode;
     tail_ = root_;
     return Status::OK();
@@ -94,8 +95,8 @@ Status CreateEdgeValidator::validateImpl() {
 
 Status CreateEdgeValidator::toPlan() {
     auto *plan = qctx_->plan();
-    auto doNode = CreateEdge::make(qctx_,
-            plan->root(), std::move(name_), std::move(schema_), ifNotExist_);
+    auto doNode = CreateEdge::make(qctx_, plan->root(), std::move(name_),
+                                   std::move(schema_), ifNotExist_);
     root_ = doNode;
     tail_ = root_;
     return Status::OK();
@@ -308,5 +309,203 @@ Status DropEdgeValidator::toPlan() {
     tail_ = root_;
     return Status::OK();
 }
+
+Status CreateTagIndexValidator::validateImpl() {
+    auto sentence = static_cast<CreateTagIndexSentence*>(sentence_);
+    name_ = *sentence->tagName();
+    index_ = *sentence->indexName();
+    fields_ = sentence->columns();
+    ifNotExist_ = sentence->isIfNotExist();
+
+    auto status = Status::OK();
+    do {
+        auto schema = vctx_->getSchema(name_);
+        if (schema == nullptr) {
+            status = Status::Error("Tag %s not exist", name_.c_str());
+            break;
+        }
+
+        status = IndexUtil::validateColumns(fields_);
+        if (!status.ok()) {
+            VLOG(1) << status;
+            break;
+        }
+    } while (false);
+    // TODO(darion) Save the index
+    return status;
+}
+
+Status CreateTagIndexValidator::toPlan() {
+    auto sentence = static_cast<CreateTagIndexSentence*>(sentence_);
+    auto *doNode = CreateTagIndex::make(qctx_,
+                                        nullptr,
+                                       *sentence->tagName(),
+                                       *sentence->indexName(),
+                                        sentence->columns(),
+                                        sentence->isIfNotExist());
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status CreateEdgeIndexValidator::validateImpl() {
+    auto sentence = static_cast<CreateEdgeIndexSentence*>(sentence_);
+    name_ = *sentence->edgeName();
+    index_ = *sentence->indexName();
+    fields_ = sentence->columns();
+    ifNotExist_ = sentence->isIfNotExist();
+
+    auto status = Status::OK();
+    do {
+        auto schema = vctx_->getSchema(name_);
+        if (schema == nullptr) {
+            status = Status::Error("Edge %s not exist", name_.c_str());
+            break;
+        }
+
+        status = IndexUtil::validateColumns(fields_);
+        if (!status.ok()) {
+            VLOG(1) << status;
+            break;
+        }
+    } while (false);
+    // TODO(darion) Save the index
+    return status;
+}
+
+Status CreateEdgeIndexValidator::toPlan() {
+    auto sentence = static_cast<CreateEdgeIndexSentence*>(sentence_);
+    auto *doNode = CreateEdgeIndex::make(qctx_,
+                                         nullptr,
+                                        *sentence->edgeName(),
+                                        *sentence->indexName(),
+                                         sentence->columns(),
+                                         sentence->isIfNotExist());
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status DropTagIndexValidator::validateImpl() {
+    auto sentence = static_cast<DropTagIndexSentence*>(sentence_);
+    index_ = *sentence->indexName();
+    auto status = Status::OK();
+    return status;
+}
+
+Status DropTagIndexValidator::toPlan() {
+    auto sentence = static_cast<DropTagIndexSentence*>(sentence_);
+    auto *doNode = DropTagIndex::make(qctx_,
+                                      nullptr,
+                                     *sentence->indexName(),
+                                      sentence->isIfExists());
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status DropEdgeIndexValidator::validateImpl() {
+    auto sentence = static_cast<DropEdgeIndexSentence*>(sentence_);
+    index_ = *sentence->indexName();
+    auto status = Status::OK();
+    return status;
+}
+
+Status DropEdgeIndexValidator::toPlan() {
+    auto sentence = static_cast<DropEdgeIndexSentence*>(sentence_);
+    auto *doNode = DropEdgeIndex::make(qctx_,
+                                       nullptr,
+                                      *sentence->indexName(),
+                                       sentence->isIfExists());
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status DescribeTagIndexValidator::validateImpl() {
+    auto sentence = static_cast<DescribeTagIndexSentence*>(sentence_);
+    index_ = *sentence->indexName();
+    return Status::OK();
+}
+
+Status DescribeTagIndexValidator::toPlan() {
+    auto sentence = static_cast<DescribeTagIndexSentence*>(sentence_);
+    auto *doNode = DescTagIndex::make(qctx_,
+                                      nullptr,
+                                     *sentence->indexName());
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status DescribeEdgeIndexValidator::validateImpl() {
+    auto sentence = static_cast<DescribeEdgeIndexSentence*>(sentence_);
+    index_ = *sentence->indexName();
+    return Status::OK();
+}
+
+Status DescribeEdgeIndexValidator::toPlan() {
+    auto sentence = static_cast<DescribeEdgeIndexSentence*>(sentence_);
+    auto *doNode = DescEdgeIndex::make(qctx_,
+                                       nullptr,
+                                      *sentence->indexName());
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status ShowCreateTagIndexValidator::validateImpl() {
+    auto sentence = static_cast<ShowCreateTagIndexSentence*>(sentence_);
+    index_ = *sentence->indexName();
+    return Status::OK();
+}
+
+Status ShowCreateTagIndexValidator::toPlan() {
+    // auto sentence = static_cast<ShowCreateTagIndexSentence*>(sentence_);
+    return Status::OK();
+}
+
+Status ShowTagIndexesValidator::validateImpl() {
+    auto sentence = static_cast<ShowCreateEdgeIndexSentence*>(sentence_);
+    index_ = *sentence->indexName();
+    return Status::OK();
+}
+
+Status ShowTagIndexesValidator::toPlan() {
+    return Status::OK();
+}
+
+Status ShowCreateEdgeIndexValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status ShowCreateEdgeIndexValidator::toPlan() {
+    return Status::OK();
+}
+
+Status ShowEdgeIndexesValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status ShowEdgeIndexesValidator::toPlan() {
+    return Status::OK();
+}
+
+Status RebuildTagIndexValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status RebuildTagIndexValidator::toPlan() {
+    return Status::OK();
+}
+
+Status RebuildEdgeIndexValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status RebuildEdgeIndexValidator::toPlan() {
+    return Status::OK();
+}
+
 }  // namespace graph
 }  // namespace nebula

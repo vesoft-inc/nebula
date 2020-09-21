@@ -14,6 +14,7 @@
 #include "common/cpp/helpers.h"
 #include "common/datatypes/Value.h"
 #include "common/meta/SchemaManager.h"
+#include "common/meta/IndexManager.h"
 #include "context/ExecutionContext.h"
 #include "context/ValidateContext.h"
 #include "parser/SequentialSentences.h"
@@ -49,6 +50,7 @@ public:
     QueryContext();
     QueryContext(RequestContextPtr rctx,
                  meta::SchemaManager* sm,
+                 meta::IndexManager* im,
                  storage::GraphStorageClient* storage,
                  meta::MetaClient* metaClient,
                  CharsetInfo* charsetInfo);
@@ -61,6 +63,10 @@ public:
 
     void setSchemaManager(meta::SchemaManager* sm) {
         sm_ = sm;
+    }
+
+    void setIndexManager(meta::IndexManager* im) {
+        im_ = im;
     }
 
     void setStorageClient(storage::GraphStorageClient* storage) {
@@ -139,6 +145,7 @@ private:
     std::unique_ptr<ExecutionContext>                       ectx_;
     std::unique_ptr<ExecutionPlan>                          ep_;
     meta::SchemaManager*                                    sm_{nullptr};
+    meta::IndexManager*                                     im_{nullptr};
     storage::GraphStorageClient*                            storageClient_{nullptr};
     meta::MetaClient*                                       metaClient_{nullptr};
     CharsetInfo*                                            charsetInfo_{nullptr};

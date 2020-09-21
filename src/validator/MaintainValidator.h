@@ -15,6 +15,7 @@
 
 namespace nebula {
 namespace graph {
+
 class CreateTagValidator final : public Validator {
 public:
     CreateTagValidator(Sentence* sentence, QueryContext* context)
@@ -177,6 +178,169 @@ private:
 
     Status toPlan() override;
 };
+
+class CreateTagIndexValidator final : public Validator {
+public:
+    CreateTagIndexValidator(Sentence* sentence, QueryContext* context)
+        : Validator(sentence, context) {
+    }
+
+private:
+    Status validateImpl() override;
+    Status toPlan() override;
+
+private:
+    std::string                      name_;
+    std::string                      index_;
+    std::vector<std::string>         fields_;
+    bool                             ifNotExist_;
+};
+
+class CreateEdgeIndexValidator final : public Validator {
+public:
+    CreateEdgeIndexValidator(Sentence* sentence, QueryContext* context)
+        : Validator(sentence, context) {
+    }
+
+private:
+    Status validateImpl() override;
+    Status toPlan() override;
+
+private:
+    std::string                      name_;
+    std::string                      index_;
+    std::vector<std::string>         fields_;
+    bool                             ifNotExist_;
+};
+
+class DropTagIndexValidator final : public Validator {
+public:
+    DropTagIndexValidator(Sentence* sentence, QueryContext* context)
+        : Validator(sentence, context) {}
+
+private:
+    Status validateImpl() override;
+
+    Status toPlan() override;
+
+private:
+    std::string                      index_;
+};
+
+class DropEdgeIndexValidator final : public Validator {
+public:
+    DropEdgeIndexValidator(Sentence* sentence, QueryContext* context)
+        : Validator(sentence, context) {}
+
+private:
+    Status validateImpl() override;
+
+    Status toPlan() override;
+
+private:
+    std::string                      index_;
+};
+
+class DescribeTagIndexValidator final : public Validator {
+public:
+    DescribeTagIndexValidator(Sentence* sentence, QueryContext* context)
+        : Validator(sentence, context) {}
+
+private:
+    Status validateImpl() override;
+
+    Status toPlan() override;
+
+private:
+    std::string                      index_;
+};
+
+class DescribeEdgeIndexValidator final : public Validator {
+public:
+    DescribeEdgeIndexValidator(Sentence* sentence, QueryContext* context)
+        : Validator(sentence, context) {}
+
+private:
+    Status validateImpl() override;
+
+    Status toPlan() override;
+
+private:
+    std::string                      index_;
+};
+
+class ShowCreateTagIndexValidator final : public Validator {
+public:
+    ShowCreateTagIndexValidator(Sentence* sentence, QueryContext* context)
+        : Validator(sentence, context) {}
+
+private:
+    Status validateImpl() override;
+
+    Status toPlan() override;
+
+private:
+    std::string                      index_;
+};
+
+class ShowTagIndexesValidator final : public Validator {
+public:
+    ShowTagIndexesValidator(Sentence* sentence, QueryContext* context)
+        : Validator(sentence, context) {}
+
+private:
+    Status validateImpl() override;
+
+    Status toPlan() override;
+
+private:
+    std::string                      index_;
+};
+
+class ShowCreateEdgeIndexValidator final : public Validator {
+public:
+    ShowCreateEdgeIndexValidator(Sentence* sentence, QueryContext* context)
+        : Validator(sentence, context) {}
+
+private:
+    Status validateImpl() override;
+
+    Status toPlan() override;
+};
+
+class ShowEdgeIndexesValidator final : public Validator {
+public:
+    ShowEdgeIndexesValidator(Sentence* sentence, QueryContext* context)
+        : Validator(sentence, context) {}
+
+private:
+    Status validateImpl() override;
+
+    Status toPlan() override;
+};
+
+class RebuildTagIndexValidator final : public Validator {
+public:
+    RebuildTagIndexValidator(Sentence* sentence, QueryContext* context)
+        : Validator(sentence, context) {}
+
+private:
+    Status validateImpl() override;
+
+    Status toPlan() override;
+};
+
+class RebuildEdgeIndexValidator final : public Validator {
+public:
+    RebuildEdgeIndexValidator(Sentence* sentence, QueryContext* context)
+        : Validator(sentence, context) {}
+
+private:
+    Status validateImpl() override;
+
+    Status toPlan() override;
+};
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // VALIDATOR_MAINTAINVALIDATOR_H_

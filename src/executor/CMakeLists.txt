@@ -48,7 +48,9 @@ nebula_add_library(
     admin/PartExecutor.cpp
     admin/CharsetExecutor.cpp
     maintain/TagExecutor.cpp
+    maintain/TagIndexExecutor.cpp
     maintain/EdgeExecutor.cpp
+    maintain/EdgeIndexExecutor.cpp
     mutate/InsertExecutor.cpp
     mutate/DeleteExecutor.cpp
     mutate/UpdateExecutor.cpp

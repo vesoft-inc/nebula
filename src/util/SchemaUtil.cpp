@@ -314,6 +314,8 @@ std::string SchemaUtil::typeToString(const meta::cpp2::ColumnDef &col) {
         }
         case meta::cpp2::PropertyType::TIMESTAMP:
             return "timestamp";
+        case meta::cpp2::PropertyType::TIME:
+            return "time";
         case meta::cpp2::PropertyType::DATE:
             return "date";
         case meta::cpp2::PropertyType::DATETIME:
@@ -334,6 +336,8 @@ Value::Type SchemaUtil::propTypeToValueType(meta::cpp2::PropertyType propType) {
         case meta::cpp2::PropertyType::INT64:
         case meta::cpp2::PropertyType::TIMESTAMP:
             return Value::Type::INT;
+        case meta::cpp2::PropertyType::TIME:
+            return Value::Type::TIME;
         case meta::cpp2::PropertyType::VID:
             return Value::Type::STRING;
         case meta::cpp2::PropertyType::FLOAT:

@@ -31,16 +31,44 @@ std::unique_ptr<cpp2::PlanNodeDescription> AlterSchemaNode::explain() const {
     return desc;
 }
 
-std::unique_ptr<cpp2::PlanNodeDescription> DescSchema::explain() const {
+std::unique_ptr<cpp2::PlanNodeDescription> DescSchemaNode::explain() const {
     auto desc = SingleInputNode::explain();
     addDescription("name", name_, desc.get());
     return desc;
 }
 
-std::unique_ptr<cpp2::PlanNodeDescription> DropSchema::explain() const {
+std::unique_ptr<cpp2::PlanNodeDescription> DropSchemaNode::explain() const {
     auto desc = SingleInputNode::explain();
     addDescription("name", name_, desc.get());
     addDescription("ifExists", util::toJson(ifExists_), desc.get());
+    return desc;
+}
+
+std::unique_ptr<cpp2::PlanNodeDescription> CreateIndexNode::explain() const {
+    auto desc = SingleInputNode::explain();
+    addDescription("schemaName", schemaName_, desc.get());
+    addDescription("indexName", indexName_, desc.get());
+    addDescription("fields", folly::toJson(util::toJson(fields_)), desc.get());
+    addDescription("ifNotExists", folly::to<std::string>(ifNotExists_), desc.get());
+    return desc;
+}
+
+std::unique_ptr<cpp2::PlanNodeDescription> DescIndexNode::explain() const {
+    auto desc = SingleInputNode::explain();
+    addDescription("indexName", indexName_, desc.get());
+    return desc;
+}
+
+std::unique_ptr<cpp2::PlanNodeDescription> DropIndexNode::explain() const {
+    auto desc = SingleInputNode::explain();
+    addDescription("indexName", indexName_, desc.get());
+    addDescription("ifExists", util::toJson(ifExists_), desc.get());
+    return desc;
+}
+
+std::unique_ptr<cpp2::PlanNodeDescription> RebuildIndexNode::explain() const {
+    auto desc = SingleInputNode::explain();
+    addDescription("indexName", indexName_, desc.get());
     return desc;
 }
 
