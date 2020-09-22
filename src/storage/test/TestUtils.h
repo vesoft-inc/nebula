@@ -8,6 +8,7 @@
 #define STORAGE_TEST_TESTUTILS_H_
 
 #include "common/base/Base.h"
+#include "codec/RowReaderWrapper.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/NebulaStore.h"
@@ -52,7 +53,7 @@ void checkAddVerticesData(cpp2::AddVerticesRequest req,
 
                 int num = 0;
                 while (iter && iter->valid()) {
-                    auto reader = RowReader::getRowReader(schema.get(), iter->val());
+                    auto reader = RowReaderWrapper::getRowReader(schema.get(), iter->val());
                     // For players tagId is 1
                     Value val;
                     if (mode == 0) {
@@ -202,7 +203,7 @@ void checkAddEdgesData(cpp2::AddEdgesRequest req,
             Value val;
             int num = 0;
             while (iter && iter->valid()) {
-                auto reader = RowReader::getRowReader(schema.get(), iter->val());
+                auto reader = RowReaderWrapper::getRowReader(schema.get(), iter->val());
                 if (mode == 0) {
                     for (auto i = 0; i < 7; i++) {
                         val = reader->getValueByIndex(i);

@@ -248,7 +248,7 @@ private:
                 if (iter == vdata.tag_data.end()) {
                     return false;
                 }
-                auto tagReader = RowReader::getRowReader(iter->data, tagProvider);
+                auto tagReader = RowReaderWrapper::getRowReader(iter->data, tagProvider);
                 auto ret = RowReader::getPropByName(tagReader.get(), propName_);
                 CHECK(ok(ret));
                 nextId = boost::get<int64_t>(value(ret));

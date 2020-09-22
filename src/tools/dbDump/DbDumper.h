@@ -13,7 +13,7 @@
 #include "common/meta/ServerBasedSchemaManager.h"
 #include <rocksdb/db.h>
 #include "kvstore/RocksEngine.h"
-#include "codec/RowReader.h"
+#include "codec/RowReaderWrapper.h"
 
 DECLARE_string(space_name);
 DECLARE_string(db_path);

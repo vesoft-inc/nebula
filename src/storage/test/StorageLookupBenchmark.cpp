@@ -58,10 +58,10 @@ std::string genVertexIndexKey(meta::SchemaManager* schemaMan,
                               const std::string &prop,
                               std::shared_ptr<nebula::cpp2::IndexItem> &index,
                               VertexID vId) {
-    auto reader = RowReader::getTagPropReader(schemaMan,
-                                              prop,
-                                              spaceId,
-                                              tagId);
+    auto reader = RowReaderWrapper::getTagPropReader(schemaMan,
+                                                     prop,
+                                                     spaceId,
+                                                     tagId);
     auto values = collectIndexValues(reader.get(),
                                      index->get_fields());
     auto indexKey = NebulaKeyUtils::vertexIndexKey(partId,

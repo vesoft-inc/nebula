@@ -107,9 +107,9 @@ public:
                               RowReader* reader,
                               const std::vector<PropContext>* props)
                 -> kvstore::ResultCode {
+                    UNUSED(edgeType);
                     nebula::List list;
-                    auto code = collectEdgeProps(edgeType,
-                                                 reader,
+                    auto code = collectEdgeProps(reader,
                                                  key,
                                                  vIdLen_,
                                                  props,

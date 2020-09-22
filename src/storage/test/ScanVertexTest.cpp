@@ -152,7 +152,7 @@ void checkResponse(PartitionID partId, cpp2::ScanVertexResponse& resp, std::stri
                 auto schemaIter = resp.vertex_schema.find(tagId);
                 EXPECT_TRUE(schemaIter != resp.vertex_schema.end());
                 auto provider = std::make_shared<ResultSchemaProvider>(schemaIter->second);
-                auto reader = RowReader::getRowReader(scanVertex.value, provider);
+                auto reader = RowReaderWrapper::getRowReader(scanVertex.value, provider);
 
                 if (!returnAllColumns) {
                     {

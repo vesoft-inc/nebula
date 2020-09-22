@@ -184,7 +184,7 @@ TEST(UpdateVertexTest, No_Filter_Test) {
     ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
     EXPECT_TRUE(iter && iter->valid());
 
-    auto reader = RowReader::getTagPropReader(env->schemaMan_, spaceId, tagId, iter->val());
+    auto reader = RowReaderWrapper::getTagPropReader(env->schemaMan_, spaceId, tagId, iter->val());
     auto val = reader->getValueByName("name");
     EXPECT_EQ("Tim Duncan", val.getStr());
     val = reader->getValueByName("age");
@@ -312,7 +312,7 @@ TEST(UpdateVertexTest, Filter_Yield_Test2) {
     EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
     EXPECT_TRUE(iter && iter->valid());
 
-    auto reader = RowReader::getTagPropReader(env->schemaMan_, spaceId, tagId, iter->val());
+    auto reader = RowReaderWrapper::getTagPropReader(env->schemaMan_, spaceId, tagId, iter->val());
     auto val = reader->getValueByName("name");
     EXPECT_EQ("Tim Duncan", val.getStr());
     val = reader->getValueByName("age");
@@ -414,7 +414,7 @@ TEST(UpdateVertexTest, Insertable_Test) {
     EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
     EXPECT_TRUE(iter && iter->valid());
 
-    auto reader = RowReader::getTagPropReader(env->schemaMan_, spaceId, tagId, iter->val());
+    auto reader = RowReaderWrapper::getTagPropReader(env->schemaMan_, spaceId, tagId, iter->val());
     auto val = reader->getValueByName("name");
     EXPECT_EQ("Brandon Ingram", val.getStr());
     val = reader->getValueByName("age");
@@ -499,7 +499,7 @@ TEST(UpdateVertexTest, Invalid_Update_Prop_Test) {
     EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
     EXPECT_TRUE(iter && iter->valid());
 
-    auto reader = RowReader::getTagPropReader(env->schemaMan_, spaceId, tagId, iter->val());
+    auto reader = RowReaderWrapper::getTagPropReader(env->schemaMan_, spaceId, tagId, iter->val());
     auto val = reader->getValueByName("name");
     EXPECT_EQ("Tim Duncan", val.getStr());
     val = reader->getValueByName("age");
@@ -615,7 +615,7 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
     EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
     EXPECT_TRUE(iter && iter->valid());
 
-    auto reader = RowReader::getTagPropReader(env->schemaMan_, spaceId, tagId, iter->val());
+    auto reader = RowReaderWrapper::getTagPropReader(env->schemaMan_, spaceId, tagId, iter->val());
     auto val = reader->getValueByName("name");
     EXPECT_EQ("Tim Duncan", val.getStr());
     val = reader->getValueByName("age");
@@ -742,7 +742,7 @@ TEST(UpdateVertexTest, Insertable_Filter_Value_Test) {
     EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
     EXPECT_TRUE(iter && iter->valid());
 
-    auto reader = RowReader::getTagPropReader(env->schemaMan_, spaceId, tagId, iter->val());
+    auto reader = RowReaderWrapper::getTagPropReader(env->schemaMan_, spaceId, tagId, iter->val());
     auto val = reader->getValueByName("name");
     EXPECT_EQ("Brandon Ingram", val.getStr());
     val = reader->getValueByName("age");
@@ -1001,7 +1001,7 @@ TEST(UpdateVertexTest, TTL_Insert_No_Exist_Test) {
     EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
     EXPECT_TRUE(iter && iter->valid());
 
-    auto reader = RowReader::getTagPropReader(env->schemaMan_, spaceId, tagId, iter->val());
+    auto reader = RowReaderWrapper::getTagPropReader(env->schemaMan_, spaceId, tagId, iter->val());
     auto val = reader->getValueByName("name");
     EXPECT_EQ("Tim", val.getStr());
     val = reader->getValueByName("age");
@@ -1127,7 +1127,7 @@ TEST(UpdateVertexTest, TTL_Insert_Test) {
 
     int count = 0;
     while (iter && iter->valid()) {
-        auto reader = RowReader::getRowReader(schema.get(), iter->val());
+        auto reader = RowReaderWrapper::getRowReader(schema.get(), iter->val());
         if (count == 1) {
             auto val = reader->getValueByName("name");
             EXPECT_EQ("Tim Duncan", val.getStr());
@@ -1306,7 +1306,7 @@ TEST(UpdateVertexTest, Insertable_In_Set_Test) {
     EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
     EXPECT_TRUE(iter && iter->valid());
 
-    auto reader = RowReader::getTagPropReader(env->schemaMan_, spaceId, tagId, iter->val());
+    auto reader = RowReaderWrapper::getTagPropReader(env->schemaMan_, spaceId, tagId, iter->val());
     auto val = reader->getValueByName("name");
     EXPECT_EQ("Brandon Ingram", val.getStr());
     val = reader->getValueByName("age");

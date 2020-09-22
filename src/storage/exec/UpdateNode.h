@@ -12,6 +12,7 @@
 #include "storage/context/StorageExpressionContext.h"
 #include "storage/exec/TagNode.h"
 #include "storage/exec/FilterNode.h"
+#include "storage/StorageFlags.h"
 #include "kvstore/LogEncoder.h"
 #include "utils/OperationKeyUtils.h"
 
@@ -183,7 +184,9 @@ public:
                         return folly::none;
                     }
 
-                    this->reader_ = filterNode_->reader();
+                    if (filterNode_->valid()) {
+                        this->reader_ = filterNode_->reader();
+                    }
                     // reset StorageExpressionContext reader_ to nullptr
                     this->expCtx_->reset();
 
@@ -261,8 +264,8 @@ public:
         }
 
         // build key, value is emtpy
-        auto version =
-            std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec();
+        auto version = FLAGS_enable_multi_versions ?
+            std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec() : 0L;
         // Switch version to big-endian, make sure the key is in ordered.
         version = folly::Endian::big(version);
         key_ = NebulaKeyUtils::vertexKey(planContext_->vIdLen_,
@@ -349,7 +352,7 @@ public:
         // when TTL exists, there is no index.
         // when insert_ is true, not old index, val_ is empty.
         if (!indexes_.empty()) {
-            std::unique_ptr<RowReader> nReader;
+            RowReaderWrapper nReader;
             for (auto& index : indexes_) {
                 auto indexId = index->get_index_id();
                 if (tagId_ == index->get_schema_id().get_tag_id()) {
@@ -380,10 +383,8 @@ public:
 
                     // step 2, insert new vertex index
                     if (!nReader) {
-                        nReader = RowReader::getTagPropReader(planContext_->env_->schemaMan_,
-                                                              planContext_->spaceId_,
-                                                              tagId_,
-                                                              nVal);
+                        nReader = RowReaderWrapper::getTagPropReader(
+                            planContext_->env_->schemaMan_, planContext_->spaceId_, tagId_, nVal);
                     }
                     if (!nReader) {
                         LOG(ERROR) << "Bad format row";
@@ -477,7 +478,9 @@ public:
                         return folly::none;
                     }
 
-                    this->reader_ = filterNode_->reader();
+                    if (filterNode_->valid()) {
+                        this->reader_ = filterNode_->reader();
+                    }
                     // reset StorageExpressionContext reader_ to nullptr
                     this->expCtx_->reset();
 
@@ -561,8 +564,8 @@ public:
         }
 
         // build key, value is emtpy
-        auto version =
-            std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec();
+        auto version = FLAGS_enable_multi_versions ?
+            std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec() : 0L;
         // Switch version to big-endian, make sure the key is in ordered.
         version = folly::Endian::big(version);
         key_ = NebulaKeyUtils::edgeKey(planContext_->vIdLen_,
@@ -659,7 +662,7 @@ public:
         // when TTL exists, there is no index.
         // when insert_ is true, not old index, val_ is empty.
         if (!indexes_.empty()) {
-            std::unique_ptr<RowReader> nReader;
+            RowReaderWrapper nReader;
             for (auto& index : indexes_) {
                 auto indexId = index->get_index_id();
                 if (edgeType_ == index->get_schema_id().get_edge_type()) {
@@ -690,10 +693,9 @@ public:
 
                     // step 2, insert new edge index
                     if (!nReader) {
-                        nReader = RowReader::getEdgePropReader(planContext_->env_->schemaMan_,
-                                                               planContext_->spaceId_,
-                                                               std::abs(edgeType_),
-                                                               nVal);
+                        nReader = RowReaderWrapper::getEdgePropReader(
+                            planContext_->env_->schemaMan_, planContext_->spaceId_,
+                            std::abs(edgeType_), nVal);
                     }
                     if (!nReader) {
                         LOG(ERROR) << "Bad format row";

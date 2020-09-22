@@ -125,26 +125,37 @@ StoragePlan<VertexID> GetNeighborsProcessor::buildPlan(nebula::DataSet* result,
     for (auto* edge : edges) {
         hashJoin->addDependency(edge);
     }
-    auto filter = std::make_unique<FilterNode<VertexID>>(
-            planContext_.get(), hashJoin.get(), expCtx_.get(), filter_.get());
-    filter->addDependency(hashJoin.get());
-    auto agg = std::make_unique<AggregateNode<VertexID>>(
-            planContext_.get(), filter.get(), &edgeContext_);
-    agg->addDependency(filter.get());
+    IterateNode<VertexID>* join = hashJoin.get();
+    IterateNode<VertexID>* upstream = hashJoin.get();
+    plan.addNode(std::move(hashJoin));
+
+    if (filter_) {
+        auto filter = std::make_unique<FilterNode<VertexID>>(
+                planContext_.get(), upstream, expCtx_.get(), filter_.get());
+        filter->addDependency(upstream);
+        upstream = filter.get();
+        plan.addNode(std::move(filter));
+    }
+
+    if (edgeContext_.statCount_ > 0) {
+        auto agg = std::make_unique<AggregateNode<VertexID>>(
+                planContext_.get(), upstream, &edgeContext_);
+        agg->addDependency(upstream);
+        upstream = agg.get();
+        plan.addNode(std::move(agg));
+    }
+
     std::unique_ptr<GetNeighborsNode> output;
     if (random) {
         output = std::make_unique<GetNeighborsSampleNode>(
-                planContext_.get(), hashJoin.get(), agg.get(), &edgeContext_, result, limit);
+                planContext_.get(), join, upstream, &edgeContext_, result, limit);
     } else {
         output = std::make_unique<GetNeighborsNode>(
-                planContext_.get(), hashJoin.get(), agg.get(), &edgeContext_, result, limit);
+                planContext_.get(), join, upstream, &edgeContext_, result, limit);
     }
-    output->addDependency(agg.get());
-
-    plan.addNode(std::move(hashJoin));
-    plan.addNode(std::move(filter));
-    plan.addNode(std::move(agg));
+    output->addDependency(upstream);
     plan.addNode(std::move(output));
+
     return plan;
 }
 

@@ -87,7 +87,7 @@ void checkResponse(const cpp2::QueryStatsResponse& resp) {
     expected.emplace_back("col_6", nebula::cpp2::SupportedType::INT, 6);
     expected.emplace_back("col_8", nebula::cpp2::SupportedType::INT, 8);
 
-    auto reader = RowReader::getRowReader(resp.data, provider);
+    auto reader = RowReaderWrapper::getRowReader(resp.data, provider);
     auto numFields = provider->getNumFields();
     for (size_t i = 0; i < numFields; i++) {
         const auto* name = provider->getFieldName(i);

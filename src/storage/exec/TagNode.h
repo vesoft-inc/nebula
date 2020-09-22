@@ -67,7 +67,7 @@ public:
         } else {
             iter_.reset();
         }
-        return kvstore::ResultCode::SUCCEEDED;
+        return ret;
     }
 
     kvstore::ResultCode collectTagPropsIfValid(NullHandler nullHandler,

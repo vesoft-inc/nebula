@@ -1,6 +1,5 @@
 {
     "MUTABLE": [
-        "max_edge_returned_per_vertex",
         "minloglevel",
         "v",
         "heartbeat_interval_secs",

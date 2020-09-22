@@ -10,6 +10,7 @@
 #include "common/base/Base.h"
 #include "kvstore/KVIterator.h"
 #include "storage/CommonUtils.h"
+#include "storage/StorageFlags.h"
 
 namespace nebula {
 namespace storage {
@@ -40,9 +41,12 @@ public:
         : planContext_(planCtx)
         , iter_(std::move(iter))
         , tagId_(tagId)
-        , schemas_(schemas)
-        , ttl_(ttl) {
-        lookupOne_ = true;
+        , schemas_(schemas) {
+        if (ttl->hasValue()) {
+            hasTtl_ = true;
+            ttlCol_ = ttl->value().first;
+            ttlDuration_ = ttl->value().second;
+        }
         check(iter_->val());
     }
 
@@ -51,9 +55,12 @@ public:
                       const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>* schemas,
                       const folly::Optional<std::pair<std::string, int64_t>>* ttl)
         : planContext_(planCtx)
-        , schemas_(schemas)
-        , ttl_(ttl) {
-        lookupOne_ = true;
+        , schemas_(schemas) {
+        if (ttl->hasValue()) {
+            hasTtl_ = true;
+            ttlCol_ = ttl->value().first;
+            ttlDuration_ = ttl->value().second;
+        }
         check(val);
     }
 
@@ -80,19 +87,16 @@ public:
 protected:
     // return true when the value iter to a valid tag value
     bool check(folly::StringPiece val) {
-        reader_ = RowReader::getRowReader(*schemas_, val);
+        reader_.reset(*schemas_, val);
         if (!reader_) {
             planContext_->resultStat_ = ResultStatus::ILLEGAL_DATA;
             return false;
         }
 
-        if (ttl_->hasValue()) {
-            auto ttlValue = ttl_->value();
-            if (CommonUtils::checkDataExpiredForTTL(schemas_->back().get(), reader_.get(),
-                                                    ttlValue.first, ttlValue.second)) {
-                reader_.reset();
-                return false;
-            }
+        if (hasTtl_ && CommonUtils::checkDataExpiredForTTL(schemas_->back().get(), reader_.get(),
+                                                           ttlCol_, ttlDuration_)) {
+            reader_.reset();
+            return false;
         }
 
         return true;
@@ -102,10 +106,12 @@ protected:
     std::unique_ptr<kvstore::KVIterator>                                  iter_;
     TagID                                                                 tagId_;
     const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>> *schemas_ = nullptr;
-    const folly::Optional<std::pair<std::string, int64_t>>               *ttl_ = nullptr;
+    bool                                                                  hasTtl_ = false;
+    std::string                                                           ttlCol_;
+    int64_t                                                               ttlDuration_;
     bool                                                                  lookupOne_ = true;
 
-    std::unique_ptr<RowReader>                                            reader_;
+    RowReaderWrapper                                                      reader_;
 };
 
 // Iterator of single specified type
@@ -122,10 +128,13 @@ public:
         , iter_(std::move(iter))
         , edgeType_(edgeType)
         , schemas_(schemas)
-        , ttl_(ttl)
         , moveToValidRecord_(moveToValidRecord) {
         CHECK(!!iter_);
-        lookupOne_ = true;
+        if (ttl->hasValue()) {
+            hasTtl_ = true;
+            ttlCol_ = ttl->value().first;
+            ttlDuration_ = ttl->value().second;
+        }
         // If moveToValidRecord is true, iterator will try to move to first valid record,
         // which is used in GetNeighbors. If it is false, it will only check the latest record,
         // which is used in GetProps and UpdateEdge.
@@ -176,37 +185,30 @@ protected:
     // return true when the value iter to a valid edge value
     bool check() {
         reader_.reset();
-        auto key = iter_->key();
-        auto rank = NebulaKeyUtils::getRank(planContext_->vIdLen_, key);
-        auto dstId = NebulaKeyUtils::getDstId(planContext_->vIdLen_, key);
-        if (!firstLoop_ && rank == lastRank_ && lastDstId_ == dstId) {
-            // pass old version data of same edge
-            return false;
+        if (FLAGS_enable_multi_versions) {
+            auto key = iter_->key();
+            auto rank = NebulaKeyUtils::getRank(planContext_->vIdLen_, key);
+            auto dstId = NebulaKeyUtils::getDstId(planContext_->vIdLen_, key);
+            if (!firstLoop_ && rank == lastRank_ && lastDstId_ == dstId) {
+                // pass old version data of same edge
+                return false;
+            }
+            firstLoop_ = false;
+            lastRank_ = rank;
+            lastDstId_ = dstId.str();
         }
 
         auto val = iter_->val();
+        reader_.reset(*schemas_, val);
         if (!reader_) {
-            reader_ = RowReader::getRowReader(*schemas_, val);
-            if (!reader_) {
-                planContext_->resultStat_ = ResultStatus::ILLEGAL_DATA;
-                return false;
-            }
-        } else if (!reader_->reset(*schemas_, val)) {
             planContext_->resultStat_ = ResultStatus::ILLEGAL_DATA;
             return false;
         }
 
-        firstLoop_ = false;
-        lastRank_ = rank;
-        lastDstId_ = dstId.str();
-
-        if (ttl_->hasValue()) {
-            auto ttlValue = ttl_->value();
-            if (CommonUtils::checkDataExpiredForTTL(schemas_->back().get(), reader_.get(),
-                                                    ttlValue.first, ttlValue.second)) {
-                reader_.reset();
-                return false;
-            }
+        if (hasTtl_ && CommonUtils::checkDataExpiredForTTL(schemas_->back().get(), reader_.get(),
+                                                           ttlCol_, ttlDuration_)) {
+            reader_.reset();
+            return false;
         }
 
         return true;
@@ -216,11 +218,13 @@ protected:
     std::unique_ptr<kvstore::KVIterator>                                  iter_;
     EdgeType                                                              edgeType_;
     const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>> *schemas_ = nullptr;
-    const folly::Optional<std::pair<std::string, int64_t>>               *ttl_ = nullptr;
+    bool                                                                  hasTtl_ = false;
+    std::string                                                           ttlCol_;
+    int64_t                                                               ttlDuration_;
     bool                                                                  moveToValidRecord_{true};
     bool                                                                  lookupOne_ = true;
 
-    std::unique_ptr<RowReader>                                            reader_;
+    RowReaderWrapper                                                      reader_;
     EdgeRanking                                                           lastRank_ = 0;
     VertexID                                                              lastDstId_ = "";
     bool                                                                  firstLoop_ = true;

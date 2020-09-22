@@ -125,16 +125,16 @@ DeleteEdgesProcessor::deleteEdges(PartitionID partId,
             /**
              * just get the latest version edge for index.
              */
-            std::unique_ptr<RowReader> reader;
+            RowReaderWrapper reader;
             for (auto& index : indexes_) {
                 if (type == index->get_schema_id().get_edge_type()) {
                     auto indexId = index->get_index_id();
 
                     if (reader == nullptr) {
-                        reader = RowReader::getEdgePropReader(env_->schemaMan_,
-                                                              spaceId_,
-                                                              type,
-                                                              iter->val());
+                        reader = RowReaderWrapper::getEdgePropReader(env_->schemaMan_,
+                                                                     spaceId_,
+                                                                     type,
+                                                                     iter->val());
                         if (reader == nullptr) {
                             LOG(WARNING) << "Bad format row!";
                             return folly::none;

@@ -19,9 +19,8 @@ namespace nebula {
 namespace storage {
 
 void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
-    CHECK_NOTNULL(env_->kvstore_);
-    auto version =
-        std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec();
+    auto version = FLAGS_enable_multi_versions ?
+        std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec() : 0L;
     // Switch version to big-endian, make sure the key is in ordered.
     version = folly::Endian::big(version);
 
@@ -146,7 +145,7 @@ AddVerticesProcessor::addVertices(PartitionID partId,
 
     for (auto& v : newVertices) {
         std::string val;
-        std::unique_ptr<RowReader> nReader;
+        RowReaderWrapper nReader;
         auto tagId = NebulaKeyUtils::getTagId(spaceVidLen_, v.first);
         auto vId = NebulaKeyUtils::getVertexId(spaceVidLen_, v.first);
         for (auto& index : indexes_) {
@@ -165,10 +164,10 @@ AddVerticesProcessor::addVertices(PartitionID partId,
                 }
 
                 if (!val.empty()) {
-                    auto reader = RowReader::getTagPropReader(env_->schemaMan_,
-                                                              spaceId_,
-                                                              tagId,
-                                                              val);
+                    auto reader = RowReaderWrapper::getTagPropReader(env_->schemaMan_,
+                                                                     spaceId_,
+                                                                     tagId,
+                                                                     val);
                     if (reader == nullptr) {
                         LOG(ERROR) << "Bad format row";
                         return folly::none;
@@ -191,10 +190,10 @@ AddVerticesProcessor::addVertices(PartitionID partId,
                  * step 2 , Insert new vertex index
                  */
                 if (nReader == nullptr) {
-                    nReader = RowReader::getTagPropReader(env_->schemaMan_,
-                                                          spaceId_,
-                                                          tagId,
-                                                          v.second);
+                    nReader = RowReaderWrapper::getTagPropReader(env_->schemaMan_,
+                                                                 spaceId_,
+                                                                 tagId,
+                                                                 v.second);
                     if (nReader == nullptr) {
                         LOG(ERROR) << "Bad format row";
                         return folly::none;

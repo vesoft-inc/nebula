@@ -52,10 +52,8 @@ public:
             return ret;
         }
 
-        if (edgeContext_->statCount_ > 0) {
-            initStatValue(edgeContext_);
-        }
-        this->result_ = Value();
+        CHECK_GT(edgeContext_->statCount_, 0);
+        initStatValue(edgeContext_);
         return kvstore::ResultCode::SUCCEEDED;
     }
 
@@ -68,18 +66,12 @@ public:
     }
 
     void next() override {
-        if (!stats_.empty()) {
-            // we need to collect the stat during `next`
-            collectEdgeStats(srcId(), edgeType(), edgeRank(), dstId(),
-                             this->reader(), planContext_->props_);
-        }
+        // we need to collect the stat during `next`
+        collectEdgeStats(this->key(), this->reader(), planContext_->props_);
         IterateNode<T>::next();
     }
 
     void calculateStat() {
-        if (stats_.empty()) {
-            return;
-        }
         nebula::List result;
         result.values.reserve(stats_.size());
         for (const auto& stat : stats_) {
@@ -133,18 +125,14 @@ private:
         }
     }
 
-    kvstore::ResultCode collectEdgeStats(VertexIDSlice srcId,
-                                         EdgeType edgeType,
-                                         EdgeRanking edgeRank,
-                                         VertexIDSlice dstId,
+    kvstore::ResultCode collectEdgeStats(folly::StringPiece key,
                                          RowReader* reader,
                                          const std::vector<PropContext>* props) {
         for (const auto& prop : *props) {
             if (prop.hasStat_) {
                 for (const auto statIndex : prop.statIndex_) {
-                    VLOG(2) << "Collect stat prop " << prop.name_ << ", type " << edgeType;
-                    auto value = QueryUtils::readEdgeProp(srcId, edgeType, edgeRank, dstId,
-                                                          reader, prop);
+                    VLOG(2) << "Collect stat prop " << prop.name_;
+                    auto value = QueryUtils::readEdgeProp(key, planContext_->vIdLen_, reader, prop);
                     if (!value.ok()) {
                         return kvstore::ResultCode::ERR_EDGE_PROP_NOT_FOUND;
                     }

@@ -46,7 +46,6 @@ bool RowReaderV1::resetImpl(meta::SchemaProviderIf const* schema,
     }
 }
 
-
 bool RowReaderV1::processHeader(folly::StringPiece row) {
     const uint8_t* it = reinterpret_cast<const uint8_t*>(row.begin());
     if (reinterpret_cast<const char*>(it) == row.end()) {

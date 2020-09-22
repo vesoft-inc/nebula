@@ -450,7 +450,8 @@ void DbDumper::iterates(kvstore::RocksPrefixIter* it) {
             // only print to screen with scan mode
             if (FLAGS_mode == "scan") {
                 printTagKey(key);
-                auto reader = RowReader::getTagPropReader(schemaMng_.get(), spaceId_, tagId, value);
+                auto reader = RowReaderWrapper::getTagPropReader(
+                    schemaMng_.get(), spaceId_, tagId, value);
                 if (!reader) {
                     std::cerr << "Can't get tag reader of " << tagId;
                     continue;
@@ -488,8 +489,8 @@ void DbDumper::iterates(kvstore::RocksPrefixIter* it) {
             // only print to screen with scan mode
             if (FLAGS_mode == "scan") {
                 printEdgeKey(key);
-                auto reader = RowReader::getEdgePropReader(schemaMng_.get(), spaceId_,
-                                                           edgeType, value);
+                auto reader = RowReaderWrapper::getEdgePropReader(schemaMng_.get(), spaceId_,
+                                                                  edgeType, value);
                 if (!reader) {
                     std::cerr << "Can't get edge reader of " << edgeType;
                     continue;

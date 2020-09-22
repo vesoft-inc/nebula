@@ -96,7 +96,6 @@ protected:
     folly::Optional<std::pair<std::string, int64_t>> ttl_;
     std::string edgeName_;
 
-    // std::unique_ptr<RowReader> reader_;
     std::unique_ptr<SingleEdgeIterator> iter_;
     std::string prefix_;
 };
@@ -140,7 +139,7 @@ public:
         } else {
             iter_.reset();
         }
-        return kvstore::ResultCode::SUCCEEDED;
+        return ret;
     }
 };
 
@@ -173,7 +172,7 @@ public:
         } else {
             iter_.reset();
         }
-        return kvstore::ResultCode::SUCCEEDED;
+        return ret;
     }
 };
 

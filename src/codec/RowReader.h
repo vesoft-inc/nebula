@@ -38,10 +38,6 @@ public:
         friend class Cell;
         friend class RowReader;
     public:
-        Iterator(Iterator&& iter);
-
-        void operator=(Iterator&& rhs);
-
         const Cell& operator*() const noexcept;
         const Cell* operator->() const noexcept;
 
@@ -70,48 +66,6 @@ public:
 
 
 public:
-    static std::unique_ptr<RowReader> getTagPropReader(
-        meta::SchemaManager* schemaMan,
-        GraphSpaceID space,
-        TagID tag,
-        folly::StringPiece row);
-
-    static std::unique_ptr<RowReader> getEdgePropReader(
-        meta::SchemaManager* schemaMan,
-        GraphSpaceID space,
-        EdgeType edge,
-        folly::StringPiece row);
-
-    static std::unique_ptr<RowReader> getRowReader(
-        meta::SchemaProviderIf const* schema,
-        folly::StringPiece row);
-
-    // notice: the schemas are from oldest to newest,
-    // usually from getAllVerTagSchema or getAllVerEdgeSchema in SchemaMan
-    static std::unique_ptr<RowReader> getRowReader(
-        const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
-        folly::StringPiece row);
-
-    bool resetTagPropReader(
-        meta::SchemaManager* schemaMan,
-        GraphSpaceID space,
-        TagID tag,
-        folly::StringPiece row);
-
-    bool resetEdgePropReader(
-        meta::SchemaManager* schemaMan,
-        GraphSpaceID space,
-        EdgeType edge,
-        folly::StringPiece row);
-
-    bool reset(meta::SchemaProviderIf const* schema,
-               folly::StringPiece row) noexcept;
-
-    // notice: the schemas are from oldest to newest,
-    // usually from getAllVerTagSchema or getAllVerEdgeSchema in SchemaMan
-    bool reset(const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
-               folly::StringPiece row) noexcept;
-
     virtual ~RowReader() = default;
 
     virtual Value getValueByName(const std::string& prop) const noexcept = 0;
@@ -155,10 +109,6 @@ protected:
 
     virtual bool resetImpl(meta::SchemaProviderIf const* schema,
                            folly::StringPiece row) noexcept;
-
-    virtual bool reset(meta::SchemaProviderIf const* schema,
-                       folly::StringPiece row,
-                       int32_t readerVer) noexcept = 0;
 
 private:
     Iterator endIter_;

@@ -141,16 +141,16 @@ DeleteVerticesProcessor::deleteVertices(PartitionID partId,
              * Using newlyVertexId to identify if it is the latest version
              */
             if (latestVVId != tagId) {
-                std::unique_ptr<RowReader> reader;
+                RowReaderWrapper reader;
                 for (auto& index : indexes_) {
                     if (index->get_schema_id().get_tag_id() == tagId) {
                         auto indexId = index->get_index_id();
 
                         if (reader == nullptr) {
-                            reader = RowReader::getTagPropReader(env_->schemaMan_,
-                                                                 spaceId_,
-                                                                 tagId,
-                                                                 iter->val());
+                            reader = RowReaderWrapper::getTagPropReader(env_->schemaMan_,
+                                                                        spaceId_,
+                                                                        tagId,
+                                                                        iter->val());
                             if (reader == nullptr) {
                                 LOG(WARNING) << "Bad format row";
                                 return folly::none;

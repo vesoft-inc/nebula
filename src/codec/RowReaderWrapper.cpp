@@ -8,15 +8,103 @@
 
 namespace nebula {
 
+// static
+RowReaderWrapper RowReaderWrapper::getTagPropReader(meta::SchemaManager* schemaMan,
+                                                    GraphSpaceID space,
+                                                    TagID tag,
+                                                    folly::StringPiece row) {
+    SchemaVer schemaVer;
+    int32_t readerVer;
+    RowReaderWrapper::getVersions(row, schemaVer, readerVer);
+    if (schemaVer >= 0) {
+        auto schema = schemaMan->getTagSchema(space, tag, schemaVer);
+        if (schema == nullptr) {
+            return RowReaderWrapper();
+        }
+        return RowReaderWrapper(schema.get(), row, readerVer);
+    } else {
+        LOG(WARNING) << "Invalid schema version in the row data!";
+        return RowReaderWrapper();
+    }
+}
+
+
+// static
+RowReaderWrapper RowReaderWrapper::getEdgePropReader(meta::SchemaManager* schemaMan,
+                                                     GraphSpaceID space,
+                                                     EdgeType edge,
+                                                     folly::StringPiece row) {
+    if (schemaMan == nullptr) {
+        LOG(ERROR) << "schemaMan should not be nullptr!";
+        return RowReaderWrapper();
+    }
+    SchemaVer schemaVer;
+    int32_t readerVer;
+    RowReaderWrapper::getVersions(row, schemaVer, readerVer);
+    if (schemaVer >= 0) {
+        auto schema = schemaMan->getEdgeSchema(space, edge, schemaVer);
+        if (schema == nullptr) {
+            return RowReaderWrapper();
+        }
+        return RowReaderWrapper(schema.get(), row, readerVer);
+    } else {
+        LOG(WARNING) << "Invalid schema version in the row data!";
+        return RowReaderWrapper();
+    }
+}
+
+// static
+RowReaderWrapper RowReaderWrapper::getRowReader(const meta::SchemaProviderIf* schema,
+                                                folly::StringPiece row) {
+    SchemaVer schemaVer;
+    int32_t readerVer;
+    RowReaderWrapper::getVersions(row, schemaVer, readerVer);
+    if (schemaVer != schema->getVersion()) {
+        return RowReaderWrapper();
+    }
+    return RowReaderWrapper(schema, row, readerVer);
+}
+
+// static
+RowReaderWrapper RowReaderWrapper::getRowReader(
+        const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
+        folly::StringPiece row) {
+    SchemaVer schemaVer;
+    int32_t readerVer;
+    RowReaderWrapper::getVersions(row, schemaVer, readerVer);
+    if (static_cast<size_t>(schemaVer) >= schemas.size() ||
+        schemaVer != schemas[schemaVer]->getVersion()) {
+        return RowReaderWrapper();
+    }
+    return RowReaderWrapper(schemas[schemaVer].get(), row, readerVer);
+}
+
+RowReaderWrapper::RowReaderWrapper(const meta::SchemaProviderIf* schema,
+                                   const folly::StringPiece& row,
+                                   int32_t& readerVer)
+        : readerVer_(readerVer) {
+    CHECK_NOTNULL(schema);
+    if (readerVer_ == 1) {
+        readerV1_.resetImpl(schema, row);
+        currReader_ = &readerV1_;
+    } else if (readerVer_ == 2) {
+        readerV2_.resetImpl(schema, row);
+        currReader_ = &readerV2_;
+    } else {
+        LOG(FATAL) << "Should not reach here";
+    }
+}
+
 bool RowReaderWrapper::reset(meta::SchemaProviderIf const* schema,
                              folly::StringPiece row,
                              int32_t readerVer) noexcept {
     CHECK_NOTNULL(schema);
-    if (readerVer == 1) {
+    readerVer_ = readerVer;
+    if (readerVer_ == 1) {
         readerV1_.resetImpl(schema, row);
         currReader_ = &readerV1_;
         return true;
-    } else if (readerVer == 2) {
+    } else if (readerVer_ == 2) {
         readerV2_.resetImpl(schema, row);
         currReader_ = &readerV2_;
         return true;
@@ -27,6 +115,35 @@ bool RowReaderWrapper::reset(meta::SchemaProviderIf const* schema,
     }
 }
 
+bool RowReaderWrapper::reset(meta::SchemaProviderIf const* schema,
+                             folly::StringPiece row) noexcept {
+    if (schema == nullptr) {
+        return false;
+    }
+    SchemaVer schemaVer;
+    int32_t readerVer;
+    RowReaderWrapper::getVersions(row, schemaVer, readerVer);
+    if (schemaVer != schema->getVersion()) {
+        return false;
+    }
+    return reset(schema, row, readerVer);
+}
+
+bool RowReaderWrapper::reset(
+        const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
+        folly::StringPiece row) noexcept {
+    SchemaVer schemaVer;
+    int32_t readerVer;
+    RowReaderWrapper::getVersions(row, schemaVer, readerVer);
+    if (static_cast<size_t>(schemaVer) >= schemas.size()) {
+        return false;
+    }
+    // the schema is stored from oldest to newest, so just use version as idx
+    if (schemaVer != schemas[schemaVer]->getVersion()) {
+        return false;
+    }
+    return reset(schemas[schemaVer].get(), row, readerVer);
+}
 
 // static
 void RowReaderWrapper::getVersions(const folly::StringPiece& row,

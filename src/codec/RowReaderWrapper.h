@@ -20,9 +20,71 @@ class RowReaderWrapper : public RowReader {
     FRIEND_TEST(RowReaderV2, encodedData);
 
 public:
+    RowReaderWrapper() = default;
+
+    RowReaderWrapper(const RowReaderWrapper&) = delete;
+
+    RowReaderWrapper& operator=(const RowReaderWrapper&) = delete;
+
+    RowReaderWrapper(RowReaderWrapper&& rhs) {
+        this->readerVer_ = rhs.readerVer_;
+        if (this->readerVer_ == 1) {
+            this->readerV1_ = std::move(rhs.readerV1_);
+            this->currReader_ = &(this->readerV1_);
+        } else if (this->readerVer_ == 2) {
+            this->readerV2_ = std::move(rhs.readerV2_);
+            this->currReader_ = &(this->readerV2_);
+        } else {
+            this->currReader_ = nullptr;
+        }
+    }
+
+    RowReaderWrapper& operator=(RowReaderWrapper&& rhs) {
+        this->readerVer_ = rhs.readerVer_;
+        if (this->readerVer_ == 1) {
+            this->readerV1_ = std::move(rhs.readerV1_);
+            this->currReader_ = &(this->readerV1_);
+        } else if (this->readerVer_ == 2) {
+            this->readerV2_ = std::move(rhs.readerV2_);
+            this->currReader_ = &(this->readerV2_);
+        } else {
+            this->currReader_ = nullptr;
+        }
+        return *this;
+    }
+
+    static RowReaderWrapper getTagPropReader(meta::SchemaManager* schemaMan,
+                                             GraphSpaceID space,
+                                             TagID tag,
+                                             folly::StringPiece row);
+
+    static RowReaderWrapper getEdgePropReader(meta::SchemaManager* schemaMan,
+                                              GraphSpaceID space,
+                                              EdgeType edge,
+                                              folly::StringPiece row);
+
+    static RowReaderWrapper getRowReader(meta::SchemaProviderIf const* schema,
+                                         folly::StringPiece row);
+
+    // notice: the schemas are from oldest to newest,
+    // usually from getAllVerTagSchema or getAllVerEdgeSchema in SchemaMan
+    static RowReaderWrapper getRowReader(
+        const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
+        folly::StringPiece row);
+
+    RowReaderWrapper(const meta::SchemaProviderIf* schema,
+                     const folly::StringPiece& row,
+                     int32_t& readerVer);
+
     bool reset(meta::SchemaProviderIf const* schema,
                folly::StringPiece row,
-               int32_t readVer) noexcept override;
+               int32_t readVer) noexcept;
+
+    bool reset(meta::SchemaProviderIf const* schema,
+               folly::StringPiece row) noexcept;
+
+    bool reset(const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
+               folly::StringPiece row) noexcept;
 
     Value getValueByName(const std::string& prop) const noexcept override {
         DCHECK(!!currReader_);
@@ -79,10 +141,43 @@ public:
                             SchemaVer& schemaVer,
                             int32_t& readerVer);
 
+    operator bool() const noexcept {
+        return operator!=(nullptr);
+    }
+
+    bool operator==(std::nullptr_t) const noexcept {
+        return !operator!=(nullptr);
+    }
+
+    bool operator!=(std::nullptr_t) const noexcept {
+        return currReader_ != nullptr;
+    }
+
+    RowReaderWrapper* operator->() const noexcept {
+        return get();
+    }
+
+    RowReaderWrapper* get() const noexcept {
+        return const_cast<RowReaderWrapper*>(this);
+    }
+
+    RowReaderWrapper* get() noexcept {
+        return this;
+    }
+
+    RowReaderWrapper& operator*() const noexcept {
+        return *get();
+    }
+
+    void reset() noexcept {
+        currReader_ = nullptr;
+    }
+
 private:
     RowReaderV1 readerV1_;
     RowReaderV2 readerV2_;
-    RowReader* currReader_;
+    RowReader* currReader_ = nullptr;
+    int32_t readerVer_ = 0;
 };
 
 }  // namespace nebula

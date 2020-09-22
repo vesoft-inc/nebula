@@ -106,8 +106,8 @@ public:
                 VLOG(3) << "Space " << spaceId << ", Tag " << tagId << " invalid";
                 return false;
             }
-            auto reader = nebula::RowReader::getTagPropReader(schemaMan_, spaceId,
-                                                              tagId, val);
+            auto reader = nebula::RowReaderWrapper::getTagPropReader(
+                schemaMan_, spaceId, tagId, val);
             return checkDataTtlValid(schema.get(), reader.get());
         } else if (NebulaKeyUtils::isEdge(vIdLen_, key)) {
             auto edgeType = NebulaKeyUtils::getEdgeType(vIdLen_, key);
@@ -116,10 +116,8 @@ public:
                 VLOG(3) << "Space " << spaceId << ", EdgeType " << edgeType << " invalid";
                 return false;
             }
-            auto reader = nebula::RowReader::getEdgePropReader(schemaMan_,
-                                                               spaceId,
-                                                               std::abs(edgeType),
-                                                               val);
+            auto reader = nebula::RowReaderWrapper::getEdgePropReader(
+                schemaMan_, spaceId, std::abs(edgeType), val);
             return checkDataTtlValid(schema.get(), reader.get());
         }
         return true;

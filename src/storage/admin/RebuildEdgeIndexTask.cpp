@@ -7,6 +7,7 @@
 #include "storage/StorageFlags.h"
 #include "storage/admin/RebuildEdgeIndexTask.h"
 #include "utils/IndexKeyUtils.h"
+#include "codec/RowReaderWrapper.h"
 
 namespace nebula {
 namespace storage {
@@ -46,7 +47,7 @@ RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID space,
     EdgeRanking currentRanking = 0;
     std::vector<kvstore::KV> data;
     data.reserve(FLAGS_rebuild_index_batch_num);
-    std::unique_ptr<RowReader> reader;
+    RowReaderWrapper reader;
     while (iter && iter->valid()) {
         if (canceled_) {
             LOG(ERROR) << "Rebuild Edge Index is Canceled";
@@ -103,19 +104,11 @@ RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID space,
             currentRanking = ranking;
         }
 
-        if (!reader) {
-            reader = RowReader::getEdgePropReader(env_->schemaMan_, space, edgeType, val);
-            if (reader == nullptr) {
-                LOG(WARNING) << "Create edge property reader failed";
-                iter->next();
-                continue;
-            }
-        } else {
-            if (!reader->resetEdgePropReader(env_->schemaMan_, space, edgeType, val)) {
-                LOG(WARNING) << "Reset edge property reader failed";
-                iter->next();
-                continue;
-            }
+        reader = RowReaderWrapper::getEdgePropReader(env_->schemaMan_, space, edgeType, val);
+        if (reader == nullptr) {
+            LOG(WARNING) << "Create edge property reader failed";
+            iter->next();
+            continue;
         }
 
         for (auto& item : items) {

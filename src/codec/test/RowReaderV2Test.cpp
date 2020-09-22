@@ -18,8 +18,8 @@ TEST(RowReaderV2, headerInfo) {
     // Simplest row, nothing in it
     char data1[] = {0x08};
     SchemaWriter schema1;
-    auto reader = RowReader::getRowReader(&schema1,
-                                          folly::StringPiece(data1, sizeof(data1)));
+    auto reader = RowReaderWrapper::getRowReader(
+        &schema1, folly::StringPiece(data1, sizeof(data1)));
     ASSERT_TRUE(!!reader);
     EXPECT_EQ(0, reader->schemaVer());
     EXPECT_EQ(sizeof(data1), reader->headerLen());
@@ -56,8 +56,7 @@ TEST(RowReaderV2, headerInfo) {
 
     // Empty row, return illegal schema version
     SchemaWriter schema5;
-    auto reader2 = RowReader::getRowReader(&schema5,
-                                           folly::StringPiece(""));
+    auto reader2 = RowReaderWrapper::getRowReader(&schema5, folly::StringPiece(""));
     ASSERT_FALSE(!!reader2);
     ASSERT_FALSE(reader2->reset(&schema5, folly::StringPiece("")));
 }
@@ -165,7 +164,7 @@ TEST(RowReaderV2, encodedData) {
     /**************************
      * Now let's read it
      *************************/
-    auto reader = RowReader::getRowReader(&schema, encoded);
+    auto reader = RowReaderWrapper::getRowReader(&schema, encoded);
 
     // Header info
     RowReaderWrapper* r = dynamic_cast<RowReaderWrapper*>(reader.get());
@@ -312,7 +311,7 @@ TEST(RowReaderV2, iterator) {
         encoded.append(7, 0);
     }
 
-    auto reader = RowReader::getRowReader(&schema, encoded);
+    auto reader = RowReaderWrapper::getRowReader(&schema, encoded);
     auto it = reader->begin();
     int32_t index = 0;
     while (it != reader->end()) {

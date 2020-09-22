@@ -74,10 +74,10 @@ static std::string genEdgeIndexKey(meta::SchemaManager* schemaMan,
                                    std::shared_ptr<nebula::cpp2::IndexItem>& index,
                                    VertexID src,
                                    VertexID dst) {
-    auto reader = RowReader::getEdgePropReader(schemaMan,
-                                               prop,
-                                               spaceId,
-                                               type);
+    auto reader = RowReaderWrapper::getEdgePropReader(schemaMan,
+                                                      prop,
+                                                      spaceId,
+                                                      type);
     auto values = collectIndexValues(reader.get(),
                                      index->get_fields());
     auto indexKey = NebulaKeyUtils::edgeIndexKey(partId,
@@ -96,10 +96,10 @@ static std::string genVertexIndexKey(meta::SchemaManager* schemaMan,
                                      TagID tagId,
                                      std::shared_ptr<nebula::cpp2::IndexItem> &index,
                                      VertexID vId) {
-    auto reader = RowReader::getTagPropReader(schemaMan,
-                                              prop,
-                                              spaceId,
-                                              tagId);
+    auto reader = RowReaderWrapper::getTagPropReader(schemaMan,
+                                                     prop,
+                                                     spaceId,
+                                                     tagId);
     auto values = collectIndexValues(reader.get(),
                                      index->get_fields());
     auto indexKey = NebulaKeyUtils::vertexIndexKey(partId,

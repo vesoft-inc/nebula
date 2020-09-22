@@ -10,12 +10,13 @@
 #include "codec/test/SchemaWriter.h"
 #include "codec/test/RowWriterV1.h"
 #include "codec/RowWriterV2.h"
-#include "codec/RowReader.h"
+#include "codec/RowReaderWrapper.h"
 
 using nebula::SchemaWriter;
 using nebula::RowWriterV1;
 using nebula::RowWriterV2;
 using nebula::RowReader;
+using nebula::RowReaderWrapper;
 using nebula::meta::cpp2::PropertyType;
 
 SchemaWriter schemaShort;
@@ -104,7 +105,7 @@ std::vector<size_t> generateRandom(SchemaWriter* schema) {
 
 
 void sequentialRead(SchemaWriter* schema, const std::string& encoded, size_t iters) {
-    auto reader = RowReader::getRowReader(schema, encoded);
+    auto reader = RowReaderWrapper::getRowReader(schema, encoded);
     DCHECK_EQ(reader->readerVer(), ((encoded[0] & 0x18) >> 3) + 1);
 
     for (size_t i = 0; i < iters; i++) {
@@ -120,7 +121,7 @@ void randomRead(SchemaWriter* schema,
                 const std::string& encoded,
                 const std::vector<size_t>& randomList,
                 size_t iters) {
-    auto reader = RowReader::getRowReader(schema, encoded);
+    auto reader = RowReaderWrapper::getRowReader(schema, encoded);
     DCHECK_EQ(reader->readerVer(), ((encoded[0] & 0x18) >> 3) + 1);
 
     for (size_t i = 0; i < iters; i++) {
@@ -135,9 +136,9 @@ void randomRead(SchemaWriter* schema,
 void sequentialTest(SchemaWriter* schema,
                     const std::string& encodedV1,
                     const std::string& encodedV2) {
-    auto reader1 = RowReader::getRowReader(schema, encodedV1);
+    auto reader1 = RowReaderWrapper::getRowReader(schema, encodedV1);
     DCHECK_EQ(reader1->readerVer(), ((encodedV1[0] & 0x18) >> 3) + 1);
-    auto reader2 = RowReader::getRowReader(schema, encodedV2);
+    auto reader2 = RowReaderWrapper::getRowReader(schema, encodedV2);
     DCHECK_EQ(reader2->readerVer(), ((encodedV2[0] & 0x18) >> 3) + 1);
 
     for (size_t i = 0; i < schema->getNumFields(); i++) {
@@ -152,9 +153,9 @@ void randomTest(SchemaWriter* schema,
                 const std::string& encodedV1,
                 const std::string& encodedV2,
                 const std::vector<size_t>& randomList) {
-    auto reader1 = RowReader::getRowReader(schema, encodedV1);
+    auto reader1 = RowReaderWrapper::getRowReader(schema, encodedV1);
     DCHECK_EQ(reader1->readerVer(), ((encodedV1[0] & 0x18) >> 3) + 1);
-    auto reader2 = RowReader::getRowReader(schema, encodedV2);
+    auto reader2 = RowReaderWrapper::getRowReader(schema, encodedV2);
     DCHECK_EQ(reader2->readerVer(), ((encodedV2[0] & 0x18) >> 3) + 1);
 
     for (size_t i = 0; i < randomList.size(); i++) {

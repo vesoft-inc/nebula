@@ -152,7 +152,7 @@ void checkResponse(PartitionID partId, cpp2::ScanEdgeResponse& resp, std::string
                 auto schemaIter = resp.edge_schema.find(edgeType);
                 EXPECT_TRUE(schemaIter != resp.edge_schema.end());
                 auto provider = std::make_shared<ResultSchemaProvider>(schemaIter->second);
-                auto reader = RowReader::getRowReader(scanEdge.value, provider);
+                auto reader = RowReaderWrapper::getRowReader(scanEdge.value, provider);
 
                 if (!returnAllColumns) {
                     for (int64_t i = 0; i < 10; i += 2) {

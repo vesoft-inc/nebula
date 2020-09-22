@@ -359,6 +359,7 @@ TEST(IndexTest, VerticesValueTest) {
  * Test the all indexes works well.
  **/
 TEST(IndexTest, AlterTagIndexTest) {
+    FLAGS_enable_multi_versions = true;
     GraphSpaceID spaceId = 1;
     TagID tagId = 111;
     IndexID indexId1 = 222;
@@ -495,6 +496,7 @@ TEST(IndexTest, AlterTagIndexTest) {
             EXPECT_EQ(1, retNum);
         }
     }
+    FLAGS_enable_multi_versions = false;
 }
 }  // namespace storage
 }  // namespace nebula

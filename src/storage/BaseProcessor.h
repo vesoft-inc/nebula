@@ -15,7 +15,7 @@
 #include <folly/futures/Promise.h>
 #include <folly/futures/Future.h>
 #include "storage/CommonUtils.h"
-#include "codec/RowReader.h"
+#include "codec/RowReaderWrapper.h"
 #include "codec/RowWriterV2.h"
 #include "utils/IndexKeyUtils.h"
 

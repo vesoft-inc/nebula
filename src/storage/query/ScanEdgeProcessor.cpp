@@ -85,7 +85,8 @@ void ScanEdgeProcessor::process(const cpp2::ScanEdgeRequest& req) {
             data.set_value(value.str());
         } else if (!ctxIter->second.empty()) {
             // only return specified columns
-            auto reader = RowReader::getEdgePropReader(schemaMan_, value, spaceId_, edgeType);
+            auto reader = RowReaderWrapper::getEdgePropReader(
+                schemaMan_, value, spaceId_, edgeType);
             RowWriter writer;
             PropsCollector collector(&writer);
             auto& props = ctxIter->second;

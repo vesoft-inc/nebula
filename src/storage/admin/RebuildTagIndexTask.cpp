@@ -7,6 +7,7 @@
 #include "storage/StorageFlags.h"
 #include "storage/admin/RebuildTagIndexTask.h"
 #include "utils/IndexKeyUtils.h"
+#include "codec/RowReaderWrapper.h"
 
 namespace nebula {
 namespace storage {
@@ -45,7 +46,7 @@ RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space,
     VertexID currentVertex = "";
     std::vector<kvstore::KV> data;
     data.reserve(FLAGS_rebuild_index_batch_num);
-    std::unique_ptr<RowReader> reader;
+    RowReaderWrapper reader;
     while (iter && iter->valid()) {
         if (canceled_) {
             LOG(ERROR) << "Rebuild Tag Index is Canceled";
@@ -91,17 +92,10 @@ RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space,
             currentVertex = vertex.data();
         }
 
-        if (!reader) {
-            reader = RowReader::getTagPropReader(env_->schemaMan_, space, tagID, val);
-            if (reader == nullptr) {
-                iter->next();
-                continue;
-            }
-        } else {
-            if (!reader->resetTagPropReader(env_->schemaMan_, space, tagID, val)) {
-                iter->next();
-                continue;
-            }
+        reader = RowReaderWrapper::getTagPropReader(env_->schemaMan_, space, tagID, val);
+        if (reader == nullptr) {
+            iter->next();
+            continue;
         }
 
         for (auto& item : items) {

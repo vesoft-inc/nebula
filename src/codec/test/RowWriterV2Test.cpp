@@ -7,7 +7,7 @@
 #include "common/base/Base.h"
 #include <gtest/gtest.h>
 #include "codec/RowWriterV2.h"
-#include "codec/RowReaderV2.h"
+#include "codec/RowReaderWrapper.h"
 #include "codec/test/SchemaWriter.h"
 
 namespace nebula {
@@ -83,8 +83,8 @@ TEST(RowWriterV2, NoDefaultValue) {
     std::string encoded1 = std::move(writer1).moveEncodedStr();
     std::string encoded2 = writer2.getEncodedStr();
 
-    auto reader1 = RowReader::getRowReader(&schema, encoded1);
-    auto reader2 = RowReader::getRowReader(&schema, encoded2);
+    auto reader1 = RowReaderWrapper::getRowReader(&schema, encoded1);
+    auto reader2 = RowReaderWrapper::getRowReader(&schema, encoded2);
 
     // Col01
     Value v1 = reader1->getValueByName("Col01");
@@ -195,7 +195,7 @@ TEST(RowWriterV2, WithDefaultValue) {
     ASSERT_EQ(WriteResult::SUCCEEDED, writer.finish());
 
     std::string encoded = std::move(writer).moveEncodedStr();
-    auto reader = RowReader::getRowReader(&schema, encoded);
+    auto reader = RowReaderWrapper::getRowReader(&schema, encoded);
 
     // Col01
     Value v1 = reader->getValueByName("Col01");
@@ -250,7 +250,7 @@ TEST(RowWriterV2, DoubleSet) {
     ASSERT_EQ(WriteResult::SUCCEEDED, writer.finish());
 
     std::string encoded = std::move(writer).moveEncodedStr();
-    auto reader = RowReader::getRowReader(&schema, encoded);
+    auto reader = RowReaderWrapper::getRowReader(&schema, encoded);
 
     // Col01
     Value v1 = reader->getValueByName("Col01");
@@ -305,7 +305,7 @@ TEST(RowWriterV2, Update) {
 
     std::string encoded1 = writer.moveEncodedStr();
 
-    auto oldReader = RowReader::getRowReader(&schema, encoded1);
+    auto oldReader = RowReaderWrapper::getRowReader(&schema, encoded1);
 
     RowWriterV2 updater2(*oldReader);
     RowWriterV2 updater1(&schema, std::move(encoded1));
@@ -324,8 +324,8 @@ TEST(RowWriterV2, Update) {
     std::string encoded3 = updater2.moveEncodedStr();
     EXPECT_EQ(encoded2, encoded3);
 
-    auto reader1 = RowReader::getRowReader(&schema, encoded2);
-    auto reader2 = RowReader::getRowReader(&schema, encoded3);
+    auto reader1 = RowReaderWrapper::getRowReader(&schema, encoded2);
+    auto reader2 = RowReaderWrapper::getRowReader(&schema, encoded3);
 
     // Col01
     Value v1 = reader1->getValueByName("Col01");
@@ -374,7 +374,7 @@ TEST(RowWriterV2, Timestamp) {
     ASSERT_EQ(WriteResult::SUCCEEDED, writer.finish());
 
     std::string encoded1 = writer.moveEncodedStr();
-    auto reader1 = RowReader::getRowReader(&schema, encoded1);
+    auto reader1 = RowReaderWrapper::getRowReader(&schema, encoded1);
 
     // Col01
     Value v1 = reader1->getValueByName("Col01");
@@ -405,7 +405,7 @@ TEST(RowWriterV2, EmptyString) {
     ASSERT_EQ(WriteResult::SUCCEEDED, writer.finish());
 
     std::string encoded = std::move(writer).moveEncodedStr();
-    auto reader = RowReader::getRowReader(&schema, encoded);
+    auto reader = RowReaderWrapper::getRowReader(&schema, encoded);
 
     // Col01
     Value v1 = reader->getValueByName("Col01");

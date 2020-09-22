@@ -197,10 +197,10 @@ TEST(UpdateEdgeTest, No_Filter_Test) {
         EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
         EXPECT_TRUE(iter && iter->valid());
 
-        auto edgeReader = RowReader::getEdgePropReader(env->schemaMan_,
-                                                       spaceId,
-                                                       std::abs(edgeType),
-                                                       iter->val());
+        auto edgeReader = RowReaderWrapper::getEdgePropReader(env->schemaMan_,
+                                                              spaceId,
+                                                              std::abs(edgeType),
+                                                              iter->val());
         auto val = edgeReader->getValueByName("playerName");
         EXPECT_EQ("Tim Duncan", val.getStr());
 
@@ -305,10 +305,10 @@ TEST(UpdateEdgeTest, No_Filter_Test) {
         EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
         EXPECT_TRUE(iter && iter->valid());
 
-        auto edgeReader = RowReader::getEdgePropReader(env->schemaMan_,
-                                                       spaceId,
-                                                       std::abs(edgeType),
-                                                       iter->val());
+        auto edgeReader = RowReaderWrapper::getEdgePropReader(env->schemaMan_,
+                                                              spaceId,
+                                                              std::abs(edgeType),
+                                                              iter->val());
         auto val = edgeReader->getValueByName("playerName");
         EXPECT_EQ("Tim Duncan", val.getStr());
         val = edgeReader->getValueByName("teamName");
@@ -455,10 +455,10 @@ TEST(UpdateEdgeTest, Filter_Yield_Test) {
     EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
     EXPECT_TRUE(iter && iter->valid());
 
-    auto reader = RowReader::getEdgePropReader(env->schemaMan_,
-                                               spaceId,
-                                               std::abs(edgeType),
-                                               iter->val());
+    auto reader = RowReaderWrapper::getEdgePropReader(env->schemaMan_,
+                                                      spaceId,
+                                                      std::abs(edgeType),
+                                                      iter->val());
     auto val = reader->getValueByName("playerName");
     EXPECT_EQ("Tim Duncan", val.getStr());
     val = reader->getValueByName("teamName");
@@ -591,10 +591,10 @@ TEST(UpdateEdgeTest, Insertable_Test) {
     EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
     EXPECT_TRUE(iter && iter->valid());
 
-    auto reader = RowReader::getEdgePropReader(env->schemaMan_,
-                                               spaceId,
-                                               std::abs(edgeType),
-                                               iter->val());
+    auto reader = RowReaderWrapper::getEdgePropReader(env->schemaMan_,
+                                                      spaceId,
+                                                      std::abs(edgeType),
+                                                      iter->val());
     auto val = reader->getValueByName("playerName");
     EXPECT_EQ("Brandon Ingram", val.getStr());
     val = reader->getValueByName("teamName");
@@ -697,10 +697,10 @@ TEST(UpdateEdgeTest, Invalid_Update_Prop_Test) {
     EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
     EXPECT_TRUE(iter && iter->valid());
 
-    auto reader = RowReader::getEdgePropReader(env->schemaMan_,
-                                               spaceId,
-                                               std::abs(edgeType),
-                                               iter->val());
+    auto reader = RowReaderWrapper::getEdgePropReader(env->schemaMan_,
+                                                      spaceId,
+                                                      std::abs(edgeType),
+                                                      iter->val());
     auto val = reader->getValueByName("playerName");
     EXPECT_EQ("Tim Duncan", val.getStr());
     val = reader->getValueByName("teamName");
@@ -828,10 +828,10 @@ TEST(UpdateEdgeTest, Invalid_Filter_Test) {
     EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
     EXPECT_TRUE(iter && iter->valid());
 
-    auto reader = RowReader::getEdgePropReader(env->schemaMan_,
-                                               spaceId,
-                                               std::abs(edgeType),
-                                               iter->val());
+    auto reader = RowReaderWrapper::getEdgePropReader(env->schemaMan_,
+                                                      spaceId,
+                                                      std::abs(edgeType),
+                                                      iter->val());
     auto val = reader->getValueByName("playerName");
     EXPECT_EQ("Tim Duncan", val.getStr());
     val = reader->getValueByName("teamName");
@@ -990,10 +990,10 @@ TEST(UpdateEdgeTest, Insertable_Filter_value_Test) {
     EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
     EXPECT_TRUE(iter && iter->valid());
 
-    auto reader = RowReader::getEdgePropReader(env->schemaMan_,
-                                               spaceId,
-                                               std::abs(edgeType),
-                                               iter->val());
+    auto reader = RowReaderWrapper::getEdgePropReader(env->schemaMan_,
+                                                      spaceId,
+                                                      std::abs(edgeType),
+                                                      iter->val());
     auto val = reader->getValueByName("playerName");
     EXPECT_EQ("Brandon Ingram", val.getStr());
     val = reader->getValueByName("teamName");
@@ -1298,10 +1298,10 @@ TEST(UpdateEdgeTest, TTL_Insert_No_Exist_Test) {
     EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
     EXPECT_TRUE(iter && iter->valid());
 
-    auto reader = RowReader::getEdgePropReader(env->schemaMan_,
-                                               spaceId,
-                                               std::abs(edgeType),
-                                               iter->val());
+    auto reader = RowReaderWrapper::getEdgePropReader(env->schemaMan_,
+                                                      spaceId,
+                                                      std::abs(edgeType),
+                                                      iter->val());
     auto val = reader->getValueByName("playerName");
     EXPECT_EQ("Tim", val.getStr());
     val = reader->getValueByName("teamName");
@@ -1437,7 +1437,7 @@ TEST(UpdateEdgeTest, TTL_Insert_Test) {
 
     int count = 0;
     while (iter && iter->valid()) {
-        auto edgeReader = RowReader::getRowReader(schema.get(), iter->val());
+        auto edgeReader = RowReaderWrapper::getRowReader(schema.get(), iter->val());
         auto val = edgeReader->getValueByName("playerName");
         EXPECT_EQ("Tim Duncan", val.getStr());
 
@@ -1592,10 +1592,10 @@ TEST(UpdateEdgeTest, Yield_Key_Test) {
     EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
     EXPECT_TRUE(iter && iter->valid());
 
-    auto edgeReader = RowReader::getEdgePropReader(env->schemaMan_,
-                                                   spaceId,
-                                                   std::abs(edgeType),
-                                                   iter->val());
+    auto edgeReader = RowReaderWrapper::getEdgePropReader(env->schemaMan_,
+                                                          spaceId,
+                                                          std::abs(edgeType),
+                                                          iter->val());
     auto val = edgeReader->getValueByName("playerName");
     EXPECT_EQ("Tim Duncan", val.getStr());
     val = edgeReader->getValueByName("teamName");
@@ -1713,10 +1713,10 @@ TEST(UpdateEdgeTest, Yield_Illegal_Key_Test) {
     EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
     EXPECT_TRUE(iter && iter->valid());
 
-    auto edgeReader = RowReader::getEdgePropReader(env->schemaMan_,
-                                                   spaceId,
-                                                   std::abs(edgeType),
-                                                   iter->val());
+    auto edgeReader = RowReaderWrapper::getEdgePropReader(env->schemaMan_,
+                                                          spaceId,
+                                                          std::abs(edgeType),
+                                                          iter->val());
     auto val = edgeReader->getValueByName("playerName");
     EXPECT_EQ("Tim Duncan", val.getStr());
     val = edgeReader->getValueByName("teamName");
@@ -1933,10 +1933,10 @@ TEST(UpdateEdgeTest, Insertable_In_Set_Test) {
     EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
     EXPECT_TRUE(iter && iter->valid());
 
-    auto reader = RowReader::getEdgePropReader(env->schemaMan_,
-                                               spaceId,
-                                               std::abs(edgeType),
-                                               iter->val());
+    auto reader = RowReaderWrapper::getEdgePropReader(env->schemaMan_,
+                                                      spaceId,
+                                                      std::abs(edgeType),
+                                                      iter->val());
     auto val = reader->getValueByName("playerName");
     EXPECT_EQ("Brandon Ingram", val.getStr());
     val = reader->getValueByName("teamName");

@@ -37,7 +37,7 @@ TEST(NebulaCodec, encode) {
     dataman::NebulaCodecImpl codec;
     std::string encoded = codec.encode(v, schema);
 
-    auto reader = RowReader::getRowReader(encoded, schema);
+    auto reader = RowReaderWrapper::getRowReader(encoded, schema);
     EXPECT_EQ(5, reader->numFields());
 
     // check int field
@@ -86,7 +86,7 @@ TEST(NebulaCodec, encode) {
 
     SchemaWriter emptyWriter;
     auto emptySchema = std::make_shared<ResultSchemaProvider>(emptyWriter.moveSchema());
-    auto emptyReader = RowReader::getRowReader(emptyEncoded, emptySchema);
+    auto emptyReader = RowReaderWrapper::getRowReader(emptyEncoded, emptySchema);
     EXPECT_EQ(0, emptyReader->numFields());
 }
 

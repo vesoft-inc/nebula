@@ -60,7 +60,7 @@ NebulaCodecImpl::decode(std::string encoded,
 
     folly::StringPiece piece;
     ResultType code;
-    auto reader = RowReader::getRowReader(encoded, schema);
+    auto reader = RowReaderWrapper::getRowReader(encoded, schema);
     std::unordered_map<std::string, Value> result;
     for (size_t index = 0; index < schema->getNumFields(); index++) {
         auto field = schema->getFieldName(index);

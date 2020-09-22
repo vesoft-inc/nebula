@@ -72,7 +72,7 @@ public:
             } else {
                 const auto* schema = isEdge_ ? indexEdgeNode_->getSchema()
                                              : indexVertexNode_->getSchema();
-                auto reader = RowReader::getRowReader(schema, k.second);
+                auto reader = RowReaderWrapper::getRowReader(schema, k.second);
                 if (!reader) {
                     continue;
                 }

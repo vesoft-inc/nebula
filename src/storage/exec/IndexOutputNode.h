@@ -167,7 +167,7 @@ private:
             Row row;
             auto vId = NebulaKeyUtils::getVertexId(planContext_->vIdLen_, val.first);
             row.emplace_back(Value(vId));
-            auto reader = RowReader::getRowReader(schema, val.second);
+            auto reader = RowReaderWrapper::getRowReader(schema, val.second);
             if (!reader) {
                 VLOG(1) << "Can't get tag reader";
                 return kvstore::ResultCode::ERR_TAG_NOT_FOUND;
@@ -221,7 +221,7 @@ private:
             row.emplace_back(Value(std::move(src)));
             row.emplace_back(Value(rank));
             row.emplace_back(Value(std::move(dst)));
-            auto reader = RowReader::getRowReader(schema, val.second);
+            auto reader = RowReaderWrapper::getRowReader(schema, val.second);
             if (!reader) {
                 VLOG(1) << "Can't get tag reader";
                 return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;

@@ -68,6 +68,7 @@ TEST(DeleteEdgesTest, SimpleTest) {
 }
 
 TEST(DeleteEdgesTest, MultiVersionTest) {
+    FLAGS_enable_multi_versions = true;
     fs::TempDir rootPath("/tmp/DeleteEdgesTest.XXXXXX");
     mock::MockCluster cluster;
     cluster.initStorageKV(rootPath.path());
@@ -122,6 +123,7 @@ TEST(DeleteEdgesTest, MultiVersionTest) {
         // All the added datas are deleted, the number of edge is 0
         checkEdgesData(spaceVidLen, req.space_id, req.parts, env, 0);
     }
+    FLAGS_enable_multi_versions = false;
 }
 
 }  // namespace storage

@@ -90,7 +90,6 @@ public:
 protected:
     // if yields is not empty, will eval the yield expression, otherwize, collect property
     kvstore::ResultCode collectEdgeProps(
-            EdgeType edgeType,
             RowReader* reader,
             folly::StringPiece key,
             size_t vIdLen,
@@ -98,12 +97,8 @@ protected:
             nebula::List& list) {
         for (const auto& prop : *props) {
             if (prop.returned_) {
-                auto srcId = NebulaKeyUtils::getSrcId(vIdLen, key);
-                auto edgeRank = NebulaKeyUtils::getRank(vIdLen, key);
-                auto dstId = NebulaKeyUtils::getDstId(vIdLen, key);
-                VLOG(2) << "Collect prop " << prop.name_ << ", type " << edgeType;
-                auto value = QueryUtils::readEdgeProp(srcId, edgeType, edgeRank, dstId,
-                                                      reader, prop);
+                VLOG(2) << "Collect prop " << prop.name_;
+                auto value = QueryUtils::readEdgeProp(key, vIdLen, reader, prop);
                 if (!value.ok()) {
                     return kvstore::ResultCode::ERR_EDGE_PROP_NOT_FOUND;
                 }

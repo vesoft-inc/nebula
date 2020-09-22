@@ -1106,6 +1106,7 @@ TEST(GetNeighborsTest, GoOverAllTest) {
 }
 
 TEST(GetNeighborsTest, MultiVersionTest) {
+    FLAGS_enable_multi_versions = true;
     fs::TempDir rootPath("/tmp/GetNeighborsTest.XXXXXX");
     mock::MockCluster cluster;
     cluster.initStorageKV(rootPath.path());
@@ -1132,6 +1133,7 @@ TEST(GetNeighborsTest, MultiVersionTest) {
         // vId, stat, player, team, general tag, - teammate, - serve, + serve, + teammate, expr
         QueryTestUtils::checkResponse(resp.vertices, vertices, 1, 10);
     }
+    FLAGS_enable_multi_versions = false;
 }
 
 TEST(GetNeighborsTest, FilterTest) {
