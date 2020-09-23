@@ -7,6 +7,7 @@
 #include "planner/Query.h"
 #include "util/ExpressionUtils.h"
 #include "util/SchemaUtil.h"
+#include "visitor/DeducePropsVisitor.h"
 
 namespace nebula {
 namespace graph {
@@ -25,7 +26,7 @@ Status FetchVerticesValidator::toPlan() {
     std::string vidsVar = (srcRef_ == nullptr ? buildConstantInput() : buildRuntimeInput());
     auto *getVerticesNode = GetVertices::make(qctx_,
                                               nullptr,
-                                              spaceId_,
+                                              space_.id,
                                               src_,
                                               std::move(props_),
                                               std::move(exprs_),
@@ -61,19 +62,33 @@ Status FetchVerticesValidator::toPlan() {
 
 Status FetchVerticesValidator::check() {
     auto *sentence = static_cast<FetchVerticesSentence *>(sentence_);
-    spaceId_ = vctx_->whichSpace().id;
 
-    tagName_ = *sentence->tag();
     if (!sentence->isAllTagProps()) {
-        tagName_ = *(sentence->tag());
-        auto tagStatus = qctx_->schemaMng()->toTagID(spaceId_, tagName_);
+        onStar_ = false;
+        auto tagName = *(sentence->tag());
+        auto tagStatus = qctx_->schemaMng()->toTagID(space_.id, tagName);
         NG_RETURN_IF_ERROR(tagStatus);
+        auto tagId = tagStatus.value();
 
-        tagId_ = tagStatus.value();
-        schema_ = qctx_->schemaMng()->getTagSchema(spaceId_, tagId_.value());
-        if (schema_ == nullptr) {
-            LOG(ERROR) << "No schema found for " << tagName_;
-            return Status::Error("No schema found for `%s'", tagName_.c_str());
+        tags_.emplace(tagName, tagId);
+        auto schema = qctx_->schemaMng()->getTagSchema(space_.id, tagId);
+        if (schema == nullptr) {
+            LOG(ERROR) << "No schema found for " << tagName;
+            return Status::Error("No schema found for `%s'", tagName.c_str());
+        }
+        tagsSchema_.emplace(tagId, schema);
+    } else {
+        onStar_ = true;
+        const auto allTagsResult = qctx_->schemaMng()->getAllVerTagSchema(space_.id);
+        NG_RETURN_IF_ERROR(allTagsResult);
+        const auto allTags = std::move(allTagsResult).value();
+        for (const auto &tag : allTags) {
+            tagsSchema_.emplace(tag.first, tag.second.back());
+        }
+        for (const auto &tagSchema : tagsSchema_) {
+            auto tagNameResult = qctx_->schemaMng()->toTagName(space_.id, tagSchema.first);
+            NG_RETURN_IF_ERROR(tagNameResult);
+            tags_.emplace(std::move(tagNameResult).value(), tagSchema.first);
         }
     }
     return Status::OK();
@@ -118,7 +133,6 @@ Status FetchVerticesValidator::prepareProperties() {
 }
 
 Status FetchVerticesValidator::preparePropertiesWithYield(const YieldClause *yield) {
-    CHECK(tagId_.hasValue()) << "Not supported yield for *.";
     withProject_ = true;
     // outputs
     auto yieldSize = yield->columns().size();
@@ -129,10 +143,8 @@ Status FetchVerticesValidator::preparePropertiesWithYield(const YieldClause *yie
     outputs_.emplace_back(VertexID, Value::Type::STRING);   // kVid
 
     dedup_ = yield->isDistinct();
-    storage::cpp2::VertexProp prop;
-    prop.set_tag(tagId_.value());
-    std::vector<std::string> propsName;
-    propsName.reserve(yield->columns().size());
+    ExpressionProps exprProps;
+    DeducePropsVisitor deducePropsVisitor(qctx_, space_.id, &exprProps);
     for (auto col : yield->columns()) {
         if (col->expr()->kind() == Expression::Kind::kLabelAttribute) {
             auto laExpr = static_cast<LabelAttributeExpression *>(col->expr());
@@ -140,36 +152,53 @@ Status FetchVerticesValidator::preparePropertiesWithYield(const YieldClause *yie
         } else {
             ExpressionUtils::rewriteLabelAttribute<TagPropertyExpression>(col->expr());
         }
-        const auto *invalidExpr = findInvalidYieldExpression(col->expr());
-        if (invalidExpr != nullptr) {
-            return Status::Error("Invalid yield expression `%s'.", col->expr()->toString().c_str());
+        col->expr()->accept(&deducePropsVisitor);
+        if (!deducePropsVisitor.ok()) {
+            return std::move(deducePropsVisitor).status();
         }
-        // The properties from storage directly push down only
-        // The other will be computed in Project Executor
-        const auto storageExprs = ExpressionUtils::findAllStorage(col->expr());
-        for (const auto &storageExpr : storageExprs) {
-            const auto *expr = static_cast<const PropertyExpression *>(storageExpr);
-            if (*expr->sym() != tagName_) {
-                return Status::Error("Mismatched tag name");
-            }
-            // Check is prop name in schema
-            if (schema_->getFieldIndex(*expr->prop()) < 0) {
-                LOG(ERROR) << "Unknown column `" << *expr->prop() << "' in tag `" << tagName_
-                           << "'.";
-                return Status::Error(
-                    "Unknown column `%s' in tag `%s'.", expr->prop()->c_str(), tagName_.c_str());
-            }
-            propsName.emplace_back(*expr->prop());
-            gvColNames_.emplace_back(*expr->sym() + "." + *expr->prop());
+        if (exprProps.hasInputVarProperty()) {
+            return Status::Error("Unsupported input/variable property expression in yield.");
         }
+        if (!exprProps.edgeProps().empty()) {
+            return Status::Error("Unsupported edge property expression in yield.");
+        }
+        if (exprProps.hasSrcDstTagProperty()) {
+            return Status::Error("Unsupported src/dst property expression in yield.");
+        }
+
         colNames_.emplace_back(deduceColName(col));
         auto typeResult = deduceExprType(col->expr());
         NG_RETURN_IF_ERROR(typeResult);
         outputs_.emplace_back(colNames_.back(), typeResult.value());
         // TODO(shylock) think about the push-down expr
     }
-    prop.set_props(std::move(propsName));
-    props_.emplace_back(std::move(prop));
+    if (exprProps.tagProps().empty()) {
+        return Status::Error("Unsupported empty tag property expression in yield.");
+    }
+
+    if (onStar_) {
+        for (const auto &tag : exprProps.tagNameIds()) {
+            if (tags_.find(tag.first) == tags_.end()) {
+                return Status::SemanticError("Mismatched tag.");
+            }
+        }
+    } else {
+        if (tags_ != exprProps.tagNameIds()) {
+            return Status::SemanticError("Mismatched tag.");
+        }
+    }
+    for (const auto &tagNameId : exprProps.tagNameIds()) {
+        storage::cpp2::VertexProp vProp;
+        std::vector<std::string> props;
+        props.reserve(exprProps.tagProps().at(tagNameId.second).size());
+        vProp.set_tag(tagNameId.second);
+        for (const auto &prop : exprProps.tagProps().at(tagNameId.second)) {
+            props.emplace_back(prop.toString());
+            gvColNames_.emplace_back(tagNameId.first + "." + prop.toString());
+        }
+        vProp.set_props(std::move(props));
+        props_.emplace_back(std::move(vProp));
+    }
 
     // insert the reserved properties expression be compatible with 1.0
     // TODO(shylock) select kVid from storage
@@ -186,65 +215,25 @@ Status FetchVerticesValidator::preparePropertiesWithYield(const YieldClause *yie
 Status FetchVerticesValidator::preparePropertiesWithoutYield() {
     // empty for all tag and properties
     props_.clear();
-    if (tagId_.hasValue()) {
-        // for one tag all properties
-        storage::cpp2::VertexProp prop;
-        prop.set_tag(tagId_.value());
-        // empty for all
-        props_.emplace_back(std::move(prop));
-        outputs_.emplace_back(VertexID, Value::Type::STRING);
-        colNames_.emplace_back(VertexID);
-        gvColNames_.emplace_back(VertexID);   // keep compatible with 1.0
-        for (std::size_t i = 0; i < schema_->getNumFields(); ++i) {
-            outputs_.emplace_back(schema_->getFieldName(i),
-                                  SchemaUtil::propTypeToValueType(schema_->getFieldType(i)));
-            colNames_.emplace_back(tagName_ + '.' + schema_->getFieldName(i));
+    outputs_.emplace_back(VertexID, Value::Type::STRING);
+    colNames_.emplace_back(VertexID);
+    gvColNames_.emplace_back(colNames_.back());
+    for (const auto &tagSchema : tagsSchema_) {
+        storage::cpp2::VertexProp vProp;
+        vProp.set_tag(tagSchema.first);
+        auto tagNameResult = qctx_->schemaMng()->toTagName(space_.id, tagSchema.first);
+        NG_RETURN_IF_ERROR(tagNameResult);
+        auto tagName = std::move(tagNameResult).value();
+        for (std::size_t i = 0; i < tagSchema.second->getNumFields(); ++i) {
+            outputs_.emplace_back(
+                tagSchema.second->getFieldName(i),
+                SchemaUtil::propTypeToValueType(tagSchema.second->getFieldType(i)));
+            colNames_.emplace_back(tagName + "." + tagSchema.second->getFieldName(i));
             gvColNames_.emplace_back(colNames_.back());
         }
-    } else {
-        // all schema properties
-        const auto allTagsResult = qctx_->schemaMng()->getAllVerTagSchema(spaceId_);
-        NG_RETURN_IF_ERROR(allTagsResult);
-        const auto allTags = std::move(allTagsResult).value();
-        std::vector<std::pair<TagID, std::shared_ptr<const meta::NebulaSchemaProvider>>>
-            allTagsSchema;
-        allTagsSchema.reserve(allTags.size());
-        for (const auto &tag : allTags) {
-            allTagsSchema.emplace_back(tag.first, tag.second.back());
-        }
-        std::sort(allTagsSchema.begin(), allTagsSchema.end(), [](const auto &a, const auto &b) {
-            return a.first < b.first;
-        });
-        outputs_.emplace_back(VertexID, Value::Type::STRING);
-        colNames_.emplace_back(VertexID);
-        gvColNames_.emplace_back(colNames_.back());
-        for (const auto &tagSchema : allTagsSchema) {
-            auto tagNameResult = qctx_->schemaMng()->toTagName(spaceId_, tagSchema.first);
-            NG_RETURN_IF_ERROR(tagNameResult);
-            auto tagName = std::move(tagNameResult).value();
-            for (std::size_t i = 0; i < tagSchema.second->getNumFields(); ++i) {
-                outputs_.emplace_back(
-                    tagSchema.second->getFieldName(i),
-                    SchemaUtil::propTypeToValueType(tagSchema.second->getFieldType(i)));
-                colNames_.emplace_back(tagName + "." + tagSchema.second->getFieldName(i));
-                gvColNames_.emplace_back(colNames_.back());
-            }
-        }
+        props_.emplace_back(std::move(vProp));
     }
     return Status::OK();
-}
-
-/*static*/
-const Expression *FetchVerticesValidator::findInvalidYieldExpression(const Expression *root) {
-    return ExpressionUtils::findAny(root,
-                                    {Expression::Kind::kInputProperty,
-                                     Expression::Kind::kVarProperty,
-                                     Expression::Kind::kSrcProperty,
-                                     Expression::Kind::kDstProperty,
-                                     Expression::Kind::kEdgeSrc,
-                                     Expression::Kind::kEdgeType,
-                                     Expression::Kind::kEdgeRank,
-                                     Expression::Kind::kEdgeDst});
 }
 
 // TODO(shylock) optimize dedup input when distinct given

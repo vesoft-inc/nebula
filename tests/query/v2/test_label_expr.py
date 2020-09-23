@@ -38,10 +38,10 @@ class TestLabelExpr(NebulaTestSuite):
     def test_wrong_props(self):
         # fetch vertex with label expr
         resp = self.execute('FETCH PROP ON person "a" YIELD name')
-        self.check_error_msg(resp, "SemanticError: LabelExpression can not be instantiated.")
+        self.check_error_msg(resp, "SemanticError: Not supported expression `name' for props deduction.")
 
         resp = self.execute('FETCH PROP ON person "a" YIELD name + 1')
-        self.check_error_msg(resp, "SemanticError: LabelExpression can not be instantiated.")
+        self.check_error_msg(resp, "SemanticError: Not supported expression `name' for props deduction.")
 
         # fetch edge with label expr
         resp = self.execute('FETCH PROP ON friend "a"->"b" YIELD start')

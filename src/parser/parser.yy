@@ -1049,11 +1049,11 @@ fetch_vertices_sentence
     | KW_FETCH KW_PROP KW_ON name_label vid_ref_expression yield_clause {
         $$ = new FetchVerticesSentence($4, $5, $6);
     }
-    | KW_FETCH KW_PROP KW_ON STAR vid_list {
-        $$ = new FetchVerticesSentence($5);
+    | KW_FETCH KW_PROP KW_ON STAR vid_list yield_clause {
+        $$ = new FetchVerticesSentence($5, $6);
     }
-    | KW_FETCH KW_PROP KW_ON STAR vid_ref_expression {
-        $$ = new FetchVerticesSentence($5);
+    | KW_FETCH KW_PROP KW_ON STAR vid_ref_expression yield_clause {
+        $$ = new FetchVerticesSentence($5, $6);
     }
     ;
 

@@ -33,6 +33,10 @@ void ExpressionProps::insertEdgeProp(EdgeType edgeType, folly::StringPiece prop)
     props.emplace(prop);
 }
 
+void ExpressionProps::insertTagNameIds(const std::string &name, TagID tagId) {
+    tagNameIds_.emplace(name, tagId);
+}
+
 void ExpressionProps::insertTagProp(TagID tagId, folly::StringPiece prop) {
     auto& props = tagProps_[tagId];
     props.emplace(prop);

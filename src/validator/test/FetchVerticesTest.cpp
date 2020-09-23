@@ -17,7 +17,7 @@ class FetchVerticesValidatorTest : public ValidatorTestBase {
 protected:
     QueryContext *getQCtx(const std::string &query) {
         auto status = validate(query);
-        EXPECT_TRUE(status);
+        EXPECT_TRUE(status.ok());
         return std::move(status).value();
     }
 };
@@ -241,6 +241,80 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
         auto result = Eq(qctx->plan()->root(), gv);
         ASSERT_TRUE(result.ok()) << result;
     }
+    // ON * with yield
+    {
+        auto qctx = getQCtx("FETCH PROP ON * \"1\", \"2\" YIELD person.name");
+
+        auto *start = StartNode::make(qctx);
+
+        std::vector<std::string> colNames {"VertexID", "person.name"};
+        // Get vertices
+        auto *gv = GetVertices::make(qctx, start, 1, src.get(), {}, {});
+        gv->setColNames(colNames);
+
+        // project
+        auto yieldColumns = std::make_unique<YieldColumns>();
+        yieldColumns->addColumn(new YieldColumn(
+            new InputPropertyExpression(new std::string("VertexID")), new std::string("VertexID")));
+        yieldColumns->addColumn(new YieldColumn(
+            new TagPropertyExpression(new std::string("person"), new std::string("name"))));
+        auto *project = Project::make(qctx, gv, yieldColumns.get());
+        project->setColNames(colNames);
+
+        auto result = Eq(qctx->plan()->root(), project);
+        ASSERT_TRUE(result.ok()) << result;
+    }
+    {
+        auto qctx = getQCtx("FETCH PROP ON * \"1\", \"2\" YIELD person.name, person.age");
+
+        auto *start = StartNode::make(qctx);
+
+        std::vector<std::string> colNames {"VertexID", "person.name", "person.age"};
+        // Get vertices
+        auto *gv = GetVertices::make(qctx, start, 1, src.get(), {}, {});
+        gv->setColNames(colNames);
+
+        // project
+        auto yieldColumns = std::make_unique<YieldColumns>();
+        yieldColumns->addColumn(new YieldColumn(
+            new InputPropertyExpression(new std::string("VertexID")), new std::string("VertexID")));
+        yieldColumns->addColumn(new YieldColumn(
+            new TagPropertyExpression(new std::string("person"), new std::string("name"))));
+        yieldColumns->addColumn(new YieldColumn(
+            new TagPropertyExpression(new std::string("person"), new std::string("age"))));
+        auto *project = Project::make(qctx, gv, yieldColumns.get());
+        project->setColNames(colNames);
+
+        auto result = Eq(qctx->plan()->root(), project);
+        ASSERT_TRUE(result.ok()) << result;
+    }
+    {
+        auto qctx = getQCtx("FETCH PROP ON * \"1\", \"2\" YIELD 1+1, person.name, person.age");
+
+        auto *start = StartNode::make(qctx);
+
+        // Get vertices
+        auto *gv = GetVertices::make(qctx, start, 1, src.get(), {}, {});
+        gv->setColNames({"VertexID", "person.name", "person.age"});
+
+        // project
+        auto yieldColumns = std::make_unique<YieldColumns>();
+        yieldColumns->addColumn(new YieldColumn(
+            new InputPropertyExpression(new std::string("VertexID")), new std::string("VertexID")));
+        yieldColumns->addColumn(new YieldColumn(
+            new ArithmeticExpression(Expression::Kind::kAdd,
+                                     new ConstantExpression(1),
+                                     new ConstantExpression(1))));
+        yieldColumns->addColumn(new YieldColumn(
+            new TagPropertyExpression(new std::string("person"), new std::string("name"))));
+        yieldColumns->addColumn(new YieldColumn(
+            new TagPropertyExpression(new std::string("person"), new std::string("age"))));
+        auto *project = Project::make(qctx, gv, yieldColumns.get());
+        project->setColNames({"VertexID", "(1+1)", "person.name", "person.age"});
+
+        auto result = Eq(qctx->plan()->root(), project);
+        ASSERT_TRUE(result.ok()) << result;
+    }
 }
 
 TEST_F(FetchVerticesValidatorTest, FetchVerticesInputOutput) {
@@ -320,6 +394,30 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesInputOutput) {
                                     PlanNode::Kind::kStart,
                                 }));
     }
+    // on * with yield
+    {
+        const std::string query = "FETCH PROP ON * \"1\", \"2\" YIELD person.name AS name"
+                                  "| FETCH PROP ON * $-.name";
+        EXPECT_TRUE(checkResult(query,
+                                {
+                                    PlanNode::Kind::kGetVertices,
+                                    PlanNode::Kind::kProject,
+                                    PlanNode::Kind::kGetVertices,
+                                    PlanNode::Kind::kStart,
+                                }));
+    }
+    {
+        const std::string query =
+            "$a = FETCH PROP ON * \"1\", \"2\" YIELD person.name AS name;"
+            "FETCH PROP ON * $a.name";
+        EXPECT_TRUE(checkResult(query,
+                                {
+                                    PlanNode::Kind::kGetVertices,
+                                    PlanNode::Kind::kProject,
+                                    PlanNode::Kind::kGetVertices,
+                                    PlanNode::Kind::kStart,
+                                }));
+    }
 }
 
 TEST_F(FetchVerticesValidatorTest, FetchVerticesPropFailed) {
@@ -328,9 +426,11 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesPropFailed) {
 
     // not exist tag
     ASSERT_FALSE(validate("FETCH PROP ON not_exist_tag \"1\" YIELD not_exist_tag.prop1"));
+    ASSERT_FALSE(validate("FETCH PROP ON * \"1\" YIELD not_exist_tag.prop1"));
 
     // not exist property
     ASSERT_FALSE(validate("FETCH PROP ON person \"1\" YIELD person.not_exist_property"));
+    ASSERT_FALSE(validate("FETCH PROP ON * \"1\" YIELD person.not_exist_property"));
 
     // invalid yield expression
     ASSERT_FALSE(validate("$a = FETCH PROP ON person \"1\" YIELD person.name AS name;"
@@ -344,20 +444,39 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesPropFailed) {
     ASSERT_FALSE(validate("FETCH PROP ON person \"1\" YIELD person._type"));
     ASSERT_FALSE(validate("FETCH PROP ON person \"1\" YIELD person._rank + 1"));
     ASSERT_FALSE(validate("FETCH PROP ON person \"1\" YIELD person._dst + 1"));
+
+    // invalid yield expression on *
+    ASSERT_FALSE(validate("$a = FETCH PROP ON * \"1\" YIELD person.name AS name;"
+                          " FETCH PROP ON * \"1\" YIELD $a.name + 1"));
+
+    ASSERT_FALSE(validate("FETCH PROP ON * \"1\" YIELD $^.person.name"));
+    ASSERT_FALSE(validate("FETCH PROP ON * \"1\" YIELD $$.person.name"));
+    ASSERT_FALSE(validate("FETCH PROP ON * \"1\" YIELD person.name AS name | "
+                          " FETCH PROP ON * \"1\" YIELD $-.name + 1"));
+    ASSERT_FALSE(validate("FETCH PROP ON * \"1\" YIELD person._src + 1"));
+    ASSERT_FALSE(validate("FETCH PROP ON * \"1\" YIELD person._type"));
+    ASSERT_FALSE(validate("FETCH PROP ON * \"1\" YIELD person._rank + 1"));
+    ASSERT_FALSE(validate("FETCH PROP ON * \"1\" YIELD person._dst + 1"));
 }
 
 TEST_F(FetchVerticesValidatorTest, FetchVerticesInputFailed) {
     // mismatched varirable
     ASSERT_FALSE(validate("$a = FETCH PROP ON person \"1\" YIELD person.name AS name;"
                           "FETCH PROP ON person $b.name"));
+    ASSERT_FALSE(validate("$a = FETCH PROP ON * \"1\" YIELD person.name AS name;"
+                          "FETCH PROP * person $b.name"));
 
     // mismatched varirable property
     ASSERT_FALSE(validate("$a = FETCH PROP ON person \"1\" YIELD person.name AS name;"
                           "FETCH PROP ON person $a.not_exist_property"));
+    ASSERT_FALSE(validate("$a = FETCH PROP * person \"1\" YIELD person.name AS name;"
+                          "FETCH PROP * person $a.not_exist_property"));
 
     // mismatched input property
     ASSERT_FALSE(validate("FETCH PROP ON person \"1\" YIELD person.name AS name | "
                           "FETCH PROP ON person $-.not_exist_property"));
+    ASSERT_FALSE(validate("FETCH PROP * person \"1\" YIELD person.name AS name | "
+                          "FETCH PROP * person $-.not_exist_property"));
 }
 
 }   // namespace graph

@@ -33,21 +33,17 @@ private:
     Status preparePropertiesWithoutYield();
     Status prepareProperties();
 
-    static const Expression* findInvalidYieldExpression(const Expression* root);
-
     // TODO(shylock) merge the code
     std::string buildConstantInput();
     std::string buildRuntimeInput();
 
 private:
-    GraphSpaceID spaceId_{0};
     DataSet srcVids_{{kVid}};  // src from constant
     Expression* srcRef_{nullptr};  // src from runtime
     Expression* src_{nullptr};  // src in total
-    std::string tagName_;
-    // none if not specified tag
-    folly::Optional<TagID> tagId_;
-    std::shared_ptr<const meta::SchemaProviderIf> schema_;
+    bool onStar_{false};
+    std::unordered_map<std::string, TagID> tags_;
+    std::map<TagID, std::shared_ptr<const meta::SchemaProviderIf>> tagsSchema_;
     std::vector<storage::cpp2::VertexProp> props_;
     std::vector<storage::cpp2::Expr>       exprs_;
     bool dedup_{false};

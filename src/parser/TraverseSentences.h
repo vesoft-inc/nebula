@@ -307,16 +307,18 @@ public:
         yieldClause_.reset(clause);
     }
 
-    explicit FetchVerticesSentence(Expression *ref) {
+    explicit FetchVerticesSentence(Expression *ref, YieldClause  *clause) {
         kind_ = Kind::kFetchVertices;
         tag_ = std::make_unique<std::string>("*");
         vidRef_.reset(ref);
+        yieldClause_.reset(clause);
     }
 
-    explicit FetchVerticesSentence(VertexIDList *vidList) {
+    explicit FetchVerticesSentence(VertexIDList *vidList, YieldClause  *clause) {
         kind_ = Kind::kFetchVertices;
         tag_ = std::make_unique<std::string>("*");
         vidList_.reset(vidList);
+        yieldClause_.reset(clause);
     }
 
     bool isAllTagProps() {

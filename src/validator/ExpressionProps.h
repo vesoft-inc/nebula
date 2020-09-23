@@ -20,6 +20,7 @@ namespace graph {
 
 class ExpressionProps final {
 public:
+    using TagNameIds = std::unordered_map<std::string, TagID>;
     using TagIDPropsMap = std::unordered_map<TagID, std::set<folly::StringPiece>>;
     using EdgePropMap = std::unordered_map<EdgeType, std::set<folly::StringPiece>>;
     using VarPropMap = std::unordered_map<std::string, std::set<folly::StringPiece>>;
@@ -39,6 +40,9 @@ public:
     const TagIDPropsMap& tagProps() const {
         return tagProps_;
     }
+    const TagNameIds& tagNameIds() const {
+        return tagNameIds_;
+    }
     const EdgePropMap& edgeProps() const {
         return edgeProps_;
     }
@@ -46,11 +50,20 @@ public:
         return varProps_;
     }
 
+    bool hasInputVarProperty() const {
+        return !inputProps_.empty() || !varProps_.empty();
+    }
+
+    bool hasSrcDstTagProperty() const {
+        return !srcTagProps_.empty() || !dstTagProps_.empty();
+    }
+
     void insertInputProp(folly::StringPiece prop);
     void insertVarProp(const std::string& outputVar, folly::StringPiece prop);
     void insertSrcTagProp(TagID tagId, folly::StringPiece prop);
     void insertDstTagProp(TagID tagId, folly::StringPiece prop);
     void insertEdgeProp(EdgeType edgeType, folly::StringPiece prop);
+    void insertTagNameIds(const std::string &name, TagID tagId);
     void insertTagProp(TagID tagId, folly::StringPiece prop);
     bool isSubsetOfInput(const std::set<folly::StringPiece>& props);
     bool isSubsetOfVar(const VarPropMap& props);
@@ -63,6 +76,7 @@ private:
     TagIDPropsMap dstTagProps_;
     EdgePropMap edgeProps_;
     TagIDPropsMap tagProps_;
+    TagNameIds tagNameIds_;
 };
 
 }   // namespace graph
