@@ -54,8 +54,9 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     auto replicaFactor = properties.get_replica_factor();
     auto charsetName = properties.get_charset_name();
     auto collateName = properties.get_collate_name();
-    auto vidSize = properties.get_vid_size();
-    auto vidType = properties.get_vid_type();
+    auto& vid = properties.get_vid_type();
+    auto vidSize = vid.__isset.type_length ? *vid.get_type_length() : 0;
+    auto vidType = vid.get_type();
 
     // Use default values or values from meta's configuration file
     if (partitionNum == 0) {
@@ -101,7 +102,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         return;
     }
 
-    properties.set_vid_size(vidSize);
+    properties.vid_type.set_type_length(vidSize);
 
     VLOG(3) << "Create space " << spaceName << ", id " << spaceId;
     if ((int32_t)hosts.size() < replicaFactor) {
@@ -145,4 +146,3 @@ CreateSpaceProcessor::pickHosts(PartitionID partId,
 
 }  // namespace meta
 }  // namespace nebula
-
