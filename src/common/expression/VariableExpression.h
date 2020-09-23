@@ -39,13 +39,12 @@ public:
     }
 
 private:
-    void writeTo(Encoder& encoder) const override {
-        encoder << kind();
-        encoder << var_.get();
+    void writeTo(Encoder&) const override {
+        LOG(FATAL) << "VariableExpression not support to encode.";
     }
 
-    void resetFrom(Decoder& decoder) override {
-        var_ = decoder.readStr();
+    void resetFrom(Decoder&) override {
+        LOG(FATAL) << "VariableExpression not support to decode.";
     }
 
     std::unique_ptr<std::string>                 var_;
@@ -92,15 +91,12 @@ public:
     }
 
 private:
-    void writeTo(Encoder& encoder) const override {
-        encoder << kind();
-        encoder << var_.get();
-        encoder << *version_;
+    void writeTo(Encoder&) const override {
+        LOG(FATAL) << "VersionedVairableExpression not support to encode.";
     }
 
-    void resetFrom(Decoder& decoder) override {
-        var_ = decoder.readStr();
-        version_ = decoder.readExpression();
+    void resetFrom(Decoder&) override {
+        LOG(FATAL) << "VersionedVairableExpression not support to decode.";
     }
 
     std::unique_ptr<std::string>                 var_;
