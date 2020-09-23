@@ -321,10 +321,14 @@ Status CreateTagIndexValidator::validateImpl() {
 
     auto status = Status::OK();
     do {
-        auto schema = vctx_->getSchema(name_);
-        if (schema == nullptr) {
-            status = Status::Error("Tag %s not exist", name_.c_str());
-            break;
+        auto tagStatus = qctx_->schemaMng()->toTagID(space_.id, name_);
+        if (!tagStatus.ok()) {
+            return tagStatus.status();
+        }
+
+        auto schema_ = qctx_->schemaMng()->getTagSchema(space_.id, tagStatus.value());
+        if (schema_ == nullptr) {
+            return Status::Error("No schema found for '%s'", name_.c_str());
         }
 
         status = IndexUtil::validateColumns(fields_);
@@ -359,10 +363,14 @@ Status CreateEdgeIndexValidator::validateImpl() {
 
     auto status = Status::OK();
     do {
-        auto schema = vctx_->getSchema(name_);
-        if (schema == nullptr) {
-            status = Status::Error("Edge %s not exist", name_.c_str());
-            break;
+        auto edgeStatus = qctx_->schemaMng()->toEdgeType(space_.id, name_);
+        if (!edgeStatus.ok()) {
+            return edgeStatus.status();
+        }
+
+        auto schema_ = qctx_->schemaMng()->getEdgeSchema(space_.id, edgeStatus.value());
+        if (schema_ == nullptr) {
+            return Status::Error("No schema found for '%s'", name_.c_str());
         }
 
         status = IndexUtil::validateColumns(fields_);

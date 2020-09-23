@@ -434,7 +434,7 @@ private:
                    std::vector<std::string> fields,
                    bool ifNotExists)
         : CreateIndexNode(id, input,
-                          Kind::kCreateEdge,
+                          Kind::kCreateTagIndex,
                           std::move(tagName),
                           std::move(indexName),
                           std::move(fields),
@@ -464,7 +464,7 @@ private:
                     std::vector<std::string> fields,
                     bool ifNotExists)
         : CreateIndexNode(id, input,
-                          Kind::kCreateEdge,
+                          Kind::kCreateEdgeIndex,
                           std::move(edgeName),
                           std::move(indexName),
                           std::move(fields),

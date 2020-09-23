@@ -164,8 +164,6 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
             return std::make_unique<ShowConfigsValidator>(sentence, context);
         case Sentence::Kind::kFindPath:
             return std::make_unique<FindPathValidator>(sentence, context);
-        case Sentence::Kind::kMatch:
-        case Sentence::Kind::kUnknown:
         case Sentence::Kind::kCreateTagIndex:
             return std::make_unique<CreateTagIndexValidator>(sentence, context);
         case Sentence::Kind::kShowCreateTagIndex:
@@ -190,6 +188,8 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
             return std::make_unique<RebuildEdgeIndexValidator>(sentence, context);
         case Sentence::Kind::kDropEdgeIndex:
             return std::make_unique<DropEdgeIndexValidator>(sentence, context);
+        case Sentence::Kind::kMatch:
+        case Sentence::Kind::kUnknown:
         case Sentence::Kind::kLookup:
         case Sentence::Kind::kDownload:
         case Sentence::Kind::kIngest:
