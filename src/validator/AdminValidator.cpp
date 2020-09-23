@@ -50,16 +50,16 @@ Status CreateSpaceValidator::validateImpl() {
                        << meta::cpp2::_PropertyType_VALUES_TO_NAMES.at(typeDef.type);
                     return Status::Error(ss.str());
                 }
-                spaceDesc_.vid_type = typeDef.type;
+                spaceDesc_.vid_type.set_type(typeDef.type);
 
                 if (typeDef.type == meta::cpp2::PropertyType::INT64) {
-                    spaceDesc_.vid_size = 8;
+                    spaceDesc_.vid_type.set_type_length(8);
                 } else {
                     if (typeDef.typeLen <= 0) {
                         return Status::Error("Vid size should be a positive number: %d",
                                              typeDef.typeLen);
                     }
-                    spaceDesc_.vid_size = typeDef.typeLen;
+                    spaceDesc_.vid_type.set_type_length(typeDef.typeLen);
                 }
                 break;
             }

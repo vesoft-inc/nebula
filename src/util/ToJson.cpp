@@ -64,7 +64,8 @@ folly::dynamic toJson(const meta::cpp2::SpaceDesc &desc) {
     obj.insert("replicaFactor", desc.replica_factor);
     obj.insert("charset", desc.charset_name);
     obj.insert("collate", desc.collate_name);
-    obj.insert("vidType", ColumnTypeDef(desc.vid_type, desc.vid_size).toString());
+    auto vidSize = desc.vid_type.__isset.type_length ? *desc.vid_type.get_type_length() : 0;
+    obj.insert("vidType", ColumnTypeDef(desc.vid_type.get_type(), vidSize).toString());
     return obj;
 }
 

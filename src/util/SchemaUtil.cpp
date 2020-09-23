@@ -358,6 +358,10 @@ Value::Type SchemaUtil::propTypeToValueType(meta::cpp2::PropertyType propType) {
     return Value::Type::__EMPTY__;
 }
 
+bool SchemaUtil::isValidVid(const Value &value, const meta::cpp2::ColumnTypeDef &type) {
+    return isValidVid(value, type.get_type());
+}
+
 bool SchemaUtil::isValidVid(const Value &value, meta::cpp2::PropertyType type) {
     auto vidType = propTypeToValueType(type);
     if ((vidType != Value::Type::STRING

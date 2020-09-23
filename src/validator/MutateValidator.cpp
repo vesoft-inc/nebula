@@ -529,10 +529,10 @@ Status UpdateValidator::getCondition() {
     if (clause != nullptr) {
         auto filter = clause->filter();
         if (filter != nullptr) {
-            auto encodeStr = filter->encode();
-            auto copyFilterExpr = Expression::decode(encodeStr);
+            std::string encodeStr;
+            auto copyFilterExpr = filter->clone();
             NG_LOG_AND_RETURN_IF_ERROR(
-                    checkAndResetSymExpr(copyFilterExpr.get(), name_, encodeStr));
+                checkAndResetSymExpr(copyFilterExpr.get(), name_, encodeStr));
             condition_ = std::move(encodeStr);
         }
     }
@@ -549,9 +549,8 @@ Status UpdateValidator::getReturnProps() {
             } else {
                 yieldColNames_.emplace_back(*col->alias());
             }
-            auto encodeStr = col->expr()->encode();
-            auto copyColExpr = Expression::decode(encodeStr);
-
+            std::string encodeStr;
+            auto copyColExpr = col->expr()->clone();
             NG_LOG_AND_RETURN_IF_ERROR(checkAndResetSymExpr(copyColExpr.get(), name_, encodeStr));
             returnProps_.emplace_back(std::move(encodeStr));
         }
@@ -585,8 +584,8 @@ Status UpdateValidator::getUpdateProps() {
             LOG(ERROR) << "valueExpr is nullptr";
             return Status::SyntaxError("Empty update item field value.");
         }
-        auto encodeStr = valueExpr->encode();
-        auto copyValueExpr = Expression::decode(encodeStr);
+        std::string encodeStr;
+        auto copyValueExpr = valueExpr->clone();
         NG_LOG_AND_RETURN_IF_ERROR(checkAndResetSymExpr(copyValueExpr.get(), *symName, encodeStr));
         updatedProp.set_value(std::move(encodeStr));
         updatedProp.set_name(fieldName);

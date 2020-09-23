@@ -36,10 +36,12 @@ Status MetaCache::createSpace(const meta::cpp2::CreateSpaceReq &req, GraphSpaceI
     space.set_space_id(spaceId);
     space.set_properties(std::move(properties));
     spaces_[spaceId] = space;
+    auto &vid = space.get_properties().get_vid_type();
+    auto vidSize = vid.__isset.type_length ? *vid.get_type_length() : 0;
     VLOG(1) << "space name: " << space.get_properties().get_space_name()
             << ", partition_num: " << space.get_properties().get_partition_num()
             << ", replica_factor: " << space.get_properties().get_replica_factor()
-            << ", rvid_size: " << space.get_properties().get_vid_size();
+            << ", vid_size: " << vidSize;
     cache_[spaceId] = SpaceInfoCache();
     roles_.emplace(spaceId, UserRoles());
     return Status::OK();
@@ -53,10 +55,13 @@ StatusOr<meta::cpp2::SpaceItem> MetaCache::getSpace(const meta::cpp2::GetSpaceRe
         return Status::Error("Space `%s' not found", req.get_space_name().c_str());
     }
     const auto spaceInfo = spaces_.find(findIter->second);
-    VLOG(1) << "space name: " << spaceInfo->second.get_properties().get_space_name()
-            << ", partition_num: " << spaceInfo->second.get_properties().get_partition_num()
-            << ", replica_factor: " << spaceInfo->second.get_properties().get_replica_factor()
-            << ", rvid_size: " << spaceInfo->second.get_properties().get_vid_size();
+    DCHECK(spaceInfo != spaces_.end());
+    auto &properties = spaceInfo->second.get_properties();
+    auto& vid = properties.get_vid_type();
+    VLOG(1) << "space name: " << properties.get_space_name()
+            << ", partition_num: " << properties.get_partition_num()
+            << ", replica_factor: " << properties.get_replica_factor()
+            << ", vid_size: " << (vid.__isset.type_length ? *vid.get_type_length() : 0);
     return spaceInfo->second;
 }
 

@@ -56,14 +56,14 @@ TEST_F(MockServerTest, TestMeta) {
         ASSERT_EQ(spaceId1, getStatus.value().get_space_id());
         ASSERT_EQ(10, getStatus.value().get_properties().get_partition_num());
         ASSERT_EQ(1, getStatus.value().get_properties().get_replica_factor());
-        ASSERT_EQ(8, getStatus.value().get_properties().get_vid_size());
+        ASSERT_EQ(8, *getStatus.value().get_properties().get_vid_type().get_type_length());
 
         getStatus = metaClient->getSpace(spaceName2).get();
         ASSERT_TRUE(getStatus.ok());
         ASSERT_EQ(spaceId2, getStatus.value().get_space_id());
         ASSERT_EQ(100, getStatus.value().get_properties().get_partition_num());
         ASSERT_EQ(3, getStatus.value().get_properties().get_replica_factor());
-        ASSERT_EQ(8, getStatus.value().get_properties().get_vid_size());
+        ASSERT_EQ(8, *getStatus.value().get_properties().get_vid_type().get_type_length());
 
         // List spaces
         auto listStatus = metaClient->listSpaces().get();
@@ -202,5 +202,3 @@ TEST_F(MockServerTest, DISABLED_TestStorage) {
 
 }   // namespace graph
 }   // namespace nebula
-
-
