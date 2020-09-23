@@ -1641,7 +1641,8 @@ StatusOr<int32_t> MetaClient::getSpaceVidLen(const GraphSpaceID& spaceId) {
         LOG(ERROR) << "Space " << spaceId << " not found!";
         return Status::Error("Space %d not found", spaceId);
     }
-    auto vIdLen = spaceIt->second->spaceDesc_.vid_size;
+    auto& vidType = spaceIt->second->spaceDesc_.vid_type;
+    auto vIdLen = vidType.__isset.type_length ? *vidType.get_type_length() : 0;
     if (vIdLen <= 0) {
         return Status::Error("Space %d vertexId length invalid", spaceId);
     }
@@ -1658,7 +1659,7 @@ StatusOr<cpp2::PropertyType> MetaClient::getSpaceVidType(const GraphSpaceID& spa
         LOG(ERROR) << "Space " << spaceId << " not found!";
         return Status::Error("Space %d not found", spaceId);
     }
-    auto vIdType = spaceIt->second->spaceDesc_.vid_type;
+    auto vIdType = spaceIt->second->spaceDesc_.vid_type.get_type();
     if (vIdType != cpp2::PropertyType::INT64 && vIdType != cpp2::PropertyType::FIXED_STRING) {
         std::stringstream ss;
         ss << "Space " << spaceId << ", vertexId type invalid: "
