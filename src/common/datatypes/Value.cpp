@@ -2160,11 +2160,17 @@ bool operator<(const Value& lhs, const Value& rhs) {
         case Value::Type::DATE: {
             return lhs.getDate() < rhs.getDate();
         }
+        case Value::Type::VERTEX: {
+            return lhs.getVertex() < rhs.getVertex();
+        }
+        case Value::Type::EDGE: {
+            return lhs.getEdge() < rhs.getEdge();
+        }
+        case Value::Type::PATH: {
+            return lhs.getPath() < rhs.getPath();
+        }
         case Value::Type::TIME:
         case Value::Type::DATETIME:
-        case Value::Type::VERTEX:
-        case Value::Type::EDGE:
-        case Value::Type::PATH:
         case Value::Type::LIST:
         case Value::Type::MAP:
         case Value::Type::SET:
