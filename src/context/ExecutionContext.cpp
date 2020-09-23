@@ -64,29 +64,28 @@ const Result& ExecutionContext::getResult(const std::string& name) const {
     if (it != valueMap_.end() && !it->second.empty()) {
         return it->second.back();
     } else {
-        return Result::kEmptyResult;
+        return Result::EmptyResult();
     }
 }
 
-const Result& ExecutionContext::getVersionedResult(const std::string& name,
-                                                   int64_t version) const {
+const Result& ExecutionContext::getVersionedResult(const std::string& name, int64_t version) const {
     auto& result = getHistory(name);
     auto size = result.size();
     if (static_cast<size_t>(std::abs(version)) >= size) {
-        return Result::kEmptyResult;
+        return Result::EmptyResult();
     } else {
-        return result[(size + version - 1) % size ];
+        return result[(size + version - 1) % size];
     }
 }
 
-const std::vector<Result>& ExecutionContext::getHistory(
-    const std::string& name) const {
+const std::vector<Result>& ExecutionContext::getHistory(const std::string& name) const {
     auto it = valueMap_.find(name);
     if (it != valueMap_.end()) {
         return it->second;
     } else {
-        return Result::kEmptyResultList;
+        return Result::EmptyResultList();
     }
 }
+
 }   // namespace graph
 }   // namespace nebula

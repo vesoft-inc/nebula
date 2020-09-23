@@ -21,14 +21,14 @@ class ResultBuilder;
 // An executor will produce a result.
 class Result final {
 public:
-    static const Result kEmptyResult;
-    static const std::vector<Result> kEmptyResultList;
-
     enum class State : uint8_t {
         kUnExecuted,
         kPartialSuccess,
         kSuccess,
     };
+
+    static const Result& EmptyResult();
+    static const std::vector<Result>& EmptyResultList();
 
     std::shared_ptr<Value> valuePtr() const {
         return core_.value;
@@ -98,22 +98,7 @@ public:
         return *this;
     }
 
-    ResultBuilder& iter(Iterator::Kind kind) {
-        DCHECK(kind == Iterator::Kind::kDefault || core_.value)
-            << "Must set value when creating non-default iterator";
-        switch (kind) {
-            case Iterator::Kind::kDefault:
-                return iter(std::make_unique<DefaultIter>(core_.value));
-            case Iterator::Kind::kSequential:
-                return iter(std::make_unique<SequentialIter>(core_.value));
-            case Iterator::Kind::kGetNeighbors:
-                return iter(std::make_unique<GetNeighborsIter>(core_.value));
-            case Iterator::Kind::kProp:
-                return iter(std::make_unique<PropIter>(core_.value));
-            default:
-                LOG(FATAL) << "Invalid Iterator kind" << static_cast<uint8_t>(kind);
-        }
-    }
+    ResultBuilder& iter(Iterator::Kind kind);
 
     ResultBuilder& state(Result::State state) {
         core_.state = state;
