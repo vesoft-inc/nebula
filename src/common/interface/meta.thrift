@@ -173,7 +173,7 @@ struct SpaceDesc {
     3: i32                  replica_factor = 0,
     4: binary               charset_name,
     5: binary               collate_name,
-    6: ColumnTypeDef        vid_type,
+    6: ColumnTypeDef        vid_type = {"type": PropertyType.FIXED_STRING, "type_length": 8},
 }
 
 struct SpaceItem {
