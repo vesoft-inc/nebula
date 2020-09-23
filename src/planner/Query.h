@@ -612,11 +612,11 @@ class Sort final : public SingleInputNode {
 public:
     static Sort* make(QueryContext* qctx,
                       PlanNode* input,
-                      std::vector<std::pair<std::string, OrderFactor::OrderType>> factors) {
+                      std::vector<std::pair<size_t, OrderFactor::OrderType>> factors) {
         return qctx->objPool()->add(new Sort(qctx->genId(), input, std::move(factors)));
     }
 
-    const std::vector<std::pair<std::string, OrderFactor::OrderType>>& factors() const {
+    const std::vector<std::pair<size_t, OrderFactor::OrderType>>& factors() const {
         return factors_;
     }
 
@@ -625,13 +625,27 @@ public:
 private:
     Sort(int64_t id,
          PlanNode* input,
-         std::vector<std::pair<std::string, OrderFactor::OrderType>> factors)
+         std::vector<std::pair<size_t, OrderFactor::OrderType>> factors)
         : SingleInputNode(id, Kind::kSort, input) {
         factors_ = std::move(factors);
     }
 
+    std::vector<std::pair<std::string, std::string>> factorsString() const {
+        std::vector<std::pair<std::string, std::string>> result;
+        result.resize(factors_.size());
+        auto cols = colNames();
+        auto get = [&cols](const std::pair<size_t, OrderFactor::OrderType> &factor) {
+            auto colName = cols[factor.first];
+            auto order = factor.second == OrderFactor::OrderType::ASCEND ? "ASCEND" : "DESCEND";
+            return std::pair<std::string, std::string>{colName, order};
+        };
+        std::transform(factors_.begin(), factors_.end(), result.begin(), get);
+
+        return result;
+    }
+
 private:
-    std::vector<std::pair<std::string, OrderFactor::OrderType>>   factors_;
+    std::vector<std::pair<size_t, OrderFactor::OrderType>>   factors_;
 };
 
 /**
@@ -667,6 +681,70 @@ private:
     int64_t     offset_{-1};
     int64_t     count_{-1};
 };
+
+
+/**
+ * Get the Top N record set.
+ */
+class TopN final : public SingleInputNode {
+public:
+    static TopN* make(QueryContext* qctx,
+                      PlanNode* input,
+                      std::vector<std::pair<size_t, OrderFactor::OrderType>> factors,
+                      int64_t offset,
+                      int64_t count) {
+        return qctx->objPool()->add(new TopN(qctx->genId(),
+            input, std::move(factors), offset, count));
+    }
+
+    const std::vector<std::pair<size_t, OrderFactor::OrderType>>& factors() const {
+        return factors_;
+    }
+
+    int64_t offset() const {
+        return offset_;
+    }
+
+    int64_t count() const {
+        return count_;
+    }
+
+    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+
+private:
+    TopN(int64_t id,
+         PlanNode* input,
+         std::vector<std::pair<size_t, OrderFactor::OrderType>> factors,
+         int64_t offset,
+         int64_t count)
+        : SingleInputNode(id, Kind::kTopN, input) {
+        factors_ = std::move(factors);
+        DCHECK_GE(offset, 0);
+        DCHECK_GE(count, 0);
+        offset_ = offset;
+        count_ = count;
+    }
+
+    std::vector<std::pair<std::string, std::string>> factorsString() const {
+        std::vector<std::pair<std::string, std::string>> result;
+        result.resize(factors_.size());
+        auto cols = colNames();
+        auto get = [&cols](const std::pair<size_t, OrderFactor::OrderType> &factor) {
+            auto colName = cols[factor.first];
+            auto order = factor.second == OrderFactor::OrderType::ASCEND ? "ASCEND" : "DESCEND";
+            return std::pair<std::string, std::string>{colName, order};
+        };
+        std::transform(factors_.begin(), factors_.end(), result.begin(), get);
+
+        return result;
+    }
+
+private:
+    std::vector<std::pair<size_t, OrderFactor::OrderType>>   factors_;
+    int64_t     offset_{-1};
+    int64_t     count_{-1};
+};
+
 
 /**
  * Do Aggregation with the given set of records,

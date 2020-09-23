@@ -67,6 +67,7 @@ nebula_add_test(
         DedupTest.cpp
         LimitTest.cpp
         SortTest.cpp
+        TopNTest.cpp
         AggregateTest.cpp
         DataJoinTest.cpp
     OBJECTS

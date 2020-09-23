@@ -84,12 +84,20 @@ std::unique_ptr<cpp2::PlanNodeDescription> Project::explain() const {
 
 std::unique_ptr<cpp2::PlanNodeDescription> Sort::explain() const {
     auto desc = SingleInputNode::explain();
-    addDescription("factors", folly::toJson(util::toJson(factors_)), desc.get());
+    addDescription("factors", folly::toJson(util::toJson(factorsString())), desc.get());
     return desc;
 }
 
 std::unique_ptr<cpp2::PlanNodeDescription> Limit::explain() const {
     auto desc = SingleInputNode::explain();
+    addDescription("offset", folly::to<std::string>(offset_), desc.get());
+    addDescription("count", folly::to<std::string>(count_), desc.get());
+    return desc;
+}
+
+std::unique_ptr<cpp2::PlanNodeDescription> TopN::explain() const {
+    auto desc = SingleInputNode::explain();
+    addDescription("factors", folly::toJson(util::toJson(factorsString())), desc.get());
     addDescription("offset", folly::to<std::string>(offset_), desc.get());
     addDescription("count", folly::to<std::string>(count_), desc.get());
     return desc;

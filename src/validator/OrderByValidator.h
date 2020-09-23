@@ -23,7 +23,7 @@ private:
     Status toPlan() override;
 
 private:
-    std::vector<std::pair<std::string, OrderFactor::OrderType>>     colOrderTypes_;
+    std::vector<std::pair<size_t, OrderFactor::OrderType>>     colOrderTypes_;
 };
 }  // namespace graph
 }  // namespace nebula

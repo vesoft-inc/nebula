@@ -45,6 +45,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
             return "Project";
         case Kind::kSort:
             return "Sort";
+        case Kind::kTopN:
+            return "TopN";
         case Kind::kLimit:
             return "Limit";
         case Kind::kAggregate:

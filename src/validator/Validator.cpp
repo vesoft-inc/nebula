@@ -319,7 +319,7 @@ bool Validator::evaluableExpr(const Expression* expr) const {
 }
 
 // static
-Status Validator::checkPropNonexistOrDuplicate(const ColsDef& cols,
+StatusOr<size_t> Validator::checkPropNonexistOrDuplicate(const ColsDef& cols,
                                                folly::StringPiece prop,
                                                const std::string& validator) {
     auto eq = [&](const ColDef& col) { return col.first == prop.str(); };
@@ -329,13 +329,14 @@ Status Validator::checkPropNonexistOrDuplicate(const ColsDef& cols,
             "%s: prop `%s' not exists", validator.c_str(), prop.str().c_str());
     }
 
+    size_t colIdx = std::distance(cols.cbegin(), iter);
     iter = std::find_if(iter + 1, cols.cend(), eq);
     if (iter != cols.cend()) {
         return Status::SemanticError(
             "%s: duplicate prop `%s'", validator.c_str(), prop.str().c_str());
     }
 
-    return Status::OK();
+    return colIdx;
 }
 
 StatusOr<std::string> Validator::checkRef(const Expression* ref, Value::Type type) const {

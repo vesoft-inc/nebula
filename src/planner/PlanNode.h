@@ -36,6 +36,7 @@ public:
         kMinus,
         kProject,
         kSort,
+        kTopN,
         kLimit,
         kAggregate,
         kSelect,

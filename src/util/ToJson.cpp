@@ -29,6 +29,10 @@ std::string toJson(int64_t i) {
     return folly::to<std::string>(i);
 }
 
+std::string toJson(size_t i) {
+    return folly::to<std::string>(i);
+}
+
 std::string toJson(bool b) {
     return b ? "true" : "false";
 }

@@ -21,8 +21,9 @@ Status OrderByValidator::validateImpl() {
         }
         auto expr = static_cast<InputPropertyExpression*>(factor->expr());
         auto *name = expr->prop();
-        NG_RETURN_IF_ERROR(checkPropNonexistOrDuplicate(outputs_, *name, "Order by"));
-        colOrderTypes_.emplace_back(std::make_pair(*name, factor->orderType()));
+        auto colIdx = checkPropNonexistOrDuplicate(outputs_, *name, "Order by");
+        NG_RETURN_IF_ERROR(colIdx);
+        colOrderTypes_.emplace_back(std::make_pair(colIdx.value(), factor->orderType()));
     }
 
     return Status::OK();

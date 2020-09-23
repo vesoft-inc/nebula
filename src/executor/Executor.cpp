@@ -59,6 +59,7 @@
 #include "executor/query/MinusExecutor.h"
 #include "executor/query/ProjectExecutor.h"
 #include "executor/query/SortExecutor.h"
+#include "executor/query/TopNExecutor.h"
 #include "executor/query/UnionExecutor.h"
 #include "planner/Admin.h"
 #include "planner/Logic.h"
@@ -144,6 +145,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
         }
         case PlanNode::Kind::kSort: {
             return pool->add(new SortExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kTopN: {
+            return pool->add(new TopNExecutor(node, qctx));
         }
         case PlanNode::Kind::kFilter: {
             return pool->add(new FilterExecutor(node, qctx));

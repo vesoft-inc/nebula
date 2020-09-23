@@ -8,7 +8,7 @@
 
 #include "context/QueryContext.h"
 #include "executor/query/ProjectExecutor.h"
-#include "executor/query/SortExecutor.h"
+#include "executor/query/TopNExecutor.h"
 #include "executor/test/QueryTestBase.h"
 #include "planner/Logic.h"
 #include "planner/Query.h"
@@ -16,18 +16,18 @@
 namespace nebula {
 namespace graph {
 
-class SortTest : public QueryTestBase {};
+class TopNTest : public QueryTestBase {};
 
-#define SORT_RESUTL_CHECK(input_name, outputName, multi, factors, expected)                        \
+#define TOPN_RESUTL_CHECK(input_name, outputName, multi, factors, offset, count, expected)         \
     do {                                                                                           \
         auto start = StartNode::make(qctx_.get());                                                 \
-        auto* sortNode = Sort::make(qctx_.get(), start, factors);                                  \
-        sortNode->setInputVar(input_name);                                                         \
-        sortNode->setOutputVar(outputName);                                                        \
-        auto sortExec = Executor::create(sortNode, qctx_.get());                                   \
-        EXPECT_TRUE(sortExec->execute().get().ok());                                               \
-        auto& sortResult = qctx_->ectx()->getResult(sortNode->outputVar());                        \
-        EXPECT_EQ(sortResult.state(), Result::State::kSuccess);                                    \
+        auto* topnNode = TopN::make(qctx_.get(), start, factors, offset, count);                   \
+        topnNode->setInputVar(input_name);                                                         \
+        topnNode->setOutputVar(outputName);                                                        \
+        auto topnExec = Executor::create(topnNode, qctx_.get());                                   \
+        EXPECT_TRUE(topnExec->execute().get().ok());                                               \
+        auto& topnResult = qctx_->ectx()->getResult(topnNode->outputVar());                        \
+        EXPECT_EQ(topnResult.state(), Result::State::kSuccess);                                    \
         std::string sentence;                                                                      \
         std::vector<std::string> colNames;                                                         \
         if (multi) {                                                                               \
@@ -40,7 +40,7 @@ class SortTest : public QueryTestBase {};
         }                                                                                          \
         auto yieldSentence = getYieldSentence(sentence);                                           \
         auto* project = Project::make(qctx_.get(), start, yieldSentence->yieldColumns());          \
-        project->setInputVar(sortNode->outputVar());                                               \
+        project->setInputVar(topnNode->outputVar());                                               \
         project->setColNames(std::move(colNames));                                                 \
         auto proExe = Executor::create(project, qctx_.get());                                      \
         EXPECT_TRUE(proExe->execute().get().ok());                                                 \
@@ -49,86 +49,68 @@ class SortTest : public QueryTestBase {};
         EXPECT_EQ(proResult.state(), Result::State::kSuccess);                                     \
     } while (false)
 
-TEST_F(SortTest, sortOneColAsc) {
+TEST_F(TopNTest, topnOneColAsc) {
     DataSet expected({"age"});
     expected.emplace_back(Row({18}));
     expected.emplace_back(Row({18}));
     expected.emplace_back(Row({19}));
     expected.emplace_back(Row({20}));
-    expected.emplace_back(Row({20}));
-    expected.emplace_back(Row({Value::kNullValue}));
     std::vector<std::pair<size_t, OrderFactor::OrderType>> factors;
     factors.emplace_back(std::make_pair(2, OrderFactor::OrderType::ASCEND));
-    SORT_RESUTL_CHECK("input_sequential", "sort_one_col_asc", false, factors, expected);
+    TOPN_RESUTL_CHECK("input_sequential", "topn_one_col_asc", false, factors, 0, 4, expected);
 }
 
-TEST_F(SortTest, sortOneColDes) {
+TEST_F(TopNTest, topnOneColDes) {
     DataSet expected({"age"});
-    expected.emplace_back(Row({Value::kNullValue}));
-    expected.emplace_back(Row({20}));
     expected.emplace_back(Row({20}));
     expected.emplace_back(Row({19}));
     expected.emplace_back(Row({18}));
     expected.emplace_back(Row({18}));
     std::vector<std::pair<size_t, OrderFactor::OrderType>> factors;
     factors.emplace_back(std::make_pair(2, OrderFactor::OrderType::DESCEND));
-    SORT_RESUTL_CHECK("input_sequential", "sort_one_col_des", false, factors, expected);
+    TOPN_RESUTL_CHECK("input_sequential", "topn_one_col_des", false, factors, 2, 9, expected);
 }
 
-TEST_F(SortTest, sortTwoColsAscAsc) {
+TEST_F(TopNTest, topnTwoColsAscAsc) {
     DataSet expected({"age", "start_year"});
-    expected.emplace_back(Row({18, 2010}));
-    expected.emplace_back(Row({18, 2010}));
     expected.emplace_back(Row({19, 2009}));
     expected.emplace_back(Row({20, 2008}));
     expected.emplace_back(Row({20, 2009}));
-    expected.emplace_back(Row({Value::kNullValue, 2009}));
     std::vector<std::pair<size_t, OrderFactor::OrderType>> factors;
     factors.emplace_back(std::make_pair(2, OrderFactor::OrderType::ASCEND));
     factors.emplace_back(std::make_pair(4, OrderFactor::OrderType::ASCEND));
-    SORT_RESUTL_CHECK("input_sequential", "sort_two_cols_asc_asc", true, factors, expected);
+    TOPN_RESUTL_CHECK("input_sequential", "topn_two_cols_asc_asc", true, factors, 2, 3, expected);
 }
 
-TEST_F(SortTest, sortTwoColsAscDes) {
+TEST_F(TopNTest, topnTwoColsAscDes) {
     DataSet expected({"age", "start_year"});
     expected.emplace_back(Row({18, 2010}));
     expected.emplace_back(Row({18, 2010}));
-    expected.emplace_back(Row({19, 2009}));
-    expected.emplace_back(Row({20, 2009}));
-    expected.emplace_back(Row({20, 2008}));
-    expected.emplace_back(Row({Value::kNullValue, 2009}));
     std::vector<std::pair<size_t, OrderFactor::OrderType>> factors;
     factors.emplace_back(std::make_pair(2, OrderFactor::OrderType::ASCEND));
     factors.emplace_back(std::make_pair(4, OrderFactor::OrderType::DESCEND));
-    SORT_RESUTL_CHECK("input_sequential", "sort_two_cols_asc_des", true, factors, expected);
+    TOPN_RESUTL_CHECK("input_sequential", "topn_two_cols_asc_des", true, factors, 0, 2, expected);
 }
 
-TEST_F(SortTest, sortTwoColDesDes) {
+TEST_F(TopNTest, topnTwoColDesDes) {
     DataSet expected({"age", "start_year"});
-    expected.emplace_back(Row({Value::kNullValue, 2009}));
-    expected.emplace_back(Row({20, 2009}));
+    std::vector<std::pair<size_t, OrderFactor::OrderType>> factors;
+    factors.emplace_back(std::make_pair(2, OrderFactor::OrderType::DESCEND));
+    factors.emplace_back(std::make_pair(4, OrderFactor::OrderType::DESCEND));
+    TOPN_RESUTL_CHECK("input_sequential", "topn_two_cols_des_des", true, factors, 10, 5, expected);
+}
+
+TEST_F(TopNTest, topnTwoColDesAsc) {
+    DataSet expected({"age", "start_year"});
     expected.emplace_back(Row({20, 2008}));
+    expected.emplace_back(Row({20, 2009}));
     expected.emplace_back(Row({19, 2009}));
     expected.emplace_back(Row({18, 2010}));
     expected.emplace_back(Row({18, 2010}));
     std::vector<std::pair<size_t, OrderFactor::OrderType>> factors;
     factors.emplace_back(std::make_pair(2, OrderFactor::OrderType::DESCEND));
-    factors.emplace_back(std::make_pair(4, OrderFactor::OrderType::DESCEND));
-    SORT_RESUTL_CHECK("input_sequential", "sort_two_cols_des_des", true, factors, expected);
-}
-
-TEST_F(SortTest, sortTwoColDesDes_union) {
-    DataSet expected({"age", "start_year"});
-    expected.emplace_back(Row({Value::kNullValue, 2009}));
-    expected.emplace_back(Row({20, 2009}));
-    expected.emplace_back(Row({20, 2008}));
-    expected.emplace_back(Row({19, 2009}));
-    expected.emplace_back(Row({18, 2010}));
-    expected.emplace_back(Row({18, 2010}));
-    std::vector<std::pair<size_t, OrderFactor::OrderType>> factors;
-    factors.emplace_back(std::make_pair(2, OrderFactor::OrderType::DESCEND));
-    factors.emplace_back(std::make_pair(4, OrderFactor::OrderType::DESCEND));
-    SORT_RESUTL_CHECK("union_sequential", "union_sort_two_cols_des_des", true, factors, expected);
+    factors.emplace_back(std::make_pair(4, OrderFactor::OrderType::ASCEND));
+    TOPN_RESUTL_CHECK("input_sequential", "topn_two_cols_des_asc", true, factors, 1, 9, expected);
 }
 }   // namespace graph
 }   // namespace nebula

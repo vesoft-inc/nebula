@@ -19,45 +19,45 @@ folly::Future<Status> SortExecutor::execute() {
     if (UNLIKELY(iter == nullptr)) {
         return Status::Error("Internal error: nullptr iterator in sort executor");
     }
+    if (UNLIKELY(iter->isDefaultIter())) {
+        std::string errMsg = "Internal error: Sort executor does not supported DefaultIter";
+        LOG(ERROR) << errMsg;
+        return Status::Error(errMsg);
+    }
     if (UNLIKELY(iter->isGetNeighborsIter())) {
         std::string errMsg = "Internal error: Sort executor does not supported GetNeighborsIter";
         LOG(ERROR) << errMsg;
         return Status::Error(errMsg);
     }
+
+    auto &factors = sort->factors();
+    auto comparator = [&factors] (const LogicalRow &lhs, const LogicalRow &rhs) {
+        for (auto &item : factors) {
+            auto index = item.first;
+            auto orderType = item.second;
+            if (lhs[index] == rhs[index]) {
+                continue;
+            }
+
+            if (orderType == OrderFactor::OrderType::ASCEND) {
+                return lhs[index] < rhs[index];
+            } else if (orderType == OrderFactor::OrderType::DESCEND) {
+                return lhs[index] > rhs[index];
+            }
+        }
+        return false;
+    };
+
     if (iter->isSequentialIter()) {
         auto seqIter = static_cast<SequentialIter*>(iter.get());
-        auto &factors = sort->factors();
-        auto &colIndices = seqIter->getColIndices();
-        std::vector<std::pair<size_t, OrderFactor::OrderType>> indexes;
-        for (auto &factor : factors) {
-            auto indexFind = colIndices.find(factor.first);
-            if (indexFind == colIndices.end()) {
-                LOG(ERROR) << "Column name `" << factor.first
-                           << "' does not exist.";
-                return Status::Error("Column name `%s' does not exist.",
-                                     factor.first.c_str());
-            }
-            indexes.emplace_back(std::make_pair(indexFind->second, factor.second));
-        }
-        auto comparator = [&indexes] (const LogicalRow &lhs, const LogicalRow &rhs) {
-            for (auto &item : indexes) {
-                auto index = item.first;
-                auto orderType = item.second;
-                if (lhs[index] == rhs[index]) {
-                    continue;
-                }
-
-                if (orderType == OrderFactor::OrderType::ASCEND) {
-                    return lhs[index] < rhs[index];
-                } else if (orderType == OrderFactor::OrderType::DESCEND) {
-                    return lhs[index] > rhs[index];
-                }
-            }
-            return false;
-        };
         std::sort(seqIter->begin(), seqIter->end(), comparator);
+    } else if (iter->isJoinIter()) {
+        auto joinIter = static_cast<JoinIter*>(iter.get());
+        std::sort(joinIter->begin(), joinIter->end(), comparator);
+    } else if (iter->isPropIter()) {
+        auto propIter = static_cast<PropIter*>(iter.get());
+        std::sort(propIter->begin(), propIter->end(), comparator);
     }
-    // TODO: Sort the join iter.
     return finish(ResultBuilder().value(iter->valuePtr()).iter(std::move(iter)).finish());
 }
 
