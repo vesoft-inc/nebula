@@ -296,6 +296,7 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp,
         case Expression::Kind::kRelLE:
         case Expression::Kind::kRelGT:
         case Expression::Kind::kRelGE:
+        case Expression::Kind::kRelNotIn:
         case Expression::Kind::kRelIn: {
             auto* relExp = static_cast<const RelationalExpression*>(exp);
             auto ret = checkExp(relExp->left(), returned, filtered, updated);
@@ -303,6 +304,36 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp,
                 return ret;
             }
             return checkExp(relExp->right(), returned, filtered, updated);
+        }
+        case Expression::Kind::kList: {
+            auto* listExp = static_cast<const ListExpression*>(exp);
+            for (auto& item : listExp->items()) {
+                auto ret = checkExp(item, returned, filtered, updated);
+                if (ret != cpp2::ErrorCode::SUCCEEDED) {
+                    return ret;
+                }
+            }
+            return cpp2::ErrorCode::SUCCEEDED;
+        }
+        case Expression::Kind::kSet: {
+            auto* setExp = static_cast<const SetExpression*>(exp);
+            for (auto& item : setExp->items()) {
+                auto ret = checkExp(item, returned, filtered, updated);
+                if (ret != cpp2::ErrorCode::SUCCEEDED) {
+                    return ret;
+                }
+            }
+            return cpp2::ErrorCode::SUCCEEDED;
+        }
+        case Expression::Kind::kMap: {
+            auto* mapExp = static_cast<const MapExpression*>(exp);
+            for (auto& item : mapExp->items()) {
+                auto ret = checkExp(item.second, returned, filtered, updated);
+                if (ret != cpp2::ErrorCode::SUCCEEDED) {
+                    return ret;
+                }
+            }
+            return cpp2::ErrorCode::SUCCEEDED;
         }
         case Expression::Kind::kLogicalAnd:
         case Expression::Kind::kLogicalOr:
@@ -319,7 +350,15 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp,
             return checkExp(typExp->operand(), returned, filtered, updated);
         }
         case Expression::Kind::kFunctionCall: {
-            return cpp2::ErrorCode::E_INVALID_FILTER;
+            auto* funExp = static_cast<const FunctionCallExpression*>(exp);
+            auto& args = funExp->args()->args();
+            for (auto iter = args.begin(); iter < args.end(); ++iter) {
+                auto ret = checkExp(iter->get(), returned, filtered, updated);
+                if (ret != cpp2::ErrorCode::SUCCEEDED) {
+                    return ret;
+                }
+            }
+            return cpp2::ErrorCode::SUCCEEDED;
         }
         case Expression::Kind::kSrcProperty: {
             auto* sourceExp = static_cast<const SourcePropertyExpression*>(exp);
@@ -425,19 +464,24 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp,
             return cpp2::ErrorCode::SUCCEEDED;
         }
         case Expression::Kind::kInputProperty:
+        case Expression::Kind::kContains:
+        case Expression::Kind::kSubscript:
+        case Expression::Kind::kAttribute:
+        case Expression::Kind::kLabelAttribute:
+        case Expression::Kind::kTagProperty:
+        case Expression::Kind::kVertex:
+        case Expression::Kind::kEdge:
+        case Expression::Kind::kLabel:
         case Expression::Kind::kVarProperty:
         case Expression::Kind::kDstProperty:
         case Expression::Kind::kUUID:
         case Expression::Kind::kVar:
         case Expression::Kind::kVersionedVar: {
-            return cpp2::ErrorCode::E_INVALID_FILTER;
-        }
-        default: {
-            LOG(INFO) << "Unsupport expression type! kind = "
-                      << exp->kind();
+            LOG(INFO) << "Unimplemented expression type! kind = " << exp->kind();
             return cpp2::ErrorCode::E_INVALID_FILTER;
         }
     }
+    return cpp2::ErrorCode::E_INVALID_FILTER;
 }
 
 template <typename REQ, typename RESP>
