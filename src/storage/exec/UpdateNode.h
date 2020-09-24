@@ -169,9 +169,8 @@ public:
 
         folly::Baton<true, std::atomic> baton;
         auto ret = kvstore::ResultCode::SUCCEEDED;
-        std::shared_ptr<int32_t> requestPtr = std::make_shared<int32_t>(0);
         planContext_->env_->kvstore_->asyncAtomicOp(planContext_->spaceId_, partId,
-            [&partId, requestPtr, &vId, this] ()
+            [&partId, &vId, this] ()
             -> folly::Optional<std::string> {
                 this->exeResult_ = RelNode::execute(partId, vId);
 
@@ -202,14 +201,14 @@ public:
                     if (this->exeResult_ != kvstore::ResultCode::SUCCEEDED) {
                         return folly::none;
                     }
-                    return this->updateAndWriteBack(partId, vId, requestPtr);
+                    return this->updateAndWriteBack(partId, vId);
                 } else {
                     // if tagnode/edgenode error
                     return folly::none;
                 }
             },
-            [&ret, requestPtr, &baton, this] (kvstore::ResultCode code) {
-                planContext_->env_->onFlyingRequest_.fetch_sub(*requestPtr);
+            [&ret, &baton, this] (kvstore::ResultCode code) {
+                planContext_->env_->onFlyingRequest_.fetch_sub(1);
                 if (code == kvstore::ResultCode::ERR_ATOMIC_OP_FAILED &&
                     this->exeResult_ != kvstore::ResultCode::SUCCEEDED) {
                     ret = this->exeResult_;
@@ -311,8 +310,8 @@ public:
     }
 
     folly::Optional<std::string>
-    updateAndWriteBack(const PartitionID partId, const VertexID vId,
-                       std::shared_ptr<int32_t> requestPtr) {
+    updateAndWriteBack(const PartitionID partId, const VertexID vId) {
+        planContext_->env_->onFlyingRequest_.fetch_add(1);
         for (auto& updateProp : updatedProps_) {
             auto propName = updateProp.get_name();
             auto updateExp = Expression::decode(updateProp.get_value());
@@ -364,7 +363,6 @@ public:
                         }
                         auto oi = indexKey(partId, vId, reader_, index);
                         if (!oi.empty()) {
-                            (*requestPtr)++;
                             if (planContext_->env_->checkRebuilding(planContext_->spaceId_,
                                                                     partId, indexId)) {
                                 auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
@@ -373,7 +371,6 @@ public:
                                                                             partId, indexId)) {
                                 LOG(ERROR) << "The index has been locked: "
                                            << index->get_index_name();
-                                planContext_->env_->onFlyingRequest_.fetch_add(*requestPtr);
                                 return folly::none;
                             } else {
                                 batchHolder->remove(std::move(oi));
@@ -392,7 +389,6 @@ public:
                     }
                     auto ni = indexKey(partId, vId, nReader.get(), index);
                     if (!ni.empty()) {
-                        (*requestPtr)++;
                         if (planContext_->env_->checkRebuilding(planContext_->spaceId_,
                                                                 partId, indexId)) {
                             auto modifyKey = OperationKeyUtils::modifyOperationKey(partId,
@@ -401,7 +397,6 @@ public:
                         } else if (planContext_->env_->checkIndexLocked(planContext_->spaceId_,
                                                                         partId, indexId)) {
                             LOG(ERROR) << "The index has been locked: " << index->get_index_name();
-                            planContext_->env_->onFlyingRequest_.fetch_add(*requestPtr);
                             return folly::none;
                         } else {
                             batchHolder->put(std::move(ni), "");
@@ -412,7 +407,6 @@ public:
         }
         // step 3, insert new vertex data
         batchHolder->put(std::move(key_), std::move(nVal));
-        planContext_->env_->onFlyingRequest_.fetch_add(*requestPtr);
         return encodeBatchValue(batchHolder->getBatch());
     }
 
@@ -460,9 +454,8 @@ public:
 
         folly::Baton<true, std::atomic> baton;
         auto ret = kvstore::ResultCode::SUCCEEDED;
-        std::shared_ptr<int32_t> requestPtr = std::make_shared<int32_t>(0);
         planContext_->env_->kvstore_->asyncAtomicOp(planContext_->spaceId_, partId,
-            [&partId, requestPtr, &edgeKey, this] ()
+            [&partId, &edgeKey, this] ()
             -> folly::Optional<std::string> {
                 this->exeResult_ = RelNode::execute(partId, edgeKey);
                 if (this->exeResult_ == kvstore::ResultCode::SUCCEEDED) {
@@ -496,13 +489,14 @@ public:
                     if (this->exeResult_ != kvstore::ResultCode::SUCCEEDED) {
                         return folly::none;
                     }
-                    return this->updateAndWriteBack(partId, edgeKey, requestPtr);
+                    return this->updateAndWriteBack(partId, edgeKey);
                 } else {
                     // If filter out, StorageExpressionContext is set in filterNode
                     return folly::none;
                 }
             },
-            [&ret, requestPtr, &baton, this] (kvstore::ResultCode code) {
+            [&ret, &baton, this] (kvstore::ResultCode code) {
+                planContext_->env_->onFlyingRequest_.fetch_sub(1);
                 if (code == kvstore::ResultCode::ERR_ATOMIC_OP_FAILED &&
                     this->exeResult_ != kvstore::ResultCode::SUCCEEDED) {
                     ret = this->exeResult_;
@@ -623,8 +617,8 @@ public:
     }
 
     folly::Optional<std::string>
-    updateAndWriteBack(const PartitionID partId, const cpp2::EdgeKey& edgeKey,
-                       std::shared_ptr<int32_t> requestPtr) {
+    updateAndWriteBack(const PartitionID partId, const cpp2::EdgeKey& edgeKey) {
+        planContext_->env_->onFlyingRequest_.fetch_add(1);
         for (auto& updateProp : updatedProps_) {
             auto propName = updateProp.get_name();
             auto updateExp = Expression::decode(updateProp.get_value());
@@ -674,7 +668,6 @@ public:
                         }
                         auto oi = indexKey(partId, reader_, edgeKey, index);
                         if (!oi.empty()) {
-                            (*requestPtr)++;
                             if (planContext_->env_->checkRebuilding(planContext_->spaceId_,
                                                                     partId, indexId)) {
                                 auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
@@ -683,7 +676,6 @@ public:
                                                                             partId, indexId)) {
                                 LOG(ERROR) << "The index has been locked: "
                                            << index->get_index_name();
-                                planContext_->env_->onFlyingRequest_.fetch_add(*requestPtr);
                                 return folly::none;
                             } else {
                                 batchHolder->remove(std::move(oi));
@@ -703,7 +695,6 @@ public:
                     }
                     auto ni = indexKey(partId, nReader.get(), edgeKey, index);
                     if (!ni.empty()) {
-                        (*requestPtr)++;
                         if (planContext_->env_->checkRebuilding(planContext_->spaceId_,
                                                                 partId, indexId)) {
                             auto modifyKey = OperationKeyUtils::modifyOperationKey(partId,
@@ -712,7 +703,6 @@ public:
                         } else if (planContext_->env_->checkIndexLocked(planContext_->spaceId_,
                                                                         partId, indexId)) {
                             LOG(ERROR) << "The index has been locked: " << index->get_index_name();
-                            planContext_->env_->onFlyingRequest_.fetch_add(*requestPtr);
                             return folly::none;
                         } else {
                             batchHolder->put(std::move(ni), "");
@@ -723,7 +713,6 @@ public:
         }
         // step 3, insert new edge data
         batchHolder->put(std::move(key_), std::move(nVal));
-        planContext_->env_->onFlyingRequest_.fetch_add(*requestPtr);
         return encodeBatchValue(batchHolder->getBatch());
     }
 

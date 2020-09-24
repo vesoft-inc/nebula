@@ -237,18 +237,14 @@ UpdateVertexProcessor::buildTagContext(const cpp2::UpdateVertexRequest& req) {
 
     // update vertex only handle one tagId
     // maybe no updated prop, filter prop, return prop
+    auto iter = tagContext_.tagNames_.find(tagId_);
     if (tagContext_.tagNames_.size() != 1 ||
-        tagContext_.tagNames_.find(tagId_) == tagContext_.tagNames_.end()) {
+        iter == tagContext_.tagNames_.end()) {
         VLOG(1) << "should only contain one tag in update vertex!";
         return cpp2::ErrorCode::E_INVALID_UPDATER;
     }
 
     planContext_->tagId_ = tagId_;
-    auto iter = tagContext_.tagNames_.find(tagId_);
-    if (iter == tagContext_.tagNames_.end()) {
-        return cpp2::ErrorCode::E_TAG_NOT_FOUND;
-    }
-
     planContext_->tagName_ = iter->second;
     auto schemaMap = tagContext_.schemas_;
     auto iterSchema = schemaMap.find(tagId_);

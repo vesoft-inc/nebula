@@ -238,19 +238,15 @@ UpdateEdgeProcessor::buildEdgeContext(const cpp2::UpdateEdgeRequest& req) {
 
     // update edge only handle one edgetype
     // maybe no updated prop, filter prop, return prop
-    if (edgeContext_.edgeNames_.find(edgeKey_.edge_type) == edgeContext_.edgeNames_.end() ||
-        edgeContext_.edgeNames_.size() != 1) {
+    auto iter = edgeContext_.edgeNames_.find(edgeKey_.edge_type);
+    if (edgeContext_.edgeNames_.size() != 1 ||
+        iter == edgeContext_.edgeNames_.end()) {
         VLOG(1) << "should only contain one edge in update edge!";
         return cpp2::ErrorCode::E_INVALID_UPDATER;
     }
 
     planContext_->edgeType_ = edgeKey_.edge_type;
-    auto iter = edgeContext_.edgeNames_.find(edgeKey_.edge_type);
-    if (iter == edgeContext_.edgeNames_.end()) {
-        return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
-    }
     planContext_->edgeName_ = iter->second;
-
     auto schemaMap = edgeContext_.schemas_;
     auto iterSchema = schemaMap.find(std::abs(edgeKey_.edge_type));
     if (iterSchema != schemaMap.end()) {
