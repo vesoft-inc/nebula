@@ -290,42 +290,19 @@ StatusOr<DataSet> SchemaUtil::toShowCreateSchema(bool isTag,
     return dataSet;
 }
 
-std::string SchemaUtil::typeToString(const meta::cpp2::ColumnDef &col) {
-    switch (col.get_type().get_type()) {
-        case meta::cpp2::PropertyType::BOOL:
-            return "bool";
-        case meta::cpp2::PropertyType::INT8:
-            return "int8";
-        case meta::cpp2::PropertyType::INT16:
-            return "int16";
-        case meta::cpp2::PropertyType::INT32:
-            return "int32";
-        case meta::cpp2::PropertyType::INT64:
-            return "int64";
-        case meta::cpp2::PropertyType::VID:
-            return "vid";
-        case meta::cpp2::PropertyType::FLOAT:
-            return "float";
-        case meta::cpp2::PropertyType::DOUBLE:
-            return "double";
-        case meta::cpp2::PropertyType::STRING:
-            return "string";
-        case meta::cpp2::PropertyType::FIXED_STRING: {
-            auto typeLen = col.type.__isset.type_length ? *col.get_type().get_type_length() : 0;
-            return folly::stringPrintf("fixed_string(%d)", typeLen);
-        }
-        case meta::cpp2::PropertyType::TIMESTAMP:
-            return "timestamp";
-        case meta::cpp2::PropertyType::TIME:
-            return "time";
-        case meta::cpp2::PropertyType::DATE:
-            return "date";
-        case meta::cpp2::PropertyType::DATETIME:
-            return "datetime";
-        case meta::cpp2::PropertyType::UNKNOWN:
-            return "";
+std::string SchemaUtil::typeToString(const meta::cpp2::ColumnTypeDef &col) {
+    auto type = meta::cpp2::_PropertyType_VALUES_TO_NAMES.at(col.get_type());
+    if (col.get_type() == meta::cpp2::PropertyType::FIXED_STRING) {
+        return folly::stringPrintf("%s(%d)", type, *col.get_type_length());
     }
-    return "";
+    return type;
+}
+
+std::string SchemaUtil::typeToString(const meta::cpp2::ColumnDef &col) {
+    auto str = typeToString(col.get_type());
+    std::transform(
+        std::begin(str), std::end(str), std::begin(str), [](uint8_t c) { return std::tolower(c); });
+    return str;
 }
 
 Value::Type SchemaUtil::propTypeToValueType(meta::cpp2::PropertyType propType) {

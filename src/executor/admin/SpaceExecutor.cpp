@@ -5,8 +5,9 @@
 */
 
 #include "executor/admin/SpaceExecutor.h"
-#include "planner/Admin.h"
 #include "context/QueryContext.h"
+#include "planner/Admin.h"
+#include "util/SchemaUtil.h"
 #include "util/ScopedTimer.h"
 
 namespace nebula {
@@ -55,9 +56,7 @@ folly::Future<Status> DescSpaceExecutor::execute() {
                 row.values.emplace_back(properties.get_replica_factor());
                 row.values.emplace_back(properties.get_charset_name());
                 row.values.emplace_back(properties.get_collate_name());
-                auto &vid = properties.get_vid_type();
-                auto vidSize = vid.__isset.type_length ? *vid.get_type_length() : 0;
-                row.values.emplace_back(ColumnTypeDef(vid.get_type(), vidSize).toString());
+                row.values.emplace_back(SchemaUtil::typeToString(properties.get_vid_type()));
                 dataSet.rows.emplace_back(std::move(row));
                 return finish(ResultBuilder()
                                   .value(Value(std::move(dataSet)))
@@ -135,16 +134,14 @@ folly::Future<Status> ShowCreateSpaceExecutor::execute() {
                 row.values.emplace_back(properties.get_space_name());
                 auto fmt = "CREATE SPACE `%s` (partition_num = %d, replica_factor = %d, "
                            "charset = %s, collate = %s, vid_type = %s)";
-                auto &vid = properties.get_vid_type();
-                auto vidSize = vid.__isset.type_length ? *vid.get_type_length() : 0;
-                row.values.emplace_back(
-                    folly::stringPrintf(fmt,
-                                        properties.get_space_name().c_str(),
-                                        properties.get_partition_num(),
-                                        properties.get_replica_factor(),
-                                        properties.get_charset_name().c_str(),
-                                        properties.get_collate_name().c_str(),
-                                        ColumnTypeDef(vid.get_type(), vidSize).toString().c_str()));
+                row.values.emplace_back(folly::stringPrintf(
+                    fmt,
+                    properties.get_space_name().c_str(),
+                    properties.get_partition_num(),
+                    properties.get_replica_factor(),
+                    properties.get_charset_name().c_str(),
+                    properties.get_collate_name().c_str(),
+                    SchemaUtil::typeToString(properties.get_vid_type()).c_str()));
                 dataSet.rows.emplace_back(std::move(row));
                 return finish(ResultBuilder()
                                   .value(Value(std::move(dataSet)))

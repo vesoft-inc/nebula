@@ -147,9 +147,7 @@ Status AlterValidator::alterSchema(const std::vector<AlterSchemaOptItem*>& schem
                 for (auto& spec : specs) {
                     meta::cpp2::ColumnDef column;
                     column.name = *spec->name();
-                    meta::cpp2::ColumnTypeDef typeDef;
-                    typeDef.set_type(spec->type());
-                    column.type = typeDef;
+                    column.type.set_type(spec->type());
                     if (spec->hasDefaultValue()) {
                         column.set_default_value(spec->getDefaultValue());
                     }

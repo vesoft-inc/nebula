@@ -55,11 +55,14 @@ Status CreateSpaceValidator::validateImpl() {
                 if (typeDef.type == meta::cpp2::PropertyType::INT64) {
                     spaceDesc_.vid_type.set_type_length(8);
                 } else {
-                    if (typeDef.typeLen <= 0) {
-                        return Status::Error("Vid size should be a positive number: %d",
-                                             typeDef.typeLen);
+                    if (!typeDef.__isset.type_length) {
+                        return Status::Error("type length is not set for fixed string type");
                     }
-                    spaceDesc_.vid_type.set_type_length(typeDef.typeLen);
+                    if (*typeDef.get_type_length() <= 0) {
+                        return Status::Error("Vid size should be a positive number: %d",
+                                             *typeDef.get_type_length());
+                    }
+                    spaceDesc_.vid_type.set_type_length(*typeDef.get_type_length());
                 }
                 break;
             }

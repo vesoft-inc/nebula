@@ -9,6 +9,8 @@
 #include "context/QueryContext.h"
 #include "util/ScopedTimer.h"
 
+using nebula::network::NetworkUtils;
+
 namespace nebula {
 namespace graph {
 folly::Future<Status> ShowPartsExecutor::execute() {

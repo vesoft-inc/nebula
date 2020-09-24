@@ -11,8 +11,8 @@
 #include "common/expression/Expression.h"
 #include "common/interface/gen-cpp2/meta_types.h"
 #include "common/interface/gen-cpp2/storage_types.h"
-#include "parser/ColumnTypeDef.h"
 #include "parser/EdgeKey.h"
+#include "util/SchemaUtil.h"
 
 namespace nebula {
 namespace util {
@@ -64,8 +64,7 @@ folly::dynamic toJson(const meta::cpp2::SpaceDesc &desc) {
     obj.insert("replicaFactor", desc.replica_factor);
     obj.insert("charset", desc.charset_name);
     obj.insert("collate", desc.collate_name);
-    auto vidSize = desc.vid_type.__isset.type_length ? *desc.vid_type.get_type_length() : 0;
-    obj.insert("vidType", ColumnTypeDef(desc.vid_type.get_type(), vidSize).toString());
+    obj.insert("vidType", graph::SchemaUtil::typeToString(desc.get_vid_type()));
     return obj;
 }
 

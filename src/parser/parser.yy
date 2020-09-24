@@ -16,7 +16,6 @@
 #include <cstddef>
 #include "parser/ExplainSentence.h"
 #include "parser/SequentialSentences.h"
-#include "parser/ColumnTypeDef.h"
 #include "common/interface/gen-cpp2/meta_types.h"
 #include "common/expression/AttributeExpression.h"
 #include "common/expression/LabelAttributeExpression.h"
@@ -48,7 +47,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
     int64_t                                 intval;
     double                                  doubleval;
     std::string                            *strval;
-    nebula::ColumnTypeDef                  *type;
+    nebula::meta::cpp2::ColumnTypeDef      *type;
     nebula::Expression                     *expr;
     nebula::Sentence                       *sentence;
     nebula::Sentence                       *sentences;
@@ -627,24 +626,62 @@ argument_list
     ;
 
 type_spec
-    : KW_BOOL { $$ = new ColumnTypeDef(meta::cpp2::PropertyType::BOOL); }
-    | KW_INT8 { $$ = new ColumnTypeDef(meta::cpp2::PropertyType::INT8); }
-    | KW_INT16 { $$ = new ColumnTypeDef(meta::cpp2::PropertyType::INT16); }
-    | KW_INT32 { $$ = new ColumnTypeDef(meta::cpp2::PropertyType::INT32); }
-    | KW_INT64 { $$ = new ColumnTypeDef(meta::cpp2::PropertyType::INT64); }
-    | KW_INT { $$ = new ColumnTypeDef(meta::cpp2::PropertyType::INT64); }
-    | KW_FLOAT { $$ = new ColumnTypeDef(meta::cpp2::PropertyType::FLOAT); }
-    | KW_DOUBLE { $$ = new ColumnTypeDef(meta::cpp2::PropertyType::DOUBLE); }
-    | KW_STRING { $$ = new ColumnTypeDef(meta::cpp2::PropertyType::STRING); }
+    : KW_BOOL {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->set_type(meta::cpp2::PropertyType::BOOL);
+    }
+    | KW_INT8 {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->set_type(meta::cpp2::PropertyType::INT8);
+    }
+    | KW_INT16 {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->set_type(meta::cpp2::PropertyType::INT16);
+    }
+    | KW_INT32 {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->set_type(meta::cpp2::PropertyType::INT32);
+    }
+    | KW_INT64 {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->set_type(meta::cpp2::PropertyType::INT64);
+    }
+    | KW_INT {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->set_type(meta::cpp2::PropertyType::INT64);
+    }
+    | KW_FLOAT {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->set_type(meta::cpp2::PropertyType::FLOAT);
+    }
+    | KW_DOUBLE {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->set_type(meta::cpp2::PropertyType::DOUBLE);
+    }
+    | KW_STRING {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->set_type(meta::cpp2::PropertyType::STRING);
+    }
     | KW_FIXED_STRING L_PAREN INTEGER R_PAREN {
         if ($3 > std::numeric_limits<int16_t>::max()) {
             throw nebula::GraphParser::syntax_error(@3, "Out of range:");
         }
-        $$ = new ColumnTypeDef(meta::cpp2::PropertyType::FIXED_STRING, $3);
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->set_type(meta::cpp2::PropertyType::FIXED_STRING);
+        $$->set_type_length($3);
     }
-    | KW_TIMESTAMP { $$ = new ColumnTypeDef(meta::cpp2::PropertyType::TIMESTAMP); }
-    | KW_DATE { $$ = new ColumnTypeDef(meta::cpp2::PropertyType::DATE); }
-    | KW_DATETIME { $$ = new ColumnTypeDef(meta::cpp2::PropertyType::DATETIME); }
+    | KW_TIMESTAMP {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->set_type(meta::cpp2::PropertyType::TIMESTAMP);
+    }
+    | KW_DATE {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->set_type(meta::cpp2::PropertyType::DATE);
+    }
+    | KW_DATETIME {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->set_type(meta::cpp2::PropertyType::DATETIME);
+    }
     ;
 
 
@@ -1367,27 +1404,27 @@ column_spec_list
 
 column_spec
     : name_label type_spec {
-        $$ = new ColumnSpecification($1, $2->type, true, nullptr, $2->typeLen);
+        $$ = new ColumnSpecification($1, $2->type, true, nullptr, $2->type_length);
         delete $2;
     }
     | name_label type_spec KW_DEFAULT expression {
-        $$ = new ColumnSpecification($1, $2->type, true, $4, $2->typeLen);
+        $$ = new ColumnSpecification($1, $2->type, true, $4, $2->type_length);
         delete $2;
     }
     | name_label type_spec KW_NOT KW_NULL {
-        $$ = new ColumnSpecification($1, $2->type, false, nullptr, $2->typeLen);
+        $$ = new ColumnSpecification($1, $2->type, false, nullptr, $2->type_length);
         delete $2;
     }
     | name_label type_spec KW_NULL {
-        $$ = new ColumnSpecification($1, $2->type, true, nullptr, $2->typeLen);
+        $$ = new ColumnSpecification($1, $2->type, true, nullptr, $2->type_length);
         delete $2;
     }
     | name_label type_spec KW_NOT KW_NULL KW_DEFAULT expression {
-        $$ = new ColumnSpecification($1, $2->type, false, $6, $2->typeLen);
+        $$ = new ColumnSpecification($1, $2->type, false, $6, $2->type_length);
         delete $2;
     }
     | name_label type_spec KW_NULL KW_DEFAULT expression {
-        $$ = new ColumnSpecification($1, $2->type, true, $5 , $2->typeLen);
+        $$ = new ColumnSpecification($1, $2->type, true, $5 , $2->type_length);
         delete $2;
     }
     ;

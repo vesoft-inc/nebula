@@ -5,6 +5,7 @@
  */
 
 #include "parser/AdminSentences.h"
+#include "util/SchemaUtil.h"
 
 namespace nebula {
 
@@ -51,19 +52,19 @@ std::string SpaceOptItem::toString() const {
         case REPLICA_FACTOR:
             return folly::stringPrintf("replica_factor = %ld", boost::get<int64_t>(optValue_));
         case VID_TYPE: {
+            auto &typeDef = boost::get<meta::cpp2::ColumnTypeDef>(optValue_);
             return folly::stringPrintf("vid_type = %s",
-                                       boost::get<ColumnTypeDef>(optValue_).toString().c_str());
+                                       graph::SchemaUtil::typeToString(typeDef).c_str());
         }
         case CHARSET:
             return folly::stringPrintf("charset = %s", boost::get<std::string>(optValue_).c_str());
         case COLLATE:
             return folly::stringPrintf("collate = %s", boost::get<std::string>(optValue_).c_str());
         default:
-             FLOG_FATAL("Space parameter illegal");
+            FLOG_FATAL("Space parameter illegal");
     }
     return "Unknown";
 }
-
 
 std::string SpaceOptList::toString() const {
     std::string buf;

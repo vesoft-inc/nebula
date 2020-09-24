@@ -7,15 +7,12 @@
 #define PARSER_ADMINSENTENCES_H_
 
 #include "parser/Clauses.h"
-#include "parser/ColumnTypeDef.h"
 #include "parser/Sentence.h"
 #include "parser/MutateSentences.h"
 #include "common/network/NetworkUtils.h"
 #include "common/interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
-
-using nebula::network::NetworkUtils;
 
 class ConfigRowItem;
 
@@ -122,7 +119,7 @@ public:
 
 class SpaceOptItem final {
 public:
-    using Value = boost::variant<int64_t, std::string, ColumnTypeDef>;
+    using Value = boost::variant<int64_t, std::string, meta::cpp2::ColumnTypeDef>;
 
     enum OptionType : uint8_t {
         PARTITION_NUM,
@@ -142,7 +139,7 @@ public:
         optValue_ = val;
     }
 
-    SpaceOptItem(OptionType op, ColumnTypeDef val) {
+    SpaceOptItem(OptionType op, meta::cpp2::ColumnTypeDef val) {
         optType_ = op;
         optValue_ = std::move(val);
     }
@@ -155,8 +152,8 @@ public:
         return boost::get<std::string>(optValue_);
     }
 
-    const ColumnTypeDef& asTypeDef() const {
-        return boost::get<ColumnTypeDef>(optValue_);
+    const meta::cpp2::ColumnTypeDef& asTypeDef() const {
+        return boost::get<meta::cpp2::ColumnTypeDef>(optValue_);
     }
 
     bool isInt() const {
@@ -189,12 +186,14 @@ public:
         }
     }
 
-    ColumnTypeDef getVidType() const {
+    meta::cpp2::ColumnTypeDef getVidType() const {
         if (isTypeDef()) {
             return asTypeDef();
         } else {
             LOG(ERROR) << "vid type illegal.";
-            return ColumnTypeDef(meta::cpp2::PropertyType::UNKNOWN);
+            static meta::cpp2::ColumnTypeDef unknownTypeDef;
+            unknownTypeDef.set_type(meta::cpp2::PropertyType::UNKNOWN);
+            return unknownTypeDef;
         }
     }
 
