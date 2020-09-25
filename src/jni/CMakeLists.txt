@@ -19,6 +19,10 @@ project("Nebula Graph codec" C CXX)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "(FreeBSD|Windows)")
+    MESSAGE(FATAL_ERROR "Only Linux is supported and MacOS")
+endif()
+
 option(ENABLE_TESTING "Whether to compile unit test ON or OFF" OFF)
 
 message(STATUS "CMAKE_CURRENT_BINARY_DIR:" ${CMAKE_CURRENT_BINARY_DIR})
@@ -31,12 +35,33 @@ include_directories($ENV{JAVA_HOME}/include
 include_directories(AFTER ${CMAKE_CURRENT_SOURCE_DIR}/../)
 include_directories(AFTER ${CMAKE_CURRENT_SOURCE_DIR}/../common)
 include_directories(AFTER ${CMAKE_CURRENT_SOURCE_DIR}/src)
-
 include_directories(SYSTEM ${NEBULA_THIRDPARTY_ROOT}/include)
-link_directories(
-    ${NEBULA_THIRDPARTY_ROOT}/lib
-    ${NEBULA_THIRDPARTY_ROOT}/lib64
-)
+
+if (NOT DEFINED ENV{JAVA_HOME})
+    message(FATAL_ERROR "Couldn't find JAVA_HOME")
+endif()
+
+if (APPLE)
+    set(JNI_INCLUDE "$ENV{JAVA_HOME}/include")
+    # include jni.h path
+    include_directories(AFTER ${JNI_INCLUDE})
+    # include the install path of glog and gflags
+    include_directories(AFTER /usr/local/include)
+    # include jni_md.h path
+    find_path(JNI_MD_FILE_DIR NAMES jni_md.h)
+    if (NOT JNI_MD_FILE_DIR)
+        message(FATAL_ERROR "Couldn't find jni_md.h")
+    endif()
+    include_directories(AFTER ${JNI_MD_FILE_DIR})
+    link_directories(/usr/local/lib)
+endif()
+
+if (NEBULA_THIRDPARTY_ROOT)
+    link_directories(
+        ${NEBULA_THIRDPARTY_ROOT}/lib
+        ${NEBULA_THIRDPARTY_ROOT}/lib64
+    )
+endif()
 
 if (ENABLE_TESTING)
     enable_testing()
@@ -61,3 +86,4 @@ add_custom_target(
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/java
     DEPENDS nebula_codec
 )
+
