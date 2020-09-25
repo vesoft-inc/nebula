@@ -8,11 +8,12 @@
 #define STORAGE_COMPACTIONFILTER_H_
 
 #include "base/Base.h"
-#include "utils/NebulaKeyUtils.h"
 #include "dataman/RowReader.h"
-#include "meta/NebulaSchemaProvider.h"
 #include "kvstore/CompactionFilter.h"
+#include "meta/NebulaSchemaProvider.h"
+#include "meta/ServerBasedIndexManager.h"
 #include "storage/CommonUtils.h"
+#include "utils/NebulaKeyUtils.h"
 
 DEFINE_bool(storage_kv_mode, false, "True for kv mode");
 
@@ -21,10 +22,8 @@ namespace storage {
 
 class StorageCompactionFilter final : public kvstore::KVFilter {
 public:
-    StorageCompactionFilter(meta::SchemaManager* schemaMan,
-                            meta::IndexManager* indexMan)
-        : schemaMan_(schemaMan)
-        , indexMan_(indexMan) {
+    StorageCompactionFilter(meta::SchemaManager* schemaMan, meta::IndexManager* indexMan)
+        : schemaMan_(schemaMan), indexMan_(indexMan) {
         CHECK_NOTNULL(schemaMan_);
     }
 
@@ -93,7 +92,8 @@ public:
         return false;
     }
 
-    bool ttlValid(GraphSpaceID spaceId, const folly::StringPiece& key,
+    bool ttlValid(GraphSpaceID spaceId,
+                  const folly::StringPiece& key,
                   const folly::StringPiece& val) const {
         if (NebulaKeyUtils::isVertex(key)) {
             auto tagId = NebulaKeyUtils::getTagId(key);
@@ -115,8 +115,8 @@ public:
                 VLOG(3) << "Space " << spaceId << ", EdgeType " << edgeType << " invalid";
                 return false;
             }
-            auto reader = nebula::RowReader::getEdgePropReader(schemaMan_, val,
-                                                               spaceId, std::abs(edgeType));
+            auto reader =
+                nebula::RowReader::getEdgePropReader(schemaMan_, val, spaceId, std::abs(edgeType));
             if (reader == nullptr) {
                 VLOG(3) << "Remove the bad format edge!";
                 return false;
@@ -144,7 +144,7 @@ public:
 
         // Only support the specified ttl_col mode
         // Not specifying or non-positive ttl_duration behaves like ttl_duration = infinity
-        if (ttlCol.empty() ||  ttlDuration <= 0) {
+        if (ttlCol.empty() || ttlDuration <= 0) {
             return true;
         }
 
@@ -185,11 +185,8 @@ class StorageCompactionFilterFactory final : public kvstore::KVCompactionFilterF
 public:
     StorageCompactionFilterFactory(meta::SchemaManager* schemaMan,
                                    meta::IndexManager* indexMan,
-                                   GraphSpaceID spaceId,
-                                   int32_t customFilterIntervalSecs):
-        KVCompactionFilterFactory(spaceId, customFilterIntervalSecs),
-        schemaMan_(schemaMan),
-        indexMan_(indexMan) {}
+                                   GraphSpaceID spaceId)
+        : KVCompactionFilterFactory(spaceId), schemaMan_(schemaMan), indexMan_(indexMan) {}
 
     std::unique_ptr<kvstore::KVFilter> createKVFilter() override {
         return std::make_unique<StorageCompactionFilter>(schemaMan_, indexMan_);
@@ -208,24 +205,19 @@ class StorageCompactionFilterFactoryBuilder : public kvstore::CompactionFilterFa
 public:
     StorageCompactionFilterFactoryBuilder(meta::SchemaManager* schemaMan,
                                           meta::IndexManager* indexMan)
-        : schemaMan_(schemaMan)
-        , indexMan_(indexMan) {}
+        : schemaMan_(schemaMan), indexMan_(indexMan) {}
 
     virtual ~StorageCompactionFilterFactoryBuilder() = default;
 
-    std::shared_ptr<kvstore::KVCompactionFilterFactory>
-    buildCfFactory(GraphSpaceID spaceId, int32_t customFilterIntervalSecs) override {
-        return std::make_shared<StorageCompactionFilterFactory>(schemaMan_,
-                                                                indexMan_,
-                                                                spaceId,
-                                                                customFilterIntervalSecs);
+    std::shared_ptr<kvstore::KVCompactionFilterFactory> buildCfFactory(
+        GraphSpaceID spaceId) override {
+        return std::make_shared<StorageCompactionFilterFactory>(schemaMan_, indexMan_, spaceId);
     }
 
 private:
     meta::SchemaManager* schemaMan_ = nullptr;
     meta::IndexManager* indexMan_ = nullptr;
 };
-
 
 }   // namespace storage
 }   // namespace nebula

@@ -49,7 +49,7 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
                         // Evict vertices from cache
                         if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
                             VLOG(3) << "Evict vertex cache for VID " << *v << ", TagID " << tag;
-                            vertexCache_->evict(std::make_pair(*v, tag), part);
+                            vertexCache_->evict(std::make_pair(*v, tag));
                         }
                         keys.emplace_back(key.str());
                     }
@@ -95,12 +95,14 @@ DeleteVerticesProcessor::deleteVertices(GraphSpaceID spaceId,
         TagID latestVVId = -1;
         while (iter->valid()) {
             auto key = iter->key();
+            if (!NebulaKeyUtils::isVertex(key)) {
+                iter->next();
+                continue;
+            }
             auto tagId = NebulaKeyUtils::getTagId(key);
             if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
-                if (NebulaKeyUtils::isVertex(key)) {
-                    VLOG(3) << "Evict vertex cache for vertex ID " << vertex << ", tagId " << tagId;
-                    vertexCache_->evict(std::make_pair(vertex, tagId), partId);
-                }
+                VLOG(3) << "Evict vertex cache for vertex ID " << vertex << ", tagId " << tagId;
+                vertexCache_->evict(std::make_pair(vertex, tagId));
             }
 
             /**
@@ -119,7 +121,7 @@ DeleteVerticesProcessor::deleteVertices(GraphSpaceID spaceId,
              * Using newlyVertexId to identify if it is the latest version
              */
             if (latestVVId != tagId) {
-                std::unique_ptr<RowReader> reader;
+                RowReader reader = RowReader::getEmptyRowReader();
                 for (auto& index : indexes_) {
                     auto indexId = index->get_index_id();
                     if (index->get_schema_id().get_tag_id() == tagId) {

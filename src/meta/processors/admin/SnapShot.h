@@ -7,12 +7,12 @@
 #ifndef META_ADMIN_SNAPSHOT_H_
 #define META_ADMIN_SNAPSHOT_H_
 
-#include <gtest/gtest_prod.h>
 #include <folly/executors/CPUThreadPoolExecutor.h>
+#include <gtest/gtest_prod.h>
 #include "kvstore/KVStore.h"
+#include "meta/processors/admin/AdminClient.h"
 #include "network/NetworkUtils.h"
 #include "time/WallClock.h"
-#include "meta/processors/admin/AdminClient.h"
 
 namespace nebula {
 namespace meta {
@@ -29,19 +29,16 @@ public:
     cpp2::ErrorCode createSnapshot(const std::string& name);
 
     cpp2::ErrorCode dropSnapshot(const std::string& name,
-                                 const std::vector<network::InetAddress> hosts);
+                                 const std::vector<network::InetAddress>& hosts);
 
     cpp2::ErrorCode blockingWrites(storage::cpp2::EngineSignType sign);
-
-    std::unordered_map<network::InetAddress, std::vector<PartitionID>>
-    getLeaderParts(HostLeaderMap *hostLeaderMap, GraphSpaceID spaceId);
 
 private:
     Snapshot(kvstore::KVStore* kv, AdminClient* client) : kv_(kv), client_(client) {
         executor_.reset(new folly::CPUThreadPoolExecutor(1));
     }
 
-    bool getAllSpaces(std::vector<GraphSpaceID>& spaces, kvstore::ResultCode& retCode);
+    StatusOr<std::map<GraphSpaceID, std::unordered_set<network::InetAddress>>> getSpacesHosts();
 
 private:
     kvstore::KVStore* kv_{nullptr};
@@ -49,8 +46,7 @@ private:
     std::unique_ptr<folly::Executor> executor_;
 };
 
-}  // namespace meta
-}  // namespace nebula
+}   // namespace meta
+}   // namespace nebula
 
-#endif  // META_ADMIN_SNAPSHOT_H_
-
+#endif   // META_ADMIN_SNAPSHOT_H_

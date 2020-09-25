@@ -3,46 +3,46 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-#include "base/Base.h"
-#include <gtest/gtest.h>
 #include <folly/executors/CPUThreadPoolExecutor.h>
 #include <folly/synchronization/Baton.h>
-#include "meta/processors/admin/Balancer.h"
-#include "interface/gen-cpp2/StorageService.h"
+#include <gtest/gtest.h>
+#include "base/Base.h"
 #include "fs/TempDir.h"
-#include "test/ServerContext.h"
+#include "interface/gen-cpp2/StorageService.h"
+#include "meta/processors/admin/Balancer.h"
 #include "meta/test/TestUtils.h"
+#include "test/ServerContext.h"
 
-#define RETURN_OK(req) \
-    UNUSED(req); \
-    do { \
-        folly::Promise<storage::cpp2::AdminExecResp> pro; \
-        auto f = pro.getFuture(); \
-        storage::cpp2::AdminExecResp resp; \
-        storage::cpp2::ResponseCommon result; \
-        std::vector<storage::cpp2::ResultCode> partRetCode; \
-        result.set_failed_codes(partRetCode); \
-        resp.set_result(result); \
-        pro.setValue(std::move(resp)); \
-        return f; \
+#define RETURN_OK(req)                                                                             \
+    UNUSED(req);                                                                                   \
+    do {                                                                                           \
+        folly::Promise<storage::cpp2::AdminExecResp> pro;                                          \
+        auto f = pro.getFuture();                                                                  \
+        storage::cpp2::AdminExecResp resp;                                                         \
+        storage::cpp2::ResponseCommon result;                                                      \
+        std::vector<storage::cpp2::ResultCode> partRetCode;                                        \
+        result.set_failed_codes(partRetCode);                                                      \
+        resp.set_result(result);                                                                   \
+        pro.setValue(std::move(resp));                                                             \
+        return f;                                                                                  \
     } while (false)
 
-#define RETURN_LEADER_CHANGED(req, leader) \
-    UNUSED(req); \
-    do { \
-        folly::Promise<storage::cpp2::AdminExecResp> pro; \
-        auto f = pro.getFuture(); \
-        storage::cpp2::AdminExecResp resp; \
-        storage::cpp2::ResponseCommon result; \
-        std::vector<storage::cpp2::ResultCode> partRetCode; \
-        storage::cpp2::ResultCode thriftRet; \
-        thriftRet.set_code(storage::cpp2::ErrorCode::E_LEADER_CHANGED); \
-        thriftRet.set_leader(leader); \
-        partRetCode.emplace_back(std::move(thriftRet)); \
-        result.set_failed_codes(partRetCode); \
-        resp.set_result(result); \
-        pro.setValue(std::move(resp)); \
-        return f; \
+#define RETURN_LEADER_CHANGED(req, leader)                                                         \
+    UNUSED(req);                                                                                   \
+    do {                                                                                           \
+        folly::Promise<storage::cpp2::AdminExecResp> pro;                                          \
+        auto f = pro.getFuture();                                                                  \
+        storage::cpp2::AdminExecResp resp;                                                         \
+        storage::cpp2::ResponseCommon result;                                                      \
+        std::vector<storage::cpp2::ResultCode> partRetCode;                                        \
+        storage::cpp2::ResultCode thriftRet;                                                       \
+        thriftRet.set_code(storage::cpp2::ErrorCode::E_LEADER_CHANGED);                            \
+        thriftRet.set_leader(leader);                                                              \
+        partRetCode.emplace_back(std::move(thriftRet));                                            \
+        result.set_failed_codes(partRetCode);                                                      \
+        resp.set_result(result);                                                                   \
+        pro.setValue(std::move(resp));                                                             \
+        return f;                                                                                  \
     } while (false)
 
 DECLARE_int32(max_retry_times_admin_op);
@@ -52,58 +52,58 @@ namespace meta {
 
 class TestStorageService : public storage::cpp2::StorageServiceSvIf {
 public:
-    folly::Future<storage::cpp2::AdminExecResp>
-    future_transLeader(const storage::cpp2::TransLeaderReq& req) override {
+    folly::Future<storage::cpp2::AdminExecResp> future_transLeader(
+        const storage::cpp2::TransLeaderReq& req) override {
         RETURN_OK(req);
     }
 
-    folly::Future<storage::cpp2::AdminExecResp>
-    future_addPart(const storage::cpp2::AddPartReq& req) override {
+    folly::Future<storage::cpp2::AdminExecResp> future_addPart(
+        const storage::cpp2::AddPartReq& req) override {
         RETURN_OK(req);
     }
 
-    folly::Future<storage::cpp2::AdminExecResp>
-    future_addLearner(const storage::cpp2::AddLearnerReq& req) override {
+    folly::Future<storage::cpp2::AdminExecResp> future_addLearner(
+        const storage::cpp2::AddLearnerReq& req) override {
         RETURN_OK(req);
     }
 
-    folly::Future<storage::cpp2::AdminExecResp>
-    future_waitingForCatchUpData(const storage::cpp2::CatchUpDataReq& req) override {
+    folly::Future<storage::cpp2::AdminExecResp> future_waitingForCatchUpData(
+        const storage::cpp2::CatchUpDataReq& req) override {
         RETURN_OK(req);
     }
 
-    folly::Future<storage::cpp2::AdminExecResp>
-    future_removePart(const storage::cpp2::RemovePartReq& req) override {
+    folly::Future<storage::cpp2::AdminExecResp> future_removePart(
+        const storage::cpp2::RemovePartReq& req) override {
         RETURN_OK(req);
     }
 
-    folly::Future<storage::cpp2::AdminExecResp>
-    future_memberChange(const storage::cpp2::MemberChangeReq& req) override {
+    folly::Future<storage::cpp2::AdminExecResp> future_memberChange(
+        const storage::cpp2::MemberChangeReq& req) override {
         RETURN_OK(req);
     }
 
-    folly::Future<storage::cpp2::AdminExecResp>
-    future_createCheckpoint(const storage::cpp2::CreateCPRequest& req) override {
+    folly::Future<storage::cpp2::AdminExecResp> future_createCheckpoint(
+        const storage::cpp2::CreateCPRequest& req) override {
         RETURN_OK(req);
     }
 
-    folly::Future<storage::cpp2::AdminExecResp>
-    future_dropCheckpoint(const storage::cpp2::DropCPRequest& req) override {
+    folly::Future<storage::cpp2::AdminExecResp> future_dropCheckpoint(
+        const storage::cpp2::DropCPRequest& req) override {
         RETURN_OK(req);
     }
 
-    folly::Future<storage::cpp2::AdminExecResp>
-    future_blockingWrites(const storage::cpp2::BlockingSignRequest& req) override {
+    folly::Future<storage::cpp2::AdminExecResp> future_blockingWrites(
+        const storage::cpp2::BlockingSignRequest& req) override {
         RETURN_OK(req);
     }
 
-    folly::Future<storage::cpp2::AdminExecResp>
-    future_rebuildTagIndex(const storage::cpp2::RebuildIndexRequest& req) override {
+    folly::Future<storage::cpp2::AdminExecResp> future_rebuildTagIndex(
+        const storage::cpp2::RebuildIndexRequest& req) override {
         RETURN_OK(req);
     }
 
-    folly::Future<storage::cpp2::AdminExecResp>
-    future_rebuildEdgeIndex(const storage::cpp2::RebuildIndexRequest& req) override {
+    folly::Future<storage::cpp2::AdminExecResp> future_rebuildEdgeIndex(
+        const storage::cpp2::RebuildIndexRequest& req) override {
         RETURN_OK(req);
     }
 };
@@ -115,18 +115,18 @@ public:
         leader_.set_port(port);
     }
 
-    folly::Future<storage::cpp2::AdminExecResp>
-    future_addLearner(const storage::cpp2::AddLearnerReq& req) override {
+    folly::Future<storage::cpp2::AdminExecResp> future_addLearner(
+        const storage::cpp2::AddLearnerReq& req) override {
         RETURN_LEADER_CHANGED(req, leader_);
     }
 
-    folly::Future<storage::cpp2::AdminExecResp>
-    future_waitingForCatchUpData(const storage::cpp2::CatchUpDataReq& req) override {
+    folly::Future<storage::cpp2::AdminExecResp> future_waitingForCatchUpData(
+        const storage::cpp2::CatchUpDataReq& req) override {
         RETURN_LEADER_CHANGED(req, leader_);
     }
 
-    folly::Future<storage::cpp2::AdminExecResp>
-    future_memberChange(const storage::cpp2::MemberChangeReq& req) override {
+    folly::Future<storage::cpp2::AdminExecResp> future_memberChange(
+        const storage::cpp2::MemberChangeReq& req) override {
         RETURN_LEADER_CHANGED(req, leader_);
     }
 
@@ -184,7 +184,6 @@ TEST(AdminClientTest, RetryTest) {
     sc2->mockCommon("storage", 0, handler2);
     LOG(INFO) << "Start storage2 server on " << sc2->port_;
 
-
     LOG(INFO) << "Now test interfaces with retry to leader!";
     fs::TempDir rootPath("/tmp/AdminTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
@@ -207,16 +206,13 @@ TEST(AdminClientTest, RetryTest) {
         thriftPeers.back().set_port(sc1->port_);
 
         std::vector<kvstore::KV> data;
-        data.emplace_back(MetaServiceUtils::partKey(0, 1),
-                          MetaServiceUtils::partVal(thriftPeers));
+        data.emplace_back(MetaServiceUtils::partKey(0, 1), MetaServiceUtils::partVal(thriftPeers));
         folly::Baton<true, std::atomic> baton;
-        kv->asyncMultiPut(kDefaultSpaceId,
-                          kDefaultPartId,
-                          std::move(data),
-                          [&baton] (kvstore::ResultCode code) {
-            CHECK_EQ(kvstore::ResultCode::SUCCEEDED, code);
-            baton.post();
-        });
+        kv->asyncMultiPut(
+            kDefaultSpaceId, kDefaultPartId, std::move(data), [&baton](kvstore::ResultCode code) {
+                CHECK_EQ(kvstore::ResultCode::SUCCEEDED, code);
+                baton.post();
+            });
         baton.wait();
     }
 
@@ -305,31 +301,31 @@ TEST(AdminClientTest, SnapshotTest) {
     fs::TempDir rootPath("/tmp/admin_snapshot_test.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     auto now = time::WallClock::fastNowInMilliSec();
-    ActiveHostsMan::updateHostInfo(
-        kv.get(), network::InetAddress(localIp, sc->port_), "localhost", HostInfo(now));
+    network::InetAddress host(localIp, sc->port_);
+    ActiveHostsMan::updateHostInfo(kv.get(), host, "localhost", HostInfo(now));
     ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(kv.get()).size());
 
-    std::vector<network::InetAddress> addresses;
-    addresses.emplace_back(localIp, sc->port_);
     auto client = std::make_unique<AdminClient>(kv.get());
     {
         LOG(INFO) << "Test Blocking Writes On...";
-        auto status = client->blockingWrites(1, storage::cpp2::EngineSignType::BLOCK_ON).get();
+        auto status =
+            client->blockingWrites(1, storage::cpp2::EngineSignType::BLOCK_ON, host).get();
         ASSERT_TRUE(status.ok());
     }
     {
         LOG(INFO) << "Test Create Snapshot...";
-        auto status = client->createSnapshot(1, "test_snapshot").get();
+        auto status = client->createSnapshot(1, "test_snapshot", host).get();
         ASSERT_TRUE(status.ok());
     }
     {
         LOG(INFO) << "Test Drop Snapshot...";
-        auto status = client->dropSnapshot(1, "test_snapshot", addresses).get();
+        auto status = client->dropSnapshot(1, "test_snapshot", host).get();
         ASSERT_TRUE(status.ok());
     }
     {
         LOG(INFO) << "Test Blocking Writes Off...";
-        auto status = client->blockingWrites(1, storage::cpp2::EngineSignType::BLOCK_OFF).get();
+        auto status =
+            client->blockingWrites(1, storage::cpp2::EngineSignType::BLOCK_OFF, host).get();
         ASSERT_TRUE(status.ok());
     }
 }
@@ -353,11 +349,6 @@ TEST(AdminClientTest, RebuildIndexTest) {
     auto address = network::InetAddress(localIp, sc->port_);
     auto client = std::make_unique<AdminClient>(kv.get());
     {
-        LOG(INFO) << "Test Blocking Writes On...";
-        auto status = client->blockingWrites(1, storage::cpp2::EngineSignType::BLOCK_ON).get();
-        ASSERT_TRUE(status.ok());
-    }
-    {
         LOG(INFO) << "Test Rebuild Tag Index...";
         std::vector<PartitionID> parts{1, 2, 3};
         auto status = client->rebuildTagIndex(address, 1, 1, std::move(parts), false).get();
@@ -369,15 +360,10 @@ TEST(AdminClientTest, RebuildIndexTest) {
         auto status = client->rebuildEdgeIndex(address, 1, 1, std::move(parts), false).get();
         ASSERT_TRUE(status.ok());
     }
-    {
-        LOG(INFO) << "Test Blocking Writes Off...";
-        auto status = client->blockingWrites(1, storage::cpp2::EngineSignType::BLOCK_OFF).get();
-        ASSERT_TRUE(status.ok());
-    }
 }
 
-}  // namespace meta
-}  // namespace nebula
+}   // namespace meta
+}   // namespace nebula
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);

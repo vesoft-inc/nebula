@@ -14,6 +14,7 @@
 #include <gtest/gtest.h>
 #include "TestUtils.h"
 #include "graph/GraphFlags.h"
+#include "storage/StorageFlags.h"
 
 namespace nebula {
 namespace graph {
@@ -47,6 +48,10 @@ public:
 
     const std::string getStorageRootPath() {
         return storageRootPath_.path();
+    }
+
+    meta::SchemaManager* schemaManager() {
+        return storageServer_->schemaMan_.get();
     }
 
 private:

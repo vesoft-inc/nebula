@@ -66,8 +66,9 @@ void QueryStatsProcessor::calcResult(std::vector<PropContext>&& props) {
 }
 
 
-kvstore::ResultCode QueryStatsProcessor::processVertex(PartitionID partId,
-                                                       VertexID vId) {
+kvstore::ResultCode QueryStatsProcessor::processVertex(
+    BucketIdx bucketIdx, PartitionID partId, VertexID vId) {
+    UNUSED(bucketIdx);
     FilterContext fcontext;
     for (auto& tc : tagContexts_) {
         auto ret = this->collectVertexProps(partId,
@@ -86,7 +87,7 @@ kvstore::ResultCode QueryStatsProcessor::processVertex(PartitionID partId,
         auto& props = ec.second;
         if (!props.empty()) {
             auto r = this->collectEdgeProps(partId, vId, edgeType, &fcontext,
-                                            [&, this](std::unique_ptr<RowReader> reader,
+                                            [&, this](RowReader reader,
                                                       folly::StringPiece key) {
                                                 this->collectProps(
                                                         reader.get(), key, props, &fcontext,

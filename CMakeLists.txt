@@ -41,6 +41,7 @@ include(LinkerConfig)
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -no-pie")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -rdynamic")
 
 set(CMAKE_SKIP_RPATH TRUE)
 
@@ -59,6 +60,7 @@ option(ENABLE_STATIC_ASAN "Whether directs the GCC driver to link libasan static
 option(ENABLE_STATIC_UBSAN "Whether directs the GCC driver to link libubsan statically" OFF)
 option(ENABLE_PACK_ONE "Whether to package into one" ON)
 option(ENABLE_PCH "Whether to enable use of precompiled header" OFF)
+option(ENABLE_FRAME_POINTER "Whether to build with -fno-omit-frame-pointer" ON)
 
 message(STATUS "ENABLE_ASAN: ${ENABLE_ASAN}")
 message(STATUS "ENABLE_TESTING: ${ENABLE_TESTING}")
@@ -70,6 +72,7 @@ message(STATUS "ENABLE_STATIC_UBSAN : ${ENABLE_STATIC_UBSAN}")
 message(STATUS "ENABLE_WERROR: ${ENABLE_WERROR}")
 message(STATUS "ENABLE_STRICT_ALIASING: ${ENABLE_STRICT_ALIASING}")
 message(STATUS "ENABLE_PCH: ${ENABLE_PCH}")
+message(STATUS "ENABLE_FRAME_POINTER: ${ENABLE_FRAME_POINTER}")
 
 if (ENABLE_NATIVE)
     message(STATUS "ENABLE_NATIVE is ${ENABLE_NATIVE}")
@@ -127,6 +130,9 @@ endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--compress-debug-sections=zlib")
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        add_compile_options(-fno-limit-debug-info)
+    endif()
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -284,6 +290,12 @@ if(NOT ENABLE_STRICT_ALIASING)
     add_compile_options(-fno-strict-aliasing)
 endif()
 
+if(ENABLE_FRAME_POINTER)
+    add_compile_options(-fno-omit-frame-pointer)
+else()
+    add_compile_options(-fomit-frame-pointer)
+endif()
+
 include(CheckCXXCompilerFlag)
 
 # TODO(dutor) Move all compiler-config-related operations to a separate file
@@ -336,7 +348,6 @@ if(ENABLE_ASAN)
     endif()
     add_compile_options(-fsanitize=address)
     add_compile_options(-g)
-    add_compile_options(-fno-omit-frame-pointer)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
 endif()
 
@@ -352,7 +363,6 @@ if(ENABLE_TSAN)
     set(ENV{TSAN_OPTIONS} "report_atomic_races=0")
     add_compile_options(-fsanitize=thread)
     add_compile_options(-g)
-    add_compile_options(-fno-omit-frame-pointer)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=thread")
 endif()
 
@@ -365,14 +375,12 @@ if(ENABLE_UBSAN)
         add_compile_options(-static-libubsan)
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libubsan")
     endif()
-    add_compile_options(-static-libubsan)
     add_compile_options(-fsanitize=undefined -fno-sanitize=alignment)
     add_compile_options(-fno-sanitize-recover=all)  # Exit on failure
     # TODO(dutor) Remove the following line when RTTI-enabled RocksDB is ready
     add_compile_options(-fno-sanitize=vptr)
     if(NOT ENABLE_ASAN)
         add_compile_options(-g)
-        add_compile_options(-fno-omit-frame-pointer)
     endif()
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=undefined")
 endif()

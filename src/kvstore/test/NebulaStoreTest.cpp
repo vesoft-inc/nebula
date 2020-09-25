@@ -4,25 +4,25 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
+#include <thrift/lib/cpp/concurrency/ThreadManager.h>
 #include <iostream>
-#include "fs/TempDir.h"
+#include "base/Base.h"
 #include "fs/FileUtils.h"
+#include "fs/TempDir.h"
+#include "kvstore/LogEncoder.h"
 #include "kvstore/NebulaStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/RocksEngine.h"
-#include "kvstore/LogEncoder.h"
 #include "network/NetworkUtils.h"
-#include <thrift/lib/cpp/concurrency/ThreadManager.h>
 
 DECLARE_uint32(raft_heartbeat_interval_secs);
 
 namespace nebula {
 namespace kvstore {
 
-template<typename T>
+template <typename T>
 void dump(const std::vector<T>& v) {
     std::stringstream ss;
     for (auto& e : v) {
@@ -31,11 +31,10 @@ void dump(const std::vector<T>& v) {
     VLOG(1) << ss.str();
 }
 
-std::shared_ptr<apache::thrift::concurrency::PriorityThreadManager>
-getHandlers() {
-    auto handlersPool
-        = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
-                                 1, true /*stats*/);
+std::shared_ptr<apache::thrift::concurrency::PriorityThreadManager> getHandlers() {
+    auto handlersPool =
+        apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
+            1, true /*stats*/);
     handlersPool->setNamePrefix("executor");
     handlersPool->start();
     return handlersPool;
@@ -47,15 +46,14 @@ TEST(NebulaStoreTest, SimpleTest) {
     // GraphSpaceID =>  {PartitionIDs}
     // 1 => {0, 1, 2, 3, 4, 5}
     // 2 => {0, 1, 2, 3, 4, 5}
-    for (auto spaceId = 1; spaceId <=2; spaceId++) {
+    for (auto spaceId = 1; spaceId <= 2; spaceId++) {
         for (auto partId = 0; partId < 6; partId++) {
             partMan->partsMap_[spaceId][partId] = PartMeta();
         }
     }
 
     VLOG(1) << "Total space num is " << partMan->partsMap_.size()
-            << ", total local partitions num is "
-            << partMan->parts(network::InetAddress()).size();
+            << ", total local partitions num is " << partMan->parts(network::InetAddress()).size();
 
     fs::TempDir rootPath("/tmp/nebula_store_test.XXXXXX");
     std::vector<std::string> paths;
@@ -66,10 +64,8 @@ TEST(NebulaStoreTest, SimpleTest) {
     options.dataPaths_ = std::move(paths);
     options.partMan_ = std::move(partMan);
     network::InetAddress local = {0, 0};
-    auto store = std::make_unique<NebulaStore>(std::move(options),
-                                               ioThreadPool,
-                                               local,
-                                               getHandlers());
+    auto store =
+        std::make_unique<NebulaStore>(std::move(options), ioThreadPool, local, getHandlers());
     store->init();
     sleep(1);
     EXPECT_EQ(2, store->spaces_.size());
@@ -101,12 +97,11 @@ TEST(NebulaStoreTest, SimpleTest) {
     std::string prefix = "prefix";
     std::vector<KV> data;
     for (auto i = 0; i < 100; i++) {
-        data.emplace_back(prefix + std::string(reinterpret_cast<const char*>(&i),
-                                               sizeof(int32_t)),
+        data.emplace_back(prefix + std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),
                           folly::stringPrintf("val_%d", i));
     }
     folly::Baton<true, std::atomic> baton;
-    store->asyncMultiPut(1, 1, std::move(data), [&] (ResultCode code) {
+    store->asyncMultiPut(1, 1, std::move(data), [&](ResultCode code) {
         EXPECT_EQ(ResultCode::SUCCEEDED, code);
         baton.post();
     });
@@ -149,9 +144,8 @@ TEST(NebulaStoreTest, PartsTest) {
     paths.emplace_back(folly::stringPrintf("%s/disk2", rootPath.path()));
 
     for (size_t i = 0; i < paths.size(); i++) {
-        auto db = std::make_unique<RocksEngine>(
-            0, /* spaceId */
-            paths[i]);
+        auto db = std::make_unique<RocksEngine>(0, /* spaceId */
+                                                paths[i]);
         for (auto partId = 0; partId < 3; partId++) {
             db->addPart(5 * i + partId);
         }
@@ -167,17 +161,12 @@ TEST(NebulaStoreTest, PartsTest) {
     options.dataPaths_ = std::move(paths);
     options.partMan_ = std::move(partMan);
     network::InetAddress local = {0, 0};
-    auto store = std::make_unique<NebulaStore>(std::move(options),
-                                               ioThreadPool,
-                                               local,
-                                               getHandlers());
+    auto store =
+        std::make_unique<NebulaStore>(std::move(options), ioThreadPool, local, getHandlers());
     store->init();
     auto check = [&](GraphSpaceID spaceId) {
         for (auto i = 0; i < 2; i++) {
-            ASSERT_EQ(folly::stringPrintf("%s/disk%d/nebula/%d",
-                                          rootPath.path(),
-                                          i + 1,
-                                          spaceId),
+            ASSERT_EQ(folly::stringPrintf("%s/disk%d/nebula/%d", rootPath.path(), i + 1, spaceId),
                       store->spaces_[spaceId]->engines_[i]->getDataRoot());
             auto parts = store->spaces_[spaceId]->engines_[i]->allParts();
             dump(parts);
@@ -271,10 +260,8 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
         options.dataPaths_ = std::move(paths);
         options.partMan_ = std::move(partMan);
         network::InetAddress local = peers[index];
-        return std::make_unique<NebulaStore>(std::move(options),
-                                             sIoThreadPool,
-                                             local,
-                                             getHandlers());
+        return std::make_unique<NebulaStore>(
+            std::move(options), sIoThreadPool, local, getHandlers());
     };
     int32_t replicas = 3;
     std::vector<network::InetAddress> peers;
@@ -288,28 +275,20 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
         stores.back()->init();
     }
     LOG(INFO) << "Waiting for all leaders elected!";
-    int from = 0;
     while (true) {
-        bool allLeaderElected = true;
-        for (int part = from; part < 3; part++) {
-            auto res = stores[0]->partLeader(0, part);
-            CHECK(ok(res));
-            auto leader = value(std::move(res));
-            if (leader.isZero()) {
-                allLeaderElected = false;
-                from = part;
-                break;
-            }
-            LOG(INFO) << "Leader for part " << part << " is " << leader;
+        int32_t leaderCount = 0;
+        for (int i = 0; i < replicas; i++) {
+            std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
+            leaderCount += stores[i]->allLeader(leaderIds);
         }
-        if (allLeaderElected) {
+        if (leaderCount == 3) {
             break;
         }
         usleep(100000);
     }
     LOG(INFO) << "Let's write some logs...";
 
-    auto findStoreIndex = [&] (const network::InetAddress& addr) {
+    auto findStoreIndex = [&](const network::InetAddress& addr) {
         for (size_t i = 0; i < peers.size(); i++) {
             if (peers[i] == addr) {
                 return i;
@@ -323,9 +302,9 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
         std::string prefix = "prefix";
         std::vector<KV> data;
         for (auto i = 0; i < 100; i++) {
-            data.emplace_back(prefix + std::string(reinterpret_cast<const char*>(&i),
-                                                   sizeof(int32_t)),
-                              folly::stringPrintf("val_%d_%d", part, i));
+            data.emplace_back(
+                prefix + std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),
+                folly::stringPrintf("val_%d_%d", part, i));
         }
         auto res = stores[0]->partLeader(0, part);
         CHECK(ok(res));
@@ -372,13 +351,11 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
         auto followerIndex = (index + 1) % replicas;
         {
             folly::Baton<true, std::atomic> baton;
-            stores[followerIndex]->asyncMultiPut(0,
-                                                 part,
-                                                 {{"key", "val"}},
-                                                 [&baton](ResultCode code) {
-                EXPECT_EQ(ResultCode::ERR_LEADER_CHANGED, code);
-                baton.post();
-            });
+            stores[followerIndex]->asyncMultiPut(
+                0, part, {{"key", "val"}}, [&baton](ResultCode code) {
+                    EXPECT_EQ(ResultCode::ERR_LEADER_CHANGED, code);
+                    baton.post();
+                });
             baton.wait();
         }
         // Let's try to read data on follower
@@ -411,10 +388,8 @@ TEST(NebulaStoreTest, TransLeaderTest) {
         options.dataPaths_ = std::move(paths);
         options.partMan_ = std::move(partMan);
         network::InetAddress local = peers[index];
-        return std::make_unique<NebulaStore>(std::move(options),
-                                             sIoThreadPool,
-                                             local,
-                                             getHandlers());
+        return std::make_unique<NebulaStore>(
+            std::move(options), sIoThreadPool, local, getHandlers());
     };
 
     // 3 replicas, 3 partition
@@ -431,27 +406,19 @@ TEST(NebulaStoreTest, TransLeaderTest) {
     }
     sleep(FLAGS_raft_heartbeat_interval_secs);
     LOG(INFO) << "Waiting for all leaders elected!";
-    int from = 0;
     while (true) {
-        bool allLeaderElected = true;
-        for (int part = from; part < 3; part++) {
-            auto res = stores[0]->partLeader(0, part);
-            CHECK(ok(res));
-            auto leader = value(std::move(res));
-            if (leader.isZero()) {
-                allLeaderElected = false;
-                from = part;
-                break;
-            }
-            LOG(INFO) << "Leader for part " << part << " is " << leader;
+        int32_t leaderCount = 0;
+        for (int i = 0; i < replicas; i++) {
+            std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
+            leaderCount += stores[i]->allLeader(leaderIds);
         }
-        if (allLeaderElected) {
+        if (leaderCount == 3) {
             break;
         }
         usleep(100000);
     }
 
-    auto findStoreIndex = [&] (const network::InetAddress& addr) {
+    auto findStoreIndex = [&](const network::InetAddress& addr) {
         for (size_t i = 0; i < peers.size(); i++) {
             if (peers[i] == addr) {
                 return i;
@@ -477,14 +444,7 @@ TEST(NebulaStoreTest, TransLeaderTest) {
         auto partRet = stores[index]->part(spaceId, partId);
         CHECK(ok(partRet));
         auto part = value(partRet);
-        part->asyncTransferLeader(targetAddr, [&] (kvstore::ResultCode code) {
-            if (code == ResultCode::ERR_LEADER_CHANGED) {
-                ASSERT_EQ(targetAddr, part->leader());
-            } else {
-                ASSERT_EQ(ResultCode::SUCCEEDED, code);
-            }
-            baton.post();
-        });
+        part->asyncTransferLeader(targetAddr, [&](kvstore::ResultCode) { baton.post(); });
         baton.wait();
     }
     sleep(FLAGS_raft_heartbeat_interval_secs);
@@ -504,14 +464,7 @@ TEST(NebulaStoreTest, TransLeaderTest) {
         CHECK(ok(ret));
         auto part = nebula::value(ret);
         LOG(INFO) << "Transfer part " << partId << " leader to " << targetAddr;
-        part->asyncTransferLeader(targetAddr, [&] (kvstore::ResultCode code) {
-            if (code == ResultCode::ERR_LEADER_CHANGED) {
-                ASSERT_EQ(targetAddr, part->leader());
-            } else {
-                ASSERT_EQ(ResultCode::SUCCEEDED, code);
-            }
-            baton.post();
-        });
+        part->asyncTransferLeader(targetAddr, [&](kvstore::ResultCode) { baton.post(); });
         baton.wait();
     }
     sleep(FLAGS_raft_heartbeat_interval_secs);
@@ -527,7 +480,7 @@ TEST(NebulaStoreTest, CheckpointTest) {
     // GraphSpaceID =>  {PartitionIDs}
     // 1 => {0, 1, 2, 3, 4, 5}
     // 2 => {0, 1, 2, 3, 4, 5}
-    for (auto spaceId = 1; spaceId <=2; spaceId++) {
+    for (auto spaceId = 1; spaceId <= 2; spaceId++) {
         for (auto partId = 0; partId < 6; partId++) {
             partMan->partsMap_[spaceId][partId] = PartMeta();
         }
@@ -546,10 +499,8 @@ TEST(NebulaStoreTest, CheckpointTest) {
     options.dataPaths_ = std::move(spaths);
     options.partMan_ = std::move(partMan);
     network::InetAddress local = {0, 0};
-    auto store = std::make_unique<NebulaStore>(std::move(options),
-                                               ioThreadPool,
-                                               local,
-                                               getHandlers());
+    auto store =
+        std::make_unique<NebulaStore>(std::move(options), ioThreadPool, local, getHandlers());
     store->init();
     sleep(1);
     EXPECT_EQ(2, store->spaces_.size());
@@ -581,12 +532,11 @@ TEST(NebulaStoreTest, CheckpointTest) {
     std::string prefix = "prefix";
     std::vector<KV> data;
     for (auto i = 0; i < 100; i++) {
-        data.emplace_back(prefix + std::string(reinterpret_cast<const char*>(&i),
-                                               sizeof(int32_t)),
+        data.emplace_back(prefix + std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),
                           folly::stringPrintf("val_%d", i));
     }
     folly::Baton<true, std::atomic> baton;
-    store->asyncMultiPut(1, 1, std::move(data), [&] (ResultCode code) {
+    store->asyncMultiPut(1, 1, std::move(data), [&](ResultCode code) {
         EXPECT_EQ(ResultCode::SUCCEEDED, code);
         baton.post();
     });
@@ -620,34 +570,24 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
         options.dataPaths_ = paths;
         options.partMan_ = std::move(partMan);
         network::InetAddress local = peers[index];
-        return std::make_unique<NebulaStore>(std::move(options),
-                                             sIoThreadPool,
-                                             local,
-                                             getHandlers());
+        return std::make_unique<NebulaStore>(
+            std::move(options), sIoThreadPool, local, getHandlers());
     };
 
-    auto waitLeader = [] (std::vector<std::unique_ptr<NebulaStore>>& stores) {
-        int from = 0;
+    auto waitLeader = [](std::vector<std::unique_ptr<NebulaStore>>& stores) {
+        int replicas = 3;
         while (true) {
-            bool allLeaderElected = true;
-            for (int part = from; part < 3; part++) {
-                auto res = stores[0]->partLeader(0, part);
-                CHECK(ok(res));
-                auto leader = value(std::move(res));
-                if (leader.isZero()) {
-                    allLeaderElected = false;
-                    from = part;
-                    break;
-                }
-                LOG(INFO) << "Leader for part " << part << " is " << leader;
+            int32_t leaderCount = 0;
+            for (int i = 0; i < replicas; i++) {
+                std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
+                leaderCount += stores[i]->allLeader(leaderIds);
             }
-            if (allLeaderElected) {
+            if (leaderCount == 3) {
                 break;
             }
             usleep(100000);
         }
     };
-
 
     int32_t replicas = 3;
     IPv4 ip;
@@ -667,7 +607,7 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
 
     LOG(INFO) << "Let's write some logs...";
 
-    auto findStoreIndex = [&] (const network::InetAddress& addr) {
+    auto findStoreIndex = [&](const network::InetAddress& addr) {
         for (size_t i = 0; i < peers.size(); i++) {
             if (peers[i] == addr) {
                 return i;
@@ -681,9 +621,9 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
         std::string prefix = "prefix";
         std::vector<KV> data;
         for (auto i = 0; i < 100; i++) {
-            data.emplace_back(prefix + std::string(reinterpret_cast<const char*>(&i),
-                                                   sizeof(int32_t)),
-                              folly::stringPrintf("val_%d_%d", part, i));
+            data.emplace_back(
+                prefix + std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),
+                folly::stringPrintf("val_%d_%d", part, i));
         }
         auto res = stores[0]->partLeader(0, part);
         CHECK(ok(res));
@@ -731,13 +671,11 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
         auto followerIndex = (index + 1) % replicas;
         {
             folly::Baton<true, std::atomic> baton;
-            stores[followerIndex]->asyncMultiPut(0,
-                                                 part,
-                                                 {{"key", "val"}},
-                                                 [&baton](ResultCode code) {
-                EXPECT_EQ(ResultCode::ERR_LEADER_CHANGED, code);
-                baton.post();
-            });
+            stores[followerIndex]->asyncMultiPut(
+                0, part, {{"key", "val"}}, [&baton](ResultCode code) {
+                    EXPECT_EQ(ResultCode::ERR_LEADER_CHANGED, code);
+                    baton.post();
+                });
             baton.wait();
         }
     }
@@ -757,20 +695,14 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
         std::string rm = folly::stringPrintf("%s/disk%d/nebula/0", rootPath.path(), i);
         fs::FileUtils::remove(folly::stringPrintf("%s/data", rm.data()).c_str(), true);
         fs::FileUtils::remove(folly::stringPrintf("%s/wal", rm.data()).c_str(), true);
-        std::string src = folly::stringPrintf(
-            "%s/disk%d/nebula/0/checkpoints/snapshot/data",
-            rootPath.path(), i);
-        std::string dst = folly::stringPrintf(
-            "%s/disk%d/nebula/0/data",
-            rootPath.path(), i);
+        std::string src =
+            folly::stringPrintf("%s/disk%d/nebula/0/checkpoints/snapshot/data", rootPath.path(), i);
+        std::string dst = folly::stringPrintf("%s/disk%d/nebula/0/data", rootPath.path(), i);
         ASSERT_TRUE(fs::FileUtils::rename(src, dst));
 
-        src = folly::stringPrintf(
-            "%s/disk%d/nebula/0/checkpoints/snapshot/wal",
-            rootPath.path(), i);
-        dst = folly::stringPrintf(
-            "%s/disk%d/nebula/0/wal",
-            rootPath.path(), i);
+        src =
+            folly::stringPrintf("%s/disk%d/nebula/0/checkpoints/snapshot/wal", rootPath.path(), i);
+        dst = folly::stringPrintf("%s/disk%d/nebula/0/wal", rootPath.path(), i);
         ASSERT_TRUE(fs::FileUtils::rename(src, dst));
     }
 
@@ -795,8 +727,8 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
         std::vector<KV> data;
         for (auto i = 0; i < 100; i++) {
             data.emplace_back(
-                    prefix + std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),
-                    folly::stringPrintf("val_%d_%d", part, i));
+                prefix + std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),
+                folly::stringPrintf("val_%d_%d", part, i));
         }
         auto res = cStores[0]->partLeader(0, part);
         CHECK(ok(res));
@@ -844,10 +776,8 @@ TEST(NebulaStoreTest, AtomicOpBatchTest) {
     options.dataPaths_ = std::move(paths);
     options.partMan_ = std::move(partMan);
     network::InetAddress local = {0, 0};
-    auto store = std::make_unique<NebulaStore>(std::move(options),
-                                               ioThreadPool,
-                                               local,
-                                               getHandlers());
+    auto store =
+        std::make_unique<NebulaStore>(std::move(options), ioThreadPool, local, getHandlers());
     store->init();
     sleep(FLAGS_raft_heartbeat_interval_secs);
     // put kv
@@ -855,7 +785,7 @@ TEST(NebulaStoreTest, AtomicOpBatchTest) {
         std::vector<std::pair<std::string, std::string>> expected, result;
         auto atomic = [&]() -> std::string {
             std::unique_ptr<kvstore::BatchHolder> batchHolder =
-                    std::make_unique<kvstore::BatchHolder>();
+                std::make_unique<kvstore::BatchHolder>();
             for (auto i = 0; i < 20; i++) {
                 auto key = folly::stringPrintf("key_%d", i);
                 auto val = folly::stringPrintf("val_%d", i);
@@ -866,7 +796,7 @@ TEST(NebulaStoreTest, AtomicOpBatchTest) {
         };
 
         folly::Baton<true, std::atomic> baton;
-        auto callback = [&] (ResultCode code) {
+        auto callback = [&](ResultCode code) {
             EXPECT_EQ(ResultCode::SUCCEEDED, code);
             baton.post();
         };
@@ -888,12 +818,12 @@ TEST(NebulaStoreTest, AtomicOpBatchTest) {
         std::vector<std::pair<std::string, std::string>> expected, result;
         auto atomic = [&]() -> std::string {
             std::unique_ptr<kvstore::BatchHolder> batchHolder =
-                    std::make_unique<kvstore::BatchHolder>();
+                std::make_unique<kvstore::BatchHolder>();
             for (auto i = 0; i < 20; i++) {
                 auto key = folly::stringPrintf("key_%d", i);
                 auto val = folly::stringPrintf("val_%d", i);
                 batchHolder->put(key.data(), val.data());
-                if (i%5 != 0) {
+                if (i % 5 != 0) {
                     expected.emplace_back(std::move(key), std::move(val));
                 }
             }
@@ -904,7 +834,7 @@ TEST(NebulaStoreTest, AtomicOpBatchTest) {
         };
 
         folly::Baton<true, std::atomic> baton;
-        auto callback = [&] (ResultCode code) {
+        auto callback = [&](ResultCode code) {
             EXPECT_EQ(ResultCode::SUCCEEDED, code);
             baton.post();
         };
@@ -922,9 +852,8 @@ TEST(NebulaStoreTest, AtomicOpBatchTest) {
         EXPECT_EQ(expected, result);
     }
 }
-}  // namespace kvstore
-}  // namespace nebula
-
+}   // namespace kvstore
+}   // namespace nebula
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);

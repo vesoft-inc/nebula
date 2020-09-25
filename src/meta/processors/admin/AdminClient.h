@@ -7,19 +7,19 @@
 #ifndef META_PROCESSORS_ADMIN_STORAGEADMINCLIENT_H_
 #define META_PROCESSORS_ADMIN_STORAGEADMINCLIENT_H_
 
-#include "base/Base.h"
 #include <folly/executors/IOThreadPoolExecutor.h>
+#include "base/Base.h"
 #include "base/Status.h"
-#include "thrift/ThriftClientManager.h"
 #include "gen-cpp2/StorageServiceAsyncClient.h"
 #include "kvstore/KVStore.h"
+#include "thrift/ThriftClientManager.h"
 
 namespace nebula {
 namespace meta {
 
-using HostLeaderMap = std::unordered_map<network::InetAddress,
-                                         std::unordered_map<GraphSpaceID,
-                                                            std::vector<PartitionID>>>;
+using HostLeaderMap =
+    std::unordered_map<network::InetAddress,
+                       std::unordered_map<GraphSpaceID, std::vector<PartitionID>>>;
 
 class FaultInjector {
 public:
@@ -48,8 +48,7 @@ class AdminClient {
 public:
     AdminClient() = default;
 
-    explicit AdminClient(kvstore::KVStore* kv)
-        : kv_(kv) {
+    explicit AdminClient(kvstore::KVStore* kv) : kv_(kv) {
         ioThreadPool_ = std::make_unique<folly::IOThreadPoolExecutor>(10);
         clientsMan_ = std::make_unique<
             thrift::ThriftClientManager<storage::cpp2::StorageServiceAsyncClient>>();
@@ -96,19 +95,21 @@ public:
                                      PartitionID partId,
                                      const network::InetAddress& host);
 
-    folly::Future<Status> checkPeers(GraphSpaceID spaceId,
-                                     PartitionID partId);
+    folly::Future<Status> checkPeers(GraphSpaceID spaceId, PartitionID partId);
 
     folly::Future<Status> getLeaderDist(HostLeaderMap* result);
 
-    folly::Future<Status> createSnapshot(GraphSpaceID spaceId, const std::string& name);
+    folly::Future<Status> createSnapshot(GraphSpaceID spaceId,
+                                         const std::string& name,
+                                         const network::InetAddress& host);
 
     folly::Future<Status> dropSnapshot(GraphSpaceID spaceId,
                                        const std::string& name,
-                                       const std::vector<network::InetAddress>& hosts);
+                                       const network::InetAddress& host);
 
     folly::Future<Status> blockingWrites(GraphSpaceID spaceId,
-                                         storage::cpp2::EngineSignType sign);
+                                         storage::cpp2::EngineSignType sign,
+                                         const network::InetAddress& host);
 
     folly::Future<Status> rebuildTagIndex(const network::InetAddress& address,
                                           GraphSpaceID spaceId,
@@ -127,15 +128,13 @@ public:
     }
 
 private:
-    template<class Request,
-             class RemoteFunc,
-             class RespGenerator>
+    template <class Request, class RemoteFunc, class RespGenerator>
     folly::Future<Status> getResponse(const network::InetAddress& host,
                                       Request req,
                                       RemoteFunc remoteFunc,
                                       RespGenerator respGen);
 
-    template<typename Request, typename RemoteFunc>
+    template <typename Request, typename RemoteFunc>
     void getResponse(std::vector<network::InetAddress> hosts,
                      int32_t index,
                      Request req,
@@ -160,9 +159,9 @@ private:
     kvstore::KVStore* kv_ = nullptr;
     std::unique_ptr<folly::IOThreadPoolExecutor> ioThreadPool_{nullptr};
     std::unique_ptr<thrift::ThriftClientManager<storage::cpp2::StorageServiceAsyncClient>>
-    clientsMan_;
+        clientsMan_;
 };
-}  // namespace meta
-}  // namespace nebula
+}   // namespace meta
+}   // namespace nebula
 
-#endif  // META_PROCESSORS_ADMIN_STORAGEADMINCLIENT_H_
+#endif   // META_PROCESSORS_ADMIN_STORAGEADMINCLIENT_H_

@@ -7,12 +7,12 @@
 #ifndef STORAGE_ADMIN_ADMINPROCESSOR_H_
 #define STORAGE_ADMIN_ADMINPROCESSOR_H_
 
+#include <folly/executors/Async.h>
 #include "base/Base.h"
 #include "kvstore/NebulaStore.h"
 #include "kvstore/Part.h"
-#include "storage/StorageFlags.h"
 #include "storage/BaseProcessor.h"
-#include <folly/executors/Async.h>
+#include "storage/StorageFlags.h"
 
 namespace nebula {
 namespace storage {
@@ -25,10 +25,9 @@ public:
 
     void process(const cpp2::TransLeaderReq& req) {
         CHECK_NOTNULL(kvstore_);
-        LOG(INFO) << "Receive transfer leader for space "
-                  << req.get_space_id() << ", part " << req.get_part_id()
-                  << ", to [" << req.get_new_leader().get_ip()
-                  << ", " << req.get_new_leader().get_port() << "]";
+        LOG(INFO) << "Receive transfer leader for space " << req.get_space_id() << ", part "
+                  << req.get_part_id() << ", to [" << req.get_new_leader().get_ip() << ", "
+                  << req.get_new_leader().get_port() << "]";
         auto spaceId = req.get_space_id();
         auto partId = req.get_part_id();
         auto ret = kvstore_->part(spaceId, partId);
@@ -40,8 +39,8 @@ public:
         auto part = nebula::value(ret);
         auto host = kvstore::NebulaStore::getRaftAddr(network::InetAddress(req.get_new_leader()));
         if (part->isLeader() && part->address() == host) {
-            LOG(INFO) << "I am already leader of space " << spaceId
-                      << " part " << partId << ", skip transLeader";
+            LOG(INFO) << "I am already leader of space " << spaceId << " part " << partId
+                      << ", skip transLeader";
             onFinished();
             return;
         }
@@ -54,14 +53,13 @@ public:
         }
         auto partMeta = status.value();
         if (partMeta.peers_.size() == 1) {
-            LOG(INFO) << "Skip transfer leader of space " << spaceId
-                      << ", part " << partId << " because of single replica.";
+            LOG(INFO) << "Skip transfer leader of space " << spaceId << ", part " << partId
+                      << " because of single replica.";
             onFinished();
             return;
         }
 
-        part->asyncTransferLeader(host,
-                                  [this, spaceId, partId, part] (kvstore::ResultCode code) {
+        part->asyncTransferLeader(host, [this, spaceId, partId, part](kvstore::ResultCode code) {
             if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
                 LOG(INFO) << "I am not the leader of space " << spaceId << " part " << partId;
                 handleLeaderChanged(spaceId, partId);
@@ -81,19 +79,19 @@ public:
                         auto leader = value(std::move(leaderRet));
                         auto* store = static_cast<kvstore::NebulaStore*>(kvstore_);
                         if (!leader.isZero() && leader != store->address()) {
-                            LOG(INFO) << "Found new leader of space " << spaceId
-                                      << " part " << partId << ": " << leader;
+                            LOG(INFO) << "Found new leader of space " << spaceId << " part "
+                                      << partId << ": " << leader;
                             onFinished();
                             return;
                         } else if (!leader.isZero()) {
-                            LOG(INFO) << "I am choosen as leader of space " << spaceId
-                                      << " part " << partId << " again!";
+                            LOG(INFO) << "I am choosen as leader of space " << spaceId << " part "
+                                      << partId << " again!";
                             this->pushResultCode(cpp2::ErrorCode::E_TRANSFER_LEADER_FAILED, partId);
                             onFinished();
                             return;
                         }
-                        LOG(INFO) << "Can't find leader for space " << spaceId
-                                  << " part " << partId << " on " << store->address();
+                        LOG(INFO) << "Can't find leader for space " << spaceId << " part " << partId
+                                  << " on " << store->address();
                         sleep(FLAGS_waiting_new_leader_interval_in_secs);
                     }
                     this->pushResultCode(cpp2::ErrorCode::E_RETRY_EXHAUSTED, partId);
@@ -111,7 +109,7 @@ public:
 
 private:
     explicit TransLeaderProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr, nullptr) {}
+        : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr, nullptr) {}
 };
 
 class AddPartProcessor : public BaseProcessor<cpp2::AdminExecResp> {
@@ -129,21 +127,25 @@ public:
             return;
         }
 
-        LOG(INFO) << "Receive add part for space "
-                  << req.get_space_id() << ", part " << partId;
+        LOG(INFO) << "Receive add part for space " << req.get_space_id() << ", part " << partId;
         auto* store = static_cast<kvstore::NebulaStore*>(kvstore_);
         auto ret = store->space(spaceId);
         if (!nebula::ok(ret) && nebula::error(ret) == kvstore::ResultCode::ERR_SPACE_NOT_FOUND) {
             LOG(INFO) << "Space " << spaceId << " not exist, create it!";
             store->addSpace(spaceId);
         }
-        store->addPart(spaceId, partId, req.get_as_learner());
+        std::vector<network::InetAddress> peers;
+        for (auto& p : req.get_peers()) {
+            peers.emplace_back(
+                kvstore::NebulaStore::getRaftAddr(network::InetAddress(p.get_ip(), p.get_port())));
+        }
+        store->addPart(spaceId, partId, req.get_as_learner(), peers);
         onFinished();
     }
 
 private:
     explicit AddPartProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr, nullptr) {}
+        : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr, nullptr) {}
 };
 
 class RemovePartProcessor : public BaseProcessor<cpp2::AdminExecResp> {
@@ -167,7 +169,7 @@ public:
 
 private:
     explicit RemovePartProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr, nullptr) {}
+        : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr, nullptr) {}
 };
 
 class MemberChangeProcessor : public BaseProcessor<cpp2::AdminExecResp> {
@@ -180,8 +182,7 @@ public:
         CHECK_NOTNULL(kvstore_);
         auto spaceId = req.get_space_id();
         auto partId = req.get_part_id();
-        LOG(INFO) << "Receive member change for space "
-                  << spaceId << ", part " << partId
+        LOG(INFO) << "Receive member change for space " << spaceId << ", part " << partId
                   << ", add/remove " << (req.get_add() ? "add" : "remove");
         auto ret = kvstore_->part(spaceId, partId);
         if (!ok(ret)) {
@@ -191,7 +192,7 @@ public:
         }
         auto part = nebula::value(ret);
         auto peer = kvstore::NebulaStore::getRaftAddr(network::InetAddress(req.get_peer()));
-        auto cb = [this, spaceId, partId] (kvstore::ResultCode code) {
+        auto cb = [this, spaceId, partId](kvstore::ResultCode code) {
             handleErrorCode(code, spaceId, partId);
             onFinished();
             return;
@@ -207,7 +208,7 @@ public:
 
 private:
     explicit MemberChangeProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr, nullptr) {}
+        : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr, nullptr) {}
 };
 
 class AddLearnerProcessor : public BaseProcessor<cpp2::AdminExecResp> {
@@ -219,8 +220,7 @@ public:
     void process(const cpp2::AddLearnerReq& req) {
         auto spaceId = req.get_space_id();
         auto partId = req.get_part_id();
-        LOG(INFO) << "Receive add learner for space "
-                  << spaceId << ", part " << partId;
+        LOG(INFO) << "Receive add learner for space " << spaceId << ", part " << partId;
         auto ret = kvstore_->part(spaceId, partId);
         if (!ok(ret)) {
             this->pushResultCode(to(error(ret)), partId);
@@ -229,7 +229,7 @@ public:
         }
         auto part = nebula::value(ret);
         auto learner = kvstore::NebulaStore::getRaftAddr(network::InetAddress(req.get_learner()));
-        part->asyncAddLearner(learner, [this, spaceId, partId] (kvstore::ResultCode code) {
+        part->asyncAddLearner(learner, [this, spaceId, partId](kvstore::ResultCode code) {
             handleErrorCode(code, spaceId, partId);
             onFinished();
             return;
@@ -238,7 +238,7 @@ public:
 
 private:
     explicit AddLearnerProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr, nullptr) {}
+        : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr, nullptr) {}
 };
 
 class WaitingForCatchUpDataProcessor : public BaseProcessor<cpp2::AdminExecResp> {
@@ -247,14 +247,13 @@ public:
         return new WaitingForCatchUpDataProcessor(kvstore);
     }
 
-    ~WaitingForCatchUpDataProcessor() {
-    }
+    ~WaitingForCatchUpDataProcessor() {}
 
     void process(const cpp2::CatchUpDataReq& req) {
         auto spaceId = req.get_space_id();
         auto partId = req.get_part_id();
-        LOG(INFO) << "Received waiting for catching up data for space "
-                  << spaceId << ", part " << partId;
+        LOG(INFO) << "Received waiting for catching up data for space " << spaceId << ", part "
+                  << partId;
         auto ret = kvstore_->part(spaceId, partId);
         if (!ok(ret)) {
             this->pushResultCode(to(error(ret)), partId);
@@ -268,9 +267,8 @@ public:
             int retry = FLAGS_waiting_catch_up_retry_times;
             while (retry-- > 0) {
                 auto res = part->isCatchedUp(peer);
-                LOG(INFO) << "Waiting for catching up data, peer " << peer
-                          << ", space " << spaceId << ", part " << partId
-                          << ", remaining " << retry << " retry times"
+                LOG(INFO) << "Waiting for catching up data, peer " << peer << ", space " << spaceId
+                          << ", part " << partId << ", remaining " << retry << " retry times"
                           << ", result " << static_cast<int32_t>(res);
                 switch (res) {
                     case raftex::AppendLogResult::SUCCEEDED:
@@ -302,7 +300,7 @@ public:
 
 private:
     explicit WaitingForCatchUpDataProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr, nullptr) {}
+        : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr, nullptr) {}
 };
 
 class CheckPeersProcessor : public BaseProcessor<cpp2::AdminExecResp> {
@@ -314,8 +312,7 @@ public:
     void process(const cpp2::CheckPeersReq& req) {
         auto spaceId = req.get_space_id();
         auto partId = req.get_part_id();
-        LOG(INFO) << "Check peers for space "
-                  << spaceId << ", part " << partId;
+        LOG(INFO) << "Check peers for space " << spaceId << ", part " << partId;
         auto ret = kvstore_->part(spaceId, partId);
         if (!ok(ret)) {
             this->pushResultCode(to(error(ret)), partId);
@@ -325,8 +322,7 @@ public:
         auto part = nebula::value(ret);
         std::vector<network::InetAddress> peers;
         for (auto& p : req.get_peers()) {
-            peers.emplace_back(
-                    kvstore::NebulaStore::getRaftAddr(network::InetAddress(p)));
+            peers.emplace_back(kvstore::NebulaStore::getRaftAddr(network::InetAddress(p)));
         }
         part->checkAndResetPeers(peers);
         this->onFinished();
@@ -334,7 +330,7 @@ public:
 
 private:
     explicit CheckPeersProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr, nullptr) {}
+        : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr, nullptr) {}
 };
 
 class GetLeaderProcessor : public BaseProcessor<cpp2::GetLeaderResp> {
@@ -354,10 +350,10 @@ public:
 
 private:
     explicit GetLeaderProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::GetLeaderResp>(kvstore, nullptr, nullptr) {}
+        : BaseProcessor<cpp2::GetLeaderResp>(kvstore, nullptr, nullptr) {}
 };
 
-}  // namespace storage
-}  // namespace nebula
+}   // namespace storage
+}   // namespace nebula
 
-#endif  // STORAGE_ADMIN_ADMINPROCESSOR_H_
+#endif   // STORAGE_ADMIN_ADMINPROCESSOR_H_

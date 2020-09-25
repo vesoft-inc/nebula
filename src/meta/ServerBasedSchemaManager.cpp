@@ -108,5 +108,10 @@ StatusOr<std::vector<std::string>> ServerBasedSchemaManager::getAllEdge(GraphSpa
     return metaClient_->getAllEdgeFromCache(space);
 }
 
+StatusOr<std::vector<std::string>> ServerBasedSchemaManager::getAllTag(GraphSpaceID space) {
+    CHECK(metaClient_);
+    return metaClient_->getAllTagFromCache(space);
+}
+
 }  // namespace meta
 }  // namespace nebula

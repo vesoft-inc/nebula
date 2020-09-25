@@ -7,20 +7,20 @@
 #ifndef STORAGE_CLIENT_STORAGECLIENT_H_
 #define STORAGE_CLIENT_STORAGECLIENT_H_
 
+#include <folly/executors/IOThreadPoolExecutor.h>
+#include <folly/futures/Future.h>
+#include <gtest/gtest_prod.h>
 #include "base/Base.h"
 #include "base/StatusOr.h"
-#include <gtest/gtest_prod.h>
-#include <folly/futures/Future.h>
-#include <folly/executors/IOThreadPoolExecutor.h>
 #include "gen-cpp2/StorageServiceAsyncClient.h"
 #include "meta/client/MetaClient.h"
-#include "thrift/ThriftClientManager.h"
 #include "stats/Stats.h"
+#include "thrift/ThriftClientManager.h"
 
 namespace nebula {
 namespace storage {
 
-template<class Response>
+template <class Response>
 class StorageRpcResponse final {
 public:
     enum class Result {
@@ -64,6 +64,10 @@ public:
         return responses_;
     }
 
+    const std::vector<Response>& responses() const {
+        return responses_;
+    }
+
     const std::vector<std::tuple<network::InetAddress, int32_t, int32_t>>& hostLatency() const {
         return hostLatency_;
     }
@@ -79,7 +83,6 @@ private:
     std::vector<std::tuple<network::InetAddress, int32_t, int32_t>> hostLatency_;
 };
 
-
 /**
  * A wrapper class for storage thrift API
  *
@@ -90,20 +93,20 @@ class StorageClient {
 
 public:
     StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
-                  meta::MetaClient *client,
-                  const std::string &serviceName = "");
+                  meta::MetaClient* client,
+                  const std::string& serviceName = "");
     virtual ~StorageClient();
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> put(
-      GraphSpaceID space,
-      std::vector<nebula::cpp2::Pair> values,
-      folly::EventBase* evb = nullptr);
+        GraphSpaceID space,
+        std::vector<nebula::cpp2::Pair> values,
+        folly::EventBase* evb = nullptr);
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>> get(
-      GraphSpaceID space,
-      const std::vector<std::string>& keys,
-      bool returnPartly = false,
-      folly::EventBase* evb = nullptr);
+        GraphSpaceID space,
+        const std::vector<std::string>& keys,
+        bool returnPartly = false,
+        folly::EventBase* evb = nullptr);
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> addVertices(
         GraphSpaceID space,
@@ -119,8 +122,8 @@ public:
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::QueryResponse>> getNeighbors(
         GraphSpaceID space,
-        const std::vector<VertexID> &vertices,
-        const std::vector<EdgeType> &edgeTypes,
+        const std::vector<VertexID>& vertices,
+        const std::vector<EdgeType>& edgeTypes,
         std::string filter,
         std::vector<storage::cpp2::PropDef> returnCols,
         folly::EventBase* evb = nullptr);
@@ -150,10 +153,8 @@ public:
         std::vector<storage::cpp2::EdgeKey> edges,
         folly::EventBase* evb = nullptr);
 
-    folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> deleteVertices(
-        GraphSpaceID space,
-        std::vector<VertexID> vids,
-        folly::EventBase* evb = nullptr);
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>>
+    deleteVertices(GraphSpaceID space, std::vector<VertexID> vids, folly::EventBase* evb = nullptr);
 
     folly::Future<StatusOr<storage::cpp2::UpdateResponse>> updateVertex(
         GraphSpaceID space,
@@ -173,10 +174,9 @@ public:
         bool insertable,
         folly::EventBase* evb = nullptr);
 
-    folly::Future<StatusOr<cpp2::GetUUIDResp>> getUUID(
-        GraphSpaceID space,
-        const std::string& name,
-        folly::EventBase* evb = nullptr);
+    folly::Future<StatusOr<cpp2::GetUUIDResp>> getUUID(GraphSpaceID space,
+                                                       const std::string& name,
+                                                       folly::EventBase* evb = nullptr);
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::LookUpIndexResp>> lookUpIndex(
         GraphSpaceID space,
@@ -184,7 +184,7 @@ public:
         std::string filter,
         std::vector<std::string> returnCols,
         bool isEdge,
-        folly::EventBase *evb = nullptr);
+        folly::EventBase* evb = nullptr);
 
 protected:
     // Calculate the partition id for the given vertex id
@@ -225,48 +225,40 @@ protected:
         }
     }
 
-    template<class Request,
-             class RemoteFunc,
-             class GetPartIDFunc,
-             class Response =
-                typename std::result_of<
-                    RemoteFunc(storage::cpp2::StorageServiceAsyncClient*, const Request&)
-                >::type::value_type
-            >
+    template <class Request,
+              class RemoteFunc,
+              class GetPartIDFunc,
+              class Response =
+                  typename std::result_of<RemoteFunc(storage::cpp2::StorageServiceAsyncClient*,
+                                                     const Request&)>::type::value_type>
     folly::SemiFuture<StorageRpcResponse<Response>> collectResponse(
         folly::EventBase* evb,
         std::unordered_map<network::InetAddress, Request> requests,
         RemoteFunc&& remoteFunc,
         GetPartIDFunc getPartIDFunc);
 
-    template<class Request,
-             class RemoteFunc,
-             class Response =
-                typename std::result_of<
-                    RemoteFunc(cpp2::StorageServiceAsyncClient* client, const Request&)
-                >::type::value_type
-            >
-    folly::Future<StatusOr<Response>> getResponse(
-        folly::EventBase* evb,
-        std::pair<network::InetAddress, Request> request,
-        RemoteFunc remoteFunc);
+    template <
+        class Request,
+        class RemoteFunc,
+        class Response = typename std::result_of<RemoteFunc(cpp2::StorageServiceAsyncClient* client,
+                                                            const Request&)>::type::value_type>
+    folly::Future<StatusOr<Response>> getResponse(folly::EventBase* evb,
+                                                  std::pair<network::InetAddress, Request> request,
+                                                  RemoteFunc remoteFunc);
 
     // Cluster given ids into the host they belong to
     // The method returns a map
     //  host_addr (A host, but in most case, the leader will be chosen)
     //      => (partition -> [ids that belong to the shard])
-    template<class Container, class GetIdFunc>
-    StatusOr<std::unordered_map<network::InetAddress,
-                       std::unordered_map<PartitionID,
-                                          std::vector<typename Container::value_type>
-                                         >
-                      >>
+    template <class Container, class GetIdFunc>
+    StatusOr<std::unordered_map<
+        network::InetAddress,
+        std::unordered_map<PartitionID, std::vector<typename Container::value_type>>>>
     clusterIdsToHosts(GraphSpaceID spaceId, Container ids, GetIdFunc f) const {
-        std::unordered_map<network::InetAddress,
-                           std::unordered_map<PartitionID,
-                                              std::vector<typename Container::value_type>
-                                             >
-                          > clusters;
+        std::unordered_map<
+            network::InetAddress,
+            std::unordered_map<PartitionID, std::vector<typename Container::value_type>>>
+            clusters;
         for (auto& id : ids) {
             auto status = partId(spaceId, f(id));
             if (!status.ok()) {
@@ -338,9 +330,9 @@ protected:
 
 private:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
-    meta::MetaClient *client_{nullptr};
-    std::unique_ptr<thrift::ThriftClientManager<
-                        storage::cpp2::StorageServiceAsyncClient>> clientsMan_;
+    meta::MetaClient* client_{nullptr};
+    std::unique_ptr<thrift::ThriftClientManager<storage::cpp2::StorageServiceAsyncClient>>
+        clientsMan_;
     mutable folly::RWSpinLock leadersLock_;
     mutable std::unordered_map<std::pair<GraphSpaceID, PartitionID>, network::InetAddress> leaders_;
     mutable std::atomic_bool loadLeaderBefore_{false};
@@ -352,4 +344,4 @@ private:
 
 #include "storage/client/StorageClient.inl"
 
-#endif  // STORAGE_CLIENT_STORAGECLIENT_H_
+#endif   // STORAGE_CLIENT_STORAGECLIENT_H_

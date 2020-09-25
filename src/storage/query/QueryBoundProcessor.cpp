@@ -35,8 +35,7 @@ kvstore::ResultCode QueryBoundProcessor::processEdgeImpl(const PartitionID partI
     edges.reserve(FLAGS_reserved_edges_one_vertex);
     auto ret = collectEdgeProps(
         partId, vId, edgeType, &fcontext,
-        [&, this](std::unique_ptr<RowReader> reader,
-                  folly::StringPiece k) {
+        [&, this](RowReader reader, folly::StringPiece k) {
             cpp2::IdAndProp edge;
             if (!onlyStructure) {
                 RowWriter writer(currEdgeSchema);
@@ -112,11 +111,12 @@ kvstore::ResultCode QueryBoundProcessor::processEdgeSampling(const PartitionID p
             CHECK(!onlyVertexProps_);
             auto ret = collectEdgeProps(
                 partId, vId, edgeType, &fcontext,
-                [&](std::unique_ptr<RowReader> reader,
-                    folly::StringPiece k) {
+                [&](RowReader reader, folly::StringPiece k) {
                     sampler->sampling(
-                        std::make_tuple(edgeType, k.str(), std::move(reader),
-                                        currEdgeSchema, props));
+                        std::make_tuple(
+                            edgeType, k.str(),
+                            std::make_unique<RowReader>(std::move(reader)),
+                            currEdgeSchema, props));
                 });
             if (ret != kvstore::ResultCode::SUCCEEDED) {
                 return ret;
@@ -163,7 +163,15 @@ kvstore::ResultCode QueryBoundProcessor::processEdgeSampling(const PartitionID p
     return kvstore::ResultCode::SUCCEEDED;
 }
 
-kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, VertexID vId) {
+void QueryBoundProcessor::beforeProcess(const std::vector<Bucket>& buckets) {
+    bucketVertices_.resize(buckets.size());
+    for (unsigned i = 0; i < buckets.size(); i++) {
+        bucketVertices_[i].reserve(buckets[i].vertices_.size());
+    }
+}
+
+kvstore::ResultCode QueryBoundProcessor::processVertex(
+    BucketIdx bucketIdx, PartitionID partId, VertexID vId) {
     cpp2::VertexData vResp;
     vResp.set_vertex_id(vId);
     FilterContext fcontext;
@@ -197,8 +205,7 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, Verte
     }
 
     if (onlyVertexProps_) {
-        std::lock_guard<std::mutex> lg(this->lock_);
-        vertices_.emplace_back(std::move(vResp));
+        bucketVertices_[bucketIdx].emplace_back(std::move(vResp));
         return kvstore::ResultCode::SUCCEEDED;
     }
 
@@ -215,11 +222,12 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, Verte
 
     if (!vResp.edge_data.empty()) {
         // Only return the vertex if edges existed.
-        std::lock_guard<std::mutex> lg(this->lock_);
+        int32_t num = 0;
         for (auto& edata : vResp.edge_data) {
-            totalEdges_ += edata.edges.size();
+            num += edata.edges.size();
         }
-        vertices_.emplace_back(std::move(vResp));
+        totalEdges_ += num;
+        bucketVertices_[bucketIdx].emplace_back(std::move(vResp));
     }
 
     return kvstore::ResultCode::SUCCEEDED;
@@ -227,7 +235,21 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, Verte
 
 void QueryBoundProcessor::onProcessFinished(int32_t retNum) {
     (void)retNum;
-    resp_.set_vertices(std::move(vertices_));
+    size_t num = 0;
+    for (auto& bucket : bucketVertices_) {
+        num += bucket.size();
+    }
+    std::vector<cpp2::VertexData> vertices;
+    vertices.reserve(num);
+
+    for (auto& bucket : bucketVertices_) {
+        vertices.insert(
+            vertices.end(),
+            std::make_move_iterator(bucket.begin()),
+            std::make_move_iterator(bucket.end()));
+    }
+
+    resp_.set_vertices(std::move(vertices));
     resp_.set_total_edges(totalEdges_);
     if (!vertexSchemaResp_.empty()) {
         resp_.set_vertex_schema(std::move(vertexSchemaResp_));

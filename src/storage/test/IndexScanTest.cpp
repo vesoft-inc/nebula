@@ -1014,17 +1014,42 @@ TEST(IndexScanTest, EdgeStringTest) {
          *     "AB" << "CAB" << "CABC"
          *     "ABC" << "ABC" << "ABC"
          *
-         * where col_0 == "ABC"
+         * where col_0 == "ABC" and col_1 == "ABC" and col_2 == "ABC"
          */
+
+        std::string abc("ABC");
         auto* col0 = new std::string("col_0");
         auto* alias0 = new std::string("101");
         auto* ape0 = new AliasPropertyExpression(new std::string(""), alias0, col0);
-        std::string c0("ABC");
-        auto* pe0 = new PrimaryExpression(c0);
-        auto r1 =  std::make_unique<RelationalExpression>(ape0,
-                                                          RelationalExpression::Operator::EQ,
-                                                          pe0);
-        auto resp = checkLookupEdgesString(Expression::encode(r1.get()));
+        auto* pe0 = new PrimaryExpression(abc);
+        auto* r1 =  new RelationalExpression(ape0,
+                                             RelationalExpression::Operator::EQ,
+                                             pe0);
+
+        auto* col1 = new std::string("col_1");
+        auto* alias1 = new std::string("101");
+        auto* ape1 = new AliasPropertyExpression(new std::string(""), alias1, col1);
+        auto* pe1 = new PrimaryExpression(abc);
+        auto* r2 =  new RelationalExpression(ape1,
+                                             RelationalExpression::Operator::EQ,
+                                             pe1);
+
+        auto* col2 = new std::string("col_2");
+        auto* alias2 = new std::string("101");
+        auto* ape2 = new AliasPropertyExpression(new std::string(""), alias2, col2);
+        auto* pe2 = new PrimaryExpression(abc);
+        auto* r3 =  new RelationalExpression(ape2,
+                                             RelationalExpression::Operator::EQ,
+                                             pe2);
+        auto* le1 = new LogicalExpression(r1,
+                                          LogicalExpression::AND,
+                                          r2);
+
+        auto logExp = std::make_unique<LogicalExpression>(le1,
+                                                          LogicalExpression::AND,
+                                                          r3);
+
+        auto resp = checkLookupEdgesString(Expression::encode(logExp.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(3, resp.get_schema()->get_columns().size());
         EXPECT_EQ(3, resp.get_edges()->size());
@@ -1047,17 +1072,42 @@ TEST(IndexScanTest, EdgeStringTest) {
          *     "AB" << "CAB" << "CABC"
          *     "ABC" << "ABC" << "ABC"
          *
-         * where col_0 == "AB"
+         * where col_0 == "AB" and col_1 == "CAB" and col_2 == "CABC"
          */
+        std::string ab("AB");
         auto* col0 = new std::string("col_0");
         auto* alias0 = new std::string("101");
         auto* ape0 = new AliasPropertyExpression(new std::string(""), alias0, col0);
-        std::string c0("AB");
-        auto* pe0 = new PrimaryExpression(c0);
-        auto r1 =  std::make_unique<RelationalExpression>(ape0,
-                                                          RelationalExpression::Operator::EQ,
-                                                          pe0);
-        auto resp = checkLookupEdgesString(Expression::encode(r1.get()));
+        auto* pe0 = new PrimaryExpression(ab);
+        auto* r1 =  new RelationalExpression(ape0,
+                                             RelationalExpression::Operator::EQ,
+                                             pe0);
+
+        std::string cab("CAB");
+        auto* col1 = new std::string("col_1");
+        auto* alias1 = new std::string("101");
+        auto* ape1 = new AliasPropertyExpression(new std::string(""), alias1, col1);
+        auto* pe1 = new PrimaryExpression(cab);
+        auto* r2 =  new RelationalExpression(ape1,
+                                             RelationalExpression::Operator::EQ,
+                                             pe1);
+
+        std::string cabc("CABC");
+        auto* col2 = new std::string("col_2");
+        auto* alias2 = new std::string("101");
+        auto* ape2 = new AliasPropertyExpression(new std::string(""), alias2, col2);
+        auto* pe2 = new PrimaryExpression(cabc);
+        auto* r3 =  new RelationalExpression(ape2,
+                                             RelationalExpression::Operator::EQ,
+                                             pe2);
+        auto* le1 = new LogicalExpression(r1,
+                                          LogicalExpression::AND,
+                                          r2);
+
+        auto logExp = std::make_unique<LogicalExpression>(le1,
+                                                          LogicalExpression::AND,
+                                                          r3);
+        auto resp = checkLookupEdgesString(Expression::encode(logExp.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(3, resp.get_schema()->get_columns().size());
         EXPECT_EQ(3, resp.get_edges()->size());
@@ -1080,30 +1130,45 @@ TEST(IndexScanTest, EdgeStringTest) {
          *     "AB" << "CAB" << "CABC"
          *     "ABC" << "ABC" << "ABC"
          *
-         * where col_1 == "CAB"
+         * where col_0 == "ABCA" and col_1 == "BC" and col_2 == "ABC"
          */
-        auto* col0 = new std::string("col_1");
+        std::string abca("ABCA");
+        auto* col0 = new std::string("col_0");
         auto* alias0 = new std::string("101");
         auto* ape0 = new AliasPropertyExpression(new std::string(""), alias0, col0);
-        std::string c1("CAB");
-        auto* pe0 = new PrimaryExpression(c1);
-        auto r1 =  std::make_unique<RelationalExpression>(ape0,
-                                                          RelationalExpression::Operator::EQ,
-                                                          pe0);
-        auto resp = checkLookupEdgesString(Expression::encode(r1.get()));
+        auto* pe0 = new PrimaryExpression(abca);
+        auto* r1 =  new RelationalExpression(ape0,
+                                             RelationalExpression::Operator::EQ,
+                                             pe0);
+
+        std::string bc("BC");
+        auto* col1 = new std::string("col_1");
+        auto* alias1 = new std::string("101");
+        auto* ape1 = new AliasPropertyExpression(new std::string(""), alias1, col1);
+        auto* pe1 = new PrimaryExpression(bc);
+        auto* r2 =  new RelationalExpression(ape1,
+                                             RelationalExpression::Operator::EQ,
+                                             pe1);
+
+        std::string abc("ABC");
+        auto* col2 = new std::string("col_2");
+        auto* alias2 = new std::string("101");
+        auto* ape2 = new AliasPropertyExpression(new std::string(""), alias2, col2);
+        auto* pe2 = new PrimaryExpression(abc);
+        auto* r3 =  new RelationalExpression(ape2,
+                                             RelationalExpression::Operator::EQ,
+                                             pe2);
+        auto* le1 = new LogicalExpression(r1,
+                                          LogicalExpression::AND,
+                                          r2);
+
+        auto logExp = std::make_unique<LogicalExpression>(le1,
+                                                          LogicalExpression::AND,
+                                                          r3);
+        auto resp = checkLookupEdgesString(Expression::encode(logExp.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(3, resp.get_schema()->get_columns().size());
-        EXPECT_EQ(3, resp.get_edges()->size());
-        RowWriter ewriter(nullptr);
-        ewriter << "AB" << "CAB" << "CABC";
-        auto eval = ewriter.encode();
-        for (const auto& row : *resp.get_edges()) {
-            EXPECT_EQ(eval, row.get_props());
-            EXPECT_EQ(1, row.get_key().get_src());
-            EXPECT_EQ(10, row.get_key().get_dst());
-            EXPECT_EQ(101, row.get_key().get_edge_type());
-            EXPECT_EQ(0, row.get_key().get_ranking());
-        }
+        EXPECT_EQ(0, resp.get_edges()->size());
     }
 }
 
@@ -1116,17 +1181,42 @@ TEST(IndexScanTest, VertexStringTest) {
          *     "AB" << "CAB" << "CABC"
          *     "ABC" << "ABC" << "ABC"
          *
-         * where col_0 == "ABC"
+         * where col_0 == "ABC" and col_1 == "ABC" and col_2 == "ABC"
          */
+
+        std::string abc("ABC");
         auto* col0 = new std::string("col_0");
         auto* alias0 = new std::string("3001");
         auto* ape0 = new AliasPropertyExpression(new std::string(""), alias0, col0);
-        std::string c0("ABC");
-        auto* pe0 = new PrimaryExpression(c0);
-        auto r1 =  std::make_unique<RelationalExpression>(ape0,
-                                                          RelationalExpression::Operator::EQ,
-                                                          pe0);
-        auto resp = checkLookupVerticesString(Expression::encode(r1.get()));
+        auto* pe0 = new PrimaryExpression(abc);
+        auto* r1 =  new RelationalExpression(ape0,
+                                             RelationalExpression::Operator::EQ,
+                                             pe0);
+
+        auto* col1 = new std::string("col_1");
+        auto* alias1 = new std::string("3001");
+        auto* ape1 = new AliasPropertyExpression(new std::string(""), alias1, col1);
+        auto* pe1 = new PrimaryExpression(abc);
+        auto* r2 =  new RelationalExpression(ape1,
+                                             RelationalExpression::Operator::EQ,
+                                             pe1);
+
+        auto* col2 = new std::string("col_2");
+        auto* alias2 = new std::string("3001");
+        auto* ape2 = new AliasPropertyExpression(new std::string(""), alias2, col2);
+        auto* pe2 = new PrimaryExpression(abc);
+        auto* r3 =  new RelationalExpression(ape2,
+                                             RelationalExpression::Operator::EQ,
+                                             pe2);
+        auto* le1 = new LogicalExpression(r1,
+                                          LogicalExpression::AND,
+                                          r2);
+
+        auto logExp = std::make_unique<LogicalExpression>(le1,
+                                                          LogicalExpression::AND,
+                                                          r3);
+
+        auto resp = checkLookupVerticesString(Expression::encode(logExp.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(3, resp.get_schema()->get_columns().size());
         EXPECT_EQ(3, resp.get_vertices()->size());
@@ -1146,17 +1236,43 @@ TEST(IndexScanTest, VertexStringTest) {
          *     "AB" << "CAB" << "CABC"
          *     "ABC" << "ABC" << "ABC"
          *
-         * where col_0 == "AB"
+         * where col_0 == "AB" and col_1 == "CAB" and col_2 == "CABC"
          */
+        std::string ab("AB");
         auto* col0 = new std::string("col_0");
         auto* alias0 = new std::string("3001");
         auto* ape0 = new AliasPropertyExpression(new std::string(""), alias0, col0);
-        std::string c0("AB");
-        auto* pe0 = new PrimaryExpression(c0);
-        auto r1 =  std::make_unique<RelationalExpression>(ape0,
-                                                          RelationalExpression::Operator::EQ,
-                                                          pe0);
-        auto resp = checkLookupVerticesString(Expression::encode(r1.get()));
+        auto* pe0 = new PrimaryExpression(ab);
+        auto* r1 =  new RelationalExpression(ape0,
+                                             RelationalExpression::Operator::EQ,
+                                             pe0);
+
+        std::string cab("CAB");
+        auto* col1 = new std::string("col_1");
+        auto* alias1 = new std::string("3001");
+        auto* ape1 = new AliasPropertyExpression(new std::string(""), alias1, col1);
+        auto* pe1 = new PrimaryExpression(cab);
+        auto* r2 =  new RelationalExpression(ape1,
+                                             RelationalExpression::Operator::EQ,
+                                             pe1);
+
+        std::string cabc("CABC");
+        auto* col2 = new std::string("col_2");
+        auto* alias2 = new std::string("3001");
+        auto* ape2 = new AliasPropertyExpression(new std::string(""), alias2, col2);
+        auto* pe2 = new PrimaryExpression(cabc);
+        auto* r3 =  new RelationalExpression(ape2,
+                                             RelationalExpression::Operator::EQ,
+                                             pe2);
+        auto* le1 = new LogicalExpression(r1,
+                                          LogicalExpression::AND,
+                                          r2);
+
+        auto logExp = std::make_unique<LogicalExpression>(le1,
+                                                          LogicalExpression::AND,
+                                                          r3);
+
+        auto resp = checkLookupVerticesString(Expression::encode(logExp.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(3, resp.get_schema()->get_columns().size());
         EXPECT_EQ(3, resp.get_vertices()->size());
@@ -1176,27 +1292,46 @@ TEST(IndexScanTest, VertexStringTest) {
          *     "AB" << "CAB" << "CABC"
          *     "ABC" << "ABC" << "ABC"
          *
-         * where col_1 == "CAB"
+         * where col_0 == "ABCA" and col_1 == "BC" and col_2 == "ABC"
          */
-        auto* col0 = new std::string("col_1");
+        std::string abca("ABCA");
+        auto* col0 = new std::string("col_0");
         auto* alias0 = new std::string("3001");
         auto* ape0 = new AliasPropertyExpression(new std::string(""), alias0, col0);
-        std::string c1("CAB");
-        auto* pe0 = new PrimaryExpression(c1);
-        auto r1 =  std::make_unique<RelationalExpression>(ape0,
-                                                          RelationalExpression::Operator::EQ,
-                                                          pe0);
-        auto resp = checkLookupVerticesString(Expression::encode(r1.get()));
+        auto* pe0 = new PrimaryExpression(abca);
+        auto* r1 =  new RelationalExpression(ape0,
+                                             RelationalExpression::Operator::EQ,
+                                             pe0);
+
+        std::string bc("BC");
+        auto* col1 = new std::string("col_1");
+        auto* alias1 = new std::string("3001");
+        auto* ape1 = new AliasPropertyExpression(new std::string(""), alias1, col1);
+        auto* pe1 = new PrimaryExpression(bc);
+        auto* r2 =  new RelationalExpression(ape1,
+                                             RelationalExpression::Operator::EQ,
+                                             pe1);
+
+        std::string abc("ABC");
+        auto* col2 = new std::string("col_2");
+        auto* alias2 = new std::string("3001");
+        auto* ape2 = new AliasPropertyExpression(new std::string(""), alias2, col2);
+        auto* pe2 = new PrimaryExpression(abc);
+        auto* r3 =  new RelationalExpression(ape2,
+                                             RelationalExpression::Operator::EQ,
+                                             pe2);
+        auto* le1 = new LogicalExpression(r1,
+                                          LogicalExpression::AND,
+                                          r2);
+
+        auto logExp = std::make_unique<LogicalExpression>(le1,
+                                                          LogicalExpression::AND,
+                                                          r3);
+
+        auto resp = checkLookupVerticesString(Expression::encode(logExp.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(3, resp.get_schema()->get_columns().size());
-        EXPECT_EQ(3, resp.get_vertices()->size());
-        RowWriter ewriter(nullptr);
-        ewriter << "AB" << "CAB" << "CABC";
-        auto eval = ewriter.encode();
-        for (const auto& row : *resp.get_vertices()) {
-            EXPECT_EQ(eval, row.get_props());
-            EXPECT_EQ(100, row.get_vertex_id());
-        }
+        EXPECT_EQ(0, resp.get_vertices()->size());
     }
 }
 

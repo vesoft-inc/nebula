@@ -43,10 +43,20 @@ void BalanceTask::invoke() {
     }
     switch (status_) {
         case Status::START: {
-            LOG(INFO) << taskIdStr_ << "Start to move part!";
-            status_ = Status::CHANGE_LEADER;
+            LOG(INFO) << taskIdStr_ << "Start to move part, check the peers firstly!";
             ret_ = Result::IN_PROGRESS;
             startTimeMs_ = time::WallClock::fastNowInMilliSec();
+            SAVE_STATE();
+            client_->checkPeers(spaceId_, partId_).thenValue([this] (auto&& resp) {
+                if (!resp.ok()) {
+                    LOG(INFO) << taskIdStr_ << "Check the peers failed, status " << resp;
+                    ret_ = Result::FAILED;
+                } else {
+                    status_ = Status::CHANGE_LEADER;
+                }
+                invoke();
+            });
+            break;
         }
         // fallthrough
         case Status::CHANGE_LEADER: {

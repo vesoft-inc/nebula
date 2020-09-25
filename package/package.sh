@@ -12,9 +12,10 @@ strip_enable="FALSE"
 usage="Usage: ${0} -v <version> -n <ON/OFF> -s <TRUE/FALSE>"
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"/../
 enablesanitizer="OFF"
+static_sanitizer="OFF"
 buildtype="Release"
 
-while getopts v:n:s:d opt;
+while getopts v:n:s:d: opt;
 do
     case $opt in
         v)
@@ -28,6 +29,9 @@ do
             ;;
         d)
             enablesanitizer="ON"
+            if [ "$OPTARG" == "static" ]; then
+                static_sanitizer="ON"
+            fi
             buildtype="RelWithDebInfo"
             ;;
         ?)
@@ -54,13 +58,14 @@ if [[ $strip_enable != TRUE ]] && [[ $strip_enable != FALSE ]]; then
     exit -1
 fi
 
-echo "current version is [ $version ], strip enable is [$strip_enable], enablesanitizer is [$enablesanitizer]"
+echo "current version is [ $version ], strip enable is [$strip_enable], enablesanitizer is [$enablesanitizer], static_sanitizer is [$static_sanitizer]"
 
 # args: <version>
 function build {
     version=$1
     san=$2
-    build_type=$3
+    ssan=$3
+    build_type=$4
     build_dir=$PROJECT_DIR/build
     if [[ -d $build_dir ]]; then
         rm -rf ${build_dir}/*
@@ -70,7 +75,9 @@ function build {
 
     pushd ${build_dir}
 
-    cmake -DCMAKE_BUILD_TYPE=${build_type} -DNEBULA_BUILD_VERSION=${version} -DENABLE_ASAN=${san} --DENABLE_UBSAN=${san} -DCMAKE_INSTALL_PREFIX=/usr/local/nebula -DENABLE_TESTING=OFF -DENABLE_PACK_ONE=${package_one} $PROJECT_DIR
+    cmake -DCMAKE_BUILD_TYPE=${build_type} -DNEBULA_BUILD_VERSION=${version} -DENABLE_ASAN=${san} --DENABLE_UBSAN=${san} \
+        -DENABLE_STATIC_ASAN=${ssan} -DENABLE_STATIC_UBSAN=${ssan} -DCMAKE_INSTALL_PREFIX=/usr/local/nebula -DENABLE_TESTING=OFF \
+        -DENABLE_PACK_ONE=${package_one} $PROJECT_DIR
 
     if !( make -j$(nproc) ); then
         echo ">>> build nebula failed <<<"
@@ -118,5 +125,5 @@ function package {
 
 
 # The main
-build $version $enablesanitizer $buildtype
+build $version $enablesanitizer $static_sanitizer $buildtype
 package $strip_enable

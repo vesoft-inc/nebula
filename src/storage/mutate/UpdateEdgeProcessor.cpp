@@ -6,8 +6,10 @@
 
 #include "storage/mutate/UpdateEdgeProcessor.h"
 #include "utils/NebulaKeyUtils.h"
+#include "utils/ConvertTimeType.h"
 #include "dataman/RowWriter.h"
 #include "kvstore/LogEncoder.h"
+#include "meta/NebulaSchemaProvider.h"
 
 namespace nebula {
 namespace storage {
@@ -28,6 +30,7 @@ void UpdateEdgeProcessor::onProcessFinished(int32_t retNum) {
             auto tagId = tagRet.value();
             auto it = tagFilters_.find(std::make_pair(tagId, prop));
             if (it == tagFilters_.end()) {
+                LOG(ERROR) << "Invalid Tag Filter, tagID: " << tagId << ", propName: " << prop;
                 return Status::Error("Invalid Tag Filter");
             }
             VLOG(1) << "Hit srcProp filter for tag: " << tagName
@@ -44,6 +47,10 @@ void UpdateEdgeProcessor::onProcessFinished(int32_t retNum) {
             return it->second;
         };
         for (auto& exp : returnColumnsExp_) {
+            if (!exp->prepare().ok()) {
+                LOG(ERROR) << "Expression::prepare failed";
+                return;
+            }
             auto value = exp->eval(getters);
             if (!value.ok()) {
                 LOG(ERROR) << value.status();
@@ -114,15 +121,25 @@ kvstore::ResultCode UpdateEdgeProcessor::collectVertexProps(
             // load it. To protect the data, we just return failed to graphd.
             return kvstore::ResultCode::ERR_UNKNOWN;
         }
-        const auto constSchema = reader->getSchema();
+        const auto schema = this->schemaMan_->getTagSchema(this->spaceId_, tagId);
+        if (schema == nullptr) {
+            LOG(WARNING) << "Can't find the schema for tagId " << tagId;
+            return kvstore::ResultCode::ERR_TAG_NOT_FOUND;
+        }
         for (auto& prop : props) {
+            VariantType v;
             auto res = RowReader::getPropByName(reader.get(), prop.prop_.name);
             if (!ok(res)) {
-                VLOG(1) << "Skip the bad value for tag: "
-                        << tagId << ", prop " << prop.prop_.name;
-                return kvstore::ResultCode::ERR_UNKNOWN;
+                auto defaultVal = schema->getDefaultValue(prop.prop_.name);
+                if (!defaultVal.ok()) {
+                    LOG(WARNING) << "No default value of "
+                                 << tagId << ", prop " << prop.prop_.name;
+                    return kvstore::ResultCode::ERR_TAG_NOT_FOUND;
+                }
+                v = std::move(defaultVal).value();
+            } else {
+                v = value(std::move(res));
             }
-            auto&& v = value(std::move(res));
             tagFilters_.emplace(std::make_pair(tagId, prop.prop_.name), v);
         }
     } else {
@@ -162,41 +179,97 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
             // So we leave the issue here. Now we just return failed to graphd.
             return kvstore::ResultCode::ERR_CORRUPT_DATA;
         }
-        const auto constSchema = reader->getSchema();
-        for (auto index = 0UL; index < constSchema->getNumFields(); index++) {
-            auto propName = std::string(constSchema->getFieldName(index));
-            auto res = RowReader::getPropByName(reader.get(), propName);
-            if (!ok(res)) {
-                VLOG(1) << "Skip the bad edge value for prop " << propName;
-                return kvstore::ResultCode::ERR_UNKNOWN;
-            }
-            auto&& v = value(std::move(res));
-            edgeFilters_.emplace(propName, v);
-        }
-        auto schema = std::const_pointer_cast<meta::SchemaProviderIf>(constSchema);
-        updater_ = std::unique_ptr<RowUpdater>(new RowUpdater(std::move(reader), schema));
-    } else if (insertable_) {
-        resp_.set_upsert(true);
-        int64_t ms = time::WallClock::fastNowInMicroSec();
-        auto now = std::numeric_limits<int64_t>::max() - ms;
-        key_ = NebulaKeyUtils::edgeKey(partId, edgeKey.src, edgeKey.edge_type,
-                                       edgeKey.ranking, edgeKey.dst, now);
         const auto constSchema = this->schemaMan_->getEdgeSchema(this->spaceId_,
                                                                  std::abs(edgeKey.edge_type));
         if (constSchema == nullptr) {
-            return kvstore::ResultCode::ERR_UNKNOWN;
+            LOG(ERROR) << "Can't find the schema for edge " << edgeKey.edge_type;
+            return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
         }
         for (auto index = 0UL; index < constSchema->getNumFields(); index++) {
             auto propName = std::string(constSchema->getFieldName(index));
-            OptVariantType value = RowReader::getDefaultProp(constSchema.get(), propName);
-            if (!value.ok()) {
-                return kvstore::ResultCode::ERR_UNKNOWN;
+            auto res = RowReader::getPropByName(reader.get(), propName);
+            VariantType v;
+            if (!ok(res)) {
+                auto defaultVal = constSchema->getDefaultValue(propName);
+                if (!defaultVal.ok()) {
+                    LOG(WARNING) << "No default value of "
+                                 << edgeKey.edge_type << ", prop " << propName;
+                    return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
+                }
+                v = std::move(defaultVal).value();
+            } else {
+                v = value(std::move(res));
             }
-            auto v = std::move(value.value());
-            edgeFilters_.emplace(propName, v);
+            edgeFilters_.emplace(propName, std::move(v));
         }
-        auto schema = std::const_pointer_cast<meta::SchemaProviderIf>(constSchema);
-        updater_ = std::unique_ptr<RowUpdater>(new RowUpdater(schema));
+        updater_ = std::unique_ptr<RowUpdater>(new RowUpdater(std::move(reader), constSchema));
+    } else if (insertable_) {
+        resp_.set_upsert(true);
+        auto version = FLAGS_enable_multi_versions ?
+            std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec() : 0L;
+        // Switch version to big-endian, make sure the key is in ordered.
+        version = folly::Endian::big(version);
+        key_ = NebulaKeyUtils::edgeKey(partId, edgeKey.src, edgeKey.edge_type,
+                                       edgeKey.ranking, edgeKey.dst, version);
+        const auto constSchema = this->schemaMan_->getEdgeSchema(this->spaceId_,
+                                                                 std::abs(edgeKey.edge_type));
+        if (constSchema == nullptr) {
+            LOG(ERROR) << "Get nullptr schema";
+            return kvstore::ResultCode::ERR_UNKNOWN;
+        }
+        auto updater = std::make_unique<RowUpdater>(constSchema);
+
+        for (auto index = 0UL; index < constSchema->getNumFields(); index++) {
+            auto propName = std::string(constSchema->getFieldName(index));
+            auto findIter = std::find_if(updateItems_.cbegin(), updateItems_.cend(),
+                    [&propName](auto &item) { return item.prop == propName; });
+            OptVariantType value;
+            if (findIter == updateItems_.end()) {
+                // When the schema field is not in update field
+                // need to get default value from schema. If nonexistent return error.
+                value = constSchema->getDefaultValue(index);
+                if (!value.ok()) {
+                    LOG(ERROR) << "EdgeType: " << edgeKey.edge_type
+                               << ", prop: " << propName << " without default value";
+                    return kvstore::ResultCode::ERR_UNKNOWN;
+                }
+                auto v = std::move(value.value());
+                edgeFilters_.emplace(propName, v);
+            } else {
+                // When the update item has src item,
+                // need to get default value from schema. If nonexistent return error.
+                auto expStatus = Expression::decode(findIter->get_value());
+                if (!expStatus.ok()) {
+                    LOG(ERROR) << "Expression decode failed, propName: " << propName;
+                    return kvstore::ResultCode::ERR_UNKNOWN;
+                }
+
+                auto expression = std::move(expStatus).value();
+                ExpressionContext expCtx;
+                expression->setContext(&expCtx);
+                if (!expression->prepare().ok()) {
+                    LOG(ERROR) << "Expression::prepare failed";
+                    return kvstore::ResultCode::ERR_UNKNOWN;
+                }
+                if (expCtx.hasEdgeProp()) {
+                    auto aliasProps = expCtx.aliasProps();
+                    for (auto& prop : aliasProps) {
+                        value = constSchema->getDefaultValue(prop.second);
+                        if (!value.ok()) {
+                            LOG(ERROR) << "EdgeType: " << edgeKey.edge_type
+                                       << ", prop: " << prop.second << " without default value";
+                            return kvstore::ResultCode::ERR_UNKNOWN;
+                        }
+                        VLOG(2) << "UpdateItem on propName: " << prop.second << " has edge prop";
+                        auto v = std::move(value.value());
+                        edgeFilters_.emplace(prop.second, v);
+                    }
+                } else {
+                    VLOG(2) << "Nothing set on propName: " << propName;
+                }
+            }
+        }
+        updater_ = std::unique_ptr<RowUpdater>(std::move(updater));
     } else {
         VLOG(3) << "Missed edge, spaceId: " << this->spaceId_ << ", partId: " << partId
                 << ", src: " << edgeKey.src << ", type: " << edgeKey.edge_type
@@ -207,8 +280,8 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
 }
 
 
-std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
-                                                    const cpp2::EdgeKey& edgeKey) {
+folly::Optional<std::string> UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
+                                                                     const cpp2::EdgeKey& edgeKey) {
     Getters getters;
     getters.getSrcTagProp = [&, this] (const std::string& tagName,
                                        const std::string& prop) -> OptVariantType {
@@ -240,50 +313,98 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
         auto exp = Expression::decode(item.get_value());
         if (!exp.ok()) {
             LOG(ERROR) << "Decode item expr failed";
-            return std::string("");
+            return folly::none;
         }
         auto vexp = std::move(exp).value();
         vexp->setContext(this->expCtx_.get());
+        if (!vexp->prepare().ok()) {
+            LOG(ERROR) << "Expression::prepare failed";
+            return folly::none;
+        }
         auto value = vexp->eval(getters);
         if (!value.ok()) {
             LOG(ERROR) << "Eval item expr failed";
-            return std::string("");
+            return folly::none;
         }
         auto expValue = value.value();
         edgeFilters_[prop] = expValue;
 
+        auto schema = updater_->schema();
         switch (expValue.which()) {
             case VAR_INT64: {
+                if (schema->getFieldType(prop).type != nebula::cpp2::SupportedType::INT &&
+                    schema->getFieldType(prop).type != nebula::cpp2::SupportedType::TIMESTAMP) {
+                    LOG(ERROR) << "Field: `" << prop << "' type is "
+                               << static_cast<int32_t>(schema->getFieldType(prop).type)
+                               << ", not INT type or TIMESTAMP";
+                    return folly::none;
+                }
                 auto v = boost::get<int64_t>(expValue);
                 updater_->setInt(prop, v);
                 break;
             }
             case VAR_DOUBLE: {
+                if (schema->getFieldType(prop).type != nebula::cpp2::SupportedType::DOUBLE) {
+                    LOG(ERROR) << "Field: `" << prop << "' type is "
+                               << static_cast<int32_t>(schema->getFieldType(prop).type)
+                               << ", not DOUBLE type";
+                    return folly::none;
+                }
                 auto v = boost::get<double>(expValue);
                 updater_->setDouble(prop, v);
                 break;
             }
             case VAR_BOOL: {
+                if (schema->getFieldType(prop).type != nebula::cpp2::SupportedType::BOOL) {
+                    LOG(ERROR) << "Field: `" << prop << "' type is "
+                               << static_cast<int32_t>(schema->getFieldType(prop).type)
+                               << ", not BOOL type";
+                    return folly::none;
+                }
                 auto v = boost::get<bool>(expValue);
                 updater_->setBool(prop, v);
                 break;
             }
             case VAR_STR: {
                 auto v = boost::get<std::string>(expValue);
-                updater_->setString(prop, v);
+                if (schema->getFieldType(prop).type == nebula::cpp2::SupportedType::TIMESTAMP) {
+                    auto timestamp = ConvertTimeType::toTimestamp(v);
+                    if (!timestamp.ok()) {
+                        LOG(ERROR) << "Field: `" << prop
+                                   << " with wrong type: " << timestamp.status();
+                        return folly::none;
+                    }
+
+                    updater_->setInt(prop, timestamp.value());
+                    edgeFilters_[prop] = timestamp.value();
+                } else {
+                    if (schema->getFieldType(prop).type != nebula::cpp2::SupportedType::STRING) {
+                        LOG(ERROR) << "Field: `" << prop << "' type is "
+                                   << static_cast<int32_t>(schema->getFieldType(prop).type)
+                                   << ", not STRING type";
+                        return folly::none;
+                    }
+                    updater_->setString(prop, v);
+                }
                 break;
              }
             default: {
                 LOG(FATAL) << "Unknown VariantType: " << expValue.which();
-                return std::string("");
+                return folly::none;
             }
         }
     }
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
-    auto nVal = updater_->encode();
+    auto status = updater_->encode();
+    if (!status.ok()) {
+        LOG(ERROR) << status.status();
+        return folly::none;
+    }
+    auto nVal = std::move(status.value());
     // TODO(heng) we don't update the index for reverse edge.
     if (!indexes_.empty() && edgeKey.edge_type > 0) {
-        std::unique_ptr<RowReader> reader, rReader;
+        RowReader reader = RowReader::getEmptyRowReader();
+        RowReader rReader = RowReader::getEmptyRowReader();
         for (auto& index : indexes_) {
             auto indexId = index->get_index_id();
             if (index->get_schema_id().get_edge_type() == edgeKey.edge_type) {
@@ -376,7 +497,11 @@ cpp2::ErrorCode UpdateEdgeProcessor::checkFilter(const PartitionID partId,
         return it->second;
     };
 
-    if (this->exp_ != nullptr) {
+    if (!resp_.upsert && this->exp_ != nullptr) {
+        if (!this->exp_->prepare().ok()) {
+            LOG(ERROR) << "Expression::prepare failed";
+            return cpp2::ErrorCode::E_INVALID_FILTER;
+        }
         auto filterResult = this->exp_->eval(getters);
         if (!filterResult.ok()) {
             VLOG(1) << "Invalid filter expression";
@@ -517,7 +642,11 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
                     if (filterResult_ == cpp2::ErrorCode::E_FILTER_OUT) {
                         onProcessFinished(req.get_return_columns().size());
                     }
-                    this->pushResultCode(filterResult_, partId);
+                    if (filterResult_ != cpp2::ErrorCode::SUCCEEDED) {
+                        this->pushResultCode(filterResult_, partId);
+                    } else {
+                        this->pushResultCode(to(code), partId);
+                    }
                 } else {
                     this->pushResultCode(to(code), partId);
                 }

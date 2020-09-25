@@ -4,15 +4,15 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
-#include "utils/NebulaKeyUtils.h"
-#include <gtest/gtest.h>
 #include <folly/synchronization/Baton.h>
+#include <gtest/gtest.h>
+#include "base/Base.h"
+#include "dataman/RowWriter.h"
 #include "fs/TempDir.h"
-#include "storage/test/TestUtils.h"
 #include "storage/CommonUtils.h"
 #include "storage/CompactionFilter.h"
-#include "dataman/RowWriter.h"
+#include "storage/test/TestUtils.h"
+#include "utils/NebulaKeyUtils.h"
 
 namespace nebula {
 namespace storage {
@@ -31,8 +31,8 @@ void mockData(kvstore::KVStore* kv) {
             for (VertexID dstId = 10001; dstId <= 10007; dstId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", dst " << dstId;
                 for (EdgeVersion version = 0; version < 3; version++) {
-                    auto key = NebulaKeyUtils::edgeKey(partId, vertexId, 101, 0, dstId,
-                                                       std::numeric_limits<int>::max() - version);
+                    auto key = NebulaKeyUtils::edgeKey(
+                        partId, vertexId, 101, 0, dstId, std::numeric_limits<int>::max() - version);
                     auto val = TestUtils::encodeValue(partId, vertexId, dstId, 101);
                     data.emplace_back(std::move(key), std::move(val));
                 }
@@ -42,7 +42,11 @@ void mockData(kvstore::KVStore* kv) {
             for (VertexID srcId = 20001; srcId <= 20005; srcId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", src " << srcId;
                 for (EdgeVersion version = 0; version < 3; version++) {
-                    auto key = NebulaKeyUtils::edgeKey(partId, vertexId, -101, 0, srcId,
+                    auto key = NebulaKeyUtils::edgeKey(partId,
+                                                       vertexId,
+                                                       -101,
+                                                       0,
+                                                       srcId,
                                                        std::numeric_limits<int>::max() - version);
                     auto val = TestUtils::setupEncode(10, 20);
                     data.emplace_back(std::move(key), std::move(val));
@@ -51,12 +55,10 @@ void mockData(kvstore::KVStore* kv) {
         }
 
         folly::Baton<true, std::atomic> baton;
-        kv->asyncMultiPut(
-            0, partId, std::move(data),
-            [&](kvstore::ResultCode code) {
-                EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
-                baton.post();
-            });
+        kv->asyncMultiPut(0, partId, std::move(data), [&](kvstore::ResultCode code) {
+            EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
+            baton.post();
+        });
         baton.wait();
     }
 }
@@ -82,8 +84,8 @@ void mockTTLDataExpired(kvstore::KVStore* kv) {
 
             // one edge data, the record data will always expire
             auto edgeType = 101;
-            auto edgekey = NebulaKeyUtils::edgeKey(partId, vertexId, edgeType, 0, 10001,
-                                                   std::numeric_limits<int>::max() - 1);
+            auto edgekey = NebulaKeyUtils::edgeKey(
+                partId, vertexId, edgeType, 0, 10001, std::numeric_limits<int>::max() - 1);
             RowWriter edgewriter;
             for (int64_t numInt = 0; numInt < 10; numInt++) {
                 // all data expired, 1546272000 timestamp representation "2019-1-1 0:0:0"
@@ -98,12 +100,10 @@ void mockTTLDataExpired(kvstore::KVStore* kv) {
         }
 
         folly::Baton<true, std::atomic> baton;
-        kv->asyncMultiPut(
-            0, partId, std::move(data),
-            [&](kvstore::ResultCode code) {
-                EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
-                baton.post();
-            });
+        kv->asyncMultiPut(0, partId, std::move(data), [&](kvstore::ResultCode code) {
+            EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
+            baton.post();
+        });
         baton.wait();
     }
 }
@@ -129,8 +129,8 @@ void mockTTLDataNotExpired(kvstore::KVStore* kv) {
             data.emplace_back(std::move(tagkey), std::move(tagval));
 
             // one edge data, the record data will never expire
-            auto edgekey = NebulaKeyUtils::edgeKey(partId, vertexId, edgeType, 0, 10001,
-                                                   std::numeric_limits<int>::max() - 1);
+            auto edgekey = NebulaKeyUtils::edgeKey(
+                partId, vertexId, edgeType, 0, 10001, std::numeric_limits<int>::max() - 1);
             RowWriter edgewriter;
             for (int64_t numInt = 0; numInt < 10; numInt++) {
                 // all data expired, 4102416000 timestamp representation "2100-1-1 0:0:0"
@@ -145,12 +145,10 @@ void mockTTLDataNotExpired(kvstore::KVStore* kv) {
         }
 
         folly::Baton<true, std::atomic> baton;
-        kv->asyncMultiPut(
-            0, partId, std::move(data),
-            [&](kvstore::ResultCode code) {
-                EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
-                baton.post();
-            });
+        kv->asyncMultiPut(0, partId, std::move(data), [&](kvstore::ResultCode code) {
+            EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
+            baton.post();
+        });
         baton.wait();
     }
 }
@@ -171,26 +169,24 @@ void mockIndexData(kvstore::KVStore* kv) {
             auto ptiKey = NebulaKeyUtils::vertexIndexKey(partId, tagId + 1001, vertexId, values);
             data.emplace_back(std::move(ptiKey), "");
 
-            auto eiKey = NebulaKeyUtils::edgeIndexKey(partId, edgeType + 100,
-                                                      vertexId, 0, 10001, values);
+            auto eiKey =
+                NebulaKeyUtils::edgeIndexKey(partId, edgeType + 100, vertexId, 0, 10001, values);
 
             data.emplace_back(std::move(eiKey), "");
             /**
              * pseudo edge index
              */
-            auto peiKey = NebulaKeyUtils::edgeIndexKey(partId, edgeType + 101,
-                                                       vertexId, 0, 10001, values);
+            auto peiKey =
+                NebulaKeyUtils::edgeIndexKey(partId, edgeType + 101, vertexId, 0, 10001, values);
 
             data.emplace_back(std::move(peiKey), "");
         }
 
         folly::Baton<true, std::atomic> baton;
-        kv->asyncMultiPut(
-            0, partId, std::move(data),
-            [&](kvstore::ResultCode code) {
-                EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
-                baton.post();
-            });
+        kv->asyncMultiPut(0, partId, std::move(data), [&](kvstore::ResultCode code) {
+            EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
+            baton.post();
+        });
         baton.wait();
     }
 }
@@ -199,14 +195,14 @@ TEST(NebulaCompactionFilterTest, InvalidSchemaAndMutliVersionsFilterTest) {
     fs::TempDir rootPath("/tmp/NebulaCompactionFilterTest.XXXXXX");
     auto schemaMan = TestUtils::mockSchemaMan();
     std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder(
-                                    new StorageCompactionFilterFactoryBuilder(schemaMan.get(),
-                                                                              nullptr));
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path(),
-                                                           6,
-                                                           network::InetAddress{0, 0},
-                                                           nullptr,
-                                                           false,
-                                                           std::move(cffBuilder)));
+        new StorageCompactionFilterFactoryBuilder(schemaMan.get(), nullptr));
+    std::unique_ptr<kvstore::KVStore> kv(
+        TestUtils::initKV(rootPath.path(),
+                          6,
+                          network::InetAddress{0, network::NetworkUtils::getAvailablePort()},
+                          nullptr,
+                          false,
+                          std::move(cffBuilder)));
     LOG(INFO) << "Write some data";
     mockData(kv.get());
     LOG(INFO) << "Let's delete one tag";
@@ -218,10 +214,7 @@ TEST(NebulaCompactionFilterTest, InvalidSchemaAndMutliVersionsFilterTest) {
     LOG(INFO) << "Finish compaction, check data...";
 
     auto checkTag = [&](PartitionID partId, VertexID vertexId, TagID tagId, int32_t expectedNum) {
-        auto prefix = NebulaKeyUtils::vertexKey(partId,
-                                                vertexId,
-                                                tagId,
-                                                0);
+        auto prefix = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, 0);
         std::unique_ptr<kvstore::KVIterator> iter;
         ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
         int32_t num = 0;
@@ -233,20 +226,15 @@ TEST(NebulaCompactionFilterTest, InvalidSchemaAndMutliVersionsFilterTest) {
         ASSERT_EQ(expectedNum, num);
     };
 
-    auto checkEdge = [&](PartitionID partId, VertexID vertexId, EdgeType edge,
-                         EdgeRanking rank, VertexID dstId, int32_t expectedNum) {
-        auto start = NebulaKeyUtils::edgeKey(partId,
-                                             vertexId,
-                                             edge,
-                                             rank,
-                                             dstId,
-                                             0);
-        auto end = NebulaKeyUtils::edgeKey(partId,
-                                           vertexId,
-                                           edge,
-                                           rank,
-                                           dstId,
-                                           std::numeric_limits<int>::max());
+    auto checkEdge = [&](PartitionID partId,
+                         VertexID vertexId,
+                         EdgeType edge,
+                         EdgeRanking rank,
+                         VertexID dstId,
+                         int32_t expectedNum) {
+        auto start = NebulaKeyUtils::edgeKey(partId, vertexId, edge, rank, dstId, 0);
+        auto end = NebulaKeyUtils::edgeKey(
+            partId, vertexId, edge, rank, dstId, std::numeric_limits<int>::max());
         std::unique_ptr<kvstore::KVIterator> iter;
         ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, kv->range(0, partId, start, end, &iter));
         int32_t num = 0;
@@ -254,8 +242,8 @@ TEST(NebulaCompactionFilterTest, InvalidSchemaAndMutliVersionsFilterTest) {
             iter->next();
             num++;
         }
-        VLOG(3) << "Check edge " << partId << ":" << vertexId << ":"
-                << edge << ":" << rank << ":" << dstId;
+        VLOG(3) << "Check edge " << partId << ":" << vertexId << ":" << edge << ":" << rank << ":"
+                << dstId;
         ASSERT_EQ(expectedNum, num);
     };
 
@@ -275,20 +263,18 @@ TEST(NebulaCompactionFilterTest, InvalidSchemaAndMutliVersionsFilterTest) {
     }
 }
 
-
 TEST(NebulaCompactionFilterTest, TTLFilterDataExpiredTest) {
     fs::TempDir rootPath("/tmp/NebulaCompactionFilterTest.XXXXXX");
     auto schemaMan = TestUtils::mockSchemaWithTTLMan();
     std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder(
-                                    new StorageCompactionFilterFactoryBuilder(schemaMan.get(),
-                                                                              nullptr));
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path(),
-                                                           6,
-                                                           network::InetAddress{0, 0},
-                                                           nullptr,
-                                                           false,
-                                                           std::move(cffBuilder)));
-
+        new StorageCompactionFilterFactoryBuilder(schemaMan.get(), nullptr));
+    std::unique_ptr<kvstore::KVStore> kv(
+        TestUtils::initKV(rootPath.path(),
+                          6,
+                          network::InetAddress{0, network::NetworkUtils::getAvailablePort()},
+                          nullptr,
+                          false,
+                          std::move(cffBuilder)));
     LOG(INFO) << "Write some data";
     mockTTLDataExpired(kv.get());
 
@@ -297,10 +283,7 @@ TEST(NebulaCompactionFilterTest, TTLFilterDataExpiredTest) {
     LOG(INFO) << "Finish compaction, check data...";
 
     auto checkTag = [&](PartitionID partId, VertexID vertexId, TagID tagId, int32_t expectedNum) {
-        auto prefix = NebulaKeyUtils::vertexKey(partId,
-                                                vertexId,
-                                                tagId,
-                                                0);
+        auto prefix = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, 0);
         std::unique_ptr<kvstore::KVIterator> iter;
         ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
         int32_t num = 0;
@@ -312,20 +295,15 @@ TEST(NebulaCompactionFilterTest, TTLFilterDataExpiredTest) {
         ASSERT_EQ(expectedNum, num);
     };
 
-    auto checkEdge = [&](PartitionID partId, VertexID vertexId, EdgeType edge,
-                         EdgeRanking rank, VertexID dstId, int32_t expectedNum) {
-        auto start = NebulaKeyUtils::edgeKey(partId,
-                                             vertexId,
-                                             edge,
-                                             rank,
-                                             dstId,
-                                             0);
-        auto end = NebulaKeyUtils::edgeKey(partId,
-                                           vertexId,
-                                           edge,
-                                           rank,
-                                           dstId,
-                                           std::numeric_limits<int>::max());
+    auto checkEdge = [&](PartitionID partId,
+                         VertexID vertexId,
+                         EdgeType edge,
+                         EdgeRanking rank,
+                         VertexID dstId,
+                         int32_t expectedNum) {
+        auto start = NebulaKeyUtils::edgeKey(partId, vertexId, edge, rank, dstId, 0);
+        auto end = NebulaKeyUtils::edgeKey(
+            partId, vertexId, edge, rank, dstId, std::numeric_limits<int>::max());
         std::unique_ptr<kvstore::KVIterator> iter;
         ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, kv->range(0, partId, start, end, &iter));
         int32_t num = 0;
@@ -333,8 +311,8 @@ TEST(NebulaCompactionFilterTest, TTLFilterDataExpiredTest) {
             iter->next();
             num++;
         }
-        VLOG(3) << "Check edge " << partId << ":" << vertexId << ":"
-                << edge << ":" << rank << ":" << dstId;
+        VLOG(3) << "Check edge " << partId << ":" << vertexId << ":" << edge << ":" << rank << ":"
+                << dstId;
         ASSERT_EQ(expectedNum, num);
     };
 
@@ -346,20 +324,18 @@ TEST(NebulaCompactionFilterTest, TTLFilterDataExpiredTest) {
     }
 }
 
-
 TEST(NebulaCompactionFilterTest, TTLFilterDataNotExpiredTest) {
     fs::TempDir rootPath("/tmp/NebulaCompactionFilterTest.XXXXXX");
     auto schemaMan = TestUtils::mockSchemaWithTTLMan();
     std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder(
-                                    new StorageCompactionFilterFactoryBuilder(schemaMan.get(),
-                                                                              nullptr));
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path(),
-                                                           6,
-                                                           network::InetAddress{0, 0},
-                                                           nullptr,
-                                                           false,
-                                                           std::move(cffBuilder)));
-
+        new StorageCompactionFilterFactoryBuilder(schemaMan.get(), nullptr));
+    std::unique_ptr<kvstore::KVStore> kv(
+        TestUtils::initKV(rootPath.path(),
+                          6,
+                          network::InetAddress{0, network::NetworkUtils::getAvailablePort()},
+                          nullptr,
+                          false,
+                          std::move(cffBuilder)));
     LOG(INFO) << "Write some data";
     mockTTLDataNotExpired(kv.get());
 
@@ -368,10 +344,7 @@ TEST(NebulaCompactionFilterTest, TTLFilterDataNotExpiredTest) {
     LOG(INFO) << "Finish compaction, check data...";
 
     auto checkTag = [&](PartitionID partId, VertexID vertexId, TagID tagId, int32_t expectedNum) {
-        auto prefix = NebulaKeyUtils::vertexKey(partId,
-                                                vertexId,
-                                                tagId,
-                                                0);
+        auto prefix = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, 0);
         std::unique_ptr<kvstore::KVIterator> iter;
         ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
         int32_t num = 0;
@@ -383,20 +356,15 @@ TEST(NebulaCompactionFilterTest, TTLFilterDataNotExpiredTest) {
         ASSERT_EQ(expectedNum, num);
     };
 
-    auto checkEdge = [&](PartitionID partId, VertexID vertexId, EdgeType edge,
-                         EdgeRanking rank, VertexID dstId, int32_t expectedNum) {
-        auto start = NebulaKeyUtils::edgeKey(partId,
-                                             vertexId,
-                                             edge,
-                                             rank,
-                                             dstId,
-                                             0);
-        auto end = NebulaKeyUtils::edgeKey(partId,
-                                           vertexId,
-                                           edge,
-                                           rank,
-                                           dstId,
-                                           std::numeric_limits<int>::max());
+    auto checkEdge = [&](PartitionID partId,
+                         VertexID vertexId,
+                         EdgeType edge,
+                         EdgeRanking rank,
+                         VertexID dstId,
+                         int32_t expectedNum) {
+        auto start = NebulaKeyUtils::edgeKey(partId, vertexId, edge, rank, dstId, 0);
+        auto end = NebulaKeyUtils::edgeKey(
+            partId, vertexId, edge, rank, dstId, std::numeric_limits<int>::max());
         std::unique_ptr<kvstore::KVIterator> iter;
         ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, kv->range(0, partId, start, end, &iter));
         int32_t num = 0;
@@ -404,8 +372,8 @@ TEST(NebulaCompactionFilterTest, TTLFilterDataNotExpiredTest) {
             iter->next();
             num++;
         }
-        VLOG(3) << "Check edge " << partId << ":" << vertexId << ":"
-                << edge << ":" << rank << ":" << dstId;
+        VLOG(3) << "Check edge " << partId << ":" << vertexId << ":" << edge << ":" << rank << ":"
+                << dstId;
         ASSERT_EQ(expectedNum, num);
     };
 
@@ -424,15 +392,14 @@ TEST(NebulaCompactionFilterTest, DropIndexTest) {
     auto indexMan = TestUtils::mockIndexMan(spaceId, 3001, 3002, 101, 102);
 
     std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder(
-        new StorageCompactionFilterFactoryBuilder(schemaMan.get(),
-                                                  indexMan.get()));
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path(),
-                                                           6,
-                                                           network::InetAddress{0, 0},
-                                                           nullptr,
-                                                           false,
-                                                           std::move(cffBuilder)));
-
+        new StorageCompactionFilterFactoryBuilder(schemaMan.get(), indexMan.get()));
+    std::unique_ptr<kvstore::KVStore> kv(
+        TestUtils::initKV(rootPath.path(),
+                          6,
+                          network::InetAddress{0, network::NetworkUtils::getAvailablePort()},
+                          nullptr,
+                          false,
+                          std::move(cffBuilder)));
     LOG(INFO) << "Write some data";
     mockIndexData(kv.get());
 
@@ -467,9 +434,8 @@ TEST(NebulaCompactionFilterTest, DropIndexTest) {
     }
 }
 
-}  // namespace storage
-}  // namespace nebula
-
+}   // namespace storage
+}   // namespace nebula
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);

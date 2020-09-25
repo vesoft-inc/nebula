@@ -332,11 +332,12 @@ TEST(BalanceIntegrationTest, LeaderBalanceTest) {
 
     LOG(INFO) << "Waiting for the leader balance";
     sleep(FLAGS_raft_heartbeat_interval_secs + 1);
+    size_t leaderCount = 0;
     for (int i = 0; i < replica; i++) {
         std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
-        EXPECT_LE(2, serverContexts[i]->kvStore_->allLeader(leaderIds));
-        EXPECT_GE(4, serverContexts[i]->kvStore_->allLeader(leaderIds));
+        leaderCount += serverContexts[i]->kvStore_->allLeader(leaderIds);
     }
+    EXPECT_EQ(9, leaderCount);
     for (auto& c : metaClients) {
         c->stop();
     }

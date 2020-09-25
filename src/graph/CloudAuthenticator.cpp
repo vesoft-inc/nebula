@@ -27,22 +27,26 @@ bool CloudAuthenticator::auth(const std::string& user, const std::string& passwo
     }
 
     // Second, use user + password authentication methods
-    StatusOr<std::string> result;
     std::string userAndPasswd = user + ":" + password;
     std::string base64Str = encryption::Base64::encode(userAndPasswd);
 
     std::string header = "-H \"Content-Type: application/json\"  -H \"Authorization:Nebula ";
     header =  header + base64Str + "\"";
-    result = http::HttpClient::post(FLAGS_cloud_http_url, header);
+    auto result = http::HttpClient::post(FLAGS_cloud_http_url, header);
 
     if (!result.ok()) {
         LOG(ERROR) << result.status();
         return false;
     }
 
-    auto json = folly::parseJson(result.value());
-    if (json["code"].asString().compare("0") != 0) {
-        LOG(ERROR) << "Cloud authentication failed";
+    try {
+        auto json = folly::parseJson(result.value());
+        if (json["code"].asString().compare("0") != 0) {
+            LOG(ERROR) << "Cloud authentication failed";
+            return false;
+        }
+    } catch (std::exception& e) {
+        LOG(ERROR) << "Invalid json: " << e.what();
         return false;
     }
     return true;

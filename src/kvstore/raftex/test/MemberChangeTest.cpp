@@ -59,7 +59,8 @@ TEST(MemberChangeTest, AddRemovePeerTest) {
         LOG(INFO) << "Add the same peer again!";
         auto f = leader->sendCommandAsync(test::encodeAddPeer(allHosts[3]));
         f.wait();
-
+        // sleep a while to ensure the learner receive the command.
+        sleep(1);
         for (auto& c : copies) {
             CHECK_EQ(3, c->hosts_.size());
         }
@@ -68,7 +69,8 @@ TEST(MemberChangeTest, AddRemovePeerTest) {
         LOG(INFO) << "Remove the peer added!";
         auto f = leader->sendCommandAsync(test::encodeRemovePeer(allHosts[3]));
         f.wait();
-
+        // sleep a while to ensure the learner receive the command.
+        sleep(1);
         for (size_t i = 0; i < copies.size() - 1; i++) {
             CHECK_EQ(2, copies[i]->hosts_.size());
         }

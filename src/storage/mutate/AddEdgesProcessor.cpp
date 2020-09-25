@@ -14,8 +14,8 @@ namespace storage {
 
 void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
     spaceId_ = req.get_space_id();
-    auto version =
-        std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec();
+    auto version = FLAGS_enable_multi_versions ?
+        std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec() : 0L;
     // Switch version to big-endian, make sure the key is in ordered.
     version = folly::Endian::big(version);
 
@@ -87,7 +87,7 @@ std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
     });
     for (auto& e : newEdges) {
         std::string val;
-        std::unique_ptr<RowReader> nReader;
+        RowReader nReader = RowReader::getEmptyRowReader();
         auto edgeType = NebulaKeyUtils::getEdgeType(e.first);
         for (auto& index : indexes_) {
             if (edgeType == index->get_schema_id().get_edge_type()) {

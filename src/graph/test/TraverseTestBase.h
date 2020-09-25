@@ -139,8 +139,8 @@ public:
             return age_;
         }
 
-        Player& serve(std::string team, int64_t startYear, int64_t endYear) {
-            serves_.emplace_back(std::move(team), startYear, endYear);
+        Player& serve(std::string team, int64_t rank, int64_t startYear, int64_t endYear) {
+            serves_.emplace_back(std::move(team), rank, startYear, endYear);
             return *this;
         }
 
@@ -167,7 +167,7 @@ public:
         }
 
     private:
-        using Serve = std::tuple<std::string, int64_t, int64_t>;
+        using Serve = std::tuple<std::string, int64_t, int64_t, int64_t>;
         using Like = std::tuple<std::string, int64_t>;
         using TeamMate = std::tuple<std::string, int64_t, int64_t>;
         std::string                             name_;
@@ -487,7 +487,7 @@ AssertionResult TraverseTestBase::prepareSchema() {
 
 AssertionResult TraverseTestBase::initData() {
     // TODO(dutor) Maybe we should move these data into some kind of testing resources, later.
-    players_["Tim Duncan"].serve("Spurs", 1997, 2016)
+    players_["Tim Duncan"].serve("Spurs", 0, 1997, 2016)
                           .like("Tony Parker", 95)
                           .like("Manu Ginobili", 95)
                           .teammate("Tony Parker", 2001, 2016)
@@ -495,8 +495,8 @@ AssertionResult TraverseTestBase::initData() {
                           .teammate("LaMarcus Aldridge", 2015, 2016)
                           .teammate("Danny Green", 2010, 2016);
 
-    players_["Tony Parker"].serve("Spurs", 1999, 2018)
-                           .serve("Hornets", 2018, 2019)
+    players_["Tony Parker"].serve("Spurs", 0, 1999, 2018)
+                           .serve("Hornets", 0, 2018, 2019)
                            .like("Tim Duncan", 95)
                            .like("Manu Ginobili", 95)
                            .like("LaMarcus Aldridge", 90)
@@ -505,79 +505,79 @@ AssertionResult TraverseTestBase::initData() {
                            .teammate("LaMarcus Aldridge", 2015, 2018)
                            .teammate("Kyle Anderson", 2014, 2016);
 
-    players_["Manu Ginobili"].serve("Spurs", 2002, 2018)
+    players_["Manu Ginobili"].serve("Spurs", 0, 2002, 2018)
                              .like("Tim Duncan", 90)
                              .teammate("Tim Duncan", 2002, 2016)
                              .teammate("Tony Parker", 2002, 2016);
 
-    players_["LaMarcus Aldridge"].serve("Trail Blazers", 2006, 2015)
-                                 .serve("Spurs", 2015, 2019)
+    players_["LaMarcus Aldridge"].serve("Trail Blazers", 0, 2006, 2015)
+                                 .serve("Spurs", 0, 2015, 2019)
                                  .like("Tony Parker", 75)
                                  .like("Tim Duncan", 75);
 
-    players_["Rudy Gay"].serve("Grizzlies", 2006, 2013)
-                        .serve("Raptors", 2013, 2013)
-                        .serve("Kings", 2013, 2017)
-                        .serve("Spurs", 2017, 2019)
+    players_["Rudy Gay"].serve("Grizzlies", 0, 2006, 2013)
+                        .serve("Raptors", 0, 2013, 2013)
+                        .serve("Kings", 0, 2013, 2017)
+                        .serve("Spurs", 0, 2017, 2019)
                         .like("LaMarcus Aldridge", 70);
 
-    players_["Marco Belinelli"].serve("Warriors", 2007, 2009)
-                               .serve("Raptors", 2009, 2010)
-                               .serve("Hornets", 2010, 2012)
-                               .serve("Bulls", 2012, 2013)
-                               .serve("Spurs", 2013, 2015)
-                               .serve("Kings", 2015, 2016)
-                               .serve("Hornets", 2016, 2017)
-                               .serve("Hawks", 2017, 2018)
-                               .serve("76ers", 2018, 2018)
-                               .serve("Spurs", 2018, 2019)
+    players_["Marco Belinelli"].serve("Warriors", 0, 2007, 2009)
+                               .serve("Raptors", 0, 2009, 2010)
+                               .serve("Hornets", 0, 2010, 2012)
+                               .serve("Bulls", 0, 2012, 2013)
+                               .serve("Spurs", 0, 2013, 2015)
+                               .serve("Kings", 0, 2015, 2016)
+                               .serve("Hornets", 1, 2016, 2017)
+                               .serve("Hawks", 0, 2017, 2018)
+                               .serve("76ers", 0, 2018, 2018)
+                               .serve("Spurs", 1, 2018, 2019)
                                .like("Tony Parker", 50)
                                .like("Tim Duncan", 55)
                                .like("Danny Green", 60);
 
-    players_["Danny Green"].serve("Cavaliers", 2009, 2010)
-                           .serve("Spurs", 2010, 2018)
-                           .serve("Raptors", 2018, 2019)
+    players_["Danny Green"].serve("Cavaliers", 0, 2009, 2010)
+                           .serve("Spurs", 0, 2010, 2018)
+                           .serve("Raptors", 0, 2018, 2019)
                            .like("Marco Belinelli", 83)
                            .like("Tim Duncan", 70)
                            .like("LeBron James", 80);
 
-    players_["Kyle Anderson"].serve("Spurs", 2014, 2018)
-                             .serve("Grizzlies", 2018, 2019);
+    players_["Kyle Anderson"].serve("Spurs", 0, 2014, 2018)
+                             .serve("Grizzlies", 0, 2018, 2019);
 
-    players_["Aron Baynes"].serve("Spurs", 2013, 2015)
-                           .serve("Pistons", 2015, 2017)
-                           .serve("Celtics", 2017, 2019)
+    players_["Aron Baynes"].serve("Spurs", 0, 2013, 2015)
+                           .serve("Pistons", 0, 2015, 2017)
+                           .serve("Celtics", 0, 2017, 2019)
                            .like("Tim Duncan", 80);
 
-    players_["Boris Diaw"].serve("Hawks", 2003, 2005)
-                          .serve("Suns", 2005, 2008)
-                          .serve("Hornets", 2008, 2012)
-                          .serve("Spurs", 2012, 2016)
-                          .serve("Jazz", 2016, 2017)
+    players_["Boris Diaw"].serve("Hawks", 0, 2003, 2005)
+                          .serve("Suns", 0, 2005, 2008)
+                          .serve("Hornets", 0, 2008, 2012)
+                          .serve("Spurs", 0, 2012, 2016)
+                          .serve("Jazz", 0, 2016, 2017)
                           .like("Tony Parker", 80)
                           .like("Tim Duncan", 80);
 
-    players_["Tiago Splitter"].serve("Spurs", 2010, 2015)
-                              .serve("Hawks", 2015, 2017)
-                              .serve("76ers", 2017, 2017)
+    players_["Tiago Splitter"].serve("Spurs", 0, 2010, 2015)
+                              .serve("Hawks", 0, 2015, 2017)
+                              .serve("76ers", 0, 2017, 2017)
                               .like("Tim Duncan", 80)
                               .like("Manu Ginobili", 90);
 
-    players_["Cory Joseph"].serve("Spurs", 2011, 2015)
-                           .serve("Raptors", 2015, 2017)
-                           .serve("Pacers", 2017, 2019);
+    players_["Cory Joseph"].serve("Spurs", 0, 2011, 2015)
+                           .serve("Raptors", 0, 2015, 2017)
+                           .serve("Pacers", 0, 2017, 2019);
 
-    players_["David West"].serve("Hornets", 2003, 2011)
-                          .serve("Pacers", 2011, 2015)
-                          .serve("Spurs", 2015, 2016)
-                          .serve("Warriors", 2016, 2018);
+    players_["David West"].serve("Hornets", 0, 2003, 2011)
+                          .serve("Pacers", 0, 2011, 2015)
+                          .serve("Spurs", 0, 2015, 2016)
+                          .serve("Warriors", 0, 2016, 2018);
 
-    players_["Jonathon Simmons"].serve("Spurs", 2015, 2017)
-                                .serve("Magic", 2017, 2019)
-                                .serve("76ers", 2019, 2019);
+    players_["Jonathon Simmons"].serve("Spurs", 0, 2015, 2017)
+                                .serve("Magic", 0, 2017, 2019)
+                                .serve("76ers", 0, 2019, 2019);
 
-    players_["Dejounte Murray"].serve("Spurs", 2016, 2019)
+    players_["Dejounte Murray"].serve("Spurs", 0, 2016, 2019)
                                .like("Tim Duncan", 99)
                                .like("Tony Parker", 99)
                                .like("Manu Ginobili", 99)
@@ -591,193 +591,193 @@ AssertionResult TraverseTestBase::initData() {
                                .like("James Harden", 99)
                                .like("Tony Parker", 99);
 
-    players_["Tracy McGrady"].serve("Raptors", 1997, 2000)
-                             .serve("Magic", 2000, 2004)
-                             .serve("Rockets", 2004, 2010)
-                             .serve("Spurs", 2013, 2013)
+    players_["Tracy McGrady"].serve("Raptors", 0, 1997, 2000)
+                             .serve("Magic", 0, 2000, 2004)
+                             .serve("Rockets", 0, 2004, 2010)
+                             .serve("Spurs", 0, 2013, 2013)
                              .like("Kobe Bryant", 90)
                              .like("Grant Hill", 90)
                              .like("Rudy Gay", 90);
 
-    players_["Kobe Bryant"].serve("Lakers", 1996, 2016);
+    players_["Kobe Bryant"].serve("Lakers", 0, 1996, 2016);
 
-    players_["LeBron James"].serve("Cavaliers", 2003, 2010)
-                            .serve("Heat", 2010, 2014)
-                            .serve("Cavaliers", 2014, 2018)
-                            .serve("Lakers", 2018, 2019)
+    players_["LeBron James"].serve("Cavaliers", 0, 2003, 2010)
+                            .serve("Heat", 0, 2010, 2014)
+                            .serve("Cavaliers", 1, 2014, 2018)
+                            .serve("Lakers", 0, 2018, 2019)
                             .like("Ray Allen", 100);
 
-    players_["Stephen Curry"].serve("Warriors", 2009, 2019);
+    players_["Stephen Curry"].serve("Warriors", 0, 2009, 2019);
 
-    players_["Russell Westbrook"].serve("Thunders", 2008, 2019)
+    players_["Russell Westbrook"].serve("Thunders", 0, 2008, 2019)
                                  .like("Paul George", 90)
                                  .like("James Harden", 90);
 
-    players_["Kevin Durant"].serve("Thunders", 2007, 2016)
-                            .serve("Warriors", 2016, 2019);
+    players_["Kevin Durant"].serve("Thunders", 0, 2007, 2016)
+                            .serve("Warriors", 0, 2016, 2019);
 
-    players_["James Harden"].serve("Thunders", 2009, 2012)
-                            .serve("Rockets", 2012, 2019)
+    players_["James Harden"].serve("Thunders", 0, 2009, 2012)
+                            .serve("Rockets", 0, 2012, 2019)
                             .like("Russell Westbrook", 80);
 
-    players_["Chris Paul"].serve("Hornets", 2005, 2011)
-                          .serve("Clippers", 2011, 2017)
-                          .serve("Rockets", 2017, 2021)
+    players_["Chris Paul"].serve("Hornets", 0, 2005, 2011)
+                          .serve("Clippers", 0, 2011, 2017)
+                          .serve("Rockets", 0, 2017, 2021)
                           .like("LeBron James", 90)
                           .like("Carmelo Anthony", 90)
                           .like("Dwyane Wade", 90);
 
-    players_["DeAndre Jordan"].serve("Clippers", 2008, 2018)
-                              .serve("Mavericks", 2018, 2019)
-                              .serve("Knicks", 2019, 2019);
+    players_["DeAndre Jordan"].serve("Clippers", 0, 2008, 2018)
+                              .serve("Mavericks", 0, 2018, 2019)
+                              .serve("Knicks", 0, 2019, 2019);
 
-    players_["Ricky Rubio"].serve("Timberwolves", 2011, 2017)
-                            .serve("Jazz", 2017, 2019);
+    players_["Ricky Rubio"].serve("Timberwolves", 0, 2011, 2017)
+                            .serve("Jazz", 0, 2017, 2019);
 
-    players_["Rajon Rondo"].serve("Celtics", 2006, 2014)
-                           .serve("Mavericks", 2014, 2015)
-                           .serve("Kings", 2015, 2016)
-                           .serve("Bulls", 2016, 2017)
-                           .serve("Pelicans", 2017, 2018)
-                           .serve("Lakers", 2018, 2019)
+    players_["Rajon Rondo"].serve("Celtics", 0, 2006, 2014)
+                           .serve("Mavericks", 0, 2014, 2015)
+                           .serve("Kings", 0, 2015, 2016)
+                           .serve("Bulls", 0, 2016, 2017)
+                           .serve("Pelicans", 0, 2017, 2018)
+                           .serve("Lakers", 0, 2018, 2019)
                            .like("Ray Allen", -1);
 
-    players_["Kyrie Irving"].serve("Cavaliers", 2011, 2017)
-                            .serve("Celtics", 2017, 2019)
+    players_["Kyrie Irving"].serve("Cavaliers", 0, 2011, 2017)
+                            .serve("Celtics", 0, 2017, 2019)
                             .like("LeBron James", 13);
 
-    players_["Vince Carter"].serve("Raptors", 1998, 2004)
-                            .serve("Nets", 2004, 2009)
-                            .serve("Magic", 2009, 2010)
-                            .serve("Suns", 2010, 2011)
-                            .serve("Mavericks", 2011, 2014)
-                            .serve("Grizzlies", 2014, 2017)
-                            .serve("Kings", 2017, 2018)
-                            .serve("Hawks", 2018, 2019)
+    players_["Vince Carter"].serve("Raptors", 0, 1998, 2004)
+                            .serve("Nets", 0, 2004, 2009)
+                            .serve("Magic", 0, 2009, 2010)
+                            .serve("Suns", 0, 2010, 2011)
+                            .serve("Mavericks", 0, 2011, 2014)
+                            .serve("Grizzlies", 0, 2014, 2017)
+                            .serve("Kings", 0, 2017, 2018)
+                            .serve("Hawks", 0, 2018, 2019)
                             .like("Tracy McGrady", 90)
                             .like("Jason Kidd", 70);
 
-    players_["Carmelo Anthony"].serve("Nuggets", 2003, 2011)
-                               .serve("Knicks", 2011, 2017)
-                               .serve("Thunders", 2017, 2018)
-                               .serve("Rockets", 2018, 2019)
+    players_["Carmelo Anthony"].serve("Nuggets", 0, 2003, 2011)
+                               .serve("Knicks", 0, 2011, 2017)
+                               .serve("Thunders", 0, 2017, 2018)
+                               .serve("Rockets", 0, 2018, 2019)
                                .like("LeBron James", 90)
                                .like("Chris Paul", 90)
                                .like("Dwyane Wade", 90);
 
-    players_["Dwyane Wade"].serve("Heat", 2003, 2016)
-                           .serve("Bulls", 2016, 2017)
-                           .serve("Cavaliers", 2017, 2018)
-                           .serve("Heat", 2018, 2019)
+    players_["Dwyane Wade"].serve("Heat", 0, 2003, 2016)
+                           .serve("Bulls", 0, 2016, 2017)
+                           .serve("Cavaliers", 0, 2017, 2018)
+                           .serve("Heat", 1, 2018, 2019)
                            .like("LeBron James", 90)
                            .like("Chris Paul", 90)
                            .like("Carmelo Anthony", 90);
 
-    players_["Joel Embiid"].serve("76ers", 2014, 2019)
+    players_["Joel Embiid"].serve("76ers", 0, 2014, 2019)
                            .like("Ben Simmons", 80);
 
-    players_["Paul George"].serve("Pacers", 2010, 2017)
-                           .serve("Thunders", 2017, 2019)
+    players_["Paul George"].serve("Pacers", 0, 2010, 2017)
+                           .serve("Thunders", 0, 2017, 2019)
                            .like("Russell Westbrook", 95);
 
-    players_["Giannis Antetokounmpo"].serve("Bucks", 2013, 2019);
+    players_["Giannis Antetokounmpo"].serve("Bucks", 0, 2013, 2019);
 
-    players_["Yao Ming"].serve("Rockets", 2002, 2011)
+    players_["Yao Ming"].serve("Rockets", 0, 2002, 2011)
                         .like("Tracy McGrady", 90)
                         .like("Shaquile O'Neal", 90);
 
-    players_["Blake Griffin"].serve("Clippers", 2009, 2018)
-                             .serve("Pistons", 2018, 2019)
+    players_["Blake Griffin"].serve("Clippers", 0, 2009, 2018)
+                             .serve("Pistons", 0, 2018, 2019)
                              .like("Chris Paul", -1);
 
-    players_["Damian Lillard"].serve("Trail Blazers", 2012, 2019)
+    players_["Damian Lillard"].serve("Trail Blazers", 0, 2012, 2019)
                               .like("LaMarcus Aldridge", 80);
 
-    players_["Steve Nash"].serve("Suns", 1996, 1998)
-                          .serve("Mavericks", 1998, 2004)
-                          .serve("Suns", 2004, 2012)
-                          .serve("Lakers", 2012, 2015)
+    players_["Steve Nash"].serve("Suns", 0, 1996, 1998)
+                          .serve("Mavericks", 0, 1998, 2004)
+                          .serve("Suns", 1, 2004, 2012)
+                          .serve("Lakers", 0, 2012, 2015)
                           .like("Amar'e Stoudemire", 90)
                           .like("Dirk Nowitzki", 88)
                           .like("Stephen Curry", 90)
                           .like("Jason Kidd", 85);
 
-    players_["Dirk Nowitzki"].serve("Mavericks", 1998, 2019)
+    players_["Dirk Nowitzki"].serve("Mavericks", 0, 1998, 2019)
                              .like("Steve Nash", 80)
                              .like("Jason Kidd", 80)
                              .like("Dwyane Wade", 10);
 
-    players_["Paul Gasol"].serve("Grizzlies", 2001, 2008)
-                          .serve("Lakers", 2008, 2014)
-                          .serve("Bulls", 2014, 2016)
-                          .serve("Spurs", 2016, 2019)
-                          .serve("Bucks", 2019, 2020)
+    players_["Paul Gasol"].serve("Grizzlies", 0, 2001, 2008)
+                          .serve("Lakers", 0, 2008, 2014)
+                          .serve("Bulls", 0, 2014, 2016)
+                          .serve("Spurs", 0, 2016, 2019)
+                          .serve("Bucks", 0, 2019, 2020)
                           .like("Kobe Bryant", 90)
                           .like("Marc Gasol", 99);
 
-    players_["Marc Gasol"].serve("Grizzlies", 2008, 2019)
-                          .serve("Raptors", 2019, 2019)
+    players_["Marc Gasol"].serve("Grizzlies", 0, 2008, 2019)
+                          .serve("Raptors", 0, 2019, 2019)
                           .like("Paul Gasol", 99);
 
-    players_["Grant Hill"].serve("Pistons", 1994, 2000)
-                          .serve("Magic", 2000, 2007)
-                          .serve("Suns", 2007, 2012)
-                          .serve("Clippers", 2012, 2013)
+    players_["Grant Hill"].serve("Pistons", 0, 1994, 2000)
+                          .serve("Magic", 0, 2000, 2007)
+                          .serve("Suns", 0, 2007, 2012)
+                          .serve("Clippers", 0, 2012, 2013)
                           .like("Tracy McGrady", 90);
 
-    players_["Ray Allen"].serve("Bucks", 1996, 2003)
-                         .serve("Thunders", 2003, 2007)
-                         .serve("Celtics", 2007, 2012)
-                         .serve("Heat", 2012, 2014)
+    players_["Ray Allen"].serve("Bucks", 0, 1996, 2003)
+                         .serve("Thunders", 0, 2003, 2007)
+                         .serve("Celtics", 0, 2007, 2012)
+                         .serve("Heat", 0, 2012, 2014)
                          .like("Rajon Rondo", 9);
 
-    players_["Klay Thompson"].serve("Warriors", 2011, 2019)
+    players_["Klay Thompson"].serve("Warriors", 0, 2011, 2019)
                              .like("Stephen Curry", 90);
 
-    players_["Kristaps Porzingis"].serve("Knicks", 2015, 2019)
-                                  .serve("Mavericks", 2019, 2020)
+    players_["Kristaps Porzingis"].serve("Knicks", 0, 2015, 2019)
+                                  .serve("Mavericks", 0, 2019, 2020)
                                   .like("Luka Doncic", 90);
 
-    players_["Shaquile O'Neal"].serve("Magic", 1992, 1996)
-                               .serve("Lakers", 1996, 2004)
-                               .serve("Heat", 2004, 2008)
-                               .serve("Suns", 2008, 2009)
-                               .serve("Cavaliers", 2009, 2010)
-                               .serve("Celtics", 2010, 2011)
+    players_["Shaquile O'Neal"].serve("Magic", 0, 1992, 1996)
+                               .serve("Lakers", 0, 1996, 2004)
+                               .serve("Heat", 0, 2004, 2008)
+                               .serve("Suns", 0, 2008, 2009)
+                               .serve("Cavaliers", 0, 2009, 2010)
+                               .serve("Celtics", 0, 2010, 2011)
                                .like("JaVale McGee", 100)
                                .like("Tim Duncan", 80);
 
-    players_["JaVale McGee"].serve("Wizards", 2008, 2012)
-                            .serve("Nuggets", 2012, 2015)
-                            .serve("Mavericks", 2015, 2016)
-                            .serve("Warriors", 2016, 2018)
-                            .serve("Lakers", 2018, 2019);
+    players_["JaVale McGee"].serve("Wizards", 0, 2008, 2012)
+                            .serve("Nuggets", 0, 2012, 2015)
+                            .serve("Mavericks", 0, 2015, 2016)
+                            .serve("Warriors", 0, 2016, 2018)
+                            .serve("Lakers", 0, 2018, 2019);
 
-    players_["Dwight Howard"].serve("Magic", 2004, 2012)
-                            .serve("Lakers", 2012, 2013)
-                            .serve("Rockets", 2013, 2016)
-                            .serve("Hawks", 2016, 2017)
-                            .serve("Hornets", 2017, 2018)
-                            .serve("Wizards", 2018, 2019);
+    players_["Dwight Howard"].serve("Magic", 0, 2004, 2012)
+                            .serve("Lakers", 0, 2012, 2013)
+                            .serve("Rockets", 0, 2013, 2016)
+                            .serve("Hawks", 0, 2016, 2017)
+                            .serve("Hornets", 0, 2017, 2018)
+                            .serve("Wizards", 0, 2018, 2019);
 
-    players_["Amar'e Stoudemire"].serve("Suns", 2002, 2010)
-                                 .serve("Knicks", 2010, 2015)
-                                 .serve("Heat", 2015, 2016)
+    players_["Amar'e Stoudemire"].serve("Suns", 0, 2002, 2010)
+                                 .serve("Knicks", 0, 2010, 2015)
+                                 .serve("Heat", 0, 2015, 2016)
                                  .like("Steve Nash", 90);
 
-    players_["Jason Kidd"].serve("Mavericks", 1994, 1996)
-                          .serve("Suns", 1996, 2001)
-                          .serve("Nets", 2001, 2008)
-                          .serve("Mavericks", 2008, 2012)
-                          .serve("Knicks", 2012, 2013)
+    players_["Jason Kidd"].serve("Mavericks", 0, 1994, 1996)
+                          .serve("Suns", 0, 1996, 2001)
+                          .serve("Nets", 0, 2001, 2008)
+                          .serve("Mavericks", 0, 2008, 2012)
+                          .serve("Knicks", 0, 2012, 2013)
                           .like("Vince Carter", 80)
                           .like("Steve Nash", 90)
                           .like("Dirk Nowitzki", 85);
 
-    players_["Ben Simmons"].serve("76ers", 2016, 2019)
+    players_["Ben Simmons"].serve("76ers", 0, 2016, 2019)
                            .like("Joel Embiid", 80);
 
-    players_["Luka Doncic"].serve("Mavericks", 2018, 2019)
+    players_["Luka Doncic"].serve("Mavericks", 0, 2018, 2019)
                            .like("Dirk Nowitzki", 90)
                            .like("Kristaps Porzingis", 90)
                            .like("James Harden", 80);
@@ -973,11 +973,14 @@ AssertionResult TraverseTestBase::insertData() {
         for (auto &player : players_) {
             for (auto &serve : player.serves()) {
                 auto &team = std::get<0>(serve);
-                auto startYear = std::get<1>(serve);
-                auto endYear = std::get<2>(serve);
+                auto rank = std::get<1>(serve);
+                auto startYear = std::get<2>(serve);
+                auto endYear = std::get<3>(serve);
                 query += std::to_string(player.vid());
                 query += " -> ";
                 query += std::to_string(teams_[team].vid());
+                query += "@";
+                query += std::to_string(rank);
                 query += ": ";
                 query += "(";
                 query += std::to_string(startYear);
@@ -1002,14 +1005,16 @@ AssertionResult TraverseTestBase::insertData() {
         for (auto &player : players_) {
             for (auto &serve : player.serves()) {
                 auto &team = std::get<0>(serve);
-                auto startYear = std::get<1>(serve);
-                auto endYear = std::get<2>(serve);
+                auto rank = std::get<1>(serve);
+                auto startYear = std::get<2>(serve);
+                auto endYear = std::get<3>(serve);
                 query += "hash(\"";
                 query += player.name();
                 query += "\") -> hash(\"";
                 query += teams_[team].name();
-                query += "\"): ";
-                query += "(";
+                query += "\")@";
+                query += std::to_string(rank);
+                query += ":(";
                 query += std::to_string(startYear);
                 query += ", ";
                 query += std::to_string(endYear);
@@ -1032,14 +1037,16 @@ AssertionResult TraverseTestBase::insertData() {
         for (auto &player : players_) {
             for (auto &serve : player.serves()) {
                 auto &team = std::get<0>(serve);
-                auto startYear = std::get<1>(serve);
-                auto endYear = std::get<2>(serve);
+                auto rank = std::get<1>(serve);
+                auto startYear = std::get<2>(serve);
+                auto endYear = std::get<3>(serve);
                 query += "uuid(\"";
                 query += player.name();
                 query += "\") -> uuid(\"";
                 query += teams_[team].name();
-                query += "\"): ";
-                query += "(";
+                query += "\")@";
+                query += std::to_string(rank);
+                query += ":(";
                 query += std::to_string(startYear);
                 query += ", ";
                 query += std::to_string(endYear);

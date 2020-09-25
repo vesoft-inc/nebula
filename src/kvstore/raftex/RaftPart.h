@@ -7,27 +7,26 @@
 #ifndef RAFTEX_RAFTPART_H_
 #define RAFTEX_RAFTPART_H_
 
-#include "base/Base.h"
-#include <folly/futures/SharedPromise.h>
 #include <folly/Function.h>
+#include <folly/futures/SharedPromise.h>
 #include <gtest/gtest_prod.h>
-#include "gen-cpp2/raftex_types.h"
-#include "time/Duration.h"
-#include "thread/GenericThreadPool.h"
+#include "base/Base.h"
 #include "base/LogIterator.h"
+#include "gen-cpp2/raftex_types.h"
 #include "kvstore/raftex/SnapshotManager.h"
+#include "thread/GenericThreadPool.h"
+#include "time/Duration.h"
 
 namespace folly {
 class IOThreadPoolExecutor;
 class EventBase;
-}  // namespace folly
+}   // namespace folly
 
 namespace nebula {
 
 namespace wal {
 class FileBasedWal;
-}  // namespace wal
-
+}   // namespace wal
 
 namespace raftex {
 
@@ -47,8 +46,8 @@ enum class AppendLogResult {
 };
 
 enum class LogType {
-    NORMAL      = 0x00,
-    ATOMIC_OP   = 0x01,
+    NORMAL = 0x00,
+    ATOMIC_OP = 0x01,
     /**
       COMMAND is similar to AtomicOp, but not the same. There are two differences:
       1. Normal logs after AtomicOp could be committed together. In opposite, Normal logs
@@ -57,7 +56,7 @@ enum class LogType {
       2. AtomicOp maybe failed. So we use SinglePromise for it. But COMMAND not, so it could
          share one promise with the normal logs before it.
      * */
-    COMMAND     = 0x02,
+    COMMAND = 0x02,
 };
 
 class Host;
@@ -136,7 +135,6 @@ public:
 
     void preProcessTransLeader(const network::InetAddress& target);
 
-
     void preProcessRemovePeer(const network::InetAddress& peer);
 
     void commitRemovePeer(const network::InetAddress& peer);
@@ -148,7 +146,6 @@ public:
     // Change the partition status to STOPPED. This is called
     // by the inherited class, when it's about to stop
     virtual void stop();
-
 
     /*****************************************************************
      * Asynchronously append a log
@@ -195,21 +192,19 @@ public:
      *
      ****************************************************/
     // Process the incoming leader election request
-    void processAskForVoteRequest(
-        const cpp2::AskForVoteRequest& req,
-        cpp2::AskForVoteResponse& resp);
+    void processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
+                                  cpp2::AskForVoteResponse& resp);
 
     // Process appendLog request
-    void processAppendLogRequest(
-        const cpp2::AppendLogRequest& req,
-        cpp2::AppendLogResponse& resp);
+    void processAppendLogRequest(const cpp2::AppendLogRequest& req, cpp2::AppendLogResponse& resp);
 
     // Process sendSnapshot request
-    void processSendSnapshotRequest(
-        const cpp2::SendSnapshotRequest& req,
-        cpp2::SendSnapshotResponse& resp);
+    void processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
+                                    cpp2::SendSnapshotResponse& resp);
 
     bool leaseValid();
+
+    bool needToCleanWal();
 
 protected:
     // Protected constructor to prevent from instantiating directly
@@ -271,18 +266,18 @@ protected:
 
 private:
     enum class Status {
-        STARTING = 0,   // The part is starting, not ready for service
-        RUNNING,        // The part is running
-        STOPPED,        // The part has been stopped
-        WAITING_SNAPSHOT  // Waiting for the snapshot.
+        STARTING = 0,      // The part is starting, not ready for service
+        RUNNING,           // The part is running
+        STOPPED,           // The part has been stopped
+        WAITING_SNAPSHOT   // Waiting for the snapshot.
     };
 
     enum class Role {
-        LEADER = 1,     // the leader
-        FOLLOWER,       // following a leader
-        CANDIDATE,      // Has sent AskForVote request
-        LEARNER         // It is the same with FOLLOWER,
-                        // except it does not participate in leader election
+        LEADER = 1,   // the leader
+        FOLLOWER,     // following a leader
+        CANDIDATE,    // Has sent AskForVote request
+        LEARNER       // It is the same with FOLLOWER,
+                      // except it does not participate in leader election
     };
 
     // A list of <idx, resp>
@@ -295,12 +290,7 @@ private:
     using AppendLogResponses = std::vector<std::pair<size_t, cpp2::AppendLogResponse>>;
 
     // <source, logType, log>
-    using LogCache = std::vector<
-        std::tuple<ClusterID,
-                   LogType,
-                   std::string,
-                   AtomicOp>>;
-
+    using LogCache = std::vector<std::tuple<ClusterID, LogType, std::string, AtomicOp>>;
 
     /****************************************************
      *
@@ -326,13 +316,11 @@ private:
 
     bool needToStartElection();
 
-    void statusPolling();
+    void statusPolling(int64_t startTime);
 
     bool needToCleanupSnapshot();
 
     void cleanupSnapshot();
-
-    bool needToCleanWal();
 
     // The method sends out AskForVote request
     // It return true if a leader is elected, otherwise returns false
@@ -341,13 +329,13 @@ private:
     // The method will fill up the request object and return TRUE
     // if the election should continue. Otherwise the method will
     // return FALSE
-    bool prepareElectionRequest(
-        cpp2::AskForVoteRequest& req,
-        std::vector<std::shared_ptr<Host>>& hosts);
+    bool prepareElectionRequest(cpp2::AskForVoteRequest& req,
+                                std::vector<std::shared_ptr<Host>>& hosts);
 
     // The method returns the partition's role after the election
     Role processElectionResponses(const ElectionResponses& results,
-                                  std::vector<std::shared_ptr<Host>> hosts);
+                                  std::vector<std::shared_ptr<Host>> hosts,
+                                  TermID proposedTerm);
 
     // Check whether new logs can be appended
     // Pre-condition: The caller needs to hold the raftLock_
@@ -360,25 +348,23 @@ private:
 
     void appendLogsInternal(AppendLogsIterator iter, TermID termId);
 
-    void replicateLogs(
-        folly::EventBase* eb,
-        AppendLogsIterator iter,
-        TermID currTerm,
-        LogID lastLogId,
-        LogID committedId,
-        TermID prevLogTerm,
-        LogID prevLogId);
+    void replicateLogs(folly::EventBase* eb,
+                       AppendLogsIterator iter,
+                       TermID currTerm,
+                       LogID lastLogId,
+                       LogID committedId,
+                       TermID prevLogTerm,
+                       LogID prevLogId);
 
-    void processAppendLogResponses(
-        const AppendLogResponses& resps,
-        folly::EventBase* eb,
-        AppendLogsIterator iter,
-        TermID currTerm,
-        LogID lastLogId,
-        LogID committedId,
-        TermID prevLogTerm,
-        LogID prevLogId,
-        std::vector<std::shared_ptr<Host>> hosts);
+    void processAppendLogResponses(const AppendLogResponses& resps,
+                                   folly::EventBase* eb,
+                                   AppendLogsIterator iter,
+                                   TermID currTerm,
+                                   LogID lastLogId,
+                                   LogID committedId,
+                                   TermID prevLogTerm,
+                                   LogID prevLogId,
+                                   std::vector<std::shared_ptr<Host>> hosts);
 
     std::vector<std::shared_ptr<Host>> followers() const;
 
@@ -387,17 +373,17 @@ private:
     void updateQuorum();
 
     std::vector<std::shared_ptr<Host>>::iterator updateAndFindHost(
-        std::function<bool(std::shared_ptr<Host> &h)> f);
+        std::function<bool(std::shared_ptr<Host>& h)> f);
 
 protected:
-    template<class ValueType>
+    template <class ValueType>
     class PromiseSet final {
     public:
         PromiseSet() = default;
         PromiseSet(const PromiseSet&) = delete;
         PromiseSet(PromiseSet&&) = default;
 
-        ~PromiseSet()  = default;
+        ~PromiseSet() = default;
 
         PromiseSet& operator=(const PromiseSet&) = delete;
         PromiseSet& operator=(PromiseSet&& right) = default;
@@ -432,14 +418,14 @@ protected:
             return sharedPromises_.back().getFuture();
         }
 
-        template<class VT>
+        template <class VT>
         void setOneSharedValue(VT&& val) {
             CHECK(!sharedPromises_.empty());
             sharedPromises_.front().setValue(std::forward<VT>(val));
             sharedPromises_.pop_front();
         }
 
-        template<class VT>
+        template <class VT>
         void setOneSingleValue(VT&& val) {
             CHECK(!singlePromises_.empty());
             singlePromises_.front().setValue(std::forward<VT>(val));
@@ -455,7 +441,6 @@ protected:
             }
         }
 
-
     private:
         // Whether the last future was returned from a shared promise
         bool rollSharedPromise_{true};
@@ -465,7 +450,6 @@ protected:
         // A list of promises for atomic op logs
         std::list<folly::Promise<ValueType>> singlePromises_;
     };
-
 
     const std::string idStr_;
 
@@ -492,18 +476,30 @@ protected:
     Role role_;
 
     // When the partition is the leader, the leader_ is same as addr_
-    std::string          leaderHostname_;
+    std::string leaderHostname_;
     network::InetAddress leader_;
 
+    // After voted for somebody, it will not be empty anymore.
+    // And it will be reset to empty after current election finished.
+    network::InetAddress votedAddr_{0, 0};
+
     // The current term id
-    //
-    // When the partition voted for someone, termId will be set to
     // the term id proposed by that candidate
     TermID term_{0};
     // During normal operation, proposedTerm_ is equal to term_,
     // when the partition becomes a candidate, proposedTerm_ will be
     // bumped up by 1 every time when sending out the AskForVote
     // Request
+
+    // If voted for somebody, the proposeTerm will be reset to the candidate
+    // propose term. So we could use it to prevent revote if someone else ask for
+    // vote for current proposedTerm.
+
+    // TODO(heng) We should persist it on the disk in the future
+    // Otherwise, after restart the whole cluster, maybe the stale
+    // leader still has the unsend log with larger term, and after other
+    // replicas elected the new leader, the stale one will not join in the
+    // Raft group any more.
     TermID proposedTerm_{0};
 
     // The id and term of the last-sent log
@@ -520,6 +516,8 @@ protected:
     uint64_t lastMsgAcceptedTime_{0};
     // How long between last message was sent and was accepted by majority peers
     uint64_t lastMsgAcceptedCostMs_{0};
+    // Make sure only one election is in progress
+    std::atomic_bool inElection_{false};
 
     // Write-ahead Log
     std::shared_ptr<wal::FileBasedWal> wal_;
@@ -546,6 +544,6 @@ protected:
     bool blocking_{false};
 };
 
-}  // namespace raftex
-}  // namespace nebula
-#endif  // RAFTEX_RAFTPART_H_
+}   // namespace raftex
+}   // namespace nebula
+#endif   // RAFTEX_RAFTPART_H_

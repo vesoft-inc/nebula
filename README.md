@@ -4,9 +4,6 @@
   <br>A distributed, scalable, lightning-fast graph database<br>
 </p>
 <p align="center">
-  <a href="https://github.com/vesoft-inc/nebula/actions?workflow=build">
-    <img src="https://github.com/vesoft-inc/nebula/workflows/build/badge.svg" alt="build and test workflow"/>
-  </a>
   <a href="https://hub.docker.com/u/vesoft">
     <img src="https://github.com/vesoft-inc/nebula/workflows/docker/badge.svg" alt="build docker image workflow"/>
   </a>
@@ -53,7 +50,7 @@ In case you encounter any problem, be sure to ask us on our [official forum](htt
 ## Documentation
 
 * [English](https://docs.nebula-graph.io/)
-* [简体中文](https://docs.nebula-graph.com.cn/)
+* [Simplified Chinese (简体中文)](https://docs.nebula-graph.com.cn/)
 
 ## Roadmap
 

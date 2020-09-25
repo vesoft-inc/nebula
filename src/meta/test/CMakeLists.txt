@@ -100,6 +100,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:dataman_obj>
         $<TARGET_OBJECTS:filter_obj>
         $<TARGET_OBJECTS:index_obj>
+        $<TARGET_OBJECTS:convert_time_type_utils_obj>
         ${meta_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -193,6 +194,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:filter_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
         $<TARGET_OBJECTS:adHocIndex_obj>
+        $<TARGET_OBJECTS:convert_time_type_utils_obj>
         ${meta_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}

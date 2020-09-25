@@ -131,8 +131,16 @@ BaseProcessor<RESP>::collectIndexValues(RowReader* reader,
             auto val = NebulaKeyUtils::encodeVariant(value(std::move(res)));
             values.emplace_back(col.get_type().get_type(), std::move(val));
         } else {
-            LOG(ERROR) << "Skip bad column prop : " << col.get_name();
-            return Status::Error("Skip bad column prop : %s", col.get_name().c_str());
+            VLOG(1) << "Bad value for prop: " << col.get_name();
+            // TODO: Should return NULL
+            auto defaultVal = RowReader::getDefaultProp(col.get_type().get_type());
+            if (!defaultVal.ok()) {
+                // Should never reach here.
+                return Status::Error("Skip bad type of prop : %s", col.get_name().c_str());
+            } else {
+                auto val = NebulaKeyUtils::encodeVariant(std::move(defaultVal).value());
+                values.emplace_back(col.get_type().get_type(), std::move(val));
+            }
         }
     }
     return values;
@@ -146,11 +154,21 @@ void BaseProcessor<RESP>::collectProps(RowReader* reader,
         if (reader != nullptr) {
             const auto& name = prop.prop_.get_name();
             auto res = RowReader::getPropByName(reader, name);
+            VariantType v;
             if (!ok(res)) {
-                VLOG(1) << "Skip the bad value for prop " << name;
-                continue;
+                VLOG(1) << "Bad value for prop: " << name;
+                // TODO: Should return NULL
+                auto defaultVal = RowReader::getDefaultProp(prop.type_.type);
+                if (!defaultVal.ok()) {
+                    // Should never reach here.
+                    LOG(FATAL) << "Get default value failed for " << name;
+                    continue;
+                } else {
+                    v = std::move(defaultVal).value();
+                }
+            } else {
+                v = value(std::move(res));
             }
-            auto&& v = value(std::move(res));
             if (prop.returned_) {
                 switch (v.which()) {
                     case VAR_INT64:

@@ -36,18 +36,18 @@ public:
             return true;
         }
 
-        bool hasDefault() const override {
-            return hasDefault_;
+        bool hasDefaultValue() const override {
+            return hasDefaultValue_;
         }
 
-        std::string getDefaultValue() const override {
+        std::string getDefaultValue() const {
             return defaultValue_;
         }
 
     private:
         std::string name_;
         ValueType type_;
-        bool hasDefault_;
+        bool hasDefaultValue_;
         std::string defaultValue_;
     };
 

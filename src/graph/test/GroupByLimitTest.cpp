@@ -184,7 +184,7 @@ TEST_F(GroupByLimitTest, LimitTest) {
                 {"Bulls"},
                 {"Hawks"},
                 {"Hornets"},
-                {"Kings"},
+                {"Hornets"},
         };
         ASSERT_TRUE(verifyResult(resp, expected, false));
     }
@@ -290,6 +290,8 @@ TEST_F(GroupByLimitTest, GroupByTest) {
                 {1, 2007, 2009.0},
                 {1, 2012, 2013.0},
                 {1, 2015, 2016.0},
+                {1, 2010, 2012.0},
+                {1, 2013, 2015.0},
         };
        ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -560,6 +562,40 @@ TEST_F(GroupByLimitTest, EmptyInput) {
 
         std::vector<std::string> expectedColNames{
             {"name"}, {"sum"}, {"count"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "YIELD $^.player.name as name, serve.start_year as start, $$.team.name as team "
+                    "| YIELD $-.name as name WHERE $-.start > 20000 "
+                    "| GROUP BY $-.name YIELD $-.name AS name";
+        auto query = folly::stringPrintf(fmt, players_["Marco Belinelli"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "YIELD $^.player.name as name, serve.start_year as start, $$.team.name as team "
+                    "| YIELD $-.name as name WHERE $-.start > 20000 "
+                    "| Limit 1";
+        auto query = folly::stringPrintf(fmt, players_["Marco Belinelli"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"name"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 

@@ -415,6 +415,14 @@ ResultCode HBaseStore::ingest(GraphSpaceID) {
     LOG(FATAL) << "Unimplement";
 }
 
+ResultCode HBaseStore::ingestTag(GraphSpaceID, TagID) {
+    LOG(FATAL) << "Unimplement";
+}
+
+ResultCode HBaseStore::ingestEdge(GraphSpaceID, EdgeType) {
+    LOG(FATAL) << "Unimplement";
+}
+
 int32_t HBaseStore::allLeader(std::unordered_map<GraphSpaceID, std::vector<PartitionID>>&) {
     LOG(FATAL) << "Unimplement";
 }

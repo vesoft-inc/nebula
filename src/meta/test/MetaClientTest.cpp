@@ -4,22 +4,20 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
+#include "base/Base.h"
+#include "dataman/ResultSchemaProvider.h"
 #include "fs/TempDir.h"
+#include "meta/ClientBasedGflagsManager.h"
+#include "meta/MetaServiceUtils.h"
+#include "meta/ServerBasedSchemaManager.h"
 #include "meta/client/MetaClient.h"
 #include "meta/test/TestUtils.h"
 #include "network/NetworkUtils.h"
-#include "meta/MetaServiceUtils.h"
-#include "meta/ServerBasedSchemaManager.h"
-#include "dataman/ResultSchemaProvider.h"
-#include "meta/test/TestUtils.h"
-#include "meta/ClientBasedGflagsManager.h"
 
 DECLARE_int32(heartbeat_interval_secs);
 DECLARE_string(rocksdb_db_options);
-
 
 namespace nebula {
 namespace meta {
@@ -101,7 +99,7 @@ TEST(MetaClientTest, InterfacesTest) {
         {
             // Create tag schema
             nebula::cpp2::Schema schema;
-            for (auto i = 0 ; i < 5; i++) {
+            for (auto i = 0; i < 5; i++) {
                 nebula::cpp2::ColumnDef column;
                 column.name = "tagItem" + std::to_string(i);
                 column.type.type = nebula::cpp2::SupportedType::STRING;
@@ -116,7 +114,7 @@ TEST(MetaClientTest, InterfacesTest) {
         {
             // Create tag schema with default value
             nebula::cpp2::Schema schema;
-            for (auto i = 0 ; i < 5; i++) {
+            for (auto i = 0; i < 5; i++) {
                 nebula::cpp2::ColumnDef column;
                 column.name = "tagItem" + std::to_string(i);
                 column.type.type = nebula::cpp2::SupportedType::STRING;
@@ -131,7 +129,7 @@ TEST(MetaClientTest, InterfacesTest) {
         {
             // Create edge schema
             nebula::cpp2::Schema schema;
-            for (auto i = 0 ; i < 5; i++) {
+            for (auto i = 0; i < 5; i++) {
                 nebula::cpp2::ColumnDef column;
                 column.name = "edgeItem" + std::to_string(i);
                 column.type.type = nebula::cpp2::SupportedType::STRING;
@@ -145,7 +143,7 @@ TEST(MetaClientTest, InterfacesTest) {
         {
             // Create edge schema with default value
             nebula::cpp2::Schema schema;
-            for (auto i = 0 ; i < 5; i++) {
+            for (auto i = 0; i < 5; i++) {
                 nebula::cpp2::ColumnDef column;
                 column.name = "edgeItem" + std::to_string(i);
                 column.type.type = nebula::cpp2::SupportedType::STRING;
@@ -170,12 +168,10 @@ TEST(MetaClientTest, InterfacesTest) {
 
             // getTagSchemaFromCache
             sleep(FLAGS_heartbeat_interval_secs + 1);
-            auto ret = client->getLatestTagVersionFromCache(spaceId,
-                                                            ret1.value().begin()->tag_id);
+            auto ret = client->getLatestTagVersionFromCache(spaceId, ret1.value().begin()->tag_id);
             CHECK(ret.ok());
             auto ver = ret.value();
-            auto ret2 = client->getTagSchemaFromCache(spaceId,
-                                                      ret1.value().begin()->tag_id, ver);
+            auto ret2 = client->getTagSchemaFromCache(spaceId, ret1.value().begin()->tag_id, ver);
             ASSERT_TRUE(ret2.ok()) << ret2.status();
             ASSERT_EQ(ret2.value()->getNumFields(), 5);
 
@@ -210,12 +206,12 @@ TEST(MetaClientTest, InterfacesTest) {
             ASSERT_NE(ret1.value().begin()->edge_type, 0);
 
             // getEdgeSchemaFromCache
-            auto retVer = client->getLatestEdgeVersionFromCache(spaceId,
-                                                                ret1.value().begin()->edge_type);
+            auto retVer =
+                client->getLatestEdgeVersionFromCache(spaceId, ret1.value().begin()->edge_type);
             CHECK(retVer.ok());
             auto ver = retVer.value();
-            auto ret2 = client->getEdgeSchemaFromCache(spaceId,
-                                                       ret1.value().begin()->edge_type, ver);
+            auto ret2 =
+                client->getEdgeSchemaFromCache(spaceId, ret1.value().begin()->edge_type, ver);
             ASSERT_TRUE(ret2.ok()) << ret2.status();
             ASSERT_EQ(ret2.value()->getNumFields(), 5);
 
@@ -624,60 +620,82 @@ TEST(MetaClientTest, TagIndexTest) {
 
             nebula::cpp2::Schema schema;
             schema.set_columns(std::move(columns));
-            auto result = client->createTagSchema(space, folly::stringPrintf("tag_%d", i),
-                                                  schema).get();
+            auto result =
+                client->createTagSchema(space, folly::stringPrintf("tag_%d", i), schema).get();
             ASSERT_TRUE(result.ok());
         }
     }
     {
-        std::vector<std::string>&& fields {"tag_0_col_0"};
-        auto result = client->createTagIndex(space,
-                                             "tag_single_field_index",
-                                             "tag_0",
-                                             std::move(fields)).get();
+        std::vector<std::string>&& fields{"tag_0_col_0"};
+        auto result =
+            client->createTagIndex(space, "tag_single_field_index", "tag_0", std::move(fields))
+                .get();
         ASSERT_TRUE(result.ok());
         singleFieldIndexID = result.value();
     }
     {
-        std::vector<std::string>&& fields {"tag_0_col_0",  "tag_0_col_1"};
-        auto result = client->createTagIndex(space,
-                                             "tag_multi_field_index",
-                                             "tag_0",
-                                             std::move(fields)).get();
+        std::vector<std::string>&& fields{"tag_0_col_0"};
+        auto result =
+            client->createTagIndex(space, "tag_duplicate_field_index", "tag_0", std::move(fields))
+                .get();
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        std::vector<std::string>&& fields{"tag_0_col_0", "tag_0_col_1"};
+        auto result =
+            client->createTagIndex(space, "tag_multi_field_index", "tag_0", std::move(fields))
+                .get();
         ASSERT_TRUE(result.ok());
         multiFieldIndexID = result.value();
     }
     {
-        std::vector<std::string>&& fields {"tag_0_col_0",  "not_exist_field"};
-        auto result = client->createTagIndex(space,
-                                             "tag_field_not_exist_index",
-                                             "tag_0",
-                                             std::move(fields)).get();
+        std::vector<std::string>&& fields{"tag_0_col_1", "tag_0_col_0"};
+        auto result =
+            client->createTagIndex(space, "tag_disorder_field_index", "tag_0", std::move(fields))
+                .get();
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        std::vector<std::string>&& fields{"tag_0_col_0", "tag_0_col_1"};
+        auto result =
+            client->createTagIndex(space, "tag_duplicate_field_index", "tag_0", std::move(fields))
+                .get();
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        std::vector<std::string>&& fields{"tag_0_col_0"};
+        auto result =
+            client->createTagIndex(space, "tag_duplicate_field_index", "tag_0", std::move(fields))
+                .get();
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        std::vector<std::string>&& fields{"tag_0_col_0", "not_exist_field"};
+        auto result =
+            client->createTagIndex(space, "tag_field_not_exist_index", "tag_0", std::move(fields))
+                .get();
         ASSERT_FALSE(result.ok());
         ASSERT_EQ(Status::Error("not existed!"), result.status());
     }
     {
-        std::vector<std::string>&& fields {"tag_0_col_0",  "tag_0_col_1"};
-        auto result = client->createTagIndex(space,
-                                             "tag_not_exist_index",
-                                             "tag_not_exist",
-                                             std::move(fields)).get();
+        std::vector<std::string>&& fields{"tag_0_col_0", "tag_0_col_1"};
+        auto result =
+            client->createTagIndex(space, "tag_not_exist_index", "tag_not_exist", std::move(fields))
+                .get();
         ASSERT_FALSE(result.ok());
         ASSERT_EQ(Status::Error("not existed!"), result.status());
     }
     {
-        std::vector<std::string>&& fields {"tag_0_col_0",  "tag_0_col_0"};
-        auto result = client->createTagIndex(space,
-                                             "tag_conflict_index",
-                                             "tag_0",
-                                             std::move(fields)).get();
+        std::vector<std::string>&& fields{"tag_0_col_0", "tag_0_col_0"};
+        auto result =
+            client->createTagIndex(space, "tag_conflict_index", "tag_0", std::move(fields)).get();
         ASSERT_FALSE(result.ok());
         ASSERT_EQ(Status::Error("conflict"), result.status());
     }
     {
         auto result = client->listTagIndexes(space).get();
         auto values = result.value();
-        ASSERT_EQ(2, values.size());
+        ASSERT_EQ(3, values.size());
 
         {
             nebula::cpp2::ColumnDef singleColumn;
@@ -711,6 +729,26 @@ TEST(MetaClientTest, TagIndexTest) {
             auto multiFieldResult = values[1].get_fields();
             ASSERT_TRUE(TestUtils::verifyResult(columns, multiFieldResult));
         }
+
+        {
+            std::vector<nebula::cpp2::ColumnDef> columns;
+            nebula::cpp2::ColumnDef stringColumn;
+            stringColumn.set_name("tag_0_col_1");
+            nebula::cpp2::ValueType stringType;
+            stringType.set_type(SupportedType::STRING);
+            stringColumn.set_type(std::move(stringType));
+            columns.emplace_back(std::move(stringColumn));
+
+            nebula::cpp2::ColumnDef intColumn;
+            intColumn.set_name("tag_0_col_0");
+            nebula::cpp2::ValueType intType;
+            intType.set_type(SupportedType::INT);
+            intColumn.set_type(std::move(intType));
+            columns.emplace_back(std::move(intColumn));
+
+            auto disorderFieldResult = values[2].get_fields();
+            ASSERT_TRUE(TestUtils::verifyResult(columns, disorderFieldResult));
+        }
     }
     sleep(FLAGS_heartbeat_interval_secs * 5);
     // Test Tag Index Properties Cache
@@ -735,7 +773,7 @@ TEST(MetaClientTest, TagIndexTest) {
     {
         auto tagIndexes = client->getTagIndexesFromCache(space);
         ASSERT_TRUE(tagIndexes.ok());
-        ASSERT_EQ(2, tagIndexes.value().size());
+        ASSERT_EQ(3, tagIndexes.value().size());
     }
     {
         GraphSpaceID spaceNotExist = 99;
@@ -799,61 +837,88 @@ TEST(MetaClientTest, EdgeIndexTest) {
 
             nebula::cpp2::Schema schema;
             schema.set_columns(std::move(columns));
-            auto result = client->createEdgeSchema(space,
-                                                   folly::stringPrintf("edge_%d", i),
-                                                   schema).get();
+            auto result =
+                client->createEdgeSchema(space, folly::stringPrintf("edge_%d", i), schema).get();
             ASSERT_TRUE(result.ok());
         }
     }
     {
-        std::vector<std::string>&& fields {"edge_0_col_0"};
-        auto result = client->createEdgeIndex(space,
-                                              "edge_single_field_index",
-                                              "edge_0",
-                                              std::move(fields)).get();
+        std::vector<std::string>&& fields{"edge_0_col_0"};
+        auto result =
+            client->createEdgeIndex(space, "edge_single_field_index", "edge_0", std::move(fields))
+                .get();
         ASSERT_TRUE(result.ok());
         singleFieldIndexID = result.value();
     }
     {
-        std::vector<std::string>&& fields {"edge_0_col_0",  "edge_0_col_1"};
-        auto result = client->createEdgeIndex(space,
-                                              "edge_multi_field_index",
-                                              "edge_0",
-                                              std::move(fields)).get();
+        std::vector<std::string>&& fields{"edge_0_col_0"};
+        auto result =
+            client
+                ->createEdgeIndex(space, "edge_duplicate_field_index", "edge_0", std::move(fields))
+                .get();
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        std::vector<std::string>&& fields{"edge_0_col_0", "edge_0_col_1"};
+        auto result =
+            client->createEdgeIndex(space, "edge_multi_field_index", "edge_0", std::move(fields))
+                .get();
         ASSERT_TRUE(result.ok());
         multiFieldIndexID = result.value();
     }
     {
-        std::vector<std::string>&& fields {"edge_0_col_0",  "edge_0_col_1"};
-        auto result = client->createEdgeIndex(space,
-                                              "edge_not_exist_index",
-                                              "edge_not_exist",
-                                              std::move(fields)).get();
+        std::vector<std::string>&& fields{"edge_0_col_1", "edge_0_col_0"};
+        auto result =
+            client->createEdgeIndex(space, "edge_disorder_field_index", "edge_0", std::move(fields))
+                .get();
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        std::vector<std::string>&& fields{"edge_0_col_0", "edge_0_col_1"};
+        auto result =
+            client
+                ->createEdgeIndex(space, "edge_duplicate_field_index", "edge_0", std::move(fields))
+                .get();
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        std::vector<std::string>&& fields{"edge_0_col_0"};
+        auto result =
+            client
+                ->createEdgeIndex(space, "edge_duplicate_field_index", "edge_0", std::move(fields))
+                .get();
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        std::vector<std::string>&& fields{"edge_0_col_0", "edge_0_col_1"};
+        auto result = client
+                          ->createEdgeIndex(
+                              space, "edge_not_exist_index", "edge_not_exist", std::move(fields))
+                          .get();
         ASSERT_FALSE(result.ok());
         ASSERT_EQ(Status::Error("not existed!"), result.status());
     }
     {
-        std::vector<std::string>&& fields {"edge_0_col_0",  "edge_0_col_0"};
-        auto result = client->createEdgeIndex(space,
-                                              "edge_conflict_index",
-                                              "edge_0",
-                                              std::move(fields)).get();
+        std::vector<std::string>&& fields{"edge_0_col_0", "edge_0_col_0"};
+        auto result =
+            client->createEdgeIndex(space, "edge_conflict_index", "edge_0", std::move(fields))
+                .get();
         ASSERT_FALSE(result.ok());
         ASSERT_EQ(Status::Error("conflict"), result.status());
     }
     {
-        std::vector<std::string>&& fields {"edge_0_col_0",  "not_exist_field"};
-        auto result = client->createEdgeIndex(space,
-                                              "edge_field_not_exist_index",
-                                              "edge_0",
-                                              std::move(fields)).get();
+        std::vector<std::string>&& fields{"edge_0_col_0", "not_exist_field"};
+        auto result =
+            client
+                ->createEdgeIndex(space, "edge_field_not_exist_index", "edge_0", std::move(fields))
+                .get();
         ASSERT_FALSE(result.ok());
         ASSERT_EQ(Status::Error("not existed!"), result.status());
     }
     {
         auto result = client->listEdgeIndexes(space).get();
         auto values = result.value();
-        ASSERT_EQ(2, values.size());
+        ASSERT_EQ(3, values.size());
 
         {
             nebula::cpp2::ColumnDef column;
@@ -885,6 +950,23 @@ TEST(MetaClientTest, EdgeIndexTest) {
             auto multiFieldResult = values[1].get_fields();
             ASSERT_TRUE(TestUtils::verifyResult(columns, multiFieldResult));
         }
+        {
+            std::vector<nebula::cpp2::ColumnDef> columns;
+            nebula::cpp2::ColumnDef stringColumn;
+            stringColumn.set_name("edge_0_col_1");
+            nebula::cpp2::ValueType stringType;
+            stringType.set_type(SupportedType::STRING);
+            stringColumn.set_type(std::move(stringType));
+            columns.emplace_back(std::move(stringColumn));
+            nebula::cpp2::ColumnDef intColumn;
+            intColumn.set_name("edge_0_col_0");
+            nebula::cpp2::ValueType intType;
+            intType.set_type(SupportedType::INT);
+            intColumn.set_type(std::move(intType));
+            columns.emplace_back(std::move(intColumn));
+            auto disorderFieldResult = values[2].get_fields();
+            ASSERT_TRUE(TestUtils::verifyResult(columns, disorderFieldResult));
+        }
     }
     sleep(FLAGS_heartbeat_interval_secs * 5);
     // Test Edge Index Properties Cache
@@ -912,7 +994,7 @@ TEST(MetaClientTest, EdgeIndexTest) {
     {
         auto edgeIndexes = client->getEdgeIndexesFromCache(space);
         ASSERT_TRUE(edgeIndexes.ok());
-        ASSERT_EQ(2, edgeIndexes.value().size());
+        ASSERT_EQ(3, edgeIndexes.value().size());
     }
     {
         GraphSpaceID spaceNotExist = 99;
@@ -954,8 +1036,7 @@ public:
     }
 
     void onSpaceOptionUpdated(GraphSpaceID spaceId,
-                              const std::unordered_map<std::string, std::string>& update)
-                              override {
+                              const std::unordered_map<std::string, std::string>& update) override {
         UNUSED(spaceId);
         for (const auto& kv : update) {
             options[kv.first] = kv.second;
@@ -972,8 +1053,8 @@ public:
         partChanged++;
     }
 
-    void fetchLeaderInfo(std::unordered_map<GraphSpaceID,
-                                            std::vector<PartitionID>>& leaderIds) override {
+    void fetchLeaderInfo(
+        std::unordered_map<GraphSpaceID, std::vector<PartitionID>>& leaderIds) override {
         LOG(INFO) << "Get leader distribution!";
         UNUSED(leaderIds);
     }
@@ -1000,9 +1081,8 @@ TEST(MetaClientTest, DiffTest) {
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto listener = std::make_unique<TestListener>();
-    auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<network::InetAddress>{
-                                                    network::InetAddress(localIp, sc->port_)});
+    auto client = std::make_shared<MetaClient>(
+        threadPool, std::vector<network::InetAddress>{network::InetAddress(localIp, sc->port_)});
     client->waitForMetadReady();
     client->registerListener(listener.get());
     {
@@ -1048,7 +1128,9 @@ TEST(MetaClientTest, HeartbeatTest) {
     FLAGS_heartbeat_interval_secs = 1;
     const nebula::ClusterID kClusterId = 10;
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
-    auto sc = TestUtils::mockMetaServer(10001, rootPath.path(), kClusterId);
+    // Let the system choose an available port for us
+    int32_t localMetaPort = 0;
+    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path(), kClusterId);
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     IPv4 localIp;
@@ -1063,7 +1145,7 @@ TEST(MetaClientTest, HeartbeatTest) {
     options.inStoraged_ = true;
     auto client = std::make_shared<MetaClient>(
         threadPool,
-        std::vector<network::InetAddress>{network::InetAddress(localIp, 10001)},
+        std::vector<network::InetAddress>{network::InetAddress(localIp, sc->port_)},
         options);
     client->waitForMetadReady();
     client->registerListener(listener.get());
@@ -1082,11 +1164,9 @@ TEST(MetaClientTest, HeartbeatTest) {
     ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(sc->kvStore_.get()).size());
 }
 
-
 class TestMetaService : public cpp2::MetaServiceSvIf {
 public:
-    folly::Future<cpp2::HBResp>
-    future_heartBeat(const cpp2::HBReq& req) override {
+    folly::Future<cpp2::HBResp> future_heartBeat(const cpp2::HBReq& req) override {
         UNUSED(req);
         folly::Promise<cpp2::HBResp> pro;
         auto f = pro.getFuture();
@@ -1109,8 +1189,7 @@ public:
         addr_.set_port(addr.getPort());
     }
 
-    folly::Future<cpp2::HBResp>
-    future_heartBeat(const cpp2::HBReq& req) override {
+    folly::Future<cpp2::HBResp> future_heartBeat(const cpp2::HBReq& req) override {
         UNUSED(req);
         folly::Promise<cpp2::HBResp> pro;
         auto f = pro.getFuture();
@@ -1142,13 +1221,12 @@ TEST(MetaClientTest, SimpleTest) {
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     auto clientPort = network::NetworkUtils::getAvailablePort();
     network::InetAddress localHost{localIp, clientPort};
-    auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<network::InetAddress>{
-                                                   network::InetAddress(localIp, sc->port_)});
+    auto client = std::make_shared<MetaClient>(
+        threadPool, std::vector<network::InetAddress>{network::InetAddress(localIp, sc->port_)});
     {
         LOG(INFO) << "Test heart beat...";
         folly::Baton<true, std::atomic> baton;
-        client->heartbeat().thenValue([&baton] (auto&& status) {
+        client->heartbeat().thenValue([&baton](auto&& status) {
             ASSERT_TRUE(status.ok());
             baton.post();
         });
@@ -1170,7 +1248,7 @@ TEST(MetaClientTest, RetryWithExceptionTest) {
     {
         LOG(INFO) << "Test heart beat...";
         folly::Baton<true, std::atomic> baton;
-        client->heartbeat().thenValue([&baton] (auto&& status) {
+        client->heartbeat().thenValue([&baton](auto&& status) {
             ASSERT_TRUE(!status.ok());
             baton.post();
         });
@@ -1203,13 +1281,13 @@ TEST(MetaClientTest, RetryOnceTest) {
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     auto clientPort = network::NetworkUtils::getAvailablePort();
     network::InetAddress localHost{localIp, clientPort};
-    auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<network::InetAddress>{addrs[1]});
+    auto client =
+        std::make_shared<MetaClient>(threadPool, std::vector<network::InetAddress>{addrs[1]});
     // First get leader changed and then succeeded
     {
         LOG(INFO) << "Test heart beat...";
         folly::Baton<true, std::atomic> baton;
-        client->heartbeat().thenValue([&baton] (auto&& status) {
+        client->heartbeat().thenValue([&baton](auto&& status) {
             ASSERT_TRUE(status.ok());
             baton.post();
         });
@@ -1241,13 +1319,13 @@ TEST(MetaClientTest, RetryUntilLimitTest) {
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     auto clientPort = network::NetworkUtils::getAvailablePort();
     network::InetAddress localHost{localIp, clientPort};
-    auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<network::InetAddress>{addrs[1]});
+    auto client =
+        std::make_shared<MetaClient>(threadPool, std::vector<network::InetAddress>{addrs[1]});
     // always get response of leader changed, then failed
     {
         LOG(INFO) << "Test heart beat...";
         folly::Baton<true, std::atomic> baton;
-        client->heartbeat().thenValue([&baton] (auto&& status) {
+        client->heartbeat().thenValue([&baton](auto&& status) {
             ASSERT_TRUE(!status.ok());
             baton.post();
         });
@@ -1270,10 +1348,10 @@ TEST(MetaClientTest, Config) {
     // Now the `--local_config' option only affect if initialize the configuration from meta
     // not affect `show/update/get configs'
     options.skipConfig_ = true;
-    auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<network::InetAddress>{
-                                                    network::InetAddress(localIp, sc->port_)},
-                                                options);
+    auto client = std::make_shared<MetaClient>(
+        threadPool,
+        std::vector<network::InetAddress>{network::InetAddress(localIp, sc->port_)},
+        options);
     client->waitForMetadReady();
 
     // Empty Configuration
@@ -1294,17 +1372,27 @@ TEST(MetaClientTest, Config) {
     }
     // Set
     {
-        auto resp = client->setConfig(cpp2::ConfigModule::GRAPH, "minloglevel",
-            cpp2::ConfigType::INT64,
-            toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(3))).get();
+        auto resp =
+            client
+                ->setConfig(cpp2::ConfigModule::GRAPH,
+                            "minloglevel",
+                            cpp2::ConfigType::INT64,
+                            toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(3)))
+                .get();
         EXPECT_TRUE(!resp.ok());
-        resp = client->setConfig(cpp2::ConfigModule::META, "minloglevel",
-            cpp2::ConfigType::INT64,
-            toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(3))).get();
+        resp = client
+                   ->setConfig(cpp2::ConfigModule::META,
+                               "minloglevel",
+                               cpp2::ConfigType::INT64,
+                               toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(3)))
+                   .get();
         EXPECT_TRUE(!resp.ok());
-        resp = client->setConfig(cpp2::ConfigModule::STORAGE, "minloglevel",
-            cpp2::ConfigType::INT64,
-            toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(3))).get();
+        resp = client
+                   ->setConfig(cpp2::ConfigModule::STORAGE,
+                               "minloglevel",
+                               cpp2::ConfigType::INT64,
+                               toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(3)))
+                   .get();
         EXPECT_TRUE(!resp.ok());
     }
     // Get
@@ -1319,22 +1407,30 @@ TEST(MetaClientTest, Config) {
         EXPECT_TRUE(!resp.ok());
     }
 
-    auto item1 = toThriftConfigItem(
-            cpp2::ConfigModule::GRAPH, "minloglevel", cpp2::ConfigType::INT64,
-            cpp2::ConfigMode::MUTABLE,
-            toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(2)));
-    auto item2 = toThriftConfigItem(
-            cpp2::ConfigModule::META, "minloglevel", cpp2::ConfigType::INT64,
-            cpp2::ConfigMode::MUTABLE,
-            toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(2)));
-    auto item3 = toThriftConfigItem(
-            cpp2::ConfigModule::STORAGE, "minloglevel", cpp2::ConfigType::INT64,
-            cpp2::ConfigMode::MUTABLE,
-            toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(2)));
+    auto item1 =
+        toThriftConfigItem(cpp2::ConfigModule::GRAPH,
+                           "minloglevel",
+                           cpp2::ConfigType::INT64,
+                           cpp2::ConfigMode::MUTABLE,
+                           toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(2)));
+    auto item2 =
+        toThriftConfigItem(cpp2::ConfigModule::META,
+                           "minloglevel",
+                           cpp2::ConfigType::INT64,
+                           cpp2::ConfigMode::MUTABLE,
+                           toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(2)));
+    auto item3 =
+        toThriftConfigItem(cpp2::ConfigModule::STORAGE,
+                           "minloglevel",
+                           cpp2::ConfigType::INT64,
+                           cpp2::ConfigMode::MUTABLE,
+                           toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(2)));
     // Reg
     {
-        std::vector<cpp2::ConfigItem> configItems {
-            item1, item2, item3,
+        std::vector<cpp2::ConfigItem> configItems{
+            item1,
+            item2,
+            item3,
         };
         auto resp = client->regConfig(configItems).get();
         ASSERT(resp.ok());
@@ -1356,17 +1452,27 @@ TEST(MetaClientTest, Config) {
     }
     // Set
     {
-        auto resp = client->setConfig(cpp2::ConfigModule::GRAPH, "minloglevel",
-            cpp2::ConfigType::INT64,
-            toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(3))).get();
+        auto resp =
+            client
+                ->setConfig(cpp2::ConfigModule::GRAPH,
+                            "minloglevel",
+                            cpp2::ConfigType::INT64,
+                            toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(3)))
+                .get();
         EXPECT_TRUE(resp.ok());
-        resp = client->setConfig(cpp2::ConfigModule::META, "minloglevel",
-            cpp2::ConfigType::INT64,
-            toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(3))).get();
+        resp = client
+                   ->setConfig(cpp2::ConfigModule::META,
+                               "minloglevel",
+                               cpp2::ConfigType::INT64,
+                               toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(3)))
+                   .get();
         EXPECT_TRUE(resp.ok());
-        resp = client->setConfig(cpp2::ConfigModule::STORAGE, "minloglevel",
-            cpp2::ConfigType::INT64,
-            toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(3))).get();
+        resp = client
+                   ->setConfig(cpp2::ConfigModule::STORAGE,
+                               "minloglevel",
+                               cpp2::ConfigType::INT64,
+                               toThriftValueStr(cpp2::ConfigType::INT64, static_cast<int64_t>(3)))
+                   .get();
         EXPECT_TRUE(resp.ok());
     }
     // Get
@@ -1391,7 +1497,6 @@ TEST(MetaClientTest, Config) {
     }
 }
 
-
 TEST(MetaClientTest, RocksdbOptionsTest) {
     FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/RocksdbOptionsTest.XXXXXX");
@@ -1406,8 +1511,8 @@ TEST(MetaClientTest, RocksdbOptionsTest) {
     auto type = cpp2::ConfigType::NESTED;
     auto mode = meta::cpp2::ConfigMode::MUTABLE;
 
-    auto client = std::make_shared<MetaClient>(threadPool,
-        std::vector<network::InetAddress>{network::InetAddress(localIp, sc->port_)});
+    auto client = std::make_shared<MetaClient>(
+        threadPool, std::vector<network::InetAddress>{network::InetAddress(localIp, sc->port_)});
     client->waitForMetadReady();
     client->registerListener(listener.get());
     client->gflagsModule_ = module;
@@ -1420,9 +1525,12 @@ TEST(MetaClientTest, RocksdbOptionsTest) {
             "disable_auto_compactions":"false",
             "write_buffer_size":"1048576"
         })";
-        configItems.emplace_back(toThriftConfigItem(
-            module, "rocksdb_db_options", type,
-            mode, toThriftValueStr(type, FLAGS_rocksdb_db_options)));
+        configItems.emplace_back(
+            toThriftConfigItem(module,
+                               "rocksdb_db_options",
+                               type,
+                               mode,
+                               toThriftValueStr(type, FLAGS_rocksdb_db_options)));
         cfgMan.registerGflags(configItems);
     }
     {
@@ -1453,9 +1561,8 @@ TEST(MetaClientTest, RocksdbOptionsTest) {
     }
 }
 
-}  // namespace meta
-}  // namespace nebula
-
+}   // namespace meta
+}   // namespace nebula
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);

@@ -9,13 +9,14 @@
 #include "base/Base.h"
 #include "base/StatusOr.h"
 #include "base/Status.h"
+#include "base/ICord.h"
 #include "storage/client/StorageClient.h"
+#include "filter/FunctionManager.h"
 #include <boost/variant.hpp>
 #include <folly/futures/Future.h>
 
 namespace nebula {
 
-class Cord;
 using OptVariantType = StatusOr<VariantType>;
 
 enum class ColumnType : uint8_t {
@@ -205,6 +206,8 @@ public:
 
     virtual OptVariantType eval(Getters &getters) const = 0;
 
+    virtual Status traversal(std::function<void(const Expression*)> visitor) const = 0;
+
     virtual bool isInputExpression() const {
         return kind_ == kInputProp;
     }
@@ -231,6 +234,16 @@ public:
 
     bool isEdgeDstIdExpression() const {
         return kind_ == kEdgeDstId;
+    }
+
+    bool fromVarInput() const {
+        bool isFromVar = false;
+        traversal([&isFromVar](const Expression *expr) {
+            if (expr->kind() == Kind::kVariableProp || expr->kind() == Kind::kInputProp) {
+                isFromVar = true;
+            }
+        });
+        return isFromVar;
     }
 
     /**
@@ -429,7 +442,7 @@ private:
     friend class VariablePropertyExpression;
     friend class InputPropertyExpression;
 
-    virtual void encode(Cord &cord) const = 0;
+    virtual void encode(ICord<> &cord) const = 0;
     /*
      * Decode an expression from within a buffer [pos, end).
      * Return a pointer to where the decoding consumed up.
@@ -463,6 +476,8 @@ public:
 
     OptVariantType eval(Getters &getters) const override;
 
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
+
     Status MUST_USE_RESULT prepare() override;
 
     std::string* alias() const {
@@ -474,7 +489,7 @@ public:
     }
 
 private:
-    void encode(Cord &cord) const override;
+    void encode(ICord<> &cord) const override;
     const char* decode(const char *pos, const char *end) override;
 
 protected:
@@ -494,6 +509,8 @@ public:
 
     OptVariantType eval(Getters &getters) const override;
 
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
+
     Status MUST_USE_RESULT prepare() override;
 };
 
@@ -509,6 +526,8 @@ public:
 
     OptVariantType eval(Getters &getters) const override;
 
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
+
     Status MUST_USE_RESULT prepare() override;
 };
 
@@ -523,6 +542,8 @@ public:
     VariablePropertyExpression(std::string *var, std::string *prop);
 
     OptVariantType eval(Getters &getters) const override;
+
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
 
     Status MUST_USE_RESULT prepare() override;
 };
@@ -544,6 +565,8 @@ public:
 
     OptVariantType eval(Getters &getters) const override;
 
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
+
     Status MUST_USE_RESULT prepare() override;
 };
 
@@ -563,6 +586,8 @@ public:
     }
 
     OptVariantType eval(Getters &getters) const override;
+
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
 
     Status MUST_USE_RESULT prepare() override;
 };
@@ -584,6 +609,8 @@ public:
 
     OptVariantType eval(Getters &getters) const override;
 
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
+
     Status MUST_USE_RESULT prepare() override;
 };
 
@@ -604,6 +631,8 @@ public:
 
     OptVariantType eval(Getters &getters) const override;
 
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
+
     Status MUST_USE_RESULT prepare() override;
 };
 
@@ -618,6 +647,8 @@ public:
     SourcePropertyExpression(std::string *tag, std::string *prop);
 
     OptVariantType eval(Getters &getters) const override;
+
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
 
     Status MUST_USE_RESULT prepare() override;
 };
@@ -654,10 +685,12 @@ public:
 
     OptVariantType eval(Getters &getters) const override;
 
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
+
     Status MUST_USE_RESULT prepare() override;
 
 private:
-    void encode(Cord &cord) const override;
+    void encode(ICord<> &cord) const override;
 
     const char* decode(const char *pos, const char *end) override;
 
@@ -711,6 +744,8 @@ public:
 
     OptVariantType eval(Getters &getters) const override;
 
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
+
     Status MUST_USE_RESULT prepare() override;
 
     void setContext(ExpressionContext *ctx) override {
@@ -720,19 +755,19 @@ public:
         }
     }
 
-    void setFunc(std::function<VariantType(const std::vector<VariantType>&)> func) {
+    void setFunc(FunctionManager::Function func) {
         function_ = func;
     }
 
 private:
-    void encode(Cord &cord) const override;
+    void encode(ICord<> &cord) const override;
 
     const char* decode(const char *pos, const char *end) override;
 
 private:
     std::unique_ptr<std::string>                name_;
     std::vector<std::unique_ptr<Expression>>    args_;
-    std::function<VariantType(const std::vector<VariantType>&)> function_;
+    FunctionManager::Function                   function_;
 };
 
 // (uuid)expr
@@ -751,6 +786,8 @@ public:
 
     OptVariantType eval(Getters &getters) const override;
 
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
+
     Status MUST_USE_RESULT prepare() override;
 
     void setContext(ExpressionContext *ctx) override {
@@ -758,7 +795,7 @@ public:
     }
 
 private:
-    void encode(Cord &) const override {
+    void encode(ICord<> &) const override {
         throw Status::Error("Not supported yet");
     }
 
@@ -792,6 +829,8 @@ public:
 
     OptVariantType eval(Getters &getters) const override;
 
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
+
     Status MUST_USE_RESULT prepare() override;
 
     void setContext(ExpressionContext *context) override {
@@ -804,7 +843,7 @@ public:
     }
 
 private:
-    void encode(Cord &cord) const override;
+    void encode(ICord<> &cord) const override;
 
     const char* decode(const char *pos, const char *end) override;
 
@@ -831,6 +870,8 @@ public:
 
     OptVariantType eval(Getters &getters) const override;
 
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
+
     Status MUST_USE_RESULT prepare() override;
 
     void setContext(ExpressionContext *context) override {
@@ -847,7 +888,7 @@ public:
     }
 
 private:
-    void encode(Cord &cord) const override;
+    void encode(ICord<> &cord) const override;
 
     const char* decode(const char *, const char *) override;
 
@@ -880,6 +921,8 @@ public:
 
     OptVariantType eval(Getters &getters) const override;
 
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
+
     Status MUST_USE_RESULT prepare() override;
 
     void setContext(ExpressionContext *context) override {
@@ -897,7 +940,7 @@ public:
     }
 
 private:
-    void encode(Cord &cord) const override;
+    void encode(ICord<> &cord) const override;
 
     const char* decode(const char *pos, const char *end) override;
 
@@ -931,6 +974,8 @@ public:
 
     OptVariantType eval(Getters &getters) const override;
 
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
+
     Status MUST_USE_RESULT prepare() override;
 
     void setContext(ExpressionContext *context) override {
@@ -952,7 +997,7 @@ public:
     }
 
 private:
-    void encode(Cord &cord) const override;
+    void encode(ICord<> &cord) const override;
 
     const char* decode(const char *pos, const char *end) override;
 
@@ -988,6 +1033,8 @@ public:
 
     OptVariantType eval(Getters &getters) const override;
 
+    Status traversal(std::function<void(const Expression*)> visitor) const override;
+
     Status MUST_USE_RESULT prepare() override;
 
     void setContext(ExpressionContext *context) override {
@@ -1017,7 +1064,7 @@ public:
     }
 
 private:
-    void encode(Cord &cord) const override;
+    void encode(ICord<> &cord) const override;
 
     const char* decode(const char *pos, const char *end) override;
 

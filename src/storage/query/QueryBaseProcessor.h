@@ -26,12 +26,12 @@ const std::unordered_map<std::string, PropContext::PropInKeyType> kPropsInKey_ =
     {"_rank", PropContext::PropInKeyType::RANK}
 };
 
-using EdgeProcessor
-    = std::function<void(std::unique_ptr<RowReader> reader,
-                         folly::StringPiece key)>;
+using EdgeProcessor = std::function<void(RowReader reader, folly::StringPiece key)>;
 struct Bucket {
     std::vector<std::pair<PartitionID, VertexID>> vertices_;
 };
+
+using BucketIdx = unsigned;
 
 using OneVertexResp = std::tuple<PartitionID, VertexID, kvstore::ResultCode>;
 
@@ -77,7 +77,12 @@ protected:
                       FilterContext* fcontext,
                       Collector* collector);
 
-    virtual kvstore::ResultCode processVertex(PartitionID partId, VertexID vId) = 0;
+    virtual void beforeProcess(const std::vector<Bucket>& buckets) {
+        UNUSED(buckets);
+    }
+
+    virtual kvstore::ResultCode processVertex(
+        BucketIdx bucketIdx, PartitionID partId, VertexID vId) = 0;
 
     virtual void onProcessFinished(int32_t retNum) = 0;
 
@@ -110,7 +115,8 @@ protected:
 
     std::vector<Bucket> genBuckets(const cpp2::GetNeighborsRequest& req);
 
-    folly::Future<std::vector<OneVertexResp>> asyncProcessBucket(Bucket bucket);
+    folly::Future<std::vector<OneVertexResp>> asyncProcessBucket(
+        BucketIdx bucketIdx, Bucket bucket);
 
     int32_t getBucketsNum(int32_t verticesNum, int32_t minVerticesPerBucket, int32_t handlerNum);
 

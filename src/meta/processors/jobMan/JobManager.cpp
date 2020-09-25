@@ -23,7 +23,7 @@
 #include "webservice/Common.h"
 #include "common/time/WallClock.h"
 
-DEFINE_int32(dispatch_thread_num, 3, "Number of job dispatch http thread");
+DEFINE_int32(dispatch_thread_num, 10, "Number of job dispatch http thread");
 DEFINE_int32(job_check_intervals, 5000, "job intervals in us");
 DEFINE_double(job_expired_secs, 7*24*60*60, "job expired intervals in sec");
 
@@ -42,6 +42,10 @@ bool JobManager::init(nebula::kvstore::KVStore* store) {
     if (store == nullptr) {
         return false;
     }
+    std::lock_guard<std::mutex> lk(statusGuard_);
+    if (status_ != Status::NOT_START) {
+        return false;
+    }
     kvStore_ = store;
     pool_ = std::make_unique<nebula::thread::GenericThreadPool>();
     pool_->start(FLAGS_dispatch_thread_num);
@@ -49,7 +53,10 @@ bool JobManager::init(nebula::kvstore::KVStore* store) {
     queue_ = std::make_unique<folly::UMPSCQueue<int32_t, true>>();
     bgThread_ = std::make_unique<thread::GenericWorker>();
     CHECK(bgThread_->start());
+
+    status_ = Status::RUNNING;
     bgThread_->addTask(&JobManager::runJobBackground, this);
+    LOG(INFO) << "JobManager initialized";
     return true;
 }
 
@@ -59,7 +66,12 @@ JobManager::~JobManager() {
 
 void JobManager::shutDown() {
     LOG(INFO) << "JobManager::shutDown() begin";
-    shutDown_ = true;
+    std::lock_guard<std::mutex> lk(statusGuard_);
+    if (status_ != Status::RUNNING) {  // in case of shutdown more than once
+        LOG(INFO) << "JobManager not running, exit";
+        return;
+    }
+    status_ = Status::STOPPED;
     pool_->stop();
     bgThread_->stop();
     bgThread_->wait();
@@ -68,10 +80,10 @@ void JobManager::shutDown() {
 
 void JobManager::runJobBackground() {
     LOG(INFO) << "JobManager::runJobBackground() enter";
-    while (!shutDown_) {
+    while (status_ == Status::RUNNING) {
         int32_t iJob = 0;
         while (!queue_->try_dequeue(iJob)) {
-            if (shutDown_) {
+            if (status_ == Status::STOPPED) {
                 LOG(INFO) << "[JobManager] detect shutdown called, exit";
                 break;
             }

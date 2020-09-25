@@ -17,7 +17,7 @@ void SnapshotManagerImpl::accessAllRowsInSnapshot(GraphSpaceID spaceId,
                                                   raftex::SnapshotCallback cb) {
     CHECK_NOTNULL(store_);
     std::unique_ptr<KVIterator> iter;
-    auto prefix = NebulaKeyUtils::prefix(partId);
+    auto prefix = NebulaKeyUtils::snapshotPrefix(partId);
     std::vector<std::string> data;
     int64_t totalSize = 0;
     int64_t totalCount = 0;

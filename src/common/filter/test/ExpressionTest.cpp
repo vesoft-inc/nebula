@@ -630,8 +630,16 @@ TEST_F(ExpressionTest, FunctionCall) {
 
     TEST_EXPR_LT(rand32(1024), 1024);
     TEST_EXPR_GE(rand32(1024), 0);
+    TEST_EXPR_FAILED(rand32(-1));
+    TEST_EXPR_FAILED(rand32(-1, -2));
+    TEST_EXPR_FAILED(rand32(3, 2));
+    TEST_EXPR_FAILED(rand32(2, 2));
     TEST_EXPR_LT(rand64(1024, 4096), 4096);
     TEST_EXPR_GE(rand64(1024, 4096), 1024);
+    TEST_EXPR_FAILED(rand64(-1));
+    TEST_EXPR_FAILED(rand64(-1, -2));
+    TEST_EXPR_FAILED(rand64(3, 2));
+    TEST_EXPR_FAILED(rand64(2, 2));
 
     TEST_EXPR_GT(now(), 1554716753);
     TEST_EXPR_LE(now(), 4773548753);  // failed 102 years later

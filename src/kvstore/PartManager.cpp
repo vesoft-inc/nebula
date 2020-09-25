@@ -106,6 +106,21 @@ void MetaServerBasedPartManager::onSpaceOptionUpdated(
         "target_file_size_multiplier",
         "max_bytes_for_level_base",
         "max_bytes_for_level_multiplier",
+        "arena_block_size",
+        "memtable_prefix_bloom_size_ratio",
+        "memtable_whole_key_filtering",
+        "memtable_huge_page_size",
+        "max_successive_merges",
+        "inplace_update_num_locks",
+        "soft_pending_compaction_bytes_limit",
+        "hard_pending_compaction_bytes_limit",
+        "max_compaction_bytes",
+        "ttl",
+        "periodic_compaction_seconds",
+        "max_sequential_skip_in_iterations",
+        "paranoid_file_checks",
+        "report_bg_io_stats",
+        "sample_for_compression"
     };
     static std::unordered_set<std::string> supportedDbOpt = {
         "max_total_wal_size",
@@ -118,7 +133,10 @@ void MetaServerBasedPartManager::onSpaceOptionUpdated(
         "wal_bytes_per_sync",
         "delayed_write_rate",
         "avoid_flush_during_shutdown",
-        "max_open_files"
+        "max_open_files",
+        "stats_persist_period_sec",
+        "stats_history_buffer_size",
+        "strict_bytes_per_sync"
     };
 
     std::unordered_map<std::string, std::string> opt;
@@ -145,7 +163,7 @@ void MetaServerBasedPartManager::onSpaceOptionUpdated(
 
 void MetaServerBasedPartManager::onPartAdded(const PartMeta& partMeta) {
     if (handler_ != nullptr) {
-        handler_->addPart(partMeta.spaceId_, partMeta.partId_, false);
+        handler_->addPart(partMeta.spaceId_, partMeta.partId_, false, {});
     } else {
         VLOG(1) << "handler_ is nullptr!";
     }

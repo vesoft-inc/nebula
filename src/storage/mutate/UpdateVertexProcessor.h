@@ -10,6 +10,7 @@
 #include "storage/query/QueryBaseProcessor.h"
 #include "dataman/RowReader.h"
 #include "dataman/RowUpdater.h"
+#include "storage/StorageFlags.h"
 
 namespace nebula {
 namespace storage {
@@ -42,7 +43,7 @@ private:
                              cpp2::UpdateResponse>(kvstore, schemaMan, stats, nullptr, cache)
         , indexMan_(indexMan) {}
 
-    kvstore::ResultCode processVertex(PartitionID, VertexID) override {
+    kvstore::ResultCode processVertex(BucketIdx, PartitionID, VertexID) override {
         LOG(FATAL) << "Unimplement!";
         return kvstore::ResultCode::SUCCEEDED;
     }
@@ -59,7 +60,7 @@ private:
 
     cpp2::ErrorCode checkFilter(const PartitionID partId, const VertexID vId);
 
-    std::string updateAndWriteBack(const PartitionID partId, const VertexID vId);
+    folly::Optional<std::string> updateAndWriteBack(const PartitionID partId, const VertexID vId);
 
 private:
     bool                                                            insertable_{false};

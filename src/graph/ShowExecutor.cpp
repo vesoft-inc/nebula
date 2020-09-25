@@ -125,8 +125,8 @@ void ShowExecutor::showHosts() {
             return a.get_status() < b.get_status();
         });
 
-        std::unordered_map<std::string, int32_t> allPartsCount;
-        std::unordered_map<std::string, int32_t> leaderPartsCount;
+        std::map<std::string, int32_t> allPartsCount;
+        std::map<std::string, int32_t> leaderPartsCount;
         for (auto& item : hostItems) {
             std::vector<cpp2::ColumnValue> row;
             row.resize(6);
@@ -145,24 +145,33 @@ void ShowExecutor::showHosts() {
             }
 
             int32_t leaderCount = 0;
-            std::string leaders;
+            std::map<std::string, int32_t> hostLeaderCount;
             for (auto& spaceEntry : item.get_leader_parts()) {
                 leaderCount += spaceEntry.second.size();
-                leaders += spaceEntry.first + ": " +
-                           folly::to<std::string>(spaceEntry.second.size()) + ", ";
+                hostLeaderCount[spaceEntry.first] = spaceEntry.second.size();
                 leaderPartsCount[spaceEntry.first] += spaceEntry.second.size();
+            }
+            row[3].set_integer(leaderCount);
+
+            std::string leaders;
+            for (auto& spaceEntry : hostLeaderCount) {
+                leaders += spaceEntry.first + ": " +
+                           folly::to<std::string>(spaceEntry.second) + ", ";
             }
             if (!leaders.empty()) {
                 leaders.resize(leaders.size() - 2);
             }
 
-            row[3].set_integer(leaderCount);
+            std::map<std::string, int32_t> hostPartsCount;
+            for (auto& spaceEntry : item.get_all_parts()) {
+                hostPartsCount[spaceEntry.first] += spaceEntry.second.size();
+                allPartsCount[spaceEntry.first] += spaceEntry.second.size();
+            }
 
             std::string parts;
-            for (auto& spaceEntry : item.get_all_parts()) {
+            for (auto& spaceEntry : hostPartsCount) {
                 parts += spaceEntry.first + ": " +
-                         folly::to<std::string>(spaceEntry.second.size()) + ", ";
-                allPartsCount[spaceEntry.first] += spaceEntry.second.size();
+                         folly::to<std::string>(spaceEntry.second) + ", ";
             }
             if (!parts.empty()) {
                 parts.resize(parts.size() - 2);
@@ -552,7 +561,7 @@ void ShowExecutor::showCreateSpace() {
 
         std::string buf;
         buf.reserve(256);
-        buf += folly::stringPrintf("CREATE SPACE %s (", properties.get_space_name().c_str());
+        buf += folly::stringPrintf("CREATE SPACE `%s` (", properties.get_space_name().c_str());
         buf += "partition_num = ";
         buf += folly::to<std::string>(properties.get_partition_num());
         buf += ", replica_factor = ";
@@ -610,12 +619,12 @@ void ShowExecutor::showCreateTag() {
 
         std::string buf;
         buf.reserve(256);
-        buf += folly::stringPrintf("CREATE TAG %s (\n", tagName->c_str());
+        buf += folly::stringPrintf("CREATE TAG `%s` (\n", tagName->c_str());
 
         auto schema = resp.value();
         for (auto& column : schema.columns) {
             buf += "  ";
-            buf += column.name;
+            buf += "`" + column.name + "`";
             buf += " ";
             buf += valueTypeToString(column.type);
             if (column.__isset.default_value) {
@@ -632,7 +641,12 @@ void ShowExecutor::showCreateTag() {
                         defaultValue = folly::to<std::string>(value->get_double_value());
                         break;
                     case nebula::cpp2::SupportedType::STRING:
-                        defaultValue = folly::to<std::string>(value->get_string_value());
+                        defaultValue = "\"";
+                        defaultValue += folly::to<std::string>(value->get_string_value());
+                        defaultValue += "\"";
+                        break;
+                    case nebula::cpp2::SupportedType::TIMESTAMP:
+                        defaultValue = folly::to<std::string>(value->get_timestamp());
                         break;
                     default:
                         LOG(ERROR) << "Unsupported type";
@@ -708,12 +722,12 @@ void ShowExecutor::showCreateEdge() {
 
         std::string buf;
         buf.reserve(256);
-        buf += folly::stringPrintf("CREATE EDGE %s (\n",  edgeName->c_str());
+        buf += folly::stringPrintf("CREATE EDGE `%s` (\n",  edgeName->c_str());
 
         auto schema = resp.value();
         for (auto& column : schema.columns) {
             buf += "  ";
-            buf += column.name;
+            buf += "`" + column.name + "`";
             buf += " ";
             buf += valueTypeToString(column.type);
             if (column.__isset.default_value) {
@@ -730,7 +744,12 @@ void ShowExecutor::showCreateEdge() {
                         defaultValue = folly::to<std::string>(value->get_double_value());
                         break;
                     case nebula::cpp2::SupportedType::STRING:
-                        defaultValue = folly::to<std::string>(value->get_string_value());
+                        defaultValue = "\"";
+                        defaultValue += folly::to<std::string>(value->get_string_value());
+                        defaultValue += "\"";
+                        break;
+                    case nebula::cpp2::SupportedType::TIMESTAMP:
+                        defaultValue = folly::to<std::string>(value->get_timestamp());
                         break;
                     default:
                         LOG(ERROR) << "Unsupported type";
@@ -807,13 +826,13 @@ void ShowExecutor::showCreateTagIndex() {
 
         std::string buf;
         buf.reserve(256);
-        buf += folly::stringPrintf("CREATE TAG INDEX %s ON ", tagName->c_str());
+        buf += folly::stringPrintf("CREATE TAG INDEX `%s` ON ", tagName->c_str());
 
         auto& fields = indexItems.get_fields();
-        buf += indexItems.get_schema_name();
+        buf += "`" + indexItems.get_schema_name() + "`";
         buf += "(";
         for (auto &column : fields) {
-            buf += column.name;
+            buf += "`" + column.name + "`";
             buf += ", ";
         }
         buf = buf.substr(0, buf.size() - 2);
@@ -866,13 +885,13 @@ void ShowExecutor::showCreateEdgeIndex() {
 
         std::string buf;
         buf.reserve(256);
-        buf += folly::stringPrintf("CREATE EDGE INDEX %s ON ", edgeName->c_str());
+        buf += folly::stringPrintf("CREATE EDGE INDEX `%s` ON ", edgeName->c_str());
 
         auto& fields = indexItems.get_fields();
-        buf += indexItems.get_schema_name();
+        buf += "`" + indexItems.get_schema_name() + "`";
         buf += "(";
         for (auto &column : fields) {
-            buf += column.name;
+            buf += "`" + column.name + "`";
             buf += ", ";
         }
         buf = buf.substr(0, buf.size() - 2);

@@ -65,9 +65,6 @@ protected:
 
     void doRemove(GraphSpaceID spaceId, PartitionID partId, std::vector<std::string> keys);
 
-    kvstore::ResultCode doRange(GraphSpaceID spaceId, PartitionID partId, std::string start,
-                                std::string end, std::unique_ptr<kvstore::KVIterator>* iter);
-
     kvstore::ResultCode doRange(GraphSpaceID spaceId, PartitionID partId, const std::string& start,
                                 const std::string& end, std::unique_ptr<kvstore::KVIterator>* iter);
 
@@ -80,7 +77,7 @@ protected:
                                  std::unique_ptr<kvstore::KVIterator>* iter);
 
     kvstore::ResultCode doPrefix(GraphSpaceID spaceId, PartitionID partId,
-                                 std::string prefix,
+                                 std::string&& prefix,
                                  std::unique_ptr<kvstore::KVIterator>* iter) = delete;
 
     kvstore::ResultCode doRangeWithPrefix(GraphSpaceID spaceId, PartitionID partId,

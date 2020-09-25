@@ -7,14 +7,14 @@
 #ifndef STORAGE_STORAGESERVER_H_
 #define STORAGE_STORAGESERVER_H_
 
-#include "base/Base.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
-#include "kvstore/NebulaStore.h"
-#include "meta/SchemaManager.h"
-#include "meta/IndexManager.h"
-#include "meta/client/MetaClient.h"
-#include "meta/ClientBasedGflagsManager.h"
+#include "base/Base.h"
 #include "hdfs/HdfsHelper.h"
+#include "kvstore/NebulaStore.h"
+#include "meta/ClientBasedGflagsManager.h"
+#include "meta/IndexManager.h"
+#include "meta/SchemaManager.h"
+#include "meta/client/MetaClient.h"
 
 namespace nebula {
 
@@ -24,6 +24,12 @@ namespace storage {
 
 class StorageServer final {
 public:
+    enum class Status {
+        INIT,
+        RUNNING,
+        STOPPED,
+    };
+
     StorageServer(network::InetAddress localHost,
                   std::vector<network::InetAddress> metaAddrs,
                   std::vector<std::string> dataPaths);
@@ -40,6 +46,19 @@ private:
 
     bool initWebService();
 
+    std::string statusStr(Status status) {
+        switch (status) {
+            case Status::INIT:
+                return "init";
+            case Status::RUNNING:
+                return "running";
+            case Status::STOPPED:
+                return "stoppped";
+        }
+        LOG(FATAL) << "Unreached";
+        return "";
+    }
+
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
     std::shared_ptr<apache::thrift::concurrency::ThreadManager> workers_;
 
@@ -54,12 +73,13 @@ private:
     std::unique_ptr<meta::SchemaManager> schemaMan_;
     std::unique_ptr<meta::IndexManager> indexMan_;
 
-    std::atomic_bool stopped_{false};
     network::InetAddress localHost_;
     std::vector<network::InetAddress> metaAddrs_;
     std::vector<std::string> dataPaths_;
+
+    std::atomic<Status> status_{Status::INIT};
 };
 
-}  // namespace storage
-}  // namespace nebula
-#endif  // STORAGE_STORAGESERVER_H_
+}   // namespace storage
+}   // namespace nebula
+#endif   // STORAGE_STORAGESERVER_H_

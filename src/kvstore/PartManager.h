@@ -18,13 +18,22 @@ namespace kvstore {
 class Handler {
 public:
     virtual ~Handler() = default;
+
     virtual void addSpace(GraphSpaceID spaceId) = 0;
-    virtual void addPart(GraphSpaceID spaceId, PartitionID partId, bool asLearner) = 0;
+
+    virtual void addPart(GraphSpaceID spaceId,
+                         PartitionID partId,
+                         bool asLearner,
+                         const std::vector<network::InetAddress>& peers) = 0;
+
     virtual void updateSpaceOption(GraphSpaceID spaceId,
                                    const std::unordered_map<std::string, std::string>& options,
                                    bool isDbOption) = 0;
+
     virtual void removeSpace(GraphSpaceID spaceId) = 0;
+
     virtual void removePart(GraphSpaceID spaceId, PartitionID partId) = 0;
+
     virtual int32_t allLeader(std::unordered_map<GraphSpaceID,
                                                  std::vector<PartitionID>>& leaderIds) = 0;
 };
@@ -109,7 +118,7 @@ public:
             handler_->addSpace(spaceId);
         }
         if (noPart && handler_) {
-            handler_->addPart(spaceId, partId, false);
+            handler_->addPart(spaceId, partId, false, {});
         }
     }
 
