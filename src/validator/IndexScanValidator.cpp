@@ -31,22 +31,24 @@ Status IndexScanValidator::prepareFrom() {
     auto *sentence = static_cast<const LookupSentence *>(sentence_);
     spaceId_ = vctx_->whichSpace().id;
     const auto* from = sentence->from();
-    auto ret = qctx_->schemaMng()->toEdgeType(spaceId_, *from);
-    if (ret.ok()) {
-        isEdge_ = true;
-    } else {
-        ret = qctx_->schemaMng()->toTagID(spaceId_, *from);
-        NG_RETURN_IF_ERROR(ret);
-        isEdge_ = false;
+    auto ret = qctx_->schemaMng()->getSchemaIDByName(spaceId_, *from);
+    if (!ret.ok()) {
+        return ret.status();
     }
-    schemaId_ = ret.value();
+    isEdge_ = ret.value().first;
+    schemaId_ = ret.value().second;
     return Status::OK();
 }
 
 Status IndexScanValidator::prepareYield() {
     auto *sentence = static_cast<const LookupSentence *>(sentence_);
+    if (sentence->yieldClause() == nullptr) {
+        return Status::OK();
+    }
     auto columns = sentence->yieldClause()->columns();
-    auto schema = qctx_->schemaMng()->getEdgeSchema(spaceId_, schemaId_);
+    auto schema = isEdge_
+                  ? qctx_->schemaMng()->getEdgeSchema(spaceId_, schemaId_)
+                  : qctx_->schemaMng()->getTagSchema(spaceId_, schemaId_);
     const auto* from = sentence->from();
     if (schema == nullptr) {
         return isEdge_
@@ -54,26 +56,26 @@ Status IndexScanValidator::prepareYield() {
                : Status::TagNotFound("Tag schema not found : %s", from->c_str());
     }
     returnCols_ = std::make_unique<std::vector<std::string>>();
-    for (const auto* col : columns) {
+    for (auto col : columns) {
+        std::string schemaName, colName;
         if (col->expr()->kind() == Expression::Kind::kLabelAttribute) {
-            auto laExpr = static_cast<LabelAttributeExpression *>(col->expr());
-            if (*laExpr->left()->name() != *from) {
-                return Status::SemanticError("Schema name error : %s",
-                                             laExpr->left()->name()->c_str());
-            }
-            auto ret = schema->getFieldType(*laExpr->right()->name());
-            if (ret == meta::cpp2::PropertyType::UNKNOWN) {
-                return Status::SemanticError("Column %s not found in schema %s",
-                                             laExpr->right()->name()->c_str(),
-                                             from->c_str());
-            }
-            returnCols_->emplace_back(*laExpr->right()->name());
-            auto typeResult = deduceExprType(col->expr());
-            NG_RETURN_IF_ERROR(typeResult);
-            outputs_.emplace_back(deduceColName(col), typeResult.value());
+            auto la = static_cast<LabelAttributeExpression *>(col->expr());
+            schemaName = *la->left()->name();
+            colName = *la->right()->name();
         } else {
-            return Status::SemanticError();
+            return Status::SemanticError("Yield clauses are not supported : %s",
+                                         col->expr()->toString().c_str());
         }
+
+        if (schemaName != *from) {
+            return Status::SemanticError("Schema name error : %s", schemaName.c_str());
+        }
+        auto ret = schema->getFieldType(colName);
+        if (ret == meta::cpp2::PropertyType::UNKNOWN) {
+            return Status::SemanticError("Column %s not found in schema %s",
+                                         colName.c_str(), from->c_str());
+        }
+        returnCols_->emplace_back(colName);
     }
     return Status::OK();
 }
@@ -110,30 +112,7 @@ Status IndexScanValidator::checkFilter(Expression* expr, const std::string& from
         case Expression::Kind::kRelGT:
         case Expression::Kind::kRelNE: {
             auto* rExpr = static_cast<RelationalExpression*>(expr);
-            auto* left = rExpr->left();
-            auto* right = rExpr->right();
-            // Does not support filter : schema.col1 > schema.col2
-            if (left->kind() == Expression::Kind::kLabelAttribute &&
-                right->kind() == Expression::Kind::kLabelAttribute) {
-                return Status::NotSupported("Expression %s not supported yet",
-                                            rExpr->toString().c_str());
-            } else if (left->kind() == Expression::Kind::kLabelAttribute) {
-                auto* attExpr = static_cast<LabelAttributeExpression *>(left);
-                if (*attExpr->left()->name() != from) {
-                    return Status::SemanticError("Schema name error : %s",
-                                                 attExpr->left()->name()->c_str());
-                }
-            } else if (right->kind() == Expression::Kind::kLabelAttribute) {
-                auto* attExpr = static_cast<LabelAttributeExpression *>(right);
-                if (*attExpr->left()->name() != from) {
-                    return Status::SemanticError("Schema name error : %s",
-                                                  attExpr->left()->name()->c_str());
-                }
-            } else {
-                return Status::NotSupported("Expression %s not supported yet",
-                                            rExpr->toString().c_str());
-            }
-            break;
+            return checkRelExpr(rExpr, from);
         }
         default: {
             return Status::NotSupported("Expression %s not supported yet",
@@ -141,6 +120,90 @@ Status IndexScanValidator::checkFilter(Expression* expr, const std::string& from
         }
     }
     return Status::OK();
+}
+
+Status IndexScanValidator::checkRelExpr(RelationalExpression* expr,
+                                        const std::string& from) {
+    auto* left = expr->left();
+    auto* right = expr->right();
+    // Does not support filter : schema.col1 > schema.col2
+    if (left->kind() == Expression::Kind::kLabelAttribute &&
+        right->kind() == Expression::Kind::kLabelAttribute) {
+        return Status::NotSupported("Expression %s not supported yet",
+                                    expr->toString().c_str());
+    } else if (left->kind() == Expression::Kind::kLabelAttribute ||
+               right->kind() == Expression::Kind::kLabelAttribute) {
+        auto ret = rewriteRelExpr(expr, from);
+        NG_RETURN_IF_ERROR(ret);
+    } else {
+        return Status::NotSupported("Expression %s not supported yet",
+                                    expr->toString().c_str());
+    }
+    return Status::OK();
+}
+
+Status IndexScanValidator::rewriteRelExpr(RelationalExpression* expr,
+                                          const std::string& from) {
+    auto* left = expr->left();
+    auto* right = expr->right();
+    auto leftIsAE = left->kind() == Expression::Kind::kLabelAttribute;
+
+    std::string ref, prop;
+    auto* la = leftIsAE
+               ? static_cast<LabelAttributeExpression *>(left)
+               : static_cast<LabelAttributeExpression *>(right);
+    if (*la->left()->name() != from) {
+        return Status::SemanticError("Schema name error : %s",
+                                     la->left()->name()->c_str());
+    }
+
+    ref = *la->left()->name();
+    prop = *la->right()->name();
+
+    // rewrite ConstantExpression
+    auto c = leftIsAE
+             ? checkConstExpr(right, prop)
+             : checkConstExpr(left, prop);
+
+    if (!c.ok()) {
+        return Status::SemanticError("expression error : %s", left->toString().c_str());
+    }
+
+    if (leftIsAE) {
+        expr->setRight(new ConstantExpression(std::move(c).value()));
+    } else {
+        expr->setLeft(new ConstantExpression(std::move(c).value()));
+    }
+
+    // rewrite PropertyExpression
+    if (leftIsAE) {
+        if (isEdge_) {
+            expr->setLeft(ExpressionUtils::rewriteLabelAttribute<EdgePropertyExpression>(la));
+        } else {
+            expr->setLeft(ExpressionUtils::rewriteLabelAttribute<TagPropertyExpression>(la));
+        }
+    } else {
+        if (isEdge_) {
+            expr->setRight(ExpressionUtils::rewriteLabelAttribute<EdgePropertyExpression>(la));
+        } else {
+            expr->setRight(ExpressionUtils::rewriteLabelAttribute<TagPropertyExpression>(la));
+        }
+    }
+    return Status::OK();
+}
+
+StatusOr<Value> IndexScanValidator::checkConstExpr(Expression* expr,
+                                                   const std::string& prop) {
+    auto schema = isEdge_
+                  ? qctx_->schemaMng()->getEdgeSchema(spaceId_, schemaId_)
+                  : qctx_->schemaMng()->getTagSchema(spaceId_, schemaId_);
+    auto type = schema->getFieldType(prop);
+    QueryExpressionContext dummy(nullptr);
+    auto v = Expression::eval(expr, dummy);
+    if (v.type() != SchemaUtil::propTypeToValueType(type)) {
+        return Status::SemanticError("Column type error : %s", prop.c_str());
+    }
+    return v;
 }
 
 }   // namespace graph

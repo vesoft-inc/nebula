@@ -448,7 +448,7 @@ public:
         return schemaId_;
     }
 
-    void setQueryContext(IndexQueryCtx contexts) {
+    void setIndexQueryContext(IndexQueryCtx contexts) {
         contexts_ = std::move(contexts);
     }
 

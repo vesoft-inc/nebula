@@ -34,6 +34,12 @@ private:
 
     Status checkFilter(Expression* expr, const std::string& from);
 
+    Status checkRelExpr(RelationalExpression* expr, const std::string& from);
+
+    Status rewriteRelExpr(RelationalExpression* expr, const std::string& from);
+
+    StatusOr<Value> checkConstExpr(Expression* expr, const std::string& prop);
+
 private:
     GraphSpaceID               spaceId_{0};
     IndexScan::IndexQueryCtx   contexts_{};
