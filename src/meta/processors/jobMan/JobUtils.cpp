@@ -4,9 +4,6 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef META_JOBUTILS_H_
-#define META_JOBUTILS_H_
-
 #include "meta/processors/jobMan/JobUtils.h"
 #include <stdexcept>
 #include <vector>
@@ -57,13 +54,13 @@ const std::string& JobUtil::archivePrefix() {
 std::string JobUtil::parseString(folly::StringPiece rawVal, size_t offset) {
     if (rawVal.size() < offset + sizeof(size_t)) {
         throw std::runtime_error(folly::stringPrintf("%s: offset=%zu, rawVal.size()=%zu",
-                                                        __func__, offset, rawVal.size()));
+                                                     __func__, offset, rawVal.size()));
     }
     auto len = *reinterpret_cast<const size_t*>(rawVal.data() + offset);
     offset += sizeof(size_t);
     if (rawVal.size() < offset + len) {
         throw std::runtime_error(folly::stringPrintf("%s: offset=%zu, rawVal.size()=%zu",
-                                                        __func__, offset, rawVal.size()));
+                                                     __func__, offset, rawVal.size()));
     }
     return std::string(rawVal.data() + offset, len);
 }
@@ -72,7 +69,7 @@ std::vector<std::string> JobUtil::parseStrVector(folly::StringPiece rawVal, size
     std::vector<std::string> ret;
     if (rawVal.size() < *offset + sizeof(size_t)) {
         throw std::runtime_error(folly::stringPrintf("%s: offset=%zu, rawVal.size()=%zu",
-                                                        __func__, *offset, rawVal.size()));
+                                                     __func__, *offset, rawVal.size()));
     }
     auto vec_size = *reinterpret_cast<const size_t*>(rawVal.data() + *offset);
     *offset += sizeof(size_t);
@@ -86,5 +83,3 @@ std::vector<std::string> JobUtil::parseStrVector(folly::StringPiece rawVal, size
 
 }  // namespace meta
 }  // namespace nebula
-
-#endif

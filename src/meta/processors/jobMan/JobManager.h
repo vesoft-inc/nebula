@@ -28,8 +28,8 @@ class JobManager : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovab
     FRIEND_TEST(JobManagerTest, showJobs);
     FRIEND_TEST(JobManagerTest, showJob);
     FRIEND_TEST(JobManagerTest, recoverJob);
-
-    using ResultCode = nebula::kvstore::ResultCode;
+    FRIEND_TEST(JobManagerTest, AddRebuildTagIndexJob);
+    FRIEND_TEST(JobManagerTest, AddRebuildEdgeIndexJob);
 
 public:
     ~JobManager();
@@ -42,28 +42,36 @@ public:
     /*
      * Load job description from kvstore
      * */
-    ResultCode addJob(const JobDescription& jobDesc, AdminClient* client);
-    ErrorOr<ResultCode, std::vector<cpp2::JobDesc>> showJobs();
-    ErrorOr<ResultCode, std::pair<cpp2::JobDesc, std::vector<cpp2::TaskDesc>>> showJob(int iJob);
-    ResultCode stopJob(int32_t iJob);
-    ErrorOr<ResultCode, int32_t> recoverJob();
+    cpp2::ErrorCode addJob(const JobDescription& jobDesc, AdminClient* client);
+
+    ErrorOr<cpp2::ErrorCode, std::vector<cpp2::JobDesc>> showJobs();
+
+    ErrorOr<cpp2::ErrorCode, std::pair<cpp2::JobDesc, std::vector<cpp2::TaskDesc>>>
+    showJob(JobID iJob);
+
+    cpp2::ErrorCode stopJob(JobID iJob);
+
+    ErrorOr<cpp2::ErrorCode, JobID> recoverJob();
 
 private:
     JobManager() = default;
     void scheduleThread();
+
     bool runJobInternal(const JobDescription& jobDesc);
-    int getSpaceId(const std::string& name);
-    nebula::kvstore::ResultCode save(const std::string& k, const std::string& v);
+
+    GraphSpaceID getSpaceId(const std::string& name);
+    kvstore::ResultCode save(const std::string& k, const std::string& v);
 
     static bool isExpiredJob(const cpp2::JobDesc& jobDesc);
     void removeExpiredJobs(const std::vector<std::string>& jobKeys);
-    std::unique_ptr<folly::UMPSCQueue<int32_t, true>> queue_;
-    std::unique_ptr<thread::GenericWorker> bgThread_;
 
-    bool shutDown_{false};
-    nebula::kvstore::KVStore* kvStore_{nullptr};
+private:
+    std::unique_ptr<folly::UMPSCQueue<int32_t, true>>  queue_;
+    std::unique_ptr<thread::GenericWorker>             bgThread_;
+    bool                                               shutDown_{false};
+    nebula::kvstore::KVStore*                          kvStore_{nullptr};
     std::unique_ptr<nebula::thread::GenericThreadPool> pool_{nullptr};
-    AdminClient*                                    adminClient_{nullptr};
+    AdminClient*                                       adminClient_{nullptr};
 };
 
 }  // namespace meta

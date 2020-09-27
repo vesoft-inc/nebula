@@ -110,18 +110,20 @@ bool JobManager::runJobInternal(const JobDescription& jobDesc) {
         jobExecutor->stop();
         return true;
     }
-    if (jobDesc.getParas().empty()) {
+
+    if (!jobExecutor->check()) {
+        LOG(ERROR) << "Job Executor check failed";
         return false;
     }
 
-    std::string spaceName = jobDesc.getParas().back();
-    int spaceId = getSpaceId(spaceName);
-    if (spaceId < 0) {
+    if (jobExecutor->prepare() != cpp2::ErrorCode::SUCCEEDED) {
+        LOG(ERROR) << "Job Executor prepare failed";
         return false;
     }
 
     auto results = jobExecutor->execute();
     if (!nebula::ok(results)) {
+        LOG(ERROR) << "Job executor running failed";
         return false;
     }
 
@@ -142,22 +144,25 @@ bool JobManager::runJobInternal(const JobDescription& jobDesc) {
     return jobSuccess;
 }
 
-ResultCode JobManager::addJob(const JobDescription& jobDesc, AdminClient* client) {
+cpp2::ErrorCode JobManager::addJob(const JobDescription& jobDesc, AdminClient* client) {
     auto rc = save(jobDesc.jobKey(), jobDesc.jobVal());
     if (rc == nebula::kvstore::SUCCEEDED) {
         queue_->enqueue(jobDesc.getJobId());
+    } else {
+        LOG(ERROR) << "Add Job Failed";
+        return cpp2::ErrorCode::E_ADD_JOB_FAILURE;
     }
     adminClient_ = client;
-    return rc;
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
-ErrorOr<ResultCode, std::vector<cpp2::JobDesc>>
+ErrorOr<cpp2::ErrorCode, std::vector<cpp2::JobDesc>>
 JobManager::showJobs() {
     std::unique_ptr<kvstore::KVIterator> iter;
     ResultCode rc = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId,
                                      JobUtil::jobPrefix(), &iter);
     if (rc != nebula::kvstore::SUCCEEDED) {
-        return rc;
+        return cpp2::ErrorCode::E_STORE_FAILURE;
     }
 
     int32_t lastExpiredJobId = INT_MIN;
@@ -202,26 +207,26 @@ bool JobManager::isExpiredJob(const cpp2::JobDesc& jobDesc) {
 void JobManager::removeExpiredJobs(const std::vector<std::string>& expiredJobsAndTasks) {
     folly::Baton<true, std::atomic> baton;
     kvStore_->asyncMultiRemove(kDefaultSpaceId, kDefaultPartId, expiredJobsAndTasks,
-        [&](nebula::kvstore::ResultCode code){
-            if (code != kvstore::ResultCode::SUCCEEDED) {
-                LOG(ERROR) << "kvstore asyncRemoveRange failed: " << code;
-            }
-            baton.post();
-        });
+                               [&](nebula::kvstore::ResultCode code) {
+                                   if (code != kvstore::ResultCode::SUCCEEDED) {
+                                       LOG(ERROR) << "kvstore asyncRemoveRange failed: " << code;
+                                   }
+                                   baton.post();
+                               });
     baton.wait();
 }
 
-ErrorOr<ResultCode, std::pair<cpp2::JobDesc, std::vector<cpp2::TaskDesc>>>
-JobManager::showJob(int iJob) {
+ErrorOr<cpp2::ErrorCode, std::pair<cpp2::JobDesc, std::vector<cpp2::TaskDesc>>>
+JobManager::showJob(JobID iJob) {
     auto jobKey = JobDescription::makeJobKey(iJob);
     std::unique_ptr<kvstore::KVIterator> iter;
-    ResultCode rc = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, jobKey, &iter);
+    auto rc = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, jobKey, &iter);
     if (rc != nebula::kvstore::SUCCEEDED) {
-        return rc;
+        return cpp2::ErrorCode::E_STORE_FAILURE;
     }
 
     if (!iter->valid()) {
-        return nebula::kvstore::ERR_KEY_NOT_FOUND;
+        return cpp2::ErrorCode::E_NOT_FOUND;
     }
 
     std::pair<cpp2::JobDesc, std::vector<cpp2::TaskDesc>> ret;
@@ -239,26 +244,41 @@ JobManager::showJob(int iJob) {
     return ret;
 }
 
-ResultCode JobManager::stopJob(int32_t iJob) {
+cpp2::ErrorCode JobManager::stopJob(JobID iJob) {
     auto jobDesc = JobDescription::loadJobDescription(iJob, kvStore_);
     if (jobDesc == folly::none) {
-        return nebula::kvstore::ResultCode::ERR_KEY_NOT_FOUND;
+        return cpp2::ErrorCode::E_NOT_FOUND;
+    }
+
+    auto jobExecutor = MetaJobExecutorFactory::createMetaJobExecutor(jobDesc.value(),
+                                                                     kvStore_,
+                                                                     adminClient_);
+    if (jobExecutor == nullptr) {
+        LOG(ERROR) << "Unknown Job";
+        return cpp2::ErrorCode::E_STOP_JOB_FAILURE;
     }
 
     jobDesc->setStatus(cpp2::JobStatus::STOPPED);
-    return save(jobDesc->jobKey(), jobDesc->jobVal());
+    auto rc = save(jobDesc->jobKey(), jobDesc->jobVal());
+    if (rc != nebula::kvstore::SUCCEEDED) {
+        return cpp2::ErrorCode::E_SAVE_JOB_FAILURE;
+    }
+
+    return jobExecutor->stop();
 }
 
 /*
  * Return: recovered job num.
  * */
-ErrorOr<ResultCode, int32_t> JobManager::recoverJob() {
+ErrorOr<cpp2::ErrorCode, JobID> JobManager::recoverJob() {
     int32_t recoveredJobNum = 0;
     std::unique_ptr<kvstore::KVIterator> iter;
-    ResultCode rc = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, JobUtil::jobPrefix(), &iter);
+    auto rc = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, JobUtil::jobPrefix(), &iter);
     if (rc != nebula::kvstore::SUCCEEDED) {
-        return rc;
+        LOG(ERROR) << "Can't find jobs";
+        return cpp2::ErrorCode::E_NOT_FOUND;
     }
+
     for (; iter->valid(); iter->next()) {
         if (!JobDescription::isJobKey(iter->key())) {
             continue;
@@ -279,15 +299,15 @@ ResultCode JobManager::save(const std::string& k, const std::string& v) {
     folly::Baton<true, std::atomic> baton;
     nebula::kvstore::ResultCode rc = nebula::kvstore::SUCCEEDED;
     kvStore_->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data),
-        [&] (nebula::kvstore::ResultCode code){
-        rc = code;
-        baton.post();
-    });
+                            [&] (nebula::kvstore::ResultCode code) {
+                                rc = code;
+                                baton.post();
+                            });
     baton.wait();
     return rc;
 }
 
-int JobManager::getSpaceId(const std::string& name) {
+GraphSpaceID JobManager::getSpaceId(const std::string& name) {
     auto indexKey = MetaServiceUtils::indexSpaceKey(name);
     std::string val;
     auto ret = kvStore_->get(kDefaultSpaceId, kDefaultPartId, indexKey, &val);
@@ -295,7 +315,7 @@ int JobManager::getSpaceId(const std::string& name) {
         LOG(ERROR) << "KVStore error: " << ret;;
         return -1;
     }
-    return *reinterpret_cast<const int*>(val.c_str());
+    return *reinterpret_cast<const GraphSpaceID*>(val.c_str());
 }
 
 }  // namespace meta

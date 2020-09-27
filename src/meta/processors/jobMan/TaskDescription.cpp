@@ -17,10 +17,10 @@ namespace meta {
 using Status = cpp2::JobStatus;
 using Host = std::pair<int, int>;
 
-TaskDescription::TaskDescription(int32_t iJob, int32_t iTask, const HostAddr& dst)
+TaskDescription::TaskDescription(JobID iJob, TaskID iTask, const HostAddr& dst)
                                 : TaskDescription(iJob, iTask, dst.host, dst.port) {}
 
-TaskDescription::TaskDescription(int32_t iJob, int32_t iTask, std::string addr, int32_t port)
+TaskDescription::TaskDescription(JobID iJob, TaskID iTask, std::string addr, int32_t port)
                 : iJob_(iJob)
                 , iTask_(iTask)
                 , dest_(addr, port)
@@ -30,8 +30,8 @@ TaskDescription::TaskDescription(int32_t iJob, int32_t iTask, std::string addr, 
 
 
 /*
- * int32_t                         iJob_;
- * int32_t                         iTask_;
+ * JobID                           iJob_;
+ * TaskID                          iTask_;
  * HostAddr                        dest_;
  * cpp2::JobStatus                 status_;
  * int64_t                         startTime_;
@@ -54,38 +54,38 @@ std::string TaskDescription::taskKey() {
     std::string str;
     str.reserve(32);
     str.append(reinterpret_cast<const char*>(JobUtil::jobPrefix().data()),
-                                             JobUtil::jobPrefix().size());
-    str.append(reinterpret_cast<const char*>(&iJob_), sizeof(iJob_));
-    str.append(reinterpret_cast<const char*>(&iTask_), sizeof(iTask_));
+                                             JobUtil::jobPrefix().size())
+       .append(reinterpret_cast<const char*>(&iJob_), sizeof(JobID))
+       .append(reinterpret_cast<const char*>(&iTask_), sizeof(TaskID));
     return str;
 }
 
-std::tuple<int32_t, int32_t>
+std::pair<JobID, TaskID>
 TaskDescription::parseKey(const folly::StringPiece& rawKey) {
     auto offset = JobUtil::jobPrefix().size();
-    int32_t iJob =  *reinterpret_cast<const int32_t*>(rawKey.begin() + offset);
-    offset += sizeof(int32_t);
-    int32_t iTask = *reinterpret_cast<const int32_t*>(rawKey.begin() + offset);
-    return std::make_tuple(iJob, iTask);
+    JobID iJob =  *reinterpret_cast<const JobID*>(rawKey.begin() + offset);
+    offset += sizeof(JobID);
+    TaskID iTask = *reinterpret_cast<const int32_t*>(rawKey.begin() + offset);
+    return std::make_pair(iJob, iTask);
 }
 
 std::string TaskDescription::archiveKey() {
     std::string str;
     str.reserve(32);
     str.append(reinterpret_cast<const char*>(JobUtil::archivePrefix().data()),
-                                             JobUtil::archivePrefix().size());
-    str.append(reinterpret_cast<const char*>(&iJob_), sizeof(iJob_));
-    str.append(reinterpret_cast<const char*>(&iTask_), sizeof(iTask_));
+                                             JobUtil::archivePrefix().size())
+       .append(reinterpret_cast<const char*>(&iJob_), sizeof(JobID))
+       .append(reinterpret_cast<const char*>(&iTask_), sizeof(TaskID));
     return str;
 }
 
 std::string TaskDescription::taskVal() {
     std::string str;
     str.reserve(128);
-    str.append(MetaServiceUtils::serializeHostAddr(dest_));
-    str.append(reinterpret_cast<const char*>(&status_), sizeof(Status));
-    str.append(reinterpret_cast<const char*>(&startTime_), sizeof(startTime_));
-    str.append(reinterpret_cast<const char*>(&stopTime_), sizeof(stopTime_));
+    str.append(MetaServiceUtils::serializeHostAddr(dest_))
+       .append(reinterpret_cast<const char*>(&status_), sizeof(Status))
+       .append(reinterpret_cast<const char*>(&startTime_), sizeof(startTime_))
+       .append(reinterpret_cast<const char*>(&stopTime_), sizeof(stopTime_));
     return str;
 }
 

@@ -43,7 +43,7 @@ std::string JobStatus::toString(Status st) {
     case Status::INVALID:
         return "invalid";
     }
-    return "invalid st";
+    return "invalid status";
 }
 
 }  // namespace meta

@@ -112,6 +112,10 @@ public:
         return response(12);
     }
 
+    folly::Future<Status> addTask() override {
+        return response(13);
+    }
+
     void reset(std::vector<Status> sts) {
         statusArray_ = std::move(sts);
     }
@@ -186,6 +190,8 @@ public:
         properties.set_replica_factor(replica);
         auto spaceVal = MetaServiceUtils::spaceVal(properties);
         std::vector<nebula::kvstore::KV> data;
+        data.emplace_back(MetaServiceUtils::indexSpaceKey("test_space"),
+                          std::string(reinterpret_cast<const char*>(&id), sizeof(GraphSpaceID)));
         data.emplace_back(MetaServiceUtils::spaceKey(id), MetaServiceUtils::spaceVal(properties));
 
         std::vector<HostAddr> allHosts;
@@ -241,6 +247,66 @@ public:
                                 baton.post();
                           });
         baton.wait();
+    }
+
+    static bool mockTagIndex(kvstore::KVStore* kv,
+                             TagID tagID, std::string tagName,
+                             IndexID indexID, std::string indexName,
+                             std::vector<cpp2::ColumnDef> columns) {
+        GraphSpaceID space = 1;
+        cpp2::IndexItem item;
+        item.set_index_id(indexID);
+        item.set_index_name(indexName);
+        cpp2::SchemaID schemaID;
+        schemaID.set_tag_id(tagID);
+        item.set_schema_id(std::move(schemaID));
+        item.set_schema_name(std::move(tagName));
+        item.set_fields(std::move(columns));
+
+        std::vector<nebula::kvstore::KV> data;
+        data.emplace_back(MetaServiceUtils::indexIndexKey(space, indexName),
+                          std::string(reinterpret_cast<const char*>(&indexID), sizeof(IndexID)));
+        data.emplace_back(MetaServiceUtils::indexKey(space, indexID),
+                          MetaServiceUtils::indexVal(item));
+        kvstore::ResultCode ret;
+        folly::Baton<true, std::atomic> baton;
+        kv->asyncMultiPut(0, 0, std::move(data),
+                          [&] (kvstore::ResultCode code) {
+                              ret = code;
+                              baton.post();
+                          });
+        baton.wait();
+        return ret == kvstore::ResultCode::SUCCEEDED;
+    }
+
+    static bool mockEdgeIndex(kvstore::KVStore* kv,
+                              EdgeType edgeType, std::string edgeName,
+                              IndexID indexID, std::string indexName,
+                              std::vector<cpp2::ColumnDef> columns) {
+        GraphSpaceID space = 1;
+        cpp2::IndexItem item;
+        item.set_index_id(indexID);
+        item.set_index_name(indexName);
+        cpp2::SchemaID schemaID;
+        schemaID.set_edge_type(edgeType);
+        item.set_schema_id(std::move(schemaID));
+        item.set_schema_name(std::move(edgeName));
+        item.set_fields(std::move(columns));
+
+        std::vector<nebula::kvstore::KV> data;
+        data.emplace_back(MetaServiceUtils::indexIndexKey(space, indexName),
+                          std::string(reinterpret_cast<const char*>(&indexID), sizeof(IndexID)));
+        data.emplace_back(MetaServiceUtils::indexKey(space, indexID),
+                          MetaServiceUtils::indexVal(item));
+        kvstore::ResultCode ret;
+        folly::Baton<true, std::atomic> baton;
+        kv->asyncMultiPut(0, 0, std::move(data),
+                          [&] (kvstore::ResultCode code) {
+                              ret = code;
+                              baton.post();
+                          });
+        baton.wait();
+        return ret == kvstore::ResultCode::SUCCEEDED;
     }
 
     static void mockEdge(kvstore::KVStore* kv, int32_t edgeNum,

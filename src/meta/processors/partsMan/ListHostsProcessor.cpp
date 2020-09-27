@@ -11,7 +11,7 @@
 DECLARE_int32(expired_threshold_sec);
 DECLARE_int32(heartbeat_interval_secs);
 DEFINE_int32(removed_threshold_sec, 24 * 60 * 60,
-                     "Hosts will be removed in this time if no heartbeat received");
+             "Hosts will be removed in this time if no heartbeat received");
 
 namespace nebula {
 namespace meta {

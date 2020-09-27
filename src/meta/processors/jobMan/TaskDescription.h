@@ -37,8 +37,8 @@ class TaskDescription {
     FRIEND_TEST(JobManagerTest, showJob);
 
 public:
-    TaskDescription(int32_t iJob, int32_t iTask, const HostAddr& dst);
-    TaskDescription(int32_t iJob, int32_t iTask, std::string addr, int32_t port);
+    TaskDescription(JobID iJob, TaskID iTask, const HostAddr& dst);
+    TaskDescription(JobID iJob, TaskID iTask, std::string addr, int32_t port);
     TaskDescription(const folly::StringPiece& key, const folly::StringPiece& val);
 
     /*
@@ -50,7 +50,7 @@ public:
     /*
      * decode jobid and taskid from kv store
      * */
-    static std::tuple<int32_t, int32_t> parseKey(const folly::StringPiece& rawKey);
+    static std::pair<JobID, TaskID> parseKey(const folly::StringPiece& rawKey);
 
     /*
      * encode task val to write to kvstore
@@ -93,11 +93,11 @@ public:
      * */
     bool setStatus(cpp2::JobStatus newStatus);
 
-    int32_t getJobId() { return iJob_; }
+    JobID getJobId() { return iJob_; }
 
 private:
-    int32_t                         iJob_;
-    int32_t                         iTask_;
+    JobID                           iJob_;
+    TaskID                          iTask_;
     HostAddr                        dest_;
     cpp2::JobStatus                 status_;
     int64_t                         startTime_;

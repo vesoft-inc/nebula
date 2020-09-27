@@ -16,7 +16,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
     cpp2::AdminJobResult result;
     cpp2::ErrorCode errorCode = cpp2::ErrorCode::SUCCEEDED;
     std::stringstream oss;
-    oss << " op=" << static_cast<int>(req.get_op());
+    oss << " op = " << static_cast<int>(req.get_op());
     if (req.get_op() == nebula::meta::cpp2::AdminJobOp::ADD) {
         oss << ", cmd = " << static_cast<int>(req.get_cmd());
     }
@@ -36,21 +36,18 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
                 break;
             }
 
-            std::vector<std::string> cmdAndParas = req.get_paras();
-            if (cmdAndParas.empty()) {
+            auto cmd = req.get_cmd();
+            auto paras = req.get_paras();
+            if (paras.empty()) {
+                LOG(ERROR) << "Parameter should be not empty";
                 errorCode = cpp2::ErrorCode::E_INVALID_PARM;
                 break;
             }
 
-            auto cmd = req.get_cmd();
-            auto paras = req.get_paras();
-
             JobDescription jobDesc(nebula::value(jobId), cmd, paras);
-            auto rc = jobMgr->addJob(jobDesc, adminClient_);
-            if (rc == nebula::kvstore::SUCCEEDED) {
+            errorCode = jobMgr->addJob(jobDesc, adminClient_);
+            if (errorCode == cpp2::ErrorCode::SUCCEEDED) {
                 result.set_job_id(nebula::value(jobId));
-            } else {
-                errorCode = MetaCommon::to(rc);
             }
             break;
         }
@@ -60,19 +57,21 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
             if (nebula::ok(ret)) {
                 result.set_job_desc(nebula::value(ret));
             } else {
-                errorCode = MetaCommon::to(nebula::error(ret));
+                errorCode = nebula::error(ret);
             }
             break;
         }
         case nebula::meta::cpp2::AdminJobOp::SHOW:
         {
             if (req.get_paras().empty()) {
+                LOG(ERROR) << "Parameter should be not empty";
                 errorCode = cpp2::ErrorCode::E_INVALID_PARM;
                 break;
             }
 
             int iJob = atoi(req.get_paras()[0].c_str());
             if (iJob == 0) {
+                LOG(ERROR) << "Show job should have parameter as the job ID";
                 errorCode = cpp2::ErrorCode::E_INVALID_PARM;
                 break;
             }
@@ -82,25 +81,24 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
                 result.set_job_desc(std::vector<cpp2::JobDesc>{nebula::value(ret).first});
                 result.set_task_desc(nebula::value(ret).second);
             } else {
-                errorCode = MetaCommon::to(nebula::error(ret));
+                errorCode = nebula::error(ret);
             }
             break;
         }
         case nebula::meta::cpp2::AdminJobOp::STOP:
         {
             if (req.get_paras().empty()) {
+                LOG(ERROR) << "Parameter should be not empty";
                 errorCode = cpp2::ErrorCode::E_INVALID_PARM;
                 break;
             }
             int iJob = atoi(req.get_paras()[0].c_str());
             if (iJob == 0) {
+                LOG(ERROR) << "Stop job should have parameter as the job ID";
                 errorCode = cpp2::ErrorCode::E_INVALID_PARM;
                 break;
             }
-            auto ret = jobMgr->stopJob(iJob);
-            if (nebula::kvstore::ResultCode::SUCCEEDED != ret) {
-                errorCode = MetaCommon::to(ret);
-            }
+            errorCode = jobMgr->stopJob(iJob);
             break;
         }
         case nebula::meta::cpp2::AdminJobOp::RECOVER:
@@ -109,7 +107,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
             if (nebula::ok(ret)) {
                 result.set_recovered_job_num(nebula::value(ret));
             } else {
-                errorCode = MetaCommon::to(nebula::error(ret));
+                errorCode = nebula::error(ret);
             }
             break;
         }

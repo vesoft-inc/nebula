@@ -38,6 +38,7 @@ public:
     virtual folly::Future<Status> blockingWrites() = 0;
     virtual folly::Future<Status> rebuildTagIndex() = 0;
     virtual folly::Future<Status> rebuildEdgeIndex() = 0;
+    virtual folly::Future<Status> addTask() = 0;
 };
 
 static const HostAddr kRandomPeer("", 0);

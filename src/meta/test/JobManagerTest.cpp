@@ -22,70 +22,86 @@ using ResultCode = nebula::kvstore::ResultCode;
 namespace nebula {
 namespace meta {
 
-using Status = nebula::meta::cpp2::JobStatus;
-using AdminCmd = cpp2::AdminCmd;
-
-AdminCmd makeCmd(const std::string& str) {
-    std::map<std::string, AdminCmd> mapping;
-    mapping["compact"] = AdminCmd::COMPACT;
-    mapping["FLUSH"] = AdminCmd::COMPACT;
-    if (mapping.count(str)) {
-        return mapping[str];
-    }
-    return AdminCmd::COMPACT;
-}
-
 class JobManagerTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        LOG(INFO) << "enter" << __func__;
         rootPath_ = std::make_unique<fs::TempDir>("/tmp/JobManager.XXXXXX");
-        kv_ = MockCluster::initMetaKV(rootPath_->path());
-        TestUtils::createSomeHosts(kv_.get());
-        TestUtils::assembleSpace(kv_.get(), 1, 1);
+        mock::MockCluster cluster;
+        kv_ = cluster.initMetaKV(rootPath_->path());
+
+        ASSERT_TRUE(TestUtils::createSomeHosts(kv_.get()));
+        ASSERT_TRUE(TestUtils::assembleSpace(kv_.get(), 1, 1));
+
+        // Make sure the rebuild job could find the index name.
+        std::vector<cpp2::ColumnDef> columns;
+        ASSERT_TRUE(TestUtils::mockTagIndex(kv_.get(), 1, "tag_name", 11,
+                                            "tag_index_name", columns));
+        ASSERT_TRUE(TestUtils::mockEdgeIndex(kv_.get(), 1, "edge_name", 21,
+                                             "edge_index_name", columns));
+
+        std::vector<Status> sts(14, Status::OK());
+        std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
+        adminClient_ = std::make_unique<AdminClient>(std::move(injector));
+
         jobMgr = JobManager::getInstance();
         jobMgr->init(kv_.get());
-        LOG(INFO) << "exit" << __func__;
     }
+
     void TearDown() override {
-        LOG(INFO) << "enter" << __func__;
         jobMgr->shutDown();
         kv_.reset();
         rootPath_.reset();
-        LOG(INFO) << "exit" << __func__;
     }
 
     std::unique_ptr<fs::TempDir> rootPath_{nullptr};
     std::unique_ptr<kvstore::KVStore> kv_{nullptr};
     std::unique_ptr<nebula::thread::GenericThreadPool> pool_{nullptr};
+    std::unique_ptr<AdminClient> adminClient_{nullptr};
     JobManager* jobMgr{nullptr};
 };
 
 TEST_F(JobManagerTest, addJob) {
-    auto cmd = makeCmd("compact");
     std::vector<std::string> paras{"test"};
-    JobDescription job(1, cmd, paras);
-    auto rc = jobMgr->addJob(job, nullptr);
-    ASSERT_EQ(rc, nebula::kvstore::ResultCode::SUCCEEDED);
+    JobDescription job(1, cpp2::AdminCmd::COMPACT, paras);
+    auto rc = jobMgr->addJob(job, adminClient_.get());
+    ASSERT_EQ(rc, cpp2::ErrorCode::SUCCEEDED);
+}
+
+
+TEST_F(JobManagerTest, AddRebuildTagIndexJob) {
+    std::vector<std::string> paras{"test_space" , "tag_index_name"};
+    JobDescription job(11, cpp2::AdminCmd::REBUILD_TAG_INDEX, paras);
+    auto rc = jobMgr->addJob(job, adminClient_.get());
+    ASSERT_EQ(rc, cpp2::ErrorCode::SUCCEEDED);
+    auto result = jobMgr->runJobInternal(job);
+    ASSERT_TRUE(result);
+}
+
+
+TEST_F(JobManagerTest, AddRebuildEdgeIndexJob) {
+    std::vector<std::string> paras{"test_space" , "edge_index_name"};
+    JobDescription job(11, cpp2::AdminCmd::REBUILD_EDGE_INDEX, paras);
+    auto rc = jobMgr->addJob(job, adminClient_.get());
+    ASSERT_EQ(rc, cpp2::ErrorCode::SUCCEEDED);
+    auto result = jobMgr->runJobInternal(job);
+    ASSERT_TRUE(result);
 }
 
 TEST_F(JobManagerTest, loadJobDescription) {
-    auto cmd = makeCmd("compact");
-    std::string para("test");
-    std::vector<std::string> paras{para};
-    JobDescription job1(1, cmd, paras);
-    job1.setStatus(Status::RUNNING);
-    job1.setStatus(Status::FINISHED);
-    auto rc = jobMgr->addJob(job1, nullptr);
-    ASSERT_EQ(rc, ResultCode::SUCCEEDED);
+    std::vector<std::string> paras{"test_space"};
+    JobDescription job1(1, cpp2::AdminCmd::COMPACT, paras);
+    job1.setStatus(cpp2::JobStatus  ::RUNNING);
+    job1.setStatus(cpp2::JobStatus::FINISHED);
+    auto rc = jobMgr->addJob(job1, adminClient_.get());
+    ASSERT_EQ(rc, cpp2::ErrorCode::SUCCEEDED);
     ASSERT_EQ(job1.id_, 1);
-    ASSERT_EQ(job1.cmd_, cmd);
-    ASSERT_EQ(job1.paras_[0], para);
+    ASSERT_EQ(job1.cmd_, cpp2::AdminCmd::COMPACT);
+    ASSERT_EQ(job1.paras_[0], "test_space");
 
     auto optJd2 = JobDescription::loadJobDescription(job1.id_, kv_.get());
     ASSERT_TRUE(optJd2);
     ASSERT_EQ(job1.id_, optJd2.value().id_);
-    LOG(INFO) << "job1.id_=" << job1.id_;
+    LOG(INFO) << "job1.id_ = " << job1.id_;
     ASSERT_EQ(job1.cmd_, optJd2.value().cmd_);
     ASSERT_EQ(job1.paras_, optJd2.value().paras_);
     ASSERT_EQ(job1.status_, optJd2.value().status_);
@@ -95,25 +111,21 @@ TEST_F(JobManagerTest, loadJobDescription) {
 
 TEST(JobUtilTest, dummy) {
     ASSERT_TRUE(JobUtil::jobPrefix().length() + sizeof(size_t) !=
-              JobUtil::currJobKey().length());
+                JobUtil::currJobKey().length());
 }
 
 TEST_F(JobManagerTest, showJobs) {
-    auto type1 = makeCmd("compact");
-    std::string para1("test");
-    std::vector<std::string> paras1{para1};
-    JobDescription jd1(1, type1, paras1);
-    jd1.setStatus(Status::RUNNING);
-    jd1.setStatus(Status::FINISHED);
-    jobMgr->addJob(jd1, nullptr);
+    std::vector<std::string> paras1{"test_space"};
+    JobDescription jd1(1, cpp2::AdminCmd::COMPACT, paras1);
+    jd1.setStatus(cpp2::JobStatus::RUNNING);
+    jd1.setStatus(cpp2::JobStatus::FINISHED);
+    jobMgr->addJob(jd1, adminClient_.get());
 
-    auto type2 = makeCmd("flush");
-    std::string para2("nba");
-    std::vector<std::string> paras2{para2};
-    JobDescription jd2(2, type2, paras2);
-    jd2.setStatus(Status::RUNNING);
-    jd2.setStatus(Status::FAILED);
-    jobMgr->addJob(jd2, nullptr);
+    std::vector<std::string> paras2{"test_space"};
+    JobDescription jd2(2, cpp2::AdminCmd::FLUSH, paras2);
+    jd2.setStatus(cpp2::JobStatus::RUNNING);
+    jd2.setStatus(cpp2::JobStatus::FAILED);
+    jobMgr->addJob(jd2, adminClient_.get());
 
     auto statusOrShowResult = jobMgr->showJobs();
     LOG(INFO) << "after show jobs";
@@ -121,16 +133,16 @@ TEST_F(JobManagerTest, showJobs) {
 
     auto& jobs = nebula::value(statusOrShowResult);
     ASSERT_EQ(jobs[1].get_id(), jd1.id_);
-    ASSERT_EQ(jobs[1].get_cmd(), type1);
-    ASSERT_EQ(jobs[1].get_paras()[0], para1);
-    ASSERT_EQ(jobs[1].get_status(), Status::FINISHED);
+    ASSERT_EQ(jobs[1].get_cmd(), cpp2::AdminCmd::COMPACT);
+    ASSERT_EQ(jobs[1].get_paras()[0], "test_space");
+    ASSERT_EQ(jobs[1].get_status(), cpp2::JobStatus::FINISHED);
     ASSERT_EQ(jobs[1].get_start_time(), jd1.startTime_);
     ASSERT_EQ(jobs[1].get_stop_time(), jd1.stopTime_);
 
     ASSERT_EQ(jobs[0].get_id(), jd2.id_);
-    ASSERT_EQ(jobs[0].get_cmd(), type2);
-    ASSERT_EQ(jobs[0].get_paras()[0], para2);
-    ASSERT_EQ(jobs[0].get_status(), Status::FAILED);
+    ASSERT_EQ(jobs[0].get_cmd(), cpp2::AdminCmd::FLUSH);
+    ASSERT_EQ(jobs[0].get_paras()[0], "test_space");
+    ASSERT_EQ(jobs[0].get_status(), cpp2::JobStatus::FAILED);
     ASSERT_EQ(jobs[0].get_start_time(), jd2.startTime_);
     ASSERT_EQ(jobs[0].get_stop_time(), jd2.stopTime_);
 }
@@ -140,29 +152,27 @@ HostAddr toHost(std::string strIp) {
 }
 
 TEST_F(JobManagerTest, showJob) {
-    auto type = makeCmd("compact");
-    std::string para("test");
-    std::vector<std::string> paras{para};
+    std::vector<std::string> paras{"test_space"};
 
-    JobDescription jd(1, type, paras);
-    jd.setStatus(Status::RUNNING);
-    jd.setStatus(Status::FINISHED);
-    jobMgr->addJob(jd, nullptr);
+    JobDescription jd(1, cpp2::AdminCmd::COMPACT, paras);
+    jd.setStatus(cpp2::JobStatus::RUNNING);
+    jd.setStatus(cpp2::JobStatus::FINISHED);
+    jobMgr->addJob(jd, adminClient_.get());
 
     int32_t iJob = jd.id_;
     int32_t task1 = 0;
     auto host1 = toHost("127.0.0.1");
 
     TaskDescription td1(iJob, task1, host1);
-    td1.setStatus(Status::RUNNING);
-    td1.setStatus(Status::FINISHED);
+    td1.setStatus(cpp2::JobStatus::RUNNING);
+    td1.setStatus(cpp2::JobStatus::FINISHED);
     jobMgr->save(td1.taskKey(), td1.taskVal());
 
     int32_t task2 = 1;
     auto host2 = toHost("127.0.0.1");
     TaskDescription td2(iJob, task2, host2);
-    td2.setStatus(Status::RUNNING);
-    td2.setStatus(Status::FAILED);
+    td2.setStatus(cpp2::JobStatus::RUNNING);
+    td2.setStatus(cpp2::JobStatus::FAILED);
     jobMgr->save(td2.taskKey(), td2.taskVal());
 
     LOG(INFO) << "before jobMgr->showJob";
@@ -173,24 +183,23 @@ TEST_F(JobManagerTest, showJob) {
     auto& tasks = nebula::value(showResult).second;
 
     ASSERT_EQ(jobs.get_id(), iJob);
-    // ASSERT_EQ(jobs.get_cmdAndParas(), type + " " + para + " ");
-    ASSERT_EQ(jobs.get_cmd(), type);
-    ASSERT_EQ(jobs.get_paras()[0], para);
-    ASSERT_EQ(jobs.get_status(), Status::FINISHED);
+    ASSERT_EQ(jobs.get_cmd(), cpp2::AdminCmd::COMPACT);
+    ASSERT_EQ(jobs.get_paras()[0], "test_space");
+    ASSERT_EQ(jobs.get_status(), cpp2::JobStatus::FINISHED);
     ASSERT_EQ(jobs.get_start_time(), jd.startTime_);
     ASSERT_EQ(jobs.get_stop_time(), jd.stopTime_);
 
     ASSERT_EQ(tasks[0].get_task_id(), task1);
     ASSERT_EQ(tasks[0].get_job_id(), iJob);
     ASSERT_EQ(tasks[0].get_host().host, host1.host);
-    ASSERT_EQ(tasks[0].get_status(), Status::FINISHED);
+    ASSERT_EQ(tasks[0].get_status(), cpp2::JobStatus::FINISHED);
     ASSERT_EQ(tasks[0].get_start_time(), td1.startTime_);
     ASSERT_EQ(tasks[0].get_stop_time(), td1.stopTime_);
 
     ASSERT_EQ(tasks[1].get_task_id(), task2);
     ASSERT_EQ(tasks[1].get_job_id(), iJob);
     ASSERT_EQ(tasks[1].get_host().host, host2.host);
-    ASSERT_EQ(tasks[1].get_status(), Status::FAILED);
+    ASSERT_EQ(tasks[1].get_status(), cpp2::JobStatus::FAILED);
     ASSERT_EQ(tasks[1].get_start_time(), td2.startTime_);
     ASSERT_EQ(tasks[1].get_stop_time(), td2.stopTime_);
 }
@@ -198,7 +207,7 @@ TEST_F(JobManagerTest, showJob) {
 TEST_F(JobManagerTest, recoverJob) {
     int32_t nJob = 3;
     for (auto i = 0; i != nJob; ++i) {
-        JobDescription jd(i, makeCmd("flush"), {"test"});
+        JobDescription jd(i, cpp2::AdminCmd::FLUSH, {"test_space"});
         jobMgr->save(jd.jobKey(), jd.jobVal());
     }
 
@@ -207,22 +216,18 @@ TEST_F(JobManagerTest, recoverJob) {
 }
 
 TEST(JobDescriptionTest, ctor) {
-    auto type1 = makeCmd("compact");
-    std::string para1("test");
-    std::vector<std::string> paras1{para1};
-    JobDescription jd1(1, type1, paras1);
-    jd1.setStatus(Status::RUNNING);
-    jd1.setStatus(Status::FINISHED);
+    std::vector<std::string> paras1{"test_space"};
+    JobDescription jd1(1, cpp2::AdminCmd::COMPACT, paras1);
+    jd1.setStatus(cpp2::JobStatus::RUNNING);
+    jd1.setStatus(cpp2::JobStatus::FINISHED);
     LOG(INFO) << "jd1 ctored";
 }
 
 TEST(JobDescriptionTest, ctor2) {
-    auto type1 = makeCmd("compact");
-    std::string para1("test");
-    std::vector<std::string> paras1{para1};
-    JobDescription jd1(1, type1, paras1);
-    jd1.setStatus(Status::RUNNING);
-    jd1.setStatus(Status::FINISHED);
+    std::vector<std::string> paras1{"test_space"};
+    JobDescription jd1(1, cpp2::AdminCmd::COMPACT, paras1);
+    jd1.setStatus(cpp2::JobStatus::RUNNING);
+    jd1.setStatus(cpp2::JobStatus::FINISHED);
     LOG(INFO) << "jd1 ctored";
 
     std::string strKey = jd1.jobKey();
@@ -232,12 +237,10 @@ TEST(JobDescriptionTest, ctor2) {
 }
 
 TEST(JobDescriptionTest, ctor3) {
-    auto type1 = makeCmd("compact");
-    std::string para1("test");
-    std::vector<std::string> paras1{para1};
-    JobDescription jd1(1, type1, paras1);
-    jd1.setStatus(Status::RUNNING);
-    jd1.setStatus(Status::FINISHED);
+    std::vector<std::string> paras1{"test_space"};
+    JobDescription jd1(1, cpp2::AdminCmd::COMPACT, paras1);
+    jd1.setStatus(cpp2::JobStatus::RUNNING);
+    jd1.setStatus(cpp2::JobStatus::FINISHED);
     LOG(INFO) << "jd1 ctored";
 
     std::string strKey = jd1.jobKey();
@@ -250,12 +253,11 @@ TEST(JobDescriptionTest, ctor3) {
 
 TEST(JobDescriptionTest, parseKey) {
     int32_t iJob = std::pow(2, 16);
-    auto type = makeCmd("compact");
-    std::vector<std::string> paras{"test"};
-    JobDescription jd(iJob, type, paras);
+    std::vector<std::string> paras{"test_space"};
+    JobDescription jd(iJob, cpp2::AdminCmd::COMPACT, paras);
     auto sKey = jd.jobKey();
     ASSERT_EQ(iJob, jd.getJobId());
-    ASSERT_EQ(type, jd.getCmd());
+    ASSERT_EQ(cpp2::AdminCmd::COMPACT, jd.getCmd());
 
     folly::StringPiece spKey(&sKey[0], sKey.length());
     auto parsedKeyId = JobDescription::parseKey(spKey);
@@ -264,20 +266,18 @@ TEST(JobDescriptionTest, parseKey) {
 
 TEST(JobDescriptionTest, parseVal) {
     int32_t iJob = std::pow(2, 15);
-    auto type = makeCmd("flush");
     std::vector<std::string> paras{"nba"};
-    JobDescription jd(iJob, type, paras);
-    auto status = Status::FINISHED;
-    jd.setStatus(Status::RUNNING);
+    JobDescription jd(iJob, cpp2::AdminCmd::FLUSH, paras);
+    auto status = cpp2::JobStatus::FINISHED;
+    jd.setStatus(cpp2::JobStatus::RUNNING);
     jd.setStatus(status);
     auto startTime = jd.startTime_;
     auto stopTime = jd.stopTime_;
 
     auto strVal = jd.jobVal();
-
     folly::StringPiece rawVal(&strVal[0], strVal.length());
     auto parsedVal = JobDescription::parseVal(rawVal);
-    ASSERT_EQ(type, std::get<0>(parsedVal));
+    ASSERT_EQ(cpp2::AdminCmd::FLUSH, std::get<0>(parsedVal));
     ASSERT_EQ(paras, std::get<1>(parsedVal));
     ASSERT_EQ(status, std::get<2>(parsedVal));
     ASSERT_EQ(startTime, std::get<3>(parsedVal));
@@ -289,7 +289,7 @@ TEST(TaskDescriptionTest, ctor) {
     int32_t iTask = 0;
     auto dest = toHost("");
     TaskDescription td(iJob, iTask, dest);
-    auto status = Status::RUNNING;
+    auto status = cpp2::JobStatus::RUNNING;
 
     ASSERT_EQ(iJob, td.iJob_);
     ASSERT_EQ(iTask, td.iTask_);
@@ -317,8 +317,8 @@ TEST(TaskDescriptionTest, parseVal) {
     std::string dest{"127.0.0.1"};
 
     TaskDescription td(iJob, iTask, toHost(dest));
-    td.setStatus(Status::RUNNING);
-    auto status = Status::FINISHED;
+    td.setStatus(cpp2::JobStatus::RUNNING);
+    auto status = cpp2::JobStatus::FINISHED;
     td.setStatus(status);
 
     std::string strVal = td.taskVal();
@@ -337,8 +337,8 @@ TEST(TaskDescriptionTest, ctor2) {
     auto dest = toHost("127.0.0.1");
 
     TaskDescription td1(iJob, iTask, dest);
-    ASSERT_EQ(td1.status_, Status::RUNNING);
-    auto status = Status::FINISHED;
+    ASSERT_EQ(td1.status_, cpp2::JobStatus::RUNNING);
+    auto status = cpp2::JobStatus::FINISHED;
     td1.setStatus(status);
 
     std::string strKey = td1.taskKey();
@@ -363,6 +363,5 @@ int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     folly::init(&argc, &argv, true);
     google::SetStderrLogging(google::INFO);
-
     return RUN_ALL_TESTS();
 }

@@ -102,8 +102,8 @@ void AdminTaskManager::schedule() {
         auto it = tasks_.find(handle);
         if (it == tasks_.end()) {
             LOG(ERROR) << folly::stringPrintf(
-                        "trying to exec non-exist task(%d, %d)",
-                        handle.first, handle.second);
+                          "trying to exec non-exist task(%d, %d)",
+                          handle.first, handle.second);
             continue;
         }
 

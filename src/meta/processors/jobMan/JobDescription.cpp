@@ -4,13 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/processors/jobMan/JobDescription.h"
 #include <stdexcept>
 #include <string>
 #include <vector>
 #include <folly/String.h>
 #include <boost/stacktrace.hpp>
 #include "meta/processors/jobMan/JobUtils.h"
+#include "meta/processors/jobMan/JobDescription.h"
 #include "kvstore/KVIterator.h"
 
 namespace nebula {
@@ -22,7 +22,7 @@ using AdminCmd = cpp2::AdminCmd;
 int32_t JobDescription::minDataVer_ = 1;
 int32_t JobDescription::currDataVer_ = 1;
 
-JobDescription::JobDescription(int32_t id,
+JobDescription::JobDescription(JobID id,
                                cpp2::AdminCmd cmd,
                                std::vector<std::string> paras,
                                Status status,
@@ -69,12 +69,12 @@ std::string JobDescription::jobKey() const {
     return makeJobKey(id_);
 }
 
-std::string JobDescription::makeJobKey(int32_t iJob) {
+std::string JobDescription::makeJobKey(JobID iJob) {
     std::string str;
     str.reserve(32);
     str.append(reinterpret_cast<const char*>(JobUtil::jobPrefix().data()),
-                                             JobUtil::jobPrefix().size());
-    str.append(reinterpret_cast<const char*>(&iJob), sizeof(int32_t));
+                                             JobUtil::jobPrefix().size())
+       .append(reinterpret_cast<const char*>(&iJob), sizeof(JobID));
     return str;
 }
 
@@ -88,18 +88,18 @@ std::string JobDescription::jobVal() const {
     str.reserve(256);
     // use a big num to avoid possible conflict
     int32_t dataVersion = INT_MAX - currDataVer_;
-    str.append(reinterpret_cast<const char*>(&dataVersion), sizeof(dataVersion));
-    str.append(reinterpret_cast<const char*>(&cmd_), sizeof(cmd_));
+    str.append(reinterpret_cast<const char*>(&dataVersion), sizeof(dataVersion))
+       .append(reinterpret_cast<const char*>(&cmd_), sizeof(cmd_));
     auto paraSize = paras_.size();
     str.append(reinterpret_cast<const char*>(&paraSize), sizeof(size_t));
     for (auto& para : paras_) {
         auto len = para.length();
-        str.append(reinterpret_cast<const char*>(&len), sizeof(len));
-        str.append(reinterpret_cast<const char*>(&para[0]), len);
+        str.append(reinterpret_cast<const char*>(&len), sizeof(len))
+           .append(reinterpret_cast<const char*>(&para[0]), len);
     }
-    str.append(reinterpret_cast<const char*>(&status_), sizeof(Status));
-    str.append(reinterpret_cast<const char*>(&startTime_), sizeof(int64_t));
-    str.append(reinterpret_cast<const char*>(&stopTime_), sizeof(int64_t));
+    str.append(reinterpret_cast<const char*>(&status_), sizeof(Status))
+       .append(reinterpret_cast<const char*>(&startTime_), sizeof(int64_t))
+       .append(reinterpret_cast<const char*>(&stopTime_), sizeof(int64_t));
     return str;
 }
 
@@ -153,8 +153,8 @@ std::string JobDescription::archiveKey() {
     std::string str;
     str.reserve(32);
     str.append(reinterpret_cast<const char*>(JobUtil::archivePrefix().data()),
-                                             JobUtil::archivePrefix().size());
-    str.append(reinterpret_cast<const char*>(&id_), sizeof(id_));
+                                             JobUtil::archivePrefix().size())
+       .append(reinterpret_cast<const char*>(&id_), sizeof(id_));
     return str;
 }
 
@@ -177,11 +177,12 @@ bool JobDescription::isJobKey(const folly::StringPiece& rawKey) {
 }
 
 folly::Optional<JobDescription>
-JobDescription::loadJobDescription(int32_t iJob, nebula::kvstore::KVStore* kv) {
+JobDescription::loadJobDescription(JobID iJob, nebula::kvstore::KVStore* kv) {
     auto key = makeJobKey(iJob);
     std::string val;
     auto rc = kv->get(0, 0, key, &val);
     if (rc != nebula::kvstore::SUCCEEDED) {
+        LOG(ERROR) << "Loading Job Description Failed";
         return folly::none;
     }
     return makeJobDescription(key, val);

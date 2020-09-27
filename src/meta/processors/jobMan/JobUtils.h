@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef META_JOB_UTIL_H_
-#define META_JOB_UTIL_H_
+#ifndef META_JOBUTIL_H_
+#define META_JOBUTIL_H_
 
 #include <ctime>
 #include <string>
@@ -28,7 +28,7 @@ public:
     static T parseFixedVal(folly::StringPiece rawVal, size_t offset) {
         if (rawVal.size() < offset + sizeof(T)) {
             throw std::runtime_error(folly::stringPrintf("%s: offset=%zu, rawVal.size()=%zu",
-                                                        __func__, offset, rawVal.size()));
+                                                         __func__, offset, rawVal.size()));
         }
         return *reinterpret_cast<const T*>(rawVal.data() + offset);
     }
@@ -43,5 +43,5 @@ public:
 }  // namespace meta
 }  // namespace nebula
 
-#endif  // META_JOB_UTIL_H_
+#endif  // META_JOBUTIL_H_
 
