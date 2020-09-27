@@ -45,7 +45,7 @@ private:
     void visit(EdgeDstIdExpression *) override;
     void visit(VertexExpression *) override;
     void visit(EdgeExpression *) override;
-    void visit(LogicalExpression *expr) override;
+    void visit(LogicalExpression *) override;
 
     bool canBePushed_{true};
     std::unique_ptr<Expression> remainedExpr_;

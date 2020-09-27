@@ -9,10 +9,12 @@ nebula_add_library(
     CollectAllExprsVisitor.cpp
     DeducePropsVisitor.cpp
     DeduceTypeVisitor.cpp
+    ExtractPropExprVisitor.cpp
     ExtractFilterExprVisitor.cpp
     FindAnyExprVisitor.cpp
     FoldConstantExprVisitor.cpp
     RewriteLabelAttrVisitor.cpp
+    RewriteInputPropVisitor.cpp
 )
 
 nebula_add_subdirectory(test)
