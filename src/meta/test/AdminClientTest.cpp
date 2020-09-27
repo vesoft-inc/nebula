@@ -12,6 +12,7 @@
 #include <folly/synchronization/Baton.h>
 #include "meta/processors/admin/Balancer.h"
 #include "meta/test/TestUtils.h"
+#include "utils/Utils.h"
 
 #define RETURN_OK(req) \
     UNUSED(req); \
@@ -227,7 +228,7 @@ TEST(AdminClientTest, RetryTest) {
         folly::Baton<true, std::atomic> baton;
         client->transLeader(0, 1, {localIp, rpcServer2->port_}, HostAddr("1", 1))
             .thenValue([&baton](auto&& st) {
-            CHECK(st.ok());
+            CHECK(st.ok()) << st;
             baton.post();
         });
         baton.wait();
@@ -236,7 +237,7 @@ TEST(AdminClientTest, RetryTest) {
         LOG(INFO) << "Test member change...";
         folly::Baton<true, std::atomic> baton;
         client->memberChange(0, 1, HostAddr("0", 0), true).thenValue([&baton](auto&& st) {
-            CHECK(st.ok());
+            CHECK(st.ok()) << st;
             baton.post();
         });
         baton.wait();
@@ -245,7 +246,7 @@ TEST(AdminClientTest, RetryTest) {
         LOG(INFO) << "Test add learner...";
         folly::Baton<true, std::atomic> baton;
         client->addLearner(0, 1, HostAddr("0", 0)).thenValue([&baton](auto&& st) {
-            CHECK(st.ok());
+            CHECK(st.ok()) << st;
             baton.post();
         });
         baton.wait();
@@ -254,7 +255,7 @@ TEST(AdminClientTest, RetryTest) {
         LOG(INFO) << "Test waitingForCatchUpData...";
         folly::Baton<true, std::atomic> baton;
         client->waitingForCatchUpData(0, 1, HostAddr("0", 0)).thenValue([&baton](auto&& st) {
-            CHECK(st.ok());
+            CHECK(st.ok()) << st;
             baton.post();
         });
         baton.wait();
@@ -274,7 +275,7 @@ TEST(AdminClientTest, RetryTest) {
         LOG(INFO) << "Test update meta...";
         folly::Baton<true, std::atomic> baton;
         client->updateMeta(0, 1, HostAddr("0", 0), HostAddr("1", 1)).thenValue([&baton](auto&& st) {
-            CHECK(st.ok());
+            CHECK(st.ok()) << st;
             baton.post();
         });
         baton.wait();
@@ -300,32 +301,33 @@ TEST(AdminClientTest, SnapshotTest) {
     fs::TempDir rootPath("/tmp/admin_snapshot_test.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
     auto now = time::WallClock::fastNowInMilliSec();
-    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr(localIp, rpcServer->port_),
+    ActiveHostsMan::updateHostInfo(kv.get(),
+                                   Utils::getStoreAddrFromAdminAddr({localIp, rpcServer->port_}),
                                    HostInfo(now, meta::cpp2::HostRole::STORAGE, ""));
     ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(kv.get()).size());
 
     std::vector<HostAddr> addresses;
-    addresses.emplace_back(localIp, rpcServer->port_);
+    addresses.emplace_back(Utils::getStoreAddrFromAdminAddr({localIp, rpcServer->port_}));
     auto client = std::make_unique<AdminClient>(kv.get());
     {
         LOG(INFO) << "Test Blocking Writes On...";
         auto status = client->blockingWrites(1, storage::cpp2::EngineSignType::BLOCK_ON).get();
-        ASSERT_TRUE(status.ok());
+        ASSERT_TRUE(status.ok()) << status;
     }
     {
         LOG(INFO) << "Test Create Snapshot...";
         auto status = client->createSnapshot(1, "test_snapshot").get();
-        ASSERT_TRUE(status.ok());
+        ASSERT_TRUE(status.ok()) << status;
     }
     {
         LOG(INFO) << "Test Drop Snapshot...";
         auto status = client->dropSnapshot(1, "test_snapshot", addresses).get();
-        ASSERT_TRUE(status.ok());
+        ASSERT_TRUE(status.ok()) << status;
     }
     {
         LOG(INFO) << "Test Blocking Writes Off...";
         auto status = client->blockingWrites(1, storage::cpp2::EngineSignType::BLOCK_OFF).get();
-        ASSERT_TRUE(status.ok());
+        ASSERT_TRUE(status.ok()) << status;
     }
 }
 
@@ -341,7 +343,8 @@ TEST(AdminClientTest, RebuildIndexTest) {
     fs::TempDir rootPath("/tmp/admin_snapshot_test.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
     auto now = time::WallClock::fastNowInMilliSec();
-    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr(localIp, rpcServer->port_),
+    ActiveHostsMan::updateHostInfo(kv.get(),
+                                   Utils::getStoreAddrFromAdminAddr({localIp, rpcServer->port_}),
                                    HostInfo(now, meta::cpp2::HostRole::STORAGE, ""));
     ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(kv.get()).size());
     auto address = HostAddr(localIp, rpcServer->port_);
@@ -349,24 +352,24 @@ TEST(AdminClientTest, RebuildIndexTest) {
     {
         LOG(INFO) << "Test Blocking Writes On...";
         auto status = client->blockingWrites(1, storage::cpp2::EngineSignType::BLOCK_ON).get();
-        ASSERT_TRUE(status.ok());
+        ASSERT_TRUE(status.ok()) << status;
     }
     {
         LOG(INFO) << "Test Rebuild Tag Index...";
         std::vector<PartitionID> parts{1, 2, 3};
         auto status = client->rebuildTagIndex(address, 1, 1, std::move(parts)).get();
-        ASSERT_TRUE(status.ok());
+        ASSERT_TRUE(status.ok()) << status;
     }
     {
         LOG(INFO) << "Test Rebuild Edge Index...";
         std::vector<PartitionID> parts{1, 2, 3};
         auto status = client->rebuildEdgeIndex(address, 1, 1, std::move(parts)).get();
-        ASSERT_TRUE(status.ok());
+        ASSERT_TRUE(status.ok()) << status;
     }
     {
         LOG(INFO) << "Test Blocking Writes Off...";
         auto status = client->blockingWrites(1, storage::cpp2::EngineSignType::BLOCK_OFF).get();
-        ASSERT_TRUE(status.ok());
+        ASSERT_TRUE(status.ok()) << status;
     }
 }
 

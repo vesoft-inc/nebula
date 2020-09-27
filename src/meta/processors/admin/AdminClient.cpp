@@ -9,6 +9,7 @@
 #include "meta/processors/Common.h"
 #include "meta/ActiveHostsMan.h"
 #include "kvstore/Part.h"
+#include "utils/Utils.h"
 
 DEFINE_int32(max_retry_times_admin_op, 30, "max retry times for admin request!");
 
@@ -364,7 +365,8 @@ void AdminClient::getResponse(
                 if (retry < retryLimit) {
                     LOG(INFO) << "Rpc failure to " << hosts[index]
                               << ", retry " << retry
-                              << ", limit " << retryLimit;
+                              << ", limit " << retryLimit
+                              << ", error: " << t.exception();
                     index = (index + 1) % hosts.size();
                     getResponse(std::move(hosts),
                                 index,
@@ -534,7 +536,7 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
     for (const auto& h : allHosts) {
         folly::Promise<StatusOr<storage::cpp2::GetLeaderPartsResp>> pro;
         auto fut = pro.getFuture();
-        getLeaderDist(h, std::move(pro), 0, 3);
+        getLeaderDist(Utils::getAdminAddrFromStoreAddr(h), std::move(pro), 0, 3);
         hostFutures.emplace_back(std::move(fut));
     }
 
@@ -569,7 +571,7 @@ folly::Future<Status> AdminClient::createSnapshot(GraphSpaceID spaceId, const st
         return injector_->createSnapshot();
     }
 
-    auto allHosts = ActiveHostsMan::getActiveHosts(kv_);
+    auto allHosts = ActiveHostsMan::getActiveAdminHosts(kv_);
     storage::cpp2::CreateCPRequest req;
     req.set_space_id(spaceId);
     req.set_name(name);
@@ -600,7 +602,11 @@ folly::Future<Status> AdminClient::dropSnapshot(GraphSpaceID spaceId,
 
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
-    getResponse(std::move(hosts), 0, std::move(req), [] (auto client, auto request) {
+    std::vector<HostAddr> adminHosts(hosts.size());
+    std::transform(hosts.begin(), hosts.end(), adminHosts.begin(), [](const auto& h) {
+        return Utils::getAdminAddrFromStoreAddr(h);
+    });
+    getResponse(std::move(adminHosts), 0, std::move(req), [] (auto client, auto request) {
         return client->future_dropCheckpoint(request);
     }, 0, std::move(pro), 1 /*The snapshot operation only needs to be retried twice*/);
     return f;
@@ -608,7 +614,7 @@ folly::Future<Status> AdminClient::dropSnapshot(GraphSpaceID spaceId,
 
 folly::Future<Status> AdminClient::blockingWrites(GraphSpaceID spaceId,
                                                   storage::cpp2::EngineSignType sign) {
-    auto allHosts = ActiveHostsMan::getActiveHosts(kv_);
+    auto allHosts = ActiveHostsMan::getActiveAdminHosts(kv_);
     storage::cpp2::BlockingSignRequest req;
     req.set_space_id(spaceId);
     req.set_sign(sign);
@@ -671,7 +677,7 @@ AdminClient::addTask(cpp2::AdminCmd cmd,
                     const std::vector<std::string>& taskSpecficParas,
                     std::vector<PartitionID> parts,
                     int concurrency) {
-    auto hosts = targetHost.empty() ? ActiveHostsMan::getActiveHosts(kv_) : targetHost;
+    auto hosts = targetHost.empty() ? ActiveHostsMan::getActiveAdminHosts(kv_) : targetHost;
     storage::cpp2::AddAdminTaskRequest req;
     req.set_cmd(cmd);
     req.set_job_id(jobId);
@@ -700,7 +706,7 @@ AdminClient::stopTask(const std::vector<HostAddr>& target,
                       int32_t jobId,
                       int32_t taskId) {
     LOG(INFO) << "AdminClient::stopTask()";
-    auto hosts = target.empty() ? ActiveHostsMan::getActiveHosts(kv_) : target;
+    auto hosts = target.empty() ? ActiveHostsMan::getActiveAdminHosts(kv_) : target;
     storage::cpp2::StopAdminTaskRequest req;
     req.set_job_id(jobId);
     req.set_task_id(taskId);

@@ -104,21 +104,6 @@ public:
                                        RowReader* reader,
                                        const std::string& ttlCol,
                                        int64_t ttlDuration);
-
-    // Calculate the admin service address based on the storage service address
-    static HostAddr getAdminAddrFromStoreAddr(HostAddr storeAddr) {
-        if (storeAddr == HostAddr("", 0)) {
-            return storeAddr;
-        }
-        return HostAddr(storeAddr.host, storeAddr.port - 1);
-    }
-
-    static HostAddr getStoreAddrFromAdminAddr(HostAddr adminAddr) {
-        if (adminAddr == HostAddr("", 0)) {
-            return adminAddr;
-        }
-        return HostAddr(adminAddr.host, adminAddr.port + 1);
-    }
 };
 
 }  // namespace storage

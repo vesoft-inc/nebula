@@ -6,6 +6,7 @@
 
 #include "meta/ActiveHostsMan.h"
 #include "meta/processors/Common.h"
+#include "utils/Utils.h"
 
 DEFINE_int32(expired_threshold_sec, 10 * 60,
                      "Hosts will be expired in this time if no heartbeat received");
@@ -63,6 +64,17 @@ std::vector<HostAddr> ActiveHostsMan::getActiveHosts(kvstore::KVStore* kv,
         iter->next();
     }
     return hosts;
+}
+
+std::vector<HostAddr> ActiveHostsMan::getActiveAdminHosts(kvstore::KVStore* kv,
+                                                          int32_t expiredTTL,
+                                                          cpp2::HostRole role) {
+    auto hosts = getActiveHosts(kv, expiredTTL, role);
+    std::vector<HostAddr> adminHosts(hosts.size());
+    std::transform(hosts.begin(), hosts.end(), adminHosts.begin(), [](const auto& h) {
+        return Utils::getAdminAddrFromStoreAddr(h);
+    });
+    return adminHosts;
 }
 
 bool ActiveHostsMan::isLived(kvstore::KVStore* kv, const HostAddr& host) {

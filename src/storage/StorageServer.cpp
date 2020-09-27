@@ -20,6 +20,7 @@
 #include "storage/http/StorageHttpIngestHandler.h"
 #include "storage/http/StorageHttpAdminHandler.h"
 #include "kvstore/PartManager.h"
+#include "utils/Utils.h"
 #include <thrift/lib/cpp/concurrency/ThreadManager.h>
 
 DEFINE_int32(port, 44500, "Storage daemon listening port");
@@ -174,7 +175,7 @@ bool StorageServer::start() {
     adminThread_.reset(new std::thread([this] {
         try {
             auto handler = std::make_shared<StorageAdminServiceHandler>(env_.get());
-            auto adminAddr = CommonUtils::getAdminAddrFromStoreAddr(localHost_);
+            auto adminAddr = Utils::getAdminAddrFromStoreAddr(localHost_);
             adminServer_ = std::make_unique<apache::thrift::ThriftServer>();
             adminServer_->setPort(adminAddr.port);
             adminServer_->setReusePort(FLAGS_reuse_port);
