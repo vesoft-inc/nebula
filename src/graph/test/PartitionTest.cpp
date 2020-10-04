@@ -10,9 +10,9 @@
 #include "meta/test/TestUtils.h"
 #include "storage/test/TestUtils.h"
 
+DECLARE_int32(max_parts_num);
 namespace nebula {
 namespace graph {
-
 class PartitionTest : public TestBase {
 protected:
     void SetUp() override {
@@ -28,6 +28,7 @@ protected:
 
 TEST_F(PartitionTest, limit_partitions) {
     auto client = gEnv->getClient();
+    FLAGS_max_parts_num = 100;
     ASSERT_NE(nullptr, client);
     {
         cpp2::ExecutionResponse resp;
