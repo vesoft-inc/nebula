@@ -100,7 +100,8 @@ void CmdProcessor::calColumnWidths(
                 }
                 case cpp2::ColumnValue::Type::double_precision: {
                     int digits10 = std::numeric_limits<double>::digits10;
-                    const char *fmtValue = folly::sformat("%.{}lf", digits10).c_str();
+                    auto str = folly::sformat("%.{}lf", digits10);
+                    const char *fmtValue = str.c_str();
                     GET_VALUE_WIDTH(double, double_precision, fmtValue);
                     if (genFmt) {
                         std::string fmt = folly::sformat(" %%-%ld.{}lf |", digits10);
