@@ -114,10 +114,6 @@ Status FetchVerticesExecutor::prepareTags() {
             return tagsStatus.status();
         }
         for (auto& tagName : std::move(tagsStatus).value()) {
-            auto tagIdStatus = ectx()->schemaManager()->toTagID(spaceId_, tagName);
-            if (!tagIdStatus.ok()) {
-                return tagIdStatus.status();
-            }
             auto result = tagNameSet_.emplace(tagName);
             if (!result.second) {
                 return Status::Error(folly::sformat("tag({}) was dup", tagName));
