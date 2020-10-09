@@ -56,12 +56,7 @@ public:
             , logId_(firstLogId)
             , logs_(std::move(logs))
             , opCB_(std::move(opCB)) {
-        leadByAtomicOp_ = processAtomicOp();
-        valid_ = idx_ < logs_.size();
-        hasNonAtomicOpLogs_ = !leadByAtomicOp_ && valid_;
-        if (valid_) {
-            currLogType_ = lastLogType_ = logType();
-        }
+        reset();
     }
 
     AppendLogsIterator(const AppendLogsIterator&) = delete;
@@ -164,17 +159,22 @@ public:
     void resume() {
         CHECK(!valid_);
         if (!empty()) {
-            leadByAtomicOp_ = processAtomicOp();
-            valid_ = idx_ < logs_.size();
-            hasNonAtomicOpLogs_ = !leadByAtomicOp_ && valid_;
-            if (valid_) {
-                currLogType_ = lastLogType_ = logType();
-            }
+            reset();
         }
     }
 
     LogType logType() const {
         return  std::get<1>(logs_.at(idx_));
+    }
+
+private:
+    void reset() {
+        leadByAtomicOp_ = processAtomicOp();
+        valid_ = idx_ < logs_.size();
+        hasNonAtomicOpLogs_ = !leadByAtomicOp_ && valid_;
+        if (valid_) {
+            currLogType_ = lastLogType_ = logType();
+        }
     }
 
 private:
