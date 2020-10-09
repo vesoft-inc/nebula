@@ -118,9 +118,6 @@ Status FetchVerticesExecutor::prepareTags() {
             if (!tagIdStatus.ok()) {
                 return tagIdStatus.status();
             }
-            auto tagId = tagIdStatus.value();
-            tagNames_.push_back(tagName);
-            tagIds_.push_back(tagId);
             auto result = tagNameSet_.emplace(tagName);
             if (!result.second) {
                 return Status::Error(folly::sformat("tag({}) was dup", tagName));
@@ -344,7 +341,7 @@ void FetchVerticesExecutor::fetchVertices() {
             ectx()->addWarningMsg("Fetch vertices executor was partially performed");
         }
         processResult(std::move(result));
-   };
+    };
     auto error = [this] (auto &&e) {
         auto msg = folly::stringPrintf("Get tag props exception: %s.", e.what().c_str());
         LOG(ERROR) << msg;
