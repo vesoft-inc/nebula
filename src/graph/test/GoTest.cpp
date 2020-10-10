@@ -3066,6 +3066,57 @@ TEST_P(GoTest, issueBackTrackOverlap) {
     }
 }
 
+TEST_P(GoTest, CatchExceptionInSetOp) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt =
+            "$var1 = go from %ld over like yield like._dst as dst;"
+            "$var2 = yield left($var1.dst, 4) + \"x\" union yield left($var1.dst, 4) + \"y\";"
+            "yield $var2.*;";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "$var1 = go from %ld over like yield like._dst as dst;"
+                    "$var2 = yield left((string)$var1.dst, 4) + \"x\" union yield left($var1.dst, "
+                    "4) + \"y\";"
+                    "yield $var2.*;";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "$var1 = go from %ld over like yield like._dst as dst;"
+                    "$var2 = yield left($var1.dst, 4) + \"x\" union yield left((string)$var1.dst, "
+                    "4) + \"y\";"
+                    "yield $var2.*;";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "$var1 = go from %ld over like yield like._dst as dst;"
+                    "$var2 = yield left((string)$var1.dst, 4) + \"x\" union yield "
+                    "left((string)$var1.dst, 4) + \"y\";"
+                    "yield $var2.*;";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::tuple<std::string>> expected = {
+            {folly::to<std::string>(players_["Tony Parker"].vid()).substr(0, 4) + "x"},
+            {folly::to<std::string>(players_["Manu Ginobili"].vid()).substr(0, 4) + "x"},
+            {folly::to<std::string>(players_["Tony Parker"].vid()).substr(0, 4) + "y"},
+            {folly::to<std::string>(players_["Manu Ginobili"].vid()).substr(0, 4) + "y"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
 INSTANTIATE_TEST_CASE_P(IfPushdownFilter, GoTest, ::testing::Bool());
 
 }   // namespace graph
